@@ -2,6 +2,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   alias Oli.Delivery.{Certificates, GrantedCertificates, Metrics, Sections}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources
+  alias Oli.Resources.Numbering
 
   def get_instructor_enrollment(section, current_user)
       when is_map(section) and is_map(current_user) and is_integer(current_user.id) do
@@ -11,7 +12,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   def get_instructor_enrollment(_section, _current_user), do: nil
 
   def get_containers(section, opts \\ [async: true]) do
-    case Sections.get_units_and_modules_containers(section.slug) do
+    case Sections.get_units_and_modules_containers(section) do
       {0, pages} ->
         page_ids = Enum.map(pages, & &1.id)
         student_ids = Sections.progress_user_ids(section.id)
@@ -119,19 +120,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   def certificate_pending_approval_count(_students, _certificate), do: nil
 
   defp return_page(graded_pages_and_section_resources, section, _students) do
+    numbering_map = Sections.decorated_numbering_map(section)
+
     # Create a map of all section resource ids to their parent container labels
     container_labels =
       Oli.Delivery.Sections.SectionResourceDepot.containers(section.id)
       |> Enum.reduce(%{}, fn container, acc ->
-        Enum.reduce(container.children, acc, fn sr_id, acc ->
-          label =
-            Sections.get_container_label_and_numbering(
-              container.numbering_level,
-              container.numbering_index,
-              section.customizations
-            )
+        label = container_label(container, numbering_map, section.customizations)
 
-          Map.put(acc, sr_id, {container.resource_id, "#{label}: #{container.title}"})
+        Enum.reduce(container.children, acc, fn sr_id, acc ->
+          Map.put(acc, sr_id, {container.resource_id, label})
         end)
       end)
 
@@ -154,6 +152,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         has_lti_activity: r.resource_id in lti_page_ids
       })
     end)
+  end
+
+  # A container absent from `numbering_map` is suppressed (or a descendant of a suppressed
+  # top-level unit); its children get the bare container title, no numbering prefix, matching
+  # how Learn presents a suppressed unit.
+  defp container_label(container, numbering_map, customizations) do
+    case Numbering.lookup(numbering_map, container.resource_id) do
+      nil ->
+        container.title
+
+      %Numbering{level: level, index: index} ->
+        label = Sections.get_container_label_and_numbering(level, index, customizations)
+        "#{label}: #{container.title}"
+    end
   end
 
   def load_metrics(resources, section, students) do

@@ -161,7 +161,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
 
     # Get parent container info for all pages in a single query
     page_ids = Enum.map(assessments, fn {rev, _sr} -> rev.resource_id end)
-    parent_containers_map = Sections.get_parent_containers_map(section.id, page_ids)
+    parent_containers_map = Sections.get_parent_containers_map(section, page_ids)
     student_started_resource_ids = student_started_resource_ids(section.id, page_ids)
     customizations = section.customizations
 

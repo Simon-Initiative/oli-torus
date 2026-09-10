@@ -21,6 +21,8 @@ defmodule Oli.Scenarios.Engine do
     InstitutionDirective,
     OwnershipDirective,
     InstitutionDiscountDirective,
+    CommunityDirective,
+    AssertSourcesDirective,
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
@@ -71,6 +73,8 @@ defmodule Oli.Scenarios.Engine do
     InstitutionHandler,
     OwnershipHandler,
     InstitutionDiscountHandler,
+    CommunityHandler,
+    AssertSourcesHandler,
     UpdateHandler,
     CustomizeHandler,
     ActivityHandler,
@@ -179,6 +183,7 @@ defmodule Oli.Scenarios.Engine do
           products: %{},
           users: initial_reference_map("default_author", author),
           institutions: initial_reference_map("default", institution),
+          communities: %{},
           activities: %{},
           activity_virtual_ids: %{},
           activity_bank_results: %{},
@@ -348,6 +353,14 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%InstitutionDiscountDirective{} = directive, state) do
     InstitutionDiscountHandler.handle(directive, state)
+  end
+
+  def execute_directive(%CommunityDirective{} = directive, state) do
+    CommunityHandler.handle(directive, state)
+  end
+
+  def execute_directive(%AssertSourcesDirective{} = directive, state) do
+    AssertSourcesHandler.handle(directive, state)
   end
 
   def execute_directive(%UpdateDirective{} = directive, state) do

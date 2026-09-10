@@ -1,0 +1,148 @@
+work_item: consistent-container-numbering
+requirements:
+- title: Assessment Settings and Student Exceptions show the same container number
+    as Learn for a given assessment's parent unit/module
+  id: FR-001
+- title: Grade Sync's assessment selector shows the same container number as Learn
+    for a given assessment's parent unit/module
+  id: FR-002
+- title: The section Scheduling editor shows the same unit/module numbers as Learn
+    for every row
+  id: FR-003
+- title: Instructor Dashboard scored, practice, and survey page views (including their
+    CSV export) show container labels consistent with Learn
+  id: FR-004
+- title: Instructor Dashboard Content view's "Order" column reflects the same container
+    numbering as Learn
+  id: FR-005
+- title: Instructor Dashboard container navigators and selectors (Content, Learning
+    Objectives, Student Insights, Intelligent Dashboard) list containers using the
+    same numbering as Learn
+  id: FR-006
+- title: Student Insights container heading matches Learn's numbering for the same
+    container
+  id: FR-007
+- title: The AI Dialogue assistant's course-layout context and generated references
+    to units/modules use suppression-aware numbering consistent with Learn
+  id: FR-008
+- title: The Intelligent Dashboard assessment context/tile labels containers consistent
+    with Learn
+  id: FR-009
+- title: Student Dashboard Course Content and legacy page-delivery navigation breadcrumbs
+    reflect suppression-aware numbering consistent with Learn
+  id: FR-010
+- title: Sections that already have suppressed top-level units in production have
+    their cached navigation index corrected without requiring an unrelated content
+    edit
+  id: FR-011
+- title: Student Progress breadcrumbs show container numbering consistent with Learn
+  id: FR-012
+- title: Sections with no suppressed units render identically before and after this
+    change on every in-scope surface
+  id: FR-013
+- title: The Instructor Preview outline and the student Lesson page's table-of-contents
+    drawer show the same container numbers as Learn, instead of silently falling back
+    to raw numbering when the shared hierarchy-thinning helper strips suppression-aware
+    data
+  id: FR-014
+acceptance_criteria:
+- title: In a section with a suppressed top-level unit, the Assessment Settings table's
+    assessment name label shows the same unit number as Learn shows for that assessment's
+    parent unit
+  verification_method: automated
+  id: AC-001
+- title: In the same section, the Student Exceptions assessment selector dropdown
+    shows the same unit number as Learn for the same assessment
+  verification_method: automated
+  id: AC-002
+- title: An assessment whose parent unit is itself suppressed shows no unit-number
+    prefix in Assessment Settings and Student Exceptions, matching Learn's title-only
+    presentation
+  verification_method: automated
+  id: AC-003
+- title: In a section with a suppressed top-level unit, the Grade Sync assessment
+    selector shows the same unit number as Learn for the same assessment
+  verification_method: automated
+  id: AC-004
+- title: In a section with a suppressed top-level unit, every unit and module row
+    in the Scheduling editor's served data shows the same numbers as Learn for the
+    same containers
+  verification_method: automated
+  id: AC-005
+- title: The Scheduling editor's frontend renders the corrected numbers without any
+    frontend code change, confirming the fix is fully server-side
+  verification_method: manual
+  id: AC-006
+- title: In a section with a suppressed top-level unit, the Instructor Dashboard's
+    scored/practice/survey page table shows container labels matching Learn for the
+    same pages
+  verification_method: automated
+  id: AC-007
+- title: The CSV export of the Instructor Dashboard page views includes the same suppression-aware
+    container labels as the on-screen table
+  verification_method: automated
+  id: AC-008
+- title: In a section with a suppressed top-level unit, the Instructor Dashboard Content
+    view's "Order" column numbers match Learn for the same containers
+  verification_method: automated
+  id: AC-009
+- title: Sorting and filtering in the Instructor Dashboard Content view continue to
+    work correctly after the underlying numbering source changes
+  verification_method: automated
+  id: AC-010
+- title: In a section with a suppressed top-level unit, the Instructor Dashboard container
+    navigator (used by Content, Learning Objectives, Student Insights, and Intelligent
+    Dashboard) lists containers with the same numbers as Learn
+  verification_method: automated
+  id: AC-011
+- title: In a section with a suppressed top-level unit, the Student Insights container
+    heading matches the number Learn shows for the same container
+  verification_method: automated
+  id: AC-012
+- title: In a section with a suppressed top-level unit, the AI Dialogue assistant's
+    generated course-layout text references units/modules using the same numbers as
+    Learn
+  verification_method: automated
+  id: AC-013
+- title: In a section with a suppressed top-level unit, the Intelligent Dashboard
+    assessment tile's context label matches the number Learn shows for the same container
+  verification_method: automated
+  id: AC-014
+- title: In a section with a suppressed top-level unit, the Student Dashboard Course
+    Content view shows the same unit/module numbers as Learn for the same containers
+  verification_method: automated
+  id: AC-015
+- title: In a section with a suppressed top-level unit, legacy page-delivery navigation
+    breadcrumbs derived from the cached hierarchy show the same numbers as Learn
+  verification_method: automated
+  id: AC-016
+- title: A migration run against a database containing at least one section with non-empty
+    unnumbered_unit_ids and at least one section with empty unnumbered_unit_ids clears
+    previous_next_index only on the former
+  verification_method: automated
+  id: AC-017
+- title: After the migration runs, the next request against a previously-affected
+    section triggers a just-in-time rebuild that produces suppression-aware numbering
+    in previous_next_index without any manual intervention
+  verification_method: automated
+  id: AC-018
+- title: In a section with a suppressed top-level unit, Student Progress breadcrumbs
+    for a page under a numbered unit show the same unit number as Learn
+  verification_method: automated
+  id: AC-019
+- title: In a section with no suppressed units (unnumbered_unit_ids empty), every
+    in-scope surface (Assessment Settings, Student Exceptions, Grade Sync, Scheduling,
+    Instructor Dashboard views, Student Insights, Intelligent Dashboard, AI Dialogue,
+    Course Content, Student Progress) renders the exact same container numbers as
+    before this change
+  verification_method: automated
+  id: AC-020
+- title: In a section with a suppressed top-level unit, the Instructor Page Preview
+    outline shows the same unit/module numbers as Learn for the same containers
+  verification_method: automated
+  id: AC-021
+- title: In a section with a suppressed top-level unit, the student Lesson page's
+    table-of-contents drawer shows the same unit/module numbers as Learn for the same
+    containers
+  verification_method: automated
+  id: AC-022

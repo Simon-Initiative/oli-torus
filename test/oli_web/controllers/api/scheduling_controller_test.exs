@@ -130,6 +130,57 @@ defmodule OliWeb.SchedulingControllerTest do
     end
   end
 
+  describe "suppression-aware numbering" do
+    setup [:setup_session_with_hierarchy]
+
+    test "containers show suppression-aware numbering, pages keep their own raw numbering", %{
+      conn: conn,
+      map: map
+    } do
+      {:ok, _section} =
+        Sections.update_section(map.section, %{unnumbered_unit_ids: [map.unit1_resource.id]})
+
+      conn = get(conn, Routes.scheduling_path(conn, :index, map.section.slug))
+
+      assert %{"result" => "success", "resources" => resources} = json_response(conn, 200)
+
+      unit1 = Enum.find(resources, &(&1["resource_id"] == map.unit1_resource.id))
+      unit2 = Enum.find(resources, &(&1["resource_id"] == map.unit2_resource.id))
+
+      # Unit 1 is suppressed: no numbering shown at all, rather than a stale raw number.
+      assert unit1["numbering_index"] == nil
+      assert unit1["numbering_level"] == nil
+
+      # Unit 2 is renumbered to "Unit 1" now that Unit 1 is suppressed.
+      assert unit2["numbering_level"] == 1
+      assert unit2["numbering_index"] == 1
+    end
+  end
+
+  defp setup_session_with_hierarchy(%{conn: conn}) do
+    map =
+      Seeder.base_project_with_larger_hierarchy()
+      |> Seeder.add_user(
+        %{preferences: %{timezone: "America/New_York"}},
+        :teacher
+      )
+
+    Sections.enroll(map.teacher.id, map.section.id, [
+      Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
+    ])
+
+    Oli.Lti.TestHelpers.all_default_claims()
+    |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
+    |> cache_lti_params(map.teacher.id)
+
+    conn =
+      Plug.Test.init_test_session(conn, lti_session: nil)
+      |> log_in_author(map.author)
+      |> log_in_user(map.teacher)
+
+    {:ok, conn: conn, map: map}
+  end
+
   defp setup_session(%{conn: conn}) do
     map =
       Seeder.base_project_with_resource2()

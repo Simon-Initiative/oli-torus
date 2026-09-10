@@ -20,10 +20,12 @@ defmodule Oli.Delivery.Sections do
     DisplayLabels,
     SectionResource,
     SectionResourceDepot,
+    SectionResourceMigration,
     ContainedObjective,
     SectionsProjectsPublications,
     Enrollment,
     EnrollmentBrowseOptions,
+    ObjectiveChildrenProjection,
     EnrollmentContextRole,
     Scheduling,
     MinimalHierarchy
@@ -73,6 +75,21 @@ defmodule Oli.Delivery.Sections do
 
   @instructor_role_ids Enum.map(@instructor_roles, & &1.id)
   @context_administrator_role_id ContextRoles.get_role(:context_administrator).id
+
+  @doc """
+  Returns whether a section participates in at least one native experiment.
+
+  This is intended as a cheap delivery-path guard before scheduling experiment work.
+  """
+  def has_experiment?(section_id) when is_integer(section_id) do
+    Repo.exists?(
+      from experiment_section in "experiment_sections",
+        where: experiment_section.section_id == ^section_id
+    )
+  end
+
+  def has_experiment?(_section_id), do: false
+
   @doc """
   Fetches the hidden instructor for a given section. If no hidden instructor exists,
   it creates one.  The "hidden" instructor is a special user account that is used to
@@ -996,6 +1013,41 @@ defmodule Oli.Delivery.Sections do
       )
 
     Repo.one(query)
+  end
+
+  @doc """
+  Returns the base project slug and active enrollment needed to render alternatives
+  in a section.
+  """
+  def get_alternatives_render_context(section_id, nil) do
+    from(
+      section in Section,
+      join: project in Project,
+      on: project.id == section.base_project_id,
+      where: section.id == ^section_id,
+      select: {project.slug, nil}
+    )
+    |> Repo.one()
+  end
+
+  def get_alternatives_render_context(section_id, user_id) do
+    enrollment_join =
+      dynamic(
+        [section, _project, enrollment],
+        enrollment.section_id == section.id and enrollment.user_id == ^user_id and
+          enrollment.status == :enrolled and section.status == :active
+      )
+
+    from(
+      section in Section,
+      join: project in Project,
+      on: project.id == section.base_project_id,
+      left_join: enrollment in Enrollment,
+      on: ^enrollment_join,
+      where: section.id == ^section_id,
+      select: {project.slug, enrollment}
+    )
+    |> Repo.one()
   end
 
   def update_enrollment(%Enrollment{} = e, attrs) do
@@ -2648,9 +2700,7 @@ defmodule Oli.Delivery.Sections do
 
     full_hierarchy
     |> Hierarchy.flatten_hierarchy()
-    |> Enum.filter(fn node ->
-      node.revision.resource_type_id == ResourceType.get_id_by_type("container")
-    end)
+    |> Enum.filter(&container_node?/1)
     |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev} = node ->
       numbering =
         case node.display_numbering do
@@ -2659,6 +2709,144 @@ defmodule Oli.Delivery.Sections do
         end
 
       {resource_id, DisplayLabels.label_for(numbering, rev.title, short_label, customizations)}
+    end)
+  end
+
+  @doc """
+  Builds a map of container resource_id => suppression-aware `%Oli.Resources.Numbering{}`
+  for every container in the given section, honoring `section.unnumbered_unit_ids`.
+
+  A container that is itself an unnumbered top-level unit, or a descendant of one, is
+  absent from the returned map -- there is no "suppressed" value, only absence. Callers
+  should treat a missing key the same way they treat "no parent container" today (title
+  only, no numbering prefix), consistent with `DisplayLabels.label_for/4` and
+  `name_with_container_label/3`.
+
+  For a section with no `unnumbered_unit_ids` configured, every container in the section
+  is present in the map with its canonical numbering, so this function is safe to call
+  unconditionally rather than special-casing the no-suppression case.
+
+  Sources the section hierarchy from `SectionResourceDepot`, so repeated calls for the
+  same section reuse the cached section resource data rather than re-querying it.
+
+  Expects `section` to have been through `create_section_resources/2` (true for every
+  section created via the normal delivery flows, which populate section resources
+  transactionally at creation time).
+
+  ## Parameters
+    - `section` - The section struct to compute container numbering for
+
+  ## Returns
+    A map where keys are container resource IDs and values are `%Oli.Resources.Numbering{}`
+    structs reflecting the numbering the student Learn view would show for that container.
+
+  ## Examples
+      iex> decorated_numbering_map(section)
+      %{
+        10 => %Oli.Resources.Numbering{level: 1, index: 1},
+        11 => %Oli.Resources.Numbering{level: 2, index: 1}
+      }
+  """
+  @spec decorated_numbering_map(Section.t()) :: %{integer() => Numbering.t()}
+  def decorated_numbering_map(%Section{} = section) do
+    section
+    |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
+    |> Hierarchy.flatten_hierarchy()
+    |> Enum.filter(&container_node?/1)
+    |> Enum.reduce(%{}, fn %HierarchyNode{resource_id: resource_id} = node, acc ->
+      case DisplayLabels.effective_numbering(node) do
+        nil -> acc
+        %Numbering{} = numbering -> Map.put(acc, resource_id, numbering)
+      end
+    end)
+  end
+
+  defp container_node?(%HierarchyNode{revision: revision}) do
+    revision.resource_type_id == ResourceType.get_id_by_type("container")
+  end
+
+  @doc """
+  Overlays suppression-aware `numbering_index` onto a list of `%SectionResource{}` containers
+  (as returned by `SectionResourceDepot.containers/2`), using `decorated_numbering_map/1`.
+
+  A suppressed container (an unnumbered top-level unit, or a descendant of one) gets
+  `numbering_index: nil`. `numbering_level` is left untouched, since it reflects structural
+  depth (unit vs. module vs. section), not a suppression-aware display index.
+  """
+  @spec overlay_suppression_aware_numbering([SectionResource.t()], Section.t()) :: [
+          SectionResource.t()
+        ]
+  def overlay_suppression_aware_numbering(containers, %Section{} = section) do
+    overlay_numbering_index(containers, section, & &1.resource_id)
+  end
+
+  @doc """
+  Like `overlay_suppression_aware_numbering/2`, but also reorders the containers into
+  document/tree order: root containers (e.g. units) first, in the order they actually
+  appear in the course, each one immediately followed by its own descendants (e.g.
+  modules), also in document order.
+
+  This matters because a suppressed container's `numbering_index` becomes `nil` after the
+  overlay, and `nil` is not a meaningful sort key -- sorting containers by their own
+  (post-overlay) `numbering_index` pushes a suppressed container to one end of the list
+  (last ascending, first descending) instead of leaving it where it structurally sits.
+  This function sorts by each container's raw, never-suppressed index instead, captured
+  before the overlay runs, so a suppressed container stays in its natural position -- the
+  same guarantee `Sections.decorated_numbering_map/1` already gives for numbering itself.
+
+  A container is treated as a "root" if it is not listed as a child of any other container
+  in the given list -- so if `containers` is a partial list (e.g. only modules), every item
+  in it is treated as a root and sorted by its own raw index, since none of its true parents
+  are present to nest it under.
+  """
+  @spec overlay_and_order_containers_by_document_position([SectionResource.t()], Section.t()) ::
+          [SectionResource.t()]
+  def overlay_and_order_containers_by_document_position(containers, %Section{} = section) do
+    document_order = Map.new(containers, &{&1.id, &1.numbering_index})
+
+    containers
+    |> overlay_suppression_aware_numbering(section)
+    |> order_by_document_position(document_order)
+  end
+
+  defp order_by_document_position(containers, document_order) do
+    containers_by_id = Map.new(containers, &{&1.id, &1})
+
+    child_ids =
+      containers
+      |> Enum.flat_map(&Map.get(&1, :children, []))
+      |> MapSet.new()
+
+    containers
+    |> Enum.reject(&MapSet.member?(child_ids, &1.id))
+    |> Enum.sort_by(&Map.fetch!(document_order, &1.id))
+    |> Enum.flat_map(&flatten_by_document_position(&1, containers_by_id))
+  end
+
+  defp flatten_by_document_position(container, containers_by_id) do
+    children =
+      container
+      |> Map.get(:children, [])
+      |> Enum.map(&Map.get(containers_by_id, &1))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.flat_map(&flatten_by_document_position(&1, containers_by_id))
+
+    [container | children]
+  end
+
+  # Shared by `overlay_suppression_aware_numbering/2` (operates on `%SectionResource{}`,
+  # keyed by `resource_id`) and `get_units_and_modules_containers/1`'s private overlay
+  # (operates on plain maps from a custom `select`, keyed by `id`) -- both need the same
+  # nil-vs-`%Numbering{}` overlay logic against `decorated_numbering_map/1`, differing only
+  # in which field identifies the container.
+  defp overlay_numbering_index(containers, section, key_fun) do
+    numbering_map = decorated_numbering_map(section)
+
+    Enum.map(containers, fn container ->
+      case Numbering.lookup(numbering_map, key_fun.(container)) do
+        nil -> %{container | numbering_index: nil}
+        %Numbering{index: index} -> %{container | numbering_index: index}
+      end
     end)
   end
 
@@ -3822,6 +4010,8 @@ defmodule Oli.Delivery.Sections do
   If a finalized hierarchy node is given, then the section will be rebuilt from it. Otherwise, it
   will be rebuilt from a list of section resources.
 
+  The transaction locks the Section before writing SectionResources to serialize with JIT migration.
+
   project_publications is a map of the project id to the pinned publication for the section.
   %{1 => %Publication{project_id: 1, ...}, ...}
   """
@@ -3832,6 +4022,9 @@ defmodule Oli.Delivery.Sections do
       ) do
     if Hierarchy.finalized?(hierarchy) do
       Multi.new()
+      |> Multi.run(:lock_section, fn _repo, _ ->
+        {:ok, SectionResourceMigration.lock_section!(section_id)}
+      end)
       |> Multi.run(:keep_original_required_assessments_for_certificate, fn _repo, _ ->
         # guarantee no added assessments are required for gaining a certificate
         Certificates.switch_certificate_to_custom_assessments(section)
@@ -3859,7 +4052,7 @@ defmodule Oli.Delivery.Sections do
       # reset any section cached data
       SectionCache.clear(section.slug)
 
-      Oli.Delivery.DepotCoordinator.clear(
+      Oli.Delivery.DepotCoordinator.clear_synchronously(
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
         section_id
       )
@@ -3894,6 +4087,11 @@ defmodule Oli.Delivery.Sections do
     create_section_resources(section, publication)
   end
 
+  @doc """
+  Rebuilds section resources and publication mappings from a finalized hierarchy.
+
+  Locks the Section before projection writes, retaining the lock through any enclosing transaction.
+  """
   def rebuild_section_resources(
         %Section{id: section_id} = section,
         section_resources,
@@ -3902,6 +4100,8 @@ defmodule Oli.Delivery.Sections do
       )
       when is_list(section_resources) do
     Repo.transaction(fn ->
+      SectionResourceMigration.lock_section!(section_id)
+
       previous_section_resource_ids =
         get_section_resources(section_id)
         |> Enum.map(fn sr -> sr.id end)
@@ -4414,6 +4614,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Serializes projection writes with JIT migration by locking the Section first.
+
   Gracefully applies the specified publication update to a given section by leaving the existing
   curriculum and section modifications in-tact while applying the structural changes that
   occurred between the old and new publication.
@@ -4432,7 +4634,6 @@ defmodule Oli.Delivery.Sections do
 
     new_publication = Publishing.get_publication!(publication_id)
     project_id = new_publication.project_id
-    project = Oli.Repo.get(Oli.Authoring.Course.Project, project_id)
     current_publication = get_current_publication(section_id, project_id)
 
     # fetch diff from cache if one is available. If not, compute one on the fly
@@ -4478,13 +4679,6 @@ defmodule Oli.Delivery.Sections do
           end
       end
 
-    # For a section based on this project, update the has_experiments in the section to match that
-    # setting in the project.
-    if section.base_project_id == project_id and
-         project.has_experiments != section.has_experiments do
-      Oli.Delivery.Sections.update_section(section, %{has_experiments: project.has_experiments})
-    end
-
     Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
 
     result
@@ -4497,6 +4691,8 @@ defmodule Oli.Delivery.Sections do
 
     result =
       Repo.transaction(fn ->
+        SectionResourceMigration.lock_section!(section.id)
+
         # Update the section project publication to the new publication
         update_section_project_publication(section, project_id, new_publication.id)
 
@@ -4519,6 +4715,8 @@ defmodule Oli.Delivery.Sections do
 
     result =
       Repo.transaction(fn ->
+        SectionResourceMigration.lock_section!(section.id)
+
         container = ResourceType.id_for_container()
 
         prev_published_resources_map =
@@ -4800,6 +4998,29 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns pinned project publications grouped by section id for the supplied sections.
+
+  This is the set-based counterpart to `get_pinned_project_publications/1` for
+  callers that need to resolve several product sources at once.
+  """
+  def get_pinned_project_publications_for_sections([]), do: %{}
+
+  def get_pinned_project_publications_for_sections(section_ids) do
+    from(spp in SectionsProjectsPublications,
+      where: spp.section_id in ^section_ids,
+      join: publication in Publication,
+      on: publication.id == spp.publication_id,
+      select: {spp.section_id, spp.project_id, publication}
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn {section_id, project_id, publication}, acc ->
+      Map.update(acc, section_id, %{project_id => publication}, fn publications ->
+        Map.put(publications, project_id, publication)
+      end)
+    end)
+  end
+
+  @doc """
   For a given section and resource, determine which project this
   resource originally belongs to.
   """
@@ -4961,6 +5182,11 @@ defmodule Oli.Delivery.Sections do
         hierarchy_definition,
         skip_set
       )
+    end
+
+    case ObjectiveChildrenProjection.persist(section_id) do
+      {:ok, _count} -> :ok
+      {:error, reason} -> Repo.rollback(reason)
     end
   end
 
@@ -5315,8 +5541,21 @@ defmodule Oli.Delivery.Sections do
   In case there are no units or modules, it returns a zero count and the pages
   of the curriculum.
   {container_count, containers} or {0, pages}
+
+  Each container's `numbering_index` is suppression-aware (see `decorated_numbering_map/1`):
+  a container that is itself an unnumbered top-level unit, or a descendant of one, has
+  `numbering_index: nil` instead of its raw index. `numbering_level` is left as the raw
+  structural depth (1 = unit, 2 = module) regardless of suppression, since it is used to
+  distinguish units from modules, not to display a number.
+
+  Each container also carries `document_index`, the raw (never-suppressed) canonical index,
+  meant for ordering rather than display: a caller that needs to list containers in the
+  order they actually appear in the course (e.g. a sortable table) should sort by
+  `document_index`, not `numbering_index` -- otherwise a suppressed container's `nil` gets
+  treated as a sort key, which pushes it to one end of the list instead of leaving it in its
+  natural position.
   """
-  def get_units_and_modules_containers(section_slug) do
+  def get_units_and_modules_containers(%Section{slug: section_slug} = section) do
     query =
       from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where:
@@ -5325,14 +5564,19 @@ defmodule Oli.Delivery.Sections do
           id: rev.resource_id,
           title: rev.title,
           numbering_level: sr.numbering_level,
-          numbering_index: sr.numbering_index
+          numbering_index: sr.numbering_index,
+          document_index: sr.numbering_index
         }
       )
 
     case Repo.all(query) do
       [] -> {0, get_pages(section_slug)}
-      containers -> {length(containers), containers}
+      containers -> {length(containers), overlay_suppression_aware_index(containers, section)}
     end
+  end
+
+  defp overlay_suppression_aware_index(containers, section) do
+    overlay_numbering_index(containers, section, & &1.id)
   end
 
   @scheduling_types Ecto.ParameterizedType.init(Ecto.Enum,
@@ -5425,6 +5669,12 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  # Only reached when a section has no units/modules at all (see
+  # `get_units_and_modules_containers/1`'s `{0, pages}` fallback), so these pages never go
+  # through a suppression overlay and `numbering_index` is never nulled out here. Still
+  # duplicated into `document_index` so every row `content.ex` sorts has that key -- its
+  # `sort_by/3` sorts on `document_index` regardless of whether the rows came from here or
+  # from an overlaid container list.
   defp get_pages(section_slug) do
     query =
       from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
@@ -5432,7 +5682,8 @@ defmodule Oli.Delivery.Sections do
         select: %{
           id: rev.resource_id,
           title: rev.title,
-          numbering_index: sr.numbering_index
+          numbering_index: sr.numbering_index,
+          document_index: sr.numbering_index
         }
       )
 
@@ -5901,9 +6152,14 @@ defmodule Oli.Delivery.Sections do
   }
 
   For objectives that are subobjectives, the objective is shown as the `subobjective` like the
-  above example, with the aggregated proficiency for its parent shown.  For objectives that are
-  top level objectives, they appear with their proficiency for only those activities that
-  directly attached to them.
+  above example, with the aggregated proficiency for its parent shown. For objectives that are
+  top level objectives in naive sections, their proficiency is the weighted average of their own directly-attached
+  evidence (when present) combined with all their Sub-LOs' evidence (see
+  `Metrics.evidence_resource_ids/2`) — a leaf objective with no Sub-LOs reduces to just its own
+  directly-attached evidence. LKT-AOA sections use their model provider's parent estimates.
+
+  Only objectives contained by the currently delivered course content are returned, so that the
+  instructor dashboard, the student dashboard and the CSV export report on the same objective set.
 
   ## Options
 
@@ -5970,20 +6226,77 @@ defmodule Oli.Delivery.Sections do
         }
       end)
 
-    id_list = Enum.map(objectives, & &1.resource_id)
+    # Only the two containment fields are needed, and both consumers of `container_ids` are
+    # membership checks, so the grouped lists are prepended and never reversed.
+    objective_to_container_ids_map =
+      from(co in ContainedObjective)
+      |> where([co], co.section_id == ^section.id)
+      |> select([co], {co.objective_id, co.container_id})
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn {objective_id, container_id}, acc ->
+        Map.update(acc, objective_id, [container_id], &[container_id | &1])
+      end)
+
+    # Section resources outlive the content that referenced them, so containment - not the
+    # `deleted` flag - decides whether an objective still belongs to the delivered course.
+    root_contained? = fn resource_id ->
+      nil in Map.get(objective_to_container_ids_map, resource_id, [])
+    end
+
+    # From `objectives`, so membership proves a section resource exists: `children` may come from
+    # the revision fallback and name objectives absent here, breaking `lookup_map` below.
+    root_contained_ids =
+      objectives
+      |> Enum.filter(&root_contained?.(&1.resource_id))
+      |> MapSet.new(& &1.resource_id)
+
+    # Applied before proficiency so discards never reach the metrics queries. The parent rule
+    # reads `children`, not the expanded rows, so `exclude_sub_objectives` cannot change it.
+    contained_ids =
+      objectives
+      |> Enum.filter(fn objective ->
+        MapSet.member?(root_contained_ids, objective.resource_id) or
+          Enum.any?(objective.children, &MapSet.member?(root_contained_ids, &1))
+      end)
+      |> MapSet.new(& &1.resource_id)
+
+    objectives =
+      objectives
+      |> Enum.filter(&MapSet.member?(contained_ids, &1.resource_id))
+      |> Enum.map(fn objective ->
+        Map.merge(objective, %{
+          container_ids: Map.get(objective_to_container_ids_map, objective.resource_id, [])
+        })
+      end)
+
+    objectives =
+      if include_related_activities_count do
+        # Use pre-calculated related_activities field for performance
+        Enum.map(objectives, fn objective ->
+          Map.put(
+            objective,
+            :related_activities_count,
+            length(objective.related_activities || [])
+          )
+        end)
+      else
+        objectives
+      end
 
     proficiencies_for_objectives =
-      Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
+      Metrics.aggregated_proficiency_per_student_for_objectives(section, objectives,
+        student_id: student_id
+      )
 
     student_proficiency_for_objectives =
       if student_id do
-        Enum.reduce(id_list, %{}, fn objective_id, acc ->
-          proficiency =
-            proficiencies_for_objectives
-            |> Map.get(objective_id, %{})
-            |> Map.get(student_id, "Not enough data")
-
-          Map.put(acc, objective_id, proficiency)
+        Enum.reduce(objectives, %{}, fn objective, acc ->
+          Map.put(
+            acc,
+            objective.resource_id,
+            get_in(proficiencies_for_objectives, [objective.resource_id, student_id]) ||
+              "Not enough data"
+          )
         end)
       else
         %{}
@@ -5992,25 +6305,15 @@ defmodule Oli.Delivery.Sections do
     {student_ids, proficiency_dist_for_objectives} =
       if is_nil(student_id) do
         student_ids = Sections.enrolled_student_ids(section_slug)
-        student_id_set = MapSet.new(student_ids)
 
         proficiency_dist_for_objectives =
-          proficiencies_for_objectives
-          |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
-            # Filter proficiency data to only include enrolled students (exclude instructors)
-            filtered_student_proficiency =
-              student_proficiency
-              |> Enum.filter(fn {user_id, _proficiency_level} ->
-                MapSet.member?(student_id_set, user_id)
-              end)
-              |> Map.new()
-
-            # Add "Not enough data" for students who don't have proficiency data
+          objectives
+          |> Enum.reduce(%{}, fn objective, acc ->
             student_proficiency =
-              student_ids
-              |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
-              |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
-                Map.put(acc, user_id, "Not enough data")
+              Enum.into(student_ids, %{}, fn enrolled_student_id ->
+                {enrolled_student_id,
+                 get_in(proficiencies_for_objectives, [objective.resource_id, enrolled_student_id]) ||
+                   "Not enough data"}
               end)
 
             proficiency_dist =
@@ -6042,7 +6345,7 @@ defmodule Oli.Delivery.Sections do
                 {proficiency_mode, proficiency_dist}
               end
 
-            Map.put(acc, objective_id,
+            Map.put(acc, objective.resource_id,
               proficiency_dist: proficiency_dist,
               proficiency_mode: proficiency_mode
             )
@@ -6051,32 +6354,6 @@ defmodule Oli.Delivery.Sections do
         {student_ids, proficiency_dist_for_objectives}
       else
         {[], %{}}
-      end
-
-    objective_to_container_ids_map =
-      from(co in ContainedObjective)
-      |> where([co], co.section_id == ^section.id)
-      |> select([co], co)
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn co, acc ->
-        Map.update(acc, co.objective_id, [co.container_id], &(&1 ++ [co.container_id]))
-      end)
-
-    objectives =
-      if include_related_activities_count do
-        # Use pre-calculated related_activities field for performance
-        Enum.map(objectives, fn obj ->
-          Map.merge(obj, %{
-            container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, []),
-            related_activities_count: length(obj.related_activities || [])
-          })
-        end)
-      else
-        Enum.map(objectives, fn obj ->
-          Map.merge(obj, %{
-            container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, [])
-          })
-        end)
       end
 
     lookup_map =
@@ -6134,8 +6411,13 @@ defmodule Oli.Delivery.Sections do
             false ->
               # this is a top-level objective, so we need to include its subobjectives
               # in the result set as well
+              # `children` keeps every authored subobjective so callers can still resolve them
+              # by id; only contained ones become rows here, and membership in
+              # `root_contained_ids` guarantees `lookup_map` resolves them.
               sub_objectives =
-                Enum.map(objective.children, fn child ->
+                objective.children
+                |> Enum.filter(&MapSet.member?(root_contained_ids, &1))
+                |> Enum.map(fn child ->
                   sub_objective = Map.get(lookup_map, child)
 
                   {student_proficiency_subobj, student_proficiency_subobj_dist} =
@@ -6229,6 +6511,11 @@ defmodule Oli.Delivery.Sections do
   Only includes non-root containers (numbering_level > 0). If a page has multiple parent containers,
   returns the one with the highest numbering_level (most specific parent).
 
+  `numbering_level`/`numbering_index` reflect suppression-aware display numbering (see
+  `decorated_numbering_map/1`), not raw canonical numbering. A page whose parent container is
+  itself suppressed (or a descendant of a suppressed top-level unit) is treated the same as a
+  page with no parent container at all -- absent from the returned map.
+
   ## Parameters
     - `section_id` - The ID of the section
     - `page_ids` - A list of page resource IDs to look up
@@ -6239,6 +6526,9 @@ defmodule Oli.Delivery.Sections do
     - `numbering_level` - The numbering level of the container (1 = Unit, 2 = Module, etc.)
     - `numbering_index` - The numbering index of the container
 
+  Accepts either a section id or an already-loaded `%Section{}` -- pass the struct when the
+  caller already has it in scope to avoid an extra lookup.
+
   ## Examples
       iex> get_parent_containers_map(section.id, [123, 456])
       %{
@@ -6246,17 +6536,30 @@ defmodule Oli.Delivery.Sections do
         456 => %{container_id: 11, numbering_level: 2, numbering_index: 1}
       }
   """
-  @spec get_parent_containers_map(integer() | nil, [integer()]) :: %{
+  @spec get_parent_containers_map(integer() | Section.t() | nil, [integer()]) :: %{
           integer() => %{
             container_id: integer(),
             numbering_level: integer(),
             numbering_index: integer()
           }
         }
-  def get_parent_containers_map(_section_id, page_ids) when page_ids == [], do: %{}
+  def get_parent_containers_map(_section_id_or_section, page_ids) when page_ids == [], do: %{}
   def get_parent_containers_map(nil, _page_ids), do: %{}
 
+  def get_parent_containers_map(%Section{} = section, page_ids) do
+    fetch_parent_containers_map(section, page_ids)
+  end
+
   def get_parent_containers_map(section_id, page_ids) do
+    case Repo.get(Section, section_id) do
+      nil -> %{}
+      section -> fetch_parent_containers_map(section, page_ids)
+    end
+  end
+
+  defp fetch_parent_containers_map(%Section{id: section_id} = section, page_ids) do
+    numbering_map = decorated_numbering_map(section)
+
     from(cp in ContainedPage,
       join: sr in SectionResource,
       on: sr.section_id == ^section_id and sr.resource_id == cp.container_id,
@@ -6279,10 +6582,26 @@ defmodule Oli.Delivery.Sections do
         |> Enum.filter(fn c -> c.numbering_level > 0 end)
         |> Enum.max_by(& &1.numbering_level, fn -> nil end)
 
-      {page_id, parent_container}
+      {page_id, decorate_parent_container(parent_container, numbering_map)}
     end)
     |> Enum.filter(fn {_page_id, container} -> container != nil end)
     |> Map.new()
+  end
+
+  # Overlays suppression-aware numbering onto a raw parent-container lookup result. A
+  # container absent from `numbering_map` is suppressed, which is treated the same as
+  # having no parent container at all (nil), matching `name_with_container_label/3`'s
+  # existing "no parent -> title only" behavior.
+  defp decorate_parent_container(nil, _numbering_map), do: nil
+
+  defp decorate_parent_container(%{container_id: container_id} = container, numbering_map) do
+    case Map.get(numbering_map, container_id) do
+      nil ->
+        nil
+
+      %Numbering{level: level, index: index} ->
+        %{container | numbering_level: level, numbering_index: index}
+    end
   end
 
   @doc """

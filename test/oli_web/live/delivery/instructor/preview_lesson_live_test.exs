@@ -177,6 +177,122 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       )
     end
 
+    test "renders all decision point alternatives in instructor preview", %{
+      conn: conn,
+      section: section,
+      project: project,
+      publication: publication,
+      page_revision: page_revision
+    } do
+      alternatives_revision =
+        insert(:revision,
+          author_id: page_revision.author_id,
+          resource_type_id: Oli.Resources.ResourceType.id_for_alternatives(),
+          content: %{
+            "strategy" => "upgrade_decision_point",
+            "options" => [
+              %{"id" => "control", "name" => "Control"},
+              %{"id" => "treatment", "name" => "Treatment"}
+            ]
+          }
+        )
+
+      insert(:project_resource,
+        project_id: project.id,
+        resource_id: alternatives_revision.resource_id
+      )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: alternatives_revision.resource,
+        revision: alternatives_revision
+      )
+
+      insert(:section_resource,
+        section: section,
+        project: project,
+        resource_id: alternatives_revision.resource_id
+      )
+
+      {:ok, page_revision} =
+        Oli.Resources.update_revision(page_revision, %{
+          content: %{
+            "model" => [
+              %{
+                "id" => "decision-point",
+                "type" => "alternatives",
+                "alternatives_id" => alternatives_revision.resource_id,
+                "strategy" => "upgrade_decision_point",
+                "children" => [
+                  %{
+                    "id" => "control-alternative",
+                    "type" => "alternative",
+                    "value" => "control",
+                    "children" => [
+                      %{
+                        "id" => "control-content",
+                        "type" => "content",
+                        "children" => [
+                          %{
+                            "id" => "control-copy",
+                            "type" => "p",
+                            "children" => [%{"text" => "Control copy"}]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  %{
+                    "id" => "treatment-alternative",
+                    "type" => "alternative",
+                    "value" => "treatment",
+                    "children" => [
+                      %{
+                        "id" => "treatment-content",
+                        "type" => "content",
+                        "children" => [
+                          %{
+                            "id" => "treatment-copy",
+                            "type" => "p",
+                            "children" => [%{"text" => "Treatment copy"}]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        })
+
+      {:ok, view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "Control copy"
+      assert html =~ "Treatment copy"
+      assert html =~ "experiment policy assigns one alternative to each learner"
+      assert has_element?(view, ~s|[phx-hook="PreviewAlternativesTabs"]|)
+
+      {:ok, _alternatives_revision} =
+        Oli.Resources.update_revision(alternatives_revision, %{
+          content: %{
+            "strategy" => "user_section_preference",
+            "options" => alternatives_revision.content["options"]
+          }
+        })
+
+      {:ok, preference_view, _html} =
+        live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert has_element?(
+               preference_view,
+               "#alternatives-selector-#{alternatives_revision.resource_id}"
+             )
+
+      assert render(preference_view) =~
+               "stored as their preference for the section"
+    end
+
     test "back link falls back to preview schedule request_path when return_to is absent", %{
       conn: conn,
       section: section,
@@ -1326,6 +1442,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     {:ok,
      conn: log_in_user(conn, user),
      user: user,
+     project: map.project,
+     publication: publication,
      section: map.section,
      page_revision: map.page.revision,
      next_page_revision: map.next_page.revision,
@@ -1865,5 +1983,51 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert index >= min_index
       index + byte_size(snippet)
     end)
+  end
+
+  describe "instructor preview with learning_objectives element" do
+    setup [:setup_lo_preview_section]
+
+    test "renders without error when page contains a learning_objectives element", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ ~s|id="instructor-preview-header"|
+    end
+  end
+
+  defp setup_lo_preview_section(%{conn: conn}) do
+    user = user_fixture(%{independent_learner: false})
+
+    map = Seeder.base_project_with_resource2()
+
+    page_attrs = %{
+      graded: false,
+      title: "LO page",
+      content: %{
+        "model" => [
+          %{"type" => "learning_objectives", "id" => "lo-intro", "mode" => "introduction"}
+        ]
+      }
+    }
+
+    map = Seeder.add_page(map, page_attrs, :container, :page)
+
+    {:ok, publication} =
+      Oli.Publishing.publish_project(map.project, "lo preview test", map.author.id)
+
+    map =
+      map
+      |> Map.merge(%{publication: publication})
+      |> Seeder.create_section()
+      |> Seeder.create_section_resources()
+
+    enroll_as_instructor(%{section: map.section, user: user})
+    cache_lti_context(map.section, user)
+
+    {:ok, conn: log_in_user(conn, user), section: map.section, page_revision: map.page.revision}
   end
 end

@@ -1,0 +1,126 @@
+# Scenario: An activity tagged to BOTH a parent Learning Objective and one of
+# its Sub-LOs contributes its evidence twice to the parent's aggregated
+# proficiency -- once via the parent's own row, again via the Sub-LO's row.
+# This is a deliberate, accepted trade-off, not a defect: real evidence is
+# never dropped, but a shared activity is not deduplicated across the two
+# rows it lands in.
+#
+# "Shared Activity" is tagged to BOTH "Double Count Parent" and its Sub-LO
+# "Double Count Child" and is answered once, correctly. A second activity,
+# tagged only to the Sub-LO, is also answered once, correctly. So only 2
+# real attempts are made in total.
+#
+# If the shared activity were correctly deduplicated (counted once), the
+# parent's aggregation would see 2 total attempts -- below the 3-attempt
+# minimum -> "Not enough data". Because it is instead counted once under the
+# parent's own row and again under the Sub-LO's row, the parent's
+# aggregation sees 3 total attempts (1 own + 2 Sub-LO, both correct) ->
+# proficiency 1.0 -> "High". That a 2-real-attempt course clears the
+# 3-attempt "enough data" minimum is only possible because of the double
+# count, which is exactly what this assertion pins down.
+
+- project:
+    name: "double_counts_shared_activity_project"
+    title: "Double Counts Shared Activity"
+    objectives:
+      - Double Count Parent:
+        - Double Count Child
+    root:
+      children:
+        - page: "Shared Activity Practice"
+        - page: "Child Only Practice"
+
+- edit_page:
+    project: "double_counts_shared_activity_project"
+    page: "Shared Activity Practice"
+    content: |
+      title: "Shared Activity Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "shared_q1"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Double Count Parent", "Double Count Child"]
+            stem_md: "Tagged to both the parent and the Sub-LO"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- edit_page:
+    project: "double_counts_shared_activity_project"
+    page: "Child Only Practice"
+    content: |
+      title: "Child Only Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "child_only_q1"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Double Count Child"]
+            stem_md: "Tagged only to the Sub-LO"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- publish:
+    to: "double_counts_shared_activity_project"
+    description: "Initial publication"
+
+- section:
+    name: "double_counts_shared_activity_section"
+    title: "Double Counts Shared Activity Section"
+    from: "double_counts_shared_activity_project"
+
+- user:
+    name: "learner"
+    type: "student"
+    email: "double_counts_shared_activity_learner@example.edu"
+    given_name: "Riley"
+    family_name: "Learner"
+
+- enroll:
+    user: "learner"
+    section: "double_counts_shared_activity_section"
+    role: student
+
+- view_practice_page:
+    student: "learner"
+    section: "double_counts_shared_activity_section"
+    page: "Shared Activity Practice"
+
+- answer_question:
+    student: "learner"
+    section: "double_counts_shared_activity_section"
+    page: "Shared Activity Practice"
+    activity_virtual_id: "shared_q1"
+    response: "b"
+
+- view_practice_page:
+    student: "learner"
+    section: "double_counts_shared_activity_section"
+    page: "Child Only Practice"
+
+- answer_question:
+    student: "learner"
+    section: "double_counts_shared_activity_section"
+    page: "Child Only Practice"
+    activity_virtual_id: "child_only_q1"
+    response: "b"
+
+- dashboard_analytics_ready:
+    section: "double_counts_shared_activity_section"
+
+- assert:
+    proficiency:
+      section: "double_counts_shared_activity_section"
+      objective: "Double Count Parent"
+      student: "learner"
+      bucket: "High"

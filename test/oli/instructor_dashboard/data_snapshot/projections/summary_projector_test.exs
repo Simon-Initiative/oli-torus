@@ -56,6 +56,29 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.ProjectorTest
                "84.5%"
     end
 
+    test "prefers actual numeric objective proficiency over category reconstruction" do
+      projection =
+        Projector.build(%{
+          oracle_instructor_objectives_proficiency: %{
+            objective_rows: [
+              %{
+                objective_id: 10,
+                numeric_proficiency: 0.42,
+                proficiency_distribution: %{"High" => 10}
+              },
+              %{
+                objective_id: 11,
+                numeric_proficiency: 0.78,
+                proficiency_distribution: %{"Low" => 10}
+              }
+            ]
+          }
+        })
+
+      assert Enum.find(projection.cards, &(&1.id == :average_class_proficiency)).value_text ==
+               "60%"
+    end
+
     test "hides cards for missing objectives or assessments and expands remaining layout" do
       projection =
         Projector.build(%{

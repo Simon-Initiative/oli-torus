@@ -1,0 +1,389 @@
+defmodule Oli.Experiments.XAPI.AttributionsTest do
+  use ExUnit.Case, async: true
+
+  alias Oli.Experiments.{
+    AssignmentDecision,
+    AssignConditionRequest,
+    ExposureReceipt,
+    OutcomeReceipt,
+    RecordExposureRequest,
+    RecordOutcomeRequest,
+    RecordRewardRequest,
+    RewardReceipt,
+    Scope
+  }
+
+  alias Oli.Experiments.XAPI.Attributions
+
+  alias Oli.Experiments.Schemas.{
+    Assignment,
+    Condition,
+    ExperimentDefinition,
+    Intervention,
+    PolicyState
+  }
+
+  @extension "http://oli.cmu.edu/extensions/experiment_attributions"
+  @experiment_uuid "11111111-2222-3333-4444-555555555555"
+
+  test "builds assignment attribution for the dedicated xAPI statement" do
+    attribution =
+      Attributions.assignment_attribution(assignment_decision(false), assign_request(),
+        assignment: assignment()
+      )
+
+    assert attribution["role"] == "assignment"
+    assert attribution["attribution_type"] == "assignment"
+    assert attribution["experiment_id"] == 10
+    assert attribution["experiment_uuid"] == @experiment_uuid
+    assert attribution["project_id"] == 100
+    assert attribution["section_id"] == 300
+    assert attribution["publication_id"] == 200
+    assert attribution["alternatives_resource_id"] == 700
+    assert attribution["alternatives_revision_id"] == 701
+    assert attribution["condition_id"] == 30
+    assert attribution["condition_code"] == "a"
+    assert attribution["assignment_key"] == "10:60:500"
+    assert attribution["enrollment_id"] == 500
+    refute Map.has_key?(attribution, "user_id")
+    assert attribution["algorithm"] == "weighted_random"
+    assert attribution["policy_version"] == "weighted_random"
+    assert attribution["assigned_at"] == DateTime.to_iso8601(timestamp())
+    assert attribution["key"] == "10:60:500"
+  end
+
+  test "canonical assignment evidence carries scope without inventing intervention ownership" do
+    canonical_assignment = %{
+      assignment()
+      | assignment_scope: :section_enrollment,
+        intervention_id: nil,
+        assignment_key: "v2:section_enrollment:10:300:500"
+    }
+
+    attribution =
+      Attributions.assignment_attribution(assignment_decision(false), assign_request(),
+        assignment: canonical_assignment
+      )
+
+    assert attribution["assignment_scope"] == "section_enrollment"
+    assert attribution["section_id"] == 300
+    assert attribution["enrollment_id"] == 500
+    refute Map.has_key?(attribution, "intervention_id")
+  end
+
+  test "builds exposure, outcome, reward, and policy update attribution evidence" do
+    [exposure] =
+      Attributions.attributions_for_page_view(exposure_receipt(), exposure_request(),
+        assignment: assignment(),
+        intervention: intervention()
+      )
+
+    [outcome] =
+      Attributions.attributions_for_part_attempt(outcome_receipt(), outcome_request(),
+        assignment: assignment()
+      )
+
+    [reward] =
+      Attributions.attributions_for_part_attempt(reward_receipt(), reward_request(),
+        assignment: assignment()
+      )
+
+    policy_update =
+      Attributions.policy_update_evidence(policy_update(), reward(),
+        assignment: assignment(),
+        experiment: experiment(),
+        condition: %{condition_code: "a"},
+        policy_state: policy_state()
+      )
+
+    assert exposure["role"] == "exposure"
+    assert exposure["attribution_type"] == "exposure"
+    refute Map.has_key?(exposure, "exposure_id")
+    assert exposure["experiment_uuid"] == @experiment_uuid
+    assert exposure["condition_code"] == "a"
+    assert exposure["content_revision_id"] == 701
+    assert exposure["assignment_scope"] == "intervention"
+    assert exposure["intervention_id"] == 60
+    assert exposure["intervention_key"] == "702:placement-a"
+
+    assert outcome["role"] == "outcome"
+    assert outcome["attribution_type"] == "outcome"
+    refute Map.has_key?(outcome, "outcome_id")
+    assert outcome["experiment_uuid"] == @experiment_uuid
+    assert outcome["condition_code"] == "a"
+    assert outcome["activity_attempt_id"] == 800
+    assert outcome["resource_attempt_id"] == 801
+    assert outcome["activity_resource_id"] == 802
+    assert outcome["score"] == 1.0
+    assert outcome["out_of"] == 1.0
+
+    assert reward["role"] == "reward"
+    assert reward["attribution_type"] == "reward"
+    refute Map.has_key?(reward, "reward_id")
+    refute Map.has_key?(reward, "outcome_id")
+    assert reward["outcome_key"] == "outcome:40"
+    assert reward["experiment_uuid"] == @experiment_uuid
+    assert reward["condition_code"] == "a"
+    assert reward["reward_source"] == "activity_attempt:full_credit"
+    assert reward["reward_value"] == 1.0
+
+    assert policy_update["role"] == "policy_update"
+    assert policy_update["attribution_type"] == "policy_update"
+    assert policy_update["policy_update_key"] == "policy_update:reward:40"
+    assert policy_update["reward_key"] == "reward:40"
+    assert policy_update["policy_state_id"] == 91
+    assert policy_update["algorithm"] == "thompson_sampling"
+    assert policy_update["algorithm_version"] == "thompson_sampling:v2"
+    assert byte_size(policy_update["previous_policy_state_hash"]) == 64
+    assert byte_size(policy_update["next_policy_state_hash"]) == 64
+  end
+
+  test "attaches optional experiment_attributions array to host statements" do
+    statement = %{
+      "context" => %{"extensions" => %{"http://oli.cmu.edu/extensions/page_id" => 44}}
+    }
+
+    attribution =
+      Attributions.exposure_attribution(exposure_receipt(), exposure_request(),
+        assignment: assignment(),
+        intervention: intervention()
+      )
+
+    statement = Attributions.attach_attributions(statement, [attribution])
+
+    assert [attached] = get_in(statement, ["context", "extensions", @extension])
+    assert attached["role"] == "exposure"
+    assert attached["experiment_id"] == 10
+  end
+
+  test "rollup and media helpers rewrite roles while preserving attribution type" do
+    attribution =
+      Attributions.outcome_attribution(outcome_receipt(), outcome_request(),
+        assignment: assignment()
+      )
+
+    assert [%{"role" => "rollup", "attribution_type" => "outcome"}] =
+             Attributions.attributions_for_activity_attempt([attribution])
+
+    assert [%{"role" => "rollup", "attribution_type" => "outcome"}] =
+             Attributions.attributions_for_page_attempt([attribution])
+
+    assignment_attribution =
+      Attributions.assignment_attribution(assignment_decision(false), assign_request(),
+        assignment: assignment()
+      )
+
+    assert [%{"role" => "media_interaction", "attribution_type" => "assignment"}] =
+             Attributions.attributions_for_media_event([assignment_attribution])
+
+    assert_raise KeyError, fn ->
+      Attributions.attributions_for_activity_attempt([%{"role" => "outcome"}])
+    end
+
+    exposure =
+      Attributions.exposure_attribution(exposure_receipt(), exposure_request(),
+        assignment: assignment(),
+        intervention: intervention()
+      )
+
+    assert_raise ArgumentError, fn ->
+      Attributions.attributions_for_activity_attempt([exposure])
+    end
+  end
+
+  test "attribution payloads exclude learner identity, raw responses, and unbounded policy state" do
+    policy_update =
+      Attributions.policy_update_evidence(policy_update(), reward(),
+        assignment: assignment(),
+        experiment: experiment(),
+        condition: %{condition_code: "a"},
+        policy_state: policy_state()
+      )
+
+    encoded = Jason.encode!(policy_update)
+
+    refute encoded =~ "Ada"
+    refute encoded =~ "Lovelace"
+    refute encoded =~ "student response"
+    refute encoded =~ "user_id"
+
+    assert policy_update["previous_policy_context"] == %{
+             "posterior_alpha" => 1.0,
+             "posterior_beta" => 1.0
+           }
+
+    assert policy_update["next_policy_context"] == %{
+             "posterior_alpha" => 2.0,
+             "posterior_beta" => 1.0
+           }
+  end
+
+  defp scope do
+    %Scope{
+      institution_id: 1,
+      project_id: 100,
+      publication_id: 200,
+      section_id: 300,
+      user_id: 400,
+      enrollment_id: 500
+    }
+  end
+
+  defp assign_request do
+    %AssignConditionRequest{
+      scope: scope(),
+      alternatives_resource_id: 700,
+      alternatives_revision_id: 701,
+      available_condition_codes: ["a", "b"]
+    }
+  end
+
+  defp assignment_decision(reused?) do
+    %AssignmentDecision{
+      status: :assigned,
+      experiment_id: 10,
+      condition_id: 30,
+      condition_code: "a",
+      assignment_id: 40,
+      reused?: reused?
+    }
+  end
+
+  defp assignment do
+    %Assignment{
+      id: 40,
+      experiment_id: 10,
+      intervention_id: 60,
+      condition_id: 30,
+      section_id: 300,
+      enrollment_id: 500,
+      user_id: 400,
+      assigned_by_policy: "weighted_random",
+      policy_version: "weighted_random",
+      assignment_key: "10:60:500",
+      assigned_at: timestamp(),
+      experiment: experiment(),
+      condition: %Condition{condition_code: "a"}
+    }
+  end
+
+  defp exposure_request do
+    %RecordExposureRequest{
+      key: "exposure:40",
+      scope: scope(),
+      assignment_id: 40,
+      page_resource_id: 702,
+      content_element_id: "placement-a",
+      content_revision_id: 701
+    }
+  end
+
+  defp intervention do
+    %Intervention{
+      id: 60,
+      experiment_id: 10,
+      page_resource_id: 702,
+      content_element_id: "placement-a"
+    }
+  end
+
+  defp exposure_receipt do
+    %ExposureReceipt{
+      key: "exposure:40",
+      assignment_id: 40,
+      recorded_at: timestamp(),
+      reused?: false
+    }
+  end
+
+  defp outcome_request do
+    %RecordOutcomeRequest{
+      key: "outcome:40",
+      scope: scope(),
+      assignment_id: 40,
+      activity_attempt_id: 800,
+      resource_attempt_id: 801,
+      activity_resource_id: 802,
+      score: 1.0,
+      out_of: 1.0,
+      metadata: %{"raw_response" => "student response"}
+    }
+  end
+
+  defp outcome_receipt do
+    %OutcomeReceipt{
+      key: "outcome:40",
+      assignment_id: 40,
+      recorded_at: timestamp(),
+      reused?: false
+    }
+  end
+
+  defp reward_request do
+    %RecordRewardRequest{
+      key: "reward:40",
+      scope: scope(),
+      assignment_id: 40,
+      outcome_key: "outcome:40",
+      reward_value: 1.0,
+      reward_source: "activity_attempt:full_credit",
+      metadata: %{"learner_name" => "Ada Lovelace"}
+    }
+  end
+
+  defp reward_receipt do
+    %RewardReceipt{
+      key: "reward:40",
+      assignment_id: 40,
+      outcome_key: "outcome:40",
+      recorded_at: timestamp(),
+      reused?: false
+    }
+  end
+
+  defp reward do
+    %{
+      assignment_id: 40,
+      experiment_id: 10,
+      condition_id: 30,
+      reward_value: 1.0,
+      reward_source: "activity_attempt:full_credit",
+      key: "reward:40",
+      inserted_at: timestamp()
+    }
+  end
+
+  defp policy_update do
+    %{
+      policy_state_id: 91,
+      reward_key: "reward:40",
+      condition_id: 30,
+      previous_state: %{"a" => %{"posterior_alpha" => 1.0, "posterior_beta" => 1.0}},
+      next_state: %{"a" => %{"posterior_alpha" => 2.0, "posterior_beta" => 1.0}},
+      algorithm_version: "thompson_sampling:v2",
+      update_reason: "reward_recorded",
+      key: "policy_update:reward:40",
+      inserted_at: timestamp()
+    }
+  end
+
+  defp policy_state do
+    %PolicyState{
+      id: 91,
+      experiment_id: 10,
+      algorithm: :thompson_sampling,
+      algorithm_version: "thompson_sampling:v2"
+    }
+  end
+
+  defp experiment do
+    %ExperimentDefinition{
+      id: 10,
+      uuid: @experiment_uuid,
+      project_id: 100,
+      algorithm: :thompson_sampling
+    }
+  end
+
+  defp timestamp, do: ~U[2026-07-14 12:00:00Z]
+end

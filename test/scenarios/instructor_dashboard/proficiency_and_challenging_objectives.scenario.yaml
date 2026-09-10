@@ -203,7 +203,7 @@
       cards:
         average_class_proficiency:
           status: "ready"
-          value_number: 50.0
+          value_number: 46.7
 
 - assert:
     instructor_dashboard_challenging_objectives:

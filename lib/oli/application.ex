@@ -122,6 +122,7 @@ defmodule Oli.Application do
         Oli.InstructorDashboard.Email.Telemetry,
         Oli.Adaptive.DynamicLinks.Telemetry,
         Oli.Dashboard.OracleTelemetry,
+        Oli.Delivery.Experiments.Telemetry,
         {Oli.Dashboard.RevisitCache, name: Oli.Dashboard.RevisitCache},
         {Registry, keys: :unique, name: Oli.GenAI.BreakerRegistry},
         Oli.GenAI.BreakerSupervisor,

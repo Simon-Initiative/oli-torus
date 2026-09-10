@@ -33,8 +33,8 @@ export interface HierarchyItemSrc {
   resource_type_id: ScheduleItemType;
   scheduling_type: SchedulingType;
   title: string;
-  numbering_index: number;
-  numbering_level: number;
+  numbering_index: number | null;
+  numbering_level: number | null;
   manually_scheduled: boolean;
   graded: boolean;
   removed_from_schedule: boolean;

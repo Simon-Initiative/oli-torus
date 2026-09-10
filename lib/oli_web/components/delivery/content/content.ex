@@ -497,7 +497,15 @@ defmodule OliWeb.Components.Delivery.Content do
   defp sort_by(containers, sort_by, sort_order) do
     case sort_by do
       :numbering_index ->
-        Enum.sort_by(containers, fn container -> container.numbering_index end, sort_order)
+        # Row order (this sort) and the "Order" column's displayed number are two different
+        # things and must not use the same field. `document_index` is the raw, never-nil
+        # index -- it always reflects where a container actually sits in the course, so
+        # sorting by it keeps a suppressed container in its natural place whether ascending
+        # or descending. `numbering_index` is the suppression-aware value (nil for a
+        # suppressed container) and is only used for what's shown in the "Order" cell; if we
+        # sorted by it instead, `nil` would sort after every number (last when ascending,
+        # first when descending), yanking the suppressed row out of its real position.
+        Enum.sort_by(containers, fn container -> container.document_index end, sort_order)
 
       :container_name ->
         Enum.sort_by(containers, fn container -> container.title end, sort_order)

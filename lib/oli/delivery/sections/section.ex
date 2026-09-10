@@ -19,8 +19,6 @@ defmodule Oli.Delivery.Sections.Section do
     Section
   }
 
-  @description_character_limit 300
-
   @required_fields [
     :type,
     :title,
@@ -40,9 +38,12 @@ defmodule Oli.Delivery.Sections.Section do
     field(:slug, :string)
     field(:open_and_free, :boolean, default: false)
     field(:requires_enrollment, :boolean, default: false)
-    field(:has_experiments, :boolean, default: false)
     field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v2)
     field(:learning_model_version, Ecto.Enum, values: ModelVersion.values(), default: :naive)
+
+    # Internal projection marker. It is intentionally absent from every public
+    # changeset so only SectionResourceMigration can advance it.
+    field(:section_resource_migration_version, :integer, default: 0)
 
     field(:status, Ecto.Enum, values: [:active, :deleted, :archived], default: :active)
     field(:invite_token, :string)
@@ -191,7 +192,6 @@ defmodule Oli.Delivery.Sections.Section do
       :context_id,
       :slug,
       :open_and_free,
-      :has_experiments,
       :analytics_version,
       :status,
       :invite_token,
@@ -258,10 +258,6 @@ defmodule Oli.Delivery.Sections.Section do
     |> check_constraint(:learning_model_version, name: :sections_learning_model_version_check)
     |> Slug.update_never("sections")
     |> validate_length(:title, max: 255)
-    |> validate_length(:description,
-      max: @description_character_limit,
-      message: "must be %{count} characters or fewer"
-    )
     |> cast_assoc(:certificate)
   end
 

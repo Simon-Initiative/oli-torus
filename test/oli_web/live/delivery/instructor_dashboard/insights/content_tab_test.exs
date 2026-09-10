@@ -275,6 +275,167 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert options_for_select == ["units", "modules"]
     end
 
+    test "content table's Order column and container navigator are suppression-aware", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{
+        section: section,
+        unit1_resource: unit1_resource,
+        unit2_resource: unit2_resource
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      ### Order column: modules under the suppressed unit1 show no order number, while
+      ### unit2's module is renumbered to 1 (it's the first module that still counts).
+      params = %{container_filter_by: :modules}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      rows =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr})
+
+      order_and_name =
+        Enum.map(rows, fn row ->
+          order = row |> Floki.find("td:first-child") |> Floki.text() |> String.trim()
+          name = row |> Floki.find("td a") |> Floki.text() |> String.trim()
+          {order, name}
+        end)
+
+      assert {"", "Module 1"} in order_and_name
+      assert {"", "Module 2"} in order_and_name
+      assert {"1", "Module 3"} in order_and_name
+
+      ### Container navigator: drilling into unit2 (not suppressed) should not show a
+      ### "Unit : Title" label for the suppressed unit1 sibling in its navigator dropdown.
+      params = %{container_id: unit2_resource.id}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      html = render(view)
+
+      refute html =~ "Unit : "
+      assert html =~ "Unit 1: Unit 2"
+    end
+
+    test "content table row order stays document order (not sorted by the suppressed nil) in both sort directions",
+         %{
+           instructor: instructor,
+           conn: conn
+         } do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      unit_a_module =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Mod A")
+
+      unit_a =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_a_module.resource_id],
+          title: "Alpha"
+        )
+
+      unit_b_module =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Mod B")
+
+      unit_b =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_b_module.resource_id],
+          title: "Beta"
+        )
+
+      unit_c_module =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Mod C")
+
+      unit_c =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_c_module.resource_id],
+          title: "Gamma"
+        )
+
+      container_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_a.resource_id, unit_b.resource_id, unit_c.resource_id],
+          title: "Root Container"
+        )
+
+      all_revisions = [
+        unit_a_module,
+        unit_a,
+        unit_b_module,
+        unit_b,
+        unit_c_module,
+        unit_c,
+        container_revision
+      ]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+      end)
+
+      publication =
+        insert(:publication, project: project, root_resource_id: container_revision.resource_id)
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        )
+      end)
+
+      section =
+        insert(:section,
+          base_project: project,
+          context_id: UUID.uuid4(),
+          open_and_free: true,
+          registration_open: true,
+          type: :enrollable
+        )
+
+      {:ok, section} = Sections.create_section_resources(section, publication)
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      # "Beta" (the suppressed, middle unit) has no order number, but its row must stay
+      # between "Alpha" and "Gamma" -- their document order -- whether ascending or
+      # descending. Before the fix, the row order and the "Order" column's displayed
+      # number both came from the same suppression-aware (nullable) field, so `nil`
+      # sorted last ascending and first descending, yanking "Beta" out of its real
+      # position instead of leaving it where it actually sits in the course.
+      params = %{container_filter_by: :units, sort_by: :numbering_index, sort_order: :asc}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      row_titles = fn view ->
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr td a})
+        |> Enum.map(&(Floki.text(&1) |> String.trim()))
+      end
+
+      assert row_titles.(view) == ["Alpha", "Beta", "Gamma"]
+
+      params = %{container_filter_by: :units, sort_by: :numbering_index, sort_order: :desc}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      assert row_titles.(view) == ["Gamma", "Beta", "Alpha"]
+    end
+
     test "content table given a section with only units",
          %{
            instructor: instructor,

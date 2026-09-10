@@ -186,6 +186,21 @@ defmodule Oli.CloneTest do
       assert duplicated.learning_model_version == :lkt_aoa
     end
 
+    test "clone_project/2 preserves learning-objective compatibility state", %{
+      project: project,
+      author2: author2
+    } do
+      Enum.each([true, false, nil], fn lo_well_formed ->
+        project =
+          project
+          |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: lo_well_formed})
+          |> Repo.update!()
+
+        assert {:ok, duplicated} = Clone.clone_project(project.slug, author2)
+        assert duplicated.lo_well_formed == lo_well_formed
+      end)
+    end
+
     test "clone_project/2 shares exact parameterized published Revisions", %{
       project: project,
       publication: publication,

@@ -7,5 +7,7 @@ defmodule Oli.Analytics.XAPI.Events.Context do
     :publication_id
   ]
 
-  defstruct @enforce_keys
+  @optional_fields [:enrollment_id]
+
+  defstruct @enforce_keys ++ @optional_fields
 end

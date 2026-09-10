@@ -20,7 +20,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
   describe "duplicate/2" do
     @page_type_id ResourceType.get_id_by_type("page")
     @container_type_id ResourceType.get_id_by_type("container")
-    @keys_to_take [:title, :blueprint_id, :required_survey_resource_id, :has_experiments]
+    @keys_to_take [:title, :blueprint_id, :required_survey_resource_id]
     @one_week_ago DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
     @a_day_later DateTime.utc_now() |> DateTime.add(-6, :day) |> DateTime.truncate(:second)
 
@@ -71,6 +71,9 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
 
       # Section from product action
       {:ok, duplicate} = Blueprint.duplicate(blueprint, section_params)
+
+      assert duplicate.section_resource_migration_version ==
+               Oli.Delivery.Sections.SectionResourceMigration.current_version()
 
       # Grab graded pages and its section_resources (only 1 at this moment)
       [{page_revision_duplicate, sr_page_duplicate}] =
@@ -133,6 +136,30 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
 
       assert enrollable_section.type == :enrollable
       assert enrollable_section.learning_model_version == :lkt_aoa
+    end
+
+    test "duplicates a legacy description over the authoring character limit" do
+      %{project: project, publication: publication, institution: institution} =
+        Seeder.base_project_with_resource2()
+
+      description = String.duplicate("Legacy description", 20)
+
+      {:ok, blueprint} =
+        Sections.create_section(%{
+          type: :blueprint,
+          title: "Legacy description template",
+          description: description,
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          institution_id: institution.id,
+          base_project_id: project.id,
+          publisher_id: project.publisher_id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(publication)
+
+      assert {:ok, duplicate} = Blueprint.duplicate(blueprint)
+      assert duplicate.description == description
     end
   end
 
@@ -199,6 +226,10 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert duplicate.skip_email_verification == true
       assert duplicate.registration_open == true
       assert duplicate.requires_enrollment == true
+
+      assert duplicate.section_resource_migration_version ==
+               Oli.Delivery.Sections.SectionResourceMigration.current_version()
+
       refute duplicate.id == section.id
       refute duplicate.slug == section.slug
       refute duplicate.root_section_resource_id == section.root_section_resource_id

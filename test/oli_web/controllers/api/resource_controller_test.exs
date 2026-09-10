@@ -4,6 +4,10 @@ defmodule OliWeb.Api.ResourceControllerTest do
   import Oli.Factory
 
   alias Oli.Resources
+  alias Oli.Authoring.Course
+  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Publishing
+  alias Oli.Utils.Time
 
   describe "GET /api/v1/project/:project/link" do
     setup [:author_conn, :create_project_with_pages]
@@ -13,7 +17,8 @@ defmodule OliWeb.Api.ResourceControllerTest do
       project: project,
       page_1: page_1,
       page_2: page_2,
-      page_3: page_3
+      page_3: page_3,
+      orphan_page: orphan_page
     } do
       conn =
         get(
@@ -40,6 +45,37 @@ defmodule OliWeb.Api.ResourceControllerTest do
       assert page_1.title in page_titles
       assert page_2.title in page_titles
       assert page_3.title in page_titles
+      assert orphan_page.title in page_titles
+    end
+
+    test "returns only hierarchy pages from hierarchy link endpoint", %{
+      conn: conn,
+      project: project,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      orphan_page: orphan_page
+    } do
+      conn =
+        get(
+          conn,
+          "/api/v1/project/#{project.slug}/link/hierarchy"
+        )
+
+      assert %{"type" => "success", "pages" => pages} = json_response(conn, 200)
+
+      page_titles = Enum.map(pages, & &1["title"])
+      page_ids = Enum.map(pages, & &1["id"])
+
+      assert page_1.title in page_titles
+      assert page_2.title in page_titles
+      assert page_3.title in page_titles
+      refute orphan_page.title in page_titles
+
+      assert page_1.resource_id in page_ids
+      assert page_2.resource_id in page_ids
+      assert page_3.resource_id in page_ids
+      refute orphan_page.resource_id in page_ids
     end
 
     test "returns 404 when project does not exist", %{conn: conn} do
@@ -111,6 +147,61 @@ defmodule OliWeb.Api.ResourceControllerTest do
     end
   end
 
+  describe "PUT /api/v1/project/:project/resource/:resource" do
+    setup [:author_conn, :create_project_with_pages]
+
+    test "returns forbidden when adding a content element for a disabled project feature", %{
+      author: author,
+      conn: conn,
+      project: project,
+      page_1: page
+    } do
+      {:ok, project} =
+        Course.update_project(project, %{
+          alternatives_enabled: false,
+          experiments_enabled: true
+        })
+
+      {:ok, alternatives_group} =
+        ResourceEditor.create(
+          project.slug,
+          author,
+          Oli.Resources.ResourceType.id_for_alternatives(),
+          %{
+            title: "Alternatives Group",
+            content: %{"options" => [], "strategy" => "user_section_preference"}
+          }
+        )
+
+      project.slug
+      |> Publishing.project_working_publication()
+      |> then(&Publishing.get_published_resource!(&1.id, page.resource_id))
+      |> Publishing.update_published_resource(%{
+        lock_updated_at: Time.now(),
+        locked_by_id: author.id
+      })
+
+      conn =
+        put(conn, "/api/v1/project/#{project.slug}/resource/#{page.slug}", %{
+          "update" => %{
+            "content" => %{
+              "version" => "0.1.0",
+              "model" => [
+                %{
+                  "type" => "alternatives",
+                  "id" => "new-alternatives",
+                  "alternatives_id" => alternatives_group.resource_id,
+                  "children" => []
+                }
+              ]
+            }
+          }
+        })
+
+      assert response(conn, 403) == "alternatives authoring is not enabled for this project"
+    end
+  end
+
   defp create_project_with_pages(%{author: author}) do
     project = insert(:project, authors: [author])
 
@@ -141,6 +232,16 @@ defmodule OliWeb.Api.ResourceControllerTest do
       insert(:revision,
         resource: page_3_resource,
         title: "Third Page",
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        deleted: false
+      )
+
+    orphan_page_resource = insert(:resource)
+
+    orphan_page_revision =
+      insert(:revision,
+        resource: orphan_page_resource,
+        title: "Orphan Page",
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         deleted: false
       )
@@ -189,17 +290,25 @@ defmodule OliWeb.Api.ResourceControllerTest do
       revision: page_3_revision
     )
 
+    insert(:published_resource,
+      publication: publication,
+      resource: orphan_page_resource,
+      revision: orphan_page_revision
+    )
+
     # Associate resources to project
     insert(:project_resource, project_id: project.id, resource_id: container_resource.id)
     insert(:project_resource, project_id: project.id, resource_id: page_1_resource.id)
     insert(:project_resource, project_id: project.id, resource_id: page_2_resource.id)
     insert(:project_resource, project_id: project.id, resource_id: page_3_resource.id)
+    insert(:project_resource, project_id: project.id, resource_id: orphan_page_resource.id)
 
     %{
       project: project,
       page_1: page_1_revision,
       page_2: page_2_revision,
-      page_3: page_3_revision
+      page_3: page_3_revision,
+      orphan_page: orphan_page_revision
     }
   end
 end

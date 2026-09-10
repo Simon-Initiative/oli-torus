@@ -6,7 +6,16 @@ defmodule Oli.Scenarios.DirectiveTypes do
   # Directive types
   defmodule ProjectDirective do
     @moduledoc "Creates a new project with specified structure"
-    defstruct [:name, :title, :root, :objectives, :tags, :slug, :visibility]
+    defstruct [
+      :name,
+      :title,
+      :root,
+      :objectives,
+      :tags,
+      :slug,
+      :visibility,
+      :learning_model_version
+    ]
   end
 
   defmodule SectionDirective do
@@ -61,6 +70,16 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:institution, :product, :type, :percentage, :amount, :bypass_paywall]
   end
 
+  defmodule CommunityDirective do
+    @moduledoc "Creates a community and associates existing users, products, and an institution."
+    defstruct [:name, :institution, users: [], products: []]
+  end
+
+  defmodule AssertSourcesDirective do
+    @moduledoc "Asserts the product sources available to a scenario user for a section."
+    defstruct [:user, :section, products: []]
+  end
+
   defmodule RemixDirective do
     @moduledoc """
     Remix content from a source project into a section's container.
@@ -69,7 +88,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
     section: target section name to remix into
     to: target container title in the section where content will be added
     """
-    defstruct [:from, :resource, :section, :to]
+    defstruct [:from, :from_product, :user, :resource, :section, :to]
   end
 
   defmodule ManipulateDirective do
@@ -483,6 +502,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               users: %{},
               # name -> Institution
               institutions: %{},
+              # name -> Community
+              communities: %{},
               # {project_name, activity_title} -> activity revision
               activities: %{},
               # {project_name, virtual_id} -> activity revision

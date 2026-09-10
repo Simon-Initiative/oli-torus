@@ -16,7 +16,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
   alias Oli.Delivery.Attempts.Core.ClientEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
   alias Oli.Delivery.Snapshots
-  alias Oli.Delivery.Experiments.LogWorker
 
   @doc """
   Processes a set of client evaluations for some number of parts for the given
@@ -115,7 +114,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
         result
       end)
       |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
-      |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
     else
       {:error, "Activity type does not allow client evaluation"}
     end
