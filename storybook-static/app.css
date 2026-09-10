@@ -17279,6 +17279,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 628px;
 }
 
+.h-\[62px\] {
+  height: 62px;
+}
+
 .h-\[64px\] {
   height: 64px;
 }
@@ -18074,6 +18078,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[60px\] {
   width: 60px;
+}
+
+.w-\[62px\] {
+  width: 62px;
 }
 
 .w-\[64px\] {
@@ -29194,7 +29202,7 @@ https://tailwindcss.com/docs/utility-first
   align-items: center;
   gap: 12px;
   min-width: 0;
-  padding: 12px;
+  padding: 0 12px;
   border-radius: 12px;
   box-shadow: 0 2px 10px 0 rgba(0, 50, 99, 0.05);
 }
@@ -29344,12 +29352,35 @@ https://tailwindcss.com/docs/utility-first
   }
 
   .content .learning-objectives-summary__explain-card {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    -moz-column-gap: 12px;
+         column-gap: 12px;
+    row-gap: 8px;
+    padding: 12px;
+  }
+
+  .content .learning-objectives-summary__recommendation-link {
+    font-size: 14px;
+  }
+
+  .content .learning-objectives-summary__explain-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .content .learning-objectives-summary__explain-copy {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 6px;
   }
 
   .content .learning-objectives-summary__explain-button {
-    width: 100%;
+    grid-column: 2;
+    grid-row: 2;
+    width: 50%;
+    align-self: start;
   }
 }
 
@@ -29525,7 +29556,15 @@ https://tailwindcss.com/docs/utility-first
 
 @media (max-width: 720px) {
   .learning-objectives-editor__proficiency-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .learning-objectives-editor__proficiency-card--strong {
+    order: 3;
+  }
+
+  .learning-objectives-editor__proficiency-card--growing {
+    order: 4;
   }
 }
 
