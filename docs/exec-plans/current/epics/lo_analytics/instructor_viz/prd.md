@@ -170,15 +170,22 @@ production), per `docs/OPERATIONS.md`.
 
 ## 12. Telemetry & Success Metrics
 
-- Emit telemetry (AppSignal-visible, per `docs/OPERATIONS.md`) for: group-selection events (which
-  group, section, objective), Email-from-group usage, and Load More usage, to understand whether
-  instructors act on the new grouping.
-- Instrument the expanded-row data-load path (depot reads + the student activity aggregate query)
-  with existing Phoenix/Ecto telemetry so a performance regression relative to the current
-  `DotDistributionChart` load path would be visible in AppSignal.
-- Success signal: instructors who expand a Learning Objective go on to select at least one group and
-  either email students or open a sub-objective, at a rate comparable to or better than current usage
-  of the existing proficiency-segment selection and student table.
+- No custom telemetry events for this feature. This repository's only wired path from a custom
+  `:telemetry.execute/3` call to AppSignal is the generic `[:torus, :feature, :exec, ...]`
+  span convention attached in `lib/oli_web/telemetry.ex`; nothing in this codebase attaches a
+  handler for a one-off `[:oli, :instructor_dashboard, ...]`-style event, so emitting one would be
+  dead code with no observable effect. Do not add ad hoc custom telemetry events for group
+  selection, email, or Load More usage unless a real consumer (a new AppSignal-wired handler, or
+  adopting the existing `[:torus, :feature, :exec, ...]` span convention deliberately) is built
+  alongside it.
+- The expanded-row data-load path (depot reads + the student activity aggregate query) is already
+  covered by this repo's existing, already-wired Phoenix/Ecto telemetry (`oli.repo.query.*` and
+  similar, per `lib/oli_web/telemetry.ex`) with no new instrumentation needed — a performance
+  regression relative to the current `DotDistributionChart` load path would already be visible in
+  AppSignal through that existing path.
+- No automated adoption/success metric is instrumented for this ticket. If instructor adoption of
+  the new grouping needs to be measured, that requires a deliberate follow-up (wiring a real
+  AppSignal-connected handler), not a passive `:telemetry.execute/3` call with no listener.
 
 ## 13. Risks & Mitigations
 

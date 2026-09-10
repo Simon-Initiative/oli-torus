@@ -98,8 +98,6 @@ Carried from `prd.md`/`fdd.md`, restated here because they affect what gets buil
   - [ ] Remove the `StudentProficiencyList` conditional from `ExpandedObjectiveView.render/1` (it is
         deleted, not migrated, in this PR — its replacement does not exist until PR2). Confirm the
         sub-objectives table below is unaffected.
-  - [ ] Emit telemetry on `select_student_group`/`deselect_student_group` (`fdd.md` section 11):
-        `section_id`, `objective_id`, `group` tags.
 - Testing Tasks:
   - [ ] ExUnit, new `test/oli/delivery/metrics/student_distribution_group_test.exs`: boundary tests at
         exactly 50% proficiency and 50% activity completion (AC-012, AC-013, AC-014); every student
@@ -202,7 +200,6 @@ Carried from `prd.md`/`fdd.md`, restated here because they affect what gets buil
         (`lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/student_support_tile.ex`)
         to call the shared selection module instead of its inline `MapSet` logic, as a pure refactor
         with no behavior change.
-  - [ ] Emit telemetry on Email-from-group and Load More usage (`fdd.md` section 11).
 - Testing Tasks:
   - [ ] `Phoenix.LiveViewTest`, `student_distribution_table_test.exs`: checkbox selection and
         select-all (AC-020); Email button acts on the current selection (AC-021); every control
@@ -225,26 +222,23 @@ Carried from `prd.md`/`fdd.md`, restated here because they affect what gets buil
     by the same person sequentially, or split: one person extracts and tests the shared module while
     another wires the table's UI against its planned interface.
 
-## Phase 4: Manual QA, Accessibility Verification & Telemetry Validation
+## Phase 4: Manual QA & Accessibility Verification
 
-- Goal: verify the shipped behavior against the Figma source of truth, the ticket's accessibility
-  requirements, and the telemetry added across the three PRs.
+- Goal: verify the shipped behavior against the Figma source of truth and the ticket's
+  accessibility requirements.
 - Tasks:
   - [ ] Visual comparison against the five Figma nodes in `design/instructor_viz_ui_brief.md`
         (`346:6145`, `358:11956`, `349:11077`, `349:11526`, `349:11974`) for the default state and each
         of the three group states, including guidance copy accuracy.
   - [ ] Keyboard-only walkthrough of region selection and every table control, confirming visible
         focus indicators, against `.review/ui.md`.
-  - [ ] Confirm telemetry events from PR1 and PR3 are visible in the local/staging AppSignal or
-        telemetry sink.
   - [ ] Confirm the still-open FDD questions (section 16) that were resolved during implementation are
         reflected correctly in the shipped behavior, or explicitly re-flagged if still unresolved.
 - Testing Tasks:
   - [ ] Manual: email-selected-students flow from a group table end to end.
   - Command(s): none (manual pass); record findings in the PR description.
 - Definition of Done:
-  - No unresolved visual or accessibility mismatch against the Figma source; telemetry confirmed
-    flowing.
+  - No unresolved visual or accessibility mismatch against the Figma source.
 - Gate:
   - Sign-off recorded in the PR description referencing this phase's checklist.
 - Dependencies:
@@ -305,6 +299,6 @@ Carried from `prd.md`/`fdd.md`, restated here because they affect what gets buil
   data-mutation side effects from selection/closing.
 - Gate C (after PR3): full feature parity — selection, email, and the third-copy selection-logic
   duplication removed — with `StudentSupportTile` regression-tested.
-- Gate D (after Phase 4): visual, accessibility, and telemetry sign-off recorded.
+- Gate D (after Phase 4): visual and accessibility sign-off recorded.
 - Gate E (after Phase 5): full regression green, code review complete, `requirements.yml` at
   `verified` for all 36 ACs, Jira updated, all three PRs confirmed merged ahead of the release cut.

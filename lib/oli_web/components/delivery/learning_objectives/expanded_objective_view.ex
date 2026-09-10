@@ -1,10 +1,20 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
+  @moduledoc """
+  Owns the expanded-row lifecycle for a Learning Objective in the instructor dashboard's
+  Learning Objectives table: loading per-student proficiency/activity data (synchronously or
+  asynchronously) only while the row is expanded, classifying students into distribution
+  groups, tracking which group is currently selected, and rendering the Student Distribution
+  matrix and the sub-objectives table for that row.
+  """
+
   use OliWeb, :live_component
 
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Metrics.StudentDistributionGroup
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Accounts
   alias OliWeb.Common.Utils
+  alias OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatrix
 
   attr :unique_id, :string, required: true
   attr :objective, :map, required: true
@@ -71,14 +81,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         estimated_students = length(all_student_ids)
         sub_objectives_data = get_sub_objectives_data(section_id, section_slug, objective_id)
 
-        proficiency_distribution =
-          section_id
-          |> Metrics.proficiency_per_student_for_objective([objective_id])
-          |> calculate_proficiency_distribution_from_student_data(
-            objective_id,
-            all_student_ids
-          )
-
         student_proficiency =
           section_id
           |> Metrics.student_proficiency_for_objective(objective_id)
@@ -88,6 +90,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
             section_id,
             objective_id
           )
+          |> StudentDistributionGroup.assign()
 
         socket =
           socket
@@ -96,11 +99,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
             loading: false,
             objective_id: objective_id,
             objective_title: objective.title,
-            selected_proficiency_level: nil,
+            selected_student_group: nil,
             estimated_students: estimated_students,
             sub_objectives_data: sub_objectives_data,
-            student_proficiency: student_proficiency,
-            proficiency_distribution: proficiency_distribution
+            student_proficiency: student_proficiency
           )
 
         {:ok, socket}
@@ -113,7 +115,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
             loading: true,
             objective_id: objective_id,
             objective_title: objective.title,
-            selected_proficiency_level: nil
+            selected_student_group: nil
           )
 
         # Schedule async data loading
@@ -129,17 +131,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
           # Fetch sub-objectives data for the main objective
           sub_objectives_data = get_sub_objectives_data(section_id, section_slug, objective_id)
 
-          # Calculate proficiency distribution for the main objective
-          proficiency_distribution =
-            section_id
-            |> Metrics.proficiency_per_student_for_objective([objective_id])
-            |> calculate_proficiency_distribution_from_student_data(
-              objective_id,
-              all_student_ids
-            )
-
-          # Get individual student proficiency for the dot distribution chart
-          # Start with real proficiency data and add missing students to ensure consistency
+          # Get individual student proficiency for the Student Distribution matrix.
+          # Start with real proficiency data, add missing students to ensure consistency
+          # with enrollment, then classify each student into a distribution group.
           student_proficiency =
             section_id
             |> Metrics.student_proficiency_for_objective(objective_id)
@@ -149,6 +143,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
               section_id,
               objective_id
             )
+            |> StudentDistributionGroup.assign()
 
           # Send message to parent process
           send(
@@ -157,8 +152,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
              %{
                estimated_students: estimated_students,
                sub_objectives_data: sub_objectives_data,
-               student_proficiency: student_proficiency,
-               proficiency_distribution: proficiency_distribution
+               student_proficiency: student_proficiency
              }}
           )
         end)
@@ -171,12 +165,26 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     end
   end
 
-  def handle_event("show_students_list", %{"proficiency_level" => proficiency_level}, socket) do
-    {:noreply, assign(socket, selected_proficiency_level: proficiency_level)}
+  # Fired by StudentDistributionMatrix's region phx-click/phx-keydown bindings. A phx-keydown
+  # payload also carries a "key" field; only Enter and Space should activate the region so
+  # unrelated keydown events (e.g. Tab, arrow keys) while a region has focus are ignored.
+  def handle_event("select_student_group", %{"group" => group} = params, socket) do
+    with true <- Map.get(params, "key") in [nil, "Enter", " "],
+         group when not is_nil(group) <- parse_group(group) do
+      selected_student_group =
+        if Map.get(socket.assigns, :selected_student_group) == group, do: nil, else: group
+
+      {:noreply, assign(socket, selected_student_group: selected_student_group)}
+    else
+      _ -> {:noreply, socket}
+    end
   end
 
-  def handle_event("hide_students_list", _params, socket) do
-    {:noreply, assign(socket, selected_proficiency_level: nil)}
+  # No rendered control currently calls this event -- `StudentDistributionMatrix` only emits
+  # "select_student_group", which already toggles a group off when it is re-activated. This
+  # handler exists as a ready, tested target for a future explicit close/dismiss control.
+  def handle_event("deselect_student_group", _params, socket) do
+    {:noreply, assign(socket, selected_student_group: nil)}
   end
 
   def render(assigns) do
@@ -201,38 +209,28 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
           </div>
         <% @is_expanded and @has_data -> %>
           <!-- Show content only when expanded AND data is loaded -->
-          <div class="mb-4">
-            <h3 class="text-lg font-medium text-Text-text-high">
-              Estimated Learning: {@estimated_students} {ngettext(
-                "Student",
-                "Students",
-                @estimated_students
-              )}
+          <div class="mb-[14px]">
+            <h3 class="font-open-sans text-[16px] font-bold leading-6">
+              <span class="text-Text-text-low-alpha">Student Distribution: </span>
+              <span class="text-Text-text-high">
+                {@estimated_students} {ngettext(
+                  "Student",
+                  "Students",
+                  @estimated_students
+                )}
+              </span>
             </h3>
           </div>
           
-    <!-- Proficiency Distribution Dots Chart -->
+    <!-- Student Distribution Matrix: pure HEEx/SVG, no React or client-side charting library. -->
           <div class="mb-6">
-            {render_dots_chart(assigns)}
+            <StudentDistributionMatrix.matrix
+              students={@student_proficiency}
+              selected_group={@selected_student_group}
+              myself={@myself}
+              unique_id={@unique_id}
+            />
           </div>
-          
-    <!-- Student Proficiency List (when a level is selected) -->
-          <%= if @selected_proficiency_level do %>
-            <div class="mb-6">
-              <.live_component
-                module={OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList}
-                id={"student-proficiency-list-#{@unique_id}"}
-                selected_proficiency_level={@selected_proficiency_level}
-                student_proficiency={@student_proficiency}
-                section_id={@section_id}
-                section_slug={@section_slug}
-                section_title={@section_title}
-                objective_title={@objective_title}
-                instructor_email={@current_user.email}
-                instructor_name={Utils.name(@current_user)}
-              />
-            </div>
-          <% end %>
           
     <!-- Sub-objectives Table (always shown) -->
           <div id={"sub-objectives-list-container-#{@unique_id}"} class="mt-4">
@@ -254,20 +252,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
       <% end %>
     </div>
     """
-  end
-
-  # RENDER DOTS CHART - Using React component for detailed visualization
-  defp render_dots_chart(assigns) do
-    OliWeb.Common.React.component(
-      %{is_liveview: true},
-      "Components.DotDistributionChart",
-      %{
-        proficiency_distribution: assigns.proficiency_distribution,
-        student_proficiency: assigns.student_proficiency,
-        unique_id: assigns.unique_id
-      },
-      id: "dot-distribution-chart-#{assigns.unique_id}"
-    )
   end
 
   # Get real sub-objectives data using optimized depot approach
@@ -362,35 +346,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     |> Enum.sum()
   end
 
-  # Convert proficiency per student data to distribution counts
-  defp calculate_proficiency_distribution_from_student_data(
-         proficiency_per_student,
-         objective_id,
-         all_student_ids
-       ) do
-    student_proficiency_levels = Map.get(proficiency_per_student, objective_id, %{})
-
-    # Filter proficiency data to only include enrolled students (exclude instructors)
-    student_set = MapSet.new(all_student_ids)
-
-    filtered_student_proficiency_levels =
-      student_proficiency_levels
-      |> Enum.filter(fn {user_id, _proficiency_level} -> MapSet.member?(student_set, user_id) end)
-      |> Map.new()
-
-    # Add "Not enough data" for students who don't have proficiency data
-    complete_student_proficiency =
-      all_student_ids
-      |> Enum.reject(&Map.has_key?(filtered_student_proficiency_levels, &1))
-      |> Enum.reduce(filtered_student_proficiency_levels, fn user_id, acc ->
-        Map.put(acc, user_id, "Not enough data")
-      end)
-
-    # Count students by proficiency level using Enum.frequencies_by
-    complete_student_proficiency
-    |> Enum.frequencies_by(fn {_student_id, proficiency_level} -> proficiency_level end)
-  end
-
   # Retrieve and merge students data.
   defp retrieve_students_data(student_proficiency) do
     students_by_id =
@@ -422,8 +377,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     end)
   end
 
-  # Add missing students to proficiency data to ensure consistency with proficiency_distribution
-  # This takes real proficiency data and adds students who don't have any proficiency data
+  # Adds students missing from the analytics-derived proficiency data so the resulting list
+  # covers every enrolled student, and attaches each student's activity-attempt counts.
   defp add_missing_students_to_proficiency_data(
          real_student_proficiency,
          all_student_ids,
@@ -444,12 +399,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         student.id
       end)
 
-    # Get related_activity_ids for calculating student attempts
-    related_activity_ids =
-      case SectionResourceDepot.get_section_resource(section_id, objective_id) do
-        nil -> []
-        section_resource -> section_resource.related_activities || []
-      end
+    # Get related_activity_ids for calculating student attempts: the union of the top-level
+    # objective's own related activities and those of its effective sub-objectives, not just
+    # the objective's direct array -- see `linked_activity_ids_for_objective/2`.
+    related_activity_ids = linked_activity_ids_for_objective(section_id, objective_id)
 
     total_related_activities = length(related_activity_ids)
 
@@ -499,9 +452,36 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     student_proficiency ++ missing_students
   end
 
+  # Resolves the unique linked-activity resource ids for a top-level objective, unioning its
+  # own `related_activities` with those of its effective sub-objectives. `related_activities`
+  # is direct-only (an objective's array does not include activities attached only to one of
+  # its sub-objectives), so a top-level objective needs this union to answer "how many
+  # activities are linked to this objective or any of its sub-objectives?" Both Depot calls
+  # are cache reads -- zero database queries once the section depot is initialized.
+  defp linked_activity_ids_for_objective(section_id, objective_id) do
+    case SectionResourceDepot.objectives_with_effective_children_for(section_id, [objective_id]) do
+      [%{children: child_ids}] ->
+        [objective_id | List.wrap(child_ids)]
+        |> then(&SectionResourceDepot.get_resources_by_ids(section_id, &1))
+        |> Enum.flat_map(&(&1.related_activities || []))
+        |> Enum.uniq()
+
+      [] ->
+        []
+    end
+  end
+
   defp get_missing_students(all_student_ids, existing_student_ids) do
     missing_student_ids = Enum.reject(all_student_ids, &MapSet.member?(existing_student_ids, &1))
 
     Accounts.get_users_by_ids(missing_student_ids)
   end
+
+  @distribution_groups ~w(needs_support excelling limited_activity)a
+
+  defp parse_group(group) when is_binary(group) do
+    Enum.find(@distribution_groups, &(Atom.to_string(&1) == group))
+  end
+
+  defp parse_group(_group), do: nil
 end

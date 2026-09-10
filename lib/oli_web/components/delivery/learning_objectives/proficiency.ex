@@ -25,6 +25,24 @@ defmodule OliWeb.Delivery.LearningObjectives.Proficiency do
   @doc "Returns resolved design-token values for the requested Vega chart theme."
   def colors(theme), do: Enum.map(@palette, &Map.fetch!(&1, theme))
 
+  @doc """
+  Returns a single solid `fill-*` Tailwind class for a proficiency label, for use on SVG
+  shapes (e.g. a filled dot) that need one color rather than the `chip/1` badge's
+  background/text pair. Uses the same semantic family as `chip_colors/1` so a dot and a chip
+  for the same label always read as the same color.
+  """
+  @spec dot_fill_class(String.t() | nil, :active | :inactive) :: String.t()
+  def dot_fill_class(label, state \\ :active)
+
+  def dot_fill_class("High", :inactive), do: "fill-Graph-dot-high-inactive"
+  def dot_fill_class("Medium", :inactive), do: "fill-Graph-dot-medium-inactive"
+  def dot_fill_class("Low", :inactive), do: "fill-Graph-dot-low-inactive"
+  def dot_fill_class(_, :inactive), do: "fill-Graph-dot-notenoughinfo-inactive"
+  def dot_fill_class("High", _state), do: "fill-Graph-dot-high-active"
+  def dot_fill_class("Medium", _state), do: "fill-Graph-dot-medium-active"
+  def dot_fill_class("Low", _state), do: "fill-Graph-dot-low-active"
+  def dot_fill_class(_, _state), do: "fill-Graph-dot-notenoughinfo-active"
+
   attr :label, :string, required: true
 
   def chip(assigns) do

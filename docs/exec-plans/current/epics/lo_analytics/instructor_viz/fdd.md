@@ -168,15 +168,50 @@ repository (section 3) and a deliberate engineering-risk-driven delivery sequenc
   `DotDistributionChart.tsx` for this surface. Follows the pattern proven by
   `StudentSupportParametersModal.matrix/1` (section 3): an `<svg viewBox="...">` with three region
   `<rect>`s (Needs Support, Excelling, and one full-width Limited Activity region below the 50%
-  activity line), one `<circle>` per student positioned by `proficiency`/`activity_completion`, and
-  Tailwind `dark:` classes for theming. Each region is a real interactive target: `phx-click`
+  activity line), one `<circle>` per student positioned by `proficiency`/`activity_completion`
+  re-normalized to its own region's local value range, and Tailwind `dark:`-aware design tokens for
+  theming (see the color-token note below). Each region is a real interactive target: `phx-click`
   (`phx-target={@myself}` bubbling to `ExpandedObjectiveView`, since this component is rendered inline
   inside it) pushing `"select_student_group"` with the region's group key, plus `tabindex="0"`,
   `role="button"`, `aria-pressed`, `aria-label`, and a `phx-keydown` binding that treats `Enter` and
   `Space` the same as a click (LiveView keydown bindings work on any focusable element, not only
-  `<button>`). No JS hook is required for rendering, selection, or theming; a hook is only a candidate
-  later if a richer hover tooltip than a native SVG `<title>` is requested (not a current
-  requirement — see section 16). (AC-001, AC-002, AC-003, AC-004, AC-005, AC-034, AC-036)
+  `<button>`). Individual student dots also carry `phx-click` for the same event/group value, so
+  clicking a dot selects its group exactly like clicking the region does — this is additive (mouse
+  convenience only); keyboard users still select a group entirely through the region's own
+  `tabindex`/`phx-keydown`, so keyboard parity is unaffected by dots not having their own
+  `tabindex`/`aria-label`.
+
+  Dots render in one of two visual states — `:active` (the dot's group is currently selected, drawn
+  with the active color token plus a white `1.5px` stroke) or `:inactive` (no group selected, or a
+  *different* group is selected, drawn with a muted inactive color token) — via
+  `Oli.Delivery.LearningObjectives.Proficiency.dot_fill_class/2` (label, state). This mirrors the
+  Figma reference's own emphasis behavior when a group is selected.
+
+  **Geometry is pinned to Figma's literal reference-frame pixel dimensions** (`580x532` viewBox,
+  region/chart offsets copied directly from Figma's inspector rather than a rescaled approximation)
+  as the starting point for this ticket. This is an intentional simplification, not a final decision:
+  making the chart's dimensions responsive (e.g. scaling or reflowing at narrow container widths) is
+  explicitly deferred to later work — see section 16.
+
+  **Color tokens**: dot fill colors (`Graph-dot-{low,medium,high,notenoughinfo}-{active,inactive}`)
+  and region backgrounds (`Graph-region-excelling`, `Graph-region-limited-activity`,
+  `Fill-fill-danger` for Needs Support) were read directly from Figma's dedicated graph color
+  variables (nodes `379:7341`, `379:7342`, `389:2234`, `389:2239`) and dark-mode label/background
+  refinements from nodes `365:19876` and `365:19875`, then added to `assets/tailwind.tokens.js` with
+  both light and dark values — superseding an earlier draft that approximated these with opacity
+  modifiers on unrelated existing tokens.
+
+  **`StudentDistributionMatrixLabels`** (new, `assets/src/hooks/student_distribution_matrix_labels.ts`,
+  registered in `assets/src/hooks/index.ts`): the one client-side hook this component uses. It does
+  **not** render chart state, compute layout, or replace any part of the HEEx/SVG rendering — it only
+  toggles a CSS opacity class on a region's count-label badge when the mouse hovers a point where the
+  label visually overlaps a student dot underneath it, so the dot stays visible. The label element
+  keeps `pointer-events: none`, so this hook never intercepts clicks or changes hit-testing; region
+  and dot selection work identically with or without it. This does not revisit the "no charting
+  library, no rendering hook" decision above — the hook has no chart-domain knowledge (no group
+  membership, no coordinates it computes, no LiveView event it sends) and would be equally
+  implementable as a pure `:hover`/`:has()` CSS rule if broader browser support removed the need for
+  the DOM query it does today. (AC-001, AC-002, AC-003, AC-004, AC-005, AC-034, AC-036)
 
 - **`StudentSelection`** (new, shared, `lib/oli/utils/student_selection.ex` or
   `lib/oli_web/components/delivery/students/student_selection.ex` — final placement decided at
@@ -355,7 +390,8 @@ Depot reads, both still zero-database-query once the section depot is initialize
 - Removing the React/Vega-Lite rendering path for this surface (replaced by server-rendered SVG) is a
   net reduction in client-side JS work per row expansion, not a regression.
 - No new NFR test budget is defined for this ticket; `harness.yml`'s `performance_requirements`
-  capability defaults to excluded. Telemetry (section 11) is the chosen observability lever instead.
+  capability defaults to excluded. The existing, already-wired Ecto/Phoenix telemetry (section 11)
+  covers this path without any new instrumentation.
 
 ## 10. Failure Modes & Resilience
 
@@ -374,15 +410,22 @@ Depot reads, both still zero-database-query once the section depot is initialize
 
 ## 11. Observability
 
-Per `harness.yml`, telemetry defaults to included:
+No custom telemetry events for this feature. An earlier draft of this design planned a custom
+`:telemetry.execute/3` call on group selection, but this repository's only path from a custom event
+to AppSignal is the generic `[:torus, :feature, :exec, :start | :stop | :exception]` span
+convention attached in `lib/oli_web/telemetry.ex` — no handler is attached anywhere for a one-off
+`[:oli, :instructor_dashboard, ...]`-style event (verified by grepping every `:telemetry.attach`/
+`:telemetry.attach_many` call in the codebase), so such a call would be dead code with no
+observable effect, not real observability. Removed rather than shipped. If instructor adoption of
+the new grouping ever needs measuring, that requires deliberately wiring a real handler (or
+emitting through the existing `[:torus, :feature, :exec, ...]` span convention), not a passive,
+unlistened `:telemetry.execute/3` call.
 
-- Emit a telemetry event on `select_student_group`/`deselect_student_group`, tagged with `section_id`,
-  `objective_id`, and `group`.
-- Emit a telemetry event on Email-from-group and Load More usage (once those exist, PR3), same tags
-  plus `selected_count` for email.
-- Instrument `linked_activity_ids_for_objective/2` and the `student_activities_attempted_count/3` call
-  with existing Ecto/Phoenix telemetry so a regression relative to the current single-objective lookup
-  is visible in AppSignal.
+The expanded-row data-load path (`linked_activity_ids_for_objective/2`,
+`student_activities_attempted_count/3`) needs no new instrumentation: it is already covered by this
+repo's existing, already-wired Ecto/Phoenix telemetry (`oli.repo.query.*` and similar), so a
+regression relative to the current single-objective lookup would already be visible in AppSignal
+through that existing path.
 
 ## 12. Security & Privacy
 
@@ -470,6 +513,15 @@ the next release):
   check contradicts it; it does not block PR1 or PR2.
 - Risk (carried from `prd.md`): shipping the wrong Activity Completion definition. Mitigation:
   unchanged — flagged explicitly rather than silently assumed correct.
+- Risk: dots in the `:inactive` state (every dot's state before any group is selected) measure well
+  under the WCAG 1.4.11 non-text-contrast minimum (3:1) against their own region background in
+  several cases (e.g. Low dots on Needs Support ≈1.6:1 light/2.0:1 dark; High dots on Excelling
+  ≈1.2:1 light/2.9:1 dark), per a code-review pass against `.review/ui.md`. These colors were read
+  directly from Figma's own graph color variables, so this is a design-vs-accessibility tension, not
+  an implementation defect — the FDD does not unilaterally alter the approved palette. Needs an
+  explicit design/product decision (darken or saturate the inactive palette, or accept it as an
+  intentional de-emphasis treatment) before this is considered accessibility-complete. Tracked in
+  section 16.
 
 ## 16. Open Questions & Follow-ups
 
@@ -488,6 +540,16 @@ Carried forward from `prd.md` (not re-litigated here) plus follow-ups from this 
   collapsing of many same-value dots into one grouped marker, that would be the trigger to revisit the
   HEEx-vs-React decision in section 4.4 for this specific surface — not a reason to preemptively add
   either capability now.
+- **Inactive-dot contrast (new follow-up, WCAG 1.4.11)**: confirm with design/product whether the
+  `Graph-dot-*-inactive` tokens (currently sourced directly from Figma) should be darkened/saturated
+  to clear the 3:1 non-text-contrast minimum, or whether the low-contrast "de-emphasized" look is an
+  intentional design choice for the unselected state. See section 15 for the measured ratios.
+- **Responsive chart dimensions (new follow-up)**: the matrix currently uses Figma's literal
+  reference-frame pixel dimensions (`580x532` viewBox and offsets) as a deliberate starting point, not
+  a final decision. Making the chart's own dimensions responsive (scaling, or reflowing at narrow
+  container widths, independent of the chart-vs-table stacking layout question already tracked in
+  `plan.md`) is planned future work, to be scoped once real usage/viewport data is available. Do not
+  treat the current fixed dimensions as a constraint when that work is picked up.
 
 ## 17. References
 
@@ -506,6 +568,13 @@ Carried forward from `prd.md` (not re-litigated here) plus follow-ups from this 
 - `lib/oli/delivery/metrics.ex`
 - `lib/oli/delivery/sections/section_resource_depot.ex`
 - `lib/oli_web/components/delivery/students/email_button.ex`
-- `assets/src/components/misc/DotDistributionChart.tsx`
+- `assets/src/components/misc/DotDistributionChart.tsx` (deleted)
+- `assets/src/hooks/student_distribution_matrix_labels.ts` — label hover-fade hook
 - `assets/src/apps/Components.tsx`
+- `assets/tailwind.tokens.js` — `Graph-dot-*`, `Graph-region-*`, `Black-Alpha-000` tokens
+- Figma graph color variable nodes: `379:7341`, `379:7342`, `389:2234`, `389:2239`; dark-mode
+  refinement nodes `365:19876` (labels), `365:19875` (Limited Activity background)
+- `docs/exec-plans/current/epics/lo_analytics/instructor_viz/phase_1_execution_record.md` —
+  "Visual Fidelity Pass" and "Tidewave Follow-up Fidelity Iteration" sections record the full history
+  of how this component's visual design converged on the above
 - `docs/BACKEND.md`, `docs/FRONTEND.md`, `docs/TESTING.md`, `docs/DESIGN.md`, `docs/OPERATIONS.md`
