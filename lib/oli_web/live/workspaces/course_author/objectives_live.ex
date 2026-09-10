@@ -67,7 +67,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         assessment_buckets: %{},
         course_content_open: false,
         course_content_selection: nil,
-        course_content_scope_ids: nil,
         course_content_nodes_by_id: %{},
         course_content_root_ids: [],
         course_content_expanded_ids: MapSet.new(),
@@ -403,18 +402,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   def before_table_params(params, socket) do
     case socket.assigns.coverage_model do
       nil ->
-        assign(socket, course_content_selection: nil, course_content_scope_ids: [])
+        assign(socket, course_content_selection: nil)
 
       model ->
         selection =
           ObjectiveCoverage.normalize_curriculum_selection(model, params["course_content"])
 
-        scope_ids = ObjectiveCoverage.objective_scope_for_pages(model, selection.page_ids)
-
-        assign(socket,
-          course_content_selection: selection,
-          course_content_scope_ids: scope_ids
-        )
+        assign(socket, course_content_selection: selection)
     end
   end
 
@@ -436,7 +430,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
     assign(socket,
       course_content_selection: selection,
-      course_content_scope_ids: socket.assigns.course_content_scope_ids || [],
       params: params
     )
   end
@@ -606,7 +599,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_status: :loading,
         assessment_buckets: socket.assigns.assessment_buckets,
         course_content_selection: nil,
-        course_content_scope_ids: nil,
         course_content_nodes_by_id: %{},
         course_content_root_ids: [],
         course_content_expanded_ids: MapSet.new(),

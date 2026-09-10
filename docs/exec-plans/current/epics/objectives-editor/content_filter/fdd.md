@@ -43,7 +43,7 @@ Traceability: AC-001 through AC-010 are represented by the design and verificati
 
 ### 4.1 Component Roles & Interactions
 
-1. `ObjectivesLive` adds the toolbar trigger and assigns `course_content_open`, `course_content_selection`, `course_content_scope_ids`, and the loaded coverage state.
+1. `ObjectivesLive` adds the toolbar trigger and assigns `course_content_open`, `course_content_selection`, and the loaded coverage state.
 2. A focused function component, preferably `OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter`, renders the trigger, active count, scrollable checklist, expansion controls, checkboxes, and tooltip attributes. It emits LiveView events rather than owning persisted state.
 3. `ObjectivesLive.handle_event/3` handles opening/closing and selection changes. Each selection normalizes ids, resets pagination to zero, and calls `push_patch/2` through `live_path/2` with all current table params plus the new content selection.
 4. `ObjectivesLive.filter_rows/4` parses the normalized selection from raw URL params, asks `ObjectiveCoverage` for matching objective ids, then composes those ids with the existing search result before table sorting and pagination. The three-argument form remains as a compatibility delegate.
@@ -63,7 +63,7 @@ Selection update:
 
 1. The event payload contains one curriculum resource id and its intended checked/unchecked state.
 2. The LiveView validates positive integer ids against `model.curriculum_by_id`, updates only explicit selections, sorts and deduplicates them, and pushes a patch with `course_content=<id,id,...>`.
-3. `handle_params/3` restores the selection from the URL, normalizes it through `ObjectiveCoverage.normalize_curriculum_selection/2`, and derives the effective scope through `ObjectiveCoverage.objective_scope_for_pages/2`.
+3. `handle_params/3` restores the selection from the URL and normalizes it through `ObjectiveCoverage.normalize_curriculum_selection/2`.
 4. The table filter composes content matching with the current query/search matching ids. Sort and pagination then operate on the filtered rows.
 5. If no selections are present, the content predicate is an identity function and the complete list is restored.
 
