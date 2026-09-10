@@ -18,6 +18,47 @@ Missing, blank, whitespace-padded, false, or malformed values leave QA tools dis
 
 Preview instances must use fresh databases or explicitly sanitized non-production copies and non-production credentials. Local email containment does not suppress LTI grade passback, payment providers, webhooks, analytics destinations, background jobs, or other integrations; unsanitized production clones are unsupported.
 
+An enabled preview release can ingest a Torus project archive synchronously for one explicitly
+selected active author:
+
+```bash
+./bin/seed projects ingest --url https://example.test/project.zip --author default_admin
+./bin/seed projects ingest --url https://example.test/project.zip --author email:author@example.test
+```
+
+The command accepts only HTTP or HTTPS, follows a bounded number of redirects, applies finite
+connection and receive timeouts, limits downloaded bytes, and removes its temporary archive after
+success or failure. Deployment network policy determines which HTTP destinations are reachable;
+the CLI does not add an SSRF destination allowlist because release-shell access is already the
+trusted operational boundary. Operators remain responsible for supplying synthetic, non-sensitive
+archives and for evaluating any partial domain mutation reported after ingestion begins.
+
+### Ingesting from a private S3 bucket
+
+For an archive in a private S3 bucket, generate a short-lived presigned HTTPS URL outside Torus and
+pass that URL to the same command. For example, an operator with access through the normal AWS
+credential chain can generate a URL valid for 15 minutes:
+
+```bash
+aws s3 presign s3://private-preview-assets/project.zip --expires-in 900
+```
+
+Then quote the returned URL so its query parameters remain one shell argument:
+
+```bash
+./bin/seed projects ingest \
+  --url 'https://private-preview-assets.s3.amazonaws.com/project.zip?...' \
+  --author default_admin
+```
+
+Use the shortest expiry that allows the download to complete, and generate a new URL for a retry
+after expiration. Do not pass an AWS access key or secret access key to `bin/seed`; the command does
+not accept them, and command-line credentials can leak through shell history, process listings,
+deployment manifests, or audit output. Prefer workload identity or an IAM role when generating the
+presigned URL. Although Torus redacts the source URL from its routine output and logs, the complete
+presigned URL is a temporary credential: avoid recording it in tickets, checked-in files, shared
+logs, or persistent shell history.
+
 # Production Deployments
 
 ## Using a Prebuilt Release (Recommended)
