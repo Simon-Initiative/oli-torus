@@ -18,6 +18,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
+    OwnershipDirective,
     InstitutionDiscountDirective,
     UpdateDirective,
     CustomizeDirective,
@@ -71,6 +72,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     "user",
     "enroll",
     "institution",
+    "ownership",
     "institution_discount",
     "update",
     "customize",
@@ -188,6 +190,21 @@ defmodule Oli.Scenarios.DirectiveParser do
           tags: parse_tags(project_data["tags"]),
           slug: project_data["slug"],
           visibility: parse_visibility(project_data["visibility"])
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"ownership" => ownership_data}) do
+    allowed_attrs = ["author", "institution"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, ownership_data, "ownership") do
+      :ok ->
+        %OwnershipDirective{
+          author: ownership_data["author"],
+          institution: ownership_data["institution"]
         }
 
       {:error, msg} ->

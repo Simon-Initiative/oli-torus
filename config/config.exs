@@ -74,7 +74,7 @@ get_env_as_integer = fn key, default ->
 end
 
 config :oli,
-  dev_qa_tools: [preview_build?: false],
+  preview_qa_tools: [preview_build?: false],
   enable_playwright_scenarios: false,
   enable_e2e_mailbox: false,
   playwright_scenario_token: nil,

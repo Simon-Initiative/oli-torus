@@ -3,7 +3,7 @@
 ## 1. Overview
 Support QA preview instances with three coordinated capabilities: CLI-based data seeding and project ingestion, system-administrator user masquerading for manual QA, and non-delivering email with an administrator-authenticated mailbox for inspecting captured messages. The CLI lists and executes bundled scenarios, executes operator-provided YAML, and ingests Torus project archives from reachable URLs. A post-migration Kubernetes Job uses the same CLI for optional `review_demo` initialization. There is no seed workbench, HTTP seed API, Oban seed scheduling, or persistent seed-run history.
 
-Preview images are built as a dedicated `MIX_ENV=preview` release with standalone configuration that explicitly owns its production-shaped settings and QA safety delta. This environment is the compile-time capability boundary. `DEV_QA_TOOLS_ENABLED` must equal `true`, case-insensitively, at runtime to activate release seeding, masquerade, and the mailbox interface. Shell access is the authorization boundary for seed operations; application authorization remains mandatory for masquerade.
+Preview images are built as a dedicated `MIX_ENV=preview` release with standalone configuration that explicitly owns its production-shaped settings and QA safety delta. This environment is the compile-time capability boundary. `PREVIEW_QA_TOOLS_ENABLED` must equal `true`, case-insensitively, at runtime to activate release seeding, masquerade, and the mailbox interface. Shell access is the authorization boundary for seed operations; application authorization remains mandatory for masquerade.
 
 ## 2. Background & Problem Statement
 Fresh preview environments lack representative projects, sections, users, enrollments, and learner progress. Torus already has a YAML scenario engine, Playwright scenario fixtures, project archive ingestion, and Stagehand prototype behavior. The previous design added an in-application seed workbench, a deployed-safe DSL policy, Oban execution, durable run records, and YAML audit storage. Research into GitLab's development tooling showed a simpler industry pattern: reviewed or operator-provided seed files are executed through privileged CLI tasks, with the ordinary application UI used to inspect the resulting data.
@@ -52,7 +52,7 @@ Requirements are found in requirements.yml
 Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
-- Security: `MIX_ENV=preview` controls compile-time inclusion and `DEV_QA_TOOLS_ENABLED` independently controls runtime activation. CLI access is trusted as equivalent to application-console access; masquerade independently requires a current system administrator at every boundary.
+- Security: `MIX_ENV=preview` controls compile-time inclusion and `PREVIEW_QA_TOOLS_ENABLED` independently controls runtime activation. CLI access is trusted as equivalent to application-console access; masquerade independently requires a current system administrator at every boundary.
 - Reliability: CLI commands execute synchronously, print bounded results, and return reliable process exit codes. Kubernetes owns startup retry, resource limits, and status.
 - Input handling: custom scenarios use the full existing `Oli.Scenarios` contract. URL ingestion supports HTTP and HTTPS with bounded download time, redirects, and archive size, and always cleans temporary files.
 - Performance: scenario progress simulation uses bounded internal concurrency. Kubernetes seed Jobs declare CPU/memory limits; there is no application queue or seed-specific global timeout.
@@ -75,7 +75,7 @@ Requirements are found in requirements.yml
 - Put release orchestration and scenario extensions under `lib/oli/`; retain web/session concerns under `lib/oli_web/`.
 - Use a release task/overlay command compatible with the existing `rel/overlays/bin/migrate` pattern rather than a Mix task that is unavailable in a production release.
 - Build preview releases with `MIX_ENV=preview`. `config/preview.exs` is standalone: initially copy only the applicable production-shaped settings and explicitly own the QA safety and capability configuration. It imports neither `prod.exs` nor `dev.exs`. During implementation, inspect existing compile-time environment branches and treat `:preview` as production-like where required, including permanent startup, compressed static assets, compiler paths/options, and dependency selection.
-- Update `guides/process/building.md` so developers can readily discover the purposes of `test`, `prod`, and `preview`; which workflows build each environment; how compile-time configuration differs from `config/runtime.exs`; and how `DEV_QA_TOOLS_ENABLED` activates capabilities in a preview release.
+- Update `guides/process/building.md` so developers can readily discover the purposes of `test`, `prod`, and `preview`; which workflows build each environment; how compile-time configuration differs from `config/runtime.exs`; and how `PREVIEW_QA_TOOLS_ENABLED` activates capabilities in a preview release.
 - Reuse `Oli.Interop.Ingest` rather than implementing archive import again.
 - Preserve institution, publication, enrollment, and immutable-content boundaries by using existing contexts.
 - Existing Playwright setup remains unchanged and may continue using its test-only controller and runtime defaults.
@@ -85,10 +85,10 @@ Requirements are found in requirements.yml
 ## 11. Feature Flagging, Rollout & Migration
 - `MIX_ENV=preview` is the compile-time capability boundary. The Docker build accepts `MIX_ENV` as a build argument with `prod` as its safe default; both jobs in `.github/workflows/build-preview-image.yml` pass `MIX_ENV=preview`, while production image workflows retain the default.
 - Existing PR build/test checks remain under `MIX_ENV=test`; the preview-image workflow builds the full `MIX_ENV=preview` release; existing package/release workflows continue validating `MIX_ENV=prod`. Do not add a separate production compile gate to PR CI. Reconsider earlier production validation only if package-stage failures become recurrent.
-- At runtime, `DEV_QA_TOOLS_ENABLED` is enabled by any casing variant of `true`. Missing, blank, whitespace-padded, false, or malformed values disable runtime QA capabilities.
-- A preview release without runtime activation emits one bounded warning explaining how to set `DEV_QA_TOOLS_ENABLED=true`; releases built under other Mix environments do not. Preview email containment remains in force even while the interactive QA capabilities are runtime-disabled.
-- `DEV_QA_SEED_PROFILE=review_demo` optionally selects the bundled scenario used by deployment automation. It cannot enable the capability. Deployment automation omits the seed Job when the profile is absent.
-- After migrations succeed, the deployment creates a `restartPolicy: Never` seed Job with `backoffLimit: 1` and explicit CPU/memory requests and limits initially matching its migration Job. Deployment automation resolves the configured profile and passes it as the final argument to `bin/seed scenarios run --name <profile>` without relying on shell interpolation. The Job name is `seed-<profile>-<release-id>` and labels identify application, environment, release, profile, and `component=dev-qa-seed`. Kubernetes owns logs, exit-status observation, and existing Job-retention policy; no identity is persisted by Torus.
+- At runtime, `PREVIEW_QA_TOOLS_ENABLED` is enabled by any casing variant of `true`. Missing, blank, whitespace-padded, false, or malformed values disable runtime QA capabilities.
+- A preview release without runtime activation emits one bounded warning explaining how to set `PREVIEW_QA_TOOLS_ENABLED=true`; releases built under other Mix environments do not. Preview email containment remains in force even while the interactive QA capabilities are runtime-disabled.
+- `PREVIEW_QA_SEED_PROFILE=review_demo` optionally selects the bundled scenario used by deployment automation. It cannot enable the capability. Deployment automation omits the seed Job when the profile is absent.
+- After migrations succeed, the deployment creates a `restartPolicy: Never` seed Job with `backoffLimit: 1` and explicit CPU/memory requests and limits initially matching its migration Job. Deployment automation resolves the configured profile and passes it as the final argument to `bin/seed scenarios run --name <profile>` without relying on shell interpolation. The Job name is `seed-<profile>-<release-id>` and labels identify application, environment, release, profile, and `component=preview-qa-seed`. Kubernetes owns logs, exit-status observation, and existing Job-retention policy; no identity is persisted by Torus.
 - No seed-history migration is required. Disabling the runtime flag invalidates active masquerade on the next request but does not undo seeded data.
 
 ## 12. Telemetry & Success Metrics
@@ -149,7 +149,7 @@ None.
 - Impact: Mailbox authorization uses a dedicated route-local check of the original actor. It does not replace `current_user` or grant access to any other administrator route, API, LiveView, navigation, data, or mutation.
 
 ### 2026-09-09 - Adopt a standalone `MIX_ENV=preview` release
-- Change: Build preview images with `MIX_ENV=preview`; add a standalone `config/preview.exs` that imports neither `prod.exs` nor `dev.exs`; use the Mix environment as the compile-time capability boundary and retain `DEV_QA_TOOLS_ENABLED` only for runtime activation.
+- Change: Build preview images with `MIX_ENV=preview`; add a standalone `config/preview.exs` that imports neither `prod.exs` nor `dev.exs`; use the Mix environment as the compile-time capability boundary and retain `PREVIEW_QA_TOOLS_ENABLED` only for runtime activation.
 - Reason: Preview has a coherent release-level profile—non-delivering email and compiled QA tooling—but little in `prod.exs` warrants inheritance or a shared configuration layer. Explicitly owned duplication is clearer and prevents future production configuration changes from silently altering previews; discoverable build documentation records the intended relationship.
 - Evidence: Approved reconsideration on 2026-09-09 after auditing current `Mix.env()` branches, dependency selectors, Docker release paths, and Elixir's compile/runtime configuration boundaries.
 - Impact: The Docker build becomes environment-parameterized, preview workflows select `preview`, production remains the default, applicable production-shaped settings are copied intentionally into `preview.exs`, production-like Mix branches include `:preview`, and `guides/process/building.md` documents how each environment is built and configured. No new production PR compile or configuration-drift gate is introduced.
@@ -167,7 +167,7 @@ None.
 - Impact: Layout-matrix tests cover the required interactive surfaces and assert that LTI entry clears/rejects masquerade; Cashnet callback and LTI root layouts do not need the banner.
 
 ### 2026-09-09 - Define the deployment seed Job contract
-- Change: Create the seed Job only after migrations succeed and only when `DEV_QA_SEED_PROFILE` is present. Pass the resolved profile as a discrete argument to `bin/seed scenarios run --name <profile>` with `restartPolicy: Never`, `backoffLimit: 1`, explicit resources initially matching the migration Job, and a labeled `seed-<profile>-<release-id>` identity.
+- Change: Create the seed Job only after migrations succeed and only when `PREVIEW_QA_SEED_PROFILE` is present. Pass the resolved profile as a discrete argument to `bin/seed scenarios run --name <profile>` with `restartPolicy: Never`, `backoffLimit: 1`, explicit resources initially matching the migration Job, and a labeled `seed-<profile>-<release-id>` identity.
 - Reason: The contract provides deterministic ordering, one bounded retry, and sufficient operational identity without coupling Torus to Kubernetes APIs or storage.
 - Evidence: Approved architecture decision on 2026-09-09.
 - Impact: Kubernetes owns stdout/stderr, process-exit observation, Job status, and its existing retention/TTL convention. Torus persists no Job identity or seed result.
@@ -197,7 +197,7 @@ None.
 - Impact: Adds ownership selectors and validation to the release execution path.
 
 ### 2026-09-09 - Separate preview compilation from runtime activation
-- Change: `MIX_ENV=preview` controls compile-time inclusion. `DEV_QA_TOOLS_ENABLED` must equal `true`, case-insensitively, only at runtime. A preview release without activation emits one instructional warning.
+- Change: `MIX_ENV=preview` controls compile-time inclusion. `PREVIEW_QA_TOOLS_ENABLED` must equal `true`, case-insensitively, only at runtime. A preview release without activation emits one instructional warning.
 - Reason: Environment identity and operator activation are separate concerns. This keeps QA code out of production releases without overloading one environment variable as both a build selector and runtime switch.
 - Evidence: Approved architecture decision.
 - Impact: Requires `config/preview.exs`, parameterized Docker release paths, a one-time review of production-like environment branches, runtime gating, warning behavior, configuration tests, and updated build documentation.

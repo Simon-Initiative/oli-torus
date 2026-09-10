@@ -11,7 +11,7 @@ Torus uses three Mix environments for distinct purposes:
 Mix environment files are compile-time configuration. `config/runtime.exs` supplies deployment-specific values when a release starts. Building with `MIX_ENV=preview` compiles preview capabilities into the artifact but does not activate them. Set the runtime variable below to the exact value `true`, ignoring letter case, to activate those capabilities:
 
 ```bash
-DEV_QA_TOOLS_ENABLED=true
+PREVIEW_QA_TOOLS_ENABLED=true
 ```
 
 Missing, blank, whitespace-padded, false, or malformed values leave QA tools disabled. Setting the variable on a `prod` build cannot add or activate preview-only capabilities. A disabled preview logs one startup warning with the activation instruction.

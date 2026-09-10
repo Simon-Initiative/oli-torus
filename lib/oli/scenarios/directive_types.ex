@@ -149,6 +149,11 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:name, :country_code, :institution_email, :institution_url]
   end
 
+  defmodule OwnershipDirective do
+    @moduledoc "Selects the author and institution used by release scenario execution"
+    defstruct [:author, :institution]
+  end
+
   defmodule UpdateDirective do
     @moduledoc "Applies publication updates from a project to a section"
     defstruct [:from, :to]
@@ -503,7 +508,12 @@ defmodule Oli.Scenarios.DirectiveTypes do
               # Default author for operations
               current_author: nil,
               # Default institution
-              current_institution: nil
+              current_institution: nil,
+              # Release execution requires ownership to be established by YAML
+              ownership: false,
+              # Release-only cumulative include budget and nesting limit
+              release_remaining_bytes: nil,
+              release_max_include_depth: nil
   end
 
   # Result types

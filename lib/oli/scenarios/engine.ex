@@ -19,6 +19,7 @@ defmodule Oli.Scenarios.Engine do
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
+    OwnershipDirective,
     InstitutionDiscountDirective,
     UpdateDirective,
     CustomizeDirective,
@@ -68,6 +69,7 @@ defmodule Oli.Scenarios.Engine do
     UserHandler,
     EnrollmentHandler,
     InstitutionHandler,
+    OwnershipHandler,
     InstitutionDiscountHandler,
     UpdateHandler,
     CustomizeHandler,
@@ -114,17 +116,24 @@ defmodule Oli.Scenarios.Engine do
 
     try do
       {final_state, verifications, errors} =
-        Enum.reduce(directives, {initial_state, [], []}, fn directive, {state, verifs, errs} ->
-          case execute_directive(directive, state) do
-            {:ok, new_state} ->
-              {new_state, verifs, errs}
+        Enum.reduce_while(directives, {initial_state, [], []}, fn
+          directive, {state, verifs, errs} ->
+            case execute_checked_directive(directive, state) do
+              {:ok, new_state} ->
+                {:cont, {new_state, verifs, errs}}
 
-            {:ok, new_state, verification} ->
-              {new_state, [verification | verifs], errs}
+              {:ok, new_state, verification} ->
+                {:cont, {new_state, [verification | verifs], errs}}
 
-            {:error, reason} ->
-              {state, verifs, [{directive, reason} | errs]}
-          end
+              {:error, reason} ->
+                result = {state, verifs, [{directive, reason} | errs]}
+
+                if state.ownership do
+                  {:halt, result}
+                else
+                  {:cont, result}
+                end
+            end
         end)
 
       %ExecutionResult{
@@ -159,17 +168,17 @@ defmodule Oli.Scenarios.Engine do
 
       nil ->
         # Use provided author or create a default one
-        author = opts[:author] || create_default_author()
+        author = opts[:author] || maybe_create_default_author(opts)
 
         # Use provided institution or create a default one
-        institution = opts[:institution] || create_default_institution()
+        institution = opts[:institution] || maybe_create_default_institution(opts)
 
         base_state = %ExecutionState{
           projects: %{},
           sections: %{},
           products: %{},
-          users: %{"default_author" => author},
-          institutions: %{"default" => institution},
+          users: initial_reference_map("default_author", author),
+          institutions: initial_reference_map("default", institution),
           activities: %{},
           activity_virtual_ids: %{},
           activity_bank_results: %{},
@@ -181,16 +190,57 @@ defmodule Oli.Scenarios.Engine do
           gates: %{},
           scenario_time: nil,
           current_author: author,
-          current_institution: institution
+          current_institution: institution,
+          ownership: opts[:ownership] || false
         }
 
         apply_execution_opts(base_state, opts)
     end
   end
 
+  defp initial_reference_map(_name, nil), do: %{}
+  defp initial_reference_map(name, value), do: %{name => value}
+
+  defp maybe_create_default_author(opts) do
+    if opts[:ownership], do: nil, else: create_default_author()
+  end
+
+  defp maybe_create_default_institution(opts) do
+    if opts[:ownership], do: nil, else: create_default_institution()
+  end
+
+  @doc false
+  def execute_checked_directive(directive, %{ownership: true} = state) do
+    if ownership_bootstrap_directive?(directive) or ownership_established?(state) do
+      execute_directive(directive, state)
+    else
+      {:error,
+       "release scenario must establish an active author and institution before #{directive_name(directive)}"}
+    end
+  end
+
+  def execute_checked_directive(directive, state), do: execute_directive(directive, state)
+
+  defp ownership_bootstrap_directive?(%UserDirective{}), do: true
+  defp ownership_bootstrap_directive?(%InstitutionDirective{}), do: true
+  defp ownership_bootstrap_directive?(%OwnershipDirective{}), do: true
+  defp ownership_bootstrap_directive?(%UseDirective{}), do: true
+  defp ownership_bootstrap_directive?(_), do: false
+
+  defp ownership_established?(state) do
+    match?(%Oli.Accounts.Author{}, state.current_author) and
+      match?(%Oli.Institutions.Institution{status: :active}, state.current_institution)
+  end
+
+  defp directive_name(directive) do
+    directive.__struct__ |> Module.split() |> List.last()
+  end
+
   defp apply_execution_opts(%ExecutionState{} = state, opts) do
     state
     |> maybe_put_current_dir(opts)
+    |> Map.put(:release_remaining_bytes, opts[:release_remaining_bytes])
+    |> Map.put(:release_max_include_depth, opts[:release_max_include_depth])
     |> Map.put(:params, opts[:params] || Map.get(state, :params, %{}))
   end
 
@@ -290,6 +340,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%InstitutionDirective{} = directive, state) do
     InstitutionHandler.handle(directive, state)
+  end
+
+  def execute_directive(%OwnershipDirective{} = directive, state) do
+    OwnershipHandler.handle(directive, state)
   end
 
   def execute_directive(%InstitutionDiscountDirective{} = directive, state) do

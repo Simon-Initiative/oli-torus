@@ -2868,6 +2868,33 @@
           {
             "type": "object",
             "required": [
+              "ownership"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "ownership": {
+                "type": "object",
+                "required": [
+                  "author",
+                  "institution"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "author": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "institution": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
               "update"
             ],
             "additionalProperties": false,

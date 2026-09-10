@@ -2,7 +2,7 @@ work_item: preview-environment-tooling
 requirements:
 - id: FR-001
   title: Compile release seeding and user masquerade only into MIX_ENV=preview releases
-    and gate their runtime use behind deny-by-default DEV_QA_TOOLS_ENABLED
+    and gate their runtime use behind deny-by-default PREVIEW_QA_TOOLS_ENABLED
 - id: FR-002
   title: Provide a bin/seed release CLI that lists bundled scenarios and synchronously
     executes a bundled or custom YAML scenario
@@ -34,19 +34,19 @@ acceptance_criteria:
 - id: AC-001
   requirement_id: FR-001
   title: Release seeding, masquerade, and the mailbox route are compiled only when
-    MIX_ENV=preview, and DEV_QA_TOOLS_ENABLED must equal true case-insensitively at
+    MIX_ENV=preview, and PREVIEW_QA_TOOLS_ENABLED must equal true case-insensitively at
     runtime to activate them
   verification_method: automated
 - id: AC-002
   requirement_id: FR-001
   title: Hostname, unrelated flags, configured profiles, and existing data cannot
-    enable the capability, and a MIX_ENV=prod release cannot expose it even when DEV_QA_TOOLS_ENABLED
+    enable the capability, and a MIX_ENV=prod release cannot expose it even when PREVIEW_QA_TOOLS_ENABLED
     is set at runtime
   verification_method: automated
 - id: AC-003
   requirement_id: FR-001
   title: A MIX_ENV=preview release without runtime activation emits one bounded warning
-    directing operators to set DEV_QA_TOOLS_ENABLED=true, while other Mix environments
+    directing operators to set PREVIEW_QA_TOOLS_ENABLED=true, while other Mix environments
     emit no such warning
   verification_method: automated
 - id: AC-004
@@ -179,7 +179,7 @@ acceptance_criteria:
 - id: AC-026
   requirement_id: FR-010
   title: MIX_ENV=preview releases expose Plug.Swoosh.MailboxPreview at /dev/mailbox
-    only while DEV_QA_TOOLS_ENABLED is active and only to a current system administrator
+    only while PREVIEW_QA_TOOLS_ENABLED is active and only to a current system administrator
     or the original system-administrator actor of a valid active masquerade, without
     granting actor privileges to any other route
   verification_method: automated

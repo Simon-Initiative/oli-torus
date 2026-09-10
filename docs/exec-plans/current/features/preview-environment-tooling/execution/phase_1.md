@@ -33,10 +33,10 @@ Environment audit:
 
 Verification results:
 
-- `mix test test/oli/dev_qa_tools/config_test.exs test/oli/dev_qa_tools/build_policy_test.exs` — 11 tests, 0 failures.
+- `mix test test/oli/preview_qa_tools/config_test.exs test/oli/preview_qa_tools/build_policy_test.exs` — 11 tests, 0 failures.
 - `MIX_ENV=preview mix compile` — passed.
 - `MIX_ENV=preview mix release --overwrite` — passed; created `_build/preview/rel/oli`.
-- Preview release eval with runtime `MIX_ENV=test` and `DEV_QA_TOOLS_ENABLED=true` — passed; immutable preview marker, local mail adapter, and effective activation remained correct.
+- Preview release eval with runtime `MIX_ENV=test` and `PREVIEW_QA_TOOLS_ENABLED=true` — passed; immutable preview marker, local mail adapter, and effective activation remained correct.
 - `mix format` on changed Elixir/config files — passed.
 - `mix format --check-formatted` and `git diff --check` — passed.
 - Harness work-item validation (`--check all`) — passed before implementation and after review fixes.
