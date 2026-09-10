@@ -3,14 +3,16 @@ defmodule Oli.Release.PreviewQATools do
 
   alias Oli.PreviewQATools.Config
   alias Oli.Release.PreviewQATools.BundledScenarios
+  alias Oli.Release.PreviewQATools.ProjectIngest
   alias Oli.Scenarios
   alias Oli.Scenarios.ReleaseExecution
 
   require Logger
 
-  @usage "usage: seed scenarios list | seed scenarios run (--name ID | --file PATH)"
+  @usage "usage: seed scenarios list | seed scenarios run (--name ID | --file PATH) | seed projects ingest --url URL --author SELECTOR"
   @max_message 500
   @max_scenario_bytes 5_000_000
+  @project_ingest_options [url: :string, author: :string]
 
   def main(args) do
     args
@@ -48,11 +50,37 @@ defmodule Oli.Release.PreviewQATools do
     end
   end
 
+  defp execute(["projects", "ingest" | args], opts) do
+    with {:ok, url, author} <- parse_project_ingest_args(args) do
+      ProjectIngest.run(url, author, opts)
+    end
+  end
+
   defp execute(_, _opts), do: {:error, :usage, @usage, false}
 
   defp parse_run_args(["--name", id]) when id != "", do: {:ok, {:name, id}}
   defp parse_run_args(["--file", path]) when path != "", do: {:ok, {:file, path}}
   defp parse_run_args(_), do: {:error, :usage, @usage, false}
+
+  defp parse_project_ingest_args(args) do
+    with {options, [], []} <- OptionParser.parse(args, strict: @project_ingest_options),
+         option_count when option_count == length(@project_ingest_options) <-
+           recognized_option_count(args),
+         {:ok, url} when url != "" <- Keyword.fetch(options, :url),
+         {:ok, author} when author != "" <- Keyword.fetch(options, :author) do
+      {:ok, url, author}
+    else
+      _ -> {:error, :usage, @usage, false}
+    end
+  end
+
+  defp recognized_option_count(args) do
+    switches = Enum.map(@project_ingest_options, fn {name, _type} -> "--#{name}" end)
+
+    Enum.count(args, fn argument ->
+      Enum.any?(switches, &(argument == &1 or String.starts_with?(argument, &1 <> "=")))
+    end)
+  end
 
   defp resolve_source({:name, id}, opts) do
     registry = Keyword.get(opts, :registry, BundledScenarios)
@@ -133,6 +161,9 @@ defmodule Oli.Release.PreviewQATools do
 
       {:ok, :run, summary, partial, metadata} ->
         success("run", summary, partial, metadata, duration_ms)
+
+      {:ok, :project_ingest, summary, partial, metadata} ->
+        success("project_ingest", summary, partial, metadata, duration_ms)
 
       {:error, code, detail, partial} ->
         failure(code, detail, partial, %{}, duration_ms)

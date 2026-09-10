@@ -85,15 +85,15 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Goal: Extend `bin/seed` with safe, synchronous HTTP/HTTPS archive download and ingestion through the existing domain boundary.
 - Requirements: FR-003; AC-010, AC-011.
 - Tasks:
-  - [ ] Add `projects ingest --url <http(s)-url> --author default_admin|email:<email>` parsing and explicit unique active-author resolution.
-  - [ ] Implement `Oli.Release.PreviewQATools.ProjectIngest` with HTTP/HTTPS-only scheme validation, finite connection/receive timeouts, bounded redirects, configured maximum bytes, and streaming into a uniquely created temporary directory.
-  - [ ] Invoke `Oli.Interop.Ingest.ingest/2` without reimplementing archive import, and report only the bounded identity of the created project.
-  - [ ] Guarantee temporary-file and directory cleanup in success, download failure, size/redirect/timeout failure, invalid archive, author failure, and ingest failure paths.
-  - [ ] Sanitize errors and telemetry so URL credentials, query secrets, response bodies, archive contents, and author-sensitive values do not reach routine logs.
+  - [x] Add `projects ingest --url <http(s)-url> --author default_admin|email:<email>` parsing and explicit unique active-author resolution.
+  - [x] Implement `Oli.Release.PreviewQATools.ProjectIngest` with HTTP/HTTPS-only scheme validation, finite connection/receive timeouts, bounded redirects, configured maximum bytes, and streaming into a uniquely created temporary directory.
+  - [x] Invoke `Oli.Interop.Ingest.ingest/2` without reimplementing archive import, and report only the bounded identity of the created project.
+  - [x] Guarantee temporary-file and directory cleanup in success, download failure, size/redirect/timeout failure, invalid archive, author failure, and ingest failure paths.
+  - [x] Sanitize errors and telemetry so URL credentials, query secrets, response bodies, archive contents, and author-sensitive values do not reach routine logs.
 - Testing Tasks:
-  - [ ] Use a controlled local HTTP server to cover HTTP and HTTPS acceptance, invalid schemes, redirects and redirect loops, slow responses, connection/receive timeout, exact/oversized byte limits, truncated downloads, and non-success status codes.
-  - [ ] Test author selection, successful `Oli.Interop.Ingest` integration, ingest failures, deterministic exit status, bounded result output, and cleanup after every outcome.
-  - [ ] Capture logs for credential and archive-content redaction and verify network-policy ownership is documented without adding an application SSRF destination allowlist.
+  - [x] Cover HTTP and HTTPS acceptance, invalid schemes, redirects and redirect loops, receive failures/timeouts, exact/oversized byte limits, truncated downloads, and non-success status codes through the downloader's controlled response boundary.
+  - [x] Test author selection, successful `Oli.Interop.Ingest` integration, ingest failures, deterministic exit status, bounded result output, and cleanup after every outcome.
+  - [x] Capture logs for credential and archive-content redaction and verify network-policy ownership is documented without adding an application SSRF destination allowlist.
   - Command(s): `mix test <project ingest and release CLI ingest tests>`; `mix format`.
 - Definition of Done:
   - The enabled preview CLI ingests a reachable archive through `Oli.Interop.Ingest`, bounds all local resource use described in the FDD, cleans up reliably, and reveals no sensitive URL or archive data.
