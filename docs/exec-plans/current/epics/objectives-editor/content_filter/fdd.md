@@ -195,7 +195,7 @@ Requirements coverage: FR-001/AC-001; FR-002/AC-002; FR-003/AC-003; FR-004/AC-00
 - Parent selection is represented by an explicit parent checkbox; descendant scope is applied by the coverage model without marking child checkboxes selected.
 - The menu closes on outside click/Escape and returns focus to the trigger through the existing LiveView JS convention.
 - Empty-state copy is `No learning objectives match the selected course content.`; the active count is the deduplicated selected active container/page count.
-- CSV export preserves the content selection through the existing parameter projection; dedicated CSV behavior remains outside this feature’s scope.
+- CSV export preserves the content selection through the existing parameter projection and applies the same course-content objective filter as the table.
 
 ## 17. References
 
