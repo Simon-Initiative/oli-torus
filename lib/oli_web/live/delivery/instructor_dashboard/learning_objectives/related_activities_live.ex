@@ -160,7 +160,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
 
   @impl Phoenix.LiveView
   def handle_event("paged_table_selection_change", %{"id" => id}, socket) do
-    with {activity_id, ""} <- Integer.parse("#{id}") do
+    with {activity_id, ""} <- Integer.parse("#{id}"),
+         true <- Enum.any?(socket.assigns.activities, &(&1.resource_id == activity_id)) do
       expanded_ids = socket.assigns.expanded_activity_ids
 
       if MapSet.member?(expanded_ids, activity_id) do

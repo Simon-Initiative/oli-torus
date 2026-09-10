@@ -817,6 +817,35 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       )
     end
 
+    test "ignores an expansion request for an activity outside the objective", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a,
+      activity_1: activity_1
+    } do
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
+
+      render_hook(view, "paged_table_selection_change", %{"id" => 999_999})
+
+      # The effect of an unknown id is invisible in the markup, so assert on the socket
+      # state that would otherwise grow without bound.
+      expanded = :sys.get_state(view.pid).socket.assigns.expanded_activity_ids
+      assert MapSet.size(expanded) == 0, "an unknown activity id was added to the expansion state"
+
+      view
+      |> element("button#button_#{activity_1.resource_id}")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button[aria-expanded='true'][aria-controls='details-row_#{activity_1.resource_id}']"
+             )
+    end
+
     test "keeps the attempts filter through a search", %{
       conn: conn,
       instructor: instructor,
