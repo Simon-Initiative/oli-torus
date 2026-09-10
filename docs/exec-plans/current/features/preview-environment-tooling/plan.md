@@ -29,19 +29,19 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Goal: Make preview a production-shaped release environment whose QA capabilities are compile-time isolated, runtime-disabled by default, and incapable of external email delivery.
 - Requirements: FR-001, FR-010; AC-001, AC-002, AC-003, AC-004, AC-025.
 - Tasks:
-  - [ ] Audit every `Mix.env()` branch and dependency `only:` selector that affects release construction or behavior, including `mix.exs`, `config/config.exs`, `lib/oli_web/endpoint.ex`, Gleam compiler paths, permanent startup, static compression, and release-only dependencies; record which branches must treat `:preview` as production-like.
-  - [ ] Add standalone `config/preview.exs` with the applicable production-shaped endpoint, logging, Playwright, and release settings, an immutable preview build marker, and `Oli.Mailer` configured with `Swoosh.Adapters.Local`.
-  - [ ] Add `Oli.DevQATools.Config` as the single effective-enablement boundary, combining the compile-time preview marker with strict runtime parsing of `DEV_QA_TOOLS_ENABLED`.
-  - [ ] Wire application startup to emit one bounded instructional warning for a preview build whose runtime activation is disabled and one bounded enabled signal when active; emit neither message for other Mix environments.
-  - [ ] Parameterize the Docker build and all release-stage paths with `ARG MIX_ENV=prod`; propagate the selected environment consistently through dependency resolution, asset/release compilation, smoke execution, and final-stage copies.
-  - [ ] Update both jobs in `.github/workflows/build-preview-image.yml` to pass `MIX_ENV=preview`, while leaving production image callers on the safe default.
-  - [ ] Update `guides/process/building.md` with the purposes and workflows for `test`, `prod`, and `preview`, standalone configuration ownership, compile-time versus runtime configuration, activation syntax, local-email containment, and the unsupported production-clone boundary.
+  - [x] Audit every `Mix.env()` branch and dependency `only:` selector that affects release construction or behavior, including `mix.exs`, `config/config.exs`, `lib/oli_web/endpoint.ex`, Gleam compiler paths, permanent startup, static compression, and release-only dependencies; record which branches must treat `:preview` as production-like.
+  - [x] Add standalone `config/preview.exs` with the applicable production-shaped endpoint, logging, Playwright, and release settings, an immutable preview build marker, and `Oli.Mailer` configured with `Swoosh.Adapters.Local`.
+  - [x] Add `Oli.DevQATools.Config` as the single effective-enablement boundary, combining the compile-time preview marker with strict runtime parsing of `DEV_QA_TOOLS_ENABLED`.
+  - [x] Wire application startup to emit one bounded instructional warning for a preview build whose runtime activation is disabled and one bounded enabled signal when active; emit neither message for other Mix environments.
+  - [x] Parameterize the Docker build and all release-stage paths with `ARG MIX_ENV=prod`; propagate the selected environment consistently through dependency resolution, asset/release compilation, and final-stage copies.
+  - [x] Update both jobs in `.github/workflows/build-preview-image.yml` to pass `MIX_ENV=preview`, while leaving production image callers on the safe default.
+  - [x] Update `guides/process/building.md` with the purposes and workflows for `test`, `prod`, and `preview`, standalone configuration ownership, compile-time versus runtime configuration, activation syntax, local-email containment, and the unsupported production-clone boundary.
 - Testing Tasks:
-  - [ ] Add unit tests for the full environment/flag truth table, including casing variants and missing, blank, whitespace-padded, false, malformed, hostname, profile, and unrelated-flag inputs.
-  - [ ] Capture logs to prove the preview-disabled warning is emitted once and other environments do not emit it.
-  - [ ] Add configuration assertions that preview uses `Swoosh.Adapters.Local` whether the runtime flag is enabled or disabled.
-  - [ ] Add static workflow/Docker assertions for the `prod` default, both preview build arguments, and consistent environment-specific release paths.
-  - [ ] Compile or build the preview release through the existing preview-image path and retain existing production packaging as the production-environment gate.
+  - [x] Add unit tests for the full environment/flag truth table, including casing variants and missing, blank, whitespace-padded, false, malformed, hostname, profile, and unrelated-flag inputs.
+  - [x] Capture logs to prove the preview-disabled warning is emitted once and other environments do not emit it.
+  - [x] Add configuration assertions that preview uses `Swoosh.Adapters.Local` whether the runtime flag is enabled or disabled.
+  - [x] Add static workflow/Docker assertions for the `prod` default, both preview build arguments, and consistent environment-specific release paths.
+  - [x] Compile or build the preview release through the existing preview-image path and retain existing production packaging as the production-environment gate.
   - Command(s): `mix test <targeted DevQATools configuration and build-policy tests>`; `MIX_ENV=preview mix compile`; `mix format`; preview-image workflow build.
 - Definition of Done:
   - Preview compiles with production-shaped settings and local-only mail, production remains the Docker default, runtime activation is deny-by-default, startup signals are bounded, and the environment contract is documented.
