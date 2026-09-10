@@ -12,7 +12,6 @@ Phase: `1 (PR1) — Chart Only, HEEx Student Distribution Matrix`
 - Remove the `StudentProficiencyList` conditional from `ExpandedObjectiveView.render/1` (module itself
   deleted in PR2, not this phase).
 - Delete `DotDistributionChart.tsx` + its Jest test + its `Components.tsx` registration.
-- Emit telemetry on the two new events.
 - Out of scope this phase: `StudentDistributionTable`, selection checkboxes, Email wiring.
 
 ## Implementation Blocks
@@ -27,7 +26,8 @@ Phase: `1 (PR1) — Chart Only, HEEx Student Distribution Matrix`
 - [x] Access-control or safety checks
   - `select_student_group` validates the incoming `"group"` string against a fixed atom allowlist (`parse_group/1`) before use — never `String.to_existing_atom` on raw client input.
 - [x] Observability or operational updates when needed
-  - `:telemetry.execute([:oli, :instructor_dashboard, :student_distribution, :group_selection], ...)` on both new events.
+  - None added. A custom telemetry call on the two new events was added and then removed in this
+    same phase — see "Telemetry Removed" below for why.
 
 ## Test Blocks
 - [x] Tests added or updated

@@ -453,6 +453,36 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       assert has_element?(view, "g[aria-label^='Excelling'][aria-pressed='true']")
     end
 
+    test "keyboard activation (Space) selects a region the same as a click", %{
+      conn: conn,
+      section: section,
+      objective: objective,
+      instructor: instructor
+    } do
+      objective_data = %{
+        resource_id: objective.resource_id,
+        title: objective.title || "Test Objective"
+      }
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, ExpandedObjectiveView, %{
+          id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
+          objective: objective_data,
+          section_id: section.id,
+          section_slug: section.slug,
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
+        })
+
+      view
+      |> element("g[aria-label^='Excelling']")
+      |> render_keydown(%{"group" => "excelling", "key" => " "})
+
+      assert has_element?(view, "g[aria-label^='Excelling'][aria-pressed='true']")
+    end
+
     test "an unrelated keydown while a region has focus does not select it", %{
       conn: conn,
       section: section,
