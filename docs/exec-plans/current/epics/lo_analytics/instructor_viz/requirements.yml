@@ -1,0 +1,400 @@
+work_item: instructor_viz
+version: 1
+feature: instructor_viz
+generated_from: prd.md
+requirements:
+- title: Student Distribution matrix replaces the one-dimensional expanded visualization
+  status: proposed
+  id: FR-001
+- title: Default state shows the matrix with no group selected
+  status: proposed
+  id: FR-002
+- title: Selecting a group displays a student table beside the visualization
+  status: proposed
+  id: FR-003
+- title: Group assignment and guidance content match the approved learning-proficiency
+    model
+  status: proposed
+  id: FR-004
+- title: Instructors can select students and email them from the group table
+  status: proposed
+  id: FR-005
+- title: Instructors can load additional students into an open group table
+  status: proposed
+  id: FR-006
+- title: Instructors can switch between groups without closing the table first
+  status: proposed
+  id: FR-007
+- title: Instructors can close the student table and return the visualization to its
+    default state
+  status: proposed
+  id: FR-008
+- title: Empty groups are handled without breaking the visualization or table
+  status: proposed
+  id: FR-009
+- title: Group membership stays consistent with underlying analytics and does not
+    corrupt calculations
+  status: proposed
+  id: FR-010
+- title: The visualization and student table are usable by keyboard
+  status: proposed
+  id: FR-011
+acceptance_criteria:
+- requirement_id: FR-001
+  title: Expanding a Learning Objective renders the Student Distribution matrix instead
+    of the current one-dimensional dot distribution chart
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributionmatrix
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-001
+- requirement_id: FR-001
+  title: Each enrolled student is represented by exactly one dot in the matrix
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributionmatrix
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-002
+- requirement_id: FR-001
+  title: The x-axis represents Learning Proficiency and the y-axis represents Activity
+    Completion
+  status: verified_plan
+  verification_method: manual
+  proofs:
+  - fdd.md#4.1-studentdistributionmatrix
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-003
+- requirement_id: FR-001
+  title: Each of the three groups (Needs Support, Excelling, Limited Activity) displays
+    a visible count of the students within it
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributionmatrix
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-004
+- requirement_id: FR-001
+  title: Selecting a group visually highlights that region, and only one group can
+    be highlighted/selected at a time
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributionmatrix
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-005
+- requirement_id: FR-002
+  title: On first load, the Student Distribution visualization is shown with no group
+    selected and no region highlighted
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-expandedobjectiveview
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-006
+- requirement_id: FR-002
+  title: On first load, the student table is not rendered until a group is selected
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-expandedobjectiveview
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-007
+- requirement_id: FR-003
+  title: Selecting a student group renders a student table beside (not below) the
+    visualization
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-expandedobjectiveview
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-008
+- requirement_id: FR-003
+  title: The selected group remains visually highlighted while its table is open
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-expandedobjectiveview
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-009
+- requirement_id: FR-003
+  title: The table header displays the group title, the number of students in the
+    group, a brief explanation of the group's characteristics, and a suggested instructor
+    action
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-010
+- requirement_id: FR-003
+  title: The table body displays student name, learning proficiency, and activity
+    completion, limited to students belonging to the selected group
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-011
+- requirement_id: FR-004
+  title: Needs Support includes students whose numeric learning proficiency is below
+    50% and whose activity completion is 50% or above
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiongroup
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-012
+- requirement_id: FR-004
+  title: Excelling includes students whose numeric learning proficiency is 50% or
+    above and whose activity completion is 50% or above
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiongroup
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-013
+- requirement_id: FR-004
+  title: Limited Activity includes students whose activity completion is below 50%,
+    regardless of proficiency
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiongroup
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-014
+- requirement_id: FR-004
+  title: Needs Support header text, guidance copy, and suggested action match the
+    approved copy, and its student list defaults to sorting low proficiency first
+  status: verified_plan
+  verification_method: manual
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-015
+- requirement_id: FR-004
+  title: Excelling header text, guidance copy, and suggested action match the approved
+    copy, and its student list defaults to sorting medium proficiency first
+  status: verified_plan
+  verification_method: manual
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-016
+- requirement_id: FR-004
+  title: Limited Activity header text, guidance copy, and suggested action match the
+    approved copy, and its student list defaults to sorting Not Enough Info, then
+    Low, then Medium, then High proficiency
+  status: verified_plan
+  verification_method: manual
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-017
+- requirement_id: FR-004
+  title: Limited Activity exposes a proficiency filter covering Not Enough Info, Low,
+    Medium, and High, since all proficiency labels can appear in that group
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-018
+- requirement_id: FR-004
+  title: A student cannot be assigned to more than one group at the same time
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiongroup
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-019
+- requirement_id: FR-005
+  title: Each row in the group table includes a selection checkbox
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  id: AC-020
+- requirement_id: FR-005
+  title: An Email button is displayed above the student selection checkboxes and acts
+    on the currently selected students
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  id: AC-021
+- requirement_id: FR-006
+  title: A Load More button is displayed beneath the student table when additional
+    students exist beyond the initial page
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  id: AC-022
+- requirement_id: FR-006
+  title: Selecting Load More appends additional students without removing previously
+    loaded students, and the table scrolls to accommodate them
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  id: AC-023
+- requirement_id: FR-007
+  title: Selecting a different group deselects the previous group and highlights the
+    newly selected group
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-expandedobjectiveview
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-024
+- requirement_id: FR-007
+  title: Selecting a different group immediately updates the table to show the newly
+    selected group's students without requiring the instructor to close the table
+    first
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-expandedobjectiveview
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-025
+- requirement_id: FR-008
+  title: Selecting the close (X) control in the table header closes the table, deselects
+    the group, and returns the visualization to its default unhighlighted state
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-expandedobjectiveview
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-026
+- requirement_id: FR-008
+  title: Clicking the currently selected group again closes the table, deselects the
+    group, and returns the visualization to its default unhighlighted state
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-expandedobjectiveview
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-027
+- requirement_id: FR-008
+  title: Closing the student table does not modify any student proficiency or activity
+    completion data
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-expandedobjectiveview
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-028
+- requirement_id: FR-009
+  title: A group with zero students remains visible in the visualization with a count
+    of zero
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-029
+- requirement_id: FR-009
+  title: Selecting an empty group displays an empty-state message instead of an empty
+    table
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-2-pr2-student-table-read-only
+  id: AC-030
+- requirement_id: FR-010
+  title: Selecting a group does not modify proficiency or activity completion calculations
+    for any student
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiongroup
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-031
+- requirement_id: FR-010
+  title: Student grouping recalculates automatically as proficiency or activity completion
+    changes, without requiring a page reload
+  status: verified_plan
+  verification_method: manual
+  proofs:
+  - fdd.md#4.2-state-and-data-flow
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-032
+- requirement_id: FR-010
+  title: Loading additional students via Load More does not replace or duplicate previously
+    loaded students
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  id: AC-033
+- requirement_id: FR-011
+  title: Every selectable group region can be reached and activated using only the
+    keyboard
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributionmatrix
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-1-pr1-chart-only-heex-student-distribution-matrix
+  id: AC-034
+- requirement_id: FR-011
+  title: Every interactive student-table control (row checkboxes, Email button, Load
+    More button, Close control) is reachable and operable using only the keyboard
+  status: verified_plan
+  verification_method: automated
+  proofs:
+  - fdd.md#4.1-studentdistributiontable
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  id: AC-035
+- requirement_id: FR-011
+  title: All interactive controls in the visualization and table show a visible focus
+    indicator when focused via keyboard
+  status: verified_plan
+  verification_method: manual
+  proofs:
+  - fdd.md#4.1-studentdistributionmatrix
+  - fdd.md#13-testing-strategy
+  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  id: AC-036
