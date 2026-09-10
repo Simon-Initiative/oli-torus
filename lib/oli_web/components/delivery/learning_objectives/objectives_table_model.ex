@@ -39,43 +39,68 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
-  def new(objectives, :instructor_dashboard) do
-    column_specs = [
-      %ColumnSpec{
-        render_fn: &render_expanded/3,
-        sortable: false,
-        th_class: "w-4"
-      },
-      %ColumnSpec{
-        name: :objective_instructor_dashboard,
-        label: "Learning Objective",
-        render_fn: &custom_render/3,
-        th_class: "w-1/2",
-        td_class: "pr-4"
-      },
-      %ColumnSpec{
-        name: :student_proficiency_obj,
-        label:
-          HTMLComponents.render_label(%{
-            title: "Student Proficiency",
-            info_tooltip: student_proficiency_tooltip_content(%{})
-          }),
-        render_fn: &custom_render/3
-      },
-      %ColumnSpec{
-        name: :student_proficiency_distribution,
-        label: "Proficiency Distribution",
-        sortable: false,
-        render_fn: &custom_render/3
-      },
-      %ColumnSpec{
-        name: :related_activities_count,
-        label: "Linked Activities",
-        render_fn: &custom_render/3,
-        sortable: false,
-        tooltip: "Number of activities that have this learning objective attached"
-      }
-    ]
+  defp confidence_tooltip_content(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <p>How confident we are in the proficiency estimate based on available data.</p>
+      <p>
+        <b>Low Confidence:</b>
+        Based on limited activity evidence. Treat proficiency level as preliminary and encourage more activity before acting.
+      </p>
+      <p>
+        <b>Medium Confidence:</b>
+        Based on moderate activity evidence. The estimate may change as more students complete linked activities.
+      </p>
+      <p>
+        <b>High Confidence:</b> Based on substantial activity evidence across linked activities.
+      </p>
+    </div>
+    """
+  end
+
+  def new(objectives, patch_url_type, confidence_supported? \\ false)
+
+  def new(objectives, :instructor_dashboard, confidence_supported?) do
+    column_specs =
+      [
+        %ColumnSpec{
+          render_fn: &render_expanded/3,
+          sortable: false,
+          th_class: "w-4"
+        },
+        %ColumnSpec{
+          name: :objective_instructor_dashboard,
+          label: "Learning Objective",
+          render_fn: &custom_render/3,
+          th_class: "w-1/2",
+          td_class: "pr-4"
+        },
+        %ColumnSpec{
+          name: :student_proficiency_obj,
+          label:
+            HTMLComponents.render_label(%{
+              title: "Student Proficiency",
+              info_tooltip: student_proficiency_tooltip_content(%{})
+            }),
+          render_fn: &custom_render/3
+        }
+      ] ++
+        maybe_confidence_column(confidence_supported?) ++
+        [
+          %ColumnSpec{
+            name: :student_proficiency_distribution,
+            label: "Proficiency Distribution",
+            sortable: false,
+            render_fn: &custom_render/3
+          },
+          %ColumnSpec{
+            name: :related_activities_count,
+            label: "Linked Activities",
+            render_fn: &custom_render/3,
+            sortable: false,
+            tooltip: "Number of activities that have this learning objective attached"
+          }
+        ]
 
     SortableTableModel.new(
       rows: objectives,
@@ -86,7 +111,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     )
   end
 
-  def new(objectives, _patch_url_type) do
+  def new(objectives, _patch_url_type, _confidence_supported?) do
     column_specs = [
       %ColumnSpec{
         name: :objective,
@@ -119,6 +144,22 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       event_suffix: "",
       id_field: [:resource_id]
     )
+  end
+
+  defp maybe_confidence_column(false), do: []
+
+  defp maybe_confidence_column(true) do
+    [
+      %ColumnSpec{
+        name: :confidence,
+        label:
+          HTMLComponents.render_label(%{
+            title: "Confidence",
+            info_tooltip: confidence_tooltip_content(%{})
+          }),
+        render_fn: &custom_render/3
+      }
+    ]
   end
 
   # STUDENT PROFICIENCY
@@ -241,6 +282,21 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         <% end %>
       </div>
     </div>
+    """
+  end
+
+  # CONFIDENCE
+  defp custom_render(assigns, objective, %ColumnSpec{name: :confidence}) do
+    confidence = Map.get(objective, :confidence_subobj) || Map.get(objective, :confidence_obj)
+
+    assigns = Map.put(assigns, :confidence, confidence)
+
+    ~H"""
+    <div :if={@confidence} class="flex items-center gap-1.5 text-Text-text-high">
+      <Icons.confidence_bars level={@confidence} />
+      <span>{@confidence}</span>
+    </div>
+    <span :if={is_nil(@confidence)}>-</span>
     """
   end
 
