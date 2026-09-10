@@ -117,6 +117,7 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExport do
           (not coverage_issues_only? or
              MapSet.member?(coverage_issue_ids, objective.resource_id))
       end)
+      |> filter_course_content(model, param(params, "course_content", nil))
 
     sort_by = param(params, "sort_by", "title")
     sort_order = if param(params, "sort_order", "asc") == "desc", do: :desc, else: :asc
@@ -126,6 +127,32 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExport do
       &objective_sort_value(model, &1, sort_by, activities_by_objective),
       sort_order
     )
+  end
+
+  defp filter_course_content(objectives, _model, nil), do: objectives
+  defp filter_course_content(objectives, _model, ""), do: objectives
+
+  defp filter_course_content(objectives, model, selected_ids) do
+    selection = ObjectiveCoverage.normalize_curriculum_selection(model, selected_ids)
+
+    case selection.selected_ids do
+      [] ->
+        objectives
+
+      _ ->
+        direct_ids = selection.objective_ids
+
+        objectives
+        |> Enum.filter(fn objective ->
+          MapSet.member?(direct_ids, objective.resource_id) or
+            Enum.any?(objective.children, &MapSet.member?(direct_ids, &1))
+        end)
+        |> Enum.map(fn objective ->
+          Map.update!(objective, :children, fn children ->
+            Enum.filter(children, &MapSet.member?(direct_ids, &1))
+          end)
+        end)
+    end
   end
 
   defp objective_sort_value(_model, objective, "title", _activities_by_objective),

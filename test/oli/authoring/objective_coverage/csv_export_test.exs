@@ -135,6 +135,45 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExportTest do
              })
   end
 
+  test "applies the course content selection before exporting" do
+    model =
+      ObjectiveCoverage.build([
+        row(:objective, 1, title: "Alpha Objective"),
+        row(:objective, 2, title: "Beta Objective"),
+        row(:objective, 3, title: "Parent Objective", children: [4]),
+        row(:objective, 4, title: "Child Objective"),
+        row(:container, 100, title: "Unit", children: [200, 201]),
+        row(:page, 200, title: "Alpha Page", activity_refs: [300]),
+        row(:page, 201, title: "Beta Page", activity_refs: [301]),
+        row(:activity, 300,
+          title: "Alpha Activity",
+          objectives: %{"part" => [1]},
+          activity_type_id: 11
+        ),
+        row(:activity, 301,
+          title: "Beta Activity",
+          objectives: %{"part" => [2]},
+          activity_type_id: 11
+        ),
+        row(:page, 202, title: "Child Page", activity_refs: [302]),
+        row(:activity, 302,
+          title: "Child Activity",
+          objectives: %{"part" => [4]},
+          activity_type_id: 11
+        )
+      ])
+
+    assert [["LO 1", "Alpha Objective" | _]] =
+             CsvExport.rows(model, nil, %{11 => "Multiple Choice"}, %{
+               "course_content" => "200"
+             })
+
+    assert [["LO 1", "Parent Objective", "Child Objective" | _]] =
+             CsvExport.rows(model, nil, %{11 => "Multiple Choice"}, %{
+               "course_content" => "202"
+             })
+  end
+
   test "matches the objective table's attachment count sorting" do
     model =
       ObjectiveCoverage.build([

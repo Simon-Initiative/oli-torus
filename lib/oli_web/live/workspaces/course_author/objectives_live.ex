@@ -33,6 +33,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     TableModel
   }
 
+  alias OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter
+
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
   @max_search_length 100
@@ -40,7 +42,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   def live_path(socket, params) do
     params =
-      expanded_params(params, Map.get(socket.assigns, :expanded_objective_slugs, MapSet.new()))
+      params
+      |> preserve_course_content_param(socket)
+      |> expanded_params(Map.get(socket.assigns, :expanded_objective_slugs, MapSet.new()))
 
     ~p"/workspaces/course_author/#{socket.assigns.project.slug}/objectives?#{params}"
   end
@@ -66,6 +70,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_load_ref: make_ref(),
         coverage_issue_ids: MapSet.new(),
         assessment_buckets: %{},
+        course_content_open: false,
+        course_content_selection: nil,
+        course_content_nodes_by_id: %{},
+        course_content_root_ids: [],
+        course_content_expanded_ids: MapSet.new(),
         pending_sub_objective_delete_slugs: MapSet.new(),
         query: "",
         search_matching_ids: nil,
@@ -197,7 +206,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                 </label>
               </form>
             </div>
-
             <div
               aria-hidden="true"
               class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1024px]:block"
@@ -264,6 +272,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                 />
               </div>
             </div>
+
+            <div
+              aria-hidden="true"
+              class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1024px]:block"
+            >
+            </div>
+
+            <ContentFilter.render
+              nodes_by_id={@course_content_nodes_by_id}
+              root_ids={@course_content_root_ids}
+              selected_ids={
+                MapSet.new(get_in(@course_content_selection || %{}, [:selected_ids]) || [])
+              }
+              active_count={get_in(@course_content_selection || %{}, [:active_count]) || 0}
+              expanded_ids={@course_content_expanded_ids}
+              open={@course_content_open}
+              disabled={@coverage_status != :ready}
+            />
           </div>
 
           <div
@@ -350,7 +376,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         show_bottom_paging={false}
         additional_table_class="table-sm text-center"
         with_body={true}
-        empty_state_text={coverage_empty_state_text(@query, @filter, @coverage_status)}
+        empty_state_text={coverage_empty_state_text(assigns)}
       >
         <div class="rounded-lg bg-Background-bg-secondary p-6 shadow-[0px_2px_5px_rgba(0,50,99,0.10)]">
           <Listing.render
@@ -444,7 +470,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     }
   end
 
-  def filter_rows(socket, query, filter) do
+  def filter_rows(socket, query, filter),
+    do: filter_rows(socket, query, filter, socket.assigns.params)
+
+  def filter_rows(socket, query, filter, params) do
     query = normalize_search_query(query)
 
     rows =
@@ -453,28 +482,100 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           if String.trim(query) == "", do: socket.assigns.objectives, else: []
 
         model ->
-          if String.trim(query) == "" do
-            socket.assigns.objectives
-          else
-            matching_ids =
+          matching_ids =
+            if String.trim(query) == "" do
+              nil
+            else
               socket.assigns.search_matching_ids || matching_objective_ids(model, query)
+            end
 
-            Enum.filter(socket.assigns.objectives, fn objective ->
-              objective.resource_id in matching_ids or
-                Enum.any?(objective.children, fn child ->
-                  not is_nil(child) and child.resource_id in matching_ids
-                end)
-            end)
-          end
+          content_selection =
+            socket.assigns.course_content_selection ||
+              ObjectiveCoverage.normalize_curriculum_selection(model, params["course_content"])
+
+          socket.assigns.objectives
+          |> filter_objective_rows(matching_ids)
+          |> filter_content_rows(content_selection)
       end
 
-    if Map.get(filter, "coverage_issues") == "true" do
-      Enum.filter(rows, fn objective ->
-        MapSet.member?(socket.assigns.coverage_issue_ids, objective.resource_id)
-      end)
-    else
-      rows
+    case Map.get(filter, "coverage_issues") do
+      "true" ->
+        Enum.filter(rows, fn objective ->
+          MapSet.member?(socket.assigns.coverage_issue_ids, objective.resource_id)
+        end)
+
+      _ ->
+        rows
     end
+  end
+
+  def before_table_params(params, socket) do
+    case socket.assigns.coverage_model do
+      nil ->
+        assign(socket, course_content_selection: nil)
+
+      model ->
+        selection =
+          ObjectiveCoverage.normalize_curriculum_selection(model, params["course_content"])
+
+        assign(socket, course_content_selection: selection)
+    end
+  end
+
+  def after_table_params(params, socket) do
+    params =
+      if Map.has_key?(params, "course_content") do
+        Map.put(socket.assigns.params, "course_content", params["course_content"])
+      else
+        Map.delete(socket.assigns.params, "course_content")
+      end
+
+    selection = socket.assigns.course_content_selection
+
+    params =
+      case selection do
+        nil -> params
+        selection -> put_course_content_param(params, selection.selected_ids)
+      end
+
+    assign(socket,
+      course_content_selection: selection,
+      params: params
+    )
+  end
+
+  defp filter_objective_rows(rows, nil), do: rows
+
+  defp filter_objective_rows(rows, matching_ids) do
+    matching_ids = MapSet.new(matching_ids)
+
+    Enum.filter(rows, fn objective ->
+      MapSet.member?(matching_ids, objective.resource_id) or
+        Enum.any?(objective.children, fn child ->
+          not is_nil(child) and MapSet.member?(matching_ids, child.resource_id)
+        end)
+    end)
+  end
+
+  defp filter_content_rows(rows, %{selected_ids: []}), do: rows
+
+  defp filter_content_rows(rows, selection) do
+    direct_ids = selection.objective_ids
+
+    rows
+    |> Enum.filter(fn objective ->
+      MapSet.member?(direct_ids, objective.resource_id) or
+        Enum.any?(objective.children, fn child ->
+          not is_nil(child) and MapSet.member?(direct_ids, child.resource_id)
+        end)
+    end)
+    |> Enum.map(fn objective ->
+      Map.update!(objective, :children, fn children ->
+        Enum.filter(children, fn child ->
+          not is_nil(child) and MapSet.member?(direct_ids, child.resource_id)
+        end)
+      end)
+    end)
   end
 
   defp matching_objective_ids(model, query) do
@@ -600,6 +701,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_status: :loading,
         coverage_issue_ids: MapSet.new(),
         assessment_buckets: socket.assigns.assessment_buckets,
+        course_content_selection: nil,
+        course_content_nodes_by_id: %{},
+        course_content_root_ids: [],
+        course_content_expanded_ids: MapSet.new(),
         search_matching_ids: nil,
         search_expansion_ids: nil,
         expanded_objective_slugs: expanded_objective_slugs
@@ -612,7 +717,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   defp csv_export_params(params) do
-    Map.take(params, ["query", "filter", "sort_by", "sort_order"])
+    Map.take(params, ["query", "filter", "sort_by", "sort_order", "course_content"])
   end
 
   defp card_body_text(assigns) do
@@ -694,6 +799,74 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       coverage_formative_threshold: defaults.formative,
       coverage_summative_threshold: defaults.summative
     })
+  end
+
+  def handle_event("toggle_course_content_filter", _params, socket) do
+    {:noreply, assign(socket, course_content_open: !socket.assigns.course_content_open)}
+  end
+
+  def handle_event("close_course_content_filter", _params, socket) do
+    {:noreply, assign(socket, course_content_open: false)}
+  end
+
+  def handle_event("toggle_course_content_node", %{"resource_id" => resource_id}, socket) do
+    with model when not is_nil(model) <- socket.assigns.coverage_model,
+         {:ok, resource_id} <- parse_objective_id(resource_id),
+         true <- Map.has_key?(model.curriculum_by_id, resource_id) do
+      expanded_ids = socket.assigns.course_content_expanded_ids
+
+      expanded_ids =
+        if MapSet.member?(expanded_ids, resource_id) do
+          MapSet.delete(expanded_ids, resource_id)
+        else
+          MapSet.put(expanded_ids, resource_id)
+        end
+
+      {:noreply, assign(socket, course_content_expanded_ids: expanded_ids)}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("toggle_course_content_item", %{"resource_id" => resource_id}, socket) do
+    with model when not is_nil(model) <- socket.assigns.coverage_model,
+         {:ok, resource_id} <- parse_objective_id(resource_id),
+         true <- Map.has_key?(model.curriculum_by_id, resource_id) do
+      current_ids =
+        MapSet.new(get_in(socket.assigns, [:course_content_selection, :selected_ids]) || [])
+
+      selected_ids =
+        if MapSet.member?(current_ids, resource_id) do
+          MapSet.delete(current_ids, resource_id)
+        else
+          MapSet.put(current_ids, resource_id)
+        end
+
+      params =
+        socket.assigns.params
+        |> put_course_content_param(MapSet.to_list(selected_ids))
+        |> Map.put("offset", 0)
+
+      params =
+        if MapSet.size(selected_ids) == 0 do
+          Map.put(params, "clear_course_content", true)
+        else
+          params
+        end
+
+      {:noreply, push_patch(socket, to: live_path(socket, params))}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("clear_course_content_filter", _params, socket) do
+    params =
+      socket.assigns.params
+      |> Map.put("clear_course_content", true)
+      |> Map.put("offset", 0)
+
+    {:noreply, push_patch(socket, to: live_path(socket, params))}
   end
 
   def handle_event("display_new_sub_modal", %{"slug" => slug}, socket),
@@ -1149,6 +1322,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         search_result_ids(model, socket.assigns.query)
       end
 
+    course_content_data = ObjectiveCoverage.curriculum_filter_data(model)
+
     socket =
       assign(socket,
         objectives: objectives,
@@ -1156,6 +1331,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_model: model,
         coverage_status: :ready,
         coverage_issue_ids: Issues.flagged_top_level_ids_from_issues(model, issues),
+        course_content_nodes_by_id: course_content_data.nodes_by_id,
+        course_content_root_ids: course_content_data.root_ids,
+        course_content_expanded_ids: curriculum_root_ids(model),
+        course_content_selection:
+          ObjectiveCoverage.normalize_curriculum_selection(
+            model,
+            socket.assigns.params["course_content"]
+          ),
         assessment_buckets: assessment_buckets,
         search_matching_ids: matching_ids,
         search_expansion_ids: expansion_ids
@@ -1170,15 +1353,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       assign(socket,
         coverage_model: nil,
         coverage_status: {:error, reason},
-        coverage_issue_ids: MapSet.new()
+        coverage_issue_ids: MapSet.new(),
+        course_content_selection: nil,
+        course_content_nodes_by_id: %{},
+        course_content_root_ids: [],
+        course_content_expanded_ids: MapSet.new()
       )
 
     refresh_table_state(socket)
   end
 
   # Distinguish unknown coverage from a successful result with no issues.
-  defp coverage_empty_state_text(query, filter, coverage_status) do
-    coverage_filter_active? = Map.get(filter, "coverage_issues") == "true"
+  defp coverage_empty_state_text(assigns) do
+    query = assigns.query
+    coverage_status = assigns.coverage_status
+    coverage_filter_active? = Map.get(assigns.filter, "coverage_issues") == "true"
+
+    course_content_filter_active? =
+      get_in(assigns, [:course_content_selection, :selected_ids]) not in [nil, []]
 
     cond do
       coverage_filter_active? and coverage_status == :loading ->
@@ -1187,14 +1379,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       coverage_filter_active? and match?({:error, _}, coverage_status) ->
         "Objective coverage could not be loaded, so issues can't be shown."
 
+      query != "" and coverage_filter_active? and course_content_filter_active? ->
+        "No learning objectives with a coverage issue match your search and selected course content."
+
       query != "" and coverage_filter_active? ->
         "No learning objectives with a coverage issue match your search."
+
+      coverage_filter_active? and course_content_filter_active? ->
+        "No learning objectives with a coverage issue match the selected course content."
 
       query != "" ->
         "No learning objectives match your search."
 
       coverage_filter_active? ->
         "No learning objectives currently have a coverage issue."
+
+      course_content_filter_active? ->
+        "No learning objectives match the selected course content."
 
       true ->
         "None exist"
@@ -1361,6 +1562,39 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   defp coverage_error_message(:invalid_project), do: "The project is invalid."
   defp coverage_error_message(_reason), do: "Objective coverage could not be loaded."
+
+  defp curriculum_root_ids(model) do
+    model.curriculum_by_id
+    |> Map.keys()
+    |> Enum.filter(fn resource_id ->
+      Map.get(model.curriculum_parents_by_child, resource_id, []) == []
+    end)
+    |> MapSet.new()
+  end
+
+  defp preserve_course_content_param(params, socket) do
+    case Map.pop(params, "clear_course_content") do
+      {clear, params} when clear in [true, "true"] ->
+        Map.delete(params, "course_content")
+
+      {_clear, params} ->
+        if Map.has_key?(params, "course_content") do
+          params
+        else
+          selected_ids = get_in(socket.assigns, [:course_content_selection, :selected_ids]) || []
+          put_course_content_param(params, selected_ids)
+        end
+    end
+  end
+
+  defp put_course_content_param(params, selected_ids) do
+    selected_ids = selected_ids |> Enum.map(&to_string/1) |> Enum.sort()
+
+    case Enum.join(selected_ids, ",") do
+      "" -> Map.delete(params, "course_content")
+      value -> Map.put(params, "course_content", value)
+    end
+  end
 
   # Keep expanded LO state shareable in the URL while accepting legacy selected links.
   defp initial_expanded_objective_slugs(params) do
