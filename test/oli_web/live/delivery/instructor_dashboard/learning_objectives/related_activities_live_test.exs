@@ -672,11 +672,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
 
       view |> element("th[phx-value-sort_by='title']") |> render_click()
       html = render(view)
-      assert :binary.match(html, "Activity 1") < :binary.match(html, "Activity 3")
+      assert :binary.match(html, "Activity 3") < :binary.match(html, "Activity 1")
 
       view |> element("th[phx-value-sort_by='title']") |> render_click()
       html = render(view)
-      assert :binary.match(html, "Activity 3") < :binary.match(html, "Activity 1")
+      assert :binary.match(html, "Activity 1") < :binary.match(html, "Activity 3")
 
       view |> element("th[phx-value-sort_by='total_attempts']") |> render_click()
       html = render(view)
@@ -713,7 +713,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       instructor: instructor,
       section: section,
       objective_a: objective_a,
-      activity_3: activity_3
+      activity_1: activity_1
     } do
       conn = log_in_user(conn, instructor)
 
@@ -725,7 +725,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
           })
         )
 
-      view |> element("button#button_#{activity_3.resource_id}") |> render_click()
+      view |> element("button#button_#{activity_1.resource_id}") |> render_click()
       assert has_element?(view, "button[aria-expanded='true']")
 
       view

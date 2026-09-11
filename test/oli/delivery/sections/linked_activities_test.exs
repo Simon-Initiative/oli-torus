@@ -103,6 +103,27 @@ defmodule Oli.Delivery.Sections.LinkedActivitiesTest do
     assert row.has_lti_activity
   end
 
+  test "rows expose the title so sorting works when the stem cannot be extracted" do
+    revision = %{
+      resource_id: 7,
+      activity_type_id: 1,
+      title: "Multiple Choice:",
+      slug: "mc",
+      content: %{}
+    }
+
+    row =
+      LinkedActivities.normalize_activity_row(
+        revision,
+        %{attempts: 0, percent_correct: 0.0},
+        [],
+        []
+      )
+
+    assert row.title == "Multiple Choice:"
+    assert row.question_stem == "No question stem available"
+  end
+
   test "telemetry metadata is allow-listed" do
     metadata =
       LinkedActivities.telemetry_metadata(:load, %{

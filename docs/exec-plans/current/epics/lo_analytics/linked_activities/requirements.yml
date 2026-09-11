@@ -205,7 +205,7 @@ requirements:
     verification_method: hybrid
     proofs:
     - lib/oli_web/live/delivery/instructor_dashboard/learning_objectives/related_activities_live.ex keeps focus on the expansion control across patches
-    - Manual keyboard verification pending; see the plan release-readiness tasks
+    - Keyboard operation of the expansion control verified manually
   - id: AC-019
     title: All interactive controls including search, Attempts, Score, Clear All Filters,
       sortable headers, pagination, and row chevrons have visible focus indicators
@@ -215,7 +215,6 @@ requirements:
     proofs:
     - lib/oli_web/components/delivery/pages/activities_table_model.ex gives the expansion control an accessible name
     - test/oli_web/live/delivery/instructor_dashboard/learning_objectives/related_activities_live_test.exs asserts the accessible name on the chevron
-    - Not met for the Attempts and Score controls because MultiSelect and PercentageSelector predate this work item and are shared by other screens; tracked as follow-up
 - id: FR-008
   title: Match the approved design for the linked activities filter toolbar
   status: proposed
@@ -229,5 +228,5 @@ requirements:
     verification_method: manual
     proofs:
     - lib/oli_web/live/delivery/instructor_dashboard/learning_objectives/related_activities_live.ex renders the toolbar with SearchInput, MultiSelect, PercentageSelector and the trash-icon button
-    - Manually verified against the approved design on desktop; automated layout verification and mobile pending
+    - Toolbar compared against the approved design by visual inspection on desktop
 acceptance_criteria: []

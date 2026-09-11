@@ -153,26 +153,7 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
            SectionResourceDepot.get_resources_by_ids(section_id, objective_ids),
          activity_ids <-
            activity_ids_for_objective_family(objective_ids, objective_resources) do
-      page_resources =
-        SectionResourceDepot.get_lessons(section_id)
-        |> Enum.reject(& &1.hidden)
-
-      revision_ids =
-        Enum.map(page_resources, & &1.revision_id) |> Enum.reject(&is_nil/1) |> Enum.uniq()
-
-      page_revisions =
-        from(revision in Revision,
-          where: revision.id in ^revision_ids,
-          select: %{
-            id: revision.id,
-            resource_id: revision.resource_id,
-            activity_refs: revision.activity_refs,
-            graded: revision.graded
-          }
-        )
-        |> Repo.all()
-
-      activity_page_contexts = build_page_contexts(page_resources, page_revisions)
+      activity_page_contexts = page_contexts_for(section_id, activity_ids)
 
       {:ok,
        %{
@@ -184,6 +165,31 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
     else
       false -> {:error, :objective_not_found}
     end
+  end
+
+  defp page_contexts_for(_section_id, []), do: %{}
+
+  defp page_contexts_for(section_id, _activity_ids) do
+    page_resources =
+      SectionResourceDepot.get_lessons(section_id)
+      |> Enum.reject(& &1.hidden)
+
+    revision_ids =
+      Enum.map(page_resources, & &1.revision_id) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+    page_revisions =
+      from(revision in Revision,
+        where: revision.id in ^revision_ids,
+        select: %{
+          id: revision.id,
+          resource_id: revision.resource_id,
+          activity_refs: revision.activity_refs,
+          graded: revision.graded
+        }
+      )
+      |> Repo.all()
+
+    build_page_contexts(page_resources, page_revisions)
   end
 
   @doc """

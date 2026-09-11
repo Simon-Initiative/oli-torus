@@ -41,8 +41,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         activity_types = Activities.list_activity_registrations()
         activity_types_map = Map.new(activity_types, &{&1.id, &1})
 
-        students = Sections.enrolled_students(section.slug, [:context_learner])
-
         scripts =
           activity_types
           |> Enum.map(& &1.authoring_script)
@@ -56,7 +54,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
            objective: objective,
            activities: activities,
            activity_types_map: activity_types_map,
-           students: students,
+           students: nil,
            scripts: scripts,
            activity_summary_cache: %{},
            loaded_activity_summaries: %{},
@@ -291,7 +289,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
                 selected_values={@selected_attempts_options}
                 selected_ids={@selected_attempts_ids}
                 target={nil}
-                disabled={@selected_attempts_ids == %{}}
                 placeholder="Attempts"
                 submit_event="apply_attempts_filter"
               />
@@ -465,7 +462,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
 
   # Legacy sort names from older URLs are mapped by `normalize_sort_by/1` in `decode_params`.
   defp sort_by(activities, :title, sort_order) do
-    Enum.sort_by(activities, &String.downcase(&1.question_stem || &1.title || ""), sort_order)
+    Enum.sort_by(activities, &String.downcase(&1.title || ""), sort_order)
   end
 
   defp sort_by(activities, :total_attempts, sort_order) do
@@ -540,6 +537,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       case activity && activity.canonical_page_context do
         %{page_resource_id: page_id} ->
           page_revision = DeliveryResolver.from_resource_id(socket.assigns.section.slug, page_id)
+          socket = ensure_students_loaded(socket)
 
           summary =
             if page_revision do
@@ -592,6 +590,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
           cache_summary(socket, activity_id, summary)
       end
   end
+
+  # Learners are only needed to summarize an expanded row, so they are loaded on the first
+  # expansion and kept for the rest of the session.
+  defp ensure_students_loaded(%{assigns: %{students: nil}} = socket) do
+    assign(socket,
+      students: Sections.enrolled_students(socket.assigns.section.slug, [:context_learner])
+    )
+  end
+
+  defp ensure_students_loaded(socket), do: socket
 
   defp cache_summary(socket, activity_id, summary) do
     socket
