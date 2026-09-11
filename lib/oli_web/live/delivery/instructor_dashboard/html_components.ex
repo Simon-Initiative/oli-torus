@@ -282,20 +282,39 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
   attr :info_tooltip, :string, required: false
 
   def render_label(assigns) do
+    assigns = Map.put(assigns, :tooltip_id, tooltip_id(assigns.title))
+
     ~H"""
     <div class="flex items-center gap-x-2 bg-transparent">
-      <span class="group relative flex cursor-pointer items-center text-Text-text-high">
+      <span
+        class="group relative flex cursor-pointer items-center text-Text-text-high rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+        tabindex={if assigns[:info_tooltip], do: "0"}
+        role={if assigns[:info_tooltip], do: "button"}
+        aria-describedby={if assigns[:info_tooltip], do: @tooltip_id}
+      >
         {Icons.info(assigns)}
         <dialog
           :if={assigns[:info_tooltip]}
-          class="absolute top-[150%] left-full -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:flex before:absolute before:content-[''] before:-top-4 before:left-0 before:right-0 before:h-4"
+          id={@tooltip_id}
+          role="tooltip"
+          class="absolute top-[150%] left-full -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:flex group-focus-within:flex before:absolute before:content-[''] before:-top-4 before:left-0 before:right-0 before:h-4"
         >
           {@info_tooltip}
         </dialog>
       </span>
-      <span>{@title}</span>
+      <span class="whitespace-nowrap">{@title}</span>
     </div>
     """
+  end
+
+  defp tooltip_id(title) do
+    slug =
+      title
+      |> String.downcase()
+      |> String.replace(~r/[^a-z0-9]+/, "-")
+      |> String.trim("-")
+
+    "info-tooltip-#{slug}"
   end
 
   attr :title, :string, required: true

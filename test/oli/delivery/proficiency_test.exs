@@ -15,6 +15,11 @@ defmodule Oli.Delivery.ProficiencyTest do
              Proficiency.provider_for(%Section{learning_model_version: :other})
   end
 
+  test "confidence_supported?/1 is true only for the lkt_aoa model" do
+    refute Proficiency.confidence_supported?(%Section{learning_model_version: :naive})
+    assert Proficiency.confidence_supported?(%Section{learning_model_version: :lkt_aoa})
+  end
+
   test "analytics_version does not participate in dispatch" do
     for analytics_version <- [:v1, :v2] do
       assert {:ok, Oli.Delivery.Proficiency.Naive} =

@@ -24,6 +24,16 @@ defmodule Oli.Delivery.Proficiency do
     lkt_aoa: Oli.Delivery.Proficiency.LktAoa
   }
 
+  @doc """
+  Whether the Section's selected model surfaces a confidence signal alongside proficiency.
+
+  `:naive` estimates never carry a confidence value (see `Oli.Delivery.Proficiency.Naive`),
+  so UI surfaces gate the Confidence column, filter, and tooltips on this check.
+  """
+  @spec confidence_supported?(Section.t()) :: boolean()
+  def confidence_supported?(%Section{learning_model_version: :lkt_aoa}), do: true
+  def confidence_supported?(%Section{}), do: false
+
   @doc "Returns the provider fixed by the Section's persisted model selection."
   @spec provider_for(Section.t()) :: {:ok, module()} | {:error, reason()}
   def provider_for(%Section{learning_model_version: model}) do

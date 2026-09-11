@@ -12,6 +12,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
   attr :selected_values, :map, default: %{}
   attr :selected_ids, :list, default: []
   attr :submit_event, :string, default: "apply_proficiency_filter"
+  attr :toggle_event, :string, default: "toggle_selected"
   attr :label, :string, default: "Proficiency"
 
   def render(assigns) do
@@ -62,7 +63,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
               class="flex flex-column gap-y-3"
               for={%{}}
               as={:options}
-              phx-change="toggle_selected"
+              phx-change={@toggle_event}
               phx-target={@target}
             >
               <.input
