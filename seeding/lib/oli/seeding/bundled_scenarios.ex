@@ -1,5 +1,5 @@
-defmodule Oli.Release.PreviewQATools.BundledScenarios do
-  @moduledoc "Registry for immutable scenarios packaged in preview releases."
+defmodule Oli.Seeding.BundledScenarios do
+  @moduledoc "Registry for immutable scenarios packaged with the seeding tooling."
 
   @manifest "preview_qa_tools/scenarios/manifest.json"
 

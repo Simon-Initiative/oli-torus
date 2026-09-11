@@ -287,6 +287,37 @@ end)
 
 ## Advanced Features
 
+### Bulk create/enroll users and simulated progress
+
+`bulk_create_enroll_users` creates collision-safe synthetic users, enrolls them, and stores stable references
+of the form `<prefix>_instructor_<n>` and `<prefix>_learner_<n>`. Re-running the same directive
+reuses an identity only when both its email and deterministic subject match; conflicting records
+fail without being overwritten.
+
+```yaml
+- bulk_create_enroll_users:
+    section: demo_section
+    prefix: qa
+    instructors: 2
+    learners: 25
+```
+
+`simulate_progress` uses a deterministic seed, preloads the section and pages once, and processes
+learners in fixed-size batches with bounded concurrency and per-task timeouts. Omitting `users`
+selects all enrolled learners. Unsupported content and learner failures are returned in the
+bounded `scenario_warnings` execution-state collection; supported work remains committed.
+
+```yaml
+- simulate_progress:
+    section: demo_section
+    users: [qa_learner_1, qa_learner_2]
+    seed: 42
+    pct_correct: 0.8
+    batch_size: 10
+    max_concurrency: 4
+    timeout_ms: 30000
+```
+
 ### Hook Directive
 
 The `hook` directive provides a powerful extension mechanism that allows scenarios to execute custom Elixir functions. This enables advanced testing capabilities like data injection, state manipulation, and custom validation logic.
