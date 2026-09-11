@@ -268,12 +268,12 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       <div
         id={@tooltip_id}
         role="tooltip"
-        class="absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-60 min-h-[100px] rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col gap-1 group-hover:flex group-focus-within:flex z-50"
+        class="absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col group-hover:flex group-focus-within:flex z-50"
       >
         <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
-          <div class="w-full flex items-center gap-1.5 text-left">
+          <div class="flex h-6 w-full items-center gap-1.5 text-left">
             <span
-              class={"inline-block h-2 w-2 shrink-0 rounded-full " <> Proficiency.dot_class(label)}
+              class={"inline-block h-3 w-3 shrink-0 rounded-full " <> Proficiency.dot_class(label)}
               aria-hidden="true"
             >
             </span>
