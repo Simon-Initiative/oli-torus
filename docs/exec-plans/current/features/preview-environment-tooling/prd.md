@@ -61,12 +61,12 @@ Requirements are found in requirements.yml
 - External effects: every `MIX_ENV=preview` release must replace outbound email delivery with `Swoosh.Adapters.Local` regardless of runtime QA-tool activation. Other external integrations are outside this work item and depend on preview instances using fresh or explicitly sanitized databases and non-production runtime credentials.
 
 ## 9. Data, Interfaces & Dependencies
-- Add `bin/seed` as a release-overlay command with `scenarios list`, `scenarios run --name <bundled-id>`, `scenarios run --file <yaml-path>`, and `projects ingest --url <http(s)-url> --author <selector>` operations. Scenario `--name` and `--file` are mutually exclusive.
+- Add one environment-neutral seeding dispatcher with a `mix seed` entry point in development and a `bin/seed` release-overlay entry point in preview. Both expose `scenarios list`, `scenarios run --name <bundled-id>`, `scenarios run --file <yaml-path>`, and `projects ingest --url <http(s)-url> --author <selector>` operations. Scenario `--name` and `--file` are mutually exclusive, and production builds exclude the seeding implementation.
 - Bundled scenarios are immutable release assets under a documented application-owned directory. Listing returns stable identifier, description, and version/digest.
 - Scenario execution calls `Oli.Scenarios` synchronously and supports its complete DSL, including composition, assertions, and hooks. The CLI does not accept inline Elixir expressions as seed definitions.
 - Every CLI-executed scenario must explicitly establish its author and institution through YAML using created scenario references, restricted lookup, or explicit configured-default selectors. It must not inherit the engine's first-record or generated-default fallback.
 - URL ingestion downloads an export archive to a temporary file and invokes the existing `Oli.Interop.Ingest` boundary with an explicitly selected author. It reports the created project identity and removes temporary data after any outcome.
-- Add `bulk_users` and `simulate_progress` directives with stable references, deterministic optional random seeds, collision-safe synthetic identities, structured warnings, and bounded concurrency.
+- Add `bulk_create_enroll_users` and `simulate_progress` directives with stable references, deterministic optional random seeds, collision-safe synthetic identities, structured warnings, and bounded concurrency.
 - The initial `review_demo` bundled scenario creates representative authoring, publication, product, section, enrollment, learner-progress, gradebook, discussion, gating, and analytics states without embedded credentials.
 - Keep bounded masquerade identifiers and timestamps in the existing tamper-protected signed session and audit the lifecycle through `Oli.Auditing`; no active-session database table or application-wide session-encryption change is introduced.
 - In `MIX_ENV=preview`, configure `Oli.Mailer` with `Swoosh.Adapters.Local` regardless of runtime activation. Compile `/dev/mailbox` only into preview releases and runtime-gate it under system-admin authentication. While masquerading, ordinary authorization uses only the target identity; the original administrator identity may authorize only stopping masquerade and accessing `/dev/mailbox`. Do not add preview branches to LTI grade passback, Stripe, Cashnet, or other external-integration code.
@@ -123,7 +123,7 @@ None.
   - Cover the Mix-environment/runtime-flag truth table, casing variants, startup warning, Docker build argument, and preview workflow policy. Existing production packaging remains unchanged.
   - Test release scenario listing, bundled and local-file execution, complete DSL compatibility, explicit YAML ownership, bounded output, failure exit codes, and partial-mutation reporting.
   - Test URL validation, redirects, timeouts, size bounds, download failures, archive ingest success/failure, author selection, log redaction, and temporary-file cleanup.
-  - Exercise `bulk_users`, `simulate_progress`, deterministic seeds, stable references, collision handling, supported/unsupported activities, and bounded concurrency.
+  - Exercise `bulk_create_enroll_users`, `simulate_progress`, deterministic seeds, stable references, collision handling, supported/unsupported activities, and bounded concurrency.
   - Run `review_demo` through the release interface and verify representative domain state and retry-safe reconciliation.
   - Confirm there is no workbench, seed route, Oban seed worker/queue, run-history schema, or startup-status endpoint.
   - Preserve Playwright fixture compatibility.

@@ -4179,6 +4179,49 @@
           },
           {
             "type": "object",
+            "required": ["bulk_create_enroll_users"],
+            "additionalProperties": false,
+            "properties": {
+              "bulk_create_enroll_users": {
+                "type": "object",
+                "required": ["section"],
+                "additionalProperties": false,
+                "properties": {
+                  "section": {"type": "string", "minLength": 1},
+                  "prefix": {"type": "string", "minLength": 1, "maxLength": 40},
+                  "instructors": {"type": "integer", "minimum": 0, "maximum": 1000},
+                  "learners": {"type": "integer", "minimum": 0, "maximum": 10000}
+                },
+                "anyOf": [
+                  {"required": ["instructors"], "properties": {"instructors": {"minimum": 1}}},
+                  {"required": ["learners"], "properties": {"learners": {"minimum": 1}}}
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["simulate_progress"],
+            "additionalProperties": false,
+            "properties": {
+              "simulate_progress": {
+                "type": "object",
+                "required": ["section"],
+                "additionalProperties": false,
+                "properties": {
+                  "section": {"type": "string", "minLength": 1},
+                  "users": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+                  "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+                  "pct_correct": {"type": "number", "minimum": 0, "maximum": 1},
+                  "batch_size": {"type": "integer", "minimum": 1, "maximum": 100},
+                  "max_concurrency": {"type": "integer", "minimum": 1, "maximum": 16},
+                  "timeout_ms": {"type": "integer", "minimum": 1, "maximum": 300000}
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
             "required": [
               "hook"
             ],

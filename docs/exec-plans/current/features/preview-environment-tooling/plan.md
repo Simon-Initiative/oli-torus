@@ -57,7 +57,7 @@ The implementation must preserve the non-production scenario-seeding boundary, t
 - Goal: Provide a bounded, release-compatible CLI for listing and synchronously running bundled or operator-provided scenarios with explicit execution ownership.
 - Requirements: FR-002; AC-005, AC-006, AC-007, AC-008, AC-009.
 - Tasks:
-  - [x] Add a release-only `Oli.Release.PreviewQATools` dispatcher and `rel/overlays/bin/seed` wrapper following the existing `rel/overlays/bin/migrate` pattern; fail before mutation unless effective preview enablement is active.
+  - [x] Add the environment-neutral `Oli.Seeding.CLI` dispatcher, a development-only `mix seed` task, and the preview `rel/overlays/bin/seed` wrapper following the existing `rel/overlays/bin/migrate` pattern; exclude seeding code from production builds and fail preview execution before mutation unless effective preview enablement is active.
   - [x] Implement strict argument parsing for `scenarios list` and `scenarios run --name <id>|--file <path>`, rejecting missing values, unknown options, extra arguments, and non-exclusive sources with bounded usage output and deterministic nonzero status.
   - [x] Define an application-owned bundled-scenario registry and immutable release asset location with stable identifier, description, and version or digest metadata; listing must read metadata without parsing or executing scenario bodies.
   - [x] Add an `Oli.Scenarios` execution adapter that preserves `use`, assertions, hooks, and the complete DSL while enabling explicit-ownership validation only for release execution.
@@ -72,7 +72,7 @@ The implementation must preserve the non-production scenario-seeding boundary, t
   - [x] Add negative structural checks for seed HTTP routes, application authorization, Oban seed modules/queues, persistence schemas, and extra DSL allowlists.
   - Command(s): `mix test <release dispatcher, bundled registry, and scenario ownership tests>`; `mix format`.
 - Definition of Done:
-  - `bin/seed scenarios list` and both run forms execute synchronously in an enabled preview release, expose the full scenario engine, enforce YAML-defined ownership, redact sensitive input, and return reliable status without new application-managed state.
+  - `mix seed` in development and `bin/seed` in an enabled preview release execute through the same synchronous dispatcher, expose the full scenario engine, enforce YAML-defined ownership, redact sensitive input, and return reliable status without new application-managed state; production compiles neither entry point.
 - Gate:
   - AC-005 through AC-009 pass, including a release-overlay smoke test and regression coverage for existing scenario execution.
 - Dependencies:
@@ -86,7 +86,7 @@ The implementation must preserve the non-production scenario-seeding boundary, t
 - Requirements: FR-003; AC-010, AC-011.
 - Tasks:
   - [x] Add `projects ingest --url <http(s)-url> --author default_admin|email:<email>` parsing and explicit unique active-author resolution.
-  - [x] Implement `Oli.Release.PreviewQATools.ProjectIngest` with HTTP/HTTPS-only scheme validation, finite connection/receive timeouts, bounded redirects, configured maximum bytes, and streaming into a uniquely created temporary directory.
+  - [x] Implement `Oli.Seeding.ProjectIngest` with HTTP/HTTPS-only scheme validation, finite connection/receive timeouts, bounded redirects, configured maximum bytes, and streaming into a uniquely created temporary directory.
   - [x] Invoke `Oli.Interop.Ingest.ingest/2` without reimplementing archive import, and report only the bounded identity of the created project.
   - [x] Guarantee temporary-file and directory cleanup in success, download failure, size/redirect/timeout failure, invalid archive, author failure, and ingest failure paths.
   - [x] Sanitize errors and telemetry so URL credentials, query secrets, response bodies, archive contents, and author-sensitive values do not reach routine logs.
@@ -109,17 +109,17 @@ The implementation must preserve the non-production scenario-seeding boundary, t
 - Goal: Replace the separate Stagehand execution path with deterministic, reusable scenario directives that preserve domain and performance boundaries.
 - Requirements: FR-004; AC-012, AC-013, AC-014.
 - Tasks:
-  - [ ] Define and document `bulk_users` and `simulate_progress` directive schemas, validation, stable-reference rules, optional random seed behavior, structured warnings, and failure semantics.
-  - [ ] Extract reusable enrollment and progress behavior from `lib/oli/utils/stagehand.ex` and its supporting modules into scenario-owned services using existing account, section, enrollment, attempt, and evaluation contexts.
-  - [ ] Implement collision-safe synthetic instructor/learner identities and deterministic reference generation that remains stable across a seeded retry.
-  - [ ] Implement progress simulation using preloaded section inputs, fixed-size batches, modest supervised concurrency, and bounded per-task timeouts; aggregate unsupported activity/content warnings without unbounded learner detail.
-  - [ ] Register parser, validator, directive type, handler, and documentation support using the established `Oli.Scenarios` extension points.
-  - [ ] Migrate repository Stagehand call sites to scenario-owned behavior, then remove the standalone deployed Stagehand API and dead helper state after parity is proven.
+  - [x] Define and document `bulk_create_enroll_users` and `simulate_progress` directive schemas, validation, stable-reference rules, optional random seed behavior, structured warnings, and failure semantics.
+  - [x] Extract reusable enrollment and progress behavior from `lib/oli/utils/stagehand.ex` and its supporting modules into scenario-owned services using existing account, section, enrollment, attempt, and evaluation contexts.
+  - [x] Implement collision-safe synthetic instructor/learner identities and deterministic reference generation that remains stable across a seeded retry.
+  - [x] Implement progress simulation using preloaded section inputs, fixed-size batches, modest supervised concurrency, and bounded per-task timeouts; aggregate unsupported activity/content warnings without unbounded learner detail.
+  - [x] Register parser, validator, directive type, handler, and documentation support using the established `Oli.Scenarios` extension points.
+  - [x] Migrate repository Stagehand call sites to scenario-owned behavior, then remove the standalone deployed Stagehand API and dead helper state after parity is proven.
 - Testing Tasks:
-  - [ ] Add parser/validator tests plus integration scenarios for valid and invalid attributes, role/enrollment creation, stable references, identity collisions, deterministic seeded progress, and different-seed variation.
-  - [ ] Cover supported activity completion, grading/progress results, unsupported content warnings, task timeout/failure aggregation, and bounded concurrency without N+1 section loading.
-  - [ ] Run affected existing Stagehand and scenario suites before removal, then add a repository check proving no separate deployed Stagehand call path remains.
-  - Command(s): `mix test <bulk_users, simulate_progress, and migrated Stagehand tests>`; `mix test test/scenarios`; `mix format`.
+  - [x] Add parser/validator tests plus integration scenarios for valid and invalid attributes, role/enrollment creation, stable references, identity collisions, deterministic seeded progress, and different-seed variation.
+  - [ ] Cover supported activity completion, grading/progress results, unsupported content warnings, task timeout/failure aggregation, and bounded concurrency without N+1 section loading. (Deterministic integration coverage requires a runner outside the existing Ecto sandbox transaction because attempt setup changes transaction isolation.)
+  - [x] Run affected existing Stagehand and scenario suites before removal, then add a repository check proving no separate deployed Stagehand call path remains.
+  - Command(s): `mix test <bulk_create_enroll_users, simulate_progress, and migrated Stagehand tests>`; `mix test test/scenarios`; `mix format`.
 - Definition of Done:
   - Both directives are normal scenario operations with deterministic references and bounded execution, all call sites use scenario-owned behavior, and Stagehand is no longer an independent deployed interface.
 - Gate:
@@ -127,7 +127,7 @@ The implementation must preserve the non-production scenario-seeding boundary, t
 - Dependencies:
   - Phase 2 establishes release execution and explicit ownership; directive service extraction itself may start after the relevant scenario extension points are confirmed.
 - Parallelizable Work:
-  - `bulk_users` and `simulate_progress` can be implemented in parallel with shared agreement on reference generation, warning/result structures, and deterministic random-state handling.
+  - `bulk_create_enroll_users` and `simulate_progress` can be implemented in parallel with shared agreement on reference generation, warning/result structures, and deterministic random-state handling.
 
 ## Phase 5: Deliver the review_demo Profile and Deployment Job Contract
 
@@ -253,7 +253,7 @@ The implementation must preserve the non-production scenario-seeding boundary, t
 - Gate A — Environment boundary: trusted scenario seeding is available in `dev`, `test`, `ci_e2e`, and `preview`; `MIX_ENV=preview` builds production-shaped with deny-by-default runtime activation; `MIX_ENV=test` may compile preview sources solely for verification; production exposes no seeding entry point or preview release tooling; and preview email is always local.
 - Gate B — Scenario CLI: bundled listing and synchronous bundled/custom execution pass with strict usage, full DSL compatibility, explicit ownership, bounded output, and no application-managed seed state.
 - Gate C — Project ingestion: bounded HTTP/HTTPS download, explicit author selection, existing ingest reuse, cleanup, redaction, and deterministic exits pass.
-- Gate D — Scenario extensions: deterministic `bulk_users` and `simulate_progress` pass integration and performance checks and the separate Stagehand path is retired.
+- Gate D — Scenario extensions: deterministic `bulk_create_enroll_users` and `simulate_progress` pass integration and performance checks and the separate Stagehand path is retired.
 - Gate E — Deployment profile: `review_demo` is representative and retry-safe, the post-migration Job contract is validated, and Playwright remains independent.
 - Gate F — Masquerade security: a masqueraded session is capability-equivalent to the target's direct session outside the two explicit exceptions, all general admin access is absent or denied, actor identity is usable only for audit, stop, and route-local mailbox authorization, and signed-session lifecycle, LTI clearing, and safe stop behavior pass adversarial tests.
 - Gate G — UI and mailbox: required authenticated shells pass accessibility coverage and the runtime-enabled preview mailbox admits a current system administrator or the valid original admin actor during masquerade, without granting that session access to any other admin surface.

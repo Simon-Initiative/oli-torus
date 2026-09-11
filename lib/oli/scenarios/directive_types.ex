@@ -164,6 +164,24 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:user, :section, :role, :email]
   end
 
+  defmodule BulkCreateEnrollUsersDirective do
+    @moduledoc "Creates deterministic synthetic users and enrolls them in a section"
+    defstruct [:section, :prefix, instructors: 0, learners: 0]
+  end
+
+  defmodule SimulateProgressDirective do
+    @moduledoc "Simulates bounded, deterministic progress for learners in a section"
+    defstruct [
+      :section,
+      :users,
+      seed: 0,
+      pct_correct: 1.0,
+      batch_size: 10,
+      max_concurrency: 4,
+      timeout_ms: 30_000
+    ]
+  end
+
   defmodule InstitutionDirective do
     @moduledoc "Creates an institution"
     defstruct [:name, :country_code, :institution_email, :institution_url]
@@ -534,8 +552,11 @@ defmodule Oli.Scenarios.DirectiveTypes do
               # Release execution requires ownership to be established by YAML
               ownership: false,
               # Release-only cumulative include budget and nesting limit
-              release_remaining_bytes: nil,
-              release_max_include_depth: nil
+              seed_remaining_bytes: nil,
+              seed_max_include_depth: nil,
+              # Bounded structured results emitted by data-generation directives
+              scenario_results: %{},
+              scenario_warnings: []
   end
 
   # Result types

@@ -1,5 +1,5 @@
-defmodule Oli.Scenarios.ReleaseExecution do
-  @moduledoc "Executes scenarios with YAML-defined ownership and no implicit defaults."
+defmodule Oli.Scenarios.SeedExecution do
+  @moduledoc "Executes seed scenarios with YAML-defined ownership and no implicit defaults."
 
   alias Oli.Scenarios.{DirectiveParser, Engine}
 
@@ -12,7 +12,7 @@ defmodule Oli.Scenarios.ReleaseExecution do
         DirectiveParser.load_file!(path)
 
       {:ok, %{type: :regular}} ->
-        raise ArgumentError, "scenario file exceeds the release size limit"
+        raise ArgumentError, "scenario file exceeds the seed size limit"
 
       _ ->
         raise ArgumentError, "scenario file was not found"
@@ -25,8 +25,8 @@ defmodule Oli.Scenarios.ReleaseExecution do
     Engine.execute(directives,
       ownership: true,
       current_dir: path |> Path.expand() |> Path.dirname(),
-      release_remaining_bytes: @max_scenario_bytes - root_size,
-      release_max_include_depth: @max_include_depth
+      seed_remaining_bytes: @max_scenario_bytes - root_size,
+      seed_max_include_depth: @max_include_depth
     )
   end
 
