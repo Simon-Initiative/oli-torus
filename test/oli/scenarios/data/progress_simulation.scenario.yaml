@@ -370,7 +370,7 @@
     section: "progress_simulation_section"
     prefix: "progress_simulation"
     instructors: 1
-    learners: 6
+    learners: 7
 
 - simulate_progress:
     section: "progress_simulation_section"
@@ -380,6 +380,19 @@
     seed: 42
     pct_correct: 1.0
     batch_size: 2
+    max_concurrency: 1
+    timeout_ms: 30000
+
+- simulate_progress:
+    section: "progress_simulation_section"
+    users:
+      - "progress_simulation_learner_7"
+    seed: 45
+    assessment_attempts:
+      - pct_correct: 0.4
+      - pct_correct: 0.7
+      - pct_correct: 0.9
+    batch_size: 1
     max_concurrency: 1
     timeout_ms: 30000
 
