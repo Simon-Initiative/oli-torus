@@ -49,7 +49,7 @@ The Dockerfile accepts `ARG MIX_ENV=prod`, propagates it through dependency sele
 
 CI responsibilities remain proportional to the existing pipeline: ordinary PR checks compile/test under `MIX_ENV=test`, including `preview/lib` for ExUnit verification; CI E2E uses the token-protected Playwright scenario interface; the preview-image workflow builds the full `MIX_ENV=preview` release on PRs; and the existing package/release workflow validates `MIX_ENV=prod` after merge. This work adds no production compile gate or automated configuration-parity audit to PR CI. `guides/process/building.md` becomes the discoverable source for the `dev`, `test`, `ci_e2e`, `preview`, and `prod` boundaries, the workflows that build them, the standalone preview configuration contract, compile-time versus runtime configuration, and the runtime activation flag. Earlier production validation is a future operational response only if package-stage failures become recurrent.
 
-`Oli.Release.PreviewQATools` is a thin synchronous command dispatcher exposed through the `bin/seed` release overlay script. It supports three operations:
+`Oli.Seeding.CLI` is a thin, environment-neutral synchronous command dispatcher. Development exposes it through `mix seed`; preview releases expose the same dispatcher through the `bin/seed` overlay. The seeding source tree is compiled in development, preview, and test, but excluded from production builds. It supports three operations:
 
 - `bin/seed scenarios list` lists immutable bundled scenario metadata;
 - `bin/seed scenarios run --name <id>` or `--file <path>` runs a bundled scenario or operator-provided local YAML through `Oli.Scenarios`;
@@ -61,9 +61,9 @@ Bundled scenarios live beneath an application-owned release directory with stabl
 
 CLI scenarios use the complete existing scenario DSL without an additional deployed-safe policy. The execution adapter disables implicit owner selection and creation. YAML must establish current author and institution before dependent mutation by creating/selecting scenario references, using restricted unique lookups, or selecting explicit configured defaults such as `default_admin`. Missing, late, ambiguous, inactive, or wrong-type ownership fails before dependent mutation (AC-007 through AC-009).
 
-`Oli.Release.PreviewQATools.ProjectIngest` accepts only HTTP/HTTPS URLs, uses the application's HTTP client with finite connect/receive timeouts, bounded redirects, and a configured maximum archive size, streams into a uniquely created temporary directory, calls `Oli.Interop.Ingest.ingest/2`, and cleans up in `after`. It never logs URL credentials, response bodies, or archive contents (AC-010 and AC-011). Because the operator has shell access, network policy—not an application SSRF allowlist—is the authoritative reachability boundary.
+`Oli.Seeding.ProjectIngest` accepts only HTTP/HTTPS URLs, uses the application's HTTP client with finite connect/receive timeouts, bounded redirects, and a configured maximum archive size, streams into a uniquely created temporary directory, calls `Oli.Interop.Ingest.ingest/2`, and cleans up in `after`. It never logs URL credentials, response bodies, or archive contents (AC-010 and AC-011). Because the operator has shell access, network policy—not an application SSRF allowlist—is the authoritative reachability boundary.
 
-`bulk_users` and `simulate_progress` become normal `Oli.Scenarios` directives. Scenario-owned services replace Stagehand's reusable behavior. They produce stable references, support optional deterministic random seeds, use collision-safe synthetic identities, bound internal concurrency, and return structured warnings for unsupported content (AC-012 through AC-014).
+`bulk_create_enroll_users` and `simulate_progress` become normal `Oli.Scenarios` directives. Scenario-owned services replace Stagehand's reusable behavior. They produce stable references, support optional deterministic random seeds, use collision-safe synthetic identities, bound internal concurrency, and return structured warnings for unsupported content (AC-012 through AC-014).
 
 The bundled `review_demo` scenario creates the approved representative QA dataset without embedded credentials. A post-migration Kubernetes Job runs it synchronously through the release CLI. No Torus process creates or monitors the Job (AC-015 through AC-017).
 
@@ -79,7 +79,7 @@ No preview-specific branches are added to LTI grade passback, Stripe, Cashnet, w
 
 Scenario command flow:
 
-1. The release wrapper passes parsed arguments to `Oli.Release.PreviewQATools`.
+1. The development Mix task or preview release wrapper passes arguments to `Oli.Seeding.CLI`.
 2. The dispatcher verifies effective enablement and resolves a bundled identifier or local path.
 3. The adapter parses the YAML and validates explicit ownership ordering without applying a broader directive allowlist.
 4. `Oli.Scenarios` executes synchronously using its existing transaction semantics.
@@ -216,7 +216,7 @@ Masquerade flow:
 - Configuration tests cover the Mix-environment/runtime-flag matrix, casing variants, disabled values, warning behavior, production-safe Docker defaults, preview build arguments, and the required existing production-like branch classifications (AC-001 through AC-004). The preview-image workflow supplies the preview release build check; existing production packaging remains unchanged.
 - Release command tests cover listing, bundled and custom execution, full DSL compatibility, explicit ownership, bounded output, exit codes, and absence of application authorization/run persistence (AC-005 through AC-009).
 - Ingest tests use a controlled HTTP server for scheme validation, redirects, timeout, byte limits, credential redaction, cleanup, author selection, and successful/failed `Oli.Interop.Ingest` calls (AC-010 and AC-011).
-- Scenario tests cover `bulk_users`, `simulate_progress`, deterministic seeds, stable identities, collision handling, supported/unsupported content, bounded concurrency, and Stagehand migration (AC-012 through AC-014).
+- Scenario tests cover `bulk_create_enroll_users`, `simulate_progress`, deterministic seeds, stable identities, collision handling, supported/unsupported content, bounded concurrency, and Stagehand migration (AC-012 through AC-014).
 - Kubernetes/profile tests execute `review_demo` through the release dispatcher, verify representative state and retry reconciliation, and inspect Job configuration. Static checks prove no Oban seeding, run schema, or status endpoint exists (AC-015 through AC-017).
 - Playwright compatibility tests preserve existing fixture behavior (AC-018).
 - Masquerade tests cover authorization, chaining, expiry, logout, target invalidation, runtime disablement, actor/target separation, audit attribution, persistent target mutations, safe redirects, keyboard operation, accessible names, and non-color cues (AC-019 through AC-024). The layout matrix includes `default`, `workspace`, `delivery`, `delivery_student_dashboard`, `delivery_dashboard`, authenticated LiveView, and authenticated `chromeless`; it excludes `delivery_from_payment` and `lti` and verifies LTI entry clears or rejects masquerade.

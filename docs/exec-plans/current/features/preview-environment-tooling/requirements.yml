@@ -5,8 +5,8 @@ requirements:
     and preview environments; explicitly exclude prod; and gate preview release QA
     tools behind deny-by-default PREVIEW_QA_TOOLS_ENABLED
 - id: FR-002
-  title: Provide a bin/seed release CLI that lists bundled scenarios and synchronously
-    executes a bundled or custom YAML scenario
+  title: Provide a mix seed development task and bin/seed preview CLI that list bundled
+    scenarios and synchronously execute a bundled or custom YAML scenario through one dispatcher
 - id: FR-003
   title: Let the release CLI download and ingest a Torus project archive from an operator-provided
     reachable URL
@@ -62,14 +62,14 @@ acceptance_criteria:
   verification_method: hybrid
 - id: AC-005
   requirement_id: FR-002
-  title: bin/seed scenarios list lists bundled scenario identifiers and descriptions
-    without executing them
+  title: mix seed scenarios list in development and bin/seed scenarios list in preview
+    list bundled scenario identifiers and descriptions without executing them
   verification_method: automated
 - id: AC-006
   requirement_id: FR-002
-  title: bin/seed scenarios run accepts exactly one of --name or --file, executes
-    it synchronously through Oli.Scenarios, prints a bounded summary, and exits nonzero
-    on usage, parse, or execution failure
+  title: Both seeding entry points accept exactly one of --name or --file, execute it
+    synchronously through Oli.Scenarios, print a bounded summary, and exit nonzero on
+    usage, parse, or execution failure
   verification_method: automated
 - id: AC-007
   requirement_id: FR-002
@@ -103,7 +103,7 @@ acceptance_criteria:
   verification_method: automated
 - id: AC-012
   requirement_id: FR-004
-  title: bulk_users creates deterministic scenario references and collision-safe synthetic
+  title: bulk_create_enroll_users creates deterministic scenario references and collision-safe synthetic
     instructors and learners enrolled in the selected section
   verification_method: automated
 - id: AC-013

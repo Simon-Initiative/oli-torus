@@ -1,10 +1,10 @@
-defmodule Oli.Release.PreviewQAToolsTest do
+defmodule Oli.Seeding.CLITest do
   use Oli.DataCase
 
   import ExUnit.CaptureLog
 
-  alias Oli.Release.PreviewQATools
-  alias Oli.Release.PreviewQATools.BundledScenarios
+  alias Oli.Seeding.BundledScenarios
+  alias Oli.Seeding.CLI, as: PreviewQATools
 
   test "disabled commands fail before accessing their source" do
     result =
@@ -201,6 +201,29 @@ defmodule Oli.Release.PreviewQAToolsTest do
       )
 
     assert inactive.result_code == "author_not_found"
+  end
+
+  test "project ingestion rejects an ordinary author configured as default_admin" do
+    author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
+    previous = Application.get_env(:oli, :preview_qa_tools)
+
+    Application.put_env(:oli, :preview_qa_tools, default_admin_email: author.email)
+    on_exit(fn -> Application.put_env(:oli, :preview_qa_tools, previous) end)
+
+    result =
+      PreviewQATools.dispatch(
+        [
+          "projects",
+          "ingest",
+          "--url",
+          "https://example.test/archive.zip",
+          "--author",
+          "default_admin"
+        ],
+        enabled?: true
+      )
+
+    assert result.result_code == "author_not_found"
   end
 
   test "project ingestion bounds bytes, failures, output, logs, and temporary storage" do

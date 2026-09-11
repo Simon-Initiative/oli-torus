@@ -1,8 +1,8 @@
-defmodule Oli.Scenarios.ReleaseExecutionTest do
+defmodule Oli.Scenarios.SeedExecutionTest do
   use Oli.DataCase
 
   alias Oli.Scenarios
-  alias Oli.Scenarios.ReleaseExecution
+  alias Oli.Scenarios.SeedExecution
 
   test "legacy execution still creates implicit ownership" do
     result = Scenarios.execute([])
@@ -11,7 +11,7 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
     assert %Oli.Institutions.Institution{} = result.state.current_institution
   end
 
-  test "release execution rejects a dependent directive before ownership" do
+  test "seed execution rejects a dependent directive before ownership" do
     path =
       write_yaml("""
       - project:
@@ -24,7 +24,7 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
           institution_url: https://example.edu
       """)
 
-    result = ReleaseExecution.execute_file(path)
+    result = SeedExecution.execute_file(path)
 
     assert [{_, message}] = result.errors
     assert message =~ "must establish an active author and institution"
@@ -33,7 +33,7 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
     refute Oli.Repo.get_by(Oli.Institutions.Institution, name: "Too Late")
   end
 
-  test "release execution rejects delivery users before ownership" do
+  test "seed execution rejects delivery users before ownership" do
     for type <- ~w(student instructor) do
       email = "pre-ownership-#{type}@example.edu"
 
@@ -47,7 +47,7 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
             family_name: Ownership
         """)
 
-      result = ReleaseExecution.execute_file(path)
+      result = SeedExecution.execute_file(path)
 
       assert [{_, message}] = result.errors
       assert message =~ "must establish an active author and institution"
@@ -63,25 +63,25 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
     path =
       write_yaml("""
       - user:
-          name: release_author
+          name: seed_author
           type: author
-          email: release-author-#{suffix}@example.edu
+          email: seed-author-#{suffix}@example.edu
           given_name: Release
           family_name: Author
       - institution:
           name: Release Institution #{suffix}
           country_code: US
-          institution_email: release-#{suffix}@example.edu
+          institution_email: seed-#{suffix}@example.edu
           institution_url: https://example.edu
       - ownership:
-          author: ref:release_author
+          author: ref:seed_author
           institution: ref:Release Institution #{suffix}
       """)
 
-    result = ReleaseExecution.execute_file(path)
+    result = SeedExecution.execute_file(path)
 
     assert result.errors == []
-    assert result.state.current_author.email == "release-author-#{suffix}@example.edu"
+    assert result.state.current_author.email == "seed-author-#{suffix}@example.edu"
     assert result.state.current_institution.name == "Release Institution #{suffix}"
   end
 
@@ -97,7 +97,7 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
           institution: default_institution
       """)
 
-    result = ReleaseExecution.execute_file(path)
+    result = SeedExecution.execute_file(path)
     assert [{_, "default_admin is ambiguous"}] = result.errors
   end
 
@@ -131,7 +131,7 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
           institution: default_institution
       """)
 
-    result = ReleaseExecution.execute_file(path)
+    result = SeedExecution.execute_file(path)
     assert result.errors == []
     assert result.state.current_author.id == author.id
     assert result.state.current_institution.id == institution.id
@@ -145,7 +145,6 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
     on_exit(fn -> Application.put_env(:oli, :preview_qa_tools, previous) end)
 
     result = ownership_result("default_admin", "default_institution")
-
     assert [{_, "default_admin did not resolve to an active record"}] = result.errors
     assert result.state.current_author == nil
     assert result.state.current_institution == nil
@@ -185,7 +184,7 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
           institution: ref:Wrong Type Institution #{suffix}
       """)
 
-    wrong_type = ReleaseExecution.execute_file(path)
+    wrong_type = SeedExecution.execute_file(path)
     assert [{_, message}] = wrong_type.errors
     assert message =~ "inactive or has the wrong type"
   end
@@ -203,7 +202,7 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
 
   defp write_yaml(contents) do
     path =
-      Path.join(System.tmp_dir!(), "release-scenario-#{System.unique_integer([:positive])}.yaml")
+      Path.join(System.tmp_dir!(), "seed-scenario-#{System.unique_integer([:positive])}.yaml")
 
     File.write!(path, contents)
     on_exit(fn -> File.rm(path) end)
@@ -216,6 +215,6 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
         author: #{author}
         institution: #{institution}
     """)
-    |> ReleaseExecution.execute_file()
+    |> SeedExecution.execute_file()
   end
 end
