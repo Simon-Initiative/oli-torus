@@ -4213,6 +4213,19 @@
                   "users": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
                   "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
                   "pct_correct": {"type": "number", "minimum": 0, "maximum": 1},
+                  "assessment_attempts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "items": {
+                      "type": "object",
+                      "required": ["pct_correct"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "pct_correct": {"type": "number", "minimum": 0, "maximum": 1}
+                      }
+                    }
+                  },
                   "batch_size": {"type": "integer", "minimum": 1, "maximum": 100},
                   "max_concurrency": {"type": "integer", "minimum": 1, "maximum": 16},
                   "timeout_ms": {"type": "integer", "minimum": 1, "maximum": 300000}

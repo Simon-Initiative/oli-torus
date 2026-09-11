@@ -17,6 +17,10 @@ defmodule Oli.Scenarios.DataGenerationDirectivesTest do
         users: [qa_learner_1]
         seed: 42
         pct_correct: 0.75
+        assessment_attempts:
+          - pct_correct: 0.4
+          - pct_correct: 0.7
+          - pct_correct: 0.9
         batch_size: 5
         max_concurrency: 2
         timeout_ms: 10000
@@ -36,6 +40,11 @@ defmodule Oli.Scenarios.DataGenerationDirectivesTest do
                users: ["qa_learner_1"],
                seed: 42,
                pct_correct: 0.75,
+               assessment_attempts: [
+                 %{pct_correct: 0.4},
+                 %{pct_correct: 0.7},
+                 %{pct_correct: 0.9}
+               ],
                batch_size: 5,
                max_concurrency: 2,
                timeout_ms: 10_000
@@ -49,6 +58,9 @@ defmodule Oli.Scenarios.DataGenerationDirectivesTest do
       "- bulk_create_enroll_users: {section: demo, learners: 10001}",
       "- bulk_create_enroll_users: {section: demo, prefix: abcdefghijklmnopqrstuvwxyzabcdefghijklmno, learners: 1}",
       "- simulate_progress: {section: demo, pct_correct: 1.1}",
+      "- simulate_progress: {section: demo, assessment_attempts: []}",
+      "- simulate_progress: {section: demo, assessment_attempts: [{pct_correct: 1.1}]}",
+      "- simulate_progress: {section: demo, assessment_attempts: [{pct_correct: 0.5, extra: true}]}",
       "- simulate_progress: {section: demo, max_concurrency: 17}"
     ]
 
