@@ -302,7 +302,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
           {@info_tooltip}
         </dialog>
       </span>
-      <span>{@title}</span>
+      <span class="whitespace-nowrap">{@title}</span>
     </div>
     """
   end
