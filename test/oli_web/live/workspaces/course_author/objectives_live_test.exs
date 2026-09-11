@@ -293,6 +293,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert toolbar =~ "@[520px]:flex-row"
       assert toolbar =~ "@[520px]:min-w-[210px]"
       assert toolbar =~ "w-full min-w-0 flex-col"
+      assert has_element?(view, "#coverage-issues-controls")
+      assert has_element?(view, "#course-content-controls")
 
       assert has_element?(
                view,

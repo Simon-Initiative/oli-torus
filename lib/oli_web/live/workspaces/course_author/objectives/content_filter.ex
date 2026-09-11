@@ -23,7 +23,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
         type="button"
         id="course-content-filter-trigger"
         class={[
-          "inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-[13px] font-semibold leading-[19.5px] text-Text-text-high transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+          "inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-[13px] font-semibold leading-[19.5px] text-Text-text-high transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary whitespace-nowrap",
           if(@open or @active_count > 0,
             do: "border-Fill-Buttons-fill-primary bg-Background-bg-primary",
             else: "border-Border-border-default bg-Background-bg-primary"

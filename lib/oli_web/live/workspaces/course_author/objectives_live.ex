@@ -157,10 +157,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       filter_opts_class="w-full"
     >
       <div id="objectives-toolbar" class="@container w-full pt-6">
-        <div class="flex w-full flex-col gap-2 @[1024px]:flex-row @[1024px]:items-center">
+        <div class="flex w-full flex-col gap-2 @[1280px]:flex-row @[1280px]:items-center">
           <div
             id="objectives-filter-controls"
-            class="order-2 flex min-w-0 flex-wrap items-center gap-2 @[1024px]:order-1 @[1024px]:flex-1 @[1024px]:flex-nowrap"
+            class="order-2 flex min-w-0 flex-wrap items-center gap-2 @[1280px]:order-1 @[1280px]:flex-1 @[1280px]:flex-nowrap"
           >
             <div class="flex w-full min-w-0 flex-col gap-2 @[520px]:w-auto @[520px]:flex-row @[520px]:items-center">
               <div class="w-full min-w-0 @[520px]:w-56 @[520px]:shrink-0">
@@ -218,13 +218,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                 </label>
               </form>
             </div>
-            <div
-              aria-hidden="true"
-              class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1024px]:block"
-            >
-            </div>
+            <div id="coverage-issues-controls" class="flex shrink-0 items-center gap-2">
+              <div
+                aria-hidden="true"
+                class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1280px]:block"
+              >
+              </div>
 
-            <div class="flex shrink-0 flex-nowrap items-center gap-2">
               <CoverageIssuesControl.coverage_issues_control
                 id="coverage-issues-filter"
                 count={
@@ -289,32 +289,34 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
               </div>
             </div>
 
-            <div
-              aria-hidden="true"
-              class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1024px]:block"
-            >
-            </div>
+            <div id="course-content-controls" class="flex shrink-0 items-center gap-2">
+              <div
+                aria-hidden="true"
+                class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1280px]:block"
+              >
+              </div>
 
-            <ContentFilter.render
-              nodes_by_id={@course_content_nodes_by_id}
-              root_ids={@course_content_root_ids}
-              selected_ids={
-                MapSet.new(get_in(@course_content_selection || %{}, [:selected_ids]) || [])
-              }
-              active_count={get_in(@course_content_selection || %{}, [:active_count]) || 0}
-              expanded_ids={@course_content_expanded_ids}
-              open={@course_content_open}
-              disabled={@coverage_status != :ready}
-            />
+              <ContentFilter.render
+                nodes_by_id={@course_content_nodes_by_id}
+                root_ids={@course_content_root_ids}
+                selected_ids={
+                  MapSet.new(get_in(@course_content_selection || %{}, [:selected_ids]) || [])
+                }
+                active_count={get_in(@course_content_selection || %{}, [:active_count]) || 0}
+                expanded_ids={@course_content_expanded_ids}
+                open={@course_content_open}
+                disabled={@coverage_status != :ready}
+              />
+            </div>
           </div>
 
           <div
             id="objectives-toolbar-actions"
-            class="order-1 ml-auto flex shrink-0 items-center mb-5 gap-2 @[1024px]:order-2 @[1024px]:mb-0"
+            class="order-1 ml-auto flex shrink-0 items-center mb-5 gap-2 @[1280px]:order-2 @[1280px]:mb-0"
           >
             <div
               aria-hidden="true"
-              class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1024px]:block"
+              class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1280px]:block"
             >
             </div>
 
