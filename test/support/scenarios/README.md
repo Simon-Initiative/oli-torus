@@ -305,7 +305,10 @@ fail without being overwritten.
 `simulate_progress` uses a deterministic seed, preloads the section and pages once, and processes
 learners in fixed-size batches with bounded concurrency and per-task timeouts. Omitting `users`
 selects all enrolled learners. Unsupported content and learner failures are returned in the
-bounded `scenario_warnings` execution-state collection; supported work remains committed.
+bounded `scenario_warnings` execution-state collection; supported work remains committed. By
+default, each learner makes one assessment attempt using `pct_correct`. Set `assessment_attempts`
+to an ordered, non-empty list to create multiple attempts with a different correctness target for
+each attempt.
 
 ```yaml
 - simulate_progress:
@@ -316,6 +319,17 @@ bounded `scenario_warnings` execution-state collection; supported work remains c
     batch_size: 10
     max_concurrency: 4
     timeout_ms: 30000
+```
+
+```yaml
+- simulate_progress:
+    section: demo_section
+    users: [qa_learner_3]
+    seed: 43
+    assessment_attempts:
+      - pct_correct: 0.4
+      - pct_correct: 0.7
+      - pct_correct: 0.9
 ```
 
 ### Hook Directive
