@@ -31,6 +31,12 @@ defmodule OliWeb.Delivery.LearningObjectives.Proficiency do
   def dot_class("High"), do: "bg-Text-text-accent-green"
   def dot_class(_not_enough_data), do: "bg-Fill-Chip-Gray"
 
+  @doc "Returns the full display label (e.g. \"Low Proficiency\") for a chart/filter label."
+  def full_label("Low"), do: "Low Proficiency"
+  def full_label("Medium"), do: "Medium Proficiency"
+  def full_label("High"), do: "High Proficiency"
+  def full_label(not_enough_data), do: not_enough_data
+
   attr :label, :string, required: true
 
   def chip(assigns) do

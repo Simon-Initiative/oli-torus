@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   defp student_proficiency_tooltip_content(assigns) do
     ~H"""
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-6">
       <p>Aggregate class proficiency for the learning objective.</p>
       <p>
         <b>Not enough data:</b>
@@ -41,7 +41,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   defp confidence_tooltip_content(assigns) do
     ~H"""
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-6">
       <p>How confident we are in the proficiency estimate based on available data.</p>
       <p>
         <b>Low Confidence:</b>
@@ -72,7 +72,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
           name: :objective_instructor_dashboard,
           label: "Learning Objective",
           render_fn: &custom_render/3,
-          th_class: "w-1/2",
+          th_class: "w-2/5",
           td_class: "pr-4"
         },
         %ColumnSpec{
@@ -259,7 +259,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
     ~H"""
     <div
-      class="group relative flex rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+      class="relative flex rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-600 focus-visible:ring-offset-2 [&:hover>.proficiency-dist-tooltip]:flex [&:focus-within>.proficiency-dist-tooltip]:flex"
       tabindex="0"
       role="button"
       aria-describedby={@tooltip_id}
@@ -268,7 +268,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       <div
         id={@tooltip_id}
         role="tooltip"
-        class="absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col group-hover:flex group-focus-within:flex z-50"
+        class="proficiency-dist-tooltip absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col z-50"
       >
         <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
           <div class="flex h-6 w-full items-center gap-1.5 text-left">
@@ -277,7 +277,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
               aria-hidden="true"
             >
             </span>
-            <span class="font-medium">{label}</span>: {value}%
+            <b>{Proficiency.full_label(label)}:</b> {value}%
           </div>
         <% end %>
       </div>
