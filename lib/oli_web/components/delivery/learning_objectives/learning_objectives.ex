@@ -1000,13 +1000,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     if mapper_ids == [] do
       objectives
     else
+      # Unlike proficiency, confidence never promotes a parent into view based on a
+      # child's own value: the table only ever displays the top-level row's own
+      # confidence_obj, so that is the only value this filter may match against.
       Enum.filter(objectives, fn objective ->
-        confidence =
-          if top_level_objective?(objective),
-            do: Map.get(objective, :confidence_obj),
-            else: Map.get(objective, :confidence_subobj)
-
-        confidence in mapper_ids
+        Map.get(objective, :confidence_obj) in mapper_ids
       end)
     end
   end

@@ -681,6 +681,36 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
     end
   end
 
+  describe "confidence filtering" do
+    setup [:instructor_conn, :create_lkt_aoa_project_with_mixed_confidence_children]
+
+    # Regression test for a bug where filtering by Confidence could show a parent
+    # objective whose OWN (displayed) confidence did not match the selected filter,
+    # because the filter incorrectly promoted the parent into view whenever ANY of
+    # its sub-objectives matched, rather than checking the parent's own aggregate.
+    test "only shows objectives whose own confidence matches the filter, not a differently-valued child's",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section,
+           revisions: revisions
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      # The parent's confidence is the attempt-weighted average of its two children
+      # (High and Low, equal weights), which lands squarely in "Medium".
+      params = %{selected_confidence_ids: Jason.encode!([3])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      refute has_element?(view, "span", "#{revisions.parent_revision.title}")
+
+      params = %{selected_confidence_ids: Jason.encode!([2])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      assert has_element?(view, "span", "#{revisions.parent_revision.title}")
+    end
+  end
+
   describe "page size change" do
     setup [:instructor_conn, :create_full_project_with_objectives]
 
@@ -904,5 +934,189 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
 
       assert render(view) =~ "transparent_background"
     end
+  end
+
+  defp create_lkt_aoa_project_with_mixed_confidence_children(_conn) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    child_1_resource = insert(:resource)
+
+    child_1_revision =
+      insert(:revision, %{
+        resource: child_1_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.id_for_objective(),
+        children: [],
+        content: %{},
+        deleted: false,
+        slug: "child_1",
+        title: "Child Objective 1"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: child_1_resource.id})
+
+    child_2_resource = insert(:resource)
+
+    child_2_revision =
+      insert(:revision, %{
+        resource: child_2_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.id_for_objective(),
+        children: [],
+        content: %{},
+        deleted: false,
+        slug: "child_2",
+        title: "Child Objective 2"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: child_2_resource.id})
+
+    parent_resource = insert(:resource)
+
+    parent_revision =
+      insert(:revision, %{
+        resource: parent_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.id_for_objective(),
+        children: [child_1_resource.id, child_2_resource.id],
+        content: %{},
+        deleted: false,
+        slug: "parent_objective",
+        title: "Parent Objective"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: parent_resource.id})
+
+    page_1_resource = insert(:resource)
+
+    page_1_revision =
+      insert(:revision, %{
+        objectives: %{"attached" => [child_1_resource.id]},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: ResourceType.id_for_page(),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 1",
+        resource: page_1_resource,
+        slug: "page_1"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_1_resource.id})
+
+    page_2_resource = insert(:resource)
+
+    page_2_revision =
+      insert(:revision, %{
+        objectives: %{"attached" => [child_2_resource.id]},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: ResourceType.id_for_page(),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 2",
+        resource: page_2_resource,
+        slug: "page_2"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_2_resource.id})
+
+    root_resource = insert(:resource)
+
+    root_revision =
+      insert(:revision, %{
+        resource: root_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.id_for_container(),
+        children: [page_1_resource.id, page_2_resource.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: root_resource.id})
+
+    publication =
+      insert(:publication, %{project: project, root_resource_id: root_resource.id, published: nil})
+
+    [
+      {child_1_resource, child_1_revision},
+      {child_2_resource, child_2_revision},
+      {parent_resource, parent_revision},
+      {page_1_resource, page_1_revision},
+      {page_2_resource, page_2_revision},
+      {root_resource, root_revision}
+    ]
+    |> Enum.each(fn {resource, revision} ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable,
+        learning_model_version: :lkt_aoa
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+    student = insert(:user)
+    Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    Repo.insert_all("learning_states", [
+      %{
+        section_id: section.id,
+        user_id: student.id,
+        learning_objective_id: child_1_resource.id,
+        attempt_count: 5,
+        success_score: 4.75,
+        failure_score: 0.25,
+        recency_logit: 0.0,
+        aoa: 0.95,
+        unique_activity_part_count: 5,
+        confidence: 0.95,
+        inserted_at: now,
+        updated_at: now
+      },
+      %{
+        section_id: section.id,
+        user_id: student.id,
+        learning_objective_id: child_2_resource.id,
+        attempt_count: 5,
+        success_score: 1.0,
+        failure_score: 4.0,
+        recency_logit: 0.0,
+        aoa: 0.2,
+        unique_activity_part_count: 5,
+        confidence: 0.2,
+        inserted_at: now,
+        updated_at: now
+      }
+    ])
+
+    %{
+      project: project,
+      section: section,
+      publication: publication,
+      revisions: %{
+        parent_revision: parent_revision,
+        child_1_revision: child_1_revision,
+        child_2_revision: child_2_revision
+      }
+    }
   end
 end
