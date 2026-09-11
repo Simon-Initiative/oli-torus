@@ -10,7 +10,9 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExport do
 
   alias Oli.Activities
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course.ProjectAttributes
   alias Oli.Authoring.ObjectiveCoverage
+  alias Oli.Authoring.ObjectiveCoverage.Issues
   alias Oli.Branding.CustomLabels
   alias Oli.Resources.Numbering
   alias Oli.Resources.ResourceType
@@ -39,29 +41,60 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExport do
         Activities.list_activity_registrations()
         |> Map.new(&{&1.id, &1.title})
 
-      {:ok, encode(model, project.customizations, activity_types_by_id, params)}
+      coverage_issue_ids =
+        case params |> param("filter", %{}) |> Map.get("coverage_issues") do
+          "true" ->
+            Issues.flagged_top_level_ids(
+              model,
+              ProjectAttributes.coverage_thresholds(project.attributes)
+            )
+
+          _ ->
+            nil
+        end
+
+      {:ok,
+       encode(model, project.customizations, activity_types_by_id, params, coverage_issue_ids)}
     end
   end
 
-  @doc "Encodes a previously loaded coverage snapshot as CSV."
-  @spec encode(ObjectiveCoverage.t(), %CustomLabels{} | nil, map(), map()) :: String.t()
-  def encode(model, customizations, activity_types_by_id, params \\ %{}) do
+  @doc """
+  Encodes a previously loaded coverage snapshot as CSV. `coverage_issue_ids`
+  is only consulted when `params["filter"]["coverage_issues"] == "true"`;
+  omit it (or pass `nil`) when the caller doesn't apply that filter.
+  """
+  @spec encode(ObjectiveCoverage.t(), %CustomLabels{} | nil, map(), map(), MapSet.t() | nil) ::
+          String.t()
+  def encode(
+        model,
+        customizations,
+        activity_types_by_id,
+        params \\ %{},
+        coverage_issue_ids \\ nil
+      ) do
     model
-    |> rows(customizations, activity_types_by_id, params)
+    |> rows(customizations, activity_types_by_id, params, coverage_issue_ids)
     |> then(&[@headers | &1])
     |> CSV.encode()
     |> Enum.join()
   end
 
-  @doc "Builds ordered, spreadsheet-safe export rows without encoding them."
-  @spec rows(ObjectiveCoverage.t(), %CustomLabels{} | nil, map(), map()) :: [export_row()]
-  def rows(model, customizations, activity_types_by_id, params \\ %{}) do
+  @doc """
+  Builds ordered, spreadsheet-safe export rows without encoding them.
+  `coverage_issue_ids` is only consulted when
+  `params["filter"]["coverage_issues"] == "true"`; omit it (or pass `nil`)
+  when the caller doesn't apply that filter.
+  """
+  @spec rows(ObjectiveCoverage.t(), %CustomLabels{} | nil, map(), map(), MapSet.t() | nil) :: [
+          export_row()
+        ]
+  def rows(model, customizations, activity_types_by_id, params \\ %{}, coverage_issue_ids \\ nil) do
     activities_by_objective = activities_by_objective(model.activities_by_id)
     pages_by_activity = pages_by_activity(model.pages_by_id)
     course_locations = course_locations(model, customizations)
 
     model
-    |> filtered_and_sorted_objectives(params, activities_by_objective)
+    |> filtered_and_sorted_objectives(params, activities_by_objective, coverage_issue_ids)
     |> Enum.with_index(1)
     |> Enum.flat_map(fn {objective, index} ->
       relationship_rows(
@@ -77,14 +110,18 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExport do
     |> Enum.map(fn row -> Enum.map(row, &spreadsheet_safe/1) end)
   end
 
-  defp filtered_and_sorted_objectives(model, params, activities_by_objective) do
+  defp filtered_and_sorted_objectives(model, params, activities_by_objective, coverage_issue_ids) do
     query = params |> param("query", "") |> normalize_text()
+    coverage_issues_only? = params |> param("filter", %{}) |> Map.get("coverage_issues") == "true"
+    coverage_issue_ids = coverage_issue_ids || MapSet.new()
 
     objectives =
       model
       |> ObjectiveCoverage.objectives()
       |> Enum.filter(fn objective ->
-        query == "" or String.contains?(normalize_text(objective.title), query)
+        (query == "" or String.contains?(normalize_text(objective.title), query)) and
+          (not coverage_issues_only? or
+             MapSet.member?(coverage_issue_ids, objective.resource_id))
       end)
       |> filter_course_content(model, param(params, "course_content", nil))
 
@@ -342,8 +379,20 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExport do
   defp page_location(nil, _course_locations), do: ""
   defp page_location(page, course_locations), do: Map.get(course_locations, page.resource_id, "")
 
-  defp param(params, key, default),
-    do: Map.get(params, key, Map.get(params, String.to_existing_atom(key), default))
+  defp param(params, key, default) do
+    case Map.fetch(params, key) do
+      {:ok, value} -> value
+      :error -> Map.get(params, existing_atom_key(key), default)
+    end
+  end
+
+  # Query params normally have string keys, but direct callers may use existing
+  # atom keys. Never create an atom from request-controlled input.
+  defp existing_atom_key(key) do
+    String.to_existing_atom(key)
+  rescue
+    ArgumentError -> key
+  end
 
   defp normalize_text(value) when is_binary(value),
     do: value |> String.downcase() |> String.trim()

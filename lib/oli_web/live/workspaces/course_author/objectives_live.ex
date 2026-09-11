@@ -10,7 +10,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   alias Oli.Accounts
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.ProjectAttributes
   alias Oli.Authoring.ObjectiveCoverage
+  alias Oli.Authoring.ObjectiveCoverage.Issues
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
@@ -20,6 +22,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   alias OliWeb.Common.Listing, as: Table
 
   alias OliWeb.Workspaces.CourseAuthor.Objectives.{
+    CoverageIssuesControl,
+    CoverageSettingsPopover,
     DeleteModal,
     FormModal,
     Listing,
@@ -35,6 +39,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   @table_push_patch_path &__MODULE__.live_path/2
   @max_search_length 100
   @max_search_terms 10
+  @coverage_issue_fields [:any_issue, :direct_formative_issue, :direct_summative_issue]
+  @empty_coverage_issue_flags Map.new(@coverage_issue_fields, &{&1, false})
 
   def live_path(socket, params) do
     params =
@@ -64,6 +70,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_model: nil,
         coverage_status: :loading,
         coverage_load_ref: make_ref(),
+        coverage_issue_ids: MapSet.new(),
+        coverage_settings_open: false,
         assessment_buckets: %{},
         course_content_open: false,
         course_content_selection: nil,
@@ -148,90 +156,193 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       card_body_text_class="mt-1 mb-4 text-Text-text-high"
       filter_opts_class="w-full"
     >
-      <div class="flex w-full flex-wrap items-center gap-2 pt-6">
-        <div class="w-full shrink-0 sm:w-56">
-          <.form for={%{}} id="objectives-search-form" phx-change="apply_search">
-            <SearchInput.render
-              id="objectives-search"
-              name="query"
-              text={@query}
-              placeholder="Search..."
-              aria_label="Search learning objectives, sub-objectives, pages, and activities"
-            />
-          </.form>
-        </div>
+      <div id="objectives-toolbar" class="@container w-full pt-6">
+        <div class="flex w-full flex-col gap-2 @[1280px]:flex-row @[1280px]:items-center">
+          <div
+            id="objectives-filter-controls"
+            class="order-2 flex min-w-0 flex-wrap items-center gap-2 @[1280px]:order-1 @[1280px]:flex-1 @[1280px]:flex-nowrap"
+          >
+            <div class="flex w-full min-w-0 flex-col gap-2 @[520px]:w-auto @[520px]:flex-row @[520px]:items-center">
+              <div class="w-full min-w-0 @[520px]:w-56 @[520px]:shrink-0">
+                <.form for={%{}} id="objectives-search-form" phx-change="apply_search">
+                  <SearchInput.render
+                    id="objectives-search"
+                    name="query"
+                    text={@query}
+                    placeholder="Search..."
+                    aria_label="Search learning objectives, sub-objectives, pages, and activities"
+                  />
+                </.form>
+              </div>
 
-        <form id="sort" phx-change="sort" class="flex h-9 shrink-0 items-center gap-2">
-          <label for="select_sort" class="sr-only">Sort objectives</label>
-          <div class="relative h-9 w-[210px] max-w-full shrink-0">
-            <select
-              name="sort_by"
-              id="select_sort"
-              class="h-9 w-full appearance-none rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] pr-9 text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-              style="appearance: none; -webkit-appearance: none; background-image: none;"
-            >
-              <%= for column_spec <- @table_model.column_specs do %>
-                <%= if column_spec.name != :action do %>
-                  <option value={column_spec.name} selected={@table_model.sort_by_spec == column_spec}>
-                    {column_spec.label}
-                  </option>
+              <form
+                id="sort"
+                phx-change="sort"
+                class="flex h-[38px] w-full min-w-0 items-center gap-2 @[520px]:w-auto @[520px]:shrink-0"
+              >
+                <label for="select_sort" class="sr-only">Sort objectives</label>
+                <div class="relative min-w-0 flex-1 @[520px]:min-w-[210px]">
+                  <select
+                    name="sort_by"
+                    id="select_sort"
+                    class="h-[38px] w-full appearance-none rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] pr-9 text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                    style="appearance: none; -webkit-appearance: none; background-image: none;"
+                  >
+                    <%= for column_spec <- @table_model.column_specs do %>
+                      <%= if column_spec.name != :action do %>
+                        <option
+                          value={column_spec.name}
+                          selected={@table_model.sort_by_spec == column_spec}
+                        >
+                          {column_spec.label}
+                        </option>
+                      <% end %>
+                    <% end %>
+                  </select>
+                  <Icons.chevron_down
+                    width="9.5"
+                    height="5.5"
+                    variant="stroke"
+                    class="pointer-events-none absolute right-[10px] top-1/2 -translate-y-1/2 text-Icon-icon-default"
+                  />
+                </div>
+                <label class="inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-md border border-Border-border-default text-Text-text-high hover:bg-Surface-surface-secondary-hover focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-Fill-Buttons-fill-primary">
+                  <span class="sr-only">Toggle sort direction</span>
+                  <.input
+                    type="checkbox"
+                    name="sort_order"
+                    class="sr-only"
+                    value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
+                  />
+                  <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
+                </label>
+              </form>
+            </div>
+            <div id="coverage-issues-controls" class="flex shrink-0 items-center gap-2">
+              <div
+                aria-hidden="true"
+                class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1280px]:block"
+              >
+              </div>
+
+              <CoverageIssuesControl.coverage_issues_control
+                id="coverage-issues-filter"
+                count={
+                  scoped_coverage_issue_count(
+                    @objectives,
+                    @query,
+                    @search_matching_ids,
+                    @course_content_selection,
+                    @coverage_issue_ids
+                  )
+                }
+                active={Map.get(@filter, "coverage_issues") == "true"}
+                click={
+                  JS.push("apply_filter",
+                    value: %{
+                      filter:
+                        Map.put(
+                          @filter,
+                          "coverage_issues",
+                          if(Map.get(@filter, "coverage_issues") == "true",
+                            do: "false",
+                            else: "true"
+                          )
+                        )
+                    }
+                  )
+                }
+              />
+
+              <div
+                class="relative shrink-0"
+                phx-click-away={@coverage_settings_open && "close_coverage_settings"}
+              >
+                <button
+                  type="button"
+                  id="coverage-settings-trigger"
+                  phx-click={
+                    if @coverage_settings_open,
+                      do: "close_coverage_settings",
+                      else: "open_coverage_settings"
+                  }
+                  aria-expanded={if(@coverage_settings_open, do: "true", else: "false")}
+                  aria-haspopup="dialog"
+                  aria-controls="coverage-settings-popover"
+                  aria-label="Coverage issue threshold settings"
+                  class="flex h-[30px] w-[30px] items-center justify-center rounded-md border border-Border-border-default bg-Background-bg-primary transition hover:bg-Surface-surface-secondary-hover aria-expanded:border-Border-border-active aria-expanded:bg-Fill-Accent-fill-accent-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                >
+                  <Icons.settings width="15" height="15" stroke_width="1.5" />
+                </button>
+                <%= if @coverage_settings_open do %>
+                  <CoverageSettingsPopover.coverage_settings_popover
+                    id="coverage-settings-popover"
+                    trigger_id="coverage-settings-trigger"
+                    formative_threshold={
+                      ProjectAttributes.coverage_thresholds(@project.attributes).formative
+                    }
+                    summative_threshold={
+                      ProjectAttributes.coverage_thresholds(@project.attributes).summative
+                    }
+                  />
                 <% end %>
-              <% end %>
-            </select>
-            <Icons.chevron_down
-              width="9.5"
-              height="5.5"
-              variant="stroke"
-              class="pointer-events-none absolute right-[10px] top-1/2 -translate-y-1/2 text-Icon-icon-default"
-            />
+              </div>
+            </div>
+
+            <div id="course-content-controls" class="flex shrink-0 items-center gap-2">
+              <div
+                aria-hidden="true"
+                class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1280px]:block"
+              >
+              </div>
+
+              <ContentFilter.render
+                nodes_by_id={@course_content_nodes_by_id}
+                root_ids={@course_content_root_ids}
+                selected_ids={
+                  MapSet.new(get_in(@course_content_selection || %{}, [:selected_ids]) || [])
+                }
+                active_count={get_in(@course_content_selection || %{}, [:active_count]) || 0}
+                expanded_ids={@course_content_expanded_ids}
+                open={@course_content_open}
+                disabled={@coverage_status != :ready}
+              />
+            </div>
           </div>
-          <label class="inline-flex size-[30px] cursor-pointer items-center justify-center rounded-md border border-Border-border-default text-Text-text-high hover:bg-Surface-surface-secondary-hover focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-Fill-Buttons-fill-primary">
-            <span class="sr-only">Toggle sort direction</span>
-            <.input
-              type="checkbox"
-              name="sort_order"
-              class="sr-only"
-              value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
-            />
-            <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
-          </label>
-        </form>
 
-        <div class="hidden h-6 w-px shrink-0 bg-Border-border-default xl:block" aria-hidden="true" />
-        <ContentFilter.render
-          nodes_by_id={@course_content_nodes_by_id}
-          root_ids={@course_content_root_ids}
-          selected_ids={MapSet.new(get_in(@course_content_selection || %{}, [:selected_ids]) || [])}
-          active_count={get_in(@course_content_selection || %{}, [:active_count]) || 0}
-          expanded_ids={@course_content_expanded_ids}
-          open={@course_content_open}
-          disabled={@coverage_status != :ready}
-        />
-
-        <div class="flex-1" />
-        <div class="ml-auto flex shrink-0 items-center gap-2">
-          <.link
-            id="download-objectives-csv"
-            href={
-              ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
-            }
-            download={"#{@project.slug}_learning_objectives.csv"}
-            class="inline-flex h-[30px] items-center justify-center gap-2 rounded-md border border-Border-border-default bg-Background-bg-primary px-[13px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high transition hover:bg-Surface-surface-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+          <div
+            id="objectives-toolbar-actions"
+            class="order-1 ml-auto flex shrink-0 items-center mb-5 gap-2 @[1280px]:order-2 @[1280px]:mb-0"
           >
-            <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
-              <Icons.download stroke_class="stroke-current" />
-            </span>
-            Download CSV
-          </.link>
+            <div
+              aria-hidden="true"
+              class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1280px]:block"
+            >
+            </div>
 
-          <button
-            type="button"
-            class="inline-flex h-[30px] items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 text-[13px] font-semibold leading-[19.5px] text-Text-text-white shadow-[0px_2px_2px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-            phx-click="display_new_modal"
-          >
-            <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
-            New Objective
-          </button>
+            <.link
+              id="download-objectives-csv"
+              href={
+                ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
+              }
+              download={"#{@project.slug}_learning_objectives.csv"}
+              class="inline-flex h-[30px] items-center justify-center gap-2 rounded-md border border-Border-border-default bg-Background-bg-primary px-[13px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high transition hover:bg-Surface-surface-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            >
+              <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
+                <Icons.download stroke_class="stroke-current" />
+              </span>
+              Download CSV
+            </.link>
+
+            <button
+              type="button"
+              class="inline-flex h-[30px] items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 text-[13px] font-semibold leading-[19.5px] text-Text-text-white shadow-[0px_2px_2px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              phx-click="display_new_modal"
+            >
+              <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
+              New Objective
+            </button>
+          </div>
         </div>
       </div>
     </FilterBox.render>
@@ -283,7 +394,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         show_bottom_paging={false}
         additional_table_class="table-sm text-center"
         with_body={true}
-        empty_state_text={empty_state_text(assigns)}
+        empty_state_text={coverage_empty_state_text(assigns)}
       >
         <div class="rounded-lg bg-Background-bg-secondary p-6 shadow-[0px_2px_5px_rgba(0,50,99,0.10)]">
           <Listing.render
@@ -331,21 +442,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
               end)
 
             [
-              Map.merge(
-                rev,
-                %{
-                  children: mapped_children,
-                  sub_objectives_count: length(mapped_children),
-                  page_attachments_count: 0,
-                  page_attachments: [],
-                  activity_attachments_count: 0,
-                  formative_activity_attachments_count: 0,
-                  summative_activity_attachments_count: 0,
-                  assessment_bucket: :formative,
-                  has_coverage: false,
-                  coverage_details: []
-                }
-              )
+              rev
+              |> Map.merge(base_coverage_fields())
+              |> Map.merge(%{
+                children: mapped_children,
+                sub_objectives_count: length(mapped_children)
+              })
             ] ++ acc
 
           _ ->
@@ -369,33 +471,45 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       has_coverage: false,
       coverage_details: []
     }
+    |> Map.merge(@empty_coverage_issue_flags)
   end
 
   def filter_rows(socket, query, filter),
     do: filter_rows(socket, query, filter, socket.assigns.params)
 
-  def filter_rows(socket, query, _filter, params) do
+  def filter_rows(socket, query, filter, params) do
     query = normalize_search_query(query)
 
-    case socket.assigns.coverage_model do
-      nil ->
-        if String.trim(query) == "", do: socket.assigns.objectives, else: []
+    rows =
+      case socket.assigns.coverage_model do
+        nil ->
+          if String.trim(query) == "", do: socket.assigns.objectives, else: []
 
-      model ->
-        matching_ids =
-          if String.trim(query) == "" do
-            nil
-          else
-            socket.assigns.search_matching_ids || matching_objective_ids(model, query)
-          end
+        model ->
+          matching_ids =
+            if String.trim(query) == "" do
+              nil
+            else
+              socket.assigns.search_matching_ids || matching_objective_ids(model, query)
+            end
 
-        content_selection =
-          socket.assigns.course_content_selection ||
-            ObjectiveCoverage.normalize_curriculum_selection(model, params["course_content"])
+          content_selection =
+            socket.assigns.course_content_selection ||
+              ObjectiveCoverage.normalize_curriculum_selection(model, params["course_content"])
 
-        socket.assigns.objectives
-        |> filter_objective_rows(matching_ids)
-        |> filter_content_rows(content_selection)
+          socket.assigns.objectives
+          |> filter_objective_rows(matching_ids)
+          |> filter_content_rows(content_selection)
+      end
+
+    case Map.get(filter, "coverage_issues") do
+      "true" ->
+        Enum.filter(rows, fn objective ->
+          MapSet.member?(socket.assigns.coverage_issue_ids, objective.resource_id)
+        end)
+
+      _ ->
+        rows
     end
   end
 
@@ -448,6 +562,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   defp filter_content_rows(rows, %{selected_ids: []}), do: rows
+  defp filter_content_rows(rows, nil), do: rows
 
   defp filter_content_rows(rows, selection) do
     direct_ids = selection.objective_ids
@@ -468,12 +583,43 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     end)
   end
 
-  defp empty_state_text(%{course_content_selection: %{selected_ids: selected_ids}})
-       when selected_ids != [],
-       do: "No learning objectives match the selected course content."
+  # Count issues within the current Search ∩ Course Content universe; sorting,
+  # pagination, and the Coverage Issues toggle do not narrow the badge count.
+  defp scoped_coverage_issue_count(
+         objectives,
+         query,
+         search_matching_ids,
+         content_selection,
+         coverage_issue_ids
+       ) do
+    matching_ids =
+      if normalize_search_query(query) == "" do
+        nil
+      else
+        search_matching_ids || MapSet.new()
+      end
 
-  defp empty_state_text(assigns) do
-    if assigns.query == "", do: "None exist", else: "No learning objectives match your search."
+    content_ids =
+      case content_selection do
+        %{selected_ids: []} -> nil
+        nil -> nil
+        selection -> selection.objective_ids
+      end
+
+    Enum.count(objectives, fn objective ->
+      MapSet.member?(coverage_issue_ids, objective.resource_id) and
+        objective_or_child_matches?(objective, matching_ids) and
+        objective_or_child_matches?(objective, content_ids)
+    end)
+  end
+
+  defp objective_or_child_matches?(_objective, nil), do: true
+
+  defp objective_or_child_matches?(objective, ids) do
+    MapSet.member?(ids, objective.resource_id) or
+      Enum.any?(objective.children, fn child ->
+        not is_nil(child) and MapSet.member?(ids, child.resource_id)
+      end)
   end
 
   defp matching_objective_ids(model, query) do
@@ -597,6 +743,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         all_children: all_children,
         coverage_model: nil,
         coverage_status: :loading,
+        coverage_issue_ids: MapSet.new(),
         assessment_buckets: socket.assigns.assessment_buckets,
         course_content_selection: nil,
         course_content_nodes_by_id: %{},
@@ -668,12 +815,42 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
      assign(socket,
        coverage_model: nil,
        coverage_status: :loading,
+       coverage_issue_ids: MapSet.new(),
        search_matching_ids: nil,
        search_expansion_ids: nil
      )
      |> start_async(:objective_coverage, fn ->
        ObjectiveCoverage.load(project)
      end)}
+  end
+
+  def handle_event("open_coverage_settings", _params, socket) do
+    {:noreply, assign(socket, coverage_settings_open: true)}
+  end
+
+  def handle_event("close_coverage_settings", _params, socket) do
+    {:noreply, assign(socket, coverage_settings_open: false)}
+  end
+
+  def handle_event("increment_coverage_formative_threshold", _params, socket),
+    do: adjust_coverage_threshold(socket, :coverage_formative_threshold, 1)
+
+  def handle_event("decrement_coverage_formative_threshold", _params, socket),
+    do: adjust_coverage_threshold(socket, :coverage_formative_threshold, -1)
+
+  def handle_event("increment_coverage_summative_threshold", _params, socket),
+    do: adjust_coverage_threshold(socket, :coverage_summative_threshold, 1)
+
+  def handle_event("decrement_coverage_summative_threshold", _params, socket),
+    do: adjust_coverage_threshold(socket, :coverage_summative_threshold, -1)
+
+  def handle_event("restore_default_coverage_thresholds", _params, socket) do
+    defaults = Issues.default_thresholds()
+
+    persist_coverage_thresholds(socket, %{
+      coverage_formative_threshold: defaults.formative,
+      coverage_summative_threshold: defaults.summative
+    })
   end
 
   def handle_event("toggle_course_content_filter", _params, socket) do
@@ -781,10 +958,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           objective_id
         )
 
-      {:ok, table_model} = TableModel.new(objectives)
-
-      socket = assign(socket, objectives: objectives, table_model: table_model)
-      refresh_table_state(socket)
+      socket
+      |> assign(objectives: objectives)
+      |> refresh_table_state()
     else
       _ -> {:noreply, socket}
     end
@@ -1186,8 +1362,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         socket.assigns.objectives
       )
 
-    objectives = apply_coverage(socket.assigns.objectives, model, assessment_buckets)
-    {:ok, table_model} = TableModel.new(objectives)
+    thresholds = ProjectAttributes.coverage_thresholds(socket.assigns.project.attributes)
+    issues = Issues.classify_all(model, thresholds)
+
+    objectives = apply_coverage(socket.assigns.objectives, model, assessment_buckets, issues)
 
     {matching_ids, expansion_ids} =
       if String.trim(socket.assigns.query) == "" do
@@ -1201,10 +1379,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     socket =
       assign(socket,
         objectives: objectives,
-        table_model: table_model,
         total_count: length(objectives),
         coverage_model: model,
         coverage_status: :ready,
+        coverage_issue_ids: Issues.flagged_top_level_ids_from_issues(model, issues),
         course_content_nodes_by_id: course_content_data.nodes_by_id,
         course_content_root_ids: course_content_data.root_ids,
         course_content_expanded_ids: curriculum_root_ids(model),
@@ -1221,16 +1399,113 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     refresh_table_state(socket)
   end
 
+  # Clear stale flags so an active filter cannot show results from a failed load.
   defp apply_coverage_result({:error, reason}, socket) do
-    {:noreply,
-     assign(socket,
-       coverage_model: nil,
-       coverage_status: {:error, reason},
-       course_content_selection: nil,
-       course_content_nodes_by_id: %{},
-       course_content_root_ids: [],
-       course_content_expanded_ids: MapSet.new()
-     )}
+    socket =
+      assign(socket,
+        objectives: clear_coverage_issue_flags(socket.assigns.objectives),
+        coverage_model: nil,
+        coverage_status: {:error, reason},
+        coverage_issue_ids: MapSet.new(),
+        course_content_selection: nil,
+        course_content_nodes_by_id: %{},
+        course_content_root_ids: [],
+        course_content_expanded_ids: MapSet.new()
+      )
+
+    refresh_table_state(socket)
+  end
+
+  defp clear_coverage_issue_flags(objectives) do
+    Enum.map(objectives, fn objective ->
+      objective
+      |> Map.merge(@empty_coverage_issue_flags)
+      |> Map.update!(:children, fn children ->
+        Enum.map(children, fn
+          nil ->
+            nil
+
+          child ->
+            Map.merge(child, @empty_coverage_issue_flags)
+        end)
+      end)
+    end)
+  end
+
+  # Distinguish unknown coverage from a successful result with no issues.
+  defp coverage_empty_state_text(assigns) do
+    query = assigns.query
+    coverage_status = assigns.coverage_status
+    coverage_filter_active? = Map.get(assigns.filter, "coverage_issues") == "true"
+
+    course_content_filter_active? =
+      get_in(assigns, [:course_content_selection, :selected_ids]) not in [nil, []]
+
+    cond do
+      coverage_filter_active? and coverage_status == :loading ->
+        "Loading objective coverage — issues can't be shown yet."
+
+      coverage_filter_active? and match?({:error, _}, coverage_status) ->
+        "Objective coverage could not be loaded, so issues can't be shown."
+
+      query != "" and coverage_filter_active? and course_content_filter_active? ->
+        "No learning objectives with a coverage issue match your search and selected course content."
+
+      query != "" and coverage_filter_active? ->
+        "No learning objectives with a coverage issue match your search."
+
+      coverage_filter_active? and course_content_filter_active? ->
+        "No learning objectives with a coverage issue match the selected course content."
+
+      query != "" ->
+        "No learning objectives match your search."
+
+      coverage_filter_active? ->
+        "No learning objectives currently have a coverage issue."
+
+      course_content_filter_active? ->
+        "No learning objectives match the selected course content."
+
+      true ->
+        "None exist"
+    end
+  end
+
+  # Read the schema field directly because this operation persists that field.
+  defp adjust_coverage_threshold(socket, field, delta) do
+    attributes = socket.assigns.project.attributes || %ProjectAttributes{}
+    current = Map.fetch!(attributes, field)
+
+    persist_coverage_thresholds(socket, %{field => max(current + delta, 0)})
+  end
+
+  defp persist_coverage_thresholds(socket, attrs) do
+    case Course.update_project_attributes(socket.assigns.project, attrs) do
+      {:ok, updated_project} ->
+        socket
+        |> assign(project: updated_project)
+        |> reclassify_coverage_issues()
+        |> refresh_table_state()
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not update coverage thresholds")}
+    end
+  end
+
+  defp reclassify_coverage_issues(%{assigns: %{coverage_model: nil}} = socket), do: socket
+
+  defp reclassify_coverage_issues(socket) do
+    model = socket.assigns.coverage_model
+    thresholds = ProjectAttributes.coverage_thresholds(socket.assigns.project.attributes)
+    issues = Issues.classify_all(model, thresholds)
+
+    objectives =
+      apply_coverage(socket.assigns.objectives, model, socket.assigns.assessment_buckets, issues)
+
+    assign(socket,
+      objectives: objectives,
+      coverage_issue_ids: Issues.flagged_top_level_ids_from_issues(model, issues)
+    )
   end
 
   defp update_objective_coverage(objectives, model, assessment_buckets, objective_id) do
@@ -1255,23 +1530,32 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   defp refresh_table_state(socket) do
     params =
-      Map.update(socket.assigns.params, "sidebar_expanded", "true", fn
+      socket.assigns.params
+      |> Map.update("sidebar_expanded", "true", fn
         true -> "true"
         false -> "false"
         value -> value
       end)
+      |> Map.update("sort_by", "title", &to_string/1)
+      |> Map.update("sort_order", "asc", &to_string/1)
 
     handle_params(params, nil, socket)
   end
 
-  defp apply_coverage(objectives, model, assessment_buckets) do
+  defp apply_coverage(objectives, model, assessment_buckets, issues) do
     Enum.map(objectives, fn objective ->
       objective
       |> Map.merge(coverage_fields(objective, model, assessment_buckets))
+      |> Map.merge(coverage_issue_fields(issues, objective.resource_id))
       |> Map.update!(:children, fn children ->
         Enum.map(children, fn
-          nil -> nil
-          child -> Map.merge(child, coverage_fields(child, model, assessment_buckets))
+          nil ->
+            nil
+
+          child ->
+            child
+            |> Map.merge(coverage_fields(child, model, assessment_buckets))
+            |> Map.merge(coverage_issue_fields(issues, child.resource_id))
         end)
       end)
     end)
@@ -1294,6 +1578,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       has_coverage: tagged_content?(coverage),
       coverage_details: ObjectiveCoverage.details(model, objective.resource_id, bucket)
     }
+  end
+
+  defp coverage_issue_fields(issues, objective_id) do
+    issues
+    |> Map.fetch!(objective_id)
+    |> Map.take(@coverage_issue_fields)
   end
 
   defp selected_assessment_buckets(existing, model, objectives) do

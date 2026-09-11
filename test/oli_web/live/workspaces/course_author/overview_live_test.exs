@@ -171,6 +171,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       |> hd() =~ "Welcome Title"
     end
 
+    test "preserves coverage thresholds changed after the Overview form mounted", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      {:ok, _updated_project} =
+        Course.update_project_attributes(project, %{
+          coverage_formative_threshold: 7,
+          coverage_summative_threshold: 9
+        })
+
+      view
+      |> element("form[phx-submit='update']")
+      |> render_submit(%{"project" => %{"title" => "Updated from Overview"}})
+
+      persisted = Course.get_project!(project.id)
+      assert persisted.attributes.coverage_formative_threshold == 7
+      assert persisted.attributes.coverage_summative_threshold == 9
+    end
+
     test "limits project descriptions that do not exceed 300 characters", %{
       conn: conn,
       author: author
