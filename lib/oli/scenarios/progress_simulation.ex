@@ -94,6 +94,36 @@ defmodule Oli.Scenarios.ProgressSimulation do
          opts,
          warnings
        ) do
+    opts
+    |> assessment_attempts()
+    |> Enum.with_index()
+    |> Enum.reduce(warnings, fn {attempt, attempt_index}, warning_acc ->
+      attempt_opts = Map.put(opts, :pct_correct, attempt.pct_correct)
+
+      attempt_opts =
+        case opts.assessment_attempts do
+          nil -> attempt_opts
+          _attempts -> Map.put(attempt_opts, :assessment_attempt_index, attempt_index)
+        end
+
+      simulate_scored_attempt(
+        section,
+        page,
+        user,
+        attempt_session_id(session_id, attempt_index),
+        registrations,
+        attempt_opts,
+        warning_acc
+      )
+    end)
+  end
+
+  defp simulate_page(section, page, user, session_id, _registrations, _opts, warnings) do
+    Seeder.Attempt.visit_page(%{}, page, section, user, session_id)
+    warnings
+  end
+
+  defp simulate_scored_attempt(section, page, user, session_id, registrations, opts, warnings) do
     map =
       %{scored_page: page, section: section, student: user}
       |> Seeder.Attempt.visit_page(
@@ -121,11 +151,6 @@ defmodule Oli.Scenarios.ProgressSimulation do
 
     {map, warnings} = submit_activities(map, registrations, opts, session_id, warnings)
     Seeder.Attempt.submit_scored_assessment(map, ref(:section), ref(:page_attempt), session_id)
-    warnings
-  end
-
-  defp simulate_page(section, page, user, session_id, _registrations, _opts, warnings) do
-    Seeder.Attempt.visit_page(%{}, page, section, user, session_id)
     warnings
   end
 
@@ -205,7 +230,7 @@ defmodule Oli.Scenarios.ProgressSimulation do
       case select_response(
              responses,
              opts.pct_correct,
-             {opts.seed, opts.user_id, activity.resource_id, part_id}
+             response_seed_key(opts, activity.resource_id, part_id)
            ) do
         nil -> nil
         selection -> %StudentInput{input: selection}
@@ -266,6 +291,23 @@ defmodule Oli.Scenarios.ProgressSimulation do
 
   defp deterministic_session_id(seed, section_id, user_id) do
     UUID.uuid5(:oid, "scenario-progress:#{seed}:#{section_id}:#{user_id}")
+  end
+
+  defp assessment_attempts(%{assessment_attempts: attempts}) when is_list(attempts), do: attempts
+  defp assessment_attempts(opts), do: [%{pct_correct: opts.pct_correct}]
+
+  defp response_seed_key(%{assessment_attempt_index: index} = opts, resource_id, part_id) do
+    {opts.seed, opts.user_id, resource_id, part_id, index}
+  end
+
+  defp response_seed_key(opts, resource_id, part_id) do
+    {opts.seed, opts.user_id, resource_id, part_id}
+  end
+
+  defp attempt_session_id(session_id, 0), do: session_id
+
+  defp attempt_session_id(session_id, attempt_index) do
+    UUID.uuid5(:oid, "#{session_id}:assessment-attempt:#{attempt_index}")
   end
 
   defp deterministic_sample(key), do: :erlang.phash2(key, 1_000_000) / 1_000_000

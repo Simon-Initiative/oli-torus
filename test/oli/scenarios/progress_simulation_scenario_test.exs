@@ -33,8 +33,8 @@ defmodule Oli.Scenarios.ProgressSimulationScenarioTest do
     assert result.errors == []
 
     assert result.state.scenario_results.bulk_create_enroll_users == %{
-             created: 7,
-             enrolled: 7,
+             created: 8,
+             enrolled: 8,
              reused: 0
            }
 
@@ -87,5 +87,36 @@ defmodule Oli.Scenarios.ProgressSimulationScenarioTest do
     high_cohort_score = scores_by_learner[3] + scores_by_learner[4]
     medium_cohort_score = scores_by_learner[5] + scores_by_learner[6]
     assert high_cohort_score > medium_cohort_score
+
+    repeated_attempt_learner = Map.fetch!(result.state.users, "progress_simulation_learner_7")
+
+    assessment_attempts =
+      Repo.all(
+        from(resource_attempt in ResourceAttempt,
+          join: resource_access in ResourceAccess,
+          on: resource_access.id == resource_attempt.resource_access_id,
+          join: revision in Revision,
+          on: revision.id == resource_attempt.revision_id,
+          where: resource_access.user_id == ^repeated_attempt_learner.id and revision.graded,
+          select: {resource_attempt.attempt_number, resource_attempt.score},
+          order_by: resource_attempt.attempt_number
+        )
+      )
+
+    assert Enum.map(assessment_attempts, &elem(&1, 0)) == [1, 2, 3]
+    assert assessment_attempts |> Enum.map(&elem(&1, 1)) |> Enum.uniq() |> length() > 1
+
+    assert Repo.one(
+             from(activity_attempt in ActivityAttempt,
+               join: resource_attempt in ResourceAttempt,
+               on: resource_attempt.id == activity_attempt.resource_attempt_id,
+               join: resource_access in ResourceAccess,
+               on: resource_access.id == resource_attempt.resource_access_id,
+               where:
+                 resource_access.user_id == ^repeated_attempt_learner.id and
+                   activity_attempt.lifecycle_state == :evaluated,
+               select: count(activity_attempt.id)
+             )
+           ) == 15
   end
 end

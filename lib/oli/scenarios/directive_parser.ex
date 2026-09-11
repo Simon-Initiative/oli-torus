@@ -625,6 +625,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       "users",
       "seed",
       "pct_correct",
+      "assessment_attempts",
       "batch_size",
       "max_concurrency",
       "timeout_ms"
@@ -644,11 +645,14 @@ defmodule Oli.Scenarios.DirectiveParser do
         raise "simulate_progress.pct_correct must be between 0.0 and 1.0"
       end
 
+      assessment_attempts = parse_assessment_attempts(data["assessment_attempts"])
+
       %SimulateProgressDirective{
         section: required_non_empty_string(data["section"], "simulate_progress.section"),
         users: users,
         seed: bounded_non_negative_integer(data["seed"], 0, "seed", 2_147_483_647),
         pct_correct: pct_correct,
+        assessment_attempts: assessment_attempts,
         batch_size: bounded_positive_integer(data["batch_size"], 10, "batch_size", 100),
         max_concurrency:
           bounded_positive_integer(data["max_concurrency"], 4, "max_concurrency", 16),
@@ -1286,6 +1290,35 @@ defmodule Oli.Scenarios.DirectiveParser do
           raise unrecognized_directive_message(key)
         end
     end)
+  end
+
+  defp parse_assessment_attempts(nil), do: nil
+
+  defp parse_assessment_attempts(attempts) when is_list(attempts) and attempts != [] do
+    if length(attempts) > 100 do
+      raise "simulate_progress.assessment_attempts must contain at most 100 attempts"
+    end
+
+    Enum.with_index(attempts, 1)
+    |> Enum.map(fn {attempt, index} ->
+      case attempt do
+        %{"pct_correct" => value} when map_size(attempt) == 1 ->
+          pct_correct = parse_optional_float(value)
+
+          if is_nil(pct_correct) or pct_correct < 0.0 or pct_correct > 1.0 do
+            raise "simulate_progress.assessment_attempts[#{index}].pct_correct must be between 0.0 and 1.0"
+          end
+
+          %{pct_correct: pct_correct}
+
+        _ ->
+          raise "simulate_progress.assessment_attempts[#{index}] must contain only pct_correct"
+      end
+    end)
+  end
+
+  defp parse_assessment_attempts(_attempts) do
+    raise "simulate_progress.assessment_attempts must be a non-empty list"
   end
 
   defp valid_directives, do: @valid_directives

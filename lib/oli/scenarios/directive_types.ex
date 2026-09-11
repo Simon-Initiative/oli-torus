@@ -174,6 +174,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [
       :section,
       :users,
+      :assessment_attempts,
       seed: 0,
       pct_correct: 1.0,
       batch_size: 10,
