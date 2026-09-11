@@ -365,6 +365,7 @@ defmodule OliWeb.DeliveryController do
         name: "Name",
         email: "Email",
         lms_id: "LMS ID",
+        enrollment_date: "Enrollment Date",
         last_interaction: "Last Interaction",
         progress: "Progress (Pct)",
         overall_proficiency: "Proficiency",
@@ -385,6 +386,8 @@ defmodule OliWeb.DeliveryController do
               name: OliWeb.Common.Utils.name(student),
               email: student.email,
               lms_id: student.sub,
+              enrollment_date:
+                FormatDateTime.format_datetime(student.enrollment_date, show_timezone: false),
               last_interaction: student.last_interaction,
               progress: convert_to_percentage(student),
               overall_proficiency: student.overall_proficiency,
