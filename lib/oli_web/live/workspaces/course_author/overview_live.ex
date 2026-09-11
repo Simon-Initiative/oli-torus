@@ -560,6 +560,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       <% end %>
 
       <Overview.section title="Actions" is_last={true}>
+        <div :if={@is_admin} class="flex items-center">
+          <.link
+            class="text-Text-text-button hover:underline pr-3 py-2"
+            href={~p"/workspaces/course_author/#{@project.slug}/learning_model_parameters"}
+          >
+            Learning Model Parameters
+          </.link>
+          <span>Download and upload LKT-AOA parameter values.</span>
+        </div>
         <%= if @is_admin do %>
           <div class="flex items-center">
             <.link
