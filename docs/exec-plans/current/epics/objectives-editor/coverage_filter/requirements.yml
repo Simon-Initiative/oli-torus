@@ -49,7 +49,7 @@ requirements:
         verification_method: "automated"
         proofs:
           - "test/oli/course_test.exs: partial embedded-attribute persistence preserves both thresholds"
-          - "test/oli_web/live/workspaces/course_author/objectives_live_test.exs: increment, decrement floor, persistence, reclassification, and restore defaults"
+          - "test/oli_web/live/workspaces/course_author/objectives_live_test.exs: authorized persistence, threshold reclassification, restore defaults, and unauthorized project access leaves thresholds unchanged"
       - id: "AC-006"
         title: "Settings popover exposes accessible controls and explanatory copy while keeping Learn more hidden until MER-5919"
         status: "verified"

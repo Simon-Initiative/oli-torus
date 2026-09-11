@@ -15,6 +15,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
       assert html =~ ~s(phx-click="increment_coverage_formative_threshold")
       assert html =~ ~s(phx-click="decrement_coverage_summative_threshold")
       assert html =~ ~s(phx-click="increment_coverage_summative_threshold")
+      assert html =~ "close_coverage_settings"
+      assert html =~ ~s(phx-key="Escape")
       assert html =~ ~r/>\s*3\s*</
       assert html =~ ~r/>\s*5\s*</
     end
@@ -22,7 +24,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
     test "disables the decrement button at zero but not the increment button" do
       html = render_popover(%{formative_threshold: 0})
 
-      assert html =~ ~s(phx-click="decrement_coverage_formative_threshold" disabled)
+      assert html =~ ~r/phx-click="decrement_coverage_formative_threshold"[^>]*disabled/
       refute html =~ ~s(phx-click="increment_coverage_formative_threshold" disabled)
     end
 
@@ -46,43 +48,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
       assert html =~ "w-[298px]"
     end
 
-    test "starts hidden, leaving dismissal to the caller's wrapper" do
+    test "is rendered only while open and handles Escape within the popover" do
       html = render_popover()
 
       assert html =~ "hidden"
-      assert html =~ "phx-window-keydown"
       assert html =~ ~s(phx-key="Escape")
+      assert html =~ "phx-window-keydown"
+      assert html =~ "motion-reduce:duration-0"
       assert html =~ ~s(id="coverage-settings-popover-focus-wrap")
-      refute html =~ ~r/\sphx-keydown=/
       refute html =~ "phx-click-away"
     end
   end
 
-  describe "open_js/2 and close_js/3" do
-    test "opening targets the popover and trigger, then moves focus inside" do
+  describe "open_js/2" do
+    test "opening records the trigger then moves focus inside" do
       open = CoverageSettingsPopover.open_js("pop", "trig").ops |> Jason.encode!()
 
       assert open =~ ~s("show")
       assert open =~ ~s("#pop")
       assert open =~ ~s("#trig")
-      assert open =~ ~s(["aria-expanded","true"])
       assert open =~ ~s("push_focus")
       assert open =~ ~s("focus_first")
     end
+  end
 
-    test "closing can restore focus to the trigger for keyboard dismissal" do
-      close = CoverageSettingsPopover.close_js("pop", "trig").ops |> Jason.encode!()
+  describe "close_js/0" do
+    test "restores focus before asking the LiveView to close" do
+      close = CoverageSettingsPopover.close_js().ops |> Jason.encode!()
 
-      assert close =~ ~s("hide")
-      assert close =~ ~s("#pop")
-      assert close =~ ~s("set_attr")
-      assert close =~ ~s(["aria-expanded","false"])
-      refute close =~ ~s("focus")
-
-      close_and_restore =
-        CoverageSettingsPopover.close_js("pop", "trig", true).ops |> Jason.encode!()
-
-      assert close_and_restore =~ ~s("pop_focus")
+      assert close =~ ~s("pop_focus")
+      assert close =~ ~s("close_coverage_settings")
     end
   end
 

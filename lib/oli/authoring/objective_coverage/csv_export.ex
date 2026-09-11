@@ -42,10 +42,16 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExport do
         |> Map.new(&{&1.id, &1.title})
 
       coverage_issue_ids =
-        Issues.flagged_top_level_ids(
-          model,
-          ProjectAttributes.coverage_thresholds(project.attributes)
-        )
+        case params |> param("filter", %{}) |> Map.get("coverage_issues") do
+          "true" ->
+            Issues.flagged_top_level_ids(
+              model,
+              ProjectAttributes.coverage_thresholds(project.attributes)
+            )
+
+          _ ->
+            nil
+        end
 
       {:ok,
        encode(model, project.customizations, activity_types_by_id, params, coverage_issue_ids)}
@@ -373,8 +379,20 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExport do
   defp page_location(nil, _course_locations), do: ""
   defp page_location(page, course_locations), do: Map.get(course_locations, page.resource_id, "")
 
-  defp param(params, key, default),
-    do: Map.get(params, key, Map.get(params, String.to_existing_atom(key), default))
+  defp param(params, key, default) do
+    case Map.fetch(params, key) do
+      {:ok, value} -> value
+      :error -> Map.get(params, existing_atom_key(key), default)
+    end
+  end
+
+  # Query params normally have string keys, but direct callers may use existing
+  # atom keys. Never create an atom from request-controlled input.
+  defp existing_atom_key(key) do
+    String.to_existing_atom(key)
+  rescue
+    ArgumentError -> key
+  end
 
   defp normalize_text(value) when is_binary(value),
     do: value |> String.downcase() |> String.trim()

@@ -39,6 +39,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   @table_push_patch_path &__MODULE__.live_path/2
   @max_search_length 100
   @max_search_terms 10
+  @coverage_issue_fields [:any_issue, :direct_formative_issue, :direct_summative_issue]
+  @empty_coverage_issue_flags Map.new(@coverage_issue_fields, &{&1, false})
 
   def live_path(socket, params) do
     params =
@@ -69,6 +71,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_status: :loading,
         coverage_load_ref: make_ref(),
         coverage_issue_ids: MapSet.new(),
+        coverage_settings_open: false,
         assessment_buckets: %{},
         course_content_open: false,
         course_content_selection: nil,
@@ -178,22 +181,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                 class="flex h-[38px] w-full min-w-0 items-center gap-2 @[520px]:w-auto @[520px]:shrink-0"
               >
                 <label for="select_sort" class="sr-only">Sort objectives</label>
-                <select
-                  name="sort_by"
-                  id="select_sort"
-                  class="h-[38px] min-w-0 flex-1 rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary @[520px]:min-w-[210px]"
-                >
-                  <%= for column_spec <- @table_model.column_specs do %>
-                    <%= if column_spec.name != :action do %>
-                      <option
-                        value={column_spec.name}
-                        selected={@table_model.sort_by_spec == column_spec}
-                      >
-                        {column_spec.label}
-                      </option>
+                <div class="relative min-w-0 flex-1 @[520px]:min-w-[210px]">
+                  <select
+                    name="sort_by"
+                    id="select_sort"
+                    class="h-[38px] w-full appearance-none rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] pr-9 text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                    style="appearance: none; -webkit-appearance: none; background-image: none;"
+                  >
+                    <%= for column_spec <- @table_model.column_specs do %>
+                      <%= if column_spec.name != :action do %>
+                        <option
+                          value={column_spec.name}
+                          selected={@table_model.sort_by_spec == column_spec}
+                        >
+                          {column_spec.label}
+                        </option>
+                      <% end %>
                     <% end %>
-                  <% end %>
-                </select>
+                  </select>
+                  <Icons.chevron_down
+                    width="9.5"
+                    height="5.5"
+                    variant="stroke"
+                    class="pointer-events-none absolute right-[10px] top-1/2 -translate-y-1/2 text-Icon-icon-default"
+                  />
+                </div>
                 <label class="inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-md border border-Border-border-default text-Text-text-high hover:bg-Surface-surface-secondary-hover focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-Fill-Buttons-fill-primary">
                   <span class="sr-only">Toggle sort direction</span>
                   <.input
@@ -244,23 +256,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
               <div
                 class="relative shrink-0"
-                phx-click-away={
-                  CoverageSettingsPopover.close_js(
-                    "coverage-settings-popover",
-                    "coverage-settings-trigger"
-                  )
-                }
+                phx-click-away={@coverage_settings_open && "close_coverage_settings"}
               >
                 <button
                   type="button"
                   id="coverage-settings-trigger"
                   phx-click={
-                    CoverageSettingsPopover.open_js(
-                      "coverage-settings-popover",
-                      "coverage-settings-trigger"
-                    )
+                    if @coverage_settings_open,
+                      do: "close_coverage_settings",
+                      else: "open_coverage_settings"
                   }
-                  aria-expanded="false"
+                  aria-expanded={if(@coverage_settings_open, do: "true", else: "false")}
                   aria-haspopup="dialog"
                   aria-controls="coverage-settings-popover"
                   aria-label="Coverage issue threshold settings"
@@ -268,16 +274,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                 >
                   <Icons.settings width="15" height="15" stroke_width="1.5" />
                 </button>
-                <CoverageSettingsPopover.coverage_settings_popover
-                  id="coverage-settings-popover"
-                  trigger_id="coverage-settings-trigger"
-                  formative_threshold={
-                    ProjectAttributes.coverage_thresholds(@project.attributes).formative
-                  }
-                  summative_threshold={
-                    ProjectAttributes.coverage_thresholds(@project.attributes).summative
-                  }
-                />
+                <%= if @coverage_settings_open do %>
+                  <CoverageSettingsPopover.coverage_settings_popover
+                    id="coverage-settings-popover"
+                    trigger_id="coverage-settings-trigger"
+                    formative_threshold={
+                      ProjectAttributes.coverage_thresholds(@project.attributes).formative
+                    }
+                    summative_threshold={
+                      ProjectAttributes.coverage_thresholds(@project.attributes).summative
+                    }
+                  />
+                <% end %>
               </div>
             </div>
 
@@ -432,24 +440,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
               end)
 
             [
-              Map.merge(
-                rev,
-                %{
-                  children: mapped_children,
-                  sub_objectives_count: length(mapped_children),
-                  page_attachments_count: 0,
-                  page_attachments: [],
-                  activity_attachments_count: 0,
-                  formative_activity_attachments_count: 0,
-                  summative_activity_attachments_count: 0,
-                  assessment_bucket: :formative,
-                  has_coverage: false,
-                  coverage_details: [],
-                  any_issue: false,
-                  direct_formative_issue: false,
-                  direct_summative_issue: false
-                }
-              )
+              rev
+              |> Map.merge(base_coverage_fields())
+              |> Map.merge(%{
+                children: mapped_children,
+                sub_objectives_count: length(mapped_children)
+              })
             ] ++ acc
 
           _ ->
@@ -471,11 +467,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       summative_activity_attachments_count: 0,
       assessment_bucket: :formative,
       has_coverage: false,
-      coverage_details: [],
-      any_issue: false,
-      direct_formative_issue: false,
-      direct_summative_issue: false
+      coverage_details: []
     }
+    |> Map.merge(@empty_coverage_issue_flags)
   end
 
   def filter_rows(socket, query, filter),
@@ -603,10 +597,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         search_matching_ids || MapSet.new()
       end
 
-    objectives
-    |> filter_objective_rows(matching_ids)
-    |> filter_content_rows(content_selection)
-    |> Enum.count(&MapSet.member?(coverage_issue_ids, &1.resource_id))
+    content_ids =
+      case content_selection do
+        %{selected_ids: []} -> nil
+        nil -> nil
+        selection -> selection.objective_ids
+      end
+
+    Enum.count(objectives, fn objective ->
+      MapSet.member?(coverage_issue_ids, objective.resource_id) and
+        objective_or_child_matches?(objective, matching_ids) and
+        objective_or_child_matches?(objective, content_ids)
+    end)
+  end
+
+  defp objective_or_child_matches?(_objective, nil), do: true
+
+  defp objective_or_child_matches?(objective, ids) do
+    MapSet.member?(ids, objective.resource_id) or
+      Enum.any?(objective.children, fn child ->
+        not is_nil(child) and MapSet.member?(ids, child.resource_id)
+      end)
   end
 
   defp matching_objective_ids(model, query) do
@@ -809,6 +820,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
      |> start_async(:objective_coverage, fn ->
        ObjectiveCoverage.load(project)
      end)}
+  end
+
+  def handle_event("open_coverage_settings", _params, socket) do
+    {:noreply, assign(socket, coverage_settings_open: true)}
+  end
+
+  def handle_event("close_coverage_settings", _params, socket) do
+    {:noreply, assign(socket, coverage_settings_open: false)}
   end
 
   def handle_event("increment_coverage_formative_threshold", _params, socket),
@@ -1382,6 +1401,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   defp apply_coverage_result({:error, reason}, socket) do
     socket =
       assign(socket,
+        objectives: clear_coverage_issue_flags(socket.assigns.objectives),
         coverage_model: nil,
         coverage_status: {:error, reason},
         coverage_issue_ids: MapSet.new(),
@@ -1392,6 +1412,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       )
 
     refresh_table_state(socket)
+  end
+
+  defp clear_coverage_issue_flags(objectives) do
+    Enum.map(objectives, fn objective ->
+      objective
+      |> Map.merge(@empty_coverage_issue_flags)
+      |> Map.update!(:children, fn children ->
+        Enum.map(children, fn
+          nil ->
+            nil
+
+          child ->
+            Map.merge(child, @empty_coverage_issue_flags)
+        end)
+      end)
+    end)
   end
 
   # Distinguish unknown coverage from a successful result with no issues.
@@ -1545,7 +1581,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   defp coverage_issue_fields(issues, objective_id) do
     issues
     |> Map.fetch!(objective_id)
-    |> Map.take([:any_issue, :direct_formative_issue, :direct_summative_issue])
+    |> Map.take(@coverage_issue_fields)
   end
 
   defp selected_assessment_buckets(existing, model, objectives) do

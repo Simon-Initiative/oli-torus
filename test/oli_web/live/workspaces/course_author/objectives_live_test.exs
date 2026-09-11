@@ -38,6 +38,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     wait_until(fn -> has_element?(view, "#objective-coverage-ready") end)
   end
 
+  defp open_coverage_settings(view) do
+    view
+    |> element("#coverage-settings-trigger")
+    |> render_click()
+  end
+
   defp create_project(_conn) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -250,9 +256,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       conn: conn,
       project: project
     } do
+      {:ok, _updated_project} =
+        Course.update_project_attributes(project, %{
+          coverage_formative_threshold: 7,
+          coverage_summative_threshold: 9
+        })
+
       redirect_path = "/workspaces/course_author"
 
       {:error, {:redirect, %{to: ^redirect_path}}} = live(conn, live_view_route(project.slug))
+
+      persisted = Course.get_project!(project.id)
+      assert persisted.attributes.coverage_formative_threshold == 7
+      assert persisted.attributes.coverage_summative_threshold == 9
     end
   end
 
@@ -2265,7 +2281,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
   describe "coverage settings popover" do
     setup [:admin_conn, :create_project]
 
-    test "renders the trigger and popover with the project's default thresholds", %{
+    test "renders the trigger and opens the popover with the project's default thresholds", %{
       conn: conn,
       project: project
     } do
@@ -2273,6 +2289,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       wait_for_coverage(view)
 
       assert has_element?(view, "#coverage-settings-trigger")
+      refute has_element?(view, "#coverage-settings-popover")
+
+      view
+      |> element("#coverage-settings-trigger")
+      |> render_click()
+
       assert has_element?(view, "#coverage-settings-popover")
       assert has_element?(view, "#coverage-settings-popover", "Minimum formative")
       assert has_element?(view, "#coverage-settings-popover", "Minimum summative")
@@ -2280,7 +2302,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "#coverage-settings-popover", "Learn more")
     end
 
-    test "the trigger's open state is driven by aria-expanded and dismissal is owned by its wrapper",
+    test "the trigger toggles the popover and only registers dismissal while it is open",
          %{conn: conn, project: project} do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
       wait_for_coverage(view)
@@ -2291,10 +2313,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert trigger =~ "aria-expanded:bg-Fill-Accent-fill-accent-blue"
       assert trigger =~ "aria-expanded:border-Border-border-active"
 
+      refute has_element?(view, "#coverage-settings-popover")
+
+      view
+      |> element("#coverage-settings-trigger")
+      |> render_click()
+
       refute render(element(view, "#coverage-settings-popover")) =~ "phx-click-away"
       assert has_element?(view, "[phx-click-away] > #coverage-settings-trigger")
       assert has_element?(view, "#coverage-settings-popover[phx-key='Escape']")
+      assert has_element?(view, "#coverage-settings-popover[phx-window-keydown]")
       assert has_element?(view, "#coverage-settings-popover-focus-wrap")
+
+      view
+      |> element("#coverage-settings-trigger")
+      |> render_click()
+
+      refute has_element?(view, "#coverage-settings-popover")
+    end
+
+    test "Escape closes the popover", %{conn: conn, project: project} do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+      open_coverage_settings(view)
+
+      view
+      |> element("#coverage-settings-popover")
+      |> render_keydown(%{"key" => "Escape"})
+
+      refute has_element?(view, "#coverage-settings-popover")
+      assert has_element?(view, "#coverage-settings-trigger[aria-expanded='false']")
     end
 
     test "incrementing the formative threshold persists it and re-flags an objective at the boundary",
@@ -2306,6 +2354,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
       wait_for_coverage(view)
+      open_coverage_settings(view)
 
       # 3 formative + 3 summative meets the default 3 threshold, so this
       # objective isn't flagged yet.
@@ -2328,6 +2377,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     } do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
       wait_for_coverage(view)
+      open_coverage_settings(view)
 
       view
       |> element(~s(button[phx-click="increment_coverage_formative_threshold"]))
@@ -2350,6 +2400,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     } do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
       wait_for_coverage(view)
+      open_coverage_settings(view)
 
       # Default threshold is 3; three decrements reach the floor of zero.
       for _ <- 1..3 do
@@ -2376,6 +2427,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     test "restore default resets both thresholds back to 3", %{conn: conn, project: project} do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
       wait_for_coverage(view)
+      open_coverage_settings(view)
 
       view
       |> element(~s(button[phx-click="increment_coverage_formative_threshold"]))

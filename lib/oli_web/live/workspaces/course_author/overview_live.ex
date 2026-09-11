@@ -9,7 +9,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.Delivery.Sections.Browse
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Authoring.Course.{CreativeCommons, Project}
+  alias Oli.Authoring.Course.{CreativeCommons, Project, ProjectAttributes}
   alias Oli.LanguageCodesIso639
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
@@ -834,7 +834,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       |> add_custom_license_details()
       |> decode_welcome_title()
 
+    # Use the persisted thresholds rather than the values the Overview form
+    # mounted with, so this form cannot overwrite changes from Objectives.
     project = socket.assigns.project
+    current_attributes = Course.get_project!(project.id).attributes
+    project_params = preserve_coverage_thresholds(project_params, current_attributes)
 
     socket =
       case Course.update_project(project, project_params) do
@@ -1098,4 +1102,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   defp decode_welcome_title(project_params),
     do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
+
+  defp preserve_coverage_thresholds(project_params, current_attributes) do
+    thresholds = ProjectAttributes.coverage_thresholds(current_attributes)
+
+    attributes =
+      project_params
+      |> Map.get("attributes", %{})
+      |> Map.put("coverage_formative_threshold", thresholds.formative)
+      |> Map.put("coverage_summative_threshold", thresholds.summative)
+
+    Map.put(project_params, "attributes", attributes)
+  end
 end

@@ -7,8 +7,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
   `ObjectivesLive` owns threshold persistence and handles each action
   immediately. The Learn more affordance remains hidden and non-interactive.
 
-  The caller owns dismissal by placing `phx-click-away` on the wrapper that
-  contains both the trigger and the popover.
+  The caller owns open state and dismissal. This component is only rendered
+  while open, so its keyboard handler cannot affect the surrounding page.
   """
   use Phoenix.Component
 
@@ -27,7 +27,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
       class="absolute left-1/2 top-full z-10 mt-[11px] hidden w-[298px] -translate-x-1/2 flex-col rounded-[10px] border border-Border-border-default bg-Surface-surface-primary shadow-[0px_8px_14px_rgba(0,50,99,0.14)]"
       role="dialog"
       aria-label="Coverage issue thresholds"
-      phx-window-keydown={close_js(@id, @trigger_id, true)}
+      phx-mounted={open_js(@id, @trigger_id)}
+      phx-window-keydown={close_js()}
       phx-key="Escape"
     >
       <.focus_wrap id={"#{@id}-focus-wrap"} class="flex flex-col">
@@ -70,6 +71,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
           <button
             type="button"
             phx-click="restore_default_coverage_thresholds"
+            phx-keydown={close_js()}
+            phx-key="Escape"
             class="rounded-md border border-Border-border-bold px-6 py-2 text-sm font-semibold leading-4 text-Specially-Tokens-Text-text-button-secondary shadow-[0px_2px_4px_0px_rgba(0,52,99,0.1)]"
           >
             Restore default
@@ -129,6 +132,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
       <button
         type="button"
         phx-click={@decrement}
+        phx-keydown={close_js()}
+        phx-key="Escape"
         disabled={@value <= 0}
         aria-label={"Decrease #{@label}"}
         class="flex h-[28px] w-[28px] items-center justify-center text-base leading-6 text-Text-text-high disabled:opacity-40"
@@ -144,6 +149,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
       <button
         type="button"
         phx-click={@increment}
+        phx-keydown={close_js()}
+        phx-key="Escape"
         aria-label={"Increase #{@label}"}
         class="flex h-[28px] w-[28px] items-center justify-center text-base leading-6 text-Text-text-high"
       >
@@ -154,37 +161,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
   end
 
   @doc """
-  Builds the `phx-click` JS command that opens the settings popover.
+  Focuses an already-mounted settings popover.
 
-  Also updates the trigger's expanded state and moves focus into the popover.
+  The trigger remains in the focus stack so keyboard dismissal can restore it.
   """
   @spec open_js(String.t(), String.t()) :: JS.t()
   def open_js(popover_id, trigger_id) do
     JS.push_focus(to: "##{trigger_id}")
     |> JS.show(
       to: "##{popover_id}",
-      transition: {"ease-out duration-150", "opacity-0 scale-95", "opacity-100 scale-100"}
+      transition: {
+        "ease-out duration-150 motion-reduce:duration-0",
+        "opacity-0 scale-95 motion-reduce:scale-100",
+        "opacity-100 scale-100"
+      }
     )
-    |> JS.set_attribute({"aria-expanded", "true"}, to: "##{trigger_id}")
     |> JS.focus_first(to: "##{popover_id}")
   end
 
   @doc """
-  Builds the `phx-click-away` JS command that closes the popover and resets its
-  trigger. Idempotent, so it is safe to fire on clicks while already closed.
-
-  Belongs on the wrapper enclosing both the trigger and the popover, so that
-  clicking the trigger is never treated as a click away.
+  Restores focus to the trigger and asks the owning LiveView to unmount the popover.
   """
-  @spec close_js(String.t(), String.t(), boolean()) :: JS.t()
-  def close_js(popover_id, trigger_id, restore_focus? \\ false) do
-    js =
-      JS.hide(
-        to: "##{popover_id}",
-        transition: {"ease-out duration-100", "opacity-100 scale-100", "opacity-0 scale-95"}
-      )
-      |> JS.set_attribute({"aria-expanded", "false"}, to: "##{trigger_id}")
-
-    if restore_focus?, do: JS.pop_focus(js), else: js
+  @spec close_js() :: JS.t()
+  def close_js do
+    JS.pop_focus()
+    |> JS.push("close_coverage_settings")
   end
 end
