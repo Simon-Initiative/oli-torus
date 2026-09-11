@@ -83,7 +83,14 @@ defmodule Oli.Scenarios.Directives.OwnershipHandler do
   defp configured_or_unique_author(nil, query, label), do: unique(query, label)
 
   defp configured_or_unique_author(email, _query, label) do
-    unique(from(a in Author, where: a.email == ^email and is_nil(a.locked_at)), label)
+    unique(
+      from(a in Author,
+        where:
+          a.email == ^email and
+            a.system_role_id == ^SystemRole.role_id().system_admin and is_nil(a.locked_at)
+      ),
+      label
+    )
   end
 
   defp unique(query, label) do

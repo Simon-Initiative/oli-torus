@@ -1,11 +1,10 @@
-defmodule Oli.Release.PreviewQATools do
-  @moduledoc "Synchronous preview QA release command dispatcher."
+defmodule Oli.Seeding.CLI do
+  @moduledoc "Synchronous command dispatcher for development and preview data seeding."
 
   alias Oli.PreviewQATools.Config
-  alias Oli.Release.PreviewQATools.BundledScenarios
-  alias Oli.Release.PreviewQATools.ProjectIngest
+  alias Oli.Seeding.{BundledScenarios, ProjectIngest}
   alias Oli.Scenarios
-  alias Oli.Scenarios.ReleaseExecution
+  alias Oli.Scenarios.SeedExecution
 
   require Logger
 
@@ -16,14 +15,14 @@ defmodule Oli.Release.PreviewQATools do
 
   def main(args) do
     args
-    |> normalize_release_args()
+    |> normalize_invocation_args()
     |> dispatch()
     |> print_result()
     |> System.halt()
   end
 
-  defp normalize_release_args(["--" | args]), do: args
-  defp normalize_release_args(args), do: args
+  defp normalize_invocation_args(["--" | args]), do: args
+  defp normalize_invocation_args(args), do: args
 
   def dispatch(args, opts \\ []) when is_list(args) do
     enabled? = Keyword.get(opts, :enabled?, Config.enabled?())
@@ -33,7 +32,7 @@ defmodule Oli.Release.PreviewQATools do
       if enabled? do
         execute(args, opts)
       else
-        {:error, :disabled, "preview QA tools are disabled", false}
+        {:error, :disabled, "seeding tools are disabled", false}
       end
 
     format_result(result, started_at)
@@ -133,22 +132,22 @@ defmodule Oli.Release.PreviewQATools do
   end
 
   defp parse_scenario(path) do
-    {:ok, ReleaseExecution.parse_file(path)}
+    {:ok, SeedExecution.parse_file(path)}
   rescue
     error ->
-      Logger.error("Release scenario parsing failed: #{inspect(error.__struct__)}")
+      Logger.error("Seed scenario parsing failed: #{inspect(error.__struct__)}")
       {:error, :parse_failed}
   end
 
   defp execute_scenario(directives, path) do
-    {:ok, ReleaseExecution.execute(directives, path)}
+    {:ok, SeedExecution.execute(directives, path)}
   rescue
     error ->
-      Logger.error("Release scenario execution failed: #{inspect(error.__struct__)}")
+      Logger.error("Seed scenario execution failed: #{inspect(error.__struct__)}")
       {:error, :execution_failed}
   catch
     kind, _reason ->
-      Logger.error("Release scenario execution terminated: #{kind}")
+      Logger.error("Seed scenario execution terminated: #{kind}")
       {:error, :execution_failed}
   end
 

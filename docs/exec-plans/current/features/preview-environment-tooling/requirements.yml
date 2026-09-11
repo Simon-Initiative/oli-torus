@@ -1,11 +1,12 @@
 work_item: preview-environment-tooling
 requirements:
 - id: FR-001
-  title: Compile release seeding and user masquerade only into MIX_ENV=preview releases
-    and gate their runtime use behind deny-by-default PREVIEW_QA_TOOLS_ENABLED
+  title: Compile seeding for development and preview while keeping it out of production;
+    compile user masquerade only into MIX_ENV=preview and gate preview runtime use behind
+    deny-by-default PREVIEW_QA_TOOLS_ENABLED
 - id: FR-002
-  title: Provide a bin/seed release CLI that lists bundled scenarios and synchronously
-    executes a bundled or custom YAML scenario
+  title: Provide a mix seed development task and bin/seed preview CLI that list bundled
+    scenarios and synchronously execute a bundled or custom YAML scenario through one dispatcher
 - id: FR-003
   title: Let the release CLI download and ingest a Torus project archive from an operator-provided
     reachable URL
@@ -33,9 +34,9 @@ requirements:
 acceptance_criteria:
 - id: AC-001
   requirement_id: FR-001
-  title: Release seeding, masquerade, and the mailbox route are compiled only when
-    MIX_ENV=preview, and PREVIEW_QA_TOOLS_ENABLED must equal true case-insensitively at
-    runtime to activate them
+  title: Seeding is compiled in development and preview but absent from production;
+    masquerade and the mailbox route remain preview-only, and PREVIEW_QA_TOOLS_ENABLED
+    must equal true case-insensitively to activate preview capabilities
   verification_method: automated
 - id: AC-002
   requirement_id: FR-001
@@ -58,14 +59,14 @@ acceptance_criteria:
   verification_method: hybrid
 - id: AC-005
   requirement_id: FR-002
-  title: bin/seed scenarios list lists bundled scenario identifiers and descriptions
-    without executing them
+  title: mix seed scenarios list in development and bin/seed scenarios list in preview
+    list bundled scenario identifiers and descriptions without executing them
   verification_method: automated
 - id: AC-006
   requirement_id: FR-002
-  title: bin/seed scenarios run accepts exactly one of --name or --file, executes
-    it synchronously through Oli.Scenarios, prints a bounded summary, and exits nonzero
-    on usage, parse, or execution failure
+  title: Both seeding entry points accept exactly one of --name or --file, execute it
+    synchronously through Oli.Scenarios, print a bounded summary, and exit nonzero on
+    usage, parse, or execution failure
   verification_method: automated
 - id: AC-007
   requirement_id: FR-002
@@ -99,7 +100,7 @@ acceptance_criteria:
   verification_method: automated
 - id: AC-012
   requirement_id: FR-004
-  title: bulk_users creates deterministic scenario references and collision-safe synthetic
+  title: bulk_create_enroll_users creates deterministic scenario references and collision-safe synthetic
     instructors and learners enrolled in the selected section
   verification_method: automated
 - id: AC-013

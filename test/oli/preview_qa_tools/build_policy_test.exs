@@ -50,19 +50,24 @@ defmodule Oli.PreviewQATools.BuildPolicyTest do
     assert mix_project =~ "elixirc_options: elixirc_options(Mix.env())"
   end
 
-  test "release seeding uses the preview source path only in preview builds" do
+  test "seeding is compiled for development and preview but excluded from production" do
     mix_project = File.read!("mix.exs")
     router = File.read!("lib/oli_web/router.ex")
     application = File.read!("lib/oli/application.ex")
 
     assert mix_project =~
-             "defp elixirc_paths(:preview), do: [\"lib\", \"preview/lib\"]"
+             "defp elixirc_paths(:dev), do: [\"lib\", \"seeding/lib\"]"
+
+    assert mix_project =~
+             "defp elixirc_paths(:preview), do: [\"lib\", \"seeding/lib\"]"
 
     refute mix_project =~
-             "defp elixirc_paths(:prod), do: [\"lib\", \"preview/lib\"]"
+             "defp elixirc_paths(:prod), do: [\"lib\", \"seeding/lib\"]"
 
-    assert File.regular?("preview/lib/oli/release/preview_qa_tools.ex")
-    refute File.dir?("lib/preview_qa_tools/release")
+    assert File.regular?("seeding/lib/oli/seeding/cli.ex")
+    assert File.regular?("seeding/lib/mix/tasks/seed.ex")
+    assert File.regular?("rel/overlays/bin/seed")
+    assert mix_project =~ "&remove_non_preview_seed/1"
 
     refute router =~ "PreviewQATools"
     refute application =~ "PreviewQATools.Seed"

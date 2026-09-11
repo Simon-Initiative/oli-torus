@@ -17,6 +17,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     AssertDirective,
     UserDirective,
     EnrollDirective,
+    BulkCreateEnrollUsersDirective,
+    SimulateProgressDirective,
     InstitutionDirective,
     OwnershipDirective,
     InstitutionDiscountDirective,
@@ -73,6 +75,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     "verify",
     "user",
     "enroll",
+    "bulk_create_enroll_users",
+    "simulate_progress",
     "institution",
     "ownership",
     "institution_discount",
@@ -587,6 +591,71 @@ defmodule Oli.Scenarios.DirectiveParser do
 
       {:error, msg} ->
         raise msg
+    end
+  end
+
+  defp parse_directive(%{"bulk_create_enroll_users" => data}) do
+    allowed_attrs = ["section", "prefix", "instructors", "learners"]
+
+    with :ok <-
+           DirectiveValidator.validate_attributes(allowed_attrs, data, "bulk_create_enroll_users") do
+      section = required_non_empty_string(data["section"], "bulk_create_enroll_users.section")
+      prefix = bounded_optional_string(data["prefix"], "bulk", "prefix", 40)
+      instructors = bounded_non_negative_integer(data["instructors"], 0, "instructors", 1_000)
+      learners = bounded_non_negative_integer(data["learners"], 0, "learners", 10_000)
+
+      if instructors + learners == 0 do
+        raise "bulk_create_enroll_users must create at least one instructor or learner"
+      end
+
+      %BulkCreateEnrollUsersDirective{
+        section: section,
+        prefix: prefix,
+        instructors: instructors,
+        learners: learners
+      }
+    else
+      {:error, msg} -> raise msg
+    end
+  end
+
+  defp parse_directive(%{"simulate_progress" => data}) do
+    allowed_attrs = [
+      "section",
+      "users",
+      "seed",
+      "pct_correct",
+      "batch_size",
+      "max_concurrency",
+      "timeout_ms"
+    ]
+
+    with :ok <- DirectiveValidator.validate_attributes(allowed_attrs, data, "simulate_progress") do
+      users = data["users"]
+
+      if not is_nil(users) and
+           (not is_list(users) or Enum.any?(users, &(not is_binary(&1) or &1 == ""))) do
+        raise "simulate_progress.users must be a list of non-empty scenario user references"
+      end
+
+      pct_correct = parse_optional_float(data["pct_correct"]) || 1.0
+
+      if pct_correct < 0.0 or pct_correct > 1.0 do
+        raise "simulate_progress.pct_correct must be between 0.0 and 1.0"
+      end
+
+      %SimulateProgressDirective{
+        section: required_non_empty_string(data["section"], "simulate_progress.section"),
+        users: users,
+        seed: bounded_non_negative_integer(data["seed"], 0, "seed", 2_147_483_647),
+        pct_correct: pct_correct,
+        batch_size: bounded_positive_integer(data["batch_size"], 10, "batch_size", 100),
+        max_concurrency:
+          bounded_positive_integer(data["max_concurrency"], 4, "max_concurrency", 16),
+        timeout_ms: bounded_positive_integer(data["timeout_ms"], 30_000, "timeout_ms", 300_000)
+      }
+    else
+      {:error, msg} -> raise msg
     end
   end
 
@@ -2410,6 +2479,39 @@ defmodule Oli.Scenarios.DirectiveParser do
       :error -> raise "Invalid integer value #{inspect(value)}"
     end
   end
+
+  defp required_non_empty_string(value, _field) when is_binary(value) and value != "", do: value
+  defp required_non_empty_string(_value, field), do: raise("#{field} must be a non-empty string")
+
+  defp bounded_optional_string(nil, default, _field, _max), do: default
+
+  defp bounded_optional_string(value, _default, _field, max)
+       when is_binary(value) and value != "" do
+    if String.length(value) <= max,
+      do: value,
+      else: raise("prefix must be a non-empty string of at most #{max} characters")
+  end
+
+  defp bounded_optional_string(_value, _default, field, max),
+    do: raise("#{field} must be a non-empty string of at most #{max} characters")
+
+  defp bounded_non_negative_integer(nil, default, _field, _max), do: default
+
+  defp bounded_non_negative_integer(value, _default, _field, max)
+       when is_integer(value) and value >= 0 and value <= max,
+       do: value
+
+  defp bounded_non_negative_integer(_value, _default, field, max),
+    do: raise("#{field} must be an integer between 0 and #{max}")
+
+  defp bounded_positive_integer(nil, default, _field, _max), do: default
+
+  defp bounded_positive_integer(value, _default, _field, max)
+       when is_integer(value) and value > 0 and value <= max,
+       do: value
+
+  defp bounded_positive_integer(_value, _default, field, max),
+    do: raise("#{field} must be an integer between 1 and #{max}")
 
   defp parse_optional_float(nil), do: nil
   defp parse_optional_float(value), do: parse_float(value)

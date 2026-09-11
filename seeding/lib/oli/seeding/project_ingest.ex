@@ -1,4 +1,4 @@
-defmodule Oli.Release.PreviewQATools.ProjectIngest do
+defmodule Oli.Seeding.ProjectIngest do
   @moduledoc """
   Downloads a bounded project archive and ingests it for an explicitly selected author.
 
@@ -66,7 +66,11 @@ defmodule Oli.Release.PreviewQATools.ProjectIngest do
           )
 
         email ->
-          from(a in Author, where: a.email == ^email and is_nil(a.locked_at))
+          from(a in Author,
+            where:
+              a.email == ^email and
+                a.system_role_id == ^SystemRole.role_id().system_admin and is_nil(a.locked_at)
+          )
       end
 
     unique_author(query)
