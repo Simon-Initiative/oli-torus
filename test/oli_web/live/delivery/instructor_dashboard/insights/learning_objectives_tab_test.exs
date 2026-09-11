@@ -709,6 +709,31 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
 
       assert has_element?(view, "span", "#{revisions.parent_revision.title}")
     end
+
+    # Regression test for the same bug affecting the Student Proficiency filter: a
+    # parent objective whose own proficiency did not match the selected filter could
+    # still appear because one of its sub-objectives happened to match.
+    test "only shows objectives whose own proficiency matches the filter, not a differently-valued child's",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section,
+           revisions: revisions
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      # The parent's proficiency is the attempt-weighted average aoa of its two
+      # children (High and Low, equal weights), which lands squarely in "Medium".
+      params = %{selected_proficiency_ids: Jason.encode!([3])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      refute has_element?(view, "span", "#{revisions.parent_revision.title}")
+
+      params = %{selected_proficiency_ids: Jason.encode!([2])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      assert has_element?(view, "span", "#{revisions.parent_revision.title}")
+    end
   end
 
   describe "page size change" do

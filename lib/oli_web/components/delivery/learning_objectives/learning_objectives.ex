@@ -955,16 +955,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp do_filter_by_proficiency(objectives, selected_proficiency_ids) do
-    mapper_ids =
-      Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
-        case id do
-          1 -> ["Low" | acc]
-          2 -> ["Medium" | acc]
-          3 -> ["High" | acc]
-          4 -> ["Not enough data" | acc]
-          _ -> acc
-        end
-      end)
+    mapper_ids = proficiency_mapper_ids(selected_proficiency_ids)
 
     if mapper_ids == [] do
       objectives
@@ -978,6 +969,42 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         proficiency in mapper_ids
       end)
     end
+  end
+
+  defp maybe_filter_by_proficiency_own_value(objectives, []), do: objectives
+
+  defp maybe_filter_by_proficiency_own_value(objectives, selected_proficiency_ids) do
+    do_filter_by_proficiency_own_value(objectives, selected_proficiency_ids)
+  end
+
+  # The instructor-dashboard table only ever displays each family's top-level row, so
+  # (unlike do_filter_by_proficiency, used by the flat parent+sub-objective table where
+  # each row shows its own sub-objective value) this must match only the value actually
+  # shown on that row: student_proficiency_obj, which every row in a family carries as
+  # the same, parent-level aggregate. Checking student_proficiency_subobj here would let
+  # a differently-valued sub-objective incorrectly promote its parent into view.
+  defp do_filter_by_proficiency_own_value(objectives, selected_proficiency_ids) do
+    mapper_ids = proficiency_mapper_ids(selected_proficiency_ids)
+
+    if mapper_ids == [] do
+      objectives
+    else
+      Enum.filter(objectives, fn objective ->
+        Map.get(objective, :student_proficiency_obj) in mapper_ids
+      end)
+    end
+  end
+
+  defp proficiency_mapper_ids(selected_proficiency_ids) do
+    Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
+      case id do
+        1 -> ["Low" | acc]
+        2 -> ["Medium" | acc]
+        3 -> ["High" | acc]
+        4 -> ["Not enough data" | acc]
+        _ -> acc
+      end
+    end)
   end
 
   defp maybe_filter_by_confidence(objectives, []), do: objectives
@@ -1063,7 +1090,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp instructor_dashboard_parent_objectives(candidates, objectives, params) do
     matching_parent_ids =
       candidates
-      |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
+      |> maybe_filter_by_proficiency_own_value(params.selected_proficiency_ids)
       |> maybe_filter_by_confidence(Map.get(params, :selected_confidence_ids, []))
       |> maybe_filter_by_card(params.selected_card_value)
       |> MapSet.new(&parent_resource_id/1)
