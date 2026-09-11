@@ -23,6 +23,20 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   alias OliWeb.Components.Delivery.AdaptiveIFrame
   alias Phoenix.LiveView.JS
 
+  @attempts_filter_options [
+    %{id: 1, name: "None", selected: false},
+    %{id: 2, name: "Less than 5", selected: false},
+    %{id: 3, name: "More than 5", selected: false}
+  ]
+
+  @doc """
+  Options for the Attempts filter shared by the Insights View activity tables.
+
+  The ids are the contract between the multi-select and the filter predicates, so both
+  must change together.
+  """
+  def attempts_filter_options, do: @attempts_filter_options
+
   @doc """
   Returns a list of summarizing details for all activities that have been attempted for a given course
   section and page. This function is used to render the Insights View in the instructor dashboard.
