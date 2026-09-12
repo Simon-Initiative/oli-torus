@@ -1,6 +1,8 @@
 defmodule Oli.BrandingTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Branding
   alias Oli.Institutions.Institution
 
@@ -95,8 +97,8 @@ defmodule Oli.BrandingTest do
       jwk = jwk_fixture()
       author = author_fixture()
 
-      %{project: project, institution: institution} =
-        Oli.Seeder.base_project_with_resource(author)
+      %{project: project} = Oli.Factory.insert_project_with_resource(author)
+      institution = insert(:institution, institution_email: author.email)
 
       registration = registration_fixture(%{tool_jwk_id: jwk.id})
 

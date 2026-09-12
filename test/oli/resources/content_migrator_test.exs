@@ -3,7 +3,8 @@ defmodule Oli.Resources.ContentMigratorTest do
 
   use Oli.DataCase
 
-  alias Oli.Seeder
+  import Oli.Factory
+
   alias Oli.Resources.ContentMigrator
 
   @content %{
@@ -87,15 +88,13 @@ defmodule Oli.Resources.ContentMigratorTest do
   }
 
   describe "content migration" do
-    setup %{} do
-      author = author_fixture()
-
-      Seeder.base_project_with_resource(author)
-    end
-
-    test "migrate to 0.1.0", %{publication: publication, project: project, author: author} do
-      %{revision: revision} =
-        Seeder.create_page("Page with Unversioned Model", publication, project, author, @content)
+    test "migrate to 0.1.0" do
+      revision =
+        insert(:revision,
+          title: "Page with Unversioned Model",
+          content: @content,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page()
+        )
 
       migrated_content = ContentMigrator.migrate(revision.content, :page, to: :v0_1_0)
 
@@ -184,18 +183,12 @@ defmodule Oli.Resources.ContentMigratorTest do
              |> Map.get("activity_id") == 31738
     end
 
-    test "adaptive page migration is skipped", %{
-      publication: publication,
-      project: project,
-      author: author
-    } do
-      %{revision: revision} =
-        Seeder.create_page(
-          "Adaptive Page with Unversioned Model",
-          publication,
-          project,
-          author,
-          @adaptive_content
+    test "adaptive page migration is skipped" do
+      revision =
+        insert(:revision,
+          title: "Adaptive Page with Unversioned Model",
+          content: @adaptive_content,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page()
         )
 
       content = ContentMigrator.migrate(revision.content, :page, to: :v0_1_0)

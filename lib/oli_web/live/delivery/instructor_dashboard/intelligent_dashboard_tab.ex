@@ -46,6 +46,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   import Phoenix.Component, only: [assign: 2, assign: 3, assign_new: 3, update: 3]
+  import Phoenix.LiveView, only: [start_async: 4]
 
   alias Oli.Dashboard.Cache.InProcessStore
   alias Oli.Dashboard.RevisitCache
@@ -2543,8 +2544,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          context,
          dependency_profile
        ) do
-    {started_oracles, _task} =
+    {started_oracles, socket} =
       start_dashboard_runtime_loads(
+        socket,
         request_token,
         misses ++ Map.get(dependency_profile, :optional, []),
         context
@@ -3004,8 +3006,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     inflight_oracles = socket.assigns.dashboard_inflight_oracles
 
     if Enum.all?(required, &MapSet.member?(loaded_oracles, &1)) do
-      {started_oracles, _task} =
+      {started_oracles, socket} =
         start_dashboard_runtime_loads(
+          socket,
           request_token,
           optional,
           context,
@@ -3018,7 +3021,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
-  defp start_dashboard_runtime_loads(request_token, oracle_keys, context, already_loaded \\ []) do
+  defp start_dashboard_runtime_loads(
+         socket,
+         request_token,
+         oracle_keys,
+         context,
+         already_loaded \\ []
+       ) do
     live_view_pid = self()
     already_loaded = MapSet.new(already_loaded)
 
@@ -3028,28 +3037,102 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       |> Enum.reject(&MapSet.member?(already_loaded, &1))
 
     runner = fn ->
-      oracle_keys
-      |> Task.async_stream(
-        fn oracle_key -> {oracle_key, dashboard_runtime_result(oracle_key, context)} end,
-        max_concurrency: dashboard_runtime_max_concurrency(),
-        ordered: false,
-        timeout: :infinity
+      stream_dashboard_runtime_results(
+        oracle_keys,
+        request_token,
+        context,
+        live_view_pid,
+        &dashboard_runtime_result/2
       )
-      |> Enum.each(fn
-        {:ok, {oracle_key, oracle_result}} ->
-          send(
-            live_view_pid,
-            {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result}
-          )
-
-        {:exit, _reason} ->
-          :ok
-      end)
     end
 
-    task = Task.Supervisor.start_child(Oli.TaskSupervisor, runner)
+    task_key = {:dashboard_runtime, oracle_keys, make_ref()}
 
-    {oracle_keys, task}
+    socket =
+      start_async(socket, task_key, runner, supervisor: Oli.TaskSupervisor)
+
+    {oracle_keys, socket}
+  end
+
+  @doc false
+  @spec stream_dashboard_runtime_results(
+          [atom()],
+          non_neg_integer(),
+          map(),
+          pid(),
+          (atom(), map() -> map())
+        ) :: :ok
+  def stream_dashboard_runtime_results(
+        oracle_keys,
+        request_token,
+        context,
+        live_view_pid,
+        load_result
+      ) do
+    oracle_keys
+    |> Task.async_stream(
+      fn oracle_key ->
+        {oracle_key, safely_load_dashboard_runtime_result(oracle_key, context, load_result)}
+      end,
+      max_concurrency: dashboard_runtime_max_concurrency(),
+      ordered: false,
+      timeout: :infinity
+    )
+    |> Enum.each(fn
+      {:ok, {oracle_key, oracle_result}} ->
+        send(
+          live_view_pid,
+          {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result}
+        )
+
+      {:exit, reason} ->
+        exit(reason)
+    end)
+
+    completion_ref = make_ref()
+
+    send(
+      live_view_pid,
+      {:dashboard_runtime_stream_complete, self(), completion_ref}
+    )
+
+    receive do
+      {:dashboard_runtime_stream_ack, ^completion_ref} -> :ok
+    end
+  end
+
+  defp safely_load_dashboard_runtime_result(oracle_key, context, load_result) do
+    try do
+      load_result.(oracle_key, context)
+    rescue
+      _exception -> runtime_load_failure(oracle_key, :error)
+    catch
+      kind, _reason -> runtime_load_failure(oracle_key, kind)
+    end
+  end
+
+  defp runtime_load_failure(oracle_key, kind) do
+    Result.error(oracle_key, {:runtime_load_failed, kind},
+      metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
+    )
+  end
+
+  @doc false
+  @spec handle_dashboard_runtime_async(socket(), [atom()], term()) :: {:noreply, socket()}
+  def handle_dashboard_runtime_async(socket, _oracle_keys, {:ok, _result}),
+    do: {:noreply, socket}
+
+  def handle_dashboard_runtime_async(socket, oracle_keys, {:exit, _reason}) do
+    {:noreply,
+     update(socket, :dashboard_inflight_oracles, &MapSet.difference(&1, MapSet.new(oracle_keys)))}
+  end
+
+  @doc false
+  @spec acknowledge_dashboard_runtime_stream(socket(), pid(), reference()) ::
+          {:noreply, socket()}
+  def acknowledge_dashboard_runtime_stream(socket, task_pid, completion_ref) do
+    send(task_pid, {:dashboard_runtime_stream_ack, completion_ref})
+    {:noreply, socket}
   end
 
   defp dashboard_runtime_max_concurrency, do: 4

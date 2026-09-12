@@ -1248,8 +1248,8 @@ defmodule OliWeb.DeliveryControllerTest do
   defp setup_lti_session(%{conn: conn}) do
     author = author_fixture()
 
-    %{project: project, institution: institution, publication: base_publication} =
-      Oli.Seeder.base_project_with_resource(author)
+    %{project: project, publication: base_publication} = insert_project_with_resource(author)
+    institution = insert(:institution, institution_email: author.email)
 
     tool_jwk = jwk_fixture()
 

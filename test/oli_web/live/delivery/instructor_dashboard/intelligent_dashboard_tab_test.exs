@@ -80,6 +80,111 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     :ok
   end
 
+  describe "runtime oracle loading" do
+    test "publishes each completed oracle without waiting for the remaining tiles" do
+      test_pid = self()
+      context = %{section_id: 123}
+
+      load_result = fn oracle_key, received_context ->
+        send(test_pid, {:oracle_started, oracle_key, self()})
+
+        receive do
+          {:release_oracle, ^oracle_key} ->
+            %{oracle_key: oracle_key, context: received_context}
+        end
+      end
+
+      stream =
+        Task.async(fn ->
+          IntelligentDashboardTab.stream_dashboard_runtime_results(
+            [:progress, :support],
+            7,
+            context,
+            test_pid,
+            load_result
+          )
+        end)
+
+      oracle_processes =
+        for _ <- 1..2, into: %{} do
+          assert_receive {:oracle_started, oracle_key, oracle_pid}
+          {oracle_key, oracle_pid}
+        end
+
+      send(oracle_processes.progress, {:release_oracle, :progress})
+
+      assert_receive {:dashboard_runtime_oracle_result, 7, ^context, :progress,
+                      %{oracle_key: :progress}}
+
+      refute_receive {:dashboard_runtime_oracle_result, 7, ^context, :support, _}
+      refute Task.yield(stream, 0)
+
+      send(oracle_processes.support, {:release_oracle, :support})
+
+      assert_receive {:dashboard_runtime_oracle_result, 7, ^context, :support,
+                      %{oracle_key: :support}}
+
+      assert_receive {:dashboard_runtime_stream_complete, stream_pid, completion_ref}
+      refute Task.yield(stream, 0)
+
+      send(stream_pid, {:dashboard_runtime_stream_ack, completion_ref})
+      assert Task.await(stream) == :ok
+    end
+
+    test "publishes a keyed error without preventing sibling oracle results" do
+      test_pid = self()
+      context = %{section_id: 123}
+
+      load_result = fn
+        :progress, _context -> raise "oracle failed"
+        :support, received_context -> %{oracle_key: :support, context: received_context}
+      end
+
+      stream =
+        Task.async(fn ->
+          IntelligentDashboardTab.stream_dashboard_runtime_results(
+            [:progress, :support],
+            7,
+            context,
+            test_pid,
+            load_result
+          )
+        end)
+
+      assert_receive {:dashboard_runtime_oracle_result, 7, ^context, :progress,
+                      %{
+                        oracle_key: :progress,
+                        status: :error,
+                        reason: {:runtime_load_failed, :error}
+                      }}
+
+      assert_receive {:dashboard_runtime_oracle_result, 7, ^context, :support,
+                      %{oracle_key: :support}}
+
+      assert_receive {:dashboard_runtime_stream_complete, stream_pid, completion_ref}
+      send(stream_pid, {:dashboard_runtime_stream_ack, completion_ref})
+      assert Task.await(stream) == :ok
+    end
+
+    test "a failed runtime load releases every oracle assigned to that task" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard_inflight_oracles: MapSet.new([:progress, :support, :unrelated])
+        }
+      }
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_runtime_async(
+                 socket,
+                 [:progress, :support],
+                 {:exit, :boom}
+               )
+
+      assert socket.assigns.dashboard_inflight_oracles == MapSet.new([:unrelated])
+    end
+  end
+
   describe "parse_scope/1" do
     test "parses the course scope" do
       assert IntelligentDashboardTab.parse_scope("course") == %{
@@ -1203,6 +1308,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                status: :started_explicit
              }
+
+      [{task_ref, _metadata}] =
+        Map.to_list(updated_socket.assigns.dashboard_summary_recommendation_task_refs)
+
+      assert_receive {:DOWN, ^task_ref, :process, _pid, _reason}
     end
 
     test "regenerate marks the tile in flight and preserves the current recommendation on failure" do

@@ -1394,6 +1394,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_info({:dashboard_runtime_stream_complete, task_pid, completion_ref}, socket) do
+    IntelligentDashboardTab.acknowledge_dashboard_runtime_stream(
+      socket,
+      task_pid,
+      completion_ref
+    )
+  end
+
+  @impl Phoenix.LiveView
   def handle_info(
         {:dashboard_summary_recommendation_trigger, request_token, scope_selector, oracle_context,
          snapshot},
@@ -1454,6 +1463,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_async({:dashboard_runtime, oracle_keys, _ref}, result, socket) do
+    IntelligentDashboardTab.handle_dashboard_runtime_async(socket, oracle_keys, result)
+  end
+
   # Intentional cancellation (modal close / superseded generation). Not a failure — deliver
   # nothing. Must precede the generic {:exit, reason} clause, which would surface it as an error.
   def handle_async({:draft, _component_id, _request_id}, {:exit, {:shutdown, :cancel}}, socket) do

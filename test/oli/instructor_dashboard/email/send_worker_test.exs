@@ -30,7 +30,7 @@ defmodule Oli.InstructorDashboard.Email.SendWorkerTest do
     ExUnit.Callbacks.on_exit(fn -> :telemetry.detach(handler_id) end)
   end
 
-  defp build_email(opts \\ []) do
+  defp build_email(opts) do
     Swoosh.Email.new()
     |> Swoosh.Email.to(Keyword.get(opts, :to, {"Alex", "alex@example.edu"}))
     |> Swoosh.Email.from({"OLI Torus", "admin@example.edu"})

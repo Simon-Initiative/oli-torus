@@ -1,5 +1,5 @@
 defmodule Oli.Math.ExactFormTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Oli.Math.Algebraic
   alias Oli.Math.ExactForm
