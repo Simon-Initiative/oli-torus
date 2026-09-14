@@ -1473,33 +1473,30 @@ defmodule Oli.Delivery.Metrics do
       do: %{}
 
   def confidence_per_student_for_objective(%Section{} = section, objective_ids, opts) do
-    student_ids =
-      case opts[:student_id] do
-        nil ->
-          {:ok, user_ids} = Proficiency.user_ids_for_objectives(section, objective_ids)
-          user_ids
+    with {:ok, student_ids} <- student_ids_for_confidence(section, objective_ids, opts),
+         {:ok, estimates} <-
+           Proficiency.estimates_for_objectives(section, student_ids, objective_ids) do
+      Map.new(estimates, fn {objective_id, by_user} ->
+        confidences =
+          Enum.reduce(by_user, %{}, fn
+            {user_id, %{confidence: confidence}}, acc when is_number(confidence) ->
+              Map.put(acc, user_id, confidence)
 
-        student_id ->
-          [student_id]
-      end
+            _pair, acc ->
+              acc
+          end)
 
-    case Proficiency.estimates_for_objectives(section, student_ids, objective_ids) do
-      {:ok, estimates} ->
-        Map.new(estimates, fn {objective_id, by_user} ->
-          confidences =
-            Enum.reduce(by_user, %{}, fn
-              {user_id, %{confidence: confidence}}, acc when is_number(confidence) ->
-                Map.put(acc, user_id, confidence)
+        {objective_id, confidences}
+      end)
+    else
+      {:error, _reason} -> %{}
+    end
+  end
 
-              _pair, acc ->
-                acc
-            end)
-
-          {objective_id, confidences}
-        end)
-
-      {:error, _reason} ->
-        %{}
+  defp student_ids_for_confidence(section, objective_ids, opts) do
+    case opts[:student_id] do
+      nil -> Proficiency.user_ids_for_objectives(section, objective_ids)
+      student_id -> {:ok, [student_id]}
     end
   end
 
