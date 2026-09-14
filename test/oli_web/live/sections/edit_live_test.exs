@@ -8,6 +8,7 @@ defmodule OliWeb.Sections.EditLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Repo
 
   defp live_view_edit_route(section_slug) do
     ~p"/sections/#{section_slug}/edit"
@@ -223,20 +224,40 @@ defmodule OliWeb.Sections.EditLiveTest do
       refute html =~ "/authoring/products/#{section.slug}/discounts"
     end
 
-    test "section description cannot exceed 300 characters", %{conn: conn, section: section} do
+    test "limits section descriptions that do not exceed 300 characters", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      assert has_element?(
+               view,
+               ~s(input[name="section[description]"][maxlength="300"])
+             )
+    end
+
+    test "grandfathers section descriptions that already exceed 300 characters", %{
+      conn: conn,
+      section: section
+    } do
       description = String.duplicate("a", 301)
 
-      {:ok, view, html} = live(conn, live_view_edit_route(section.slug))
+      section =
+        section
+        |> Ecto.Changeset.change(description: description)
+        |> Repo.update!()
 
-      assert html =~ ~s(maxlength="300")
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
-      html =
-        view
-        |> element("#section-edit-form")
-        |> render_submit(section: %{description: description})
+      refute has_element?(view, ~s(input[name="section[description]"][maxlength]))
 
-      assert html =~ "must be 300 characters or fewer"
-      assert Oli.Repo.get(Section, section.id).description == section.description
+      updated_description = description <> "b"
+
+      view
+      |> element("#section-edit-form")
+      |> render_submit(section: %{description: updated_description})
+
+      assert Repo.get(Section, section.id).description == updated_description
     end
 
     test "loads open and free section data correctly", %{conn: conn} do

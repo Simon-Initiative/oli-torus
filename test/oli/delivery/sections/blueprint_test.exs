@@ -137,6 +137,30 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert enrollable_section.type == :enrollable
       assert enrollable_section.learning_model_version == :lkt_aoa
     end
+
+    test "duplicates a legacy description over the authoring character limit" do
+      %{project: project, publication: publication, institution: institution} =
+        Seeder.base_project_with_resource2()
+
+      description = String.duplicate("Legacy description", 20)
+
+      {:ok, blueprint} =
+        Sections.create_section(%{
+          type: :blueprint,
+          title: "Legacy description template",
+          description: description,
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          institution_id: institution.id,
+          base_project_id: project.id,
+          publisher_id: project.publisher_id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(publication)
+
+      assert {:ok, duplicate} = Blueprint.duplicate(blueprint)
+      assert duplicate.description == description
+    end
   end
 
   describe "basic blueprint operations" do

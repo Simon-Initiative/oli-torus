@@ -68,6 +68,45 @@ defmodule Oli.CourseTest do
       assert returned_project.title == "some updated title"
     end
 
+    test "update_project/2 persists coverage thresholds in project attributes", %{
+      project: project
+    } do
+      assert {:ok, %Project{} = updated_project} =
+               Course.update_project(project, %{
+                 attributes: %{
+                   coverage_formative_threshold: 4,
+                   coverage_summative_threshold: 2
+                 }
+               })
+
+      assert updated_project.attributes.coverage_formative_threshold == 4
+      assert updated_project.attributes.coverage_summative_threshold == 2
+
+      persisted_project = Course.get_project!(project.id)
+      assert persisted_project.attributes.coverage_formative_threshold == 4
+      assert persisted_project.attributes.coverage_summative_threshold == 2
+    end
+
+    test "update_project_attributes/2 preserves omitted embedded attributes", %{project: project} do
+      {:ok, project} =
+        Course.update_project(project, %{
+          attributes: %{
+            learning_language: "Spanish",
+            calculate_embeddings_on_publish: true,
+            coverage_formative_threshold: 4,
+            coverage_summative_threshold: 2
+          }
+        })
+
+      assert {:ok, updated_project} =
+               Course.update_project_attributes(project, %{coverage_summative_threshold: 5})
+
+      assert updated_project.attributes.learning_language == "Spanish"
+      assert updated_project.attributes.calculate_embeddings_on_publish
+      assert updated_project.attributes.coverage_formative_threshold == 4
+      assert updated_project.attributes.coverage_summative_threshold == 5
+    end
+
     test "update_project/2 with invalid data returns error changeset", %{project: project} do
       assert {:error, %Ecto.Changeset{}} = Course.update_project(project, @invalid_attrs)
 

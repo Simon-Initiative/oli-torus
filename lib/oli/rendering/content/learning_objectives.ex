@@ -336,7 +336,7 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   defp maybe_dot_explain_card(%Context{assistant_available?: true} = context, objective) do
     [
       ~s|<section class="learning-objectives-summary__explain-card border border-Border-border-subtle bg-Surface-surface-secondary-hover" aria-label="Ask DOT to explain this objective">|,
-      ~s|<div class="w-[72px] h-[72px] relative shrink-0" aria-hidden="true">|,
+      ~s|<div class="learning-objectives-summary__explain-icon w-[62px] h-[62px] relative shrink-0" aria-hidden="true">|,
       ~s|<img class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]" src="/images/assistant/footer_dot_ai.png" alt="" />|,
       ~s|<div class="w-[28px] h-[28px] absolute inset-0 m-auto bg-zinc-300 rounded-full blur-[16px] animate-[pulse_6s_cubic-bezier(0.4,0,0.6,1)_infinite]"></div>|,
       ~s|</div>|,
