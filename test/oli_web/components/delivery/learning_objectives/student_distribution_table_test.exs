@@ -410,7 +410,29 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
         |> element("th", "Student Name")
         |> render()
 
-      refute student_name_th =~ "dialog"
+      refute student_name_th =~ "role=\"tooltip\""
+    end
+
+    test "the header tooltip trigger is a focusable button whose aria-describedby points to a real tooltip element",
+         %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(conn, StudentDistributionTable, %{
+          id: "student-distribution-table",
+          students: [student("Low Student", :limited_activity, "Low")],
+          selected_group: :limited_activity,
+          parent_target: nil
+        })
+
+      proficiency_th =
+        view
+        |> element("th", "Proficiency")
+        |> render()
+        |> Floki.parse_fragment!()
+
+      [button] = Floki.find(proficiency_th, "button[aria-describedby]")
+      [tooltip_id] = Floki.attribute(button, "aria-describedby")
+
+      assert has_element?(view, "##{tooltip_id}[role='tooltip']")
     end
 
     test "the proficiency filter dropdown's default option reads 'Proficiency'", %{conn: conn} do

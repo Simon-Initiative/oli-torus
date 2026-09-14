@@ -4,7 +4,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   Learning Objectives table: loading per-student proficiency/activity data (synchronously or
   asynchronously) only while the row is expanded, classifying students into distribution
   groups, tracking which group is currently selected, and rendering the Student Distribution
-  matrix and the sub-objectives table for that row.
+  matrix, the student table for the selected group, and the sub-objectives table for that row.
   """
 
   use OliWeb, :live_component
@@ -223,8 +223,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
           </div>
           
     <!-- Student Distribution Matrix: pure HEEx/SVG, no React or client-side charting library.
-         The student table (once a group is selected) renders beside it, not below, per the
-         ticket's layout requirement. -->
+         The student table (once a group is selected) renders beside it, not below. -->
           <div class="mb-6 flex flex-col items-start gap-6 xl:flex-row">
             <StudentDistributionMatrix.matrix
               students={@student_proficiency}

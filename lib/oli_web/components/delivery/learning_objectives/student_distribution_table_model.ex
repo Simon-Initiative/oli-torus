@@ -12,6 +12,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
   whenever sorting by the `:proficiency` column, not just on the initial render.
   """
 
+  @type sort_by :: :student_name | :proficiency | :activity_completion
+  @type column :: %{
+          required(:key) => sort_by(),
+          required(:label) => String.t(),
+          optional(:tooltip) => String.t()
+        }
+
   @sortable_columns [:student_name, :proficiency, :activity_completion]
   @default_sort_by :proficiency
 
@@ -44,12 +51,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
   }
 
   @doc "Column key/label pairs, in display order."
+  @spec columns() :: [column()]
   def columns, do: @columns
 
   @doc "Column keys this model accepts as a `sort_by` value."
+  @spec sortable_columns() :: [sort_by()]
   def sortable_columns, do: @sortable_columns
 
   @doc "The column sorted by default."
+  @spec default_sort_by() :: sort_by()
   def default_sort_by, do: @default_sort_by
 
   @doc """
@@ -57,6 +67,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
   and `sort_order`. `sort_by` falls back to #{inspect(@default_sort_by)} if it isn't one of
   #{inspect(@sortable_columns)}.
   """
+  @spec sort(
+          [map()],
+          Oli.Delivery.Metrics.StudentDistributionGroup.group(),
+          sort_by(),
+          :asc | :desc
+        ) :: [map()]
   def sort(students, group, sort_by \\ @default_sort_by, sort_order \\ :asc) do
     sort_by = if sort_by in @sortable_columns, do: sort_by, else: @default_sort_by
 

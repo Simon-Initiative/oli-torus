@@ -210,17 +210,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       <% else %>
         <div class="flex-1 overflow-y-auto">
           <table class="w-full border-collapse text-left text-sm">
+            <caption class="sr-only">{@content.title} students</caption>
             <thead>
               <tr class="border-b border-Table-table-border">
                 <th scope="col" class="w-10 p-2">
-                  <input
-                    type="checkbox"
-                    checked={@select_all_checked}
-                    phx-click="toggle_all"
-                    phx-target={@myself}
-                    aria-label={select_all_label(@select_all_checked, @filtered_student_count)}
-                    class="h-4 w-4 rounded border-Border-border-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-                  />
+                  <label class="flex h-6 w-6 cursor-pointer items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={@select_all_checked}
+                      phx-click="toggle_all"
+                      phx-target={@myself}
+                      aria-label={select_all_label(@select_all_checked, @filtered_student_count)}
+                      class="h-4 w-4 rounded border-Border-border-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                    />
+                  </label>
                 </th>
                 <th
                   :for={col <- @columns}
@@ -229,7 +232,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
                   aria-sort={aria_sort(col.key, @sort_by, @sort_order)}
                 >
                   <div class="inline-flex items-center gap-1">
-                    <.header_tooltip :if={col[:tooltip]} text={col.tooltip} />
+                    <.header_tooltip
+                      :if={col[:tooltip]}
+                      id={"#{@id}-#{col.key}-tooltip"}
+                      text={col.tooltip}
+                    />
                     <button
                       type="button"
                       phx-click="student_distribution_sort"
@@ -263,15 +270,17 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
                 ]}
               >
                 <td class="p-2">
-                  <input
-                    type="checkbox"
-                    checked={MapSet.member?(@selected_student_ids, student.id)}
-                    phx-click="toggle_student"
-                    phx-value-student_id={student.id}
-                    phx-target={@myself}
-                    aria-label={"Select #{student.full_name}"}
-                    class="h-4 w-4 rounded border-Border-border-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-                  />
+                  <label class="flex h-6 w-6 cursor-pointer items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={MapSet.member?(@selected_student_ids, student.id)}
+                      phx-click="toggle_student"
+                      phx-value-student_id={student.id}
+                      phx-target={@myself}
+                      aria-label={"Select #{student.full_name}"}
+                      class="h-4 w-4 rounded border-Border-border-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                    />
+                  </label>
                 </td>
                 <td class="p-2 text-Text-text-high">
                   <div class="flex items-center gap-2">
@@ -308,19 +317,34 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     """
   end
 
-  # Matches `OliWeb.Delivery.InstructorDashboard.HTMLComponents.render_label/1`'s icon+tooltip
-  # markup, but kept separate from the sort button (not reused wholesale) since that helper
-  # bundles the icon *and* the column title into one block, while here only the title belongs
-  # inside the clickable sort button.
+  # Similar intent to `OliWeb.Delivery.InstructorDashboard.HTMLComponents.render_label/1`'s
+  # icon+tooltip, but not reused wholesale (that helper bundles the icon *and* the column
+  # title into one block, while here only the title belongs inside the clickable sort
+  # button) and made keyboard/AT-reachable: a real `<button>` trigger (not a bare `<span>`)
+  # with `aria-describedby`, and a plain `role="tooltip"` `<div>` (not `<dialog>`, which stays
+  # closed to assistive tech without an explicit `.showModal()`/`open`) shown on hover *or*
+  # focus, not hover-only.
+  attr :id, :string, required: true
   attr :text, :string, required: true
 
   defp header_tooltip(assigns) do
     ~H"""
-    <span class="group relative flex cursor-pointer items-center text-Icon-icon-default">
-      <Icons.info />
-      <dialog class="absolute top-[150%] left-full -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:flex before:absolute before:content-[''] before:-top-4 before:left-0 before:right-0 before:h-4">
+    <span class="group relative inline-flex items-center">
+      <button
+        type="button"
+        aria-describedby={@id}
+        class="flex items-center text-Icon-icon-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+      >
+        <Icons.info />
+        <span class="sr-only">More info</span>
+      </button>
+      <div
+        id={@id}
+        role="tooltip"
+        class="pointer-events-none absolute top-[150%] left-full z-10 hidden w-80 -translate-x-1/2 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+      >
         {@text}
-      </dialog>
+      </div>
     </span>
     """
   end
