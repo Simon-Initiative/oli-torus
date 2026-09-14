@@ -15,6 +15,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   alias Oli.Accounts
   alias OliWeb.Common.Utils
   alias OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatrix
+  alias OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
 
   attr :unique_id, :string, required: true
   attr :objective, :map, required: true
@@ -180,9 +181,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     end
   end
 
-  # No rendered control currently calls this event -- `StudentDistributionMatrix` only emits
-  # "select_student_group", which already toggles a group off when it is re-activated. This
-  # handler exists as a ready, tested target for a future explicit close/dismiss control.
+  # Fired by StudentDistributionTable's close ("X") control, targeted at this component's
+  # `@myself` since deselecting the group is state this component owns, not the table.
   def handle_event("deselect_student_group", _params, socket) do
     {:noreply, assign(socket, selected_student_group: nil)}
   end
@@ -222,13 +222,23 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
             </h3>
           </div>
           
-    <!-- Student Distribution Matrix: pure HEEx/SVG, no React or client-side charting library. -->
-          <div class="mb-6">
+    <!-- Student Distribution Matrix: pure HEEx/SVG, no React or client-side charting library.
+         The student table (once a group is selected) renders beside it, not below, per the
+         ticket's layout requirement. -->
+          <div class="mb-6 flex flex-col items-start gap-6 xl:flex-row">
             <StudentDistributionMatrix.matrix
               students={@student_proficiency}
               selected_group={@selected_student_group}
               myself={@myself}
               unique_id={@unique_id}
+            />
+            <.live_component
+              :if={@selected_student_group != nil}
+              module={StudentDistributionTable}
+              id={"student-distribution-table-#{@unique_id}"}
+              students={@student_proficiency}
+              selected_group={@selected_student_group}
+              parent_target={@myself}
             />
           </div>
           
@@ -369,7 +379,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
               full_name: student_full_name,
               name: student.name,
               given_name: student.given_name,
-              family_name: student.family_name
+              family_name: student.family_name,
+              picture: student.picture
             })
 
           [student_data | acc]
@@ -441,6 +452,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
           name: student.name,
           given_name: student.given_name,
           family_name: student.family_name,
+          picture: student.picture,
           proficiency: 0.0,
           proficiency_range: "Not enough data",
           activities_attempted_count: activities_attempted,

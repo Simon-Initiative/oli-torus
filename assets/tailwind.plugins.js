@@ -5,6 +5,12 @@ const tokens = require('./tailwind.tokens');
 const tokenColorPlugin = plugin(function ({ addComponents, addUtilities }) {
   const components = {};
   const utilities = {};
+  // Kept separate from `components` and added via its own `addComponents` call, after the
+  // general `.border-{token}` rules below, so a per-side override (e.g. `.border-l-{token}`)
+  // reliably wins the cascade over a general `.border-{token}` (which sets the `border-color`
+  // shorthand, touching all four sides) regardless of which two tokens are combined or their
+  // relative declaration order in tailwind.tokens.js.
+  const borderSideComponents = {};
 
   Object.entries(tokens).forEach(([token, { light, dark }]) => {
     // Background
@@ -27,6 +33,17 @@ const tokenColorPlugin = plugin(function ({ addComponents, addUtilities }) {
     // Border
     components[`.border-${token}`] = { borderColor: light };
     components[`.dark .border-${token}`] = { borderColor: dark };
+
+    // Border - per side (e.g. `.border-l-{token}` to accent one side while `.border-{token}`
+    // above covers the rest)
+    borderSideComponents[`.border-t-${token}`] = { borderTopColor: light };
+    borderSideComponents[`.dark .border-t-${token}`] = { borderTopColor: dark };
+    borderSideComponents[`.border-r-${token}`] = { borderRightColor: light };
+    borderSideComponents[`.dark .border-r-${token}`] = { borderRightColor: dark };
+    borderSideComponents[`.border-b-${token}`] = { borderBottomColor: light };
+    borderSideComponents[`.dark .border-b-${token}`] = { borderBottomColor: dark };
+    borderSideComponents[`.border-l-${token}`] = { borderLeftColor: light };
+    borderSideComponents[`.dark .border-l-${token}`] = { borderLeftColor: dark };
 
     // Outline
     components[`.outline-${token}`] = { outlineColor: light };
@@ -78,6 +95,7 @@ const tokenColorPlugin = plugin(function ({ addComponents, addUtilities }) {
   });
 
   addComponents(components);
+  addComponents(borderSideComponents);
   addUtilities(utilities, ['responsive', 'dark']);
 });
 

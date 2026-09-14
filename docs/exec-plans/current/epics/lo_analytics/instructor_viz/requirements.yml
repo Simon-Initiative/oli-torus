@@ -235,7 +235,7 @@ acceptance_criteria:
   proofs:
   - fdd.md#4.1-studentdistributiontable
   - fdd.md#13-testing-strategy
-  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  - plan.md#phase-2-pr2-student-table-read-only
   id: AC-020
 - requirement_id: FR-005
   title: An Email button is displayed above the student selection checkboxes and acts
@@ -255,7 +255,7 @@ acceptance_criteria:
   proofs:
   - fdd.md#4.1-studentdistributiontable
   - fdd.md#13-testing-strategy
-  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  - plan.md#phase-2-pr2-student-table-read-only
   id: AC-022
 - requirement_id: FR-006
   title: Selecting Load More appends additional students without removing previously
@@ -265,7 +265,7 @@ acceptance_criteria:
   proofs:
   - fdd.md#4.1-studentdistributiontable
   - fdd.md#13-testing-strategy
-  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  - plan.md#phase-2-pr2-student-table-read-only
   id: AC-023
 - requirement_id: FR-007
   title: Selecting a different group deselects the previous group and highlights the
@@ -366,7 +366,7 @@ acceptance_criteria:
   proofs:
   - fdd.md#4.1-studentdistributiontable
   - fdd.md#13-testing-strategy
-  - plan.md#phase-3-pr3-selection-email-shared-selection-state-extraction
+  - plan.md#phase-2-pr2-student-table-read-only
   id: AC-033
 - requirement_id: FR-011
   title: Every selectable group region can be reached and activated using only the
