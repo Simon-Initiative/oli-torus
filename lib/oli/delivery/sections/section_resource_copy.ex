@@ -20,14 +20,12 @@ defmodule Oli.Delivery.Sections.SectionResourceCopy do
 
   ## Ordering constraint
 
-  `ai_enabled` cannot be given its final value here. `SectionResourceMigration.migrate/1`
-  overwrites it from the pinned revision, and it runs twice during a copy: once
-  directly after the rows are inserted, and again inside `PostProcessing.apply/2`
-  via `SectionResourceMigration.project_current/1`. Instructor overrides must
-  therefore be re-applied by `reapply_ai_overrides/2` as the last write of the
-  copy, after post-processing - not merely after the first migration. Rows built
-  here always carry the revision value for that column so the pre-migration state
-  is deterministic.
+  `ai_enabled` cannot be given its final value here. `PostProcessing.apply/2`
+  calls `SectionResourceMigration.project_current/1`, which overwrites it from
+  the pinned revision. Instructor overrides must therefore be re-applied by
+  `reapply_ai_overrides/2` as the last write of the copy, after post-processing.
+  Rows built here always carry the revision value for that column so the
+  pre-migration state is deterministic.
 
   ## Divergence between copy policies
 
