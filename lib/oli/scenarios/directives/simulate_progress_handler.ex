@@ -8,14 +8,27 @@ defmodule Oli.Scenarios.Directives.SimulateProgressHandler do
   def handle(%SimulateProgressDirective{} = directive, state) do
     with section when not is_nil(section) <- Engine.get_section(state, directive.section),
          {:ok, users} <- resolve_users(directive.users, state),
-         {:ok, result} <- ProgressSimulation.run(section, users, Map.from_struct(directive)) do
+         :ok <- validate_scenario_time(directive.timing, state.scenario_time),
+         opts <- Map.from_struct(directive),
+         {:ok, result} <- ProgressSimulation.run(section, users, opts) do
       {:ok,
        state
        |> Map.update!(:scenario_results, &Map.put(&1, :simulate_progress, result))
        |> Map.update!(:scenario_warnings, &bounded_warnings(&1, result.warnings))}
     else
-      nil -> {:error, "Section '#{directive.section}' not found"}
-      {:error, reason} -> {:error, "simulate_progress failed: #{inspect(reason)}"}
+      nil ->
+        {:error, "Section '#{directive.section}' not found"}
+
+      {:error, reason, result} ->
+        updated_state =
+          state
+          |> Map.update!(:scenario_results, &Map.put(&1, :simulate_progress, result))
+          |> Map.update!(:scenario_warnings, &bounded_warnings(&1, result.warnings))
+
+        {:error, "simulate_progress failed: #{inspect(reason)}", updated_state}
+
+      {:error, reason} ->
+        {:error, "simulate_progress failed: #{inspect(reason)}"}
     end
   end
 
@@ -33,6 +46,11 @@ defmodule Oli.Scenarios.Directives.SimulateProgressHandler do
       error -> error
     end
   end
+
+  defp validate_scenario_time(:paced, scenario_time) when not is_nil(scenario_time),
+    do: {:error, "paced mode cannot run while a scenario time override is active"}
+
+  defp validate_scenario_time(_timing, _scenario_time), do: :ok
 
   defp bounded_warnings(existing, new), do: Enum.take(existing ++ new, 100)
 end

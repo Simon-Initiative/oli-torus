@@ -63,7 +63,17 @@ CLI scenarios use the complete existing scenario DSL without an additional deplo
 
 `Oli.Seeding.ProjectIngest` accepts only HTTP/HTTPS URLs, uses the application's HTTP client with finite connect/receive timeouts, bounded redirects, and a configured maximum archive size, streams into a uniquely created temporary directory, calls `Oli.Interop.Ingest.ingest/2`, and cleans up in `after`. It never logs URL credentials, response bodies, or archive contents (AC-010 and AC-011). Because the operator has shell access, network policy—not an application SSRF allowlist—is the authoritative reachability boundary.
 
-`bulk_create_enroll_users` and `simulate_progress` become normal `Oli.Scenarios` directives. Scenario-owned services replace Stagehand's reusable behavior. They produce stable references, support optional deterministic random seeds, use collision-safe synthetic identities, bound internal concurrency, and return structured warnings for unsupported content (AC-012 through AC-014).
+`bulk_create_enroll_users` remains a normal `Oli.Scenarios` directive. Phase 4B replaces the initial `simulate_progress` implementation and input/result contract with a fixed profile/course simulator. It requires exactly one profile or complete count-based cohort assignment, rejects removed top-level `pct_correct` and `assessment_attempts` options, and exposes neither profile versions nor arbitrary overrides (AC-012 through AC-014 and AC-027).
+
+The replacement simulator walks delivered curriculum order and uses shared scenario-owned learner actions for visits, evaluations, hints, whole-activity or part resets, scored-attempt saves, and finalization. Native response adapters support multiple choice, ordering, check all that apply, short answer, and both multi-input submission modes from the transformed activity model and real part identities. Actual evaluation and grading policy determine scores and retained grades (AC-028).
+
+Fixed `high_proficiency`, `steady_learner`, `persistent_learner`, and `low_engagement` profiles contain only course reach, activity participation, initial correctness, practice attempt count, assessment attempt count, and improvement per attempt. Hint requests are a built-in response to an incorrect practice attempt rather than a profile setting. Stable learner identities and seeded decisions keep response variation repeatable (AC-029).
+
+Fast execution remains the default. Optional paced mode samples fixed per-profile page, answer, retry, break, and study-session distributions and sleeps within each learner worker without a total-duration window. Fast mode uses normal task-stream concurrency and a deterministic 10–50 ms delay at modeled wait points to stagger learner actions; paced mode starts one worker per admitted learner so realistic waits overlap. The foreground CLI process owns the stream; terminating it exits the VM and all workers immediately, while database transactions already committed remain committed. Both Mix and release entry points select a dedicated `Oli.Seeding.Runtime` role that starts required repository, cache, evaluation, event, and job-production dependencies while excluding the endpoint, unrelated consumers, upload pipelines, and startup recovery (AC-030 and AC-031).
+
+`Oli.Scenarios.LearnerSession` derives one UUIDv5 identifier from seed, learner identity, and section. The simulator reuses that ID for the learner's full journey. Modeled study sessions still control paced gaps and breaks, but no longer rotate DataShop IDs. Lower-level exact-sequence directives keep independent transient UUIDs and expose no new session-management contract (AC-034).
+
+The runner admits at most 100 learners, uses `Task.async_stream/3` defaults in fast mode and one worker per admitted learner in paced mode, and relies on fixed profile attempt caps plus ordinary Repo/domain timeouts. A small fast-mode action delay smooths bursts without introducing an action budget, token bucket, per-action task, cumulative active-work timeout, central scheduler, or memory benchmark. Oban owns concurrency and persistence for downstream jobs; the simulator does not poll shared queues. Learners with existing section history are skipped and counted, while fresh learners continue. There is no reconciliation, run persistence, cleanup, automatic resume, or backdated history (AC-032 and AC-033).
 
 The bundled `review_demo` scenario creates the approved representative QA dataset without embedded credentials. A post-migration Kubernetes Job runs it synchronously through the release CLI. No Torus process creates or monitors the Job (AC-015 through AC-017).
 
@@ -84,6 +94,14 @@ Scenario command flow:
 3. The adapter parses the YAML and validates explicit ownership ordering without applying a broader directive allowlist.
 4. `Oli.Scenarios` executes synchronously using its existing transaction semantics.
 5. The command emits a bounded summary and exits zero or nonzero. No run record or background job is created.
+
+Course-simulation flow:
+
+1. Resolve the section, enrolled learners, fixed profile/count cohorts, and delivered curriculum; skip and count learners with existing section history.
+2. Derive stable per-learner reach, participation, correctness, response, and timing decisions from the explicit seed and learner identity.
+3. Process learners through one unordered task stream. Fast mode uses the task-stream default and short deterministic action delays; paced mode admits all selected learners and sleeps in each learner process.
+4. Execute visits, responses, hints, resets, saves, and finalization directly through normal delivery boundaries. Later attempt numbers increase correctness probability, while real evaluators and grading policy determine outcomes.
+5. Reduce learner outcomes into a compact summary. Process termination stops all remaining work without simulator-specific cleanup or resume behavior.
 
 Project ingest flow:
 
@@ -178,7 +196,7 @@ Masquerade flow:
 
 - Commands run outside web request and Oban processes and do not consume application job queues.
 - URL downloads stream to disk and enforce bounded time, redirects, and bytes.
-- `simulate_progress` uses fixed-size batches with modest supervised concurrency and bounded per-task timeouts; shared section inputs are preloaded to avoid N+1 queries.
+- `simulate_progress` passes one resolved course map to a learner task stream. Fast mode uses the task-stream default with short deterministic action delays; paced mode uses one worker per admitted learner so sleeping journeys progress concurrently. Delivery calls run directly in each learner worker and use ordinary domain and Repo timeout behavior. Both delay strategies use `Process.sleep/1`; no additional scheduler, limiter, reporter, or action task tree is introduced.
 - Kubernetes declares CPU/memory requests and limits. No seed-specific global execution timeout is added inside Torus.
 
 ## 10. Failure Modes & Resilience
@@ -189,7 +207,8 @@ Masquerade flow:
 - Ownership missing or invalid: reject before the first ownership-dependent directive; do not use implicit defaults.
 - Scenario/assertion/hook failure: exit nonzero and report possible partial mutation without rollback.
 - URL, redirect, timeout, size, archive, author, or ingest failure: exit nonzero, redact sensitive data, and clean temporary files.
-- Kubernetes interruption: Kubernetes permits one retry through `backoffLimit: 1`; `review_demo` reconciliation limits duplication.
+- Simulator interruption: the foreground seed VM owns its linked learner workers, so terminating the command terminates all simulator processes immediately. Already committed database transactions remain committed; an operation interrupted inside its transaction follows the domain operation's normal rollback behavior. Server-owned jobs created by committed actions continue normally.
+- Existing learner history: skip and report those learners before dispatch while continuing with fresh learners. Phase 4B does not resume or reconcile partial progress; Phase 5 must add canonical-state reconciliation before Kubernetes retry is enabled for `review_demo`.
 - Invalid/expired masquerade state or entry into a new LTI login/launch flow: clear or reject it, audit the reason, and continue as the actor when safe or signed out otherwise.
 - Mailbox access while disabled or without current system-admin authorization: return a non-disclosing response and expose no message metadata.
 - Unsanitized production database clone or production credentials: unsupported deployment configuration; the feature provides no claim of broad external-effect containment beyond application email.
@@ -216,7 +235,7 @@ Masquerade flow:
 - Configuration tests cover the Mix-environment/runtime-flag matrix, casing variants, disabled values, warning behavior, production-safe Docker defaults, preview build arguments, and the required existing production-like branch classifications (AC-001 through AC-004). The preview-image workflow supplies the preview release build check; existing production packaging remains unchanged.
 - Release command tests cover listing, bundled and custom execution, full DSL compatibility, explicit ownership, bounded output, exit codes, and absence of application authorization/run persistence (AC-005 through AC-009).
 - Ingest tests use a controlled HTTP server for scheme validation, redirects, timeout, byte limits, credential redaction, cleanup, author selection, and successful/failed `Oli.Interop.Ingest` calls (AC-010 and AC-011).
-- Scenario tests cover `bulk_create_enroll_users`, `simulate_progress`, deterministic seeds, stable identities, collision handling, supported/unsupported content, bounded concurrency, and Stagehand migration (AC-012 through AC-014).
+- Scenario tests cover `bulk_create_enroll_users`, fixed-profile/count-cohort parsing and schema parity, seeded policy/session identity, ordered traversal, all supported native activity configurations, whole-activity and per-part retries, repeated scored assessments and grade aggregation, existing-history skipping, pacing primitives, fixed caps, compact state, and Stagehand migration (AC-012 through AC-014 and AC-027 through AC-034).
 - Kubernetes/profile tests execute `review_demo` through the release dispatcher, verify representative state and retry reconciliation, and inspect Job configuration. Static checks prove no Oban seeding, run schema, or status endpoint exists (AC-015 through AC-017).
 - Playwright compatibility tests preserve existing fixture behavior (AC-018).
 - Masquerade tests cover authorization, chaining, expiry, logout, target invalidation, runtime disablement, actor/target separation, audit attribution, persistent target mutations, safe redirects, keyboard operation, accessible names, and non-color cues (AC-019 through AC-024). The layout matrix includes `default`, `workspace`, `delivery`, `delivery_student_dashboard`, `delivery_dashboard`, authenticated LiveView, and authenticated `chromeless`; it excludes `delivery_from_payment` and `lti` and verifies LTI entry clears or rejects masquerade.
@@ -234,8 +253,8 @@ Acceptance-criterion traceability clarifications:
 
 ## 14. Backwards Compatibility
 
-- Existing `Oli.Scenarios` and Playwright execution remain available. Explicit ownership is enforced only by the new release adapter.
-- New directives extend the DSL without changing existing syntax.
+- Existing unrelated `Oli.Scenarios` directives and Playwright execution remain available. Explicit ownership is enforced only by the new release adapter.
+- `simulate_progress` keeps its directive name but intentionally replaces the Phase 4 syntax and result. Every existing caller and assertion migrates; removed top-level options fail with migration guidance and no compatibility adapter remains.
 - Stagehand call sites migrate before its standalone API is removed or reduced to temporary local wrappers.
 - No database migration is introduced for seed tooling.
 - Non-masqueraded sessions and existing authorization behavior remain unchanged.
@@ -279,6 +298,12 @@ None.
 - `rel/overlays/bin/migrate`
 
 ## Decision Log
+
+### 2026-09-14 - Let Oban own downstream job concurrency
+- Question: Should `simulate_progress` poll shared Oban queues and pause learner dispatch based on downstream backlog?
+- Decision: No. Remove downstream queue polling, high/low-water hysteresis, observation-failure pauses, and the `downstream_overloaded` terminal result. Also omit simulator action budgets and action-rate limiting. Use only fixed learner concurrency; Oban owns downstream job persistence and worker concurrency.
+- Rationale: Queue depth does not control simultaneous snapshot execution or serialize conflicting analytics updates. The polling duplicated queue-management responsibility, queried PostgreSQL every second during long paced waits, and did not prevent the observed contention below its 1,000-job threshold.
+- Impact: Remove queue state from simulator results and paced progress logs, delete backlog-observer tests, and treat snapshot worker sizing and project-scoped serialization as separate Oban/analytics operational concerns.
 
 ### 2026-09-09 - Preserve mailbox access during administrator masquerade
 - Question: May the original administrator inspect `/dev/mailbox` while masquerading as a non-admin user?

@@ -13,15 +13,13 @@ defmodule Mix.Tasks.Seed do
 
   use Mix.Task
 
-  alias Oli.Seeding.CLI
+  alias Oli.Seeding.{CLI, Runtime}
 
   @shortdoc "Runs a Torus data-seeding command"
 
   @impl Mix.Task
   def run(args) do
-    Mix.Task.run("app.start")
-
-    result = CLI.dispatch(args, enabled?: Mix.env() == :dev)
+    result = Runtime.run(fn -> CLI.dispatch(args, enabled?: Mix.env() == :dev) end)
 
     case result do
       %{status: 0, output: output} ->

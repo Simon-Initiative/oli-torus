@@ -62,20 +62,29 @@ defmodule Oli.Scenarios.Directives.UseHandler do
 
           {:error, _reason} = error ->
             {:halt, error}
+
+          {:error, reason, new_state} ->
+            {:halt, {:error, reason, new_state}}
         end
       end)
 
     # Restore the original directory and include stack in the state
     case result do
       {:ok, final_state} ->
-        {:ok,
-         final_state
-         |> Map.put(:current_dir, current_dir)
-         |> Map.put(:include_stack, include_stack)}
+        {:ok, restore_context(final_state, current_dir, include_stack)}
+
+      {:error, reason, final_state} ->
+        {:error, reason, restore_context(final_state, current_dir, include_stack)}
 
       error ->
         error
     end
+  end
+
+  defp restore_context(state, current_dir, include_stack) do
+    state
+    |> Map.put(:current_dir, current_dir)
+    |> Map.put(:include_stack, include_stack)
   end
 
   defp validate_not_circular(resolved_path, include_stack) do

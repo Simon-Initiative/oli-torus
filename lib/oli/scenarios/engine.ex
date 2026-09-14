@@ -141,6 +141,15 @@ defmodule Oli.Scenarios.Engine do
                 else
                   {:cont, result}
                 end
+
+              {:error, reason, new_state} ->
+                result = {new_state, verifs, [{directive, reason} | errs]}
+
+                if new_state.ownership do
+                  {:halt, result}
+                else
+                  {:cont, result}
+                end
             end
         end)
 
