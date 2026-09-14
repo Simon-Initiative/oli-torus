@@ -171,6 +171,24 @@ defmodule Oli.Delivery.Sections.SourceResolutionTest do
                  lti_spec
                )
     end
+
+    test "an LTI actor cannot copy an institution-less section", ctx do
+      lti_spec = %SectionSpecification.Lti{
+        lti_params: %{},
+        institution: ctx.institution,
+        registration: nil,
+        deployment: nil
+      }
+
+      assert is_nil(ctx.source_section.institution_id)
+
+      assert {:error, :not_found} =
+               SourceResolution.resolve(
+                 "section:#{ctx.source_section.id}",
+                 Actor.new(ctx.instructor),
+                 lti_spec
+               )
+    end
   end
 
   describe "resolve/3 with product:<id>" do

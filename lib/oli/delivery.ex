@@ -31,6 +31,11 @@ defmodule Oli.Delivery do
     - `publication:<publication_id>` for a publication
     - `product:<product_id>` for a product
 
+  For compatibility with existing trusted admin and internal callers, a `nil`
+  user remains valid for direct-delivery creation from those three legacy source
+  types. Creating from a previous section requires the request-struct API with
+  an explicit user or author identity.
+
   The return value is one of the following:
     - `{:ok, section.id, section.slug}`: The section was successfully created.
     - `{:error, error_msg}`: An error occurred while creating the section.
@@ -47,12 +52,14 @@ defmodule Oli.Delivery do
   @spec create_section(Ecto.Changeset.t(), String.t(), Oli.Accounts.User.t() | nil, term()) ::
           {:ok, integer(), String.t()} | {:error, term()}
   def create_section(changeset, source, user, section_spec) do
-    create_section(%SectionCreationRequest{
+    request = %SectionCreationRequest{
       changeset: changeset,
       source: source,
       user: user,
       section_spec: section_spec
-    })
+    }
+
+    create_section(request, legacy_creation_actor(source, user, section_spec))
   end
 
   @doc """
@@ -69,28 +76,30 @@ defmodule Oli.Delivery do
   @spec create_section(SectionCreationRequest.t()) ::
           {:ok, integer(), String.t()} | {:error, term()}
   def create_section(%SectionCreationRequest{} = request) do
+    create_section(request, Actor.new(request.user, request.author))
+  end
+
+  defp create_section(%SectionCreationRequest{} = request, %Actor{} = actor) do
     # Check if section already exists for LTI specifications
     case request.section_spec do
       %SectionSpecification.Lti{lti_params: lti_params} ->
         case Sections.get_section_from_lti_params(lti_params) do
-          nil -> create_new_section(request)
+          nil -> create_new_section(request, actor)
           existing_section -> {:ok, existing_section.id, existing_section.slug}
         end
 
       _ ->
-        create_new_section(request)
+        create_new_section(request, actor)
     end
   end
 
-  defp create_new_section(%SectionCreationRequest{} = request) do
+  defp create_new_section(%SectionCreationRequest{} = request, %Actor{} = actor) do
     %SectionCreationRequest{
       changeset: changeset,
       source: source,
       user: user,
       section_spec: section_spec
     } = request
-
-    actor = Actor.new(user, request.author)
 
     case SourceResolution.resolve(source, actor, section_spec) do
       {:error, :not_found} ->
@@ -122,6 +131,17 @@ defmodule Oli.Delivery do
         )
     end
   end
+
+  defp legacy_creation_actor("project:" <> _id, nil, %SectionSpecification.Direct{}),
+    do: Actor.system()
+
+  defp legacy_creation_actor("publication:" <> _id, nil, %SectionSpecification.Direct{}),
+    do: Actor.system()
+
+  defp legacy_creation_actor("product:" <> _id, nil, %SectionSpecification.Direct{}),
+    do: Actor.system()
+
+  defp legacy_creation_actor(_source, user, _section_spec), do: Actor.new(user)
 
   defp create_from_project(changeset, project, user, section_spec) do
     %{id: project_id} = Oli.Authoring.Course.get_project_by_slug(project.slug)
