@@ -721,7 +721,7 @@ if runtime_env in [:prod, :preview] do
     ],
     queues: [
       default: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DEFAULT", "10")),
-      snapshots: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_SNAPSHOTS", "20")),
+      snapshots: get_env_as_integer.("OBAN_QUEUE_SIZE_SNAPSHOTS", "4"),
       s3_uploader: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_S3UPLOADER", "20")),
       selections: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_SELECTIONS", "20")),
       updates: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_UPDATES", "2")),
