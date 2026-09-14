@@ -11,7 +11,7 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Oli.Delivery.DepotCoordinator
   alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, SectionResourceDepot, SectionSpecification}
+  alias Oli.Delivery.Sections.{CopyOptions, Section, SectionResourceDepot, SectionSpecification}
   alias OliWeb.Common.{Breadcrumb, Stepper, FormatDateTime}
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Components.Common
@@ -90,6 +90,7 @@ defmodule OliWeb.Delivery.NewCourse do
        current_user: current_user,
        section_spec: section_spec,
        changeset: changeset,
+       copy_options: default_copy_options(),
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
        loading: false
      )}
@@ -194,7 +195,11 @@ defmodule OliWeb.Delivery.NewCourse do
         <img src="/images/icons/course-creation-wizard-step-1.svg" style="height: 170px;" />
         <h2>Name your course</h2>
         <.render_flash flash={@flash} />
-        <NameCourse.render changeset={to_form(@changeset)} />
+        <NameCourse.render
+          changeset={to_form(@changeset)}
+          copy_source?={@copy_source?}
+          copy_options={@copy_options}
+        />
       </div>
     </.new_course_header>
     """
@@ -237,13 +242,19 @@ defmodule OliWeb.Delivery.NewCourse do
           on_select: JS.push("source_selection", target: "##{@form_id}"),
           actor: actor(assigns),
           current_user: assigns.current_user,
+          current_author: assigns.current_author,
           section_spec: assigns.section_spec,
           is_admin: assigns.is_admin,
           context_id: assigns[:context_id]
         }
 
       1 ->
-        %{changeset: assigns.changeset, flash: assigns.flash}
+        %{
+          changeset: assigns.changeset,
+          flash: assigns.flash,
+          copy_source?: section_source?(assigns[:source]),
+          copy_options: assigns.copy_options
+        }
 
       _ ->
         %{
@@ -288,6 +299,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
     case SectionCreationRequest.new(actor(socket.assigns), source, attrs, section_spec) do
       {:ok, request} ->
+        request = %{request | copy_options: build_copy_options(source, socket.assigns.copy_options)}
         liveview_pid = self()
 
         # start an async task to create the section and send the result back to the liveview
@@ -377,7 +389,7 @@ defmodule OliWeb.Delivery.NewCourse do
   # This is the response returned from the SubmitForm hook
   def handle_event(
         "js_form_data_response",
-        %{"section" => section, "current_step" => current_step},
+        %{"section" => section, "current_step" => current_step} = params,
         socket
       ) do
     section =
@@ -395,13 +407,29 @@ defmodule OliWeb.Delivery.NewCourse do
       socket.assigns.changeset
       |> Section.changeset(section)
 
+    copy_options =
+      case params["copy_options"] do
+        nil -> socket.assigns.copy_options
+        submitted -> normalize_copy_options(submitted)
+      end
+
     case current_step do
       step when step == 0 or step == 1 ->
-        {:noreply, assign(socket, changeset: changeset, current_step: current_step)}
+        {:noreply,
+         assign(socket,
+           changeset: changeset,
+           copy_options: copy_options,
+           current_step: current_step
+         )}
 
       2 ->
         if validate_fields(changeset, [:title, :course_section_number, :class_modality]) do
-          {:noreply, assign(socket, changeset: changeset, current_step: current_step)}
+          {:noreply,
+           assign(socket,
+             changeset: changeset,
+             copy_options: copy_options,
+             current_step: current_step
+           )}
         else
           {:noreply,
            assign(socket, changeset: changeset)
@@ -488,4 +516,28 @@ defmodule OliWeb.Delivery.NewCourse do
     {_, end_date} = Ecto.Changeset.fetch_field(changeset, :end_date)
     DateTime.compare(start_date, end_date) == :lt
   end
+
+  defp default_copy_options do
+    Map.new(CopyOptions.groups(), &{&1, true})
+  end
+
+  defp normalize_copy_options(submitted) do
+    Map.new(CopyOptions.groups(), fn group ->
+      value = Map.get(submitted, Atom.to_string(group), false)
+      {group, group == :content or value in [true, "true", "on", "1", 1]}
+    end)
+  end
+
+  defp build_copy_options("section:" <> _id, selected) do
+    groups =
+      selected |> Enum.filter(fn {_group, enabled?} -> enabled? end) |> Enum.map(&elem(&1, 0))
+
+    {:ok, options} = CopyOptions.for_previous_section(groups)
+    options
+  end
+
+  defp build_copy_options(_source, _selected), do: nil
+
+  defp section_source?("section:" <> _id), do: true
+  defp section_source?(_), do: false
 end

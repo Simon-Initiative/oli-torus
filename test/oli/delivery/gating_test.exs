@@ -37,7 +37,7 @@ defmodule Oli.Delivery.GatingTest do
 
       assert Gating.list_gating_conditions(section2.id) == []
 
-      Gating.duplicate_gates(section, section2)
+      assert {:ok, 1} = Gating.duplicate_gates(section, section2)
 
       gcs = Gating.list_gating_conditions(section2.id)
       assert Enum.count(gcs) == 1

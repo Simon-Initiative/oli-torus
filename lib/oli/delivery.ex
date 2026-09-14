@@ -1,6 +1,7 @@
 defmodule Oli.Delivery do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.{CopyOptions, SectionCopy}
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications, SectionSpecification}
@@ -60,7 +61,7 @@ defmodule Oli.Delivery do
 
     Repo.transaction(fn ->
       with {:ok, source} <- SectionCreation.resolve_source(actor, request.source, institution),
-           {:ok, section} <- create_from_source(source, actor, attrs, section_spec) do
+           {:ok, section} <- create_from_source(source, actor, attrs, section_spec, request.copy_options) do
         section
       else
         {:error, error} -> Repo.rollback(error)
@@ -79,7 +80,7 @@ defmodule Oli.Delivery do
     end
   end
 
-  defp create_from_source({:publication, publication}, actor, attrs, section_spec) do
+  defp create_from_source({:publication, publication}, actor, attrs, section_spec, _copy_options) do
     project = publication.project
 
     customizations =
@@ -109,7 +110,7 @@ defmodule Oli.Delivery do
     create_from_publication(actor, publication, section_params)
   end
 
-  defp create_from_source({:product, blueprint}, actor, attrs, section_spec) do
+  defp create_from_source({:product, blueprint}, actor, attrs, section_spec, _copy_options) do
     project = blueprint.base_project
 
     # calculate a cost, if an error, fallback to the amount in the blueprint.
@@ -145,10 +146,38 @@ defmodule Oli.Delivery do
     create_from_product(actor, blueprint, section_params)
   end
 
-  # Copying an existing section is the copy engine's branch (MER-5831); the gate resolves
-  # the source for it.
-  defp create_from_source({:section, _section}, _actor, _attrs, _section_spec),
-    do: {:error, :section_source_not_supported}
+  defp create_from_source({:section, source_section}, actor, attrs, section_spec, copy_options) do
+    copy_options = copy_options || default_previous_section_copy_options()
+    project = Repo.get(Oli.Authoring.Course.Project, source_section.base_project_id)
+
+    section_params =
+      attrs
+      |> Map.merge(%{
+        context_id: UUID.uuid4(),
+        required_survey_resource_id: project && project.required_survey_resource_id
+      })
+      |> SectionSpecification.apply(section_spec)
+
+    with {:ok, section} <- SectionCopy.copy(source_section, section_params, copy_options),
+         {:ok, _} <- Sections.rebuild_contained_pages(section),
+         {:ok, _} <- Sections.rebuild_contained_objectives(section),
+         {:ok, section} <- enroll_actor(actor, section),
+         {:ok, _} <-
+           SectionCreationAuditor.capture(actor, :section_created, section, %{
+             "section_title" => section.title,
+             "type" => Atom.to_string(section.type),
+             "base_project_id" => section.base_project_id,
+             "creation_source" => "previous_section",
+             "copied_groups" => CopyOptions.to_audit_list(copy_options)
+           }) do
+      {:ok, PostProcessing.apply(section, :discussions)}
+    end
+  end
+
+  defp default_previous_section_copy_options do
+    {:ok, options} = CopyOptions.for_previous_section(CopyOptions.groups())
+    options
+  end
 
   defp create_from_publication(actor, publication, section_params) do
     with {:ok, section} <-

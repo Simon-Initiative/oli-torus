@@ -1,14 +1,14 @@
 defmodule Oli.Delivery.SectionCreationRequest do
   @moduledoc """
   Command struct for course section creation: who is asking, which source, the form
-  attributes and the delivery specification.
+  attributes, the delivery specification and the selected copy groups.
 
   The actor is carried as a tagged id and reloaded at the boundary. Enrollment follows
   from it: a user actor is enrolled as instructor, an author actor enrolls nobody.
   """
 
   alias Oli.Accounts.{Author, User}
-  alias Oli.Delivery.Sections.SectionSpecification
+  alias Oli.Delivery.Sections.{CopyOptions, SectionSpecification}
 
   @attr_keys [
     :title,
@@ -25,7 +25,7 @@ defmodule Oli.Delivery.SectionCreationRequest do
   @max_id 9_223_372_036_854_775_807
 
   @enforce_keys [:actor, :source, :attrs, :section_spec]
-  defstruct [:actor, :source, :attrs, :section_spec]
+  defstruct [:actor, :source, :attrs, :section_spec, copy_options: nil]
 
   @type actor :: {:user, integer()} | {:author, integer()}
   @type source :: {:publication, integer()} | {:product, integer()} | {:section, integer()}
@@ -34,7 +34,8 @@ defmodule Oli.Delivery.SectionCreationRequest do
           actor: actor(),
           source: source(),
           attrs: map(),
-          section_spec: struct()
+          section_spec: struct(),
+          copy_options: CopyOptions.t() | nil
         }
 
   @doc """

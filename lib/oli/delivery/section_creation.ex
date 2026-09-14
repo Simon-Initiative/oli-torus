@@ -146,9 +146,9 @@ defmodule Oli.Delivery.SectionCreation do
       else: {:error, :unauthorized}
   end
 
-  def resolve_source(actor, {:section, id}, _institution) do
+  def resolve_source(actor, {:section, id}, institution) do
     if SectionCreationRequest.valid_id?(id),
-      do: resolve_section(actor, id),
+      do: resolve_section(actor, id, institution),
       else: {:error, :unauthorized}
   end
 
@@ -170,9 +170,9 @@ defmodule Oli.Delivery.SectionCreation do
     |> found(:product)
   end
 
-  defp resolve_section(actor, id) do
+  defp resolve_section(actor, id, institution) do
     actor
-    |> permitted_sections_query()
+    |> permitted_sections_query(institution)
     |> where([section: section], section.id == ^id)
     |> Repo.one()
     |> found(:section)
@@ -210,14 +210,16 @@ defmodule Oli.Delivery.SectionCreation do
 
   @doc """
   Sections the actor may create a section from: active enrollable sections the actor
-  teaches, or any of them for an administrator.
+  teaches, or any of them for an administrator. LTI sources are restricted to the
+  launching institution; direct-delivery sources have no institution boundary.
   """
-  def permitted_sections_query(actor) do
+  def permitted_sections_query(actor, institution \\ nil) do
     from(section in Section,
       as: :section,
       where: section.type == :enrollable and section.status == :active
     )
     |> where(^section_entitlement(actor))
+    |> scope_sections_to_institution(institution)
   end
 
   @doc """
@@ -245,9 +247,15 @@ defmodule Oli.Delivery.SectionCreation do
     do: actor |> permitted_products_query(institution) |> Repo.all()
 
   @doc """
-  Lists the sections of `permitted_sections_query/1`.
+  Lists the sections of `permitted_sections_query/2`, optionally institution-scoped.
   """
-  def permitted_sections(actor), do: actor |> permitted_sections_query() |> Repo.all()
+  def permitted_sections(actor, institution \\ nil),
+    do: actor |> permitted_sections_query(institution) |> Repo.all()
+
+  defp scope_sections_to_institution(query, nil), do: query
+
+  defp scope_sections_to_institution(query, %Institution{id: institution_id}),
+    do: where(query, [section: section], section.institution_id == ^institution_id)
 
   defp found(%Publication{} = publication, :publication), do: {:ok, {:publication, publication}}
   defp found(%Section{} = section, kind), do: {:ok, {kind, section}}

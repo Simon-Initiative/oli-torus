@@ -8,7 +8,7 @@ defmodule Oli.DeliveryTest do
   alias Oli.Delivery
   alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, SectionSpecification}
+  alias Oli.Delivery.Sections.{CopyOptions, Section, SectionSpecification}
   alias Oli.Authoring.Course.Project
   alias Oli.Repo
 
@@ -381,6 +381,71 @@ defmodule Oli.DeliveryTest do
 
       set_section_learning_model(product, :naive)
       assert Sections.get_section!(section_id).learning_model_version == :lkt_aoa
+    end
+
+    test "creates an independent course from a section source identifier", context do
+      user =
+        context.user
+        |> Ecto.Changeset.change(independent_learner: true)
+        |> Repo.update!()
+
+      {:ok, source} =
+        Oli.Delivery.Sections.Blueprint.duplicate(context.product, %{
+          type: :enrollable,
+          title: "Existing Course",
+          open_and_free: true,
+          blueprint_id: context.product.id
+        })
+
+      {:ok, _} =
+        Sections.enroll(user.id, source.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      student = insert(:user)
+
+      {:ok, _} =
+        Sections.enroll(student.id, source.id, [ContextRoles.get_role(:context_learner)])
+
+      changeset =
+        Sections.change_section(%Section{
+          title: "Copied Course",
+          start_date: ~U[2026-08-01 12:00:00Z],
+          end_date: ~U[2026-12-01 12:00:00Z]
+        })
+
+      {:ok, copy_options} =
+        CopyOptions.for_previous_section([
+          :content,
+          :section_settings,
+          :assessment_settings,
+          :ai_settings
+        ])
+
+      assert {:ok, copied_section_id, _slug} =
+               Delivery.create_section(%SectionCreationRequest{
+                 changeset: changeset,
+                 source: "section:#{source.id}",
+                 user: user,
+                 section_spec: SectionSpecification.direct(),
+                 copy_options: copy_options
+               })
+
+      copy = Sections.get_section!(copied_section_id)
+
+      assert copy.id != source.id
+      assert copy.base_project_id == source.base_project_id
+      assert copy.blueprint_id == source.blueprint_id
+      assert copy.title == "Copied Course"
+      assert copy.context_id != source.context_id
+      assert copy.root_section_resource_id != source.root_section_resource_id
+
+      destination_enrollments = Sections.list_enrollments(copy.slug)
+      assert Enum.map(destination_enrollments, & &1.user_id) == [user.id]
+
+      assert Enum.any?(hd(destination_enrollments).context_roles, fn role ->
+               role.id == ContextRoles.get_role(:context_instructor).id
+             end)
     end
 
     test "creates section with contained objectives from publication if it does not exist",
