@@ -24,6 +24,7 @@ defmodule Oli.Authoring.Course do
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.{ResourceType, Revision, ScoringStrategy}
   alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.PublishedResource
 
   def create_project_resource(attrs) do
@@ -1062,9 +1063,11 @@ defmodule Oli.Authoring.Course do
     create_and_attach_resource(project, attrs)
   end
 
+  @doc "Creates a new project using the latest learning proficiency framework."
   def create_project(attrs) do
     %Project{}
     |> Project.changeset(attrs)
+    |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
     |> Repo.insert()
   end
 
@@ -1085,8 +1088,9 @@ defmodule Oli.Authoring.Course do
     |> Repo.insert()
   end
 
+  @doc "Creates a new project and its initial content using LKT-AOA by default."
   def create_project(title, author, additional_attrs \\ %{}) do
-    do_create_project(title, author, additional_attrs, nil, :use_default)
+    do_create_project(title, author, additional_attrs, :lkt_aoa, :use_default)
   end
 
   @doc """
@@ -1184,6 +1188,50 @@ defmodule Oli.Authoring.Course do
     project
     |> Project.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Upgrades an active project and all its templates from the legacy learning model to LKT-AOA.
+
+  Only project authors and administrators with project access may upgrade. The
+  conditional update prevents stale requests from changing an already upgraded
+  project. Templates are updated in one bulk query in the same transaction.
+  Existing course sections, content, and learner proficiency remain unchanged.
+  """
+  @spec upgrade_learning_model(%Project{}, %Author{}) ::
+          {:ok, %Project{}} | {:error, :not_authorized | :not_upgradable}
+  def upgrade_learning_model(%Project{} = project, %Author{} = author) do
+    case Accounts.can_access?(author, project) do
+      false ->
+        {:error, :not_authorized}
+
+      true ->
+        query =
+          from p in Project,
+            where:
+              p.id == ^project.id and p.status == :active and p.learning_model_version == :naive,
+            select: p
+
+        Repo.transaction(fn ->
+          updates = [
+            learning_model_version: :lkt_aoa,
+            updated_at: DateTime.utc_now() |> DateTime.truncate(:second)
+          ]
+
+          case Repo.update_all(query, set: updates) do
+            {1, [updated]} ->
+              from(s in Section,
+                where: s.base_project_id == ^project.id and s.type == :blueprint
+              )
+              |> Repo.update_all(set: updates)
+
+              updated
+
+            {0, []} ->
+              Repo.rollback(:not_upgradable)
+          end
+        end)
+    end
   end
 
   @doc """
