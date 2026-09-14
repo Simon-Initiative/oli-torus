@@ -175,6 +175,48 @@ defmodule Oli.Authoring.ObjectiveCoverageTest do
       assert ObjectiveCoverage.coverage(model, 2).page_count == 1
     end
 
+    test "normalizes curriculum selections and matches page and embedded activity objectives" do
+      rows = [
+        row(ResourceType.id_for_objective(), 1, children: [2], objectives: %{}),
+        row(ResourceType.id_for_objective(), 2, objectives: %{}),
+        row(ResourceType.id_for_page(), 20,
+          objectives: %{"attached" => [2]},
+          activity_refs: [30]
+        ),
+        row(ResourceType.id_for_page(), 21, objectives: %{"attached" => [2]}),
+        row(ResourceType.id_for_activity(), 30,
+          objectives: %{"part" => [1]},
+          scope: :embedded
+        ),
+        row(ResourceType.id_for_container(), 40, children: [50]),
+        row(ResourceType.id_for_container(), 50, children: [20, 21])
+      ]
+
+      model = ObjectiveCoverage.build(rows)
+
+      assert ObjectiveCoverage.objective_ids_for_pages(model, [20]) == MapSet.new([1, 2])
+      assert ObjectiveCoverage.objective_ids_for_pages(model, [21]) == MapSet.new([2])
+      assert ObjectiveCoverage.objective_scope_for_pages(model, [21]) == MapSet.new([1, 2])
+
+      assert ObjectiveCoverage.normalize_curriculum_selection(model, "40,20,invalid,0") == %{
+               selected_ids: [20, 40],
+               curriculum_ids: [20, 21, 40, 50],
+               page_ids: [20, 21],
+               objective_ids: MapSet.new([1, 2]),
+               active_count: 4
+             }
+
+      assert ObjectiveCoverage.normalize_curriculum_selection(model, ["40", "20", "40"]).selected_ids ==
+               [20, 40]
+
+      assert Enum.map(ObjectiveCoverage.curriculum_nodes(model), & &1.resource_id) == [
+               40,
+               50,
+               20,
+               21
+             ]
+    end
+
     test "normalizes malformed optional values and produces stable output" do
       rows = [
         row(ResourceType.id_for_objective(), 2, children: [3, 2, "invalid"]),

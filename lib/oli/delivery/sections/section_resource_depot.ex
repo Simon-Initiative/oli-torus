@@ -190,13 +190,44 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   @doc """
   Returns objective SectionResource records with `children` normalized to objective resource ids.
 
-  When the depot record does not store objective hierarchy directly, falls back to the
-  corresponding revision children for the objective tree.
+  The versioned SectionResource projection guarantees that stored children are
+  SectionResource IDs, including an empty list for leaf objectives.
   """
   def objectives_with_effective_children(section_id, additional_query_conditions \\ []) do
     section_id
     |> objectives(additional_query_conditions)
     |> hydrate_objective_children()
+  end
+
+  @doc """
+  Returns effective child resource IDs for only the requested objectives.
+
+  Version-two SectionResource children are stored as SectionResource IDs. This
+  bounded lookup resolves those references without hydrating every objective in
+  the course.
+  """
+  def objectives_with_effective_children_for(section_id, resource_ids) do
+    requested = objectives(section_id, resource_id: {:in, resource_ids})
+    child_refs = requested |> Enum.flat_map(&List.wrap(&1.children)) |> Enum.uniq()
+
+    referenced_by_section_resource_id =
+      case child_refs do
+        [] ->
+          []
+
+        ids ->
+          objectives(section_id, id: {:in, ids})
+      end
+      |> Map.new(&{&1.id, &1.resource_id})
+
+    Enum.map(requested, fn section_resource ->
+      children =
+        section_resource.children
+        |> List.wrap()
+        |> Enum.map(&Map.get(referenced_by_section_resource_id, &1))
+
+      %{section_resource | children: Enum.reject(children, &is_nil/1)}
+    end)
   end
 
   @doc """
@@ -266,6 +297,23 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Returns all SectionResources needed for proficiency membership after ensuring
+  the versioned depot projection is available.
+  """
+  def proficiency_resources(section_id) do
+    type_ids = [
+      Oli.Resources.ResourceType.id_for_page(),
+      Oli.Resources.ResourceType.id_for_container(),
+      Oli.Resources.ResourceType.id_for_objective()
+    ]
+
+    with {:ok, _status} <-
+           depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__) do
+      {:ok, Depot.query(@depot_desc, section_id, resource_type_id: {:in, type_ids})}
+    end
+  end
+
+  @doc """
   Returns a SectionResource record for a given section and resource id.
   """
 
@@ -285,11 +333,11 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   Public function responsible for creating the ETS table
   """
   def process_table_creation(section_id) do
-    if SectionResourceMigration.requires_migration?(section_id) do
-      SectionResourceMigration.migrate(section_id)
+    # The version marker, not an empty projection array, proves readiness. Load
+    # ETS only after the locked migration transaction has committed successfully.
+    with {:ok, _status} <- SectionResourceMigration.ensure_current(section_id) do
+      load(section_id)
     end
-
-    load(section_id)
   end
 
   defp load(section_id) do
@@ -326,34 +374,12 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
         Map.put(acc, sr.id, sr.resource_id)
       end)
 
-    revision_children_by_id =
-      objectives_section_resources
-      |> Enum.filter(&(List.wrap(&1.children) == []))
-      |> Enum.map(& &1.revision_id)
-      |> case do
-        [] ->
-          %{}
-
-        revision_ids ->
-          from(r in Oli.Resources.Revision,
-            where: r.id in ^revision_ids,
-            select: {r.id, r.children}
-          )
-          |> Repo.all()
-          |> Map.new()
-      end
-
     Enum.map(objectives_section_resources, fn sr ->
       children =
-        case sr.children || [] do
-          [] ->
-            Map.get(revision_children_by_id, sr.revision_id, [])
-
-          section_resource_children ->
-            section_resource_children
-            |> Enum.map(&Map.get(section_resource_id_to_resource_id, &1, &1))
-            |> Enum.filter(&(&1 != nil))
-        end
+        sr.children
+        |> List.wrap()
+        |> Enum.map(&Map.get(section_resource_id_to_resource_id, &1))
+        |> Enum.reject(&is_nil/1)
 
       %{sr | children: children}
     end)

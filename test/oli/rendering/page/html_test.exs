@@ -129,7 +129,7 @@ defmodule Oli.Content.Page.HtmlTest do
         |> Phoenix.HTML.safe_to_string()
 
       refute rendered_html =~ "Element type 'learning_objectives' is not supported"
-      assert rendered_html =~ "Learning Objective Summary"
+      assert rendered_html =~ "Recommended Review"
       assert rendered_html =~ "Understand linear equations"
       assert rendered_html =~ "Growing Proficiency"
     end

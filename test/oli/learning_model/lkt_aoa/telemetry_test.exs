@@ -34,7 +34,7 @@ defmodule Oli.LearningModel.LktAoa.TelemetryTest do
     :learning_model_parameters
   ]
 
-  test "emits start and stop telemetry with aggregate success metadata only" do
+  test "emits batch counts as measurements and bounded success metadata" do
     %{section: section, group: group} = LktAoaFixtures.lkt_fixture()
 
     events =
@@ -48,20 +48,25 @@ defmodule Oli.LearningModel.LktAoa.TelemetryTest do
            ] = events
 
     assert start_event.measurements.system_time
-    assert start_event.metadata == %{model: :lkt_aoa, input_attempt_count: 1}
+    assert start_event.measurements.input_attempt_count == 1
+    assert start_event.metadata == %{model: :lkt_aoa}
 
-    assert is_integer(stop_event.measurements.duration)
-    assert stop_event.measurements.duration >= 0
-
-    assert stop_event.metadata == %{
-             model: :lkt_aoa,
-             result: :applied,
-             failure_category: nil,
+    assert %{
+             duration: duration,
              input_attempt_count: 1,
              claimed_attempt_count: 1,
              contribution_count: 1,
              affected_state_count: 1,
              new_evidence_count: 1
+           } = stop_event.measurements
+
+    assert is_integer(duration)
+    assert duration >= 0
+
+    assert stop_event.metadata == %{
+             model: :lkt_aoa,
+             result: :applied,
+             failure_category: nil
            }
 
     refute_forbidden_metadata(stop_event.metadata)
@@ -82,9 +87,9 @@ defmodule Oli.LearningModel.LktAoa.TelemetryTest do
 
     assert stop_event.metadata.result == :noop
     assert stop_event.metadata.failure_category == nil
-    assert stop_event.metadata.input_attempt_count == 1
-    assert stop_event.metadata.claimed_attempt_count == 0
-    assert stop_event.metadata.contribution_count == 0
+    assert stop_event.measurements.input_attempt_count == 1
+    assert stop_event.measurements.claimed_attempt_count == 0
+    assert stop_event.measurements.contribution_count == 0
     refute_forbidden_metadata(stop_event.metadata)
   end
 
@@ -103,7 +108,7 @@ defmodule Oli.LearningModel.LktAoa.TelemetryTest do
 
     assert stop_event.metadata.result == :error
     assert stop_event.metadata.failure_category == :invalid_input
-    assert stop_event.metadata.input_attempt_count == 1
+    assert stop_event.measurements.input_attempt_count == 1
     refute_forbidden_metadata(stop_event.metadata)
   end
 
@@ -128,12 +133,12 @@ defmodule Oli.LearningModel.LktAoa.TelemetryTest do
       Enum.find(events, &(&1.event == [:oli, :learning_model, :lkt_aoa, :batch, :exception]))
 
     assert is_integer(exception_event.measurements.duration)
+    assert exception_event.measurements.input_attempt_count == 1
 
     assert exception_event.metadata == %{
              model: :lkt_aoa,
              result: :exception,
-             failure_category: :exception,
-             input_attempt_count: 1
+             failure_category: :exception
            }
 
     refute_forbidden_metadata(exception_event.metadata)

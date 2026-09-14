@@ -17,14 +17,20 @@ defmodule Oli.Scenarios.Builder do
           objectives: objectives,
           tags: tags,
           slug: slug,
-          visibility: visibility
+          visibility: visibility,
+          learning_model_version: learning_model_version
         },
         author,
         _institution
       ) do
     # Use the standard Oli.Authoring.Course.create_project infrastructure
     # that the UI uses when creating projects
-    {:ok, project_setup} = Course.create_project(title || "Test Project", author)
+    {:ok, project_setup} =
+      Course.create_project_from_archive(
+        title || "Test Project",
+        author,
+        learning_model_version || :naive
+      )
 
     %{
       project: project,

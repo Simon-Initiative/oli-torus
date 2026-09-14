@@ -31,6 +31,52 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
              end)
   end
 
+  test "schema and parser reject unsupported proficiency scopes" do
+    for scope <- ["page", "container"], student <- [nil, "alice"] do
+      student_yaml =
+        case student do
+          nil -> ""
+          name -> "      student: #{name}\n"
+        end
+
+      yaml =
+        """
+        - assert:
+            proficiency:
+              section: demo
+              objective: Understand concepts
+              bucket: High
+              #{scope}: Lesson
+        """ <> student_yaml
+
+      assert {:error, _errors} = Scenarios.validate_yaml(yaml)
+
+      error = assert_raise RuntimeError, fn -> DirectiveParser.parse_yaml!(yaml) end
+      assert error.message =~ "Unknown attributes in 'proficiency assertion' directive"
+      assert error.message =~ scope
+    end
+  end
+
+  test "schema and parser accept objective proficiency without scope filters" do
+    yaml = """
+    - assert:
+        proficiency:
+          section: demo
+          objective: Understand concepts
+          bucket: High
+          value: 0.9
+    - assert:
+        proficiency:
+          section: demo
+          objective: Understand concepts
+          student: alice
+          bucket: High
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+    assert length(DirectiveParser.parse_yaml!(yaml)) == 2
+  end
+
   test "schema and parser agree on unknown directives" do
     yaml = """
     - create_project:

@@ -3,6 +3,10 @@
 # Keep Codex state/config user-local (~/.codex), not repo-local.
 .codex/
 
+# Claude Code: skills are machine-local symlinks; local settings are personal.
+.claude/skills/
+.claude/settings.local.json
+
 assets/automation/.playwright-cli
 
 temp_init_file

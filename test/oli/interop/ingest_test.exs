@@ -210,6 +210,18 @@ defmodule Oli.Interop.IngestTest do
 
       assert Enum.count(product_root.children) == 2
     end
+
+    test "ingests a legacy project description over the authoring character limit", %{
+      author: author
+    } do
+      description = String.duplicate("Legacy description", 20)
+
+      assert {:ok, project} =
+               minimal_digest(%{"title" => "Legacy project", "description" => description})
+               |> Ingest.process(author)
+
+      assert project.description == description
+    end
   end
 
   describe "learning-model archive compatibility" do

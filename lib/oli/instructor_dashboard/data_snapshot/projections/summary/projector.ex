@@ -270,6 +270,23 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
   defp recommendation_aria_label(body), do: "#{@recommendation_label}: #{body}"
 
   defp aggregate_objective_proficiency(objective_rows) do
+    numeric_scores =
+      objective_rows
+      |> Enum.map(&Map.get(&1, :numeric_proficiency))
+      |> Enum.reject(&is_nil/1)
+
+    case numeric_scores do
+      [_ | _] ->
+        Enum.sum(numeric_scores) / length(numeric_scores) * 100.0
+
+      [] ->
+        aggregate_legacy_objective_proficiency(objective_rows)
+    end
+  end
+
+  # Legacy naive snapshots predate numeric oracle fields, so category-derived
+  # reconstruction remains only as a cache/backward-compatibility seam.
+  defp aggregate_legacy_objective_proficiency(objective_rows) do
     objective_rows
     |> Enum.reduce({0.0, 0}, fn objective_row, {weighted_sum, total} ->
       proficiency_distribution =

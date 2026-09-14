@@ -20,6 +20,7 @@ defmodule Oli.Conversation.Triggers do
     :trap_state,
     :content_group,
     :content_block,
+    :explain_objective,
     :correct_answer,
     :incorrect_answer,
     :hint,
@@ -50,6 +51,9 @@ defmodule Oli.Conversation.Triggers do
     do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
 
   def description(:content_block, data), do: "Viewed a content block (id: #{data["ref_id"]})"
+
+  def description(:explain_objective, data),
+    do: "requested an explanation for the learning objective: '#{data["objective_title"]}'"
 
   def description(:correct_answer, data),
     do:
@@ -258,7 +262,8 @@ defmodule Oli.Conversation.Triggers do
              :adaptive_component,
              :trap_state,
              :content_group,
-             :content_block
+             :content_block,
+             :explain_objective
            ] ->
         trigger
 

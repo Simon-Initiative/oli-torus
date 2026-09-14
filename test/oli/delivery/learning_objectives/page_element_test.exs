@@ -5,6 +5,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
 
   alias Oli.Delivery.LearningObjectives.IncludedObjective
   alias Oli.Delivery.LearningObjectives.PageElement
+  alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.SectionResourceDepot
@@ -177,6 +178,41 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
              end)
     end
 
+    test "Summary uses the LKT-AOA provider for model-selected sections", %{
+      seeds: %{section: section, resources: resources}
+    } do
+      section = %{section | learning_model_version: :lkt_aoa}
+      user = insert(:user)
+      objective_id = resources.obj_resource_d.id
+
+      Oli.Repo.insert!(%Oli.LearningModel.LearningState{
+        section_id: section.id,
+        user_id: user.id,
+        learning_objective_id: objective_id,
+        aoa: 0.9,
+        attempt_count: 5,
+        unique_activity_part_count: 5,
+        confidence: 0.9
+      })
+
+      payload =
+        PageElement.prepare_render_payload(
+          section,
+          resources.page_resource_2.id,
+          learning_objectives_content("summary"),
+          user,
+          raw_proficiency_fun: fn _, _, _ -> flunk("LKT-AOA must use its provider") end
+        )
+
+      assert payload.performance_by_objective_id[objective_id] == "High"
+
+      assert Metrics.aggregated_proficiency_per_student_for_objectives(
+               section,
+               [%{resource_id: objective_id, children: []}],
+               student_id: user.id
+             )[objective_id][user.id] == "High"
+    end
+
     test "does not query proficiency without a delivery user", %{
       seeds: %{section: section, resources: resources}
     } do
@@ -202,7 +238,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
 
     test "combines a parent's own evidence with a Sub-LO's evidence, including a Sub-LO outside this page element's own scope, consistent with the Instructor Dashboard",
          %{
-           seeds: %{section: section, resources: resources, revisions: revisions}
+           seeds: %{section: section, resources: resources}
          } do
       user = insert(:user)
       objective_type_id = Resources.ResourceType.id_for_objective()
@@ -212,17 +248,8 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
       # E, but E's evidence must still be combined into D's aggregated
       # proficiency, consistent with the Instructor Dashboard (Phase 3).
       #
-      # Set via the revision's `children` (resource ids), not the
-      # SectionResource-level `children` (section_resource ids, per
-      # Sections.populate_children_for_objectives/4) that `force_children`
-      # sets — Sections.get_objectives_and_subobjectives/2 and
-      # SectionResourceDepot.objectives_with_effective_children/1 only agree
-      # on the same resolved children when the SectionResource's own
-      # `children` is empty and both fall back to reading the revision.
-      {:ok, _} =
-        revisions.obj_revision_d
-        |> Ecto.Changeset.change(children: [resources.obj_resource_e.id])
-        |> Oli.Repo.update()
+      # The versioned depot stores authoritative children as SectionResource IDs.
+      force_children(section, resources.obj_resource_d.id, [resources.obj_resource_e.id])
 
       # D's own directly-tagged evidence (from Activity Z) is always combined
       # with its Sub-LO's evidence, per a deliberate product decision (Darren
@@ -494,9 +521,14 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
   end
 
   defp force_children(section, objective_resource_id, child_resource_ids) do
+    child_section_resource_ids =
+      Enum.map(child_resource_ids, fn child_resource_id ->
+        SectionResourceDepot.get_section_resource(section.id, child_resource_id).id
+      end)
+
     section.id
     |> SectionResourceDepot.get_section_resource(objective_resource_id)
-    |> Sections.update_section_resource(%{children: child_resource_ids})
+    |> Sections.update_section_resource(%{children: child_section_resource_ids})
     |> case do
       {:ok, section_resource} ->
         SectionResourceDepot.update_section_resource(section_resource)

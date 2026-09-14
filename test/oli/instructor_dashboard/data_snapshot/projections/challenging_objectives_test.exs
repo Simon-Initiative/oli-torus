@@ -5,6 +5,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   import Oli.Factory
 
   alias Oli.Dashboard.Snapshot.Contract
+  alias Oli.Delivery.Sections
   alias Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Resources.ResourceType
@@ -200,7 +201,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
       assert projection.rows == []
     end
 
-    test "falls back to revision children when objective section resources do not store hierarchy" do
+    test "does not bypass the delivery depot when objective hierarchy is absent" do
       %{section: section, unit: unit, parent: parent, child: child} =
         setup_projection_resources(children_on_section_resource?: false)
 
@@ -220,15 +221,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
 
       assert {:ok, projection} = ChallengingObjectives.derive(snapshot, [])
 
-      assert [
-               %{
-                 objective_id: parent_id,
-                 has_children: true,
-                 children: [%{objective_id: child_id}]
-               }
-             ] = projection.rows
+      assert [%{objective_id: child_id, has_children: false, children: []}] = projection.rows
 
-      assert parent_id == parent.resource_id
       assert child_id == child.resource_id
     end
 
@@ -267,9 +261,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
     test "guards against cycles in objective hierarchy recursion" do
       %{section: section, unit: unit, parent: parent, child: child} = setup_projection_resources()
 
-      from(sr in Oli.Delivery.Sections.SectionResource, where: sr.id == ^child.id)
-      |> Repo.update_all(set: [children: [child.resource_id]])
-
+      {:ok, child} = Sections.update_section_resource(child, %{children: [child.id]})
       SectionResourceDepot.update_section_resource(child)
 
       snapshot =
@@ -351,7 +343,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
         slug: "objective-a",
         numbering_index: 10,
         numbering_level: 2,
-        children: if(children_on_section_resource?, do: [child_resource.id], else: [])
+        children: []
       })
 
     child =
@@ -366,6 +358,18 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
         numbering_index: 11,
         numbering_level: 3
       })
+
+    # Initialize the depot before applying the test-specific hierarchy so the
+    # cache update below cannot be replaced by its initial database load.
+    SectionResourceDepot.get_section_resource(section.id, parent.resource_id)
+
+    parent =
+      if children_on_section_resource? do
+        {:ok, parent} = Sections.update_section_resource(parent, %{children: [child.id]})
+        parent
+      else
+        parent
+      end
 
     extra_root =
       if extra_root_before? do

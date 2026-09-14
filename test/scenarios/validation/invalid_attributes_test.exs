@@ -79,6 +79,21 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
       end
     end
 
+    test "project directive rejects an invalid learning model" do
+      yaml = """
+      - project:
+          name: "project1"
+          title: "Project 1"
+          root:
+            children: []
+          learning_model_version: "experimental"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid learning_model_version/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
     test "clone directive with extra attributes fails" do
       yaml = """
       - clone:

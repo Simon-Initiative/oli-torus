@@ -722,6 +722,7 @@ defmodule OliWeb.Router do
       :learning_objectives
     )
 
+    get("/:project/link/hierarchy", Api.ResourceController, :hierarchy_pages)
     get("/:project/link", Api.ResourceController, :index)
 
     post("/:project/activity/:activity_type", Api.ActivityController, :create)
@@ -1059,6 +1060,11 @@ defmodule OliWeb.Router do
     post "/scores", LtiAgsController, :post_score
   end
 
+  scope "/learning_model_parameters", OliWeb do
+    pipe_through([:browser, :authoring_protected, :require_authenticated_content_admin])
+    get("/:project_slug/download", LearningModelParametersController, :download)
+  end
+
   ### Workspaces
   scope "/workspaces", OliWeb.Workspaces do
     pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin])
@@ -1121,6 +1127,7 @@ defmodule OliWeb.Router do
         live("/:project_id/overview", OverviewLive)
         live("/:project_id/alternatives", AlternativesLive)
         live("/:project_id/index_csv", IndexCsvLive)
+        live("/:project_id/learning_model_parameters", LearningModelParametersLive)
         live("/:project_id/activity_bank", ActivityBankLive)
         live("/:project_id/objectives", ObjectivesLive)
         live("/:project_id/experiments", ExperimentsLive)

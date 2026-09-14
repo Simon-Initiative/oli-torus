@@ -27,7 +27,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
 
         <article
           id={item.slug}
-          class="group max-w-full overflow-hidden rounded-lg border border-Border-border-default bg-Background-bg-secondary shadow-[0px_2px_2.5px_rgba(0,50,99,0.05)]"
+          class={[
+            "group max-w-full overflow-hidden rounded-lg border bg-Background-bg-secondary shadow-[0px_2px_2.5px_rgba(0,50,99,0.05)]",
+            issue_border_class(item.any_issue)
+          ]}
         >
           <div
             class="flex flex-col items-center gap-3 px-3 py-4 sm:flex-row sm:justify-between"
@@ -126,25 +129,48 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                 class="shrink-0 text-current"
               />
             </.metadata_pill>
-            <span class="inline-flex min-h-[30px] items-center rounded-[12px] border border-Border-border-default px-[13px] py-1 text-[13px] font-semibold leading-[19.5px] text-Text-text-high">
+            <span
+              :if={item.sub_objectives_count > 0}
+              class="inline-flex min-h-[30px] items-center rounded-[12px] border border-Border-border-default px-[13px] py-1 text-[13px] font-semibold leading-[19.5px] text-Text-text-high"
+            >
               {pluralized_count(item.sub_objectives_count, "Sub-Objective", "Sub-Objectives")}
             </span>
-            <.metadata_pill label={
-              pluralized_count(
-                item.formative_activity_attachments_count,
-                "Formative",
-                "Formative"
-              )
-            }>
+            <.metadata_pill
+              label={
+                pluralized_count(
+                  item.formative_activity_attachments_count,
+                  "Formative",
+                  "Formative"
+                )
+              }
+              class={
+                item.direct_formative_issue &&
+                  "border border-Border-border-danger bg-Background-bg-secondary text-Text-text-high"
+              }
+            >
+              <Icons.warning_triangle
+                :if={item.direct_formative_issue}
+                class="h-3 w-3.5 shrink-0 stroke-Icon-icon-danger"
+              />
               <Icons.practice is_active={false} />
             </.metadata_pill>
-            <.metadata_pill label={
-              pluralized_count(
-                item.summative_activity_attachments_count,
-                "Summative",
-                "Summative"
-              )
-            }>
+            <.metadata_pill
+              label={
+                pluralized_count(
+                  item.summative_activity_attachments_count,
+                  "Summative",
+                  "Summative"
+                )
+              }
+              class={
+                item.direct_summative_issue &&
+                  "border border-Border-border-danger bg-Background-bg-secondary text-Text-text-high"
+              }
+            >
+              <Icons.warning_triangle
+                :if={item.direct_summative_issue}
+                class="h-3 w-3.5 shrink-0 stroke-Icon-icon-danger"
+              />
               <Icons.assignments is_active={false} />
             </.metadata_pill>
           </div>
@@ -159,36 +185,65 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
               <section :if={item.has_coverage} class="order-1 flex flex-col gap-3">
                 <div class="flex items-center justify-start gap-4">
                   <div
-                    class="inline-flex items-center rounded-md border border-Border-border-default bg-Surface-surface-secondary-muted p-1"
+                    class="inline-flex items-center gap-1 rounded-md border border-Border-border-default bg-Surface-surface-secondary-muted p-1"
                     role="group"
                     aria-label="Assessment bucket"
                   >
                     <button
                       type="button"
-                      class={bucket_button_class(item.assessment_bucket == :formative)}
+                      class={
+                        bucket_button_class(
+                          :formative,
+                          item.assessment_bucket == :formative
+                        )
+                      }
                       aria-pressed={to_string(item.assessment_bucket == :formative)}
                       phx-click="set_assessment_bucket"
                       phx-value-objective_id={item.resource_id}
                       phx-value-bucket="formative"
                     >
-                      <Icons.practice is_active={item.assessment_bucket == :formative} />
+                      <Icons.clipboard
+                        width="14"
+                        height="14"
+                        variant="objective"
+                        class={
+                          bucket_icon_class(
+                            :formative,
+                            item.assessment_bucket == :formative
+                          )
+                        }
+                      />
                       {item.formative_activity_attachments_count} Formative
                     </button>
                     <button
                       type="button"
-                      class={bucket_button_class(item.assessment_bucket == :summative)}
+                      class={
+                        bucket_button_class(
+                          :summative,
+                          item.assessment_bucket == :summative
+                        )
+                      }
                       aria-pressed={to_string(item.assessment_bucket == :summative)}
                       phx-click="set_assessment_bucket"
                       phx-value-objective_id={item.resource_id}
                       phx-value-bucket="summative"
                     >
-                      <Icons.assignments is_active={item.assessment_bucket == :summative} />
+                      <Icons.assignments
+                        is_active={false}
+                        class={
+                          bucket_icon_class(
+                            :summative,
+                            item.assessment_bucket == :summative
+                          )
+                        }
+                      />
                       {item.summative_activity_attachments_count} Summative
                     </button>
                   </div>
                 </div>
                 <.coverage_details
                   item={item}
+                  level={:objective}
                   project_slug={@project_slug}
                   regex={@highlight_regex}
                   terms={@highlight_terms}
@@ -207,7 +262,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                     <li
                       :if={!is_nil(sub_objective)}
                       class={[
-                        "group/item flex flex-wrap items-center gap-[10px] rounded-md border border-Border-border-default bg-Background-bg-secondary p-3",
+                        "group/item flex flex-wrap items-center gap-[10px] rounded-md border bg-Background-bg-secondary p-3",
+                        issue_border_class(sub_objective.any_issue),
                         MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "opacity-50"
                       ]}
                     >
@@ -265,17 +321,46 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           aria-label={"Activity coverage summary for #{sub_objective.title}"}
                         >
                           <span
-                            class="inline-flex min-h-[26px] items-center gap-1 rounded-full border border-Border-border-default bg-Background-bg-secondary px-1.5 py-0.5 text-xs font-semibold leading-[18px] text-Text-text-high"
+                            class={[
+                              "inline-flex h-6 min-w-16 items-center gap-1 rounded-full border bg-Background-bg-secondary px-[7px] text-xs font-semibold leading-[18px] text-Text-text-high",
+                              issue_border_class(sub_objective.direct_formative_issue)
+                            ]}
                             aria-label={"#{sub_objective.formative_activity_attachments_count} formative activities"}
                           >
-                            <Icons.practice is_active={false} />
+                            <span class="inline-flex h-4 shrink-0 items-center gap-1.5">
+                              <Icons.warning_triangle
+                                :if={sub_objective.direct_formative_issue}
+                                class="h-3 w-3.5 shrink-0 stroke-Icon-icon-danger"
+                              />
+                              <Icons.clipboard
+                                width="13"
+                                height="16"
+                                stroke_width="1.5"
+                                variant="objective"
+                                class="h-4 w-[13px] max-w-none shrink-0 text-Icon-icon-default"
+                              />
+                            </span>
                             <span>{sub_objective.formative_activity_attachments_count}</span>
                           </span>
                           <span
-                            class="inline-flex min-h-[26px] items-center gap-1 rounded-full border border-Border-border-default bg-Background-bg-secondary px-1.5 py-0.5 text-xs font-semibold leading-[18px] text-Text-text-high"
+                            class={[
+                              "inline-flex h-6 min-w-16 items-center gap-1 rounded-full border bg-Background-bg-secondary px-[7px] text-xs font-semibold leading-[18px] text-Text-text-high",
+                              issue_border_class(sub_objective.direct_summative_issue)
+                            ]}
                             aria-label={"#{sub_objective.summative_activity_attachments_count} summative activities"}
                           >
-                            <Icons.assignments is_active={false} />
+                            <span class="inline-flex h-4 shrink-0 items-center gap-1.5">
+                              <Icons.warning_triangle
+                                :if={sub_objective.direct_summative_issue}
+                                class="h-3 w-3.5 shrink-0 stroke-Icon-icon-danger"
+                              />
+                              <span class="flex h-4 w-[13px] shrink-0 items-center justify-center">
+                                <Icons.assignments
+                                  is_active={false}
+                                  class="h-4 w-4 max-w-none shrink-0 stroke-Text-text-high"
+                                />
+                              </span>
+                            </span>
                             <span>{sub_objective.summative_activity_attachments_count}</span>
                           </span>
                         </div>
@@ -324,44 +409,65 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                       >
                         <div class="mb-3 flex items-center justify-start gap-4">
                           <div
-                            class="inline-flex items-center rounded-md border border-Border-border-default bg-Surface-surface-secondary-muted p-1"
+                            class="inline-flex items-center gap-1 rounded-md border border-Border-border-default bg-Surface-surface-secondary-muted p-1"
                             role="group"
                             aria-label="Assessment bucket"
                           >
                             <button
                               type="button"
                               class={
-                                bucket_button_class(sub_objective.assessment_bucket == :formative)
+                                bucket_button_class(
+                                  :formative,
+                                  sub_objective.assessment_bucket == :formative
+                                )
                               }
                               aria-pressed={to_string(sub_objective.assessment_bucket == :formative)}
                               phx-click="set_assessment_bucket"
                               phx-value-objective_id={sub_objective.resource_id}
                               phx-value-bucket="formative"
                             >
-                              <Icons.practice is_active={
-                                sub_objective.assessment_bucket == :formative
-                              } />
+                              <Icons.clipboard
+                                width="14"
+                                height="14"
+                                variant="objective"
+                                class={
+                                  bucket_icon_class(
+                                    :formative,
+                                    sub_objective.assessment_bucket == :formative
+                                  )
+                                }
+                              />
                               {sub_objective.formative_activity_attachments_count} Formative
                             </button>
                             <button
                               type="button"
                               class={
-                                bucket_button_class(sub_objective.assessment_bucket == :summative)
+                                bucket_button_class(
+                                  :summative,
+                                  sub_objective.assessment_bucket == :summative
+                                )
                               }
                               aria-pressed={to_string(sub_objective.assessment_bucket == :summative)}
                               phx-click="set_assessment_bucket"
                               phx-value-objective_id={sub_objective.resource_id}
                               phx-value-bucket="summative"
                             >
-                              <Icons.assignments is_active={
-                                sub_objective.assessment_bucket == :summative
-                              } />
+                              <Icons.assignments
+                                is_active={false}
+                                class={
+                                  bucket_icon_class(
+                                    :summative,
+                                    sub_objective.assessment_bucket == :summative
+                                  )
+                                }
+                              />
                               {sub_objective.summative_activity_attachments_count} Summative
                             </button>
                           </div>
                         </div>
                         <.coverage_details
                           item={sub_objective}
+                          level={:sub_objective}
                           project_slug={@project_slug}
                           regex={@highlight_regex}
                           terms={@highlight_terms}
@@ -392,7 +498,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
     ]}>
       <span
         :if={@inner_block != []}
-        class="inline-flex h-5 w-[13px] shrink-0 items-center justify-center text-Text-text-high"
+        class="inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 text-Text-text-high"
       >
         {render_slot(@inner_block)}
       </span>
@@ -401,7 +507,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
     """
   end
 
+  # `:level` selects the hierarchy-specific copy; both objective levels share
+  # the same bucket-toggle and warning-banner structure.
   attr :item, :map, required: true
+  attr :level, :atom, required: true, values: [:objective, :sub_objective]
   attr :project_slug, :string, required: true
   attr :regex, :any, required: true
   attr :terms, :list, required: true
@@ -409,6 +518,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   defp coverage_details(assigns) do
     ~H"""
     <div class="flex flex-col gap-4">
+      <div
+        :if={coverage_warning?(@item)}
+        class="flex items-start gap-2 rounded-md border border-Border-border-danger bg-Fill-fill-danger px-[13px] py-[9px] text-[13px] text-Text-text-high"
+      >
+        <Icons.warning_triangle class="mt-0.5 h-3 w-3.5 shrink-0 stroke-Icon-icon-danger" />
+        <p class="m-0">
+          {coverage_warning_text(@item.assessment_bucket, @level)}
+        </p>
+      </div>
       <%= if @item.coverage_details == [] do %>
         <p class="m-0 rounded-md bg-Background-bg-secondary px-3 py-2 text-sm text-Text-text-low-alpha">
           No pages or activities are attached for this assessment bucket.
@@ -417,7 +535,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
         <ul class="m-0 flex list-none flex-col gap-4 p-0">
           <%= for page <- @item.coverage_details do %>
             <li class="flex flex-col gap-2">
-              <div class="border-b border-Border-border-subtle pb-2">
+              <div>
                 <.link
                   href={
                     ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{page.page.slug}/edit"
@@ -425,8 +543,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                   class="flex items-center gap-1.5 rounded text-sm font-semibold leading-[21px] text-Text-text-button hover:text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                   aria-label={"Open page editor for #{page.page.title || page.page.slug}"}
                 >
-                  <Icons.book width="12" height="13" stroke_width="1.41573" variant="objective" />
-                  <span>
+                  <Icons.book
+                    width="12"
+                    height="13"
+                    stroke_width="1.41573"
+                    variant="objective"
+                    class="shrink-0 text-Icon-icon-default"
+                  />
+                  <span class="text-Text-text-button">
                     <.highlighted_title
                       title={page.page.title || page.page.slug}
                       regex={@regex}
@@ -451,11 +575,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                         aria-label={"Open activity #{activity.title || activity.slug} in #{page.page.title || page.page.slug}"
                         }
                       >
-                        <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-Fill-Accent-fill-accent-blue p-1">
+                        <span class={activity_icon_container_class(page.page.graded)}>
                           <%= if page.page.graded do %>
-                            <Icons.assignments is_active={false} />
+                            <span class="flex h-3 w-[11px] items-center justify-center">
+                              <Icons.assignments class="h-4 w-4 max-w-none shrink-0 stroke-Icon-icon-accent-orange" />
+                            </span>
                           <% else %>
-                            <Icons.practice is_active={false} />
+                            <Icons.clipboard
+                              width="11"
+                              height="13"
+                              variant="objective"
+                              class="text-Icon-icon-accent-blue"
+                            />
                           <% end %>
                         </span>
                         <span class="min-w-0 truncate">
@@ -478,16 +609,69 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
     """
   end
 
-  defp bucket_button_class(true),
+  defp bucket_button_class(:formative, true),
     do:
-      "inline-flex h-[27px] items-center gap-1.5 rounded bg-Fill-Accent-fill-accent-blue px-3 py-1 text-sm font-semibold leading-4 text-Text-text-high whitespace-nowrap shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+      "inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded bg-Fill-Accent-fill-accent-blue px-3 py-1 text-[13px] font-semibold leading-[19.5px] text-Text-text-high shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
 
-  defp bucket_button_class(false),
+  defp bucket_button_class(:summative, true),
     do:
-      "inline-flex h-[27px] items-center gap-1.5 rounded px-3 py-1 text-sm font-semibold leading-4 text-Text-text-low whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+      "inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded bg-Fill-Accent-fill-accent-orange px-3 py-1 text-[13px] font-semibold leading-[19.5px] text-Text-text-accent-orange shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+
+  defp bucket_button_class(_bucket, false),
+    do:
+      "inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded px-3 py-1 text-[13px] font-semibold leading-[19.5px] text-Text-text-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+
+  defp bucket_icon_class(:formative, true),
+    do: "h-4 w-4 max-w-none shrink-0"
+
+  defp bucket_icon_class(:summative, true),
+    do: "h-5 w-5 max-w-none shrink-0 stroke-Icon-icon-accent-orange"
+
+  defp bucket_icon_class(:formative, false),
+    do: "h-4 w-4 max-w-none shrink-0 text-Icon-icon-default"
+
+  defp bucket_icon_class(:summative, false),
+    do: "h-5 w-5 max-w-none shrink-0 text-Icon-icon-default stroke-current"
+
+  defp activity_icon_container_class(true),
+    do:
+      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-Fill-Accent-fill-accent-orange p-1"
+
+  defp activity_icon_container_class(false),
+    do:
+      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-Fill-Accent-fill-accent-blue p-1"
 
   defp pluralized_count(1, singular, _plural), do: "1 #{singular}"
   defp pluralized_count(count, _singular, plural), do: "#{count} #{plural}"
+
+  defp issue_border_class(true), do: "border-Border-border-danger"
+  defp issue_border_class(false), do: "border-Border-border-default"
+
+  # Only the bucket currently selected by the Formative/Summative toggle has
+  # its coverage_details rendered at all, so this only ever reflects that one
+  # bucket's own flag, never "any" or "both" — the healthy bucket's shortfall
+  # (if any) surfaces once the user switches to it.
+  defp coverage_warning?(%{assessment_bucket: :formative, direct_formative_issue: issue}),
+    do: issue
+
+  defp coverage_warning?(%{assessment_bucket: :summative, direct_summative_issue: issue}),
+    do: issue
+
+  defp coverage_warning_text(:formative, :objective),
+    do:
+      "This objective contains limited practice opportunities. Additional formative activities may improve both learning and insight quality."
+
+  defp coverage_warning_text(:formative, :sub_objective),
+    do:
+      "This sub-objective contains limited practice opportunities. Additional formative activities may improve both learning and insight quality."
+
+  defp coverage_warning_text(:summative, :objective),
+    do:
+      "This objective contains limited assessment opportunities. Additional summative activities may improve both learning and insight quality."
+
+  defp coverage_warning_text(:summative, :sub_objective),
+    do:
+      "This sub-objective contains limited assessment opportunities. Additional summative activities may improve both learning and insight quality."
 
   attr :title, :string, required: true
   attr :regex, :any, required: true

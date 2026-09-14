@@ -79,7 +79,7 @@ defmodule Oli.Scenarios.DirectiveValidator do
           ["section", "progress", "page", "container", "student"]
 
         :proficiency ->
-          ["section", "objective", "bucket", "value", "student", "page", "container"]
+          ["section", "objective", "bucket", "value", "student"]
 
         :certificate ->
           [
