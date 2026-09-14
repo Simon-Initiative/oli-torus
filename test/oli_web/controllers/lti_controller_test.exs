@@ -120,6 +120,70 @@ defmodule OliWeb.LtiControllerTest do
       assert html_response(conn, 200) =~ "This course section is not available"
     end
 
+    @tag capture_log: true
+    test "a signed launch whose identity claims are malformed renders a launch error, not a crash",
+         %{conn: conn, registration: registration} do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+
+      malformed = [
+        {"list context", %{"https://purl.imsglobal.org/spec/lti/claim/context" => []}},
+        {"missing context id", %{"https://purl.imsglobal.org/spec/lti/claim/context" => %{}}},
+        {"non binary context id",
+         %{"https://purl.imsglobal.org/spec/lti/claim/context" => %{"id" => 7}}},
+        {"oversized context id",
+         %{
+           "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+             "id" => String.duplicate("c", 256)
+           }
+         }},
+        {"context id with a NUL byte",
+         %{
+           "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+             "id" => "x" <> <<0>> <> "y"
+           }
+         }}
+      ]
+
+      for {label, overrides} <- malformed do
+        body = %{
+          "client_id" => registration.client_id,
+          "iss" => registration.issuer,
+          "login_hint" => "some-login_hint",
+          "lti_message_hint" => "some-lti_message_hint",
+          "target_link_uri" => "https://some-target_link_uri/lti/launch"
+        }
+
+        login_conn = post(conn, Routes.lti_path(conn, :login, body))
+        state = redirect_query_param(redirected_to(login_conn), "state")
+
+        custom_header = %{"kid" => platform_jwk.kid}
+        signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+        claims =
+          Oli.Lti.TestHelpers.all_default_claims()
+          |> Map.merge(overrides)
+          |> Map.delete("iss")
+          |> Map.delete("aud")
+
+        {:ok, claims} =
+          Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+          |> Joken.generate_claims(claims)
+
+        {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+        launch_conn =
+          post(login_conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+        response = html_response(launch_conn, 400)
+
+        assert response =~ "LTI Launch Is Missing Its Course Identity",
+               "expected the identity launch error for a #{label} claim"
+
+        refute response =~ "Launch Completed but Course Access Failed"
+      end
+    end
+
     test "login post fails on missing registration and redirects to register_form", %{
       conn: conn,
       registration: registration

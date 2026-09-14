@@ -8,6 +8,7 @@ defmodule OliWeb.LtiController do
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti.KeysetCache
   alias Oli.Lti.LaunchErrors
+  alias Oli.Lti.LaunchIdentity
   alias Oli.Lti.LtiParams
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
@@ -99,6 +100,13 @@ defmodule OliWeb.LtiController do
             transport_method: :session_storage
           )
 
+        {:error, :invalid_launch_identity} ->
+          render_launch_error(conn, :invalid_launch_identity,
+            request_id: request_id(conn),
+            state_id: state_identifier(Map.get(params, "state")),
+            transport_method: :session_storage
+          )
+
         {:error, error} ->
           Logger.error("Failed to handle valid LTI 1.3 launch: #{inspect(error)}")
 
@@ -141,9 +149,15 @@ defmodule OliWeb.LtiController do
   end
 
   defp handle_valid_lti_1p3_launch(lti_params) do
-    issuer = lti_params["iss"]
-    client_id = LtiParams.peek_client_id(lti_params)
-    deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+    case LaunchIdentity.from_claims(lti_params) do
+      {:ok, identity} -> handle_valid_lti_1p3_launch(lti_params, identity)
+      :error -> {:error, :invalid_launch_identity}
+    end
+  end
+
+  # Parsed before anything is read from the claims or written for this launch.
+  defp handle_valid_lti_1p3_launch(lti_params, %LaunchIdentity{} = identity) do
+    %LaunchIdentity{issuer: issuer, client_id: client_id, deployment_id: deployment_id} = identity
 
     Oli.Repo.transaction(fn ->
       with {:ok, institution, registration} <-
