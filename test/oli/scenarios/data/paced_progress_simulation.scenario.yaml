@@ -490,3 +490,5 @@
         count: 10
       - profile: low_engagement
         count: 5
+    timing:
+      mode: paced

@@ -4,17 +4,19 @@ defmodule Oli.Scenarios.Directives.FinalizeAttemptHandler do
   through the real page lifecycle.
   """
 
-  alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, FinalizeAttemptDirective}
   alias Oli.Scenarios.Engine
+  alias Oli.Scenarios.LearnerActions
 
   def handle(%FinalizeAttemptDirective{} = directive, %ExecutionState{} = state) do
     key = {directive.student, directive.section, directive.page}
 
+    datashop_session_id = Oli.Scenarios.LearnerSession.transient_id()
+
     with {:ok, section} <- fetch_section(state, directive.section),
-         {:ok, attempt_guid} <- fetch_attempt_guid(state, key),
+         {:ok, resource_attempt} <- fetch_resource_attempt(state, key),
          {:ok, finalization_summary} <-
-           finalize_attempt(section.slug, attempt_guid) do
+           LearnerActions.finalize(section, resource_attempt, datashop_session_id) do
       {:ok,
        %{
          state
@@ -23,7 +25,7 @@ defmodule Oli.Scenarios.Directives.FinalizeAttemptHandler do
        }}
     else
       {:error, reason} ->
-        {:error, "Failed to finalize attempt: #{reason}"}
+        {:error, "Failed to finalize attempt: #{format_reason(reason)}"}
     end
   end
 
@@ -34,7 +36,7 @@ defmodule Oli.Scenarios.Directives.FinalizeAttemptHandler do
     end
   end
 
-  defp fetch_attempt_guid(state, key) do
+  defp fetch_resource_attempt(state, key) do
     case Map.get(state.page_attempts, key) do
       nil ->
         {:error, "No active attempt found - student must visit page first"}
@@ -42,23 +44,14 @@ defmodule Oli.Scenarios.Directives.FinalizeAttemptHandler do
       {:not_started, _} ->
         {:error, "Page not started - cannot finalize attempt"}
 
-      {_status, %{resource_attempt: %{attempt_guid: attempt_guid}}} ->
-        {:ok, attempt_guid}
+      {_status, %{resource_attempt: %{} = resource_attempt}} ->
+        {:ok, resource_attempt}
 
       {_status, _unexpected} ->
         {:error, "Stored page attempt does not contain a finalizable resource attempt"}
     end
   end
 
-  defp finalize_attempt(section_slug, attempt_guid) do
-    datashop_session_id = "session_#{System.unique_integer([:positive])}"
-
-    case PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id) do
-      {:ok, finalization_summary} ->
-        {:ok, finalization_summary}
-
-      {:error, reason} ->
-        {:error, inspect(reason)}
-    end
-  end
+  defp format_reason(reason) when is_binary(reason), do: reason
+  defp format_reason(reason), do: inspect(reason)
 end

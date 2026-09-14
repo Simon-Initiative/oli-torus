@@ -303,35 +303,63 @@ fail without being overwritten.
     learners: 25
 ```
 
-`simulate_progress` uses a deterministic seed, preloads the section and pages once, and processes
-learners in fixed-size batches with bounded concurrency and per-task timeouts. Omitting `users`
-selects all enrolled learners. Unsupported content and learner failures are returned in the
-bounded `scenario_warnings` execution-state collection; supported work remains committed. By
-default, each learner makes one assessment attempt using `pct_correct`. Set `assessment_attempts`
-to an ordered, non-empty list to create multiple attempts with a different correctness target for
-each attempt.
+`simulate_progress` takes enrolled learners through the delivered course using fixed behavior
+profiles and real delivery attempt/evaluation lifecycles. Omitting `users` selects all enrolled
+learners. A seed makes cohort assignment, participation, response, and timing choices repeatable.
+Unsupported content is reported as a bounded warning; learner failures are reported separately.
+
+Select exactly one top-level `profile` or `cohorts`. The former `pct_correct` and
+`assessment_attempts` options have been removed; use a fixed profile or lower-level learner
+directives when an exact action sequence is required.
 
 ```yaml
 - simulate_progress:
     section: demo_section
     users: [qa_learner_1, qa_learner_2]
     seed: 42
-    pct_correct: 0.8
-    batch_size: 10
-    max_concurrency: 4
-    timeout_ms: 30000
+    profile: steady_learner
 ```
 
 ```yaml
 - simulate_progress:
     section: demo_section
-    users: [qa_learner_3]
-    seed: 43
-    assessment_attempts:
-      - pct_correct: 0.4
-      - pct_correct: 0.7
-      - pct_correct: 0.9
+    seed: 42
+    cohorts:
+      - profile: high_proficiency
+        count: 5
+      - profile: steady_learner
+        count: 10
+      - profile: persistent_learner
+        count: 5
+      - profile: low_engagement
+        count: 5
 ```
+
+The built-in profiles vary course reach, activity participation, initial correctness, practice and
+assessment attempt counts, and improvement per attempt. Incorrect practice attempts request hints
+when available. Learners with existing section history are skipped and reported rather than resumed.
+
+Fast mode is the default. Paced mode uses real wall-clock waits sampled independently for each
+learner from fixed profile distributions for page, answer, retry, break, and study-session timing.
+Both modes accept at most 100 learners. Fast mode uses the normal `Task.async_stream/3` concurrency
+and adds a small deterministic delay between actions; paced mode starts one worker per admitted
+learner so realistic waits overlap. Paced mode is intended to run
+in a separate shell alongside the development or preview server:
+
+```yaml
+- simulate_progress:
+    section: demo_section
+    profile: steady_learner
+    seed: 42
+    timing:
+      mode: paced
+```
+
+Run a local file with `mix seed scenarios run --file path/to/scenario.yaml`. Preview releases use
+`bin/seed scenarios run --file path/to/staged-scenario.yaml`. Stopping the process stops owned
+learner work and keeps already committed attempts; there is no resume, special interruption
+summary, or automatic cleanup. Refresh the application UI to inspect committed data; downstream analytics may require
+the concurrently running server's normal queues to drain.
 
 ### Hook Directive
 

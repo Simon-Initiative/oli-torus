@@ -5,6 +5,7 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Repo
+  alias Oli.Utils.DataGenerators.NameGenerator
 
   import Ecto.Query
 
@@ -39,10 +40,10 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
       %{
         reference: reference,
         role: role,
-        email: "#{reference}@scenarios.invalid",
+        email: "#{reference}@example.edu",
         sub: "scenario:#{reference}",
-        given_name: String.capitalize(role_name),
-        family_name: "#{index}"
+        given_name: NameGenerator.first_name(),
+        family_name: NameGenerator.last_name()
       }
     end
   end

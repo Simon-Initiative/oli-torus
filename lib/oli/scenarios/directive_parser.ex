@@ -624,39 +624,31 @@ defmodule Oli.Scenarios.DirectiveParser do
       "section",
       "users",
       "seed",
+      "profile",
+      "cohorts",
+      "timing",
       "pct_correct",
-      "assessment_attempts",
-      "batch_size",
-      "max_concurrency",
-      "timeout_ms"
+      "assessment_attempts"
     ]
 
     with :ok <- DirectiveValidator.validate_attributes(allowed_attrs, data, "simulate_progress") do
-      users = data["users"]
+      reject_removed_progress_options!(data)
+      users = parse_progress_users(data["users"], "simulate_progress.users")
+      {profile, cohorts} = parse_progress_selection(data)
 
-      if not is_nil(users) and
-           (not is_list(users) or Enum.any?(users, &(not is_binary(&1) or &1 == ""))) do
-        raise "simulate_progress.users must be a list of non-empty scenario user references"
-      end
-
-      pct_correct = parse_optional_float(data["pct_correct"]) || 1.0
-
-      if pct_correct < 0.0 or pct_correct > 1.0 do
-        raise "simulate_progress.pct_correct must be between 0.0 and 1.0"
-      end
-
-      assessment_attempts = parse_assessment_attempts(data["assessment_attempts"])
+      timing =
+        case Oli.Scenarios.ProgressSimulation.Profiles.normalize_mode(data["timing"]) do
+          {:ok, mode} -> mode
+          {:error, message} -> raise message
+        end
 
       %SimulateProgressDirective{
         section: required_non_empty_string(data["section"], "simulate_progress.section"),
         users: users,
         seed: bounded_non_negative_integer(data["seed"], 0, "seed", 2_147_483_647),
-        pct_correct: pct_correct,
-        assessment_attempts: assessment_attempts,
-        batch_size: bounded_positive_integer(data["batch_size"], 10, "batch_size", 100),
-        max_concurrency:
-          bounded_positive_integer(data["max_concurrency"], 4, "max_concurrency", 16),
-        timeout_ms: bounded_positive_integer(data["timeout_ms"], 30_000, "timeout_ms", 300_000)
+        profile: profile,
+        cohorts: cohorts,
+        timing: timing
       }
     else
       {:error, msg} -> raise msg
@@ -1292,33 +1284,94 @@ defmodule Oli.Scenarios.DirectiveParser do
     end)
   end
 
-  defp parse_assessment_attempts(nil), do: nil
+  defp reject_removed_progress_options!(data) do
+    removed = Enum.filter(["pct_correct", "assessment_attempts"], &Map.has_key?(data, &1))
 
-  defp parse_assessment_attempts(attempts) when is_list(attempts) and attempts != [] do
-    if length(attempts) > 100 do
-      raise "simulate_progress.assessment_attempts must contain at most 100 attempts"
+    case removed do
+      [] ->
+        :ok
+
+      _ ->
+        raise "simulate_progress no longer accepts #{Enum.join(removed, " or ")}; use a fixed profile, or lower-level learner directives for exact attempts"
     end
-
-    Enum.with_index(attempts, 1)
-    |> Enum.map(fn {attempt, index} ->
-      case attempt do
-        %{"pct_correct" => value} when map_size(attempt) == 1 ->
-          pct_correct = parse_optional_float(value)
-
-          if is_nil(pct_correct) or pct_correct < 0.0 or pct_correct > 1.0 do
-            raise "simulate_progress.assessment_attempts[#{index}].pct_correct must be between 0.0 and 1.0"
-          end
-
-          %{pct_correct: pct_correct}
-
-        _ ->
-          raise "simulate_progress.assessment_attempts[#{index}] must contain only pct_correct"
-      end
-    end)
   end
 
-  defp parse_assessment_attempts(_attempts) do
-    raise "simulate_progress.assessment_attempts must be a non-empty list"
+  defp parse_progress_selection(%{"profile" => profile} = data) do
+    case Map.has_key?(data, "cohorts") do
+      true -> raise "simulate_progress requires exactly one of profile or cohorts"
+      false -> :ok
+    end
+
+    validate_progress_profile!(profile, "simulate_progress")
+    {profile, nil}
+  end
+
+  defp parse_progress_selection(%{"cohorts" => cohorts}) do
+    {nil, parse_progress_cohorts(cohorts)}
+  end
+
+  defp parse_progress_selection(_data),
+    do: raise("simulate_progress requires exactly one of profile or cohorts")
+
+  defp parse_progress_cohorts(cohorts)
+       when is_list(cohorts) and cohorts != [] and length(cohorts) <= 100 do
+    cohorts
+    |> Enum.with_index()
+    |> Enum.map(fn {cohort, index} -> parse_progress_cohort(cohort, index) end)
+  end
+
+  defp parse_progress_cohorts(_cohorts),
+    do: raise("simulate_progress.cohorts must contain between 1 and 100 cohorts")
+
+  defp parse_progress_cohort(cohort, index) when is_map(cohort) do
+    case DirectiveValidator.validate_attributes(
+           ["profile", "count"],
+           cohort,
+           "simulate_progress.cohorts[#{index}]"
+         ) do
+      :ok -> :ok
+      {:error, message} -> raise message
+    end
+
+    profile =
+      required_non_empty_string(
+        cohort["profile"],
+        "simulate_progress.cohorts[#{index}].profile"
+      )
+
+    validate_progress_profile!(profile, "simulate_progress.cohorts[#{index}]")
+
+    count =
+      case Map.fetch(cohort, "count") do
+        {:ok, value} -> bounded_positive_integer(value, nil, "cohorts[#{index}].count", 100)
+        :error -> raise "simulate_progress.cohorts[#{index}].count is required"
+      end
+
+    %{profile: profile, count: count}
+  end
+
+  defp parse_progress_cohort(_cohort, index),
+    do: raise("simulate_progress.cohorts[#{index}] must be a map")
+
+  defp parse_progress_users(nil, _path), do: nil
+
+  defp parse_progress_users(users, _path)
+       when is_list(users) and users != [] and length(users) <= 100 do
+    case Enum.all?(users, &(is_binary(&1) and &1 != "")) and
+           length(Enum.uniq(users)) == length(users) do
+      true -> users
+      false -> raise "simulate_progress.users must contain unique, non-empty references"
+    end
+  end
+
+  defp parse_progress_users(_users, path),
+    do: raise("#{path} must be a non-empty list of unique scenario user references")
+
+  defp validate_progress_profile!(profile, path) do
+    case Oli.Scenarios.ProgressSimulation.Profiles.resolve(profile) do
+      {:ok, _resolved} -> :ok
+      {:error, message} -> raise "#{path}: #{message}"
+    end
   end
 
   defp valid_directives, do: @valid_directives
