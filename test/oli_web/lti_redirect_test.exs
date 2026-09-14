@@ -102,6 +102,105 @@ defmodule OliWeb.LtiRedirectTest do
 
       assert redirected_to(conn) == "/sections/new/deleted-context"
     end
+
+    test "launches a learner directly into a page named by the custom claim", %{conn: conn} do
+      user = insert(:user, independent_learner: false)
+
+      page_revision =
+        insert(:revision, resource_type_id: Oli.Resources.ResourceType.id_for_page())
+
+      {:ok, [section: section, project: _project, author: _author]} =
+        section_with_pages(%{revisions: [page_revision]})
+
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> LtiRedirect.redirect_from_lti_params(
+          lti_params(section, "Learner", %{
+            "torus_resource_type" => "page",
+            "torus_resource_id" => page_revision.slug
+          })
+        )
+
+      assert redirected_to(conn) == "/sections/#{section.slug}/page/#{page_revision.slug}"
+    end
+
+    test "launches an instructor directly into a page instead of section management", %{
+      conn: conn
+    } do
+      user = insert(:user, independent_learner: false)
+
+      page_revision =
+        insert(:revision, resource_type_id: Oli.Resources.ResourceType.id_for_page())
+
+      {:ok, [section: section, project: _project, author: _author]} =
+        section_with_pages(%{revisions: [page_revision]})
+
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> LtiRedirect.redirect_from_lti_params(
+          lti_params(section, "Instructor", %{
+            "torus_resource_type" => "page",
+            "torus_resource_id" => page_revision.slug
+          })
+        )
+
+      assert redirected_to(conn) == "/sections/#{section.slug}/page/#{page_revision.slug}"
+    end
+
+    test "falls back to the normal destination when direct resource parameters are incomplete or unsupported",
+         %{conn: conn} do
+      user = insert(:user, independent_learner: false)
+      section = insert(:section)
+
+      for custom <- [
+            %{"torus_resource_type" => "page"},
+            %{"torus_resource_id" => "some-page"},
+            %{"torus_resource_type" => "activity", "torus_resource_id" => "some-page"}
+          ] do
+        conn =
+          conn
+          |> assign(:current_user, user)
+          |> LtiRedirect.redirect_from_lti_params(lti_params(section, "Learner", custom))
+
+        assert redirected_to(conn) == "/sections/#{section.slug}"
+      end
+    end
+
+    test "falls back to the normal destination when the page is not in the launched section", %{
+      conn: conn
+    } do
+      user = insert(:user, independent_learner: false)
+      section = insert(:section)
+      other_page = insert(:revision, resource_type_id: Oli.Resources.ResourceType.id_for_page())
+
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> LtiRedirect.redirect_from_lti_params(
+          lti_params(section, "Learner", %{
+            "torus_resource_type" => "page",
+            "torus_resource_id" => other_page.slug
+          })
+        )
+
+      assert redirected_to(conn) == "/sections/#{section.slug}"
+    end
+  end
+
+  defp lti_params(section, role, custom) do
+    %{
+      "iss" => section.lti_1p3_deployment.registration.issuer,
+      "aud" => [section.lti_1p3_deployment.registration.client_id],
+      "https://purl.imsglobal.org/spec/lti/claim/context" => %{"id" => section.context_id},
+      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
+        section.lti_1p3_deployment.deployment_id,
+      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+        "http://purl.imsglobal.org/vocab/lis/v2/membership##{role}"
+      ],
+      "https://purl.imsglobal.org/spec/lti/claim/custom" => custom
+    }
   end
 
   defp attach_handler(events) do

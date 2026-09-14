@@ -273,6 +273,20 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Returns the page in a section with the given revision slug, or `nil` when it is not present.
+  """
+  def get_page_by_revision_slug(section_id, revision_slug) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+
+    @depot_desc
+    |> Depot.query(section_id,
+      resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+      revision_slug: revision_slug
+    )
+    |> List.first()
+  end
+
+  @doc """
   Returns true if the section has any scheduled resources.
   """
   def has_scheduled_resources?(section_id) do

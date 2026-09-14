@@ -6,6 +6,7 @@ defmodule OliWeb.LtiRedirect do
   alias Lti_1p3.Roles.{ContextRoles, PlatformRoles}
   alias Oli.Accounts
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Lti.LtiParams
 
   require Logger
@@ -80,29 +81,15 @@ defmodule OliWeb.LtiRedirect do
             observe_redirect_resolution(metadata)
             :course_not_configured
 
-          section when can_configure_section ->
-            metadata = %{
-              context_id: context_id,
-              outcome: :section_manage,
-              section_id: section.id,
-              source: source,
-              transport_method: transport_method
-            }
-
-            observe_redirect_resolution(metadata)
-            {:redirect, ~p"/sections/#{section.slug}/manage"}
-
           section ->
-            metadata = %{
-              context_id: context_id,
-              outcome: :section_home,
-              section_id: section.id,
-              source: source,
-              transport_method: transport_method
-            }
-
-            observe_redirect_resolution(metadata)
-            {:redirect, ~p"/sections/#{section.slug}"}
+            section_destination(
+              lti_params,
+              section,
+              can_configure_section,
+              context_id,
+              source,
+              transport_method
+            )
         end
 
       _ ->
@@ -131,6 +118,71 @@ defmodule OliWeb.LtiRedirect do
   defp can_configure_section?(roles) do
     MapSet.intersection(roles, @allow_configure_section_roles_set) |> MapSet.size() > 0
   end
+
+  defp section_destination(
+         lti_params,
+         section,
+         can_configure_section,
+         context_id,
+         source,
+         transport_method
+       ) do
+    case direct_page_path(lti_params, section) do
+      {:ok, path} ->
+        observe_redirect_resolution(%{
+          context_id: context_id,
+          outcome: :direct_page,
+          section_id: section.id,
+          source: source,
+          transport_method: transport_method
+        })
+
+        {:redirect, path}
+
+      :fallback when can_configure_section ->
+        observe_redirect_resolution(%{
+          context_id: context_id,
+          outcome: :section_manage,
+          section_id: section.id,
+          source: source,
+          transport_method: transport_method
+        })
+
+        {:redirect, ~p"/sections/#{section.slug}/manage"}
+
+      :fallback ->
+        observe_redirect_resolution(%{
+          context_id: context_id,
+          outcome: :section_home,
+          section_id: section.id,
+          source: source,
+          transport_method: transport_method
+        })
+
+        {:redirect, ~p"/sections/#{section.slug}"}
+    end
+  end
+
+  defp direct_page_path(
+         %{
+           "https://purl.imsglobal.org/spec/lti/claim/custom" => %{
+             "torus_resource_type" => "page",
+             "torus_resource_id" => revision_slug
+           }
+         },
+         section
+       )
+       when is_binary(revision_slug) and revision_slug != "" do
+    case SectionResourceDepot.get_page_by_revision_slug(section.id, revision_slug) do
+      %{revision_slug: resolved_slug} ->
+        {:ok, ~p"/sections/#{section.slug}/page/#{resolved_slug}"}
+
+      _ ->
+        :fallback
+    end
+  end
+
+  defp direct_page_path(_lti_params, _section), do: :fallback
 
   defp apply_destination(conn, {:redirect, path}, _opts), do: redirect(conn, to: path)
 
