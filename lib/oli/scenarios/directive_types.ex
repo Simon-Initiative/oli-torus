@@ -169,16 +169,14 @@ defmodule Oli.Scenarios.DirectiveTypes do
   end
 
   defmodule SimulateProgressDirective do
-    @moduledoc "Simulates bounded, deterministic progress for learners in a section"
+    @moduledoc "Simulates profile-driven course progress for learners in a section"
     defstruct [
       :section,
       :users,
-      :assessment_attempts,
+      :profile,
+      :cohorts,
       seed: 0,
-      pct_correct: 1.0,
-      batch_size: 10,
-      max_concurrency: 4,
-      timeout_ms: 30_000
+      timing: :fast
     ]
   end
 

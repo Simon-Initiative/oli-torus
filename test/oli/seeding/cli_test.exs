@@ -4,11 +4,12 @@ defmodule Oli.Seeding.CLITest do
   import ExUnit.CaptureLog
 
   alias Oli.Seeding.BundledScenarios
-  alias Oli.Seeding.CLI, as: PreviewQATools
+  alias Oli.Seeding.CLI
+  alias Oli.Scenarios.DirectiveTypes.{ExecutionResult, ExecutionState}
 
   test "disabled commands fail before accessing their source" do
     result =
-      PreviewQATools.dispatch(["scenarios", "run", "--file", "/does/not/exist"],
+      CLI.dispatch(["scenarios", "run", "--file", "/does/not/exist"],
         enabled?: false
       )
 
@@ -33,7 +34,7 @@ defmodule Oli.Seeding.CLITest do
       ["projects", "ingest", "--url", "one", "--author", "two", "--unknown", "three"]
     ]
 
-    assert Enum.all?(invalid, &(PreviewQATools.dispatch(&1, enabled?: true).status == 64))
+    assert Enum.all?(invalid, &(CLI.dispatch(&1, enabled?: true).status == 64))
   end
 
   test "project ingest options are order-independent" do
@@ -41,7 +42,7 @@ defmodule Oli.Seeding.CLITest do
     archive = zip_archive("valid")
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -83,7 +84,7 @@ defmodule Oli.Seeding.CLITest do
     end
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -125,7 +126,7 @@ defmodule Oli.Seeding.CLITest do
       expected_url = "#{scheme}://example.test/archive.zip"
 
       result =
-        PreviewQATools.dispatch(
+        CLI.dispatch(
           [
             "projects",
             "ingest",
@@ -144,7 +145,7 @@ defmodule Oli.Seeding.CLITest do
     end
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -167,7 +168,7 @@ defmodule Oli.Seeding.CLITest do
     Oli.Utils.Seeder.AccountsFixtures.author_fixture(system_role_id: admin_id)
 
     ambiguous =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -188,7 +189,7 @@ defmodule Oli.Seeding.CLITest do
     |> Oli.Repo.update!()
 
     inactive =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -211,7 +212,7 @@ defmodule Oli.Seeding.CLITest do
     on_exit(fn -> Application.put_env(:oli, :preview_qa_tools, previous) end)
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -245,7 +246,7 @@ defmodule Oli.Seeding.CLITest do
           temp_root = temp_directory()
 
           result =
-            PreviewQATools.dispatch(
+            CLI.dispatch(
               ["projects", "ingest", "--url", secret_url, "--author", "email:#{author.email}"],
               enabled?: true,
               request_fun: fn _url, _opts -> {:ok, response} end,
@@ -274,7 +275,7 @@ defmodule Oli.Seeding.CLITest do
     archive = zip_archive("valid archive")
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -300,7 +301,7 @@ defmodule Oli.Seeding.CLITest do
     archive = zip_archive(String.duplicate("a", 10_000))
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -333,7 +334,7 @@ defmodule Oli.Seeding.CLITest do
     ]
 
     request_failure =
-      PreviewQATools.dispatch(args,
+      CLI.dispatch(args,
         enabled?: true,
         request_fun: fn _url, _opts -> raise "secret request failure" end,
         temp_root: temp_directory()
@@ -345,7 +346,7 @@ defmodule Oli.Seeding.CLITest do
     archive = zip_archive("valid")
 
     ingest_failure =
-      PreviewQATools.dispatch(args,
+      CLI.dispatch(args,
         enabled?: true,
         request_fun: fn _url, _opts -> {:ok, {:download, 200, [archive]}} end,
         ingest_fun: fn _path, _author -> raise "secret ingest failure" end,
@@ -358,7 +359,7 @@ defmodule Oli.Seeding.CLITest do
   end
 
   test "listing returns bounded immutable metadata" do
-    result = PreviewQATools.dispatch(["scenarios", "list"], enabled?: true)
+    result = CLI.dispatch(["scenarios", "list"], enabled?: true)
 
     assert result.status == 0, result.output
     assert result.output =~ "preview_smoke"
@@ -384,12 +385,43 @@ defmodule Oli.Seeding.CLITest do
           institution: id:#{institution.id}
       """)
 
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", path], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", path], enabled?: true)
 
     assert result.status == 0
     assert result.result_code == "ok"
     assert result.output =~ "users_created"
     assert result.output =~ "\"source\":\"file\""
+  end
+
+  test "scenario summaries retain compact progress details" do
+    progress = %{
+      learners: 40,
+      processed: 17,
+      skipped_existing_history: 3,
+      partial: 4,
+      pages_visited: 30,
+      warnings: List.duplicate(%{unbounded: true}, 500),
+      profiles: %{"large" => String.duplicate("x", 10_000)}
+    }
+
+    result = %ExecutionResult{
+      state: %ExecutionState{scenario_results: %{simulate_progress: progress}},
+      verifications: [],
+      errors: []
+    }
+
+    assert %{
+             simulate_progress: %{
+               learners: 40,
+               processed: 17,
+               skipped_existing_history: 3,
+               partial: 4,
+               pages_visited: 30
+             }
+           } = Oli.Scenarios.summarize(result)
+
+    refute Map.has_key?(Oli.Scenarios.summarize(result).simulate_progress, :warnings)
+    refute Map.has_key?(Oli.Scenarios.summarize(result).simulate_progress, :profiles)
   end
 
   test "custom execution preserves use composition, hooks, and assertions" do
@@ -421,7 +453,7 @@ defmodule Oli.Seeding.CLITest do
             - release DSL remains available
       """)
 
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", main], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", main], enabled?: true)
 
     assert result.status == 0, result.output
     assert result.output =~ "\"verifications_passed\":1"
@@ -449,7 +481,7 @@ defmodule Oli.Seeding.CLITest do
           function: Oli.Scenarios.#{unknown}.function/1
       """)
 
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", path], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", path], enabled?: true)
 
     assert result.status == 1
 
@@ -468,16 +500,17 @@ defmodule Oli.Seeding.CLITest do
 
   test "custom scenario input is size bounded before parsing" do
     path = write_yaml(String.duplicate("x", 5_000_001))
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", path], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", path], enabled?: true)
 
     assert result.status == 1
     assert result.result_code == "input_too_large"
     assert result.output =~ "5000000 byte limit"
   end
 
+  @tag capture_log: true
   test "parse failure reports that mutations did not begin" do
     path = write_yaml("invalid: [")
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", path], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", path], enabled?: true)
 
     assert result.status == 1
     assert result.result_code == "parse_failed"
@@ -488,7 +521,7 @@ defmodule Oli.Seeding.CLITest do
     included = write_yaml(String.duplicate("x", 5_000_001))
     root = write_yaml("- use:\n    file: #{Path.basename(included)}\n")
 
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", root], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", root], enabled?: true)
 
     assert result.status == 1
     assert result.output =~ "\"partial_mutations_possible\":true"
@@ -502,7 +535,7 @@ defmodule Oli.Seeding.CLITest do
         write_yaml("- use:\n    file: #{Path.basename(child)}\n")
       end)
 
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", root], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", root], enabled?: true)
 
     assert result.status == 1
     assert result.output =~ "\"partial_mutations_possible\":true"

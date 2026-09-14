@@ -70,6 +70,19 @@
         }
       ]
     },
+    "progressProfile": {
+      "type": "string",
+      "enum": ["high_proficiency", "steady_learner", "persistent_learner", "low_engagement"]
+    },
+    "progressCohort": {
+      "type": "object",
+      "required": ["profile", "count"],
+      "additionalProperties": false,
+      "properties": {
+        "profile": {"$ref": "#/definitions/progressProfile"},
+        "count": {"type": "integer", "minimum": 1, "maximum": 100}
+      }
+    },
     "moneyLike": {
       "type": "object",
       "required": [
@@ -4161,26 +4174,26 @@
                 "additionalProperties": false,
                 "properties": {
                   "section": {"type": "string", "minLength": 1},
-                  "users": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+                  "users": {"type": "array", "minItems": 1, "maxItems": 100, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
                   "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
-                  "pct_correct": {"type": "number", "minimum": 0, "maximum": 1},
-                  "assessment_attempts": {
+                  "profile": {"$ref": "#/definitions/progressProfile"},
+                  "cohorts": {
                     "type": "array",
                     "minItems": 1,
                     "maxItems": 100,
-                    "items": {
-                      "type": "object",
-                      "required": ["pct_correct"],
-                      "additionalProperties": false,
-                      "properties": {
-                        "pct_correct": {"type": "number", "minimum": 0, "maximum": 1}
-                      }
-                    }
+                    "items": {"$ref": "#/definitions/progressCohort"}
                   },
-                  "batch_size": {"type": "integer", "minimum": 1, "maximum": 100},
-                  "max_concurrency": {"type": "integer", "minimum": 1, "maximum": 16},
-                  "timeout_ms": {"type": "integer", "minimum": 1, "maximum": 300000}
-                }
+                  "timing": {
+                    "type": "object",
+                    "required": ["mode"],
+                    "additionalProperties": false,
+                    "properties": {"mode": {"type": "string", "enum": ["fast", "paced"]}}
+                  }
+                },
+                "oneOf": [
+                  {"required": ["profile"], "not": {"required": ["cohorts"]}},
+                  {"required": ["cohorts"], "not": {"required": ["profile"]}}
+                ]
               }
             }
           },
