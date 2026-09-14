@@ -21,8 +21,7 @@ defmodule Oli.Delivery.SectionCreationRequest do
     :timezone
   ]
 
-  # Source ids address bigint primary keys; anything larger cannot name a row and must not
-  # reach the database.
+  # Source ids address bigint primary keys; a larger one cannot name a row.
   @max_id 9_223_372_036_854_775_807
 
   @enforce_keys [:actor, :source, :attrs, :section_spec]

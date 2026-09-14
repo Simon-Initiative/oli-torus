@@ -155,9 +155,7 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  # The launch identity is parsed once, before anything is read from the claims or written
-  # for this launch: a launch that does not name itself completely is a bounded launch
-  # error, not an exception.
+  # Parsed before anything is read from the claims or written for this launch.
   defp handle_valid_lti_1p3_launch(lti_params, %LaunchIdentity{} = identity) do
     %LaunchIdentity{issuer: issuer, client_id: client_id, deployment_id: deployment_id} = identity
 

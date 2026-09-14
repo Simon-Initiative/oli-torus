@@ -13,18 +13,8 @@ defmodule Oli.Lti.LaunchIdentity do
   @context_claim "https://purl.imsglobal.org/spec/lti/claim/context"
   @deployment_claim "https://purl.imsglobal.org/spec/lti/claim/deployment_id"
 
-  # This is an application storage limit, not a protocol limit.
-  #
-  # The columns these four values are written to are `varchar(255)`, which counts 255
-  # *characters*; the bound here is 255 *bytes*, so it is stricter than the column and can
-  # never produce a value the column cannot hold. Non-ASCII values are accepted while they
-  # fit it.
-  #
-  # Only two of the four have a protocol limit to compare against: LTI 1.3 (§5.3.3, §5.4.1)
-  # limits a deployment id and a context id to 255 ASCII characters, and this bound accepts
-  # every identity that obeys it. An issuer and a client id have no such limit — OAuth
-  # leaves client id size undefined — so for those two the bound is ours alone, chosen so
-  # every field of the identity is storable by construction.
+  # A storage bound, in bytes, against `varchar(255)` columns that count characters:
+  # stricter than the column, and wide enough for every protocol-compliant identity.
   @max_length 255
 
   @enforce_keys [:issuer, :client_id, :deployment_id, :context_id]
@@ -72,8 +62,7 @@ defmodule Oli.Lti.LaunchIdentity do
 
   defp new(_issuer, _client_id, _deployment_id, _context_id), do: :error
 
-  # PostgreSQL rejects a NUL byte in any character type, and invalid UTF-8 never reaches a
-  # column either — both raise out of the query rather than returning an error, so they are
-  # refused here. This entry point takes arbitrary binaries, so neither is hypothetical.
+  # PostgreSQL rejects a NUL byte in any character type, and invalid UTF-8 raises out of
+  # the query rather than returning an error.
   defp persistable?(value), do: String.valid?(value) and not String.contains?(value, <<0>>)
 end

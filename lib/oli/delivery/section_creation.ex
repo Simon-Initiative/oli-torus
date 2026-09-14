@@ -89,10 +89,8 @@ defmodule Oli.Delivery.SectionCreation do
 
   def authorize_actor(_actor, _section_spec), do: {:error, :unauthorized}
 
-  # An administrator has no launch of their own to rebuild from, so the specification is
-  # rebuilt from its own claims instead: the institution, registration and deployment a
-  # section is written under always come from one resolved launch identity, never from
-  # three structs a caller assembled.
+  # An administrator has no launch of their own, so the specification is rebuilt from its
+  # own claims: the destination always comes from one resolved launch identity.
   defp complete_spec(%SectionSpecification.Direct{} = section_spec), do: {:ok, section_spec}
 
   defp complete_spec(%SectionSpecification.Lti{lti_params: lti_params}) do
