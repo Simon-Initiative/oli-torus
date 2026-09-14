@@ -786,7 +786,7 @@ defmodule Oli.Institutions do
         # The schema does not declare this identity unique, so an ambiguous one names no
         # deployment rather than raising out of whatever is asking.
         Logger.warning(
-          "More than one LTI deployment matches issuer #{issuer}, client #{client_id} and deployment #{deployment_id}"
+          "More than one LTI deployment matches issuer #{inspect(issuer)}, client #{inspect(client_id)} and deployment #{inspect(deployment_id)}"
         )
 
         nil
