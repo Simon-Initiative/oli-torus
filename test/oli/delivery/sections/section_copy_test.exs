@@ -86,11 +86,21 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
     end
 
     test "publication pins are duplicated as destination-owned rows", %{source: source} do
+      other_publication = insert(:publication)
+
+      {:ok, _} =
+        Sections.create_section_project_publication(%{
+          section_id: source.id,
+          project_id: other_publication.project_id,
+          publication_id: other_publication.id
+        })
+
       {:ok, copy} = copy(source, @all_groups)
 
       source_pins = publication_pins(source)
       copy_pins = publication_pins(copy)
 
+      assert length(source_pins) == 2
       assert length(copy_pins) == length(source_pins)
       assert Enum.all?(copy_pins, &(&1.section_id == copy.id))
 

@@ -6,6 +6,7 @@ defmodule Oli.Delivery.Sections.SourceResolutionTest do
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.SystemRole
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionSpecification
   alias Oli.Delivery.Sections.SourceResolution
@@ -94,6 +95,26 @@ defmodule Oli.Delivery.Sections.SourceResolutionTest do
                SourceResolution.resolve("section:#{ctx.source_section.id}", actor, ctx.spec)
     end
 
+    test "an identityless request cannot copy it", ctx do
+      assert {:error, :not_found} =
+               SourceResolution.resolve(
+                 "section:#{ctx.source_section.id}",
+                 Actor.new(),
+                 ctx.spec
+               )
+    end
+
+    test "an explicitly trusted system actor can copy it", ctx do
+      assert {:ok, {:previous_section, section}} =
+               SourceResolution.resolve(
+                 "section:#{ctx.source_section.id}",
+                 Actor.system(),
+                 ctx.spec
+               )
+
+      assert section.id == ctx.source_section.id
+    end
+
     test "a nonexistent id is indistinguishable from an unauthorized one", ctx do
       actor = Actor.new(ctx.stranger)
 
@@ -169,6 +190,11 @@ defmodule Oli.Delivery.Sections.SourceResolutionTest do
                SourceResolution.resolve("product:#{ctx.product.id}", actor, ctx.spec)
     end
 
+    test "an identityless request is refused", ctx do
+      assert {:error, :not_found} =
+               SourceResolution.resolve("product:#{ctx.product.id}", Actor.new(), ctx.spec)
+    end
+
     test "a forged id is refused with the same shape as a nonexistent one", ctx do
       actor = Actor.new(ctx.stranger)
 
@@ -229,6 +255,95 @@ defmodule Oli.Delivery.Sections.SourceResolutionTest do
                SourceResolution.resolve("project:#{ctx.project.id}", actor, ctx.spec)
 
       assert project.id == ctx.project.id
+    end
+
+    test "refuses publication and project ids hidden from the actor", ctx do
+      publication = publish(ctx.publication)
+      actor = Actor.new(ctx.stranger)
+
+      assert {:error, :not_found} =
+               SourceResolution.resolve("publication:#{publication.id}", actor, ctx.spec)
+
+      assert {:error, :not_found} =
+               SourceResolution.resolve("project:#{ctx.project.id}", actor, ctx.spec)
+    end
+
+    test "resolves publication and project ids visible to the actor's institution", ctx do
+      publication = publish(ctx.publication)
+
+      project =
+        ctx.project
+        |> Project.changeset(%{visibility: :selected})
+        |> Repo.update!()
+
+      insert(:project_visibility,
+        project_id: project.id,
+        institution_id: ctx.institution.id,
+        author_id: nil
+      )
+
+      matching_spec = lti_spec(ctx.institution)
+      actor = Actor.new(ctx.stranger)
+
+      assert {:ok, {:publication, _}} =
+               SourceResolution.resolve(
+                 "publication:#{publication.id}",
+                 actor,
+                 matching_spec
+               )
+
+      assert {:ok, {:project, _}} =
+               SourceResolution.resolve("project:#{project.id}", actor, matching_spec)
+    end
+
+    test "refuses publication and project ids outside the actor's LTI institution", ctx do
+      publication = publish(ctx.publication)
+
+      project =
+        ctx.project
+        |> Project.changeset(%{visibility: :selected})
+        |> Repo.update!()
+
+      insert(:project_visibility,
+        project_id: project.id,
+        institution_id: ctx.institution.id,
+        author_id: nil
+      )
+
+      other_spec = lti_spec(insert(:institution))
+      actor = Actor.new(ctx.stranger)
+
+      assert {:error, :not_found} =
+               SourceResolution.resolve(
+                 "publication:#{publication.id}",
+                 actor,
+                 other_spec
+               )
+
+      assert {:error, :not_found} =
+               SourceResolution.resolve("project:#{project.id}", actor, other_spec)
+    end
+
+    test "refuses identityless publication and project requests", ctx do
+      publication = publish(ctx.publication)
+      actor = Actor.new()
+
+      assert {:error, :not_found} =
+               SourceResolution.resolve("publication:#{publication.id}", actor, ctx.spec)
+
+      assert {:error, :not_found} =
+               SourceResolution.resolve("project:#{ctx.project.id}", actor, ctx.spec)
+    end
+
+    test "allows an explicitly trusted system actor", ctx do
+      publication = publish(ctx.publication)
+      actor = Actor.system()
+
+      assert {:ok, {:publication, _}} =
+               SourceResolution.resolve("publication:#{publication.id}", actor, ctx.spec)
+
+      assert {:ok, {:project, _}} =
+               SourceResolution.resolve("project:#{ctx.project.id}", actor, ctx.spec)
     end
 
     test "refuses a missing project", ctx do
@@ -312,5 +427,25 @@ defmodule Oli.Delivery.Sections.SourceResolutionTest do
       assert actor.author.id == ctx.instructor.author_id
       refute actor.admin?
     end
+
+    test "identityless actors are not implicitly trusted" do
+      refute Actor.system?(Actor.new())
+      assert Actor.system?(Actor.system())
+    end
+  end
+
+  defp publish(publication) do
+    publication
+    |> Ecto.Changeset.change(%{published: DateTime.utc_now() |> DateTime.truncate(:second)})
+    |> Repo.update!()
+  end
+
+  defp lti_spec(institution) do
+    %SectionSpecification.Lti{
+      lti_params: %{},
+      institution: institution,
+      registration: nil,
+      deployment: nil
+    }
   end
 end

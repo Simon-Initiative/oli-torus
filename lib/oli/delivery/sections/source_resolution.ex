@@ -21,8 +21,9 @@ defmodule Oli.Delivery.Sections.SourceResolution do
     * `section:` - an active section of type `:enrollable` in which the actor
       holds an instructor role, or any such section for an administrator.
       Institution boundaries are enforced for LTI creation.
-    * `project:` / `publication:` - the project or publication must exist, and a
-      publication must actually be published.
+    * `project:` / `publication:` - the project or publication must exist and be
+      visible to the actor under the applicable institution policy. A publication
+      must also actually be published.
   """
 
   import Ecto.Query, warn: false
@@ -45,17 +46,18 @@ defmodule Oli.Delivery.Sections.SourceResolution do
     Who is creating a section.
 
     Both a delivery `user` and an authoring `author` may be present; admin
-    authors are recognised through `admin?`. An actor with neither is the
-    system-level path used by internal tooling, which is trusted.
+    authors are recognised through `admin?`. Missing identities are denied by
+    default. Trusted internal tooling must opt into `system/0` explicitly.
     """
 
     @type t :: %__MODULE__{
             user: Oli.Accounts.User.t() | nil,
             author: Oli.Accounts.Author.t() | nil,
-            admin?: boolean()
+            admin?: boolean(),
+            system?: boolean()
           }
 
-    defstruct user: nil, author: nil, admin?: false
+    defstruct user: nil, author: nil, admin?: false, system?: false
 
     @doc "Builds an actor, deriving admin status from the author's system role."
     @spec new(Oli.Accounts.User.t() | nil, Oli.Accounts.Author.t() | nil) :: t()
@@ -69,13 +71,13 @@ defmodule Oli.Delivery.Sections.SourceResolution do
       %__MODULE__{user: user, author: author, admin?: Accounts.is_admin?(author)}
     end
 
-    @doc "An actor with no identity, used by trusted internal callers."
+    @doc "Builds an explicitly trusted actor for internal, non-request callers."
     @spec system() :: t()
-    def system, do: %__MODULE__{}
+    def system, do: %__MODULE__{system?: true}
 
-    @doc "True when this actor carries no identity at all."
+    @doc "True only for an actor explicitly constructed by `system/0`."
     @spec system?(t()) :: boolean()
-    def system?(%__MODULE__{user: nil, author: nil, admin?: false}), do: true
+    def system?(%__MODULE__{system?: true}), do: true
     def system?(%__MODULE__{}), do: false
   end
 
@@ -118,19 +120,22 @@ defmodule Oli.Delivery.Sections.SourceResolution do
     end
   end
 
-  def resolve("publication:" <> id, %Actor{}, _section_spec) do
+  def resolve("publication:" <> id, %Actor{} = actor, section_spec) do
     with {:ok, id} <- parse_id(id),
          %Publication{} = publication <- Repo.get(Publication, id),
-         false <- is_nil(publication.published) do
-      {:ok, {:publication, Repo.preload(publication, :project)}}
+         false <- is_nil(publication.published),
+         publication <- Repo.preload(publication, :project),
+         true <- source_visible?(publication, actor, section_spec) do
+      {:ok, {:publication, publication}}
     else
       _ -> {:error, :not_found}
     end
   end
 
-  def resolve("project:" <> id, %Actor{}, _section_spec) do
+  def resolve("project:" <> id, %Actor{} = actor, section_spec) do
     with {:ok, id} <- parse_id(id),
-         %Project{status: :active} = project <- Repo.get(Project, id) do
+         %Project{status: :active} = project <- Repo.get(Project, id),
+         true <- source_visible?(project, actor, section_spec) do
       {:ok, {:project, project}}
     else
       _ -> {:error, :not_found}
@@ -185,48 +190,52 @@ defmodule Oli.Delivery.Sections.SourceResolution do
   # Authorization
   # ---------------------------------------------------------------------------
 
-  defp product_visible?(_product, %Actor{admin?: true}, _section_spec), do: true
-
   defp product_visible?(product, %Actor{} = actor, section_spec) do
-    case Actor.system?(actor) do
-      true ->
-        true
-
-      false ->
-        institution = SectionSpecification.get_institution(section_spec)
-
-        user_can_see_product?(product, actor.user, institution) or
-          author_can_see_product?(product, actor.author, institution)
-    end
+    source_visible?(product, actor, section_spec)
   end
 
-  defp author_can_see_product?(_product, nil, _institution), do: false
+  # Direct-delivery administrators historically have access to every active
+  # source. LTI creation still goes through the institution-aware catalogue so
+  # an admin account cannot accidentally cross the launch tenant boundary.
+  defp source_visible?(_source, %Actor{admin?: true}, section_spec)
+       when not is_struct(section_spec, SectionSpecification.Lti),
+       do: true
 
-  defp author_can_see_product?(product, %Author{} = author, %Institution{} = institution) do
-    Blueprint.available_products(author, institution)
-    |> Enum.any?(&(&1.id == product.id))
+  defp source_visible?(_source, %Actor{} = actor, _section_spec)
+       when actor.system?,
+       do: true
+
+  defp source_visible?(source, %Actor{} = actor, section_spec) do
+    actor
+    |> visible_sources(SectionSpecification.get_institution(section_spec))
+    |> Enum.any?(&same_source?(&1, source))
   end
 
-  # Direct delivery carries no institution, so institution-scoped visibility does
-  # not apply and the globally visible catalogue is the floor for an author.
-  defp author_can_see_product?(product, %Author{}, nil) do
-    Blueprint.available_products()
-    |> Enum.any?(&(&1.id == product.id))
-  end
-
-  defp user_can_see_product?(_product, nil, _institution), do: false
-
-  defp user_can_see_product?(product, %User{} = user, institution) do
-    # `retrieve_visible_sources/2` reads `user.author`, and raises on an unloaded
-    # association rather than treating it as absent.
+  defp visible_sources(%Actor{user: %User{} = user}, institution) do
     user
     |> Repo.preload(:author)
     |> Publishing.retrieve_visible_sources(institution)
-    |> Enum.any?(fn
-      %Section{id: id} -> id == product.id
-      _ -> false
-    end)
   end
+
+  defp visible_sources(%Actor{author: %Author{} = author}, institution) do
+    Publishing.available_publications(author, institution) ++
+      visible_products(author, institution)
+  end
+
+  defp visible_sources(%Actor{}, _institution), do: []
+
+  defp visible_products(author, %Institution{} = institution),
+    do: Blueprint.available_products(author, institution)
+
+  defp visible_products(_author, nil), do: Blueprint.available_products()
+
+  defp same_source?(%Publication{id: id}, %Publication{id: id}), do: true
+  defp same_source?(%Publication{project_id: project_id}, %Project{id: project_id}), do: true
+
+  defp same_source?(%Section{id: id, type: :blueprint}, %Section{id: id, type: :blueprint}),
+    do: true
+
+  defp same_source?(_visible, _source), do: false
 
   # A previous section is copyable by an administrator, or by a user who holds an
   # instructor role in that section. Enrollment alone is not enough: a student

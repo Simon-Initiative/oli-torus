@@ -42,12 +42,10 @@ defmodule Oli.Delivery.Sections.SectionCopy do
 
   ## Step ordering
 
-  `SectionResourceMigration.migrate/1` overwrites revision-derived section
-  resource columns, `ai_enabled` among them, and it runs twice: once directly
-  after the rows are inserted, and again inside `PostProcessing.apply/2` by way
-  of `SectionResourceMigration.project_current/1`. Instructor AI overrides are
-  therefore re-applied as the very last write of the copy. See
-  `Oli.Delivery.Sections.SectionResourceCopy`.
+  `PostProcessing.apply/2` calls `SectionResourceMigration.project_current/1`,
+  which overwrites revision-derived section-resource columns, `ai_enabled`
+  among them. Instructor AI overrides are therefore re-applied as the very last
+  write of the copy. See `Oli.Delivery.Sections.SectionResourceCopy`.
   """
 
   import Ecto.Query, warn: false
@@ -166,9 +164,8 @@ defmodule Oli.Delivery.Sections.SectionCopy do
     Repo.transaction(fn ->
       with {:ok, source} <- lock_source(source),
            {:ok, destination} <- create_destination(source, destination_attrs, options),
-           {:ok, pins} <- copy_publication_pins(source, destination, options),
+           {:ok, pin_count} <- copy_publication_pins(source, destination, options),
            {:ok, resources} <- copy_section_resources(source, destination, options),
-           {:ok, _migrated} <- migrate_section_resources(destination.id),
            {:ok, destination} <-
              Sections.update_section(destination, %{
                root_section_resource_id: resources.root.id
@@ -180,15 +177,15 @@ defmodule Oli.Delivery.Sections.SectionCopy do
              maybe_copy_gating_index(source, destination, options, gate_count),
            {:ok, destination} <- PostProcessing.apply_result(destination, :all),
            # Must be the last write of the copy. Post-processing runs
-           # `SectionResourceMigration.project_current/1`, which migrates a second
-           # time and rewrites `ai_enabled` from the pinned revision, so an overlay
-           # applied any earlier than this is silently undone.
+           # `SectionResourceMigration.project_current/1`, which rewrites
+           # `ai_enabled` from the pinned revision, so an overlay applied any
+           # earlier than this is silently undone.
            {:ok, _reapplied} <-
              SectionResourceCopy.reapply_ai_overrides(destination.id, resources.ai_overrides) do
         {destination,
          %{
            section_resources: resources.count,
-           publication_pins: length(pins),
+           publication_pins: pin_count,
            activity_exclusions: exclusion_count,
            gates: gate_count
          }}
@@ -408,24 +405,50 @@ defmodule Oli.Delivery.Sections.SectionCopy do
   defp copy_publication_pins(%Section{id: source_id}, %Section{} = destination, %CopyOptions{
          project_remap: project_remap
        }) do
-    from(spp in SectionsProjectsPublications,
-      where: spp.section_id == ^source_id,
-      select: spp
-    )
-    |> Repo.all()
-    |> Enum.reduce_while({:ok, []}, fn spp, {:ok, all} ->
-      {project_id, publication_id} =
-        remap_pin(spp.project_id, spp.publication_id, destination, project_remap)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-      attrs = %{
-        section_id: destination.id,
-        project_id: project_id,
-        publication_id: publication_id
-      }
+    rows =
+      from(spp in SectionsProjectsPublications,
+        where: spp.section_id == ^source_id,
+        select: spp
+      )
+      |> Repo.all()
+      |> Enum.map(fn spp ->
+        {project_id, publication_id} =
+          remap_pin(spp.project_id, spp.publication_id, destination, project_remap)
 
-      case Sections.create_section_project_publication(attrs) do
-        {:ok, copy} -> {:cont, {:ok, [copy | all]}}
-        {:error, e} -> {:halt, {:error, e}}
+        %{
+          section_id: destination.id,
+          project_id: project_id,
+          publication_id: publication_id,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
+
+    with :ok <- validate_publication_pins(rows),
+         {count, _} <-
+           Repo.insert_all(SectionsProjectsPublications, rows,
+             on_conflict: :nothing,
+             conflict_target: [:section_id, :project_id]
+           ),
+         true <- count == length(rows) do
+      {:ok, count}
+    else
+      false -> {:error, :publication_pin_copy_incomplete}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp validate_publication_pins(rows) do
+    Enum.reduce_while(rows, :ok, fn attrs, :ok ->
+      changeset =
+        %SectionsProjectsPublications{}
+        |> SectionsProjectsPublications.changeset(attrs)
+
+      case changeset.valid? do
+        true -> {:cont, :ok}
+        false -> {:halt, {:error, changeset}}
       end
     end)
   end
@@ -528,13 +551,6 @@ defmodule Oli.Delivery.Sections.SectionCopy do
           source.ai_enabled != Map.get(revision, :ai_enabled)
         end)
         |> Enum.map(fn {source, copy} -> {copy.id, source.ai_enabled} end)
-    end
-  end
-
-  defp migrate_section_resources(section_id) do
-    case SectionResourceMigration.migrate(section_id) do
-      {:ok, _count} -> {:ok, :migrated}
-      error -> error
     end
   end
 

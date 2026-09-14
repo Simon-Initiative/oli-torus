@@ -106,31 +106,64 @@ defmodule Oli.Delivery.Gating do
           {:ok, non_neg_integer()} | {:error, term()}
   def duplicate_gates(%Section{} = source, %Section{} = destination, condition_types \\ :all) do
     Repo.transaction(fn ->
-      result =
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      attrs =
         source.id
         |> list_gating_conditions(true)
         |> Enum.filter(&matches_condition_types?(&1, condition_types))
-        |> Enum.reduce_while({:ok, 0}, fn gating_condition, {:ok, count} ->
-          attrs =
-            gating_condition
-            |> Map.take([:type, :graded_resource_policy, :resource_id])
-            |> Map.merge(%{
-              parent_id: nil,
-              section_id: destination.id,
-              data: gate_data_attrs(gating_condition.data)
-            })
-
-          case create_gating_condition(attrs) do
-            {:ok, _} -> {:cont, {:ok, count + 1}}
-            {:error, error} -> {:halt, {:error, error}}
-          end
+        |> Enum.map(fn gating_condition ->
+          gating_condition
+          |> Map.take([:type, :graded_resource_policy, :resource_id])
+          |> Map.merge(%{
+            parent_id: nil,
+            user_id: nil,
+            section_id: destination.id,
+            data: gate_data_attrs(gating_condition.data)
+          })
         end)
 
-      case result do
-        {:ok, count} -> count
+      with {:ok, rows} <- validate_gate_rows(attrs, now),
+           {count, _} <- Repo.insert_all(GatingCondition, rows),
+           true <- count == length(rows) do
+        count
+      else
+        false -> Repo.rollback(:gate_copy_incomplete)
         {:error, error} -> Repo.rollback(error)
       end
     end)
+  end
+
+  defp validate_gate_rows(attrs, now) do
+    Enum.reduce_while(attrs, {:ok, []}, fn attrs, {:ok, rows} ->
+      changeset = GatingCondition.changeset(%GatingCondition{}, attrs)
+
+      case Ecto.Changeset.apply_action(changeset, :insert) do
+        {:ok, gate} ->
+          row =
+            gate
+            |> Map.from_struct()
+            |> Map.take([
+              :type,
+              :graded_resource_policy,
+              :resource_id,
+              :section_id,
+              :user_id,
+              :parent_id,
+              :data
+            ])
+            |> Map.merge(%{inserted_at: now, updated_at: now})
+
+          {:cont, {:ok, [row | rows]}}
+
+        {:error, changeset} ->
+          {:halt, {:error, changeset}}
+      end
+    end)
+    |> case do
+      {:ok, rows} -> {:ok, Enum.reverse(rows)}
+      error -> error
+    end
   end
 
   defp gate_data_attrs(nil), do: %{}

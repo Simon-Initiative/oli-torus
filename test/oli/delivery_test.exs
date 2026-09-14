@@ -440,6 +440,27 @@ defmodule Oli.DeliveryTest do
              end)
     end
 
+    @tag capture_log: true
+    test "refuses an identityless section-copy request", context do
+      {:ok, source} =
+        Oli.Delivery.Sections.Blueprint.duplicate(context.product, %{
+          type: :enrollable,
+          title: "Existing Course",
+          open_and_free: true,
+          blueprint_id: context.product.id
+        })
+
+      changeset = Sections.change_section(%Section{title: "Unauthorized Copy"})
+
+      assert {:error, _message} =
+               Delivery.create_section(
+                 changeset,
+                 "section:#{source.id}",
+                 nil,
+                 SectionSpecification.direct()
+               )
+    end
+
     test "creates section with contained objectives from publication if it does not exist",
          context do
       context_id = "123"
