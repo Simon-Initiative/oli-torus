@@ -350,6 +350,23 @@ defmodule Oli.DeliveryTest do
       assert section.encouraging_subtitle == "Project subtitle"
     end
 
+    test "preserves trusted legacy creation with no user", context do
+      changeset = Sections.change_section(%Section{title: "Admin-created Section"})
+
+      assert {:ok, section_id, _slug} =
+               Delivery.create_section(
+                 changeset,
+                 "project:#{context.project.id}",
+                 nil,
+                 SectionSpecification.direct()
+               )
+
+      section = Sections.get_section!(section_id)
+
+      assert section.title == "Admin-created Section"
+      assert Sections.list_enrollments(section.slug) == []
+    end
+
     test "copies the blueprint model even when it differs from its base Project", context do
       product = set_section_learning_model(context.product, :lkt_aoa)
       assert context.project.learning_model_version == :naive

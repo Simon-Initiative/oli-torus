@@ -246,12 +246,11 @@ defmodule Oli.Delivery.Sections.SourceResolution do
          Sections.is_instructor?(actor.user, section.slug))
   end
 
-  # LTI creation is scoped to the launching institution. Direct delivery carries
-  # no institution, and a source section with none is not institution-scoped.
+  # LTI creation is scoped strictly to the launching institution. Direct
+  # delivery carries no institution boundary.
   defp within_institution?(section, section_spec) do
     case {SectionSpecification.get_institution(section_spec), section.institution_id} do
       {nil, _} -> true
-      {_institution, nil} -> true
       {institution, section_institution_id} -> institution.id == section_institution_id
     end
   end
