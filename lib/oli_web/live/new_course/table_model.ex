@@ -48,11 +48,43 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
     )
   end
 
+  @doc "Returns whether a source-list item is a reusable course template."
   def is_product?(item),
     do: Map.has_key?(item, :type) and Map.get(item, :type) == :blueprint
 
+  @doc "Returns whether a source-list item is an existing enrollable course."
+  def is_course?(item),
+    do: Map.has_key?(item, :type) and Map.get(item, :type) == :enrollable
+
+  @doc "Returns the display title for a project publication, template, or course source."
+  def source_title(item) do
+    case {is_product?(item), is_course?(item)} do
+      {true, _} -> item.title
+      {_, true} -> item.title
+      _ -> item.project.title
+    end
+  end
+
+  @doc "Returns the description for a project publication, template, or course source."
+  def source_description(item) do
+    case {is_product?(item), is_course?(item)} do
+      {true, _} -> item.description
+      {_, true} -> item.description
+      _ -> item.project.description
+    end
+  end
+
+  @doc "Returns the typed source identifier consumed by the course-creation workflow."
+  def source_identifier(item) do
+    case {is_product?(item), is_course?(item)} do
+      {true, _} -> "product:#{item.id}"
+      {_, true} -> "section:#{item.id}"
+      _ -> "publication:#{item.id}"
+    end
+  end
+
   def render_payment_column(_, item, _) do
-    if is_product?(item) and item.requires_payment do
+    if payable_source?(item) do
       case Money.to_string(item.amount) do
         {:ok, m} -> m
         _ -> "Yes"
@@ -65,7 +97,7 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
   def sort_payment_column(sort_order, sort_spec) do
     {fn item ->
        amount =
-         if is_product?(item) and item.requires_payment do
+         if payable_source?(item) do
            case Money.to_string(item.amount) do
              {:ok, m} -> m
              _ -> 0
@@ -79,23 +111,17 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
   end
 
   def render_title_column(_assigns, item, _) do
-    if is_product?(item) do
-      item.title
-    else
-      item.project.title
-    end
+    source_title(item)
   end
 
   def sort_title_column(sort_order, sort_spec) do
     {fn item ->
-       if is_product?(item),
-         do: Map.put(item, :title, String.downcase(item.title)),
-         else: Map.put(item.project, :title, String.downcase(item.project.title))
+       Map.put(item, :title, String.downcase(source_title(item)))
      end, ColumnSpec.default_sort_fn(sort_order, sort_spec)}
   end
 
   def render_action_column(assigns, item, _) do
-    id = if is_product?(item), do: "product:#{item.id}", else: "publication:#{item.id}"
+    id = source_identifier(item)
 
     assigns = Map.merge(assigns, %{id: id})
 
@@ -106,12 +132,20 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
     """
   end
 
-  def render_type_column(_, item, _),
-    do: if(is_product?(item), do: "Template", else: "Project")
+  def render_type_column(_, item, _) do
+    case {is_product?(item), is_course?(item)} do
+      {true, _} -> "Template"
+      {_, true} -> "Course"
+      _ -> "Project"
+    end
+  end
 
   def render(assigns) do
     ~H"""
     <div>nothing</div>
     """
   end
+
+  defp payable_source?(item),
+    do: (is_product?(item) or is_course?(item)) and Map.get(item, :requires_payment, false)
 end
