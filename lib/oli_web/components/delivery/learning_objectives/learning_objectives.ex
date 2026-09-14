@@ -287,7 +287,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               selected_values={@selected_proficiency_options}
               selected_ids={@selected_proficiency_ids}
               target={@myself}
-              disabled={@selected_proficiency_ids == %{}}
+              disabled={@selected_proficiency_ids == []}
               placeholder="Proficiency"
             />
 
@@ -298,7 +298,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               selected_values={@selected_confidence_options}
               selected_ids={@selected_confidence_ids}
               target={@myself}
-              disabled={@selected_confidence_ids == %{}}
+              disabled={@selected_confidence_ids == []}
               placeholder="Confidence"
               label="Confidence"
               toggle_event="toggle_confidence_selected"

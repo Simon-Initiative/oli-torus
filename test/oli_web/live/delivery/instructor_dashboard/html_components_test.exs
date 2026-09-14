@@ -14,7 +14,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponentsTest do
         )
 
       assert html =~ ~s(tabindex="0")
-      assert html =~ ~s(role="button")
+      refute html =~ ~s(role="button")
       assert html =~ ~s(role="tooltip")
       assert html =~ ~s(id="info-tooltip-student-proficiency")
       assert html =~ ~s(aria-describedby="info-tooltip-student-proficiency")
@@ -26,6 +26,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponentsTest do
 
       refute html =~ "tabindex"
       refute html =~ "aria-describedby"
+    end
+
+    test "an explicit :id overrides the title-derived tooltip id to avoid collisions" do
+      html =
+        render_component(&HTMLComponents.render_label/1,
+          title: "Confidence",
+          info_tooltip: "Some tooltip content",
+          id: "confidence-tooltip-42"
+        )
+
+      assert html =~ ~s(id="confidence-tooltip-42")
+      assert html =~ ~s(aria-describedby="confidence-tooltip-42")
+      refute html =~ "info-tooltip-confidence"
     end
   end
 end

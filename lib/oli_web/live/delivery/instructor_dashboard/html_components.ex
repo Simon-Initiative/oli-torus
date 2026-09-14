@@ -281,15 +281,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
   attr :title, :string, required: true
   attr :info_tooltip, :string, required: false
 
+  attr :id, :string,
+    required: false,
+    doc:
+      "Overrides the title-derived tooltip id when this component renders more than once with the same title on a page."
+
   def render_label(assigns) do
-    assigns = Map.put(assigns, :tooltip_id, tooltip_id(assigns.title))
+    assigns = Map.put(assigns, :tooltip_id, assigns[:id] || tooltip_id(assigns.title))
 
     ~H"""
     <div class="flex items-center gap-x-2 bg-transparent">
       <span
         class="group relative flex cursor-pointer items-center text-Text-text-high rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         tabindex={if assigns[:info_tooltip], do: "0"}
-        role={if assigns[:info_tooltip], do: "button"}
         aria-describedby={if assigns[:info_tooltip], do: @tooltip_id}
       >
         {Icons.info(assigns)}
