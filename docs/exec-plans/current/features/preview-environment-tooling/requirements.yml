@@ -11,8 +11,9 @@ requirements:
   title: Let the release CLI download and ingest a Torus project archive from an operator-provided
     reachable URL
 - id: FR-004
-  title: Extend Oli.Scenarios with deterministic bulk-user enrollment and learner-progress
-    simulation and retire the separate Stagehand API
+  title: Extend Oli.Scenarios with deterministic bulk-user enrollment and profile-driven
+    course progress simulation and retire the separate Stagehand API and legacy progress-simulator
+    contract
 - id: FR-005
   title: Run the optional review_demo deployment seed through the same release CLI
     in a post-migration Kubernetes Job
@@ -183,4 +184,57 @@ acceptance_criteria:
     only while PREVIEW_QA_TOOLS_ENABLED is active and only to a current system administrator
     or the original system-administrator actor of a valid active masquerade, without
     granting actor privileges to any other route
+  verification_method: automated
+- id: AC-027
+  requirement_id: FR-004
+  title: simulate_progress requires exactly one fixed profile or complete count-based cohort
+    assignment, validates the selected learner population before mutation, and rejects the removed
+    pct_correct, assessment_attempts, profile-version, override, and execution-tuning options
+  verification_method: automated
+- id: AC-028
+  requirement_id: FR-004
+  title: Course simulation traverses delivered curriculum order and creates real practice and
+    scored-assessment attempt histories through normal visit, evaluate, hint, reset, save, and
+    finalize lifecycles for supported multiple-choice, ordering, check-all-that-apply, short-answer,
+    and multi-input configurations without writing requested scores directly
+  verification_method: automated
+- id: AC-029
+  requirement_id: FR-004
+  title: Fixed high-proficiency, steady-learner, persistent-learner, and low-engagement profiles vary
+    only course reach, activity participation, initial correctness, practice attempt count,
+    assessment attempt count, and improvement per attempt; seeded response and behavior choices
+    remain deterministic
+  verification_method: automated
+- id: AC-030
+  requirement_id: FR-004
+  title: Fast execution is the default, while paced execution sleeps in real time using fixed
+    profile distributions for page, answer, retry, break, and study-session timing; terminating the
+    foreground seed command immediately ends its VM and learner workers while already committed
+    database transactions remain committed
+  verification_method: hybrid
+- id: AC-031
+  requirement_id: FR-004
+  title: Development and preview seeding entry points use a dedicated companion runtime that can
+    run alongside the server without starting a second endpoint, unrelated consumers, upload
+    pipelines, or startup recovery while preserving required data, cache, evaluation, event, and
+    downstream enqueue behavior
+  verification_method: hybrid
+- id: AC-032
+  requirement_id: FR-004
+  title: Simulation has one modest 100-learner cap, fixed profile attempt caps, normal task-stream
+    concurrency plus small deterministic action delays in fast mode, one concurrent worker per
+    admitted learner in paced mode, and compact success, failure, skip, and unsupported-content reporting;
+    Oban owns downstream work and the simulator does not poll, reserve, throttle, or cancel jobs
+  verification_method: automated
+- id: AC-033
+  requirement_id: FR-004
+  title: Profile-mode preflight skips and reports learners with existing section history, simulates
+    only fresh learners, and adds no reconciliation, cleanup, automatic resume, seed-run persistence,
+    or backdated history
+  verification_method: automated
+- id: AC-034
+  requirement_id: FR-004
+  title: Course simulation derives one deterministic DataShop UUID from the seed, learner identity,
+    and section, then reuses it for the learner's complete simulated journey; profile study-session
+    timing affects pacing only and lower-level directives retain independent transient IDs
   verification_method: automated
