@@ -8,6 +8,44 @@ defmodule OliWeb.LtiRedirectTest do
   @telemetry_prefix [:oli, :lti]
 
   describe "redirect_from_lti_params/3" do
+    test "routes a launch to the section of its own deployment, not another deployment's",
+         %{conn: conn} do
+      user = insert(:user, independent_learner: false)
+      registration = insert(:lti_registration)
+      context_id = "shared-context-#{System.unique_integer([:positive])}"
+
+      first_deployment =
+        insert(:lti_deployment, registration: registration, deployment_id: "deployment-a")
+
+      second_deployment =
+        insert(:lti_deployment, registration: registration, deployment_id: "deployment-b")
+
+      first_section =
+        insert(:section, lti_1p3_deployment: first_deployment, context_id: context_id)
+
+      second_section =
+        insert(:section, lti_1p3_deployment: second_deployment, context_id: context_id)
+
+      lti_params = %{
+        "iss" => registration.issuer,
+        "aud" => [registration.client_id],
+        "https://purl.imsglobal.org/spec/lti/claim/context" => %{"id" => context_id},
+        "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
+          second_deployment.deployment_id,
+        "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+          "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+        ]
+      }
+
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> LtiRedirect.redirect_from_lti_params(lti_params, source: :current_launch)
+
+      assert redirected_to(conn) == "/sections/#{second_section.slug}"
+      refute redirected_to(conn) == "/sections/#{first_section.slug}"
+    end
+
     test "emits redirect resolution telemetry with transport method", %{conn: conn} do
       handler_id = attach_handler([@telemetry_prefix ++ [:redirect_resolution]])
 

@@ -408,6 +408,99 @@ defmodule Oli.SectionsTest do
       assert Sections.get_section_from_lti_params(lti_params).id == section.id
     end
 
+    test "get_section_from_lti_params/1 refuses a launch whose identity claims are malformed", %{
+      institution: institution
+    } do
+      jwk = jwk_fixture()
+      registration = registration_fixture(%{tool_jwk_id: jwk.id})
+      context_id = "malformed-context-#{System.unique_integer([:positive])}"
+
+      deployment_a =
+        deployment_fixture(%{
+          institution_id: institution.id,
+          registration_id: registration.id,
+          deployment_id: "deployment-a"
+        })
+
+      deployment_b =
+        deployment_fixture(%{
+          institution_id: institution.id,
+          registration_id: registration.id,
+          deployment_id: "deployment-b"
+        })
+
+      insert(:section, lti_1p3_deployment: deployment_a, context_id: context_id)
+      insert(:section, lti_1p3_deployment: deployment_b, context_id: context_id)
+
+      well_formed =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> put_in(["iss"], registration.issuer)
+        |> put_in(["aud"], registration.client_id)
+        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/deployment_id"], "deployment-b")
+        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], context_id)
+
+      # Control: the same claims, well formed, do resolve.
+      refute is_nil(Sections.get_section_from_lti_params(well_formed))
+
+      malformed = [
+        {"missing deployment",
+         Map.delete(well_formed, "https://purl.imsglobal.org/spec/lti/claim/deployment_id")},
+        {"nil deployment",
+         put_in(well_formed, ["https://purl.imsglobal.org/spec/lti/claim/deployment_id"], nil)},
+        {"integer deployment",
+         put_in(well_formed, ["https://purl.imsglobal.org/spec/lti/claim/deployment_id"], 123)},
+        {"missing context",
+         Map.delete(well_formed, "https://purl.imsglobal.org/spec/lti/claim/context")},
+        {"list context",
+         Map.put(well_formed, "https://purl.imsglobal.org/spec/lti/claim/context", [])},
+        {"non binary context id",
+         put_in(well_formed, ["https://purl.imsglobal.org/spec/lti/claim/context", "id"], 7)}
+      ]
+
+      for {label, claims} <- malformed do
+        assert Sections.get_section_from_lti_params(claims) == nil,
+               "expected no section for a launch with a #{label} claim"
+      end
+    end
+
+    test "get_section_from_lti_params/1 returns the section of the launch's own deployment", %{
+      institution: institution
+    } do
+      jwk = jwk_fixture()
+      registration = registration_fixture(%{tool_jwk_id: jwk.id})
+      context_id = "shared-context-#{System.unique_integer([:positive])}"
+
+      first_deployment =
+        deployment_fixture(%{
+          institution_id: institution.id,
+          registration_id: registration.id,
+          deployment_id: "deployment-a"
+        })
+
+      second_deployment =
+        deployment_fixture(%{
+          institution_id: institution.id,
+          registration_id: registration.id,
+          deployment_id: "deployment-b"
+        })
+
+      first_section =
+        insert(:section, lti_1p3_deployment: first_deployment, context_id: context_id)
+
+      second_section =
+        insert(:section, lti_1p3_deployment: second_deployment, context_id: context_id)
+
+      lti_params =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> put_in(["iss"], registration.issuer)
+        |> put_in(["aud"], registration.client_id)
+        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/deployment_id"], "deployment-b")
+        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], context_id)
+
+      assert Sections.get_section_from_lti_params(lti_params).id == second_section.id
+      refute Sections.get_section_from_lti_params(lti_params).id == first_section.id
+    end
+
     test "get_section_from_lti_params/1 returns the section from the given lti params when aud claim is a list",
          %{
            section: section,

@@ -5,6 +5,8 @@ defmodule Oli.Institutions do
 
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
@@ -761,18 +763,34 @@ defmodule Oli.Institutions do
       nil
   """
   def get_institution_registration_deployment(issuer, client_id, deployment_id) do
-    Repo.one(
-      from(d in Deployment,
-        join: r in Registration,
-        on: r.id == d.registration_id,
-        join: i in Institution,
-        on: i.id == d.institution_id,
-        where:
-          r.issuer == ^issuer and r.client_id == ^client_id and
-            d.deployment_id == ^deployment_id,
-        select: {i, r, d}
-      )
+    from(d in Deployment,
+      join: r in Registration,
+      on: r.id == d.registration_id,
+      join: i in Institution,
+      on: i.id == d.institution_id,
+      where:
+        r.issuer == ^issuer and r.client_id == ^client_id and
+          d.deployment_id == ^deployment_id,
+      select: {i, r, d},
+      limit: 2
     )
+    |> Repo.all()
+    |> case do
+      [institution_registration_deployment] ->
+        institution_registration_deployment
+
+      [] ->
+        nil
+
+      [_ | _] ->
+        # The schema does not declare this identity unique, so an ambiguous one names no
+        # deployment rather than raising out of whatever is asking.
+        Logger.warning(
+          "More than one LTI deployment matches issuer #{issuer}, client #{client_id} and deployment #{deployment_id}"
+        )
+
+        nil
+    end
   end
 
   @doc """

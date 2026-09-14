@@ -7,9 +7,9 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
   the section itself has been persisted.
   """
 
-  alias Oli.Delivery
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.{Blueprint, PostProcessing}
   alias Oli.GenAI
   alias Oli.GenAI.Completions.ServiceConfig
   alias Oli.Publishing
@@ -139,8 +139,23 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       |> Map.put(:requires_payment, requires_payment)
       |> Map.put(:blueprint_id, product.id)
 
-    {:ok, section} = Delivery.create_from_product(state.current_author, product, section_params)
-    Oli.Repo.preload(section, [:blueprint])
+    {:ok, section} =
+      Repo.transaction(fn ->
+        {:ok, section} = Blueprint.duplicate(product, section_params)
+        {:ok, _} = Sections.rebuild_contained_pages(section)
+        {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+        Oli.Auditing.capture(state.current_author, :section_created, section, %{
+          "section_title" => section.title,
+          "type" => Atom.to_string(section.type),
+          "base_project_id" => section.base_project_id,
+          "blueprint_id" => product.id
+        })
+
+        PostProcessing.apply(section, :discussions)
+      end)
+
+    Repo.preload(section, [:blueprint])
   end
 
   defp create_standalone(directive_attrs, state) do
