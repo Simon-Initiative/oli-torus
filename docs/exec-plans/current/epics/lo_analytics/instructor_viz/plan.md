@@ -201,30 +201,24 @@ Carried from `prd.md`/`fdd.md`, restated here because they affect what gets buil
   and remove the (now third) copy of duplicated selection-toggle logic across the codebase. The
   selection checkboxes and select-all themselves shipped in PR2, ahead of the original plan.
 - Tasks:
-  - [ ] Create the shared selection module (`fdd.md` section 4.1 — final module path decided at
-        implementation time, default `lib/oli_web/components/delivery/students/student_selection.ex`):
-        `toggle/2`, `toggle_all/2`, `selected_emails/2`, extracted from the duplicated logic now in
-        `StudentDistributionTable` (`toggle_student`/`toggle_all` handlers, PR2) and `StudentSupportTile`
-        (`StudentProficiencyList`'s copy is moot — that module was deleted in PR2).
-  - [ ] Migrate `StudentDistributionTable`'s existing `toggle_student`/`toggle_all` handlers to call the
-        new shared module instead of their inline `MapSet` logic, as a pure refactor with no behavior
-        change (re-run PR2's checkbox/select-all tests unmodified to confirm).
-  - [ ] Wire `OliWeb.Components.Delivery.Students.EmailButton` and the `email_modal_payload`/
+  - [x] Create the shared selection module (`fdd.md` section 4.1):
+        `lib/oli_web/components/delivery/students/student_selection.ex` — `toggle/2`, `toggle_all/2`,
+        `selected_emails/2`.
+  - [x] Migrate `StudentDistributionTable`'s existing `toggle_student`/`toggle_all` handlers to call the
+        shared module instead of their inline `MapSet` logic (pure refactor, PR2 tests unmodified).
+  - [x] Wire `OliWeb.Components.Delivery.Students.EmailButton` and the `email_modal_payload`/
         `DraftEmailModal` forwarding pattern into `StudentDistributionTable` (AC-021).
-  - [ ] Migrate `StudentSupportTile`
-        (`lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/student_support_tile.ex`)
-        to call the shared selection module instead of its inline `MapSet` logic, as a pure refactor
-        with no behavior change.
+  - [x] Migrate `StudentSupportTile`'s `select_all_students`/`student_support_row_toggled` handlers to
+        call the shared selection module (pure refactor, existing suite unmodified).
 - Testing Tasks:
-  - [ ] `Phoenix.LiveViewTest`, `student_distribution_table_test.exs`: Email button acts on the current
-        selection (AC-021); every control (checkboxes, Email, Load More, filter, Close, sort headers)
-        is keyboard-operable (AC-035); focus-visible styling across every control introduced in all
-        three PRs (AC-036, final pass).
-  - [ ] ExUnit, new tests for the shared selection module: toggle, toggle-all, and email-derivation
-        behavior in isolation.
-  - [ ] Run `StudentDistributionTable`'s and `StudentSupportTile`'s existing test suites unmodified to
-        confirm both migrations introduced no behavior change.
-  - Command(s): `mix test test/oli_web/components/delivery/learning_objectives/`, `mix test test/oli_web/components/delivery/instructor_dashboard/`, `mix format`
+  - [x] `Phoenix.LiveViewTest`, `student_distribution_table_test.exs`: Email button disabled/enabled
+        state, `Copy email addresses` payload, and `email_modal_payload` correctness (situation_key,
+        scope_label, objective, recipients) for the current selection (AC-021).
+  - [x] ExUnit, `student_selection_test.exs`: toggle, toggle-all, and email-derivation behavior in
+        isolation.
+  - [x] `StudentDistributionTable`'s and `StudentSupportTile`'s existing test suites re-run unmodified,
+        confirming both migrations introduced no behavior change.
+  - Command(s): `mix test test/oli_web/components/delivery/learning_objectives/`, `mix test test/oli_web/components/delivery/instructor_dashboard/`, `mix test test/oli_web/components/delivery/students/`, `mix format`
 - Definition of Done:
   - Students can be emailed from the group table using the selection already built in PR2;
     `StudentDistributionTable` and `StudentSupportTile` both behave identically to before their

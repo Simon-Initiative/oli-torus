@@ -16,11 +16,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   alias OliWeb.Common.Utils
   alias OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatrix
   alias OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
+  alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
 
   attr :unique_id, :string, required: true
   attr :objective, :map, required: true
   attr :section_id, :integer, required: true
   attr :section_slug, :string, required: true
+  attr :section_title, :string, default: nil
   attr :current_user, :map, required: true
   attr :text_search, :string, default: nil
   attr :sync_load, :boolean, default: false
@@ -31,6 +33,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   end
 
   def update(assigns, socket) do
+    socket = assign_new(socket, :section_title, fn -> nil end)
+
     cond do
       # Handle async data loading completion
       Map.has_key?(assigns, :loaded_data) ->
@@ -238,6 +242,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
               students={@student_proficiency}
               selected_group={@selected_student_group}
               parent_target={@myself}
+              section_id={@section_id}
+              section_slug={@section_slug}
+              section_title={@section_title}
+              objective_title={@objective_title}
+              instructor_email={instructor_email(@current_user)}
+              instructor_name={instructor_name(@current_user)}
             />
           </div>
           
@@ -495,4 +505,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   end
 
   defp parse_group(_group), do: nil
+
+  defp instructor_email(nil), do: nil
+  defp instructor_email(current_user), do: current_user.email
+
+  defp instructor_name(nil), do: nil
+  defp instructor_name(current_user), do: DeliveryUtils.user_name(current_user)
 end

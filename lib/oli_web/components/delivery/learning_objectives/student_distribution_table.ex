@@ -1,8 +1,10 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable do
   @moduledoc """
   Renders the student list for the currently selected Student Distribution group, beside the
-  matrix chart. Students can be selected via row checkboxes and a header "select all" -- an
-  Email button that acts on that selection is not wired up yet.
+  matrix chart. Students can be selected via row checkboxes and a header "select all", and
+  emailed via an `EmailButton`/`DraftEmailModal` forwarding pattern already used elsewhere in
+  the app (the modal itself is rendered by a sibling component further up the tree, not here --
+  see `email_modal_payload/2`).
 
   Renders its own `<table>` markup rather than reusing `OliWeb.Common.SortableTable.Table`:
   that shared component applies `additional_row_class` identically to every row (no real
@@ -23,6 +25,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
   use OliWeb, :live_component
 
   alias OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTableModel
+  alias OliWeb.Components.Delivery.Students.EmailButton
+  alias OliWeb.Components.Delivery.Students.StudentSelection
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Delivery.LearningObjectives.Proficiency
   alias OliWeb.Icons
@@ -110,7 +114,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     |> assign(:sort_order, @default_sort_order)
     |> assign(:selected_proficiency_filter, @default_proficiency_filter)
     |> assign(:visible_count, @visible_count_step)
-    |> assign(:selected_student_ids, MapSet.new())
+    |> assign(:selected_student_ids, [])
   end
 
   defp reset_local_state_if_needed(socket, false) do
@@ -119,7 +123,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     |> assign_new(:sort_order, fn -> @default_sort_order end)
     |> assign_new(:selected_proficiency_filter, fn -> @default_proficiency_filter end)
     |> assign_new(:visible_count, fn -> @visible_count_step end)
-    |> assign_new(:selected_student_ids, fn -> MapSet.new() end)
+    |> assign_new(:selected_student_ids, fn -> [] end)
   end
 
   def render(assigns) do
@@ -127,11 +131,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     visible_rows = Enum.take(assigns.sorted_students, assigns.visible_count)
     remaining_count = max(length(assigns.sorted_students) - length(visible_rows), 0)
 
-    filtered_ids = MapSet.new(assigns.sorted_students, & &1.id)
+    filtered_ids = Enum.map(assigns.sorted_students, & &1.id)
+    # `selected_student_ids` stays list-based (the `StudentSelection` contract), but membership
+    # is checked once per row here -- build a set for O(1) lookups instead of scanning the list.
+    selected_id_set = MapSet.new(assigns.selected_student_ids)
 
     select_all_checked =
-      MapSet.size(filtered_ids) > 0 and
-        MapSet.subset?(filtered_ids, assigns.selected_student_ids)
+      filtered_ids != [] and Enum.all?(filtered_ids, &MapSet.member?(selected_id_set, &1))
 
     assigns =
       assigns
@@ -143,6 +149,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       |> assign(:visible_count_step, @visible_count_step)
       |> assign(:visible_rows, visible_rows)
       |> assign(:select_all_checked, select_all_checked)
+      |> assign(:selected_id_set, selected_id_set)
+      |> assign(
+        :selected_emails,
+        StudentSelection.selected_emails(assigns.students, assigns.selected_student_ids)
+      )
+      |> assign(:email_modal_payload, email_modal_payload(assigns, content))
 
     ~H"""
     <div
@@ -181,7 +193,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
         </button>
       </div>
 
-      <div :if={@group_student_count > 0} class="mb-3 shrink-0">
+      <div :if={@group_student_count > 0} class="mb-3 flex shrink-0 flex-wrap items-center gap-2">
+        <.live_component
+          id={"#{@id}-email-button"}
+          module={EmailButton}
+          selected_students={@selected_student_ids}
+          selected_emails={@selected_emails}
+          section_slug={@section_slug}
+          instructor_email={@instructor_email}
+          email_handler_id={@id}
+          email_modal_payload={@email_modal_payload}
+        />
+
         <.form for={%{}} phx-target={@myself} phx-change="filter_by_proficiency">
           <label for={"#{@id}-proficiency-filter"} class="sr-only">Filter by proficiency</label>
           <select
@@ -273,7 +296,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
                   <label class="flex h-6 w-6 cursor-pointer items-center justify-center">
                     <input
                       type="checkbox"
-                      checked={MapSet.member?(@selected_student_ids, student.id)}
+                      checked={MapSet.member?(@selected_id_set, student.id)}
                       phx-click="toggle_student"
                       phx-value-student_id={student.id}
                       phx-target={@myself}
@@ -389,15 +412,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
   def handle_event("toggle_student", %{"student_id" => student_id_param}, socket) do
     case Integer.parse(student_id_param) do
       {student_id, ""} ->
-        selected = socket.assigns.selected_student_ids
-
-        updated =
-          if MapSet.member?(selected, student_id) do
-            MapSet.delete(selected, student_id)
-          else
-            MapSet.put(selected, student_id)
-          end
-
+        updated = StudentSelection.toggle(socket.assigns.selected_student_ids, student_id)
         {:noreply, assign(socket, :selected_student_ids, updated)}
 
       _ ->
@@ -411,14 +426,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
   # paginated slice), so selection stays consistent as more rows are revealed via Load More.
   def handle_event("toggle_all", _params, socket) do
     %{sorted_students: sorted_students, selected_student_ids: selected} = socket.assigns
-    filtered_ids = MapSet.new(sorted_students, & &1.id)
+    filtered_ids = Enum.map(sorted_students, & &1.id)
 
-    updated =
-      if MapSet.subset?(filtered_ids, selected) do
-        MapSet.difference(selected, filtered_ids)
-      else
-        MapSet.union(selected, filtered_ids)
-      end
+    updated = StudentSelection.toggle_all(filtered_ids, selected)
 
     {:noreply, assign(socket, :selected_student_ids, updated)}
   end
@@ -494,4 +504,32 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
 
   defp empty_state_message(0), do: "No students currently belong to this group."
   defp empty_state_message(_group_student_count), do: "No students match the selected filter."
+
+  # Shaped to match `DraftEmailModal`'s expected assigns exactly, so `LearningObjectives` can
+  # forward it with a plain `{@email_modal_payload}` splat once `EmailButton` relays it up
+  # through `instructor_dashboard_live.ex`. `objective`'s `proficiency_label` uses the group's
+  # own title (e.g. "Needs Support") rather than a single proficiency label, since a
+  # distribution group can span multiple proficiency ranges.
+  defp email_modal_payload(assigns, content) do
+    %{
+      students:
+        StudentSelection.recipients(
+          assigns.students,
+          assigns.selected_student_ids,
+          & &1.full_name
+        ),
+      section_id: assigns.section_id,
+      section_title: assigns.section_title,
+      section_slug: assigns.section_slug,
+      instructor_email: assigns.instructor_email,
+      instructor_name: assigns.instructor_name,
+      situation_key: situation_key(assigns.selected_group),
+      scope_label: content.title,
+      objective: %{title: assigns.objective_title, proficiency_label: content.title}
+    }
+  end
+
+  defp situation_key(:needs_support), do: :struggling_students
+  defp situation_key(:excelling), do: :excelling_students
+  defp situation_key(:limited_activity), do: :inactive_students
 end

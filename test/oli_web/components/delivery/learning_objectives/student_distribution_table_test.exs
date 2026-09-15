@@ -18,7 +18,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
         students = one_of_each_proficiency(group)
 
         {:ok, view, _html} =
-          live_component_isolated(conn, StudentDistributionTable, %{
+          render_table(conn, %{
             id: "student-distribution-table",
             students: students,
             selected_group: group,
@@ -37,7 +37,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
           [student("Excelling Student", :excelling, "High")]
 
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: students,
           selected_group: :limited_activity,
@@ -81,7 +81,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       students = one_of_each_proficiency(:limited_activity)
 
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: students,
           selected_group: :limited_activity,
@@ -109,7 +109,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       students = [student("Low Student", :limited_activity, "Low")]
 
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: students,
           selected_group: :limited_activity,
@@ -127,7 +127,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     test "a group with zero students shows an empty-state message instead of an empty table",
          %{conn: conn} do
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: [student("Excelling Student", :excelling, "High")],
           selected_group: :limited_activity,
@@ -145,7 +145,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       students = one_of_each_proficiency(:needs_support) ++ one_of_each_proficiency(:excelling)
 
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: students,
           selected_group: :needs_support,
@@ -196,7 +196,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       students = many_limited_activity_students(25)
 
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: students,
           selected_group: :limited_activity,
@@ -222,7 +222,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       students = many_limited_activity_students(4)
 
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: students,
           selected_group: :limited_activity,
@@ -250,7 +250,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       ]
 
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: students,
           selected_group: :limited_activity,
@@ -275,7 +275,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       students = one_of_each_proficiency(:limited_activity)
 
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: students,
           selected_group: :limited_activity,
@@ -316,7 +316,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       students = one_of_each_proficiency(:limited_activity)
 
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: students,
           selected_group: :limited_activity,
@@ -354,7 +354,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
              "text-Text-Chip-Gray"}
           ] do
         {:ok, view, _html} =
-          live_component_isolated(conn, StudentDistributionTable, %{
+          render_table(conn, %{
             id: "student-distribution-table",
             students: one_of_each_proficiency(group),
             selected_group: group,
@@ -371,7 +371,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     test "renders the Student Name / Proficiency / Activities column headers and the activities cell as '<attempted> of <total> (<pct>%)'",
          %{conn: conn} do
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: [student("Low Student", :limited_activity, "Low")],
           selected_group: :limited_activity,
@@ -391,7 +391,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       conn: conn
     } do
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: [student("Low Student", :limited_activity, "Low")],
           selected_group: :limited_activity,
@@ -416,7 +416,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     test "the header tooltip trigger is a focusable button whose aria-describedby points to a real tooltip element",
          %{conn: conn} do
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: [student("Low Student", :limited_activity, "Low")],
           selected_group: :limited_activity,
@@ -437,7 +437,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
 
     test "the proficiency filter dropdown's default option reads 'Proficiency'", %{conn: conn} do
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: one_of_each_proficiency(:limited_activity),
           selected_group: :limited_activity,
@@ -452,7 +452,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       conn: conn
     } do
       {:ok, view, _html} =
-        live_component_isolated(conn, StudentDistributionTable, %{
+        render_table(conn, %{
           id: "student-distribution-table",
           students: one_of_each_proficiency(:needs_support),
           selected_group: :needs_support,
@@ -465,13 +465,118 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
              |> Floki.parse_fragment!()
              |> Floki.attribute("phx-target") == ["parent-target-placeholder"]
     end
+
+    test "the Email button is disabled until a student is selected", %{conn: conn} do
+      students = one_of_each_proficiency(:needs_support)
+
+      {:ok, view, _html} =
+        render_table(conn, %{
+          id: "student-distribution-table",
+          students: students,
+          selected_group: :needs_support,
+          parent_target: nil
+        })
+
+      assert has_element?(view, "button[disabled]", "Email")
+
+      [student | _] = students
+
+      view
+      |> element("input[phx-value-student_id='#{student.id}']")
+      |> render_click()
+
+      refute has_element?(view, "button[disabled]", "Email")
+    end
+
+    test "the Copy email addresses action carries the comma-separated emails of the selected students",
+         %{conn: conn} do
+      students = [
+        student_with_email("Low Student", :needs_support, "Low", "low@example.com"),
+        student_with_email("Medium Student", :needs_support, "Medium", "medium@example.com")
+      ]
+
+      {:ok, view, _html} =
+        render_table(conn, %{
+          id: "student-distribution-table",
+          students: students,
+          selected_group: :needs_support,
+          parent_target: nil
+        })
+
+      Enum.each(students, fn s ->
+        view
+        |> element("input[phx-value-student_id='#{s.id}']")
+        |> render_click()
+      end)
+
+      assert view
+             |> element("button[data-copy-text]")
+             |> render() =~ "low@example.com, medium@example.com"
+    end
+
+    test "the Email button opens the modal with a payload matching the selected group, objective, and selection",
+         %{conn: conn} do
+      students = [
+        student_with_email("Low Student", :needs_support, "Low", "low@example.com"),
+        student("No Email Student", :needs_support, "Medium")
+      ]
+
+      {:ok, view, _html} =
+        render_table(conn, %{
+          id: "student-distribution-table",
+          students: students,
+          selected_group: :needs_support,
+          parent_target: nil,
+          section_id: 123,
+          section_slug: "sec-slug",
+          section_title: "Course 1",
+          objective_title: "Objective A",
+          instructor_email: "instructor@example.com",
+          instructor_name: "Ms. Instructor"
+        })
+
+      Enum.each(students, fn s ->
+        view
+        |> element("input[phx-value-student_id='#{s.id}']")
+        |> render_click()
+      end)
+
+      test_pid = self()
+
+      LiveComponentTests.live_component_intercept(view, fn
+        {:show_email_modal, caller_assigns}, socket ->
+          send(test_pid, {:captured_payload, caller_assigns.email_modal_payload})
+          {:halt, socket}
+
+        _other, socket ->
+          {:cont, socket}
+      end)
+
+      view
+      |> element("button", "Send email")
+      |> render_click()
+
+      assert_receive {:captured_payload, payload}
+
+      assert payload.section_id == 123
+      assert payload.section_slug == "sec-slug"
+      assert payload.section_title == "Course 1"
+      assert payload.instructor_email == "instructor@example.com"
+      assert payload.instructor_name == "Ms. Instructor"
+      assert payload.situation_key == :struggling_students
+      assert payload.scope_label == "Needs Support"
+      assert payload.objective == %{title: "Objective A", proficiency_label: "Needs Support"}
+
+      assert Enum.map(payload.students, & &1.display_name) |> Enum.sort() ==
+               ["Low Student", "No Email Student"]
+    end
   end
 
   defp assert_default_sort_order(conn, group, expected_names) do
     students = one_of_each_proficiency(group)
 
     {:ok, view, _html} =
-      live_component_isolated(conn, StudentDistributionTable, %{
+      render_table(conn, %{
         id: "student-distribution-table",
         students: students,
         selected_group: group,
@@ -479,6 +584,24 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       })
 
     assert rendered_row_names(view) == expected_names
+  end
+
+  # `StudentDistributionTable` requires the email-related assigns; most tests here don't
+  # exercise that flow, so this centralizes innocuous defaults instead of repeating them
+  # at every call site. Tests that do exercise the email flow override what they need.
+  defp render_table(conn, attrs) do
+    live_component_isolated(conn, StudentDistributionTable, Map.merge(email_defaults(), attrs))
+  end
+
+  defp email_defaults do
+    %{
+      section_id: 1,
+      section_slug: "sec",
+      section_title: "Section",
+      objective_title: "Objective",
+      instructor_email: "instructor@example.edu",
+      instructor_name: "Instructor"
+    }
   end
 
   defp rendered_row_names(view) do
@@ -517,6 +640,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       total_related_activities: 9,
       distribution_group: group
     }
+  end
+
+  defp student_with_email(full_name, group, proficiency_range, email) do
+    student(full_name, group, proficiency_range)
+    |> Map.put(:email, email)
   end
 
   defp guidance_snippet(:needs_support), do: "reach out to students to offer support"
