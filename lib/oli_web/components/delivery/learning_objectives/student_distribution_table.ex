@@ -319,7 +319,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
                   </div>
                 </td>
                 <td class="p-2">
-                  <.proficiency_chip label={student.proficiency_range || "Not enough data"} />
+                  <.proficiency_chip student={student} />
                 </td>
                 <td class="p-2 text-Text-text-high">{activities_text(student)}</td>
               </tr>
@@ -375,14 +375,21 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     """
   end
 
-  # A plain color chip, no icon -- unlike `OliWeb.Delivery.LearningObjectives.Proficiency.chip/1`
-  # (shared with the Learning Objectives and Sub-objectives tables, which do want the "Low"
-  # warning icon), this table's own Figma spec has no icon on any proficiency badge.
-  attr :label, :string, required: true
+  # No icon, unlike the shared `Proficiency.chip/1` used by other LO tables. Skips the tooltip
+  # for "Not enough data" since its `:proficiency` is `0.0` upstream, not a real 0% score.
+  attr :student, :map, required: true
 
   defp proficiency_chip(assigns) do
-    {bg_color, text_color} = proficiency_chip_colors(assigns.label)
-    assigns = assign(assigns, bg_color: bg_color, text_color: text_color)
+    label = assigns.student.proficiency_range || "Not enough data"
+    {bg_color, text_color} = proficiency_chip_colors(label)
+
+    assigns =
+      assign(assigns,
+        label: label,
+        bg_color: bg_color,
+        text_color: text_color,
+        tooltip: proficiency_tooltip(assigns.student, label)
+      )
 
     ~H"""
     <Chip.render
@@ -390,6 +397,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       bg_color={@bg_color}
       text_color={@text_color}
       label_class="whitespace-nowrap"
+      tooltip={@tooltip}
     />
     """
   end
@@ -401,6 +409,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
 
   defp proficiency_chip_colors("Low"), do: {"bg-Fill-fill-danger", "text-Text-text-danger"}
   defp proficiency_chip_colors(_), do: {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
+
+  defp proficiency_tooltip(_student, "Not enough data"), do: nil
+
+  defp proficiency_tooltip(student, _label) do
+    case Map.get(student, :proficiency) do
+      proficiency when is_number(proficiency) -> "#{round(proficiency * 100)}% proficiency"
+      _ -> nil
+    end
+  end
 
   def handle_event("filter_by_proficiency", %{"proficiency" => proficiency}, socket) do
     {:noreply,
