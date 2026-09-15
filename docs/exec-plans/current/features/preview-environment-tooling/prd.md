@@ -53,7 +53,7 @@ Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Security: `MIX_ENV=preview` controls compile-time inclusion and `PREVIEW_QA_TOOLS_ENABLED` independently controls runtime activation. CLI access is trusted as equivalent to application-console access; masquerade independently requires a current system administrator at every boundary.
-- Reliability: CLI commands execute synchronously, print bounded results, and return reliable process exit codes. Kubernetes owns startup retry, resource limits, and status.
+- Reliability: CLI commands execute synchronously, print bounded results, and return reliable process exit codes. Kubernetes owns Job resource limits and status. The deployment seed is a one-shot initializer and is not automatically retried after partial mutation.
 - Input handling: custom scenarios use the full existing `Oli.Scenarios` contract. URL ingestion supports HTTP and HTTPS with bounded download time, redirects, and archive size, and always cleans temporary files.
 - Performance: course progress simulation admits at most 100 learners, uses normal task-stream concurrency plus a small deterministic delay between actions in fast mode, starts one worker per admitted learner in paced mode so realistic waits overlap, and uses fixed profile attempt caps. Oban owns downstream job execution concurrency; the simulator does not poll or throttle Oban queues. Kubernetes seed Jobs declare CPU/memory limits, and there is no seed-specific global wall-clock timeout.
 - Privacy: operators must use synthetic QA data. CLI logs and summaries must not print credentials, learner responses, archive contents, or complete YAML bodies.
@@ -71,7 +71,7 @@ Requirements are found in requirements.yml
 - Fast execution is the default. Optional paced execution samples fixed per-profile page, answer, retry, break, and study-session distributions and sleeps against real wall-clock time without a requested completion window. The foreground process owns all learner workers, so terminating it stops the simulation immediately while already committed database work remains.
 - Derive one deterministic DataShop UUID from the seed, learner identity, and section and reuse it for the learner's complete simulated journey. Study-session timing changes waits only; it does not rotate the DataShop identifier or alter lower-level directives.
 - Both seeding entry points bootstrap a dedicated companion runtime that excludes the endpoint, unrelated consumers, upload pipelines, and startup recovery. The simulator uses fixed learner concurrency and does not add action budgets, rate controls, queue polling, rich telemetry, or retained scheduler state.
-- The initial `review_demo` bundled scenario creates representative authoring, publication, product, section, enrollment, learner-progress, gradebook, discussion, gating, and analytics states without embedded credentials.
+- The initial `review_demo` bundled scenario creates representative authoring, publication, product, section, enrollment, learner-progress, gradebook, discussion, gating, and analytics states without embedded credentials. It targets a fresh or deliberately reset preview database and does not add cross-run reconciliation or resume behavior.
 - Keep bounded masquerade identifiers and timestamps in the existing tamper-protected signed session and audit the lifecycle through `Oli.Auditing`; no active-session database table or application-wide session-encryption change is introduced.
 - In `MIX_ENV=preview`, configure `Oli.Mailer` with `Swoosh.Adapters.Local` regardless of runtime activation. Compile `/dev/mailbox` only into preview releases and runtime-gate it under system-admin authentication. While masquerading, ordinary authorization uses only the target identity; the original administrator identity may authorize only stopping masquerade and accessing `/dev/mailbox`. Do not add preview branches to LTI grade passback, Stripe, Cashnet, or other external-integration code.
 
@@ -91,13 +91,13 @@ Requirements are found in requirements.yml
 - Existing PR build/test checks remain under `MIX_ENV=test`; the preview-image workflow builds the full `MIX_ENV=preview` release; existing package/release workflows continue validating `MIX_ENV=prod`. Do not add a separate production compile gate to PR CI. Reconsider earlier production validation only if package-stage failures become recurrent.
 - At runtime, `PREVIEW_QA_TOOLS_ENABLED` is enabled by any casing variant of `true`. Missing, blank, whitespace-padded, false, or malformed values disable runtime QA capabilities.
 - A preview release without runtime activation emits one bounded warning explaining how to set `PREVIEW_QA_TOOLS_ENABLED=true`; releases built under other Mix environments do not. Preview email containment remains in force even while the interactive QA capabilities are runtime-disabled.
-- `PREVIEW_QA_SEED_PROFILE=review_demo` optionally selects the bundled scenario used by deployment automation. It cannot enable the capability. Deployment automation omits the seed Job when the profile is absent.
-- After migrations succeed, the deployment creates a `restartPolicy: Never` seed Job with `backoffLimit: 1` and explicit CPU/memory requests and limits initially matching its migration Job. Deployment automation resolves the configured profile and passes it as the final argument to `bin/seed scenarios run --name <profile>` without relying on shell interpolation. The Job name is `seed-<profile>-<release-id>` and labels identify application, environment, release, profile, and `component=preview-qa-seed`. Kubernetes owns logs, exit-status observation, and existing Job-retention policy; no identity is persisted by Torus.
+- `PREVIEW_QA_SEED_SCENARIO=review_demo` optionally selects the bundled scenario used by deployment automation. It cannot enable the capability. Deployment automation omits the seed Job when the scenario is absent.
+- After migrations succeed, the deployment creates a `restartPolicy: Never` seed Job with `backoffLimit: 0` and explicit CPU/memory requests and limits initially matching its migration Job. Deployment automation resolves the configured scenario and passes it as the final argument to `bin/seed scenarios run --name <scenario>` without relying on shell interpolation. The Job name is `seed-<scenario>-<release-id>` and labels identify application, environment, release, scenario, and `component=preview-qa-seed`. Kubernetes owns logs, exit-status observation, and existing Job-retention policy; no identity is persisted by Torus.
 - No seed-history migration is required. Disabling the runtime flag invalidates active masquerade on the next request but does not undo seeded data.
 
 ## 12. Telemetry & Success Metrics
 - CLI commands emit bounded structured logs and process exit status for operation, source type, scenario identifier or digest, duration, and aggregate result counts without YAML bodies or sensitive values.
-- Kubernetes monitoring owns seed Job completion, failure, retry, duration, and resource visibility.
+- Kubernetes monitoring owns seed Job completion, failure, duration, and resource visibility. A failed one-shot Job requires operator inspection and fresh/reset data before another invocation.
 - Audit masquerade start, stop, expiry, and invalidation with actor and target identifiers.
 - Success means operators can prepare fresh QA environments through controlled shell/deployment interfaces with less implementation and operational surface than an in-application seed system.
 
@@ -105,7 +105,7 @@ Requirements are found in requirements.yml
 - Shell operators can execute powerful scenario behavior: treat shell access as the privileged boundary, retain the preview-build/runtime-activation boundary, document that scenarios mutate real data, and keep the capability out of production images.
 - A URL exposes internal or oversized content: accept only HTTP/HTTPS, apply bounded redirects/time/size, avoid logging credentials, and clean temporary files. Deployment network policy remains authoritative because a shell operator already has equivalent network access.
 - Partial scenario mutation occurs before failure: return nonzero, report that partial changes may exist, and do not claim rollback.
-- Kubernetes retries duplicate data: make `review_demo` reconciliation-aware and idempotent; Kubernetes owns bounded retry behavior.
+- A partial `review_demo` failure leaves canonical data behind: disable automatic Job retries, report partial mutation, and require operators to recreate or deliberately reset the ephemeral preview data before rerunning.
 - Masquerade leaks administrator privilege: separate actor and target identities, authorize only as the target except for stop, prohibit chaining, expire sessions, and test forged requests.
 - An unsanitized production database clone or production credentials expose external integrations: preview instances support only fresh or explicitly sanitized databases and non-production runtime configuration. Email is contained through the local adapter; making production clones broadly safe requires a separate inventory and design covering all outbound effects and background work.
 - Custom scenario hooks invoke external behavior: hooks execute with shell-equivalent trust, so the operator is responsible for their effects beyond application email sent through `Oli.Mailer`.
@@ -128,7 +128,7 @@ None.
   - Test release scenario listing, bundled and local-file execution, complete DSL compatibility, explicit YAML ownership, bounded output, failure exit codes, and partial-mutation reporting.
   - Test URL validation, redirects, timeouts, size bounds, download failures, archive ingest success/failure, author selection, log redaction, and temporary-file cleanup.
   - Exercise `bulk_create_enroll_users` and the replacement `simulate_progress` profile/cohort schema, deterministic assignments and responses, one DataShop session per learner, delivered course ordering, authentic native practice/assessment lifecycles, existing-history skipping, paced waits, fixed caps, compact state, and Stagehand migration.
-  - Run `review_demo` through the release interface and verify representative domain state and retry-safe reconciliation.
+  - Run `review_demo` once through the release interface on fresh data and verify representative domain state, bounded partial-failure reporting, and the absence of automatic retry or reconciliation machinery.
   - Confirm there is no workbench, seed route, Oban seed worker/queue, run-history schema, or startup-status endpoint.
   - Preserve Playwright fixture compatibility.
   - Cover masquerade authorization, target-only permissions, session lifecycle, auditing, safe redirects, and accessible banner coverage.
@@ -146,6 +146,11 @@ None.
 - [ ] validation passes
 
 ## Decision Log
+
+### 2026-09-14 - Make deployment seeding one-shot
+- Change: Treat `review_demo` as a one-shot initializer for a fresh or deliberately reset preview database and set its Kubernetes Job to `backoffLimit: 0`. Do not add resume, reconciliation, completion markers, or seed-run persistence for partial learner simulations.
+- Reason: Phase 4B intentionally skips learners with existing history and leaves committed work in place after interruption. Retrying a partially mutated scenario would either duplicate domain data or require the reconciliation subsystem removed during simplification.
+- Impact: Stable scenario references remain useful within one run but do not imply cross-run idempotency. Operators inspect a failed Job and recreate or reset preview data before starting another seed Job. This supersedes the earlier one-retry portion of the deployment Job decision below.
 
 ### 2026-09-09 - Preserve mailbox access during administrator masquerade
 - Change: Treat `/dev/mailbox` as the only actor-authorized exception besides stopping masquerade. A valid original system-administrator actor may inspect the mailbox while ordinary application authorization continues to use only the target user.
@@ -171,8 +176,8 @@ None.
 - Impact: Layout-matrix tests cover the required interactive surfaces and assert that LTI entry clears/rejects masquerade; Cashnet callback and LTI root layouts do not need the banner.
 
 ### 2026-09-09 - Define the deployment seed Job contract
-- Change: Create the seed Job only after migrations succeed and only when `PREVIEW_QA_SEED_PROFILE` is present. Pass the resolved profile as a discrete argument to `bin/seed scenarios run --name <profile>` with `restartPolicy: Never`, `backoffLimit: 1`, explicit resources initially matching the migration Job, and a labeled `seed-<profile>-<release-id>` identity.
-- Reason: The contract provides deterministic ordering, one bounded retry, and sufficient operational identity without coupling Torus to Kubernetes APIs or storage.
+- Change: Create the seed Job only after migrations succeed and only when `PREVIEW_QA_SEED_SCENARIO` is present. Pass the resolved scenario as a discrete argument to `bin/seed scenarios run --name <scenario>` with `restartPolicy: Never`, explicit resources initially matching the migration Job, and a labeled `seed-<scenario>-<release-id>` identity. The original `backoffLimit: 1` choice is superseded by the 2026-09-14 one-shot decision.
+- Reason: The contract provides deterministic ordering and sufficient operational identity without coupling Torus to Kubernetes APIs or storage.
 - Evidence: Approved architecture decision on 2026-09-09.
 - Impact: Kubernetes owns stdout/stderr, process-exit observation, Job status, and its existing retention/TTL convention. Torus persists no Job identity or seed result.
 

@@ -41,7 +41,7 @@ acceptance_criteria:
   verification_method: automated
 - id: AC-002
   requirement_id: FR-001
-  title: Hostname, unrelated flags, configured profiles, and existing data cannot
+  title: Hostname, unrelated flags, a configured seed scenario, and existing data cannot
     enable the capability, and a MIX_ENV=prod release cannot expose it even when PREVIEW_QA_TOOLS_ENABLED
     is set at runtime
   verification_method: automated
@@ -117,8 +117,8 @@ acceptance_criteria:
 - id: AC-015
   requirement_id: FR-005
   title: After migrations succeed, a configured Kubernetes Job invokes bin/seed scenarios
-    run with the selected profile passed as a discrete argument, uses restartPolicy
-    Never, backoffLimit 1, explicit resource requests and limits, and does not affect
+    run with the selected bundled scenario passed as a discrete argument, uses restartPolicy
+    Never, backoffLimit 0, explicit resource requests and limits, and does not affect
     web readiness
   verification_method: hybrid
 - id: AC-016
@@ -129,9 +129,9 @@ acceptance_criteria:
   verification_method: automated
 - id: AC-017
   requirement_id: FR-005
-  title: Kubernetes owns Job status, one retry, labeled release/profile identity,
-    logs, and retention; Torus adds no Oban seed job, seed-run table, startup-status
-    endpoint, or persistent execution history
+  title: Kubernetes owns Job status, labeled release/scenario identity, logs, and retention;
+    automatic retry is disabled because review_demo is a one-shot initializer, and Torus adds no
+    Oban seed job, seed-run table, startup-status endpoint, or persistent execution history
   verification_method: automated
 - id: AC-018
   requirement_id: FR-006

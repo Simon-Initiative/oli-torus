@@ -24,7 +24,8 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Scenario and ingest operations retain their existing transaction boundaries. Once scenario execution begins, a failure may leave partial mutations and must say so without claiming rollback.
 - Deployment manifests may be owned outside this repository. If implementation confirms that boundary, the Torus change must define and test the command contract and provide the exact manifest change for the owning deployment repository; the phase gate requires evidence that the owning deployment path was updated before rollout.
 - No Jira write is part of this plan. If delivery tracking requires Jira changes, draft the exact proposed changes and obtain explicit user approval before using the `jira` CLI.
-- Phase 4B replaces Phase 4's `simulate_progress` implementation and input/result contract before Phase 5 consumes it, retaining the directive name but removing top-level `pct_correct` and `assessment_attempts` without a compatibility mode. Migrate all existing simulator callers, tests, and examples; preserve unrelated directives and the existing bulk-user hook/example. The replacement targets learners without existing section progress and supports fast execution by default or optional real-time pacing sampled independently per learner from profile timing distributions, without a target duration window. Operators can stop the separate CLI process and preserve all committed learner progress. Backdated history is deferred. Phase 5 must resolve reconciliation of complete and interrupted simulation runs before its retry-safe deployment gate can pass.
+- Phase 4B replaces Phase 4's `simulate_progress` implementation and input/result contract before Phase 5 consumes it, retaining the directive name but removing top-level `pct_correct` and `assessment_attempts` without a compatibility mode. Migrate all existing simulator callers, tests, and examples; preserve unrelated directives and the existing bulk-user hook/example. The replacement targets learners without existing section progress and supports fast execution by default or optional real-time pacing sampled independently per learner from profile timing distributions, without a target duration window. Operators can stop the separate CLI process and preserve all committed learner progress. Backdated history and resume/reconciliation remain out of scope.
+- The deployment `review_demo` profile is a one-shot initializer for a fresh or deliberately reset preview database. Stable scenario references improve predictability within that run but are not a cross-run idempotency or completion marker. The Kubernetes Job uses `backoffLimit: 0`; after a partial failure, an operator inspects the bounded result and recreates or resets the preview environment before rerunning.
 
 ## Phase 1: Establish the Preview Build and Runtime Safety Boundary
 
@@ -106,35 +107,33 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Parallelizable Work:
   - The downloader and its controlled-server tests can proceed alongside Phase 2 scenario ownership work once the common CLI result contract is fixed.
 
-## Phase 4: Move Bulk Users and Progress Simulation into Oli.Scenarios
+## Phase 4: Move Bulk User Enrollment into Oli.Scenarios and Retire Stagehand
 
-- Goal: Replace the separate Stagehand execution path with deterministic, reusable scenario directives that preserve domain and performance boundaries.
-- Requirements: FR-004; AC-012, AC-013, AC-014.
+- Goal: Establish deterministic bulk user enrollment as a reusable scenario directive and remove the separate Stagehand execution path before Phase 4B replaces progress simulation.
+- Requirements: FR-004; AC-012, AC-014.
 - Tasks:
-  - [x] Define and document `bulk_create_enroll_users` and `simulate_progress` directive schemas, validation, stable-reference rules, optional random seed behavior, structured warnings, and failure semantics.
-  - [x] Extract reusable enrollment and progress behavior from `lib/oli/utils/stagehand.ex` and its supporting modules into scenario-owned services using existing account, section, enrollment, attempt, and evaluation contexts.
-  - [x] Implement collision-safe synthetic instructor/learner identities and deterministic reference generation that remains stable across a seeded retry.
-  - [x] Implement progress simulation using preloaded section inputs, fixed-size batches, modest supervised concurrency, and bounded per-task timeouts; aggregate unsupported activity/content warnings without unbounded learner detail.
+  - [x] Define and document the `bulk_create_enroll_users` schema, validation, stable-reference rules, result shape, and failure semantics while preserving the existing `Oli.Scenarios.Hooks.create_bulk_users/1` hook and example.
+  - [x] Extract bulk creation and enrollment into the focused `Oli.Scenarios.BulkCreateEnrollUsers` service rather than expanding `Oli.Accounts`.
+  - [x] Implement collision-safe synthetic instructor/learner identities, deterministic scenario references, and realistic generated names.
   - [x] Register parser, validator, directive type, handler, and documentation support using the established `Oli.Scenarios` extension points.
-  - [x] Migrate repository Stagehand call sites to scenario-owned behavior, then remove the standalone deployed Stagehand API and dead helper state after parity is proven.
+  - [x] Move progress behavior behind the scenario boundary, then retire the standalone deployed Stagehand API after Phase 4B supplies and verifies the final simulator contract.
 - Testing Tasks:
-  - [x] Add parser/validator tests plus integration scenarios for valid and invalid attributes, role/enrollment creation, stable references, identity collisions, deterministic seeded progress, and different-seed variation.
-  - [ ] Cover supported activity completion, grading/progress results, unsupported content warnings, task timeout/failure aggregation, and bounded concurrency without N+1 section loading. (Deterministic integration coverage requires a runner outside the existing Ecto sandbox transaction because attempt setup changes transaction isolation.)
-  - [x] Run affected existing Stagehand and scenario suites before removal, then add a repository check proving no separate deployed Stagehand call path remains.
-  - Command(s): `mix test <bulk_create_enroll_users, simulate_progress, and migrated Stagehand tests>`; `mix test test/scenarios`; `mix format`.
+  - [x] Add parser/validator and integration coverage for valid and invalid attributes, role/enrollment creation, stable references, identity collisions, generated identities, and preservation of the existing bulk-user hook.
+  - [x] Run affected Stagehand and scenario suites before removal, then add a repository check proving no separate deployed Stagehand call path remains.
+  - Command(s): `mix test <bulk_create_enroll_users and migrated Stagehand tests>`; `mix test test/scenarios`; `mix format`.
 - Definition of Done:
-  - Both directives are normal scenario operations with deterministic references and bounded execution, all call sites use scenario-owned behavior, and Stagehand is no longer an independent deployed interface.
+  - Bulk creation and enrollment are a normal scenario operation with deterministic references, the original hook remains available, progress ownership is ready for the Phase 4B replacement, and Stagehand is no longer an independent deployed interface.
 - Gate:
-  - AC-012 through AC-014 pass, existing scenario behavior remains green, and performance review confirms batching, preloading, concurrency, and output bounds.
+  - AC-012 and AC-014 pass, existing scenario behavior remains green, and Phase 4B owns all final `simulate_progress` acceptance and performance evidence.
 - Dependencies:
   - Phase 2 establishes release execution and explicit ownership; directive service extraction itself may start after the relevant scenario extension points are confirmed.
 - Parallelizable Work:
-  - `bulk_create_enroll_users` and `simulate_progress` can be implemented in parallel with shared agreement on reference generation, warning/result structures, and deterministic random-state handling.
+  - Bulk-user implementation and Phase 4B design can proceed in parallel once the scenario registration and stable-reference conventions are agreed.
 
 ## Phase 4B: Implement Profile-Driven Course Progress Simulation
 
 - Goal: Replace Phase 4's `simulate_progress` contract with one small course-level simulator that produces authentic, varied learner progress for development and preview QA.
-- Requirements: FR-004, FR-005; AC-012, AC-013, AC-016, AC-027 through AC-034. Detailed behavior is specified in `docs/exec-plans/current/features/preview-environment-tooling/design/course-progress-simulation.md`; the module/runtime shape is captured in `docs/exec-plans/current/features/preview-environment-tooling/design/progress-simulation-architecture.md`.
+- Requirements: FR-004, FR-005; AC-012, AC-013, AC-016, AC-027, AC-028, AC-029, AC-030, AC-031, AC-032, AC-033, AC-034. Detailed behavior is specified in `docs/exec-plans/current/features/preview-environment-tooling/design/course-progress-simulation.md`; the module/runtime shape is captured in `docs/exec-plans/current/features/preview-environment-tooling/design/progress-simulation-architecture.md`.
 - Tasks:
   - [x] Reconcile `requirements.yml`, PRD, FDD, detailed design, architecture, and this plan with the simplified replacement contract. Retain unrelated scenario directives and `bulk_create_enroll_users`; reject the retired `pct_correct` and `assessment_attempts` inputs.
   - [x] Retain the dedicated `Oli.Seeding.Runtime` used by development `mix seed` and preview `bin/seed`. Start required persistence, cache, evaluation, event, and job-production services without the endpoint, normal consumers/plugins, upload pipeline, or inventory recovery.
@@ -167,33 +166,33 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Parallelizable Work:
   - Profile/policy/response unit verification may proceed independently from environment-level development and preview CLI smoke testing.
 
-## Phase 5: Deliver the review_demo Profile and Deployment Job Contract
+## Phase 5: Deliver the `review_demo` Bundled Scenario and Deployment Job Contract
 
-- Goal: Create a retry-safe representative QA dataset and invoke it through the same CLI after migrations without coupling Torus readiness or persistence to Kubernetes.
+- Goal: Create a representative QA dataset on a fresh preview database and invoke it once through the same CLI after migrations without coupling Torus readiness or persistence to Kubernetes.
 - Requirements: FR-005, FR-006; AC-015, AC-016, AC-017, AC-018.
 - Tasks:
   - [ ] Author the immutable bundled `review_demo` scenario using Phase 4B's supported course simulation, with explicit author/institution establishment and stable synthetic references covering authoring, publication, product, section, enrollment, learner progress, gradebook, discussion, gating, and analytics states without embedded credentials.
   - [ ] Keep deployment initialization fast by default. Document paced scenarios as an explicit operator choice with a suitable process/Job lifetime; do not implicitly make the post-migration seed Job run for hours or days.
-  - [ ] Make profile operations reconciliation-aware so a Kubernetes retry converges on the intended state rather than silently duplicating projects, users, sections, enrollments, or learner results.
-  - [ ] Design and implement a reconciliation strategy for completed and interrupted learner simulation using canonical domain state, compatible with Phase 4B's fresh-history default and the prohibition on seed-run persistence. Specify how completed work is recognized and partial work is continued; do not treat a deterministic seed or an existing enrollment as proof that learner progress is complete.
-  - [ ] Add deployment configuration that omits the seed Job when `PREVIEW_QA_SEED_PROFILE` is absent and creates it only after successful migrations when present.
-  - [ ] Pass the resolved profile as a discrete final argument to `bin/seed scenarios run --name <profile>` without shell interpolation; use `seed-<profile>-<release-id>`, application/environment/release/profile/component labels, `restartPolicy: Never`, `backoffLimit: 1`, and explicit CPU/memory requests and limits initially matching the migration Job.
-  - [ ] Preserve Kubernetes ownership of stdout/stderr, exit observation, one retry, Job status, resource visibility, and the existing retention convention; add no Torus startup coordinator, Job API client, readiness dependency, or Job identity/history storage.
+  - [ ] Treat `review_demo` as a one-shot initializer for a fresh or deliberately reset preview database. Document that stable references are deterministic within the run but do not make the full scenario rerunnable or prove completion.
+  - [ ] Preserve Phase 4B's existing-history policy: learners with any section progress are skipped and reported, and Phase 5 adds no resume, reconciliation, cleanup, completion marker, seed-run persistence, or automatic rerun behavior.
+  - [ ] Add deployment configuration that omits the seed Job when `PREVIEW_QA_SEED_SCENARIO` is absent and creates it only after successful migrations when present.
+  - [ ] Pass the resolved scenario as a discrete final argument to `bin/seed scenarios run --name <scenario>` without shell interpolation; use `seed-<scenario>-<release-id>`, application/environment/release/scenario/component labels, `restartPolicy: Never`, `backoffLimit: 0`, and explicit CPU/memory requests and limits initially matching the migration Job.
+  - [ ] Preserve Kubernetes ownership of stdout/stderr, exit observation, Job status, resource visibility, and the existing retention convention; add no automatic Job retry, Torus startup coordinator, Job API client, readiness dependency, or Job identity/history storage.
+  - [ ] Document partial-failure recovery: inspect the bounded command and Job result, then recreate or deliberately reset the ephemeral preview data before starting a new Job. Do not rerun `review_demo` over partially seeded state.
   - [ ] Audit Playwright's test-only controller, fixtures, token, and per-spec identifiers and leave their self-seeding lifecycle independent of `review_demo` and any startup-status endpoint.
 - Testing Tasks:
   - [ ] Execute `review_demo` through the release dispatcher and assert every representative domain state plus absence of credentials in source and logs.
-  - [ ] Execute the profile twice and verify reconciliation and stable references do not introduce unintended duplicates.
-  - [ ] Interrupt simulation after some learner actions have committed, rerun the deployment profile, and verify convergence without duplicated attempts or skipped incomplete learners. Keep this test mandatory before enabling the Kubernetes retry contract.
-  - [ ] Add static or rendered-manifest tests for omission/presence, migration ordering, discrete arguments, name/labels, restart policy, retry limit, resources, logs/retention ownership, and lack of readiness coupling.
+  - [ ] Force a scenario failure after an earlier mutation and verify the CLI returns nonzero with bounded partial-mutation reporting; verify the deployment contract does not automatically rerun that partial scenario.
+  - [ ] Add static or rendered-manifest tests for omission/presence, migration ordering, discrete arguments, name/labels, restart policy, zero retry, resources, logs/retention ownership, and lack of readiness coupling.
   - [ ] Run the existing Playwright scenario-fixture tests and add a contract check proving they reference neither `review_demo` nor a startup-status endpoint.
   - [ ] Add negative repository checks for an Oban seed job/queue, seed-run schema or migration, startup-status route, and persistent execution history.
   - Command(s): `mix test <review_demo and deployment-contract tests>`; `<existing Playwright fixture test command>`; `mix format`; rendered deployment-manifest validation in the owning repository.
 - Definition of Done:
-  - `review_demo` creates the approved synthetic state through `bin/seed`, converges under the configured retry, the post-migration Job meets the operational contract, and Playwright remains independently self-seeding.
+  - `review_demo` creates the approved synthetic state once through `bin/seed` on fresh preview data, failures remain visible without an unsafe automatic rerun, the post-migration Job meets the operational contract, and Playwright remains independently self-seeding.
 - Gate:
-  - AC-015 through AC-018 pass, including completed-run and interrupted-run learner reconciliation; deployment ownership and rollout evidence are identified; the Job does not affect application readiness.
+  - AC-015 through AC-018 pass; one-shot and partial-failure behavior are documented and tested; deployment ownership and rollout evidence are identified; the Job does not affect application readiness.
 - Dependencies:
-  - Phases 2, 4, and 4B; Phase 1's preview image is required for end-to-end Job execution.
+  - Phases 1, 2, and 4B.
 - Parallelizable Work:
   - Profile authoring, deployment manifest work, and Playwright regression auditing can proceed concurrently once the CLI and directive contracts stabilize.
 
@@ -264,8 +263,8 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
   - [ ] Run focused security, performance, Elixir, UI/accessibility, and requirements reviews under `.review/`; include TypeScript or Gleam review only if final changed files require those lenses.
   - [ ] Inspect the final diff for sensitive logging, unbounded output/work, unsafe URL handling, authorization bypass, privilege inheritance, N+1 queries, compile/runtime boundary drift, and undocumented operational assumptions.
   - [ ] Confirm excluded scope remains absent: seed UI/API, Oban seed scheduling, seed history/YAML persistence, startup status, broad external-integration suppression, and production-clone safety claims.
-  - [ ] Finalize operator documentation for CLI syntax, synthetic-data responsibility, partial-mutation behavior, profile activation, Job observation/retry ownership, local mailbox access, masquerade lifecycle, and safe disablement.
-  - [ ] Execute the manual QA matrix from a preview-built image: list scenarios, run bundled and custom YAML, ingest a controlled archive, run the deployment profile, inspect captured mail, masquerade as instructor and learner across all required shells, stop safely, and confirm disabled/non-preview rejection.
+  - [ ] Finalize operator documentation for CLI syntax, synthetic-data responsibility, partial-mutation behavior, deployment scenario selection, one-shot Job observation and reset/recovery ownership, local mailbox access, masquerade lifecycle, and safe disablement.
+  - [ ] Execute the manual QA matrix from a preview-built image and fresh preview data: list scenarios, run bundled and custom YAML, ingest a controlled archive, run the deployment scenario once, inspect captured mail, masquerade as instructor and learner across all required shells, stop safely, and confirm disabled/non-preview rejection.
 - Testing Tasks:
   - [ ] Run all targeted suites from prior phases, then the broader affected backend and scenario suites.
   - [ ] Run formatting and compile gates, the full preview-image release build, deployment manifest validation, and existing production packaging evidence.
@@ -286,7 +285,7 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 
 - Phase 1 is the critical-path foundation because all callable capabilities depend on its compile-time and runtime boundary.
 - After Phase 1, Phase 2 CLI/scenario ownership and Phase 6 masquerade lifecycle are independent workstreams. Phase 3 can begin once Phase 2 fixes the common CLI result interface.
-- Phase 4 directive work can overlap Phases 2 and 3, but its final release tests depend on Phase 2. Phase 4B follows Phase 4 and supplies the course simulation consumed by Phase 5. Deployment manifest work may proceed earlier, but Phase 5's demo-data gate depends on Phase 4B and verified learner reconciliation.
+- Phase 4 bulk-user work can overlap Phases 2 and 3. Phase 4B owns the replacement course simulation consumed by Phase 5. Deployment manifest work may proceed earlier, but Phase 5's demo-data gate depends on the completed Phase 4B contract and a fresh-data one-shot recovery policy.
 - Phase 7 UI and mailbox work can overlap Phases 2 through 5 but requires the effective-enablement contract from Phase 1 and masquerade state contract from Phase 6.
 - Assign one owner to changes in shared scenario parser/validator/runtime files and one owner to shared router/session/layout files to avoid conflicting edits. Integrate each workstream only after its focused gate is green.
 - Review and verification tasks should be performed continuously within phases; Phase 8 consolidates evidence rather than postponing security, performance, accessibility, or test work.
@@ -296,9 +295,9 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Gate A — Preview boundary: `MIX_ENV=preview` builds production-shaped, runtime QA activation is deny-by-default, production remains compile-time clean, and preview email is always local.
 - Gate B — Scenario CLI: bundled listing and synchronous bundled/custom execution pass with strict usage, full DSL compatibility, explicit ownership, bounded output, and no application-managed seed state.
 - Gate C — Project ingestion: bounded HTTP/HTTPS download, explicit author selection, existing ingest reuse, cleanup, redaction, and deterministic exits pass.
-- Gate D — Scenario extensions: deterministic `bulk_create_enroll_users` and `simulate_progress` pass integration and performance checks and the separate Stagehand path is retired.
+- Gate D — Scenario foundation: deterministic `bulk_create_enroll_users` passes integration checks, the existing bulk-user hook remains available, and the separate Stagehand path is retired; the final simulator is gated only by Phase 4B.
 - Gate D2 — Course simulation (Phase 4B): AC-027 through AC-034 verify that the replacement simulator and migrated Phase 4 scenario produce realistic practice/part retries, scored assessment histories, partial progress, and one deterministic DataShop ID per learner/section journey through shared learner operations, with fast defaults and optional wall-clock pacing. Verify isolated companion boot, foreground-process termination, normal fast task concurrency with small action delays, concurrent paced learner journeys, the 100-learner cap, compact aggregate output, deterministic response variation, complete input/result migration, and removed-option rejection; no legacy simulator branch remains and backdated history stays deferred.
-- Gate E — Deployment profile: `review_demo` consumes Phase 4B, is representative and retry-safe for complete and interrupted learner runs, the post-migration Job contract is validated, and Playwright remains independent.
+- Gate E — Deployment scenario: `review_demo` consumes Phase 4B, creates representative data once on a fresh or reset preview database, fails visibly without automatic retry after partial mutation, satisfies the post-migration Job contract, and leaves Playwright independent.
 - Gate F — Masquerade security: a masqueraded session is capability-equivalent to the target's direct session outside the two explicit exceptions, all general admin access is absent or denied, actor identity is usable only for audit, stop, and route-local mailbox authorization, and signed-session lifecycle, LTI clearing, and safe stop behavior pass adversarial tests.
 - Gate G — UI and mailbox: required authenticated shells pass accessibility coverage and the runtime-enabled preview mailbox admits a current system administrator or the valid original admin actor during masquerade, without granting that session access to any other admin surface.
 - Gate H — Release readiness: all FR/AC evidence, required reviews, formatting/tests, preview build, deployment validation, documentation, manual QA, and scope-exclusion checks pass.
