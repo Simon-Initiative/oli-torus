@@ -62,7 +62,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
               role="button"
               download="gradebook.csv"
               class="flex items-center justify-center gap-x-2 text-Text-text-button hover:text-Text-text-button-hover font-bold leading-none hover:no-underline"
-              href={~p"/sections/#{@section_slug}/grades/export"}
+              href={download_path(@section_slug, @student_id)}
             >
               <span class="border-b border-transparent hover:border-Text-text-button-hover transition-all duration-100 ease-out py-1">
                 Download CSV
@@ -123,6 +123,17 @@ defmodule OliWeb.Components.Delivery.QuizScores do
       </div>
     </div>
     """
+  end
+
+  defp download_path(section_slug, nil), do: ~p"/sections/#{section_slug}/grades/export"
+
+  defp download_path(section_slug, student_id) do
+    Routes.delivery_path(
+      OliWeb.Endpoint,
+      :download_quiz_scores,
+      section_slug,
+      student_id: student_id
+    )
   end
 
   defp get_scores_for_student(scores, student_id, section, view, patch_url_type, params, socket) do
