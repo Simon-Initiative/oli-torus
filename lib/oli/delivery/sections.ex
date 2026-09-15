@@ -194,6 +194,7 @@ defmodule Oli.Delivery.Sections do
     |> Enum.map(fn {user, context_role_id, enrollment, payment} ->
       Map.merge(user, %{
         enrollment_status: enrollment.status,
+        enrollment_date: enrollment.inserted_at,
         user_role_id: context_role_id,
         payment_status:
           Paywall.summarize_access(
