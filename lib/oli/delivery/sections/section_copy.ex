@@ -332,6 +332,7 @@ defmodule Oli.Delivery.Sections.SectionCopy do
     |> Map.merge(copied_ai_settings(source, options))
     |> Map.merge(%{context_id: UUID.uuid4()})
     |> Map.merge(normalize_keys(destination_attrs))
+    |> Map.put(:learning_model_version, source.learning_model_version)
     |> Sections.create_section_from_source(source)
   end
 

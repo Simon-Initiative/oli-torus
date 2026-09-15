@@ -238,7 +238,20 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       assert copy.analytics_version == :v2
     end
 
-    test "destination attributes win over everything the policy produced", %{source: source} do
+    test "preserves the source learning model and ignores a destination override", %{
+      source: source
+    } do
+      source =
+        source
+        |> Section.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
+        |> Repo.update!()
+
+      {:ok, copy} = copy(source, @all_groups, %{learning_model_version: :naive})
+
+      assert copy.learning_model_version == :lkt_aoa
+    end
+
+    test "destination attributes win over copied settings", %{source: source} do
       {:ok, copy} =
         copy(source, @all_groups, %{
           title: "Fall 2026 Section",
