@@ -10,6 +10,48 @@ defmodule Oli.Scenarios.Builder do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.ResourceType
 
+  @empty_page_content %{"version" => "0.1.0", "model" => []}
+
+  @doc """
+  Creates and attaches a scenario hierarchy node with the canonical revision defaults.
+
+  Accepting only `:container` or `:page` keeps raw content attributes out of scenario call sites and
+  guarantees that every created node has traversable page content.
+  """
+  @spec add_hierarchy_node(
+          Oli.Resources.Revision.t(),
+          :container | :page,
+          String.t(),
+          Oli.Accounts.Author.t(),
+          Oli.Authoring.Course.Project.t()
+        ) :: {:ok, Oli.Resources.Revision.t()} | {:error, term()}
+  def add_hierarchy_node(parent, type, title, author, project) do
+    ContainerEditor.add_new(parent, hierarchy_node_attrs(type, title), author, project)
+  end
+
+  defp hierarchy_node_attrs(:container, title) when is_binary(title) do
+    %{
+      objectives: %{"attached" => []},
+      children: [],
+      content: @empty_page_content,
+      title: title,
+      graded: false,
+      resource_type_id: ResourceType.id_for_container()
+    }
+  end
+
+  defp hierarchy_node_attrs(:page, title) when is_binary(title) do
+    %{
+      objectives: %{"attached" => []},
+      children: [],
+      content: @empty_page_content,
+      title: title,
+      graded: false,
+      max_attempts: 0,
+      resource_type_id: ResourceType.id_for_page()
+    }
+  end
+
   def build!(
         %ProjectSpec{
           title: title,
@@ -116,17 +158,7 @@ defmodule Oli.Scenarios.Builder do
          rev_map
        ) do
     # Use ContainerEditor to create and attach the page
-    attrs = %{
-      objectives: %{"attached" => []},
-      children: [],
-      content: %{"version" => "0.1.0", "model" => []},
-      title: title,
-      graded: false,
-      max_attempts: 0,
-      resource_type_id: ResourceType.id_for_page()
-    }
-
-    {:ok, page_rev} = ContainerEditor.add_new(parent_rev, attrs, author, proj)
+    {:ok, page_rev} = add_hierarchy_node(parent_rev, :page, title, author, proj)
 
     # Parent revision has been updated, so fetch the latest version
     updated_parent_rev = AuthoringResolver.from_resource_id(proj.slug, parent_rev.resource_id)
@@ -150,16 +182,7 @@ defmodule Oli.Scenarios.Builder do
          rev_map
        ) do
     # Use ContainerEditor to create and attach the container
-    attrs = %{
-      objectives: %{"attached" => []},
-      children: [],
-      content: %{},
-      title: title,
-      graded: false,
-      resource_type_id: ResourceType.id_for_container()
-    }
-
-    {:ok, cont_rev} = ContainerEditor.add_new(parent_rev, attrs, author, proj)
+    {:ok, cont_rev} = add_hierarchy_node(parent_rev, :container, title, author, proj)
 
     # Build children of this container (note: cont_rev is already the latest)
     {id_map_updated, rev_map_updated} =
