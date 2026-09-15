@@ -2,8 +2,8 @@ work_item: preview-environment-tooling
 requirements:
 - id: FR-001
   title: Restrict supported scenario-seeding entry points to dev, test, ci_e2e,
-    and preview environments; explicitly exclude prod; and gate preview release QA
-    tools behind deny-by-default PREVIEW_QA_TOOLS_ENABLED
+    and preview environments; explicitly exclude prod; and gate preview web QA tools
+    behind deny-by-default PREVIEW_QA_TOOLS_ENABLED
 - id: FR-002
   title: Provide a mix seed development task and bin/seed preview CLI that list bundled
     scenarios and synchronously execute a bundled or custom YAML scenario through one dispatcher
@@ -37,15 +37,15 @@ acceptance_criteria:
   requirement_id: FR-001
   title: Scenario seeding is supported only in dev, test, ci_e2e, and preview environments;
     dev, test, and ci_e2e use the existing local or token-protected Playwright interfaces,
-    preview uses the privileged release CLI, and preview-only sources may compile in test
-    solely for automated verification; PREVIEW_QA_TOOLS_ENABLED must equal true case-insensitively
-    at runtime to activate preview release QA tools
+    preview uses the privileged release CLI without another runtime flag, and seeding sources
+    may compile in test solely for automated verification; PREVIEW_QA_TOOLS_ENABLED must equal
+    true case-insensitively to activate web-accessible masquerade and mailbox features
   verification_method: automated
 - id: AC-002
   requirement_id: FR-001
-  title: Hostname, unrelated flags, configured profiles, and existing data cannot
-    enable preview release QA tools, and MIX_ENV=prod exposes neither scenario-seeding
-    routes nor preview release tooling even when PREVIEW_QA_TOOLS_ENABLED is set at runtime
+  title: Hostname, unrelated flags, a configured seed scenario, and existing data cannot
+    enable web QA capabilities, and a MIX_ENV=prod release cannot expose seeding, masquerade,
+    or the mailbox even when PREVIEW_QA_TOOLS_ENABLED is set at runtime
   verification_method: automated
 - id: AC-003
   requirement_id: FR-001
@@ -120,8 +120,8 @@ acceptance_criteria:
 - id: AC-015
   requirement_id: FR-005
   title: After migrations succeed, a configured Kubernetes Job invokes bin/seed scenarios
-    run with the selected profile passed as a discrete argument, uses restartPolicy
-    Never, backoffLimit 1, explicit resource requests and limits, and does not affect
+    run with the selected bundled scenario passed as a discrete argument, uses restartPolicy
+    Never, backoffLimit 0, explicit resource requests and limits, and does not affect
     web readiness
   verification_method: hybrid
 - id: AC-016
@@ -132,9 +132,9 @@ acceptance_criteria:
   verification_method: automated
 - id: AC-017
   requirement_id: FR-005
-  title: Kubernetes owns Job status, one retry, labeled release/profile identity,
-    logs, and retention; Torus adds no Oban seed job, seed-run table, startup-status
-    endpoint, or persistent execution history
+  title: Kubernetes owns Job status, labeled release/scenario identity, logs, and retention;
+    automatic retry is disabled because review_demo is a one-shot initializer, and Torus adds no
+    Oban seed job, seed-run table, startup-status endpoint, or persistent execution history
   verification_method: automated
 - id: AC-018
   requirement_id: FR-006
