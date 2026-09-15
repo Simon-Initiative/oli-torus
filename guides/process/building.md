@@ -1,3 +1,64 @@
+# Build Environments
+
+Torus uses three Mix environments for distinct purposes:
+
+- `test` runs automated tests and includes test-support modules. Pull-request test workflows build in this environment.
+- `prod` builds deployable production releases. It remains the default for the Dockerfile and the production package workflow.
+- `preview` builds production-shaped QA releases for preview instances. `.github/workflows/build-preview-image.yml` explicitly selects it.
+
+`config/preview.exs` is standalone and deliberately owns the small production-shaped configuration needed by a release plus the preview safety boundary. In particular, every preview build uses `Swoosh.Adapters.Local`, so email is retained locally and cannot be delivered externally regardless of whether QA tools are active.
+
+Mix environment files are compile-time configuration. `config/runtime.exs` supplies deployment-specific values when a release starts. Building with `MIX_ENV=preview` compiles preview capabilities into the artifact but does not activate them. Set the runtime variable below to the exact value `true`, ignoring letter case, to activate those capabilities:
+
+```bash
+PREVIEW_QA_TOOLS_ENABLED=true
+```
+
+Missing, blank, whitespace-padded, false, or malformed values leave QA tools disabled. Setting the variable on a `prod` build cannot add or activate preview-only capabilities. A disabled preview logs one startup warning with the activation instruction.
+
+Preview instances must use fresh databases or explicitly sanitized non-production copies and non-production credentials. Local email containment does not suppress LTI grade passback, payment providers, webhooks, analytics destinations, background jobs, or other integrations; unsanitized production clones are unsupported.
+
+An enabled preview release can ingest a Torus project archive synchronously for one explicitly
+selected active author:
+
+```bash
+./bin/seed projects ingest --url https://example.test/project.zip --author default_admin
+./bin/seed projects ingest --url https://example.test/project.zip --author email:author@example.test
+```
+
+The command accepts only HTTP or HTTPS, follows a bounded number of redirects, applies finite
+connection and receive timeouts, limits downloaded bytes, and removes its temporary archive after
+success or failure. Deployment network policy determines which HTTP destinations are reachable;
+the CLI does not add an SSRF destination allowlist because release-shell access is already the
+trusted operational boundary. Operators remain responsible for supplying synthetic, non-sensitive
+archives and for evaluating any partial domain mutation reported after ingestion begins.
+
+### Ingesting from a private S3 bucket
+
+For an archive in a private S3 bucket, generate a short-lived presigned HTTPS URL outside Torus and
+pass that URL to the same command. For example, an operator with access through the normal AWS
+credential chain can generate a URL valid for 15 minutes:
+
+```bash
+aws s3 presign s3://private-preview-assets/project.zip --expires-in 900
+```
+
+Then quote the returned URL so its query parameters remain one shell argument:
+
+```bash
+./bin/seed projects ingest \
+  --url 'https://private-preview-assets.s3.amazonaws.com/project.zip?...' \
+  --author default_admin
+```
+
+Use the shortest expiry that allows the download to complete, and generate a new URL for a retry
+after expiration. Do not pass an AWS access key or secret access key to `bin/seed`; the command does
+not accept them, and command-line credentials can leak through shell history, process listings,
+deployment manifests, or audit output. Prefer workload identity or an IAM role when generating the
+presigned URL. Although Torus redacts the source URL from its routine output and logs, the complete
+presigned URL is a temporary credential: avoid recording it in tickets, checked-in files, shared
+logs, or persistent shell history.
+
 # Production Deployments
 
 ## Using a Prebuilt Release (Recommended)

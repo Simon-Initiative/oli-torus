@@ -21,7 +21,7 @@ defmodule Oli.MixProject do
       ],
       erlc_include_path: "#{@gleam_erlang_build_root}/#{@gleam_app}/include",
       prune_code_paths: false,
-      start_permanent: Mix.env() == :prod,
+      start_permanent: Mix.env() in [:prod, :preview],
       aliases: aliases(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
@@ -127,7 +127,8 @@ defmodule Oli.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:preview), do: ["lib", "preview/lib"]
+  defp elixirc_paths(:test), do: ["lib", "preview/lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp elixirc_options(:dev), do: []
