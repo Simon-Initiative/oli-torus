@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Seed do
 
       mix seed scenarios list
       mix seed scenarios run --file path/to/scenario.yaml
-      mix seed scenarios run --name preview_smoke
+      mix seed scenarios run --name oli_torus_getting_started_course
       mix seed projects ingest --url URL --author SELECTOR
 
   The task mutates the configured development database synchronously. Production
@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Seed do
 
   @impl Mix.Task
   def run(args) do
-    result = Runtime.run(fn -> CLI.dispatch(args, enabled?: Mix.env() == :dev) end)
+    result = Runtime.run(fn -> CLI.dispatch(args) end)
 
     case result do
       %{status: 0, output: output} ->

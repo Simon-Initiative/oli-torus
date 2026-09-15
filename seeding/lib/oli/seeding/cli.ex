@@ -1,7 +1,6 @@
 defmodule Oli.Seeding.CLI do
   @moduledoc "Synchronous command dispatcher for development and preview data seeding."
 
-  alias Oli.PreviewQATools.Config
   alias Oli.Seeding.{BundledScenarios, ProjectIngest}
   alias Oli.Scenarios
   alias Oli.Scenarios.SeedExecution
@@ -25,15 +24,8 @@ defmodule Oli.Seeding.CLI do
   defp normalize_invocation_args(args), do: args
 
   def dispatch(args, opts \\ []) when is_list(args) do
-    enabled? = Keyword.get(opts, :enabled?, Config.enabled?())
     started_at = System.monotonic_time(:millisecond)
-
-    result =
-      if enabled? do
-        execute(args, opts)
-      else
-        {:error, :disabled, "seeding tools are disabled", false}
-      end
+    result = execute(args, opts)
 
     format_result(result, started_at)
   end
@@ -217,7 +209,6 @@ defmodule Oli.Seeding.CLI do
   defp encode(fields), do: Jason.encode!(fields)
 
   defp exit_code(:usage), do: 64
-  defp exit_code(:disabled), do: 77
   defp exit_code(:not_found), do: 66
   defp exit_code(_), do: 1
 

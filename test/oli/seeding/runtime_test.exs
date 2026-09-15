@@ -50,6 +50,7 @@ defmodule Oli.Seeding.RuntimeTest do
     assert release_wrapper =~ "Oli.Seeding.Runtime.main"
     assert release_wrapper =~ "exec ./oli eval"
     assert application =~ "maybe_start_inventory_recovery(:seeding), do: :ok"
+    assert application =~ "maybe_log_preview_qa_tools_status(:seeding), do: :ok"
     refute release_wrapper =~ "trap "
   end
 end

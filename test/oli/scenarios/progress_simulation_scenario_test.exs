@@ -3,7 +3,6 @@ defmodule Oli.Scenarios.ProgressSimulationScenarioTest do
 
   alias Oli.Scenarios
   alias Oli.Scenarios.LearnerSession
-  alias Oli.Scenarios.RuntimeOpts
 
   alias Oli.Activities.ActivityRegistration
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
@@ -15,19 +14,35 @@ defmodule Oli.Scenarios.ProgressSimulationScenarioTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkin(Oli.Repo)
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Oli.Repo, isolation: :serializable)
     Ecto.Adapters.SQL.Sandbox.mode(Oli.Repo, {:shared, self()})
-    :ok
-  end
 
-  test "simulates learner progress across practice and graded native activities" do
-    assert :ok = Scenarios.validate_file(@scenario_path)
+    bootstrap =
+      Scenarios.execute_yaml(
+        """
+        - user:
+            name: "preview_admin"
+            type: "author"
+            email: "progress_preview_admin@scenarios.invalid"
+            given_name: "Preview"
+            family_name: "Administrator"
+            system_role: "system_admin"
+        """,
+        ownership: true
+      )
 
-    runtime_opts = RuntimeOpts.build()
-    author = Keyword.fetch!(runtime_opts, :author)
+    assert bootstrap.errors == []
+    author = bootstrap.state.users["preview_admin"]
     previous_config = Application.get_env(:oli, :preview_qa_tools)
 
     Application.put_env(:oli, :preview_qa_tools, default_admin_email: author.email)
-
     on_exit(fn -> Application.put_env(:oli, :preview_qa_tools, previous_config) end)
+
+    {:ok, runtime_opts: [author: author, ownership: true]}
+  end
+
+  test "simulates learner progress across practice and graded native activities", %{
+    runtime_opts: runtime_opts
+  } do
+    assert :ok = Scenarios.validate_file(@scenario_path)
 
     result = Scenarios.execute_file(@scenario_path, runtime_opts)
 
@@ -239,8 +254,10 @@ defmodule Oli.Scenarios.ProgressSimulationScenarioTest do
            end)
   end
 
-  test "reuses one deterministic DataShop session ID for each learner simulation" do
-    result = Scenarios.execute_file(@scenario_path, RuntimeOpts.build())
+  test "reuses one deterministic DataShop session ID for each learner simulation", %{
+    runtime_opts: runtime_opts
+  } do
+    result = Scenarios.execute_file(@scenario_path, runtime_opts)
     assert result.errors == []
 
     section = result.state.sections["progress_simulation_section"]
