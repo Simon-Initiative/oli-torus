@@ -49,14 +49,17 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
   end
 
   @doc "Returns whether a source-list item is a reusable course template."
+  @spec is_product?(map()) :: boolean()
   def is_product?(item),
     do: Map.has_key?(item, :type) and Map.get(item, :type) == :blueprint
 
   @doc "Returns whether a source-list item is an existing enrollable course."
+  @spec is_course?(map()) :: boolean()
   def is_course?(item),
     do: Map.has_key?(item, :type) and Map.get(item, :type) == :enrollable
 
   @doc "Returns the display title for a project publication, template, or course source."
+  @spec source_title(map()) :: String.t() | nil
   def source_title(item) do
     case {is_product?(item), is_course?(item)} do
       {true, _} -> item.title
@@ -66,6 +69,7 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
   end
 
   @doc "Returns the description for a project publication, template, or course source."
+  @spec source_description(map()) :: String.t() | nil
   def source_description(item) do
     case {is_product?(item), is_course?(item)} do
       {true, _} -> item.description
@@ -75,6 +79,7 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
   end
 
   @doc "Returns the typed source identifier consumed by the course-creation workflow."
+  @spec source_identifier(map()) :: String.t()
   def source_identifier(item) do
     case {is_product?(item), is_course?(item)} do
       {true, _} -> "product:#{item.id}"

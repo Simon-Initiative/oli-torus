@@ -27,8 +27,8 @@ defmodule Oli.Delivery.SectionCreationRequest do
   @type t :: %__MODULE__{
           changeset: Ecto.Changeset.t() | nil,
           source: String.t() | nil,
-          user: Oli.Accounts.User.t() | nil,
-          author: Oli.Accounts.Author.t() | nil,
+          user: %Oli.Accounts.User{} | nil,
+          author: %Oli.Accounts.Author{} | nil,
           section_spec: term(),
           copy_options: CopyOptions.t() | nil
         }

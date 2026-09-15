@@ -102,7 +102,7 @@ defmodule Oli.Delivery.Gating do
   Student-specific exceptions are never duplicated. `condition_types` can be `:all` or a list
   of gate types, allowing callers to copy schedule-shaped gates separately from content gates.
   """
-  @spec duplicate_gates(Section.t(), Section.t(), :all | [atom()]) ::
+  @spec duplicate_gates(%Section{}, %Section{}, :all | [atom()]) ::
           {:ok, non_neg_integer()} | {:error, term()}
   def duplicate_gates(%Section{} = source, %Section{} = destination, condition_types \\ :all) do
     Repo.transaction(fn ->
@@ -187,6 +187,7 @@ defmodule Oli.Delivery.Gating do
       [%GatingCondition{}, ...]
 
   """
+  @spec list_gating_conditions(integer(), boolean()) :: [%GatingCondition{}]
   def list_gating_conditions(section_id, top_level_only \\ false) do
     filter_by_top_level =
       case top_level_only do

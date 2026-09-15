@@ -49,7 +49,7 @@ defmodule Oli.Delivery do
     {:error, "Failed to create new section"}
 
   """
-  @spec create_section(Ecto.Changeset.t(), String.t(), Oli.Accounts.User.t() | nil, term()) ::
+  @spec create_section(Ecto.Changeset.t(), String.t(), %Oli.Accounts.User{} | nil, term()) ::
           {:ok, integer(), String.t()} | {:error, term()}
   def create_section(changeset, source, user, section_spec) do
     request = %SectionCreationRequest{
@@ -306,11 +306,11 @@ defmodule Oli.Delivery do
   is enrolled, as a newly created instructor enrollment.
   """
   @spec create_from_previous_section(
-          Oli.Accounts.User.t() | nil,
-          Section.t(),
+          %Oli.Accounts.User{} | nil,
+          %Section{},
           map(),
           CopyOptions.t()
-        ) :: {:ok, Section.t()} | {:error, term()}
+        ) :: {:ok, %Section{}} | {:error, term()}
   def create_from_previous_section(user, source_section, section_params, copy_options) do
     Repo.transaction(fn ->
       with {:ok, section} <- SectionCopy.copy(source_section, section_params, copy_options),

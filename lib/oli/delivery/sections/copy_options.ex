@@ -83,7 +83,7 @@ defmodule Oli.Delivery.Sections.CopyOptions do
       iex> Oli.Delivery.Sections.CopyOptions.new([:schedule])
       {:error, :content_group_required}
   """
-  @spec new([group()] | MapSet.t(group()), keyword()) :: {:ok, t()} | {:error, term()}
+  @spec new([atom()] | MapSet.t(atom()), keyword()) :: {:ok, t()} | {:error, term()}
   def new(groups, opts \\ [])
 
   def new(%MapSet{} = groups, opts), do: groups |> MapSet.to_list() |> new(opts)
@@ -106,7 +106,7 @@ defmodule Oli.Delivery.Sections.CopyOptions do
 
   This is the course-copy policy: allowlisted section fields, no project remap.
   """
-  @spec for_previous_section([group()] | MapSet.t(group())) :: {:ok, t()} | {:error, term()}
+  @spec for_previous_section([atom()] | MapSet.t(atom())) :: {:ok, t()} | {:error, term()}
   def for_previous_section(groups), do: new(groups, source_kind: :previous_section)
 
   @doc """
