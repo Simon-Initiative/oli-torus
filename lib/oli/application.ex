@@ -10,9 +10,9 @@ defmodule Oli.Application do
     # Install the logger truncator
     Oli.LoggerTruncator.init()
     maybe_add_appsignal_logger_backend()
-    Oli.PreviewQATools.Config.log_startup_status()
 
     role = Application.get_env(:oli, :application_role, :server)
+    maybe_log_preview_qa_tools_status(role)
 
     # List all child processes to be supervised
     children =
@@ -269,6 +269,12 @@ defmodule Oli.Application do
   end
 
   defp maybe_start_inventory_recovery(:seeding), do: :ok
+
+  defp maybe_log_preview_qa_tools_status(:server) do
+    Oli.PreviewQATools.Config.log_startup_status()
+  end
+
+  defp maybe_log_preview_qa_tools_status(:seeding), do: :ok
 
   defp maybe_add_appsignal_logger_backend do
     case Application.get_env(:oli, :appsignal_logger_backend) do

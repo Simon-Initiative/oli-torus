@@ -2,8 +2,8 @@ work_item: preview-environment-tooling
 requirements:
 - id: FR-001
   title: Compile seeding for development and preview while keeping it out of production;
-    compile user masquerade only into MIX_ENV=preview and gate preview runtime use behind
-    deny-by-default PREVIEW_QA_TOOLS_ENABLED
+    compile user masquerade and the mailbox only into MIX_ENV=preview and gate those
+    web-accessible capabilities behind deny-by-default PREVIEW_QA_TOOLS_ENABLED
 - id: FR-002
   title: Provide a mix seed development task and bin/seed preview CLI that list bundled
     scenarios and synchronously execute a bundled or custom YAML scenario through one dispatcher
@@ -15,8 +15,9 @@ requirements:
     course progress simulation and retire the separate Stagehand API and legacy progress-simulator
     contract
 - id: FR-005
-  title: Run the optional review_demo deployment seed through the same release CLI
-    in a post-migration Kubernetes Job
+  title: Create the bundled oli_torus_getting_started_course scenario and run it once
+    through the same release CLI after baseline setup and server readiness in pull-request
+    preview environments
 - id: FR-006
   title: Preserve existing Playwright-owned per-spec scenario setup independently
     of deployment seeding
@@ -36,20 +37,20 @@ acceptance_criteria:
 - id: AC-001
   requirement_id: FR-001
   title: Seeding is compiled in development and preview but absent from production;
-    masquerade and the mailbox route remain preview-only, and PREVIEW_QA_TOOLS_ENABLED
-    must equal true case-insensitively to activate preview capabilities
+    bin/seed requires no runtime feature flag, while masquerade and the mailbox route remain
+    preview-only and require PREVIEW_QA_TOOLS_ENABLED to equal true case-insensitively
   verification_method: automated
 - id: AC-002
   requirement_id: FR-001
   title: Hostname, unrelated flags, a configured seed scenario, and existing data cannot
-    enable the capability, and a MIX_ENV=prod release cannot expose it even when PREVIEW_QA_TOOLS_ENABLED
-    is set at runtime
+    enable web QA capabilities, and a MIX_ENV=prod release cannot expose seeding, masquerade,
+    or the mailbox even when PREVIEW_QA_TOOLS_ENABLED is set at runtime
   verification_method: automated
 - id: AC-003
   requirement_id: FR-001
-  title: A MIX_ENV=preview release without runtime activation emits one bounded warning
-    directing operators to set PREVIEW_QA_TOOLS_ENABLED=true, while other Mix environments
-    emit no such warning
+  title: A MIX_ENV=preview application server without web QA runtime activation emits one bounded
+    warning directing operators to set PREVIEW_QA_TOOLS_ENABLED=true for masquerade and mailbox access,
+    while other Mix environments emit no such warning
   verification_method: automated
 - id: AC-004
   requirement_id: FR-001
@@ -84,8 +85,9 @@ acceptance_criteria:
   verification_method: automated
 - id: AC-009
   requirement_id: FR-002
-  title: CLI execution performs no application-level authorization check beyond effective
-    feature enablement because shell access is the trusted operational boundary
+  title: CLI execution performs no application-level authorization or runtime feature-flag
+    check because command invocation through development Mix or a preview release shell is the
+    trusted operational boundary
   verification_method: automated
 - id: AC-010
   requirement_id: FR-003
@@ -116,27 +118,29 @@ acceptance_criteria:
   verification_method: automated
 - id: AC-015
   requirement_id: FR-005
-  title: After migrations succeed, a configured Kubernetes Job invokes bin/seed scenarios
-    run with the selected bundled scenario passed as a discrete argument, uses restartPolicy
-    Never, backoffLimit 0, explicit resource requests and limits, and does not affect
-    web readiness
+  title: After baseline release setup succeeds and the application becomes Ready, a later-wave
+    Kubernetes Job invokes bin/seed scenarios run with oli_torus_getting_started_course passed
+    as a discrete argument, uses restartPolicy Never, backoffLimit 0, and explicit resource
+    requests and limits
   verification_method: hybrid
 - id: AC-016
   requirement_id: FR-005
-  title: review_demo creates representative synthetic authoring, delivery, enrollment,
-    progress, gradebook, discussion, gating, and analytics data with stable references
-    and no embedded credentials
+  title: oli_torus_getting_started_course creates a cohesive Getting Started with OLI Torus
+    course with learning objectives, rich authoring and publishing content, several unscored
+    practice pages, a scored assessment, activities with hints and correct/incorrect feedback,
+    an enrolled synthetic cohort, simulated learner progress, and no embedded credentials
   verification_method: automated
 - id: AC-017
   requirement_id: FR-005
-  title: Kubernetes owns Job status, labeled release/scenario identity, logs, and retention;
-    automatic retry is disabled because review_demo is a one-shot initializer, and Torus adds no
-    Oban seed job, seed-run table, startup-status endpoint, or persistent execution history
-  verification_method: automated
+  title: A fixed retained Job runs once per pull-request preview namespace, remains completed
+    across later image updates and Argo CD resyncs, and is pruned with the namespace; Kubernetes
+    owns its status and logs, while Torus adds no automatic retry, Oban seed job, seed-run table,
+    startup-status endpoint, or persistent execution history
+  verification_method: hybrid
 - id: AC-018
   requirement_id: FR-006
   title: Existing Playwright scenario fixtures remain self-seeding and do not depend
-    on review_demo or a startup-status endpoint
+    on oli_torus_getting_started_course or a startup-status endpoint
   verification_method: automated
 - id: AC-019
   requirement_id: FR-007

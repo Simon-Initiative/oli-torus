@@ -7,7 +7,7 @@ defmodule Oli.PreviewQATools.ConfigTest do
   alias Swoosh.Adapters.Local.Storage.Memory
 
   describe "enabled?/2" do
-    test "requires both a preview build and the exact case-insensitive true value" do
+    test "web QA tools require both a preview build and the exact case-insensitive true value" do
       for value <- ["true", "TRUE", "True", "tRuE"] do
         assert Config.enabled?(true, value)
       end
@@ -32,7 +32,7 @@ defmodule Oli.PreviewQATools.ConfigTest do
       end)
 
       System.put_env("HOST", "preview-123.example.test")
-      System.put_env("PREVIEW_QA_SEED_SCENARIO", "review_demo")
+      System.put_env("PREVIEW_QA_SEED_SCENARIO", "oli_torus_getting_started_course")
       System.put_env("ENABLE_PLAYWRIGHT_SCENARIOS", "true")
 
       refute Config.enabled?(true, nil)

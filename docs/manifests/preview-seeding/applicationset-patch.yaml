@@ -1,0 +1,15 @@
+# Merge these fields into the pull-request preview ApplicationSet's spec.template.spec.
+# This is a documentation fragment, not a resource included by kustomization.yaml.
+syncPolicy:
+  automated:
+    prune: true
+    selfHeal: true
+  syncOptions:
+    - CreateNamespace=true
+    - RespectIgnoreDifferences=true
+ignoreDifferences:
+  - group: batch
+    kind: Job
+    name: oli-torus-preview-seed
+    jsonPointers:
+      - /spec/template

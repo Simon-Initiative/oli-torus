@@ -1,9 +1,10 @@
 defmodule Oli.PreviewQATools.Config do
   @moduledoc """
-  Defines the compile-time and runtime activation boundary for preview QA tools.
+  Defines the compile-time and runtime activation boundary for web-accessible preview QA tools.
 
-  A runtime flag can activate QA tools only when the application was compiled
-  with the immutable preview build marker.
+  A runtime flag can activate masquerade and the development mailbox only when
+  the application was compiled with the immutable preview build marker. The
+  low-level seeding CLI is controlled by its compile-time inclusion instead.
   """
 
   require Logger
@@ -15,7 +16,7 @@ defmodule Oli.PreviewQATools.Config do
   @doc "Returns whether this artifact was compiled as a preview build."
   def preview_build?, do: @preview_build
 
-  @doc "Returns whether QA tools are effectively enabled for the current process."
+  @doc "Returns whether web-accessible QA tools are effectively enabled for the current process."
   def enabled? do
     enabled?(@preview_build, System.get_env(@runtime_flag))
   end
@@ -32,7 +33,7 @@ defmodule Oli.PreviewQATools.Config do
 
   def enabled_runtime_value?(_runtime_value), do: false
 
-  @doc "Logs the bounded preview QA-tools startup status once when invoked at startup."
+  @doc "Logs the bounded web QA-tools startup status once when invoked at startup."
   def log_startup_status do
     log_startup_status(@preview_build, System.get_env(@runtime_flag))
   end
