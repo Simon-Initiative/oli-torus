@@ -231,12 +231,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
           {empty_state_message(@group_student_count)}
         </div>
       <% else %>
-        <div class="flex-1 overflow-y-auto">
-          <table class="w-full border-collapse text-left text-sm">
+        <div class="min-h-0 flex-1 overflow-y-auto">
+          <table class="w-full border-separate border-spacing-0 text-left text-sm">
             <caption class="sr-only">{@content.title} students</caption>
             <thead>
-              <tr class="border-b border-Table-table-border">
-                <th scope="col" class="w-10 p-2">
+              <tr class="!border-0">
+                <th
+                  scope="col"
+                  class="!sticky !top-0 z-10 w-10 border-b border-t border-Table-table-border !bg-Background-bg-secondary p-2"
+                >
                   <label class="flex h-6 w-6 cursor-pointer items-center justify-center">
                     <input
                       type="checkbox"
@@ -251,7 +254,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
                 <th
                   :for={col <- @columns}
                   scope="col"
-                  class="p-2 font-semibold text-Text-text-high"
+                  class="!sticky !top-0 z-10 border-b border-t border-Table-table-border !bg-Background-bg-secondary p-2 font-semibold text-Text-text-high"
                   aria-sort={aria_sort(col.key, @sort_by, @sort_order)}
                 >
                   <div class="inline-flex items-center gap-1">
