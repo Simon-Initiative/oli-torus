@@ -7,12 +7,14 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Gating
   alias Oli.Delivery.Gating.GatingCondition
+  alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.CopyOptions
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionCopy
   alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Delivery.Sections.SectionSpecification
   alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   @all_groups [:content, :schedule, :section_settings, :assessment_settings, :ai_settings]
@@ -410,14 +412,25 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       update_page_settings(source, page1, %{ai_enabled: override})
 
       {:ok, options} = CopyOptions.for_previous_section([:content, :ai_settings])
+      instructor = insert(:user)
 
-      {:ok, copy} =
-        Oli.Delivery.create_from_previous_section(
-          nil,
-          source,
-          %{title: "Copied Section", registration_open: true, type: :enrollable},
-          options
-        )
+      {:ok, _enrollment} =
+        Sections.enroll(instructor.id, source.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      changeset = Sections.change_section(%Section{title: "Copied Section"})
+
+      {:ok, copy_id, _slug} =
+        Oli.Delivery.create_section(%SectionCreationRequest{
+          changeset: changeset,
+          source: "section:#{source.id}",
+          user: instructor,
+          section_spec: SectionSpecification.direct(),
+          copy_options: options
+        })
+
+      copy = Sections.get_section!(copy_id)
 
       assert page_resource(copy, page1).ai_enabled == override
     end
