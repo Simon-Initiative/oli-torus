@@ -297,21 +297,15 @@ defmodule Oli.Delivery do
     options
   end
 
-  @doc """
-  Creates a new course section as an independent snapshot of an existing section.
-
-  The destination shares no state with the source once created: later edits to
-  either are invisible to the other. No roster, enrollment, attempt, grade,
-  submission, discussion or analytics record is copied - only the creating user
-  is enrolled, as a newly created instructor enrollment.
-  """
+  # Source authorization is deliberately kept in the public create_section/1
+  # workflow. This helper only receives sections resolved by SourceResolution.
   @spec create_from_previous_section(
           %Oli.Accounts.User{} | nil,
           %Section{},
           map(),
           CopyOptions.t()
         ) :: {:ok, %Section{}} | {:error, term()}
-  def create_from_previous_section(user, source_section, section_params, copy_options) do
+  defp create_from_previous_section(user, source_section, section_params, copy_options) do
     Repo.transaction(fn ->
       with {:ok, section} <- SectionCopy.copy(source_section, section_params, copy_options),
            {:ok, _} <- Sections.rebuild_contained_pages(section),

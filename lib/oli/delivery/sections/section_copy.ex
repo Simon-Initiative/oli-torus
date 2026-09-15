@@ -7,6 +7,12 @@ defmodule Oli.Delivery.Sections.SectionCopy do
   resources, rewires the copied hierarchy onto the new section-resource ids, and
   copies instructor configuration selected by the given `CopyOptions`.
 
+  ## Authorization
+
+  This module is a persistence service and assumes the source section has
+  already been authorized. Request-facing callers must resolve the submitted
+  source through `Oli.Delivery.Sections.SourceResolution` before invoking it.
+
   ## Independence
 
   The destination is independent of the source once this returns:
