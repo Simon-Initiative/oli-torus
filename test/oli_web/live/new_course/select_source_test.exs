@@ -385,8 +385,8 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       refute has_element?(view, "p", "None exist")
       assert render(view) =~ "Offerable Product"
-      end
     end
+  end
 
   describe "Instructor course copy sources" do
     setup [:instructor_conn]

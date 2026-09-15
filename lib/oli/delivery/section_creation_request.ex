@@ -5,6 +5,10 @@ defmodule Oli.Delivery.SectionCreationRequest do
 
   The actor is carried as a tagged id and reloaded at the boundary. Enrollment follows
   from it: a user actor is enrolled as instructor, an author actor enrolls nobody.
+
+  `copy_options` controls the instructor configuration carried by a section copy.
+  It is ignored for publication and product sources; when omitted for a section
+  source, all supported copy groups are selected.
   """
 
   alias Oli.Accounts.{Author, User}

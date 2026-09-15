@@ -178,7 +178,7 @@ defmodule Oli.DeliveryTest do
     end
   end
 
-  describe "create_section/4" do
+  describe "create_section/1" do
     ## Course Hierarchy
     #
     # Root Container --> Page 1 --> Activity X
@@ -353,7 +353,6 @@ defmodule Oli.DeliveryTest do
     @tag capture_log: true
     test "refuses legacy creation with no user", context do
       sections_before = Repo.aggregate(Section, :count, :id)
-      changeset = Sections.change_section(%Section{title: "Unauthorized Section"})
 
       for source <- [
             "project:#{context.project.id}",
@@ -361,10 +360,10 @@ defmodule Oli.DeliveryTest do
             "product:#{context.product.id}"
           ] do
         assert {:error, _message} =
-                 Delivery.create_section(
-                   changeset,
-                   source,
+                 SectionCreationRequest.new(
                    nil,
+                   source,
+                   %{title: "Unauthorized Section"},
                    SectionSpecification.direct()
                  )
       end
@@ -429,12 +428,12 @@ defmodule Oli.DeliveryTest do
       {:ok, _} =
         Sections.enroll(student.id, source.id, [ContextRoles.get_role(:context_learner)])
 
-      changeset =
-        Sections.change_section(%Section{
+      attrs =
+        %{
           title: "Copied Course",
           start_date: ~U[2026-08-01 12:00:00Z],
           end_date: ~U[2026-12-01 12:00:00Z]
-        })
+        }
 
       {:ok, copy_options} =
         CopyOptions.for_previous_section([
@@ -444,14 +443,10 @@ defmodule Oli.DeliveryTest do
           :ai_settings
         ])
 
+      request = request!(user, "section:#{source.id}", attrs, SectionSpecification.direct())
+
       assert {:ok, copied_section_id, _slug} =
-               Delivery.create_section(%SectionCreationRequest{
-                 changeset: changeset,
-                 source: "section:#{source.id}",
-                 user: user,
-                 section_spec: SectionSpecification.direct(),
-                 copy_options: copy_options
-               })
+               Delivery.create_section(%{request | copy_options: copy_options})
 
       copy = Sections.get_section!(copied_section_id)
 
@@ -480,15 +475,13 @@ defmodule Oli.DeliveryTest do
           blueprint_id: context.product.id
         })
 
-      changeset = Sections.change_section(%Section{title: "Unauthorized Copy"})
-
       assert {:error, _message} =
-               Delivery.create_section(
-                 changeset,
-                 "section:#{source.id}",
-                 nil,
-                 SectionSpecification.direct()
-               )
+               Delivery.create_section(%SectionCreationRequest{
+                 actor: nil,
+                 source: {:section, source.id},
+                 attrs: %{title: "Unauthorized Copy"},
+                 section_spec: SectionSpecification.direct()
+               })
     end
 
     test "creates section with contained objectives from publication if it does not exist",

@@ -63,7 +63,8 @@ defmodule Oli.Delivery do
 
     Repo.transaction(fn ->
       with {:ok, source} <- SectionCreation.resolve_source(actor, request.source, institution),
-           {:ok, section} <- create_from_source(source, actor, attrs, section_spec, request.copy_options) do
+           {:ok, section} <-
+             create_from_source(source, actor, attrs, section_spec, request.copy_options) do
         section
       else
         {:error, error} -> Repo.rollback(error)
@@ -156,6 +157,8 @@ defmodule Oli.Delivery do
       attrs
       |> Map.merge(%{
         context_id: UUID.uuid4(),
+        # Sourced from the base project rather than the source section, matching
+        # how the product-to-section path resolves it.
         required_survey_resource_id: project && project.required_survey_resource_id
       })
       |> SectionSpecification.apply(section_spec)

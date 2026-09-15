@@ -242,7 +242,6 @@ defmodule OliWeb.Delivery.NewCourse do
           on_select: JS.push("source_selection", target: "##{@form_id}"),
           actor: actor(assigns),
           current_user: assigns.current_user,
-          current_author: assigns.current_author,
           section_spec: assigns.section_spec,
           is_admin: assigns.is_admin,
           context_id: assigns[:context_id]
@@ -299,7 +298,11 @@ defmodule OliWeb.Delivery.NewCourse do
 
     case SectionCreationRequest.new(actor(socket.assigns), source, attrs, section_spec) do
       {:ok, request} ->
-        request = %{request | copy_options: build_copy_options(source, socket.assigns.copy_options)}
+        request = %{
+          request
+          | copy_options: build_copy_options(source, socket.assigns.copy_options)
+        }
+
         liveview_pid = self()
 
         # start an async task to create the section and send the result back to the liveview

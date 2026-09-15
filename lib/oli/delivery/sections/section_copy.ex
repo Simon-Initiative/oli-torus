@@ -11,7 +11,7 @@ defmodule Oli.Delivery.Sections.SectionCopy do
 
   This module is a persistence service and assumes the source section has
   already been authorized. Request-facing callers must resolve the submitted
-  source through `Oli.Delivery.Sections.SourceResolution` before invoking it.
+  source through `Oli.Delivery.SectionCreation` before invoking it.
 
   ## Independence
 
@@ -108,8 +108,8 @@ defmodule Oli.Delivery.Sections.SectionCopy do
     certificate_enabled: false,
     certificate: nil,
     required_survey_resource_id: nil,
-    registration_open: false,
-    requires_enrollment: false,
+    registration_open: true,
+    requires_enrollment: true,
     skip_email_verification: false,
     start_date: nil,
     end_date: nil,
@@ -152,13 +152,40 @@ defmodule Oli.Delivery.Sections.SectionCopy do
     :instructor_recommendation_prompt_template
   ]
 
+  # Fields owned by the new course rather than copied from the source. This is
+  # the complete boundary accepted by the allowlisted course-copy policy.
+  @course_destination_fields [
+    :title,
+    :course_section_number,
+    :class_modality,
+    :class_days,
+    :start_date,
+    :end_date,
+    :preferred_scheduling_time,
+    :timezone,
+    :context_id,
+    :open_and_free,
+    :institution_id,
+    :lti_1p3_deployment_id,
+    :grade_passback_enabled,
+    :line_items_service_url,
+    :nrps_enabled,
+    :nrps_context_memberships_url,
+    :required_survey_resource_id
+  ]
+
+  @course_destination_fields_by_name Map.new(
+                                       @course_destination_fields,
+                                       &{Atom.to_string(&1), &1}
+                                     )
+
   @doc """
   Copies `source` into a new section.
 
-  `destination_attrs` carries the identity and context the destination owns:
-  title, course section number, dates entered during setup, institution and LTI
-  deployment, context id, and registration behaviour. It is merged last and so
-  always wins over anything the copy policy produced.
+  `destination_attrs` carries the identity and context the destination owns.
+  The allowlisted course-copy policy accepts only the fields declared by this
+  service and rejects unknown keys, while the legacy blueprint policy retains
+  its historical attribute behaviour.
 
   Returns `{:ok, section}` or `{:error, reason}`. Every step participates in one
   transaction, so a failure at any point leaves no partial section behind.
@@ -326,14 +353,16 @@ defmodule Oli.Delivery.Sections.SectionCopy do
          destination_attrs,
          %CopyOptions{section_field_policy: :allowlist} = options
        ) do
-    @system_defaults
-    |> Map.merge(lineage(source))
-    |> Map.merge(copied_section_settings(source, options))
-    |> Map.merge(copied_ai_settings(source, options))
-    |> Map.merge(%{context_id: UUID.uuid4()})
-    |> Map.merge(normalize_keys(destination_attrs))
-    |> Map.put(:learning_model_version, source.learning_model_version)
-    |> Sections.create_section_from_source(source)
+    with {:ok, destination_attrs} <- normalize_course_destination_attrs(destination_attrs) do
+      @system_defaults
+      |> Map.merge(lineage(source))
+      |> Map.merge(copied_section_settings(source, options))
+      |> Map.merge(copied_ai_settings(source, options))
+      |> Map.merge(%{context_id: UUID.uuid4()})
+      |> Map.merge(destination_attrs)
+      |> Map.put(:learning_model_version, source.learning_model_version)
+      |> Sections.create_section_from_source(source)
+    end
   end
 
   # The destination inherits the source's lineage, not the source itself.
@@ -404,6 +433,37 @@ defmodule Oli.Delivery.Sections.SectionCopy do
       {key, value} -> {key, value}
     end)
   end
+
+  defp normalize_course_destination_attrs(attrs) when is_map(attrs) do
+    {normalized, rejected} =
+      Enum.reduce(attrs, {%{}, []}, fn {key, value}, {normalized, rejected} ->
+        case course_destination_field(key) do
+          {:ok, field} -> {Map.put(normalized, field, value), rejected}
+          :error -> {normalized, [key | rejected]}
+        end
+      end)
+
+    case rejected do
+      [] -> {:ok, normalized}
+      rejected -> {:error, {:invalid_destination_fields, Enum.reverse(rejected)}}
+    end
+  end
+
+  defp course_destination_field(field) when is_atom(field) do
+    case field in @course_destination_fields do
+      true -> {:ok, field}
+      false -> :error
+    end
+  end
+
+  defp course_destination_field(field) when is_binary(field) do
+    case Map.fetch(@course_destination_fields_by_name, field) do
+      {:ok, field} -> {:ok, field}
+      :error -> :error
+    end
+  end
+
+  defp course_destination_field(_field), do: :error
 
   # ---------------------------------------------------------------------------
   # Publication pins
@@ -510,9 +570,15 @@ defmodule Oli.Delivery.Sections.SectionCopy do
 
     {_count, inserted} = Sections.bulk_create_section_resource(rows, returning: true)
 
+    # PostgreSQL does not promise RETURNING order. resource_id is unique within
+    # a section, so it is the stable correlation key between source and copy.
+    inserted_by_resource_id = Map.new(inserted, &{&1.resource_id, &1})
+
     id_map =
-      Enum.zip(source_resources, inserted)
-      |> Map.new(fn {source, copy} -> {source.id, copy.id} end)
+      Map.new(source_resources, fn source ->
+        copy = Map.fetch!(inserted_by_resource_id, source.resource_id)
+        {source.id, copy.id}
+      end)
 
     # The inserted rows still carry the source's children ids. Rewire them onto
     # the destination's own section resource ids; anything unresolvable (nil or
@@ -538,7 +604,8 @@ defmodule Oli.Delivery.Sections.SectionCopy do
          %{
            root: root,
            count: length(rows),
-           ai_overrides: ai_overrides(source_resources, inserted, revision_defaults, options)
+           ai_overrides:
+             ai_overrides(source_resources, inserted_by_resource_id, revision_defaults, options)
          }}
     end
   end
@@ -546,18 +613,26 @@ defmodule Oli.Delivery.Sections.SectionCopy do
   # An instructor AI override is a page whose `ai_enabled` differs from the value
   # its pinned revision carries. Only those need re-applying after migration;
   # everything else already matches what migration writes.
-  defp ai_overrides(source_resources, inserted, revision_defaults, %CopyOptions{} = options) do
+  defp ai_overrides(
+         source_resources,
+         inserted_by_resource_id,
+         revision_defaults,
+         %CopyOptions{} = options
+       ) do
     case CopyOptions.selected?(options, :ai_settings) do
       false ->
         []
 
       true ->
-        Enum.zip(source_resources, inserted)
-        |> Enum.filter(fn {source, _copy} ->
+        source_resources
+        |> Enum.filter(fn source ->
           revision = Map.get(revision_defaults, source.resource_id, %{})
           source.ai_enabled != Map.get(revision, :ai_enabled)
         end)
-        |> Enum.map(fn {source, copy} -> {copy.id, source.ai_enabled} end)
+        |> Enum.map(fn source ->
+          copy = Map.fetch!(inserted_by_resource_id, source.resource_id)
+          {copy.id, source.ai_enabled}
+        end)
     end
   end
 
