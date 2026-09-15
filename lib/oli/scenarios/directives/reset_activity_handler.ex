@@ -3,20 +3,19 @@ defmodule Oli.Scenarios.Directives.ResetActivityHandler do
   Handles reset_activity directives through the learner activity lifecycle.
   """
 
-  alias Oli.Delivery.Attempts.ActivityLifecycle
-
   alias Oli.Scenarios.Directives.{
     ActivityAttemptSupport,
     AttemptSupport
   }
 
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, ResetActivityDirective}
+  alias Oli.Scenarios.LearnerActions
 
   @doc """
   Resets the directive's activity and refreshes its page attempt state.
   """
   def handle(%ResetActivityDirective{} = directive, %ExecutionState{} = state) do
-    datashop_session_id = "session_#{System.unique_integer([:positive])}"
+    datashop_session_id = Oli.Scenarios.LearnerSession.transient_id()
 
     with {:ok, user} <- AttemptSupport.get_user(state, directive.student),
          {:ok, section} <- AttemptSupport.get_section(state, directive.section),
@@ -38,9 +37,9 @@ defmodule Oli.Scenarios.Directives.ResetActivityHandler do
          {:ok, activity_attempt_info} <-
            ActivityAttemptSupport.find_activity_attempt(attempt_state, activity_revision),
          {:ok, _reset_result} <-
-           ActivityLifecycle.reset_activity(
-             section.slug,
-             activity_attempt_info.attempt_guid,
+           LearnerActions.reset_activity(
+             section,
+             activity_attempt_info.activity_attempt,
              datashop_session_id
            ),
          {:ok, refreshed_attempt} <-

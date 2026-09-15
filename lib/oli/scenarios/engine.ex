@@ -18,6 +18,8 @@ defmodule Oli.Scenarios.Engine do
     AssertDirective,
     UserDirective,
     EnrollDirective,
+    BulkCreateEnrollUsersDirective,
+    SimulateProgressDirective,
     InstitutionDirective,
     OwnershipDirective,
     InstitutionDiscountDirective,
@@ -70,6 +72,8 @@ defmodule Oli.Scenarios.Engine do
     AssertHandler,
     UserHandler,
     EnrollmentHandler,
+    BulkCreateEnrollUsersHandler,
+    SimulateProgressHandler,
     InstitutionHandler,
     OwnershipHandler,
     InstitutionDiscountHandler,
@@ -133,6 +137,15 @@ defmodule Oli.Scenarios.Engine do
                 result = {state, verifs, [{directive, reason} | errs]}
 
                 if state.ownership do
+                  {:halt, result}
+                else
+                  {:cont, result}
+                end
+
+              {:error, reason, new_state} ->
+                result = {new_state, verifs, [{directive, reason} | errs]}
+
+                if new_state.ownership do
                   {:halt, result}
                 else
                   {:cont, result}
@@ -244,8 +257,8 @@ defmodule Oli.Scenarios.Engine do
   defp apply_execution_opts(%ExecutionState{} = state, opts) do
     state
     |> maybe_put_current_dir(opts)
-    |> Map.put(:release_remaining_bytes, opts[:release_remaining_bytes])
-    |> Map.put(:release_max_include_depth, opts[:release_max_include_depth])
+    |> Map.put(:seed_remaining_bytes, opts[:seed_remaining_bytes])
+    |> Map.put(:seed_max_include_depth, opts[:seed_max_include_depth])
     |> Map.put(:params, opts[:params] || Map.get(state, :params, %{}))
   end
 
@@ -341,6 +354,14 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%EnrollDirective{} = directive, state) do
     EnrollmentHandler.handle(directive, state)
+  end
+
+  def execute_directive(%BulkCreateEnrollUsersDirective{} = directive, state) do
+    BulkCreateEnrollUsersHandler.handle(directive, state)
+  end
+
+  def execute_directive(%SimulateProgressDirective{} = directive, state) do
+    SimulateProgressHandler.handle(directive, state)
   end
 
   def execute_directive(%InstitutionDirective{} = directive, state) do

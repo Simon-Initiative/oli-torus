@@ -10,134 +10,144 @@ defmodule Oli.Application do
     # Install the logger truncator
     Oli.LoggerTruncator.init()
     maybe_add_appsignal_logger_backend()
-    Oli.PreviewQATools.Config.log_startup_status()
+
+    role = Application.get_env(:oli, :application_role, :server)
+    maybe_log_preview_qa_tools_status(role)
 
     # List all child processes to be supervised
     children =
-      [
-        Oli.Vault,
+      case role do
+        :seeding ->
+          seeding_children()
 
-        # libcluster config
-        {Cluster.Supervisor,
-         [Application.fetch_env!(:libcluster, :topologies), [name: Oli.ClusterSupervisor]]},
+        :server ->
+          [
+            Oli.Vault,
 
-        # Start Phoenix PubSub
-        {Phoenix.PubSub, name: Oli.PubSub},
+            # libcluster config
+            {Cluster.Supervisor,
+             [Application.fetch_env!(:libcluster, :topologies), [name: Oli.ClusterSupervisor]]},
 
-        # Start the Ecto repository
-        Oli.Repo,
+            # Start Phoenix PubSub
+            {Phoenix.PubSub, name: Oli.PubSub},
 
-        # Starts telemetry
-        OliWeb.Telemetry,
-        Oli.Analytics.XAPI.UploadPipeline,
+            # Start the Ecto repository
+            Oli.Repo,
 
-        # Start the endpoint when the application starts
-        OliWeb.Endpoint,
+            # Starts telemetry
+            OliWeb.Telemetry,
+            Oli.Analytics.XAPI.UploadPipeline,
 
-        # Start the Oban background job processor
-        {Oban, oban_config()},
+            # Start the endpoint when the application starts
+            OliWeb.Endpoint,
 
-        # Starts the presence tracker
-        OliWeb.Presence,
+            # Start the Oban background job processor
+            {Oban, oban_config()},
 
-        # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
-        %{
-          id: "cleanup_nonce_store_daily",
-          start: {SchedEx, :run_every, [Lti_1p3.Nonces, :cleanup_nonce_store, [], "1 1 * * *"]}
-        },
-        # Starts the login hint cleanup task
-        %{
-          id: "cleanup_login_hint_store_daily",
-          start:
-            {SchedEx, :run_every,
-             [Lti_1p3.Platform.LoginHints, :cleanup_login_hint_store, [], "1 1 * * *"]}
-        },
-        # Starts the publication diff cleanup task
-        %{
-          id: "cleanup_publication_diffs_daily",
-          start:
-            {SchedEx, :run_every,
-             [Oli.Publishing.Publications.DiffAgent, :cleanup_diff_store, [], "1 1 * * *"]}
-        },
+            # Starts the presence tracker
+            OliWeb.Presence,
 
-        # Starts the publication diff agent store
-        Oli.Publishing.Publications.DiffAgent,
+            # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
+            %{
+              id: "cleanup_nonce_store_daily",
+              start:
+                {SchedEx, :run_every, [Lti_1p3.Nonces, :cleanup_nonce_store, [], "1 1 * * *"]}
+            },
+            # Starts the login hint cleanup task
+            %{
+              id: "cleanup_login_hint_store_daily",
+              start:
+                {SchedEx, :run_every,
+                 [Lti_1p3.Platform.LoginHints, :cleanup_login_hint_store, [], "1 1 * * *"]}
+            },
+            # Starts the publication diff cleanup task
+            %{
+              id: "cleanup_publication_diffs_daily",
+              start:
+                {SchedEx, :run_every,
+                 [Oli.Publishing.Publications.DiffAgent, :cleanup_diff_store, [], "1 1 * * *"]}
+            },
 
-        # Starts Cachex to store page content info
-        Oli.Delivery.DistributedDepotCoordinator,
-        Oli.Delivery.DepotWarmer,
-        Supervisor.child_spec({Cachex, name: :page_content_cache}, id: :page_content_cache),
-        Supervisor.child_spec(
-          {Cachex, name: :feature_flag_stage, limit: 200_000, policy: Cachex.Policy.LRW},
-          id: :feature_flag_stage_cache
-        ),
-        Supervisor.child_spec(
-          {Cachex, name: :feature_flag_cohorts, limit: 200_000, policy: Cachex.Policy.LRW},
-          id: :feature_flag_cohort_cache
-        ),
+            # Starts the publication diff agent store
+            Oli.Publishing.Publications.DiffAgent,
 
-        # Cache assistant replies for AI page triggers (per-node, capped)
-        Supervisor.child_spec(
-          {
-            Cachex,
-            # Keep at most 10k entries, evict oldest first
-            name: :ai_page_trigger_reply_cache, limit: 10_000, policy: Cachex.Policy.LRW
-          },
-          id: :ai_page_trigger_reply_cache
-        ),
-        Supervisor.child_spec(
-          {
-            Cachex,
-            name: :adaptive_trigger_invocation_cache, limit: 50_000, policy: Cachex.Policy.LRW
-          },
-          id: :adaptive_trigger_invocation_cache
-        ),
-        Supervisor.child_spec(
-          {Cachex, name: :embedded_preview_sessions, limit: 10_000, policy: Cachex.Policy.LRW},
-          id: :embedded_preview_sessions
-        ),
+            # Starts Cachex to store page content info
+            Oli.Delivery.DistributedDepotCoordinator,
+            Oli.Delivery.DepotWarmer,
+            Supervisor.child_spec({Cachex, name: :page_content_cache}, id: :page_content_cache),
+            Supervisor.child_spec(
+              {Cachex, name: :feature_flag_stage, limit: 200_000, policy: Cachex.Policy.LRW},
+              id: :feature_flag_stage_cache
+            ),
+            Supervisor.child_spec(
+              {Cachex, name: :feature_flag_cohorts, limit: 200_000, policy: Cachex.Policy.LRW},
+              id: :feature_flag_cohort_cache
+            ),
 
-        # Starts Cachex to store vr user agents
-        Oli.VrLookupCache,
-        Oli.RuntimeLogOverrides.Registry,
+            # Cache assistant replies for AI page triggers (per-node, capped)
+            Supervisor.child_spec(
+              {
+                Cachex,
+                # Keep at most 10k entries, evict oldest first
+                name: :ai_page_trigger_reply_cache, limit: 10_000, policy: Cachex.Policy.LRW
+              },
+              id: :ai_page_trigger_reply_cache
+            ),
+            Supervisor.child_spec(
+              {
+                Cachex,
+                name: :adaptive_trigger_invocation_cache, limit: 50_000, policy: Cachex.Policy.LRW
+              },
+              id: :adaptive_trigger_invocation_cache
+            ),
+            Supervisor.child_spec(
+              {Cachex,
+               name: :embedded_preview_sessions, limit: 10_000, policy: Cachex.Policy.LRW},
+              id: :embedded_preview_sessions
+            ),
 
-        # Starts Cachex to store section info
-        Oli.Delivery.Sections.SectionCache,
-        Oli.ScopedFeatureFlags.CacheSubscriber,
+            # Starts Cachex to store vr user agents
+            Oli.VrLookupCache,
+            Oli.RuntimeLogOverrides.Registry,
 
-        # Starts the LTI 1.3 keyset cache for caching platform public keys
-        Oli.Lti.KeysetCache,
-        Oli.Lti.KeysetFetchCoordinator,
+            # Starts Cachex to store section info
+            Oli.Delivery.Sections.SectionCache,
+            Oli.ScopedFeatureFlags.CacheSubscriber,
 
-        # a supervisor which can be used to dynamically supervise tasks
-        {Task.Supervisor, name: Oli.TaskSupervisor},
+            # Starts the LTI 1.3 keyset cache for caching platform public keys
+            Oli.Lti.KeysetCache,
+            Oli.Lti.KeysetFetchCoordinator,
 
-        # GenAI hackney connection pool
-        Oli.GenAI.HackneyPool,
+            # a supervisor which can be used to dynamically supervise tasks
+            {Task.Supervisor, name: Oli.TaskSupervisor},
 
-        # GenAI routing and breaker infrastructure
-        Oli.GenAI.AdmissionControl,
-        Oli.GenAI.Telemetry,
-        Oli.GenAI.AdaptiveContextTelemetry,
-        Oli.InstructorDashboard.Email.Telemetry,
-        Oli.Adaptive.DynamicLinks.Telemetry,
-        Oli.Dashboard.OracleTelemetry,
-        Oli.Delivery.Experiments.Telemetry,
-        {Oli.Dashboard.RevisitCache, name: Oli.Dashboard.RevisitCache},
-        {Registry, keys: :unique, name: Oli.GenAI.BreakerRegistry},
-        Oli.GenAI.BreakerSupervisor,
+            # GenAI hackney connection pool
+            Oli.GenAI.HackneyPool,
 
-        # MCP (Model Context Protocol) server for AI agents
-        Anubis.Server.Registry,
+            # GenAI routing and breaker infrastructure
+            Oli.GenAI.AdmissionControl,
+            Oli.GenAI.Telemetry,
+            Oli.GenAI.AdaptiveContextTelemetry,
+            Oli.InstructorDashboard.Email.Telemetry,
+            Oli.Adaptive.DynamicLinks.Telemetry,
+            Oli.Dashboard.OracleTelemetry,
+            Oli.Delivery.Experiments.Telemetry,
+            {Oli.Dashboard.RevisitCache, name: Oli.Dashboard.RevisitCache},
+            {Registry, keys: :unique, name: Oli.GenAI.BreakerRegistry},
+            Oli.GenAI.BreakerSupervisor,
 
-        # AI Agent system
-        Oli.GenAI.Agent.Registry,
-        Oli.GenAI.Agent.ToolBroker,
-        Oli.GenAI.Agent.RunSupervisor,
-        {Oli.MCP.Server, transport: :streamable_http}
-      ] ++ maybe_node_js_config()
+            # MCP (Model Context Protocol) server for AI agents
+            Anubis.Server.Registry,
 
-    if log_incomplete_requests?() do
+            # AI Agent system
+            Oli.GenAI.Agent.Registry,
+            Oli.GenAI.Agent.ToolBroker,
+            Oli.GenAI.Agent.RunSupervisor,
+            {Oli.MCP.Server, transport: :streamable_http}
+          ] ++ maybe_node_js_config()
+      end
+
+    if role == :server and log_incomplete_requests?() do
       :ok =
         :telemetry.attach(
           "cowboy-request-handler",
@@ -153,16 +163,37 @@ defmodule Oli.Application do
 
     case Supervisor.start_link(children, opts) do
       {:ok, pid} ->
-        Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-          Process.sleep(1_000)
-          safe_inventory_recovery()
-        end)
+        maybe_start_inventory_recovery(role)
 
         {:ok, pid}
 
       other ->
         other
     end
+  end
+
+  @doc false
+  def seeding_children do
+    [
+      Oli.Vault,
+      {Cluster.Supervisor,
+       [Application.fetch_env!(:libcluster, :topologies), [name: Oli.ClusterSupervisor]]},
+      {Phoenix.PubSub, name: Oli.PubSub},
+      Oli.Repo,
+      {Oban, oban_config(:seeding)},
+      Oli.Delivery.DistributedDepotCoordinator,
+      Supervisor.child_spec({Cachex, name: :page_content_cache}, id: :page_content_cache),
+      Supervisor.child_spec(
+        {Cachex, name: :feature_flag_stage, limit: 200_000, policy: Cachex.Policy.LRW},
+        id: :feature_flag_stage_cache
+      ),
+      Supervisor.child_spec(
+        {Cachex, name: :feature_flag_cohorts, limit: 200_000, policy: Cachex.Policy.LRW},
+        id: :feature_flag_cohort_cache
+      ),
+      Oli.Delivery.Sections.SectionCache,
+      {Task.Supervisor, name: Oli.TaskSupervisor}
+    ] ++ maybe_node_js_config()
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -178,6 +209,14 @@ defmodule Oli.Application do
     Oban.Telemetry.attach_default_logger()
 
     Application.fetch_env!(:oli, Oban)
+  end
+
+  defp oban_config(:seeding) do
+    Oban.Telemetry.attach_default_logger()
+
+    Application.fetch_env!(:oli, Oban)
+    |> Keyword.put(:plugins, false)
+    |> Keyword.put(:queues, [])
   end
 
   def current_oban_config do
@@ -221,6 +260,21 @@ defmodule Oli.Application do
         :ok
     end
   end
+
+  defp maybe_start_inventory_recovery(:server) do
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      Process.sleep(1_000)
+      safe_inventory_recovery()
+    end)
+  end
+
+  defp maybe_start_inventory_recovery(:seeding), do: :ok
+
+  defp maybe_log_preview_qa_tools_status(:server) do
+    Oli.PreviewQATools.Config.log_startup_status()
+  end
+
+  defp maybe_log_preview_qa_tools_status(:seeding), do: :ok
 
   defp maybe_add_appsignal_logger_backend do
     case Application.get_env(:oli, :appsignal_logger_backend) do

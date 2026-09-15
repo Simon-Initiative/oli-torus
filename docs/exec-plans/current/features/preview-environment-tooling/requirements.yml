@@ -1,20 +1,23 @@
 work_item: preview-environment-tooling
 requirements:
 - id: FR-001
-  title: Compile release seeding and user masquerade only into MIX_ENV=preview releases
-    and gate their runtime use behind deny-by-default PREVIEW_QA_TOOLS_ENABLED
+  title: Compile seeding for development and preview while keeping it out of production;
+    compile user masquerade and the mailbox only into MIX_ENV=preview and gate those
+    web-accessible capabilities behind deny-by-default PREVIEW_QA_TOOLS_ENABLED
 - id: FR-002
-  title: Provide a bin/seed release CLI that lists bundled scenarios and synchronously
-    executes a bundled or custom YAML scenario
+  title: Provide a mix seed development task and bin/seed preview CLI that list bundled
+    scenarios and synchronously execute a bundled or custom YAML scenario through one dispatcher
 - id: FR-003
   title: Let the release CLI download and ingest a Torus project archive from an operator-provided
     reachable URL
 - id: FR-004
-  title: Extend Oli.Scenarios with deterministic bulk-user enrollment and learner-progress
-    simulation and retire the separate Stagehand API
+  title: Extend Oli.Scenarios with deterministic bulk-user enrollment and profile-driven
+    course progress simulation and retire the separate Stagehand API and legacy progress-simulator
+    contract
 - id: FR-005
-  title: Run the optional review_demo deployment seed through the same release CLI
-    in a post-migration Kubernetes Job
+  title: Create the bundled oli_torus_getting_started_course scenario and run it once
+    through the same release CLI after baseline setup and server readiness in pull-request
+    preview environments
 - id: FR-006
   title: Preserve existing Playwright-owned per-spec scenario setup independently
     of deployment seeding
@@ -33,21 +36,21 @@ requirements:
 acceptance_criteria:
 - id: AC-001
   requirement_id: FR-001
-  title: Release seeding, masquerade, and the mailbox route are compiled only when
-    MIX_ENV=preview, and PREVIEW_QA_TOOLS_ENABLED must equal true case-insensitively at
-    runtime to activate them
+  title: Seeding is compiled in development and preview but absent from production;
+    bin/seed requires no runtime feature flag, while masquerade and the mailbox route remain
+    preview-only and require PREVIEW_QA_TOOLS_ENABLED to equal true case-insensitively
   verification_method: automated
 - id: AC-002
   requirement_id: FR-001
-  title: Hostname, unrelated flags, configured profiles, and existing data cannot
-    enable the capability, and a MIX_ENV=prod release cannot expose it even when PREVIEW_QA_TOOLS_ENABLED
-    is set at runtime
+  title: Hostname, unrelated flags, a configured seed scenario, and existing data cannot
+    enable web QA capabilities, and a MIX_ENV=prod release cannot expose seeding, masquerade,
+    or the mailbox even when PREVIEW_QA_TOOLS_ENABLED is set at runtime
   verification_method: automated
 - id: AC-003
   requirement_id: FR-001
-  title: A MIX_ENV=preview release without runtime activation emits one bounded warning
-    directing operators to set PREVIEW_QA_TOOLS_ENABLED=true, while other Mix environments
-    emit no such warning
+  title: A MIX_ENV=preview application server without web QA runtime activation emits one bounded
+    warning directing operators to set PREVIEW_QA_TOOLS_ENABLED=true for masquerade and mailbox access,
+    while other Mix environments emit no such warning
   verification_method: automated
 - id: AC-004
   requirement_id: FR-001
@@ -58,14 +61,14 @@ acceptance_criteria:
   verification_method: hybrid
 - id: AC-005
   requirement_id: FR-002
-  title: bin/seed scenarios list lists bundled scenario identifiers and descriptions
-    without executing them
+  title: mix seed scenarios list in development and bin/seed scenarios list in preview
+    list bundled scenario identifiers and descriptions without executing them
   verification_method: automated
 - id: AC-006
   requirement_id: FR-002
-  title: bin/seed scenarios run accepts exactly one of --name or --file, executes
-    it synchronously through Oli.Scenarios, prints a bounded summary, and exits nonzero
-    on usage, parse, or execution failure
+  title: Both seeding entry points accept exactly one of --name or --file, execute it
+    synchronously through Oli.Scenarios, print a bounded summary, and exit nonzero on
+    usage, parse, or execution failure
   verification_method: automated
 - id: AC-007
   requirement_id: FR-002
@@ -82,8 +85,9 @@ acceptance_criteria:
   verification_method: automated
 - id: AC-009
   requirement_id: FR-002
-  title: CLI execution performs no application-level authorization check beyond effective
-    feature enablement because shell access is the trusted operational boundary
+  title: CLI execution performs no application-level authorization or runtime feature-flag
+    check because command invocation through development Mix or a preview release shell is the
+    trusted operational boundary
   verification_method: automated
 - id: AC-010
   requirement_id: FR-003
@@ -99,7 +103,7 @@ acceptance_criteria:
   verification_method: automated
 - id: AC-012
   requirement_id: FR-004
-  title: bulk_users creates deterministic scenario references and collision-safe synthetic
+  title: bulk_create_enroll_users creates deterministic scenario references and collision-safe synthetic
     instructors and learners enrolled in the selected section
   verification_method: automated
 - id: AC-013
@@ -114,27 +118,29 @@ acceptance_criteria:
   verification_method: automated
 - id: AC-015
   requirement_id: FR-005
-  title: After migrations succeed, a configured Kubernetes Job invokes bin/seed scenarios
-    run with the selected profile passed as a discrete argument, uses restartPolicy
-    Never, backoffLimit 1, explicit resource requests and limits, and does not affect
-    web readiness
+  title: After baseline release setup succeeds and the application becomes Ready, a later-wave
+    Kubernetes Job invokes bin/seed scenarios run with oli_torus_getting_started_course passed
+    as a discrete argument, uses restartPolicy Never, backoffLimit 0, and explicit resource
+    requests and limits
   verification_method: hybrid
 - id: AC-016
   requirement_id: FR-005
-  title: review_demo creates representative synthetic authoring, delivery, enrollment,
-    progress, gradebook, discussion, gating, and analytics data with stable references
-    and no embedded credentials
+  title: oli_torus_getting_started_course creates a cohesive Getting Started with OLI Torus
+    course with learning objectives, rich authoring and publishing content, several unscored
+    practice pages, a scored assessment, activities with hints and correct/incorrect feedback,
+    an enrolled synthetic cohort, simulated learner progress, and no embedded credentials
   verification_method: automated
 - id: AC-017
   requirement_id: FR-005
-  title: Kubernetes owns Job status, one retry, labeled release/profile identity,
-    logs, and retention; Torus adds no Oban seed job, seed-run table, startup-status
-    endpoint, or persistent execution history
-  verification_method: automated
+  title: A fixed retained Job runs once per pull-request preview namespace, remains completed
+    across later image updates and Argo CD resyncs, and is pruned with the namespace; Kubernetes
+    owns its status and logs, while Torus adds no automatic retry, Oban seed job, seed-run table,
+    startup-status endpoint, or persistent execution history
+  verification_method: hybrid
 - id: AC-018
   requirement_id: FR-006
   title: Existing Playwright scenario fixtures remain self-seeding and do not depend
-    on review_demo or a startup-status endpoint
+    on oli_torus_getting_started_course or a startup-status endpoint
   verification_method: automated
 - id: AC-019
   requirement_id: FR-007
@@ -182,4 +188,57 @@ acceptance_criteria:
     only while PREVIEW_QA_TOOLS_ENABLED is active and only to a current system administrator
     or the original system-administrator actor of a valid active masquerade, without
     granting actor privileges to any other route
+  verification_method: automated
+- id: AC-027
+  requirement_id: FR-004
+  title: simulate_progress requires exactly one fixed profile or complete count-based cohort
+    assignment, validates the selected learner population before mutation, and rejects the removed
+    pct_correct, assessment_attempts, profile-version, override, and execution-tuning options
+  verification_method: automated
+- id: AC-028
+  requirement_id: FR-004
+  title: Course simulation traverses delivered curriculum order and creates real practice and
+    scored-assessment attempt histories through normal visit, evaluate, hint, reset, save, and
+    finalize lifecycles for supported multiple-choice, ordering, check-all-that-apply, short-answer,
+    and multi-input configurations without writing requested scores directly
+  verification_method: automated
+- id: AC-029
+  requirement_id: FR-004
+  title: Fixed high-proficiency, steady-learner, persistent-learner, and low-engagement profiles vary
+    only course reach, activity participation, initial correctness, practice attempt count,
+    assessment attempt count, and improvement per attempt; seeded response and behavior choices
+    remain deterministic
+  verification_method: automated
+- id: AC-030
+  requirement_id: FR-004
+  title: Fast execution is the default, while paced execution sleeps in real time using fixed
+    profile distributions for page, answer, retry, break, and study-session timing; terminating the
+    foreground seed command immediately ends its VM and learner workers while already committed
+    database transactions remain committed
+  verification_method: hybrid
+- id: AC-031
+  requirement_id: FR-004
+  title: Development and preview seeding entry points use a dedicated companion runtime that can
+    run alongside the server without starting a second endpoint, unrelated consumers, upload
+    pipelines, or startup recovery while preserving required data, cache, evaluation, event, and
+    downstream enqueue behavior
+  verification_method: hybrid
+- id: AC-032
+  requirement_id: FR-004
+  title: Simulation has one modest 100-learner cap, fixed profile attempt caps, normal task-stream
+    concurrency plus small deterministic action delays in fast mode, one concurrent worker per
+    admitted learner in paced mode, and compact success, failure, skip, and unsupported-content reporting;
+    Oban owns downstream work and the simulator does not poll, reserve, throttle, or cancel jobs
+  verification_method: automated
+- id: AC-033
+  requirement_id: FR-004
+  title: Profile-mode preflight skips and reports learners with existing section history, simulates
+    only fresh learners, and adds no reconciliation, cleanup, automatic resume, seed-run persistence,
+    or backdated history
+  verification_method: automated
+- id: AC-034
+  requirement_id: FR-004
+  title: Course simulation derives one deterministic DataShop UUID from the seed, learner identity,
+    and section, then reuses it for the learner's complete simulated journey; profile study-session
+    timing affects pacing only and lower-level directives retain independent transient IDs
   verification_method: automated

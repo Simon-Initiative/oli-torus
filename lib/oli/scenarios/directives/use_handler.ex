@@ -26,7 +26,7 @@ defmodule Oli.Scenarios.Directives.UseHandler do
     include_stack = Map.get(state, :include_stack, [])
 
     with :ok <- validate_not_circular(resolved_path, include_stack),
-         {:ok, remaining_bytes} <- validate_release_limits(resolved_path, state, include_stack) do
+         {:ok, remaining_bytes} <- validate_seed_limits(resolved_path, state, include_stack) do
       execute_file(file, resolved_path, state, current_dir, include_stack, remaining_bytes)
     end
   end
@@ -43,7 +43,7 @@ defmodule Oli.Scenarios.Directives.UseHandler do
       state
       |> Map.put(:current_dir, new_dir)
       |> Map.put(:include_stack, [resolved_path | include_stack])
-      |> Map.put(:release_remaining_bytes, remaining_bytes)
+      |> Map.put(:seed_remaining_bytes, remaining_bytes)
 
     # Load and parse the included file
     directives = Oli.Scenarios.DirectiveParser.load_file!(resolved_path)
@@ -62,20 +62,29 @@ defmodule Oli.Scenarios.Directives.UseHandler do
 
           {:error, _reason} = error ->
             {:halt, error}
+
+          {:error, reason, new_state} ->
+            {:halt, {:error, reason, new_state}}
         end
       end)
 
     # Restore the original directory and include stack in the state
     case result do
       {:ok, final_state} ->
-        {:ok,
-         final_state
-         |> Map.put(:current_dir, current_dir)
-         |> Map.put(:include_stack, include_stack)}
+        {:ok, restore_context(final_state, current_dir, include_stack)}
+
+      {:error, reason, final_state} ->
+        {:error, reason, restore_context(final_state, current_dir, include_stack)}
 
       error ->
         error
     end
+  end
+
+  defp restore_context(state, current_dir, include_stack) do
+    state
+    |> Map.put(:current_dir, current_dir)
+    |> Map.put(:include_stack, include_stack)
   end
 
   defp validate_not_circular(resolved_path, include_stack) do
@@ -86,15 +95,15 @@ defmodule Oli.Scenarios.Directives.UseHandler do
     end
   end
 
-  defp validate_release_limits(_path, %{release_remaining_bytes: nil}, _stack), do: {:ok, nil}
+  defp validate_seed_limits(_path, %{seed_remaining_bytes: nil}, _stack), do: {:ok, nil}
 
-  defp validate_release_limits(path, state, include_stack) do
-    with true <- length(include_stack) < state.release_max_include_depth,
+  defp validate_seed_limits(path, state, include_stack) do
+    with true <- length(include_stack) < state.seed_max_include_depth,
          {:ok, %{type: :regular, size: size}} <- File.stat(path),
-         true <- size <= state.release_remaining_bytes do
-      {:ok, state.release_remaining_bytes - size}
+         true <- size <= state.seed_remaining_bytes do
+      {:ok, state.seed_remaining_bytes - size}
     else
-      false -> {:error, "Use directive exceeds release include limits"}
+      false -> {:error, "Use directive exceeds seed include limits"}
       _ -> {:error, "Use directive file is not a regular file"}
     end
   end
