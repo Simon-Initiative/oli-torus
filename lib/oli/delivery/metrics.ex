@@ -1501,10 +1501,8 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
-  Buckets an average per-student confidence score (0.0-1.0) into a display label.
-
-  These thresholds are provisional, mirroring the Proficiency cutoffs, pending design
-  confirmation of Confidence-specific ranges (MER-5812).
+  Buckets an average per-student confidence score (0.0-1.0) into a display label,
+  using the same thresholds as Proficiency.
   """
   @spec confidence_label(float()) :: String.t()
   def confidence_label(avg_confidence) when avg_confidence <= 0.4, do: "Low"

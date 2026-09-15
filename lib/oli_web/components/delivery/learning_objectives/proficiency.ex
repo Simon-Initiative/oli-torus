@@ -25,11 +25,31 @@ defmodule OliWeb.Delivery.LearningObjectives.Proficiency do
   @doc "Returns resolved design-token values for the requested Vega chart theme."
   def colors(theme), do: Enum.map(@palette, &Map.fetch!(&1, theme))
 
+  @doc "Returns the raw design-token name (e.g. \"Icon-icon-danger\") for a proficiency/confidence level."
+  def color_token("Low"), do: "Icon-icon-danger"
+  def color_token("Medium"), do: "Icon-icon-accent-orange"
+  def color_token("High"), do: "Text-text-accent-green"
+  def color_token(_not_enough_data), do: "Fill-Chip-Gray"
+
   @doc "Returns the background-color Tailwind class for the color dot matching a proficiency label."
-  def dot_class("Low"), do: "bg-Icon-icon-danger"
-  def dot_class("Medium"), do: "bg-Icon-icon-accent-orange"
-  def dot_class("High"), do: "bg-Text-text-accent-green"
-  def dot_class(_not_enough_data), do: "bg-Fill-Chip-Gray"
+  def dot_class(label), do: "bg-" <> color_token(label)
+
+  @doc "Returns the three cumulative bar-fill classes for the Confidence icon at a given level."
+  def confidence_bar_classes(level) when level in ["Low", "Medium", "High"] do
+    filled = "fill-" <> color_token(level)
+    inactive = "fill-Icon-icon-default"
+
+    case level do
+      "High" -> {filled, filled, filled}
+      "Medium" -> {filled, filled, inactive}
+      "Low" -> {filled, inactive, inactive}
+    end
+  end
+
+  def confidence_bar_classes(_not_enough_data) do
+    inactive = "fill-Icon-icon-default"
+    {inactive, inactive, inactive}
+  end
 
   @doc "Returns the full display label (e.g. \"Low Proficiency\") for a chart/filter label."
   def full_label("Low"), do: "Low Proficiency"

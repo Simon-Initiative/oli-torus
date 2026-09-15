@@ -965,103 +965,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
-    child_1_resource = insert(:resource)
+    {child_1_resource, child_1_revision} =
+      create_objective("Child Objective 1", "child_1", project)
 
-    child_1_revision =
-      insert(:revision, %{
-        resource: child_1_resource,
-        objectives: %{},
-        resource_type_id: ResourceType.id_for_objective(),
-        children: [],
-        content: %{},
-        deleted: false,
-        slug: "child_1",
-        title: "Child Objective 1"
-      })
+    {child_2_resource, child_2_revision} =
+      create_objective("Child Objective 2", "child_2", project)
 
-    insert(:project_resource, %{project_id: project.id, resource_id: child_1_resource.id})
+    {parent_resource, parent_revision} =
+      create_objective("Parent Objective", "parent_objective", project, [
+        child_1_resource.id,
+        child_2_resource.id
+      ])
 
-    child_2_resource = insert(:resource)
+    {page_1_resource, page_1_revision} =
+      create_page("Page 1", "page_1", project, [], [child_1_resource.id])
 
-    child_2_revision =
-      insert(:revision, %{
-        resource: child_2_resource,
-        objectives: %{},
-        resource_type_id: ResourceType.id_for_objective(),
-        children: [],
-        content: %{},
-        deleted: false,
-        slug: "child_2",
-        title: "Child Objective 2"
-      })
+    {page_2_resource, page_2_revision} =
+      create_page("Page 2", "page_2", project, [], [child_2_resource.id])
 
-    insert(:project_resource, %{project_id: project.id, resource_id: child_2_resource.id})
-
-    parent_resource = insert(:resource)
-
-    parent_revision =
-      insert(:revision, %{
-        resource: parent_resource,
-        objectives: %{},
-        resource_type_id: ResourceType.id_for_objective(),
-        children: [child_1_resource.id, child_2_resource.id],
-        content: %{},
-        deleted: false,
-        slug: "parent_objective",
-        title: "Parent Objective"
-      })
-
-    insert(:project_resource, %{project_id: project.id, resource_id: parent_resource.id})
-
-    page_1_resource = insert(:resource)
-
-    page_1_revision =
-      insert(:revision, %{
-        objectives: %{"attached" => [child_1_resource.id]},
-        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.id_for_page(),
-        children: [],
-        content: %{"model" => []},
-        deleted: false,
-        title: "Page 1",
-        resource: page_1_resource,
-        slug: "page_1"
-      })
-
-    insert(:project_resource, %{project_id: project.id, resource_id: page_1_resource.id})
-
-    page_2_resource = insert(:resource)
-
-    page_2_revision =
-      insert(:revision, %{
-        objectives: %{"attached" => [child_2_resource.id]},
-        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.id_for_page(),
-        children: [],
-        content: %{"model" => []},
-        deleted: false,
-        title: "Page 2",
-        resource: page_2_resource,
-        slug: "page_2"
-      })
-
-    insert(:project_resource, %{project_id: project.id, resource_id: page_2_resource.id})
-
-    root_resource = insert(:resource)
-
-    root_revision =
-      insert(:revision, %{
-        resource: root_resource,
-        objectives: %{},
-        resource_type_id: ResourceType.id_for_container(),
-        children: [page_1_resource.id, page_2_resource.id],
-        content: %{},
-        deleted: false,
-        slug: "root_container",
-        title: "Root Container"
-      })
-
-    insert(:project_resource, %{project_id: project.id, resource_id: root_resource.id})
+    {root_resource, root_revision} =
+      create_container("Root Container", "root_container", project, [
+        page_1_resource.id,
+        page_2_resource.id
+      ])
 
     publication =
       insert(:publication, %{project: project, root_resource_id: root_resource.id, published: nil})
