@@ -226,7 +226,14 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           </div>
 
           <a
-            href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)}
+            href={
+              Routes.delivery_path(
+                OliWeb.Endpoint,
+                :download_learning_objectives,
+                @section_slug,
+                download_params(@student_id)
+              )
+            }
             download={"#{@section_slug}_learning_objectives.csv"}
             class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold"
           >
@@ -314,6 +321,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     </div>
     """
   end
+
+  defp download_params(nil), do: []
+  defp download_params(student_id), do: [student_id: student_id]
 
   def handle_event("select_card", %{"selected" => value}, socket) do
     value =
