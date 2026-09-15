@@ -129,6 +129,11 @@ defmodule Oli.Interop.IngestTest do
       # verify that every practice page has a content attribute with a model
       assert Enum.all?(practice_pages, fn p -> Map.has_key?(p.content, "model") end)
 
+      assert Enum.all?(practice_pages, fn p ->
+               MapSet.new(p.activity_refs) ==
+                 Oli.Authoring.Editing.Utils.activity_references(p.content)
+             end)
+
       # verify that citations are rewired correctly
       page_with_citation = Enum.filter(practice_pages, fn p -> p.title == "Feedback" end) |> hd
 

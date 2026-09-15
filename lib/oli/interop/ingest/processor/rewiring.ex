@@ -56,6 +56,55 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
     prune_nil_nodes(mapped)
   end
 
+  @doc """
+  Rewires resource and page IDs stored in learning objectives page elements.
+
+  These IDs are persisted in the element configuration rather than in the
+  standard page-content reference fields, so they need explicit handling
+  during project ingestion.
+  """
+  @spec rewire_learning_objectives_references(map() | nil, map()) :: map() | nil
+  def rewire_learning_objectives_references(content, id_map) do
+    {mapped, _} =
+      PageContent.map_reduce(content, :ok, fn
+        %{"type" => "learning_objectives", "learning_objectives" => objectives} = element,
+        status,
+        _tr_context ->
+          objectives =
+            List.wrap(objectives)
+            |> Enum.map(fn objective ->
+              objective
+              |> rewire_id_field("resource_id", id_map)
+              |> rewire_id_list_field("revisit_pages", id_map)
+              |> rewire_id_list_field("practice_pages", id_map)
+            end)
+
+          {Map.put(element, "learning_objectives", objectives), status}
+
+        other, status, _tr_context ->
+          {other, status}
+      end)
+
+    mapped
+  end
+
+  defp rewire_id_field(value, field, id_map) do
+    case Map.fetch(value, field) do
+      {:ok, id} -> Map.put(value, field, retrieve(id_map, id) || id)
+      :error -> value
+    end
+  end
+
+  defp rewire_id_list_field(value, field, id_map) do
+    case Map.fetch(value, field) do
+      {:ok, ids} when is_list(ids) ->
+        Map.put(value, field, Enum.map(ids, fn id -> retrieve(id_map, id) || id end))
+
+      _ ->
+        value
+    end
+  end
+
   @spec rewire_report_activity_references(map(), any) :: map()
   def rewire_report_activity_references(content, activity_map) do
     {mapped, _} =

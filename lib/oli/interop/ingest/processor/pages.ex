@@ -91,6 +91,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
           |> Rewiring.rewire_citation_references(state.legacy_to_resource_id_map)
           |> Rewiring.rewire_alternatives_groups(state.legacy_to_resource_id_map)
           |> Rewiring.rewire_adaptive_link_references(state.legacy_to_resource_id_map)
+          |> Rewiring.rewire_learning_objectives_references(state.legacy_to_resource_id_map)
       end
 
     %{
@@ -110,6 +111,9 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
           |> Enum.filter(fn f -> !is_nil(f) end)
       },
       content: content,
+      activity_refs:
+        Oli.Authoring.Editing.Utils.activity_references(content)
+        |> MapSet.to_list(),
       author_id: {:placeholder, :author_id},
       children: {:placeholder, :children},
       resource_type_id: {:placeholder, :resource_type_id},
