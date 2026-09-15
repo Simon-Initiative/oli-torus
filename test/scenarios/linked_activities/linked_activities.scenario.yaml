@@ -1,0 +1,280 @@
+# Real authoring -> publication -> delivery coverage for linked Learning Objective
+# activities, including descendant expansion and page-level metric aggregation.
+
+- project:
+    name: "linked_activities_project"
+    title: "Linked Activities Scenario"
+    objectives:
+      - Linked Parent:
+          - Linked Child One
+          - Linked Child Two
+      - Unrelated Objective
+    root:
+      children:
+        - page: "Parent Activities"
+        - page: "Child One Activities"
+        - page: "Child Two Activities"
+        - page: "Shared Activities One"
+        - page: "Shared Activities Two"
+        - page: "No Attempt Activities"
+        - page: "Unrelated Activities"
+
+- create_activity:
+    project: "linked_activities_project"
+    title: "Parent Only Activity"
+    virtual_id: "parent_only"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Linked Parent"
+    content: |
+      stem_md: "Which answer belongs to the parent objective?"
+      choices:
+        - id: "a"
+          body_md: "Correct"
+          score: 1
+        - id: "b"
+          body_md: "Incorrect"
+          score: 0
+
+- create_activity:
+    project: "linked_activities_project"
+    title: "Child One Only Activity"
+    virtual_id: "child_one_only"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Linked Child One"
+    content: |
+      stem_md: "Which answer belongs to child one?"
+      choices:
+        - id: "a"
+          body_md: "Correct"
+          score: 1
+        - id: "b"
+          body_md: "Incorrect"
+          score: 0
+
+- create_activity:
+    project: "linked_activities_project"
+    title: "Shared Activity"
+    virtual_id: "shared"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Linked Parent"
+      - "Linked Child One"
+    content: |
+      stem_md: "Which answer is shared across two pages?"
+      choices:
+        - id: "a"
+          body_md: "Correct"
+          score: 1
+        - id: "b"
+          body_md: "Incorrect"
+          score: 0
+
+- create_activity:
+    project: "linked_activities_project"
+    title: "Child Two Only Activity"
+    virtual_id: "child_two_only"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Linked Child Two"
+    content: |
+      stem_md: "Which answer belongs to child two?"
+      choices:
+        - id: "a"
+          body_md: "Correct"
+          score: 1
+        - id: "b"
+          body_md: "Incorrect"
+          score: 0
+
+- create_activity:
+    project: "linked_activities_project"
+    title: "No Attempt Activity"
+    virtual_id: "no_attempt"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Linked Parent"
+    content: |
+      stem_md: "Which activity has no learner attempt?"
+      choices:
+        - id: "a"
+          body_md: "Correct"
+          score: 1
+        - id: "b"
+          body_md: "Incorrect"
+          score: 0
+
+- create_activity:
+    project: "linked_activities_project"
+    title: "Unrelated Activity"
+    virtual_id: "unrelated"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Unrelated Objective"
+    content: |
+      stem_md: "Which activity is outside the selected objective family?"
+      choices:
+        - id: "a"
+          body_md: "Correct"
+          score: 1
+        - id: "b"
+          body_md: "Incorrect"
+          score: 0
+
+- edit_page:
+    project: "linked_activities_project"
+    page: "Parent Activities"
+    content: |
+      title: "Parent Activities"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "parent_only"
+
+- edit_page:
+    project: "linked_activities_project"
+    page: "Child One Activities"
+    content: |
+      title: "Child One Activities"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "child_one_only"
+
+- edit_page:
+    project: "linked_activities_project"
+    page: "Child Two Activities"
+    content: |
+      title: "Child Two Activities"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "child_two_only"
+
+- edit_page:
+    project: "linked_activities_project"
+    page: "Shared Activities One"
+    content: |
+      title: "Shared Activities One"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "shared"
+
+- edit_page:
+    project: "linked_activities_project"
+    page: "Shared Activities Two"
+    content: |
+      title: "Shared Activities Two"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "shared"
+
+- edit_page:
+    project: "linked_activities_project"
+    page: "No Attempt Activities"
+    content: |
+      title: "No Attempt Activities"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "no_attempt"
+
+- edit_page:
+    project: "linked_activities_project"
+    page: "Unrelated Activities"
+    content: |
+      title: "Unrelated Activities"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "unrelated"
+
+- publish:
+    to: "linked_activities_project"
+    description: "Publish linked activities scenario"
+
+- section:
+    name: "linked_activities_section"
+    title: "Linked Activities Section"
+    from: "linked_activities_project"
+
+- user:
+    name: "learner_one"
+    type: "student"
+    email: "linked_activities_learner_one@example.edu"
+    given_name: "Alex"
+    family_name: "One"
+
+- user:
+    name: "learner_two"
+    type: "student"
+    email: "linked_activities_learner_two@example.edu"
+    given_name: "Taylor"
+    family_name: "Two"
+
+- enroll:
+    user: "learner_one"
+    section: "linked_activities_section"
+    role: "student"
+
+- enroll:
+    user: "learner_two"
+    section: "linked_activities_section"
+    role: "student"
+
+- view_practice_page:
+    student: "learner_one"
+    section: "linked_activities_section"
+    page: "Parent Activities"
+
+- answer_question:
+    student: "learner_one"
+    section: "linked_activities_section"
+    page: "Parent Activities"
+    activity_virtual_id: "parent_only"
+    response: "a"
+
+- view_practice_page:
+    student: "learner_one"
+    section: "linked_activities_section"
+    page: "Child One Activities"
+
+- answer_question:
+    student: "learner_one"
+    section: "linked_activities_section"
+    page: "Child One Activities"
+    activity_virtual_id: "child_one_only"
+    response: "b"
+
+- view_practice_page:
+    student: "learner_one"
+    section: "linked_activities_section"
+    page: "Shared Activities One"
+
+- answer_question:
+    student: "learner_one"
+    section: "linked_activities_section"
+    page: "Shared Activities One"
+    activity_virtual_id: "shared"
+    response: "a"
+
+- view_practice_page:
+    student: "learner_two"
+    section: "linked_activities_section"
+    page: "Shared Activities Two"
+
+- answer_question:
+    student: "learner_two"
+    section: "linked_activities_section"
+    page: "Shared Activities Two"
+    activity_virtual_id: "shared"
+    response: "b"
+
+- dashboard_analytics_ready:
+    section: "linked_activities_section"
+
+- hook:
+    function: "Oli.Scenarios.LinkedActivitiesHooks.assert_linked_activity_rows/1"

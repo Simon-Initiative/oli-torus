@@ -8,6 +8,7 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Utils.Seeder
   alias Oli.Factory
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.LinkedActivities
 
   alias Oli.Delivery.Sections.{
     ContainedObjective,
@@ -3557,7 +3558,7 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
-  describe "get_activities_for_objective/2" do
+  describe "LinkedActivities.get_activities_for_objective/2" do
     setup do
       setup_objectives_and_activities_test()
     end
@@ -3567,12 +3568,12 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{objective_a: objective_a},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
-      # Should return 1 activity that has objective A
-      assert length(result) == 1
+      # Includes objective A and activities attached to its sub-objectives.
+      assert length(result) == 3
 
-      activity = List.first(result)
+      activity = Enum.find(result, &(&1.resource_id == activities.page_1_mcq_1.resource_id))
       assert activity.resource_id == activities.page_1_mcq_1.resource_id
       assert activity.title == "Page 1 MCQ 1"
       assert activity.question_stem == "What is the capital of France?"
@@ -3585,7 +3586,7 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{objective_c: objective_c},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, objective_c.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_c.resource_id)
 
       # Should return 3 activities that have objective C:
       # - page_1_mcq_4 (has both objective_b and objective_c)
@@ -3604,7 +3605,7 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{objective_d: objective_d},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, objective_d.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_d.resource_id)
 
       # Should return 2 activities that have objective D:
       # - page_4_mcq_2 (graded)
@@ -3621,7 +3622,8 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{sub_objective_a1: sub_objective_a1},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, sub_objective_a1.resource_id)
+      result =
+        LinkedActivities.get_activities_for_objective(section, sub_objective_a1.resource_id)
 
       # Should return 1 activity that has sub-objective A.1
       assert length(result) == 1
@@ -3634,7 +3636,7 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "returns empty list for non-existent objective", %{section: section} do
       non_existent_objective_id = 99999
-      result = Sections.get_activities_for_objective(section, non_existent_objective_id)
+      result = LinkedActivities.get_activities_for_objective(section, non_existent_objective_id)
 
       assert result == []
     end
@@ -3673,10 +3675,10 @@ defmodule Oli.Delivery.SectionsTest do
       Sections.rebuild_contained_objectives(section)
       Sections.PostProcessing.apply(section, :all)
 
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
-      # Should now return 2 activities (original + new one)
-      assert length(result) == 2
+      # Should now return 4 activities (direct + two sub-objective activities + new one)
+      assert length(result) == 4
 
       activity_no_stem_result =
         Enum.find(result, &(&1.resource_id == activity_no_stem.resource_id))
@@ -3688,7 +3690,7 @@ defmodule Oli.Delivery.SectionsTest do
       section: section,
       objectives: %{objective_a: objective_a}
     } do
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
       # All activities should have 0 attempts and 0% correct when no attempts exist
       assert length(result) > 0
@@ -3719,7 +3721,7 @@ defmodule Oli.Delivery.SectionsTest do
       ])
 
       # Get activities for objective A initially
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
       first_activity = List.first(result)
 
       # Initially should have 0 attempts and 0% correct
@@ -3742,7 +3744,8 @@ defmodule Oli.Delivery.SectionsTest do
       })
 
       # Get fresh results after creating attempts
-      updated_result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      updated_result =
+        LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
       updated_activity =
         Enum.find(updated_result, &(&1.resource_id == activities.page_1_mcq_1.resource_id))
@@ -3750,6 +3753,121 @@ defmodule Oli.Delivery.SectionsTest do
       # Verify calculations: 3 total attempts, 2 correct = 66.67%
       assert updated_activity.attempts == 3
       assert_in_delta updated_activity.percent_correct, 66.67, 0.1
+    end
+
+    test "reports section-wide summary counts once for an activity placed on several pages", %{
+      section: section,
+      objectives: %{objective_a: objective_a},
+      activities: activities
+    } do
+      activity = activities.page_1_mcq_1
+
+      # Deliver two extra pages that both reference the same activity, so it resolves through
+      # more than one page context.
+      host_pages =
+        for title <- ["First host page", "Second host page"] do
+          page =
+            insert(:revision,
+              resource_type_id: ResourceType.id_for_page(),
+              title: title,
+              activity_refs: [activity.resource_id],
+              graded: false
+            )
+
+          insert(:section_resource,
+            section: section,
+            project: section.base_project,
+            resource_id: page.resource_id,
+            revision_id: page.id,
+            resource_type_id: ResourceType.id_for_page(),
+            hidden: false
+          )
+
+          page
+        end
+
+      Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+        section.id
+      )
+
+      # A single section-wide summary row holds the totals for the activity. `ResourceSummary`
+      # is scoped to the section and not to the page, so it must be read once per activity:
+      # reading it once per containing page and summing would report twice these counts.
+      Oli.Repo.insert!(%Oli.Analytics.Summary.ResourceSummary{
+        project_id: -1,
+        section_id: section.id,
+        user_id: -1,
+        resource_id: activity.resource_id,
+        part_id: "1",
+        num_attempts: 10,
+        num_correct: 4
+      })
+
+      part_response =
+        Oli.Repo.insert!(%Oli.Analytics.Summary.ResourcePartResponse{
+          resource_id: activity.resource_id,
+          part_id: "1",
+          response: "choice_a",
+          label: "A"
+        })
+
+      # Response rows are what tie an activity to a page, so one per host page is required for
+      # the page-scoped summary lookup to resolve this activity at all.
+      for page <- host_pages do
+        Oli.Repo.insert!(%Oli.Analytics.Summary.ResponseSummary{
+          project_id: -1,
+          section_id: section.id,
+          page_id: page.resource_id,
+          activity_id: activity.resource_id,
+          part_id: "1",
+          resource_part_response_id: part_response.id,
+          count: 1
+        })
+      end
+
+      contexts =
+        LinkedActivities.resolve_context(section.id, objective_a.resource_id)
+        |> elem(1)
+        |> Map.fetch!(:activity_page_contexts)
+        |> Map.get(activity.resource_id, [])
+
+      assert length(contexts) > 1,
+             "expected more than one page context, got #{length(contexts)}"
+
+      row =
+        LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
+        |> Enum.find(&(&1.resource_id == activity.resource_id))
+
+      assert row.attempts == 10, "section-wide attempts were counted more than once"
+      assert row.percent_correct == 40.0
+    end
+
+    test "reports activity-level attempts for a multi-part activity", %{
+      section: section,
+      objectives: %{objective_a: objective_a},
+      activities: activities
+    } do
+      activity = activities.page_1_mcq_1
+
+      for part_id <- ["1", "2", "3"] do
+        Oli.Repo.insert!(%Oli.Analytics.Summary.ResourceSummary{
+          project_id: -1,
+          section_id: section.id,
+          user_id: -1,
+          resource_id: activity.resource_id,
+          part_id: part_id,
+          num_attempts: 4,
+          num_correct: 3
+        })
+      end
+
+      row =
+        LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
+        |> Enum.find(&(&1.resource_id == activity.resource_id))
+
+      assert row.attempts == 4, "part attempt counts were summed into the activity total"
+      assert row.percent_correct == 75.0
     end
   end
 
