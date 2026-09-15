@@ -24,11 +24,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
 
   use OliWeb, :live_component
 
+  alias OliWeb.Common.Chip
   alias OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTableModel
   alias OliWeb.Components.Delivery.Students.EmailButton
   alias OliWeb.Components.Delivery.Students.StudentSelection
   alias OliWeb.Components.Delivery.UserAccount
-  alias OliWeb.Delivery.LearningObjectives.Proficiency
   alias OliWeb.Icons
 
   @visible_count_step 20
@@ -316,7 +316,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
                   </div>
                 </td>
                 <td class="p-2">
-                  <Proficiency.chip label={student.proficiency_range || "Not enough data"} />
+                  <.proficiency_chip label={student.proficiency_range || "Not enough data"} />
                 </td>
                 <td class="p-2 text-Text-text-high">{activities_text(student)}</td>
               </tr>
@@ -371,6 +371,33 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     </span>
     """
   end
+
+  # A plain color chip, no icon -- unlike `OliWeb.Delivery.LearningObjectives.Proficiency.chip/1`
+  # (shared with the Learning Objectives and Sub-objectives tables, which do want the "Low"
+  # warning icon), this table's own Figma spec has no icon on any proficiency badge.
+  attr :label, :string, required: true
+
+  defp proficiency_chip(assigns) do
+    {bg_color, text_color} = proficiency_chip_colors(assigns.label)
+    assigns = assign(assigns, bg_color: bg_color, text_color: text_color)
+
+    ~H"""
+    <Chip.render
+      label={@label}
+      bg_color={@bg_color}
+      text_color={@text_color}
+      label_class="whitespace-nowrap"
+    />
+    """
+  end
+
+  defp proficiency_chip_colors("High"), do: {"bg-Fill-Chip-Green", "text-Text-text-accent-green"}
+
+  defp proficiency_chip_colors("Medium"),
+    do: {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
+
+  defp proficiency_chip_colors("Low"), do: {"bg-Fill-fill-danger", "text-Text-text-danger"}
+  defp proficiency_chip_colors(_), do: {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
 
   def handle_event("filter_by_proficiency", %{"proficiency" => proficiency}, socket) do
     {:noreply,
