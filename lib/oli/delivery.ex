@@ -31,10 +31,8 @@ defmodule Oli.Delivery do
     - `publication:<publication_id>` for a publication
     - `product:<product_id>` for a product
 
-  For compatibility with existing trusted admin and internal callers, a `nil`
-  user remains valid for direct-delivery creation from those three legacy source
-  types. Creating from a previous section requires the request-struct API with
-  an explicit user or author identity.
+  Missing identities are denied by default. Administrative callers should use
+  the request-struct API with an authenticated author.
 
   The return value is one of the following:
     - `{:ok, section.id, section.slug}`: The section was successfully created.
@@ -59,7 +57,7 @@ defmodule Oli.Delivery do
       section_spec: section_spec
     }
 
-    create_section(request, legacy_creation_actor(source, user, section_spec))
+    create_section(request)
   end
 
   @doc """
@@ -131,17 +129,6 @@ defmodule Oli.Delivery do
         )
     end
   end
-
-  defp legacy_creation_actor("project:" <> _id, nil, %SectionSpecification.Direct{}),
-    do: Actor.system()
-
-  defp legacy_creation_actor("publication:" <> _id, nil, %SectionSpecification.Direct{}),
-    do: Actor.system()
-
-  defp legacy_creation_actor("product:" <> _id, nil, %SectionSpecification.Direct{}),
-    do: Actor.system()
-
-  defp legacy_creation_actor(_source, user, _section_spec), do: Actor.new(user)
 
   defp create_from_project(changeset, project, user, section_spec) do
     %{id: project_id} = Oli.Authoring.Course.get_project_by_slug(project.slug)
