@@ -55,6 +55,23 @@ defmodule OliWeb.Delivery.LearningObjectives.Proficiency do
   def dot_class("High"), do: "bg-Text-text-accent-green"
   def dot_class(_not_enough_data), do: "bg-Fill-Chip-Gray"
 
+  @doc "Returns the three cumulative bar-fill classes for the Confidence icon at a given level."
+  def confidence_bar_classes("Low"),
+    do: {"fill-Icon-icon-danger", "fill-Icon-icon-default", "fill-Icon-icon-default"}
+
+  def confidence_bar_classes("Medium"),
+    do: {"fill-Icon-icon-accent-orange", "fill-Icon-icon-accent-orange", "fill-Icon-icon-default"}
+
+  def confidence_bar_classes("High"),
+    do:
+      {"fill-Text-text-accent-green", "fill-Text-text-accent-green",
+       "fill-Text-text-accent-green"}
+
+  def confidence_bar_classes(_not_enough_data) do
+    inactive = "fill-Icon-icon-default"
+    {inactive, inactive, inactive}
+  end
+
   @doc "Returns the full display label (e.g. \"Low Proficiency\") for a chart/filter label."
   def full_label("Low"), do: "Low Proficiency"
   def full_label("Medium"), do: "Medium Proficiency"

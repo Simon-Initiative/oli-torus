@@ -19,40 +19,46 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
-  defp student_proficiency_tooltip_content(assigns) do
-    ~H"""
-    <div class="flex flex-col gap-6">
-      <p>Aggregate class proficiency for the learning objective.</p>
-      <p>
-        <b>Not enough data:</b>
-        Students have not completed enough linked activities to estimate proficiency for this objective.
-      </p>
-      <p>
-        <b>Low Proficiency:</b>
-        Students are unlikely to apply this objective without support, open the student list to investigate.
-      </p>
-      <p><b>Medium Proficiency:</b> Students may need more practice before assessment.</p>
-      <p>
-        <b>High Proficiency:</b> Students are likely to apply this objective across linked activities.
-      </p>
-    </div>
-    """
+  defp student_proficiency_tooltip_content(_assigns) do
+    definition_list_tooltip(%{
+      intro: "Aggregate class proficiency for the learning objective.",
+      definitions: [
+        {"Not enough data",
+         "Students have not completed enough linked activities to estimate proficiency for this objective."},
+        {"Low Proficiency",
+         "Students are unlikely to apply this objective without support, open the student list to investigate."},
+        {"Medium Proficiency", "Students may need more practice before assessment."},
+        {"High Proficiency",
+         "Students are likely to apply this objective across linked activities."}
+      ]
+    })
   end
 
-  defp confidence_tooltip_content(assigns) do
+  defp confidence_tooltip_content(_assigns) do
+    definition_list_tooltip(%{
+      intro: "How confident we are in the proficiency estimate based on available data.",
+      definitions: [
+        {"Low Confidence",
+         "Based on limited activity evidence. Treat proficiency level as preliminary and encourage more activity before acting."},
+        {"Medium Confidence",
+         "Based on moderate activity evidence. The estimate may change as more students complete linked activities."},
+        {"High Confidence", "Based on substantial activity evidence across linked activities."}
+      ]
+    })
+  end
+
+  attr :intro, :string, required: true
+
+  attr :definitions, :list,
+    required: true,
+    doc: "A list of {label, description} tuples, each rendered as a bold-label definition."
+
+  defp definition_list_tooltip(assigns) do
     ~H"""
     <div class="flex flex-col gap-6">
-      <p>How confident we are in the proficiency estimate based on available data.</p>
-      <p>
-        <b>Low Confidence:</b>
-        Based on limited activity evidence. Treat proficiency level as preliminary and encourage more activity before acting.
-      </p>
-      <p>
-        <b>Medium Confidence:</b>
-        Based on moderate activity evidence. The estimate may change as more students complete linked activities.
-      </p>
-      <p>
-        <b>High Confidence:</b> Based on substantial activity evidence across linked activities.
+      <p>{@intro}</p>
+      <p :for={{label, description} <- @definitions}>
+        <b>{label}:</b> {description}
       </p>
     </div>
     """
@@ -261,7 +267,6 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     <div
       class="relative flex rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-600 focus-visible:ring-offset-2 [&:hover>.proficiency-dist-tooltip]:flex [&:focus-within>.proficiency-dist-tooltip]:flex"
       tabindex="0"
-      role="button"
       aria-describedby={@tooltip_id}
     >
       {render_proficiency_data_chart(@objective_id, @proficiency_distribution)}
@@ -288,12 +293,23 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   # CONFIDENCE
   defp custom_render(assigns, objective, %ColumnSpec{name: :confidence}) do
     confidence = Map.get(objective, :confidence_subobj) || Map.get(objective, :confidence_obj)
+    {bar_1_class, bar_2_class, bar_3_class} = Proficiency.confidence_bar_classes(confidence)
 
-    assigns = Map.put(assigns, :confidence, confidence)
+    assigns =
+      Map.merge(assigns, %{
+        confidence: confidence,
+        bar_1_class: bar_1_class,
+        bar_2_class: bar_2_class,
+        bar_3_class: bar_3_class
+      })
 
     ~H"""
     <div :if={@confidence} class="flex items-center gap-1.5 text-Text-text-high">
-      <Icons.confidence_bars level={@confidence} />
+      <Icons.confidence_bars
+        bar_1_class={@bar_1_class}
+        bar_2_class={@bar_2_class}
+        bar_3_class={@bar_3_class}
+      />
       <span>{@confidence}</span>
     </div>
     <span :if={is_nil(@confidence)}>-</span>

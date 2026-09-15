@@ -1859,20 +1859,13 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :level, :string, required: true
+  attr :bar_1_class, :string, required: true
+  attr :bar_2_class, :string, required: true
+  attr :bar_3_class, :string, required: true
   attr :class, :string, default: "w-4 h-4"
 
-  @doc "Three-bar signal icon for a confidence level, bars filled cumulatively by level."
+  @doc "Three-bar signal icon; pass the fill class for each bar (see Proficiency.confidence_bar_classes/1)."
   def confidence_bars(assigns) do
-    {bar_1_class, bar_2_class, bar_3_class} = confidence_bar_classes(assigns.level)
-
-    assigns =
-      Map.merge(assigns, %{
-        bar_1_class: bar_1_class,
-        bar_2_class: bar_2_class,
-        bar_3_class: bar_3_class
-      })
-
     ~H"""
     <svg class={@class} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="1" y="9" width="3" height="5" rx="1" class={@bar_1_class} />
@@ -1881,20 +1874,6 @@ defmodule OliWeb.Icons do
     </svg>
     """
   end
-
-  defp confidence_bar_classes("High"),
-    do:
-      {"fill-Text-text-accent-green", "fill-Text-text-accent-green",
-       "fill-Text-text-accent-green"}
-
-  defp confidence_bar_classes("Medium"),
-    do: {"fill-Icon-icon-accent-orange", "fill-Icon-icon-accent-orange", "fill-Icon-icon-default"}
-
-  defp confidence_bar_classes("Low"),
-    do: {"fill-Icon-icon-danger", "fill-Icon-icon-default", "fill-Icon-icon-default"}
-
-  defp confidence_bar_classes(_not_enough_data),
-    do: {"fill-Icon-icon-default", "fill-Icon-icon-default", "fill-Icon-icon-default"}
 
   attr :is_active, :boolean, default: false
   attr :stroke_class, :string, default: "stroke-[#757682] dark:stroke-[#BAB8BF]"
