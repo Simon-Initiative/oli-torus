@@ -157,7 +157,7 @@ defmodule Oli.Delivery.Sections.SectionCopy do
   Returns `{:ok, section}` or `{:error, reason}`. Every step participates in one
   transaction, so a failure at any point leaves no partial section behind.
   """
-  @spec copy(Section.t(), map(), CopyOptions.t()) :: {:ok, Section.t()} | {:error, term()}
+  @spec copy(%Section{}, map(), CopyOptions.t()) :: {:ok, %Section{}} | {:error, term()}
   def copy(%Section{} = source, destination_attrs, %CopyOptions{} = options) do
     started_at = System.monotonic_time()
 

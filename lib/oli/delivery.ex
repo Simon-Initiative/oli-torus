@@ -33,6 +33,8 @@ defmodule Oli.Delivery do
     - `{:error, :unauthorized}`: The actor may not create this section.
     - `{:error, error_msg}`: An error occurred while creating the section.
   """
+  @spec create_section(SectionCreationRequest.t()) ::
+          {:ok, integer(), String.t()} | {:error, term()}
   def create_section(%SectionCreationRequest{} = request) do
     with {:ok, actor} <- SectionCreation.load_actor(request.actor),
          {:ok, section_spec} <- SectionCreation.authorize_actor(actor, request.section_spec) do

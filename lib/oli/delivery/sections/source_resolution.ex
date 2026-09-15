@@ -51,8 +51,8 @@ defmodule Oli.Delivery.Sections.SourceResolution do
     """
 
     @type t :: %__MODULE__{
-            user: Oli.Accounts.User.t() | nil,
-            author: Oli.Accounts.Author.t() | nil,
+            user: %Oli.Accounts.User{} | nil,
+            author: %Oli.Accounts.Author{} | nil,
             admin?: boolean(),
             system?: boolean()
           }
@@ -60,7 +60,7 @@ defmodule Oli.Delivery.Sections.SourceResolution do
     defstruct user: nil, author: nil, admin?: false, system?: false
 
     @doc "Builds an actor, deriving admin status from the author's system role."
-    @spec new(Oli.Accounts.User.t() | nil, Oli.Accounts.Author.t() | nil) :: t()
+    @spec new(%Oli.Accounts.User{} | nil, %Oli.Accounts.Author{} | nil) :: t()
     def new(user \\ nil, author \\ nil) do
       author =
         case author || (user && Map.get(user, :author)) do
@@ -82,10 +82,10 @@ defmodule Oli.Delivery.Sections.SourceResolution do
   end
 
   @type source ::
-          {:project, Project.t()}
-          | {:publication, Publication.t()}
-          | {:product, Section.t()}
-          | {:previous_section, Section.t()}
+          {:project, %Project{}}
+          | {:publication, %Publication{}}
+          | {:product, %Section{}}
+          | {:previous_section, %Section{}}
 
   @doc """
   Resolves `identifier` into a typed, authorized source.
@@ -152,7 +152,7 @@ defmodule Oli.Delivery.Sections.SourceResolution do
   institution when creating through LTI. This is the query the source-selection
   UI should use; `resolve/3` re-checks the same rules on submission.
   """
-  @spec copyable_sections(Actor.t(), term()) :: [Section.t()]
+  @spec copyable_sections(Actor.t(), term()) :: [%Section{}]
   def copyable_sections(%Actor{admin?: true}, section_spec) do
     base_copyable_query()
     |> scope_to_institution(SectionSpecification.get_institution(section_spec))
@@ -262,6 +262,5 @@ defmodule Oli.Delivery.Sections.SourceResolution do
     end
   end
 
-  defp parse_id(id) when is_integer(id), do: {:ok, id}
   defp parse_id(_), do: :error
 end

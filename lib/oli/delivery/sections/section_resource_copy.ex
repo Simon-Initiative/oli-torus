@@ -150,7 +150,7 @@ defmodule Oli.Delivery.Sections.SectionResourceCopy do
   when the copy remaps projects. `now` is the timestamp stamped on the new row:
   copied rows are new rows, so they never inherit the source's `inserted_at`.
   """
-  @spec build_row(SectionResource.t(), map(), CopyOptions.t(), map(), DateTime.t()) :: map()
+  @spec build_row(%SectionResource{}, map(), CopyOptions.t(), map(), DateTime.t()) :: map()
   def build_row(%SectionResource{} = source, overrides, %CopyOptions{} = options, defaults, now) do
     revision = Map.get(defaults, source.resource_id, %{})
 
