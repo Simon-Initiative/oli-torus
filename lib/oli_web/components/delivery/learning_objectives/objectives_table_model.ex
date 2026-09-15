@@ -19,43 +19,94 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
-  def new(objectives, :instructor_dashboard) do
-    column_specs = [
-      %ColumnSpec{
-        render_fn: &render_expanded/3,
-        sortable: false,
-        th_class: "w-4"
-      },
-      %ColumnSpec{
-        name: :objective_instructor_dashboard,
-        label: "Learning Objective",
-        render_fn: &custom_render/3,
-        th_class: "w-1/2",
-        td_class: "pr-4"
-      },
-      %ColumnSpec{
-        name: :student_proficiency_obj,
-        label:
-          HTMLComponents.render_label(%{
-            title: "Student Proficiency",
-            info_tooltip: @student_proficiency_tooltip_text
-          }),
-        render_fn: &custom_render/3
-      },
-      %ColumnSpec{
-        name: :student_proficiency_distribution,
-        label: "Proficiency Distribution",
-        sortable: false,
-        render_fn: &custom_render/3
-      },
-      %ColumnSpec{
-        name: :related_activities_count,
-        label: "Linked Activities",
-        render_fn: &custom_render/3,
-        sortable: false,
-        tooltip: "Number of activities that have this learning objective attached"
-      }
-    ]
+  defp student_proficiency_tooltip_content(_assigns) do
+    definition_list_tooltip(%{
+      intro: "Aggregate class proficiency for the learning objective.",
+      definitions: [
+        {"Not enough data",
+         "Students have not completed enough linked activities to estimate proficiency for this objective."},
+        {"Low Proficiency",
+         "Students are unlikely to apply this objective without support, open the student list to investigate."},
+        {"Medium Proficiency", "Students may need more practice before assessment."},
+        {"High Proficiency",
+         "Students are likely to apply this objective across linked activities."}
+      ]
+    })
+  end
+
+  defp confidence_tooltip_content(_assigns) do
+    definition_list_tooltip(%{
+      intro: "How confident we are in the proficiency estimate based on available data.",
+      definitions: [
+        {"Low Confidence",
+         "Based on limited activity evidence. Treat proficiency level as preliminary and encourage more activity before acting."},
+        {"Medium Confidence",
+         "Based on moderate activity evidence. The estimate may change as more students complete linked activities."},
+        {"High Confidence", "Based on substantial activity evidence across linked activities."}
+      ]
+    })
+  end
+
+  attr :intro, :string, required: true
+
+  attr :definitions, :list,
+    required: true,
+    doc: "A list of {label, description} tuples, each rendered as a bold-label definition."
+
+  defp definition_list_tooltip(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-6">
+      <p>{@intro}</p>
+      <p :for={{label, description} <- @definitions}>
+        <b>{label}:</b> {description}
+      </p>
+    </div>
+    """
+  end
+
+  def new(objectives, patch_url_type, confidence_supported? \\ false)
+
+  def new(objectives, :instructor_dashboard, confidence_supported?) do
+    column_specs =
+      [
+        %ColumnSpec{
+          render_fn: &render_expanded/3,
+          sortable: false,
+          th_class: "w-4"
+        },
+        %ColumnSpec{
+          name: :objective_instructor_dashboard,
+          label: "Learning Objective",
+          render_fn: &custom_render/3,
+          th_class: "w-2/5",
+          td_class: "pr-4"
+        },
+        %ColumnSpec{
+          name: :student_proficiency_obj,
+          label:
+            HTMLComponents.render_label(%{
+              title: "Student Proficiency",
+              info_tooltip: student_proficiency_tooltip_content(%{})
+            }),
+          render_fn: &custom_render/3
+        }
+      ] ++
+        maybe_confidence_column(confidence_supported?) ++
+        [
+          %ColumnSpec{
+            name: :student_proficiency_distribution,
+            label: "Proficiency Distribution",
+            sortable: false,
+            render_fn: &custom_render/3
+          },
+          %ColumnSpec{
+            name: :related_activities_count,
+            label: "Linked Activities",
+            render_fn: &custom_render/3,
+            sortable: false,
+            tooltip: "Number of activities that have this learning objective attached"
+          }
+        ]
 
     SortableTableModel.new(
       rows: objectives,
@@ -66,7 +117,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     )
   end
 
-  def new(objectives, _patch_url_type) do
+  def new(objectives, _patch_url_type, _confidence_supported?) do
     column_specs = [
       %ColumnSpec{
         name: :objective,
@@ -99,6 +150,22 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       event_suffix: "",
       id_field: [:resource_id]
     )
+  end
+
+  defp maybe_confidence_column(false), do: []
+
+  defp maybe_confidence_column(true) do
+    [
+      %ColumnSpec{
+        name: :confidence,
+        label:
+          HTMLComponents.render_label(%{
+            title: "Confidence",
+            info_tooltip: confidence_tooltip_content(%{})
+          }),
+        render_fn: &custom_render/3
+      }
+    ]
   end
 
   # STUDENT PROFICIENCY
@@ -194,17 +261,58 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         proficiency_labels: Proficiency.labels()
       })
 
+    assigns = Map.put(assigns, :tooltip_id, "proficiency-distribution-tooltip-#{objective_id}")
+
     ~H"""
-    <div class="group relative flex">
+    <div
+      class="relative flex rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-600 focus-visible:ring-offset-2 [&:hover>.proficiency-dist-tooltip]:flex [&:focus-within>.proficiency-dist-tooltip]:flex"
+      tabindex="0"
+      aria-describedby={@tooltip_id}
+    >
       {render_proficiency_data_chart(@objective_id, @proficiency_distribution)}
-      <div class="absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-60 min-h-[100px] rounded-md border border-Border-border-default bg-white dark:bg-gray-900 px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col gap-1 group-hover:flex z-50">
+      <div
+        id={@tooltip_id}
+        role="tooltip"
+        class="proficiency-dist-tooltip absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col z-50"
+      >
         <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
-          <div class="w-full text-left">
-            <span class="font-medium">{label}</span>: {value}%
+          <div class="flex h-6 w-full items-center gap-1.5 text-left">
+            <span
+              class={"inline-block h-3 w-3 shrink-0 rounded-full " <> Proficiency.dot_class(label)}
+              aria-hidden="true"
+            >
+            </span>
+            <b>{Proficiency.full_label(label)}:</b> {value}%
           </div>
         <% end %>
       </div>
     </div>
+    """
+  end
+
+  # CONFIDENCE
+  defp custom_render(assigns, objective, %ColumnSpec{name: :confidence}) do
+    confidence = Map.get(objective, :confidence_subobj) || Map.get(objective, :confidence_obj)
+    {bar_1_class, bar_2_class, bar_3_class} = Proficiency.confidence_bar_classes(confidence)
+
+    assigns =
+      Map.merge(assigns, %{
+        confidence: confidence,
+        bar_1_class: bar_1_class,
+        bar_2_class: bar_2_class,
+        bar_3_class: bar_3_class
+      })
+
+    ~H"""
+    <div :if={@confidence} class="flex items-center gap-1.5 text-Text-text-high">
+      <Icons.confidence_bars
+        bar_1_class={@bar_1_class}
+        bar_2_class={@bar_2_class}
+        bar_3_class={@bar_3_class}
+      />
+      <span>{@confidence}</span>
+    </div>
+    <span :if={is_nil(@confidence)}>-</span>
     """
   end
 

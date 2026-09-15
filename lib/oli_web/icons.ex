@@ -1859,6 +1859,22 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :bar_1_class, :string, required: true
+  attr :bar_2_class, :string, required: true
+  attr :bar_3_class, :string, required: true
+  attr :class, :string, default: "w-4 h-4"
+
+  @doc "Three-bar signal icon; pass the fill class for each bar (see Proficiency.confidence_bar_classes/1)."
+  def confidence_bars(assigns) do
+    ~H"""
+    <svg class={@class} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="9" width="3" height="5" rx="1" class={@bar_1_class} />
+      <rect x="6.5" y="6" width="3" height="8" rx="1" class={@bar_2_class} />
+      <rect x="12" y="2" width="3" height="12" rx="1" class={@bar_3_class} />
+    </svg>
+    """
+  end
+
   attr :is_active, :boolean, default: false
   attr :stroke_class, :string, default: "stroke-[#757682] dark:stroke-[#BAB8BF]"
   attr :class, :string, default: "w-[24px] h-[24px]"

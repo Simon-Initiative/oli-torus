@@ -21,6 +21,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     text_search: nil,
     filter_by: "root",
     selected_proficiency_ids: [],
+    selected_confidence_ids: [],
     selected_card_value: nil,
     navigation_source: nil,
     objective_id: nil,
@@ -28,6 +29,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   }
 
   @proficiency_options [
+    %{id: 1, name: "Low", selected: false},
+    %{id: 2, name: "Medium", selected: false},
+    %{id: 3, name: "High", selected: false},
+    %{id: 4, name: "Not Enough Data", selected: false}
+  ]
+
+  @confidence_options [
     %{id: 1, name: "Low", selected: false},
     %{id: 2, name: "Medium", selected: false},
     %{id: 3, name: "High", selected: false}
@@ -44,6 +52,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       ) do
     params = decode_params(params)
     patch_url_type = assigns[:patch_url_type]
+    confidence_supported? = Map.get(assigns, :confidence_supported?, false)
 
     params =
       maybe_adjust_params_for_navigation(
@@ -65,7 +74,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       end)
 
     {:ok, objectives_table_model} =
-      ObjectivesTableModel.new(indexed_rows, patch_url_type)
+      ObjectivesTableModel.new(indexed_rows, patch_url_type, confidence_supported?)
 
     # A new search term resets the expansion state to whatever that term dictates. While the
     # term holds, rows the user collapsed by hand stay collapsed across sorting and paging.
@@ -136,10 +145,22 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     selected_proficiency_ids = params.selected_proficiency_ids
 
     proficiency_options =
-      update_proficiency_options(selected_proficiency_ids, @proficiency_options)
+      update_options(selected_proficiency_ids, @proficiency_options)
 
     selected_proficiency_options =
       Enum.reduce(proficiency_options, %{}, fn option, acc ->
+        if option.selected,
+          do: Map.put(acc, option.id, option.name),
+          else: acc
+      end)
+
+    selected_confidence_ids = params.selected_confidence_ids
+
+    confidence_options =
+      update_options(selected_confidence_ids, @confidence_options)
+
+    selected_confidence_options =
+      Enum.reduce(confidence_options, %{}, fn option, acc ->
         if option.selected,
           do: Map.put(acc, option.id, option.name),
           else: acc
@@ -160,6 +181,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        proficiency_options: proficiency_options,
        selected_proficiency_options: selected_proficiency_options,
        selected_proficiency_ids: selected_proficiency_ids,
+       confidence_supported?: confidence_supported?,
+       confidence_options: confidence_options,
+       selected_confidence_options: selected_confidence_options,
+       selected_confidence_ids: selected_confidence_ids,
        card_props: card_props,
        expanded_objectives: expanded_objectives,
        manually_collapsed_rows: manually_collapsed_rows
@@ -262,8 +287,22 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               selected_values={@selected_proficiency_options}
               selected_ids={@selected_proficiency_ids}
               target={@myself}
-              disabled={@selected_proficiency_ids == %{}}
+              disabled={@selected_proficiency_ids == []}
               placeholder="Proficiency"
+            />
+
+            <MultiSelect.render
+              :if={@confidence_supported?}
+              id="confidence_select"
+              options={@confidence_options}
+              selected_values={@selected_confidence_options}
+              selected_ids={@selected_confidence_ids}
+              target={@myself}
+              disabled={@selected_confidence_ids == []}
+              placeholder="Confidence"
+              label="Confidence"
+              toggle_event="toggle_confidence_selected"
+              submit_event="apply_confidence_filter"
             />
 
             <button
@@ -334,25 +373,33 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   def handle_event("toggle_selected", %{"_target" => [id]}, socket) do
     selected_id = String.to_integer(id)
-    do_update_selection(socket, selected_id)
+
+    do_toggle_selection(
+      socket,
+      selected_id,
+      :proficiency_options,
+      :selected_proficiency_options,
+      :selected_proficiency_ids
+    )
   end
 
-  def handle_event("apply_proficiency_filter", _params, socket) do
-    %{
-      selected_proficiency_ids: selected_proficiency_ids,
-      patch_url_type: patch_url_type
-    } = socket.assigns
+  def handle_event("toggle_confidence_selected", %{"_target" => [id]}, socket) do
+    selected_id = String.to_integer(id)
 
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_for(
-           socket,
-           %{selected_proficiency_ids: Jason.encode!(selected_proficiency_ids)},
-           patch_url_type
-         )
-     )}
+    do_toggle_selection(
+      socket,
+      selected_id,
+      :confidence_options,
+      :selected_confidence_options,
+      :selected_confidence_ids
+    )
   end
+
+  def handle_event("apply_confidence_filter", _params, socket),
+    do: apply_selection_filter(socket, :selected_confidence_ids)
+
+  def handle_event("apply_proficiency_filter", _params, socket),
+    do: apply_selection_filter(socket, :selected_proficiency_ids)
 
   def handle_event("clear_all_filters", _params, socket) do
     section_slug = socket.assigns.section_slug
@@ -487,15 +534,21 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
      |> assign(table_model: updated_table_model)}
   end
 
-  defp do_update_selection(socket, selected_id) do
-    %{proficiency_options: proficiency_options} = socket.assigns
+  defp do_toggle_selection(
+         socket,
+         selected_id,
+         options_key,
+         selected_options_key,
+         selected_ids_key
+       ) do
+    options = Map.fetch!(socket.assigns, options_key)
 
     updated_options =
-      Enum.map(proficiency_options, fn option ->
+      Enum.map(options, fn option ->
         if option.id == selected_id, do: %{option | selected: !option.selected}, else: option
       end)
 
-    {selected_proficiency_options, selected_ids} =
+    {selected_options, selected_ids} =
       Enum.reduce(updated_options, {%{}, []}, fn option, {values, acc_ids} ->
         if option.selected,
           do: {Map.put(values, option.id, option.name), [option.id | acc_ids]},
@@ -503,16 +556,30 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       end)
 
     {:noreply,
-     assign(socket,
-       selected_proficiency_options: selected_proficiency_options,
-       proficiency_options: updated_options,
-       selected_proficiency_ids: selected_ids
+     assign(socket, %{
+       selected_options_key => selected_options,
+       options_key => updated_options,
+       selected_ids_key => selected_ids
+     })}
+  end
+
+  defp apply_selection_filter(socket, ids_key) do
+    selected_ids = Map.fetch!(socket.assigns, ids_key)
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(
+           socket,
+           %{ids_key => Jason.encode!(selected_ids)},
+           socket.assigns.patch_url_type
+         )
      )}
   end
 
-  defp update_proficiency_options(selected_proficiency_ids, proficiency_options) do
-    Enum.map(proficiency_options, fn option ->
-      if option.id in selected_proficiency_ids,
+  defp update_options(selected_ids, options) do
+    Enum.map(options, fn option ->
+      if option.id in selected_ids,
         do: %{option | selected: true},
         else: option
     end)
@@ -539,6 +606,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             :subobjective,
             :student_proficiency_obj,
             :student_proficiency_subobj,
+            :confidence,
             :related_activities_count
           ],
           @default_params.sort_by
@@ -553,6 +621,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           params,
           "selected_proficiency_ids",
           @default_params.selected_proficiency_ids
+        ),
+      selected_confidence_ids:
+        Params.get_list_param(
+          params,
+          "selected_confidence_ids",
+          @default_params.selected_confidence_ids
         ),
       selected_card_value:
         Params.get_atom_param(
@@ -602,9 +676,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp trim_text_search(_text_search), do: nil
 
   defp encode_params_for_url(params) do
-    case Map.fetch(params, :selected_proficiency_ids) do
+    params
+    |> encode_list_param_for_url(:selected_proficiency_ids)
+    |> encode_list_param_for_url(:selected_confidence_ids)
+  end
+
+  defp encode_list_param_for_url(params, key) do
+    case Map.fetch(params, key) do
       {:ok, ids} when is_list(ids) ->
-        Map.put(params, :selected_proficiency_ids, Jason.encode!(ids))
+        Map.put(params, key, Jason.encode!(ids))
 
       _ ->
         params
@@ -698,6 +778,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     objectives
     |> maybe_filter_by_text(params.text_search)
     |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
+    |> maybe_filter_by_confidence(Map.get(params, :selected_confidence_ids, []))
     |> maybe_filter_by_card(params.selected_card_value)
   end
 
@@ -792,6 +873,21 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end
   end
 
+  @confidence_rank ["High", "Medium", "Low", nil]
+                   |> Enum.with_index()
+                   |> Enum.into(%{})
+
+  defp sort_by(objectives, :confidence, sort_order) do
+    Enum.sort_by(
+      objectives,
+      fn objective ->
+        confidence = Map.get(objective, :confidence_subobj) || Map.get(objective, :confidence_obj)
+        {@confidence_rank[confidence], normalized_title(objective)}
+      end,
+      sort_order
+    )
+  end
+
   defp sort_by(objectives, :related_activities_count, sort_order) do
     Enum.sort_by(
       objectives,
@@ -842,15 +938,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp do_filter_by_proficiency(objectives, selected_proficiency_ids) do
-    mapper_ids =
-      Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
-        case id do
-          1 -> ["Low" | acc]
-          2 -> ["Medium" | acc]
-          3 -> ["High" | acc]
-          _ -> acc
-        end
-      end)
+    mapper_ids = level_mapper_ids(selected_proficiency_ids)
 
     if mapper_ids == [] do
       objectives
@@ -864,6 +952,46 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         proficiency in mapper_ids
       end)
     end
+  end
+
+  defp maybe_filter_by_proficiency_own_value(objectives, []), do: objectives
+
+  defp maybe_filter_by_proficiency_own_value(objectives, selected_proficiency_ids) do
+    filter_by_own_value(objectives, selected_proficiency_ids, :student_proficiency_obj)
+  end
+
+  defp maybe_filter_by_confidence(objectives, []), do: objectives
+
+  defp maybe_filter_by_confidence(objectives, selected_confidence_ids) do
+    filter_by_own_value(objectives, selected_confidence_ids, :confidence_obj)
+  end
+
+  # The instructor-dashboard table only ever displays each family's top-level row, so
+  # (unlike do_filter_by_proficiency, used by the flat parent+sub-objective table where
+  # each row shows its own sub-objective value) this must match only the value actually
+  # shown on that row — the same, parent-level aggregate every row in a family carries.
+  # Checking a sub-objective's own value here would let a differently-valued child
+  # incorrectly promote its parent into view.
+  defp filter_by_own_value(objectives, selected_ids, field) do
+    mapper_ids = level_mapper_ids(selected_ids)
+
+    if mapper_ids == [] do
+      objectives
+    else
+      Enum.filter(objectives, fn objective -> Map.get(objective, field) in mapper_ids end)
+    end
+  end
+
+  defp level_mapper_ids(selected_ids) do
+    Enum.reduce(selected_ids, [], fn id, acc ->
+      case id do
+        1 -> ["Low" | acc]
+        2 -> ["Medium" | acc]
+        3 -> ["High" | acc]
+        4 -> ["Not enough data" | acc]
+        _ -> acc
+      end
+    end)
   end
 
   defp maybe_filter_by_card(objectives, :low_proficiency_outcomes),
@@ -920,7 +1048,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp instructor_dashboard_parent_objectives(candidates, objectives, params) do
     matching_parent_ids =
       candidates
-      |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
+      |> maybe_filter_by_proficiency_own_value(params.selected_proficiency_ids)
+      |> maybe_filter_by_confidence(Map.get(params, :selected_confidence_ids, []))
       |> maybe_filter_by_card(params.selected_card_value)
       |> MapSet.new(&parent_resource_id/1)
 

@@ -3830,6 +3830,15 @@ defmodule Oli.Delivery.SectionsTest do
       assert is_list(sub_b2.container_ids)
     end
 
+    test "confidence is nil for naive sections", %{section: section} do
+      assert section.learning_model_version == :naive
+
+      result = Sections.get_objectives_and_subobjectives(section)
+
+      assert Enum.all?(result, &(&1.confidence_obj == nil))
+      assert Enum.all?(result, &(&1.confidence_subobj == nil))
+    end
+
     test "excludes subobjectives when exclude_sub_objectives is true", %{
       section: section,
       objectives: %{objective_a: objective_a, objective_b: objective_b}

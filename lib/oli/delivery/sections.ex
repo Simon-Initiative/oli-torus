@@ -60,6 +60,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Proficiency
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Branding.CustomLabels
 
@@ -6356,6 +6357,34 @@ defmodule Oli.Delivery.Sections do
         {[], %{}}
       end
 
+    # Confidence is only meaningful for models that compute it, and only for the
+    # class-wide view (a single student's own confidence isn't rolled up here).
+    confidence_for_objectives =
+      if is_nil(student_id) and Proficiency.confidence_supported?(section) do
+        confidence_per_student =
+          Metrics.confidence_per_student_for_objective(
+            section,
+            Enum.map(objectives, & &1.resource_id)
+          )
+
+        Map.new(objectives, fn objective ->
+          confidences =
+            confidence_per_student
+            |> Map.get(objective.resource_id, %{})
+            |> Map.values()
+
+          label =
+            case confidences do
+              [] -> nil
+              values -> Metrics.confidence_label(Enum.sum(values) / length(values))
+            end
+
+          {objective.resource_id, label}
+        end)
+      else
+        %{}
+      end
+
     lookup_map =
       Enum.reduce(objectives, %{}, fn obj, acc ->
         Map.put(acc, obj.resource_id, obj)
@@ -6402,9 +6431,11 @@ defmodule Oli.Delivery.Sections do
               objective_resource_id: objective.resource_id,
               student_proficiency_obj: student_proficiency_obj,
               student_proficiency_obj_dist: student_proficiency_obj_dist,
+              confidence_obj: Map.get(confidence_for_objectives, objective.resource_id),
               subobjective: nil,
               subobjective_resource_id: nil,
-              student_proficiency_subobj: nil
+              student_proficiency_subobj: nil,
+              confidence_subobj: nil
             })
 
           case exclude_sub_objectives do
@@ -6445,10 +6476,13 @@ defmodule Oli.Delivery.Sections do
                     objective_resource_id: objective.resource_id,
                     student_proficiency_obj: student_proficiency_obj,
                     student_proficiency_obj_dist: student_proficiency_obj_dist,
+                    confidence_obj: Map.get(confidence_for_objectives, objective.resource_id),
                     subobjective: sub_objective.title,
                     subobjective_resource_id: sub_objective.resource_id,
                     student_proficiency_subobj: student_proficiency_subobj,
-                    student_proficiency_subobj_dist: student_proficiency_subobj_dist
+                    student_proficiency_subobj_dist: student_proficiency_subobj_dist,
+                    confidence_subobj:
+                      Map.get(confidence_for_objectives, sub_objective.resource_id)
                   })
                 end)
 
