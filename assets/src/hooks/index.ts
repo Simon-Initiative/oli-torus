@@ -79,6 +79,7 @@ import { SessionBannerDismiss } from './session_banner_dismiss';
 import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { StickyTechSupportButton } from './sticky_tech_support_button';
+import { StudentDistributionMatrixLabels } from './student_distribution_matrix_labels';
 import { StudentSupportChart } from './student_support_chart';
 import { StudentSupportParametersMatrix } from './student_support_parameters_matrix';
 import { SubmitForm } from './submit_form';
@@ -181,6 +182,7 @@ export const Hooks = {
   FixedNavigationBar,
   SubmitTechSupportForm,
   StickyTechSupportButton,
+  StudentDistributionMatrixLabels,
   StudentSupportChart,
   StudentSupportParametersMatrix,
   SyncChevronState,
