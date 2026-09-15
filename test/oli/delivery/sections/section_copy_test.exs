@@ -238,30 +238,40 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       assert copy.analytics_version == :v2
     end
 
-    test "preserves the source learning model and ignores a destination override", %{
-      source: source
-    } do
+    test "preserves the source learning model", %{source: source} do
       source =
         source
         |> Section.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
         |> Repo.update!()
 
-      {:ok, copy} = copy(source, @all_groups, %{learning_model_version: :naive})
+      {:ok, copy} = copy(source, @all_groups)
 
       assert copy.learning_model_version == :lkt_aoa
     end
 
-    test "destination attributes win over copied settings", %{source: source} do
+    test "rejects destination attempts to override protected fields", %{source: source} do
+      sections_before = Repo.aggregate(Section, :count, :id)
+
+      assert {:error, {:invalid_destination_fields, rejected}} =
+               copy(source, @all_groups, %{
+                 "type" => "blueprint",
+                 base_project_id: insert(:project).id,
+                 requires_payment: true
+               })
+
+      assert MapSet.new(rejected) == MapSet.new([:base_project_id, "type", :requires_payment])
+      assert Repo.aggregate(Section, :count, :id) == sections_before
+    end
+
+    test "destination attributes provide fresh course identity", %{source: source} do
       {:ok, copy} =
         copy(source, @all_groups, %{
           title: "Fall 2026 Section",
-          course_section_number: "42",
-          registration_open: false
+          course_section_number: "42"
         })
 
       assert copy.title == "Fall 2026 Section"
       assert copy.course_section_number == "42"
-      refute copy.registration_open
     end
   end
 
@@ -754,14 +764,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
     {:ok, options} = CopyOptions.for_previous_section(groups)
 
     destination_attrs =
-      Map.merge(
-        %{
-          title: "Copied Section",
-          registration_open: true,
-          type: :enrollable
-        },
-        attrs
-      )
+      Map.merge(%{title: "Copied Section"}, attrs)
 
     SectionCopy.copy(source, destination_attrs, options)
   end

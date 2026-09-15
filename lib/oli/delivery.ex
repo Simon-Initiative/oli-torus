@@ -252,18 +252,10 @@ defmodule Oli.Delivery do
         :timezone
       ])
       |> Map.merge(%{
-        type: :enrollable,
-        # Lineage, not parentage: the copy points at whatever product seeded the
-        # source, including nothing at all. The source section is never recorded.
-        base_project_id: source_section.base_project_id,
-        blueprint_id: source_section.blueprint_id,
         context_id: UUID.uuid4(),
-        analytics_version: :v2,
         # Sourced from the base project rather than the source section, matching
         # how the product-to-section path resolves it.
-        required_survey_resource_id: project && project.required_survey_resource_id,
-        registration_open: true,
-        requires_enrollment: true
+        required_survey_resource_id: project && project.required_survey_resource_id
       })
       |> SectionSpecification.apply(section_spec)
 
