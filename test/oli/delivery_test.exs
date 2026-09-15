@@ -350,21 +350,26 @@ defmodule Oli.DeliveryTest do
       assert section.encouraging_subtitle == "Project subtitle"
     end
 
-    test "preserves trusted legacy creation with no user", context do
-      changeset = Sections.change_section(%Section{title: "Admin-created Section"})
+    @tag capture_log: true
+    test "refuses legacy creation with no user", context do
+      sections_before = Repo.aggregate(Section, :count, :id)
+      changeset = Sections.change_section(%Section{title: "Unauthorized Section"})
 
-      assert {:ok, section_id, _slug} =
-               Delivery.create_section(
-                 changeset,
-                 "project:#{context.project.id}",
-                 nil,
-                 SectionSpecification.direct()
-               )
+      for source <- [
+            "project:#{context.project.id}",
+            "publication:#{context.publication.id}",
+            "product:#{context.product.id}"
+          ] do
+        assert {:error, _message} =
+                 Delivery.create_section(
+                   changeset,
+                   source,
+                   nil,
+                   SectionSpecification.direct()
+                 )
+      end
 
-      section = Sections.get_section!(section_id)
-
-      assert section.title == "Admin-created Section"
-      assert Sections.list_enrollments(section.slug) == []
+      assert Repo.aggregate(Section, :count, :id) == sections_before
     end
 
     test "copies the blueprint model even when it differs from its base Project", context do
