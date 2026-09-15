@@ -19,6 +19,7 @@ defmodule Oli.Delivery.GatingTest do
     test "duplicate_gates/2 duplicates top-level gates",
          %{
            page1: page1,
+           page2: page2,
            section_1: section,
            section_2: section2,
            user_a: user_a
@@ -32,22 +33,27 @@ defmodule Oli.Delivery.GatingTest do
         user_id: user_a.id
       })
 
+      second_gate =
+        gating_condition_fixture(%{section_id: section.id, resource_id: page2.id})
+
       gcs = Gating.list_gating_conditions(section.id)
-      assert Enum.count(gcs) == 2
+      assert Enum.count(gcs) == 3
 
       assert Gating.list_gating_conditions(section2.id) == []
 
-      Gating.duplicate_gates(section, section2)
+      assert {:ok, 2} = Gating.duplicate_gates(section, section2)
 
       gcs = Gating.list_gating_conditions(section2.id)
-      assert Enum.count(gcs) == 1
-      dupe = Enum.at(gcs, 0)
+      assert Enum.count(gcs) == 2
+      dupe = Enum.find(gcs, &(&1.resource_id == gate.resource_id))
       assert dupe.resource_id == gate.resource_id
       assert dupe.type == gate.type
       assert dupe.graded_resource_policy == gate.graded_resource_policy
       assert dupe.data == gate.data
       assert is_nil(dupe.parent_id)
       assert is_nil(dupe.user_id)
+
+      assert Enum.any?(gcs, &(&1.resource_id == second_gate.resource_id))
     end
 
     test "list_gating_conditions/1 returns all gating_conditions for a given section",

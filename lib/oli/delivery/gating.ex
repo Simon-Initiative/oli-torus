@@ -97,25 +97,82 @@ defmodule Oli.Delivery.Gating do
   end
 
   @doc """
-  Duplicates all top-level gates in a source section into a destination section.  Does
-  not duplicate student specific exceptions.  Does not validate that resources in the gate
-  exist within the destination section.
+  Duplicates top-level gates from a source section into a destination section.
+
+  Student-specific exceptions are never duplicated. `condition_types` can be `:all` or a list
+  of gate types, allowing callers to copy schedule-shaped gates separately from content gates.
   """
-  def duplicate_gates(%Section{} = source, %Section{} = destination) do
-    Repo.transaction(fn _ ->
-      list_gating_conditions(source.id)
-      |> Enum.filter(fn gc -> is_nil(gc.parent_id) end)
-      |> Enum.each(fn gc ->
-        Map.take(gc, [:type, :graded_resource_policy, :resource_id])
-        |> Map.merge(%{
-          parent_id: nil,
-          section_id: destination.id,
-          data: Map.from_struct(gc.data)
-        })
-        |> create_gating_condition()
-      end)
+  @spec duplicate_gates(%Section{}, %Section{}, :all | [atom()]) ::
+          {:ok, non_neg_integer()} | {:error, term()}
+  def duplicate_gates(%Section{} = source, %Section{} = destination, condition_types \\ :all) do
+    Repo.transaction(fn ->
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      attrs =
+        source.id
+        |> list_gating_conditions(true)
+        |> Enum.filter(&matches_condition_types?(&1, condition_types))
+        |> Enum.map(fn gating_condition ->
+          gating_condition
+          |> Map.take([:type, :graded_resource_policy, :resource_id])
+          |> Map.merge(%{
+            parent_id: nil,
+            user_id: nil,
+            section_id: destination.id,
+            data: gate_data_attrs(gating_condition.data)
+          })
+        end)
+
+      with {:ok, rows} <- validate_gate_rows(attrs, now),
+           {count, _} <- Repo.insert_all(GatingCondition, rows),
+           true <- count == length(rows) do
+        count
+      else
+        false -> Repo.rollback(:gate_copy_incomplete)
+        {:error, error} -> Repo.rollback(error)
+      end
     end)
   end
+
+  defp validate_gate_rows(attrs, now) do
+    Enum.reduce_while(attrs, {:ok, []}, fn attrs, {:ok, rows} ->
+      changeset = GatingCondition.changeset(%GatingCondition{}, attrs)
+
+      case Ecto.Changeset.apply_action(changeset, :insert) do
+        {:ok, gate} ->
+          row =
+            gate
+            |> Map.from_struct()
+            |> Map.take([
+              :type,
+              :graded_resource_policy,
+              :resource_id,
+              :section_id,
+              :user_id,
+              :parent_id,
+              :data
+            ])
+            |> Map.merge(%{inserted_at: now, updated_at: now})
+
+          {:cont, {:ok, [row | rows]}}
+
+        {:error, changeset} ->
+          {:halt, {:error, changeset}}
+      end
+    end)
+    |> case do
+      {:ok, rows} -> {:ok, Enum.reverse(rows)}
+      error -> error
+    end
+  end
+
+  defp gate_data_attrs(nil), do: %{}
+  defp gate_data_attrs(data), do: Map.from_struct(data)
+
+  defp matches_condition_types?(_gating_condition, :all), do: true
+
+  defp matches_condition_types?(%GatingCondition{type: type}, types) when is_list(types),
+    do: type in types
 
   @doc """
   Returns the list of gating_conditions for a section, optionally restricted
@@ -130,15 +187,18 @@ defmodule Oli.Delivery.Gating do
       [%GatingCondition{}, ...]
 
   """
+  @spec list_gating_conditions(integer(), boolean()) :: [%GatingCondition{}]
   def list_gating_conditions(section_id, top_level_only \\ false) do
     filter_by_top_level =
-      if is_nil(top_level_only) do
-        dynamic(
-          [gc],
-          is_nil(gc.parent_id)
-        )
-      else
-        true
+      case top_level_only do
+        true ->
+          dynamic(
+            [gc],
+            is_nil(gc.parent_id)
+          )
+
+        _ ->
+          true
       end
 
     query =

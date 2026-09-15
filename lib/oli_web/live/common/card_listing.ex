@@ -74,15 +74,11 @@ defmodule OliWeb.Common.CardListing do
   end
 
   defp render_title_column(item) do
-    if TableModel.is_product?(item),
-      do: item.title,
-      else: item.project.title
+    TableModel.source_title(item)
   end
 
   defp render_description(item) do
-    if TableModel.is_product?(item),
-      do: item.description,
-      else: item.project.description
+    TableModel.source_description(item)
   end
 
   defp render_date(item, ctx) do
@@ -90,8 +86,6 @@ defmodule OliWeb.Common.CardListing do
   end
 
   defp action_id(item) do
-    if TableModel.is_product?(item),
-      do: "product:#{item.id}",
-      else: "publication:#{item.id}"
+    TableModel.source_identifier(item)
   end
 end

@@ -1,7 +1,8 @@
 defmodule OliWeb.Delivery.NewCourse.SelectSource do
   use OliWeb, :live_component
 
-  alias Oli.Delivery.Sections.{Blueprint, SectionSpecification}
+  alias Oli.Delivery.Sections.{Blueprint, SectionSpecification, SourceResolution}
+  alias Oli.Delivery.Sections.SourceResolution.Actor
   alias Oli.Publishing
   alias OliWeb.Common.{Filter, FilterBox, Listing}
   alias OliWeb.Common.Table.SortableTableModel
@@ -25,6 +26,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
           ctx: ctx,
           on_select: on_select,
           current_user: current_user,
+          current_author: current_author,
           is_admin: is_admin,
           section_spec: section_spec,
           request_path: request_path
@@ -37,7 +39,8 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
       {role, institution} = unpack_role_institution(section_spec, is_admin)
 
-      sources = retrieve_all_sources(role, current_user, institution)
+      actor = Actor.new(current_user, current_author)
+      sources = retrieve_all_sources(role, current_user, institution, actor, section_spec)
 
       {total_count, table_model} =
         OliWeb.Delivery.NewCourse.TableModel.new(sources, ctx)
@@ -201,11 +204,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       query ->
         rows =
           Enum.filter(sources, fn source ->
-            title =
-              case Map.get(source, :type) do
-                nil -> source.project.title
-                :blueprint -> source.title
-              end
+            title = OliWeb.Delivery.NewCourse.TableModel.source_title(source)
 
             String.contains?(
               String.downcase(title),
@@ -316,7 +315,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     {:noreply, assign(socket, total_count: total_count, table_model: table_model, params: params)}
   end
 
-  defp retrieve_all_sources(:admin, _user, _institution) do
+  defp retrieve_all_sources(:admin, _user, _institution, actor, section_spec) do
     products = Blueprint.list()
 
     free_project_publications =
@@ -328,15 +327,24 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         )
       end)
 
-    Enum.with_index(free_project_publications ++ products, fn element, index ->
+    courses = SourceResolution.copyable_sections(actor, section_spec)
+
+    Enum.with_index(free_project_publications ++ products ++ courses, fn element, index ->
       Map.put(element, :unique_id, index)
     end)
   end
 
-  defp retrieve_all_sources(_, user, institution),
-    do:
-      Publishing.retrieve_visible_sources(user, institution)
-      |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
+  defp retrieve_all_sources(_, user, institution, actor, section_spec) do
+    courses = SourceResolution.copyable_sections(actor, section_spec)
+
+    (Publishing.retrieve_visible_sources(user, institution) ++ courses)
+    |> Enum.uniq_by(&source_key/1)
+    |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
+  end
+
+  defp source_key(%{type: :enrollable, id: id}), do: {:section, id}
+  defp source_key(%{type: :blueprint, id: id}), do: {:product, id}
+  defp source_key(%{id: id}), do: {:publication, id}
 
   defp is_instructor?(:admin), do: false
   defp is_instructor?(_), do: true
