@@ -23,7 +23,7 @@ defmodule Oli.PreviewQATools.ConfigTest do
     test "cannot be enabled by unrelated runtime state" do
       original_values =
         Map.new(
-          ["HOST", "PREVIEW_QA_SEED_PROFILE", "ENABLE_PLAYWRIGHT_SCENARIOS"],
+          ["HOST", "PREVIEW_QA_SEED_SCENARIO", "ENABLE_PLAYWRIGHT_SCENARIOS"],
           &{&1, System.get_env(&1)}
         )
 
@@ -32,7 +32,7 @@ defmodule Oli.PreviewQATools.ConfigTest do
       end)
 
       System.put_env("HOST", "preview-123.example.test")
-      System.put_env("PREVIEW_QA_SEED_PROFILE", "review_demo")
+      System.put_env("PREVIEW_QA_SEED_SCENARIO", "review_demo")
       System.put_env("ENABLE_PLAYWRIGHT_SCENARIOS", "true")
 
       refute Config.enabled?(true, nil)
