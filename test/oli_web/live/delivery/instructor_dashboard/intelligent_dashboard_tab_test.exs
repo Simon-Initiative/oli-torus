@@ -166,6 +166,26 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert Task.await(stream) == :ok
     end
 
+    test "returns an error when the completion acknowledgement times out" do
+      test_pid = self()
+
+      stream =
+        Task.async(fn ->
+          IntelligentDashboardTab.stream_dashboard_runtime_results(
+            [],
+            7,
+            %{section_id: 123},
+            test_pid,
+            fn _oracle_key, _context -> :unused end,
+            10
+          )
+        end)
+
+      assert_receive {:dashboard_runtime_stream_complete, stream_pid, _completion_ref}
+      assert stream_pid == stream.pid
+      assert Task.await(stream) == {:error, :request_timed_out}
+    end
+
     test "a failed runtime load releases every oracle assigned to that task" do
       socket = %Phoenix.LiveView.Socket{
         assigns: %{

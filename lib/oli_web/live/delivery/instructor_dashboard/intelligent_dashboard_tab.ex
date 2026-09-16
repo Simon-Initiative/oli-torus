@@ -98,6 +98,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   @min_section_tile_split 30
   @max_section_tile_split 70
   @summary_recommendation_debounce_ms 400
+  @dashboard_runtime_completion_timeout_ms 5_000
 
   @doc """
   Lazily initializes dashboard-tab-specific assigns for the current LiveView session.
@@ -3061,14 +3062,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
           map(),
           pid(),
           (atom(), map() -> map())
-        ) :: :ok
+        ) :: :ok | {:error, :request_timed_out}
+  @spec stream_dashboard_runtime_results(
+          [atom()],
+          non_neg_integer(),
+          map(),
+          pid(),
+          (atom(), map() -> map()),
+          non_neg_integer()
+        ) :: :ok | {:error, :request_timed_out}
   def stream_dashboard_runtime_results(
         oracle_keys,
         request_token,
         context,
         live_view_pid,
-        load_result
-      ) do
+        load_result,
+        completion_timeout_ms \\ @dashboard_runtime_completion_timeout_ms
+      )
+      when is_integer(completion_timeout_ms) and completion_timeout_ms >= 0 do
     oracle_keys
     |> Task.async_stream(
       fn oracle_key ->
@@ -3098,6 +3109,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
     receive do
       {:dashboard_runtime_stream_ack, ^completion_ref} -> :ok
+    after
+      completion_timeout_ms -> {:error, :request_timed_out}
     end
   end
 
