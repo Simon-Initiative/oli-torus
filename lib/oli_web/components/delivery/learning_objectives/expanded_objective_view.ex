@@ -165,9 +165,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     end
   end
 
-  # Fired by StudentDistributionMatrix's region phx-click/phx-keydown bindings. A phx-keydown
-  # payload also carries a "key" field; only Enter and Space should activate the region so
-  # unrelated keydown events (e.g. Tab, arrow keys) while a region has focus are ignored.
+  # Fired by StudentDistributionMatrix's region phx-click binding and its
+  # StudentDistributionRegionKeydown hook; the "key" guard below is kept as a defensive
+  # server-side check.
   def handle_event("select_student_group", %{"group" => group} = params, socket) do
     with true <- Map.get(params, "key") in [nil, "Enter", " "],
          group when not is_nil(group) <- parse_group(group) do

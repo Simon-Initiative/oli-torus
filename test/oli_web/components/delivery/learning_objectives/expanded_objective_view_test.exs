@@ -423,6 +423,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       refute has_element?(view, "g[aria-pressed='true']")
     end
 
+    # Region keydown filtering (Enter/Space only) now happens client-side in the
+    # StudentDistributionRegionKeydown hook, so there's no phx-keydown DOM binding left for
+    # render_keydown/2 to target. render_hook/3 simulates what that hook pushes instead,
+    # exercising handle_event's own "key" guard directly.
     test "keyboard activation (Enter) selects a region the same as a click", %{
       conn: conn,
       section: section,
@@ -448,7 +452,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
 
       view
       |> element("g[aria-label^='Excelling']")
-      |> render_keydown(%{"group" => "excelling", "key" => "Enter"})
+      |> render_hook("select_student_group", %{"group" => "excelling", "key" => "Enter"})
 
       assert has_element?(view, "g[aria-label^='Excelling'][aria-pressed='true']")
     end
@@ -478,7 +482,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
 
       view
       |> element("g[aria-label^='Excelling']")
-      |> render_keydown(%{"group" => "excelling", "key" => " "})
+      |> render_hook("select_student_group", %{"group" => "excelling", "key" => " "})
 
       assert has_element?(view, "g[aria-label^='Excelling'][aria-pressed='true']")
     end
@@ -508,7 +512,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
 
       view
       |> element("g[aria-label^='Excelling']")
-      |> render_keydown(%{"group" => "excelling", "key" => "Tab"})
+      |> render_hook("select_student_group", %{"group" => "excelling", "key" => "Tab"})
 
       refute has_element?(view, "g[aria-pressed='true']")
     end

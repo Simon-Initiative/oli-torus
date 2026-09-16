@@ -8,14 +8,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatri
   registration. It is chosen over a client-rendered chart because this surface does not need
   per-dot hover tooltips beyond a native SVG `<title>`, collapsing of dense same-value dots
   into a grouped marker, or any other client-side chart state. Region and dot selection are
-  plain `phx-click`/`phx-keydown` events bubbling to the parent LiveComponent
-  (`ExpandedObjectiveView`) via `@myself`.
+  plain `phx-click` events bubbling to the parent LiveComponent (`ExpandedObjectiveView`) via
+  `@myself`.
 
-  The only client-side behavior is the `StudentDistributionMatrixLabels` Phoenix hook, which
-  does not render chart state. It only fades a count label when the mouse is over that label
-  and the label overlaps at least one student dot. The label layer keeps `pointer-events: none`
-  so hover/click hit-testing still reaches the dot or region underneath, preserving native dot
-  titles and region selection.
+  Client-side behavior is limited to two small Phoenix hooks, neither of which renders chart
+  state:
+
+    * `StudentDistributionMatrixLabels` fades a count label when the mouse is over that label
+      and the label overlaps at least one student dot. The label layer keeps
+      `pointer-events: none` so hover/click hit-testing still reaches the dot or region
+      underneath, preserving native dot titles and region selection.
+    * `StudentDistributionRegionKeydown` filters each region's keydown events to Enter/Space
+      before pushing `select_student_group`, since `phx-key` only matches a single key and a
+      raw `phx-keydown` binding would otherwise forward every keydown (Tab, arrows, etc.) to
+      the server.
 
   Every student passed in must already carry `:distribution_group` and
   `:activity_completion`, computed by `Oli.Delivery.Metrics.StudentDistributionGroup.assign/1`.
@@ -156,6 +162,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatri
           count={@needs_support_count}
           selected={@selected_group == :needs_support}
           myself={@myself}
+          unique_id={@unique_id}
           fill_class="fill-Fill-fill-danger"
           border_class="stroke-Border-border-danger"
         />
@@ -166,6 +173,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatri
           count={@excelling_count}
           selected={@selected_group == :excelling}
           myself={@myself}
+          unique_id={@unique_id}
           fill_class="fill-Graph-region-excelling"
           border_class="stroke-Graph-dot-high-active"
         />
@@ -176,6 +184,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatri
           count={@limited_activity_count}
           selected={@selected_group == :limited_activity}
           myself={@myself}
+          unique_id={@unique_id}
           fill_class="fill-Graph-region-limited-activity"
           border_class="stroke-Graph-dot-notenoughinfo-active"
         />
@@ -252,6 +261,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatri
   attr :count, :integer, required: true
   attr :selected, :boolean, required: true
   attr :myself, :any, required: true
+  attr :unique_id, :string, required: true
   attr :fill_class, :string, required: true
   attr :border_class, :string, required: true
 
@@ -269,12 +279,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatri
 
     ~H"""
     <g
+      id={"student-distribution-region-#{@group_value}-#{@unique_id}"}
       tabindex="0"
       role="button"
       aria-pressed={to_string(@selected)}
       aria-label={region_aria_label(@label, @count, @selected)}
       phx-click="select_student_group"
-      phx-keydown="select_student_group"
+      phx-hook="StudentDistributionRegionKeydown"
       phx-value-group={@group_value}
       phx-target={@myself}
       class="cursor-pointer outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
