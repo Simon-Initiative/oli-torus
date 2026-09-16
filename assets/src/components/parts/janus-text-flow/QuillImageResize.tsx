@@ -1,9 +1,16 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Quill } from 'react-quill';
+import type QuillEditor from 'quill';
 import { MAX_IMAGE_DIMENSION, normalizeImageDimension } from './imageSizing';
 
+/** Quill operations used for image resizing and grouping undo history. */
+interface ImageResizeEditor
+  extends Pick<QuillEditor, 'root' | 'on' | 'off' | 'getIndex' | 'formatText'> {
+  getModule(name: 'history'): { cutoff(): void } | undefined;
+}
+
 export interface QuillImageResizeProps {
-  editor: any;
+  editor: ImageResizeEditor;
   image: HTMLImageElement;
   container: HTMLElement;
   onEdit: () => void;
