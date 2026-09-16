@@ -33,6 +33,30 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
     refute Oli.Repo.get_by(Oli.Institutions.Institution, name: "Too Late")
   end
 
+  test "release execution rejects delivery users before ownership" do
+    for type <- ~w(student instructor) do
+      email = "pre-ownership-#{type}@example.edu"
+
+      path =
+        write_yaml("""
+        - user:
+            name: pre_ownership_#{type}
+            type: #{type}
+            email: #{email}
+            given_name: Pre
+            family_name: Ownership
+        """)
+
+      result = ReleaseExecution.execute_file(path)
+
+      assert [{_, message}] = result.errors
+      assert message =~ "must establish an active author and institution"
+      assert result.state.current_author == nil
+      assert result.state.current_institution == nil
+      refute Oli.Repo.get_by(Oli.Accounts.User, email: email)
+    end
+  end
+
   test "created references establish ownership" do
     suffix = System.unique_integer([:positive])
 
@@ -113,13 +137,43 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
     assert result.state.current_institution.id == institution.id
   end
 
+  test "configured default admin rejects an active non-admin author" do
+    author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
+    previous = Application.get_env(:oli, :preview_qa_tools)
+
+    Application.put_env(:oli, :preview_qa_tools, default_admin_email: author.email)
+    on_exit(fn -> Application.put_env(:oli, :preview_qa_tools, previous) end)
+
+    result = ownership_result("default_admin", "default_institution")
+
+    assert [{_, "default_admin did not resolve to an active record"}] = result.errors
+    assert result.state.current_author == nil
+    assert result.state.current_institution == nil
+  end
+
   test "references reject missing and wrong-type authors" do
     missing = ownership_result("ref:missing", "default_institution")
     assert [{_, message}] = missing.errors
     assert message =~ "was not created before ownership selection"
 
+    suffix = System.unique_integer([:positive])
+
     path =
       write_yaml("""
+      - user:
+          name: release_author
+          type: author
+          email: wrong-type-author-#{suffix}@example.edu
+          given_name: Release
+          family_name: Author
+      - institution:
+          name: Wrong Type Institution #{suffix}
+          country_code: US
+          institution_email: wrong-type-institution-#{suffix}@example.edu
+          institution_url: https://example.edu
+      - ownership:
+          author: ref:release_author
+          institution: ref:Wrong Type Institution #{suffix}
       - user:
           name: learner
           type: student
@@ -128,7 +182,7 @@ defmodule Oli.Scenarios.ReleaseExecutionTest do
           family_name: Type
       - ownership:
           author: ref:learner
-          institution: default_institution
+          institution: ref:Wrong Type Institution #{suffix}
       """)
 
     wrong_type = ReleaseExecution.execute_file(path)

@@ -226,7 +226,7 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_checked_directive(directive, state), do: execute_directive(directive, state)
 
-  defp ownership_bootstrap_directive?(%UserDirective{}), do: true
+  defp ownership_bootstrap_directive?(%UserDirective{type: :author}), do: true
   defp ownership_bootstrap_directive?(%InstitutionDirective{}), do: true
   defp ownership_bootstrap_directive?(%OwnershipDirective{}), do: true
   defp ownership_bootstrap_directive?(%UseDirective{}), do: true
