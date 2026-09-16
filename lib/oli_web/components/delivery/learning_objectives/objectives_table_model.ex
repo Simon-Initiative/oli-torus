@@ -258,35 +258,16 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       Map.merge(assigns, %{
         objective_id: objective_id,
         proficiency_distribution: proficiency_distribution,
-        proficiency_labels: Proficiency.labels()
+        tooltip_id: "proficiency-distribution-tooltip-#{objective_id}"
       })
 
-    assigns = Map.put(assigns, :tooltip_id, "proficiency-distribution-tooltip-#{objective_id}")
-
     ~H"""
-    <div
-      class="relative flex rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-600 focus-visible:ring-offset-2 [&:hover>.proficiency-dist-tooltip]:flex [&:focus-within>.proficiency-dist-tooltip]:flex"
-      tabindex="0"
-      aria-describedby={@tooltip_id}
+    <Proficiency.distribution_chart_with_tooltip
+      id={@tooltip_id}
+      distribution={@proficiency_distribution}
     >
       {render_proficiency_data_chart(@objective_id, @proficiency_distribution)}
-      <div
-        id={@tooltip_id}
-        role="tooltip"
-        class="proficiency-dist-tooltip absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col z-50"
-      >
-        <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
-          <div class="flex h-6 w-full items-center gap-1.5 text-left">
-            <span
-              class={"inline-block h-3 w-3 shrink-0 rounded-full " <> Proficiency.dot_class(label)}
-              aria-hidden="true"
-            >
-            </span>
-            <b>{Proficiency.full_label(label)}:</b> {value}%
-          </div>
-        <% end %>
-      </div>
-    </div>
+    </Proficiency.distribution_chart_with_tooltip>
     """
   end
 
@@ -468,19 +449,6 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       },
       id: "proficiency-data-bar-chart-for-objective-#{objective_id}"
     )
-  end
-
-  # CALCULATE PERCENTAGES
-  defp calc_percentages(data) do
-    total = data |> Map.values() |> Enum.sum()
-
-    perc = fn label ->
-      if total == 0, do: 0, else: round(Map.get(data, label, 0) / total * 100)
-    end
-
-    Proficiency.labels()
-    |> Enum.map(fn label -> {label, perc.(label)} end)
-    |> Map.new()
   end
 
   # RENDER EXPANDED DETAILS FOR STRIPED TABLE

@@ -61,6 +61,73 @@ defmodule OliWeb.Delivery.LearningObjectives.Proficiency do
   def full_label("High"), do: "High Proficiency"
   def full_label(not_enough_data), do: not_enough_data
 
+  attr :id, :string,
+    required: true,
+    doc: "Unique id for the tooltip, referenced by the trigger's aria-describedby."
+
+  attr :distribution, :map,
+    required: true,
+    doc: "Raw counts per label, e.g. %{\"Low\" => 2, \"High\" => 1}."
+
+  slot :inner_block, required: true, doc: "The chart/bar content the tooltip is attached to."
+
+  @doc """
+  Wraps chart content (the inner_block) with the keyboard-and-hover-accessible
+  Proficiency Distribution tooltip. Shared by the parent objectives table and the
+  expanded sub-objectives table so both render byte-identical tooltips.
+  """
+  def distribution_chart_with_tooltip(assigns) do
+    ~H"""
+    <div
+      class="relative flex rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-600 focus-visible:ring-offset-2 [&:hover>.proficiency-dist-tooltip]:flex [&:focus-within>.proficiency-dist-tooltip]:flex"
+      tabindex="0"
+      aria-describedby={@id}
+    >
+      {render_slot(@inner_block)}
+      <.distribution_tooltip id={@id} distribution={@distribution} />
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :distribution, :map, required: true
+
+  defp distribution_tooltip(assigns) do
+    assigns =
+      assigns
+      |> assign(:percentages, distribution_percentages(assigns.distribution))
+      |> assign(:labels, @labels)
+
+    ~H"""
+    <div
+      id={@id}
+      role="tooltip"
+      class="proficiency-dist-tooltip absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col z-50"
+    >
+      <%= for label <- @labels, value = Map.get(@percentages, label, 0) do %>
+        <div class="flex h-6 w-full items-center gap-1.5 text-left">
+          <span
+            class={"inline-block h-3 w-3 shrink-0 rounded-full " <> dot_class(label)}
+            aria-hidden="true"
+          >
+          </span>
+          <b>{full_label(label)}:</b> {value}%
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp distribution_percentages(data) do
+    total = data |> Map.values() |> Enum.sum()
+
+    percentage_for = fn label ->
+      if total == 0, do: 0, else: round(Map.get(data, label, 0) / total * 100)
+    end
+
+    Map.new(@labels, fn label -> {label, percentage_for.(label)} end)
+  end
+
   attr :label, :string, required: true
 
   def chip(assigns) do
