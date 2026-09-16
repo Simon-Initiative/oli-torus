@@ -50,16 +50,30 @@ defmodule Oli.PreviewQATools.BuildPolicyTest do
     assert mix_project =~ "elixirc_options: elixirc_options(Mix.env())"
   end
 
-  test "release seeding uses the preview source path only in preview builds" do
+  test "scenario seeding is limited to trusted non-production environments" do
     mix_project = File.read!("mix.exs")
+    shared_config = File.read!("config/config.exs")
+    dev_config = File.read!("config/dev.exs")
+    test_config = File.read!("config/test.exs")
+    ci_e2e_config = File.read!("config/ci_e2e.exs")
+    prod_config = File.read!("config/prod.exs")
     router = File.read!("lib/oli_web/router.ex")
     application = File.read!("lib/oli/application.ex")
 
     assert mix_project =~
              "defp elixirc_paths(:preview), do: [\"lib\", \"preview/lib\"]"
 
+    assert mix_project =~
+             "defp elixirc_paths(:test), do: [\"lib\", \"preview/lib\", \"test/support\"]"
+
     refute mix_project =~
              "defp elixirc_paths(:prod), do: [\"lib\", \"preview/lib\"]"
+
+    assert shared_config =~ "enable_playwright_scenarios: false"
+    assert dev_config =~ "enable_playwright_scenarios: true"
+    assert test_config =~ "enable_playwright_scenarios: true"
+    assert ci_e2e_config =~ "enable_playwright_scenarios: true"
+    refute prod_config =~ "enable_playwright_scenarios: true"
 
     assert File.regular?("preview/lib/oli/release/preview_qa_tools.ex")
     refute File.dir?("lib/preview_qa_tools/release")

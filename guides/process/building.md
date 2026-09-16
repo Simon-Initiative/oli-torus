@@ -1,14 +1,16 @@
 # Build Environments
 
-Torus uses three Mix environments for distinct purposes:
+Torus uses five Mix environments with explicit scenario-seeding boundaries:
 
-- `test` runs automated tests and includes test-support modules. Pull-request test workflows build in this environment.
-- `prod` builds deployable production releases. It remains the default for the Dockerfile and the production package workflow.
-- `preview` builds production-shaped QA releases for preview instances. `.github/workflows/build-preview-image.yml` explicitly selects it.
+- `dev` supports local development and the token-protected Playwright scenario interface.
+- `test` runs automated tests, includes test-support modules, and compiles `preview/lib` solely to verify preview release tooling. Pull-request test workflows build in this environment; it is not a deployable release boundary.
+- `ci_e2e` supports ephemeral CI browser testing through the token-protected Playwright scenario interface.
+- `preview` builds production-shaped QA releases for preview instances and exposes the privileged release scenario CLI only when runtime-enabled. `.github/workflows/build-preview-image.yml` explicitly selects it.
+- `prod` builds deployable production releases. It exposes neither the Playwright scenario routes nor preview release tooling and remains the default for the Dockerfile and production package workflow.
 
 `config/preview.exs` is standalone and deliberately owns the small production-shaped configuration needed by a release plus the preview safety boundary. In particular, every preview build uses `Swoosh.Adapters.Local`, so email is retained locally and cannot be delivered externally regardless of whether QA tools are active.
 
-Mix environment files are compile-time configuration. `config/runtime.exs` supplies deployment-specific values when a release starts. Building with `MIX_ENV=preview` compiles preview capabilities into the artifact but does not activate them. Set the runtime variable below to the exact value `true`, ignoring letter case, to activate those capabilities:
+The shared scenario engine remains available to trusted development and automation callers, but production has no supported scenario-seeding entry point. Mix environment files are compile-time configuration. `config/runtime.exs` supplies deployment-specific values when a release starts. Building with `MIX_ENV=preview` compiles preview capabilities into the artifact but does not activate them. Set the runtime variable below to the exact value `true`, ignoring letter case, to activate those capabilities:
 
 ```bash
 PREVIEW_QA_TOOLS_ENABLED=true

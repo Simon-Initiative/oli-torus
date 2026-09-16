@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-This design supports QA preview instances through three coordinated concerns. A production-shaped `MIX_ENV=preview` release compiles in CLI seeding and system-administrator masquerading, while runtime `PREVIEW_QA_TOOLS_ENABLED` activation makes those tools and the protected mailbox available. Independently of runtime activation, every preview release routes email to a local non-delivering adapter.
+This design supports QA preview instances through three coordinated concerns. Scenario seeding remains available only in non-production environments: local and token-protected Playwright entry points in `dev`, `test`, and `ci_e2e`, plus a privileged CLI in `preview`; `prod` exposes no supported seeding entry point. A production-shaped `MIX_ENV=preview` release compiles in CLI seeding and system-administrator masquerading, while runtime `PREVIEW_QA_TOOLS_ENABLED` activation makes those tools and the protected mailbox available. `MIX_ENV=test` may compile preview-only sources solely for automated verification and is not a deployable release boundary. Independently of runtime activation, every preview release routes email to a local non-delivering adapter.
 
 Seeding is a synchronous release CLI intended only for operators with shell or IEx access. It lists bundled scenarios, runs a bundled scenario or local YAML file through the full `Oli.Scenarios` engine, and downloads and ingests a Torus project archive from an HTTP/HTTPS URL. The post-migration Kubernetes Job invokes this same CLI for `review_demo`.
 
@@ -43,11 +43,11 @@ Torus adds no seed web UI or API, Oban worker or queue, durable seed-run state, 
 
 ### 4.1 Component Roles & Interactions
 
-Preview images are production-shaped releases built with `MIX_ENV=preview`. `config/preview.exs` is standalone and imports neither `prod.exs` nor `dev.exs`. It initially copies only the applicable production settings, sets the preview build marker, and configures `Swoosh.Adapters.Local`. `config/runtime.exs` treats `PREVIEW_QA_TOOLS_ENABLED` as runtime activation: any casing of `true` enables it, while missing, blank, whitespace-padded, false, and malformed values disable it. `Oli.PreviewQATools.Config.enabled?/0` requires both the compile-time preview marker and runtime activation. Compile-shaped release and router integrations use `Application.compile_env/3`; callable boundaries recheck runtime state (AC-001 through AC-004).
+Preview images are production-shaped releases built with `MIX_ENV=preview`. `config/preview.exs` is standalone and imports neither `prod.exs` nor `dev.exs`. It initially copies only the applicable production settings, sets the preview build marker, and configures `Swoosh.Adapters.Local`. `config/runtime.exs` treats `PREVIEW_QA_TOOLS_ENABLED` as runtime activation: any casing of `true` enables it, while missing, blank, whitespace-padded, false, and malformed values disable it. `Oli.PreviewQATools.Config.enabled?/0` requires both the compile-time preview marker and runtime activation. Compile-shaped release and router integrations use `Application.compile_env/3`; callable boundaries recheck runtime state. Development and CI E2E continue using the existing Playwright interface, test compiles preview-only sources to verify them, and production exposes neither Playwright scenario routes nor preview release tooling (AC-001 through AC-004).
 
 The Dockerfile accepts `ARG MIX_ENV=prod`, propagates it through dependency selection, compilation, release construction, smoke execution, and final-stage copy paths, and therefore remains production-safe when callers omit the argument. Both automatic and manual preview-image jobs pass `MIX_ENV=preview`; production workflows retain `prod`. The implementation audit classifies existing `Mix.env()` branches and dependency `only:` selectors, including `start_permanent`, endpoint static gzip, and compiler paths/options, so preview receives production-like behavior where required (AC-004).
 
-CI responsibilities remain proportional to the existing pipeline: ordinary PR checks compile/test under `MIX_ENV=test`, the preview-image workflow builds the full `MIX_ENV=preview` release on PRs, and the existing package/release workflow validates `MIX_ENV=prod` after merge. This work adds no production compile gate or automated configuration-parity audit to PR CI. `guides/process/building.md` becomes the discoverable source for the purpose of each Mix environment, the workflow that builds it, the standalone configuration contract, compile-time versus runtime configuration, and the runtime activation flag. Earlier production validation is a future operational response only if package-stage failures become recurrent.
+CI responsibilities remain proportional to the existing pipeline: ordinary PR checks compile/test under `MIX_ENV=test`, including `preview/lib` for ExUnit verification; CI E2E uses the token-protected Playwright scenario interface; the preview-image workflow builds the full `MIX_ENV=preview` release on PRs; and the existing package/release workflow validates `MIX_ENV=prod` after merge. This work adds no production compile gate or automated configuration-parity audit to PR CI. `guides/process/building.md` becomes the discoverable source for the `dev`, `test`, `ci_e2e`, `preview`, and `prod` boundaries, the workflows that build them, the standalone preview configuration contract, compile-time versus runtime configuration, and the runtime activation flag. Earlier production validation is a future operational response only if package-stage failures become recurrent.
 
 `Oli.Release.PreviewQATools` is a thin synchronous command dispatcher exposed through the `bin/seed` release overlay script. It supports three operations:
 
@@ -129,10 +129,11 @@ Masquerade flow:
 
 - Build/runtime configuration:
   - Preview images use `MIX_ENV=preview`; production images default to `MIX_ENV=prod`.
+  - Local and Playwright scenario seeding is available in `dev`, `test`, and `ci_e2e`; `test` also compiles `preview/lib` solely for automated verification; `prod` exposes no supported seeding entry point.
   - `config/preview.exs` is standalone, imports neither environment file, and explicitly declares the applicable production-shaped settings plus preview capabilities and safety overrides.
   - `PREVIEW_QA_TOOLS_ENABLED`: case-insensitive `true` required at runtime to activate seeding, masquerade, and mailbox access; it is not a build argument.
   - `PREVIEW_QA_SEED_PROFILE`: optional bundled identifier used by deployment automation; it does not enable anything.
-  - `guides/process/building.md`: documents the `test`, `prod`, and `preview` build paths, configuration ownership, compile/runtime boundary, and preview activation procedure.
+  - `guides/process/building.md`: documents the `dev`, `test`, `ci_e2e`, `preview`, and `prod` seeding boundaries, build paths, configuration ownership, compile/runtime boundary, and preview activation procedure.
 - Release interface:
   - `bin/seed scenarios list`: list bundled identifiers, descriptions, and versions/digests.
   - `bin/seed scenarios run --name <id>`: synchronously execute bundled YAML.
@@ -145,7 +146,7 @@ Masquerade flow:
   - The Job uses `restartPolicy: Never`, `backoffLimit: 1`, resources initially matching the migration Job, the name `seed-<profile>-<release-id>`, and application/environment/release/profile/component labels.
   - Kubernetes owns logs and its existing retention policy; Torus persists no Job identity or result.
 - Web interface:
-  - Only masquerade start/stop and the persistent banner are added. There is no seed route, LiveView, controller, or API.
+  - Only masquerade start/stop and the persistent banner are added for preview tooling. There is no new preview seed route, LiveView, controller, or API; the existing token-protected Playwright scenario route remains limited to `dev`, `test`, and `ci_e2e`.
   - `/dev/mailbox` forwards to `Plug.Swoosh.MailboxPreview` only in preview-compiled/runtime-enabled images and only through current system-admin authentication or the original system-administrator actor of a valid active masquerade.
 - External-effect interface:
   - `Oli.Mailer` uses `Swoosh.Adapters.Local` for every `MIX_ENV=preview` release, independent of runtime QA-tool activation.
@@ -241,7 +242,7 @@ Acceptance-criterion traceability clarifications:
 
 ## 15. Risks & Mitigations
 
-- CLI power is mistaken for sandboxed input: document shell-equivalent trust explicitly and compile the capability only under `MIX_ENV=preview`.
+- Scenario execution is mistaken for a production input surface: document the trusted local, automation-token, and shell boundaries for `dev`, `test`, `ci_e2e`, and `preview`; keep production free of supported seeding entry points; and compile preview release tooling into deployable artifacts only under `MIX_ENV=preview`.
 - Preview configuration becomes misunderstood or stale: keep it small, document intentional duplication and every environment's build path in `guides/process/building.md`, review existing `Mix.env()` branches and dependency selectors when introducing preview, and rely on the preview-image and existing production-package builds for their respective environments. Extract shared configuration only if meaningful duplication emerges.
 - Project download consumes resources or reaches an unintended destination: bound time/redirects/bytes, rely on deployment network policy, and clean temporary files.
 - Scenario or retry creates partial/duplicate data: report partial mutation, use deterministic profile references, and make `review_demo` reconciliation-aware.
@@ -334,7 +335,7 @@ None.
 - Impact: The release adapter adds ownership selection and ordering validation without constraining the rest of the scenario DSL.
 
 ### 2026-09-09 - Separate preview compilation from runtime activation
-- Decision: `MIX_ENV=preview` controls compile-time inclusion. `PREVIEW_QA_TOOLS_ENABLED` must equal `true`, case-insensitively, only at runtime. Preview-built but runtime-disabled images emit one instructional warning.
+- Decision: `MIX_ENV=preview` controls inclusion in deployable preview releases, while `MIX_ENV=test` may compile preview-only sources solely for automated verification. `PREVIEW_QA_TOOLS_ENABLED` must equal `true`, case-insensitively, only at preview runtime. Preview-built but runtime-disabled images emit one instructional warning.
 - Rationale: Compile exclusion and deliberate runtime opt-in remain, but each control now has one meaning.
 - Impact: Requires preview configuration, Docker environment selection, runtime-only flag handling, conditional integrations, warning behavior, and environment/flag matrix tests.
 
@@ -342,3 +343,8 @@ None.
 - Decision: Run `review_demo` through a post-migration Kubernetes Job and leave Playwright's per-spec scenario setup unchanged.
 - Rationale: Kubernetes owns deployment execution, while Playwright already owns isolated automation data.
 - Impact: No application startup coordinator or shared Playwright seed profile is added.
+
+### 2026-09-16 - Clarify the non-production scenario-seeding matrix
+- Decision: Support scenario seeding in `dev`, `test`, and `ci_e2e` through existing local or token-protected Playwright interfaces and in `preview` through the runtime-enabled privileged release CLI; expose no supported seeding entry point in `prod`. Allow `MIX_ENV=test` to compile `preview/lib` solely for automated verification.
+- Rationale: The environment boundary must distinguish test compilation from deployable release inclusion and distinguish the shared scenario engine from the preview release interface.
+- Impact: Requirements, design, build documentation, and policy tests explicitly cover all five environments while preserving production exclusion and the preview runtime gate.

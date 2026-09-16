@@ -1,8 +1,9 @@
 work_item: preview-environment-tooling
 requirements:
 - id: FR-001
-  title: Compile release seeding and user masquerade only into MIX_ENV=preview releases
-    and gate their runtime use behind deny-by-default PREVIEW_QA_TOOLS_ENABLED
+  title: Restrict supported scenario-seeding entry points to dev, test, ci_e2e,
+    and preview environments; explicitly exclude prod; and gate preview release QA
+    tools behind deny-by-default PREVIEW_QA_TOOLS_ENABLED
 - id: FR-002
   title: Provide a bin/seed release CLI that lists bundled scenarios and synchronously
     executes a bundled or custom YAML scenario
@@ -33,15 +34,17 @@ requirements:
 acceptance_criteria:
 - id: AC-001
   requirement_id: FR-001
-  title: Release seeding, masquerade, and the mailbox route are compiled only when
-    MIX_ENV=preview, and PREVIEW_QA_TOOLS_ENABLED must equal true case-insensitively at
-    runtime to activate them
+  title: Scenario seeding is supported only in dev, test, ci_e2e, and preview environments;
+    dev, test, and ci_e2e use the existing local or token-protected Playwright interfaces,
+    preview uses the privileged release CLI, and preview-only sources may compile in test
+    solely for automated verification; PREVIEW_QA_TOOLS_ENABLED must equal true case-insensitively
+    at runtime to activate preview release QA tools
   verification_method: automated
 - id: AC-002
   requirement_id: FR-001
   title: Hostname, unrelated flags, configured profiles, and existing data cannot
-    enable the capability, and a MIX_ENV=prod release cannot expose it even when PREVIEW_QA_TOOLS_ENABLED
-    is set at runtime
+    enable preview release QA tools, and MIX_ENV=prod exposes neither scenario-seeding
+    routes nor preview release tooling even when PREVIEW_QA_TOOLS_ENABLED is set at runtime
   verification_method: automated
 - id: AC-003
   requirement_id: FR-001
@@ -53,8 +56,9 @@ acceptance_criteria:
   requirement_id: FR-001
   title: The Docker build accepts MIX_ENV with a prod default, the preview-image jobs
     build with MIX_ENV=preview using a standalone config/preview.exs, and production
-    image workflows retain MIX_ENV=prod; repository build documentation explains each
-    configuration's purpose, build path, and runtime relationship
+    image workflows retain MIX_ENV=prod; repository build documentation explains the
+    dev, test, ci_e2e, preview, and prod scenario-seeding boundaries plus each configuration's
+    purpose, build path, and runtime relationship
   verification_method: hybrid
 - id: AC-005
   requirement_id: FR-002
