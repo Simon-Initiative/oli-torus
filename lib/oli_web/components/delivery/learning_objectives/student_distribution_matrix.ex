@@ -57,8 +57,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatri
   @region_height (@grid_height - @region_gap) / 2
   @region_radius 16
   @dot_radius 11.5
-  @top_region_dot_top_pad 36.5
-  @limited_activity_dot_top_pad 108.0
   @x_tick_y 498
   @x_axis_label_y 530
   @y_axis_label_x 14
@@ -394,7 +392,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatri
 
     inner_x0 = region.x + @dot_radius
     inner_x1 = region.x + region.width - @dot_radius
-    inner_y0 = region.y + dot_top_pad(group)
+    inner_y0 = region.y + @dot_radius
     inner_y1 = region.y + region.height - @dot_radius
     dot_state = dot_state(group, selected_group)
 
@@ -418,9 +416,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatri
 
   defp dot_stroke_width(:active), do: "1.5"
   defp dot_stroke_width(:inactive), do: "0"
-
-  defp dot_top_pad(:limited_activity), do: @limited_activity_dot_top_pad
-  defp dot_top_pad(_group), do: @top_region_dot_top_pad
 
   # Re-normalizes `value` (already known to fall within [range_min, range_max], since the
   # caller looked it up via the student's own `distribution_group`) to 0.0..1.0 local to that
