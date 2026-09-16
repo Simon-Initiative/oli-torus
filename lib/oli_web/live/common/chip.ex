@@ -25,6 +25,7 @@ defmodule OliWeb.Common.Chip do
           <div class={["text-base font-semibold text-center", @text_color, @label_class]}>
             {@label}
           </div>
+          <span :if={@tooltip} class="sr-only">{@tooltip}</span>
         </div>
       </div>
     </div>

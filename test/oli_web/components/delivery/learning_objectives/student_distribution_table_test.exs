@@ -448,6 +448,25 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       refute has_element?(view, "option", "All")
     end
 
+    test "the proficiency chip's tooltip shows the exact percentage, except for 'Not enough data'",
+         %{conn: conn} do
+      students = one_of_each_proficiency(:limited_activity)
+
+      {:ok, view, _html} =
+        render_table(conn, %{
+          id: "student-distribution-table",
+          students: students,
+          selected_group: :limited_activity,
+          parent_target: nil
+        })
+
+      low_row = view |> element("tr", "Low Student") |> render()
+      assert low_row =~ ~s(title="10% proficiency")
+
+      not_enough_row = view |> element("tr", "Not Enough Student") |> render()
+      refute not_enough_row =~ "title="
+    end
+
     test "the close control targets the parent component, not this component's own myself", %{
       conn: conn
     } do
