@@ -51,6 +51,7 @@ defmodule Oli.PreviewQATools.BuildPolicyTest do
   end
 
   test "scenario seeding is limited to trusted non-production environments" do
+    dockerfile = File.read!("Dockerfile")
     mix_project = File.read!("mix.exs")
     shared_config = File.read!("config/config.exs")
     dev_config = File.read!("config/dev.exs")
@@ -82,6 +83,10 @@ defmodule Oli.PreviewQATools.BuildPolicyTest do
     assert File.regular?("seeding/lib/mix/tasks/seed.ex")
     assert File.regular?("rel/overlays/bin/seed")
     assert mix_project =~ "&remove_non_preview_seed/1"
+
+    assert {seeding_copy_position, _length} = :binary.match(dockerfile, "COPY seeding seeding")
+    assert {compile_position, _length} = :binary.match(dockerfile, "RUN mix compile --force")
+    assert seeding_copy_position < compile_position
 
     refute router =~ "PreviewQATools"
     refute application =~ "PreviewQATools.Seed"
