@@ -12,7 +12,7 @@ function mockRect(el: Element, rect: Rect) {
         x: rect.left,
         y: rect.top,
         toJSON: () => rect,
-      }) as DOMRect,
+      } as DOMRect),
   );
 }
 
