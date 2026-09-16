@@ -419,7 +419,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
   describe "download_students_progress/2" do
     test "downloads student progress with different proficiency levels", %{conn: conn} do
-      %{instructor: instructor, section: section} =
+      %{instructor: instructor, section: section, student1: student_1} =
         prepare_student_progress_data()
 
       # Download the CSV
@@ -444,6 +444,7 @@ defmodule OliWeb.DeliveryControllerTest do
                "Name",
                "Email",
                "LMS ID",
+               "Enrollment Date",
                "Last Interaction",
                "Progress (Pct)",
                "Proficiency",
@@ -455,24 +456,35 @@ defmodule OliWeb.DeliveryControllerTest do
       assert Enum.count(students) == 8
 
       # CSV Student data
-      assert ["Five, Student", _, _, _, "100", "High", "N/A", "Enrolled"] = Enum.at(students, 0)
-      assert ["Four, Student", _, _, _, "33.03", "High", "N/A", "Enrolled"] = Enum.at(students, 1)
+      assert ["Five, Student", _, _, _, _, "100", "High", "N/A", "Enrolled"] =
+               Enum.at(students, 0)
 
-      assert ["One, Student", _, _, _, "0", "Not enough data", "N/A", "Enrolled"] =
+      assert ["Four, Student", _, _, _, _, "33.03", "High", "N/A", "Enrolled"] =
+               Enum.at(students, 1)
+
+      assert ["One, Student", _, _, enrollment_date, _, "0", "Not enough data", "N/A", "Enrolled"] =
                Enum.at(students, 2)
 
-      assert ["Three, Student", _, _, _, "22.22", "Medium", "N/A", "Enrolled"] =
+      enrollment = Sections.get_enrollment(section.slug, student_1.id, filter_by_status: false)
+
+      assert enrollment_date ==
+               OliWeb.Common.FormatDateTime.format_datetime(enrollment.inserted_at,
+                 show_timezone: false
+               )
+
+      assert ["Three, Student", _, _, _, _, "22.22", "Medium", "N/A", "Enrolled"] =
                Enum.at(students, 3)
 
-      assert ["Two, Student", _, _, _, "11.11", "Low", "N/A", "Enrolled"] = Enum.at(students, 4)
+      assert ["Two, Student", _, _, _, _, "11.11", "Low", "N/A", "Enrolled"] =
+               Enum.at(students, 4)
 
-      assert ["Seven, Student", _, _, _, "0", "Not enough data", "N/A", "Pending confirmation"] =
+      assert ["Seven, Student", _, _, _, _, "0", "Not enough data", "N/A", "Pending confirmation"] =
                Enum.at(students, 5)
 
-      assert ["Eight, Student", _, _, _, "0", "Not enough data", "N/A", "Rejected invitation"] =
+      assert ["Eight, Student", _, _, _, _, "0", "Not enough data", "N/A", "Rejected invitation"] =
                Enum.at(students, 6)
 
-      assert ["Six, Student", _, _, _, "0", "Not enough data", "N/A", "Suspended"] =
+      assert ["Six, Student", _, _, _, _, "0", "Not enough data", "N/A", "Suspended"] =
                Enum.at(students, 7)
     end
 
@@ -517,6 +529,7 @@ defmodule OliWeb.DeliveryControllerTest do
                "Name",
                "Email",
                "LMS ID",
+               "Enrollment Date",
                "Last Interaction",
                "Progress (Pct)",
                "Proficiency",
@@ -529,23 +542,24 @@ defmodule OliWeb.DeliveryControllerTest do
       assert Enum.count(students) == 8
 
       # CSV Student data
-      assert ["Five, Student", _, _, _, "100", "High", "N/A", "Enrolled", "In Progress"] =
+      assert ["Five, Student", _, _, _, _, "100", "High", "N/A", "Enrolled", "In Progress"] =
                Enum.at(students, 0)
 
-      assert ["Four, Student", _, _, _, "33.03", "High", "N/A", "Enrolled", "In Progress"] =
+      assert ["Four, Student", _, _, _, _, "33.03", "High", "N/A", "Enrolled", "In Progress"] =
                Enum.at(students, 1)
 
-      assert ["One, Student", _, _, _, "0", "Not enough data", "N/A", "Enrolled", "Approved"] =
+      assert ["One, Student", _, _, _, _, "0", "Not enough data", "N/A", "Enrolled", "Approved"] =
                Enum.at(students, 2)
 
-      assert ["Three, Student", _, _, _, "22.22", "Medium", "N/A", "Enrolled", "In Progress"] =
+      assert ["Three, Student", _, _, _, _, "22.22", "Medium", "N/A", "Enrolled", "In Progress"] =
                Enum.at(students, 3)
 
-      assert ["Two, Student", _, _, _, "11.11", "Low", "N/A", "Enrolled", "Denied"] =
+      assert ["Two, Student", _, _, _, _, "11.11", "Low", "N/A", "Enrolled", "Denied"] =
                Enum.at(students, 4)
 
       assert [
                "Seven, Student",
+               _,
                _,
                _,
                _,
@@ -562,6 +576,7 @@ defmodule OliWeb.DeliveryControllerTest do
                _,
                _,
                _,
+               _,
                "0",
                "Not enough data",
                "N/A",
@@ -570,7 +585,18 @@ defmodule OliWeb.DeliveryControllerTest do
              ] =
                Enum.at(students, 6)
 
-      assert ["Six, Student", _, _, _, "0", "Not enough data", "N/A", "Suspended", "In Progress"] =
+      assert [
+               "Six, Student",
+               _,
+               _,
+               _,
+               _,
+               "0",
+               "Not enough data",
+               "N/A",
+               "Suspended",
+               "In Progress"
+             ] =
                Enum.at(students, 7)
     end
 
