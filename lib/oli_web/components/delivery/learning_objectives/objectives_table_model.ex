@@ -297,23 +297,11 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         do: Map.get(objective, :confidence_obj),
         else: Map.get(objective, :confidence_subobj)
 
-    {bar_1_class, bar_2_class, bar_3_class} = Proficiency.confidence_bar_classes(confidence)
-
-    assigns =
-      Map.merge(assigns, %{
-        confidence: confidence,
-        bar_1_class: bar_1_class,
-        bar_2_class: bar_2_class,
-        bar_3_class: bar_3_class
-      })
+    assigns = Map.put(assigns, :confidence, confidence)
 
     ~H"""
     <div :if={@confidence} class="flex items-center gap-1.5 text-Text-text-high">
-      <Icons.confidence_bars
-        bar_1_class={@bar_1_class}
-        bar_2_class={@bar_2_class}
-        bar_3_class={@bar_3_class}
-      />
+      <Icons.confidence_bars level={@confidence} />
       <span>{@confidence}</span>
     </div>
     <span :if={is_nil(@confidence)}>-</span>
