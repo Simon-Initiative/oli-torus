@@ -218,6 +218,8 @@ Carried from `prd.md`/`fdd.md`, restated here because they affect what gets buil
         isolation.
   - [x] `StudentDistributionTable`'s and `StudentSupportTile`'s existing test suites re-run unmodified,
         confirming both migrations introduced no behavior change.
+  - [x] Every control introduced across all three phases (row checkboxes, Email button, Load More,
+        proficiency filter, Close, sort headers) is a native, keyboard-operable element (AC-035).
   - Command(s): `mix test test/oli_web/components/delivery/learning_objectives/`, `mix test test/oli_web/components/delivery/instructor_dashboard/`, `mix test test/oli_web/components/delivery/students/`, `mix format`
 - Definition of Done:
   - Students can be emailed from the group table using the selection already built in PR2;
@@ -237,7 +239,7 @@ Carried from `prd.md`/`fdd.md`, restated here because they affect what gets buil
 - Goal: verify the shipped behavior against the Figma source of truth and the ticket's
   accessibility requirements.
 - Tasks:
-  - [ ] Visual comparison against the five Figma nodes in `design/instructor_viz_ui_brief.md`
+  - [x] Visual comparison against the five Figma nodes in `design/instructor_viz_ui_brief.md`
         (`346:6145`, `358:11956`, `349:11077`, `349:11526`, `349:11974`) for the default state and each
         of the three group states, including guidance copy accuracy.
   - [ ] Keyboard-only walkthrough of region selection and every table control, confirming visible
@@ -260,21 +262,22 @@ Carried from `prd.md`/`fdd.md`, restated here because they affect what gets buil
 
 - Goal: close out the work item with a full regression pass and traceability update.
 - Tasks:
-  - [ ] Run the full backend and frontend test suites to catch any unrelated regression.
-  - [ ] Request code review per `docs/CODEREVIEW.md`: `.review/security.md` and
+  - [x] Run the full backend and frontend test suites to catch any unrelated regression.
+  - [x] Request code review per `docs/CODEREVIEW.md`: `.review/security.md` and
         `.review/performance.md` always; `.review/elixir.md` and `.review/ui.md` given this ticket's
         LiveView/UI surface area; `.review/requirements.md` given the PRD traceability in this work
         item. `.review/typescript.md` is no longer required for this ticket's chart (it is HEEx, not
         React) but still applies if any TypeScript file is touched (e.g. deleting
         `DotDistributionChart.tsx`).
-  - [ ] Run `python3 <skills_root>/requirements/scripts/requirements_trace.py <work_item_dir> --action verify_implementation`
+  - [x] Run `python3 <skills_root>/requirements/scripts/requirements_trace.py <work_item_dir> --action verify_implementation`
         and update `requirements.yml` AC statuses to `verified` with implementation-file proofs.
   - [ ] Update MER-5814 in Jira with the PR links (three PRs) per `docs/ISSUE_TRACKING.md`.
   - [ ] Confirm all three PRs landed on `master` before the next release cut (Scope section).
 - Testing Tasks:
-  - [ ] `mix test` (full suite)
-  - [ ] `cd assets && yarn test && yarn lint` (regression check even though this ticket's own chart is
-        no longer React — other apps in the bundle still need to build/test cleanly)
+  - [x] `mix test` (full suite) — 8935 tests, 2 pre-existing failures in
+        `Oli.Authoring.ObjectiveCoverage.CsvExportTest` (unrelated module; fails standalone too, on an
+        atom-table/test-isolation issue predating this branch, not a regression from this work).
+  - [x] `cd assets && yarn test && yarn lint` — 163 suites / 1582 tests passing, lint clean.
   - Command(s): `mix test`, `cd assets && yarn test`, `cd assets && yarn lint`, `mix format --check-formatted`
 - Definition of Done:
   - Full suites pass; code review findings addressed; `requirements.yml` reflects final AC status; all
