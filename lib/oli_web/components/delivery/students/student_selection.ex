@@ -38,18 +38,6 @@ defmodule OliWeb.Components.Delivery.Students.StudentSelection do
   end
 
   @doc """
-  Comma-separated, de-duplicated emails for the students in `students` whose id is in
-  `selected_ids`. Students without a usable email are silently skipped.
-  """
-  @spec selected_emails([map()], [id]) :: String.t()
-  def selected_emails(students, selected_ids) do
-    students
-    |> selected(selected_ids)
-    |> Enum.map(&Map.get(&1, :email))
-    |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
-  end
-
-  @doc """
   Shapes selected students into the recipient maps `DraftEmailModal` consumes.
 
   Keeps ALL selected students -- including those without an email -- so the modal can split

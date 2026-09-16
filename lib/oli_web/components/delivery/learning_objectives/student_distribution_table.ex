@@ -24,6 +24,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
 
   use OliWeb, :live_component
 
+  alias Oli.Utils
   alias OliWeb.Common.Chip
   alias OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTableModel
   alias OliWeb.Components.Delivery.Students.EmailButton
@@ -86,7 +87,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
 
   def update(assigns, socket) do
     group_changed? = socket.assigns[:selected_group] not in [nil, assigns.selected_group]
-    students_changed? = Map.get(socket.assigns, :students) != Map.get(assigns, :students)
 
     socket =
       socket
@@ -95,12 +95,14 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
 
     # `update/2` runs on every render of the parent LiveComponent, not only when this
     # component's own inputs change (e.g. an unrelated search keystroke elsewhere on the
-    # page). Only re-filter when the group, the student list, or the local filter state
-    # actually changed; `load_more`/`student_distribution_sort` below already keep the
-    # filtered list and only re-sort or re-slice, so they never call this either.
+    # page). Only re-filter when the group changes (or on first mount); `load_more`/
+    # `student_distribution_sort` below already keep the filtered list and only re-sort or
+    # re-slice, so they never call this either. `students` itself never changes for an
+    # already-mounted instance -- `ExpandedObjectiveView` computes it once per expanded
+    # objective -- so there is no `students`-changed case to guard against here.
     socket =
-      if group_changed? or students_changed? or not Map.has_key?(socket.assigns, :sorted_students) do
-        socket |> recompute_filtered_students() |> resort()
+      if group_changed? or not Map.has_key?(socket.assigns, :sorted_students) do
+        socket |> recompute_filtered_students() |> resort() |> recompute_email_assigns()
       else
         socket
       end
@@ -150,11 +152,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
       |> assign(:visible_rows, visible_rows)
       |> assign(:select_all_checked, select_all_checked)
       |> assign(:selected_id_set, selected_id_set)
-      |> assign(
-        :selected_emails,
-        StudentSelection.selected_emails(assigns.students, assigns.selected_student_ids)
-      )
-      |> assign(:email_modal_payload, email_modal_payload(assigns, content))
 
     ~H"""
     <div
@@ -460,7 +457,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     case Integer.parse(student_id_param) do
       {student_id, ""} ->
         updated = StudentSelection.toggle(socket.assigns.selected_student_ids, student_id)
-        {:noreply, assign(socket, :selected_student_ids, updated)}
+
+        {:noreply, socket |> assign(:selected_student_ids, updated) |> recompute_email_assigns()}
 
       _ ->
         {:noreply, socket}
@@ -477,7 +475,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
 
     updated = StudentSelection.toggle_all(filtered_ids, selected)
 
-    {:noreply, assign(socket, :selected_student_ids, updated)}
+    {:noreply, socket |> assign(:selected_student_ids, updated) |> recompute_email_assigns()}
   end
 
   defp recompute_filtered_students(socket) do
@@ -552,19 +550,35 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
   defp empty_state_message(0), do: "No students currently belong to this group."
   defp empty_state_message(_group_student_count), do: "No students match the selected filter."
 
+  # Recomputes the two assigns derived from the current selection (`selected_emails`,
+  # `email_modal_payload`) -- called from `update/2` (group change / first mount) and from the
+  # two selection-toggling event handlers, never from `render/1`, so sorting/filtering/Load
+  # More (which never touch selection) don't pay for a fresh scan of `students`.
+  defp recompute_email_assigns(socket) do
+    %{students: students, selected_student_ids: selected_student_ids, selected_group: group} =
+      socket.assigns
+
+    content = Map.fetch!(@group_content, group)
+    recipients = StudentSelection.recipients(students, selected_student_ids, & &1.full_name)
+
+    selected_emails =
+      recipients
+      |> Enum.map(& &1.email)
+      |> Utils.normalize_and_join_strings(", ", unique: true)
+
+    socket
+    |> assign(:selected_emails, selected_emails)
+    |> assign(:email_modal_payload, email_modal_payload(socket.assigns, content, recipients))
+  end
+
   # Shaped to match `DraftEmailModal`'s expected assigns exactly, so `LearningObjectives` can
   # forward it with a plain `{@email_modal_payload}` splat once `EmailButton` relays it up
   # through `instructor_dashboard_live.ex`. `objective`'s `proficiency_label` uses the group's
   # own title (e.g. "Needs Support") rather than a single proficiency label, since a
   # distribution group can span multiple proficiency ranges.
-  defp email_modal_payload(assigns, content) do
+  defp email_modal_payload(assigns, content, recipients) do
     %{
-      students:
-        StudentSelection.recipients(
-          assigns.students,
-          assigns.selected_student_ids,
-          & &1.full_name
-        ),
+      students: recipients,
       section_id: assigns.section_id,
       section_title: assigns.section_title,
       section_slug: assigns.section_slug,

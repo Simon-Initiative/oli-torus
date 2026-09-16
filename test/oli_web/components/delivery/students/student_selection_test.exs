@@ -65,41 +65,4 @@ defmodule OliWeb.Components.Delivery.Students.StudentSelectionTest do
       assert Enum.find(result, &(&1.id == 2)).given_name == "B"
     end
   end
-
-  describe "selected_emails/2" do
-    test "joins the emails of the selected students, comma-separated" do
-      students = [
-        %{id: 1, email: "a@example.com"},
-        %{id: 2, email: "b@example.com"},
-        %{id: 3, email: "c@example.com"}
-      ]
-
-      assert StudentSelection.selected_emails(students, [1, 3]) == "a@example.com, c@example.com"
-    end
-
-    test "skips students with no email or a blank email" do
-      students = [
-        %{id: 1, email: "a@example.com"},
-        %{id: 2, email: nil},
-        %{id: 3, email: ""}
-      ]
-
-      assert StudentSelection.selected_emails(students, [1, 2, 3]) == "a@example.com"
-    end
-
-    test "de-duplicates repeated emails" do
-      students = [
-        %{id: 1, email: "shared@example.com"},
-        %{id: 2, email: "shared@example.com"}
-      ]
-
-      assert StudentSelection.selected_emails(students, [1, 2]) == "shared@example.com"
-    end
-
-    test "returns an empty string when nothing is selected" do
-      students = [%{id: 1, email: "a@example.com"}]
-
-      assert StudentSelection.selected_emails(students, []) == ""
-    end
-  end
 end
