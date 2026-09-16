@@ -891,7 +891,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     Enum.sort_by(
       objectives,
       fn objective ->
-        confidence = Map.get(objective, :confidence_subobj) || Map.get(objective, :confidence_obj)
+        confidence =
+          if top_level_objective?(objective),
+            do: Map.get(objective, :confidence_obj),
+            else: Map.get(objective, :confidence_subobj)
+
         {@confidence_rank[confidence], normalized_title(objective)}
       end,
       sort_order
@@ -948,7 +952,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp do_filter_by_proficiency(objectives, selected_proficiency_ids) do
-    mapper_ids = level_mapper_ids(selected_proficiency_ids)
+    mapper_ids = level_mapper_ids(selected_proficiency_ids, "Not enough data")
 
     if mapper_ids == [] do
       objectives
@@ -967,12 +971,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp maybe_filter_by_proficiency_own_value(objectives, []), do: objectives
 
   defp maybe_filter_by_proficiency_own_value(objectives, selected_proficiency_ids) do
-    filter_by_own_value(objectives, selected_proficiency_ids, :student_proficiency_obj)
+    filter_by_own_value(
+      objectives,
+      selected_proficiency_ids,
+      :student_proficiency_obj,
+      "Not enough data"
+    )
   end
 
   defp maybe_filter_by_confidence(objectives, []), do: objectives
 
   defp maybe_filter_by_confidence(objectives, selected_confidence_ids) do
+    # Confidence has no "Not Enough Data" filter option (@confidence_options only has
+    # Low/Medium/High) and its missing-data state is the atom nil, not a label string,
+    # so option id 4 must not resolve to anything here.
     filter_by_own_value(objectives, selected_confidence_ids, :confidence_obj)
   end
 
@@ -982,8 +994,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   # shown on that row — the same, parent-level aggregate every row in a family carries.
   # Checking a sub-objective's own value here would let a differently-valued child
   # incorrectly promote its parent into view.
-  defp filter_by_own_value(objectives, selected_ids, field) do
-    mapper_ids = level_mapper_ids(selected_ids)
+  defp filter_by_own_value(objectives, selected_ids, field, id_4_label \\ nil) do
+    mapper_ids = level_mapper_ids(selected_ids, id_4_label)
 
     if mapper_ids == [] do
       objectives
@@ -992,13 +1004,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end
   end
 
-  defp level_mapper_ids(selected_ids) do
+  defp level_mapper_ids(selected_ids, id_4_label) do
     Enum.reduce(selected_ids, [], fn id, acc ->
       case id do
         1 -> ["Low" | acc]
         2 -> ["Medium" | acc]
         3 -> ["High" | acc]
-        4 -> ["Not enough data" | acc]
+        4 -> if id_4_label, do: [id_4_label | acc], else: acc
         _ -> acc
       end
     end)

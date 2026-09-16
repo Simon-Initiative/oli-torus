@@ -292,7 +292,11 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   # CONFIDENCE
   defp custom_render(assigns, objective, %ColumnSpec{name: :confidence}) do
-    confidence = Map.get(objective, :confidence_subobj) || Map.get(objective, :confidence_obj)
+    confidence =
+      if is_nil(objective.subobjective),
+        do: Map.get(objective, :confidence_obj),
+        else: Map.get(objective, :confidence_subobj)
+
     {bar_1_class, bar_2_class, bar_3_class} = Proficiency.confidence_bar_classes(confidence)
 
     assigns =
