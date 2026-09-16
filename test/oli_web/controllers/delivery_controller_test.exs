@@ -363,6 +363,110 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert response(conn, 404)
     end
+
+    test "downloads course content metrics for only the selected student", %{conn: conn} do
+      %{instructor: instructor, section: section, student2: student} =
+        prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            container_filter_by: :units,
+            student_id: student.id
+          )
+        )
+
+      [headers, row] = NimbleCSV.RFC4180.parse_string(response(conn, 200), skip_headers: false)
+
+      assert headers == ["title", "progress", "student_proficiency"]
+      assert [_, progress, "Low"] = row
+      assert_in_delta String.to_float(progress), 0.11111, 0.00001
+    end
+
+    test "returns 403 when the selected student is not enrolled in the section", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      outsider = user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            student_id: outsider.id
+          )
+        )
+
+      assert response(conn, 403)
+    end
+
+    test "returns 403 when the selected student id is malformed", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            student_id: "not-a-student-id"
+          )
+        )
+
+      assert response(conn, 403)
+    end
+
+    test "returns 403 when the selected user is not a learner", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      other_instructor = user_fixture()
+
+      Sections.enroll(other_instructor.id, section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            student_id: other_instructor.id
+          )
+        )
+
+      assert response(conn, 403)
+    end
+
+    test "returns 403 when the selected learner also has an instructor role", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      learner_instructor = user_fixture()
+
+      Sections.enroll(learner_instructor.id, section.id, [
+        ContextRoles.get_role(:context_learner),
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            student_id: learner_instructor.id
+          )
+        )
+
+      assert response(conn, 403)
+    end
   end
 
   describe "download_container_progress/2" do
@@ -675,6 +779,25 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert response(conn, 404)
     end
+
+    test "returns 403 when the selected student is not enrolled in the section", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      outsider = user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_learning_objectives, section.slug,
+            student_id: outsider.id
+          )
+        )
+
+      assert response(conn, 403)
+    end
   end
 
   describe "download_learning_objectives with objectives that left the course content" do
@@ -734,6 +857,51 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert csv =~ obj_revision_1.title
       refute csv =~ orphan_revision.title
+    end
+
+    test "downloads proficiency for only the selected student", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      obj_revision_1: objective
+    } do
+      student = user_fixture()
+      other_student = user_fixture()
+      learner_role = [ContextRoles.get_role(:context_learner)]
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, learner_role)
+      Sections.enroll(other_student.id, section.id, learner_role)
+
+      insert(:resource_summary,
+        section_id: section.id,
+        user_id: student.id,
+        resource_id: objective.resource_id,
+        resource_type_id: objective_type_id,
+        num_first_attempts: 3,
+        num_first_attempts_correct: 3
+      )
+
+      insert(:resource_summary,
+        section_id: section.id,
+        user_id: other_student.id,
+        resource_id: objective.resource_id,
+        resource_type_id: objective_type_id,
+        num_first_attempts: 3,
+        num_first_attempts_correct: 0
+      )
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_learning_objectives, section.slug,
+            student_id: student.id
+          )
+        )
+
+      assert response(conn, 200) =~ "#{objective.title},,High,"
     end
   end
 
@@ -860,6 +1028,49 @@ defmodule OliWeb.DeliveryControllerTest do
         |> get(Routes.delivery_path(conn, :download_quiz_scores, "invalid_section_slug"))
 
       assert response(conn, 404)
+    end
+
+    test "downloads quiz scores for only the selected student", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{section: section} = basic_section(nil)
+      student = user_fixture(%{email: "selected@example.edu"})
+      other_student = user_fixture(%{email: "other@example.edu"})
+      learner_role = [ContextRoles.get_role(:context_learner)]
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, learner_role)
+      Sections.enroll(other_student.id, section.id, learner_role)
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_quiz_scores, section.slug, student_id: student.id)
+        )
+
+      csv = response(conn, 200)
+      assert csv =~ student.email
+      refute csv =~ other_student.email
+    end
+
+    test "returns 403 when the selected student is not enrolled in the section", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{section: section} = basic_section(nil)
+      outsider = user_fixture()
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_quiz_scores, section.slug, student_id: outsider.id)
+        )
+
+      assert response(conn, 403)
     end
   end
 

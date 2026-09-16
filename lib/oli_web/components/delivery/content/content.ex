@@ -168,8 +168,11 @@ defmodule OliWeb.Components.Delivery.Content do
           <div>
             <a
               href={
-                Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug,
-                  container_filter_by: @params.container_filter_by
+                Routes.delivery_path(
+                  OliWeb.Endpoint,
+                  :download_course_content_info,
+                  @section_slug,
+                  download_params(@params.container_filter_by, @student_id)
                 )
               }
               download="course_content.csv"
@@ -246,6 +249,12 @@ defmodule OliWeb.Components.Delivery.Content do
     </div>
     """
   end
+
+  defp download_params(container_filter_by, nil),
+    do: [container_filter_by: container_filter_by]
+
+  defp download_params(container_filter_by, student_id),
+    do: [container_filter_by: container_filter_by, student_id: student_id]
 
   def handle_event("toggle_selected", %{"_target" => [id]}, socket) do
     selected_id = String.to_integer(id)
