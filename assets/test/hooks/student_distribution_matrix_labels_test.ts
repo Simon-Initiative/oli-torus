@@ -67,6 +67,20 @@ describe('StudentDistributionMatrixLabels', () => {
     expect(coveredLabel).not.toHaveClass('opacity-25');
   });
 
+  test('does not re-read a label rect on mousemove (cached at mount, not on the hot path)', () => {
+    const { svg, coveredLabel } = buildMatrix();
+    const hook = { el: svg } as any;
+
+    StudentDistributionMatrixLabels.mounted!.call(hook);
+    const rectSpy = coveredLabel.getBoundingClientRect as jest.Mock;
+    rectSpy.mockClear();
+
+    mousemove(svg, 10, 10);
+    mousemove(svg, 11, 11);
+
+    expect(rectSpy).not.toHaveBeenCalled();
+  });
+
   test('clears the fade on mouseleave', () => {
     const { svg, coveredLabel } = buildMatrix();
     const hook = { el: svg } as any;
