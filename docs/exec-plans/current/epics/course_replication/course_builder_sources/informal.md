@@ -1,64 +1,83 @@
 # Course Builder Source Selection - Informal Feature Context
 
-Last updated: 2026-07-27
+Last updated: 2026-09-17
 
-This feature updates the shared course-builder source-selection experience so instructors can discover and choose ordinary curriculum sources, their own sections for independent copy, and authorized Blueprints without confusing the resulting relationships.
+> **Scope correction (2026-09-17):** the entire Blueprint Courses workstream — `MER-5825`, `MER-5826`, `MER-5827`, `MER-5829`, `MER-5830`, `MER-5833` — is `Closed Won't Do` epic-wide (confirmed on `MER-5841` by Eli Knebel and Francisco Castro, decision by Darren, 2026-09-08). There is no linked/child Blueprint relationship anywhere in current scope, in this lane or any other. Everything below reflects that. The epic-level `../informal.md` and `../plan.md` still describe the cancelled workstream and need their own refresh pass (e.g. via `harness-update_docs`) — do not treat them as current for this lane.
+
+This feature updates the shared course-builder source-selection experience so instructors can discover ordinary curriculum sources ("Templates" — the existing project/product sources) and browse their own course sections ("My Course Sections") ahead of copying them. This ticket (`MER-5828`) ships the shared UI and the My Course Sections tab/listing; the actual "select to copy" action and copy modal are deliberately deferred to a follow-up PR (`MER-5832`), so My Course Sections cards are intentionally non-functional ("dummy") for selection in this PR.
+
+The codebase is Phoenix LiveView/HEEx (`OliWeb.Common.CardListing`, `OliWeb.Delivery.NewCourse.{SelectSource,TableModel}`, `OliWeb.Common.Listing`), not React — prior mentions of "React components" in this doc were inaccurate and have been corrected below.
+
+## Design references
+
+Figma file: [Course replication feature](https://www.figma.com/design/ZAfwBt1ek94xAyriR6wy8S/Course-replication-feature)
+
+- `MER-5828` frames: node-id `44-721`, node-id `40-2883`.
+- `MER-5832` frames (for context only, not built here): node-id `44-960`, node-id `44-1311` (hover state), node-id `40-1106`.
 
 ## Source tickets
 
-- `MER-5828` Course Builder UI Updates
-- UI integration portions of `MER-5829` Course Builder: Selecting a blueprint
-- UI integration portions of `MER-5832` Course Builder: Selecting a section to copy
-- Epic context: `../informal.md`
-- Parent lane plan: `../plan.md`
+- `MER-5828` Course Builder UI Updates — this ticket, branch `MER-5828-course-builder-ui-updates`, status In Progress.
+- `MER-5841` Replication contracts and safety foundation — **merged to master 2026-09-17** ([PR #6854](https://github.com/Simon-Initiative/oli-torus/pull/6854)). Defines the server-side authorization/query contract this feature must reuse for "My Course Sections" eligibility: an active enrollable section on which the actor holds an instructor/content-developer role, or any active enrollable section for admins. This branch has been **rebased onto master and already includes it.**
+- `MER-5831` Course Copy: Rules — open PR ([PR #6855](https://github.com/Simon-Initiative/oli-torus/pull/6855)), not yet merged. Not required to merge for this ticket (copy submission stays out of scope here), but Darren Siegel's design comment (2026-08-06) documents modeling "previous sections" as a distinct, typed source kind in `select_source.ex`/`table_model.ex` — follow that direction here so `MER-5832` can plug in the real action without reshaping these components again.
+- `MER-5832` Course Builder: Selecting a section to copy — deferred to the follow-up PR; consumes the tab/filter/query/tag built here and replaces the placeholder action with the real copy modal.
+- Epic context: `../informal.md` (stale, see scope correction above).
+- Parent lane plan: `../plan.md` (same staleness caveat).
 
 ## Product outcome
 
-The course builder lets an instructor quickly find an appropriate source and understand what will happen next: Blueprint selection creates a linked child, while My Course Sections selection creates an independent copy.
+The course builder lets an instructor quickly find an appropriate source: an existing Template (project or product) to build from immediately, exactly as today, or one of their own course sections to copy later. Selecting a My Course Section in this PR surfaces the section (searchable, sortable, tagged) but does not yet trigger any creation — that ships in `MER-5832`.
 
 ## Functional scope
 
-- Improve course-card density, layout, spacing, and metadata scanability.
-- Add source filters: All Sources, My Course Sections, and Blueprint Courses.
+- Improve course-card density, layout, spacing, and metadata scanability in the existing card/list components (`CardListing`, `TableModel`, `Listing`).
+- Add source filters/tabs: **All Sources**, **Templates** (the existing Project/Product sources — today rendered via `TableModel.render_type_column/3` as "Project"/"Template"), and **My Course Sections** (new).
+- "My Course Sections" lists active enrollable sections where the current instructor holds an instructor/content-developer role (admins: any active enrollable section) — reuse `MER-5841`'s resolution rule server-side; do not write a second, divergent eligibility query.
 - Preserve Most Recent as the default sort and preserve a user-selected sort while filters change.
 - Keep search and sorting scoped to the selected source semantics.
-- Add consistent source/type tags such as Blueprint and My Section, with a final decision for Blueprint Child presentation.
-- Add accessible Blueprint child-creation and independent-copy initiation actions.
-- Show explanatory messaging for linked versus independent creation, permissions, editable settings, and future synchronization.
-- Surface server-derived Blueprint source/owner information on the resulting child Manage experience where applicable.
+- Add consistent source/type tags: "Template" (existing) and a new "My Section" tag.
+- My Course Sections cards are present, searchable, sortable, and taggable, but their selection affordance is an intentional no-op/disabled state in this ticket (e.g. hidden or disabled "Select" action with copy explaining it is coming soon). `MER-5832` swaps this placeholder for the real "select to copy" action and modal.
+- No Blueprint linked-child creation action, no linked/child explanatory messaging, and no Blueprint source/owner surfacing on Manage — removed from scope; the feature is cancelled, not deferred.
 
 ## Technical guidance
 
-Define a normalized, authorization-safe source-card/query contract consumed by all filters. Do not rely on client-side filtering to protect Blueprint names, owners, counts, or statuses. Search and sorting must not create or mutate relationships.
+Reuse `MER-5841`'s contract for "My Course Sections" eligibility; do not filter client-side and do not duplicate the eligibility check.
 
-Keep initiation actions semantically distinct even if cards/components are shared. Blueprint cards invoke linked child creation; My Section cards invoke independent copy. The UI must not infer relationship type from visual tags alone.
+Follow the source-kind modeling direction from `MER-5831`'s design comment: give each row a typed source kind (e.g. `{:project, ...} | {:publication, ...} | {:product, ...} | {:previous_section, ...}`) instead of the current structural `Map.has_key?(item, :type)` check, so `MER-5832` can add the real `:previous_section` selection/copy action without re-deriving row typing.
 
-All filters, sort controls, tabs, cards, and actions need keyboard operation, accessible names, selected states, and focus behavior. Hover text must have a keyboard/focus equivalent. Dynamic result updates should be announced where appropriate. Avoid duplicating relationship or authorization rules in React components.
+Do not implement any Blueprint relationship, synchronization, or linked-child messaging or actions — none of that exists in scope anywhere in the epic anymore.
+
+All filters, sort controls, tabs, cards, and the (currently disabled) My Course Sections action need keyboard operation, accessible names, selected states, and focus behavior. Hover text must have a keyboard/focus equivalent. Dynamic result updates should be announced where appropriate. Keep the disabled action visually and semantically honest — communicate via copy/state that it ships in a follow-up rather than presenting it as broken.
 
 ## Out of scope
 
-- Blueprint relationship and synchronization behavior; see `../blueprint_lifecycle/`.
-- Course Copy backend semantics; see `../course_copy/`.
-- Admin relationship reporting; see `../blueprint_visibility/`.
+- Blueprint parent/child relationship, synchronization, enable/disable, and linked-section visibility — **cancelled epic-wide** (`MER-5825`/`5826`/`5827`/`5829`/`5830`/`5833`, all `Closed Won't Do`). Not built here or elsewhere.
+- The actual copy submission/modal for My Course Sections — `MER-5832`, follow-up PR.
+- Course Copy backend semantics (allowlist, transaction, learner-data exclusion) — `MER-5831` / `../course_copy/`.
 
 ## Dependencies and handoff
 
-- Can begin with design/component inventory immediately.
-- Soft dependency on `../replication_contracts/` for source classifications, permissions, and safe queries.
-- Hard dependency on `../blueprint_lifecycle/` for Blueprint eligibility, child-creation action, and relationship metadata.
-- Hard dependency on `../course_copy/` for My Course Sections and copy initiation behavior.
+- Hard dependency on `../replication_contracts/` (`MER-5841`) — merged to master 2026-09-17; **this branch is rebased and includes it.**
+- Soft dependency on `../course_copy/` (`MER-5831`, PR #6855, open) — not required to merge this ticket, but mirror its source-kind modeling so `MER-5832` integrates without restructuring this ticket's components.
+- No dependency on `../blueprint_lifecycle/` or `../blueprint_visibility/` — both lanes are cancelled.
+- Hands off to `MER-5832`: the My Course Sections tab, query, cards, and tag should be ready to receive a real selection action and copy modal without further restructuring.
 
 ## Verification expectations
 
-- Query/filter tests for source membership, authorization, search, and sort preservation.
-- UI tests for all source filters, card tags, actions, and explanatory messages.
-- End-to-end tests distinguishing Blueprint child creation from independent Course Copy.
+- Query/filter tests for My Course Sections membership (mirroring `MER-5841`'s contract), authorization, search, and sort preservation.
+- UI tests for the All Sources / Templates / My Course Sections filters, tags, and the disabled/no-op state of My Course Sections cards.
 - Accessibility tests for keyboard-only operation, focus, selected state, hover equivalents, and dynamic result announcements.
-- Regression tests for ordinary course creation and non-replication sources.
+- Regression tests for ordinary Template-based course creation (unchanged select/copy flow).
+- No Blueprint-vs-Copy end-to-end distinction test — Blueprint is out of scope, not a parallel path to distinguish from.
 
 ## Open decisions
 
-- Final Blueprint Child tag/filter behavior.
+- Exact hover/disabled-state copy for My Course Sections cards before `MER-5832` lands.
 - Exact card metadata and sort options.
-- Whether source selection and copy/Blueprint setup are separate steps or share a modal/flow.
-- Final relationship messaging and terminology.
+- Whether the row/source-kind typing refactor (per `MER-5831`'s design comment) is completed fully in this ticket or left partially prepared for `MER-5832`.
+
+## Follow-up: doc reconciliation
+
+As one of the last steps of this ticket (after implementation, before closing the PR), run **`harness-update_docs`** against this work item directory (`docs/exec-plans/current/epics/course_replication/course_builder_sources/`) to reconcile `prd.md`/`fdd.md`/`plan.md` (produced by the `harness-analyze`/`harness-architect`/`harness-plan` steps) with what was actually implemented — in particular the deliberately non-functional My Course Sections selection state and any source-kind typing decisions made along the way. It only rewrites this work item's own PRD/FDD/plan and re-validates them; it does not touch `informal.md` files.
+
+It does **not** cover the epic-level drift found in this pass: `../informal.md` and `../plan.md` (and, transitively, `../blueprint_lifecycle/informal.md` and `../blueprint_visibility/informal.md`) still describe the cancelled Blueprint workstream as active scope. That reconciliation is bigger than this ticket (it spans lanes not owned here) and should be tracked as separate follow-up work once all in-flight lanes are known, rather than folded into this PR.
