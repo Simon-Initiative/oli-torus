@@ -32,7 +32,9 @@ defmodule Oli.Delivery.Sections.LinkedActivitiesTest do
       %{resource_id: 99, related_activities: [6]}
     ]
 
-    assert LinkedActivities.activity_ids_for_objective(objectives, resources, 20) == [4]
+    family = LinkedActivities.objective_family_ids(objectives, 20)
+
+    assert LinkedActivities.activity_ids_for_objective_family(family, resources) == [4]
   end
 
   test "empty relationships produce an empty activity list" do

@@ -75,14 +75,6 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
     |> Enum.sort()
   end
 
-  @doc "Returns the unique activity IDs for a selected objective and its effective descendants."
-  @spec activity_ids_for_objective([map()], [map()], integer()) :: [integer()]
-  def activity_ids_for_objective(objectives, objective_resources, selected_objective_id) do
-    objectives
-    |> objective_family_ids(selected_objective_id)
-    |> activity_ids_for_objective_family(objective_resources)
-  end
-
   @doc "Returns the unique activity IDs for an already-resolved objective family."
   @spec activity_ids_for_objective_family([integer()], [map()]) :: [integer()]
   def activity_ids_for_objective_family(objective_ids, objective_resources) do
@@ -224,15 +216,6 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
   end
 
   @doc "Normalizes a published activity revision and aggregate metrics for shared consumers."
-  def normalize_activity_row(revision, metrics, page_contexts \\ []) do
-    normalize_activity_row(
-      revision,
-      metrics,
-      page_contexts,
-      Activities.list_lti_activity_registrations() |> Enum.map(& &1.id)
-    )
-  end
-
   def normalize_activity_row(revision, metrics, page_contexts, lti_activity_type_ids) do
     question_stem = extract_question_stem(revision.content)
     attempts = Map.get(metrics, :attempts, Map.get(metrics, :total_attempts, 0))
