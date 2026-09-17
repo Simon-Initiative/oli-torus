@@ -2,7 +2,144 @@ defmodule Oli.Delivery.GatingTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Gating
+  alias Oli.Delivery.Sections
   alias Oli.Seeder
+
+  describe "atomic gate edits" do
+    @describetag :copy_configuration_regression
+
+    setup do
+      Seeder.base_project_with_resource4()
+      |> Seeder.add_users_to_section(:section_1, [:user_a])
+    end
+
+    test "creating a gate also persists its enforcement index", %{
+      section_1: section,
+      page1: page,
+      user_a: user
+    } do
+      assert {:ok, gate} =
+               Gating.create_gating_condition_with_index(%{
+                 section_id: section.id,
+                 resource_id: page.id,
+                 type: :schedule,
+                 data: %{start_datetime: ~U[2099-01-01 00:00:00Z]}
+               })
+
+      updated = Sections.get_section!(section.id)
+      assert updated.resource_gating_index[Integer.to_string(page.id)] == [page.id]
+      assert [%{id: id}] = Gating.blocked_by(updated, user, page.id)
+      assert id == gate.id
+    end
+
+    test "changing a gate target atomically updates the enforcement index", %{
+      section_1: section,
+      page1: page1,
+      page2: page2,
+      user_a: user
+    } do
+      gate =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page1.id,
+          data: %{start_datetime: ~U[2099-01-01 00:00:00Z]}
+        })
+
+      {:ok, _} = Gating.update_resource_gating_index(section)
+
+      assert {:ok, updated_gate} =
+               Gating.update_gating_condition_with_index(gate, %{resource_id: page2.id})
+
+      updated = Sections.get_section!(section.id)
+
+      assert Gating.blocked_by(updated, user, page1.id) == []
+      assert [%{id: id}] = Gating.blocked_by(updated, user, page2.id)
+      assert id == updated_gate.id
+    end
+
+    test "deleting a gate clears its index in the same operation", %{
+      section_1: section,
+      page1: page
+    } do
+      gate = gating_condition_fixture(%{section_id: section.id, resource_id: page.id})
+      {:ok, _} = Gating.update_resource_gating_index(section)
+
+      assert {:ok, deleted, 1} = Gating.delete_gating_condition_with_index(gate)
+      assert deleted.id == gate.id
+      assert Sections.get_section!(section.id).resource_gating_index == %{}
+      assert Gating.list_gating_conditions(section.id) == []
+    end
+
+    test "a failed index write rolls the gate creation back", %{
+      section_1: section,
+      page1: page
+    } do
+      # Force a section validation failure after the gate insert succeeds.
+      from(s in Oli.Delivery.Sections.Section, where: s.id == ^section.id)
+      |> Repo.update_all(set: [requires_payment: true, amount: nil])
+
+      assert {:error, %Ecto.Changeset{}} =
+               Gating.create_gating_condition_with_index(%{
+                 section_id: section.id,
+                 resource_id: page.id,
+                 type: :schedule,
+                 data: %{}
+               })
+
+      assert Gating.list_gating_conditions(section.id) == []
+      assert Sections.get_section!(section.id).resource_gating_index == %{}
+    end
+
+    test "a failed index write also rolls a gate target change back", %{
+      section_1: section,
+      page1: page1,
+      page2: page2
+    } do
+      gate = gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
+      {:ok, section} = Gating.update_resource_gating_index(section)
+
+      from(s in Oli.Delivery.Sections.Section, where: s.id == ^section.id)
+      |> Repo.update_all(set: [requires_payment: true, amount: nil])
+
+      assert {:error, %Ecto.Changeset{}} =
+               Gating.update_gating_condition_with_index(gate, %{resource_id: page2.id})
+
+      assert Gating.get_gating_condition!(gate.id).resource_id == page1.id
+
+      assert Sections.get_section!(section.id).resource_gating_index ==
+               section.resource_gating_index
+    end
+
+    test "invalid gate changes do not alter the gate or its index", %{
+      section_1: section,
+      page1: page
+    } do
+      gate = gating_condition_fixture(%{section_id: section.id, resource_id: page.id})
+      {:ok, section} = Gating.update_resource_gating_index(section)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Gating.update_gating_condition_with_index(gate, %{type: nil})
+
+      assert Gating.get_gating_condition!(gate.id) == gate
+
+      assert Sections.get_section!(section.id).resource_gating_index ==
+               section.resource_gating_index
+    end
+
+    test "an atomic gate edit cannot move a gate to another section", %{
+      section_1: section,
+      section_2: other,
+      page1: page
+    } do
+      gate = gating_condition_fixture(%{section_id: section.id, resource_id: page.id})
+
+      assert {:error, changeset} =
+               Gating.update_gating_condition_with_index(gate, %{section_id: other.id})
+
+      assert errors_on(changeset).section_id == ["cannot move a gate to another section"]
+      assert Gating.get_gating_condition!(gate.id).section_id == section.id
+    end
+  end
 
   describe "gating_conditions" do
     alias Oli.Delivery.Gating.GatingCondition

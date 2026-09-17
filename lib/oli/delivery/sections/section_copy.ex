@@ -212,7 +212,7 @@ defmodule Oli.Delivery.Sections.SectionCopy do
              InstructorCustomizations.duplicate_section_exclusions(source, destination),
            {:ok, gate_count} <- copy_gates(source, destination, options),
            {:ok, destination} <-
-             maybe_copy_gating_index(source, destination, options, gate_count),
+             maybe_rebuild_gating_index(source, destination, options, gate_count),
            {:ok, destination} <- PostProcessing.apply_result(destination, :all),
            # Must be the last write of the copy. Post-processing runs
            # `SectionResourceMigration.project_current/1`, which rewrites
@@ -713,16 +713,10 @@ defmodule Oli.Delivery.Sections.SectionCopy do
     @content_condition_types ++ schedule
   end
 
-  # `resource_gating_index` maps an authoring resource id to the gated ancestor
-  # resource ids above it. Both sides are project-scoped rather than
-  # section-scoped, so the source's index is already correct for the destination.
-  #
-  # It must be copied whenever gates are copied: `Gating.blocked_by/3`
-  # short-circuits to `[]` for any resource missing from the index, so a section
-  # holding gating conditions with an empty index has gates that are never
-  # evaluated. Regenerating the index here is not an option - that path reads the
-  # depot, which is not warm during section creation.
-  defp maybe_copy_gating_index(
+  # Rebuild from the destination's persisted hierarchy and copied gates, not the
+  # source's potentially stale derived index. The lifecycle projection does not
+  # require a warm depot and indexes only gates actually selected for the copy.
+  defp maybe_rebuild_gating_index(
          _source,
          %Section{} = destination,
          %CopyOptions{section_field_policy: :inherit_all},
@@ -730,10 +724,10 @@ defmodule Oli.Delivery.Sections.SectionCopy do
        ),
        do: {:ok, destination}
 
-  defp maybe_copy_gating_index(_source, %Section{} = destination, _options, 0),
+  defp maybe_rebuild_gating_index(_source, %Section{} = destination, _options, 0),
     do: {:ok, destination}
 
-  defp maybe_copy_gating_index(%Section{} = source, %Section{} = destination, _options, _count) do
-    Sections.update_section(destination, %{resource_gating_index: source.resource_gating_index})
+  defp maybe_rebuild_gating_index(_source, %Section{} = destination, _options, _count) do
+    Gating.rebuild_resource_gating_index(destination)
   end
 end

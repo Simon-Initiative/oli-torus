@@ -129,6 +129,43 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   # Lineage
   # ---------------------------------------------------------------------------
 
+  describe "legacy delivery policy isolation" do
+    @describetag :copy_configuration_regression
+
+    test "course copies reset source-owned policy pointers even with assessment settings",
+         %{source: source, page1: page} do
+      policy = source_policy(source)
+      update_page_settings(source, page, %{delivery_policy_id: policy.id, time_limit: 45})
+
+      {:ok, copied} = copy(source, [:content, :assessment_settings])
+
+      assert is_nil(page_resource(copied, page).delivery_policy_id)
+      assert page_resource(copied, page).time_limit == 45
+      assert page_resource(source, page).delivery_policy_id == policy.id
+    end
+
+    test "omitting assessment settings does not retain a legacy assessment policy",
+         %{source: source, page1: page} do
+      policy = source_policy(source)
+      update_page_settings(source, page, %{delivery_policy_id: policy.id})
+
+      {:ok, copied} = copy(source, [:content])
+
+      assert is_nil(page_resource(copied, page).delivery_policy_id)
+    end
+
+    test "deleting a source policy does not delete copied resources",
+         %{source: source, page1: page} do
+      policy = source_policy(source)
+      update_page_settings(source, page, %{delivery_policy_id: policy.id})
+      {:ok, copied} = copy(source, [:content, :assessment_settings])
+
+      Repo.delete!(policy)
+
+      assert Repo.get_by(SectionResource, section_id: copied.id, resource_id: page.id)
+    end
+  end
+
   describe "lineage" do
     test "a nil source blueprint_id stays nil", %{source: source} do
       assert is_nil(source.blueprint_id)
@@ -794,6 +831,41 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   # ---------------------------------------------------------------------------
 
   describe "gates" do
+    @tag :copy_configuration_regression
+    test "copied gates are enforced even when the source index is stale",
+         %{source: source, page1: page1, page2: page2} do
+      {:ok, gate} = create_schedule_gate(source, page1)
+      {:ok, source} = set_gating_index(source, page1)
+      {:ok, _} = Gating.update_gating_condition(gate, %{resource_id: page2.id})
+
+      {:ok, copied} = copy(source, [:content, :schedule])
+      {:ok, source} = set_gating_index(source, page2)
+      user = insert(:user)
+
+      assert Gating.blocked_by(source, user, page2.id) != []
+      assert Gating.blocked_by(copied, user, page2.id) != []
+      assert Gating.blocked_by(copied, user, page1.id) == []
+    end
+
+    @tag :copy_configuration_regression
+    test "container gates are enforced for their copied descendants without a source index",
+         %{source: source, page1: page1} do
+      root = Repo.get!(SectionResource, source.root_section_resource_id)
+
+      {:ok, _} =
+        Gating.create_gating_condition(%{
+          type: :schedule,
+          section_id: source.id,
+          resource_id: root.resource_id,
+          data: %{start_datetime: ~U[2099-01-01 00:00:00Z]}
+        })
+
+      assert source.resource_gating_index == %{}
+      {:ok, copied} = copy(source, [:content, :schedule])
+
+      assert Gating.blocked_by(copied, insert(:user), page1.id) != []
+    end
+
     test "a copied gate is actually enforced, not merely present",
          %{source: source, page1: page1} do
       {:ok, _gate} = create_schedule_gate(source, page1)
@@ -1020,6 +1092,12 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   end
 
   defp reload(%Section{id: id}), do: Repo.get(Section, id)
+
+  defp source_policy(source) do
+    %Oli.Delivery.DeliveryPolicy{}
+    |> Ecto.Changeset.change(section_id: source.id, assessment_time_limit_sec: 120)
+    |> Repo.insert!()
+  end
 
   defp section_resources(%Section{id: id}) do
     from(sr in SectionResource, where: sr.section_id == ^id, order_by: sr.id) |> Repo.all()

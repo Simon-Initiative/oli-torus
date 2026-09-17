@@ -187,6 +187,33 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       {:ok, Map.put(seed, :product, product)}
     end
 
+    test "legacy product duplication retains its existing delivery policy behavior", %{
+      product: product,
+      page1: page
+    } do
+      policy =
+        %Oli.Delivery.DeliveryPolicy{}
+        |> Ecto.Changeset.change(section_id: product.id, assessment_time_limit_sec: 120)
+        |> Repo.insert!()
+
+      source_page =
+        Repo.get_by!(Oli.Delivery.Sections.SectionResource,
+          section_id: product.id,
+          resource_id: page.id
+        )
+
+      {:ok, _} = Sections.update_section_resource(source_page, %{delivery_policy_id: policy.id})
+      {:ok, duplicate} = Blueprint.duplicate(product)
+
+      copied_page =
+        Repo.get_by!(Oli.Delivery.Sections.SectionResource,
+          section_id: duplicate.id,
+          resource_id: page.id
+        )
+
+      assert copied_page.delivery_policy_id == policy.id
+    end
+
     test "deep copies section resources onto new ids", %{product: product} do
       {:ok, duplicate} = Blueprint.duplicate(product)
 

@@ -35,6 +35,11 @@ defmodule Oli.Delivery.Sections.SectionResourceCopy do
   the allowlist policy used by course copy does carry it. The `:inherit_all`
   policy used by product duplication deliberately continues to omit it, keeping
   that long-standing path behaviourally unchanged.
+
+  Legacy `delivery_policy_id` pointers are also retained only by product
+  duplication. These point to mutable, section-owned rows and are not part of
+  the supported course-copy settings; course copies reset them rather than
+  retaining a dependency on the source section.
   """
 
   import Ecto.Query, warn: false
@@ -157,6 +162,7 @@ defmodule Oli.Delivery.Sections.SectionResourceCopy do
     source
     |> Map.from_struct()
     |> Map.take(@structural_fields)
+    |> reset_legacy_policy(options)
     |> Map.merge(schedule_values(source, options))
     |> Map.merge(assessment_values(source, revision, options))
     |> Map.merge(section_settings_values(source, revision, options))
@@ -164,6 +170,11 @@ defmodule Oli.Delivery.Sections.SectionResourceCopy do
     |> Map.merge(%{inserted_at: now, updated_at: now})
     |> Map.merge(overrides)
   end
+
+  defp reset_legacy_policy(row, %CopyOptions{section_field_policy: :allowlist}),
+    do: Map.put(row, :delivery_policy_id, nil)
+
+  defp reset_legacy_policy(row, _options), do: row
 
   @doc """
   Re-applies instructor-owned page-level `ai_enabled` overrides after migration.
