@@ -71,14 +71,17 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
           ))
         )}
 
-        {showProgressBar && (
+        {showProgressBar && options.length === 0 && (
+          <p className="text-sm text-gray-800 dark:text-white">Progress: No sections available.</p>
+        )}
+        {showProgressBar && options.length > 0 && (
           <div
             className="space-y-5 progress-bar"
             style={{ width: '96%' }}
             role="progressbar"
             aria-label="Progress"
             aria-valuemin={0}
-            aria-valuemax={options.length || 1}
+            aria-valuemax={options.length}
             aria-valuenow={0}
             aria-valuetext={`0 of ${options.length} sections completed`}
           >
