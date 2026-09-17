@@ -204,8 +204,7 @@ requirements:
     status: proposed
     verification_method: hybrid
     proofs:
-    - lib/oli_web/live/delivery/instructor_dashboard/learning_objectives/related_activities_live.ex keeps focus on the expansion control across patches
-    - Keyboard operation of the expansion control verified manually
+    - 'Not met. Keyboard focus measured in the browser on 2026-09-16 moves to the document body on both expand and collapse. The same behavior was measured on the pre-existing Practice Pages surface, so it belongs to the shared expansion control.'
   - id: AC-019
     title: All interactive controls including search, Attempts, Score, Clear All Filters,
       sortable headers, pagination, and row chevrons have visible focus indicators
@@ -228,5 +227,5 @@ requirements:
     verification_method: manual
     proofs:
     - lib/oli_web/live/delivery/instructor_dashboard/learning_objectives/related_activities_live.ex renders the toolbar with SearchInput, MultiSelect, PercentageSelector and the trash-icon button
-    - Toolbar compared against the approved design by visual inspection on desktop
+    - 'Toolbar compared against Figma node 275-7364 on 2026-09-17: search, Attempts, Score and Clear All Filters render as one bordered row, in the same order as the design.'
 acceptance_criteria: []
