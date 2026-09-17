@@ -35,28 +35,8 @@ defmodule Oli.Delivery.Sections.LinkedActivitiesTest do
     assert LinkedActivities.activity_ids_for_objective(objectives, resources, 20) == [4]
   end
 
-  test "empty relationships and missing page revisions produce empty indexes" do
+  test "empty relationships produce an empty activity list" do
     assert LinkedActivities.unique_activity_ids([%{resource_id: 1, related_activities: []}]) == []
-
-    assert LinkedActivities.build_page_contexts([%{resource_id: 100, revision_id: 9}], []) == %{}
-  end
-
-  test "indexes activity references by page and selects the first canonical context" do
-    page_resources = [
-      %{resource_id: 100, revision_id: 1},
-      %{resource_id: 200, revision_id: 2}
-    ]
-
-    revisions = [
-      %{id: 1, resource_id: 1000, activity_refs: [7, 8]},
-      %{id: 2, resource_id: 2000, activity_refs: [7]}
-    ]
-
-    contexts = LinkedActivities.build_page_contexts(page_resources, revisions)
-
-    assert Enum.map(contexts[7], & &1.page_resource_id) == [100, 200]
-    assert contexts[8] |> List.first() |> Map.get(:page_resource_id) == 100
-    assert LinkedActivities.canonical_page_contexts(contexts)[7].page_resource_id == 100
   end
 
   test "merges summary counts and recomputes ratios" do

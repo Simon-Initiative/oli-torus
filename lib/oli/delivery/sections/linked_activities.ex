@@ -14,23 +14,19 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
   import Ecto.Query
 
   alias Oli.Activities
-  alias Oli.Analytics.Summary.ResourceSummary
+  alias Oli.Analytics.Summary.{ResourceSummary, ResponseSummary}
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAccess, ResourceAttempt}
+  alias Oli.Delivery.Sections.LinkedActivities.PageContexts
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
   alias Oli.Resources.Revision
 
-  @type page_context :: %{
-          page_resource_id: integer(),
-          page_revision: map()
-        }
-
   @type linked_context :: %{
           objective_ids: [integer()],
           activity_ids: [integer()],
-          activity_page_contexts: %{optional(integer()) => [page_context()]},
-          canonical_page_context: %{optional(integer()) => page_context()}
+          activity_page_contexts: %{optional(integer()) => [PageContexts.t()]},
+          canonical_page_context: %{optional(integer()) => PageContexts.t()}
         }
 
   @doc """
@@ -99,48 +95,6 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
   end
 
   @doc """
-  Builds an activity-to-page index from depot page resources and their already-derived revisions.
-
-  Page revisions are supplied separately to keep the one batch revision lookup at the caller
-  boundary and to make this function deterministic in unit tests.
-  """
-  @spec build_page_contexts([map()], [Revision.t() | map()]) :: %{
-          optional(integer()) => [page_context()]
-        }
-  def build_page_contexts(page_resources, page_revisions) do
-    revisions_by_id = Map.new(page_revisions, &{&1.id, &1})
-
-    page_resources
-    |> Enum.reduce(%{}, fn page_resource, contexts ->
-      case Map.get(revisions_by_id, page_resource.revision_id) do
-        nil ->
-          contexts
-
-        page_revision ->
-          context = %{
-            page_resource_id: page_resource.resource_id,
-            page_revision: page_revision
-          }
-
-          Enum.reduce(List.wrap(Map.get(page_revision, :activity_refs, [])), contexts, fn
-            activity_id, contexts ->
-              Map.update(contexts, activity_id, [context], &[context | &1])
-          end)
-      end
-    end)
-    # Reversed because `canonical_page_contexts/1` takes the first entry, so order matters.
-    |> Map.new(fn {activity_id, contexts} -> {activity_id, Enum.reverse(contexts)} end)
-  end
-
-  @doc "Selects the first stable page context for every activity."
-  @spec canonical_page_contexts(%{optional(integer()) => [page_context()]}) :: %{
-          optional(integer()) => page_context()
-        }
-  def canonical_page_contexts(contexts) do
-    Map.new(contexts, fn {activity_id, [context | _]} -> {activity_id, context} end)
-  end
-
-  @doc """
   Resolves the section-scoped objective family, unique activity IDs, and page contexts.
   """
   @spec resolve_context(integer(), integer()) :: {:ok, linked_context()} | {:error, atom()}
@@ -160,7 +114,7 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
          objective_ids: objective_ids,
          activity_ids: activity_ids,
          activity_page_contexts: activity_page_contexts,
-         canonical_page_context: canonical_page_contexts(activity_page_contexts)
+         canonical_page_context: PageContexts.canonical(activity_page_contexts)
        }}
     else
       false -> {:error, :objective_not_found}
@@ -169,10 +123,8 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
 
   defp page_contexts_for(_section_id, []), do: %{}
 
-  defp page_contexts_for(section_id, _activity_ids) do
-    page_resources =
-      SectionResourceDepot.get_lessons(section_id)
-      |> Enum.reject(& &1.hidden)
+  defp page_contexts_for(section_id, activity_ids) do
+    page_resources = SectionResourceDepot.get_lessons(section_id)
 
     revision_ids =
       Enum.map(page_resources, & &1.revision_id) |> Enum.reject(&is_nil/1) |> Enum.uniq()
@@ -189,7 +141,27 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
       )
       |> Repo.all()
 
-    build_page_contexts(page_resources, page_revisions)
+    observed =
+      section_id
+      |> response_activity_pages(activity_ids)
+      |> PageContexts.from_page_pairs(page_resources, page_revisions)
+
+    declared = PageContexts.from_activity_refs(page_resources, page_revisions)
+
+    PageContexts.merge(observed, declared)
+  end
+
+  defp response_activity_pages(_section_id, []), do: []
+
+  defp response_activity_pages(section_id, activity_ids) do
+    from(response in ResponseSummary,
+      where:
+        response.section_id == ^section_id and response.project_id == -1 and
+          response.activity_id in ^activity_ids,
+      distinct: true,
+      select: {response.activity_id, response.page_id}
+    )
+    |> Repo.all()
   end
 
   @doc """

@@ -8,6 +8,7 @@ defmodule Oli.Scenarios.LinkedActivitiesHooks do
   """
 
   import ExUnit.Assertions
+  import Ecto.Query, only: [from: 2]
 
   alias Oli.Delivery.Sections.LinkedActivities
   alias Oli.Delivery.Sections.PostProcessing
@@ -65,7 +66,38 @@ defmodule Oli.Scenarios.LinkedActivitiesHooks do
     assert no_attempt.attempts == 0
     assert no_attempt.percent_correct == 0.0
 
+    assert Enum.all?(lesson_activity_refs(section.id), &(&1 == [])),
+           "scenario pages unexpectedly carry activity_refs; this assertion no longer isolates the observed path"
+
+    shared_pages = Enum.map(shared.page_contexts, & &1.page_resource_id) |> Enum.sort()
+
+    assert length(shared_pages) == 2,
+           "expected the shared activity to resolve both pages it was answered on, got #{inspect(shared_pages)}"
+
+    assert shared.canonical_page_context.page_resource_id in shared_pages
+
+    assert Enum.count(
+             Enum.find(parent_rows, &(&1.resource_id == activity_ids["parent_only"])).page_contexts
+           ) == 1
+
+    assert no_attempt.page_contexts == []
+    assert no_attempt.canonical_page_context == nil
+
     state
+  end
+
+  defp lesson_activity_refs(section_id) do
+    revision_ids =
+      SectionResourceDepot.get_lessons(section_id)
+      |> Enum.map(& &1.revision_id)
+      |> Enum.reject(&is_nil/1)
+
+    Oli.Repo.all(
+      from(revision in Oli.Resources.Revision,
+        where: revision.id in ^revision_ids,
+        select: revision.activity_refs
+      )
+    )
   end
 
   defp objective_id(objectives, title) do
