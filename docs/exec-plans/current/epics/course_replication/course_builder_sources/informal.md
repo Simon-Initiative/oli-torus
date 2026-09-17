@@ -74,6 +74,10 @@ All filters, sort controls, tabs, cards, and the (currently disabled) My Course 
 
 Use the existing `bg-blue-700` Tailwind color for the wizard left panel; it already renders `#1D4481` exactly (`assets/tailwind.theme.js`), so no new color token is needed for that value. Any other color/token gaps surfaced while implementing the new banner, tooltips, or card states should be checked against `lib/oli_web/components/design_tokens/` first, per the repo's `implement_ui`/`ui_workflow` token-reuse guardrails, before introducing anything new.
 
+`assets/tailwind.tokens.js` is a separate, auto-generated token layer from `tailwind.theme.js`: it mirrors this Figma file's semantic variables 1:1 (e.g. `surface/surface-primary` → `Surface-surface-primary`), and `tailwind.plugins.js`'s `tokenColorPlugin` turns every key into `bg-<Token>`/`text-<Token>`/`border-<Token>` utilities with automatic light/dark switching. Almost every color in this ticket's designs (card surface/border, "My Section"/"Free" pill colors, tooltip surface/border/text, Cancel button text/border) maps directly by name to a key in that file — check there by name before assuming a color needs a raw hex or a new token. The full mapping produced during design-brief research is recorded in the `ui_workflow` runtime brief for this scope (`~/.codex/memories/oli-torus-ng/ui-work/MER-5828/brief.md`); re-derive it from `assets/tailwind.tokens.js` if that external file is unavailable.
+
+The repo also already has a generic, reusable tooltip mechanism — the `GlobalTooltip` phx-hook (`assets/src/hooks/global_tooltip.ts`, used via `phx-hook="GlobalTooltip" data-tooltip="..." data-tooltip-style="body"`) — that already renders with the exact tokens the Templates/My Course Sections filter tooltips need. Reuse it; do not build a new tooltip component.
+
 `OliWeb.Common.Stepper` (`lib/oli_web/live/common/stepper/stepper.ex`) is shared with `lib/oli_web/live/delivery/student_onboarding/wizard.ex`. Any left-panel/footer styling change (design references 7, 11) must be scoped to the `course_creation_stepper` id, following the existing `if @id == "course_creation_stepper"` conditional pattern already in that component, not applied unconditionally.
 
 ## Out of scope
@@ -99,11 +103,13 @@ Use the existing `bg-blue-700` Tailwind color for the wizard left panel; it alre
 
 ## Open decisions
 
-- Exact hover/disabled-state copy for My Course Sections cards before `MER-5832` lands.
+- ~~Exact wording for the new-feature explanatory banner (design reference 2) and the two filter tooltips (design references 4-5).~~ **Resolved** via the `ui_workflow` design brief (`get_design_context` on nodes `44:1146`, `74:4025`, `74:4023`, 2026-09-17): banner — "Create a new course section by copying all or part of an existing section. The new section will reflect the source section as it exists at the time it is copied. Changes made to the source afterward will not appear in the new section. Only course sections you currently have permission to access are shown."; Templates tooltip — "View and create courses from templates made by course authors."; My Course Sections tooltip — "View and copy your previously created course sections."
 - Exact card metadata and sort options.
 - Whether the row/source-kind typing refactor (per `MER-5831`'s design comment) is completed fully in this ticket or left partially prepared for `MER-5832`.
-- Whether the darkened-overlay + "SELECT TO COPY COURSE SECTION" hover treatment (design reference 10) extends to Free/Template cards, or is exclusive to "My Section" cards — needs designer confirmation.
-- Exact wording for the new-feature explanatory banner (design reference 2) and the two filter tooltips (design references 4-5).
+- Whether the darkened-overlay + "SELECT TO COPY COURSE SECTION" hover treatment (design reference 10) extends to Free/Template cards, or is exclusive to "My Section" cards — no other card type shows this hover state in the designs fetched so far; still needs designer confirmation before extending it.
+- Exact hover/disabled-state distinction (if any) between "hovering a My Section card today, where clicking is a no-op" and the same hover once `MER-5832` wires the real action — the design shows one hover state, not a "coming soon" variant. Current recommendation: implement the hover exactly as designed now; treat any additional not-yet-clickable messaging as a `MER-5832` decision, not something to invent here.
+- Footer "Next Step" button color: the Figma frame's local fallback for `fill/buttons/fill-primary` is `#0073E5`, but the repo's synced token `Fill-Buttons-fill-primary` (`assets/tailwind.tokens.js`) is `#0080FF`. Same variable name, slightly different value — use the token, but flag the drift to design rather than silently picking one.
+- Footer "Cancel" button border: the design shows a visible `Border-border-bold` (`#8AB8E5`) border; the current `torus-button.secondary` variant (`assets/css/button.css`) has no border, and `.outline` has a border but in the wrong color (`azure-600`, `#0165D9`). Needs a decision — extend `.secondary` with the right-colored border, or add a variant — rather than approximating.
 
 ## Follow-up: doc reconciliation
 
