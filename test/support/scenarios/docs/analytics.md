@@ -1,4 +1,28 @@
-# Authoring Analytics
+# Analytics
+
+## Scoped learning objective assertions
+
+`assert.learning_objectives` verifies the objective titles available to a section at course scope
+or within a named curriculum container. This exercises the same section learning-objective data
+used by instructor and student dashboards.
+
+- `section`: Scenario section name (required)
+- `container`: Container title; omit or use `course` for the full course
+- `includes`: Objective titles that must be present
+- `excludes`: Objective titles that must not be present
+
+At least one of `includes` or `excludes` must be non-empty.
+
+```yaml
+- assert:
+    learning_objectives:
+      section: "analytics_section"
+      container: "Unit 1"
+      includes:
+        - "Apply feedback principles"
+      excludes:
+        - "Unrelated objective"
+```
 
 ## Insights assertions
 
