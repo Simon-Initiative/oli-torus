@@ -588,7 +588,8 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
 
       assert is_nil(copied.feedback_scheduled_date)
 
-      effective_settings = Oli.Delivery.Settings.combine(pinned_revision(copy, page1), copied, nil)
+      effective_settings =
+        Oli.Delivery.Settings.combine(pinned_revision(copy, page1), copied, nil)
 
       # Learner page delivery evaluates these settings when building its page context.
       assert is_boolean(Oli.Delivery.Settings.show_feedback?(effective_settings))
