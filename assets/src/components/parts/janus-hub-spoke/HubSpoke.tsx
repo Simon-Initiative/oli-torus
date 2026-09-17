@@ -52,6 +52,7 @@ export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
     <div style={spokeItemStyles} className="hub-spoke-item">
       <button
         type="button"
+        aria-label={`${spokeLabel}, ${IsCompleted ? 'visited' : 'not visited'}`}
         onClick={() => onSelected?.(val)}
         className="btn btn-primary hub-spoke-button"
       >
@@ -326,22 +327,28 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
             )}
 
             {showProgressBar && (
-              <div className="space-y-5 progress-bar" style={{ width: '96%' }}>
-                <div>
+              <div
+                className="space-y-5 progress-bar"
+                style={{ width: '96%' }}
+                role="progressbar"
+                aria-label="Progress"
+                aria-valuemin={0}
+                aria-valuemax={options.length || 1}
+                aria-valuenow={completedSpokeCount}
+                aria-valuetext={`${completedSpokeCount} of ${options.length} sections completed`}
+              >
+                <div aria-hidden="true">
                   <div className="mb-2 flex justify-between items-center">
-                    <h3 className="text-sm font-semibold text-gray-800 dark:text-white">
+                    <span className="text-sm font-semibold text-gray-800 dark:text-white">
                       Progress
-                    </h3>
+                    </span>
                     <span className="text-sm text-gray-800 dark:text-white">
                       <b>
                         {completedSpokeCount}/{options?.length}
                       </b>
                     </span>
                   </div>
-                  <div
-                    className="flex w-full h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-neutral-700"
-                    role="progressbar"
-                  >
+                  <div className="flex w-full h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-neutral-700">
                     <div
                       className="flex flex-col justify-center rounded-full overflow-hidden bg-body-dark-600 text-xs text-white text-center whitespace-nowrap transition duration-500 dark:bg-blue-500"
                       style={{ width: `${progressPercentage}%` }}
