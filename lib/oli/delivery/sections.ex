@@ -34,7 +34,7 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.Roles.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
-  alias Oli.Lti.LtiParams
+  alias Oli.Lti.LaunchIdentity
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
@@ -1319,51 +1319,56 @@ defmodule Oli.Delivery.Sections do
       nil
   """
   def get_section_from_lti_params(lti_params) do
-    context_id =
-      Map.get(lti_params, "https://purl.imsglobal.org/spec/lti/claim/context")
-      |> Map.get("id")
-
-    issuer = lti_params["iss"]
-    client_id = LtiParams.peek_client_id(lti_params)
-
-    get_section_for_lti_context(context_id, issuer, client_id)
+    case LaunchIdentity.from_claims(lti_params) do
+      {:ok, identity} -> get_section_for_launch(identity)
+      :error -> nil
+    end
   end
 
-  def get_section_for_lti_context(context_id, issuer, client_id)
-      when is_binary(context_id) and is_binary(issuer) and is_binary(client_id) do
-    Repo.all(
+  @doc """
+  Returns the active section of one launch identity.
+
+  Every part of the identity is matched, deployment included: two deployments of the same
+  registration can carry the same context id, and each owns its own section.
+  """
+  def get_section_for_launch(%LaunchIdentity{} = identity) do
+    Repo.one(
       from(s in Section,
         join: d in Deployment,
         on: s.lti_1p3_deployment_id == d.id,
         join: r in Registration,
         on: d.registration_id == r.id,
         where:
-          s.context_id == ^context_id and s.status == :active and r.issuer == ^issuer and
-            r.client_id == ^client_id,
+          s.context_id == ^identity.context_id and s.status == :active and
+            r.issuer == ^identity.issuer and r.client_id == ^identity.client_id and
+            d.deployment_id == ^identity.deployment_id,
         order_by: [asc: :id],
         limit: 1,
         select: s
       )
     )
-    |> one_or_warn(context_id)
   end
 
-  def get_section_for_lti_context(_context_id, _issuer, _client_id), do: nil
+  @doc """
+  Returns the active section for an LTI context within one deployment.
 
-  defp one_or_warn(result, context_id) do
-    case result do
-      [] ->
-        nil
-
-      [first] ->
-        first
-
-      [first | _] ->
-        Logger.warning("More than one active section was returned for context_id #{context_id}")
-
-        first
-    end
+  Two deployments of the same registration can carry the same context id, and each owns
+  its own section.
+  """
+  def get_section_for_lti_deployment(context_id, deployment_id)
+      when is_binary(context_id) and is_integer(deployment_id) do
+    Repo.one(
+      from(s in Section,
+        where:
+          s.context_id == ^context_id and s.lti_1p3_deployment_id == ^deployment_id and
+            s.status == :active,
+        order_by: [asc: :id],
+        limit: 1
+      )
+    )
   end
+
+  def get_section_for_lti_deployment(_context_id, _deployment_id), do: nil
 
   @doc """
   Gets the associated deployment and registration from the given section

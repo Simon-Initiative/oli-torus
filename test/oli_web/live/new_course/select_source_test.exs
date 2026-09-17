@@ -344,6 +344,32 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     end
   end
 
+  describe "the source list and the creation gate" do
+    setup [:user_conn]
+
+    test "offers nothing to a user who may not create sections", %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Offerable Product"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "p", "None exist")
+      refute render(view) =~ "Offerable Product"
+    end
+
+    test "offers the same source once the user may create sections", %{conn: conn, user: user} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Offerable Product"})
+
+      user |> Ecto.Changeset.change(can_create_sections: true) |> Oli.Repo.update!()
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      refute has_element?(view, "p", "None exist")
+      assert render(view) =~ "Offerable Product"
+    end
+  end
+
   describe "Independet instructor - Step 1" do
     setup [:instructor_conn]
 

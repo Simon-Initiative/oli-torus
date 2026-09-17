@@ -6,6 +6,7 @@ defmodule Oli.DeliveryTest do
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery
+  alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionSpecification}
   alias Oli.Authoring.Course.Project
@@ -260,16 +261,16 @@ defmodule Oli.DeliveryTest do
 
       cache_lti_params(lti_params, context.user.id)
 
-      changeset = Sections.change_section(%Section{title: "New Section"})
-
       section_spec = SectionSpecification.lti(context.user, section.context_id)
 
       assert {:ok, returned_section_id, returned_section_slug} =
                Delivery.create_section(
-                 changeset,
-                 "publication:#{context.publication.id}",
-                 context.user,
-                 section_spec
+                 request!(
+                   context.user,
+                   "publication:#{context.publication.id}",
+                   %{title: "New Section"},
+                   section_spec
+                 )
                )
 
       # Should return the existing section
@@ -292,10 +293,12 @@ defmodule Oli.DeliveryTest do
 
       assert {:ok, section_id, _slug} =
                Delivery.create_section(
-                 Sections.change_section(%Section{title: "Project model Section"}),
-                 "publication:#{context.publication.id}",
-                 context.user,
-                 SectionSpecification.lti(context.user, context_id)
+                 request!(
+                   context.user,
+                   "publication:#{context.publication.id}",
+                   %{title: "Project model Section"},
+                   SectionSpecification.lti(context.user, context_id)
+                 )
                )
 
       assert Sections.get_section!(section_id).learning_model_version == :lkt_aoa
@@ -327,14 +330,18 @@ defmodule Oli.DeliveryTest do
         })
         |> Repo.update!()
 
-      user = insert(:user, independent_learner: true)
+      user = insert(:user, independent_learner: true, can_create_sections: true)
+
+      publication = Oli.Publishing.get_latest_published_publication_by_slug(project.slug)
 
       assert {:ok, section_id, _slug} =
                Delivery.create_section(
-                 Sections.change_section(%Section{title: "Project onboarding Section"}),
-                 "project:#{project.id}",
-                 user,
-                 SectionSpecification.direct()
+                 request!(
+                   user,
+                   "publication:#{publication.id}",
+                   %{title: "Project onboarding Section"},
+                   SectionSpecification.direct()
+                 )
                )
 
       section = Sections.get_section!(section_id)
@@ -360,10 +367,12 @@ defmodule Oli.DeliveryTest do
 
       assert {:ok, section_id, _slug} =
                Delivery.create_section(
-                 Sections.change_section(%Section{title: "Product model Section"}),
-                 "product:#{product.id}",
-                 context.user,
-                 SectionSpecification.lti(context.user, context_id)
+                 request!(
+                   context.user,
+                   "product:#{product.id}",
+                   %{title: "Product model Section"},
+                   SectionSpecification.lti(context.user, context_id)
+                 )
                )
 
       section = Sections.get_section!(section_id)
@@ -386,16 +395,16 @@ defmodule Oli.DeliveryTest do
 
       cache_lti_params(lti_params, context.user.id)
 
-      changeset = Sections.change_section(%Section{title: title})
-
       section_spec = SectionSpecification.lti(context.user, context_id)
 
       assert {:ok, returned_section_id, _returned_section_slug} =
                Delivery.create_section(
-                 changeset,
-                 "publication:#{context.publication.id}",
-                 context.user,
-                 section_spec
+                 request!(
+                   context.user,
+                   "publication:#{context.publication.id}",
+                   %{title: title},
+                   section_spec
+                 )
                )
 
       # Get the created section for verification
@@ -498,16 +507,16 @@ defmodule Oli.DeliveryTest do
 
       cache_lti_params(lti_params, context.user.id)
 
-      changeset = Sections.change_section(%Section{title: context.product.title})
-
       section_spec = SectionSpecification.lti(context.user, context.product.context_id)
 
       assert {:ok, returned_section_id, _returned_section_slug} =
                Delivery.create_section(
-                 changeset,
-                 "publication:#{context.publication.id}",
-                 context.user,
-                 section_spec
+                 request!(
+                   context.user,
+                   "product:#{context.product.id}",
+                   %{title: context.product.title},
+                   section_spec
+                 )
                )
 
       # Get the created section for verification
@@ -613,5 +622,10 @@ defmodule Oli.DeliveryTest do
       learning_model_version: learning_model_version
     })
     |> Repo.update!()
+  end
+
+  defp request!(actor, source, attrs, section_spec) do
+    {:ok, request} = SectionCreationRequest.new(actor, source, attrs, section_spec)
+    request
   end
 end

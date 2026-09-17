@@ -9,6 +9,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
   alias Oli.Delivery
   alias Oli.Delivery.DepotCoordinator
+  alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionResourceDepot, SectionSpecification}
   alias OliWeb.Common.{Breadcrumb, Stepper, FormatDateTime}
@@ -175,6 +176,7 @@ defmodule OliWeb.Delivery.NewCourse do
           ctx={@ctx}
           on_select={@on_select}
           source={@source}
+          actor={@actor}
           current_user={@current_user}
           is_admin={@is_admin}
           section_spec={@section_spec}
@@ -233,6 +235,7 @@ defmodule OliWeb.Delivery.NewCourse do
           ctx: assigns.ctx,
           source: assigns[:source],
           on_select: JS.push("source_selection", target: "##{@form_id}"),
+          actor: actor(assigns),
           current_user: assigns.current_user,
           section_spec: assigns.section_spec,
           is_admin: assigns.is_admin,
@@ -273,32 +276,40 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def create_section(socket) do
     %{
-      current_user: current_user,
       source: source,
       changeset: changeset,
       section_spec: section_spec
     } = socket.assigns
 
-    liveview_pid = self()
+    attrs =
+      changeset
+      |> Ecto.Changeset.apply_changes()
+      |> Map.from_struct()
 
-    # start an async task to create the section and send the result back to the liveview
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-      case Delivery.create_section(
-             changeset,
-             source,
-             current_user,
-             section_spec
-           ) do
-        {:ok, section_id, section_slug} ->
-          send(liveview_pid, {:section_created, section_id, section_slug})
+    case SectionCreationRequest.new(actor(socket.assigns), source, attrs, section_spec) do
+      {:ok, request} ->
+        liveview_pid = self()
 
-        {:error, error} ->
-          send(liveview_pid, {:section_created_error, error})
-      end
-    end)
+        # start an async task to create the section and send the result back to the liveview
+        Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+          case Delivery.create_section(request) do
+            {:ok, section_id, section_slug} ->
+              send(liveview_pid, {:section_created, section_id, section_slug})
 
-    {:noreply, assign(socket, loading: true)}
+            {:error, error} ->
+              send(liveview_pid, {:section_created_error, error})
+          end
+        end)
+
+        {:noreply, assign(socket, loading: true)}
+
+      {:error, error} ->
+        {:noreply, put_flash(socket, :form_error, error_message(error))}
+    end
   end
+
+  defp actor(assigns),
+    do: SectionCreationRequest.actor_account(assigns[:current_author], assigns[:current_user])
 
   def handle_info({:section_created, section_id, section_slug}, socket) do
     Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
@@ -311,10 +322,18 @@ defmodule OliWeb.Delivery.NewCourse do
     |> noreply_wrapper()
   end
 
-  def handle_info({:section_created_error, error_msg}, socket) do
-    socket = put_flash(socket, :form_error, error_msg)
-    {:noreply, socket}
+  def handle_info({:section_created_error, error}, socket) do
+    {:noreply,
+     socket
+     |> assign(loading: false)
+     |> put_flash(:form_error, error_message(error))}
   end
+
+  defp error_message(:unauthorized),
+    do: "You are not allowed to create a course section from the selected source"
+
+  defp error_message(error) when is_binary(error), do: error
+  defp error_message(_error), do: "Failed to create new section"
 
   def handle_event("redirect_to_courses", _, socket) do
     {:noreply,
