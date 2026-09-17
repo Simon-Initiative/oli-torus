@@ -223,7 +223,7 @@ None.
 - Impact: No web-runtime startup coordinator or Playwright startup profile is added.
 
 ### 2026-09-16 - Clarify the non-production scenario-seeding matrix
-- Change: Support scenario seeding in `dev`, `test`, and `ci_e2e` through existing local or token-protected Playwright interfaces and in `preview` through the runtime-enabled privileged release CLI; expose no supported seeding entry point in `prod`. Permit `MIX_ENV=test` to compile `preview/lib` solely for automated verification.
+- Change: Support scenario seeding in `dev`, `test`, and `ci_e2e` through existing local or token-protected Playwright interfaces and in `preview` through the privileged release CLI without another runtime flag; expose no supported seeding entry point in `prod`. Permit `MIX_ENV=test` to compile `seeding/lib` solely for automated verification.
 - Reason: Test compilation is not deployable release inclusion, and the requirements must distinguish the shared scenario engine from the preview release interface.
 - Evidence: Approved review follow-up after reconciling the implemented environment and route matrix.
 - Impact: Requirements, design, build documentation, and policy tests cover all five environments while preserving production exclusion and the preview runtime gate.
