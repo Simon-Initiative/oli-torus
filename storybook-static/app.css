@@ -7756,6 +7756,10 @@ select {
   box-shadow: 0 0 0 4px #EF4444;
 }
 
+.bg-Text-text-accent-green {
+  background-color: #218358;
+}
+
 .dark .bg-Text-text-accent-green {
   background-color: #39E581;
 }
@@ -9900,6 +9904,10 @@ select {
   box-shadow: 0 0 0 4px #87D7E0;
 }
 
+.bg-Icon-icon-accent-orange {
+  background-color: #BF5B13;
+}
+
 .dark .bg-Icon-icon-accent-orange {
   background-color: #FFB387;
 }
@@ -9958,6 +9966,10 @@ select {
 
 .dark .ring-Icon-icon-accent-orange {
   --tw-ring-color: #FFB387;
+}
+
+.fill-Icon-icon-accent-orange {
+  fill: #BF5B13;
 }
 
 .dark .fill-Icon-icon-accent-orange {
@@ -18876,10 +18888,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 1.5rem;
 }
 
-.w-60 {
-  width: 15rem;
-}
-
 .w-64 {
   width: 16rem;
 }
@@ -19745,11 +19753,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .-translate-y-1\/2 {
   --tw-translate-y: -50%;
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
-.-translate-y-\[calc\(100\%-90px\)\] {
-  --tw-translate-y: calc(calc(100% - 90px) * -1);
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -33914,6 +33917,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   display: block;
 }
 
+.group:focus-within .group-focus-within\:flex {
+  display: flex;
+}
+
 .group:hover .group-hover\:pointer-events-auto {
   pointer-events: auto;
 }
@@ -36301,6 +36308,11 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   outline-color: #4CA6FF;
 }
 
+.dark .dark\:focus-visible\:ring-blue-600:focus-visible {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(39 92 175 / var(--tw-ring-opacity));
+}
+
 .dark .dark\:focus-visible\:ring-offset-gray-900:focus-visible {
   --tw-ring-offset-color: #171717;
 }
@@ -38675,6 +38687,14 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .\[\&\:\:-webkit-details-marker\]\:hidden::-webkit-details-marker {
   display: none;
+}
+
+.\[\&\:focus-within\>\.proficiency-dist-tooltip\]\:flex:focus-within>.proficiency-dist-tooltip {
+  display: flex;
+}
+
+.\[\&\:hover\>\.proficiency-dist-tooltip\]\:flex:hover>.proficiency-dist-tooltip {
+  display: flex;
 }
 
 .\[\&\>\*\:first-child\]\:text-3xl>*:first-child {
