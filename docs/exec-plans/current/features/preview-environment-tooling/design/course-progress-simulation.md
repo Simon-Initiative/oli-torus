@@ -83,7 +83,9 @@ unsupported assessment scoring modes are reported rather than bypassed.
 
 ## Fast and Paced Timing
 
-Fast mode is the default and performs no artificial waits.
+Fast mode is the default. It skips realistic learner pacing but retains deterministic 10–50 ms
+delays at modeled wait points to smooth request bursts and avoid overwhelming the application and
+database.
 
 ```yaml
 - simulate_progress:
