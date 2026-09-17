@@ -578,6 +578,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       refute has_element?(view, "p", "No activities are linked to this learning objective.")
     end
 
+    test "expanding a question with recorded responses renders its details, not the empty state",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section,
+           objective_a: objective_a,
+           activity_1: activity_1,
+           page_1: page_1
+         } do
+      :ok = seed_question_analytics(section, page_1, activity_1)
+
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
+
+      view
+      |> element("button#button_#{activity_1.resource_id}")
+      |> render_click()
+
+      details = view |> element("#details-#{activity_1.resource_id}") |> render()
+
+      refute details =~ "No attempt registered for this question"
+      assert details =~ "What is 2 + 2?"
+      assert details =~ "Four"
+      assert has_element?(view, "#details-#{activity_1.resource_id}", "First Try Correct")
+    end
+
     test "uses shared expandable details and linked sort columns", %{
       conn: conn,
       instructor: instructor,
@@ -974,6 +1002,120 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     end)
 
     %{resource_attempt: resource_attempt, activity_attempts: activity_attempts}
+  end
+
+  defp seed_question_analytics(section, page, activity, opts \\ []) do
+    registration = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+    correct = Keyword.get(opts, :num_correct, 1)
+    attempts = Keyword.get(opts, :num_attempts, 2)
+
+    {:ok, _} =
+      activity
+      |> Ecto.Changeset.change(
+        activity_type_id: registration.id,
+        content: multiple_choice_content()
+      )
+      |> Oli.Repo.update()
+
+    {:ok, part_response} =
+      Oli.Analytics.Summary.create_resource_part_response(%{
+        resource_id: activity.resource_id,
+        part_id: "1",
+        response: "choice_a",
+        label: "A"
+      })
+
+    {:ok, _} =
+      Oli.Analytics.Summary.create_resource_summary(%{
+        project_id: -1,
+        section_id: section.id,
+        user_id: -1,
+        resource_id: activity.resource_id,
+        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+        part_id: "1",
+        num_attempts: attempts,
+        num_correct: correct,
+        num_first_attempts: attempts,
+        num_first_attempts_correct: correct
+      })
+
+    {:ok, _} =
+      Oli.Analytics.Summary.create_response_summary(%{
+        project_id: -1,
+        section_id: section.id,
+        page_id: page.resource_id,
+        activity_id: activity.resource_id,
+        part_id: "1",
+        resource_part_response_id: part_response.id,
+        count: attempts
+      })
+
+    :ok
+  end
+
+  defp multiple_choice_content do
+    %{
+      "stem" => %{
+        "id" => "stem_1",
+        "content" => [
+          %{"id" => "p1", "type" => "p", "children" => [%{"text" => "What is 2 + 2?"}]}
+        ]
+      },
+      "choices" => [
+        %{
+          "id" => "choice_a",
+          "content" => [
+            %{"id" => "c1", "type" => "p", "children" => [%{"text" => "Four"}]}
+          ]
+        },
+        %{
+          "id" => "choice_b",
+          "content" => [
+            %{"id" => "c2", "type" => "p", "children" => [%{"text" => "Five"}]}
+          ]
+        }
+      ],
+      "authoring" => %{
+        "version" => 2,
+        "targeted" => [],
+        "transformations" => [],
+        "previewText" => "What is 2 + 2?",
+        "parts" => [
+          %{
+            "id" => "1",
+            "scoringStrategy" => "average",
+            "gradingApproach" => "automatic",
+            "hints" => [],
+            "responses" => [
+              %{
+                "id" => "r1",
+                "rule" => "input like {choice_a}",
+                "score" => 1,
+                "correct" => true,
+                "feedback" => %{
+                  "id" => "f1",
+                  "content" => [
+                    %{"id" => "fp1", "type" => "p", "children" => [%{"text" => "Correct"}]}
+                  ]
+                }
+              },
+              %{
+                "id" => "r2",
+                "rule" => "input like {.*}",
+                "score" => 0,
+                "correct" => false,
+                "feedback" => %{
+                  "id" => "f2",
+                  "content" => [
+                    %{"id" => "fp2", "type" => "p", "children" => [%{"text" => "Incorrect"}]}
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
   end
 
   # Helper to get activity revision from section
