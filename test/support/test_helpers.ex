@@ -1691,7 +1691,7 @@ defmodule Oli.TestHelpers do
     }
   end
 
-  defp create_objective(title, slug, project, subobjectives \\ []) do
+  def create_objective(title, slug, project, subobjectives \\ []) do
     obj_resource = insert(:resource)
 
     obj_revision =
@@ -1735,7 +1735,7 @@ defmodule Oli.TestHelpers do
     {activity_resource, activity_revision}
   end
 
-  defp create_page(title, slug, project, content_model, objectives \\ []) do
+  def create_page(title, slug, project, content_model, objectives \\ []) do
     page_resource = insert(:resource)
 
     page_revision =
@@ -1757,7 +1757,7 @@ defmodule Oli.TestHelpers do
     {page_resource, page_revision}
   end
 
-  defp create_container(title, slug, project, children) do
+  def create_container(title, slug, project, children) do
     container_resource = insert(:resource)
 
     container_revision =

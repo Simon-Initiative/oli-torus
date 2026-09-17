@@ -6,6 +6,9 @@ defmodule OliWeb.ObjectivesLiveTest do
   #
   use OliWeb.ConnCase
 
+  # This module defines its own create_objective/4 (different signature/purpose),
+  # which conflicts with the one Oli.TestHelpers exports.
+  import Oli.TestHelpers, except: [create_objective: 4]
   import Oli.Factory
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest

@@ -7,6 +7,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
   # AC-010 compact read-only coverage integration and no-write behavior.
   use OliWeb.ConnCase
 
+  # This module defines its own create_objective/4 (different signature/purpose),
+  # which conflicts with the one Oli.TestHelpers exports.
+  import Oli.TestHelpers, except: [create_objective: 4]
+
   # Phase 4 requirements proof map:
   # AC-001/AC-002 -> summary rendering and mutation-refresh tests exercise parent
   #                     and Sub-Objective row shaping.
