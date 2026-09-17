@@ -10,10 +10,28 @@ The codebase is Phoenix LiveView/HEEx (`OliWeb.Common.CardListing`, `OliWeb.Deli
 
 ## Design references
 
-Figma file: [Course replication feature](https://www.figma.com/design/ZAfwBt1ek94xAyriR6wy8S/Course-replication-feature)
+Figma file: [Course replication feature](https://www.figma.com/design/ZAfwBt1ek94xAyriR6wy8S/Course-replication-feature). All node-ids below are confirmed by Gastón (2026-09-17); the two node-ids previously listed here from the Jira description text alone (`44-721`, `40-2883`) turn out to be correct and are kept, now with confirmed content.
 
-- `MER-5828` frames: node-id `44-721`, node-id `40-2883`.
-- `MER-5832` frames (for context only, not built here): node-id `44-960`, node-id `44-1311` (hover state), node-id `40-1106`.
+**Scope boundary confirmed with these designs:** all of it is the section-creation wizard's **step 1 of 3** ("Select source materials") only. Steps 2 and 3 (`name_course`, `course_details`) are not touched.
+
+Full-screen references:
+
+1. Node `44-721` — full step 1 view, light mode.
+2. Node `44-1146` — new-feature explanatory banner, rendered between the filter/search bar and the pagination + "Showing X-Y of Z" row. New element; in code this slot is between `FilterBox.render`/`Filter.render` and `Listing.render` inside `select_source.ex`.
+3. Node `40-2883` — same as (1), dark mode.
+4. Node `74-4025` — hover tooltip on the "Templates" filter button.
+5. Node `74-4023` — hover tooltip on the "My Course Sections" filter button.
+
+Component-level detail (subsets of 1/3, called out because they carry the changes with the most implementation risk):
+
+6. Left-panel background `#1D4481` — **already satisfied, no new token needed.** `assets/tailwind.theme.js` defines a custom `blue.700 = '#1D4481'` in the Tailwind theme, and `lib/oli_web/live/common/stepper/stepper.ex:40` already renders the left panel as `bg-blue-700 dark:bg-black`. Keep using `bg-blue-700`; do not introduce a raw hex value.
+7. Node `44-842` — left-panel step titles/descriptions (the 3-step content). This is data owned by `new_course.ex`'s `steps` list (title/description strings passed into `OliWeb.Common.Stepper`), not shared markup — low risk to replace.
+8. Node `44-789` — reference card for source type "My Section".
+9. Node `44-805` — reference card for source type "Free". If a source is neither "My Section" nor "Free"/"Template", it appears to carry no label at all.
+10. Node `44-1459` — "My Section" card hover state: same card with a darkened overlay and the label "SELECT TO COPY COURSE SECTION". **Open question from Gastón:** whether other card types (Free/Template) get an equivalent hover treatment — needs designer confirmation. Also note the tension with this ticket's dummy scope below.
+11. Node `44-838` — wizard footer (Cancel / Next Step buttons), same layout as today with new styling only.
+
+**Shared-component risk on (7) and (11):** `OliWeb.Common.Stepper` (`lib/oli_web/live/common/stepper/stepper.ex`) is not exclusive to course creation — `lib/oli_web/live/delivery/student_onboarding/wizard.ex` renders the same component for an unrelated student-onboarding flow. The footer button markup and the step-item chrome live in the shared component, so any new styling there must be scoped to the `course_creation_stepper` instance (the component already has one such conditional, keyed on `@id`, at stepper.ex:50-55) rather than restyling the shared component globally, or the student-onboarding wizard picks up unintended visual changes.
 
 ## Source tickets
 
@@ -38,6 +56,11 @@ The course builder lets an instructor quickly find an appropriate source: an exi
 - Add consistent source/type tags: "Template" (existing) and a new "My Section" tag.
 - My Course Sections cards are present, searchable, sortable, and taggable, but their selection affordance is an intentional no-op/disabled state in this ticket (e.g. hidden or disabled "Select" action with copy explaining it is coming soon). `MER-5832` swaps this placeholder for the real "select to copy" action and modal.
 - No Blueprint linked-child creation action, no linked/child explanatory messaging, and no Blueprint source/owner surfacing on Manage — removed from scope; the feature is cancelled, not deferred.
+- Add a new-feature explanatory banner between the filter/search bar and the pagination row (design reference 2).
+- Add hover tooltips on the "Templates" and "My Course Sections" filter buttons, with a keyboard/focus equivalent (design references 4-5).
+- Restyle the source cards per type: "My Section" and "Free" get distinct treatments; a source that is neither gets no label at all (design references 8-9).
+- "My Section" cards get a hover state — darkened overlay plus "SELECT TO COPY COURSE SECTION" label (design reference 10) — implemented as a **purely visual hover affordance**; it must not make the card clickable/selectable in this ticket, since selection stays a no-op until `MER-5832`. Whether other card types share this hover treatment is an open decision (see below).
+- Update the wizard's left-panel step titles/descriptions (design reference 7) and footer button styling (design reference 11) for **step 1 of the section-creation wizard only** — steps 2 and 3 are unchanged, and none of this may leak into the unrelated student-onboarding wizard that shares `OliWeb.Common.Stepper` (see Design references, item 6/11 risk note).
 
 ## Technical guidance
 
@@ -48,6 +71,10 @@ Follow the source-kind modeling direction from `MER-5831`'s design comment: give
 Do not implement any Blueprint relationship, synchronization, or linked-child messaging or actions — none of that exists in scope anywhere in the epic anymore.
 
 All filters, sort controls, tabs, cards, and the (currently disabled) My Course Sections action need keyboard operation, accessible names, selected states, and focus behavior. Hover text must have a keyboard/focus equivalent. Dynamic result updates should be announced where appropriate. Keep the disabled action visually and semantically honest — communicate via copy/state that it ships in a follow-up rather than presenting it as broken.
+
+Use the existing `bg-blue-700` Tailwind color for the wizard left panel; it already renders `#1D4481` exactly (`assets/tailwind.theme.js`), so no new color token is needed for that value. Any other color/token gaps surfaced while implementing the new banner, tooltips, or card states should be checked against `lib/oli_web/components/design_tokens/` first, per the repo's `implement_ui`/`ui_workflow` token-reuse guardrails, before introducing anything new.
+
+`OliWeb.Common.Stepper` (`lib/oli_web/live/common/stepper/stepper.ex`) is shared with `lib/oli_web/live/delivery/student_onboarding/wizard.ex`. Any left-panel/footer styling change (design references 7, 11) must be scoped to the `course_creation_stepper` id, following the existing `if @id == "course_creation_stepper"` conditional pattern already in that component, not applied unconditionally.
 
 ## Out of scope
 
@@ -75,6 +102,8 @@ All filters, sort controls, tabs, cards, and the (currently disabled) My Course 
 - Exact hover/disabled-state copy for My Course Sections cards before `MER-5832` lands.
 - Exact card metadata and sort options.
 - Whether the row/source-kind typing refactor (per `MER-5831`'s design comment) is completed fully in this ticket or left partially prepared for `MER-5832`.
+- Whether the darkened-overlay + "SELECT TO COPY COURSE SECTION" hover treatment (design reference 10) extends to Free/Template cards, or is exclusive to "My Section" cards — needs designer confirmation.
+- Exact wording for the new-feature explanatory banner (design reference 2) and the two filter tooltips (design references 4-5).
 
 ## Follow-up: doc reconciliation
 
