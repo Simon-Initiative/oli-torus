@@ -58,6 +58,7 @@ defmodule Oli.Delivery.Sections.SectionCopy do
 
   alias Oli.Delivery.Gating
   alias Oli.Delivery.InstructorCustomizations
+  alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.CopyOptions
   alias Oli.Delivery.Sections.PostProcessing
@@ -66,6 +67,7 @@ defmodule Oli.Delivery.Sections.SectionCopy do
   alias Oli.Delivery.Sections.SectionResourceCopy
   alias Oli.Delivery.Sections.SectionResourceMigration
   alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Institutions.Institution
   alias Oli.Repo
 
   # Gate condition types that store absolute dates, and so follow the :schedule
@@ -170,8 +172,7 @@ defmodule Oli.Delivery.Sections.SectionCopy do
     :grade_passback_enabled,
     :line_items_service_url,
     :nrps_enabled,
-    :nrps_context_memberships_url,
-    :required_survey_resource_id
+    :nrps_context_memberships_url
   ]
 
   @course_destination_fields_by_name Map.new(
@@ -186,6 +187,10 @@ defmodule Oli.Delivery.Sections.SectionCopy do
   The allowlisted course-copy policy accepts only the fields declared by this
   service and rejects unknown keys, while the legacy blueprint policy retains
   its historical attribute behaviour.
+
+  Course billing is resolved afresh from the retained product and destination
+  institution, never from the source's discounted price or learner payments.
+  The required survey stays pinned to the source's content snapshot.
 
   Returns `{:ok, section}` or `{:error, reason}`. Every step participates in one
   transaction, so a failure at any point leaves no partial section behind.
@@ -353,15 +358,67 @@ defmodule Oli.Delivery.Sections.SectionCopy do
          destination_attrs,
          %CopyOptions{section_field_policy: :allowlist} = options
        ) do
-    with {:ok, destination_attrs} <- normalize_course_destination_attrs(destination_attrs) do
+    with {:ok, destination_attrs} <- normalize_course_destination_attrs(destination_attrs),
+         {:ok, billing} <- course_billing(source, destination_attrs) do
       @system_defaults
       |> Map.merge(lineage(source))
       |> Map.merge(copied_section_settings(source, options))
       |> Map.merge(copied_ai_settings(source, options))
+      |> Map.merge(billing)
       |> Map.merge(%{context_id: UUID.uuid4()})
       |> Map.merge(destination_attrs)
+      |> Map.put(:required_survey_resource_id, source.required_survey_resource_id)
       |> Map.put(:learning_model_version, source.learning_model_version)
       |> Sections.create_section_from_source(source)
+    end
+  end
+
+  # An unlinked free course has no product billing policy. An unlinked paid
+  # course cannot safely be repriced, so fail rather than silently granting access.
+  defp course_billing(%Section{blueprint_id: nil, requires_payment: false}, _attrs),
+    do: {:ok, %{}}
+
+  defp course_billing(%Section{blueprint_id: nil}, _attrs),
+    do: {:error, :billing_source_not_found}
+
+  defp course_billing(%Section{blueprint_id: blueprint_id}, attrs) do
+    with %Section{type: :blueprint} = product <- Repo.get(Section, blueprint_id),
+         :ok <- validate_billing_amount(product),
+         {:ok, institution} <- billing_institution(Map.get(attrs, :institution_id)),
+         {:ok, amount} <- Paywall.section_cost_from_product(product, institution) do
+      policy =
+        product
+        |> Map.from_struct()
+        |> Map.take([
+          :payment_options,
+          :pay_by_institution,
+          :has_grace_period,
+          :grace_period_days,
+          :grace_period_strategy
+        ])
+        |> Map.merge(%{
+          amount: amount || product.amount,
+          requires_payment: product.requires_payment and not is_nil(amount)
+        })
+
+      {:ok, policy}
+    else
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :billing_source_not_found}
+    end
+  end
+
+  defp validate_billing_amount(%Section{requires_payment: true, amount: nil}),
+    do: {:error, :billing_amount_missing}
+
+  defp validate_billing_amount(_product), do: :ok
+
+  defp billing_institution(nil), do: {:ok, nil}
+
+  defp billing_institution(id) do
+    case Repo.get(Institution, id) do
+      %Institution{} = institution -> {:ok, institution}
+      nil -> {:error, :billing_institution_not_found}
     end
   end
 

@@ -195,7 +195,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
           line_items_service_url: "https://lms.example.com/line_items",
           nrps_enabled: true,
           nrps_context_memberships_url: "https://lms.example.com/memberships",
-          requires_payment: true,
+          requires_payment: false,
           amount: Money.new(100, "USD"),
           grace_period_days: 3,
           pay_by_institution: true,
@@ -220,6 +220,56 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       assert is_nil(copy.previous_next_index)
       assert is_nil(copy.lti_1p3_deployment_id)
       assert is_nil(copy.institution_id)
+    end
+
+    test "copying a paid course does not remove its paywall", %{source: source, project: project} do
+      price = Money.new(1000, "USD")
+
+      product =
+        insert(:section,
+          type: :blueprint,
+          base_project: project,
+          requires_payment: true,
+          amount: price,
+          has_grace_period: false
+        )
+
+      {:ok, source} =
+        Sections.update_section(source, %{
+          blueprint_id: product.id,
+          requires_payment: true,
+          amount: price,
+          has_grace_period: false
+        })
+
+      instructor = insert(:user, can_create_sections: true)
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, source.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      {:ok, request} =
+        SectionCreationRequest.new(
+          instructor,
+          "section:#{source.id}",
+          %{title: "Paid course copy"},
+          SectionSpecification.direct()
+        )
+
+      {:ok, copy_id, _slug} = Oli.Delivery.create_section(request)
+      copied = Sections.get_section!(copy_id)
+
+      student = insert(:user)
+
+      {:ok, _} =
+        Sections.enroll(student.id, copied.id, [
+          ContextRoles.get_role(:context_learner)
+        ])
+
+      access = Oli.Delivery.Paywall.summarize_access(student, copied)
+      refute access.reason == :not_paywalled
+      assert copied.requires_payment
     end
 
     test "an archived source produces an active copy", %{source: source} do
@@ -327,6 +377,105 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
     end
   end
 
+  describe "destination billing" do
+    test "a paid course without a product fails without creating a section", %{source: source} do
+      {:ok, source} =
+        Sections.update_section(source, %{
+          requires_payment: true,
+          amount: Money.new(1000, "USD"),
+          has_grace_period: false
+        })
+
+      before = Repo.aggregate(Section, :count)
+      assert {:error, :billing_source_not_found} = copy(source, [:content])
+      assert Repo.aggregate(Section, :count) == before
+    end
+
+    test "billing uses destination discounts and product policy, not source payment state",
+         %{source: source, project: project, institution: source_institution} do
+      price = Money.new(1000, "USD")
+
+      product =
+        insert(:section,
+          type: :blueprint,
+          base_project: project,
+          requires_payment: true,
+          amount: price,
+          has_grace_period: true,
+          grace_period_days: 7,
+          payment_options: :direct
+        )
+
+      insert(:discount, section: product, institution: source_institution, percentage: 90)
+      destination_institution = insert(:institution)
+      insert(:discount, section: product, institution: destination_institution, percentage: 25)
+
+      {:ok, source} =
+        Sections.update_section(source, %{
+          blueprint_id: product.id,
+          requires_payment: true,
+          amount: Money.new(100, "USD"),
+          has_grace_period: false
+        })
+
+      enrollment = insert(:enrollment, section: source)
+      payment = insert(:payment, section: source, enrollment: enrollment)
+
+      {:ok, copied} = copy(source, [:content], %{institution_id: destination_institution.id})
+
+      assert copied.requires_payment
+      assert copied.amount == Money.new(750, "USD")
+      assert copied.payment_options == :direct
+      assert copied.has_grace_period
+      assert copied.grace_period_days == 7
+      assert count_for_section("payments", copied.id) == 0
+      assert count_for_section("enrollments", copied.id) == 0
+      assert Repo.get!(Oli.Delivery.Paywall.Payment, payment.id).section_id == source.id
+
+      {:ok, direct_copy} = copy(source, [:content])
+      assert direct_copy.amount == price
+      assert direct_copy.requires_payment
+    end
+
+    test "an institution paywall bypass is not carried into a direct course",
+         %{source: source, project: project, institution: institution} do
+      price = Money.new(1000, "USD")
+
+      product =
+        insert(:section,
+          type: :blueprint,
+          base_project: project,
+          requires_payment: true,
+          amount: price,
+          has_grace_period: false
+        )
+
+      insert(:discount, section: product, institution: institution, bypass_paywall: true)
+      {:ok, source} = Sections.update_section(source, %{blueprint_id: product.id})
+
+      {:ok, institutional_copy} = copy(source, [:content], %{institution_id: institution.id})
+      refute institutional_copy.requires_payment
+
+      {:ok, direct_copy} = copy(source, [:content])
+      assert direct_copy.requires_payment
+      assert direct_copy.amount == price
+    end
+
+    test "a paid product missing its price fails closed", %{source: source, project: project} do
+      product =
+        insert(:section,
+          type: :blueprint,
+          base_project: project,
+          requires_payment: true,
+          amount: nil,
+          has_grace_period: false
+        )
+
+      {:ok, source} = Sections.update_section(source, %{blueprint_id: product.id})
+      assert {:error, :billing_amount_missing} = copy(source, [:content])
+    end
+  end
+
   describe ":assessment_settings" do
     @assessment_overrides %{
       max_attempts: 7,
@@ -399,12 +548,112 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
 
       {:ok, both} = copy(source, [:content, :assessment_settings, :schedule])
       assert page_resource(both, page1).feedback_scheduled_date == scheduled
+      assert page_resource(both, page1).feedback_mode == :scheduled
 
       {:ok, assessment_only} = copy(source, [:content, :assessment_settings])
       assert is_nil(page_resource(assessment_only, page1).feedback_scheduled_date)
+      assert page_resource(assessment_only, page1).feedback_mode == :disallow
+
+      refute Oli.Delivery.Settings.show_feedback?(
+               Oli.Delivery.Settings.combine(
+                 pinned_revision(assessment_only, page1),
+                 page_resource(assessment_only, page1),
+                 nil
+               )
+             )
 
       {:ok, schedule_only} = copy(source, [:content, :schedule])
       assert is_nil(page_resource(schedule_only, page1).feedback_scheduled_date)
+      assert page_resource(schedule_only, page1).feedback_mode == :allow
+    end
+
+    test "non-scheduled feedback modes remain unchanged without schedule",
+         %{source: source, page1: page1} do
+      for mode <- [:allow, :disallow] do
+        update_page_settings(source, page1, %{feedback_mode: mode})
+        {:ok, copied} = copy(source, [:content, :assessment_settings])
+        assert page_resource(copied, page1).feedback_mode == mode
+      end
+    end
+
+    test "scheduled feedback remains evaluable when assessment settings are copied without schedule",
+         %{source: source, page1: page1} do
+      update_page_settings(source, page1, %{
+        feedback_mode: :scheduled,
+        feedback_scheduled_date: ~U[2026-03-01 12:00:00Z]
+      })
+
+      {:ok, copy} = copy(source, [:content, :assessment_settings])
+      copied = page_resource(copy, page1)
+
+      assert is_nil(copied.feedback_scheduled_date)
+
+      effective_settings = Oli.Delivery.Settings.combine(pinned_revision(copy, page1), copied, nil)
+
+      # Learner page delivery evaluates these settings when building its page context.
+      assert is_boolean(Oli.Delivery.Settings.show_feedback?(effective_settings))
+    end
+  end
+
+  describe "required survey snapshot" do
+    test "an existing required survey is retained and resolves from copied publication pins",
+         %{project: project, author: author} do
+      survey = Oli.Authoring.Course.create_project_survey(project, author.id)
+      project = Oli.Authoring.Course.get_project!(project.id)
+      {:ok, publication} = Oli.Publishing.publish_project(project, "With survey", author.id)
+
+      {:ok, source} =
+        Sections.create_section(%{
+          title: "Course requiring a survey",
+          type: :enrollable,
+          base_project_id: project.id,
+          required_survey_resource_id: survey.resource_id
+        })
+
+      {:ok, source} = Sections.create_section_resources(source, publication)
+      {:ok, copied} = copy(source, [:content])
+
+      assert copied.required_survey_resource_id == survey.resource_id
+      assert Sections.get_survey(copied.slug).resource_id == survey.resource_id
+      assert publication_pins(copied) |> Enum.map(& &1.publication_id) == [publication.id]
+
+      {:ok, _} = Sections.update_section(source, %{required_survey_resource_id: nil})
+      assert reload(copied).required_survey_resource_id == survey.resource_id
+    end
+  end
+
+  describe "required survey" do
+    test "copying an older publication does not require a subsequently authored survey",
+         %{source: source, project: project, author: author} do
+      # The source keeps this publication while later authoring uses a new working publication.
+      {:ok, _publication} = Oli.Publishing.publish_project(project, "Source snapshot", author.id)
+      survey = Oli.Authoring.Course.create_project_survey(project, author.id)
+
+      assert survey.resource_id
+      assert is_nil(source.required_survey_resource_id)
+
+      instructor = insert(:user, can_create_sections: true)
+
+      {:ok, _enrollment} =
+        Sections.enroll(instructor.id, source.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      {:ok, request} =
+        SectionCreationRequest.new(
+          instructor,
+          "section:#{source.id}",
+          %{title: "Copied older course"},
+          SectionSpecification.direct()
+        )
+
+      {:ok, copy_id, copy_slug} = Oli.Delivery.create_section(request)
+      copied = Sections.get_section!(copy_id)
+      required_survey = Sections.get_survey(copy_slug)
+
+      # Onboarding must be able to resolve any survey that the destination requires.
+      assert is_nil(copied.required_survey_resource_id) or not is_nil(required_survey)
+      assert copied.required_survey_resource_id == source.required_survey_resource_id
     end
   end
 

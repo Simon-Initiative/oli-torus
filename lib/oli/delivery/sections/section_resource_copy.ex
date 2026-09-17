@@ -215,6 +215,7 @@ defmodule Oli.Delivery.Sections.SectionResourceCopy do
         source
         |> Map.from_struct()
         |> Map.take(Map.keys(@assessment_static_resets) ++ @assessment_revision_derived)
+        |> Map.put(:feedback_mode, feedback_mode(source, options))
         |> Map.put(:feedback_scheduled_date, feedback_scheduled_date(source, options))
 
       false ->
@@ -229,6 +230,17 @@ defmodule Oli.Delivery.Sections.SectionResourceCopy do
   # Copying it when the schedule was deliberately not copied would leave the
   # destination holding a stale date from the source's term, so it follows both
   # groups: it is carried only when assessment settings and schedule are copied.
+  # Without that date, scheduled feedback stays hidden until the instructor
+  # configures a new release policy rather than becoming invalid or public.
+  defp feedback_mode(%{feedback_mode: :scheduled}, %CopyOptions{} = options) do
+    case CopyOptions.selected?(options, :schedule) do
+      true -> :scheduled
+      false -> :disallow
+    end
+  end
+
+  defp feedback_mode(source, _options), do: source.feedback_mode
+
   defp feedback_scheduled_date(source, %CopyOptions{} = options) do
     case CopyOptions.selected?(options, :schedule) do
       true -> source.feedback_scheduled_date

@@ -151,16 +151,10 @@ defmodule Oli.Delivery do
 
   defp create_from_source({:section, source_section}, actor, attrs, section_spec, copy_options) do
     copy_options = copy_options || default_previous_section_copy_options()
-    project = Repo.get(Oli.Authoring.Course.Project, source_section.base_project_id)
 
     section_params =
       attrs
-      |> Map.merge(%{
-        context_id: UUID.uuid4(),
-        # Sourced from the base project rather than the source section, matching
-        # how the product-to-section path resolves it.
-        required_survey_resource_id: project && project.required_survey_resource_id
-      })
+      |> Map.put(:context_id, UUID.uuid4())
       |> SectionSpecification.apply(section_spec)
 
     with {:ok, section} <- SectionCopy.copy(source_section, section_params, copy_options),
