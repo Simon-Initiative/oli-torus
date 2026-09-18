@@ -81,6 +81,12 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       assert has_element?(view, "input#copy-section-settings[checked]")
       assert has_element?(view, "input#copy-assessment-settings[checked]")
       assert has_element?(view, "input#copy-ai-settings[checked]")
+
+      for id <- ~w(copy-schedule copy-section-settings copy-assessment-settings copy-ai-settings) do
+        assert has_element?(view, "label.min-h-11.cursor-pointer input##{id}")
+      end
+
+      refute has_element?(view, "label.cursor-pointer input#copy-course-content")
     end
   end
 

@@ -62,7 +62,7 @@ defmodule OliWeb.Delivery.NewCourse.NameCourse do
         </label>
 
         <%= for {group, label} <- copy_option_labels() do %>
-          <label class="flex items-center gap-2">
+          <label class="flex min-h-11 cursor-pointer items-center gap-2">
             <input
               id={"copy-#{String.replace(Atom.to_string(group), "_", "-")}"}
               type="checkbox"

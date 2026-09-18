@@ -267,7 +267,8 @@ defmodule Oli.Delivery.Gating do
 
   @doc """
   Creates a gate and its enforcement index atomically under the section lifecycle
-  lock. Request-facing callers must authorize the destination section first.
+  lock. Student exceptions do not change the shared index and skip its rebuild.
+  Request-facing callers must authorize the destination section first.
   """
   @spec create_gating_condition_with_index(map()) ::
           {:ok, %GatingCondition{}} | {:error, term()}
@@ -280,7 +281,9 @@ defmodule Oli.Delivery.Gating do
   @doc """
   Updates a gate and its enforcement index atomically under the section lifecycle
   lock. Moving a gate to another section is not supported. Callers must authorize
-  the section before invoking this persistence operation.
+  the section before invoking this persistence operation. The index is rebuilt
+  only when the gate's top-level resource membership changes, not for changes to
+  its condition, dates, or student exception configuration.
   """
   @spec update_gating_condition_with_index(%GatingCondition{}, map()) ::
           {:ok, %GatingCondition{}} | {:error, term()}
@@ -293,42 +296,71 @@ defmodule Oli.Delivery.Gating do
         false -> [section_id: "cannot move a gate to another section"]
       end
     end)
-    |> persist_gate_with_index(:update)
+    |> persist_gate_with_index(:update, attrs)
   end
 
   @doc """
   Deletes a gate (and any child exceptions) and refreshes its index atomically
-  under the section lifecycle lock. Callers must authorize the section first.
+  under the section lifecycle lock. Deleting a student exception leaves the
+  shared index unchanged. Callers must authorize the section first.
   """
   @spec delete_gating_condition_with_index(%GatingCondition{}) ::
           {:ok, %GatingCondition{}, non_neg_integer()} | {:error, term()}
   def delete_gating_condition_with_index(%GatingCondition{} = gate) do
-    with_gating_index(gate.section_id, fn -> delete_gating_condition(gate) end)
+    with_gating_index(gate.section_id, gate.id, :delete, &delete_gating_condition/1)
   end
 
-  defp persist_gate_with_index(%Ecto.Changeset{valid?: false} = changeset, _operation),
+  defp persist_gate_with_index(changeset, operation, attrs \\ %{})
+
+  defp persist_gate_with_index(%Ecto.Changeset{valid?: false} = changeset, _operation, _attrs),
     do: {:error, changeset}
 
-  defp persist_gate_with_index(changeset, operation) do
+  defp persist_gate_with_index(changeset, operation, attrs) do
     section_id = Ecto.Changeset.get_field(changeset, :section_id)
 
-    with_gating_index(section_id, fn ->
+    with_gating_index(section_id, changeset.data.id, operation, fn current_gate ->
       case operation do
         :insert -> Repo.insert(changeset)
-        :update -> Repo.update(changeset)
+        :update -> current_gate |> GatingCondition.changeset(attrs) |> Repo.update()
       end
     end)
   end
 
-  defp with_gating_index(section_id, mutation) do
+  defp with_gating_index(section_id, gate_id, operation, mutation) do
     Repo.transaction(fn ->
       section = SectionResourceMigration.lock_section!(section_id)
 
-      case mutation.() do
+      # Read membership under the lock, rather than relying on a caller's stale
+      # gate struct. Apply only the requested changes to that current row.
+      before_gate =
+        case gate_id do
+          nil ->
+            nil
+
+          id ->
+            case Repo.get_by(GatingCondition, id: id, section_id: section_id) do
+              nil -> Repo.rollback(:gating_condition_not_found)
+              gate -> gate
+            end
+        end
+
+      case mutation.(before_gate) do
         result when elem(result, 0) == :ok ->
-          case rebuild_resource_gating_index(section) do
-            {:ok, _section} -> result
-            {:error, reason} -> Repo.rollback(reason)
+          after_gate =
+            case operation do
+              :delete -> nil
+              _ -> elem(result, 1)
+            end
+
+          case indexed_resource(before_gate) == indexed_resource(after_gate) do
+            true ->
+              result
+
+            false ->
+              case rebuild_resource_gating_index(section) do
+                {:ok, _section} -> result
+                {:error, reason} -> Repo.rollback(reason)
+              end
           end
 
         {:error, reason} ->
@@ -340,6 +372,11 @@ defmodule Oli.Delivery.Gating do
       {:error, reason} -> {:error, reason}
     end
   end
+
+  defp indexed_resource(%GatingCondition{parent_id: nil, resource_id: resource_id}),
+    do: resource_id
+
+  defp indexed_resource(_gate), do: nil
 
   @doc """
   Updates a gating_condition.

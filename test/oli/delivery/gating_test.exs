@@ -32,6 +32,169 @@ defmodule Oli.Delivery.GatingTest do
       assert id == gate.id
     end
 
+    test "condition-only edits preserve the index without querying the hierarchy", %{
+      section_1: section,
+      page1: page,
+      user_a: user
+    } do
+      {:ok, gate} =
+        Gating.create_gating_condition_with_index(%{
+          section_id: section.id,
+          resource_id: page.id,
+          type: :schedule,
+          data: %{start_datetime: ~U[2099-01-01 00:00:00Z]}
+        })
+
+      section = Sections.get_section!(section.id)
+
+      queries =
+        capture_gate_queries(fn ->
+          assert {:ok, updated} =
+                   Gating.update_gating_condition_with_index(gate, %{
+                     data: %{start_datetime: ~U[2000-01-01 00:00:00Z]}
+                   })
+
+          assert updated.data.start_datetime == ~U[2000-01-01 00:00:00Z]
+        end)
+
+      refute_index_rebuild(queries)
+      updated = Sections.get_section!(section.id)
+      assert updated.resource_gating_index == section.resource_gating_index
+      assert Gating.blocked_by(updated, user, page.id) == []
+    end
+
+    test "student exception mutations do not rebuild the shared index", %{
+      section_1: section,
+      page1: page,
+      user_a: user
+    } do
+      {:ok, parent} =
+        Gating.create_gating_condition_with_index(%{
+          section_id: section.id,
+          resource_id: page.id,
+          type: :schedule,
+          data: %{start_datetime: ~U[2099-01-01 00:00:00Z]}
+        })
+
+      section = Sections.get_section!(section.id)
+
+      queries =
+        capture_gate_queries(fn ->
+          assert {:ok, exception} =
+                   Gating.create_gating_condition_with_index(%{
+                     section_id: section.id,
+                     resource_id: page.id,
+                     parent_id: parent.id,
+                     user_id: user.id,
+                     type: :schedule,
+                     data: %{start_datetime: ~U[2000-01-01 00:00:00Z]}
+                   })
+
+          assert Gating.blocked_by(section, user, page.id) == []
+
+          assert {:ok, exception} =
+                   Gating.update_gating_condition_with_index(exception, %{
+                     data: %{start_datetime: ~U[1999-01-01 00:00:00Z]}
+                   })
+
+          assert {:ok, _, 1} = Gating.delete_gating_condition_with_index(exception)
+        end)
+
+      refute_index_rebuild(queries)
+
+      assert Sections.get_section!(section.id).resource_gating_index ==
+               section.resource_gating_index
+
+      assert [%{id: id}] = Gating.blocked_by(section, user, page.id)
+      assert id == parent.id
+    end
+
+    test "condition edits use the persisted target when the caller's gate is stale", %{
+      section_1: section,
+      page1: page1,
+      page2: page2
+    } do
+      {:ok, gate} =
+        Gating.create_gating_condition_with_index(%{
+          section_id: section.id,
+          resource_id: page1.id,
+          type: :schedule,
+          data: %{}
+        })
+
+      {:ok, _} = Gating.update_gating_condition_with_index(gate, %{resource_id: page2.id})
+      section = Sections.get_section!(section.id)
+
+      queries =
+        capture_gate_queries(fn ->
+          assert {:ok, updated} =
+                   Gating.update_gating_condition_with_index(gate, %{
+                     data: %{start_datetime: ~U[2099-01-01 00:00:00Z]}
+                   })
+
+          assert updated.resource_id == page2.id
+        end)
+
+      refute_index_rebuild(queries)
+      assert Gating.get_gating_condition!(gate.id).resource_id == page2.id
+
+      assert Sections.get_section!(section.id).resource_gating_index ==
+               section.resource_gating_index
+
+      # An explicitly submitted target must also be applied against current
+      # state, even when it matches the caller's older struct.
+      assert {:ok, updated} =
+               Gating.update_gating_condition_with_index(gate, %{resource_id: page1.id})
+
+      assert updated.resource_id == page1.id
+      assert Sections.get_section!(section.id).resource_gating_index["#{page1.id}"] == [page1.id]
+      refute Map.has_key?(Sections.get_section!(section.id).resource_gating_index, "#{page2.id}")
+    end
+
+    test "changing a gate between top-level and exception rebuilds the index", %{
+      section_1: section,
+      page1: page1,
+      page2: page2,
+      user_a: user
+    } do
+      {:ok, parent} =
+        Gating.create_gating_condition_with_index(%{
+          section_id: section.id,
+          resource_id: page1.id,
+          type: :schedule,
+          data: %{}
+        })
+
+      {:ok, gate} =
+        Gating.create_gating_condition_with_index(%{
+          section_id: section.id,
+          resource_id: page2.id,
+          type: :schedule,
+          data: %{}
+        })
+
+      assert {:ok, exception} =
+               Gating.update_gating_condition_with_index(gate, %{
+                 parent_id: parent.id,
+                 user_id: user.id
+               })
+
+      refute Map.has_key?(Sections.get_section!(section.id).resource_gating_index, "#{page2.id}")
+
+      assert {:ok, _} =
+               Gating.update_gating_condition_with_index(exception, %{
+                 parent_id: nil,
+                 user_id: nil
+               })
+
+      assert Sections.get_section!(section.id).resource_gating_index["#{page2.id}"] == [page2.id]
+
+      # Deleting through an older exception struct must still remove the now
+      # top-level gate from the index.
+      assert {:ok, _, 1} = Gating.delete_gating_condition_with_index(exception)
+      refute Map.has_key?(Sections.get_section!(section.id).resource_gating_index, "#{page2.id}")
+    end
+
     test "changing a gate target atomically updates the enforcement index", %{
       section_1: section,
       page1: page1,
@@ -68,6 +231,9 @@ defmodule Oli.Delivery.GatingTest do
       assert deleted.id == gate.id
       assert Sections.get_section!(section.id).resource_gating_index == %{}
       assert Gating.list_gating_conditions(section.id) == []
+
+      assert {:error, :gating_condition_not_found} =
+               Gating.delete_gating_condition_with_index(gate)
     end
 
     test "a failed index write rolls the gate creation back", %{
@@ -139,6 +305,45 @@ defmodule Oli.Delivery.GatingTest do
       assert errors_on(changeset).section_id == ["cannot move a gate to another section"]
       assert Gating.get_gating_condition!(gate.id).section_id == section.id
     end
+  end
+
+  defp capture_gate_queries(fun) do
+    reference = make_ref()
+
+    :ok =
+      :telemetry.attach(
+        reference,
+        [:oli, :repo, :query],
+        &record_gate_query/4,
+        {self(), reference}
+      )
+
+    try do
+      fun.()
+      collect_gate_queries(reference, [])
+    after
+      :telemetry.detach(reference)
+    end
+  end
+
+  defp record_gate_query(_event, _measurements, metadata, {owner, reference}) do
+    case self() == owner do
+      true -> send(owner, {reference, metadata.query})
+      false -> :ok
+    end
+  end
+
+  defp collect_gate_queries(reference, queries) do
+    receive do
+      {^reference, query} -> collect_gate_queries(reference, [query | queries])
+    after
+      0 -> queries
+    end
+  end
+
+  defp refute_index_rebuild(queries) do
+    refute Enum.any?(queries, &String.contains?(&1, "FROM \"section_resources\""))
+    refute Enum.any?(queries, &String.contains?(&1, "UPDATE \"sections\""))
   end
 
   describe "gating_conditions" do
