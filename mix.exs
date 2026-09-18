@@ -25,6 +25,11 @@ defmodule Oli.MixProject do
       aliases: aliases(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
+      test_ignore_filters: [
+        ~r{^test/config/},
+        ~r{^test/scenarios/.+(?:_hooks|/hooks)\.ex$},
+        "test/run_single_scenario.exs"
+      ],
 
       # Docs
       name: "OLI Torus",

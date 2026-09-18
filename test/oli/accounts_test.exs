@@ -81,7 +81,7 @@ defmodule Oli.AccountsTest do
     end
 
     test "search_authors_matching/1 returns authors matching the input exactly" do
-      author = insert(:author)
+      %Author{} = author = insert(:author)
 
       [matching_author] = Accounts.search_authors_matching(author.email)
 
@@ -360,7 +360,7 @@ defmodule Oli.AccountsTest do
     test "setup_sso_author/2 links user with author when they have the same email" do
       community = insert(:community)
       user = insert(:user)
-      author = insert(:author, email: user.email)
+      %Author{} = author = insert(:author, email: user.email)
 
       fields = %{"sub" => user.sub, "cognito:username" => "username", "email" => user.email}
       {:ok, returned_author} = Accounts.setup_sso_author(fields, community.id)

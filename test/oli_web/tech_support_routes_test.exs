@@ -1,6 +1,8 @@
 defmodule OliWeb.TechSupportRoutesTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
+
+  import Oli.Factory
   import Phoenix.LiveViewTest
 
   describe "authoring layout" do
@@ -71,7 +73,8 @@ defmodule OliWeb.TechSupportRoutesTest do
   defp prepare_session(%{conn: conn}) do
     author = author_fixture()
 
-    %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
+    project = insert(:project)
+    institution = insert(:institution, institution_email: author.email)
 
     tool_jwk = jwk_fixture()
 

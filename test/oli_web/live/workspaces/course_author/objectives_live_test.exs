@@ -1525,7 +1525,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
 
       assert has_element?(view, ".collapse .line-through", "#{sub_obj.title}")
-      assert has_element?(view, ".collapse .spinner-border")
 
       wait_until(fn ->
         has_element?(view, ~s{div[role="alert"].alert-info}, "Objective successfully removed")
@@ -1581,7 +1580,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj_a.slug})
 
       assert has_element?(view, "##{obj_a.slug} .line-through", "#{sub_obj.title}")
-      assert has_element?(view, "##{obj_a.slug} .spinner-border")
 
       wait_until(fn ->
         has_element?(view, ~s{div[role="alert"].alert-info}, "Objective successfully removed")

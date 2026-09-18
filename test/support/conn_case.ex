@@ -32,10 +32,19 @@ defmodule OliWeb.ConnCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Oli.Repo)
+    if tags[:sandbox_owner] do
+      owner =
+        Ecto.Adapters.SQL.Sandbox.start_owner!(Oli.Repo,
+          shared: not tags[:async]
+        )
 
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Oli.Repo, {:shared, self()})
+      on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
+    else
+      :ok = Ecto.Adapters.SQL.Sandbox.checkout(Oli.Repo)
+
+      unless tags[:async] do
+        Ecto.Adapters.SQL.Sandbox.mode(Oli.Repo, {:shared, self()})
+      end
     end
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}

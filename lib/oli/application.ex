@@ -152,15 +152,25 @@ defmodule Oli.Application do
 
     case Supervisor.start_link(children, opts) do
       {:ok, pid} ->
-        Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-          Process.sleep(1_000)
-          safe_inventory_recovery()
-        end)
+        maybe_start_inventory_recovery()
 
         {:ok, pid}
 
       other ->
         other
+    end
+  end
+
+  defp maybe_start_inventory_recovery do
+    case Application.get_env(:oli, :inventory_recovery_on_boot, true) do
+      true ->
+        Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+          Process.sleep(1_000)
+          safe_inventory_recovery()
+        end)
+
+      false ->
+        :ok
     end
   end
 
