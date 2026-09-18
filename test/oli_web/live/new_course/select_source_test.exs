@@ -500,6 +500,87 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     end
   end
 
+  describe "card identification tag and cost badge" do
+    setup [:instructor_conn]
+
+    test "a Template card shows the Template tag and its cost badge; a My Course Sections card shows the My Section tag with no cost badge; an untagged source shows neither",
+         %{conn: conn, instructor: instructor} do
+      insert(:section, open_and_free: true, type: :blueprint, title: "Chem 101")
+
+      %Publication{project: my_section_project} = insert(:publication)
+
+      my_section =
+        insert(:section, %{
+          base_project: my_section_project,
+          type: :enrollable,
+          title: "Chem Copy"
+        })
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, my_section.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      %Publication{project: untagged_project} = insert(:publication)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      template_card =
+        view
+        |> element(".course-card-link", "Chem 101")
+        |> render()
+
+      assert template_card =~ "Template"
+      assert template_card =~ "Free"
+
+      my_section_card =
+        view
+        |> element(".course-card-link", "Chem Copy")
+        |> render()
+
+      assert my_section_card =~ "My Section"
+      refute my_section_card =~ "Free"
+
+      untagged_card =
+        view
+        |> element(".course-card-link", untagged_project.title)
+        |> render()
+
+      refute untagged_card =~ "Template"
+      refute untagged_card =~ "My Section"
+      refute untagged_card =~ "Free"
+    end
+  end
+
+  describe "My Course Sections card hover state" do
+    setup [:instructor_conn]
+
+    test "a My Course Sections card renders the hover overlay markup; a Template card does not",
+         %{conn: conn, instructor: instructor} do
+      insert(:section, open_and_free: true, type: :blueprint, title: "Chem 101")
+
+      %Publication{project: project} = insert(:publication)
+
+      my_section =
+        insert(:section, %{base_project: project, type: :enrollable, title: "Chem Copy"})
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, my_section.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert view
+             |> element(".course-card-link", "Chem Copy")
+             |> render() =~ "Select to Copy Course Section"
+
+      refute view
+             |> element(".course-card-link", "Chem 101")
+             |> render() =~ "Select to Copy Course Section"
+    end
+  end
+
   describe "Independet instructor - Step 1" do
     setup [:instructor_conn]
 

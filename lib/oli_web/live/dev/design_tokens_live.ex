@@ -56,7 +56,7 @@ defmodule OliWeb.Dev.DesignTokensLive do
           class={tab_classes(@selected_tab == "buttons")}
           aria-pressed={to_string(@selected_tab == "buttons")}
         >
-          Buttons
+          Primitives
         </button>
         <button
           type="button"
@@ -203,23 +203,29 @@ defmodule OliWeb.Dev.DesignTokensLive do
                                 id={"copy-enabled-#{slugify(section.title)}-#{slugify(example.label)}"}
                                 type="button"
                                 phx-hook="CopyToClipboard"
-                                data-copy-text={button_code(example.assigns)}
+                                data-copy-text={primitive_code(primitive.module, example.assigns)}
                                 aria-label="Copy HEEx snippet"
                                 class="absolute right-2 top-2 text-Text-text-low transition hover:text-Text-text-high"
                                 title="Copy HEEx"
                               >
                                 <Icons.clipboard class="h-4 w-4 fill-current" />
                               </button>
-                              <pre class="w-full overflow-x-auto rounded-md border border-Border-border-subtle bg-Surface-surface-secondary-muted p-2 pt-8 text-[11px] leading-4 text-Text-text-low"><code>{button_code(example.assigns)}</code></pre>
+                              <pre class="w-full overflow-x-auto rounded-md border border-Border-border-subtle bg-Surface-surface-secondary-muted p-2 pt-8 text-[11px] leading-4 text-Text-text-low"><code>{primitive_code(primitive.module, example.assigns)}</code></pre>
                             </div>
                           </div>
                         <% end %>
                       </div>
 
-                      <div class="text-xs font-semibold uppercase tracking-wide text-Text-text-low-alpha">
+                      <div
+                        :if={primitive_supports_disabled?(primitive.module)}
+                        class="text-xs font-semibold uppercase tracking-wide text-Text-text-low-alpha"
+                      >
                         Disabled
                       </div>
-                      <div class="flex flex-wrap items-start gap-4">
+                      <div
+                        :if={primitive_supports_disabled?(primitive.module)}
+                        class="flex flex-wrap items-start gap-4"
+                      >
                         <%= for example <- Enum.reject(section.examples, &long_text_example?/1) do %>
                           <div class="flex w-56 flex-col gap-2">
                             <div class="flex min-h-10 items-start">
@@ -380,6 +386,38 @@ defmodule OliWeb.Dev.DesignTokensLive do
     |> String.replace(~r/[^a-z0-9]+/u, "-")
     |> String.trim("-")
   end
+
+  @doc false
+  # Dispatches to a primitive-specific snippet generator when one exists (currently
+  # only Button, which has bespoke slot/variant formatting), and otherwise falls back
+  # to a generic attribute dump so a newly-added primitive never shows an incorrect
+  # copy-paste snippet borrowed from Button's format.
+  defp primitive_code(OliWeb.Components.DesignTokens.Primitives.Button, assigns),
+    do: button_code(assigns)
+
+  defp primitive_code(module, assigns), do: generic_primitive_code(module, assigns)
+
+  defp generic_primitive_code(module, assigns) do
+    assigns = Map.new(assigns)
+    function_name = module |> Module.split() |> List.last() |> Macro.underscore()
+    component_name = module |> Module.split() |> List.last()
+
+    attrs =
+      assigns
+      |> Map.drop([:label])
+      |> Enum.map_join(" ", fn {key, value} -> "#{key}={#{inspect(value)}}" end)
+
+    if attrs == "" do
+      "<#{component_name}.#{function_name} />"
+    else
+      "<#{component_name}.#{function_name} #{attrs} />"
+    end
+  end
+
+  # Only Button currently exposes a meaningful `disabled` state; showing a second
+  # "Disabled" preview column for other primitives would be misleading.
+  defp primitive_supports_disabled?(OliWeb.Components.DesignTokens.Primitives.Button), do: true
+  defp primitive_supports_disabled?(_module), do: false
 
   defp button_code(assigns) do
     assigns = Map.new(assigns)
