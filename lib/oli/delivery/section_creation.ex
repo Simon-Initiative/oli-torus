@@ -210,13 +210,33 @@ defmodule Oli.Delivery.SectionCreation do
 
   @doc """
   Sections the actor may create a section from: active enrollable sections the actor
-  teaches, or any of them for an administrator. LTI sources are restricted to the
-  launching institution; direct-delivery sources have no institution boundary.
+  teaches, or any of them for an administrator, whose source project or blueprint is
+  currently available to the actor in the course builder. Blueprint-based sections
+  require access to that exact blueprint; project access alone does not substitute.
+  LTI sources are restricted to the launching institution; direct-delivery sources
+  have no institution boundary.
   """
+  @spec permitted_sections_query(%User{} | %Author{}, %Institution{} | nil) :: Ecto.Query.t()
   def permitted_sections_query(actor, institution \\ nil) do
+    permitted_project_ids =
+      actor
+      |> permitted_publications_query(institution)
+      |> exclude(:preload)
+      |> select([publication: publication], publication.project_id)
+
+    permitted_product_ids =
+      actor
+      |> permitted_products_query(institution)
+      |> exclude(:preload)
+      |> select([product: product], product.id)
+
     from(section in Section,
       as: :section,
-      where: section.type == :enrollable and section.status == :active
+      where: section.type == :enrollable and section.status == :active,
+      where:
+        (is_nil(section.blueprint_id) and
+           section.base_project_id in subquery(permitted_project_ids)) or
+          section.blueprint_id in subquery(permitted_product_ids)
     )
     |> where(^section_entitlement(actor))
     |> scope_sections_to_institution(institution)

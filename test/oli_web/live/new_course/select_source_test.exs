@@ -391,6 +391,26 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
   describe "Instructor course copy sources" do
     setup [:instructor_conn]
 
+    test "hides previously taught courses after their source project is restricted", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %Publication{project: project} = insert(:publication)
+      course = insert(:section, type: :enrollable, base_project: project)
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, course.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+      assert has_element?(view, "a[phx-value-id='section:#{course.id}']")
+
+      project |> Ecto.Changeset.change(visibility: :selected) |> Oli.Repo.update!()
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+      refute has_element?(view, "a[phx-value-id='section:#{course.id}']")
+      assert has_element?(view, "p", "None exist")
+    end
+
     test "shows courses where the user is an instructor and hides learner-only courses", %{
       conn: conn,
       instructor: instructor

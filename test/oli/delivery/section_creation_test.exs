@@ -377,6 +377,193 @@ defmodule Oli.Delivery.SectionCreationTest do
     end
   end
 
+  describe "course copy source visibility" do
+    setup [:publishable_source]
+
+    setup %{section: section} do
+      instructor = insert(:user, independent_learner: true, can_create_sections: true)
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      [instructor: instructor]
+    end
+
+    test "rechecks project visibility when submitting a previously authorized copy", %{
+      instructor: instructor,
+      project: project,
+      section: section
+    } do
+      assert_copy_available(instructor, section)
+      request = request!(instructor, "section:#{section.id}", %{title: "Restricted Copy"})
+
+      project |> Ecto.Changeset.change(visibility: :selected) |> Repo.update!()
+
+      assert_copy_unavailable(instructor, section)
+      before = section_count()
+      assert {:error, :unauthorized} = Delivery.create_section(request)
+      assert section_count() == before
+    end
+
+    test "honors selected author access and its removal", %{
+      instructor: instructor,
+      project: project,
+      section: section
+    } do
+      project |> Ecto.Changeset.change(visibility: :selected) |> Repo.update!()
+      assert_copy_unavailable(instructor, section)
+
+      visibility =
+        insert(:project_visibility, project_id: project.id, author_id: instructor.author_id)
+
+      assert_copy_available(instructor, section)
+
+      Repo.delete!(visibility)
+      assert_copy_unavailable(instructor, section)
+
+      insert(:author_project, project_id: project.id, author_id: instructor.author_id)
+      assert_copy_available(instructor, section)
+    end
+
+    test "honors community project access and current global access", %{
+      instructor: instructor,
+      project: project,
+      section: section
+    } do
+      community = insert(:community, global_access: false)
+      insert(:community_user_account, community: community, user: instructor)
+      assert_copy_unavailable(instructor, section)
+
+      visibility = insert(:community_visibility, community: community, project: project)
+      assert_copy_available(instructor, section)
+
+      Repo.delete!(visibility)
+      assert_copy_unavailable(instructor, section)
+
+      community |> Ecto.Changeset.change(global_access: true) |> Repo.update!()
+      assert_copy_available(instructor, section)
+    end
+
+    test "honors the launching institution's selected project access", %{
+      instructor: instructor,
+      project: project,
+      section: section
+    } do
+      instructor =
+        instructor
+        |> Ecto.Changeset.change(independent_learner: false, can_create_sections: false)
+        |> Repo.update!()
+
+      %{institution: institution, spec: spec} =
+        lti_launch(instructor, unique_context_id(), [@instructor_role])
+
+      {:ok, section} = Sections.update_section(section, %{institution_id: institution.id})
+
+      project |> Ecto.Changeset.change(visibility: :selected) |> Repo.update!()
+      assert_copy_unavailable(instructor, section, institution)
+
+      visibility =
+        insert(:project_institution_visibility,
+          project_id: project.id,
+          institution_id: institution.id
+        )
+
+      assert_copy_available(instructor, section, institution)
+      request = request!(instructor, "section:#{section.id}", %{title: "LTI Copy"}, spec)
+      Repo.delete!(visibility)
+
+      assert_copy_unavailable(instructor, section, institution)
+      before = section_count()
+      assert {:error, :unauthorized} = Delivery.create_section(request)
+      assert section_count() == before
+    end
+
+    test "requires access to the exact blueprint rather than another template or its project", %{
+      instructor: instructor,
+      project: project,
+      publication: publication,
+      section: section
+    } do
+      project |> Ecto.Changeset.change(visibility: :selected) |> Repo.update!()
+      product = product_from(project, publication)
+      other_product = product_from(project, publication)
+      {:ok, section} = Sections.update_section(section, %{blueprint_id: product.id})
+      community = insert(:community, global_access: false)
+      insert(:community_user_account, community: community, user: instructor)
+      insert(:community_visibility, community: community, project: project)
+      insert(:community_product_visibility, community: community, section: other_product)
+
+      assert_copy_unavailable(instructor, section)
+      visibility = insert(:community_product_visibility, community: community, section: product)
+      assert_copy_available(instructor, section)
+
+      assert {:ok, _id, _slug} =
+               Delivery.create_section(
+                 request!(instructor, "section:#{section.id}", %{title: "Visible Template Copy"})
+               )
+
+      Repo.delete!(visibility)
+      assert_copy_unavailable(instructor, section)
+
+      assert {:error, :unauthorized} =
+               Delivery.create_section(
+                 request!(instructor, "section:#{section.id}", %{title: "Hidden Template Copy"})
+               )
+    end
+
+    test "refuses archived templates even when their project is visible", %{
+      instructor: instructor,
+      project: project,
+      publication: publication,
+      section: section
+    } do
+      product = product_from(project, publication)
+      {:ok, section} = Sections.update_section(section, %{blueprint_id: product.id})
+      assert_copy_available(instructor, section)
+
+      {:ok, _} = Sections.update_section(product, %{status: :archived})
+      assert_copy_unavailable(instructor, section)
+      assert_copy_unavailable(admin_author(), section)
+    end
+
+    test "refuses deleted projects and projects without published content", %{
+      instructor: instructor,
+      project: project,
+      section: section
+    } do
+      project |> Ecto.Changeset.change(status: :deleted) |> Repo.update!()
+      assert_copy_unavailable(instructor, section)
+      assert_copy_unavailable(admin_author(), section)
+
+      unpublished_project = insert(:project)
+
+      {:ok, section} =
+        Sections.update_section(section, %{base_project_id: unpublished_project.id})
+
+      assert_copy_unavailable(instructor, section)
+    end
+
+    test "does not expose legacy free sections when the project requires a paid product", %{
+      instructor: instructor,
+      project: project,
+      publication: publication,
+      section: section
+    } do
+      assert_copy_available(instructor, section)
+      product_from(project, publication, requires_payment: true, amount: Money.new(:USD, 25))
+
+      assert_copy_unavailable(instructor, section)
+      before = section_count()
+
+      assert {:error, :unauthorized} =
+               Delivery.create_section(
+                 request!(instructor, "section:#{section.id}", %{title: "Legacy Free Copy"})
+               )
+
+      assert section_count() == before
+    end
+  end
+
   describe "the source list and the gate" do
     test "T6 offers no source the gate refuses, for an author linked user (P3, N9)" do
       author = insert(:author)
@@ -1171,6 +1358,22 @@ defmodule Oli.Delivery.SectionCreationTest do
       assert {:ok, _id, _slug} =
                Delivery.create_section(%{forged | source: {:publication, publication.id}})
     end
+  end
+
+  defp assert_copy_available(actor, section, institution \\ nil) do
+    assert section.id in Enum.map(SectionCreation.permitted_sections(actor, institution), & &1.id)
+
+    assert {:ok, {:section, %Section{id: id}}} =
+             SectionCreation.resolve_source(actor, {:section, section.id}, institution)
+
+    assert id == section.id
+  end
+
+  defp assert_copy_unavailable(actor, section, institution \\ nil) do
+    refute section.id in Enum.map(SectionCreation.permitted_sections(actor, institution), & &1.id)
+
+    assert {:error, :unauthorized} =
+             SectionCreation.resolve_source(actor, {:section, section.id}, institution)
   end
 
   defp publishable_source(_context) do
