@@ -434,6 +434,63 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "a[phx-value-id='section:#{instructor_course.id}']")
       refute has_element?(view, "a[phx-value-id='section:#{learner_course.id}']")
     end
+
+    test "hides courses after template access is revoked while another template remains visible",
+         %{
+           conn: conn,
+           instructor: instructor
+         } do
+      project = insert(:project, visibility: :selected)
+      insert(:publication, project: project)
+      previous_template = insert(:section, type: :blueprint, base_project: project)
+      current_template = insert(:section, type: :blueprint, base_project: project)
+
+      previous_course =
+        insert(:section,
+          type: :enrollable,
+          base_project: project,
+          blueprint_id: previous_template.id
+        )
+
+      current_course =
+        insert(:section,
+          type: :enrollable,
+          base_project: project,
+          blueprint_id: current_template.id
+        )
+
+      for course <- [previous_course, current_course] do
+        {:ok, _} =
+          Sections.enroll(instructor.id, course.id, [ContextRoles.get_role(:context_instructor)])
+      end
+
+      community = insert(:community, global_access: false)
+      insert(:community_user_account, community: community, user: instructor)
+      insert(:community_visibility, community: community, project: project)
+      insert(:community_product_visibility, community: community, section: current_template)
+
+      visibility =
+        insert(:community_product_visibility, community: community, section: previous_template)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+      assert has_element?(view, "a[phx-value-id='section:#{previous_course.id}']")
+      assert has_element?(view, "a[phx-value-id='section:#{current_course.id}']")
+
+      Oli.Repo.delete!(visibility)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+      refute has_element?(view, "a[phx-value-id='section:#{previous_course.id}']")
+      refute has_element?(view, "a[phx-value-id='product:#{previous_template.id}']")
+      assert has_element?(view, "a[phx-value-id='section:#{current_course.id}']")
+      assert has_element?(view, "a[phx-value-id='product:#{current_template.id}']")
+
+      view |> element("form#update_view_type") |> render_change(%{"view" => %{"type" => "list"}})
+
+      refute has_element?(view, "button[phx-value-id='section:#{previous_course.id}']")
+      refute has_element?(view, "button[phx-value-id='product:#{previous_template.id}']")
+      assert has_element?(view, "button[phx-value-id='section:#{current_course.id}']")
+      assert has_element?(view, "button[phx-value-id='product:#{current_template.id}']")
+    end
   end
 
   describe "Independet instructor - Step 1" do

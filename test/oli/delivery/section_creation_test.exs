@@ -526,6 +526,93 @@ defmodule Oli.Delivery.SectionCreationTest do
       assert_copy_unavailable(admin_author(), section)
     end
 
+    test "rechecks template access when submitting a previously authorized copy", %{
+      instructor: instructor,
+      project: project,
+      publication: publication,
+      section: section
+    } do
+      project |> Ecto.Changeset.change(visibility: :selected) |> Repo.update!()
+      product = product_from(project, publication)
+      {:ok, section} = Sections.update_section(section, %{blueprint_id: product.id})
+      community = insert(:community, global_access: false)
+      insert(:community_user_account, community: community, user: instructor)
+
+      visibility = insert(:community_product_visibility, community: community, section: product)
+      assert_copy_available(instructor, section)
+      request = request!(instructor, "section:#{section.id}", %{title: "Revoked Template Copy"})
+
+      Repo.delete!(visibility)
+
+      assert_copy_unavailable(instructor, section)
+      before = section_count()
+      assert {:error, :unauthorized} = Delivery.create_section(request)
+      assert section_count() == before
+    end
+
+    for project_visible? <- [false, true], template_visible? <- [false, true] do
+      test "project visibility #{project_visible?} and template visibility #{template_visible?} authorize their respective copy sources",
+           %{
+             instructor: instructor,
+             project: project,
+             publication: publication,
+             section: project_section
+           } do
+        project |> Ecto.Changeset.change(visibility: :selected) |> Repo.update!()
+        product = product_from(project, publication)
+
+        {:ok, template_section} =
+          Sections.Blueprint.duplicate(product, %{
+            type: :enrollable,
+            title: "Template-based source",
+            open_and_free: true,
+            blueprint_id: product.id
+          })
+
+        {:ok, _} =
+          Sections.enroll(instructor.id, template_section.id, [
+            ContextRoles.get_role(:context_instructor)
+          ])
+
+        community = insert(:community, global_access: false)
+        insert(:community_user_account, community: community, user: instructor)
+
+        case unquote(project_visible?) do
+          true -> insert(:community_visibility, community: community, project: project)
+          false -> :ok
+        end
+
+        case unquote(template_visible?) do
+          true -> insert(:community_product_visibility, community: community, section: product)
+          false -> :ok
+        end
+
+        for {material, source, visible?} <- [
+              {{:publication, publication.id}, project_section, unquote(project_visible?)},
+              {{:product, product.id}, template_section, unquote(template_visible?)}
+            ] do
+          request =
+            request!(instructor, "section:#{source.id}", %{title: "Visibility Matrix Copy"})
+
+          case visible? do
+            true ->
+              assert {:ok, _} = SectionCreation.resolve_source(instructor, material, nil)
+              assert_copy_available(instructor, source)
+              assert {:ok, _id, _slug} = Delivery.create_section(request)
+
+            false ->
+              assert {:error, :unauthorized} =
+                       SectionCreation.resolve_source(instructor, material, nil)
+
+              assert_copy_unavailable(instructor, source)
+              before = section_count()
+              assert {:error, :unauthorized} = Delivery.create_section(request)
+              assert section_count() == before
+          end
+        end
+      end
+    end
+
     test "refuses deleted projects and projects without published content", %{
       instructor: instructor,
       project: project,
