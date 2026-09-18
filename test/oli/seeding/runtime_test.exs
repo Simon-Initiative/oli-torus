@@ -3,6 +3,53 @@ defmodule Oli.Seeding.RuntimeTest do
 
   alias Oli.Seeding.Runtime
 
+  @tag timeout: 120_000
+  test "the mix entry point loads runtime configuration in a fresh VM" do
+    script = """
+    Mix.CLI.main(["seed", "scenarios", "list"])
+    "seed-runtime.example" = Application.fetch_env!(:oli, :xapi_host_name)
+    """
+
+    {output, status} =
+      System.cmd("elixir", ["-e", script],
+        env: [{"MIX_ENV", "test"}, {"XAPI_HOST_NAME", "seed-runtime.example"}],
+        stderr_to_stdout: true
+      )
+
+    assert status == 0, output
+    assert output =~ "oli_torus_getting_started_course"
+  end
+
+  @tag timeout: 120_000
+  test "the isolated companion runtime can publish and apply a section update" do
+    path = "test/scenarios/seeding/publication_update.scenario.yaml"
+    assert :ok = Oli.Scenarios.validate_file(path)
+
+    script = """
+    Oli.Seeding.Runtime.run(fn ->
+      nil = Process.whereis(OliWeb.Endpoint)
+      :ok = Ecto.Adapters.SQL.Sandbox.mode(Oli.Repo, :manual)
+      :ok = Ecto.Adapters.SQL.Sandbox.checkout(Oli.Repo)
+
+      try do
+        result = Oli.Scenarios.SeedExecution.execute_file(#{inspect(path)})
+        [] = result.errors
+        true = Oli.Scenarios.all_verifications_passed?(result)
+      after
+        Ecto.Adapters.SQL.Sandbox.checkin(Oli.Repo)
+      end
+    end)
+    """
+
+    {output, status} =
+      System.cmd("mix", ["run", "--no-start", "-e", script],
+        env: [{"MIX_ENV", "test"}],
+        stderr_to_stdout: true
+      )
+
+    assert status == 0, output
+  end
+
   test "run installs and restores the application role" do
     previous_role = Application.get_env(:oli, :application_role)
 
