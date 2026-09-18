@@ -47,7 +47,7 @@ defmodule OliWeb.Delivery.NewCourse do
       %Step{
         title: "Course details",
         description:
-          "If you meet as a group, let us know what days of the week your class meets. Everyone needs to tell us your course’s start and end dates.",
+          "If you meet as a group, let us know what days of the week your class meets. Tell us your course’s start and end dates.",
         render_fn: fn assigns -> render_step(:course_details, assigns) end,
         on_previous_step:
           JS.push("change_step", value: %{form_id: "course-details-form", current_step: 1}),
@@ -116,6 +116,7 @@ defmodule OliWeb.Delivery.NewCourse do
       <.live_component
         id="course_creation_stepper"
         module={Stepper}
+        variant={:course_creation}
         on_cancel={JS.push("redirect_to_courses")}
         steps={@steps || []}
         current_step={@current_step}

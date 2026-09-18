@@ -109,12 +109,12 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 
 - Goal: update the left-panel step 1/2/3 copy and the footer button styling for the section-creation wizard only, without affecting the student-onboarding wizard.
 - Tasks:
-  - [ ] Update the `steps` list titles/descriptions in `new_course.ex` to the new copy (node `44:842`).
-  - [ ] Add footer/left-panel styling changes in `stepper.ex`, gated on the existing `if @id == "course_creation_stepper"` conditional (node `44:838`); resolve the Cancel-button border decision (extend `.secondary` vs. add a variant) per FDD Open Questions before finalizing that detail.
+  - [x] Update the `steps` list titles/descriptions in `new_course.ex` to the new copy (node `44:842`).
+  - [x] Add footer/left-panel styling changes in `stepper.ex`, gated on an explicit `variant={:course_creation}` attr (replacing the earlier `if @id == "course_creation_stepper"` conditional per a `$harness-review` finding, node `44:838`); resolved the Cancel-button border decision (neither extend `.secondary` nor add a CSS variant — scoped inline via the new `variant` attr instead) per FDD Open Questions.
 - Testing Tasks:
-  - [ ] LiveView test: the left-panel copy for all three steps matches the updated text (AC-014).
-  - [ ] New regression test asserting the student-onboarding wizard's rendered footer/left-panel styling is unchanged after this change (AC-015).
-  - Command(s): `mix test test/oli_web/live/new_course/new_course_test.exs test/oli_web/live/delivery/student_onboarding/wizard_test.exs`
+  - [x] LiveView test: the left-panel copy for all three steps matches the updated text (AC-014).
+  - [x] New regression test asserting the student-onboarding wizard's rendered footer/left-panel styling is unchanged after this change (AC-015).
+  - Command(s): `mix test test/oli_web/live/new_course/new_course_test.exs test/oli_web/live/delivery/onboarding_wizard/student_onboarding_wizard_test.exs` (the onboarding-wizard test file already existed at this path, not the `student_onboarding/wizard_test.exs` path originally assumed)
 - Definition of Done:
   - Section-creation wizard shows the new copy/styling; student-onboarding wizard is pixel-identical to before this ticket.
 - Gate:

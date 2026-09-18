@@ -23,6 +23,15 @@ defmodule OliWeb.Common.Stepper do
   attr :next_step_disabled, :boolean, default: false
   attr :show_spinner, :boolean, default: false
 
+  @doc """
+  `:course_creation` opts this instance into the course-creation wizard's
+  spacing/color treatment (currently used by `OliWeb.Delivery.NewCourse`).
+  Callers that don't pass it (e.g. the student-onboarding wizard) get the
+  shared default look. Set explicitly by the caller rather than inferred
+  from `@id`, so the styling doesn't silently depend on a sibling string.
+  """
+  attr :variant, :atom, default: :default, values: [:default, :course_creation]
+
   def render(assigns) do
     assigns = assign(assigns, steps: Enum.with_index(assigns.steps))
 
@@ -49,7 +58,7 @@ defmodule OliWeb.Common.Stepper do
         </div>
         <div class={[
           "bg-white dark:bg-[#0B0C11] w-full h-4/5 md:h-none md:w-2/3 flex flex-col overflow-y-scroll shadow-xl",
-          if(@id == "course_creation_stepper",
+          if(@variant == :course_creation,
             do: "my-10",
             else: "mt-4 hvxs:my-8 hvmd:my-16 hvlg:my-20 hvxl:my-24"
           )
@@ -62,7 +71,13 @@ defmodule OliWeb.Common.Stepper do
             <%= if !is_nil(@on_cancel) do %>
               <button
                 phx-click={@on_cancel}
-                class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900"
+                class={[
+                  "torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900",
+                  if(@variant == :course_creation,
+                    do:
+                      "!border !border-Border-border-bold !text-Specially-Tokens-Text-text-button-secondary"
+                  )
+                ]}
               >
                 {@cancel_button_label}
               </button>
@@ -96,7 +111,12 @@ defmodule OliWeb.Common.Stepper do
               <button
                 disabled={@next_step_disabled}
                 phx-click={@selected_step.on_next_step |> fade_out_transition("stepper_content")}
-                class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center"
+                class={[
+                  "torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center",
+                  if(@variant == :course_creation and !@next_step_disabled,
+                    do: "!bg-Fill-Buttons-fill-primary-bold"
+                  )
+                ]}
               >
                 {@selected_step.next_button_label || "Next step"}
 
