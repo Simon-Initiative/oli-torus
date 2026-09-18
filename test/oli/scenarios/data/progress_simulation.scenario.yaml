@@ -1,0 +1,492 @@
+# Scenario: Bulk-enroll learners and simulate progress across practice and graded pages.
+# The graded assessment exercises every native activity type supported by simulation.
+
+- institution:
+    name: "Progress Simulation Institution"
+    country_code: "US"
+    institution_email: "progress-simulation@scenarios.invalid"
+    institution_url: "https://scenarios.invalid/progress-simulation"
+
+- ownership:
+    author: default_admin
+    institution: "ref:Progress Simulation Institution"
+
+- project:
+    name: "progress_simulation"
+    title: "Progress Simulation"
+    objectives:
+      - "Recognize native activity response patterns"
+      - "Apply response strategies across assessments"
+    root:
+      children:
+        - page: "Practice Introduction"
+        - page: "Native Activity Practice"
+        - page: "Native Activity Assessment"
+
+- create_activity:
+    project: "progress_simulation"
+    title: "Multiple Choice Question"
+    virtual_id: "progress_mcq"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Recognize native activity response patterns"
+    content_format: "json"
+    content:
+      activityType: "oli_multiple_choice"
+      stem:
+        id: "mcq_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Choose the correct option."
+      choices:
+        - id: "a"
+          content:
+            - type: "p"
+              children:
+                - text: "Incorrect"
+        - id: "b"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "mcq_correct"
+                rule: "input like {b}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "mcq_correct_feedback"
+                  content: []
+              - id: "mcq_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "mcq_incorrect_feedback"
+                  content: []
+            hints: &default_hints
+              - id: "deer_in_headlights_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Review the question and identify the key concept."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "cognitive_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Eliminate choices that conflict with the course example."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "bottom_out_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Use the response pattern demonstrated on the practice page."
+                editor: "slate"
+                textDirection: "ltr"
+
+- create_activity:
+    project: "progress_simulation"
+    title: "Ordering Question"
+    virtual_id: "progress_ordering"
+    type: "oli_ordering"
+    objectives:
+      - "Recognize native activity response patterns"
+    content_format: "json"
+    content:
+      activityType: "oli_ordering"
+      stem:
+        id: "ordering_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Put the steps in order."
+      choices:
+        - id: "first"
+          content:
+            - type: "p"
+              children:
+                - text: "First"
+        - id: "second"
+          content:
+            - type: "p"
+              children:
+                - text: "Second"
+        - id: "third"
+          content:
+            - type: "p"
+              children:
+                - text: "Third"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        correct:
+          - ["first", "second", "third"]
+          - "ordering_correct"
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "ordering_correct"
+                rule: "input like {first second third}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "ordering_correct_feedback"
+                  content: []
+              - id: "ordering_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "ordering_incorrect_feedback"
+                  content: []
+            hints: *default_hints
+
+- create_activity:
+    project: "progress_simulation"
+    title: "Check All That Apply Question"
+    virtual_id: "progress_cata"
+    type: "oli_check_all_that_apply"
+    objectives:
+      - "Recognize native activity response patterns"
+    content_format: "json"
+    content:
+      activityType: "oli_check_all_that_apply"
+      stem:
+        id: "cata_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Select both correct options."
+      choices:
+        - id: "c1"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct one"
+        - id: "c2"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct two"
+        - id: "c3"
+          content:
+            - type: "p"
+              children:
+                - text: "Incorrect"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        correct:
+          - ["c1", "c2"]
+          - "cata_correct"
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "cata_correct"
+                rule: "input like {c1 c2}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "cata_correct_feedback"
+                  content: []
+              - id: "cata_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "cata_incorrect_feedback"
+                  content: []
+            hints: *default_hints
+
+- create_activity:
+    project: "progress_simulation"
+    title: "Single Response Question"
+    virtual_id: "progress_single_response"
+    type: "oli_short_answer"
+    objectives:
+      - "Apply response strategies across assessments"
+    content_format: "json"
+    content:
+      activityType: "oli_short_answer"
+      stem:
+        id: "single_response_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Enter the expected answer."
+      inputType: "text"
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "single_response_correct"
+                rule: "input contains {scenario}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "single_response_correct_feedback"
+                  content: []
+              - id: "single_response_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "single_response_incorrect_feedback"
+                  content: []
+            hints: *default_hints
+
+- create_activity:
+    project: "progress_simulation"
+    title: "Multi Input Question"
+    virtual_id: "progress_multi_input"
+    type: "oli_multi_input"
+    objectives:
+      - "Apply response strategies across assessments"
+    content_format: "json"
+    content:
+      activityType: "oli_multi_input"
+      submitPerPart: false
+      choices: []
+      inputs:
+        - id: "text_input"
+          inputType: "text"
+          partId: "text_part"
+        - id: "numeric_input"
+          inputType: "numeric"
+          partId: "numeric_part"
+      stem:
+        id: "multi_input_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Complete both inputs: "
+              - type: "input_ref"
+                id: "text_input"
+                children:
+                  - text: ""
+              - text: " and "
+              - type: "input_ref"
+                id: "numeric_input"
+                children:
+                  - text: ""
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "text_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "multi_input_text_correct"
+                rule: "input contains {answer}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "multi_input_text_correct_feedback"
+                  content: []
+              - id: "multi_input_text_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "multi_input_text_incorrect_feedback"
+                  content: []
+            hints: *default_hints
+          - id: "numeric_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "multi_input_numeric_correct"
+                rule: "input = {1}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "multi_input_numeric_correct_feedback"
+                  content: []
+              - id: "multi_input_numeric_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "multi_input_numeric_incorrect_feedback"
+                  content: []
+            hints: *default_hints
+
+- create_activity:
+    project: "progress_simulation"
+    title: "Multi Input Per Part Question"
+    virtual_id: "progress_multi_input_per_part"
+    type: "oli_multi_input"
+    objectives:
+      - "Apply response strategies across assessments"
+    content_format: "json"
+    content:
+      activityType: "oli_multi_input"
+      submitPerPart: true
+      choices: []
+      inputs:
+        - id: "text_input"
+          inputType: "text"
+          partId: "text_part"
+        - id: "numeric_input"
+          inputType: "numeric"
+          partId: "numeric_part"
+      stem:
+        id: "multi_input_per_part_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Complete both inputs independently: "
+              - type: "input_ref"
+                id: "text_input"
+                children:
+                  - text: ""
+              - text: " and "
+              - type: "input_ref"
+                id: "numeric_input"
+                children:
+                  - text: ""
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "text_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "multi_input_per_part_text_correct"
+                rule: "input contains {answer}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "multi_input_per_part_text_correct_feedback"
+                  content: []
+              - id: "multi_input_per_part_text_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "multi_input_per_part_text_incorrect_feedback"
+                  content: []
+            hints: *default_hints
+          - id: "numeric_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "multi_input_per_part_numeric_correct"
+                rule: "input = {1}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "multi_input_per_part_numeric_correct_feedback"
+                  content: []
+              - id: "multi_input_per_part_numeric_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "multi_input_per_part_numeric_incorrect_feedback"
+                  content: []
+            hints: *default_hints
+
+- edit_page:
+    project: "progress_simulation"
+    page: "Practice Introduction"
+    content: |
+      title: "Practice Introduction"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Review this introduction before starting the assessment."
+
+- edit_page:
+    project: "progress_simulation"
+    page: "Native Activity Practice"
+    content: |
+      title: "Native Activity Practice"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Try these unscored activities before starting the assessment."
+        - type: activity_reference
+          virtual_id: "progress_mcq"
+        - type: activity_reference
+          virtual_id: "progress_ordering"
+        - type: activity_reference
+          virtual_id: "progress_cata"
+        - type: activity_reference
+          virtual_id: "progress_single_response"
+        - type: activity_reference
+          virtual_id: "progress_multi_input"
+        - type: activity_reference
+          virtual_id: "progress_multi_input_per_part"
+
+- edit_page:
+    project: "progress_simulation"
+    page: "Native Activity Assessment"
+    content: |
+      title: "Native Activity Assessment"
+      graded: true
+      blocks:
+        - type: activity_reference
+          virtual_id: "progress_mcq"
+        - type: activity_reference
+          virtual_id: "progress_ordering"
+        - type: activity_reference
+          virtual_id: "progress_cata"
+        - type: activity_reference
+          virtual_id: "progress_single_response"
+        - type: activity_reference
+          virtual_id: "progress_multi_input"
+
+- publish:
+    to: "progress_simulation"
+    description: "Publish practice and graded progress simulation pages"
+
+- section:
+    name: "progress_simulation_section"
+    title: "Progress Simulation Section"
+    from: "progress_simulation"
+
+- bulk_create_enroll_users:
+    section: "progress_simulation_section"
+    prefix: "simulated"
+    instructors: 1
+    learners: 40
+
+- simulate_progress:
+    section: "progress_simulation_section"
+    seed: 42
+    cohorts:
+      - profile: high_proficiency
+        count: 10
+      - profile: steady_learner
+        count: 15
+      - profile: persistent_learner
+        count: 10
+      - profile: low_engagement
+        count: 5

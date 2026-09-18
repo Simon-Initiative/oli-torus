@@ -68,7 +68,9 @@ defmodule Oli.Scenarios.Directives.AttemptSupport do
   end
 
   def visit_page(user, section, page_revision, opts \\ []) do
-    datashop_session_id = Keyword.get_lazy(opts, :datashop_session_id, &datashop_session_id/0)
+    datashop_session_id =
+      Keyword.get_lazy(opts, :datashop_session_id, &Oli.Scenarios.LearnerSession.transient_id/0)
+
     password = Keyword.get(opts, :password)
 
     case PageContext.create_for_visit(section, page_revision.slug, user, datashop_session_id) do
@@ -214,6 +216,4 @@ defmodule Oli.Scenarios.Directives.AttemptSupport do
       revision -> {:ok, revision}
     end
   end
-
-  defp datashop_session_id, do: "session_#{System.unique_integer([:positive])}"
 end

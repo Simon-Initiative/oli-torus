@@ -76,6 +76,7 @@ RUN mix deps.compile
 COPY priv priv
 
 COPY lib lib
+COPY seeding seeding
 
 COPY gleam gleam
 RUN cd gleam && gleam clean && gleam deps download && gleam build --target erlang --warnings-as-errors

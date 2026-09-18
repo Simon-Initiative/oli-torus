@@ -6,7 +6,7 @@ Phase: `1 - Establish the Preview Build and Runtime Safety Boundary`
 ## Scope from plan.md
 
 - Establish a standalone, production-shaped `MIX_ENV=preview` release environment.
-- Compile preview capabilities behind an immutable build marker and require strict runtime activation.
+- Compile preview capabilities behind an immutable build marker and require strict runtime activation for web QA features.
 - Keep preview email local, propagate the selected build environment through Docker and preview workflows, and document the contract.
 
 ## Implementation Blocks
@@ -36,7 +36,7 @@ Verification results:
 - `mix test test/oli/preview_qa_tools/config_test.exs test/oli/preview_qa_tools/build_policy_test.exs` — 11 tests, 0 failures.
 - `MIX_ENV=preview mix compile` — passed.
 - `MIX_ENV=preview mix release --overwrite` — passed; created `_build/preview/rel/oli`.
-- Preview release eval with runtime `MIX_ENV=test` and `PREVIEW_QA_TOOLS_ENABLED=true` — passed; immutable preview marker, local mail adapter, and effective activation remained correct.
+- Preview release eval with runtime `MIX_ENV=test` and `PREVIEW_QA_TOOLS_ENABLED=true` — passed; immutable preview marker, local mail adapter, and effective web QA activation remained correct. Release seeding now relies only on preview compile-time inclusion per the later 2026-09-15 decision.
 - `mix format` on changed Elixir/config files — passed.
 - `mix format --check-formatted` and `git diff --check` — passed.
 - Harness work-item validation (`--check all`) — passed before implementation and after review fixes.

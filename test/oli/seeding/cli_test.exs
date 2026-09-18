@@ -1,19 +1,17 @@
-defmodule Oli.Release.PreviewQAToolsTest do
+defmodule Oli.Seeding.CLITest do
   use Oli.DataCase
 
   import ExUnit.CaptureLog
 
-  alias Oli.Release.PreviewQATools
-  alias Oli.Release.PreviewQATools.BundledScenarios
+  alias Oli.Seeding.BundledScenarios
+  alias Oli.Seeding.CLI
+  alias Oli.Scenarios.DirectiveTypes.{ExecutionResult, ExecutionState}
 
-  test "disabled commands fail before accessing their source" do
-    result =
-      PreviewQATools.dispatch(["scenarios", "run", "--file", "/does/not/exist"],
-        enabled?: false
-      )
+  test "commands do not require runtime activation" do
+    result = CLI.dispatch(["scenarios", "run", "--file", "/does/not/exist"])
 
-    assert result.status == 77
-    assert result.result_code == "disabled"
+    assert result.status == 66
+    assert result.result_code == "not_found"
     assert result.output =~ "partial_mutations_possible"
   end
 
@@ -33,7 +31,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
       ["projects", "ingest", "--url", "one", "--author", "two", "--unknown", "three"]
     ]
 
-    assert Enum.all?(invalid, &(PreviewQATools.dispatch(&1, enabled?: true).status == 64))
+    assert Enum.all?(invalid, &(CLI.dispatch(&1).status == 64))
   end
 
   test "project ingest options are order-independent" do
@@ -41,7 +39,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
     archive = zip_archive("valid")
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -50,7 +48,6 @@ defmodule Oli.Release.PreviewQAToolsTest do
           "--url",
           "https://example.test/archive.zip"
         ],
-        enabled?: true,
         request_fun: fn _url, _opts -> {:ok, {:download, 200, [archive]}} end,
         ingest_fun: fn _path, _author -> {:ok, %{id: 1, slug: "safe", title: "Safe"}} end,
         temp_root: temp_directory()
@@ -83,7 +80,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
     end
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -92,7 +89,6 @@ defmodule Oli.Release.PreviewQAToolsTest do
           "--author",
           "email:#{author.email}"
         ],
-        enabled?: true,
         request_fun: request_fun,
         ingest_fun: ingest_fun,
         temp_root: temp_root,
@@ -125,7 +121,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
       expected_url = "#{scheme}://example.test/archive.zip"
 
       result =
-        PreviewQATools.dispatch(
+        CLI.dispatch(
           [
             "projects",
             "ingest",
@@ -134,7 +130,6 @@ defmodule Oli.Release.PreviewQAToolsTest do
             "--author",
             "email:#{author.email}"
           ],
-          enabled?: true,
           request_fun: request_fun,
           temp_root: temp_directory()
         )
@@ -144,7 +139,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
     end
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -153,7 +148,6 @@ defmodule Oli.Release.PreviewQAToolsTest do
           "--author",
           "email:#{author.email}"
         ],
-        enabled?: true,
         request_fun: request_fun
       )
 
@@ -167,17 +161,14 @@ defmodule Oli.Release.PreviewQAToolsTest do
     Oli.Utils.Seeder.AccountsFixtures.author_fixture(system_role_id: admin_id)
 
     ambiguous =
-      PreviewQATools.dispatch(
-        [
-          "projects",
-          "ingest",
-          "--url",
-          "https://example.test/archive.zip",
-          "--author",
-          "default_admin"
-        ],
-        enabled?: true
-      )
+      CLI.dispatch([
+        "projects",
+        "ingest",
+        "--url",
+        "https://example.test/archive.zip",
+        "--author",
+        "default_admin"
+      ])
 
     assert ambiguous.result_code == "author_ambiguous"
 
@@ -188,19 +179,36 @@ defmodule Oli.Release.PreviewQAToolsTest do
     |> Oli.Repo.update!()
 
     inactive =
-      PreviewQATools.dispatch(
-        [
-          "projects",
-          "ingest",
-          "--url",
-          "https://example.test/archive.zip",
-          "--author",
-          "email:#{locked.email}"
-        ],
-        enabled?: true
-      )
+      CLI.dispatch([
+        "projects",
+        "ingest",
+        "--url",
+        "https://example.test/archive.zip",
+        "--author",
+        "email:#{locked.email}"
+      ])
 
     assert inactive.result_code == "author_not_found"
+  end
+
+  test "project ingestion rejects an ordinary author configured as default_admin" do
+    author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
+    previous = Application.get_env(:oli, :preview_qa_tools)
+
+    Application.put_env(:oli, :preview_qa_tools, default_admin_email: author.email)
+    on_exit(fn -> Application.put_env(:oli, :preview_qa_tools, previous) end)
+
+    result =
+      CLI.dispatch([
+        "projects",
+        "ingest",
+        "--url",
+        "https://example.test/archive.zip",
+        "--author",
+        "default_admin"
+      ])
+
+    assert result.result_code == "author_not_found"
   end
 
   test "project ingestion bounds bytes, failures, output, logs, and temporary storage" do
@@ -222,9 +230,8 @@ defmodule Oli.Release.PreviewQAToolsTest do
           temp_root = temp_directory()
 
           result =
-            PreviewQATools.dispatch(
+            CLI.dispatch(
               ["projects", "ingest", "--url", secret_url, "--author", "email:#{author.email}"],
-              enabled?: true,
               request_fun: fn _url, _opts -> {:ok, response} end,
               ingest_fun: fn _path, _author ->
                 {:ok, %{id: 1, slug: "safe", title: "Safe"}}
@@ -251,7 +258,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
     archive = zip_archive("valid archive")
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -260,7 +267,6 @@ defmodule Oli.Release.PreviewQAToolsTest do
           "--author",
           "email:#{author.email}"
         ],
-        enabled?: true,
         request_fun: fn _url, _opts -> {:ok, {:download, 200, [archive]}} end,
         ingest_fun: fn _path, _author -> {:error, "archive secret details"} end,
         temp_root: temp_root
@@ -277,7 +283,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
     archive = zip_archive(String.duplicate("a", 10_000))
 
     result =
-      PreviewQATools.dispatch(
+      CLI.dispatch(
         [
           "projects",
           "ingest",
@@ -286,7 +292,6 @@ defmodule Oli.Release.PreviewQAToolsTest do
           "--author",
           "email:#{author.email}"
         ],
-        enabled?: true,
         request_fun: fn _url, _opts -> {:ok, {:download, 200, [archive]}} end,
         ingest_fun: fn _path, _author -> flunk("unsafe archive must not be ingested") end,
         temp_root: temp_directory(),
@@ -310,8 +315,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
     ]
 
     request_failure =
-      PreviewQATools.dispatch(args,
-        enabled?: true,
+      CLI.dispatch(args,
         request_fun: fn _url, _opts -> raise "secret request failure" end,
         temp_root: temp_directory()
       )
@@ -322,8 +326,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
     archive = zip_archive("valid")
 
     ingest_failure =
-      PreviewQATools.dispatch(args,
-        enabled?: true,
+      CLI.dispatch(args,
         request_fun: fn _url, _opts -> {:ok, {:download, 200, [archive]}} end,
         ingest_fun: fn _path, _author -> raise "secret ingest failure" end,
         temp_root: temp_directory()
@@ -335,11 +338,11 @@ defmodule Oli.Release.PreviewQAToolsTest do
   end
 
   test "listing returns bounded immutable metadata" do
-    result = PreviewQATools.dispatch(["scenarios", "list"], enabled?: true)
+    result = CLI.dispatch(["scenarios", "list"])
 
     assert result.status == 0, result.output
-    assert result.output =~ "preview_smoke"
-    assert result.output =~ "Creates a minimal preview-owned project"
+    assert result.output =~ "oli_torus_getting_started_course"
+    assert result.output =~ "Creates the Getting Started with OLI Torus course"
     refute result.output =~ "ownership:"
   end
 
@@ -361,12 +364,43 @@ defmodule Oli.Release.PreviewQAToolsTest do
           institution: id:#{institution.id}
       """)
 
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", path], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", path])
 
     assert result.status == 0
     assert result.result_code == "ok"
     assert result.output =~ "users_created"
     assert result.output =~ "\"source\":\"file\""
+  end
+
+  test "scenario summaries retain compact progress details" do
+    progress = %{
+      learners: 40,
+      processed: 17,
+      skipped_existing_history: 3,
+      partial: 4,
+      pages_visited: 30,
+      warnings: List.duplicate(%{unbounded: true}, 500),
+      profiles: %{"large" => String.duplicate("x", 10_000)}
+    }
+
+    result = %ExecutionResult{
+      state: %ExecutionState{scenario_results: %{simulate_progress: progress}},
+      verifications: [],
+      errors: []
+    }
+
+    assert %{
+             simulate_progress: %{
+               learners: 40,
+               processed: 17,
+               skipped_existing_history: 3,
+               partial: 4,
+               pages_visited: 30
+             }
+           } = Oli.Scenarios.summarize(result)
+
+    refute Map.has_key?(Oli.Scenarios.summarize(result).simulate_progress, :warnings)
+    refute Map.has_key?(Oli.Scenarios.summarize(result).simulate_progress, :profiles)
   end
 
   test "custom execution preserves use composition, hooks, and assertions" do
@@ -398,7 +432,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
             - release DSL remains available
       """)
 
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", main], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", main])
 
     assert result.status == 0, result.output
     assert result.output =~ "\"verifications_passed\":1"
@@ -426,7 +460,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
           function: Oli.Scenarios.#{unknown}.function/1
       """)
 
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", path], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", path])
 
     assert result.status == 1
 
@@ -436,7 +470,9 @@ defmodule Oli.Release.PreviewQAToolsTest do
   end
 
   test "bundled registry exposes metadata and a packaged immutable path" do
-    assert {:ok, metadata, path} = BundledScenarios.fetch("preview_smoke")
+    assert {:ok, metadata, path} =
+             BundledScenarios.fetch("oli_torus_getting_started_course")
+
     assert metadata["version"] == "1"
     assert File.regular?(path)
     assert :ok = Oli.Scenarios.validate_file(path)
@@ -445,16 +481,17 @@ defmodule Oli.Release.PreviewQAToolsTest do
 
   test "custom scenario input is size bounded before parsing" do
     path = write_yaml(String.duplicate("x", 5_000_001))
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", path], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", path])
 
     assert result.status == 1
     assert result.result_code == "input_too_large"
     assert result.output =~ "5000000 byte limit"
   end
 
+  @tag capture_log: true
   test "parse failure reports that mutations did not begin" do
     path = write_yaml("invalid: [")
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", path], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", path])
 
     assert result.status == 1
     assert result.result_code == "parse_failed"
@@ -465,7 +502,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
     included = write_yaml(String.duplicate("x", 5_000_001))
     root = write_yaml("- use:\n    file: #{Path.basename(included)}\n")
 
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", root], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", root])
 
     assert result.status == 1
     assert result.output =~ "\"partial_mutations_possible\":true"
@@ -479,7 +516,7 @@ defmodule Oli.Release.PreviewQAToolsTest do
         write_yaml("- use:\n    file: #{Path.basename(child)}\n")
       end)
 
-    result = PreviewQATools.dispatch(["scenarios", "run", "--file", root], enabled?: true)
+    result = CLI.dispatch(["scenarios", "run", "--file", root])
 
     assert result.status == 1
     assert result.output =~ "\"partial_mutations_possible\":true"

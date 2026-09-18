@@ -17,6 +17,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     AssertDirective,
     UserDirective,
     EnrollDirective,
+    BulkCreateEnrollUsersDirective,
+    SimulateProgressDirective,
     InstitutionDirective,
     OwnershipDirective,
     InstitutionDiscountDirective,
@@ -73,6 +75,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     "verify",
     "user",
     "enroll",
+    "bulk_create_enroll_users",
+    "simulate_progress",
     "institution",
     "ownership",
     "institution_discount",
@@ -587,6 +591,67 @@ defmodule Oli.Scenarios.DirectiveParser do
 
       {:error, msg} ->
         raise msg
+    end
+  end
+
+  defp parse_directive(%{"bulk_create_enroll_users" => data}) do
+    allowed_attrs = ["section", "prefix", "instructors", "learners"]
+
+    with :ok <-
+           DirectiveValidator.validate_attributes(allowed_attrs, data, "bulk_create_enroll_users") do
+      section = required_non_empty_string(data["section"], "bulk_create_enroll_users.section")
+      prefix = bounded_optional_string(data["prefix"], "bulk", "prefix", 40)
+      instructors = bounded_non_negative_integer(data["instructors"], 0, "instructors", 1_000)
+      learners = bounded_non_negative_integer(data["learners"], 0, "learners", 10_000)
+
+      if instructors + learners == 0 do
+        raise "bulk_create_enroll_users must create at least one instructor or learner"
+      end
+
+      %BulkCreateEnrollUsersDirective{
+        section: section,
+        prefix: prefix,
+        instructors: instructors,
+        learners: learners
+      }
+    else
+      {:error, msg} -> raise msg
+    end
+  end
+
+  defp parse_directive(%{"simulate_progress" => data}) do
+    allowed_attrs = [
+      "section",
+      "users",
+      "seed",
+      "profile",
+      "cohorts",
+      "timing",
+      "pct_correct",
+      "assessment_attempts"
+    ]
+
+    with :ok <- DirectiveValidator.validate_attributes(allowed_attrs, data, "simulate_progress") do
+      reject_removed_progress_options!(data)
+      users = parse_progress_users(data["users"], "simulate_progress.users")
+      {profile, cohorts} = parse_progress_selection(data)
+
+      timing =
+        case Oli.Scenarios.ProgressSimulation.Profiles.normalize_mode(data["timing"]) do
+          {:ok, mode} -> mode
+          {:error, message} -> raise message
+        end
+
+      %SimulateProgressDirective{
+        section: required_non_empty_string(data["section"], "simulate_progress.section"),
+        users: users,
+        seed: bounded_non_negative_integer(data["seed"], 0, "seed", 2_147_483_647),
+        profile: profile,
+        cohorts: cohorts,
+        timing: timing
+      }
+    else
+      {:error, msg} -> raise msg
     end
   end
 
@@ -1217,6 +1282,96 @@ defmodule Oli.Scenarios.DirectiveParser do
           raise unrecognized_directive_message(key)
         end
     end)
+  end
+
+  defp reject_removed_progress_options!(data) do
+    removed = Enum.filter(["pct_correct", "assessment_attempts"], &Map.has_key?(data, &1))
+
+    case removed do
+      [] ->
+        :ok
+
+      _ ->
+        raise "simulate_progress no longer accepts #{Enum.join(removed, " or ")}; use a fixed profile, or lower-level learner directives for exact attempts"
+    end
+  end
+
+  defp parse_progress_selection(%{"profile" => profile} = data) do
+    case Map.has_key?(data, "cohorts") do
+      true -> raise "simulate_progress requires exactly one of profile or cohorts"
+      false -> :ok
+    end
+
+    validate_progress_profile!(profile, "simulate_progress")
+    {profile, nil}
+  end
+
+  defp parse_progress_selection(%{"cohorts" => cohorts}) do
+    {nil, parse_progress_cohorts(cohorts)}
+  end
+
+  defp parse_progress_selection(_data),
+    do: raise("simulate_progress requires exactly one of profile or cohorts")
+
+  defp parse_progress_cohorts(cohorts)
+       when is_list(cohorts) and cohorts != [] and length(cohorts) <= 100 do
+    cohorts
+    |> Enum.with_index()
+    |> Enum.map(fn {cohort, index} -> parse_progress_cohort(cohort, index) end)
+  end
+
+  defp parse_progress_cohorts(_cohorts),
+    do: raise("simulate_progress.cohorts must contain between 1 and 100 cohorts")
+
+  defp parse_progress_cohort(cohort, index) when is_map(cohort) do
+    case DirectiveValidator.validate_attributes(
+           ["profile", "count"],
+           cohort,
+           "simulate_progress.cohorts[#{index}]"
+         ) do
+      :ok -> :ok
+      {:error, message} -> raise message
+    end
+
+    profile =
+      required_non_empty_string(
+        cohort["profile"],
+        "simulate_progress.cohorts[#{index}].profile"
+      )
+
+    validate_progress_profile!(profile, "simulate_progress.cohorts[#{index}]")
+
+    count =
+      case Map.fetch(cohort, "count") do
+        {:ok, value} -> bounded_positive_integer(value, nil, "cohorts[#{index}].count", 100)
+        :error -> raise "simulate_progress.cohorts[#{index}].count is required"
+      end
+
+    %{profile: profile, count: count}
+  end
+
+  defp parse_progress_cohort(_cohort, index),
+    do: raise("simulate_progress.cohorts[#{index}] must be a map")
+
+  defp parse_progress_users(nil, _path), do: nil
+
+  defp parse_progress_users(users, _path)
+       when is_list(users) and users != [] and length(users) <= 100 do
+    case Enum.all?(users, &(is_binary(&1) and &1 != "")) and
+           length(Enum.uniq(users)) == length(users) do
+      true -> users
+      false -> raise "simulate_progress.users must contain unique, non-empty references"
+    end
+  end
+
+  defp parse_progress_users(_users, path),
+    do: raise("#{path} must be a non-empty list of unique scenario user references")
+
+  defp validate_progress_profile!(profile, path) do
+    case Oli.Scenarios.ProgressSimulation.Profiles.resolve(profile) do
+      {:ok, _resolved} -> :ok
+      {:error, message} -> raise "#{path}: #{message}"
+    end
   end
 
   defp valid_directives, do: @valid_directives
@@ -2438,6 +2593,39 @@ defmodule Oli.Scenarios.DirectiveParser do
       :error -> raise "Invalid integer value #{inspect(value)}"
     end
   end
+
+  defp required_non_empty_string(value, _field) when is_binary(value) and value != "", do: value
+  defp required_non_empty_string(_value, field), do: raise("#{field} must be a non-empty string")
+
+  defp bounded_optional_string(nil, default, _field, _max), do: default
+
+  defp bounded_optional_string(value, _default, _field, max)
+       when is_binary(value) and value != "" do
+    if String.length(value) <= max,
+      do: value,
+      else: raise("prefix must be a non-empty string of at most #{max} characters")
+  end
+
+  defp bounded_optional_string(_value, _default, field, max),
+    do: raise("#{field} must be a non-empty string of at most #{max} characters")
+
+  defp bounded_non_negative_integer(nil, default, _field, _max), do: default
+
+  defp bounded_non_negative_integer(value, _default, _field, max)
+       when is_integer(value) and value >= 0 and value <= max,
+       do: value
+
+  defp bounded_non_negative_integer(_value, _default, field, max),
+    do: raise("#{field} must be an integer between 0 and #{max}")
+
+  defp bounded_positive_integer(nil, default, _field, _max), do: default
+
+  defp bounded_positive_integer(value, _default, _field, max)
+       when is_integer(value) and value > 0 and value <= max,
+       do: value
+
+  defp bounded_positive_integer(_value, _default, field, max),
+    do: raise("#{field} must be an integer between 1 and #{max}")
 
   defp parse_optional_float(nil), do: nil
   defp parse_optional_float(value), do: parse_float(value)
