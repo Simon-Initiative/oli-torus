@@ -90,6 +90,7 @@ No feature flags present in this work item. This is an additive, low-risk UI cha
 ## 14. Open Questions & Assumptions
 
 ### Open Questions
+- **Pending Slack question to Jess (design), asked 2026-09-18:** the Figma reference card for a Template row (node `44:805`) shows a green "Free" pill, not the word "Template" this PRD's UX requirements call for. Interim decision: implement literal "Template" text using that same pill styling; if design confirms "Free"/cost-based is correct instead, this needs a follow-up change, and it's still open what a paid template's card should show.
 - Whether the My Section hover treatment (dark overlay + "SELECT TO COPY COURSE SECTION") should extend to Free/Template cards, or stays exclusive to My Section cards — no other card type shows this hover state in the designs reviewed so far; needs designer confirmation.
 - Exact card metadata and sort options beyond what is already in the current implementation.
 - Footer "Next Step" button fill color: Figma's local fallback is `#0073E5`; the repository's synced token `Fill-Buttons-fill-primary` is `#0080FF`. Use the token; flag the drift to design.

@@ -13,7 +13,8 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 
 - `MER-5831` merged to `master` on 2026-09-18 (PR #6855, merge commit `7908b1002e`) and this branch is rebased onto it. Its merge already wired `SectionCreation.permitted_sections/2` into `select_source.ex`, already normalized all source kinds in `table_model.ex` (`is_product?/1`, `is_course?/1`, `source_title/1`, `source_description/1`, `source_identifier/1`), and already made every card — including My Course Sections rows — selectable, proceeding into a working (unstyled) step-2 "Choose what to copy" flow. This superseded the plan's original premise that My Course Sections selection would be a no-op in this ticket.
 - Per Gastón's decision on 2026-09-18: this plan does not add any gating, confirmation, or disabled state to My Course Sections card selection. It builds the visual/discovery layer only. The resulting brief, unstyled-step-2 window is accepted because Torus ships by release rather than on merge, and `MER-5832` (which redesigns step 2) follows this ticket immediately.
-- The My Section hover treatment (dark overlay + "SELECT TO COPY COURSE SECTION") is built only for My Section cards in this plan; extending it to Free/Template cards is out of scope pending designer confirmation (PRD Open Questions) and is not blocked by any phase below.
+- The My Section hover treatment (dark overlay + "SELECT TO COPY COURSE SECTION") is built only for My Section cards in this plan; extending it to Template cards is out of scope pending designer confirmation (PRD Open Questions) and is not blocked by any phase below.
+- **Template tag text, pending Jess (design):** the Figma reference card for a Template row (node `44:805`) shows a green "Free" pill, not the word "Template" the PRD/Jira AC calls for. Interim decision (2026-09-18, Gastón): implement literal "Template" text using that same green pill styling, and confirm with design via Slack; Phase 3 below reflects this interim choice.
 - No new row-kind abstraction is introduced. `MER-5831` already normalized row typing via `is_product?/1`/`is_course?/1`; every phase below builds directly on that existing interface rather than the `{:project,...}|{:publication,...}|{:product,...}|{:previous_section,...}` shape originally floated pre-merge.
 - No feature flag is used (PRD Section 11); this ships as a normal additive change.
 
@@ -21,13 +22,13 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 
 - Goal: establish a regression baseline for the already-shipped (`MER-5831`) My Course Sections query, authorization, and row normalization, and add the one small new piece of logic later phases need: a tag derivation built directly on the existing `is_product?/1`/`is_course?/1` predicates. No new query, no new row-typing abstraction, and no visible UI change yet.
 - Tasks:
-  - [ ] Read `lib/oli/delivery/section_creation.ex` and confirm `permitted_sections/2`/`permitted_sections_query/2` (used already by `select_source.ex`'s `retrieve_all_sources/2`) implement exactly the eligibility rule this ticket needs — no code change expected here, this is a confirmation task.
-  - [ ] Add a small tag-derivation helper in `table_model.ex` (e.g. `tag_variant/1`) that returns `:my_section` when `is_course?/1`, `:free`/`nil` per the existing `render_type_column/3` logic otherwise — built directly on the existing predicates, not a new row-kind shape.
-  - [ ] Confirm the unrecognized-row fallback (neither product nor course) renders no tag rather than raising (FDD Section 10) — already true of `render_type_column/3`'s default branch; add a test if none exists.
+  - [x] Read `lib/oli/delivery/section_creation.ex` and confirm `permitted_sections/2`/`permitted_sections_query/2` (used already by `select_source.ex`'s `retrieve_all_sources/2`) implement exactly the eligibility rule this ticket needs — no code change expected here, this is a confirmation task.
+  - [x] Add a small tag-derivation helper in `table_model.ex` (e.g. `tag_variant/1`) that returns `:template` when `is_product?/1`, `:my_section` when `is_course?/1`, and `nil` otherwise — built directly on the existing predicates, not a new row-kind shape.
+  - [x] Confirm the unrecognized-row fallback (neither product nor course) renders no tag rather than raising (FDD Section 10) — already true of `render_type_column/3`'s default branch; add a test if none exists.
 - Testing Tasks:
-  - [ ] Regression test: an instructor sees only active enrollable sections where they hold an instructor/content-developer role under My Course Sections, confirming this ticket's changes have not altered that existing behavior (AC-004).
-  - [ ] Regression test: an admin actor sees any active enrollable section under My Course Sections, unchanged (AC-005).
-  - [ ] Regression test: a section the existing authorization rule would deny for the current actor is absent from the returned rows, unchanged (AC-006).
+  - [x] Regression test: an instructor sees only active enrollable sections where they hold an instructor/content-developer role under My Course Sections, confirming this ticket's changes have not altered that existing behavior (AC-004) — already covered by `select_source_test.exs`'s `"Instructor course copy sources"` describe block; reran it green rather than duplicating it.
+  - [x] Regression test: an admin actor sees any active enrollable section under My Course Sections, unchanged (AC-005) — already covered by `section_creation_test.exs`'s `"T21 resolves any active enrollable section for an admin"`; reran it green.
+  - [x] Regression test: a section the existing authorization rule would deny for the current actor is absent from the returned rows, unchanged (AC-006) — already covered by `section_creation_test.exs`'s institution-boundary and student-enrollment tests; reran them green.
   - Command(s): `mix test test/oli_web/live/new_course/select_source_test.exs test/oli/delivery/section_creation_test.exs`
 - Definition of Done:
   - The existing My Course Sections eligibility/selection behavior is confirmed unchanged and regression-tested, and the new tag-derivation helper exists and is unit-tested; no rendered markup has changed yet.
@@ -64,7 +65,7 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 
 - Goal: denser cards with a type tag per row kind and the designed My Section hover overlay, leaving the existing, already-working selection click completely untouched.
 - Tasks:
-  - [ ] Add `lib/oli_web/components/design_tokens/primitives/badge.ex` with `attr :variant, :atom, values: [:my_section, :free, nil], default: nil`, rendering nothing when `variant` is `nil`, using the token mapping from the `ui_workflow` brief (`Fill-Accent-fill-accent-purple`/`Text-text-accent-purple` for My Section, `Fill-Chip-Green`/`Text-text-accent-green` for Free).
+  - [ ] Add `lib/oli_web/components/design_tokens/primitives/badge.ex` with `attr :variant, :atom, values: [:my_section, :template, nil], default: nil`, rendering nothing when `variant` is `nil`, using the token mapping from the `ui_workflow` brief (`Fill-Accent-fill-accent-purple`/`Text-text-accent-purple` for My Section; `Fill-Chip-Green`/`Text-text-accent-green` reused for Template as an interim styling choice — the Figma reference card for that row kind shows a green "Free" pill instead of the word "Template", pending confirmation with Jess).
   - [ ] Update `CardListing` to render the badge (via Phase 1's tag-derivation helper) per row and increase card density/metadata per the Figma reference (nodes `44:789`, `44:805`, `44:824`).
   - [ ] Add the My Section hover overlay (dark overlay + "SELECT TO COPY COURSE SECTION", node `44:1459`) as a visual addition only.
   - [ ] Do **not** modify `CardListing`'s existing `phx-click={@selected}`/`phx-value-id` selection markup — it already correctly routes every row kind, including My Course Sections, into the existing `MER-5831` copy-creation flow. Verify by code review that this task list did not touch it.
@@ -75,7 +76,7 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
   - [ ] LiveView regression test: activating a My Course Sections card still proceeds into the existing step-2 copy-options flow exactly as it did before this ticket (no new gating), and activating a Template card still creates a section as before (AC-013).
   - Command(s): `mix test test/oli_web/live/new_course/select_source_test.exs test/oli_web/live/common/card_listing_test.exs`
 - Definition of Done:
-  - Cards visually match the confirmed Figma states for Template/Free/My Section/no-tag, and My Course Sections selection still works exactly as it did before this ticket (verified by regression test, not by inspection).
+  - Cards visually match the confirmed Figma states for Template (interim text, pending Jess)/My Section/no-tag, and My Course Sections selection still works exactly as it did before this ticket (verified by regression test, not by inspection).
 - Gate:
   - Phase 3 tests pass; existing Template-card and My-Course-Sections-card selection/creation regression tests pass unmodified.
 - Dependencies:
