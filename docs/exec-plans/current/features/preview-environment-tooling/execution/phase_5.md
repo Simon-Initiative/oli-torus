@@ -33,10 +33,10 @@ Phase: `5`
 - [x] Tests added or updated
   - Added full scenario integration coverage and public manifest/Playwright-independence contract
     coverage; updated preview configuration terminology.
-- [ ] Required verification commands run
-  - Automated commands pass. Fresh-database UI smoke tests, release `bin/seed` execution alongside
-    a server, the Playwright deployment suite, and a disposable Argo CD lifecycle remain hybrid
-    checks requiring a running environment.
+- [x] Required verification commands run
+  - The fresh-database UI, release `bin/seed` alongside a server, and disposable Argo CD lifecycle
+    checks were recorded complete in the work-item plan at commit `deb313aa376fa3c0bc024be8dfc7921c73b2e2f3`.
+  - The remaining Playwright fixture-independence check passed on 2026-09-18, as recorded below.
 - [x] Results captured
   - Final consolidated focused suite (course scenario, manifest contract, preview configuration, and
     seeding CLI): 32 tests, 0 failures.
@@ -48,6 +48,20 @@ Phase: `5`
     successfully with `PREVIEW_QA_TOOLS_ENABLED` explicitly unset, confirming that the flag governs
     only web-accessible QA features.
   - Harness work-item validation and `git diff --check`: passed.
+  - [PR Playwright Suite run 35372591197](https://github.com/Simon-Initiative/oli-torus/actions/runs/35372591197/job/105689806478)
+    passed on commit `deb313aa376fa3c0bc024be8dfc7921c73b2e2f3` on 2026-09-18.
+    `npx playwright test --grep @pr --reporter=line` ran 4 Chrome tests: 4 passed in 2.6 minutes,
+    with no failed or skipped tests. Coverage included author and independent-learner self-service
+    lifecycles plus scenario-provisioned system-admin and instructor credential lifecycles.
+  - The CI workflow created an isolated `MIX_ENV=ci_e2e` database with baseline application seeds.
+    The provisioned-role tests loaded `playwright_credential_roles.yaml` through their own
+    `seedScenario` fixture and `/test/scenario-yaml`; the workflow invoked neither the bundled
+    Getting Started scenario nor the deployment seed Job.
+  - `mix test test/oli/seeding/preview_seed_manifest_examples_test.exs`: 3 tests, 0 failures.
+    Its independence check scans Playwright source, fixtures, and configuration for the bundled
+    scenario ID, deployment Job name, and startup-status dependencies. A separate source scan of
+    `assets/automation` also found no references to `oli_torus_getting_started_course`,
+    `oli-torus-preview-seed`, `PREVIEW_QA_SEED_SCENARIO`, `startup-status`, or `startup_status`.
 
 ## Work-Item Sync
 
@@ -82,8 +96,8 @@ Phase: `5`
 ## Done Definition
 
 - [x] Phase tasks complete
-- [ ] Tests and verification pass
-  - Automated verification passes; the explicitly hybrid environment checks remain open in the
-    Phase 5 testing tasks and gate.
+- [x] Tests and verification pass
+  - The Phase 5 testing tasks are complete in the work-item plan; the passing CI run and independence
+    contract above close the final Playwright verification item.
 - [x] Review completed when enabled
 - [x] Validation passes
