@@ -68,7 +68,7 @@ Requirements are found in requirements.yml
 - Implementation surface is Phoenix LiveView/HEEx, not React (`OliWeb.Common.CardListing`, `OliWeb.Delivery.NewCourse.{SelectSource,TableModel}`, `OliWeb.Common.Listing`).
 - Reuse the repository's Figma-synced semantic token layer (`assets/tailwind.tokens.js`, via `tailwind.plugins.js`'s `tokenColorPlugin`) for all new colors (card surface/border, tag colors, tooltip surface/border/text) instead of hardcoding hex values; see the token-mapping table in the `ui_workflow` brief.
 - Reuse the existing `GlobalTooltip` phx-hook for both filter-button tooltips instead of building a new tooltip mechanism.
-- `OliWeb.Common.Stepper` is shared with `lib/oli_web/live/delivery/student_onboarding/wizard.ex`; any left-panel/footer styling change must be scoped to the `course_creation_stepper` id, following the existing `if @id == "course_creation_stepper"` conditional already present in that component.
+- `OliWeb.Common.Stepper` is shared with `lib/oli_web/live/delivery/student_onboarding/wizard.ex`; any left-panel/footer styling change must be scoped to the course-creation caller only. Implemented (Phase 5) via an explicit `attr :variant, :atom, default: :default, values: [:default, :course_creation]`, not the `@id == "course_creation_stepper"` conditional originally described here — a `$harness-review` finding that the string-coupling pattern was about to recur a third time with no compile-time safety net.
 - Code review should include `.review/ui.md` (UX/accessibility/visual behavior) and `.review/security.md`/`.review/performance.md` per repository default policy; `.review/elixir.md` applies given the LiveView changes.
 
 ## 11. Feature Flagging, Rollout & Migration
@@ -77,15 +77,15 @@ No feature flags present in this work item. This is an additive, low-risk UI cha
 
 ## 12. Telemetry & Success Metrics
 
-- Emit or extend an existing telemetry/AppSignal signal when the My Course Sections filter tab is selected and when a My Course Sections card is activated, to give the `MER-5832` team visibility into real usage of the already-functional flow ahead of its step-2 redesign (aggregate counts only, no section titles or user-identifying content).
+- Emit or extend an existing telemetry/AppSignal signal when the My Course Sections filter tab is selected and when a My Course Sections card is activated, to give the `MER-5832` team visibility into real usage of the already-functional flow ahead of its step-2 redesign (aggregate counts only, no section titles or user-identifying content). **Implemented in Phase 6** as two new events (no pre-existing signal to extend): `[:oli, :course_builder, :my_course_sections_filter_selected]` and `[:oli, :course_builder, :my_course_sections_card_activated]`, both `%{count: 1}` measurements with empty `%{}` metadata.
 - Success signal for this ticket: no regression in existing Template-based or My-Course-Sections-based section-creation completion rate, and the My Course Sections tab renders without error for eligible instructors/admins in production telemetry.
 
 ## 13. Risks & Mitigations
 
-- Risk: `OliWeb.Common.Stepper` styling changes leak into the unrelated student-onboarding wizard. Mitigation: scope every left-panel/footer style change to the `course_creation_stepper` id and add a regression test asserting the onboarding wizard's rendered output is unchanged.
+- Risk: `OliWeb.Common.Stepper` styling changes leak into the unrelated student-onboarding wizard. Mitigation: scope every left-panel/footer style change to an explicit `variant` attr set only by the course-creation caller (Phase 5) and add a regression test asserting the onboarding wizard's rendered output is unchanged (`test/oli_web/live/delivery/onboarding_wizard/student_onboarding_wizard_test.exs`).
 - Risk: instructors reach the existing, unstyled step-2 "Choose what to copy" UI via the newly-prominent, polished My Course Sections tab, producing a visually inconsistent hand-off between a polished step 1 and a rough step 2. Mitigation: accepted as a brief, release-scoped window rather than something to fix here — Torus ships by release rather than immediately on merge, and `MER-5832` (which redesigns step 2) follows this ticket immediately.
 - Risk: this ticket's refactor of `select_source.ex`/`table_model.ex` (to add tabs/tags) accidentally changes or forks the "who can see this section" behavior already implemented by `MER-5841`/`MER-5831`. Mitigation: touch only presentation logic; add a regression test proving a section `MER-5841`'s contract would deny still never appears in the My Course Sections response after this ticket's changes.
-- Risk: color/token drift between the Figma frame's local fallback values and the repository's synced `tailwind.tokens.js` (already found once, on the footer "Next Step" button fill). Mitigation: always resolve by token name, not by the frame's literal hex fallback, and flag any drift found back to design rather than picking a value unilaterally.
+- Risk: color/token drift between the Figma frame's local fallback values and the repository's synced `tailwind.tokens.js` (found on the footer "Next Step" button fill). Mitigation: always resolve by token name, not by the frame's literal hex fallback, and flag any drift found back to design rather than picking a value unilaterally. **Materialized in Phase 5**: the synced token itself (`Fill-Buttons-fill-primary`, `#0080FF`) turned out to fail WCAG AA contrast (~3.8:1) against the button's existing white text; resolved by using the same token family's `-bold` variant (`#0062F2`, ~5.2:1) instead — a token-layer choice, not a hardcoded hex, but one step beyond "just use the token name" once that token was shown unsafe for this pairing.
 
 ## 14. Open Questions & Assumptions
 
@@ -117,6 +117,14 @@ No feature flags present in this work item. This is an additive, low-risk UI cha
 
 ## 16. Definition of Done
 
-- [ ] PRD sections complete
-- [ ] requirements.yml captured and valid
-- [ ] validation passes
+- [x] PRD sections complete
+- [x] requirements.yml captured and valid
+- [x] validation passes
+
+## Decision Log
+
+### 2026-09-18 - Reconcile PRD with as-built implementation after all 6 phases
+- Change: Section 10 (Stepper sharing constraint), Section 12 (telemetry), and Section 13 (risks) updated to describe the actual implemented mechanisms instead of the originally-proposed ones.
+- Reason: two mid-implementation `$harness-review` findings changed the concrete approach from what this PRD originally described: (1) the `Stepper` component's shared-instance scoping was implemented as an explicit `variant` attr instead of the `@id ==` string-comparison conditional this PRD assumed; (2) the "Next Step" button's fill color, resolved by using the repo's synced token per this PRD's own stated policy, turned out to fail WCAG AA contrast, requiring a further token-family substitution beyond "just use the token."
+- Evidence: `phase-5-execution-record.md` (Review Loop section), `lib/oli_web/live/common/stepper/stepper.ex` (`attr :variant`), commit `a465b7dead` ("Phase 5: fix the wizard step-3 copy and scope Cancel/Next Step footer colors...").
+- Impact: no change to scope, acceptance criteria, or user-visible behavior — only to the documented implementation mechanism, so future readers of this PRD don't chase a conditional pattern that was superseded during implementation.
