@@ -32,12 +32,12 @@ requirements:
     existing GlobalTooltip hook, with a keyboard/focus-triggered equivalent.
   status: proposed
   id: FR-005
-- title: Add a purely visual hover state to My Course Sections cards without enabling
-    selection
+- title: Add the designed hover state to My Course Sections cards without disabling
+    the selection behavior MER-5831 already wired up
   description: My Course Sections cards get the designed hover treatment (darkened
-    overlay plus 'SELECT TO COPY COURSE SECTION' label) as a visual-only affordance;
-    activating the card must remain a no-op in this ticket, since the real copy action
-    ships in MER-5832.
+    overlay plus 'SELECT TO COPY COURSE SECTION' label). The card is already selectable
+    via the section-copy flow MER-5831 shipped (merged 2026-09-18); this ticket must
+    not add, remove, or gate that click behavior, only its visual presentation.
   status: proposed
   id: FR-006
 - title: Update the wizard's left-panel step copy and footer styling for step 1 only,
@@ -148,16 +148,17 @@ acceptance_criteria:
   id: AC-011
 - title: Hovering a My Course Sections card shows the darkened overlay with the 'SELECT
     TO COPY COURSE SECTION' label
-  requirement: Add a purely visual hover state to My Course Sections cards without
-    enabling selection
+  requirement: Add the designed hover state to My Course Sections cards without disabling
+    the selection behavior MER-5831 already wired up
   status: proposed
   verification_method: manual
   proofs: []
   id: AC-012
-- title: Activating a My Course Sections card performs no navigation, copy, or section
-    creation in this ticket, while the existing Template-card selection flow is unaffected
-  requirement: Add a purely visual hover state to My Course Sections cards without
-    enabling selection
+- title: Activating a My Course Sections card proceeds into the existing MER-5831
+    section-copy flow exactly as it did before this ticket, with no additional gating
+    added, while the existing Template-card selection flow is unaffected
+  requirement: Add the designed hover state to My Course Sections cards without disabling
+    the selection behavior MER-5831 already wired up
   status: proposed
   verification_method: automated
   proofs: []

@@ -7,36 +7,36 @@ Scope and reference artifacts:
 
 ## Scope
 
-Update step 1 of 3 ("Select source materials") of the section-creation wizard: add All Sources / Templates / My Course Sections filter tabs with sort-order preservation, scope My Course Sections to the current instructor's eligible sections via `MER-5841`'s already-merged authorization contract, redesign source cards with type tags and a visual-only "My Section" hover state, add the new-feature banner and filter tooltips, and restyle the wizard's left-panel copy and footer for step 1 only — without touching steps 2/3, without any Blueprint concept, and without leaking styling changes into the shared `OliWeb.Common.Stepper`'s other consumer (`student_onboarding/wizard.ex`). No new schema, migration, or backend authorization logic.
+Update step 1 of 3 ("Select source materials") of the section-creation wizard: add All Sources / Templates / My Course Sections filter tabs with sort-order preservation, redesign source cards with type tags and the "My Section" hover state, add the new-feature banner and filter tooltips, and restyle the wizard's left-panel copy and footer for step 1 only — without touching steps 2/3, without any Blueprint concept, and without leaking styling changes into the shared `OliWeb.Common.Stepper`'s other consumer (`student_onboarding/wizard.ex`). No new schema, migration, or backend authorization logic: `MER-5841` (authorization) and `MER-5831` (the My Course Sections query, row normalization, and the copy-creation flow) are both already merged and already wired up; this plan only builds the presentation layer on top of them and explicitly does not gate the selection behavior they already provide.
 
 ## Clarifications & Default Assumptions
 
-- `MER-5841`'s authorization/query contract is sufficient for My Course Sections eligibility; Phase 1 confirms the exact callable function by reading the merged code rather than guessing, per FDD Section 3's "Unknowns to confirm."
+- `MER-5831` merged to `master` on 2026-09-18 (PR #6855, merge commit `7908b1002e`) and this branch is rebased onto it. Its merge already wired `SectionCreation.permitted_sections/2` into `select_source.ex`, already normalized all source kinds in `table_model.ex` (`is_product?/1`, `is_course?/1`, `source_title/1`, `source_description/1`, `source_identifier/1`), and already made every card — including My Course Sections rows — selectable, proceeding into a working (unstyled) step-2 "Choose what to copy" flow. This superseded the plan's original premise that My Course Sections selection would be a no-op in this ticket.
+- Per Gastón's decision on 2026-09-18: this plan does not add any gating, confirmation, or disabled state to My Course Sections card selection. It builds the visual/discovery layer only. The resulting brief, unstyled-step-2 window is accepted because Torus ships by release rather than on merge, and `MER-5832` (which redesigns step 2) follows this ticket immediately.
 - The My Section hover treatment (dark overlay + "SELECT TO COPY COURSE SECTION") is built only for My Section cards in this plan; extending it to Free/Template cards is out of scope pending designer confirmation (PRD Open Questions) and is not blocked by any phase below.
-- Row-kind typing (`{:project,...}|{:publication,...}|{:product,...}|{:previous_section,...}`) is done now, in Phase 1, so later phases and `MER-5832` build on one consistent shape rather than the current structural `Map.has_key?(item, :type)` check.
+- No new row-kind abstraction is introduced. `MER-5831` already normalized row typing via `is_product?/1`/`is_course?/1`; every phase below builds directly on that existing interface rather than the `{:project,...}|{:publication,...}|{:product,...}|{:previous_section,...}` shape originally floated pre-merge.
 - No feature flag is used (PRD Section 11); this ships as a normal additive change.
 
-## Phase 1: My Course Sections query and row-kind typing
+## Phase 1: Confirm the existing My Course Sections integration and add the tag-rendering helper
 
-- Goal: make My Course Sections rows available to the rest of the LiveComponent, correctly authorized and typed, with no visible UI change yet.
+- Goal: establish a regression baseline for the already-shipped (`MER-5831`) My Course Sections query, authorization, and row normalization, and add the one small new piece of logic later phases need: a tag derivation built directly on the existing `is_product?/1`/`is_course?/1` predicates. No new query, no new row-typing abstraction, and no visible UI change yet.
 - Tasks:
-  - [ ] Confirm and call `MER-5841`'s exposed authorization/query function for "sections the actor may create from" (read the merged code in `lib/oli/delivery.ex`, `lib/oli/delivery/sections/section_specification.ex`, `lib/oli_web/live/new_course/select_source.ex` first; add a one-line wrapper only if no directly callable function exists).
-  - [ ] Extend `SelectSource.retrieve_all_sources/3` to also fetch and tag My Course Sections rows alongside the existing Template rows, fetched once per mount.
-  - [ ] Add `TableModel.row_kind/1` returning `{:project, item} | {:publication, item} | {:product, item} | {:previous_section, item}`; re-express `is_product?/1` and `render_type_column/3` in terms of it without changing their existing behavior for Template/Project rows.
-  - [ ] Ensure an unrecognized row shape falls back to `{:project, item}` rather than raising (FDD Section 10).
+  - [ ] Read `lib/oli/delivery/section_creation.ex` and confirm `permitted_sections/2`/`permitted_sections_query/2` (used already by `select_source.ex`'s `retrieve_all_sources/2`) implement exactly the eligibility rule this ticket needs — no code change expected here, this is a confirmation task.
+  - [ ] Add a small tag-derivation helper in `table_model.ex` (e.g. `tag_variant/1`) that returns `:my_section` when `is_course?/1`, `:free`/`nil` per the existing `render_type_column/3` logic otherwise — built directly on the existing predicates, not a new row-kind shape.
+  - [ ] Confirm the unrecognized-row fallback (neither product nor course) renders no tag rather than raising (FDD Section 10) — already true of `render_type_column/3`'s default branch; add a test if none exists.
 - Testing Tasks:
-  - [ ] Unit/LiveView test: an instructor sees only active enrollable sections where they hold an instructor/content-developer role under My Course Sections (AC-004).
-  - [ ] Unit/LiveView test: an admin actor sees any active enrollable section under My Course Sections (AC-005).
-  - [ ] Unit/LiveView test: a section `MER-5841`'s rule would deny for the current actor is absent from the returned rows, not merely hidden client-side (AC-006).
-  - Command(s): `mix test test/oli_web/live/new_course/select_source_test.exs`
+  - [ ] Regression test: an instructor sees only active enrollable sections where they hold an instructor/content-developer role under My Course Sections, confirming this ticket's changes have not altered that existing behavior (AC-004).
+  - [ ] Regression test: an admin actor sees any active enrollable section under My Course Sections, unchanged (AC-005).
+  - [ ] Regression test: a section the existing authorization rule would deny for the current actor is absent from the returned rows, unchanged (AC-006).
+  - Command(s): `mix test test/oli_web/live/new_course/select_source_test.exs test/oli/delivery/section_creation_test.exs`
 - Definition of Done:
-  - My Course Sections rows are fetched, correctly authorized, and typed; existing Template/Project rendering and tests are unaffected.
+  - The existing My Course Sections eligibility/selection behavior is confirmed unchanged and regression-tested, and the new tag-derivation helper exists and is unit-tested; no rendered markup has changed yet.
 - Gate:
-  - All Phase 1 tests pass; no change yet to any rendered markup (verified by running the existing `select_source_test.exs` suite unmodified assertions still green).
+  - All Phase 1 tests pass; the existing `select_source_test.exs`/`section_creation_test.exs` suites are green unmodified in behavior (only new regression assertions added).
 - Dependencies:
-  - None — first phase.
+  - None — first phase. (No dependency on `MER-5841`/`MER-5831` landing, since both are already merged and rebased onto this branch.)
 - Parallelizable Work:
-  - None; every later phase depends on row-kind typing existing.
+  - None; Phase 3's tag rendering depends on the helper added here.
 
 ## Phase 2: Filter tabs (All Sources / Templates / My Course Sections)
 
@@ -56,30 +56,30 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 - Gate:
   - Phase 2 tests pass; existing Template-only regression assertions in `select_source_test.exs` still pass unmodified.
 - Dependencies:
-  - Phase 1 (needs My Course Sections rows and row kind to exist to filter over).
+  - Phase 1 (sequencing only, for the Phase 1 regression baseline; the underlying My Course Sections rows and `is_product?/1`/`is_course?/1` predicates this phase filters over already exist independent of Phase 1's new tag helper).
 - Parallelizable Work:
   - Safe to build in parallel with Phase 4 (banner/tooltips) and Phase 5 (Stepper), since neither touches `filter/3` or the tab markup.
 
 ## Phase 3: Card redesign, type tags, and the My Section hover state
 
-- Goal: denser cards with a type tag per row kind and the designed My Section hover overlay, with selection staying a no-op for My Course Sections rows.
+- Goal: denser cards with a type tag per row kind and the designed My Section hover overlay, leaving the existing, already-working selection click completely untouched.
 - Tasks:
   - [ ] Add `lib/oli_web/components/design_tokens/primitives/badge.ex` with `attr :variant, :atom, values: [:my_section, :free, nil], default: nil`, rendering nothing when `variant` is `nil`, using the token mapping from the `ui_workflow` brief (`Fill-Accent-fill-accent-purple`/`Text-text-accent-purple` for My Section, `Fill-Chip-Green`/`Text-text-accent-green` for Free).
-  - [ ] Update `CardListing` to render the badge per row kind and increase card density/metadata per the Figma reference (nodes `44:789`, `44:805`, `44:824`).
-  - [ ] Add the My Section hover overlay (dark overlay + "SELECT TO COPY COURSE SECTION", node `44:1459`) as a purely visual state.
-  - [ ] Update the card click handler so a `{:previous_section, ...}` row's activation is a true no-op (`{:noreply, socket}`), while the existing Template/Project `source_selection` flow is unchanged.
+  - [ ] Update `CardListing` to render the badge (via Phase 1's tag-derivation helper) per row and increase card density/metadata per the Figma reference (nodes `44:789`, `44:805`, `44:824`).
+  - [ ] Add the My Section hover overlay (dark overlay + "SELECT TO COPY COURSE SECTION", node `44:1459`) as a visual addition only.
+  - [ ] Do **not** modify `CardListing`'s existing `phx-click={@selected}`/`phx-value-id` selection markup — it already correctly routes every row kind, including My Course Sections, into the existing `MER-5831` copy-creation flow. Verify by code review that this task list did not touch it.
 - Testing Tasks:
   - [ ] LiveView test: Template card shows "Template" tag, My Course Sections card shows "My Section" tag, a card that is neither shows no tag (AC-007).
   - [ ] LiveView/manual test: the redesigned grid shows more cards per viewport and renders title/description/date/tag without truncation regressions (AC-008).
   - [ ] Manual visual check: hovering a My Course Sections card shows the darkened overlay and label per the Figma reference (AC-012).
-  - [ ] LiveView test: activating a My Course Sections card produces no navigation/creation, while activating a Template card still creates a section as before (AC-013).
+  - [ ] LiveView regression test: activating a My Course Sections card still proceeds into the existing step-2 copy-options flow exactly as it did before this ticket (no new gating), and activating a Template card still creates a section as before (AC-013).
   - Command(s): `mix test test/oli_web/live/new_course/select_source_test.exs test/oli_web/live/common/card_listing_test.exs`
 - Definition of Done:
-  - Cards visually match the confirmed Figma states for Template/Free/My Section/no-tag, and My Course Sections selection is verifiably inert.
+  - Cards visually match the confirmed Figma states for Template/Free/My Section/no-tag, and My Course Sections selection still works exactly as it did before this ticket (verified by regression test, not by inspection).
 - Gate:
-  - Phase 3 tests pass; existing Template-card selection/creation regression tests pass unmodified.
+  - Phase 3 tests pass; existing Template-card and My-Course-Sections-card selection/creation regression tests pass unmodified.
 - Dependencies:
-  - Phase 1 (row kind).
+  - Phase 1 (tag-derivation helper).
 - Parallelizable Work:
   - Safe to build in parallel with Phase 2, 4, and 5 once Phase 1 lands, since it touches `CardListing`/the new badge primitive rather than the tab or filter logic.
 
@@ -146,12 +146,12 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 
 ## Parallelization Notes
 
-- Phase 1 must land first; it is the only hard serial dependency (row typing + My Course Sections data availability).
+- Phase 1 lands first to establish the regression baseline and the tag-derivation helper Phase 3 needs; it is intentionally light now that `MER-5831` already ships the underlying query/data.
 - Phases 2, 3, 4, and 5 touch disjoint files (`select_source.ex` tab/filter logic; `card_listing.ex` + new badge primitive; `select_source.ex` banner/tooltip markup; `new_course.ex` + `stepper.ex`) and can be implemented and reviewed in parallel once Phase 1 lands.
 - Phase 6 is the integration/closeout phase and must run last.
 
 ## Phase Gate Summary
 
-- Gate A (after Phase 1): My Course Sections rows are correctly authorized and typed; no visible UI change yet; existing tests green.
+- Gate A (after Phase 1): the already-shipped My Course Sections authorization/selection behavior is regression-tested and confirmed unchanged; the new tag-derivation helper exists and is unit-tested; no visible UI change yet.
 - Gate B (after Phases 2-5, any order): filter tabs, card redesign/hover, banner/tooltips, and wizard copy/footer restyle each pass their own phase's tests independently, with no cross-phase regression.
 - Gate C (after Phase 6): full accessibility/telemetry/regression pass is green, `ui_workflow` visual QA is closed or explicitly escalated to human review, and the ticket is ready for `harness-update_docs` (per `informal.md`'s existing "Follow-up: doc reconciliation" note) before PR close.

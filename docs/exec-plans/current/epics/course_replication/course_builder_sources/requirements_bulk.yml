@@ -14,8 +14,8 @@ requirements:
   - title: "Add keyboard-accessible hover tooltips to the Templates and My Course Sections filter buttons"
     description: "Both filter buttons get a hover tooltip with agreed copy, reusing the existing GlobalTooltip hook, with a keyboard/focus-triggered equivalent."
     status: proposed
-  - title: "Add a purely visual hover state to My Course Sections cards without enabling selection"
-    description: "My Course Sections cards get the designed hover treatment (darkened overlay plus 'SELECT TO COPY COURSE SECTION' label) as a visual-only affordance; activating the card must remain a no-op in this ticket, since the real copy action ships in MER-5832."
+  - title: "Add the designed hover state to My Course Sections cards without disabling the selection behavior MER-5831 already wired up"
+    description: "My Course Sections cards get the designed hover treatment (darkened overlay plus 'SELECT TO COPY COURSE SECTION' label). The card is already selectable via the section-copy flow MER-5831 shipped (merged 2026-09-18); this ticket must not add, remove, or gate that click behavior, only its visual presentation."
     status: proposed
   - title: "Update the wizard's left-panel step copy and footer styling for step 1 only, scoped away from the student-onboarding wizard"
     description: "The section-creation wizard's left-panel 3-step titles/descriptions and footer (Cancel/Next Step) button styling are updated for step 1 of 3 only. OliWeb.Common.Stepper is shared with the student-onboarding wizard, so the change must be scoped to the course_creation_stepper id and must not alter the student-onboarding wizard's appearance."
@@ -81,12 +81,12 @@ acceptance_criteria:
     verification_method: automated
     proofs: []
   - title: "Hovering a My Course Sections card shows the darkened overlay with the 'SELECT TO COPY COURSE SECTION' label"
-    requirement: "Add a purely visual hover state to My Course Sections cards without enabling selection"
+    requirement: "Add the designed hover state to My Course Sections cards without disabling the selection behavior MER-5831 already wired up"
     status: proposed
     verification_method: manual
     proofs: []
-  - title: "Activating a My Course Sections card performs no navigation, copy, or section creation in this ticket, while the existing Template-card selection flow is unaffected"
-    requirement: "Add a purely visual hover state to My Course Sections cards without enabling selection"
+  - title: "Activating a My Course Sections card proceeds into the existing MER-5831 section-copy flow exactly as it did before this ticket, with no additional gating added, while the existing Template-card selection flow is unaffected"
+    requirement: "Add the designed hover state to My Course Sections cards without disabling the selection behavior MER-5831 already wired up"
     status: proposed
     verification_method: automated
     proofs: []
