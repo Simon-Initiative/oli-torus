@@ -416,6 +416,90 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     end
   end
 
+  describe "source filter tabs" do
+    setup [:instructor_conn]
+
+    test "renders all three tabs with accessible names and the correct selected state", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "button[role='tab'][aria-selected='true']", "All Sources")
+      assert has_element?(view, "button[role='tab'][aria-selected='false']", "Templates")
+      assert has_element?(view, "button[role='tab'][aria-selected='false']", "My Course Sections")
+    end
+
+    test "changing the active tab does not reset the previously selected sort order", %{
+      conn: conn
+    } do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Zeta Course"})
+      insert(:section, %{base_project: project, title: "Alpha Course"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("form#sort")
+      |> render_change(%{sort_by: "title"})
+
+      sorted_last_row =
+        view
+        |> element(".card-deck:last-child")
+        |> render()
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      view
+      |> element("button[role='tab']", "All Sources")
+      |> render_click()
+
+      assert view
+             |> element(".card-deck:last-child")
+             |> render() == sorted_last_row
+    end
+
+    test "a search performed under one tab never returns rows belonging to a different tab", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      template =
+        insert(:section, %{
+          open_and_free: true,
+          type: :blueprint,
+          title: "Chemistry Template"
+        })
+
+      %Publication{project: project} = insert(:publication)
+
+      my_section =
+        insert(:section, %{base_project: project, type: :enrollable, title: "Chemistry Copy"})
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, my_section.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      view
+      |> element("input[placeholder=\"Search...\"]")
+      |> render_blur(%{value: "Chemistry"})
+
+      view
+      |> element("button", "Search")
+      |> render_click()
+
+      assert has_element?(view, "h5", template.title)
+      refute has_element?(view, "h5", my_section.title)
+    end
+  end
+
   describe "Independet instructor - Step 1" do
     setup [:instructor_conn]
 

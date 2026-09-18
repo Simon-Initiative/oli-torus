@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   alias Oli.Delivery.Sections.SectionSpecification
   alias OliWeb.Common.{Filter, FilterBox, Listing}
   alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Delivery.NewCourse.TableModel
 
   alias Phoenix.LiveView.JS
 
@@ -15,10 +16,12 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     sort_order: :asc,
     query: "",
     applied_query: "",
-    selection: nil
+    selection: nil,
+    source_filter: :all
   }
 
   @default_view_type :card
+  @source_results_id "select_source_results"
 
   def update(
         %{
@@ -41,7 +44,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       sources = retrieve_all_sources(actor, section_spec)
 
       {total_count, table_model} =
-        OliWeb.Delivery.NewCourse.TableModel.new(sources, ctx)
+        TableModel.new(sources, ctx)
         |> elem(1)
         |> get_table_model_and_count(sources, params)
 
@@ -66,25 +69,22 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         source ->
           params = Map.put(socket.assigns.params, :selection, source)
 
-          {total_count, table_model} =
-            get_table_model_and_count(
-              socket.assigns.table_model,
-              socket.assigns.sources,
-              params
-            )
-
-          {:ok,
-           assign(socket, total_count: total_count, table_model: table_model, params: params)}
+          {:ok, update_source_list(socket, params)}
       end
     end
   end
 
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
-    assigns = assign(assigns, :changeset, to_form(%{}, as: :view))
+    assigns =
+      assigns
+      |> assign(:changeset, to_form(%{}, as: :view))
+      |> assign(:source_results_id, @source_results_id)
 
     ~H"""
     <div class="w-full">
+      <.source_filter_tabs source_filter={@params[:source_filter]} myself={@myself} />
+
       <FilterBox.render
         table_model={@table_model}
         sort={JS.push("sort", target: @myself)}
@@ -136,18 +136,20 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         </:extra_opts>
       </FilterBox.render>
 
-      <Listing.render
-        filter={@params[:applied_query]}
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@params[:offset]}
-        limit={@params[:limit]}
-        selected={@on_select}
-        sort={JS.push("sort", target: @myself)}
-        page_change={JS.push("page_change", target: @myself)}
-        show_bottom_paging={false}
-        cards_view={is_cards_view?(@role, @view_type)}
-      />
+      <div id={@source_results_id}>
+        <Listing.render
+          filter={@params[:applied_query]}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@params[:offset]}
+          limit={@params[:limit]}
+          selected={@on_select}
+          sort={JS.push("sort", target: @myself)}
+          page_change={JS.push("page_change", target: @myself)}
+          show_bottom_paging={false}
+          cards_view={is_cards_view?(@role, @view_type)}
+        />
+      </div>
 
       <%= if is_lms_instructor?(@role) and is_nil(@current_user.author) do %>
         <div class="card max-w-lg mx-auto">
@@ -167,6 +169,82 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       <% end %>
     </div>
     """
+  end
+
+  attr :source_filter, :atom, required: true
+  attr :myself, :any, required: true
+
+  defp source_filter_tabs(assigns) do
+    assigns = assign(assigns, :results_id, @source_results_id)
+
+    ~H"""
+    <div class="flex gap-4 items-center mb-4" role="tablist" aria-label="Source filters">
+      <.source_filter_tab
+        filter={:all}
+        label="All Sources"
+        active={@source_filter == :all}
+        results_id={@results_id}
+        myself={@myself}
+      />
+      <.source_filter_tab
+        filter={:templates}
+        label="Templates"
+        active={@source_filter == :templates}
+        results_id={@results_id}
+        myself={@myself}
+      />
+      <.source_filter_tab
+        filter={:my_sections}
+        label="My Course Sections"
+        active={@source_filter == :my_sections}
+        results_id={@results_id}
+        myself={@myself}
+      />
+    </div>
+    """
+  end
+
+  attr :filter, :atom, required: true
+  attr :label, :string, required: true
+  attr :active, :boolean, required: true
+  attr :results_id, :string, required: true
+  attr :myself, :any, required: true
+
+  defp source_filter_tab(assigns) do
+    ~H"""
+    <button
+      type="button"
+      id={"source-filter-tab-#{@filter}"}
+      role="tab"
+      aria-selected={to_string(@active)}
+      aria-controls={@results_id}
+      phx-click="filter_source"
+      phx-value-filter={@filter}
+      phx-target={@myself}
+      class={[
+        "p-2.5 h-[35px] rounded-[3px] border font-semibold text-base",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+        if(@active,
+          do: "bg-Fill-Accent-fill-accent-blue border-Text-text-button text-Text-text-button",
+          else: "bg-Background-bg-primary border-Border-border-default text-Text-text-high"
+        )
+      ]}
+    >
+      {@label}
+    </button>
+    """
+  end
+
+  defp update_source_list(socket, params, opts \\ [update_sort_params: false]) do
+    {total_count, table_model} =
+      get_table_model_and_count(
+        socket.assigns.table_model,
+        socket.assigns.sources,
+        params,
+        opts
+      )
+
+    assign(socket, total_count: total_count, table_model: table_model, params: params)
   end
 
   defp get_table_model_and_count(
@@ -195,23 +273,33 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   end
 
   defp filter(table_model, sources, params) do
-    case params.applied_query do
-      "" ->
-        Map.put(table_model, :rows, sources)
+    rows =
+      sources
+      |> filter_by_source_type(params.source_filter)
+      |> filter_by_query(params.applied_query)
 
-      query ->
-        rows =
-          Enum.filter(sources, fn source ->
-            title = OliWeb.Delivery.NewCourse.TableModel.source_title(source)
+    Map.put(table_model, :rows, rows)
+  end
 
-            String.contains?(
-              String.downcase(title),
-              String.downcase(query)
-            )
-          end)
+  defp filter_by_source_type(sources, :templates),
+    do: Enum.filter(sources, &(TableModel.tag_variant(&1) == :template))
 
-        Map.put(table_model, :rows, rows)
-    end
+  defp filter_by_source_type(sources, :my_sections),
+    do: Enum.filter(sources, &(TableModel.tag_variant(&1) == :my_section))
+
+  defp filter_by_source_type(sources, _other_filter), do: sources
+
+  defp filter_by_query(sources, ""), do: sources
+
+  defp filter_by_query(sources, query) do
+    Enum.filter(sources, fn source ->
+      title = TableModel.source_title(source)
+
+      String.contains?(
+        String.downcase(title),
+        String.downcase(query)
+      )
+    end)
   end
 
   defp paginate(table_model, params) do
@@ -243,6 +331,22 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   def handle_event("update_view_type", %{"view" => %{"type" => view_type}}, socket),
     do: {:noreply, assign(socket, :view_type, String.to_atom(view_type))}
 
+  def handle_event("filter_source", %{"filter" => filter}, socket) do
+    source_filter =
+      case filter do
+        "templates" -> :templates
+        "my_sections" -> :my_sections
+        _other_filter -> :all
+      end
+
+    params =
+      socket.assigns.params
+      |> Map.put(:source_filter, source_filter)
+      |> Map.put(:offset, 0)
+
+    {:noreply, update_source_list(socket, params)}
+  end
+
   def handle_event("change_search", %{"value" => value}, socket) do
     params = Map.put(socket.assigns.params, :query, value)
 
@@ -252,27 +356,13 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   def handle_event("apply_search", _, socket) do
     params = Map.put(socket.assigns.params, :applied_query, socket.assigns.params.query)
 
-    {total_count, table_model} =
-      get_table_model_and_count(
-        socket.assigns.table_model,
-        socket.assigns.sources,
-        params
-      )
-
-    {:noreply, assign(socket, total_count: total_count, table_model: table_model, params: params)}
+    {:noreply, update_source_list(socket, params)}
   end
 
   def handle_event("reset_search", _, socket) do
     params = Map.merge(socket.assigns.params, %{query: "", applied_query: ""})
 
-    {total_count, table_model} =
-      get_table_model_and_count(
-        socket.assigns.table_model,
-        socket.assigns.sources,
-        params
-      )
-
-    {:noreply, assign(socket, total_count: total_count, table_model: table_model, params: params)}
+    {:noreply, update_source_list(socket, params)}
   end
 
   def handle_event("sort", %{"sort_by" => sort_by}, socket) do
@@ -284,15 +374,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         sort_order: socket.assigns.table_model.sort_order
       })
 
-    {total_count, table_model} =
-      get_table_model_and_count(
-        socket.assigns.table_model,
-        socket.assigns.sources,
-        params,
-        update_sort_params: true
-      )
-
-    {:noreply, assign(socket, table_model: table_model, total_count: total_count, params: params)}
+    {:noreply, update_source_list(socket, params, update_sort_params: true)}
   end
 
   def handle_event("page_change", %{"offset" => offset}, socket) do
@@ -303,14 +385,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         String.to_integer(offset)
       )
 
-    {total_count, table_model} =
-      get_table_model_and_count(
-        socket.assigns.table_model,
-        socket.assigns.sources,
-        params
-      )
-
-    {:noreply, assign(socket, total_count: total_count, table_model: table_model, params: params)}
+    {:noreply, update_source_list(socket, params)}
   end
 
   # An actor the gate would refuse is offered nothing: the list never shows a source that

@@ -14,7 +14,7 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 - `MER-5831` merged to `master` on 2026-09-18 (PR #6855, merge commit `7908b1002e`) and this branch is rebased onto it. Its merge already wired `SectionCreation.permitted_sections/2` into `select_source.ex`, already normalized all source kinds in `table_model.ex` (`is_product?/1`, `is_course?/1`, `source_title/1`, `source_description/1`, `source_identifier/1`), and already made every card — including My Course Sections rows — selectable, proceeding into a working (unstyled) step-2 "Choose what to copy" flow. This superseded the plan's original premise that My Course Sections selection would be a no-op in this ticket.
 - Per Gastón's decision on 2026-09-18: this plan does not add any gating, confirmation, or disabled state to My Course Sections card selection. It builds the visual/discovery layer only. The resulting brief, unstyled-step-2 window is accepted because Torus ships by release rather than on merge, and `MER-5832` (which redesigns step 2) follows this ticket immediately.
 - The My Section hover treatment (dark overlay + "SELECT TO COPY COURSE SECTION") is built only for My Section cards in this plan; extending it to Template cards is out of scope pending designer confirmation (PRD Open Questions) and is not blocked by any phase below.
-- **Template tag text, pending Jess (design):** the Figma reference card for a Template row (node `44:805`) shows a green "Free" pill, not the word "Template" the PRD/Jira AC calls for. Interim decision (2026-09-18, Gastón): implement literal "Template" text using that same green pill styling, and confirm with design via Slack; Phase 3 below reflects this interim choice.
+- **Resolved 2026-09-18 (Jess, design, via Slack):** the green "Free" pill on the Template reference card (node `44:805`) is the existing cost badge, only restyled — not the new "Template" identification tag, which stays literal per the PRD/Jira AC. Both labels are independent and can render on the same card. Phase 3 below covers both: the new identification tag, and restyling + scoping the existing cost badge to Template cards only (the latter scoping is an inference from the mockups, not explicitly confirmed — see `informal.md` Open decisions).
 - No new row-kind abstraction is introduced. `MER-5831` already normalized row typing via `is_product?/1`/`is_course?/1`; every phase below builds directly on that existing interface rather than the `{:project,...}|{:publication,...}|{:product,...}|{:previous_section,...}` shape originally floated pre-merge.
 - No feature flag is used (PRD Section 11); this ships as a normal additive change.
 
@@ -43,14 +43,14 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 
 - Goal: let the user switch between the three source sets without losing their chosen sort order, and without leaking rows across tabs.
 - Tasks:
-  - [ ] Add `@params.source_filter :: :all | :templates | :my_sections` (default `:all`) to `SelectSource`.
-  - [ ] Add a feature-local `source_filter_tabs/1` function component rendered above `FilterBox.render`, using `phx-click="filter_source"` / `phx-value-filter` and a new `handle_event("filter_source", ...)` clause, following the existing `handle_event` style in this module.
-  - [ ] Extend `filter/3` with a `source_filter`-narrowing pass that runs before the existing text-query pass.
-  - [ ] Give each tab an accessible name and a selected/`aria-selected` state; add a keyboard/focus-visible style consistent with the rest of the module.
+  - [x] Add `@params.source_filter :: :all | :templates | :my_sections` (default `:all`) to `SelectSource`.
+  - [x] Add a feature-local `source_filter_tabs/1` function component rendered above `FilterBox.render`, using `phx-click="filter_source"` / `phx-value-filter` and a new `handle_event("filter_source", ...)` clause, following the existing `handle_event` style in this module.
+  - [x] Extend `filter/3` with a `source_filter`-narrowing pass that runs before the existing text-query pass.
+  - [x] Give each tab an accessible name and a selected/`aria-selected` state; add a keyboard/focus-visible style consistent with the rest of the module. (Also added a non-color selected-state cue and `id`/`aria-controls` wiring to the results region, per `$harness-review`'s `.review/ui.md` findings — see `phase-2-execution-record.md`.)
 - Testing Tasks:
-  - [ ] LiveView test: all three tabs render with accessible names and correct selected state (AC-001).
-  - [ ] LiveView test: changing tabs does not change the currently selected sort order; default sort stays Most Recent until explicitly changed (AC-002).
-  - [ ] LiveView test: a search performed under one tab never returns rows belonging to a different tab (AC-003).
+  - [x] LiveView test: all three tabs render with accessible names and correct selected state (AC-001).
+  - [x] LiveView test: changing tabs does not change the currently selected sort order; default sort stays Most Recent until explicitly changed (AC-002).
+  - [x] LiveView test: a search performed under one tab never returns rows belonging to a different tab (AC-003).
   - Command(s): `mix test test/oli_web/live/new_course/select_source_test.exs`
 - Definition of Done:
   - Tabs are visible, keyboard-operable, and correctly scope search/sort/pagination without disturbing the user's sort choice.
@@ -63,20 +63,21 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 
 ## Phase 3: Card redesign, type tags, and the My Section hover state
 
-- Goal: denser cards with a type tag per row kind and the designed My Section hover overlay, leaving the existing, already-working selection click completely untouched.
+- Goal: denser cards with an identification tag per row kind, the existing cost badge restyled and scoped to Template cards, and the designed My Section hover overlay, leaving the existing, already-working selection click completely untouched.
 - Tasks:
-  - [ ] Add `lib/oli_web/components/design_tokens/primitives/badge.ex` with `attr :variant, :atom, values: [:my_section, :template, nil], default: nil`, rendering nothing when `variant` is `nil`, using the token mapping from the `ui_workflow` brief (`Fill-Accent-fill-accent-purple`/`Text-text-accent-purple` for My Section; `Fill-Chip-Green`/`Text-text-accent-green` reused for Template as an interim styling choice — the Figma reference card for that row kind shows a green "Free" pill instead of the word "Template", pending confirmation with Jess).
-  - [ ] Update `CardListing` to render the badge (via Phase 1's tag-derivation helper) per row and increase card density/metadata per the Figma reference (nodes `44:789`, `44:805`, `44:824`).
+  - [ ] Add `lib/oli_web/components/design_tokens/primitives/badge.ex` with `attr :variant, :atom, values: [:my_section, :template, nil], default: nil`, rendering nothing when `variant` is `nil`, using the token mapping from the `ui_workflow` brief (`Fill-Accent-fill-accent-purple`/`Text-text-accent-purple` for My Section; `Fill-Chip-Green`/`Text-text-accent-green` for Template). This is the new **identification** tag only — confirmed with design (2026-09-18) to be separate from the cost badge below, not a replacement for it.
+  - [ ] Restyle the existing cost badge (`TableModel.render_payment_column/3`, today a plain Bootstrap `badge badge-success`) to the pill treatment shown at node `44:805`, without changing its Free/price computation, and scope its rendering to `TableModel.is_product?/1` rows only (it currently renders unconditionally on every card).
+  - [ ] Update `CardListing` to render the identification tag (via Phase 1's tag-derivation helper) and the restyled/scoped cost badge together per row, and increase card density/metadata per the Figma reference (nodes `44:789`, `44:805`, `44:824`).
   - [ ] Add the My Section hover overlay (dark overlay + "SELECT TO COPY COURSE SECTION", node `44:1459`) as a visual addition only.
   - [ ] Do **not** modify `CardListing`'s existing `phx-click={@selected}`/`phx-value-id` selection markup — it already correctly routes every row kind, including My Course Sections, into the existing `MER-5831` copy-creation flow. Verify by code review that this task list did not touch it.
 - Testing Tasks:
-  - [ ] LiveView test: Template card shows "Template" tag, My Course Sections card shows "My Section" tag, a card that is neither shows no tag (AC-007).
-  - [ ] LiveView/manual test: the redesigned grid shows more cards per viewport and renders title/description/date/tag without truncation regressions (AC-008).
+  - [ ] LiveView test: Template card shows the "Template" identification tag, My Course Sections card shows "My Section", a card that is neither shows no identification tag (AC-007).
+  - [ ] LiveView/manual test: the redesigned grid shows more cards per viewport and renders title/description/date/identification-tag/cost-badge without truncation regressions; the cost badge's Free/price value is unchanged and appears only on Template cards, not on My Course Sections or untagged cards (AC-008).
   - [ ] Manual visual check: hovering a My Course Sections card shows the darkened overlay and label per the Figma reference (AC-012).
   - [ ] LiveView regression test: activating a My Course Sections card still proceeds into the existing step-2 copy-options flow exactly as it did before this ticket (no new gating), and activating a Template card still creates a section as before (AC-013).
   - Command(s): `mix test test/oli_web/live/new_course/select_source_test.exs test/oli_web/live/common/card_listing_test.exs`
 - Definition of Done:
-  - Cards visually match the confirmed Figma states for Template (interim text, pending Jess)/My Section/no-tag, and My Course Sections selection still works exactly as it did before this ticket (verified by regression test, not by inspection).
+  - Cards visually match the confirmed Figma states for Template/My Section/no-tag, the identification tag and cost badge coexist correctly, and My Course Sections selection still works exactly as it did before this ticket (verified by regression test, not by inspection).
 - Gate:
   - Phase 3 tests pass; existing Template-card and My-Course-Sections-card selection/creation regression tests pass unmodified.
 - Dependencies:

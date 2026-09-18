@@ -17,8 +17,11 @@ requirements:
   id: FR-002
 - title: Redesign source cards with improved density and type tags
   description: 'Source cards get tighter density/spacing and scannable metadata, plus
-    a type tag: ''Template'' for existing project/product sources, ''My Section''
-    for My Course Sections rows, and no tag when a source is neither.'
+    an identification tag: ''Template'' for existing project/product sources, ''My
+    Section'' for My Course Sections rows, and no tag when a source is neither. Separately,
+    the existing cost badge (Free/price) is restyled to match and scoped to display
+    on Template cards only; it is independent of the identification tag and both can
+    render on the same card (confirmed with design, 2026-09-18).'
   status: proposed
   id: FR-003
 - title: Add the new-feature explanatory banner to the Select Source Materials step
@@ -115,7 +118,9 @@ acceptance_criteria:
   proofs: []
   id: AC-007
 - title: The redesigned card grid shows more cards within the same viewport and surfaces
-    title, description, date, and type tag without truncation regressions
+    title, description, date, identification tag, and (for Template cards) the restyled
+    cost badge without truncation regressions, with the cost badge's Free/price value
+    unchanged and absent from My Course Sections and untagged cards
   requirement: Redesign source cards with improved density and type tags
   status: proposed
   verification_method: automated and manual
