@@ -374,8 +374,6 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
             "No question stem available"
         end
     end
-  rescue
-    _ -> "No question stem available"
   end
 
   defp extract_question_stem(_), do: "No question stem available"

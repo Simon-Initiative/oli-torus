@@ -532,63 +532,43 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     if ActivityInsightsState.loaded?(socket.assigns.loaded_activity_summaries, activity_id) do
       socket
     else
-      activity = Enum.find(socket.assigns.activities, &(&1.resource_id == activity_id))
-
-      case activity && activity.canonical_page_context do
-        %{page_resource_id: page_id} ->
-          page_revision = DeliveryResolver.from_resource_id(socket.assigns.section.slug, page_id)
-          socket = ensure_students_loaded(socket)
-
-          summary =
-            if page_revision do
-              ActivityHelpers.summarize_activity_performance(
-                socket.assigns.section,
-                page_revision,
-                socket.assigns.activity_types_map,
-                socket.assigns.students,
-                [activity_id],
-                include_adaptive_part_analytics: true
-              )
-              |> List.first()
-            end
-
-          summary =
-            summary ||
-              %{
-                resource_id: activity_id,
-                id: activity_id,
-                revision: activity.revision,
-                first_attempt_pct: 0.0,
-                all_attempt_pct: 0.0,
-                preview_rendered: nil
-              }
-
-          cache_summary(socket, activity_id, summary)
-
-        _ when not is_nil(activity) ->
-          cache_summary(socket, activity_id, empty_summary(activity))
-
-        _ ->
-          socket
-      end
-    end
-  rescue
-    exception ->
-      Logger.warning("Linked activity summary load failed",
-        section_id: socket.assigns.section.id,
-        activity_id: activity_id,
-        error: exception.__struct__
+      socket
+      |> load_activity_summary(
+        Enum.find(socket.assigns.activities, &(&1.resource_id == activity_id))
       )
+    end
+  end
 
-      case Enum.find(socket.assigns.activities, &(&1.resource_id == activity_id)) do
-        nil ->
-          socket
+  defp load_activity_summary(socket, nil), do: socket
 
-        activity ->
-          # Flagged so the detail pane omits the bars instead of showing a 0% that reads as real.
-          summary = Map.put(empty_summary(activity), :metrics_unavailable, true)
-          cache_summary(socket, activity_id, summary)
-      end
+  defp load_activity_summary(
+         socket,
+         %{canonical_page_context: %{page_resource_id: page_id}} = activity
+       ) do
+    page_revision = DeliveryResolver.from_resource_id(socket.assigns.section.slug, page_id)
+    socket = ensure_students_loaded(socket)
+
+    summary = summarize_activity(socket, page_revision, activity.resource_id)
+
+    cache_summary(socket, activity.resource_id, summary || empty_summary(activity))
+  end
+
+  defp load_activity_summary(socket, activity) do
+    cache_summary(socket, activity.resource_id, empty_summary(activity))
+  end
+
+  defp summarize_activity(_socket, nil, _activity_id), do: nil
+
+  defp summarize_activity(socket, page_revision, activity_id) do
+    ActivityHelpers.summarize_activity_performance(
+      socket.assigns.section,
+      page_revision,
+      socket.assigns.activity_types_map,
+      socket.assigns.students,
+      [activity_id],
+      include_adaptive_part_analytics: true
+    )
+    |> List.first()
   end
 
   # Learners are only needed to summarize an expanded row, so they are loaded on the first
@@ -622,7 +602,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   end
 
   defp extract_back_url_params(params) do
-    # Extract and decode the back_params parameter
     case Map.get(params, "back_params") do
       nil ->
         %{}
@@ -631,11 +610,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         params
 
       encoded_params ->
-        try do
-          encoded_params
-          |> URI.decode()
-          |> Jason.decode!()
-        rescue
+        case encoded_params |> URI.decode() |> Jason.decode() do
+          {:ok, decoded} when is_map(decoded) -> decoded
           _ -> %{}
         end
     end
