@@ -500,6 +500,63 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     end
   end
 
+  describe "new-feature banner and filter tooltips" do
+    setup [:instructor_conn]
+
+    test "renders the explanatory banner with the agreed copy, positioned before the results",
+         %{conn: conn} do
+      {:ok, view, html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               "#new-course-banner",
+               "Create a new course section by copying all or part of an existing section."
+             )
+
+      assert has_element?(
+               view,
+               "#new-course-banner",
+               "The new section will reflect the source section as it exists at the time it is copied."
+             )
+
+      assert has_element?(
+               view,
+               "#new-course-banner",
+               "Changes made to the source afterward will not appear in the new section."
+             )
+
+      assert has_element?(
+               view,
+               "#new-course-banner",
+               "Only course sections you currently have permission to access are shown."
+             )
+
+      banner_index = :binary.match(html, ~s(id="new-course-banner")) |> elem(0)
+      results_index = :binary.match(html, ~s(id="select_source_results")) |> elem(0)
+
+      assert banner_index < results_index
+    end
+
+    test "wires the GlobalTooltip hook with the agreed copy onto the Templates and My Course Sections tabs",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               ~s(button[role='tab'][phx-hook='GlobalTooltip'][data-tooltip='View and create courses from templates made by course authors.']),
+               "Templates"
+             )
+
+      assert has_element?(
+               view,
+               ~s(button[role='tab'][phx-hook='GlobalTooltip'][data-tooltip='View and copy your previously created course sections.']),
+               "My Course Sections"
+             )
+
+      refute has_element?(view, "button[role='tab'][phx-hook='GlobalTooltip']", "All Sources")
+    end
+  end
+
   describe "card identification tag and cost badge" do
     setup [:instructor_conn]
 

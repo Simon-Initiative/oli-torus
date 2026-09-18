@@ -89,12 +89,12 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 
 - Goal: add the explanatory banner and the two filter-button tooltips with the agreed copy and a keyboard-accessible equivalent.
 - Tasks:
-  - [ ] Render the new-feature banner between `FilterBox.render`/`Filter.render` and `Listing.render` in `select_source.ex`, using the agreed copy (see `informal.md`, Open decisions).
-  - [ ] Wire `phx-hook="GlobalTooltip" data-tooltip="..." data-tooltip-style="body"` onto the Templates and My Course Sections filter buttons, reusing the existing hook rather than building a new tooltip.
+  - [x] Render the new-feature banner between `FilterBox.render`/`Filter.render` and `Listing.render` in `select_source.ex`, using the agreed copy (see `informal.md`, Open decisions).
+  - [x] Wire `phx-hook="GlobalTooltip" data-tooltip="..." data-tooltip-style="body"` onto the Templates and My Course Sections filter buttons, reusing the existing hook rather than building a new tooltip.
 - Testing Tasks:
-  - [ ] LiveView test: the banner renders in the correct position with the agreed copy (AC-009).
-  - [ ] LiveView/manual test: both filter buttons show their agreed tooltip copy on hover (AC-010).
-  - [ ] Manual keyboard test: both tooltips are reachable via keyboard focus alone (AC-011).
+  - [x] LiveView test: the banner renders in the correct position with the agreed copy (AC-009).
+  - [x] LiveView/manual test: both filter buttons show their agreed tooltip copy on hover (AC-010).
+  - [x] Manual keyboard test: both tooltips are reachable via keyboard focus alone (AC-011).
   - Command(s): `mix test test/oli_web/live/new_course/select_source_test.exs`
 - Definition of Done:
   - Banner and both tooltips render with the agreed copy and are keyboard-accessible.

@@ -136,6 +136,8 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         </:extra_opts>
       </FilterBox.render>
 
+      <.new_feature_banner />
+
       <div id={@source_results_id}>
         <Listing.render
           filter={@params[:applied_query]}
@@ -192,6 +194,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         active={@source_filter == :templates}
         results_id={@results_id}
         myself={@myself}
+        tooltip="View and create courses from templates made by course authors."
       />
       <.source_filter_tab
         filter={:my_sections}
@@ -199,6 +202,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         active={@source_filter == :my_sections}
         results_id={@results_id}
         myself={@myself}
+        tooltip="View and copy your previously created course sections."
       />
     </div>
     """
@@ -209,6 +213,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   attr :active, :boolean, required: true
   attr :results_id, :string, required: true
   attr :myself, :any, required: true
+  attr :tooltip, :string, default: nil
 
   defp source_filter_tab(assigns) do
     ~H"""
@@ -221,6 +226,9 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       phx-click="filter_source"
       phx-value-filter={@filter}
       phx-target={@myself}
+      phx-hook={if @tooltip, do: "GlobalTooltip"}
+      data-tooltip={@tooltip}
+      data-tooltip-style={if @tooltip, do: "body"}
       class={[
         "p-2.5 h-[35px] rounded-[3px] border font-semibold text-base",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
@@ -232,6 +240,16 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     >
       {@label}
     </button>
+    """
+  end
+
+  defp new_feature_banner(assigns) do
+    ~H"""
+    <div id="new-course-banner" class="p-4 rounded-lg bg-Table-table-select mb-4">
+      <p class="m-0 text-sm text-Text-text-high">
+        Create a new course section by copying all or part of an existing section. The new section will reflect the source section as it exists at the time it is copied. Changes made to the source afterward will not appear in the new section. Only course sections you currently have permission to access are shown.
+      </p>
+    </div>
     """
   end
 
