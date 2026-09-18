@@ -5,6 +5,7 @@ defmodule Oli.Scenarios.ProgressSimulationTest do
   alias Oli.Delivery.Evaluation.{EvaluationContext, Rule}
   alias Oli.Scenarios.ProgressSimulation
   alias Oli.Scenarios.LearnerActions
+  alias Oli.Scenarios.ProgressSimulation.Responses
 
   @opts %{correctness: 1.0, seed: 42, user_id: 7}
 
@@ -169,6 +170,52 @@ defmodule Oli.Scenarios.ProgressSimulationTest do
                activity,
                %{@opts | correctness: 1.0}
              )
+  end
+
+  test "dropdown responses use only the choices available to that input" do
+    model =
+      choice_activity(["a", "unavailable", "b"], "input like {a}")
+      |> put_in([:content, "inputs"], [
+        %{"partId" => "1", "inputType" => "dropdown", "choiceIds" => ["a", "missing", "b"]}
+      ])
+
+    for {correctness, expected} <- [{1.0, "a"}, {0.0, "b"}] do
+      assert {:ok, %StudentInput{input: ^expected}} =
+               Responses.for_part("oli_multi_input", "1", model, correctness, :dropdown)
+
+      assert evaluates?("input like {a}", expected) == (correctness == 1.0)
+    end
+  end
+
+  test "dropdowns without an available incorrect choice are unsupported" do
+    model =
+      choice_activity(["a", "unavailable"], "input like {a}")
+      |> put_in([:content, "inputs"], [
+        %{"partId" => "1", "inputType" => "dropdown", "choiceIds" => ["a"]}
+      ])
+
+    assert {:unsupported, {:response_rule, "oli_multi_input", "1"}} =
+             Responses.for_part("oli_multi_input", "1", model, 0.0, :dropdown)
+  end
+
+  test "regex source that does not satisfy its rule is reported as unsupported" do
+    for rule <- ["input like {^answer$}", "input like {[}"] do
+      model = activity(%{"1" => response_set(rule)})
+
+      assert {:unsupported, {:response_rule, "oli_short_answer", "1"}} =
+               Responses.for_part("oli_short_answer", "1", model, 1.0, :unsupported_regex)
+    end
+  end
+
+  test "dropdowns cannot select a correct answer belonging to another input" do
+    model =
+      choice_activity(["a", "b"], "input like {a}")
+      |> put_in([:content, "inputs"], [
+        %{"partId" => "1", "inputType" => "dropdown", "choiceIds" => ["b"]}
+      ])
+
+    assert {:unsupported, {:response_rule, "oli_multi_input", "1"}} =
+             Responses.for_part("oli_multi_input", "1", model, 1.0, :dropdown)
   end
 
   defp response(slug, part_id, responses) do

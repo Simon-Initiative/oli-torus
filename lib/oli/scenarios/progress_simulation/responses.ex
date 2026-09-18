@@ -53,7 +53,28 @@ defmodule Oli.Scenarios.ProgressSimulation.Responses do
   defp transformed_content(%{content: content}) when is_map(content), do: content
   defp transformed_content(content) when is_map(content), do: content
 
-  defp response_value(slug, content, part_id, responses, correct?, seed_key) do
+  defp response_value(
+         "oli_multi_input" = slug,
+         %{"inputs" => inputs} = content,
+         part_id,
+         responses,
+         correct?,
+         seed_key
+       )
+       when is_list(inputs) do
+    case Enum.find(inputs, &(&1["partId"] == part_id)) do
+      %{"inputType" => "dropdown"} = input ->
+        dropdown_response(content, input, responses, correct?)
+
+      _ ->
+        native_response_value(slug, content, part_id, responses, correct?, seed_key)
+    end
+  end
+
+  defp response_value(slug, content, part_id, responses, correct?, seed_key),
+    do: native_response_value(slug, content, part_id, responses, correct?, seed_key)
+
+  defp native_response_value(slug, content, part_id, responses, correct?, seed_key) do
     selected = select_response(responses, correct?, seed_key)
 
     case {slug, correct?, selected} do
@@ -79,6 +100,25 @@ defmodule Oli.Scenarios.ProgressSimulation.Responses do
         nil
     end
   end
+
+  defp dropdown_response(%{"choices" => choices}, %{"choiceIds" => ids}, responses, correct?)
+       when is_list(choices) and is_list(ids) do
+    with {:ok, rules} <- supported_correct_rules(responses) do
+      available = MapSet.new(choices, & &1["id"])
+
+      Enum.find(ids, fn id ->
+        is_binary(id) and MapSet.member?(available, id) and
+          case correct? do
+            true -> Enum.any?(rules, &(evaluate_rule(&1, id) == {:ok, true}))
+            false -> Enum.all?(rules, &(evaluate_rule(&1, id) == {:ok, false}))
+          end
+      end)
+    else
+      :error -> nil
+    end
+  end
+
+  defp dropdown_response(_content, _input, _responses, _correct?), do: nil
 
   defp select_response(responses, correct?, seed_key) do
     candidates =
@@ -179,7 +219,7 @@ defmodule Oli.Scenarios.ProgressSimulation.Responses do
       end
 
     Enum.find(candidates, fn candidate ->
-      Enum.all?(rules, &(not rule_matches?(&1, candidate)))
+      Enum.all?(rules, &(evaluate_rule(&1, candidate) == {:ok, false}))
     end)
   end
 
@@ -196,7 +236,7 @@ defmodule Oli.Scenarios.ProgressSimulation.Responses do
     end
   end
 
-  defp rule_matches?(rule, input) do
+  defp evaluate_rule(rule, input) do
     context = %EvaluationContext{
       resource_attempt_number: 1,
       activity_attempt_number: 1,
@@ -207,12 +247,7 @@ defmodule Oli.Scenarios.ProgressSimulation.Responses do
       input: input
     }
 
-    with {:ok, tree} <- Rule.parse(rule),
-         {:ok, result} <- Rule.evaluate(tree, context) do
-      result
-    else
-      _ -> true
-    end
+    Rule.parse_and_evaluate(rule, context)
   end
 
   defp supported_correct_rule_values(responses) do
@@ -232,9 +267,17 @@ defmodule Oli.Scenarios.ProgressSimulation.Responses do
       [~r/^input (?:like|contains|=) \{([^}]+)\}$/],
       fn pattern ->
         case Regex.run(pattern, rule) do
-          [_match, ".*"] -> nil
-          [_match, response] -> response
-          _ -> nil
+          [_match, ".*"] ->
+            nil
+
+          [_match, response] ->
+            case evaluate_rule(rule, response) do
+              {:ok, true} -> response
+              _ -> nil
+            end
+
+          _ ->
+            nil
         end
       end
     )

@@ -172,7 +172,8 @@ defmodule Oli.Application do
     end
   end
 
-  @doc false
+  @doc "Returns the persistence, publication, and evaluation services required by seed scenarios."
+  @spec seeding_children() :: [Supervisor.child_spec() | {module(), term()} | module()]
   def seeding_children do
     [
       Oli.Vault,
@@ -181,6 +182,7 @@ defmodule Oli.Application do
       {Phoenix.PubSub, name: Oli.PubSub},
       Oli.Repo,
       {Oban, oban_config(:seeding)},
+      Oli.Publishing.Publications.DiffAgent,
       Oli.Delivery.DistributedDepotCoordinator,
       Supervisor.child_spec({Cachex, name: :page_content_cache}, id: :page_content_cache),
       Supervisor.child_spec(

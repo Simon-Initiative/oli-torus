@@ -18,7 +18,9 @@ defmodule Mix.Tasks.Seed do
   @shortdoc "Runs a Torus data-seeding command"
 
   @impl Mix.Task
+  @doc "Loads runtime configuration and runs the command in the companion application role."
   def run(args) do
+    Mix.Task.run("app.config")
     result = Runtime.run(fn -> CLI.dispatch(args) end)
 
     case result do
