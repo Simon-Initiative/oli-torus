@@ -202,11 +202,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       query ->
         rows =
           Enum.filter(sources, fn source ->
-            title =
-              case Map.get(source, :type) do
-                nil -> source.project.title
-                :blueprint -> source.title
-              end
+            title = OliWeb.Delivery.NewCourse.TableModel.source_title(source)
 
             String.contains?(
               String.downcase(title),
@@ -325,7 +321,8 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         institution = SectionSpecification.get_institution(authorized_spec)
 
         (SectionCreation.permitted_publications(actor, institution) ++
-           SectionCreation.permitted_products(actor, institution))
+           SectionCreation.permitted_products(actor, institution) ++
+           SectionCreation.permitted_sections(actor, institution))
         |> Enum.sort_by(&source_title/1, :asc)
         |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 

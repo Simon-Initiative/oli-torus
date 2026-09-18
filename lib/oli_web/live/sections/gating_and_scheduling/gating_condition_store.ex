@@ -574,13 +574,11 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       ) do
     socket = clear_flash(socket)
 
-    %{gating_condition: gating_condition, section: section} = socket.assigns
+    %{gating_condition: gating_condition} = socket.assigns
 
     socket =
-      case Gating.create_gating_condition(gating_condition) do
+      case Gating.create_gating_condition_with_index(gating_condition) do
         {:ok, _gc} ->
-          {:ok, _section} = Gating.update_resource_gating_index(section)
-
           socket
           |> put_flash(:info, "Gating condition successfully created.")
           |> redirect(to: return_path(socket))
@@ -603,14 +601,12 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       ) do
     socket = clear_flash(socket)
 
-    %{gating_condition: attrs, section: section} = socket.assigns
+    %{gating_condition: attrs} = socket.assigns
     gating_condition = Gating.get_gating_condition!(attrs.id)
 
     socket =
-      case Gating.update_gating_condition(gating_condition, attrs) do
+      case Gating.update_gating_condition_with_index(gating_condition, attrs) do
         {:ok, _gating_condition} ->
-          {:ok, _section} = Gating.update_resource_gating_index(section)
-
           socket
           |> put_flash(:info, "Gating condition successfully updated.")
           |> redirect(to: return_path(socket))
@@ -665,7 +661,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     gating_condition = Gating.get_gating_condition!(String.to_integer(id))
 
     socket =
-      case Gating.delete_gating_condition(gating_condition) do
+      case Gating.delete_gating_condition_with_index(gating_condition) do
         {:ok, _gating_condition, _} ->
           socket
           |> put_flash(:info, "Gating condition successfully deleted.")

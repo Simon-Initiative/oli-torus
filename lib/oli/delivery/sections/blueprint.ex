@@ -6,10 +6,11 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Authoring.Course.ProjectVisibility
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.CopyOptions
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionCopy
   alias Oli.Delivery.Sections.BlueprintBrowseOptions
-  alias Oli.Delivery.InstructorCustomizations
   alias Oli.Groups.CommunityVisibility
   alias Oli.Institutions.Institution
   alias Oli.Repo
@@ -300,228 +301,24 @@ defmodule Oli.Delivery.Sections.Blueprint do
   This method supports duplication of enrollable sections to create a blueprint.
 
   If this method is called with a `cloned_from_project_publication_ids` parameter, it will update the
-  section_project_publications an section_resource records corresponding to that project id.
+  section_project_publications and section_resource records corresponding to that project id.
   This is useful when duplicating a blueprint/product that was part of a project that is being
   cloned. If this parameter is not provided, then the project_id of the section_project_publications
   will remain the same as the original project id.
   """
+  @spec duplicate(%Section{}, map(), nil | {integer(), integer()}) ::
+          {:ok, %Section{}} | {:error, term()}
   def duplicate(%Section{} = section, attrs \\ %{}, cloned_from_project_publication_ids \\ nil) do
-    Repo.transaction(fn _ ->
-      with {:ok, blueprint} <- dupe_section(section, attrs),
-           {:ok, _} <-
-             dupe_section_project_publications(
-               section,
-               blueprint,
-               cloned_from_project_publication_ids
-             ),
-           {:ok, duplicated_root_resource} <-
-             dupe_section_resources(section, blueprint, cloned_from_project_publication_ids),
-           {:ok, _} <- migrate_section_resources(blueprint.id),
-           {:ok, blueprint} <-
-             Sections.update_section(blueprint, %{
-               root_section_resource_id: duplicated_root_resource.id
-             }),
-           {:ok, _count} <-
-             InstructorCustomizations.duplicate_section_exclusions(section, blueprint) do
-        Oli.Delivery.Gating.duplicate_gates(section, blueprint)
+    # Project cloning supplies a source struct whose base project has already
+    # been replaced with the clone. Preserve that destination override before
+    # SectionCopy reloads and locks the persisted source row.
+    attrs = Map.put_new(attrs, :base_project_id, section.base_project_id)
 
-        PostProcessing.apply(blueprint, :all)
-      else
-        {:error, e} -> Repo.rollback(e)
-      end
-    end)
-  end
-
-  defp dupe_section(%Section{} = section, attrs) do
-    custom_labels =
-      if section.customizations == nil, do: nil, else: Map.from_struct(section.customizations)
-
-    certificate =
-      case Oli.Repo.preload(section, :certificate).certificate do
-        nil -> nil
-        certificate -> Map.from_struct(certificate)
-      end
-
-    params =
-      Map.merge(
-        %{
-          type: :blueprint,
-          status: :active,
-          base_project_id: section.base_project_id,
-          open_and_free: false,
-          context_id: UUID.uuid4(),
-          start_date: nil,
-          end_date: nil,
-          brand_id: section.brand_id,
-          title: section.title <> " Copy",
-          invite_token: nil,
-          passcode: nil,
-          blueprint_id: nil,
-          lti_1p3_deployment_id: nil,
-          institution_id: nil,
-          delivery_policy_id: nil,
-          customizations: custom_labels,
-          contains_explorations: section.contains_explorations,
-          contains_deliberate_practice: section.contains_deliberate_practice,
-          cover_image: section.cover_image,
-          skip_email_verification: section.skip_email_verification,
-          registration_open: section.registration_open,
-          requires_enrollment: section.requires_enrollment,
-          certificate: certificate,
-          # Course section defaults (MER-4054)
-          assistant_enabled: section.assistant_enabled,
-          triggers_enabled: section.triggers_enabled,
-          page_prompt_template: section.page_prompt_template,
-          instructor_recommendations_enabled: section.instructor_recommendations_enabled,
-          instructor_recommendation_prompt_template:
-            section.instructor_recommendation_prompt_template,
-          contains_discussions: section.contains_discussions,
-          required_survey_resource_id: section.required_survey_resource_id
-        },
-        attrs
-      )
-      |> Map.put(:learning_model_version, section.learning_model_version)
-
-    Map.merge(
-      Map.from_struct(section),
-      params
+    SectionCopy.copy(
+      section,
+      attrs,
+      CopyOptions.for_blueprint_duplication(cloned_from_project_publication_ids)
     )
-    |> Map.delete(:id)
-    |> Map.delete(:slug)
-    |> Sections.create_section_from_source(section)
-  end
-
-  defp dupe_section_resources(
-         %Section{id: id, root_section_resource_id: root_id},
-         %Section{} = blueprint,
-         cloned_from_project_publication_ids
-       ) do
-    Repo.transaction(fn ->
-      query =
-        from(
-          s in Oli.Delivery.Sections.SectionResource,
-          where: s.section_id == ^id,
-          select: s
-        )
-
-      resources = Repo.all(query)
-
-      # Create the maps for each section resource by duplicating the existing ones
-      # and set the section_id to be the id of the blueprint
-      resources_to_create =
-        Enum.reverse(resources)
-        |> Enum.reduce([], fn p, resources_to_create ->
-          # same process as sections_project_publications, if this blueprint was duplicated
-          # as part of a project cloning, we need to update the project_id of the section_resource
-          # if the section_resource belongs to the original project
-          project_id =
-            case cloned_from_project_publication_ids do
-              {cloned_from_project_id, _} ->
-                if p.project_id == cloned_from_project_id do
-                  blueprint.base_project_id
-                else
-                  p.project_id
-                end
-
-              _ ->
-                p.project_id
-            end
-
-          resource =
-            Map.merge(Sections.SectionResource.to_map(p), %{
-              section_id: blueprint.id,
-              project_id: project_id
-            })
-            |> Map.delete(:id)
-
-          [resource | resources_to_create]
-        end)
-
-      # Insert all the new (duplicated) section resources in the database (at this point
-      # the children of each section resource will be wrongly mapped to its original section resource)
-      {_count, results} =
-        Sections.bulk_create_section_resource(resources_to_create, returning: true)
-
-      results = Enum.map(results, &Sections.SectionResource.to_map(&1))
-
-      resource_map =
-        Enum.zip(resources, results)
-        |> Enum.reduce(%{}, fn {original, duplicate}, m ->
-          Map.put(m, original.id, duplicate.id)
-        end)
-
-      # Change the newly created section resources children so that they point to the correct
-      # section resource
-      section_resources =
-        Enum.reduce(results || [], [], fn sr, section_resources ->
-          # filter out any nil (from nil or unknown ids) that may have been introduced due to data corruption
-          updated =
-            Enum.map(sr.children || [], fn id -> Map.get(resource_map, id, nil) end)
-            |> Enum.filter(fn id -> !is_nil(id) end)
-
-          sr =
-            Map.put(
-              sr,
-              :children,
-              updated
-            )
-
-          [sr | section_resources]
-        end)
-
-      # Update all section resources at the same time
-      {_cont, rows} = Sections.bulk_update_section_resource(section_resources, returning: true)
-
-      # Return the section resource that corresponds to the original root resource
-      Enum.find(rows, &(Map.get(resource_map, root_id) == &1.id))
-    end)
-  end
-
-  defp dupe_section_project_publications(
-         %Section{id: id},
-         %Section{} = blueprint,
-         cloned_from_project_publication_ids
-       ) do
-    query =
-      from(
-        s in Oli.Delivery.Sections.SectionsProjectsPublications,
-        where: s.section_id == ^id,
-        select: s
-      )
-
-    Repo.all(query)
-    |> Enum.reduce_while({:ok, []}, fn spp, {:ok, all} ->
-      # In the case where a project is cloned with products, these product blueprints are no longer associated with the
-      # original project id. So we must use the provided project id in `cloned_from_project_publication_ids` to identify the
-      # section_project_publication record associated with the original project id and update it to
-      # the new project and publication ids.
-      #
-      # In the other cases where we are simply duplicating a blueprint, the project_id should remain
-      # the same as the original project id, which is the base_project_id of the blueprint
-      {project_id, publication_id} =
-        case cloned_from_project_publication_ids do
-          {cloned_from_project_id, cloned_publication_id} ->
-            if spp.project_id == cloned_from_project_id do
-              {blueprint.base_project_id, cloned_publication_id}
-            else
-              {spp.project_id, spp.publication_id}
-            end
-
-          _ ->
-            {spp.project_id, spp.publication_id}
-        end
-
-      attrs = %{
-        section_id: blueprint.id,
-        project_id: project_id,
-        publication_id: publication_id
-      }
-
-      case Sections.create_section_project_publication(attrs) do
-        {:ok, copy} -> {:cont, {:ok, [copy | all]}}
-        {:error, e} -> {:halt, {:error, e}}
-      end
-    end)
   end
 
   def list() do

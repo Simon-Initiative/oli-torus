@@ -229,6 +229,75 @@ defmodule Oli.Delivery.SectionCreationTest do
       assert resolved_id == source_section.id
     end
 
+    test "section copy listing and resolution enforce the same institution boundary", %{
+      section: source_section
+    } do
+      institution = insert(:institution)
+      other_institution = insert(:institution)
+      instructor = insert(:user, independent_learner: true, can_create_sections: true)
+      admin = admin_author()
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, source_section.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      for actor <- [instructor, admin] do
+        assert {:error, :unauthorized} =
+                 SectionCreation.resolve_source(actor, {:section, source_section.id}, institution)
+
+        refute source_section.id in Enum.map(
+                 SectionCreation.permitted_sections(actor, institution),
+                 & &1.id
+               )
+      end
+
+      {:ok, source_section} =
+        Sections.update_section(source_section, %{institution_id: institution.id})
+
+      for actor <- [instructor, admin] do
+        assert {:ok, {:section, %Section{id: id}}} =
+                 SectionCreation.resolve_source(actor, {:section, source_section.id}, institution)
+
+        assert id == source_section.id
+        assert id in Enum.map(SectionCreation.permitted_sections(actor, institution), & &1.id)
+
+        assert {:error, :unauthorized} =
+                 SectionCreation.resolve_source(actor, {:section, id}, other_institution)
+
+        refute id in Enum.map(
+                 SectionCreation.permitted_sections(actor, other_institution),
+                 & &1.id
+               )
+
+        assert {:ok, {:section, _}} = SectionCreation.resolve_source(actor, {:section, id}, nil)
+      end
+    end
+
+    test "student enrollment does not authorize a section copy", %{section: source_section} do
+      student = insert(:user, independent_learner: true, can_create_sections: true)
+
+      {:ok, _} =
+        Sections.enroll(student.id, source_section.id, [ContextRoles.get_role(:context_learner)])
+
+      assert {:error, :unauthorized} =
+               Delivery.create_section(
+                 request!(student, "section:#{source_section.id}", %{title: "Student Copy"})
+               )
+
+      assert SectionCreation.permitted_sections(student) == []
+    end
+
+    test "administrator course copy creates no instructor enrollment", %{section: source_section} do
+      assert {:ok, copied_id, slug} =
+               Delivery.create_section(
+                 request!(admin_author(), "section:#{source_section.id}", %{title: "Admin Copy"})
+               )
+
+      assert copied_id != source_section.id
+      assert Sections.list_enrollments(slug) == []
+    end
+
     test "T18 refuses malformed, retired and nonexistent identifiers, and drops forged attributes",
          %{publication: publication} do
       user = insert(:user, independent_learner: true, can_create_sections: true)
