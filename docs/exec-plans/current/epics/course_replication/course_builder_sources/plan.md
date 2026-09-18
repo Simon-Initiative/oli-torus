@@ -128,19 +128,19 @@ Update step 1 of 3 ("Select source materials") of the section-creation wizard: a
 
 - Goal: close out cross-cutting accessibility and observability requirements and confirm no regression across the whole Select Source Materials step.
 - Tasks:
-  - [ ] Audit every control introduced or changed in Phases 2-5 for keyboard operability and visible focus (tabs, tooltips, cards, banner).
-  - [ ] Add an assistive-technology announcement (existing live-region/announcement pattern already used elsewhere in `Listing`, per FDD Section 11) for filter/search-driven result-list updates.
-  - [ ] Add or extend a lightweight telemetry event for My Course Sections tab selection (aggregate counts only, no section titles/ids), per PRD Section 12 and `docs/OPERATIONS.md` conventions.
-  - [ ] Run the `ui_workflow` `implement`→`qa` cycle against `~/.codex/memories/oli-torus-ng/ui-work/MER-5828/brief.md` for visual/layout fidelity in both light and dark mode.
+  - [x] Audit every control introduced or changed in Phases 2-5 for keyboard operability and visible focus (tabs, tooltips, cards, banner). Found and fixed a real pre-existing bug: the source card (`card_listing.ex`, redesigned in Phase 3) was a bare `<a>` with no `href`, which browsers never include in the tab order — it was never actually keyboard-reachable. Fixed by converting it to `<button type="button">`. Also confirmed, but did not change, that the filter tabs (Phase 2) are keyboard-reachable via sequential Tab order but don't implement the full WAI-ARIA APG roving-tabindex "Tabs" pattern — logged as an accepted follow-up in fdd.md, not a blocking gap (see `$harness-review` UI finding, Phase 6 execution record).
+  - [x] Add an assistive-technology announcement for filter/search-driven result-list updates — implemented via the same `sr-only`/`role="status"`/`aria-live="polite"` idiom already established in `lib/oli_web/components/delivery/list_navigator.ex` (not `Listing`, which has no such pattern — the plan's "per FDD Section 11" pointer was inaccurate; the FDD's actual Section 11 is Observability, not accessibility).
+  - [x] Add or extend a lightweight telemetry event for My Course Sections tab selection (aggregate counts only, no section titles/ids), per PRD Section 12 and `docs/OPERATIONS.md` conventions. PRD Section 12 actually specifies two events (tab selection AND card activation); both implemented as `[:oli, :course_builder, :my_course_sections_filter_selected]` and `[:oli, :course_builder, :my_course_sections_card_activated]`, metadata `%{}` (no ids).
+  - [ ] Run the `ui_workflow` `implement`→`qa` cycle against `~/.codex/memories/oli-torus-ng/ui-work/MER-5828/brief.md` for visual/layout fidelity in both light and dark mode. **Not run — no Browser MCP session was available** (this phase was executed autonomously while the user was away, per explicit instruction, with no human-prepared QA browser window to hand off to). Per this phase's own Definition of Done, logging as `needs-human-review` rather than skipping silently. All color/token/spacing choices across Phases 2-6 were still cross-checked against Figma (`get_design_context`/`get_variable_defs`) at implementation time; what's missing is only the live-rendered, in-browser light/dark visual pass.
 - Testing Tasks:
-  - [ ] LiveView/manual test: every new/changed control is keyboard-operable with a visible focus indicator (AC-016).
-  - [ ] LiveView/manual test: a filter/search-driven result-list update is announced to assistive technology (AC-017).
-  - [ ] Full regression pass across the whole Select Source Materials step (all phases' tests together).
-  - Command(s): `mix test test/oli_web/live/new_course/ test/oli_web/live/delivery/student_onboarding/` then `mix format --check-formatted`
+  - [x] LiveView/manual test: every new/changed control is keyboard-operable with a visible focus indicator (AC-016).
+  - [x] LiveView/manual test: a filter/search-driven result-list update is announced to assistive technology (AC-017).
+  - [x] Full regression pass across the whole Select Source Materials step (all phases' tests together).
+  - Command(s): `mix test test/oli_web/live/new_course/ test/oli_web/live/delivery/onboarding_wizard/ test/oli_web/live/delivery/student_onboarding/ test/oli_web/live/products/ test/oli_web/live/common/ test/oli_web/live/dev/ test/oli_web/components/design_tokens/` then `mix format --check-formatted` (the plan's original `test/oli_web/live/delivery/student_onboarding/` path covers the onboarding wizard's own sub-components; its own LiveView test lives at `test/oli_web/live/delivery/onboarding_wizard/student_onboarding_wizard_test.exs`, included above)
 - Definition of Done:
-  - All 17 acceptance criteria pass; no regression in existing Template-based course creation; `ui_workflow` visual/layout QA reports no material open finding (or findings are explicitly logged as `needs-human-review`).
+  - All 17 acceptance criteria pass; no regression in existing Template-based course creation; `ui_workflow` visual/layout QA reports no material open finding (or findings are explicitly logged as `needs-human-review`) — **status: `needs-human-review`, visual QA not run (see above)**.
 - Gate:
-  - Full `mix test` run for the affected directories is green; `ui_workflow` QA status is `needs-human-review` or `done`, not `iterating` with open structural findings.
+  - Full `mix test` run for the affected directories is green; `ui_workflow` QA status is `needs-human-review` or `done`, not `iterating` with open structural findings. **Met**: tests green, QA status is `needs-human-review` (not `iterating`), consistent with this gate's own stated allowance.
 - Dependencies:
   - Phases 1-5.
 - Parallelizable Work:

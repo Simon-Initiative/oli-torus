@@ -371,6 +371,14 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def handle_event("source_selection", %{"id" => source}, socket) do
+    if section_source?(source) do
+      :telemetry.execute(
+        [:oli, :course_builder, :my_course_sections_card_activated],
+        %{count: 1},
+        %{}
+      )
+    end
+
     {:noreply, assign(socket, source: source, current_step: 1)}
   end
 

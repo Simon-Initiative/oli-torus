@@ -395,7 +395,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
   defp select_source(_, view, source) do
     view
-    |> Phoenix.LiveViewTest.element(".card-deck a:first-child")
+    |> Phoenix.LiveViewTest.element(".card-deck button:first-child")
     |> render_click(%{
       id:
         "#{if Map.get(source, :type) == :blueprint, do: "product", else: "publication"}:#{Map.get(source, :id) || Map.get(source, :publication_id)}"

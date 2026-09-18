@@ -231,7 +231,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
 
   defp select_section(_, view, section) do
     view
-    |> Phoenix.LiveViewTest.element(".card-deck a:first-child")
+    |> Phoenix.LiveViewTest.element(".card-deck button:first-child")
     |> Phoenix.LiveViewTest.render_click(id: "publication:#{section.id}")
 
     view

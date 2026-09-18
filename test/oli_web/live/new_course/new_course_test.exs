@@ -65,7 +65,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
       assert has_element?(view, "button[disabled]", "Next step")
 
       view
-      |> element(".card-deck a:first-child")
+      |> element(".card-deck button:first-child")
       |> render_click(id: "publication:#{section.id}")
 
       assert has_element?(view, "h2", "Name your course")
@@ -77,6 +77,48 @@ defmodule OliWeb.NewCourse.NewCourseTest do
                ~s(button.torus-button.primary[class*="Fill-Buttons-fill-primary-bold"]),
                "Next step"
              )
+    end
+  end
+
+  describe "telemetry" do
+    setup [:admin_conn]
+
+    test "emits my_course_sections_card_activated only when a My Course Sections source is selected",
+         %{conn: conn} do
+      handler_id = "my-course-sections-card-telemetry-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :course_builder, :my_course_sections_card_activated],
+        fn event, measurements, metadata, pid ->
+          send(pid, {:telemetry_event, event, measurements, metadata})
+        end,
+        self()
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      %Publication{project: project} = insert(:publication)
+      template = insert(:section, base_project: project, title: "Chem Template")
+      course = insert(:section, type: :enrollable, base_project: project, title: "Chem Copy")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      view
+      |> element("button[phx-value-id='product:#{template.id}']")
+      |> render_click()
+
+      refute_received {:telemetry_event, _, _, _}
+
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      view
+      |> element("button[phx-value-id='section:#{course.id}']")
+      |> render_click()
+
+      assert_received {:telemetry_event,
+                       [:oli, :course_builder, :my_course_sections_card_activated], %{count: 1},
+                       %{}}
     end
   end
 end

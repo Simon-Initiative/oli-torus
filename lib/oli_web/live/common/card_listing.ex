@@ -21,14 +21,15 @@ defmodule OliWeb.Common.CardListing do
             <.card_listing_card item={item} ctx={@ctx} preview_mode={true} />
           </article>
         <% else %>
-          <a
+          <button
+            type="button"
             phx-click={@selected}
-            class="course-card-link group mb-2 no-underline hover:no-underline"
+            class="course-card-link group mb-2 border-0 bg-transparent p-0 text-left no-underline hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
             phx-value-id={action_id(item)}
             aria-label={card_aria_label(item)}
           >
             <.card_listing_card item={item} ctx={@ctx} />
-          </a>
+          </button>
         <% end %>
       <% end %>
     </div>

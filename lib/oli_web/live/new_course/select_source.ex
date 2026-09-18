@@ -138,6 +138,11 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
       <.new_feature_banner />
 
+      <.result_count_announcement
+        total_count={@total_count}
+        source_filter={@params[:source_filter]}
+      />
+
       <div id={@source_results_id}>
         <Listing.render
           filter={@params[:applied_query]}
@@ -183,14 +188,14 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     <div class="flex gap-4 items-center mb-4" role="tablist" aria-label="Source filters">
       <.source_filter_tab
         filter={:all}
-        label="All Sources"
+        label={source_filter_label(:all)}
         active={@source_filter == :all}
         results_id={@results_id}
         myself={@myself}
       />
       <.source_filter_tab
         filter={:templates}
-        label="Templates"
+        label={source_filter_label(:templates)}
         active={@source_filter == :templates}
         results_id={@results_id}
         myself={@myself}
@@ -198,7 +203,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       />
       <.source_filter_tab
         filter={:my_sections}
-        label="My Course Sections"
+        label={source_filter_label(:my_sections)}
         active={@source_filter == :my_sections}
         results_id={@results_id}
         myself={@myself}
@@ -252,6 +257,28 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     </div>
     """
   end
+
+  attr :total_count, :integer, required: true
+  attr :source_filter, :atom, required: true
+
+  defp result_count_announcement(assigns) do
+    ~H"""
+    <p class="sr-only" role="status" aria-live="polite">
+      {result_count_message(@total_count, @source_filter)}
+    </p>
+    """
+  end
+
+  defp result_count_message(total_count, source_filter) do
+    "Showing #{total_count} #{pluralize_result(total_count)} for #{source_filter_label(source_filter)}"
+  end
+
+  defp pluralize_result(1), do: "result"
+  defp pluralize_result(_), do: "results"
+
+  defp source_filter_label(:templates), do: "Templates"
+  defp source_filter_label(:my_sections), do: "My Course Sections"
+  defp source_filter_label(_), do: "All Sources"
 
   defp update_source_list(socket, params, opts \\ [update_sort_params: false]) do
     {total_count, table_model} =
@@ -356,6 +383,14 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         "my_sections" -> :my_sections
         _other_filter -> :all
       end
+
+    if source_filter == :my_sections do
+      :telemetry.execute(
+        [:oli, :course_builder, :my_course_sections_filter_selected],
+        %{count: 1},
+        %{}
+      )
+    end
 
     params =
       socket.assigns.params

@@ -320,15 +320,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
-      assert has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
-      refute has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
+      assert has_element?(view, "button[phx-value-id='publication:#{publication_id}']")
+      refute has_element?(view, "button[phx-value-id='product:#{last_s.id}']")
 
       view
       |> element(".page-item button", "2")
       |> render_click()
 
-      refute has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
-      assert has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
+      refute has_element?(view, "button[phx-value-id='publication:#{publication_id}']")
+      assert has_element?(view, "button[phx-value-id='product:#{last_s.id}']")
     end
 
     test "successfully goes to the next step", %{conn: conn} do
@@ -340,7 +340,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "button[disabled]", "Next step")
 
       view
-      |> element(".card-deck a:first-child")
+      |> element(".card-deck button:first-child")
       |> render_click(id: "publication:#{section.id}")
 
       refute has_element?(view, "h2", "Select source")
@@ -411,8 +411,8 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "a[phx-value-id='section:#{instructor_course.id}']")
-      refute has_element?(view, "a[phx-value-id='section:#{learner_course.id}']")
+      assert has_element?(view, "button[phx-value-id='section:#{instructor_course.id}']")
+      refute has_element?(view, "button[phx-value-id='section:#{learner_course.id}']")
     end
   end
 
@@ -752,15 +752,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
-      assert has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
-      refute has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
+      assert has_element?(view, "button[phx-value-id='publication:#{publication_id}']")
+      refute has_element?(view, "button[phx-value-id='product:#{last_s.id}']")
 
       view
       |> element(".page-item button", "2")
       |> render_click()
 
-      refute has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
-      assert has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
+      refute has_element?(view, "button[phx-value-id='publication:#{publication_id}']")
+      assert has_element?(view, "button[phx-value-id='product:#{last_s.id}']")
     end
 
     test "successfully goes to the next step", %{conn: conn} do
@@ -772,7 +772,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "button[disabled]", "Next step")
 
       view
-      |> element(".card-deck a:first-child")
+      |> element(".card-deck button:first-child")
       |> render_click(id: "publication:#{section.id}")
 
       refute has_element?(view, "button[disabled]", "Next step")
@@ -792,6 +792,104 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
              |> element(".card-deck:last-child")
              |> render() =~
                OliWeb.Common.Utils.render_date(section, :inserted_at, session_context)
+    end
+  end
+
+  describe "assistive-technology result-count announcement" do
+    setup [:instructor_conn]
+
+    test "announces the result count and active filter, and updates on filter/search changes (AC-017)",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Chem 101"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "p[role='status'][aria-live='polite']")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "p[role='status'][aria-live='polite']",
+               "Showing 1 result for Templates"
+             )
+
+      view
+      |> element("button[role='tab']", "My Course Sections")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "p[role='status'][aria-live='polite']",
+               "Showing 0 results for My Course Sections"
+             )
+    end
+
+    test "updates the announcement when a search is applied (AC-017)", %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Chemistry 101"})
+      insert(:section, %{base_project: project, title: "Biology 101"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               "p[role='status'][aria-live='polite']",
+               "Showing 3 results for All Sources"
+             )
+
+      view
+      |> element("input[placeholder=\"Search...\"]")
+      |> render_blur(%{value: "Chemistry"})
+
+      view
+      |> element("button", "Search")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "p[role='status'][aria-live='polite']",
+               "Showing 1 result for All Sources"
+             )
+    end
+  end
+
+  describe "telemetry" do
+    setup [:instructor_conn]
+
+    test "emits my_course_sections_filter_selected only when the My Course Sections tab is selected",
+         %{conn: conn} do
+      handler_id = "my-course-sections-filter-telemetry-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :course_builder, :my_course_sections_filter_selected],
+        fn event, measurements, metadata, pid ->
+          send(pid, {:telemetry_event, event, measurements, metadata})
+        end,
+        self()
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      refute_received {:telemetry_event, _, _, _}
+
+      view
+      |> element("button[role='tab']", "My Course Sections")
+      |> render_click()
+
+      assert_received {:telemetry_event,
+                       [:oli, :course_builder, :my_course_sections_filter_selected], %{count: 1},
+                       %{}}
     end
   end
 
