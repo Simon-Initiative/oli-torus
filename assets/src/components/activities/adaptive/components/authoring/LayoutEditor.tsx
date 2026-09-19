@@ -215,11 +215,17 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       resizeData: { x: number; y: number; width: number; height: number };
     }) => {
       const { width, height, x, y } = resizeData;
-      modifyPartCustomProp(partId, { width, height, x, y });
       setIsDragging(false);
       setIsResizing(false);
+
+      if (![width, height, x, y].every(Number.isFinite) || width <= 0 || height <= 0) {
+        return;
+      }
+
+      // Flow layout controls position and width; vertical resizing should only persist height.
+      modifyPartCustomProp(partId, isResponsive ? { height } : { width, height, x, y });
     },
-    [modifyPartCustomProp],
+    [isResponsive, modifyPartCustomProp],
   );
 
   const handlePartDrag = useCallback(
@@ -316,8 +322,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       height: part.custom.height || 100,
     };
 
-    // Determine resize grid based on responsive mode
-    const resizeGrid: [number, number] = isResponsive ? [0, 1] : [1, 1];
+    // Grid values are snap increments, not axis locks. Zero produces invalid dimensions.
+    const enableResizing =
+      !isResponsive || (part.type !== 'janus-image' && { top: true, bottom: true });
 
     const handleDragStop = (e: any, d: any) => {
       handlePartDrag({ partId: part.id, dragData: d });
@@ -329,8 +336,8 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         resizeData: {
           width: isResponsive ? getWidth(part.custom.width) || 100 : parseInt(ref.style.width, 10),
           height: parseInt(ref.style.height, 10),
-          x: Math.round(position.x), // Always update x position in data
-          y: Math.round(position.y), // Always update y position in data
+          x: Math.round(position.x),
+          y: Math.round(position.y),
         },
       });
     };
@@ -339,7 +346,8 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       <ResizeContainer
         key={part.id}
         dragGrid={[5, 5]}
-        resizeGrid={resizeGrid}
+        resizeGrid={[1, 1]}
+        enableResizing={enableResizing}
         selected={part.id === selectedPartId}
         size={size}
         position={position}
