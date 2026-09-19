@@ -1646,6 +1646,11 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     Map.put(activity_attempt, :student_responses, Map.merge(sr, grouped))
   end
 
+  defp authored_text(%{"content" => [%{"children" => [%{"text" => text} | _]} | _]})
+       when is_binary(text), do: text
+
+  defp authored_text(_), do: ""
+
   defp add_likert_details(activity, response_summaries) do
     %{questions: questions, question_mapper: question_mapper} =
       Enum.reduce(
@@ -1654,7 +1659,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         fn q, acc ->
           question = %{
             id: q["id"],
-            text: q["content"] |> hd() |> Map.get("children") |> hd() |> Map.get("text"),
+            text: authored_text(q),
             number: acc.question_number
           }
 
@@ -1677,7 +1682,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         fn ch, acc ->
           choice = %{
             id: ch["id"],
-            text: ch["content"] |> hd() |> Map.get("children") |> hd() |> Map.get("text"),
+            text: authored_text(ch),
             points: acc.aux_points
           }
 

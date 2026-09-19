@@ -2926,6 +2926,49 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                %{choice: "Yes", question: "Question 2", out_of: 2, value: 2}
              ] = Enum.sort_by(values, &{&1.question, &1.choice})
     end
+
+    test "an item or choice whose authored text was cleared renders as blank instead of raising" do
+      likert_id = 5
+
+      activities = [
+        %{
+          resource_id: 51,
+          revision: %{
+            activity_type_id: likert_id,
+            title: "Cleared Survey",
+            content: %{
+              "items" => [
+                %{"id" => "q1", "content" => []},
+                %{"id" => "q2", "content" => [%{"children" => [%{"text" => "Question 2"}]}]}
+              ],
+              "choices" => [
+                %{"id" => "c1", "content" => [%{"children" => []}]},
+                %{"id" => "c2", "content" => [%{"children" => [%{"text" => "Yes"}]}]}
+              ]
+            }
+          },
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{activity_id: 51, response: "c1", part_id: "q1", count: 1},
+        %{activity_id: 51, response: "c2", part_id: "q2", count: 2}
+      ]
+
+      [%{datasets: %{medians: medians, values: values}}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{likert_id => %{title: "Likert"}},
+          response_summaries
+        )
+
+      questions = medians |> Enum.map(& &1.question) |> Enum.sort()
+
+      assert questions == ["", "Question 2"]
+      assert Enum.any?(values, &(&1.choice == ""))
+      assert Enum.any?(values, &(&1.choice == "Yes"))
+    end
   end
 
   describe "stage_performance_details/3 fallback" do
