@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { parseBoolean } from 'utils/common';
 import {
   NotificationType,
@@ -9,15 +9,12 @@ import { PartComponentProps } from '../types/parts';
 import AccordionView, { tagName } from './AccordionView';
 import {
   AccordionCapiState,
-  accordionMinHeight,
   buildResponses,
   parseAccordionModel,
   parseSectionIndexes,
   uniqueSortedIndexes,
 } from './accordion-util';
 import { AccordionModel } from './schema';
-
-const RESIZE_REPORT_DEBOUNCE_MS = 400;
 
 const Accordion: React.FC<PartComponentProps<AccordionModel>> = (props) => {
   const id: string = props.id;
@@ -28,7 +25,8 @@ const Accordion: React.FC<PartComponentProps<AccordionModel>> = (props) => {
   const [openedSections, setOpenedSections] = useState<number[]>([]);
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const resizeDebounceRef = useRef<number | null>(null);
+  const onResizeRef = useRef(props.onResize);
+  onResizeRef.current = props.onResize;
 
   const saveState = useCallback(
     (next: AccordionCapiState) => {
@@ -100,58 +98,50 @@ const Accordion: React.FC<PartComponentProps<AccordionModel>> = (props) => {
     }
   }, [ready]);
 
-  const minHeight = model ? accordionMinHeight(model.height) : 0;
   const { width } = model ?? {};
 
-  useEffect(() => {
-    if (!ready || !model) return;
-
-    const styleChanges: Record<string, { value: number | string }> = {};
-    if (width !== undefined) {
-      styleChanges.width = { value: width as number | string };
-    }
-    styleChanges.height = { value: minHeight };
-
-    props.onResize({ id: `${id}`, settings: styleChanges });
-  }, [ready, width, minHeight, id, model]);
-
-  useEffect(() => {
-    if (!ready || !model || !containerRef.current) {
+  useLayoutEffect(() => {
+    if (!ready || !containerRef.current) {
       return;
     }
 
     const el = containerRef.current;
+    let animationFrame: number | null = null;
+    let previousHeight: number | undefined;
 
     const reportHeight = () => {
-      const contentHeight = Math.ceil(el.getBoundingClientRect().height);
-      props.onResize({
+      // offsetHeight is in layout pixels; the author preview can apply a scale transform.
+      const contentHeight = el.offsetHeight;
+      if (contentHeight === previousHeight) return;
+      previousHeight = contentHeight;
+      onResizeRef.current({
         id: `${id}`,
-        settings: { height: { value: Math.max(minHeight, contentHeight) } },
+        settings: {
+          ...(width !== undefined ? { width: { value: width } } : {}),
+          height: { value: contentHeight },
+        },
       });
     };
 
-    const debouncedReportHeight = () => {
-      if (resizeDebounceRef.current !== null) {
-        window.clearTimeout(resizeDebounceRef.current);
-      }
-      resizeDebounceRef.current = window.setTimeout(() => {
-        resizeDebounceRef.current = null;
+    const scheduleReportHeight = () => {
+      if (animationFrame !== null) return;
+      animationFrame = window.requestAnimationFrame(() => {
+        animationFrame = null;
         reportHeight();
-      }, RESIZE_REPORT_DEBOUNCE_MS);
+      });
     };
 
     reportHeight();
-    const observer = new ResizeObserver(debouncedReportHeight);
+    const observer = new ResizeObserver(scheduleReportHeight);
     observer.observe(el);
 
     return () => {
       observer.disconnect();
-      if (resizeDebounceRef.current !== null) {
-        window.clearTimeout(resizeDebounceRef.current);
-        resizeDebounceRef.current = null;
+      if (animationFrame !== null) {
+        window.cancelAnimationFrame(animationFrame);
       }
     };
-  }, [ready, minHeight, id, model?.sections, expandedSections]);
+  }, [ready, id, width]);
 
   const applyStateChanges = useCallback(
     (changes: Record<string, any>) => {
