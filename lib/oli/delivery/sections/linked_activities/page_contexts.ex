@@ -38,12 +38,20 @@ defmodule Oli.Delivery.Sections.LinkedActivities.PageContexts do
     end)
   end
 
-  @doc "Indexes `{activity_id, page_resource_id}` pairs, dropping pages absent from the section."
+  @doc """
+  Indexes `{activity_id, page_resource_id}` pairs, dropping pages absent from the section.
+
+  Pairs are sorted first: `canonical/1` takes the head of each list, so the caller's order —
+  a database result set with no `ORDER BY`, or a depot scan — must not decide which page the
+  detail pane summarizes.
+  """
   @spec from_page_pairs([{integer(), integer()}], [map()], [Revision.t() | map()]) :: index()
   def from_page_pairs(pairs, page_resources, page_revisions) do
     contexts_by_page = by_page_resource_id(page_resources, page_revisions)
 
-    Enum.reduce(pairs, %{}, fn {activity_id, page_resource_id}, contexts ->
+    pairs
+    |> Enum.sort()
+    |> Enum.reduce(%{}, fn {activity_id, page_resource_id}, contexts ->
       case Map.get(contexts_by_page, page_resource_id) do
         nil -> contexts
         context -> Map.update(contexts, activity_id, [context], &(&1 ++ [context]))

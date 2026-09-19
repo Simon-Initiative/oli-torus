@@ -49,6 +49,27 @@ defmodule Oli.Delivery.Sections.LinkedActivities.PageContextsTest do
     assert contexts[7] |> List.first() |> Map.get(:page_revision) |> Map.get(:id) == 1
   end
 
+  test "the caller's pair order does not decide the canonical page" do
+    page_resources = [
+      %{resource_id: 100, revision_id: 1},
+      %{resource_id: 200, revision_id: 2}
+    ]
+
+    revisions = [
+      %{id: 1, resource_id: 100, activity_refs: []},
+      %{id: 2, resource_id: 200, activity_refs: []}
+    ]
+
+    pairs = [{7, 100}, {7, 200}]
+
+    forward = PageContexts.from_page_pairs(pairs, page_resources, revisions)
+    reversed = PageContexts.from_page_pairs(Enum.reverse(pairs), page_resources, revisions)
+
+    assert Enum.map(forward[7], & &1.page_resource_id) == [100, 200]
+    assert Enum.map(reversed[7], & &1.page_resource_id) == [100, 200]
+    assert PageContexts.canonical(reversed)[7].page_resource_id == 100
+  end
+
   test "observed contexts lead, and a page present in both sources is not duplicated" do
     observed = %{
       7 => [%{page_resource_id: 200, page_revision: %{id: 2}}]
