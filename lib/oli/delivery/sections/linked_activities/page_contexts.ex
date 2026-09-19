@@ -19,23 +19,22 @@ defmodule Oli.Delivery.Sections.LinkedActivities.PageContexts do
   @doc "Indexes the activity references a page revision declares, as written by the authoring editor."
   @spec from_activity_refs([map()], [Revision.t() | map()]) :: index()
   def from_activity_refs(page_resources, page_revisions) do
-    contexts_by_page = by_page_resource_id(page_resources, page_revisions)
+    revisions_by_id = Map.new(page_revisions, &{&1.id, &1})
 
     page_resources
-    |> Enum.reduce(%{}, fn page_resource, contexts ->
-      case Map.get(contexts_by_page, page_resource.resource_id) do
+    |> Enum.flat_map(fn page_resource ->
+      case Map.get(revisions_by_id, page_resource.revision_id) do
         nil ->
-          contexts
+          []
 
-        context ->
-          context.page_revision
+        page_revision ->
+          page_revision
           |> Map.get(:activity_refs, [])
           |> List.wrap()
-          |> Enum.reduce(contexts, fn activity_id, contexts ->
-            Map.update(contexts, activity_id, [context], &(&1 ++ [context]))
-          end)
+          |> Enum.map(&{&1, page_resource.resource_id})
       end
     end)
+    |> from_page_pairs(page_resources, page_revisions)
   end
 
   @doc """

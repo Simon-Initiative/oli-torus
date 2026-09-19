@@ -70,6 +70,25 @@ defmodule Oli.Delivery.Sections.LinkedActivities.PageContextsTest do
     assert PageContexts.canonical(reversed)[7].page_resource_id == 100
   end
 
+  test "the depot's page order does not decide the canonical page either" do
+    page_resources = [
+      %{resource_id: 100, revision_id: 1},
+      %{resource_id: 200, revision_id: 2}
+    ]
+
+    revisions = [
+      %{id: 1, resource_id: 100, activity_refs: [7]},
+      %{id: 2, resource_id: 200, activity_refs: [7]}
+    ]
+
+    forward = PageContexts.from_activity_refs(page_resources, revisions)
+    reversed = PageContexts.from_activity_refs(Enum.reverse(page_resources), revisions)
+
+    assert Enum.map(forward[7], & &1.page_resource_id) == [100, 200]
+    assert Enum.map(reversed[7], & &1.page_resource_id) == [100, 200]
+    assert PageContexts.canonical(reversed)[7].page_resource_id == 100
+  end
+
   test "observed contexts lead, and a page present in both sources is not duplicated" do
     observed = %{
       7 => [%{page_resource_id: 200, page_revision: %{id: 2}}]

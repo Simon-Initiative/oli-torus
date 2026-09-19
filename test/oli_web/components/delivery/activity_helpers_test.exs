@@ -2927,7 +2927,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
              ] = Enum.sort_by(values, &{&1.question, &1.choice})
     end
 
-    test "an item or choice whose authored text was cleared renders as blank instead of raising" do
+    test "cleared items and choices keep distinct identities instead of raising or colliding" do
       likert_id = 5
 
       activities = [
@@ -2939,7 +2939,8 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
             content: %{
               "items" => [
                 %{"id" => "q1", "content" => []},
-                %{"id" => "q2", "content" => [%{"children" => [%{"text" => "Question 2"}]}]}
+                %{"id" => "q2", "content" => [%{"children" => [%{"text" => ""}]}]},
+                %{"id" => "q3", "content" => [%{"children" => [%{"text" => "Question 3"}]}]}
               ],
               "choices" => [
                 %{"id" => "c1", "content" => [%{"children" => []}]},
@@ -2953,7 +2954,8 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
 
       response_summaries = [
         %{activity_id: 51, response: "c1", part_id: "q1", count: 1},
-        %{activity_id: 51, response: "c2", part_id: "q2", count: 2}
+        %{activity_id: 51, response: "c2", part_id: "q2", count: 2},
+        %{activity_id: 51, response: "c2", part_id: "q3", count: 1}
       ]
 
       [%{datasets: %{medians: medians, values: values}}] =
@@ -2965,8 +2967,11 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
 
       questions = medians |> Enum.map(& &1.question) |> Enum.sort()
 
-      assert questions == ["", "Question 2"]
-      assert Enum.any?(values, &(&1.choice == ""))
+      # Two items were cleared; each keeps its own category instead of collapsing into one.
+      assert questions == ["Question 1", "Question 2", "Question 3"]
+      assert length(Enum.uniq(questions)) == 3
+
+      assert Enum.any?(values, &(&1.choice == "Choice 1"))
       assert Enum.any?(values, &(&1.choice == "Yes"))
     end
   end

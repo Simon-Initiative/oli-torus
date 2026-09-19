@@ -1646,10 +1646,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     Map.put(activity_attempt, :student_responses, Map.merge(sr, grouped))
   end
 
-  defp authored_text(%{"content" => [%{"children" => [%{"text" => text} | _]} | _]})
-       when is_binary(text), do: text
+  # Downstream datasets key on this text, so a blank fallback would merge two cleared items into a
+  # single chart category. The positional label keeps them apart.
+  defp authored_text(%{"content" => [%{"children" => [%{"text" => text} | _]} | _]}, fallback)
+       when is_binary(text) do
+    if String.trim(text) == "", do: fallback, else: text
+  end
 
-  defp authored_text(_), do: ""
+  defp authored_text(_node, fallback), do: fallback
 
   defp add_likert_details(activity, response_summaries) do
     %{questions: questions, question_mapper: question_mapper} =
@@ -1659,7 +1663,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         fn q, acc ->
           question = %{
             id: q["id"],
-            text: authored_text(q),
+            text: authored_text(q, "Question #{acc.question_number}"),
             number: acc.question_number
           }
 
@@ -1682,7 +1686,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         fn ch, acc ->
           choice = %{
             id: ch["id"],
-            text: authored_text(ch),
+            text: authored_text(ch, "Choice #{acc.aux_points}"),
             points: acc.aux_points
           }
 
