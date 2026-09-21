@@ -2,9 +2,9 @@
 
 ## 1. Executive Summary
 
-This design supports QA preview instances through three coordinated concerns. Scenario seeding remains available only in non-production environments: local and token-protected Playwright entry points in `dev`, `test`, and `ci_e2e`, plus a privileged CLI in `preview`; `prod` exposes no supported seeding entry point. A production-shaped `MIX_ENV=preview` release compiles in CLI seeding and system-administrator masquerading, while runtime `PREVIEW_QA_TOOLS_ENABLED` activation makes those tools and the protected mailbox available. `MIX_ENV=test` may compile preview-only sources solely for automated verification and is not a deployable release boundary. Independently of runtime activation, every preview release routes email to a local non-delivering adapter.
+This design supports QA preview instances through three coordinated concerns. Scenario seeding remains available only in non-production environments: local and token-protected Playwright entry points in `dev`, `test`, and `ci_e2e`, plus a privileged CLI in `preview`; `prod` exposes no supported seeding entry point. A production-shaped `MIX_ENV=preview` release makes low-level CLI seeding available directly, while runtime `PREVIEW_QA_TOOLS_ENABLED` activation enables web-accessible system-administrator masquerading and the protected mailbox. `MIX_ENV=test` compiles seeding sources solely for automated verification and is not a deployable release boundary. Independently of runtime activation, every preview release routes email to a local non-delivering adapter.
 
-Seeding is a synchronous release CLI intended only for operators with shell or IEx access. It lists bundled scenarios, runs a bundled scenario or local YAML file through the full `Oli.Scenarios` engine, and downloads and ingests a Torus project archive from an HTTP/HTTPS URL. The post-migration Kubernetes Job invokes this same CLI for `review_demo`.
+Seeding is a synchronous release CLI intended only for operators with shell or IEx access. It lists bundled scenarios, runs a bundled scenario or local YAML file through the full `Oli.Scenarios` engine, and downloads and ingests a Torus project archive from an HTTP/HTTPS URL. A retained, later-wave Kubernetes Job invokes this same CLI for `oli_torus_getting_started_course` after baseline setup and application readiness.
 
 Torus adds no seed web UI or API, Oban worker or queue, durable seed-run state, YAML snapshot storage, deployed-safe scenario allowlist, or application-managed retry system. Shell access is the seed authorization boundary and the external deployment-management system owns operator access/auditing. User masquerade remains an application feature because it is required for manual QA; it retains system-admin authorization, signed session state, dual-identity auditing, and the persistent warning/stop UI.
 
@@ -12,12 +12,12 @@ Torus adds no seed web UI or API, Oban worker or queue, durable seed-run state, 
 
 - Functional requirements:
   - FR-001 through FR-003 define the preview-build/runtime-activation boundary, synchronous release commands, scenario listing/execution, and URL archive ingestion.
-  - FR-004 through FR-006 add the Stagehand-derived directives, invoke `review_demo` from Kubernetes, and preserve Playwright-owned setup.
+  - FR-004 through FR-006 add the Stagehand-derived directives, invoke `oli_torus_getting_started_course` from Kubernetes, and preserve Playwright-owned setup.
   - FR-007 through FR-009 retain secure, auditable, accessible user masquerade.
   - FR-010 replaces outbound email delivery with a local non-delivering adapter and provides an authenticated mailbox in QA mode.
 - Non-functional requirements:
   - CLI commands return bounded output and deterministic exit codes and never print complete YAML, credentials, learner responses, or archive contents.
-  - Kubernetes owns startup retry, status, and resource limits. Scenario handlers own their existing transaction boundaries; partial changes are not rolled back.
+  - Kubernetes owns Job status and resource limits. The deployment seed is a one-shot initializer with automatic retry disabled. Scenario handlers own their existing transaction boundaries; partial changes are not rolled back.
   - Masquerade authorization fails closed independently at route/event, service, session-restoration, and stop boundaries.
 - Assumptions:
   - Shell or IEx access is already privileged enough to execute arbitrary application code and mutate the database.
@@ -43,29 +43,39 @@ Torus adds no seed web UI or API, Oban worker or queue, durable seed-run state, 
 
 ### 4.1 Component Roles & Interactions
 
-Preview images are production-shaped releases built with `MIX_ENV=preview`. `config/preview.exs` is standalone and imports neither `prod.exs` nor `dev.exs`. It initially copies only the applicable production settings, sets the preview build marker, and configures `Swoosh.Adapters.Local`. `config/runtime.exs` treats `PREVIEW_QA_TOOLS_ENABLED` as runtime activation: any casing of `true` enables it, while missing, blank, whitespace-padded, false, and malformed values disable it. `Oli.PreviewQATools.Config.enabled?/0` requires both the compile-time preview marker and runtime activation. Compile-shaped release and router integrations use `Application.compile_env/3`; callable boundaries recheck runtime state. Development and CI E2E continue using the existing Playwright interface, test compiles preview-only sources to verify them, and production exposes neither Playwright scenario routes nor preview release tooling (AC-001 through AC-004).
+Preview images are production-shaped releases built with `MIX_ENV=preview`. `config/preview.exs` is standalone and imports neither `prod.exs` nor `dev.exs`. It initially copies only the applicable production settings, sets the preview build marker, and configures `Swoosh.Adapters.Local`. The preview build includes `seeding/lib` and retains `bin/seed`; other release environments do neither, so the command needs no runtime flag. For web QA capabilities, `PREVIEW_QA_TOOLS_ENABLED` remains deny-by-default: any casing of `true` enables masquerade and mailbox access, while missing, blank, whitespace-padded, false, and malformed values disable them. `Oli.PreviewQATools.Config.enabled?/0` requires both the compile-time preview marker and runtime activation for those web boundaries (AC-001 through AC-004).
 
 The Dockerfile accepts `ARG MIX_ENV=prod`, propagates it through dependency selection, compilation, release construction, smoke execution, and final-stage copy paths, and therefore remains production-safe when callers omit the argument. Both automatic and manual preview-image jobs pass `MIX_ENV=preview`; production workflows retain `prod`. The implementation audit classifies existing `Mix.env()` branches and dependency `only:` selectors, including `start_permanent`, endpoint static gzip, and compiler paths/options, so preview receives production-like behavior where required (AC-004).
 
-CI responsibilities remain proportional to the existing pipeline: ordinary PR checks compile/test under `MIX_ENV=test`, including `preview/lib` for ExUnit verification; CI E2E uses the token-protected Playwright scenario interface; the preview-image workflow builds the full `MIX_ENV=preview` release on PRs; and the existing package/release workflow validates `MIX_ENV=prod` after merge. This work adds no production compile gate or automated configuration-parity audit to PR CI. `guides/process/building.md` becomes the discoverable source for the `dev`, `test`, `ci_e2e`, `preview`, and `prod` boundaries, the workflows that build them, the standalone preview configuration contract, compile-time versus runtime configuration, and the runtime activation flag. Earlier production validation is a future operational response only if package-stage failures become recurrent.
+CI responsibilities remain proportional to the existing pipeline: ordinary PR checks compile/test under `MIX_ENV=test`, including `seeding/lib` for ExUnit verification; CI E2E uses the token-protected Playwright scenario interface; the preview-image workflow builds the full `MIX_ENV=preview` release on PRs; and the existing package/release workflow validates `MIX_ENV=prod` after merge. This work adds no production compile gate or automated configuration-parity audit to PR CI. `guides/process/building.md` becomes the discoverable source for the `dev`, `test`, `ci_e2e`, `preview`, and `prod` boundaries, the workflows that build them, the standalone preview configuration contract, flag-free release seeding, and runtime activation of web QA features. Earlier production validation is a future operational response only if package-stage failures become recurrent.
 
-`Oli.Release.PreviewQATools` is a thin synchronous command dispatcher exposed through the `bin/seed` release overlay script. It supports three operations:
+`Oli.Seeding.CLI` is a thin, environment-neutral synchronous command dispatcher. Development exposes it through `mix seed`; preview releases expose the same dispatcher through the `bin/seed` overlay. The seeding source tree is compiled in development, preview, and test, but excluded from production builds. It supports three operations:
 
 - `bin/seed scenarios list` lists immutable bundled scenario metadata;
 - `bin/seed scenarios run --name <id>` or `--file <path>` runs a bundled scenario or operator-provided local YAML through `Oli.Scenarios`;
 - `bin/seed projects ingest --url <http(s)-url> --author <selector>` downloads and ingests a project archive for an explicitly selected author through `Oli.Interop.Ingest`.
 
-It prints a bounded human-readable summary, returns zero only on success, and maps usage, disabled, download, parse, scenario, assertion, hook, and ingest failures to nonzero exits (AC-005 through AC-011). `--name` and `--file` are mutually exclusive; unknown options, missing values, and extra positional arguments print usage and fail. It does not accept an inline Elixir expression as input; operators who need arbitrary code already have IEx access. The underlying functions remain directly callable from IEx.
+It prints a bounded human-readable summary, returns zero only on success, and maps usage, download, parse, scenario, assertion, hook, and ingest failures to nonzero exits (AC-005 through AC-011). `--name` and `--file` are mutually exclusive; unknown options, missing values, and extra positional arguments print usage and fail. It does not accept an inline Elixir expression as input; operators who need arbitrary code already have IEx access. The underlying functions remain directly callable from IEx.
 
 Bundled scenarios live beneath an application-owned release directory with stable identifier, description, and version/digest metadata. Listing never parses or executes scenario bodies. A path supplied to `run` is intentionally not restricted to that directory because shell access is trusted.
 
 CLI scenarios use the complete existing scenario DSL without an additional deployed-safe policy. The execution adapter disables implicit owner selection and creation. YAML must establish current author and institution before dependent mutation by creating/selecting scenario references, using restricted unique lookups, or selecting explicit configured defaults such as `default_admin`. Missing, late, ambiguous, inactive, or wrong-type ownership fails before dependent mutation (AC-007 through AC-009).
 
-`Oli.Release.PreviewQATools.ProjectIngest` accepts only HTTP/HTTPS URLs, uses the application's HTTP client with finite connect/receive timeouts, bounded redirects, and a configured maximum archive size, streams into a uniquely created temporary directory, calls `Oli.Interop.Ingest.ingest/2`, and cleans up in `after`. It never logs URL credentials, response bodies, or archive contents (AC-010 and AC-011). Because the operator has shell access, network policy—not an application SSRF allowlist—is the authoritative reachability boundary.
+`Oli.Seeding.ProjectIngest` accepts only HTTP/HTTPS URLs, uses the application's HTTP client with finite connect/receive timeouts, bounded redirects, and a configured maximum archive size, streams into a uniquely created temporary directory, calls `Oli.Interop.Ingest.ingest/2`, and cleans up in `after`. It never logs URL credentials, response bodies, or archive contents (AC-010 and AC-011). Because the operator has shell access, network policy—not an application SSRF allowlist—is the authoritative reachability boundary.
 
-`bulk_users` and `simulate_progress` become normal `Oli.Scenarios` directives. Scenario-owned services replace Stagehand's reusable behavior. They produce stable references, support optional deterministic random seeds, use collision-safe synthetic identities, bound internal concurrency, and return structured warnings for unsupported content (AC-012 through AC-014).
+`bulk_create_enroll_users` remains a normal `Oli.Scenarios` directive. Phase 4B replaces the initial `simulate_progress` implementation and input/result contract with a fixed profile/course simulator. It requires exactly one profile or complete count-based cohort assignment, rejects removed top-level `pct_correct` and `assessment_attempts` options, and exposes neither profile versions nor arbitrary overrides (AC-012 through AC-014 and AC-027).
 
-The bundled `review_demo` scenario creates the approved representative QA dataset without embedded credentials. A post-migration Kubernetes Job runs it synchronously through the release CLI. No Torus process creates or monitors the Job (AC-015 through AC-017).
+The replacement simulator walks delivered curriculum order and uses shared scenario-owned learner actions for visits, evaluations, hints, whole-activity or part resets, scored-attempt saves, and finalization. Native response adapters support multiple choice, ordering, check all that apply, short answer, and both multi-input submission modes from the transformed activity model and real part identities. Actual evaluation and grading policy determine scores and retained grades (AC-028).
+
+Fixed `high_proficiency`, `steady_learner`, `persistent_learner`, and `low_engagement` profiles contain only course reach, activity participation, initial correctness, practice attempt count, assessment attempt count, and improvement per attempt. Hint requests are a built-in response to an incorrect practice attempt rather than a profile setting. Stable learner identities and seeded decisions keep response variation repeatable (AC-029).
+
+Fast execution remains the default. Optional paced mode samples fixed per-profile page, answer, retry, break, and study-session distributions and sleeps within each learner worker without a total-duration window. Fast mode uses normal task-stream concurrency and a deterministic 10–50 ms delay at modeled wait points to stagger learner actions; paced mode starts one worker per admitted learner so realistic waits overlap. The foreground CLI process owns the stream; terminating it exits the VM and all workers immediately, while database transactions already committed remain committed. Both Mix and release entry points select a dedicated `Oli.Seeding.Runtime` role that starts required repository, cache, evaluation, event, and job-production dependencies while excluding the endpoint, unrelated consumers, upload pipelines, and startup recovery (AC-030 and AC-031).
+
+`Oli.Scenarios.LearnerSession` derives one UUIDv5 identifier from seed, learner identity, and section. The simulator reuses that ID for the learner's full journey. Modeled study sessions still control paced gaps and breaks, but no longer rotate DataShop IDs. Lower-level exact-sequence directives keep independent transient UUIDs and expose no new session-management contract (AC-034).
+
+The runner admits at most 100 learners, uses `Task.async_stream/3` defaults in fast mode and one worker per admitted learner in paced mode, and relies on fixed profile attempt caps plus ordinary Repo/domain timeouts. A small fast-mode action delay smooths bursts without introducing an action budget, token bucket, per-action task, cumulative active-work timeout, central scheduler, or memory benchmark. Oban owns concurrency and persistence for downstream jobs; the simulator does not poll shared queues. Learners with existing section history are skipped and counted, while fresh learners continue. There is no reconciliation, run persistence, cleanup, automatic resume, or backdated history (AC-032 and AC-033).
+
+The bundled `oli_torus_getting_started_course` scenario creates a cohesive “Getting Started with OLI Torus” course without embedded credentials. Its design artifact, `design/oli-torus-getting-started-course.md`, defines learning objectives, rich authoring and publishing content, several unscored practice pages, one scored assessment, and each activity's hints and correct/incorrect feedback before the YAML is authored. The scenario publishes the course, creates its section and synthetic cohort, then invokes fast `simulate_progress` to produce progress and grades. It is a one-shot initializer for a fresh or deliberately reset preview database and adds no cross-run reconciliation or resume behavior (AC-015 through AC-017).
 
 `Oli.PreviewQATools.Masquerade` owns start, stop, restore, expiry, and invalidation. The existing tamper-protected signed session holds only the actor identifier, target identifier, issued/expiry timestamps, and a random reference; this work does not change application-wide session encryption. Ordinary authorization sees only the target; actor identity is available only to auditing, the stop operation, and route-local `/dev/mailbox` authorization. Chaining is rejected and invalid state is cleared (AC-019 through AC-022).
 
@@ -79,11 +89,19 @@ No preview-specific branches are added to LTI grade passback, Stripe, Cashnet, w
 
 Scenario command flow:
 
-1. The release wrapper passes parsed arguments to `Oli.Release.PreviewQATools`.
+1. The development Mix task or preview release wrapper passes arguments to `Oli.Seeding.CLI`.
 2. The dispatcher verifies effective enablement and resolves a bundled identifier or local path.
 3. The adapter parses the YAML and validates explicit ownership ordering without applying a broader directive allowlist.
 4. `Oli.Scenarios` executes synchronously using its existing transaction semantics.
 5. The command emits a bounded summary and exits zero or nonzero. No run record or background job is created.
+
+Course-simulation flow:
+
+1. Resolve the section, enrolled learners, fixed profile/count cohorts, and delivered curriculum; skip and count learners with existing section history.
+2. Derive stable per-learner reach, participation, correctness, response, and timing decisions from the explicit seed and learner identity.
+3. Process learners through one unordered task stream. Fast mode uses the task-stream default and short deterministic action delays; paced mode admits all selected learners and sleeps in each learner process.
+4. Execute visits, responses, hints, resets, saves, and finalization directly through normal delivery boundaries. Later attempt numbers increase correctness probability, while real evaluators and grading policy determine outcomes.
+5. Reduce learner outcomes into a compact summary. Process termination stops all remaining work without simulator-specific cleanup or resume behavior.
 
 Project ingest flow:
 
@@ -93,10 +111,12 @@ Project ingest flow:
 
 Kubernetes flow:
 
-1. Deployment automation waits for successful migrations and omits the seed Job when `PREVIEW_QA_SEED_PROFILE` is absent.
-2. It creates `seed-<profile>-<release-id>` with application, environment, release, profile, and `component=preview-qa-seed` labels, resolves the configured profile, and passes it as the final argument to `bin/seed scenarios run --name <profile>` without shell interpolation.
-3. The Job uses `restartPolicy: Never`, `backoffLimit: 1`, and explicit CPU/memory requests and limits initially matching the migration Job.
-4. Kubernetes uses process exit for success/failure and owns retry, stdout/stderr logs, status, resource enforcement, and its existing Job-retention/TTL convention. Torus receives or persists no Job identity.
+1. The pull-request preview overlay selects `PREVIEW_QA_SEED_SCENARIO=oli_torus_getting_started_course` and includes a fixed-name retained seed Job. It may independently set `PREVIEW_QA_TOOLS_ENABLED=true` for masquerade and mailbox access, but the Job does not depend on that flag.
+2. Argo CD applies ordinary application resources first. The Deployment becomes Healthy only after its `release-setup` init container completes baseline create/migrate/seed and the web readiness probe succeeds.
+3. A later sync wave applies the Job, which uses the same preview release image, service account, runtime ConfigMap, and runtime Secret as the application and passes `scenarios run --name oli_torus_getting_started_course` as discrete arguments to `/app/bin/seed`.
+4. The Job uses `restartPolicy: Never`, `backoffLimit: 0`, and explicit CPU/memory requests and limits. It is a normal resource, not an Argo CD hook.
+5. The completed Job remains in the namespace as the one-run marker. The generated Application ignores later pod-template drift while respecting that difference during sync, preventing a later preview image update or resync from replacing or replaying it. Closing the pull request prunes the Job with the namespace.
+6. Kubernetes uses process exit for success/failure and owns stdout/stderr logs, status, and resource enforcement. A failed partial seed requires a fresh or deliberately reset preview namespace. Torus receives or persists no Job identity.
 
 Masquerade flow:
 
@@ -118,7 +138,7 @@ Masquerade flow:
 - Admin workbench plus Oban and run persistence: rejected because shell access is acceptable and already privileged; the application layers add substantial UI, authorization, storage, and orchestration scope.
 - Deployed-safe directive allowlist: rejected for CLI execution because an operator with shell/IEx access can already invoke arbitrary application behavior. Existing scenario validation remains useful, but is not a security sandbox.
 - Store exact YAML for audit: rejected in the reduced scope because Torus stores no seed runs. The deployment-management platform audits shell access and operators retain inputs externally.
-- Application startup or Oban seeding: rejected because a post-migration Kubernetes Job cleanly owns deployment-time execution.
+- Application startup or Oban seeding: rejected because a later-wave Kubernetes Job cleanly owns deployment-time execution after application readiness.
 - Remove masquerade with the workbench: rejected because manual QA still requires efficient identity switching and this cannot be replaced by shell execution.
 - Keep `MIX_ENV=prod` and use `PREVIEW_QA_TOOLS_ENABLED` at compilation and runtime: superseded because it overloads a single variable as build identity and operator activation while scattering a coherent preview safety profile through production configuration. A dedicated environment is selected with a one-time review of production-like branches and clear build documentation.
 - Base preview on `dev.exs`: rejected because code reloading, development dependencies, relaxed runtime behavior, and developer conveniences do not represent a production-shaped Kubernetes release.
@@ -129,11 +149,11 @@ Masquerade flow:
 
 - Build/runtime configuration:
   - Preview images use `MIX_ENV=preview`; production images default to `MIX_ENV=prod`.
-  - Local and Playwright scenario seeding is available in `dev`, `test`, and `ci_e2e`; `test` also compiles `preview/lib` solely for automated verification; `prod` exposes no supported seeding entry point.
+  - Local and Playwright scenario seeding is available in `dev`, `test`, and `ci_e2e`; `test` also compiles `seeding/lib` solely for automated verification; `prod` exposes no supported seeding entry point.
   - `config/preview.exs` is standalone, imports neither environment file, and explicitly declares the applicable production-shaped settings plus preview capabilities and safety overrides.
-  - `PREVIEW_QA_TOOLS_ENABLED`: case-insensitive `true` required at runtime to activate seeding, masquerade, and mailbox access; it is not a build argument.
-  - `PREVIEW_QA_SEED_PROFILE`: optional bundled identifier used by deployment automation; it does not enable anything.
-  - `guides/process/building.md`: documents the `dev`, `test`, `ci_e2e`, `preview`, and `prod` seeding boundaries, build paths, configuration ownership, compile/runtime boundary, and preview activation procedure.
+  - `PREVIEW_QA_TOOLS_ENABLED`: case-insensitive `true` required at runtime to activate masquerade and mailbox access; it does not control the release seeding CLI and is not a build argument.
+  - `PREVIEW_QA_SEED_SCENARIO`: bundled scenario identifier selected by deployment automation; pull-request previews set it to `oli_torus_getting_started_course`, and it does not enable anything.
+  - `guides/process/building.md`: documents the `dev`, `test`, `ci_e2e`, `preview`, and `prod` seeding boundaries, build paths, configuration ownership, compile/runtime boundary, flag-free release seeding, and web QA activation procedure.
 - Release interface:
   - `bin/seed scenarios list`: list bundled identifiers, descriptions, and versions/digests.
   - `bin/seed scenarios run --name <id>`: synchronously execute bundled YAML.
@@ -142,8 +162,9 @@ Masquerade flow:
 - Scenario ownership interface:
   - Explicit create/reference, restricted unique lookup, and configured-default selectors establish `current_author` and `current_institution`.
 - Kubernetes interface:
-  - After migrations succeed, an optional Job uses the Torus image and passes the resolved profile to `bin/seed scenarios run --name <profile>` as a discrete argument.
-  - The Job uses `restartPolicy: Never`, `backoffLimit: 1`, resources initially matching the migration Job, the name `seed-<profile>-<release-id>`, and application/environment/release/profile/component labels.
+  - Pull-request previews include a retained Job in a later Argo CD sync wave; application health establishes that baseline setup and web readiness succeeded before the Job starts.
+  - The Job uses the Torus image and passes `oli_torus_getting_started_course` to `bin/seed scenarios run --name <scenario>` as a discrete argument.
+  - The Job uses `restartPolicy: Never`, `backoffLimit: 0`, explicit resources, a fixed scenario-derived name, and application/environment/scenario/component labels.
   - Kubernetes owns logs and its existing retention policy; Torus persists no Job identity or result.
 - Web interface:
   - Only masquerade start/stop and the persistent banner are added for preview tooling. There is no new preview seed route, LiveView, controller, or API; the existing token-protected Playwright scenario route remains limited to `dev`, `test`, and `ci_e2e`.
@@ -166,7 +187,7 @@ Masquerade flow:
 
 - Scenario directives and `Oli.Interop.Ingest` retain their existing transaction boundaries.
 - A failed scenario may leave earlier mutations committed; the CLI explicitly reports `partial_mutations_possible` when execution started.
-- `review_demo` must use stable identities/references and reconciliation-aware operations so bounded Kubernetes retries do not silently duplicate its intended dataset.
+- `oli_torus_getting_started_course` uses stable scenario identities/references for predictable one-run behavior. They are not treated as cross-run completion markers. The retained completed Job is only a namespace-lifetime execution marker, and automatic Kubernetes retry is disabled so a partially mutated scenario is not replayed.
 - Masquerade session renewal and clearing are atomic with the HTTP response; required audit failures follow existing security-audit fail-closed conventions.
 
 ## 8. Caching Strategy
@@ -178,18 +199,19 @@ Masquerade flow:
 
 - Commands run outside web request and Oban processes and do not consume application job queues.
 - URL downloads stream to disk and enforce bounded time, redirects, and bytes.
-- `simulate_progress` uses fixed-size batches with modest supervised concurrency and bounded per-task timeouts; shared section inputs are preloaded to avoid N+1 queries.
+- `simulate_progress` passes one resolved course map to a learner task stream. Fast mode uses the task-stream default with short deterministic action delays; paced mode uses one worker per admitted learner so sleeping journeys progress concurrently. Delivery calls run directly in each learner worker and use ordinary domain and Repo timeout behavior. Both delay strategies use `Process.sleep/1`; no additional scheduler, limiter, reporter, or action task tree is introduced.
 - Kubernetes declares CPU/memory requests and limits. No seed-specific global execution timeout is added inside Torus.
 
 ## 10. Failure Modes & Resilience
 
 - Non-preview build: release commands and masquerade integrations are unavailable; runtime configuration cannot add them.
-- Preview build but runtime-disabled: commands fail before mutation, masquerade fails closed, mailbox access is unavailable, and startup emits one instructional warning. Preview email containment remains active.
+- Preview build but web-QA-runtime-disabled: `bin/seed` remains available, masquerade fails closed, mailbox access is unavailable, and application-server startup emits one instructional warning for those web capabilities. The dedicated seeding process emits no web-tools status. Preview email containment remains active.
 - Unknown scenario or invalid path/YAML: print a bounded error and exit nonzero.
 - Ownership missing or invalid: reject before the first ownership-dependent directive; do not use implicit defaults.
 - Scenario/assertion/hook failure: exit nonzero and report possible partial mutation without rollback.
 - URL, redirect, timeout, size, archive, author, or ingest failure: exit nonzero, redact sensitive data, and clean temporary files.
-- Kubernetes interruption: Kubernetes permits one retry through `backoffLimit: 1`; `review_demo` reconciliation limits duplication.
+- Simulator interruption: the foreground seed VM owns its linked learner workers, so terminating the command terminates all simulator processes immediately. Already committed database transactions remain committed; an operation interrupted inside its transaction follows the domain operation's normal rollback behavior. Server-owned jobs created by committed actions continue normally.
+- Existing learner history: skip and report those learners before dispatch while continuing with fresh learners. Neither Phase 4B nor Phase 5 resumes or reconciles partial progress. A failed `oli_torus_getting_started_course` Job requires operator inspection and a recreated or deliberately reset preview dataset before another invocation.
 - Invalid/expired masquerade state or entry into a new LTI login/launch flow: clear or reject it, audit the reason, and continue as the actor when safe or signed out otherwise.
 - Mailbox access while disabled or without current system-admin authorization: return a non-disclosing response and expose no message metadata.
 - Unsanitized production database clone or production credentials: unsupported deployment configuration; the feature provides no claim of broad external-effect containment beyond application email.
@@ -197,14 +219,14 @@ Masquerade flow:
 ## 11. Observability
 
 - CLI stdout/stderr contains operation, source type, bundled identifier or digest where available, duration, aggregate counts, result code, and partial-mutation warning. It excludes complete YAML, archive bodies, URL credentials, learner responses, and secrets.
-- Process exit is the authoritative command result. Kubernetes collects logs and owns Job status, retries, duration, and resource monitoring.
-- Application startup emits one warning only for preview-compiled/runtime-disabled state and an enabled signal when the preview environment and runtime flag are both active.
+- Process exit is the authoritative command result. Kubernetes collects logs and owns Job status, duration, and resource monitoring; automatic seed retry is disabled.
+- Application-server startup emits one web-QA warning only for preview-compiled/runtime-disabled state and an enabled signal when the preview environment and runtime flag are both active. Dedicated seeding-process startup emits neither web-tools status.
 - Audit masquerade start, stop, expiry, and invalidation with actor, target, timestamp, session reference, and bounded request context.
 - Local mailbox inspection relies on authenticated access logs; email contents are visible only inside the protected mailbox UI and excluded from application telemetry.
 
 ## 12. Security & Privacy
 
-- The preview build/runtime activation boundary protects both capabilities. CLI seed authorization relies on existing deployment shell/IEx controls; Torus adds no redundant role model for shell callers.
+- The preview compile-time boundary makes `bin/seed` unavailable in production. CLI seed activation and authorization rely on explicit development Mix or preview release shell invocation; Torus adds no runtime flag or redundant role model for shell callers. The separate runtime flag protects web-accessible masquerade and mailbox features.
 - The release command is powerful by design and is not a sandbox. Documentation warns that arbitrary custom scenarios and hooks execute trusted application behavior and mutate real data.
 - URL ingestion accepts only HTTP/HTTPS, bounds resource usage, redacts credentials, and relies on deployment network policy for destination control.
 - YAML ownership is explicit and no first-record/generated-default fallback is allowed in CLI mode.
@@ -216,8 +238,8 @@ Masquerade flow:
 - Configuration tests cover the Mix-environment/runtime-flag matrix, casing variants, disabled values, warning behavior, production-safe Docker defaults, preview build arguments, and the required existing production-like branch classifications (AC-001 through AC-004). The preview-image workflow supplies the preview release build check; existing production packaging remains unchanged.
 - Release command tests cover listing, bundled and custom execution, full DSL compatibility, explicit ownership, bounded output, exit codes, and absence of application authorization/run persistence (AC-005 through AC-009).
 - Ingest tests use a controlled HTTP server for scheme validation, redirects, timeout, byte limits, credential redaction, cleanup, author selection, and successful/failed `Oli.Interop.Ingest` calls (AC-010 and AC-011).
-- Scenario tests cover `bulk_users`, `simulate_progress`, deterministic seeds, stable identities, collision handling, supported/unsupported content, bounded concurrency, and Stagehand migration (AC-012 through AC-014).
-- Kubernetes/profile tests execute `review_demo` through the release dispatcher, verify representative state and retry reconciliation, and inspect Job configuration. Static checks prove no Oban seeding, run schema, or status endpoint exists (AC-015 through AC-017).
+- Scenario tests cover `bulk_create_enroll_users`, fixed-profile/count-cohort parsing and schema parity, seeded policy/session identity, ordered traversal, all supported native activity configurations, whole-activity and per-part retries, repeated scored assessments and grade aggregation, existing-history skipping, pacing primitives, fixed caps, compact state, and Stagehand migration (AC-012 through AC-014 and AC-027 through AC-034).
+- Scenario/deployment tests execute `oli_torus_getting_started_course` through development and release dispatchers on fresh data; verify its curriculum, activities, cohort, progress, gradebook state, and bounded partial-failure reporting; and render the zero-retry, later-wave retained Job contract. A disposable pull-request preview verifies ready-before-seed ordering, no replay after a later image sync, and pruning on close. Static checks prove no Oban seeding, reconciliation layer, run schema, or status endpoint exists (AC-015 through AC-017).
 - Playwright compatibility tests preserve existing fixture behavior (AC-018).
 - Masquerade tests cover authorization, chaining, expiry, logout, target invalidation, runtime disablement, actor/target separation, audit attribution, persistent target mutations, safe redirects, keyboard operation, accessible names, and non-color cues (AC-019 through AC-024). The layout matrix includes `default`, `workspace`, `delivery`, `delivery_student_dashboard`, `delivery_dashboard`, authenticated LiveView, and authenticated `chromeless`; it excludes `delivery_from_payment` and `lti` and verifies LTI entry clears or rejects masquerade.
 - Mail containment tests verify the preview adapter override regardless of runtime flag, absence of external delivery, preview/runtime route gating, mailbox access for a current system administrator and for a valid original admin actor during masquerade, continued target identity within that mailbox request, denial of adjacent admin routes, and denial to anonymous, lesser-role, expired, invalid, or forged states (AC-025 and AC-026).
@@ -229,13 +251,13 @@ Acceptance-criterion traceability clarifications:
 - AC-002 and AC-003 are verified by negative enablement and startup log-capture tests.
 - AC-006 and AC-008 are verified by release-dispatch and explicit-ownership integration tests.
 - AC-013 is verified by deterministic `simulate_progress` scenario tests.
-- AC-016 is verified by the `review_demo` end-to-end scenario test.
+- AC-016 is verified by the `oli_torus_getting_started_course` end-to-end scenario test.
 - AC-020 and AC-021 are verified by masquerade lifecycle and actor/target authorization tests.
 
 ## 14. Backwards Compatibility
 
-- Existing `Oli.Scenarios` and Playwright execution remain available. Explicit ownership is enforced only by the new release adapter.
-- New directives extend the DSL without changing existing syntax.
+- Existing unrelated `Oli.Scenarios` directives and Playwright execution remain available. Explicit ownership is enforced only by the new release adapter.
+- `simulate_progress` keeps its directive name but intentionally replaces the Phase 4 syntax and result. Every existing caller and assertion migrates; removed top-level options fail with migration guidance and no compatibility adapter remains.
 - Stagehand call sites migrate before its standalone API is removed or reduced to temporary local wrappers.
 - No database migration is introduced for seed tooling.
 - Non-masqueraded sessions and existing authorization behavior remain unchanged.
@@ -245,7 +267,7 @@ Acceptance-criterion traceability clarifications:
 - Scenario execution is mistaken for a production input surface: document the trusted local, automation-token, and shell boundaries for `dev`, `test`, `ci_e2e`, and `preview`; keep production free of supported seeding entry points; and compile preview release tooling into deployable artifacts only under `MIX_ENV=preview`.
 - Preview configuration becomes misunderstood or stale: keep it small, document intentional duplication and every environment's build path in `guides/process/building.md`, review existing `Mix.env()` branches and dependency selectors when introducing preview, and rely on the preview-image and existing production-package builds for their respective environments. Extract shared configuration only if meaningful duplication emerges.
 - Project download consumes resources or reaches an unintended destination: bound time/redirects/bytes, rely on deployment network policy, and clean temporary files.
-- Scenario or retry creates partial/duplicate data: report partial mutation, use deterministic profile references, and make `review_demo` reconciliation-aware.
+- Scenario failure leaves partial data: report partial mutation, disable automatic retry, and require a fresh or deliberately reset preview dataset before rerunning `oli_torus_getting_started_course`.
 - External effects escape through an unsanitized clone or production credentials: explicitly support only fresh or sanitized databases and non-production runtime configuration. Email is contained; broad safe-clone operation requires a separate inventory and design.
 - Custom hooks cause external effects: retain shell-equivalent trust and document that only email sent through `Oli.Mailer` is contained by this feature.
 - Masquerade leaks actor privilege: preserve strict actor/target separation and test representative authorization paths.
@@ -280,6 +302,24 @@ None.
 
 ## Decision Log
 
+### 2026-09-15 - Make release seeding available without the web QA flag
+- Question: Should a `MIX_ENV=preview` release require `PREVIEW_QA_TOOLS_ENABLED=true` before its low-level `bin/seed` command can run?
+- Decision: No. Compile seeding only in development, test, and preview; retain `bin/seed` only in preview releases; and let explicit Mix/release-shell invocation run without a runtime feature flag. Continue requiring `PREVIEW_QA_TOOLS_ENABLED=true` for web-accessible masquerade and `/dev/mailbox` features.
+- Rationale: A caller able to invoke the release command already holds the trusted operational authority, and the preview build provides the production-exclusion boundary. A second flag does not add meaningful authorization but remains useful as a deployment kill switch for browser-accessible features.
+- Impact: Remove `Oli.PreviewQATools.Config.enabled?/0` from the CLI dispatcher, remove the now-dead disabled CLI result, preserve bounded parsing/execution failures, narrow preview startup messaging to web QA tools, and update requirements, commands, manifests, and tests. This supersedes the seeding portion of the 2026-09-09 runtime-activation decision below.
+
+### 2026-09-14 - Name and deploy the Getting Started course once
+- Question: What is the formal course/scenario name, and should Phase 5 add reconciliation so Kubernetes can retry a partially completed run?
+- Decision: Use `oli-torus-getting-started-course.md` for the design artifact and `oli_torus_getting_started_course` for the bundled scenario identifier. Run it only against fresh or deliberately reset preview data, set the Job to `backoffLimit: 0`, and retain the fixed-name completed Job across later image syncs. Preserve Phase 4B's existing-history skip behavior and add no resume, reconciliation, completion marker, or seed-run state.
+- Rationale: A retry after committed mutations cannot safely infer completion from stable references or enrollment state. Supporting it would reintroduce the orchestration and reconciliation complexity intentionally removed from the simulator.
+- Impact: A failed Job remains visible through its status and bounded CLI output. Operators inspect the failure and recreate or reset the ephemeral preview data before starting another Job. The completed Job prevents replay during ordinary resyncs and is pruned with its namespace. This supersedes the one-retry and release-derived Job-name portions of the 2026-09-09 Job decision below.
+
+### 2026-09-14 - Let Oban own downstream job concurrency
+- Question: Should `simulate_progress` poll shared Oban queues and pause learner dispatch based on downstream backlog?
+- Decision: No. Remove downstream queue polling, high/low-water hysteresis, observation-failure pauses, and the `downstream_overloaded` terminal result. Also omit simulator action budgets and action-rate limiting. Use only fixed learner concurrency; Oban owns downstream job persistence and worker concurrency.
+- Rationale: Queue depth does not control simultaneous snapshot execution or serialize conflicting analytics updates. The polling duplicated queue-management responsibility, queried PostgreSQL every second during long paced waits, and did not prevent the observed contention below its 1,000-job threshold.
+- Impact: Remove queue state from simulator results and paced progress logs, delete backlog-observer tests, and treat snapshot worker sizing and project-scoped serialization as separate Oban/analytics operational concerns.
+
 ### 2026-09-09 - Preserve mailbox access during administrator masquerade
 - Question: May the original administrator inspect `/dev/mailbox` while masquerading as a non-admin user?
 - Decision: Yes. Stop and `/dev/mailbox` are the only actor-authorized operations during masquerade; every other authorization decision uses only the target identity.
@@ -288,7 +328,7 @@ None.
 
 ### 2026-09-09 - Adopt a standalone `MIX_ENV=preview` release
 - Question: Should preview deployments use a dedicated Mix environment and `config/preview.exs`?
-- Decision: Yes. Build preview images with `MIX_ENV=preview`, use a standalone `config/preview.exs` that imports neither `prod.exs` nor `dev.exs`, and use `PREVIEW_QA_TOOLS_ENABLED` only for runtime activation.
+- Decision: Yes. Build preview images with `MIX_ENV=preview`, use a standalone `config/preview.exs` that imports neither `prod.exs` nor `dev.exs`, and use `PREVIEW_QA_TOOLS_ENABLED` only for runtime activation of web QA features.
 - Rationale: Preview has a coherent build-level safety and capability profile, while the small amount of reusable production configuration does not justify inheritance or a shared base layer. Explicit ownership, a one-time branch/dependency review, and discoverable build documentation preserve the intended production-shaped behavior.
 - Impact: Add standalone `config/preview.exs`; parameterize Docker release paths with a safe `prod` default; pass `MIX_ENV=preview` from both preview-image jobs; intentionally copy applicable settings; treat `:preview` as production-like for permanent startup, gzip, compiler behavior, and applicable dependency selectors; document all environment build paths in `guides/process/building.md`. No new production PR build gate or drift audit is added.
 
@@ -305,10 +345,10 @@ None.
 - Impact: Add an explicit layout test matrix and LTI-boundary lifecycle tests; do not add banner rendering to the Cashnet callback or LTI layouts.
 
 ### 2026-09-09 - Define the deployment seed Job contract
-- Question: What Kubernetes ordering, retry, resources, identity, logging, and retention conventions should startup seeding use?
-- Decision: Create the Job only after successful migrations and only when a profile is present. Pass the resolved profile as a discrete argument to `bin/seed scenarios run --name <profile>` using `restartPolicy: Never`, `backoffLimit: 1`, explicit resources initially matching migrations, and the labeled name `seed-<profile>-<release-id>`.
-- Rationale: This supplies deterministic ordering, one bounded retry, and useful operational identity while leaving orchestration entirely outside Torus.
-- Impact: Kubernetes owns stdout/stderr, process exit, status, resources, and existing Job retention. Torus persists no Kubernetes identity or seed result.
+- Question: What Kubernetes ordering, resources, identity, logging, and retention conventions should startup seeding use?
+- Decision: In pull-request previews, use a fixed-name retained Job in a later Argo CD sync wave than the application Deployment. Deployment health proves that baseline `release-setup` and web readiness completed. Pass `oli_torus_getting_started_course` as a discrete argument to `bin/seed scenarios run --name <scenario>`, use `restartPolicy: Never`, explicit resources, and `backoffLimit: 0`, and preserve the completed pod template across later image updates.
+- Rationale: This supplies deterministic readiness ordering and a namespace-lifetime one-run marker while leaving orchestration entirely outside Torus.
+- Impact: Kubernetes owns stdout/stderr, process exit, status, resources, and namespace-scoped retention. Torus persists no Kubernetes identity or seed result.
 
 ### 2026-09-09 - Name the release seeding interface `bin/seed`
 - Question: What release command should expose scenario and project seeding operations?
@@ -335,16 +375,16 @@ None.
 - Impact: The release adapter adds ownership selection and ordering validation without constraining the rest of the scenario DSL.
 
 ### 2026-09-09 - Separate preview compilation from runtime activation
-- Decision: `MIX_ENV=preview` controls inclusion in deployable preview releases, while `MIX_ENV=test` may compile preview-only sources solely for automated verification. `PREVIEW_QA_TOOLS_ENABLED` must equal `true`, case-insensitively, only at preview runtime. Preview-built but runtime-disabled images emit one instructional warning.
+- Decision: `MIX_ENV=preview` controls inclusion in deployable preview releases, while `MIX_ENV=test` compiles seeding sources solely for automated verification. At the time of this decision, `PREVIEW_QA_TOOLS_ENABLED` activated every compiled QA capability; the 2026-09-15 decision above supersedes that behavior for CLI seeding and retains it only for web QA features. Preview-built but web-QA-runtime-disabled application servers emit one instructional warning.
 - Rationale: Compile exclusion and deliberate runtime opt-in remain, but each control now has one meaning.
 - Impact: Requires preview configuration, Docker environment selection, runtime-only flag handling, conditional integrations, warning behavior, and environment/flag matrix tests.
 
 ### 2026-09-09 - Use Kubernetes for startup seeding and preserve Playwright setup
-- Decision: Run `review_demo` through a post-migration Kubernetes Job and leave Playwright's per-spec scenario setup unchanged.
+- Decision: Run `oli_torus_getting_started_course` through the retained later-wave Kubernetes Job and leave Playwright's per-spec scenario setup unchanged.
 - Rationale: Kubernetes owns deployment execution, while Playwright already owns isolated automation data.
 - Impact: No application startup coordinator or shared Playwright seed profile is added.
 
 ### 2026-09-16 - Clarify the non-production scenario-seeding matrix
-- Decision: Support scenario seeding in `dev`, `test`, and `ci_e2e` through existing local or token-protected Playwright interfaces and in `preview` through the runtime-enabled privileged release CLI; expose no supported seeding entry point in `prod`. Allow `MIX_ENV=test` to compile `preview/lib` solely for automated verification.
+- Decision: Support scenario seeding in `dev`, `test`, and `ci_e2e` through existing local or token-protected Playwright interfaces and in `preview` through the privileged release CLI without another runtime flag; expose no supported seeding entry point in `prod`. Allow `MIX_ENV=test` to compile `seeding/lib` solely for automated verification.
 - Rationale: The environment boundary must distinguish test compilation from deployable release inclusion and distinguish the shared scenario engine from the preview release interface.
-- Impact: Requirements, design, build documentation, and policy tests explicitly cover all five environments while preserving production exclusion and the preview runtime gate.
+- Impact: Requirements, design, build documentation, and policy tests explicitly cover all five environments while preserving production exclusion and the runtime gate for web QA features.

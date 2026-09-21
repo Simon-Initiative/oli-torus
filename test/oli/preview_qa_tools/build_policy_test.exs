@@ -51,6 +51,7 @@ defmodule Oli.PreviewQATools.BuildPolicyTest do
   end
 
   test "scenario seeding is limited to trusted non-production environments" do
+    dockerfile = File.read!("Dockerfile")
     mix_project = File.read!("mix.exs")
     shared_config = File.read!("config/config.exs")
     dev_config = File.read!("config/dev.exs")
@@ -61,13 +62,16 @@ defmodule Oli.PreviewQATools.BuildPolicyTest do
     application = File.read!("lib/oli/application.ex")
 
     assert mix_project =~
-             "defp elixirc_paths(:preview), do: [\"lib\", \"preview/lib\"]"
+             "defp elixirc_paths(:dev), do: [\"lib\", \"seeding/lib\"]"
 
     assert mix_project =~
-             "defp elixirc_paths(:test), do: [\"lib\", \"preview/lib\", \"test/support\"]"
+             "defp elixirc_paths(:preview), do: [\"lib\", \"seeding/lib\"]"
+
+    assert mix_project =~
+             "defp elixirc_paths(:test), do: [\"lib\", \"seeding/lib\", \"test/support\"]"
 
     refute mix_project =~
-             "defp elixirc_paths(:prod), do: [\"lib\", \"preview/lib\"]"
+             "defp elixirc_paths(:prod), do: [\"lib\", \"seeding/lib\"]"
 
     assert shared_config =~ "enable_playwright_scenarios: false"
     assert dev_config =~ "enable_playwright_scenarios: true"
@@ -75,8 +79,14 @@ defmodule Oli.PreviewQATools.BuildPolicyTest do
     assert ci_e2e_config =~ "enable_playwright_scenarios: true"
     refute prod_config =~ "enable_playwright_scenarios: true"
 
-    assert File.regular?("preview/lib/oli/release/preview_qa_tools.ex")
-    refute File.dir?("lib/preview_qa_tools/release")
+    assert File.regular?("seeding/lib/oli/seeding/cli.ex")
+    assert File.regular?("seeding/lib/mix/tasks/seed.ex")
+    assert File.regular?("rel/overlays/bin/seed")
+    assert mix_project =~ "&remove_non_preview_seed/1"
+
+    assert {seeding_copy_position, _length} = :binary.match(dockerfile, "COPY seeding seeding")
+    assert {compile_position, _length} = :binary.match(dockerfile, "RUN mix compile --force")
+    assert seeding_copy_position < compile_position
 
     refute router =~ "PreviewQATools"
     refute application =~ "PreviewQATools.Seed"

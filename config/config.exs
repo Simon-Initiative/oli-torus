@@ -256,7 +256,9 @@ config :oli, Oban,
   ],
   queues: [
     default: 10,
-    snapshots: 20,
+    # Snapshot jobs perform several database-heavy analytics operations. Keep their concurrency below
+    # the Repo pool size so the server and other queues retain connection capacity.
+    snapshots: 4,
     embeddings: 1,
     selections: 2,
     updates: 10,

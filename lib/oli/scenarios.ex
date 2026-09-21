@@ -167,7 +167,7 @@ defmodule Oli.Scenarios do
   Gets a summary of the execution result.
   """
   def summarize(%ExecutionResult{} = result) do
-    %{
+    summary = %{
       projects_created: map_size(result.state.projects),
       sections_created: map_size(result.state.sections),
       products_created: map_size(result.state.products),
@@ -177,5 +177,34 @@ defmodule Oli.Scenarios do
       verifications_failed: Enum.count(result.verifications, &(!&1.passed)),
       errors: length(result.errors)
     }
+
+    case Map.get(result.state.scenario_results, :simulate_progress) do
+      %{} = progress ->
+        Map.put(summary, :simulate_progress, summarize_progress(progress))
+
+      _ ->
+        summary
+    end
+  end
+
+  defp summarize_progress(progress) do
+    Map.take(progress, [
+      :learners,
+      :processed,
+      :skipped_existing_history,
+      :course_complete,
+      :partial,
+      :blocked,
+      :failed,
+      :pages_visited,
+      :practice_submissions,
+      :assessment_submissions,
+      :activity_resets,
+      :part_resets,
+      :hints_requested,
+      :retry_limits_reached,
+      :timing_mode,
+      :section
+    ])
   end
 end
