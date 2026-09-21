@@ -30,6 +30,13 @@ by learner simulation.
 
 ## Integrating the Job
 
+On a fresh non-dev preview database, the GitOps-owned runtime Secret must provide both
+`ADMIN_EMAIL` and `ADMIN_PASSWORD` to baseline `release-setup`. Its `priv/repo/seeds.exs` step
+uses these values to create the active system administrator required by the bundled scenario's
+`author: default_admin` ownership selector. If either variable is absent, baseline setup skips
+admin creation and the scenario cannot resolve `default_admin`. Complete baseline setup before
+running the seed Job; keep the credential values in the runtime Secret.
+
 Copy or adapt these resources in the preview overlay, then align these placeholder references with
 the application Deployment:
 

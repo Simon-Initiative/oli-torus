@@ -8,6 +8,9 @@
     institution_url: "https://scenarios.invalid/oli-torus-demo"
 
 - ownership:
+    # Requires an active system administrator from baseline priv/repo/seeds.exs.
+    # Fresh non-dev previews must supply ADMIN_EMAIL and ADMIN_PASSWORD in the runtime Secret.
+    # See docs/manifests/preview-seeding/README.md for the bootstrap prerequisite.
     author: default_admin
     institution: "ref:OLI Torus Demo Institution"
 

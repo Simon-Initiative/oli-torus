@@ -30,8 +30,25 @@ defmodule Oli.Scenarios.ProgressSimulationPolicyTest do
 
   test "accepts only fast and paced timing modes" do
     assert {:ok, :fast} = Profiles.normalize_mode(nil)
+    assert {:ok, :fast} = Profiles.normalize_mode(%{"mode" => "fast"})
     assert {:ok, :paced} = Profiles.normalize_mode(%{"mode" => "paced"})
+    assert {:ok, :fast} = Profiles.normalize_mode(%{mode: :fast})
+    assert {:ok, :paced} = Profiles.normalize_mode(%{mode: :paced})
     assert {:error, _} = Profiles.normalize_mode(%{"mode" => "accelerated"})
+  end
+
+  test "rejects extra timing options for string, atom, and mixed keys" do
+    for timing <- [
+          %{"mode" => "fast", "typo" => true},
+          %{"mode" => "paced", "typo" => true},
+          %{mode: :fast, typo: true},
+          %{mode: :paced, typo: true},
+          %{"mode" => "fast", mode: :paced},
+          %{"mode" => "paced", mode: :fast}
+        ] do
+      assert {:error, "simulate_progress.timing must contain only mode: fast or mode: paced"} =
+               Profiles.normalize_mode(timing)
+    end
   end
 
   test "every built-in profile uses realistic millisecond timing bounds" do

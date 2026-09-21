@@ -153,7 +153,8 @@ Automated coverage must prove:
 - authentic delivery lifecycles for all five native activity types, both multi-input submission
   modes, hints, practice resets, multiple assessment attempts, evaluator scores, and grading policy;
 - existing-history learners are skipped and reported;
-- fast mode avoids waits and the pacing helper sleeps for requested sampled durations;
+- fast mode uses only deterministic 10–50 ms delays at modeled wait points, omits realistic
+  paced delays, and the pacing helper sleeps for requested sampled durations;
 - development `mix seed` dispatches through the dedicated companion runtime without starting the
   full web application.
 

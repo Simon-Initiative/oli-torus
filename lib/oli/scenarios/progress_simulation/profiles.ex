@@ -100,12 +100,17 @@ defmodule Oli.Scenarios.ProgressSimulation.Profiles do
   @doc "Returns the fixed timing distributions for a profile."
   def timing(name), do: Map.fetch!(@timings, name)
 
-  @doc "Validates and normalizes top-level timing mode configuration."
+  @doc """
+  Validates and normalizes top-level timing mode configuration.
+
+  Defaults to fast mode for `nil`. Timing maps must contain only `mode`, using
+  string keys and values or atom keys and values; additional keys are rejected.
+  """
   def normalize_mode(nil), do: {:ok, :fast}
-  def normalize_mode(%{"mode" => "fast"}), do: {:ok, :fast}
-  def normalize_mode(%{"mode" => "paced"}), do: {:ok, :paced}
-  def normalize_mode(%{mode: :fast}), do: {:ok, :fast}
-  def normalize_mode(%{mode: :paced}), do: {:ok, :paced}
+  def normalize_mode(%{"mode" => "fast"} = timing) when map_size(timing) == 1, do: {:ok, :fast}
+  def normalize_mode(%{"mode" => "paced"} = timing) when map_size(timing) == 1, do: {:ok, :paced}
+  def normalize_mode(%{mode: :fast} = timing) when map_size(timing) == 1, do: {:ok, :fast}
+  def normalize_mode(%{mode: :paced} = timing) when map_size(timing) == 1, do: {:ok, :paced}
 
   def normalize_mode(_),
     do: {:error, "simulate_progress.timing must contain only mode: fast or mode: paced"}
