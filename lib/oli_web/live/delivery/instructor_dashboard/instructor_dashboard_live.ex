@@ -1193,7 +1193,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
       {:insights, :learning_objectives} ->
         # The modal is rendered by LearningObjectives (a sibling of the objectives table),
-        # not the in-row StudentProficiencyList, so it overlays the page correctly.
+        # not the in-row expanded-objective student table, so it overlays the page correctly.
         send_update(OliWeb.Components.Delivery.LearningObjectives,
           id: "objectives_table_#{socket.assigns.section_slug}",
           email_modal_payload: caller_assigns.email_modal_payload
