@@ -32,6 +32,86 @@ defmodule OliWeb.Common.Stepper do
   """
   attr :variant, :atom, default: :default, values: [:default, :course_creation]
 
+  def render(%{variant: :course_creation} = assigns) do
+    assigns = assign(assigns, steps: Enum.with_index(assigns.steps))
+
+    assigns =
+      assign(assigns,
+        selected_step:
+          Enum.find(assigns.steps, {@empty_step, 0}, fn {_step, index} ->
+            index == assigns.current_step
+          end)
+          |> elem(0)
+      )
+
+    ~H"""
+    <div id={@id} class="flex h-full w-full flex-col md:flex-row">
+      <div class="w-full shrink-0 bg-blue-700 px-8 py-10 dark:bg-black md:w-1/4 md:overflow-y-auto">
+        <div class="flex flex-col gap-6">
+          <%= for {step, index} <- @steps do %>
+            <.step index={index + 1} step={step} active={index == @current_step} variant={@variant} />
+          <% end %>
+        </div>
+      </div>
+      <div class="flex h-full w-full flex-col bg-white dark:bg-[#0B0C11] md:w-3/4">
+        <div id="stepper_content" class="w-full flex-1 overflow-y-auto">
+          {@selected_step.render_fn.(@data)}
+        </div>
+
+        <div class={"p-3 flex items-center bg-gray-100/50 dark:bg-black #{if is_nil(@on_cancel), do: "justify-end", else: "justify-between"}"}>
+          <%= if !is_nil(@on_cancel) do %>
+            <button
+              phx-click={@on_cancel}
+              class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm !border !border-Border-border-bold !text-Specially-Tokens-Text-text-button-secondary flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900"
+            >
+              {@cancel_button_label}
+            </button>
+          <% end %>
+          <div class="flex gap-2">
+            <!-- Hidden automation helper button for E2E tests to bypass wizard -->
+            <button
+              id="automation-go-to-course"
+              class="absolute w-6 h-6 opacity-0 -left-10 -top-10"
+              aria-hidden="true"
+              aria-disabled="true"
+              tabindex="-1"
+              phx-click={
+                @selected_step.on_next_step
+                |> fade_out_transition("stepper_content")
+              }
+            >
+              Automation go to course
+            </button>
+            <%= if @current_step != 0 do %>
+              <button
+                phx-click={@selected_step.on_previous_step |> fade_out_transition("stepper_content")}
+                class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900"
+              >
+                <i class="fa-solid fa-arrow-left sm:mr-2"></i><span class="hidden sm:flex"><%= @selected_step.previous_button_label ||
+                  "Previous step" %></span>
+              </button>
+            <% end %>
+            <button
+              disabled={@next_step_disabled}
+              phx-click={@selected_step.on_next_step |> fade_out_transition("stepper_content")}
+              class={[
+                "torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center",
+                if(!@next_step_disabled, do: "!bg-Fill-Buttons-fill-primary-bold")
+              ]}
+            >
+              {@selected_step.next_button_label || "Next step"}
+
+              <div :if={@show_spinner} class="ml-1" role="status">
+                <.loader />
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   def render(assigns) do
     assigns = assign(assigns, steps: Enum.with_index(assigns.steps))
 
@@ -56,13 +136,7 @@ defmodule OliWeb.Common.Stepper do
             <% end %>
           </div>
         </div>
-        <div class={[
-          "bg-white dark:bg-[#0B0C11] w-full h-4/5 md:h-none md:w-2/3 flex flex-col overflow-y-scroll shadow-xl",
-          if(@variant == :course_creation,
-            do: "my-10",
-            else: "mt-4 hvxs:my-8 hvmd:my-16 hvlg:my-20 hvxl:my-24"
-          )
-        ]}>
+        <div class="bg-white dark:bg-[#0B0C11] w-full h-4/5 md:h-none md:w-2/3 flex flex-col overflow-y-scroll shadow-xl mt-4 hvxs:my-8 hvmd:my-16 hvlg:my-20 hvxl:my-24">
           <div id="stepper_content" class="flex flex-col h-[calc(100%-64px)] w-full">
             {@selected_step.render_fn.(@data)}
           </div>
@@ -71,13 +145,7 @@ defmodule OliWeb.Common.Stepper do
             <%= if !is_nil(@on_cancel) do %>
               <button
                 phx-click={@on_cancel}
-                class={[
-                  "torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900",
-                  if(@variant == :course_creation,
-                    do:
-                      "!border !border-Border-border-bold !text-Specially-Tokens-Text-text-button-secondary"
-                  )
-                ]}
+                class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900"
               >
                 {@cancel_button_label}
               </button>
@@ -111,12 +179,7 @@ defmodule OliWeb.Common.Stepper do
               <button
                 disabled={@next_step_disabled}
                 phx-click={@selected_step.on_next_step |> fade_out_transition("stepper_content")}
-                class={[
-                  "torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center",
-                  if(@variant == :course_creation and !@next_step_disabled,
-                    do: "!bg-Fill-Buttons-fill-primary-bold"
-                  )
-                ]}
+                class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center"
               >
                 {@selected_step.next_button_label || "Next step"}
 
@@ -136,7 +199,39 @@ defmodule OliWeb.Common.Stepper do
     {:noreply, assign(socket, current_step: String.to_integer(step))}
   end
 
-  def step(%{index: _index, step: %Step{}, active: _active} = assigns) do
+  attr :index, :integer, required: true
+  attr :step, Step, required: true
+  attr :active, :boolean, required: true
+  attr :variant, :atom, default: :default
+
+  def step(%{variant: :course_creation} = assigns) do
+    ~H"""
+    <div class="flex items-start gap-3">
+      <div class={[
+        "flex h-[33px] w-[33px] shrink-0 items-center justify-center rounded-full text-[16px] font-extrabold leading-[28px] shadow-[0px_1px_1px_rgba(0,0,0,0.05)]",
+        if(@active,
+          do: "bg-blue-500 text-white",
+          else: "bg-white border border-Border-border-default text-Text-text-low-alpha"
+        )
+      ]}>
+        {@index}
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <h4 class="mb-[9px] text-[16px] font-bold leading-[24px] text-white">
+          {@step.title}
+        </h4>
+        <p
+          :if={@step.description not in [nil, ""]}
+          class="text-Specially-Tokens-Text-text-tile-details text-[16px] font-medium leading-[24px]"
+        >
+          {@step.description}
+        </p>
+      </div>
+    </div>
+    """
+  end
+
+  def step(assigns) do
     ~H"""
     <div class={[
       "gap-2 md:gap-6 items-center justify-between shrink-0 md:w-auto",

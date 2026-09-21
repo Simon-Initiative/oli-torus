@@ -112,7 +112,14 @@ defmodule OliWeb.Delivery.NewCourse do
           include_logo
         />
     <% end %>
-    <div id={@form_id} phx-hook="SubmitForm" class="mt-14 h-[calc(100vh-56px)]">
+    <div
+      id={@form_id}
+      phx-hook="SubmitForm"
+      class={[
+        "h-[calc(100vh-56px)]",
+        if(@live_action == :admin, do: "mt-14")
+      ]}
+    >
       <.live_component
         id="course_creation_stepper"
         module={Stepper}
