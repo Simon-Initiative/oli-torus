@@ -16,6 +16,14 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
            ]
   end
 
+  test "the percent correct header stays on one line, as the design specifies" do
+    {:ok, model} = ActivitiesTableModel.new([], columns: :linked_activities)
+
+    score_column = Enum.find(model.column_specs, &(&1.name == :avg_score))
+
+    assert score_column.th_class =~ "whitespace-nowrap"
+  end
+
   test "an unknown column mode raises instead of silently rendering the default columns" do
     assert_raise FunctionClauseError, fn ->
       ActivitiesTableModel.new([], columns: :not_a_mode)

@@ -58,6 +58,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
       %ColumnSpec{
         name: :avg_score,
         label: "% Correct",
+        th_class: "whitespace-nowrap",
         render_fn: &render_avg_score_column/3
       }
     ]
