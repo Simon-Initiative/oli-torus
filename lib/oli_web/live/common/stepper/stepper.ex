@@ -53,12 +53,12 @@ defmodule OliWeb.Common.Stepper do
           <% end %>
         </div>
       </div>
-      <div class="flex h-full w-full flex-col bg-white dark:bg-[#0B0C11] md:w-3/4">
+      <div class="flex h-full w-full flex-col bg-Background-bg-primary md:w-3/4">
         <div id="stepper_content" class="w-full flex-1 overflow-y-auto">
           {@selected_step.render_fn.(@data)}
         </div>
 
-        <div class={"p-3 flex items-center bg-gray-100/50 dark:bg-black #{if is_nil(@on_cancel), do: "justify-end", else: "justify-between"}"}>
+        <div class={"p-3 flex items-center bg-white dark:bg-black #{if is_nil(@on_cancel), do: "justify-end", else: "justify-between"}"}>
           <%= if !is_nil(@on_cancel) do %>
             <button
               phx-click={@on_cancel}

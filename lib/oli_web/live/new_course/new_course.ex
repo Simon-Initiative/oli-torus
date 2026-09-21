@@ -92,8 +92,20 @@ defmodule OliWeb.Delivery.NewCourse do
        changeset: changeset,
        copy_options: default_copy_options(),
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
-       loading: false
+       loading: false,
+       initial_source_filter: parse_source_filter(params["filter"])
      )}
+  end
+
+  defp parse_source_filter("templates"), do: :templates
+  defp parse_source_filter("my_sections"), do: :my_sections
+  defp parse_source_filter(_), do: :all
+
+  # The `filter` query param is only ever pushed via `push_patch` to make the
+  # source filter shareable/reloadable; `SelectSource` already applies the
+  # change locally on click, so there's nothing further to sync here.
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
   end
 
   attr(:breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Creation"})])
@@ -139,10 +151,10 @@ defmodule OliWeb.Delivery.NewCourse do
 
   defp new_course_header(assigns) do
     ~H"""
-    <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
-      New course set up
-    </h5>
     <div class="overflow-y-auto scrollbar-hide relative h-full">
+      <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
+        New course set up
+      </h5>
       {render_slot(@inner_block)}
     </div>
     """
@@ -173,12 +185,16 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def render_step(:select_source, assigns) do
     assigns =
-      Map.put(assigns, :request_path, section_setup_request_path(Map.get(assigns, :context_id)))
+      assigns
+      |> Map.put(:request_path, section_setup_request_path(Map.get(assigns, :context_id)))
+      |> Map.put(
+        :base_path,
+        current_wizard_path(assigns.live_action, Map.get(assigns, :context_id))
+      )
 
     ~H"""
     <.new_course_header>
-      <div class="flex flex-col items-center gap-3 pr-9 pl-16 py-6">
-        <h2>Select source</h2>
+      <div class="flex flex-col gap-3 pr-9 pl-16 py-6">
         <.live_component
           id="select_source_step"
           module={SelectSource}
@@ -190,6 +206,8 @@ defmodule OliWeb.Delivery.NewCourse do
           is_admin={@is_admin}
           section_spec={@section_spec}
           request_path={@request_path}
+          base_path={@base_path}
+          initial_source_filter={@initial_source_filter}
         />
       </div>
     </.new_course_header>
@@ -241,6 +259,10 @@ defmodule OliWeb.Delivery.NewCourse do
   defp section_setup_request_path(nil), do: ~p"/sections/new"
   defp section_setup_request_path(context_id), do: ~p"/sections/new/#{context_id}"
 
+  defp current_wizard_path(:admin, _context_id), do: ~p"/admin/sections/create"
+  defp current_wizard_path(_live_action, nil), do: ~p"/sections/new"
+  defp current_wizard_path(_live_action, context_id), do: ~p"/sections/new/#{context_id}"
+
   defp get_step_data(assigns) do
     case assigns.current_step do
       0 ->
@@ -252,7 +274,9 @@ defmodule OliWeb.Delivery.NewCourse do
           current_user: assigns.current_user,
           section_spec: assigns.section_spec,
           is_admin: assigns.is_admin,
-          context_id: assigns[:context_id]
+          context_id: assigns[:context_id],
+          live_action: assigns.live_action,
+          initial_source_filter: assigns.initial_source_filter
         }
 
       1 ->

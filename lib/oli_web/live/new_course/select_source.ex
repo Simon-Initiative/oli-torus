@@ -31,12 +31,16 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
           current_user: current_user,
           is_admin: is_admin,
           section_spec: section_spec,
-          request_path: request_path
+          request_path: request_path,
+          base_path: base_path,
+          initial_source_filter: initial_source_filter
         } = assigns,
         socket
       ) do
     if !socket.assigns[:loaded] do
-      params = socket.assigns[:params] || @default_params
+      params =
+        socket.assigns[:params] || Map.put(@default_params, :source_filter, initial_source_filter)
+
       view_type = socket.assigns[:view_type] || @default_view_type
 
       {role, _institution} = unpack_role_institution(section_spec, is_admin)
@@ -58,6 +62,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
          on_select: on_select,
          current_user: current_user,
          request_path: request_path,
+         base_path: base_path,
          params: params,
          view_type: view_type
        )}
@@ -83,12 +88,18 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
     ~H"""
     <div class="w-full">
+      <h2 class="pb-2">Select Curriculum</h2>
+      <p class="mt-1 mb-4">Select a curriculum source to create your course section.</p>
+
+      <p class="mb-2 text-sm font-semibold text-Text-text-low-alpha">Filter by:</p>
       <.source_filter_tabs source_filter={@params[:source_filter]} myself={@myself} />
 
       <FilterBox.render
         table_model={@table_model}
         sort={JS.push("sort", target: @myself)}
         show_more_opts={is_instructor?(@role)}
+        card_header_text=""
+        card_body_text=""
       >
         <Filter.render
           query={@params[:query]}
@@ -234,11 +245,12 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       phx-hook={if @tooltip, do: "GlobalTooltip"}
       data-tooltip={@tooltip}
       data-tooltip-style={if @tooltip, do: "body"}
+      data-tooltip-position={if @tooltip, do: "bottom"}
       class={[
-        "p-2.5 h-[35px] rounded-[3px] border font-semibold text-base",
+        "flex items-center justify-center p-2.5 h-[35px] rounded-[3px] border font-semibold text-base",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
         if(@active,
-          do: "bg-Fill-Accent-fill-accent-blue border-Text-text-button text-Text-text-button",
+          do: "bg-Background-bg-primary border-Text-text-button text-Text-text-button",
           else: "bg-Background-bg-primary border-Border-border-default text-Text-text-high"
         )
       ]}
@@ -397,7 +409,9 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       |> Map.put(:source_filter, source_filter)
       |> Map.put(:offset, 0)
 
-    {:noreply, update_source_list(socket, params)}
+    socket = update_source_list(socket, params)
+
+    {:noreply, push_patch(socket, to: filter_patch_path(socket.assigns.base_path, source_filter))}
   end
 
   def handle_event("change_search", %{"value" => value}, socket) do
@@ -440,6 +454,9 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
     {:noreply, update_source_list(socket, params)}
   end
+
+  defp filter_patch_path(base_path, :all), do: base_path
+  defp filter_patch_path(base_path, filter), do: "#{base_path}?filter=#{filter}"
 
   # An actor the gate would refuse is offered nothing: the list never shows a source that
   # creation would reject.

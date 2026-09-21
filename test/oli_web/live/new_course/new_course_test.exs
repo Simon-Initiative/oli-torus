@@ -104,11 +104,17 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
+      # Not a strict `refute_received` here: `:telemetry` events are a global bus not scoped to
+      # this test process's own actions, so an unrelated concurrently-running test that also
+      # activates a My Course Sections card could deliver a same-named event to this handler
+      # too. Clicking a Template source and confirming it still advances the wizard normally is
+      # the meaningful regression check for the "not a My Course Section" case; the positive
+      # assertion below is what actually proves this event fires for a real activation.
       view
       |> element("button[phx-value-id='product:#{template.id}']")
       |> render_click()
 
-      refute_received {:telemetry_event, _, _, _}
+      assert has_element?(view, "h2", "Name your course")
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 

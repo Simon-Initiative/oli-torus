@@ -29,12 +29,16 @@ defmodule OliWeb.Common.FilterBox do
   def render(assigns) do
     ~H"""
     <div class={@class}>
-      <h2 id="header_id" class={@header_class}>{@card_header_text}</h2>
+      <h2 :if={@card_header_text not in [nil, ""]} id="header_id" class={@header_class}>
+        {@card_header_text}
+      </h2>
       <div class={@body_class}>
         <%= if @card_body != [] do %>
           {render_slot(@card_body)}
         <% else %>
-          <p class={@card_body_text_class}>{@card_body_text}</p>
+          <p :if={@card_body_text not in [nil, ""]} class={@card_body_text_class}>
+            {@card_body_text}
+          </p>
         <% end %>
         <div class={@filter_opts_class}>
           <div class={@inner_block_class}>

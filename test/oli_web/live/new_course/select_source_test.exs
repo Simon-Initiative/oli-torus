@@ -42,7 +42,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
-      assert has_element?(view, "h2", "Select source")
+      assert has_element?(view, "h2", "Select Curriculum")
       assert has_element?(view, "button[phx-click='source_selection']")
       refute has_element?(view, "img[alt=\"course image\"]")
       refute has_element?(view, "form#update_view_type")
@@ -134,7 +134,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("button[phx-click='source_selection']")
       |> render_click(%{id: "product:#{section.id}"})
 
-      refute has_element?(view, "h2", "Select source")
+      refute has_element?(view, "h2", "Select Curriculum")
       assert has_element?(view, "h2", "Name your course")
     end
 
@@ -183,7 +183,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "h2", "Select source")
+      assert has_element?(view, "h2", "Select Curriculum")
       refute has_element?(view, "button[phx-click='source_selection']")
       assert has_element?(view, "img[alt=\"course image\"]")
       assert has_element?(view, "form#update_view_type")
@@ -343,7 +343,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element(".card-deck button:first-child")
       |> render_click(id: "publication:#{section.id}")
 
-      refute has_element?(view, "h2", "Select source")
+      refute has_element?(view, "h2", "Select Curriculum")
       assert has_element?(view, "h2", "Name your course")
     end
 
@@ -427,6 +427,12 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "button[role='tab'][aria-selected='true']", "All Sources")
       assert has_element?(view, "button[role='tab'][aria-selected='false']", "Templates")
       assert has_element?(view, "button[role='tab'][aria-selected='false']", "My Course Sections")
+
+      assert has_element?(
+               view,
+               ~s(button[role='tab'][aria-selected='true'].bg-Background-bg-primary.border-Text-text-button.text-Text-text-button),
+               "All Sources"
+             )
     end
 
     test "changing the active tab does not reset the previously selected sort order", %{
@@ -498,6 +504,86 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "h5", template.title)
       refute has_element?(view, "h5", my_section.title)
     end
+
+    test "clicking a non-default tab reflects the filter as a URL query param, and All Sources omits it",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      assert_patch(view, "/sections/new?filter=templates")
+
+      view
+      |> element("button[role='tab']", "My Course Sections")
+      |> render_click()
+
+      assert_patch(view, "/sections/new?filter=my_sections")
+
+      view
+      |> element("button[role='tab']", "All Sources")
+      |> render_click()
+
+      assert_patch(view, "/sections/new")
+    end
+
+    test "loading the page with ?filter=templates preselects that tab", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new?filter=templates")
+
+      assert has_element?(view, "button[role='tab'][aria-selected='true']", "Templates")
+      assert has_element?(view, "button[role='tab'][aria-selected='false']", "All Sources")
+    end
+
+    test "loading the page with ?filter=my_sections preselects that tab", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new?filter=my_sections")
+
+      assert has_element?(
+               view,
+               "button[role='tab'][aria-selected='true']",
+               "My Course Sections"
+             )
+    end
+
+    test "the text inside each tab button is vertically and horizontally centered", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               "button[role='tab'].flex.items-center.justify-center",
+               "All Sources"
+             )
+    end
+  end
+
+  describe "select curriculum title and filter-by label" do
+    setup [:instructor_conn]
+
+    test "renders the panel title, subtitle, and 'Filter by:' label above the tabs", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "h2", "Select Curriculum")
+      assert has_element?(view, "p", "Select a curriculum source to create your course section.")
+      assert has_element?(view, "p", "Filter by:")
+    end
+
+    test "the title and subtitle render exactly once, not duplicated by FilterBox's own default header",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+      html = render(view)
+
+      assert Regex.scan(~r/Select Curriculum/, html) |> length() == 1
+
+      assert Regex.scan(
+               ~r/Select a curriculum source to create your course section\./,
+               html
+             )
+             |> length() == 1
+    end
   end
 
   describe "new-feature banner and filter tooltips" do
@@ -554,6 +640,24 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
              )
 
       refute has_element?(view, "button[role='tab'][phx-hook='GlobalTooltip']", "All Sources")
+    end
+
+    test "the tooltip-enabled tabs expand downward, not upward", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               ~s(button[role='tab'][data-tooltip-position='bottom']),
+               "Templates"
+             )
+
+      assert has_element?(
+               view,
+               ~s(button[role='tab'][data-tooltip-position='bottom']),
+               "My Course Sections"
+             )
+
+      refute has_element?(view, "button[role='tab'][data-tooltip-position]", "All Sources")
     end
   end
 
@@ -654,7 +758,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "h2", "Select source")
+      assert has_element?(view, "h2", "Select Curriculum")
       refute has_element?(view, "button[phx-click='source_selection']")
       assert has_element?(view, "img[alt=\"course image\"]")
       assert has_element?(view, "form#update_view_type")
@@ -776,7 +880,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> render_click(id: "publication:#{section.id}")
 
       refute has_element?(view, "button[disabled]", "Next step")
-      refute has_element?(view, "h2", "Select source")
+      refute has_element?(view, "h2", "Select Curriculum")
       assert has_element?(view, "h2", "Name your course")
     end
 
@@ -877,11 +981,17 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
+      # Not a strict `refute_received` here: `:telemetry` events are a global bus not scoped to
+      # this test process's own actions, so an unrelated concurrently-running test that also
+      # selects the My Course Sections tab could deliver a same-named event to this handler too.
+      # Confirming the Templates tab still becomes selected is the meaningful regression check
+      # for the "not My Course Sections" case; the positive assertion below is what actually
+      # proves this event fires for a real selection.
       view
       |> element("button[role='tab']", "Templates")
       |> render_click()
 
-      refute_received {:telemetry_event, _, _, _}
+      assert has_element?(view, "button[role='tab'][aria-selected='true']", "Templates")
 
       view
       |> element("button[role='tab']", "My Course Sections")
