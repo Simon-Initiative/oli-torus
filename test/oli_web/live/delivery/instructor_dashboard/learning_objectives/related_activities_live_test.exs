@@ -643,11 +643,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       assert has_element?(
                view,
                "#details-#{activity_1.resource_id}",
-               "Question analytics are not available"
+               "Value cannot be computed"
              )
 
-      refute has_element?(view, "#details-#{activity_1.resource_id}", "First Try Correct")
-      refute has_element?(view, "#details-#{activity_1.resource_id}", "Eventually Correct")
+      assert has_element?(view, "#details-#{activity_1.resource_id}", "First Try Correct")
+      assert has_element?(view, "#details-#{activity_1.resource_id}", "Eventually Correct")
 
       assert has_element?(
                view,
@@ -732,7 +732,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       assert has_element?(
                view,
                "#details-#{activity_3.resource_id}",
-               "Question analytics are not available"
+               "Value cannot be computed"
              )
     end
 

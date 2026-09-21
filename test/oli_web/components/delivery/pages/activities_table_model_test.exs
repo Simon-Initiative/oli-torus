@@ -241,14 +241,23 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
     no_observations = render_status.(Map.put(base, :summary_status, :no_observations))
 
     assert no_observations =~ "No attempt registered for this question"
-    refute no_observations =~ "Question analytics are not available"
+    refute no_observations =~ "Value cannot be computed"
     assert no_observations =~ "First Try Correct"
+    assert no_observations =~ "pct-bar-"
 
     unavailable = render_status.(Map.put(base, :summary_status, :unavailable))
 
-    assert unavailable =~ "Question analytics are not available"
     refute unavailable =~ "No attempt registered for this question"
-    refute unavailable =~ "First Try Correct"
+    refute unavailable =~ "Question analytics are not available"
+
+    # The designer asked for the copy in place of each bar, one per label, so each metric group must
+    # carry its own message and neither chart may render.
+    assert metric_groups(unavailable) == [
+             "First Try Correct Value cannot be computed",
+             "Eventually Correct Value cannot be computed"
+           ]
+
+    refute unavailable =~ "pct-bar-"
 
     legacy = render_status.(base)
 
@@ -284,10 +293,16 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
         ActivitiesTableModel.render_assessment_details(assigns, assessment)
       end)
 
-    # A failed summary load must not render 0%, which reads as genuinely zero performance.
-    refute html =~ "First Try Correct"
-    refute html =~ "Eventually Correct"
+    # A failed summary load must not render 0%, which reads as genuinely zero performance. The labels
+    # stay so the reader knows which metric is missing.
+    assert metric_groups(html) == [
+             "First Try Correct Value cannot be computed",
+             "Eventually Correct Value cannot be computed"
+           ]
+
+    refute html =~ "Question analytics are not available"
     refute html =~ "0%"
+    refute html =~ "pct-bar-"
   end
 
   test "render_assessment_details shows a repair notice while adaptive analytics refresh is in progress" do
@@ -364,5 +379,12 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
     assert html =~ "Adaptive analytics refreshed"
     assert html =~ "have been reloaded"
+  end
+
+  defp metric_groups(html) do
+    html
+    |> Floki.parse_fragment!()
+    |> Floki.find("div[class*=\"justify-start\"]")
+    |> Enum.map(fn group -> group |> Floki.text(sep: " ") |> String.split() |> Enum.join(" ") end)
   end
 end
