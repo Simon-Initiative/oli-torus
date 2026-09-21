@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   use OliWeb, :live_component
 
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Sections.LinkedActivities
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Accounts
   alias OliWeb.Common.Utils
@@ -444,12 +445,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         student.id
       end)
 
-    # Get related_activity_ids for calculating student attempts
-    related_activity_ids =
-      case SectionResourceDepot.get_section_resource(section_id, objective_id) do
-        nil -> []
-        section_resource -> section_resource.related_activities || []
-      end
+    related_activity_ids = LinkedActivities.family_activity_ids(section_id, objective_id)
 
     total_related_activities = length(related_activity_ids)
 
