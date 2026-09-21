@@ -12,6 +12,22 @@ import { ProjectSlug } from 'data/types';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 import styles from './ObjectivesSelection.modules.scss';
+import {
+  AttachmentType,
+  ObjectiveOption,
+  canCreateObjective,
+  getPlaceholderLabel,
+  isSearchOnly,
+  objectivesForAttachment,
+} from './objectivesSelectionHelpers';
+
+export {
+  canCreateObjective,
+  getPlaceholderLabel,
+  isSearchOnly,
+  objectivesForAttachment,
+} from './objectivesSelectionHelpers';
+export type { AttachmentType, ObjectiveOption } from './objectivesSelectionHelpers';
 
 export type ObjectivesProps = {
   objectives: Objective[];
@@ -20,42 +36,9 @@ export type ObjectivesProps = {
   projectSlug: ProjectSlug;
   onEdit: (objectives: ResourceId[]) => void;
   onRegisterNewObjective?: (objective: Objective) => void;
-  attachmentType?: 'page' | 'activity';
+  attachmentType?: AttachmentType;
   loWellFormed?: boolean;
 };
-
-export type ObjectiveOption = Objective & { disabled?: boolean };
-
-export const objectivesForAttachment = (
-  objectives: Objective[],
-  attachmentType?: ObjectivesProps['attachmentType'],
-  loWellFormed?: boolean,
-): ObjectiveOption[] => {
-  if (!loWellFormed) return objectives;
-
-  switch (attachmentType) {
-    case 'page':
-      return objectives.filter((objective) => !objective.parentIds?.length);
-    case 'activity':
-      return objectives.map((objective) => ({
-        ...objective,
-        disabled: !objective.parentIds?.length,
-      }));
-    default:
-      return objectives;
-  }
-};
-
-export const canCreateObjective = (
-  onRegisterNewObjective?: (objective: Objective) => void,
-  attachmentType?: ObjectivesProps['attachmentType'],
-  loWellFormed?: boolean,
-) => !!onRegisterNewObjective && !(loWellFormed === true && attachmentType === 'activity');
-
-export const isSearchOnly = (
-  attachmentType?: ObjectivesProps['attachmentType'],
-  loWellFormed?: boolean,
-) => loWellFormed === true && attachmentType === 'activity';
 
 // Custom filterBy function for the Typeahead. This allows searches to
 // pick up child objectives for text that matches any of their parents
@@ -88,18 +71,6 @@ function createMapById(objectives: Objective[]) {
     return m;
   }, {});
 }
-
-const getPlaceholderLabel = (hasObjectives: boolean, editMode: boolean, searchOnly: boolean) => {
-  if (editMode && searchOnly) return 'Search learning objectives...';
-
-  if (editMode) {
-    return hasObjectives
-      ? 'Select or Create learning objectives...'
-      : 'Create a new learning objective';
-  } else {
-    return 'Select a learning objective';
-  }
-};
 
 export const ObjectivesSelection = (props: ObjectivesProps) => {
   const {
@@ -160,8 +131,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
     attachmentType,
     loWellFormed,
   );
-  const hasObjectives = attachmentObjectives.length > 0;
-  const placeholder = getPlaceholderLabel(hasObjectives, editMode, searchOnly);
+  const placeholder = getPlaceholderLabel(editMode, searchOnly);
 
   const clearSearch = () => setSearchResetNonce((nonce) => nonce + 1);
 

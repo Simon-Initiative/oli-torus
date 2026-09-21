@@ -1,8 +1,9 @@
 import {
   canCreateObjective,
+  getPlaceholderLabel,
   isSearchOnly,
   objectivesForAttachment,
-} from 'components/resource/objectives/ObjectivesSelection';
+} from 'components/resource/objectives/objectivesSelectionHelpers';
 import { Objective } from 'data/content/objective';
 
 const objectives: Objective[] = [
@@ -12,6 +13,18 @@ const objectives: Objective[] = [
 ];
 
 describe('objective attachment restrictions', () => {
+  it('uses the Sub-LO descriptor for well-formed activity attachments', () => {
+    expect(getPlaceholderLabel(true, true)).toBe('Select sub-objectives…');
+  });
+
+  it('uses the LO descriptor for editable page attachments', () => {
+    expect(getPlaceholderLabel(true, false)).toBe('Select or create learning objectives');
+  });
+
+  it('uses the read-only descriptor outside edit mode', () => {
+    expect(getPlaceholderLabel(false, false)).toBe('Select a learning objective');
+  });
+
   it('only offers top-level objectives for well-formed page attachments', () => {
     expect(objectivesForAttachment(objectives, 'page', true)).toEqual(objectives.slice(0, 2));
   });
