@@ -212,6 +212,50 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
     assert html =~ "0%"
   end
 
+  test "render_assessment_details distinguishes the three summary states" do
+    assessment = %{title: "Question", resource_id: 55, content: %{"partsLayout" => []}}
+
+    render_status = fn current_activity ->
+      model = %{
+        data: %{
+          activity_summary_cache: %{55 => current_activity},
+          expanded_activity_ids: MapSet.new([55]),
+          target: nil
+        }
+      }
+
+      render_component(fn assigns ->
+        assigns = Map.merge(assigns, %{model: model, activity_types_map: %{}})
+        ActivitiesTableModel.render_assessment_details(assigns, assessment)
+      end)
+    end
+
+    base = %{
+      resource_id: 55,
+      id: 55,
+      preview_rendered: nil,
+      first_attempt_pct: 0.0,
+      all_attempt_pct: 0.0
+    }
+
+    no_observations = render_status.(Map.put(base, :summary_status, :no_observations))
+
+    assert no_observations =~ "No attempt registered for this question"
+    refute no_observations =~ "Question analytics are not available"
+    assert no_observations =~ "First Try Correct"
+
+    unavailable = render_status.(Map.put(base, :summary_status, :unavailable))
+
+    assert unavailable =~ "Question analytics are not available"
+    refute unavailable =~ "No attempt registered for this question"
+    refute unavailable =~ "First Try Correct"
+
+    legacy = render_status.(base)
+
+    assert legacy =~ "No attempt registered for this question"
+    assert legacy =~ "First Try Correct"
+  end
+
   test "render_assessment_details omits the percentage bars when metrics are unavailable" do
     assessment = %{
       title: "Manual Screen",

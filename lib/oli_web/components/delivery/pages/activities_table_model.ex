@@ -164,7 +164,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         all_attempt_pct: Map.get(current_activity || %{}, :all_attempt_pct, 0.0),
         adaptive_summary_repair_status:
           Map.get(current_activity || %{}, :adaptive_summary_repair_status),
-        metrics_unavailable: Map.get(current_activity || %{}, :metrics_unavailable, false),
+        summary_status: summary_status(current_activity),
         detail_label:
           if(adaptive_screen?(assessment), do: "Screen details", else: "Question details")
       })
@@ -217,17 +217,14 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
               </div>
             </div>
           </div>
-          <%= if Map.get(@current_activity, :preview_rendered) != nil do %>
-            <ActivityHelpers.rendered_activity
-              activity={@current_activity}
-              activity_types_map={@activity_types_map}
-            />
-          <% else %>
-            <p class="pt-9 pb-5">No attempt registered for this question</p>
-          <% end %>
+          <.summary_body
+            summary_status={@summary_status}
+            current_activity={@current_activity}
+            activity_types_map={@activity_types_map}
+          />
         </div>
         <div
-          :if={not @metrics_unavailable}
+          :if={@summary_status != :unavailable}
           class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4"
         >
           <ActivityHelpers.percentage_bar
@@ -254,6 +251,41 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     <% end %>
     """
   end
+
+  attr :summary_status, :atom, required: true
+  attr :current_activity, :map, required: true
+  attr :activity_types_map, :map, default: %{}
+
+  defp summary_body(%{summary_status: :complete} = assigns) do
+    ~H"""
+    <ActivityHelpers.rendered_activity
+      activity={@current_activity}
+      activity_types_map={@activity_types_map}
+    />
+    """
+  end
+
+  defp summary_body(%{summary_status: :unavailable} = assigns) do
+    ~H"""
+    <p class="pt-9 pb-5">Question analytics are not available</p>
+    """
+  end
+
+  defp summary_body(assigns) do
+    ~H"""
+    <p class="pt-9 pb-5">No attempt registered for this question</p>
+    """
+  end
+
+  defp summary_status(nil), do: :no_observations
+
+  defp summary_status(%{summary_status: status}) when not is_nil(status), do: status
+
+  defp summary_status(%{metrics_unavailable: true}), do: :unavailable
+
+  defp summary_status(%{preview_rendered: preview}) when not is_nil(preview), do: :complete
+
+  defp summary_status(_activity), do: :no_observations
 
   defp question_text(assigns) do
     ~H"""

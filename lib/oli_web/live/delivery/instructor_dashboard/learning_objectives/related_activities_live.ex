@@ -13,6 +13,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Delivery.ActivityInsightsState
   alias OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActivities.Filters
+  alias OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActivities.Summaries
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
@@ -64,12 +65,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     %{activities: activities} = socket.assigns
     socket = assign(socket, expanded_activity_ids: MapSet.new(), loaded_activity_summaries: %{})
 
-    # Decode and apply filters
     decoded_params = Filters.decode_params(params)
     selected_attempts_ids = Filters.decode_attempts_ids(decoded_params.selected_attempts_ids)
     {total_count, filtered_activities} = Filters.apply(activities, decoded_params)
 
-    # Create table model
     {:ok, table_model} =
       ActivitiesTableModel.new(filtered_activities, columns: :linked_activities)
 
@@ -347,8 +346,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     """
   end
 
-  # Helper functions
-
   defp route_for(socket, new_params) do
     params = Filters.update_params(socket.assigns.params, new_params)
 
@@ -397,11 +394,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
 
     summary = summarize_activity(socket, page_revision, activity.resource_id)
 
-    cache_summary(socket, activity.resource_id, summary || empty_summary(activity))
+    cache_summary(socket, activity.resource_id, Summaries.from_result(summary, activity))
   end
 
   defp load_activity_summary(socket, activity) do
-    cache_summary(socket, activity.resource_id, empty_summary(activity))
+    cache_summary(socket, activity.resource_id, Summaries.without_analytics(activity))
   end
 
   defp summarize_activity(_socket, nil, _activity_id), do: nil
@@ -435,17 +432,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         Map.put(socket.assigns.loaded_activity_summaries, activity_id, summary),
       activity_summary_cache: Map.put(socket.assigns.activity_summary_cache, activity_id, summary)
     )
-  end
-
-  defp empty_summary(activity) do
-    %{
-      resource_id: activity.resource_id,
-      id: activity.resource_id,
-      revision: activity.revision,
-      first_attempt_pct: 0.0,
-      all_attempt_pct: 0.0,
-      preview_rendered: nil
-    }
   end
 
   defp back_to_objectives_path(socket_or_assigns) do
