@@ -1646,26 +1646,50 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     Map.put(activity_attempt, :student_responses, Map.merge(sr, grouped))
   end
 
-  # Downstream datasets key on this text, so a blank fallback would merge two cleared items into a
-  # single chart category. The positional label keeps them apart.
-  defp authored_text(%{"content" => [%{"children" => [%{"text" => text} | _]} | _]}, fallback)
-       when is_binary(text) do
-    if String.trim(text) == "", do: fallback, else: text
+  defp authored_text(%{"content" => [%{"children" => [%{"text" => text} | _]} | _]})
+       when is_binary(text),
+       do: present_text(text, String.trim(text))
+
+  defp authored_text(_node), do: nil
+
+  defp present_text(_text, ""), do: nil
+  defp present_text(text, _trimmed), do: text
+
+  defp distinct_labels(nodes, prefix) do
+    nodes = List.wrap(nodes)
+    authored = Enum.map(nodes, &authored_text/1)
+    taken = authored |> Enum.reject(&is_nil/1) |> MapSet.new()
+
+    {labels, _taken} =
+      authored
+      |> Enum.with_index(1)
+      |> Enum.map_reduce(taken, fn
+        {nil, position}, taken ->
+          label = free_label("#{prefix} #{position}", taken)
+          {label, MapSet.put(taken, label)}
+
+        {text, _position}, taken ->
+          {text, taken}
+      end)
+
+    labels
   end
 
-  defp authored_text(_node, fallback), do: fallback
+  defp free_label(candidate, taken) do
+    if MapSet.member?(taken, candidate),
+      do: free_label(candidate <> " (untitled)", taken),
+      else: candidate
+  end
 
   defp add_likert_details(activity, response_summaries) do
+    items = activity.revision.content["items"]
+
     %{questions: questions, question_mapper: question_mapper} =
       Enum.reduce(
-        activity.revision.content["items"],
+        Enum.zip(items, distinct_labels(items, "Question")),
         %{questions: [], question_mapper: %{}, question_number: 1},
-        fn q, acc ->
-          question = %{
-            id: q["id"],
-            text: authored_text(q, "Question #{acc.question_number}"),
-            number: acc.question_number
-          }
+        fn {q, label}, acc ->
+          question = %{id: q["id"], text: label, number: acc.question_number}
 
           %{
             questions: [question | acc.questions],
@@ -1679,14 +1703,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         end
       )
 
+    choices = activity.revision.content["choices"]
+
     {ordered_choices, choice_mapper} =
       Enum.reduce(
-        activity.revision.content["choices"],
+        Enum.zip(choices, distinct_labels(choices, "Choice")),
         %{ordered_choices: [], choice_mapper: %{}, aux_points: 1},
-        fn ch, acc ->
+        fn {ch, label}, acc ->
           choice = %{
             id: ch["id"],
-            text: authored_text(ch, "Choice #{acc.aux_points}"),
+            text: label,
             points: acc.aux_points
           }
 

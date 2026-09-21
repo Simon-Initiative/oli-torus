@@ -2939,7 +2939,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
             content: %{
               "items" => [
                 %{"id" => "q1", "content" => []},
-                %{"id" => "q2", "content" => [%{"children" => [%{"text" => ""}]}]},
+                %{"id" => "q2", "content" => [%{"children" => [%{"text" => "   "}]}]},
                 %{"id" => "q3", "content" => [%{"children" => [%{"text" => "Question 3"}]}]}
               ],
               "choices" => [
@@ -2967,12 +2967,97 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
 
       questions = medians |> Enum.map(& &1.question) |> Enum.sort()
 
-      # Two items were cleared; each keeps its own category instead of collapsing into one.
       assert questions == ["Question 1", "Question 2", "Question 3"]
       assert length(Enum.uniq(questions)) == 3
 
       assert Enum.any?(values, &(&1.choice == "Choice 1"))
       assert Enum.any?(values, &(&1.choice == "Yes"))
+    end
+
+    test "authored labels that differ only in surrounding space stay separate categories" do
+      likert_id = 5
+
+      activities = [
+        %{
+          resource_id: 53,
+          revision: %{
+            activity_type_id: likert_id,
+            title: "Spaced Survey",
+            content: %{
+              "items" => [
+                %{"id" => "q1", "content" => [%{"children" => [%{"text" => "Same"}]}]},
+                %{"id" => "q2", "content" => [%{"children" => [%{"text" => " Same "}]}]}
+              ],
+              "choices" => [
+                %{"id" => "c1", "content" => [%{"children" => [%{"text" => "No"}]}]},
+                %{"id" => "c2", "content" => [%{"children" => [%{"text" => "Yes"}]}]}
+              ]
+            }
+          },
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{activity_id: 53, response: "c1", part_id: "q1", count: 1},
+        %{activity_id: 53, response: "c2", part_id: "q2", count: 2}
+      ]
+
+      [%{datasets: %{medians: medians}}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{likert_id => %{title: "Likert"}},
+          response_summaries
+        )
+
+      questions = Enum.map(medians, & &1.question)
+
+      assert length(Enum.uniq(questions)) == 2
+      assert "Same" in questions
+      assert " Same " in questions
+    end
+
+    test "a generated label does not collide with one an author already used" do
+      likert_id = 5
+
+      activities = [
+        %{
+          resource_id: 52,
+          revision: %{
+            activity_type_id: likert_id,
+            title: "Colliding Survey",
+            content: %{
+              "items" => [
+                %{"id" => "q1", "content" => []},
+                %{"id" => "q2", "content" => [%{"children" => [%{"text" => "Question 1"}]}]}
+              ],
+              "choices" => [
+                %{"id" => "c1", "content" => [%{"children" => [%{"text" => "No"}]}]},
+                %{"id" => "c2", "content" => [%{"children" => [%{"text" => "Yes"}]}]}
+              ]
+            }
+          },
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{activity_id: 52, response: "c1", part_id: "q1", count: 1},
+        %{activity_id: 52, response: "c2", part_id: "q2", count: 2}
+      ]
+
+      [%{datasets: %{medians: medians}}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{likert_id => %{title: "Likert"}},
+          response_summaries
+        )
+
+      questions = medians |> Enum.map(& &1.question) |> Enum.sort()
+
+      assert length(Enum.uniq(questions)) == 2
+      assert "Question 1" in questions
+      refute questions == ["Question 1", "Question 1"]
     end
   end
 
