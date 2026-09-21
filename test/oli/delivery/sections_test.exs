@@ -3982,11 +3982,11 @@ defmodule Oli.Delivery.SectionsTest do
       assert Map.has_key?(top_level_a, :related_activities_count)
       assert Map.has_key?(top_level_b, :related_activities_count)
 
-      # Objective A should have 1 related activity (page_1_mcq_1)
-      assert top_level_a.related_activities_count == 1
+      # Objective A: page_1_mcq_1 plus one activity under each of its two sub-objectives
+      assert top_level_a.related_activities_count == 3
 
-      # Objective B should have 1 related activity (page_1_mcq_4)
-      assert top_level_b.related_activities_count == 1
+      # Objective B: page_1_mcq_4 plus one activity under each of its two sub-objectives
+      assert top_level_b.related_activities_count == 3
 
       # Find subobjectives and verify they also have the count
       subobjectives = Enum.filter(result, &(&1.subobjective != nil))
@@ -3995,6 +3995,68 @@ defmodule Oli.Delivery.SectionsTest do
         assert Map.has_key?(sub, :related_activities_count)
         assert is_integer(sub.related_activities_count)
       end)
+    end
+
+    test "the count matches the destination page for a sub-objective missing containment records",
+         %{
+           section: section,
+           objectives: %{objective_a: objective_a, sub_objective_a2: sub_objective_a2}
+         } do
+      drop_containment_records(section, sub_objective_a2)
+
+      result =
+        Sections.get_objectives_and_subobjectives(section, include_related_activities_count: true)
+
+      refute Enum.any?(result, &(&1.subobjective_resource_id == sub_objective_a2.resource_id))
+
+      parent_row =
+        Enum.find(
+          result,
+          &(&1.objective_resource_id == objective_a.resource_id and is_nil(&1.subobjective))
+        )
+
+      assert parent_row.related_activities_count == 3
+
+      {:ok, context} = LinkedActivities.resolve_context(section.id, objective_a.resource_id)
+
+      assert length(context.activity_ids) == parent_row.related_activities_count
+    end
+
+    test "family activity ids span the objective and its sub-objectives", %{
+      section: section,
+      objectives: %{objective_a: objective_a, sub_objective_a1: sub_objective_a1}
+    } do
+      family = LinkedActivities.family_activity_ids(section.id, objective_a.resource_id)
+      leaf = LinkedActivities.family_activity_ids(section.id, sub_objective_a1.resource_id)
+
+      assert length(family) == 3
+      assert length(leaf) == 1
+      assert Enum.all?(leaf, &(&1 in family))
+
+      {:ok, context} = LinkedActivities.resolve_context(section.id, objective_a.resource_id)
+
+      assert Enum.sort(context.activity_ids) == Enum.sort(family)
+    end
+
+    test "a parent whose projected children were cleared counts only its own activities", %{
+      section: section,
+      objectives: %{objective_a: objective_a}
+    } do
+      clear_projected_children(section, objective_a)
+
+      parent_row =
+        Sections.get_objectives_and_subobjectives(section,
+          include_related_activities_count: true
+        )
+        |> Enum.find(
+          &(&1.objective_resource_id == objective_a.resource_id and is_nil(&1.subobjective))
+        )
+
+      assert parent_row.related_activities_count == 1
+
+      {:ok, context} = LinkedActivities.resolve_context(section.id, objective_a.resource_id)
+
+      assert length(context.activity_ids) == parent_row.related_activities_count
     end
 
     test "filters by student_id when provided", %{
@@ -4513,6 +4575,25 @@ defmodule Oli.Delivery.SectionsTest do
   end
 
   # Helper function to create a test section with objectives and activities
+  defp clear_projected_children(section, objective) do
+    from(sr in SectionResource,
+      where: sr.section_id == ^section.id and sr.resource_id == ^objective.resource_id
+    )
+    |> Oli.Repo.update_all(set: [children: []])
+
+    Oli.Delivery.DepotCoordinator.clear(
+      Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+      section.id
+    )
+  end
+
+  defp drop_containment_records(section, objective) do
+    from(co in ContainedObjective,
+      where: co.section_id == ^section.id and co.objective_id == ^objective.resource_id
+    )
+    |> Oli.Repo.delete_all()
+  end
+
   defp setup_objectives_and_activities_test do
     # Create author and project
     author = insert(:author)

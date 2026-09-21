@@ -22,6 +22,7 @@ defmodule Oli.Delivery.Sections do
     SectionResourceDepot,
     SectionResourceMigration,
     ContainedObjective,
+    LinkedActivities,
     SectionsProjectsPublications,
     Enrollment,
     EnrollmentBrowseOptions,
@@ -6201,7 +6202,7 @@ defmodule Oli.Delivery.Sections do
           |> Map.new()
       end
 
-    objectives =
+    section_objectives =
       objectives_section_resources
       |> Enum.map(fn sr ->
         children =
@@ -6246,14 +6247,14 @@ defmodule Oli.Delivery.Sections do
     # From `objectives`, so membership proves a section resource exists: `children` may come from
     # the revision fallback and name objectives absent here, breaking `lookup_map` below.
     root_contained_ids =
-      objectives
+      section_objectives
       |> Enum.filter(&root_contained?.(&1.resource_id))
       |> MapSet.new(& &1.resource_id)
 
     # Applied before proficiency so discards never reach the metrics queries. The parent rule
     # reads `children`, not the expanded rows, so `exclude_sub_objectives` cannot change it.
     contained_ids =
-      objectives
+      section_objectives
       |> Enum.filter(fn objective ->
         MapSet.member?(root_contained_ids, objective.resource_id) or
           Enum.any?(objective.children, &MapSet.member?(root_contained_ids, &1))
@@ -6261,27 +6262,17 @@ defmodule Oli.Delivery.Sections do
       |> MapSet.new(& &1.resource_id)
 
     objectives =
-      objectives
+      section_objectives
       |> Enum.filter(&MapSet.member?(contained_ids, &1.resource_id))
       |> Enum.map(fn objective ->
         Map.merge(objective, %{
           container_ids: Map.get(objective_to_container_ids_map, objective.resource_id, [])
         })
       end)
-
-    objectives =
-      if include_related_activities_count do
-        # Use pre-calculated related_activities field for performance
-        Enum.map(objectives, fn objective ->
-          Map.put(
-            objective,
-            :related_activities_count,
-            length(objective.related_activities || [])
-          )
-        end)
-      else
-        objectives
-      end
+      |> put_related_activities_count(
+        objectives_section_resources,
+        include_related_activities_count
+      )
 
     proficiencies_for_objectives =
       Metrics.aggregated_proficiency_per_student_for_objectives(section, objectives,
@@ -6463,6 +6454,20 @@ defmodule Oli.Delivery.Sections do
         _true ->
           all
       end
+    end)
+  end
+
+  defp put_related_activities_count(objectives, _objectives_section_resources, false),
+    do: objectives
+
+  defp put_related_activities_count(objectives, objectives_section_resources, true) do
+    counts =
+      objectives_section_resources
+      |> SectionResourceDepot.hydrate_objective_children()
+      |> LinkedActivities.activity_counts_by_family()
+
+    Enum.map(objectives, fn objective ->
+      Map.put(objective, :related_activities_count, Map.fetch!(counts, objective.resource_id))
     end)
   end
 

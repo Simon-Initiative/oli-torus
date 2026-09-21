@@ -368,7 +368,13 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     ArgumentError -> :ok
   end
 
-  defp hydrate_objective_children(objectives_section_resources) do
+  @doc """
+  Resolves SectionResource-id children onto resource ids, the hierarchy delivery reads.
+
+  Objectives whose projected children are empty stay empty: the projection clears them on purpose
+  when the pinned revision is deleted.
+  """
+  def hydrate_objective_children(objectives_section_resources) do
     section_resource_id_to_resource_id =
       Enum.reduce(objectives_section_resources, %{}, fn sr, acc ->
         Map.put(acc, sr.id, sr.resource_id)

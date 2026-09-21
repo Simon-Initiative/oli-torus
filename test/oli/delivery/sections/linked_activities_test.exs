@@ -41,6 +41,57 @@ defmodule Oli.Delivery.Sections.LinkedActivitiesTest do
     assert LinkedActivities.unique_activity_ids([%{resource_id: 1, related_activities: []}]) == []
   end
 
+  test "a parent counts its descendants' activities and a leaf counts only its own" do
+    objectives = [
+      %{resource_id: 10, children: [20, 30], related_activities: [1]},
+      %{resource_id: 20, children: [], related_activities: [2]},
+      %{resource_id: 30, children: [], related_activities: [3, 4]}
+    ]
+
+    counts = LinkedActivities.activity_counts_by_family(objectives)
+
+    assert counts[10] == 4
+    assert counts[20] == 1
+    assert counts[30] == 2
+  end
+
+  test "an activity declared by both a parent and its child is counted once" do
+    objectives = [
+      %{resource_id: 10, children: [20], related_activities: [1, 2]},
+      %{resource_id: 20, children: [], related_activities: [2, 3]}
+    ]
+
+    assert LinkedActivities.activity_counts_by_family(objectives)[10] == 3
+  end
+
+  test "an activity shared by two sibling objectives is counted once" do
+    objectives = [
+      %{resource_id: 10, children: [20, 30], related_activities: []},
+      %{resource_id: 20, children: [], related_activities: [7]},
+      %{resource_id: 30, children: [], related_activities: [7]}
+    ]
+
+    assert LinkedActivities.activity_counts_by_family(objectives)[10] == 1
+  end
+
+  test "a cycle between objectives does not inflate the count" do
+    objectives = [
+      %{resource_id: 10, children: [20], related_activities: [1]},
+      %{resource_id: 20, children: [10], related_activities: [2]}
+    ]
+
+    counts = LinkedActivities.activity_counts_by_family(objectives)
+
+    assert counts[10] == 2
+    assert counts[20] == 2
+  end
+
+  test "a child named outside the supplied objectives is skipped" do
+    objectives = [%{resource_id: 10, children: [20, 999], related_activities: [1]}]
+
+    assert LinkedActivities.activity_counts_by_family(objectives)[10] == 1
+  end
+
   test "merges summary counts and recomputes ratios" do
     merged =
       LinkedActivities.merge_summary_metrics([

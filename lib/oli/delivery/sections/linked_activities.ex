@@ -37,9 +37,35 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
   """
   @spec objective_family_ids([map()], integer()) :: [integer()]
   def objective_family_ids(objectives, selected_objective_id) do
+    objectives
+    |> Map.new(&{&1.resource_id, &1})
+    |> family_ids(selected_objective_id)
+  end
+
+  @doc """
+  Counts the unique activities linked to each objective together with its descendants.
+
+  The objective index is built once so a whole table can be counted in a single pass.
+  """
+  @spec activity_counts_by_family([map()]) :: %{integer() => non_neg_integer()}
+  def activity_counts_by_family(objectives) do
     objectives_by_id = Map.new(objectives, &{&1.resource_id, &1})
 
-    do_objective_family_ids(objectives_by_id, selected_objective_id, MapSet.new(), [])
+    Map.new(objectives, fn objective ->
+      {objective.resource_id, family_activity_count(objectives_by_id, objective.resource_id)}
+    end)
+  end
+
+  defp family_activity_count(objectives_by_id, objective_id) do
+    objectives_by_id
+    |> family_ids(objective_id)
+    |> Enum.map(&Map.fetch!(objectives_by_id, &1))
+    |> unique_activity_ids()
+    |> length()
+  end
+
+  defp family_ids(objectives_by_id, objective_id) do
+    do_objective_family_ids(objectives_by_id, objective_id, MapSet.new(), [])
     |> elem(1)
     |> Enum.reverse()
   end
@@ -84,6 +110,19 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
     |> Enum.map(&Map.get(objective_resources_by_id, &1))
     |> Enum.reject(&is_nil/1)
     |> unique_activity_ids()
+  end
+
+  @doc "Returns the unique activity IDs linked to an objective and its descendants."
+  @spec family_activity_ids(integer(), integer()) :: [integer()]
+  def family_activity_ids(section_id, objective_id) do
+    objective_ids =
+      section_id
+      |> SectionResourceDepot.objectives_with_effective_children()
+      |> objective_family_ids(objective_id)
+
+    objective_resources = SectionResourceDepot.get_resources_by_ids(section_id, objective_ids)
+
+    activity_ids_for_objective_family(objective_ids, objective_resources)
   end
 
   @doc """
