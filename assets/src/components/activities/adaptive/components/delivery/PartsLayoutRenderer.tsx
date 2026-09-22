@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ActivityState, PartComponentDefinition } from 'components/activities/types';
 import PartComponent from '../common/PartComponent';
 
@@ -42,6 +42,15 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   responsiveLayout = true,
   preserveCapiIframeSize = false,
 }) => {
+  const handlePartInit = useCallback(
+    async (payload: any) => {
+      const result = await onPartInit(payload);
+      // Nested layouts (such as fixed popups) can differ from their parent's context.
+      return { ...result, context: { ...result?.context, responsiveLayout } };
+    },
+    [onPartInit, responsiveLayout],
+  );
+
   // Helper function to create part props
   const createPartProps = (partDefinition: PartComponentDefinition) => {
     // For images with only lockAspectRatio (no scaleContent), preserve original width to maintain aspect ratio
@@ -70,7 +79,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
       preserveCapiIframeSize,
       sectionSlug,
       resourceId,
-      onInit: onPartInit,
+      onInit: handlePartInit,
       onReady: onPartReady,
       onSave: onPartSave,
       onSubmit: onPartSubmit,
