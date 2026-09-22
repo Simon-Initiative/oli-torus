@@ -2,13 +2,28 @@ import React, { useCallback } from 'react';
 import { ActivityState, PartComponentDefinition } from 'components/activities/types';
 import PartComponent from '../common/PartComponent';
 
+interface PartInitPayload {
+  id: string;
+  responses: unknown[];
+}
+
+interface PartInitResult {
+  type?: string;
+  snapshot?: unknown;
+  context?: object;
+  env?: unknown;
+  responsiveLayout?: boolean;
+}
+
 interface PartsLayoutRendererProps {
   parts: PartComponentDefinition[];
   state?: ActivityState;
   mode?: string;
   sectionSlug?: string;
   resourceId?: number;
-  onPartInit?: any;
+  onPartInit?: (
+    payload: PartInitPayload,
+  ) => PartInitResult | boolean | Promise<PartInitResult | boolean>;
   onPartReady?: any;
   onPartSave?: any;
   onPartSubmit?: any;
@@ -43,10 +58,12 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   preserveCapiIframeSize = false,
 }) => {
   const handlePartInit = useCallback(
-    async (payload: any) => {
+    async (payload: PartInitPayload) => {
       const result = await onPartInit(payload);
+      const initResult: PartInitResult =
+        typeof result === 'object' && result !== null ? result : {};
       // Nested layouts (such as fixed popups) can differ from their parent's context.
-      return { ...result, context: { ...result?.context, responsiveLayout } };
+      return { ...initResult, context: { ...initResult.context, responsiveLayout } };
     },
     [onPartInit, responsiveLayout],
   );
