@@ -59,7 +59,7 @@ defmodule OliWeb.Common.CardListing do
       <div class="relative h-1/3 w-full shrink-0 overflow-hidden">
         <img src={cover_image(@item)} class="h-full w-full object-cover" alt="course image" />
         <div class="pointer-events-none absolute inset-0 bg-[rgba(54,59,89,0.4)]" />
-        <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,0.1)] to-[rgba(0,50,99,0.4)] mix-blend-hard-light" />
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,0.1)] to-[rgba(0,50,99,0.4)] mix-blend-hard-light backdrop-blur-[4px]" />
       </div>
 
       <div class="flex flex-1 flex-col gap-2 overflow-hidden px-2 pt-3">
