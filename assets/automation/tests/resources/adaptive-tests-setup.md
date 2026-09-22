@@ -66,6 +66,7 @@ DevOps) should upload the files using whatever access method they have available
 | `real-chem-greenhouse-molecules.spec.ts` | `real_chem-greenhouse_molecules/course.zip` | `real_chem-greenhouse_molecules/answers.json` |
 | `real-chem-dazzling-d-orbitals.spec.ts` | `real_chem_ii-dazzling_d_orbitals/course.zip` | `real_chem_ii-dazzling_d_orbitals/answers.json` |
 | `hw-brightness-assessment.spec.ts` | `habitable_worlds-brightness_assessment/course.zip` | _(none — no secret answers required)_ |
+| `lote-plate-tectonics.spec.ts` | `living_on_the_edge-plate_tectonics/course.zip` | `living_on_the_edge-plate_tectonics/answers.json` |
 
 ### Step 2 — Configure the Torus server
 

@@ -9,14 +9,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.Delivery.Sections.Browse
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Authoring.Course.{CreativeCommons, Project}
+  alias Oli.Authoring.Course.{CreativeCommons, Project, ProjectAttributes}
   alias Oli.LanguageCodesIso639
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
   alias Oli.ScopedFeatureFlags
   alias OliWeb.Common.Utils
   alias OliWeb.Components.{Common, Modal, Overview}
-  alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
+  alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter, LearningProficiency}
   alias OliWeb.Live.Components.Tags.TagsComponent
   alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Common.StripedPagedTable
@@ -78,6 +78,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           Activities.selected_activities_for_project(project.id, is_admin?),
         is_admin: is_admin?,
         changeset: Project.changeset(project),
+        confirming_framework_upgrade: false,
+        framework_confirmation: "",
         latest_published_publication: latest_published_publication,
         publishers: Inventories.list_publishers(),
         resource_title: project.title,
@@ -160,7 +162,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               label="Project Description"
               type="textarea"
               class="form-control"
-              maxlength="300"
+              maxlength={Common.description_maxlength(@project.description)}
               placeholder="A brief description of your project..."
               error_position={:top}
               errors={f.errors}
@@ -458,6 +460,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         session: %{"project_slug" => @project.slug, "current_author_id" => @current_author.id}
       )}
 
+      <LearningProficiency.settings
+        project={@project}
+        confirming={@confirming_framework_upgrade}
+        confirmation={@framework_confirmation}
+      />
+
       <Overview.section
         title="AI Activation Points"
         description="Enable AI activation points for your project to include in your curriculum."
@@ -560,6 +568,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       <% end %>
 
       <Overview.section title="Actions" is_last={true}>
+        <div :if={@is_admin} class="flex items-center">
+          <.link
+            class="text-Text-text-button hover:underline pr-3 py-2"
+            href={~p"/workspaces/course_author/#{@project.slug}/learning_model_parameters"}
+          >
+            Learning Model Parameters
+          </.link>
+          <span>Download and upload LKT-AOA parameter values.</span>
+        </div>
         <%= if @is_admin do %>
           <div class="flex items-center">
             <.link
@@ -828,13 +845,72 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     {:noreply, socket |> assign(custom_license: license_type === "custom")}
   end
 
+  def handle_event("show_framework_upgrade", _, socket) do
+    case socket.assigns.project.learning_model_version do
+      :naive ->
+        {:noreply, assign(socket, confirming_framework_upgrade: true, framework_confirmation: "")}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_framework_upgrade", _, socket) do
+    {:noreply, assign(socket, confirming_framework_upgrade: false, framework_confirmation: "")}
+  end
+
+  def handle_event("validate_framework_upgrade", %{"confirmation" => confirmation}, socket) do
+    {:noreply, assign(socket, framework_confirmation: confirmation)}
+  end
+
+  def handle_event(
+        "upgrade_framework",
+        %{"confirmation" => "Update Framework"},
+        %{assigns: %{confirming_framework_upgrade: true}} = socket
+      ) do
+    case Course.upgrade_learning_model(socket.assigns.project, socket.assigns.current_author) do
+      {:ok, updated} ->
+        project = %{
+          socket.assigns.project
+          | learning_model_version: updated.learning_model_version,
+            updated_at: updated.updated_at
+        }
+
+        {:noreply,
+         socket
+         |> assign(
+           project: project,
+           changeset: Project.changeset(project),
+           confirming_framework_upgrade: false,
+           framework_confirmation: ""
+         )
+         |> put_flash(:info, "Learning proficiency framework updated successfully.")}
+
+      {:error, _} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "The learning proficiency framework could not be updated. Please reload the page and try again."
+         )}
+    end
+  end
+
+  def handle_event("upgrade_framework", _, socket) do
+    {:noreply, put_flash(socket, :error, "Please type Update Framework to confirm.")}
+  end
+
   def handle_event("update", %{"project" => project_params}, socket) do
     project_params =
       project_params
       |> add_custom_license_details()
       |> decode_welcome_title()
 
+    # Use the persisted thresholds rather than the values the Overview form
+    # mounted with, so this form cannot overwrite changes from Objectives.
     project = socket.assigns.project
+    current_attributes = Course.get_project!(project.id).attributes
+    project_params = preserve_coverage_thresholds(project_params, current_attributes)
 
     socket =
       case Course.update_project(project, project_params) do
@@ -1098,4 +1174,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   defp decode_welcome_title(project_params),
     do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
+
+  defp preserve_coverage_thresholds(project_params, current_attributes) do
+    thresholds = ProjectAttributes.coverage_thresholds(current_attributes)
+
+    attributes =
+      project_params
+      |> Map.get("attributes", %{})
+      |> Map.put("coverage_formative_threshold", thresholds.formative)
+      |> Map.put("coverage_summative_threshold", thresholds.summative)
+
+    Map.put(project_params, "attributes", attributes)
+  end
 end

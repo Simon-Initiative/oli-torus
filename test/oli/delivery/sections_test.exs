@@ -3948,6 +3948,15 @@ defmodule Oli.Delivery.SectionsTest do
       assert is_list(sub_b2.container_ids)
     end
 
+    test "confidence is nil for naive sections", %{section: section} do
+      assert section.learning_model_version == :naive
+
+      result = Sections.get_objectives_and_subobjectives(section)
+
+      assert Enum.all?(result, &(&1.confidence_obj == nil))
+      assert Enum.all?(result, &(&1.confidence_subobj == nil))
+    end
+
     test "excludes subobjectives when exclude_sub_objectives is true", %{
       section: section,
       objectives: %{objective_a: objective_a, objective_b: objective_b}
@@ -4020,22 +4029,6 @@ defmodule Oli.Delivery.SectionsTest do
       {:ok, context} = LinkedActivities.resolve_context(section.id, objective_a.resource_id)
 
       assert length(context.activity_ids) == parent_row.related_activities_count
-    end
-
-    test "family activity ids span the objective and its sub-objectives", %{
-      section: section,
-      objectives: %{objective_a: objective_a, sub_objective_a1: sub_objective_a1}
-    } do
-      family = LinkedActivities.family_activity_ids(section.id, objective_a.resource_id)
-      leaf = LinkedActivities.family_activity_ids(section.id, sub_objective_a1.resource_id)
-
-      assert length(family) == 3
-      assert length(leaf) == 1
-      assert Enum.all?(leaf, &(&1 in family))
-
-      {:ok, context} = LinkedActivities.resolve_context(section.id, objective_a.resource_id)
-
-      assert Enum.sort(context.activity_ids) == Enum.sort(family)
     end
 
     test "a parent whose projected children were cleared counts only its own activities", %{

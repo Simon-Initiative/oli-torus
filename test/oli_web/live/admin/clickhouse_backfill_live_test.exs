@@ -1,5 +1,5 @@
 defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
-  use OliWeb.ConnCase, async: true
+  use OliWeb.ConnCase, async: false
   use Oban.Testing, repo: Oli.Repo
 
   import Phoenix.LiveViewTest

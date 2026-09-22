@@ -68,6 +68,12 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
              )
 
       assert has_element?(view, "button[id=\"filter_units_button\"]", "Units")
+
+      assert has_element?(
+               view,
+               ~s{a[href="#{Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, section.slug, container_filter_by: :units, student_id: student.id)}"]},
+               "Download CSV"
+             )
     end
 
     test "gets sorted by module through url query params", %{

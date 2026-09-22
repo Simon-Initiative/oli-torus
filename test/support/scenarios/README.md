@@ -133,6 +133,7 @@ All directives are documented in detail in the linked documentation files.
 | | `assert.activity_customization` | Assert persisted instructor activity customization state | [instructor_customizations.md](docs/instructor_customizations.md#activity-customization-assertions) |
 | | `assert.page_objectives` | Assert delivery page learning objective titles | [content_authoring.md](docs/content_authoring.md#page-objective-assertions) |
 | | `assert.activity_objectives` | Assert objective titles attached to a scenario activity | [content_authoring.md](docs/content_authoring.md#activity-objective-assertions) |
+| | `assert.learning_objectives` | Assert section learning objectives within course or container scope | [analytics.md](docs/analytics.md#scoped-learning-objective-assertions) |
 | | `assert.insights` | Assert authoring analytics for pages, activities, and objectives | [analytics.md](docs/analytics.md#insights-assertions) |
 | **Instructor Dashboard** | | | |
 | | `dashboard_analytics_ready` | Prepare analytics-backed instructor dashboard data after learner activity | [instructor_dashboard.md](docs/instructor_dashboard.md#dashboard_analytics_ready) |
@@ -286,6 +287,79 @@ end)
 ```
 
 ## Advanced Features
+
+### Bulk create/enroll users and simulated progress
+
+`bulk_create_enroll_users` creates collision-safe synthetic users, enrolls them, and stores stable references
+of the form `<prefix>_instructor_<n>` and `<prefix>_learner_<n>`. Re-running the same directive
+reuses an identity only when both its email and deterministic subject match; conflicting records
+fail without being overwritten.
+
+```yaml
+- bulk_create_enroll_users:
+    section: demo_section
+    prefix: qa
+    instructors: 2
+    learners: 25
+```
+
+`simulate_progress` takes enrolled learners through the delivered course using fixed behavior
+profiles and real delivery attempt/evaluation lifecycles. Omitting `users` selects all enrolled
+learners. A seed makes cohort assignment, participation, response, and timing choices repeatable.
+Unsupported content is reported as a bounded warning; learner failures are reported separately.
+
+Select exactly one top-level `profile` or `cohorts`. The former `pct_correct` and
+`assessment_attempts` options have been removed; use a fixed profile or lower-level learner
+directives when an exact action sequence is required.
+
+```yaml
+- simulate_progress:
+    section: demo_section
+    users: [qa_learner_1, qa_learner_2]
+    seed: 42
+    profile: steady_learner
+```
+
+```yaml
+- simulate_progress:
+    section: demo_section
+    seed: 42
+    cohorts:
+      - profile: high_proficiency
+        count: 5
+      - profile: steady_learner
+        count: 10
+      - profile: persistent_learner
+        count: 5
+      - profile: low_engagement
+        count: 5
+```
+
+The built-in profiles vary course reach, activity participation, initial correctness, practice and
+assessment attempt counts, and improvement per attempt. Incorrect practice attempts request hints
+when available. Learners with existing section history are skipped and reported rather than resumed.
+
+Fast mode is the default. Paced mode uses real wall-clock waits sampled independently for each
+learner from fixed profile distributions for page, answer, retry, break, and study-session timing.
+Both modes accept at most 100 learners. Fast mode uses the normal `Task.async_stream/3` concurrency
+and adds a small deterministic delay between actions; paced mode starts one worker per admitted
+learner so realistic waits overlap. Paced mode is intended to run
+in a separate shell alongside the development or preview server:
+
+```yaml
+- simulate_progress:
+    section: demo_section
+    profile: steady_learner
+    seed: 42
+    timing:
+      mode: paced
+```
+
+Run a local file with `mix seed scenarios run --file path/to/scenario.yaml`. Preview releases use
+`bin/seed scenarios run --file path/to/staged-scenario.yaml`. Stopping the process stops owned
+learner work and keeps already committed attempts; there is no resume, special interruption
+summary, or automatic cleanup. Refresh the application UI to inspect committed data; downstream analytics may require
+the concurrently running server's normal queues to drain.
 
 ### Hook Directive
 

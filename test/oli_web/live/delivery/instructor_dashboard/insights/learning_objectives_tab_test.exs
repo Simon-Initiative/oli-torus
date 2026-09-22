@@ -409,6 +409,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       for color <- ~w(#CED1D9 #CE2C31 #BF5B13 #218358 #353740 #FF8787 #FFB387 #39E581) do
         assert html =~ color
       end
+
+      chart_props =
+        html
+        |> Floki.parse_fragment!()
+        |> Floki.find("#proficiency-data-bar-chart-for-objective-#{obj_revision_1.resource_id}")
+        |> Floki.attribute("data-live-react-props")
+        |> hd()
+        |> Jason.decode!()
+
+      assert chart_props["spec"]["mark"] == %{"type" => "bar", "binSpacing" => 2}
+      assert chart_props["spec"]["encoding"]["x"]["bin"] == "binned"
     end
   end
 
@@ -670,6 +681,61 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
     end
   end
 
+  describe "confidence filtering" do
+    setup [:instructor_conn, :create_lkt_aoa_project_with_mixed_confidence_children]
+
+    # Regression test for a bug where filtering by Confidence could show a parent
+    # objective whose OWN (displayed) confidence did not match the selected filter,
+    # because the filter incorrectly promoted the parent into view whenever ANY of
+    # its sub-objectives matched, rather than checking the parent's own aggregate.
+    test "only shows objectives whose own confidence matches the filter, not a differently-valued child's",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section,
+           revisions: revisions
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      # The parent's confidence is the attempt-weighted average of its two children
+      # (High and Low, equal weights), which lands squarely in "Medium".
+      params = %{selected_confidence_ids: Jason.encode!([3])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      refute has_element?(view, "span", "#{revisions.parent_revision.title}")
+
+      params = %{selected_confidence_ids: Jason.encode!([2])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      assert has_element?(view, "span", "#{revisions.parent_revision.title}")
+    end
+
+    # Regression test for the same bug affecting the Student Proficiency filter: a
+    # parent objective whose own proficiency did not match the selected filter could
+    # still appear because one of its sub-objectives happened to match.
+    test "only shows objectives whose own proficiency matches the filter, not a differently-valued child's",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section,
+           revisions: revisions
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      # The parent's proficiency is the attempt-weighted average aoa of its two
+      # children (High and Low, equal weights), which lands squarely in "Medium".
+      params = %{selected_proficiency_ids: Jason.encode!([3])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      refute has_element?(view, "span", "#{revisions.parent_revision.title}")
+
+      params = %{selected_proficiency_ids: Jason.encode!([2])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      assert has_element?(view, "span", "#{revisions.parent_revision.title}")
+    end
+  end
+
   describe "page size change" do
     setup [:instructor_conn, :create_full_project_with_objectives]
 
@@ -893,5 +959,115 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
 
       assert render(view) =~ "transparent_background"
     end
+  end
+
+  defp create_lkt_aoa_project_with_mixed_confidence_children(_conn) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    {child_1_resource, child_1_revision} =
+      create_objective("Child Objective 1", "child_1", project)
+
+    {child_2_resource, child_2_revision} =
+      create_objective("Child Objective 2", "child_2", project)
+
+    {parent_resource, parent_revision} =
+      create_objective("Parent Objective", "parent_objective", project, [
+        child_1_resource.id,
+        child_2_resource.id
+      ])
+
+    {page_1_resource, page_1_revision} =
+      create_page("Page 1", "page_1", project, [], [child_1_resource.id])
+
+    {page_2_resource, page_2_revision} =
+      create_page("Page 2", "page_2", project, [], [child_2_resource.id])
+
+    {root_resource, root_revision} =
+      create_container("Root Container", "root_container", project, [
+        page_1_resource.id,
+        page_2_resource.id
+      ])
+
+    publication =
+      insert(:publication, %{project: project, root_resource_id: root_resource.id, published: nil})
+
+    [
+      {child_1_resource, child_1_revision},
+      {child_2_resource, child_2_revision},
+      {parent_resource, parent_revision},
+      {page_1_resource, page_1_revision},
+      {page_2_resource, page_2_revision},
+      {root_resource, root_revision}
+    ]
+    |> Enum.each(fn {resource, revision} ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable,
+        learning_model_version: :lkt_aoa
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+    student = insert(:user)
+    Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    Repo.insert_all("learning_states", [
+      %{
+        section_id: section.id,
+        user_id: student.id,
+        learning_objective_id: child_1_resource.id,
+        attempt_count: 5,
+        success_score: 4.75,
+        failure_score: 0.25,
+        recency_logit: 0.0,
+        aoa: 0.95,
+        unique_activity_part_count: 5,
+        confidence: 0.95,
+        inserted_at: now,
+        updated_at: now
+      },
+      %{
+        section_id: section.id,
+        user_id: student.id,
+        learning_objective_id: child_2_resource.id,
+        attempt_count: 5,
+        success_score: 1.0,
+        failure_score: 4.0,
+        recency_logit: 0.0,
+        aoa: 0.2,
+        unique_activity_part_count: 5,
+        confidence: 0.2,
+        inserted_at: now,
+        updated_at: now
+      }
+    ])
+
+    %{
+      project: project,
+      section: section,
+      publication: publication,
+      revisions: %{
+        parent_revision: parent_revision,
+        child_1_revision: child_1_revision,
+        child_2_revision: child_2_revision
+      }
+    }
   end
 end

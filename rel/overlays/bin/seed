@@ -1,0 +1,4 @@
+#!/bin/sh
+cd -P -- "$(dirname -- "$0")"
+
+exec ./oli eval 'Oli.Seeding.Runtime.main(System.argv())' -- "$@"

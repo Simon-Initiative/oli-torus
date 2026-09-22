@@ -35,7 +35,7 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.Roles.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
-  alias Oli.Lti.LtiParams
+  alias Oli.Lti.LaunchIdentity
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
@@ -58,9 +58,12 @@ defmodule Oli.Delivery.Sections do
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
   alias Ecto.Multi
+  alias Oli.Analytics.Summary.{ResourcePartResponse, ResourceSummary, StudentResponse}
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
+
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Proficiency
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Branding.CustomLabels
 
@@ -195,6 +198,7 @@ defmodule Oli.Delivery.Sections do
     |> Enum.map(fn {user, context_role_id, enrollment, payment} ->
       Map.merge(user, %{
         enrollment_status: enrollment.status,
+        enrollment_date: enrollment.inserted_at,
         user_role_id: context_role_id,
         payment_status:
           Paywall.summarize_access(
@@ -1316,51 +1320,56 @@ defmodule Oli.Delivery.Sections do
       nil
   """
   def get_section_from_lti_params(lti_params) do
-    context_id =
-      Map.get(lti_params, "https://purl.imsglobal.org/spec/lti/claim/context")
-      |> Map.get("id")
-
-    issuer = lti_params["iss"]
-    client_id = LtiParams.peek_client_id(lti_params)
-
-    get_section_for_lti_context(context_id, issuer, client_id)
+    case LaunchIdentity.from_claims(lti_params) do
+      {:ok, identity} -> get_section_for_launch(identity)
+      :error -> nil
+    end
   end
 
-  def get_section_for_lti_context(context_id, issuer, client_id)
-      when is_binary(context_id) and is_binary(issuer) and is_binary(client_id) do
-    Repo.all(
+  @doc """
+  Returns the active section of one launch identity.
+
+  Every part of the identity is matched, deployment included: two deployments of the same
+  registration can carry the same context id, and each owns its own section.
+  """
+  def get_section_for_launch(%LaunchIdentity{} = identity) do
+    Repo.one(
       from(s in Section,
         join: d in Deployment,
         on: s.lti_1p3_deployment_id == d.id,
         join: r in Registration,
         on: d.registration_id == r.id,
         where:
-          s.context_id == ^context_id and s.status == :active and r.issuer == ^issuer and
-            r.client_id == ^client_id,
+          s.context_id == ^identity.context_id and s.status == :active and
+            r.issuer == ^identity.issuer and r.client_id == ^identity.client_id and
+            d.deployment_id == ^identity.deployment_id,
         order_by: [asc: :id],
         limit: 1,
         select: s
       )
     )
-    |> one_or_warn(context_id)
   end
 
-  def get_section_for_lti_context(_context_id, _issuer, _client_id), do: nil
+  @doc """
+  Returns the active section for an LTI context within one deployment.
 
-  defp one_or_warn(result, context_id) do
-    case result do
-      [] ->
-        nil
-
-      [first] ->
-        first
-
-      [first | _] ->
-        Logger.warning("More than one active section was returned for context_id #{context_id}")
-
-        first
-    end
+  Two deployments of the same registration can carry the same context id, and each owns
+  its own section.
+  """
+  def get_section_for_lti_deployment(context_id, deployment_id)
+      when is_binary(context_id) and is_integer(deployment_id) do
+    Repo.one(
+      from(s in Section,
+        where:
+          s.context_id == ^context_id and s.lti_1p3_deployment_id == ^deployment_id and
+            s.status == :active,
+        order_by: [asc: :id],
+        limit: 1
+      )
+    )
   end
+
+  def get_section_for_lti_deployment(_context_id, _deployment_id), do: nil
 
   @doc """
   Gets the associated deployment and registration from the given section
@@ -6167,6 +6176,11 @@ defmodule Oli.Delivery.Sections do
   * `:student_id` - If provided, filters proficiency results for a specific student
   * `:exclude_sub_objectives` - If true, only returns top-level objectives (default: false)
   * `:include_related_activities_count` - If true, includes `related_activities_count` field for each objective. A related activity is any activity that has the objective attached to it in its objectives map (default: false)
+
+  Container scopes union objectives statically attached to pages and embedded activities with
+  objectives from answered activities recorded in per-student analytics summaries. The latter
+  allows realized activity-bank selections to contribute their objectives after learners encounter
+  them.
   """
   def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, opts \\ []) do
     student_id = if opts[:student_id], do: opts[:student_id], else: nil
@@ -6227,16 +6241,11 @@ defmodule Oli.Delivery.Sections do
         }
       end)
 
-    # Only the two containment fields are needed, and both consumers of `container_ids` are
-    # membership checks, so the grouped lists are prepended and never reversed.
+    # Include both statically contained objectives and objectives realized by enrolled learners.
+    # Building this before the proficiency queries keeps objectives outside delivered content out
+    # of the more expensive metrics work.
     objective_to_container_ids_map =
-      from(co in ContainedObjective)
-      |> where([co], co.section_id == ^section.id)
-      |> select([co], {co.objective_id, co.container_id})
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn {objective_id, container_id}, acc ->
-        Map.update(acc, objective_id, [container_id], &[container_id | &1])
-      end)
+      objective_to_container_ids_map(section.id)
 
     # Section resources outlive the content that referenced them, so containment - not the
     # `deleted` flag - decides whether an objective still belongs to the delivered course.
@@ -6347,6 +6356,34 @@ defmodule Oli.Delivery.Sections do
         {[], %{}}
       end
 
+    # Confidence is only meaningful for models that compute it, and only for the
+    # class-wide view (a single student's own confidence isn't rolled up here).
+    confidence_for_objectives =
+      if is_nil(student_id) and Proficiency.confidence_supported?(section) do
+        confidence_per_student =
+          Metrics.confidence_per_student_for_objective(
+            section,
+            Enum.map(objectives, & &1.resource_id)
+          )
+
+        Map.new(objectives, fn objective ->
+          confidences =
+            confidence_per_student
+            |> Map.get(objective.resource_id, %{})
+            |> Map.values()
+
+          label =
+            case confidences do
+              [] -> nil
+              values -> Metrics.confidence_label(Enum.sum(values) / length(values))
+            end
+
+          {objective.resource_id, label}
+        end)
+      else
+        %{}
+      end
+
     lookup_map =
       Enum.reduce(objectives, %{}, fn obj, acc ->
         Map.put(acc, obj.resource_id, obj)
@@ -6393,9 +6430,11 @@ defmodule Oli.Delivery.Sections do
               objective_resource_id: objective.resource_id,
               student_proficiency_obj: student_proficiency_obj,
               student_proficiency_obj_dist: student_proficiency_obj_dist,
+              confidence_obj: Map.get(confidence_for_objectives, objective.resource_id),
               subobjective: nil,
               subobjective_resource_id: nil,
-              student_proficiency_subobj: nil
+              student_proficiency_subobj: nil,
+              confidence_subobj: nil
             })
 
           case exclude_sub_objectives do
@@ -6436,10 +6475,13 @@ defmodule Oli.Delivery.Sections do
                     objective_resource_id: objective.resource_id,
                     student_proficiency_obj: student_proficiency_obj,
                     student_proficiency_obj_dist: student_proficiency_obj_dist,
+                    confidence_obj: Map.get(confidence_for_objectives, objective.resource_id),
                     subobjective: sub_objective.title,
                     subobjective_resource_id: sub_objective.resource_id,
                     student_proficiency_subobj: student_proficiency_subobj,
-                    student_proficiency_subobj_dist: student_proficiency_subobj_dist
+                    student_proficiency_subobj_dist: student_proficiency_subobj_dist,
+                    confidence_subobj:
+                      Map.get(confidence_for_objectives, sub_objective.resource_id)
                   })
                 end)
 
@@ -6470,6 +6512,89 @@ defmodule Oli.Delivery.Sections do
       Map.put(objective, :related_activities_count, Map.fetch!(counts, objective.resource_id))
     end)
   end
+
+  defp objective_to_container_ids_map(section_id) do
+    from(co in ContainedObjective,
+      where: co.section_id == ^section_id,
+      select: {co.objective_id, co.container_id}
+    )
+    |> Repo.all()
+    |> Enum.concat(realized_objective_container_pairs(section_id))
+    |> Enum.reduce(%{}, fn {objective_id, container_id}, acc ->
+      Map.update(acc, objective_id, MapSet.new([container_id]), &MapSet.put(&1, container_id))
+    end)
+    |> Map.new(fn {objective_id, container_ids} ->
+      {objective_id, container_ids |> MapSet.to_list() |> Enum.sort()}
+    end)
+  end
+
+  # Student response summaries retain the page on which an activity was answered. Pair them with
+  # per-student resource summaries to scope realized bank objectives without scanning attempts.
+  defp realized_objective_container_pairs(section_id) do
+    activity_type_id = ResourceType.id_for_activity()
+
+    from(summary in ResourceSummary,
+      join: enrollment in Enrollment,
+      on:
+        enrollment.section_id == summary.section_id and
+          enrollment.user_id == summary.user_id,
+      join: enrollment_context_role in EnrollmentContextRole,
+      on: enrollment_context_role.enrollment_id == enrollment.id,
+      join: resource_part_response in ResourcePartResponse,
+      on:
+        resource_part_response.resource_id == summary.resource_id and
+          resource_part_response.part_id == summary.part_id,
+      join: student_response in StudentResponse,
+      on:
+        student_response.section_id == summary.section_id and
+          student_response.user_id == summary.user_id and
+          student_response.resource_part_response_id == resource_part_response.id,
+      join: contained_page in ContainedPage,
+      on:
+        contained_page.section_id == student_response.section_id and
+          contained_page.page_id == student_response.page_id,
+      join: spp in SectionsProjectsPublications,
+      on: spp.section_id == summary.section_id,
+      join: published_resource in PublishedResource,
+      on:
+        published_resource.publication_id == spp.publication_id and
+          published_resource.resource_id == summary.resource_id,
+      join: activity_revision in Revision,
+      on: activity_revision.id == published_resource.revision_id,
+      where:
+        summary.project_id == -1 and
+          summary.section_id == ^section_id and
+          summary.resource_type_id == ^activity_type_id and
+          summary.num_attempts > 0 and
+          enrollment.status == :enrolled and
+          enrollment_context_role.context_role_id == ^@student_role_id and
+          activity_revision.deleted == false,
+      distinct: [contained_page.container_id, activity_revision.id, summary.part_id],
+      select: %{
+        container_id: contained_page.container_id,
+        objectives: activity_revision.objectives,
+        part_id: summary.part_id
+      }
+    )
+    |> Repo.all()
+    |> Enum.flat_map(fn result ->
+      objective_ids_for_part(result.objectives, result.part_id)
+      |> Enum.map(&{&1, result.container_id})
+    end)
+  end
+
+  defp objective_ids_for_part(objectives, part_id) when is_map(objectives) do
+    objectives
+    |> Map.get(part_id, [])
+    |> List.wrap()
+    |> Enum.filter(&is_integer/1)
+  end
+
+  defp objective_ids_for_part(objectives, _part_id) when is_list(objectives) do
+    Enum.filter(objectives, &is_integer/1)
+  end
+
+  defp objective_ids_for_part(_objectives, _part_id), do: []
 
   @doc """
   Returns the container label and numbering for a given container.

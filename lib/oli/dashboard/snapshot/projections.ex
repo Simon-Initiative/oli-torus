@@ -92,9 +92,7 @@ defmodule Oli.Dashboard.Snapshot.Projections do
         status = %{status: :partial, reason: reason, reason_code: reason_code}
         emit_projection_telemetry(capability_key, status, :ok, duration_ms, oracle_count)
 
-        Logger.warning(
-          "projection partial capability=#{inspect(capability_key)} reason=#{inspect(reason)}"
-        )
+        log_partial_projection(capability_key, reason)
 
         {projection, status}
 
@@ -118,9 +116,7 @@ defmodule Oli.Dashboard.Snapshot.Projections do
         status = %{status: :failed, reason: reason, reason_code: reason_code}
         emit_projection_telemetry(capability_key, status, :error, duration_ms, oracle_count)
 
-        Logger.error(
-          "projection failed capability=#{inspect(capability_key)} reason=#{inspect(reason)}"
-        )
+        log_failed_projection(capability_key, reason)
 
         {%{}, status}
 
@@ -131,6 +127,32 @@ defmodule Oli.Dashboard.Snapshot.Projections do
         Logger.error("projection invalid return capability=#{inspect(capability_key)}")
         {%{}, status}
     end
+  end
+
+  # Missing dependencies are a normal intermediate state while dashboard oracles load.
+  # Telemetry still records the partial/failed status for operational visibility.
+  defp log_partial_projection(capability_key, {:dependency_unavailable, _} = reason) do
+    Logger.debug(
+      "projection partial capability=#{inspect(capability_key)} reason=#{inspect(reason)}"
+    )
+  end
+
+  defp log_partial_projection(capability_key, reason) do
+    Logger.warning(
+      "projection partial capability=#{inspect(capability_key)} reason=#{inspect(reason)}"
+    )
+  end
+
+  defp log_failed_projection(capability_key, {:missing_required_oracles, _} = reason) do
+    Logger.debug(
+      "projection incomplete capability=#{inspect(capability_key)} reason=#{inspect(reason)}"
+    )
+  end
+
+  defp log_failed_projection(capability_key, reason) do
+    Logger.error(
+      "projection failed capability=#{inspect(capability_key)} reason=#{inspect(reason)}"
+    )
   end
 
   defp projection_modules(opts) do

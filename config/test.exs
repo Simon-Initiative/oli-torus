@@ -5,6 +5,8 @@ config :bcrypt_elixir, :log_rounds, 1
 
 config :oli,
   env: :test,
+  inventory_recovery_on_boot: false,
+  logger_truncation_enabled: false,
   depot_coordinator: Oli.Delivery.SingletonDepotCoordinator,
   s3_media_bucket_name: "torus-media-test",
   s3_xapi_bucket_name: "torus-xapi-test",
@@ -140,7 +142,7 @@ config :oli, OliWeb.Endpoint,
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshSync
 config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenTest
 
-# Print only warnings and errors during test
+# ExUnit captures logs emitted during each test and only prints them when that test fails.
 config :logger, level: :warning
 
 config :oli,

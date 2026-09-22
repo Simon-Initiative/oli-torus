@@ -129,6 +129,11 @@ defmodule Oli.Interop.IngestTest do
       # verify that every practice page has a content attribute with a model
       assert Enum.all?(practice_pages, fn p -> Map.has_key?(p.content, "model") end)
 
+      assert Enum.all?(practice_pages, fn p ->
+               MapSet.new(p.activity_refs) ==
+                 Oli.Authoring.Editing.Utils.activity_references(p.content)
+             end)
+
       # verify that citations are rewired correctly
       page_with_citation = Enum.filter(practice_pages, fn p -> p.title == "Feedback" end) |> hd
 
@@ -209,6 +214,90 @@ defmodule Oli.Interop.IngestTest do
         Oli.Repo.get!(Oli.Delivery.Sections.SectionResource, product.root_section_resource_id)
 
       assert Enum.count(product_root.children) == 2
+    end
+
+    test "ingest rewires learning objective recommendation IDs to imported pages", %{
+      author: author
+    } do
+      objective = %{
+        "id" => "90000001",
+        "type" => "Objective",
+        "title" => "Recommended objective",
+        "objectives" => []
+      }
+
+      recommendation_pages =
+        Enum.map(
+          [{"90000002", "Revisit page"}, {"90000003", "Practice page"}],
+          fn {id, title} ->
+            %{
+              "id" => id,
+              "type" => "Page",
+              "title" => title,
+              "objectives" => [],
+              "content" => %{"model" => []}
+            }
+          end
+        )
+
+      summary_page = %{
+        "id" => "90000004",
+        "type" => "Page",
+        "title" => "Objective summary",
+        "objectives" => [objective["id"]],
+        "content" => %{
+          "model" => [
+            %{
+              "id" => "learning-objectives-summary",
+              "type" => "learning_objectives",
+              "mode" => "summary",
+              "learning_objectives" => [
+                %{
+                  "resource_id" => 90_000_001,
+                  "revisit_pages" => [90_000_002],
+                  "practice_pages" => [90_000_003]
+                }
+              ]
+            }
+          ]
+        }
+      }
+
+      assert {:ok, project} =
+               minimal_digest(%{"title" => "Learning objective recommendations"}, [], [
+                 objective,
+                 summary_page | recommendation_pages
+               ])
+               |> Ingest.process(author)
+
+      [imported_objective] =
+        Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "objective")
+
+      pages_by_title =
+        Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "page")
+        |> Map.new(&{&1.title, &1})
+
+      [element] = pages_by_title["Objective summary"].content["model"]
+      [config] = element["learning_objectives"]
+
+      assert config["resource_id"] == imported_objective.resource_id
+
+      assert Map.take(config, ["revisit_pages", "practice_pages"]) == %{
+               "revisit_pages" => [pages_by_title["Revisit page"].resource_id],
+               "practice_pages" => [pages_by_title["Practice page"].resource_id]
+             }
+    end
+
+    test "ingests a legacy project description over the authoring character limit", %{
+      author: author
+    } do
+      description = String.duplicate("Legacy description", 20)
+
+      assert {:ok, project} =
+               minimal_digest(%{"title" => "Legacy project", "description" => description})
+               |> Ingest.process(author)
+
+      assert project.description == description
     end
   end
 

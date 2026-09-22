@@ -84,21 +84,22 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       assigns
       |> Map.put(:sub_objective_id, sub_objective.id)
       |> Map.put(:proficiency_distribution, proficiency_distribution)
-      |> Map.put(:proficiency_labels, Proficiency.labels())
+      |> Map.put(
+        :tooltip_id,
+        "proficiency-distribution-tooltip-#{build_chart_id(sub_objective.id, assigns.parent_unique_id)}"
+      )
 
     ~H"""
-    <div class="group flex relative">
+    <Proficiency.distribution_chart_with_tooltip
+      id={@tooltip_id}
+      distribution={@proficiency_distribution}
+    >
       {render_proficiency_chart(
         @sub_objective_id,
         @proficiency_distribution,
         @parent_unique_id
       )}
-      <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
-        <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
-          <p>{label}: {value}%</p>
-        <% end %>
-      </div>
-    </div>
+    </Proficiency.distribution_chart_with_tooltip>
     """
   end
 
@@ -146,10 +147,10 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
 
     spec = %{
       height: 12,
-      mark: "bar",
+      mark: %{type: "bar", binSpacing: 2},
       data: %{values: data_with_positions},
       encoding: %{
-        x: %{field: "start", type: "quantitative", scale: %{nice: false}},
+        x: %{field: "start", type: "quantitative", bin: "binned", scale: %{nice: false}},
         x2: %{field: "end"},
         color: %{
           field: "proficiency",
@@ -193,18 +194,5 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       nil -> "proficiency-chart-sub-objective-#{sub_objective_id}"
       parent_id -> "proficiency-chart-sub-objective-#{sub_objective_id}-#{parent_id}"
     end
-  end
-
-  # CALCULATE PERCENTAGES
-  defp calc_percentages(data) do
-    total = data |> Map.values() |> Enum.sum()
-
-    perc = fn label ->
-      if total == 0, do: 0, else: round(Map.get(data, label, 0) / total * 100)
-    end
-
-    Proficiency.labels()
-    |> Enum.map(fn label -> {label, perc.(label)} end)
-    |> Map.new()
   end
 end

@@ -112,19 +112,6 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
     |> unique_activity_ids()
   end
 
-  @doc "Returns the unique activity IDs linked to an objective and its descendants."
-  @spec family_activity_ids(integer(), integer()) :: [integer()]
-  def family_activity_ids(section_id, objective_id) do
-    objective_ids =
-      section_id
-      |> SectionResourceDepot.objectives_with_effective_children()
-      |> objective_family_ids(objective_id)
-
-    objective_resources = SectionResourceDepot.get_resources_by_ids(section_id, objective_ids)
-
-    activity_ids_for_objective_family(objective_ids, objective_resources)
-  end
-
   @doc """
   Resolves the section-scoped objective family, unique activity IDs, and page contexts.
   """

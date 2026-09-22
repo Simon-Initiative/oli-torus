@@ -447,30 +447,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     send_update(__MODULE__, id: component_id, __draft_result__: {request_id, result})
   end
 
-  @doc """
-  Shapes selected students into the recipient maps this modal consumes.
-
-  Keeps ALL selected students — including those without an email — so the modal
-  can split valid recipients from excluded ones and name the excluded students.
-  `name_fn` resolves each student's display name (the source field differs per
-  caller, e.g. `:full_name` vs a composed name).
-  """
-  def recipients(students, selected_ids, name_fn) when is_function(name_fn, 1) do
-    selected = MapSet.new(selected_ids)
-
-    students
-    |> Enum.filter(&MapSet.member?(selected, &1.id))
-    |> Enum.map(fn student ->
-      %{
-        id: student.id,
-        email: Map.get(student, :email),
-        given_name: Map.get(student, :given_name),
-        family_name: Map.get(student, :family_name),
-        display_name: name_fn.(student)
-      }
-    end)
-  end
-
   defp maybe_apply_draft_result(%{__draft_result__: {request_id, result}}, socket) do
     # Apply only the result of the current generation; drop stale results (from a closed,
     # reopened, regenerated, or already-consumed request). Clear the id on apply so the same

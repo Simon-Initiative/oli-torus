@@ -190,6 +190,12 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
              )
 
       assert has_element?(view, "h4", "Learning Objectives")
+
+      assert has_element?(
+               view,
+               ~s{a[href="#{Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, section.slug, student_id: student.id)}"]},
+               "Download CSV"
+             )
     end
 
     test "loads correctly when there are no objectives", %{

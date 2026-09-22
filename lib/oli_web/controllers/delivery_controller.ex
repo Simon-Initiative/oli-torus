@@ -279,8 +279,10 @@ defmodule OliWeb.DeliveryController do
   end
 
   def download_course_content_info(conn, params) do
-    with {:ok, section} <- ensure_instructor_access(conn) do
-      {_total_count, containers_with_metrics} = Helpers.get_containers(section, async: false)
+    with {:ok, section} <- ensure_instructor_access(conn),
+         {:ok, student_id} <- validate_student_filter(section, params) do
+      {_total_count, containers_with_metrics} =
+        Helpers.get_containers(section, async: false, student_id: student_id)
 
       container_filter_by =
         Params.get_atom_param(
@@ -365,6 +367,7 @@ defmodule OliWeb.DeliveryController do
         name: "Name",
         email: "Email",
         lms_id: "LMS ID",
+        enrollment_date: "Enrollment Date",
         last_interaction: "Last Interaction",
         progress: "Progress (Pct)",
         overall_proficiency: "Proficiency",
@@ -385,6 +388,8 @@ defmodule OliWeb.DeliveryController do
               name: OliWeb.Common.Utils.name(student),
               email: student.email,
               lms_id: student.sub,
+              enrollment_date:
+                FormatDateTime.format_datetime(student.enrollment_date, show_timezone: false),
               last_interaction: student.last_interaction,
               progress: convert_to_percentage(student),
               overall_proficiency: student.overall_proficiency,
@@ -465,10 +470,14 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  def download_learning_objectives(conn, _params) do
-    with {:ok, section} <- ensure_instructor_access(conn) do
+  def download_learning_objectives(conn, params) do
+    with {:ok, section} <- ensure_instructor_access(conn),
+         {:ok, student_id} <- validate_student_filter(section, params) do
       contents =
-        Sections.get_objectives_and_subobjectives(section, exclude_sub_objectives: false)
+        Sections.get_objectives_and_subobjectives(section,
+          exclude_sub_objectives: false,
+          student_id: student_id
+        )
         |> Enum.map(fn objective ->
           %{
             subobjective: subobjective,
@@ -537,19 +546,11 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  def download_quiz_scores(conn, _params) do
-    with {:ok, section} <- ensure_instructor_access(conn) do
+  def download_quiz_scores(conn, params) do
+    with {:ok, section} <- ensure_instructor_access(conn),
+         {:ok, student_id} <- validate_student_filter(section, params) do
       enrollments =
-        Sections.browse_enrollments(
-          section,
-          %Paging{offset: 0, limit: nil},
-          %Sorting{direction: :desc, field: :name},
-          %EnrollmentBrowseOptions{
-            text_search: "",
-            is_student: true,
-            is_instructor: false
-          }
-        )
+        quiz_score_students(section, student_id)
 
       hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
 
@@ -1020,6 +1021,48 @@ defmodule OliWeb.DeliveryController do
         {:error, :not_found}
     end
   end
+
+  defp validate_student_filter(_section, params) when not is_map_key(params, "student_id"),
+    do: {:ok, nil}
+
+  defp validate_student_filter(section, %{"student_id" => student_id})
+       when is_binary(student_id) do
+    with {student_id, ""} <- Integer.parse(student_id),
+         %{} = enrollment <-
+           Sections.get_enrollment(section.slug, student_id, filter_by_status: false),
+         true <- learner_enrollment?(enrollment) do
+      {:ok, student_id}
+    else
+      _ -> {:error, :forbidden}
+    end
+  end
+
+  defp validate_student_filter(_section, _params), do: {:error, :forbidden}
+
+  defp learner_enrollment?(enrollment) do
+    context_roles =
+      enrollment
+      |> Repo.preload(:context_roles)
+      |> Map.fetch!(:context_roles)
+
+    Enum.any?(context_roles, &(&1.id == @learner_role_id)) and
+      not Sections.contains_instructor_role?(context_roles)
+  end
+
+  defp quiz_score_students(section, nil) do
+    Sections.browse_enrollments(
+      section,
+      %Paging{offset: 0, limit: nil},
+      %Sorting{direction: :desc, field: :name},
+      %EnrollmentBrowseOptions{
+        text_search: "",
+        is_student: true,
+        is_instructor: false
+      }
+    )
+  end
+
+  defp quiz_score_students(_section, student_id), do: [Accounts.get_user!(student_id)]
 
   defp authorized_instructor?(conn, section) do
     conn.assigns[:is_instructor] ||

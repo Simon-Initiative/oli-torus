@@ -5,7 +5,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
   import Phoenix.LiveViewTest
 
   alias OliWeb.Components.Delivery.LearningObjectives
-  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
+  alias OliWeb.Components.Delivery.Students.StudentSelection
 
   describe "LearningObjectives component" do
     test "renders the Draft Email modal outside the objectives table when a payload is set", %{
@@ -27,7 +27,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
 
       payload = %{
         students:
-          DraftEmailModal.recipients(
+          StudentSelection.recipients(
             [
               %{id: 4, full_name: "Davis, Emma", email: "emma@test.com", proficiency_range: "Low"}
             ],

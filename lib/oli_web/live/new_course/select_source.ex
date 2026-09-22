@@ -1,8 +1,8 @@
 defmodule OliWeb.Delivery.NewCourse.SelectSource do
   use OliWeb, :live_component
 
-  alias Oli.Delivery.Sections.{Blueprint, SectionSpecification}
-  alias Oli.Publishing
+  alias Oli.Delivery.SectionCreation
+  alias Oli.Delivery.Sections.SectionSpecification
   alias OliWeb.Common.{Filter, FilterBox, Listing}
   alias OliWeb.Common.Table.SortableTableModel
 
@@ -24,6 +24,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         %{
           ctx: ctx,
           on_select: on_select,
+          actor: actor,
           current_user: current_user,
           is_admin: is_admin,
           section_spec: section_spec,
@@ -35,9 +36,9 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       params = socket.assigns[:params] || @default_params
       view_type = socket.assigns[:view_type] || @default_view_type
 
-      {role, institution} = unpack_role_institution(section_spec, is_admin)
+      {role, _institution} = unpack_role_institution(section_spec, is_admin)
 
-      sources = retrieve_all_sources(role, current_user, institution)
+      sources = retrieve_all_sources(actor, section_spec)
 
       {total_count, table_model} =
         OliWeb.Delivery.NewCourse.TableModel.new(sources, ctx)
@@ -201,11 +202,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       query ->
         rows =
           Enum.filter(sources, fn source ->
-            title =
-              case Map.get(source, :type) do
-                nil -> source.project.title
-                :blueprint -> source.title
-              end
+            title = OliWeb.Delivery.NewCourse.TableModel.source_title(source)
 
             String.contains?(
               String.downcase(title),
@@ -316,27 +313,25 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     {:noreply, assign(socket, total_count: total_count, table_model: table_model, params: params)}
   end
 
-  defp retrieve_all_sources(:admin, _user, _institution) do
-    products = Blueprint.list()
+  # An actor the gate would refuse is offered nothing: the list never shows a source that
+  # creation would reject.
+  defp retrieve_all_sources(actor, section_spec) do
+    case SectionCreation.authorize_actor(actor, section_spec) do
+      {:ok, authorized_spec} ->
+        institution = SectionSpecification.get_institution(authorized_spec)
 
-    free_project_publications =
-      Oli.Publishing.all_available_publications()
-      |> then(fn publications ->
-        Blueprint.filter_for_free_projects(
-          products,
-          publications
-        )
-      end)
+        (SectionCreation.permitted_publications(actor, institution) ++
+           SectionCreation.permitted_products(actor, institution) ++
+           SectionCreation.permitted_sections(actor, institution))
+        |> Enum.sort_by(&source_title/1, :asc)
+        |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
-    Enum.with_index(free_project_publications ++ products, fn element, index ->
-      Map.put(element, :unique_id, index)
-    end)
+      {:error, _reason} ->
+        []
+    end
   end
 
-  defp retrieve_all_sources(_, user, institution),
-    do:
-      Publishing.retrieve_visible_sources(user, institution)
-      |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
+  defp source_title(source), do: Map.get(source, :title) || source.project.title
 
   defp is_instructor?(:admin), do: false
   defp is_instructor?(_), do: true

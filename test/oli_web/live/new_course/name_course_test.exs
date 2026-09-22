@@ -63,6 +63,31 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       refute has_element?(view, ".alert-danger", "Some fields require your attention")
       assert has_element?(view, "h2", "Course details")
     end
+
+    test "shows explicit copy options for an existing course source", %{
+      conn: conn,
+      project: project
+    } do
+      course = insert(:section, type: :enrollable, base_project: project)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      view
+      |> element("button[phx-value-id='section:#{course.id}']")
+      |> render_click()
+
+      assert has_element?(view, "legend", "Choose what to copy")
+      assert has_element?(view, "input#copy-course-content[checked][disabled]")
+      assert has_element?(view, "input#copy-schedule[checked]")
+      assert has_element?(view, "input#copy-section-settings[checked]")
+      assert has_element?(view, "input#copy-assessment-settings[checked]")
+      assert has_element?(view, "input#copy-ai-settings[checked]")
+
+      for id <- ~w(copy-schedule copy-section-settings copy-assessment-settings copy-ai-settings) do
+        assert has_element?(view, "label.min-h-11.cursor-pointer input##{id}")
+      end
+
+      refute has_element?(view, "label.cursor-pointer input#copy-course-content")
+    end
   end
 
   describe "Instructor - Name your course" do

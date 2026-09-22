@@ -120,6 +120,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       for color <- ~w(#CED1D9 #CE2C31 #BF5B13 #218358 #353740 #FF8787 #FFB387 #39E581) do
         assert html =~ color
       end
+
+      chart_props =
+        html
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{div[data-live-react-class="Components.VegaLiteRenderer"]})
+        |> hd()
+        |> Floki.attribute("data-live-react-props")
+        |> hd()
+        |> Jason.decode!()
+
+      assert chart_props["spec"]["mark"] == %{"type" => "bar", "binSpacing" => 2}
+      assert chart_props["spec"]["encoding"]["x"]["bin"] == "binned"
     end
 
     test "handles empty sub-objectives data", %{conn: conn} do

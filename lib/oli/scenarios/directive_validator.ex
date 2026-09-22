@@ -227,6 +227,9 @@ defmodule Oli.Scenarios.DirectiveValidator do
         :activity_objectives ->
           ["project", "activity_virtual_id", "expected"]
 
+        :learning_objectives ->
+          ["section", "container", "includes", "excludes"]
+
         :instructor_dashboard_summary ->
           [
             "section",

@@ -21,10 +21,15 @@ defmodule Oli.MixProject do
       ],
       erlc_include_path: "#{@gleam_erlang_build_root}/#{@gleam_app}/include",
       prune_code_paths: false,
-      start_permanent: Mix.env() == :prod,
+      start_permanent: Mix.env() in [:prod, :preview],
       aliases: aliases(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
+      test_ignore_filters: [
+        ~r{^test/config/},
+        ~r{^test/scenarios/.+(?:_hooks|/hooks)\.ex$},
+        "test/run_single_scenario.exs"
+      ],
 
       # Docs
       name: "OLI Torus",
@@ -35,7 +40,7 @@ defmodule Oli.MixProject do
         oli: [
           include_executables_for: [:unix],
           strip_beams: false,
-          steps: [:assemble, &remove_stale_gleam_release_build/1]
+          steps: [:assemble, &remove_non_preview_seed/1, &remove_stale_gleam_release_build/1]
         ]
       ],
       default_release: :oli
@@ -127,7 +132,9 @@ defmodule Oli.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:dev), do: ["lib", "seeding/lib"]
+  defp elixirc_paths(:preview), do: ["lib", "seeding/lib"]
+  defp elixirc_paths(:test), do: ["lib", "seeding/lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp elixirc_options(:dev), do: []
@@ -277,6 +284,15 @@ defmodule Oli.MixProject do
     release.path
     |> Path.join("gleam")
     |> File.rm_rf!()
+
+    release
+  end
+
+  defp remove_non_preview_seed(%Mix.Release{} = release) do
+    case Mix.env() do
+      :preview -> :ok
+      _ -> release.path |> Path.join("bin/seed") |> File.rm()
+    end
 
     release
   end

@@ -2,6 +2,8 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
+  alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.Publications.Publication
 
@@ -134,6 +136,22 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       refute has_element?(view, "h2", "Select source")
       assert has_element?(view, "h2", "Name your course")
+    end
+
+    test "offers existing enrollable courses as copy sources", %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      course = insert(:section, type: :enrollable, base_project: project, title: "Course to Copy")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      assert has_element?(
+               view,
+               "button[phx-click='source_selection'][phx-value-id='section:#{course.id}']"
+             )
+
+      assert view
+             |> element("button[phx-value-id='section:#{course.id}']")
+             |> render_click() =~ "Name your course"
     end
 
     test "renders datetimes using the local timezone", context do
@@ -341,6 +359,60 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
              |> element(".card-deck:last-child")
              |> render() =~
                OliWeb.Common.Utils.render_date(section, :inserted_at, session_context)
+    end
+  end
+
+  describe "the source list and the creation gate" do
+    setup [:user_conn]
+
+    test "offers nothing to a user who may not create sections", %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Offerable Product"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "p", "None exist")
+      refute render(view) =~ "Offerable Product"
+    end
+
+    test "offers the same source once the user may create sections", %{conn: conn, user: user} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Offerable Product"})
+
+      user |> Ecto.Changeset.change(can_create_sections: true) |> Oli.Repo.update!()
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      refute has_element?(view, "p", "None exist")
+      assert render(view) =~ "Offerable Product"
+    end
+  end
+
+  describe "Instructor course copy sources" do
+    setup [:instructor_conn]
+
+    test "shows courses where the user is an instructor and hides learner-only courses", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %Publication{project: project} = insert(:publication)
+      instructor_course = insert(:section, type: :enrollable, base_project: project)
+      learner_course = insert(:section, type: :enrollable, base_project: project)
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, instructor_course.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, learner_course.id, [
+          ContextRoles.get_role(:context_learner)
+        ])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "a[phx-value-id='section:#{instructor_course.id}']")
+      refute has_element?(view, "a[phx-value-id='section:#{learner_course.id}']")
     end
   end
 

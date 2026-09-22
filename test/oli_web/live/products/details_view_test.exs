@@ -66,6 +66,19 @@ defmodule OliWeb.Products.DetailsViewTest do
       assert tags_index < welcome_title_index
     end
 
+    test "grandfathers template descriptions that already exceed 300 characters", %{
+      conn: conn,
+      product: product
+    } do
+      product
+      |> Ecto.Changeset.change(description: String.duplicate("a", 301))
+      |> Oli.Repo.update!()
+
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      refute has_element?(view, ~s(input[name="section[description]"][maxlength]))
+    end
+
     test "displays Tags section with editable TagsComponent", %{
       conn: conn,
       product: product,

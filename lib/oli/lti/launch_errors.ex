@@ -6,6 +6,7 @@ defmodule Oli.Lti.LaunchErrors do
   @type classification ::
           :independent_learner_not_allowed
           | :invalid_deployment
+          | :invalid_launch_identity
           | :invalid_registration
           | :launch_handler_failure
           | :missing_state
@@ -81,7 +82,23 @@ defmodule Oli.Lti.LaunchErrors do
           guidance: "Ask your LMS or Torus administrator to verify the launch configuration."
         }
 
+      :invalid_launch_identity ->
+        %{
+          title: "LTI Launch Is Missing Its Course Identity",
+          message:
+            "The LMS launch did not name the issuer, client, deployment and course context it belongs to.",
+          guidance:
+            "Ask your LMS administrator to check the course and deployment configuration, then relaunch."
+        }
+
       :unknown_failure ->
+        %{
+          title: "LTI Launch Failed",
+          message: "Torus could not complete this LMS launch.",
+          guidance: "Try the launch again. If the issue persists, contact support."
+        }
+
+      _classification ->
         %{
           title: "LTI Launch Failed",
           message: "Torus could not complete this LMS launch.",

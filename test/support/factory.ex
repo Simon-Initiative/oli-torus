@@ -191,16 +191,60 @@ defmodule Oli.Factory do
     }
   end
 
-  def author_project_factory() do
-    author = insert(:author)
-    project = insert(:project)
+  @doc """
+  Inserts a project with an owner and unpublished root container.
 
-    %AuthorProject{
-      author_id: author.id,
-      project_id: project.id,
-      project_role_id: ProjectRole.role_id().owner,
-      status: :accepted
+  Use this helper when a test needs a minimally publishable authoring project rather than an
+    isolated project record.
+  """
+  def insert_project_with_resource(author) do
+    project = insert(:project, authors: [])
+    resource = insert(:resource)
+
+    revision =
+      insert(:revision,
+        author: author,
+        resource: resource,
+        resource_type_id: ResourceType.id_for_container(),
+        title: "Curriculum",
+        children: []
+      )
+
+    insert(:author_project, author_id: author.id, project_id: project.id)
+    insert(:project_resource, project_id: project.id, resource_id: resource.id)
+
+    publication =
+      insert(:publication,
+        project: project,
+        root_resource_id: resource.id,
+        published: nil
+      )
+
+    insert(:published_resource,
+      publication: publication,
+      resource: resource,
+      revision: revision,
+      author: author
+    )
+
+    %{
+      project: project,
+      author: author,
+      publication: publication,
+      container: %{resource: resource, revision: revision}
     }
+  end
+
+  def author_project_factory(attrs) do
+    struct!(
+      %AuthorProject{
+        author_id: attrs[:author_id] || insert(:author).id,
+        project_id: attrs[:project_id] || insert(:project).id,
+        project_role_id: ProjectRole.role_id().owner,
+        status: :accepted
+      },
+      Map.new(attrs)
+    )
   end
 
   def project_visibility_factory(), do: struct!(project_author_visibility_factory())

@@ -1,0 +1,179 @@
+- project:
+    name: "bank_objective_scope_course"
+    title: "Bank Objective Scope Course"
+    tags:
+      - "bank-result"
+    objectives:
+      - "Static objective"
+      - "Bank result objective"
+    root:
+      children:
+        - container: "Unit 1"
+          children:
+            - page: "Bank Practice"
+        - container: "Unit 2"
+          children:
+            - page: "Other Bank Practice"
+
+- create_activity:
+    project: "bank_objective_scope_course"
+    title: "Bank Result Question"
+    virtual_id: "bank_result_question"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags:
+      - "bank-result"
+    objectives:
+      - "Bank result objective"
+    content: |
+      stem_md: "Which option is correct?"
+      choices:
+        - id: "a"
+          body_md: "Incorrect"
+          score: 0
+        - id: "b"
+          body_md: "Correct"
+          score: 1
+
+- edit_page:
+    project: "bank_objective_scope_course"
+    page: "Bank Practice"
+    content: |
+      title: "Bank Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "static_question"
+          activity:
+            type: oli_multiple_choice
+            title: "Static Question"
+            objectives:
+              - "Static objective"
+            stem_md: "Select the static answer."
+            choices:
+              - id: "a"
+                body_md: "Static answer"
+                score: 1
+              - id: "b"
+                body_md: "Other answer"
+                score: 0
+        - type: bank-selection
+          id: "bank_result_selection"
+          count: 1
+          points: 1
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value:
+                - "bank-result"
+
+- edit_page:
+    project: "bank_objective_scope_course"
+    page: "Other Bank Practice"
+    content: |
+      title: "Other Bank Practice"
+      graded: false
+      blocks:
+        - type: bank-selection
+          id: "other_bank_result_selection"
+          count: 1
+          points: 1
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value:
+                - "bank-result"
+
+- publish:
+    to: "bank_objective_scope_course"
+    description: "Publish bank objective scope regression"
+
+- section:
+    name: "bank_objective_scope_section"
+    title: "Bank Objective Scope Section"
+    from: "bank_objective_scope_course"
+
+- dashboard_analytics_ready:
+    section: "bank_objective_scope_section"
+
+- assert:
+    learning_objectives:
+      section: "bank_objective_scope_section"
+      container: "Unit 1"
+      includes:
+        - "Static objective"
+      excludes:
+        - "Bank result objective"
+
+- user:
+    name: "instructor"
+    type: "instructor"
+
+- enroll:
+    user: "instructor"
+    section: "bank_objective_scope_section"
+    role: "instructor"
+
+- visit_page:
+    student: "instructor"
+    section: "bank_objective_scope_section"
+    page: "Bank Practice"
+
+- answer_question:
+    student: "instructor"
+    section: "bank_objective_scope_section"
+    page: "Bank Practice"
+    activity_virtual_id: "bank_result_question"
+    response: "b"
+
+- assert:
+    learning_objectives:
+      section: "bank_objective_scope_section"
+      container: "Unit 1"
+      includes:
+        - "Static objective"
+      excludes:
+        - "Bank result objective"
+
+- user:
+    name: "student"
+    type: "student"
+
+- enroll:
+    user: "student"
+    section: "bank_objective_scope_section"
+    role: "student"
+
+- visit_page:
+    student: "student"
+    section: "bank_objective_scope_section"
+    page: "Bank Practice"
+
+- answer_question:
+    student: "student"
+    section: "bank_objective_scope_section"
+    page: "Bank Practice"
+    activity_virtual_id: "bank_result_question"
+    response: "b"
+
+- assert:
+    learning_objectives:
+      section: "bank_objective_scope_section"
+      container: "Unit 1"
+      includes:
+        - "Static objective"
+        - "Bank result objective"
+
+- assert:
+    learning_objectives:
+      section: "bank_objective_scope_section"
+      includes:
+        - "Static objective"
+        - "Bank result objective"
+
+- assert:
+    learning_objectives:
+      section: "bank_objective_scope_section"
+      container: "Unit 2"
+      excludes:
+        - "Bank result objective"

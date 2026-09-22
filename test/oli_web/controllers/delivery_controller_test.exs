@@ -363,6 +363,110 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert response(conn, 404)
     end
+
+    test "downloads course content metrics for only the selected student", %{conn: conn} do
+      %{instructor: instructor, section: section, student2: student} =
+        prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            container_filter_by: :units,
+            student_id: student.id
+          )
+        )
+
+      [headers, row] = NimbleCSV.RFC4180.parse_string(response(conn, 200), skip_headers: false)
+
+      assert headers == ["title", "progress", "student_proficiency"]
+      assert [_, progress, "Low"] = row
+      assert_in_delta String.to_float(progress), 0.11111, 0.00001
+    end
+
+    test "returns 403 when the selected student is not enrolled in the section", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      outsider = user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            student_id: outsider.id
+          )
+        )
+
+      assert response(conn, 403)
+    end
+
+    test "returns 403 when the selected student id is malformed", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            student_id: "not-a-student-id"
+          )
+        )
+
+      assert response(conn, 403)
+    end
+
+    test "returns 403 when the selected user is not a learner", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      other_instructor = user_fixture()
+
+      Sections.enroll(other_instructor.id, section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            student_id: other_instructor.id
+          )
+        )
+
+      assert response(conn, 403)
+    end
+
+    test "returns 403 when the selected learner also has an instructor role", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      learner_instructor = user_fixture()
+
+      Sections.enroll(learner_instructor.id, section.id, [
+        ContextRoles.get_role(:context_learner),
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            student_id: learner_instructor.id
+          )
+        )
+
+      assert response(conn, 403)
+    end
   end
 
   describe "download_container_progress/2" do
@@ -419,7 +523,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
   describe "download_students_progress/2" do
     test "downloads student progress with different proficiency levels", %{conn: conn} do
-      %{instructor: instructor, section: section} =
+      %{instructor: instructor, section: section, student1: student_1} =
         prepare_student_progress_data()
 
       # Download the CSV
@@ -444,6 +548,7 @@ defmodule OliWeb.DeliveryControllerTest do
                "Name",
                "Email",
                "LMS ID",
+               "Enrollment Date",
                "Last Interaction",
                "Progress (Pct)",
                "Proficiency",
@@ -455,24 +560,35 @@ defmodule OliWeb.DeliveryControllerTest do
       assert Enum.count(students) == 8
 
       # CSV Student data
-      assert ["Five, Student", _, _, _, "100", "High", "N/A", "Enrolled"] = Enum.at(students, 0)
-      assert ["Four, Student", _, _, _, "33.03", "High", "N/A", "Enrolled"] = Enum.at(students, 1)
+      assert ["Five, Student", _, _, _, _, "100", "High", "N/A", "Enrolled"] =
+               Enum.at(students, 0)
 
-      assert ["One, Student", _, _, _, "0", "Not enough data", "N/A", "Enrolled"] =
+      assert ["Four, Student", _, _, _, _, "33.03", "High", "N/A", "Enrolled"] =
+               Enum.at(students, 1)
+
+      assert ["One, Student", _, _, enrollment_date, _, "0", "Not enough data", "N/A", "Enrolled"] =
                Enum.at(students, 2)
 
-      assert ["Three, Student", _, _, _, "22.22", "Medium", "N/A", "Enrolled"] =
+      enrollment = Sections.get_enrollment(section.slug, student_1.id, filter_by_status: false)
+
+      assert enrollment_date ==
+               OliWeb.Common.FormatDateTime.format_datetime(enrollment.inserted_at,
+                 show_timezone: false
+               )
+
+      assert ["Three, Student", _, _, _, _, "22.22", "Medium", "N/A", "Enrolled"] =
                Enum.at(students, 3)
 
-      assert ["Two, Student", _, _, _, "11.11", "Low", "N/A", "Enrolled"] = Enum.at(students, 4)
+      assert ["Two, Student", _, _, _, _, "11.11", "Low", "N/A", "Enrolled"] =
+               Enum.at(students, 4)
 
-      assert ["Seven, Student", _, _, _, "0", "Not enough data", "N/A", "Pending confirmation"] =
+      assert ["Seven, Student", _, _, _, _, "0", "Not enough data", "N/A", "Pending confirmation"] =
                Enum.at(students, 5)
 
-      assert ["Eight, Student", _, _, _, "0", "Not enough data", "N/A", "Rejected invitation"] =
+      assert ["Eight, Student", _, _, _, _, "0", "Not enough data", "N/A", "Rejected invitation"] =
                Enum.at(students, 6)
 
-      assert ["Six, Student", _, _, _, "0", "Not enough data", "N/A", "Suspended"] =
+      assert ["Six, Student", _, _, _, _, "0", "Not enough data", "N/A", "Suspended"] =
                Enum.at(students, 7)
     end
 
@@ -517,6 +633,7 @@ defmodule OliWeb.DeliveryControllerTest do
                "Name",
                "Email",
                "LMS ID",
+               "Enrollment Date",
                "Last Interaction",
                "Progress (Pct)",
                "Proficiency",
@@ -529,23 +646,24 @@ defmodule OliWeb.DeliveryControllerTest do
       assert Enum.count(students) == 8
 
       # CSV Student data
-      assert ["Five, Student", _, _, _, "100", "High", "N/A", "Enrolled", "In Progress"] =
+      assert ["Five, Student", _, _, _, _, "100", "High", "N/A", "Enrolled", "In Progress"] =
                Enum.at(students, 0)
 
-      assert ["Four, Student", _, _, _, "33.03", "High", "N/A", "Enrolled", "In Progress"] =
+      assert ["Four, Student", _, _, _, _, "33.03", "High", "N/A", "Enrolled", "In Progress"] =
                Enum.at(students, 1)
 
-      assert ["One, Student", _, _, _, "0", "Not enough data", "N/A", "Enrolled", "Approved"] =
+      assert ["One, Student", _, _, _, _, "0", "Not enough data", "N/A", "Enrolled", "Approved"] =
                Enum.at(students, 2)
 
-      assert ["Three, Student", _, _, _, "22.22", "Medium", "N/A", "Enrolled", "In Progress"] =
+      assert ["Three, Student", _, _, _, _, "22.22", "Medium", "N/A", "Enrolled", "In Progress"] =
                Enum.at(students, 3)
 
-      assert ["Two, Student", _, _, _, "11.11", "Low", "N/A", "Enrolled", "Denied"] =
+      assert ["Two, Student", _, _, _, _, "11.11", "Low", "N/A", "Enrolled", "Denied"] =
                Enum.at(students, 4)
 
       assert [
                "Seven, Student",
+               _,
                _,
                _,
                _,
@@ -562,6 +680,7 @@ defmodule OliWeb.DeliveryControllerTest do
                _,
                _,
                _,
+               _,
                "0",
                "Not enough data",
                "N/A",
@@ -570,7 +689,18 @@ defmodule OliWeb.DeliveryControllerTest do
              ] =
                Enum.at(students, 6)
 
-      assert ["Six, Student", _, _, _, "0", "Not enough data", "N/A", "Suspended", "In Progress"] =
+      assert [
+               "Six, Student",
+               _,
+               _,
+               _,
+               _,
+               "0",
+               "Not enough data",
+               "N/A",
+               "Suspended",
+               "In Progress"
+             ] =
                Enum.at(students, 7)
     end
 
@@ -649,6 +779,25 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert response(conn, 404)
     end
+
+    test "returns 403 when the selected student is not enrolled in the section", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      outsider = user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_learning_objectives, section.slug,
+            student_id: outsider.id
+          )
+        )
+
+      assert response(conn, 403)
+    end
   end
 
   describe "download_learning_objectives with objectives that left the course content" do
@@ -708,6 +857,51 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert csv =~ obj_revision_1.title
       refute csv =~ orphan_revision.title
+    end
+
+    test "downloads proficiency for only the selected student", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      obj_revision_1: objective
+    } do
+      student = user_fixture()
+      other_student = user_fixture()
+      learner_role = [ContextRoles.get_role(:context_learner)]
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, learner_role)
+      Sections.enroll(other_student.id, section.id, learner_role)
+
+      insert(:resource_summary,
+        section_id: section.id,
+        user_id: student.id,
+        resource_id: objective.resource_id,
+        resource_type_id: objective_type_id,
+        num_first_attempts: 3,
+        num_first_attempts_correct: 3
+      )
+
+      insert(:resource_summary,
+        section_id: section.id,
+        user_id: other_student.id,
+        resource_id: objective.resource_id,
+        resource_type_id: objective_type_id,
+        num_first_attempts: 3,
+        num_first_attempts_correct: 0
+      )
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_learning_objectives, section.slug,
+            student_id: student.id
+          )
+        )
+
+      assert response(conn, 200) =~ "#{objective.title},,High,"
     end
   end
 
@@ -834,6 +1028,49 @@ defmodule OliWeb.DeliveryControllerTest do
         |> get(Routes.delivery_path(conn, :download_quiz_scores, "invalid_section_slug"))
 
       assert response(conn, 404)
+    end
+
+    test "downloads quiz scores for only the selected student", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{section: section} = basic_section(nil)
+      student = user_fixture(%{email: "selected@example.edu"})
+      other_student = user_fixture(%{email: "other@example.edu"})
+      learner_role = [ContextRoles.get_role(:context_learner)]
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, learner_role)
+      Sections.enroll(other_student.id, section.id, learner_role)
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_quiz_scores, section.slug, student_id: student.id)
+        )
+
+      csv = response(conn, 200)
+      assert csv =~ student.email
+      refute csv =~ other_student.email
+    end
+
+    test "returns 403 when the selected student is not enrolled in the section", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{section: section} = basic_section(nil)
+      outsider = user_fixture()
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_quiz_scores, section.slug, student_id: outsider.id)
+        )
+
+      assert response(conn, 403)
     end
   end
 
@@ -1248,8 +1485,8 @@ defmodule OliWeb.DeliveryControllerTest do
   defp setup_lti_session(%{conn: conn}) do
     author = author_fixture()
 
-    %{project: project, institution: institution, publication: base_publication} =
-      Oli.Seeder.base_project_with_resource(author)
+    %{project: project, publication: base_publication} = insert_project_with_resource(author)
+    institution = insert(:institution, institution_email: author.email)
 
     tool_jwk = jwk_fixture()
 

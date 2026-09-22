@@ -174,10 +174,20 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
 - **Frontend**: Jest tests alongside source files
 - Use factories for test data generation
 - Integration tests for critical workflows
-- For ExUnit cases that intentionally trigger application logs:
-  - If a test intentionally triggers application logs and does not assert on them, use `@tag capture_log: true`.
-  - If a test needs to verify emitted logs, wrap the relevant code in `capture_log(...)`.
-  - Do not leave intentional logs visible in normal test output.
+- Keep the ExUnit portion of a successful `mix test` run clean: once ExUnit starts, output should
+  contain only its normal progress dots and summary. Existing setup output from migrations, runtime
+  configuration, and seeds that execute before ExUnit starts is acceptable.
+- ExUnit captures logs emitted during each test globally through `test/test_helper.exs` and prints
+  them when that test fails. If a test needs to verify emitted logs, wrap the relevant code in
+  `capture_log(...)`.
+- Logs from `setup_all`, `on_exit`, orphaned processes, or activity between tests are outside normal
+  per-test capture. Capture intentional output at its source, and fix unexpected output as a process
+  lifecycle or test-isolation problem; do not disable Logger's default handler for the entire suite.
+- Do not use `IO.puts/1`, `IO.inspect/2`, or similar ad hoc output in tests or test-only setup unless
+  the output is explicitly captured and asserted. Fix compiler warnings and asynchronous process or
+  database-ownership errors rather than suppressing them.
+- After changing test configuration or shared test support, run the full `mix test` suite and confirm
+  that the ExUnit portion of a successful run has no output beyond its progress and summary.
 - Always run tests before committing
 
 ## UI Workflow
