@@ -23,6 +23,7 @@ defmodule Oli.Resources.Revision do
              :scoring_strategy_id,
              :activity_type_id,
              :title,
+             :objective_type,
              :resource_id,
              :intro_video,
              :poster_image,
@@ -50,6 +51,11 @@ defmodule Oli.Resources.Revision do
     # fields that apply to only a subset of the types
     field :content, :map, default: %{}
     field :children, {:array, :id}, default: []
+
+    field :objective_type, Ecto.Enum,
+      values: [:objective, :sub_objective],
+      default: :objective
+
     field :tags, {:array, :id}, default: []
     field :activity_refs, {:array, :id}, default: []
     field :objectives, :map, default: %{}
@@ -121,6 +127,7 @@ defmodule Oli.Resources.Revision do
       :resource_type_id,
       :content,
       :children,
+      :objective_type,
       :tags,
       :objectives,
       :graded,

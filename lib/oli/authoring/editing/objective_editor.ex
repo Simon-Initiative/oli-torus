@@ -14,11 +14,18 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   import Oli.Utils
 
+  @doc """
+  Creates a learning objective or sub-objective and optionally associates it with a parent.
+
+  Passing a non-empty `container_slug` creates a sub-objective. The persisted type remains
+  stable if that final parent association is later removed.
+  """
   def add_new(attrs, %Author{} = author, %Project{} = project, container_slug \\ nil) do
     attrs =
       Map.merge(attrs, %{
         author_id: author.id,
-        resource_type_id: Oli.Resources.ResourceType.id_for_objective()
+        resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+        objective_type: objective_type(container_slug)
       })
 
     result =
@@ -203,23 +210,42 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     end)
   end
 
+  @doc """
+  Removes only the association between a sub-objective and one parent objective.
+
+  The sub-objective remains published in the project, retains its course-content
+  attachments and other parent associations, and is marked as a sub-objective even
+  when this was its final parent association.
+  """
   def remove_sub_objective_from_parent(
         revision_slug,
         %Author{} = author,
         %Project{} = project,
         parent_objective
       ) do
-    resource = Resources.get_resource_from_slug(revision_slug)
-
-    edit(
-      parent_objective.slug,
-      %{
-        children: Enum.filter(parent_objective.children, fn id -> id != resource.id end)
-      },
-      author,
-      project
-    )
+    Repo.transaction(fn ->
+      with %{} = resource <- Resources.get_resource_from_slug(revision_slug),
+           {:ok, _sub_objective} <-
+             edit(revision_slug, %{objective_type: :sub_objective}, author, project),
+           {:ok, parent} <-
+             edit(
+               parent_objective.slug,
+               %{
+                 children: Enum.reject(parent_objective.children, &(&1 == resource.id))
+               },
+               author,
+               project
+             ) do
+        parent
+      else
+        nil -> Repo.rollback({:error, :not_found})
+        error -> Repo.rollback(error)
+      end
+    end)
   end
+
+  defp objective_type(container_slug) when container_slug in [nil, ""], do: :objective
+  defp objective_type(_container_slug), do: :sub_objective
 
   @doc """
   Detaches an objective from all unlocked pages and activites that currently reference it.

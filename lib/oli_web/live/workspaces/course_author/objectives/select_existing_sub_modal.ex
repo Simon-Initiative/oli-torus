@@ -1,24 +1,35 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
   use OliWeb, :live_component
 
-  alias OliWeb.Common.TextSearch
+  alias OliWeb.Icons
 
   def update(assigns, socket) do
+    query = Map.get(socket.assigns, :query, "")
+    status = Map.get(socket.assigns, :status, "all")
+
     {:ok,
-     assign(socket,
+     socket
+     |> assign(
        add: assigns.add,
-       filtered_sub_objectives: assigns.sub_objectives,
+       delete: assigns.delete,
+       focus_delete_slug: assigns.focus_delete_slug,
        id: assigns.id,
        parent_slug: assigns.parent_slug,
+       query: query,
+       status: status,
        sub_objectives: assigns.sub_objectives
-     )}
+     )
+     |> assign_filtered_sub_objectives()}
   end
 
   attr(:add, :string, required: true)
+  attr(:delete, :string, required: true)
   attr(:filtered_sub_objectives, :list, default: [])
+  attr(:focus_delete_slug, :string, default: nil)
   attr(:id, :string)
   attr(:parent_slug, :string, required: true)
   attr(:query, :string, default: "")
+  attr(:status, :string, default: "all")
   attr(:sub_objectives, :list, default: [])
 
   def render(assigns) do
@@ -29,43 +40,119 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
       style="display: block"
       tabindex="-1"
       role="dialog"
-      aria-labelledby="show-existing-sub-modal"
-      aria-hidden="true"
+      aria-modal="true"
+      aria-labelledby={"#{@id}-title"}
+      data-initial-focus={@focus_delete_slug && "#delete-sub-objective-#{@focus_delete_slug}"}
       phx-hook="ModalLaunch"
     >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Select existing Sub-Objective</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+      <div class="modal-dialog modal-dialog-centered !max-w-[860px]" role="document">
+        <div class="modal-content !rounded-2xl border-0 bg-Background-bg-secondary shadow-xl">
+          <div class="flex items-center justify-between px-8 pb-4 pt-8 sm:px-16 sm:pt-14">
+            <h2
+              id={"#{@id}-title"}
+              class="m-0 text-2xl font-bold leading-9 text-Text-text-high"
+            >
+              Select Existing Sub-Objective
+            </h2>
+            <button
+              type="button"
+              class="btn-close rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              data-bs-dismiss="modal"
+              aria-label="Close Select Existing Sub-Objective dialog"
+            >
             </button>
           </div>
-          <div class="modal-body">
-            <div class="container form-container">
-              <TextSearch.render
-                id="text-search"
-                text={@query}
-                event_target={@myself}
-                reset="text_search_reset"
-              />
-              <div class="d-flex flex-column mt-3">
-                <%= for sub_objective <- @filtered_sub_objectives do %>
-                  <div class="my-2 d-flex">
-                    <div class="p-1 mr-3 flex-grow-1 overflow-auto text-truncate">
-                      {sub_objective.title}
-                    </div>
-                    <button
-                      class="btn btn-outline-primary py-1"
-                      phx-value-slug={sub_objective.slug}
-                      phx-value-parent_slug={@parent_slug}
-                      phx-click={@add}
-                    >
-                      Add
-                    </button>
-                  </div>
-                <% end %>
-              </div>
-            </div>
+
+          <div class="px-8 pb-10 sm:px-16 sm:pb-14">
+            <form
+              id={"#{@id}-filters"}
+              class="mb-6 flex flex-col gap-3 sm:flex-row"
+              phx-change="filters_changed"
+              phx-target={@myself}
+            >
+              <label class="relative min-w-0 flex-1" for={"#{@id}-search"}>
+                <span class="sr-only">Search sub-objectives</span>
+                <i
+                  class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-Icon-icon-default"
+                  aria-hidden="true"
+                >
+                </i>
+                <input
+                  id={"#{@id}-search"}
+                  name="query"
+                  type="search"
+                  value={@query}
+                  placeholder="Search..."
+                  phx-debounce="250"
+                  class="h-10 w-full rounded-md border border-Border-border-default bg-Background-bg-secondary pl-10 pr-3 text-sm text-Text-text-high placeholder:text-Text-text-low-alpha focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                />
+              </label>
+
+              <label class="relative sm:w-48" for={"#{@id}-status"}>
+                <span class="sr-only">Filter sub-objectives by association status</span>
+                <select
+                  id={"#{@id}-status"}
+                  name="status"
+                  class="h-10 w-full appearance-none rounded-md border border-Border-border-default bg-Background-bg-secondary px-3 pr-9 text-sm text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                >
+                  <option value="all" selected={@status == "all"}>Status</option>
+                  <option value="associated" selected={@status == "associated"}>Associated</option>
+                  <option value="unassociated" selected={@status == "unassociated"}>
+                    Unassociated
+                  </option>
+                </select>
+                <Icons.chevron_down
+                  width="9.5"
+                  height="5.5"
+                  variant="stroke"
+                  class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-Icon-icon-default"
+                />
+              </label>
+            </form>
+
+            <p
+              :if={@filtered_sub_objectives == []}
+              id={"#{@id}-empty"}
+              class="m-0 rounded-md border border-Border-border-default px-4 py-6 text-center text-sm text-Text-text-low-alpha"
+            >
+              No sub-objectives match these filters.
+            </p>
+
+            <ul class="m-0 flex list-none flex-col gap-2 p-0">
+              <li
+                :for={sub_objective <- @filtered_sub_objectives}
+                id={"existing-sub-objective-#{sub_objective.resource_id}"}
+                class="flex flex-col gap-3 rounded-md px-3 py-2 sm:flex-row sm:items-center"
+              >
+                <span class="min-w-0 flex-1 text-sm text-Text-text-high">
+                  {sub_objective.title}
+                </span>
+                <div class="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-Fill-Buttons-fill-primary px-4 text-sm font-semibold text-Text-text-button hover:bg-Fill-Buttons-fill-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                    phx-value-slug={sub_objective.slug}
+                    phx-value-parent_slug={@parent_slug}
+                    phx-click={@add}
+                    aria-label={"Add #{sub_objective.title} to this learning objective"}
+                  >
+                    Add
+                  </button>
+                  <button
+                    :if={sub_objective.association_count == 0}
+                    id={"delete-sub-objective-#{sub_objective.slug}"}
+                    type="button"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-Border-border-danger px-4 text-sm font-semibold text-Text-text-danger hover:bg-Fill-fill-danger focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Icon-icon-danger"
+                    phx-value-slug={sub_objective.slug}
+                    phx-value-parent_slug={@parent_slug}
+                    phx-click={@delete}
+                    aria-label={"Permanently delete #{sub_objective.title}"}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -73,26 +160,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
     """
   end
 
-  def handle_event("text_search_change", %{"value" => query}, socket) do
-    query_str = String.downcase(query)
+  def handle_event("filters_changed", params, socket) do
+    {:noreply,
+     socket
+     |> assign(
+       query: Map.get(params, "query", socket.assigns.query),
+       status: Map.get(params, "status", socket.assigns.status)
+     )
+     |> assign_filtered_sub_objectives()}
+  end
+
+  defp assign_filtered_sub_objectives(socket) do
+    query = String.downcase(String.trim(socket.assigns.query))
 
     filtered_sub_objectives =
-      Enum.filter(socket.assigns.sub_objectives, fn sub ->
-        String.contains?(String.downcase(sub.title), query_str)
+      socket.assigns.sub_objectives
+      |> Enum.filter(fn sub_objective ->
+        query == "" or String.contains?(String.downcase(sub_objective.title), query)
       end)
+      |> Enum.filter(&matches_status?(&1, socket.assigns.status))
 
-    {:noreply,
-     assign(socket,
-       filtered_sub_objectives: filtered_sub_objectives,
-       query: query
-     )}
+    assign(socket, filtered_sub_objectives: filtered_sub_objectives)
   end
 
-  def handle_event("text_search_reset", _, socket) do
-    {:noreply,
-     assign(socket,
-       filtered_sub_objectives: socket.assigns.sub_objectives,
-       query: ""
-     )}
-  end
+  defp matches_status?(sub_objective, "associated"), do: sub_objective.association_count > 0
+  defp matches_status?(sub_objective, "unassociated"), do: sub_objective.association_count == 0
+  defp matches_status?(_sub_objective, _status), do: true
 end

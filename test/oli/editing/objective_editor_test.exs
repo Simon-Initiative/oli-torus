@@ -400,6 +400,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       assert length(children) == 0
       refute Enum.member?(children, subobjective12A_resource_id)
       assert Enum.member?(objective2_children, subobjective12A_resource_id)
+
+      updated_sub_objective =
+        AuthoringResolver.from_revision_slug(project.slug, subobjective12A_slug)
+
+      assert updated_sub_objective.objective_type == :sub_objective
+      refute updated_sub_objective.deleted
     end
 
     test "detach_objective/3 preserves tags when removing an objective from a banked activity", %{
