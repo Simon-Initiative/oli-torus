@@ -93,13 +93,32 @@ defmodule OliWeb.Delivery.NewCourse do
        copy_options: default_copy_options(),
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
        loading: false,
-       initial_source_filter: parse_source_filter(params["filter"])
+       initial_source_filter: parse_source_filter(params["filter"]),
+       initial_query: params["query"] || "",
+       initial_sort_by: parse_sort_by(params["sort_by"]),
+       initial_sort_order: parse_sort_order(params["sort_order"]),
+       initial_view_type: parse_view_type(params["view"])
      )}
   end
 
   defp parse_source_filter("templates"), do: :templates
   defp parse_source_filter("my_sections"), do: :my_sections
   defp parse_source_filter(_), do: :all
+
+  # Defaults to `:inserted_at` (Created) rather than `:title`: "Courses are sorted by Most
+  # Recent by default" is a product requirement, not just this table's own internal default
+  # (`TableModel.new/2` itself defaults to Title/desc — overridden here for every first load).
+  defp parse_sort_by(value) when value in ~w(title type requires_payment inserted_at),
+    do: String.to_existing_atom(value)
+
+  defp parse_sort_by(_), do: :inserted_at
+
+  # `:desc` on `:inserted_at` means most-recently-created first ("Most Recent" default).
+  defp parse_sort_order("asc"), do: :asc
+  defp parse_sort_order(_), do: :desc
+
+  defp parse_view_type("list"), do: :list
+  defp parse_view_type(_), do: :card
 
   # The `filter` query param is only ever pushed via `push_patch` to make the
   # source filter shareable/reloadable; `SelectSource` already applies the
@@ -208,6 +227,10 @@ defmodule OliWeb.Delivery.NewCourse do
           request_path={@request_path}
           base_path={@base_path}
           initial_source_filter={@initial_source_filter}
+          initial_query={@initial_query}
+          initial_sort_by={@initial_sort_by}
+          initial_sort_order={@initial_sort_order}
+          initial_view_type={@initial_view_type}
         />
       </div>
     </.new_course_header>
@@ -276,7 +299,11 @@ defmodule OliWeb.Delivery.NewCourse do
           is_admin: assigns.is_admin,
           context_id: assigns[:context_id],
           live_action: assigns.live_action,
-          initial_source_filter: assigns.initial_source_filter
+          initial_source_filter: assigns.initial_source_filter,
+          initial_query: assigns.initial_query,
+          initial_sort_by: assigns.initial_sort_by,
+          initial_sort_order: assigns.initial_sort_order,
+          initial_view_type: assigns.initial_view_type
         }
 
       1 ->

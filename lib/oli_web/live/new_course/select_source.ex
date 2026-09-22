@@ -3,24 +3,24 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
   alias Oli.Delivery.SectionCreation
   alias Oli.Delivery.Sections.SectionSpecification
-  alias OliWeb.Common.{Filter, FilterBox, Listing}
+  alias OliWeb.Common.{Filter, Listing}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Delivery.NewCourse.TableModel
+  alias OliWeb.Icons
 
   alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
     limit: 20,
-    sort_by: :title,
-    sort_order: :asc,
+    sort_by: :inserted_at,
+    sort_order: :desc,
     query: "",
     applied_query: "",
     selection: nil,
     source_filter: :all
   }
 
-  @default_view_type :card
   @source_results_id "select_source_results"
 
   def update(
@@ -33,15 +33,26 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
           section_spec: section_spec,
           request_path: request_path,
           base_path: base_path,
-          initial_source_filter: initial_source_filter
+          initial_source_filter: initial_source_filter,
+          initial_query: initial_query,
+          initial_sort_by: initial_sort_by,
+          initial_sort_order: initial_sort_order,
+          initial_view_type: initial_view_type
         } = assigns,
         socket
       ) do
     if !socket.assigns[:loaded] do
       params =
-        socket.assigns[:params] || Map.put(@default_params, :source_filter, initial_source_filter)
+        socket.assigns[:params] ||
+          Map.merge(@default_params, %{
+            source_filter: initial_source_filter,
+            query: initial_query,
+            applied_query: initial_query,
+            sort_by: initial_sort_by,
+            sort_order: initial_sort_order
+          })
 
-      view_type = socket.assigns[:view_type] || @default_view_type
+      view_type = socket.assigns[:view_type] || initial_view_type
 
       {role, _institution} = unpack_role_institution(section_spec, is_admin)
 
@@ -50,6 +61,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       {total_count, table_model} =
         TableModel.new(sources, ctx)
         |> elem(1)
+        |> apply_initial_sort(initial_sort_by, initial_sort_order)
         |> get_table_model_and_count(sources, params)
 
       {:ok,
@@ -94,58 +106,37 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       <p class="mb-2 text-sm font-semibold text-Text-text-low-alpha">Filter by:</p>
       <.source_filter_tabs source_filter={@params[:source_filter]} myself={@myself} />
 
-      <FilterBox.render
-        table_model={@table_model}
-        sort={JS.push("sort", target: @myself)}
-        show_more_opts={is_instructor?(@role)}
-        card_header_text=""
-        card_body_text=""
-      >
-        <Filter.render
-          query={@params[:query]}
-          apply={JS.push("apply_search", target: @myself)}
-          change={JS.push("change_search", target: @myself)}
-          reset={JS.push("reset_search", target: @myself)}
-        />
+      <div class="mb-4 flex flex-wrap items-center gap-4">
+        <div class="w-[224px] shrink-0">
+          <Filter.render
+            query={@params[:query]}
+            apply={JS.push("change_search", target: @myself)}
+            change={JS.push("change_search", target: @myself)}
+            reset={JS.push("reset_search", target: @myself)}
+            apply_icon={true}
+            show_reset={false}
+            placeholder=""
+            debounce="300"
+          />
+        </div>
 
-        <:extra_opts>
-          <div class="flex flex-row justify-end border-l border-l-gray-200 pl-4">
-            <.form
-              id="update_view_type"
-              for={@changeset}
-              phx-change="update_view_type"
-              phx-target={@myself}
-            >
-              <div name={:type} class="control w-100 d-flex align-items-center">
-                <div class="flex text-white dark:text-delivery-body-color-dark">
-                  <label class={"#{if @view_type == :card, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-l-sm py-1 h-8 w-10"}>
-                    <.input
-                      field={@changeset[:type]}
-                      id="card-view-type"
-                      type="radio"
-                      class="hidden"
-                      value="card"
-                      checked={@view_type == :card}
-                    />
-                    <i class="fa fa-th" />
-                  </label>
-                  <label class={"#{if @view_type == :list, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-r-sm py-1 h-8 w-10"}>
-                    <.input
-                      field={@changeset[:type]}
-                      id="list-view-type"
-                      type="radio"
-                      class="hidden"
-                      value="list"
-                      checked={@view_type == :card}
-                    />
-                    <i class="fa fa-list" />
-                  </label>
-                </div>
-              </div>
-            </.form>
-          </div>
-        </:extra_opts>
-      </FilterBox.render>
+        <.sort_by_dropdown table_model={@table_model} myself={@myself} />
+
+        <button
+          type="button"
+          phx-click="sort"
+          phx-value-sort_by={@table_model.sort_by_spec.name}
+          phx-target={@myself}
+          class="flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-[3px] text-Icon-icon-default hover:bg-Fill-fill-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          aria-label={"Sort #{if @table_model.sort_order == :desc, do: "ascending", else: "descending"}"}
+        >
+          <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
+        </button>
+
+        <div :if={is_instructor?(@role)} class="border-l border-Border-border-default pl-4">
+          <.view_type_toggle view_type={@view_type} changeset={@changeset} myself={@myself} />
+        </div>
+      </div>
 
       <.new_feature_banner />
 
@@ -260,6 +251,106 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     """
   end
 
+  attr :table_model, :map, required: true
+  attr :myself, :any, required: true
+
+  # A fully custom, LiveView-driven dropdown (no native `<select>`) — a native select here
+  # proved unreliable across browsers even behind an invisible-overlay + decorative-label trick
+  # (duplicate native arrows, and the visible label/actual sort state falling out of sync after
+  # a click-driven selection). This gives full control over both the visuals and the event flow.
+  defp sort_by_dropdown(assigns) do
+    ~H"""
+    <div
+      id="sort_by_dropdown"
+      class="relative inline-flex shrink-0 items-center"
+      phx-click-away={JS.hide(to: "#sort_by_menu")}
+    >
+      <button
+        type="button"
+        phx-click={JS.toggle(to: "#sort_by_menu")}
+        aria-haspopup="listbox"
+        aria-label={"Sort by: #{@table_model.sort_by_spec.label}"}
+        class="flex items-center gap-2 rounded-[3px] border border-Border-border-default bg-Background-bg-primary py-[8px] pl-[10px] pr-8 text-base font-semibold leading-none text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        {@table_model.sort_by_spec.label}
+      </button>
+      <Icons.chevron_down
+        width="16"
+        height="16"
+        class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-Text-text-high"
+      />
+      <div
+        id="sort_by_menu"
+        role="listbox"
+        class="hidden absolute left-0 top-full z-10 mt-1 min-w-full overflow-hidden rounded-[3px] border border-Border-border-default bg-Background-bg-primary shadow"
+      >
+        <%= for column_spec <- @table_model.column_specs, column_spec.name != :action do %>
+          <button
+            type="button"
+            role="option"
+            aria-selected={to_string(@table_model.sort_by_spec == column_spec)}
+            phx-click={JS.push("sort", target: @myself) |> JS.hide(to: "#sort_by_menu")}
+            phx-value-sort_by={column_spec.name}
+            class={[
+              "block w-full whitespace-nowrap px-3 py-2 text-left text-base font-semibold leading-none text-Text-text-high hover:bg-Fill-fill-hover",
+              if(@table_model.sort_by_spec == column_spec, do: "bg-Fill-fill-hover")
+            ]}
+          >
+            {column_spec.label}
+          </button>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  attr :view_type, :atom, required: true
+  attr :changeset, :any, required: true
+  attr :myself, :any, required: true
+
+  defp view_type_toggle(assigns) do
+    ~H"""
+    <.form id="update_view_type" for={@changeset} phx-change="update_view_type" phx-target={@myself}>
+      <div class="flex shrink-0">
+        <label class={[
+          "flex h-8 w-10 cursor-pointer items-center justify-center rounded-l-[2px] border border-Border-border-default",
+          if(@view_type == :card,
+            do: "bg-Fill-fill-selection-active text-Icon-icon-white",
+            else: "text-Icon-icon-default"
+          )
+        ]}>
+          <.input
+            field={@changeset[:type]}
+            id="card-view-type"
+            type="radio"
+            class="hidden"
+            value="card"
+            checked={@view_type == :card}
+          />
+          <i class="fa fa-th" />
+        </label>
+        <label class={[
+          "flex h-8 w-10 cursor-pointer items-center justify-center rounded-r-[2px] border border-l-0 border-Border-border-default",
+          if(@view_type == :list,
+            do: "bg-Fill-fill-selection-active text-Icon-icon-white",
+            else: "text-Icon-icon-default"
+          )
+        ]}>
+          <.input
+            field={@changeset[:type]}
+            id="list-view-type"
+            type="radio"
+            class="hidden"
+            value="list"
+            checked={@view_type == :list}
+          />
+          <i class="fa fa-list" />
+        </label>
+      </div>
+    </.form>
+    """
+  end
+
   defp new_feature_banner(assigns) do
     ~H"""
     <div id="new-course-banner" class="p-4 rounded-lg bg-Table-table-select mb-4">
@@ -302,6 +393,19 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       )
 
     assign(socket, total_count: total_count, table_model: table_model, params: params)
+  end
+
+  # Sets (not toggles) the table model's sort column/order, used only to apply a sort_by/
+  # sort_order pair carried over from the URL on first load. `SortableTableModel.update_sort_params/2`
+  # can't be reused here since it treats "same column" as "flip direction," which would wrongly
+  # flip the order on every load where the URL's sort_by happens to match the table's own default.
+  defp apply_initial_sort(table_model, sort_by, sort_order) do
+    spec = Enum.find(table_model.column_specs, table_model.sort_by_spec, &(&1.name == sort_by))
+
+    table_model
+    |> Map.put(:sort_by_spec, spec)
+    |> Map.put(:sort_order, sort_order)
+    |> SortableTableModel.sort()
   end
 
   defp get_table_model_and_count(
@@ -385,8 +489,11 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     Map.put(table_model, :rows, rows)
   end
 
-  def handle_event("update_view_type", %{"view" => %{"type" => view_type}}, socket),
-    do: {:noreply, assign(socket, :view_type, String.to_atom(view_type))}
+  def handle_event("update_view_type", %{"view" => %{"type" => view_type}}, socket) do
+    socket = assign(socket, :view_type, String.to_atom(view_type))
+
+    {:noreply, push_patch(socket, to: patch_path(socket))}
+  end
 
   def handle_event("filter_source", %{"filter" => filter}, socket) do
     source_filter =
@@ -411,25 +518,26 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
     socket = update_source_list(socket, params)
 
-    {:noreply, push_patch(socket, to: filter_patch_path(socket.assigns.base_path, source_filter))}
+    {:noreply, push_patch(socket, to: patch_path(socket))}
   end
 
   def handle_event("change_search", %{"value" => value}, socket) do
-    params = Map.put(socket.assigns.params, :query, value)
+    params =
+      socket.assigns.params
+      |> Map.merge(%{query: value, applied_query: value})
+      |> Map.put(:offset, 0)
 
-    {:noreply, assign(socket, params: params)}
-  end
+    socket = update_source_list(socket, params)
 
-  def handle_event("apply_search", _, socket) do
-    params = Map.put(socket.assigns.params, :applied_query, socket.assigns.params.query)
-
-    {:noreply, update_source_list(socket, params)}
+    {:noreply, push_patch(socket, to: patch_path(socket))}
   end
 
   def handle_event("reset_search", _, socket) do
     params = Map.merge(socket.assigns.params, %{query: "", applied_query: ""})
 
-    {:noreply, update_source_list(socket, params)}
+    socket = update_source_list(socket, params)
+
+    {:noreply, push_patch(socket, to: patch_path(socket))}
   end
 
   def handle_event("sort", %{"sort_by" => sort_by}, socket) do
@@ -441,7 +549,9 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         sort_order: socket.assigns.table_model.sort_order
       })
 
-    {:noreply, update_source_list(socket, params, update_sort_params: true)}
+    socket = update_source_list(socket, params, update_sort_params: true)
+
+    {:noreply, push_patch(socket, to: patch_path(socket))}
   end
 
   def handle_event("page_change", %{"offset" => offset}, socket) do
@@ -455,8 +565,34 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     {:noreply, update_source_list(socket, params)}
   end
 
-  defp filter_patch_path(base_path, :all), do: base_path
-  defp filter_patch_path(base_path, filter), do: "#{base_path}?filter=#{filter}"
+  # Builds the current filter/search/sort/view state as a shareable, reloadable URL, omitting
+  # each query param when it's at its default value (so the common "no filters applied" case
+  # keeps a clean base URL, matching the existing `filter` param's established convention).
+  defp patch_path(socket) do
+    params = socket.assigns.params
+    table_model = socket.assigns.table_model
+
+    # Sort state is read from `table_model` (`sort_by_spec.name`/`sort_order`), not from
+    # `params.sort_by`/`params.sort_order` — the "same column toggles direction" translation
+    # inside `SortableTableModel.update_sort_params/2` happens *after* `params` is built in the
+    # `sort` event handler, so `params`'s own sort fields lag one step behind the table's actual
+    # resulting sort state right after a direction toggle.
+    query =
+      %{}
+      |> put_unless_default("filter", params.source_filter, :all)
+      |> put_unless_default("query", params.applied_query, "")
+      |> put_unless_default("sort_by", table_model.sort_by_spec.name, :inserted_at)
+      |> put_unless_default("sort_order", table_model.sort_order, :desc)
+      |> put_unless_default("view", socket.assigns.view_type, :card)
+
+    case query do
+      empty when empty == %{} -> socket.assigns.base_path
+      query -> "#{socket.assigns.base_path}?#{URI.encode_query(query)}"
+    end
+  end
+
+  defp put_unless_default(query, _key, value, default) when value == default, do: query
+  defp put_unless_default(query, key, value, _default), do: Map.put(query, key, to_string(value))
 
   # An actor the gate would refuse is offered nothing: the list never shows a source that
   # creation would reject.
