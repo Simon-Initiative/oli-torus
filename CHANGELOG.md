@@ -7,6 +7,34 @@ For a complete list of changes and release notes, please refer to the [GitHub re
 If a PR is opened that adds a new environment config or requires infrastructure changes, please
 update this file accordingly.
 
+## 0.35.0
+
+### Environment Configs
+
+| Name                              | Required | Description                                                                     |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------- |
+| MOODLE_BASE_URL                    | No       | Moodle base URL for Moodle LTI Playwright automation                            |
+| MOODLE_INSTRUCTOR_EMAIL            | No       | Moodle instructor username required by Moodle LTI Playwright automation         |
+| MOODLE_INSTRUCTOR_PASSWORD         | No       | Moodle instructor password required by Moodle LTI Playwright automation         |
+| MOODLE_STUDENT_EMAIL               | No       | Moodle student username required by the Moodle grade passback Playwright test   |
+| MOODLE_STUDENT_PASSWORD            | No       | Moodle student password required by the Moodle grade passback Playwright test   |
+| MOODLE_API_TOKEN                   | No       | Moodle web service token used to create/delete/import the fixture course via API |
+| MOODLE_LTI_TOOL_NAME                | No       | Pre-registered Moodle course tool display name to select (default "Tokamak")     |
+
+- `MOODLE_*` environment variables configure the Moodle-to-Torus LTI launch and grade passback
+  Playwright automation. They are not required by the Torus application runtime. See
+  `assets/automation/tests/torus/lti_moodle/moodle_playwright.md` for the full setup.
+
+- Moodle LTI course-provisioning Playwright settings are local/test-runner configuration only
+  and are not required for the Torus application runtime. Do not commit real Moodle credentials
+  or API tokens.
+
+### Infrastructure Changes
+
+None
+
+---
+
 ## 0.34.0
 
 ### Environment Configs

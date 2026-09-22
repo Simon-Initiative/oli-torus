@@ -9,6 +9,7 @@ This platform contains the automated e2e tests.
 - Scenario seeding is authenticated with a default token of `my-token`; change this in the spec runtime config and in your Phoenix `PLAYWRIGHT_SCENARIO_TOKEN` if needed.
 - Browser auto-close behavior is controlled by runtime config in specs (defaults to keep the browser open between tests).
 - The nightly LTI spec reads `CANVAS_UI_EMAIL` and `CANVAS_UI_PASSWORD` from the environment instead of hardcoding credentials.
+- The nightly Moodle LTI specs read `MOODLE_INSTRUCTOR_EMAIL`, `MOODLE_INSTRUCTOR_PASSWORD`, `MOODLE_STUDENT_EMAIL`, `MOODLE_STUDENT_PASSWORD`, and `MOODLE_API_TOKEN` from the environment; see `tests/torus/lti_moodle/moodle_playwright.md` for the full setup.
 - The live OAuth login spec reads its target, operation timeout, and dedicated accounts from the remote YAML selected by `PLAYWRIGHT_PARAMETER_CONFIG_URL`.
 - GitHub Actions wiring for the nightly run lives in `.github/workflows/nightly-playwright.yml` and expects those values as environment secrets on the `nightly-ui` environment.
 
