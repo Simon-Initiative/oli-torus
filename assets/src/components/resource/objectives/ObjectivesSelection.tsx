@@ -12,9 +12,8 @@ import { ProjectSlug } from 'data/types';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 import styles from './ObjectivesSelection.modules.scss';
+import type { AttachmentType, ObjectiveOption } from './objectivesSelectionHelpers';
 import {
-  AttachmentType,
-  ObjectiveOption,
   canCreateObjective,
   getPlaceholderLabel,
   isSearchOnly,

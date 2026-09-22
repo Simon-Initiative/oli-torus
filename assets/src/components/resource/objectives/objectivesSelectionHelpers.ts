@@ -1,4 +1,4 @@
-import { Objective } from 'data/content/objective';
+import type { Objective } from 'data/content/objective';
 
 export type AttachmentType = 'page' | 'activity';
 export type ObjectiveOption = Objective & { disabled?: boolean };
