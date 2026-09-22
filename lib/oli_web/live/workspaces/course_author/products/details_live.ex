@@ -502,22 +502,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         image_file_name = "#{entry.uuid}.#{ext(entry)}"
         upload_path = "#{section_path}/#{image_file_name}"
 
-        S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
+        {:ok, S3Storage.upload_file(bucket_name, upload_path, temp_file_path)}
       end)
 
-    with uploaded_path <- Enum.at(uploaded_files, 0),
+    with {:ok, uploaded_path} <- Enum.at(uploaded_files, 0, {:ok, nil}),
          {:ok, section} <-
            Sections.update_section(socket.assigns.product, %{cover_image: uploaded_path}) do
       socket = put_flash(socket, :info, "Template changes saved")
       {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
     else
       {:error, %Ecto.Changeset{} = changeset} ->
-        socket = put_flash(socket, :info, "Couldn't update template image")
+        socket = put_flash(socket, :error, "Couldn't update template image")
         {:noreply, assign(socket, changeset: changeset)}
 
       {:error, payload} ->
         Logger.error("Error uploading product image to S3: #{inspect(payload)}")
-        socket = put_flash(socket, :info, "Couldn't update template image")
+        socket = put_flash(socket, :error, "Couldn't update template image")
         {:noreply, socket}
     end
   end

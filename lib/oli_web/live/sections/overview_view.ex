@@ -679,28 +679,29 @@ defmodule OliWeb.Sections.OverviewView do
   def handle_event("update_image", _, socket) do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
-    [uploaded_path] =
+    [upload_result] =
       consume_uploaded_entries(socket, :cover_image, fn meta, entry ->
         temp_file_path = meta.path
         section_path = "sections/#{socket.assigns.section.slug}"
         image_file_name = "#{entry.uuid}.#{ext(entry)}"
         upload_path = "#{section_path}/#{image_file_name}"
 
-        S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
+        {:ok, S3Storage.upload_file(bucket_name, upload_path, temp_file_path)}
       end)
 
-    with {:ok, section} <-
+    with {:ok, uploaded_path} <- upload_result,
+         {:ok, section} <-
            Sections.update_section(socket.assigns.section, %{cover_image: uploaded_path}) do
       socket = put_flash(socket, :info, "Section changes saved")
       {:noreply, assign(socket, section: section, changeset: Section.changeset(section, %{}))}
     else
       {:error, %Ecto.Changeset{} = changeset} ->
-        socket = put_flash(socket, :info, "Couldn't update section image")
+        socket = put_flash(socket, :error, "Couldn't update section image")
         {:noreply, assign(socket, changeset: changeset)}
 
       {:error, payload} ->
         Logger.error("Error uploading section image to S3: #{inspect(payload)}")
-        socket = put_flash(socket, :info, "Couldn't update section image")
+        socket = put_flash(socket, :error, "Couldn't update section image")
         {:noreply, socket}
     end
   end

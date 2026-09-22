@@ -320,10 +320,10 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
             else: "text-Icon-icon-default"
           )
         ]}>
-          <.input
-            field={@changeset[:type]}
-            id="card-view-type"
+          <input
             type="radio"
+            id="card-view-type"
+            name="view[type]"
             class="hidden"
             value="card"
             checked={@view_type == :card}
@@ -337,10 +337,10 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
             else: "text-Icon-icon-default"
           )
         ]}>
-          <.input
-            field={@changeset[:type]}
-            id="list-view-type"
+          <input
             type="radio"
+            id="list-view-type"
+            name="view[type]"
             class="hidden"
             value="list"
             checked={@view_type == :list}
@@ -495,6 +495,10 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
     {:noreply, push_patch(socket, to: patch_path(socket))}
   end
+
+  # Defensive: a change event on the view-type radio group can fire with no checked
+  # radio in its payload (e.g. a rapid double-toggle), which carries only "_target".
+  def handle_event("update_view_type", _params, socket), do: {:noreply, socket}
 
   def handle_event("filter_source", %{"filter" => filter}, socket) do
     source_filter =
