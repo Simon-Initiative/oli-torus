@@ -2,6 +2,7 @@ defmodule OliWeb.Common.Stepper do
   use OliWeb, :live_component
 
   alias OliWeb.Common.Stepper.Step
+  alias OliWeb.Components.DesignTokens.Primitives.Button
 
   @moduledoc """
   Stepper Component
@@ -58,15 +59,18 @@ defmodule OliWeb.Common.Stepper do
           {@selected_step.render_fn.(@data)}
         </div>
 
-        <div class={"p-3 flex items-center bg-white dark:bg-black #{if is_nil(@on_cancel), do: "justify-end", else: "justify-between"}"}>
-          <%= if !is_nil(@on_cancel) do %>
-            <button
-              phx-click={@on_cancel}
-              class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm !border !border-Border-border-bold !text-Specially-Tokens-Text-text-button-secondary flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900"
-            >
-              {@cancel_button_label}
-            </button>
-          <% end %>
+        <div class={[
+          "flex items-center border-t border-Border-border-default bg-Background-bg-secondary px-[45px] py-3",
+          if(is_nil(@on_cancel), do: "justify-end", else: "justify-between")
+        ]}>
+          <Button.button
+            :if={!is_nil(@on_cancel)}
+            variant={:secondary}
+            size={:sm}
+            phx-click={@on_cancel}
+          >
+            {@cancel_button_label}
+          </Button.button>
           <div class="flex gap-2">
             <!-- Hidden automation helper button for E2E tests to bypass wizard -->
             <button
@@ -82,29 +86,27 @@ defmodule OliWeb.Common.Stepper do
             >
               Automation go to course
             </button>
-            <%= if @current_step != 0 do %>
-              <button
-                phx-click={@selected_step.on_previous_step |> fade_out_transition("stepper_content")}
-                class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900"
-              >
-                <i class="fa-solid fa-arrow-left sm:mr-2"></i><span class="hidden sm:flex"><%= @selected_step.previous_button_label ||
-                  "Previous step" %></span>
-              </button>
-            <% end %>
-            <button
+            <Button.button
+              :if={@current_step != 0}
+              variant={:secondary}
+              size={:sm}
+              phx-click={@selected_step.on_previous_step |> fade_out_transition("stepper_content")}
+            >
+              {@selected_step.previous_button_label || "Previous step"}
+            </Button.button>
+            <Button.button
+              variant={:primary}
+              size={:sm}
               disabled={@next_step_disabled}
               phx-click={@selected_step.on_next_step |> fade_out_transition("stepper_content")}
-              class={[
-                "torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center",
-                if(!@next_step_disabled, do: "!bg-Fill-Buttons-fill-primary-bold")
-              ]}
             >
               {@selected_step.next_button_label || "Next step"}
-
-              <div :if={@show_spinner} class="ml-1" role="status">
-                <.loader />
-              </div>
-            </button>
+              <:icon_right :if={@show_spinner}>
+                <div role="status">
+                  <.loader />
+                </div>
+              </:icon_right>
+            </Button.button>
           </div>
         </div>
       </div>

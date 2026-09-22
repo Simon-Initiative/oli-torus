@@ -14,7 +14,7 @@ defmodule OliWeb.Common.CardListing do
 
   def render(assigns) do
     ~H"""
-    <div class="select-sources card-deck flex flex-wrap justify-center gap-4">
+    <div class="select-sources card-deck flex flex-wrap items-start gap-[22px]">
       <%= for item <- @model.rows do %>
         <%= if @preview_mode do %>
           <article class="course-card-link group mb-2" data-preview-mode="true">
@@ -48,15 +48,15 @@ defmodule OliWeb.Common.CardListing do
 
     ~H"""
     <div class={[
-      "relative flex h-[296px] w-full max-w-[310px] flex-col overflow-hidden rounded-2xl border",
+      "relative flex aspect-[310/296] w-full max-w-[310px] flex-col overflow-hidden rounded-2xl border",
       "shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]",
       if(Map.get(@item, :selected),
         do: "!border-none !bg-delivery-primary-100 shadow-inner",
         else: "border-Border-border-default bg-Surface-surface-primary"
       ),
-      if(@preview_mode, do: "!h-[23em] !w-[16.8em] select-none")
+      if(@preview_mode, do: "!aspect-auto !h-[23em] !w-[16.8em] select-none")
     ]}>
-      <div class="relative h-[166px] w-full shrink-0 overflow-hidden">
+      <div class="relative h-1/3 w-full shrink-0 overflow-hidden">
         <img src={cover_image(@item)} class="h-full w-full object-cover" alt="course image" />
         <div class="pointer-events-none absolute inset-0 bg-[rgba(54,59,89,0.4)]" />
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,0.1)] to-[rgba(0,50,99,0.4)] mix-blend-hard-light" />
@@ -80,7 +80,7 @@ defmodule OliWeb.Common.CardListing do
           {render_title_column(@item)}
         </h5>
 
-        <p class="card-text text-sm leading-5 text-Text-text-high">
+        <p class="card-text text-sm leading-5 text-Text-text-high" title={render_description(@item)}>
           {render_description(@item)}
         </p>
       </div>

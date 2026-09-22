@@ -138,7 +138,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         </div>
       </div>
 
-      <.new_feature_banner />
+      <.new_feature_banner :if={@params[:source_filter] == :my_sections} />
 
       <.result_count_announcement
         total_count={@total_count}
@@ -157,6 +157,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
           page_change={JS.push("page_change", target: @myself)}
           show_bottom_paging={false}
           cards_view={is_cards_view?(@role, @view_type)}
+          paging_container_class=""
         />
       </div>
 

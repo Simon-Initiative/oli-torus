@@ -42,7 +42,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
   describe "wizard footer restyle" do
     setup [:instructor_conn]
 
-    test "the Cancel button carries the course-creation-only border override (present on every step)",
+    test "the Cancel button renders as the shared secondary Button component (present on every step)",
          %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
@@ -50,12 +50,12 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
       assert has_element?(
                view,
-               ~s(button.torus-button.secondary[class*="Border-border-bold"]),
+               ~s(button[class*="Border-border-bold"]),
                "Cancel"
              )
     end
 
-    test "the (enabled) Next Step button carries the course-creation-only fill override once a source is selected",
+    test "the Next Step button renders as the shared primary Button component, switching from muted to filled once a source is selected",
          %{conn: conn} do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
@@ -63,6 +63,12 @@ defmodule OliWeb.NewCourse.NewCourseTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert has_element?(view, "button[disabled]", "Next step")
+
+      assert has_element?(
+               view,
+               ~s(button[class*="Fill-Buttons-fill-primary-muted"]),
+               "Next step"
+             )
 
       view
       |> element(".card-deck button:first-child")
@@ -72,9 +78,9 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
       refute has_element?(view, "button[disabled]", "Next step")
 
-      assert has_element?(
+      refute has_element?(
                view,
-               ~s(button.torus-button.primary[class*="Fill-Buttons-fill-primary-bold"]),
+               ~s(button[class*="Fill-Buttons-fill-primary-muted"]),
                "Next step"
              )
     end

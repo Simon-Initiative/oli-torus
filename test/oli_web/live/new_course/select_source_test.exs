@@ -816,9 +816,21 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
   describe "new-feature banner and filter tooltips" do
     setup [:instructor_conn]
 
-    test "renders the explanatory banner with the agreed copy, positioned before the results",
+    test "the banner is hidden for All Sources and Templates, and only shows (with the agreed copy, positioned before the results) when filtering by My Course Sections",
          %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/sections/new")
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      refute has_element?(view, "#new-course-banner")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      refute has_element?(view, "#new-course-banner")
+
+      view
+      |> element("button[role='tab']", "My Course Sections")
+      |> render_click()
 
       assert has_element?(
                view,
@@ -844,10 +856,17 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
                "Only course sections you currently have permission to access are shown."
              )
 
+      html = render(view)
       banner_index = :binary.match(html, ~s(id="new-course-banner")) |> elem(0)
       results_index = :binary.match(html, ~s(id="select_source_results")) |> elem(0)
 
       assert banner_index < results_index
+
+      view
+      |> element("button[role='tab']", "All Sources")
+      |> render_click()
+
+      refute has_element?(view, "#new-course-banner")
     end
 
     test "wires the GlobalTooltip hook with the agreed copy onto the Templates and My Course Sections tabs",
