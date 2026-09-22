@@ -6,7 +6,40 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   instead of being inferred from missing fields.
   """
 
+  alias Oli.Publishing.DeliveryResolver
+  alias OliWeb.Delivery.ActivityHelpers
+
   @type status :: :complete | :no_observations | :unavailable
+
+  @doc """
+  Summarizes an activity over every page it was answered on, so the pane describes the same population
+  the row counts. Resolving and summarizing stay together: a caller holding the page list could drop
+  pages and silently narrow the population.
+  """
+  @spec across_pages(map(), map(), map(), [map()]) :: map() | nil
+  def across_pages(section, activity, activity_types_map, students) do
+    case page_revisions(section.slug, activity.page_contexts) do
+      [] ->
+        nil
+
+      revisions ->
+        ActivityHelpers.summarize_activities_across_pages(
+          section,
+          revisions,
+          activity_types_map,
+          students,
+          [activity.resource_id],
+          include_adaptive_part_analytics: true
+        )
+        |> List.first()
+    end
+  end
+
+  defp page_revisions(section_slug, page_contexts) do
+    section_slug
+    |> DeliveryResolver.from_resource_id(Enum.map(page_contexts, & &1.page_resource_id))
+    |> Enum.reject(&is_nil/1)
+  end
 
   @doc """
   Attaches the outcome to a summary the analytics helpers produced, or builds the summary that

@@ -387,32 +387,23 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
 
   defp load_activity_summary(
          socket,
-         %{canonical_page_context: %{page_resource_id: page_id}} = activity
+         %{canonical_page_context: %{page_resource_id: _}} = activity
        ) do
-    page_revision = DeliveryResolver.from_resource_id(socket.assigns.section.slug, page_id)
     socket = ensure_students_loaded(socket)
 
-    summary = summarize_activity(socket, page_revision, activity.resource_id)
+    summary =
+      Summaries.across_pages(
+        socket.assigns.section,
+        activity,
+        socket.assigns.activity_types_map,
+        socket.assigns.students
+      )
 
     cache_summary(socket, activity.resource_id, Summaries.from_result(summary, activity))
   end
 
   defp load_activity_summary(socket, activity) do
     cache_summary(socket, activity.resource_id, Summaries.without_analytics(activity))
-  end
-
-  defp summarize_activity(_socket, nil, _activity_id), do: nil
-
-  defp summarize_activity(socket, page_revision, activity_id) do
-    ActivityHelpers.summarize_activity_performance(
-      socket.assigns.section,
-      page_revision,
-      socket.assigns.activity_types_map,
-      socket.assigns.students,
-      [activity_id],
-      include_adaptive_part_analytics: true
-    )
-    |> List.first()
   end
 
   # Learners are only needed to summarize an expanded row, so they are loaded on the first

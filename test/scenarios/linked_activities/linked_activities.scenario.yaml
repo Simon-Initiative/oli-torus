@@ -215,6 +215,13 @@
     given_name: "Taylor"
     family_name: "Two"
 
+- user:
+    name: "learner_three"
+    type: "student"
+    email: "linked_activities_learner_three@example.edu"
+    given_name: "Robin"
+    family_name: "Three"
+
 - enroll:
     user: "learner_one"
     section: "linked_activities_section"
@@ -222,6 +229,11 @@
 
 - enroll:
     user: "learner_two"
+    section: "linked_activities_section"
+    role: "student"
+
+- enroll:
+    user: "learner_three"
     section: "linked_activities_section"
     role: "student"
 
@@ -272,6 +284,30 @@
     page: "Shared Activities Two"
     activity_virtual_id: "shared"
     response: "b"
+
+- view_practice_page:
+    student: "learner_one"
+    section: "linked_activities_section"
+    page: "Shared Activities Two"
+
+- answer_question:
+    student: "learner_one"
+    section: "linked_activities_section"
+    page: "Shared Activities Two"
+    activity_virtual_id: "shared"
+    response: "a"
+
+- view_practice_page:
+    student: "learner_three"
+    section: "linked_activities_section"
+    page: "Shared Activities Two"
+
+- answer_question:
+    student: "learner_three"
+    section: "linked_activities_section"
+    page: "Shared Activities Two"
+    activity_virtual_id: "shared"
+    response: "a"
 
 - dashboard_analytics_ready:
     section: "linked_activities_section"

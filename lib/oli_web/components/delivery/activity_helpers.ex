@@ -68,6 +68,30 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         only_for_activity_ids,
         opts \\ []
       ) do
+    summarize_activities_across_pages(
+      section,
+      [page_revision],
+      activity_types_map,
+      students,
+      only_for_activity_ids,
+      opts
+    )
+  end
+
+  @doc """
+  Summarizes activities over every page they appear on, as one population.
+
+  `graded` and the question ordinal belong to a single page, so both come from the first revision
+  given; the analytics inputs are gathered across all of them before any grouping.
+  """
+  def summarize_activities_across_pages(
+        %Section{} = section,
+        [page_revision | _] = page_revisions,
+        activity_types_map,
+        students,
+        only_for_activity_ids,
+        opts \\ []
+      ) do
     page_id = page_revision.resource_id
     graded = page_revision.graded
 
@@ -95,7 +119,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     # {list of all response summaries, map of activity_id -> set of user ids}
     {response_summaries, attempted_activities} =
-      Summary.get_response_summary_for(page_id, section.id, only_for_activity_ids)
+      page_revisions
+      |> Enum.map(& &1.resource_id)
+      |> Summary.get_response_summary_for_pages(section.id, only_for_activity_ids)
+      |> merge_responses_across_pages()
       |> Enum.reduce({[], %{}}, fn summary, {all, attempted_activities} ->
         # The users who have answered these responses comes over as a list of user ids,
         # so we need to convert them to a list of user structs, but careful to dedupe, handle
@@ -289,6 +316,26 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         OliWeb.ManualGrading.Rendering.render(context, :instructor_preview)
     end
   end
+
+  # One row per answer per page arrives here. Staging picks a response by first match, so rows for the
+  # same answer must become one row carrying the combined count and student list before it runs.
+  defp merge_responses_across_pages(summaries) do
+    by_answer = Enum.group_by(summaries, &answer_key/1)
+
+    summaries
+    |> Enum.uniq_by(&answer_key/1)
+    |> Enum.map(fn first ->
+      rows = Map.fetch!(by_answer, answer_key(first))
+
+      %{
+        first
+        | count: Enum.sum(Enum.map(rows, & &1.count)),
+          users: rows |> Enum.flat_map(& &1.users) |> Enum.uniq()
+      }
+    end)
+  end
+
+  defp answer_key(summary), do: {summary.activity_id, summary.part_id, summary.response}
 
   defp build_ordinal_mapping(revision) do
     {mapping, _} =

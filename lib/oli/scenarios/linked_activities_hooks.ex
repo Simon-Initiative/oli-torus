@@ -10,9 +10,11 @@ defmodule Oli.Scenarios.LinkedActivitiesHooks do
   import ExUnit.Assertions
   import Ecto.Query, only: [from: 2]
 
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.LinkedActivities
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActivities.Summaries
   alias Oli.Scenarios.DirectiveTypes.ExecutionState
 
   @project_name "linked_activities_project"
@@ -59,8 +61,8 @@ defmodule Oli.Scenarios.LinkedActivitiesHooks do
     assert Enum.count(parent_rows, &(&1.resource_id == activity_ids["shared"])) == 1
 
     shared = Enum.find(parent_rows, &(&1.resource_id == activity_ids["shared"]))
-    assert shared.attempts == 2
-    assert shared.percent_correct == 50.0
+    assert shared.attempts == 4
+    assert shared.percent_correct == 75.0
 
     no_attempt = Enum.find(parent_rows, &(&1.resource_id == activity_ids["no_attempt"]))
     assert no_attempt.attempts == 0
@@ -83,7 +85,58 @@ defmodule Oli.Scenarios.LinkedActivitiesHooks do
     assert no_attempt.page_contexts == []
     assert no_attempt.canonical_page_context == nil
 
+    assert_shared_summary_spans_both_pages(section, shared)
+
     state
+  end
+
+  # The row totals every page the activity appears on, so the expanded pane must describe the same
+  # population: one correct answer on one page, one incorrect on the other.
+  defp assert_shared_summary_spans_both_pages(section, shared) do
+    summary =
+      Summaries.across_pages(
+        section,
+        shared,
+        Map.new(Oli.Activities.list_activity_registrations(), &{&1.id, &1}),
+        Sections.enrolled_students(section.slug, [:context_learner])
+      )
+
+    assert summary, "no summary was produced for the shared activity"
+
+    assert summary.total_attempts_count == shared.attempts,
+           "pane counted #{summary.total_attempts_count} attempts while the row counted #{shared.attempts}"
+
+    assert_in_delta summary.all_attempt_pct * 100,
+                    shared.percent_correct,
+                    0.05,
+                    "pane reported #{summary.all_attempt_pct * 100}% while the row reported #{shared.percent_correct}%"
+
+    # Four attempts from three students: one learner answered on both pages. A pin that used the
+    # attempt count here would pass while conflating the two measures.
+    assert summary.students_with_attempts_count == 3,
+           "pane saw #{summary.students_with_attempts_count} student(s); the pages together have 3"
+
+    assert_choice_counts_combine_across_pages(summary)
+  end
+
+  # Learners chose the same answer on different pages. Staging resolves a choice by first match, so
+  # unmerged rows would report one page and lose the other. These counts are responses, not students:
+  # one learner answered on both pages, which is why A exceeds the learners who chose it.
+  defp assert_choice_counts_combine_across_pages(summary) do
+    counts =
+      summary.student_responses
+      |> Map.values()
+      |> List.flatten()
+      |> Map.new(fn choice -> {choice["label"], choice["count"]} end)
+
+    assert counts["A."] == 3,
+           "the correct answer was chosen three times across both pages; the pane shows #{inspect(counts)}"
+
+    assert counts["B."] == 1,
+           "the incorrect answer was chosen once; the pane shows #{inspect(counts)}"
+
+    assert Enum.sum(Map.values(counts)) > summary.students_with_attempts_count,
+           "this fixture must keep responses and students apart, or a pin that conflates them passes"
   end
 
   defp lesson_activity_refs(section_id) do
