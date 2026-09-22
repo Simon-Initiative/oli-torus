@@ -212,8 +212,8 @@ requirements:
     status: proposed
     verification_method: hybrid
     proofs:
-    - lib/oli_web/components/delivery/pages/activities_table_model.ex gives the expansion control an accessible name
-    - test/oli_web/live/delivery/instructor_dashboard/learning_objectives/related_activities_live_test.exs asserts the accessible name on the chevron
+    - 'Partially met. Proven: lib/oli_web/components/delivery/pages/activities_table_model.ex gives the expansion control an accessible name, and test/oli_web/live/delivery/instructor_dashboard/learning_objectives/related_activities_live_test.exs asserts it on the chevron.'
+    - 'Not proven: accessible names and visible focus indicators for the search field, the Attempts and Score selectors, Clear All Filters, the sortable headers and pagination. Those controls come from shared components and carry no assertion in this suite.'
 - id: FR-008
   title: Match the approved design for the linked activities filter toolbar
   status: proposed

@@ -322,7 +322,8 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
         {resource_id, %{attempts: attempts, correct: correct}}
       end)
 
-    fallback_ids = activity_ids -- Map.keys(metrics_by_id)
+    measured_ids = MapSet.new(Map.keys(metrics_by_id))
+    fallback_ids = Enum.reject(activity_ids, &MapSet.member?(measured_ids, &1))
 
     metrics_by_id = Map.merge(activity_attempt_fallback(section_id, fallback_ids), metrics_by_id)
 

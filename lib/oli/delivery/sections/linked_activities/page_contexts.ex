@@ -53,9 +53,10 @@ defmodule Oli.Delivery.Sections.LinkedActivities.PageContexts do
     |> Enum.reduce(%{}, fn {activity_id, page_resource_id}, contexts ->
       case Map.get(contexts_by_page, page_resource_id) do
         nil -> contexts
-        context -> Map.update(contexts, activity_id, [context], &(&1 ++ [context]))
+        context -> Map.update(contexts, activity_id, [context], &[context | &1])
       end
     end)
+    |> Map.new(fn {activity_id, contexts} -> {activity_id, Enum.reverse(contexts)} end)
   end
 
   @doc "Merges two indexes, keeping the first one's order and dropping pages it already holds."

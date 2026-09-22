@@ -128,8 +128,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   defp maybe_filter_by_text(activities, ""), do: activities
 
   defp maybe_filter_by_text(activities, text_search) do
+    search = String.downcase(text_search)
+
     Enum.filter(activities, fn activity ->
-      search = String.downcase(text_search)
       stem = String.downcase(activity.question_stem || "")
       title = String.downcase(activity.title || "")
 
