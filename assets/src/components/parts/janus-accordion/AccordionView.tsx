@@ -9,7 +9,7 @@ import {
   hasAccordionTheme,
   normalizeSections,
 } from './accordion-util';
-import { AccordionModel } from './schema';
+import { AccordionModel, DEFAULT_ACCORDION_HEIGHT } from './schema';
 
 export const tagName = 'janus-accordion';
 
@@ -47,7 +47,7 @@ const AccordionView = forwardRef<HTMLDivElement, AccordionViewProps>(function Ac
         ...accordionContainerStyles(model.width, model.height),
         ...themeStyles,
       }
-    : themeStyles;
+    : { width: '100%', height: model.height ?? DEFAULT_ACCORDION_HEIGHT, ...themeStyles };
   const themedClass = hasAccordionTheme(model.themeColor) ? 'janus-accordion--themed' : '';
 
   const handleHeaderKeyDown = useCallback(
@@ -146,6 +146,8 @@ const AccordionView = forwardRef<HTMLDivElement, AccordionViewProps>(function Ac
                   <div
                     className={`accordion-panel-wrap${expanded ? ' is-expanded' : ''}`}
                     aria-hidden={!expanded}
+                    // Keep links and other rich content out of the tab order while collapsed.
+                    {...(!expanded ? { inert: '' } : {})}
                   >
                     <div
                       id={panelId}

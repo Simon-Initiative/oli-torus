@@ -1,5 +1,5 @@
 import React, { ReactEventHandler } from 'react';
-import { Modal } from 'react-bootstrap';
+import { Modal, ModalProps } from 'react-bootstrap';
 
 interface QuillImageUploaderProps {
   handleImageDetailsSave: (imageSrc: string, imageAltText: string) => void;
@@ -8,6 +8,9 @@ interface QuillImageUploaderProps {
   initialImageSrc?: string;
   initialImageAltText?: string;
   isEditingImage?: boolean;
+  /** Uses the editor's modal container when nested in advanced authoring. */
+  ModalComponent?: React.ComponentType<ModalProps>;
+  onExited?: () => void;
 }
 export const QuillImageUploader: React.FC<QuillImageUploaderProps> = ({
   handleImageDetailsSave,
@@ -16,6 +19,8 @@ export const QuillImageUploader: React.FC<QuillImageUploaderProps> = ({
   initialImageSrc = '',
   initialImageAltText = '',
   isEditingImage = false,
+  ModalComponent = Modal,
+  onExited,
 }) => {
   const [imageURL, setImageURL] = React.useState<string>('');
   const [imageAltText, setImageAltText] = React.useState<string>('');
@@ -59,7 +64,11 @@ export const QuillImageUploader: React.FC<QuillImageUploaderProps> = ({
     <React.Fragment>
       {
         <>
-          <Modal show={showImageSelectorDailog} onHide={handleImageDailogClose}>
+          <ModalComponent
+            show={showImageSelectorDailog}
+            onHide={handleImageDailogClose}
+            onExited={onExited}
+          >
             <Modal.Header closeButton={true} className="px-8 pb-0">
               <h3 className="modal-title font-bold">
                 {isEditingImage ? 'Edit Image' : 'Insert Image'}
@@ -103,7 +112,7 @@ export const QuillImageUploader: React.FC<QuillImageUploaderProps> = ({
                 Cancel
               </button>
             </Modal.Footer>
-          </Modal>
+          </ModalComponent>
         </>
       }
     </React.Fragment>

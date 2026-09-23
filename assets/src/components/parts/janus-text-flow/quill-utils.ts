@@ -1,5 +1,10 @@
 import { CSSProperties } from 'react';
 import Delta from 'quill-delta';
+import {
+  normalizeImageAspectRatio,
+  normalizeImageDimension,
+  normalizeImageWidth,
+} from './imageSizing';
 
 interface JanusMarkupNode {
   tag: string;
@@ -170,6 +175,7 @@ const convertFontSize = (fontSize: string, conversionType: 'px' | 'rem'): string
   return conversionType === 'px' ? `${convertedValue}px` : `${convertedValue}rem`;
 };
 
+/** Converts Quill content to Janus markup, retaining image widths and custom aspect ratios. */
 export const convertQuillToJanus = (delta: Delta) => {
   const doc = new Delta().compose(delta);
   const nodes: JanusMarkupNode[] = [];
@@ -237,12 +243,19 @@ export const convertQuillToJanus = (delta: Delta) => {
         const src = typeof imageValue === 'string' ? imageValue : imageValue.src;
         const altFromImageValue = typeof imageValue === 'object' ? imageValue?.alt : undefined;
         const altFromLegacyInsert = imageDetails?.alt;
+        const width = normalizeImageWidth(op.attributes?.width);
+        const height = normalizeImageDimension(op.attributes?.height);
         const child: JanusMarkupNode = {
           tag: 'img',
-          style: {
-            height: '100%',
-            width: '100%',
-          },
+          style:
+            width === undefined
+              ? { height: '100%', width: '100%' }
+              : {
+                  width,
+                  maxWidth: '100%',
+                  height: 'auto',
+                  ...(height === undefined ? {} : { aspectRatio: `${width} / ${height}` }),
+                },
           alt: `${altFromImageValue ?? op?.attributes?.alt ?? altFromLegacyInsert ?? ''}`,
           src: `${src}`,
           children: [],
@@ -333,6 +346,20 @@ export const convertQuillToJanus = (delta: Delta) => {
 };
 
 const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: any = {}) => {
+  if (node.tag === 'img') {
+    const width = normalizeImageWidth(node.style?.width);
+    const aspectRatio = normalizeImageAspectRatio(node.style?.aspectRatio);
+    const height =
+      width === undefined
+        ? undefined
+        : normalizeImageDimension(aspectRatio === undefined ? undefined : width / aspectRatio) ??
+          normalizeImageDimension(node.style?.height);
+    return doc.insert(
+      { image: { src: node.src || '', alt: node.alt || '' } },
+      width === undefined ? undefined : { width, ...(height === undefined ? {} : { height }) },
+    );
+  }
+
   const attrs: any = {};
   if (node.style?.fontWeight === 'bold') {
     attrs.bold = true;
@@ -434,9 +461,6 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
           if (child.style?.textAlign) {
             lineAttrs.align = child.style.textAlign;
           }
-          if (child.tag === 'img') {
-            doc.insert({ image: { src: child.src || '', alt: child.alt || '' } });
-          }
           line.insert('\n', lineAttrs);
         }
       }
@@ -449,6 +473,7 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
 
 const blockTags = ['p', 'blockquote', 'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img'];
 
+/** Restores Janus images to Quill with pixel width and optional custom-ratio or legacy height. */
 export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
   let doc = new Delta();
   const parentAttrs: any = {};
