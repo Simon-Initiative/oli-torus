@@ -9,6 +9,7 @@ defmodule OliWeb.Components.Delivery.Students do
   alias OliWeb.Components.Delivery.CardHighlights
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
+  alias OliWeb.Components.Delivery.Students.StudentSelection
 
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Delivery.Content.{PercentageSelector, MultiSelect, SelectDropdown}
@@ -662,7 +663,7 @@ defmodule OliWeb.Components.Delivery.Students do
           module={DraftEmailModal}
           modal_dom_id={"draft_email_modal_#{@id}"}
           students={
-            DraftEmailModal.recipients(
+            StudentSelection.recipients(
               @all_students,
               @selected_students,
               &Utils.name(&1.name, &1.given_name, &1.family_name)

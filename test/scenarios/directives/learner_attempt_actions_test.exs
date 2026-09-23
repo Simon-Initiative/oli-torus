@@ -50,16 +50,24 @@ defmodule Oli.Scenarios.Directives.LearnerAttemptActionsTest do
       )
       |> Oli.Repo.all()
 
-    assert [first_attempt, second_attempt] = attempts
+    assert [first_attempt, second_attempt, third_attempt] = attempts
     assert first_attempt.score == 0.0
     assert second_attempt.score == 1.0
+    assert third_attempt.score == 1.0
     assert first_attempt.attempt_number == 1
     assert second_attempt.attempt_number == 2
+    assert third_attempt.attempt_number == 3
 
     assert [first_part_attempt] = first_attempt.part_attempts
     assert [second_part_attempt] = second_attempt.part_attempts
+    assert [third_part_attempt] = third_attempt.part_attempts
     assert first_part_attempt.hints == ["try_again_hint"]
     assert second_part_attempt.hints == ["try_again_hint"]
+    assert third_part_attempt.hints == ["try_again_hint"]
+
+    assert Enum.all?([first_part_attempt, second_part_attempt, third_part_attempt], fn attempt ->
+             match?({:ok, _}, UUID.info(attempt.datashop_session_id))
+           end)
   end
 
   test "request_hint requires a visited page" do

@@ -5,12 +5,19 @@ defmodule OliWeb.Common.Chip do
   attr :bg_color, :string, required: true
   attr :text_color, :string, required: true
   attr :label_class, :string, default: nil
+  attr :tooltip, :string, default: nil
   slot :icon
 
   def render(assigns) do
     ~H"""
     <div class="inline-flex items-center">
-      <div class={"px-2 py-1 rounded-full shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] flex items-center overflow-hidden #{@bg_color}"}>
+      <div
+        title={@tooltip}
+        class={[
+          "px-2 py-1 rounded-full shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] flex items-center overflow-hidden",
+          @bg_color
+        ]}
+      >
         <div class="px-2 flex items-center gap-2">
           <span :if={@icon != []} class="inline-flex shrink-0 items-center justify-center">
             {render_slot(@icon)}
@@ -18,6 +25,7 @@ defmodule OliWeb.Common.Chip do
           <div class={["text-base font-semibold text-center", @text_color, @label_class]}>
             {@label}
           </div>
+          <span :if={@tooltip} class="sr-only">{@tooltip}</span>
         </div>
       </div>
     </div>

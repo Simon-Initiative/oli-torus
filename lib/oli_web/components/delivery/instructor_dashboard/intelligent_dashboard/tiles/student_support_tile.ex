@@ -9,6 +9,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Students.EmailButton
+  alias OliWeb.Components.Delivery.Students.StudentSelection
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
 
@@ -718,17 +719,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       |> Enum.map(& &1.id)
 
     selected_student_ids = normalize_selected_student_ids(socket.assigns[:selected_student_ids])
-    filtered_student_id_set = MapSet.new(filtered_student_ids)
-    selected_student_id_set = selected_student_id_set(selected_student_ids)
 
     next_selected_student_ids =
-      if filtered_student_ids != [] and
-           MapSet.subset?(filtered_student_id_set, selected_student_id_set) do
-        Enum.reject(selected_student_ids, &MapSet.member?(filtered_student_id_set, &1))
-      else
-        selected_student_ids ++
-          Enum.reject(filtered_student_ids, &MapSet.member?(selected_student_id_set, &1))
-      end
+      StudentSelection.toggle_all(filtered_student_ids, selected_student_ids)
 
     selected_students_data =
       selected_students_data(socket.assigns.student_lookup, next_selected_student_ids)
@@ -747,14 +740,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         selected_student_ids =
           normalize_selected_student_ids(socket.assigns[:selected_student_ids])
 
-        selected_student_id_set = selected_student_id_set(selected_student_ids)
-
         next_selected_student_ids =
-          if MapSet.member?(selected_student_id_set, parsed_student_id) do
-            List.delete(selected_student_ids, parsed_student_id)
-          else
-            [parsed_student_id | selected_student_ids]
-          end
+          StudentSelection.toggle(selected_student_ids, parsed_student_id)
 
         selected_students_data =
           selected_students_data(socket.assigns.student_lookup, next_selected_student_ids)

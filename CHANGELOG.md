@@ -20,6 +20,7 @@ update this file accordingly.
 | MOODLE_STUDENT_PASSWORD            | No       | Moodle student password required by the Moodle grade passback Playwright test   |
 | MOODLE_API_TOKEN                   | No       | Moodle web service token used to create/delete/import the fixture course via API |
 | MOODLE_LTI_TOOL_NAME                | No       | Pre-registered Moodle course tool display name to select (default "Tokamak")     |
+| OBAN_QUEUE_SIZE_SNAPSHOTS          | No       | Snapshot queue concurrency per node (Default: 4)                                |
 
 - `MOODLE_*` environment variables configure the Moodle-to-Torus LTI launch and grade passback
   Playwright automation. They are not required by the Torus application runtime. See
@@ -28,6 +29,11 @@ update this file accordingly.
 - Moodle LTI course-provisioning Playwright settings are local/test-runner configuration only
   and are not required for the Torus application runtime. Do not commit real Moodle credentials
   or API tokens.
+
+- `OBAN_QUEUE_SIZE_SNAPSHOTS` controls the maximum number of snapshot jobs that each production or
+  preview application node executes concurrently. Keep it lower than the database connection
+  `POOL_SIZE` so snapshot processing leaves connections available for web requests and other
+  background queues.
 
 ### Infrastructure Changes
 

@@ -32,6 +32,7 @@ defmodule Oli.Interop.Ingest.Processor do
       |> init
       |> Project.process()
       |> bulk_allocate_resources
+      |> precompute_page_id_map
       |> Tags.process()
       |> Alternatives.process()
       |> Objectives.process()
@@ -75,6 +76,28 @@ defmodule Oli.Interop.Ingest.Processor do
       state
       | resource_id_pool: Oli.Publishing.create_resource_batch(project, total_needed)
     }
+  end
+
+  defp precompute_page_id_map(%State{} = state) do
+    preceding_resource_count =
+      Enum.count(state.tags) +
+        Enum.count(state.alternatives) +
+        Enum.count(state.objectives) +
+        Enum.count(state.bib_entries) +
+        Enum.count(state.activities)
+
+    page_resource_ids =
+      state.resource_id_pool
+      |> Enum.drop(preceding_resource_count)
+      |> Enum.take(Enum.count(state.pages))
+
+    page_id_map =
+      Enum.zip(page_resource_ids, state.pages)
+      |> Enum.reduce(%{}, fn {resource_id, {legacy_id, _resource}}, acc ->
+        Map.put(acc, legacy_id, resource_id)
+      end)
+
+    %{state | legacy_to_resource_id_map: Map.merge(state.legacy_to_resource_id_map, page_id_map)}
   end
 
   defp force_rollback_if_error(%State{force_rollback: nil} = state), do: state
