@@ -1,10 +1,13 @@
-import React, { CSSProperties, useEffect, useRef } from 'react';
+import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import chroma from 'chroma-js';
 import { Environment } from 'janus-script';
 import PartsLayoutRenderer from 'components/activities/adaptive/components/delivery/PartsLayoutRenderer';
+import guid from 'utils/guid';
 import { ContextProps, InitResultProps } from './types';
 
 interface PopupWindowProps {
+  /** Short dialog name; the rendered parts provide its accessible description. */
+  accessibleName: string;
   config: any;
   parts: any[];
   context: ContextProps;
@@ -14,6 +17,7 @@ interface PopupWindowProps {
 }
 
 const PopupWindow: React.FC<PopupWindowProps> = ({
+  accessibleName,
   config,
   parts,
   context,
@@ -27,6 +31,7 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
     width: config?.width || 300,
   };
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [contentId] = useState(() => `popup-content-${guid()}`);
   if (config?.palette) {
     if (config.palette.useHtmlProps) {
       popupModalStyles.backgroundColor = config.palette.backgroundColor;
@@ -129,16 +134,20 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
+      aria-label={accessibleName}
+      aria-describedby={contentId}
       tabIndex={-1}
       className={`info-icon-popup ${config?.customCssClass ? config.customCssClass : ''}`}
       style={popupModalStyles}
     >
       <div className="popup-background" style={popupBGStyles}>
-        <PartsLayoutRenderer
-          onPartInit={handlePartInit}
-          parts={parts}
-          responsiveLayout={responsiveLayout}
-        ></PartsLayoutRenderer>
+        <div id={contentId}>
+          <PartsLayoutRenderer
+            onPartInit={handlePartInit}
+            parts={parts}
+            responsiveLayout={responsiveLayout}
+          ></PartsLayoutRenderer>
+        </div>
 
         <button
           aria-label="Close"
