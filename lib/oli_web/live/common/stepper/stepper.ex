@@ -47,10 +47,16 @@ defmodule OliWeb.Common.Stepper do
 
     ~H"""
     <div id={@id} class="flex h-full w-full flex-col md:flex-row">
-      <div class="w-full shrink-0 bg-blue-700 px-8 py-10 dark:bg-black md:w-1/4 md:overflow-y-auto">
+      <div class="w-full shrink-0 bg-blue-700 px-8 pb-10 pt-[77px] md:w-1/4 md:overflow-y-auto">
         <div class="flex flex-col gap-6">
           <%= for {step, index} <- @steps do %>
-            <.step index={index + 1} step={step} active={index == @current_step} variant={@variant} />
+            <.step
+              index={index + 1}
+              step={step}
+              active={index == @current_step}
+              completed={index < @current_step}
+              variant={@variant}
+            />
           <% end %>
         </div>
       </div>
@@ -204,6 +210,7 @@ defmodule OliWeb.Common.Stepper do
   attr :index, :integer, required: true
   attr :step, Step, required: true
   attr :active, :boolean, required: true
+  attr :completed, :boolean, default: false
   attr :variant, :atom, default: :default
 
   def step(%{variant: :course_creation} = assigns) do
@@ -211,20 +218,35 @@ defmodule OliWeb.Common.Stepper do
     <div class="flex items-start gap-3">
       <div class={[
         "flex h-[33px] w-[33px] shrink-0 items-center justify-center rounded-full text-[16px] font-extrabold leading-[28px] shadow-[0px_1px_1px_rgba(0,0,0,0.05)]",
-        if(@active,
-          do: "bg-blue-500 text-white",
-          else: "bg-white border border-Border-border-default text-Text-text-low-alpha"
-        )
+        cond do
+          @active ->
+            "bg-blue-500 text-white"
+
+          @completed ->
+            "bg-[rgba(255,255,255,0.74)] border border-[#3b3740] text-[#757682]"
+
+          true ->
+            "bg-white border border-Border-border-default text-Text-text-low-alpha dark:!text-[#757682]"
+        end
       ]}>
         {@index}
       </div>
       <div class="flex min-w-0 flex-col">
-        <h4 class="mb-[9px] text-[16px] font-bold leading-[24px] text-white">
+        <h4 class={[
+          "mb-[9px] text-[16px] font-bold leading-[24px]",
+          if(@completed, do: "text-[#90a2c1]", else: "text-white")
+        ]}>
           {@step.title}
         </h4>
         <p
           :if={@step.description not in [nil, ""]}
-          class="text-Specially-Tokens-Text-text-tile-details text-[16px] font-medium leading-[24px]"
+          class={[
+            "text-[16px] font-medium leading-[24px]",
+            if(@completed,
+              do: "text-[#90a2c1]",
+              else: "text-Specially-Tokens-Text-text-tile-details"
+            )
+          ]}
         >
           {@step.description}
         </p>
