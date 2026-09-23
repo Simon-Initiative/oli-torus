@@ -28,16 +28,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
       refute html =~ ~s(phx-click="increment_coverage_formative_threshold" disabled)
     end
 
-    test "shows the explanatory copy and keeps Learn more hidden and non-interactive" do
+    test "shows the explanatory copy and links Learn more to the coverage guidance" do
       html = render_popover()
 
       assert html =~ "objectives are flagged as coverage issues"
       assert html =~ ~s(phx-click="restore_default_coverage_thresholds")
       assert html =~ "Restore default"
       assert html =~ ~s(id="coverage-settings-learn-more")
-      assert html =~ ~r/id="coverage-settings-learn-more"\s+class="[^"]*\bhidden\b/
-      assert html =~ "Learn more"
-      refute html =~ ~r/<a[^>]*>\s*Learn more/
+
+      assert html =~
+               ~s(href="https://olihelp.zohodesk.com/portal/en/kb/articles/review-practice-and-assessment-opportunities-for-each-sub-objective")
+
+      assert html =~ ~s(target="_blank")
+      assert html =~ ~s(rel="noopener noreferrer")
+      assert html =~ ~r/<a[^>]*id="coverage-settings-learn-more"[^>]*>\s*Learn more/
     end
 
     test "renders centered below its trigger at the Figma width" do

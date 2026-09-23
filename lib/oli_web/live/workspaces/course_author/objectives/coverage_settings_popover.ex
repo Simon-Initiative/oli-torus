@@ -5,7 +5,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
   action.
 
   `ObjectivesLive` owns threshold persistence and handles each action
-  immediately. The Learn more affordance remains hidden and non-interactive.
+  immediately.
 
   The caller owns open state and dismissal. This component is only rendered
   while open, so its keyboard handler cannot affect the surrounding page.
@@ -77,13 +77,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
           >
             Restore default
           </button>
-          <span
+          <a
             id="coverage-settings-learn-more"
-            class="hidden py-1 text-sm font-bold leading-4 text-Text-text-button"
+            href="https://olihelp.zohodesk.com/portal/en/kb/articles/review-practice-and-assessment-opportunities-for-each-sub-objective"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="py-1 text-sm font-bold leading-4 text-Text-text-button"
           >
-            <%!-- Will be addressed on MER-5919, that is why we keep it hidden (but already styled to match Figma Design) --%>
             Learn more
-          </span>
+          </a>
         </div>
       </.focus_wrap>
     </div>
