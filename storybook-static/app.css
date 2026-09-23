@@ -19096,6 +19096,10 @@ table.table-striped tbody tr:nth-child(even) {
   bottom: -5rem;
 }
 
+.-bottom-3 {
+  bottom: -0.75rem;
+}
+
 .-left-1 {
   left: -0.25rem;
 }
@@ -19126,6 +19130,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .-right-1 {
   right: -0.25rem;
+}
+
+.-right-3 {
+  right: -0.75rem;
 }
 
 .-right-\[114px\] {
@@ -19614,6 +19622,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .order-4 {
   order: 4;
+}
+
+.order-first {
+  order: -9999;
 }
 
 .col-span-12 {
@@ -22399,6 +22411,10 @@ table.table-striped tbody tr:nth-child(even) {
   cursor: default;
 }
 
+.cursor-ew-resize {
+  cursor: ew-resize;
+}
+
 .cursor-grab {
   cursor: grab;
 }
@@ -22423,12 +22439,20 @@ table.table-striped tbody tr:nth-child(even) {
   cursor: nw-resize;
 }
 
+.cursor-nwse-resize {
+  cursor: nwse-resize;
+}
+
 .cursor-pointer {
   cursor: pointer;
 }
 
 .cursor-text {
   cursor: text;
+}
+
+.touch-none {
+  touch-action: none;
 }
 
 .select-none {
@@ -35803,6 +35827,11 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   --tw-ring-color: rgb(29 68 129 / var(--tw-ring-opacity));
 }
 
+.focus\:ring-blue-800:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(19 44 83 / var(--tw-ring-opacity));
+}
+
 .focus\:ring-danger:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(231 76 60 / var(--tw-ring-opacity));
@@ -41162,6 +41191,22 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 .\[\&_\.content_p\]\:my-0 .content p {
   margin-top: 0px;
   margin-bottom: 0px;
+}
+
+.\[\&_\.ql-editor_img\:not\(\[width\]\)\]\:w-full .ql-editor img:not([width]) {
+  width: 100%;
+}
+
+.\[\&_\.ql-editor_img\]\:h-auto .ql-editor img {
+  height: auto;
+}
+
+.\[\&_\.ql-editor_img\]\:max-w-full .ql-editor img {
+  max-width: 100%;
+}
+
+.\[\&_\.ql-editor_img\]\:cursor-pointer .ql-editor img {
+  cursor: pointer;
 }
 
 .\[\&_\.rich-text-editor\]\:min-h-\[255px\] .rich-text-editor {
