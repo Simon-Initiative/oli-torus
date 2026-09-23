@@ -1358,6 +1358,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       )
       |> render_click(%{"slug" => first_obj.slug})
 
+      assert has_element?(
+               view,
+               "#select_existing_sub_modal button[aria-label='Close Select Existing Sub-Objective dialog'] svg"
+             )
+
       refute has_element?(
                view,
                "button[phx-click='add_existing_sub'][phx-value-slug=#{sub_obj_a.slug}]",

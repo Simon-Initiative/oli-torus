@@ -1,6 +1,7 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
   use OliWeb, :live_component
 
+  alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Icons
 
   def update(assigns, socket) do
@@ -47,30 +48,29 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
     >
       <div class="modal-dialog modal-dialog-centered !max-w-[860px]" role="document">
         <div class="modal-content !rounded-2xl border-0 bg-Background-bg-secondary shadow-xl">
-          <div class="flex items-center justify-between px-8 pb-4 pt-8 sm:px-16 sm:pt-14">
+          <div class="flex items-center px-8 pb-6 pt-8 sm:px-16 sm:pt-16">
             <h2
               id={"#{@id}-title"}
               class="m-0 text-2xl font-bold leading-9 text-Text-text-high"
             >
               Select Existing Sub-Objective
             </h2>
-            <button
-              type="button"
-              class="btn-close rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            <Button.button
+              variant={:close}
+              class="absolute right-6 top-6 inline-flex h-5 w-5 items-center justify-center text-Icon-icon-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
               data-bs-dismiss="modal"
               aria-label="Close Select Existing Sub-Objective dialog"
-            >
-            </button>
+            />
           </div>
 
-          <div class="px-8 pb-10 sm:px-16 sm:pb-14">
+          <div class="px-8 pb-10 sm:pb-16 sm:pl-16 sm:pr-9">
             <form
               id={"#{@id}-filters"}
-              class="mb-6 flex flex-col gap-3 sm:flex-row"
+              class="mb-6 flex flex-col gap-3 sm:flex-row sm:gap-6"
               phx-change="filters_changed"
               phx-target={@myself}
             >
-              <label class="relative min-w-0 flex-1" for={"#{@id}-search"}>
+              <label class="relative min-w-0 sm:w-56 sm:flex-none" for={"#{@id}-search"}>
                 <span class="sr-only">Search sub-objectives</span>
                 <i
                   class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-Icon-icon-default"
@@ -84,16 +84,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
                   value={@query}
                   placeholder="Search..."
                   phx-debounce="250"
-                  class="h-10 w-full rounded-md border border-Border-border-default bg-Background-bg-secondary pl-10 pr-3 text-sm text-Text-text-high placeholder:text-Text-text-low-alpha focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                  class="h-9 w-full rounded-md border border-Border-border-default bg-Background-bg-secondary pl-10 pr-3 text-sm text-Text-text-high placeholder:text-Text-text-low-alpha focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                 />
               </label>
 
-              <label class="relative sm:w-48" for={"#{@id}-status"}>
+              <label
+                class={[
+                  "relative",
+                  if(@status == "unassociated", do: "sm:w-[150px]", else: "sm:w-[95px]")
+                ]}
+                for={"#{@id}-status"}
+              >
                 <span class="sr-only">Filter sub-objectives by association status</span>
                 <select
                   id={"#{@id}-status"}
                   name="status"
-                  class="h-10 w-full appearance-none rounded-md border border-Border-border-default bg-Background-bg-secondary px-3 pr-9 text-sm text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                  class="h-9 w-full appearance-none rounded-md border border-Border-border-default bg-Background-bg-secondary px-3 pr-9 text-sm text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                 >
                   <option value="all" selected={@status == "all"}>Status</option>
                   <option value="associated" selected={@status == "associated"}>Associated</option>
@@ -122,15 +128,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
               <li
                 :for={sub_objective <- @filtered_sub_objectives}
                 id={"existing-sub-objective-#{sub_objective.resource_id}"}
-                class="flex flex-col gap-3 rounded-md px-3 py-2 sm:flex-row sm:items-center"
+                class="flex flex-col gap-3 rounded-md py-2 sm:flex-row sm:items-center"
               >
-                <span class="min-w-0 flex-1 text-sm text-Text-text-high">
+                <span class="min-w-0 flex-1 text-base leading-6 text-Text-text-high">
                   {sub_objective.title}
                 </span>
                 <div class="flex shrink-0 gap-2">
                   <button
                     type="button"
-                    class="inline-flex h-9 items-center justify-center rounded-md border border-Fill-Buttons-fill-primary px-4 text-sm font-semibold text-Text-text-button hover:bg-Fill-Buttons-fill-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                    class="inline-flex h-8 items-center justify-center rounded-md border border-Fill-Buttons-fill-primary px-6 text-sm font-semibold leading-4 text-Text-text-button hover:bg-Fill-Buttons-fill-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                     phx-value-slug={sub_objective.slug}
                     phx-value-parent_slug={@parent_slug}
                     phx-click={@add}
@@ -142,7 +148,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
                     :if={sub_objective.association_count == 0}
                     id={"delete-sub-objective-#{sub_objective.slug}"}
                     type="button"
-                    class="inline-flex h-9 items-center justify-center rounded-md border border-Border-border-danger px-4 text-sm font-semibold text-Text-text-danger hover:bg-Fill-fill-danger focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Icon-icon-danger"
+                    class="inline-flex h-8 items-center justify-center rounded-md border border-Border-border-danger px-6 text-sm font-semibold leading-4 text-Text-text-danger hover:bg-Fill-fill-danger focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Icon-icon-danger"
                     phx-value-slug={sub_objective.slug}
                     phx-value-parent_slug={@parent_slug}
                     phx-click={@delete}
