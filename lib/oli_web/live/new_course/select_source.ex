@@ -114,7 +114,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
             change={JS.push("change_search", target: @myself)}
             reset={JS.push("reset_search", target: @myself)}
             apply_icon={true}
-            show_reset={false}
+            show_reset={true}
             placeholder=""
             debounce="300"
           />

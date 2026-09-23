@@ -91,6 +91,7 @@ defmodule OliWeb.Delivery.NewCourse do
        section_spec: section_spec,
        changeset: changeset,
        copy_options: default_copy_options(),
+       copy_source?: false,
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
        loading: false,
        initial_source_filter: parse_source_filter(params["filter"]),
@@ -120,11 +121,23 @@ defmodule OliWeb.Delivery.NewCourse do
   defp parse_view_type("list"), do: :list
   defp parse_view_type(_), do: :card
 
-  # The `filter` query param is only ever pushed via `push_patch` to make the
-  # source filter shareable/reloadable; `SelectSource` already applies the
-  # change locally on click, so there's nothing further to sync here.
-  def handle_params(_params, _uri, socket) do
-    {:noreply, socket}
+  # `SelectSource` can remount fresh when step 0 is re-entered (each step has its own
+  # `render_fn`, so the component isn't part of the tree while on another step, and Phoenix can
+  # garbage-collect its state in the meantime) and re-seeds itself from `initial_*` on that
+  # first load. Without re-parsing `params` here, those `initial_*` assigns would stay frozen at
+  # whatever the URL was at the original page mount, so filtering/sorting/searching on step 0,
+  # moving to step 1, then coming back could silently drop back to the stale initial state even
+  # though the URL (kept in sync via `SelectSource`'s own `push_patch` calls) still shows the
+  # current filter/sort/query/view.
+  def handle_params(params, _uri, socket) do
+    {:noreply,
+     assign(socket,
+       initial_source_filter: parse_source_filter(params["filter"]),
+       initial_query: params["query"] || "",
+       initial_sort_by: parse_sort_by(params["sort_by"]),
+       initial_sort_order: parse_sort_order(params["sort_order"]),
+       initial_view_type: parse_view_type(params["view"])
+     )}
   end
 
   attr(:breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Creation"})])
@@ -310,7 +323,7 @@ defmodule OliWeb.Delivery.NewCourse do
         %{
           changeset: assigns.changeset,
           flash: assigns.flash,
-          copy_source?: section_source?(assigns[:source]),
+          copy_source?: assigns.copy_source?,
           copy_options: assigns.copy_options
         }
 
@@ -429,7 +442,9 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def handle_event("source_selection", %{"id" => source}, socket) do
-    if section_source?(source) do
+    copy_source? = section_source?(source)
+
+    if copy_source? do
       :telemetry.execute(
         [:oli, :course_builder, :my_course_sections_card_activated],
         %{count: 1},
@@ -437,7 +452,7 @@ defmodule OliWeb.Delivery.NewCourse do
       )
     end
 
-    {:noreply, assign(socket, source: source, current_step: 1)}
+    {:noreply, assign(socket, source: source, copy_source?: copy_source?, current_step: 1)}
   end
 
   def handle_event(
@@ -489,7 +504,11 @@ defmodule OliWeb.Delivery.NewCourse do
          assign(socket,
            changeset: changeset,
            copy_options: copy_options,
-           current_step: current_step
+           current_step: current_step,
+           # Returning to step 0 must not leave the previously selected card looking
+           # "selected" (`source` is only meant as momentary click feedback there);
+           # `copy_source?` already carries what step 1+ still need from that selection.
+           source: source_for_step(current_step, socket.assigns.source)
          )}
 
       2 ->
@@ -610,4 +629,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
   defp section_source?("section:" <> _id), do: true
   defp section_source?(_), do: false
+
+  defp source_for_step(0, _previous_source), do: nil
+  defp source_for_step(_step, previous_source), do: previous_source
 end

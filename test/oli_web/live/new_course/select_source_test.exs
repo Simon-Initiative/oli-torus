@@ -536,6 +536,80 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     end
   end
 
+  describe "step navigation preserves the URL-synced select-source state" do
+    setup [:instructor_conn]
+
+    test "the active filter tab and its results survive going to step 2 and back", %{
+      conn: conn
+    } do
+      insert(:section, open_and_free: true, type: :blueprint, title: "Bio Template")
+
+      %Publication{project: project} = insert(:publication)
+      insert(:section, base_project: project, type: :enrollable, title: "Chem Copy")
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      assert_patch(view, "/sections/new?filter=templates")
+
+      view
+      |> element(".card-deck button:first-child")
+      |> render_click()
+
+      assert has_element?(view, "h2", "Name your course")
+
+      # Clicking "Previous step" from step 1 round-trips through the SubmitForm JS hook
+      # (to capture the in-progress form first), which LiveViewTest can't execute — so we
+      # simulate the hook's response directly, exactly like the existing name_course tests do.
+      view
+      |> element("#open_and_free_form")
+      |> render_hook("js_form_data_response", %{"section" => %{}, "current_step" => 0})
+
+      assert has_element?(view, "h2", "Select Curriculum")
+
+      assert has_element?(view, "button[role='tab'][aria-selected='true']", "Templates")
+      assert has_element?(view, ".course-card-link", "Bio Template")
+      refute has_element?(view, ".course-card-link", "Chem Copy")
+    end
+
+    test "returning to step 1 does not leave the previously selected card/row highlighted", %{
+      conn: conn
+    } do
+      insert(:section, open_and_free: true, type: :blueprint, title: "Bio Template")
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element(".card-deck button:first-child")
+      |> render_click()
+
+      assert has_element?(view, "h2", "Name your course")
+
+      view
+      |> element("#open_and_free_form")
+      |> render_hook("js_form_data_response", %{"section" => %{}, "current_step" => 0})
+
+      assert has_element?(view, "h2", "Select Curriculum")
+      refute render(view) =~ "bg-delivery-primary-100"
+
+      view
+      |> element("form#update_view_type")
+      |> render_change(%{view: %{type: "list"}})
+
+      refute has_element?(view, "tr[aria-selected='true']")
+      refute render(view) =~ "bg-delivery-primary-100"
+
+      view
+      |> element("form#update_view_type")
+      |> render_change(%{view: %{type: "card"}})
+
+      refute render(view) =~ "bg-delivery-primary-100"
+    end
+  end
+
   describe "search bar and sort row" do
     setup [:instructor_conn]
 
@@ -567,7 +641,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert newer_index < older_index
     end
 
-    test "the search input is debounced, has no placeholder, no visible Search button, and no reset button",
+    test "the search input is debounced, has no placeholder, no visible Search button, and no reset button while empty",
          %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
@@ -575,6 +649,34 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "input[aria-label='Search'][placeholder='']")
       refute has_element?(view, "button", "Search")
       refute has_element?(view, "#reset_search")
+    end
+
+    test "typing shows the reset button, and clicking it clears the query, results, and URL param",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Chemistry 101"})
+      insert(:section, %{base_project: project, title: "Biology 101"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("#search_filter_form")
+      |> render_change(%{value: "Chemistry"})
+
+      assert has_element?(view, "#reset_search")
+      assert_patch(view, "/sections/new?query=Chemistry")
+      assert has_element?(view, "h5", "Chemistry 101")
+      refute has_element?(view, "h5", "Biology 101")
+
+      view
+      |> element("#reset_search")
+      |> render_click()
+
+      refute has_element?(view, "#reset_search")
+      assert_patch(view, "/sections/new")
+      assert has_element?(view, "h5", "Chemistry 101")
+      assert has_element?(view, "h5", "Biology 101")
+      assert has_element?(view, "input[aria-label='Search'][value='']")
     end
 
     test "typing in the search input filters results immediately, without a separate apply step",

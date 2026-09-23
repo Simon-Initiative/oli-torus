@@ -23,30 +23,29 @@ defmodule OliWeb.Common.Filter do
       id="search_filter_form"
       phx-change={@change}
       phx-submit={@change}
-      class="relative flex h-9 w-full items-center gap-3 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input py-1 pl-2.5 pr-1"
+      class="relative flex h-9 w-full items-center gap-3 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input py-1 pl-2.5 pr-2"
     >
       <Icons.search class="size-5 shrink-0 text-Icon-icon-default" />
 
-      <div class="relative flex min-w-0 flex-1 items-center">
-        <input
-          type="text"
-          name="value"
-          class="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-Text-text-high outline-none focus:outline-none focus:ring-0 focus:shadow-none placeholder:text-Text-text-low-alpha"
-          placeholder={@placeholder}
-          aria-label="Search"
-          phx-debounce={@debounce}
-          value={@query}
-        />
-        <button
-          :if={@show_reset}
-          id="reset_search"
-          phx-click={@reset}
-          type="button"
-          class="absolute right-0 my-auto size-6 rounded-full text-Text-text-low-alpha hover:bg-Surface-surface-secondary-hover hover:text-Text-text-high"
-        >
-          <i class="fa-solid fa-xmark" />
-        </button>
-      </div>
+      <input
+        type="text"
+        name="value"
+        class="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-Text-text-high outline-none focus:outline-none focus:ring-0 focus:shadow-none placeholder:text-Text-text-low-alpha"
+        placeholder={@placeholder}
+        aria-label="Search"
+        phx-debounce={@debounce}
+        value={@query}
+      />
+      <button
+        :if={@show_reset and @query not in [nil, ""]}
+        id="reset_search"
+        phx-click={@reset}
+        type="button"
+        aria-label="Clear search"
+        class="flex size-6 shrink-0 items-center justify-center rounded-full text-Text-text-low-alpha hover:bg-Surface-surface-secondary-hover hover:text-Text-text-high"
+      >
+        <i class="fa-solid fa-xmark" />
+      </button>
     </form>
     """
   end
