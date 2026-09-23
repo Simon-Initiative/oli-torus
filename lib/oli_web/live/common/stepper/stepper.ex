@@ -62,7 +62,18 @@ defmodule OliWeb.Common.Stepper do
       </div>
       <div class="flex h-full w-full flex-col bg-Background-bg-primary md:w-3/4">
         <div id="stepper_content" class="w-full flex-1 overflow-y-auto">
-          {@selected_step.render_fn.(@data)}
+          <div
+            id={"stepper_step_content_#{@current_step}"}
+            class="opacity-0"
+            phx-mounted={
+              JS.transition(
+                {"transition-opacity ease-out duration-700", "opacity-0", "opacity-100"},
+                time: 700
+              )
+            }
+          >
+            {@selected_step.render_fn.(@data)}
+          </div>
         </div>
 
         <div class={[
@@ -85,10 +96,7 @@ defmodule OliWeb.Common.Stepper do
               aria-hidden="true"
               aria-disabled="true"
               tabindex="-1"
-              phx-click={
-                @selected_step.on_next_step
-                |> fade_out_transition("stepper_content")
-              }
+              phx-click={@selected_step.on_next_step}
             >
               Automation go to course
             </button>
@@ -96,7 +104,7 @@ defmodule OliWeb.Common.Stepper do
               :if={@current_step != 0}
               variant={:secondary}
               size={:sm}
-              phx-click={@selected_step.on_previous_step |> fade_out_transition("stepper_content")}
+              phx-click={@selected_step.on_previous_step}
             >
               {@selected_step.previous_button_label || "Previous step"}
             </Button.button>
@@ -104,7 +112,7 @@ defmodule OliWeb.Common.Stepper do
               variant={:primary}
               size={:sm}
               disabled={@next_step_disabled}
-              phx-click={@selected_step.on_next_step |> fade_out_transition("stepper_content")}
+              phx-click={@selected_step.on_next_step}
             >
               {@selected_step.next_button_label || "Next step"}
               <:icon_right :if={@show_spinner}>
@@ -218,6 +226,7 @@ defmodule OliWeb.Common.Stepper do
     <div class="flex items-start gap-3">
       <div class={[
         "flex h-[33px] w-[33px] shrink-0 items-center justify-center rounded-full text-[16px] font-extrabold leading-[28px] shadow-[0px_1px_1px_rgba(0,0,0,0.05)]",
+        "transition-colors duration-700",
         cond do
           @active ->
             "bg-blue-500 text-white"
@@ -233,7 +242,7 @@ defmodule OliWeb.Common.Stepper do
       </div>
       <div class="flex min-w-0 flex-col">
         <h4 class={[
-          "mb-[9px] text-[16px] font-bold leading-[24px]",
+          "mb-[9px] text-[16px] font-bold leading-[24px] transition-colors duration-700",
           if(@completed, do: "text-[#90a2c1]", else: "text-white")
         ]}>
           {@step.title}
@@ -241,7 +250,7 @@ defmodule OliWeb.Common.Stepper do
         <p
           :if={@step.description not in [nil, ""]}
           class={[
-            "text-[16px] font-medium leading-[24px]",
+            "text-[16px] font-medium leading-[24px] transition-colors duration-700",
             if(@completed,
               do: "text-[#90a2c1]",
               else: "text-Specially-Tokens-Text-text-tile-details"

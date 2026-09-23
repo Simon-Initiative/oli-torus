@@ -962,7 +962,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
   describe "My Course Sections card hover state" do
     setup [:instructor_conn]
 
-    test "a My Course Sections card renders the hover overlay markup; a Template card does not",
+    test "a My Course Sections card shows a copy label, while a Template card shows a create label",
          %{conn: conn, instructor: instructor} do
       insert(:section, open_and_free: true, type: :blueprint, title: "Chem 101")
 
@@ -981,6 +981,14 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert view
              |> element(".course-card-link", "Chem Copy")
              |> render() =~ "Select to Copy Course Section"
+
+      refute view
+             |> element(".course-card-link", "Chem Copy")
+             |> render() =~ "Select to Create Course Section"
+
+      assert view
+             |> element(".course-card-link", "Chem 101")
+             |> render() =~ "Select to Create Course Section"
 
       refute view
              |> element(".course-card-link", "Chem 101")

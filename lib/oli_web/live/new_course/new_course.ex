@@ -171,7 +171,7 @@ defmodule OliWeb.Delivery.NewCourse do
   defp new_course_header(assigns) do
     ~H"""
     <div class="overflow-y-auto scrollbar-hide relative h-full">
-      <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
+      <h5 class="sticky top-0 z-10 bg-Background-bg-primary px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
         New course set up
       </h5>
       {render_slot(@inner_block)}
