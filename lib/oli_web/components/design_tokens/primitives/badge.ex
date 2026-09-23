@@ -10,11 +10,12 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Badge do
   The `:template` variant's color is an interim choice (no confirmed Figma
   reference exists for it as of 2026-09-18); see
   `docs/exec-plans/current/epics/course_replication/course_builder_sources/informal.md`.
-  Its fill (`Fill-Chip-Gray`) alone does not meet WCAG 1.4.11 non-text contrast
-  against the card surface, so it carries an added `Border-border-high` border
-  to keep the pill's boundary perceivable; the border color is not itself
-  design-confirmed and should be revisited alongside the fill once design
-  responds.
+  It reuses the same `Fill-Accent-fill-accent-*` / `Text-text-accent-*` token
+  family as `:my_section` (purple) for visual consistency with the rest of the
+  accent-tag set, using the orange pair instead of a gray fill + border — no
+  border is needed since the accent-orange fill/text pairing already meets
+  contrast on its own, matching how `:my_section` is styled. Should still be
+  revisited once design confirms a final color for this tag.
   """
 
   use Phoenix.Component
@@ -96,5 +97,5 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Badge do
     do: "bg-Fill-Accent-fill-accent-purple text-Text-text-accent-purple"
 
   defp variant_classes(:template),
-    do: "border border-Border-border-high bg-Fill-Chip-Gray text-Text-Chip-Gray"
+    do: "bg-Fill-Accent-fill-accent-orange text-Text-text-accent-orange"
 end

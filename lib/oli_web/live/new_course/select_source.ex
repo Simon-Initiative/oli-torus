@@ -241,6 +241,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       class={[
         "flex items-center justify-center p-2.5 h-[35px] rounded-[3px] border font-semibold text-base",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+        "hover:border-Text-text-button hover:text-Text-text-button",
         if(@active,
           do: "bg-Background-bg-primary border-Text-text-button text-Text-text-button",
           else: "bg-Background-bg-primary border-Border-border-default text-Text-text-high"
@@ -264,21 +265,28 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     <div
       id="sort_by_dropdown"
       class="relative inline-flex shrink-0 items-center"
-      phx-click-away={JS.hide(to: "#sort_by_menu")}
+      phx-click-away={
+        JS.hide(to: "#sort_by_menu")
+        |> JS.set_attribute({"aria-expanded", "false"}, to: "#sort_by_trigger")
+      }
     >
       <button
+        id="sort_by_trigger"
         type="button"
-        phx-click={JS.toggle(to: "#sort_by_menu")}
+        phx-click={
+          JS.toggle(to: "#sort_by_menu") |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+        }
         aria-haspopup="listbox"
+        aria-expanded="false"
         aria-label={"Sort by: #{@table_model.sort_by_spec.label}"}
-        class="flex items-center gap-2 rounded-[3px] border border-Border-border-default bg-Background-bg-primary py-[8px] pl-[10px] pr-8 text-base font-semibold leading-none text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        class="peer flex items-center gap-2 rounded-[3px] border border-Border-border-default bg-Background-bg-primary py-[8px] pl-[10px] pr-8 text-base font-semibold leading-none text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:border-Text-text-button hover:text-Text-text-button aria-expanded:border-Text-text-button aria-expanded:text-Text-text-button"
       >
         {@table_model.sort_by_spec.label}
       </button>
       <Icons.chevron_down
         width="16"
         height="16"
-        class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-Text-text-high"
+        class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-Text-text-high peer-hover:text-Text-text-button peer-aria-expanded:text-Text-text-button"
       />
       <div
         id="sort_by_menu"
@@ -290,7 +298,11 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
             type="button"
             role="option"
             aria-selected={to_string(@table_model.sort_by_spec == column_spec)}
-            phx-click={JS.push("sort", target: @myself) |> JS.hide(to: "#sort_by_menu")}
+            phx-click={
+              JS.push("sort", target: @myself)
+              |> JS.hide(to: "#sort_by_menu")
+              |> JS.set_attribute({"aria-expanded", "false"}, to: "#sort_by_trigger")
+            }
             phx-value-sort_by={column_spec.name}
             class={[
               "block w-full whitespace-nowrap px-3 py-2 text-left text-base font-semibold leading-none text-Text-text-high hover:bg-Fill-fill-hover",
@@ -328,7 +340,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
             value="card"
             checked={@view_type == :card}
           />
-          <i class="fa fa-th" />
+          <Icons.grid_view />
         </label>
         <label class={[
           "flex h-8 w-10 cursor-pointer items-center justify-center rounded-r-[2px] border border-l-0 border-Border-border-default",
