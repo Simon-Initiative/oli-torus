@@ -84,7 +84,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
             rel="noopener noreferrer"
             class="py-1 text-sm font-bold leading-4 text-Text-text-button"
           >
-            Learn more <span class="sr-only">(opens in a new tab)</span>
+            Learn more
+            <span class="sr-only">about reviewing objective coverage (opens in a new tab)</span>
           </a>
         </div>
       </.focus_wrap>
