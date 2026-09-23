@@ -42,6 +42,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
       assert html =~ ~s(target="_blank")
       assert html =~ ~s(rel="noopener noreferrer")
       assert html =~ ~r/<a[^>]*id="coverage-settings-learn-more"[^>]*>\s*Learn more/
+      assert html =~ "(opens in a new tab)"
     end
 
     test "renders centered below its trigger at the Figma width" do
