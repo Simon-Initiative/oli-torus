@@ -28,13 +28,13 @@ module `launch.spec.ts` (the Canvas equivalent) uses.
 
 - `MOODLE_INSTRUCTOR_EMAIL` / `MOODLE_INSTRUCTOR_PASSWORD`
 - `MOODLE_STUDENT_EMAIL` / `MOODLE_STUDENT_PASSWORD`
-- `MOODLE_API_TOKEN` — scoped to the external service in fixture #5 below.
+- `MOODLE_API_TOKEN` — scoped to the external service in fixture #6 below.
 
 Optional overrides:
 
 - `MOODLE_BASE_URL`, default `https://oli.moodlecloud.com`
 - `MOODLE_LTI_TOOL_NAME`, default `Tokamak` — the pre-registered course
-  tool's exact display name (see fixture #4).
+  tool's exact display name (see fixture #5).
 
 ## Required External Presets (Torus & Moodle)
 
@@ -58,7 +58,7 @@ look like code bugs.
 
 - Where: `oli.moodlecloud.com`.
 - Contains exactly one activity: an External tool backed by the `Tokamak`
-  tool (fixture #4), named `Tokamak`.
+  tool (fixture #5), named `Tokamak`.
 - Read-only from this automation's perspective — imported from, never
   written to, by `moodle-launch.spec.ts` on every run.
 
@@ -69,9 +69,30 @@ Required by `moodle-grade-passback.spec.ts`. Must contain:
 - `MOODLE_STUDENT_EMAIL` enrolled as Student, `MOODLE_INSTRUCTOR_EMAIL` as
   Teacher.
 - An activity backed by `Tokamak`, already linked (via a completed first
-  launch) to a Torus section built from fixture #1's graded page.
+  launch) to fixture #4's Torus section.
 
-### 4. Moodle pre-registered LTI course tool — `Tokamak`
+### 4. Torus section — `Moodle Grade Passback Fixture Section`
+
+- Where: `tokamak.oli.cmu.edu`. This is a manual, one-time setup step, not
+  something any spec creates or recreates: launch fixture #3's Moodle
+  activity once and complete Torus's "New course set up" wizard, picking
+  fixture #1's project as the source. That launch is what creates this
+  section.
+- Permanent — unlike the disposable sections `moodle-launch.spec.ts`
+  creates and deletes on every run, this one is never torn down.
+- Fixture #3's Moodle activity stays linked to whichever Torus section it
+  was launched into the first time. If this section is ever deleted, redo
+  the launch above to create a new one — that becomes fixture #3's
+  activity's new linked section.
+- On the `Graded page for graded passback` activity, its assessment
+  settings (overridden at the section level, not the project's) must be:
+  Scoring Strategy `Most Recent` (not the default `Best`) and Number of
+  Attempts `0`/unlimited (not the default `5`). `moodle-grade-passback.spec.ts`
+  reruns this page nightly against the same persistent student enrolment,
+  so the gradebook must reflect the latest attempt rather than capping
+  attempts at 5 or keeping an older, higher score.
+
+### 5. Moodle pre-registered LTI course tool — `Tokamak`
 
 - Where: `oli.moodlecloud.com`, visible in every course's activity chooser.
   Not owned/editable by this automation or any course we have access to.
@@ -80,7 +101,7 @@ Required by `moodle-grade-passback.spec.ts`. Must contain:
   one-time, out-of-band LTI 1.3 mutual-trust registration between Moodle
   and Torus, the same category of setup as Canvas's LTI Developer Key.
 
-### 5. Moodle external service — `Torus Playwright Automation`
+### 6. Moodle external service — `Torus Playwright Automation`
 
 - Where: `oli.moodlecloud.com`, *Site administration → Server → Web
   services → External services*.
