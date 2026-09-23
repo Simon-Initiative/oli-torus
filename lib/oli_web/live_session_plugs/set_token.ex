@@ -13,7 +13,11 @@ defmodule OliWeb.LiveSessionPlugs.SetToken do
   def on_mount(:default, _params, _session, socket) do
     case socket.assigns[:current_user] do
       %User{sub: sub} ->
-        token = Phoenix.Token.sign(socket, "user socket", sub)
+        token =
+          case socket.assigns[:user_session] do
+            nil -> Phoenix.Token.sign(socket, "user socket", sub)
+            session -> OliWeb.SecureSocket.sign(socket, session)
+          end
 
         {:cont, assign(socket, user_token: token)}
 

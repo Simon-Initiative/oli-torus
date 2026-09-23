@@ -279,11 +279,42 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     |> JS.show(to: "#question_#{question_number}")
   end
 
-  def handle_event("activity_saved", params, socket) do
+  @doc "Revalidates the current credential before component callbacks (parent hooks do not run here)."
+  def handle_event(event, params, socket) do
+    with :ok <-
+           OliWeb.LiveSessionPlugs.SecureAssessment.authorize(
+             socket,
+             socket.assigns[:secure_route_params] || %{}
+           ),
+         :ok <- authorize_question(event, params, socket) do
+      handle_authorized_event(event, params, socket)
+    else
+      _ -> {:noreply, Phoenix.LiveView.redirect(socket, to: "/secure-assessment/restricted")}
+    end
+  end
+
+  defp authorize_question("submit_selected_question", %{"attempt_guid" => guid}, socket) do
+    with %{token_id: id} <- socket.assigns[:user_session],
+         {:ok, session} <- Oli.Accounts.get_user_session_by_id(id),
+         true <- Enum.any?(socket.assigns.questions, &(&1.state["attemptGuid"] == guid)) do
+      OliWeb.Plugs.SecureAssessment.check(
+        session,
+        OliWeb.Api.AttemptController,
+        :submit_activity,
+        %{"section_slug" => socket.assigns.section_slug, "activity_attempt_guid" => guid}
+      )
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp authorize_question(_, _, _), do: :ok
+
+  defp handle_authorized_event("activity_saved", params, socket) do
     {:noreply, update_activity(socket, params)}
   end
 
-  def handle_event("select_question", %{"question_number" => question_number}, socket) do
+  defp handle_authorized_event("select_question", %{"question_number" => question_number}, socket) do
     questions =
       socket.assigns.questions
       |> Enum.map(fn question ->
@@ -293,11 +324,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     {:noreply, assign(socket, questions: questions)}
   end
 
-  def handle_event(
-        "submit_selected_question",
-        %{"attempt_guid" => attempt_guid, "question_id" => question_id},
-        socket
-      ) do
+  defp handle_authorized_event(
+         "submit_selected_question",
+         %{"attempt_guid" => attempt_guid, "question_id" => question_id},
+         socket
+       ) do
     ## evaluate the activity attempt
 
     Core.get_activity_attempt_by(attempt_guid: attempt_guid)

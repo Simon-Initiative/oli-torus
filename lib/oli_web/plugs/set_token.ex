@@ -15,7 +15,12 @@ defmodule OliWeb.Plugs.SetToken do
         conn
 
       user ->
-        token = Phoenix.Token.sign(conn, "user socket", user.sub)
+        token =
+          case conn.assigns[:user_session] do
+            nil -> Phoenix.Token.sign(conn, "user socket", user.sub)
+            session -> OliWeb.SecureSocket.sign(conn, session)
+          end
+
         assign(conn, :user_token, token)
     end
   end

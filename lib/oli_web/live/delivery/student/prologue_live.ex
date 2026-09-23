@@ -125,6 +125,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         <StudentUtils.blocking_gates_warning
           :if={@show_blocking_gates?}
           attempt_message={@attempt_message}
+          secure_delivery={match?(%{scope: %{}}, @user_session)}
         />
         <.assignment_terms
           :if={!@show_blocking_gates?}

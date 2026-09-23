@@ -2,6 +2,7 @@
   <%= if not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) do %>
     {react_component("Components.OfflineDetector")}
     <Components.Delivery.PageDelivery.header
+      :if={not match?(%{scope: %{}}, @conn.assigns[:user_session])}
       title={@title}
       page_number={@page_number}
       review_mode={@review_mode}
@@ -136,13 +137,17 @@
     </div>
   <% end %>
 
-  {live_render(@conn, OliWeb.Dialogue.WindowLive,
-    session: %{
-      "section_slug" => @section_slug,
-      "resource_id" => @current_page["id"],
-      "revision_id" => @page.id
-    }
-  )}
+  <%= unless match?(%{scope: %{}}, @conn.assigns[:user_session]) do %>
+    {live_render(@conn, OliWeb.Dialogue.WindowLive,
+      session: %{
+        "secure_session_id" =>
+          @conn.assigns[:user_session] && @conn.assigns.user_session.token_id,
+        "section_slug" => @section_slug,
+        "resource_id" => @current_page["id"],
+        "revision_id" => @page.id
+      }
+    )}
+  <% end %>
   <%= if @review_mode == true do %>
     <div class="d-flex align-items-center justify-content-center">
       {link("Continue",

@@ -155,6 +155,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     ]
 
     column_specs =
+      case Oli.Delivery.SecureAssessments.supported?() do
+        true ->
+          column_specs ++
+            [
+              %ColumnSpec{
+                name: :secure_delivery,
+                label: "SECURE DELIVERY",
+                render_fn: &render_secure_delivery_column/3,
+                th_class: "whitespace-nowrap",
+                tooltip:
+                  "Requires a secure launch to start or resume. Submitted review follows the assessment review settings."
+              }
+            ]
+
+        false ->
+          column_specs
+      end
+
+    column_specs =
       if Keyword.get(opts, :include_student_exceptions?, true),
         do: column_specs,
         else: Enum.reject(column_specs, &(&1.name == :exceptions_count))
@@ -174,6 +193,22 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         return_to: Keyword.fetch!(opts, :return_to)
       }
     )
+  end
+
+  @doc "Renders the section-only secure delivery setting for either page renderer."
+  def render_secure_delivery_column(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        id: assessment.resource_id,
+        secure_delivery: assessment.secure_delivery
+      })
+
+    ~H"""
+    <select class="torus-select" name={"secure_delivery-#{@id}"} aria-label="Secure delivery">
+      <option selected={@secure_delivery} value="true">Yes</option>
+      <option selected={!@secure_delivery} value="false">No</option>
+    </select>
+    """
   end
 
   def render_assessment_column(assigns, assessment, _) do

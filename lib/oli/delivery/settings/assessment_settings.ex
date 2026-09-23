@@ -35,17 +35,26 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     :feedback_scheduled_date,
     :review_submission,
     :password,
-    :allow_hints
+    :allow_hints,
+    :secure_delivery
   ]
 
   def supported_keys, do: @supported_keys
 
+  @doc "Updates assessment settings, with authoritative authorization for secure policy changes."
   def update(%Section{} = section, user, assessment_setting_id, attrs, opts \\ %{})
       when is_map(attrs) do
+    attrs =
+      case Map.fetch(attrs, "secure_delivery") do
+        :error -> attrs
+        {:ok, value} -> attrs |> Map.delete("secure_delivery") |> Map.put(:secure_delivery, value)
+      end
+
     assessments = Map.get(opts, :assessments)
     ctx = Map.get(opts, :ctx)
 
-    with {:ok, assessment} <- fetch_assessment(section, assessment_setting_id, assessments),
+    with :ok <- authorize_secure_change(section, user, assessment_setting_id, attrs),
+         {:ok, assessment} <- fetch_assessment(section, assessment_setting_id, assessments),
          {:ok, changes} <- normalize_changes(attrs, assessment, ctx),
          setting_changes <- build_settings_changes(changes, assessment, section.id, user),
          {:ok, _result} <- persist_update(section, assessment, changes, setting_changes) do
@@ -56,6 +65,197 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
        }}
     end
   end
+
+  @doc """
+  Applies one persisted assessment's settings to the other graded pages atomically.
+  Unsupported instances omit secure delivery, preserving existing policy values.
+  """
+  def bulk_apply(%Section{} = section, user, source_resource_id) do
+    case settings_editor?(section, user) do
+      false ->
+        {:error, :not_authorized}
+
+      true ->
+        result =
+          Repo.transaction(fn ->
+            assessments = get_assessments(section, [])
+            base_assessment = Enum.find(assessments, &(&1.resource_id == source_resource_id))
+
+            case base_assessment do
+              nil -> Repo.rollback(:assessment_not_found)
+              _ -> apply_bulk_values(section, user, base_assessment, assessments)
+            end
+          end)
+
+        case result do
+          {:ok, _} ->
+            Oli.Delivery.DepotCoordinator.clear_synchronously(
+              SectionResourceDepot.depot_desc(),
+              section.id
+            )
+
+          _ ->
+            :ok
+        end
+
+        result
+    end
+  end
+
+  defp apply_bulk_values(section, user, base_assessment, assessments) do
+    common_set_values =
+      if(base_assessment.feedback_mode == :scheduled,
+        do: [feedback_scheduled_date: base_assessment.feedback_scheduled_date],
+        else: []
+      ) ++
+        [
+          max_attempts: base_assessment.max_attempts,
+          retake_mode: base_assessment.retake_mode,
+          assessment_mode: base_assessment.assessment_mode,
+          late_submit: base_assessment.late_submit,
+          late_start: base_assessment.late_start,
+          time_limit: base_assessment.time_limit,
+          grace_period: base_assessment.grace_period,
+          scoring_strategy_id: base_assessment.scoring_strategy_id,
+          review_submission: base_assessment.review_submission,
+          feedback_mode: base_assessment.feedback_mode,
+          password: base_assessment.password,
+          allow_hints: base_assessment.allow_hints
+        ]
+
+    common_set_values =
+      case Oli.Delivery.SecureAssessments.supported?() do
+        true -> Keyword.put(common_set_values, :secure_delivery, base_assessment.secure_delivery)
+        false -> common_set_values
+      end
+
+    replacement_strategy_set_values = [
+      replacement_strategy: base_assessment.replacement_strategy
+    ]
+
+    scoring_mode_set_values = [
+      batch_scoring: base_assessment.batch_scoring
+    ]
+
+    from(
+      [sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section.slug),
+      where:
+        rev.resource_type_id == 1 and rev.graded == true and
+          sr.resource_id != ^base_assessment.resource_id,
+      select: sr
+    )
+    |> Repo.update_all(set: common_set_values)
+
+    basic_page_target_assessments =
+      assessments
+      |> Enum.reject(&(&1.resource_id == base_assessment.resource_id))
+      |> Enum.reject(& &1.is_adaptive)
+
+    replacement_strategy_target_resource_ids =
+      basic_page_target_assessments
+      |> Enum.map(& &1.resource_id)
+
+    current_student_started_resource_ids =
+      student_started_resource_ids(
+        section.id,
+        replacement_strategy_target_resource_ids
+      )
+
+    from(sr in SectionResource,
+      where:
+        sr.section_id == ^section.id and
+          sr.resource_id in ^replacement_strategy_target_resource_ids
+    )
+    |> Repo.update_all(set: replacement_strategy_set_values)
+
+    scoring_mode_target_resource_ids =
+      basic_page_target_assessments
+      |> Enum.reject(&MapSet.member?(current_student_started_resource_ids, &1.resource_id))
+      |> Enum.map(& &1.resource_id)
+
+    from(sr in SectionResource,
+      where:
+        sr.section_id == ^section.id and
+          sr.resource_id in ^scoring_mode_target_resource_ids
+    )
+    |> Repo.update_all(set: scoring_mode_set_values)
+
+    settings_changes =
+      assessments
+      |> Enum.filter(fn a -> a.resource_id != base_assessment.resource_id end)
+      |> Enum.flat_map(fn assessment ->
+        assessment
+        |> bulk_apply_set_values(
+          common_set_values,
+          replacement_strategy_set_values,
+          scoring_mode_set_values,
+          current_student_started_resource_ids
+        )
+        |> then(&build_settings_changes(Map.new(&1), assessment, section.id, user))
+      end)
+
+    Settings.bulk_insert_settings_changes(settings_changes)
+  end
+
+  defp bulk_apply_set_values(
+         %{is_adaptive: true},
+         common_set_values,
+         _replacement_strategy_set_values,
+         _scoring_mode_set_values,
+         _student_started_resource_ids
+       ),
+       do: common_set_values
+
+  defp bulk_apply_set_values(
+         assessment,
+         common_set_values,
+         replacement_strategy_set_values,
+         scoring_mode_set_values,
+         student_started_resource_ids
+       ) do
+    common_set_values ++
+      replacement_strategy_set_values ++
+      if(MapSet.member?(student_started_resource_ids, assessment.resource_id),
+        do: [],
+        else: scoring_mode_set_values
+      )
+  end
+
+  defp authorize_secure_change(section, user, resource_id, attrs) do
+    case Map.has_key?(attrs, :secure_delivery) or Map.has_key?(attrs, "secure_delivery") do
+      false ->
+        :ok
+
+      true ->
+        value = Map.get(attrs, :secure_delivery, Map.get(attrs, "secure_delivery"))
+        resource = Repo.get_by(SectionResource, section_id: section.id, resource_id: resource_id)
+
+        cond do
+          not settings_editor?(section, user) ->
+            {:error, :not_authorized}
+
+          value not in [true, false] ->
+            {:error, :invalid_secure_delivery}
+
+          value and not Oli.Delivery.SecureAssessments.supported?() ->
+            {:error, :secure_delivery_unsupported}
+
+          is_nil(resource) or resource.graded != true or resource.resource_type_id != 1 ->
+            {:error, :invalid_secure_delivery_target}
+
+          true ->
+            :ok
+        end
+    end
+  end
+
+  defp settings_editor?(section, %Author{} = author) do
+    Oli.Accounts.is_admin?(author) or
+      (section.type == :blueprint and
+         Sections.Blueprint.is_author_of_blueprint?(section.slug, author.id))
+  end
+
+  defp settings_editor?(section, user), do: Sections.is_instructor?(user, section.slug)
 
   def do_update(:late_policy, asmt_set_id, new_value, resources) do
     %{section: section, user: user, assessments: asmts} = resources

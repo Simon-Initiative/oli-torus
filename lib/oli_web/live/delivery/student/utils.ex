@@ -1198,6 +1198,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   attr :attempt_message, :any
+  attr :secure_delivery, :boolean, default: false
 
   def blocking_gates_warning(assigns) do
     ~H"""
@@ -1218,7 +1219,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </ul>
           </p>
 
-          <p class="mt-4">
+          <p :if={not @secure_delivery} class="mt-4">
             If you think this is an error or would like more information, please <OliWeb.Components.Common.tech_support_link
               id="tech_support_lti_error"
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline text-base font-['Open Sans'] tracking-tight cursor-pointer"

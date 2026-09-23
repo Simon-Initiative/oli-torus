@@ -149,11 +149,26 @@ export const getBulkActivitiesForDelivery = async (
   sectionSlug: string,
   activityIds: ResourceId[],
   isPreviewMode: boolean,
-) => {
+  resourceAttemptGuid?: string,
+): Promise<any[]> => {
+  if (activityIds.length > 100) {
+    const results: any[] = [];
+    for (let index = 0; index < activityIds.length; index += 100) {
+      results.push(
+        ...(await getBulkActivitiesForDelivery(
+          sectionSlug,
+          activityIds.slice(index, index + 100),
+          isPreviewMode,
+          resourceAttemptGuid,
+        )),
+      );
+    }
+    return results;
+  }
   const params = {
     method: 'POST',
     url: `/storage/course/${sectionSlug}/resource`,
-    body: JSON.stringify({ resourceIds: activityIds }),
+    body: JSON.stringify({ resourceIds: activityIds, resource_attempt_guid: resourceAttemptGuid }),
     query: isPreviewMode ? { mode: 'preview' } : {},
   };
 

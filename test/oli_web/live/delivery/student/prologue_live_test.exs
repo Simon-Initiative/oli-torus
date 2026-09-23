@@ -451,6 +451,44 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   describe "student" do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
+    test "secure reconnect and begin_attempt revalidate only the current token", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      sr =
+        Oli.Repo.get_by!(Oli.Delivery.Sections.SectionResource,
+          section_id: section.id,
+          resource_id: page.resource_id
+        )
+
+      Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
+      ordinary = Oli.Accounts.generate_user_session_token(user)
+
+      token =
+        Oli.Accounts.generate_user_session_token(user,
+          scope: %Oli.Delivery.SecureAssessments.Scope{
+            section_id: section.id,
+            resource_id: page.resource_id
+          }
+        )
+
+      conn =
+        conn |> recycle() |> init_test_session(%{user_token: token, current_user_id: user.id})
+
+      {:ok, view, _} = live(conn, Utils.prologue_live_path(section.slug, page.slug))
+      Oli.Accounts.delete_user_session_token(token)
+
+      assert {:error, {:redirect, %{to: "/secure-assessment/restricted"}}} =
+               render_hook(view, "begin_attempt", %{})
+
+      assert {:ok, %{scope: nil}} = Oli.Accounts.get_user_session(ordinary)
+    end
+
     test "cannot access removed instructor preview prologue route", %{
       conn: conn,
       user: user,

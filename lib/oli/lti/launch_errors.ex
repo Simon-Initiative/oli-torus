@@ -10,6 +10,9 @@ defmodule Oli.Lti.LaunchErrors do
           | :launch_handler_failure
           | :missing_state
           | :mismatched_state
+          | :secure_launch_required
+          | :secure_delivery_unsupported
+          | :secure_target_invalid
           | :storage_blocked
           | :validation_failure
           | :unknown_failure
@@ -72,6 +75,30 @@ defmodule Oli.Lti.LaunchErrors do
           message: "Torus could not complete the sign-in handshake for this embedded LMS launch.",
           guidance:
             "Allow cookies for this launch if your browser permits it, or ask your LMS administrator to configure Torus to open in a new window."
+        }
+
+      :secure_delivery_unsupported ->
+        %{
+          title: "Secure Delivery Unavailable",
+          message: "This Torus instance does not currently accept secure assessment launches.",
+          guidance:
+            "Contact your instructor or administrator. Ordinary course access is unaffected."
+        }
+
+      :secure_target_invalid ->
+        %{
+          title: "Secure Assessment Launch Unavailable",
+          message: "The secure launch could not be matched to an available assessment.",
+          guidance:
+            "Return to your learning platform and relaunch the assessment. If the problem continues, contact your instructor."
+        }
+
+      :secure_launch_required ->
+        %{
+          title: "Safe Exam Browser Launch Required",
+          message: "This activity requires a current secure launch from your LMS.",
+          guidance:
+            "Open the activity using its Safe Exam Browser configuration and launch it again. If the problem continues, contact your instructor."
         }
 
       :validation_failure ->

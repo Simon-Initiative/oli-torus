@@ -4,6 +4,8 @@ defmodule OliWeb.LtiController do
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.SecureAssessments
+  alias Oli.Lti.SecureLaunch
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti.KeysetCache
@@ -82,13 +84,26 @@ defmodule OliWeb.LtiController do
     with :ok <- validate_session_state(conn, params),
          {:ok, lti_params} <- validate_launch(params, conn) do
       case handle_valid_lti_1p3_launch(lti_params) do
-        {:ok, user} ->
+        {:ok, %{user: user, token: token, destination: destination, mode: mode}} ->
+          observe_secure_admission(:accepted, mode)
+
           conn
-          |> UserAuth.create_session(user)
-          |> assign(:current_user, user)
-          |> LtiRedirect.redirect_from_lti_params(lti_params,
-            allow_new_section_creation: true,
-            source: :current_launch,
+          |> UserAuth.install_session(user, token)
+          |> put_resp_header("cache-control", "no-store")
+          |> LtiRedirect.redirect_to_destination(destination)
+
+        {:error, classification}
+        when classification in [
+               :secure_launch_required,
+               :secure_target_invalid,
+               :secure_delivery_unsupported,
+               :secure_session_persistence_failed,
+               :not_enrolled
+             ] ->
+          observe_secure_admission(:rejected, classification)
+
+          render_launch_error(conn, secure_error_classification(classification),
+            request_id: request_id(conn),
             transport_method: :session_storage
           )
 
@@ -153,13 +168,40 @@ defmodule OliWeb.LtiController do
            :ok <- update_user_platform_roles(user, lti_params),
            {:ok, section} <- get_and_update_lti_section_details(lti_params, registration),
            :ok <- enroll_user(user, section, lti_params) do
-        user
+        target = LtiRedirect.resolve_target(lti_params, section)
+
+        with {:ok, admission} <- SecureLaunch.admission(user, target, lti_params),
+             {:ok, token} <- issue_launch_session(user, admission) do
+          destination =
+            LtiRedirect.launch_destination(lti_params,
+              target: target,
+              allow_new_section_creation: true,
+              source: :current_launch,
+              transport_method: :session_storage
+            )
+
+          %{
+            user: user,
+            token: token,
+            destination: destination,
+            mode:
+              case admission do
+                nil -> :ordinary
+                _ -> :secure
+              end
+          }
+        else
+          {:error, reason} -> Oli.Repo.rollback(reason)
+        end
       else
         {:error, error} ->
           Oli.Repo.rollback(error)
       end
     end)
   end
+
+  defp issue_launch_session(user, nil), do: {:ok, Accounts.generate_user_session_token(user)}
+  defp issue_launch_session(user, admission), do: SecureAssessments.issue_session(user, admission)
 
   defp get_institution_and_registration(issuer, client_id, deployment_id) do
     case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
@@ -637,11 +679,26 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  defp observe_secure_admission(outcome, classification) do
+    :telemetry.execute([:oli, :secure_assessment, :admission], %{count: 1}, %{
+      outcome: outcome,
+      classification: classification
+    })
+  end
+
+  defp secure_error_classification(:not_enrolled), do: :secure_target_invalid
+
+  defp secure_error_classification(:secure_session_persistence_failed),
+    do: :launch_handler_failure
+
+  defp secure_error_classification(classification), do: classification
+
   defp render_launch_error(conn, classification, opts) do
     details = LaunchErrors.details(classification)
     log_launch_error_render(classification, opts)
 
     conn
+    |> put_resp_header("cache-control", "no-store")
     |> put_status(Keyword.get(opts, :status, :bad_request))
     |> render("lti_error.html",
       guidance: details.guidance,

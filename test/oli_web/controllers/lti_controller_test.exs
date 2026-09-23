@@ -234,6 +234,275 @@ defmodule OliWeb.LtiControllerTest do
       assert html_response(conn, 200) =~ "value=\"#{deployment.deployment_id}\""
     end
 
+    for mode <- [
+          :valid,
+          :missing,
+          :stale,
+          :invalid_jwt,
+          :ordinary,
+          :unsupported,
+          :wrong_target,
+          :wrong_deployment,
+          :ungraded,
+          :insert_failure
+        ] do
+      @tag secure_launch_mode: mode
+      @tag capture_log: true
+      test "secure resource launch #{mode}", %{
+        conn: conn,
+        registration: registration,
+        deployment: deployment,
+        secure_launch_mode: mode
+      } do
+        previous_level = Logger.level()
+        Logger.configure(level: :info)
+        on_exit(fn -> Logger.configure(level: previous_level) end)
+        previous_support = Application.get_env(:oli, :supports_secure_delivery)
+        Application.put_env(:oli, :supports_secure_delivery, mode != :unsupported)
+        on_exit(fn -> Application.put_env(:oli, :supports_secure_delivery, previous_support) end)
+        section = insert(:section, lti_1p3_deployment: deployment)
+
+        page =
+          insert(:revision,
+            graded: true,
+            resource_type_id: Oli.Resources.ResourceType.id_for_page()
+          )
+
+        insert(:section_resource,
+          section: section,
+          resource_id: page.resource_id,
+          revision_slug: page.slug,
+          graded: mode != :ungraded,
+          secure_delivery: true,
+          resource_type_id: page.resource_type_id
+        )
+
+        if mode == :wrong_deployment do
+          other = insert(:lti_deployment, registration: registration)
+          section |> Ecto.Changeset.change(lti_1p3_deployment_id: other.id) |> Oli.Repo.update!()
+        end
+
+        stale_user =
+          insert(:user, independent_learner: false, lti_institution_id: deployment.institution_id)
+
+        stale_token =
+          Oli.Accounts.generate_user_session_token(stale_user,
+            scope: %Oli.Delivery.SecureAssessments.Scope{
+              section_id: section.id,
+              resource_id: page.resource_id
+            }
+          )
+
+        ordinary_token = Oli.Accounts.generate_user_session_token(stale_user)
+
+        if mode == :insert_failure do
+          # Force an actual Repo.insert constraint error. The function/trigger are
+          # transaction-local test DDL and roll back with this test's sandbox.
+          Oli.Repo.query!("""
+          CREATE FUNCTION pg_temp.reject_secure_session() RETURNS trigger AS $$
+          BEGIN
+            RAISE EXCEPTION 'simulated session insert failure'
+              USING ERRCODE = '23503', CONSTRAINT = 'users_tokens_secure_section_id_fkey';
+          END;
+          $$ LANGUAGE plpgsql
+          """)
+
+          Oli.Repo.query!("""
+          CREATE TRIGGER reject_secure_session BEFORE INSERT ON users_tokens
+          FOR EACH ROW WHEN (NEW.secure_section_id = #{section.id})
+          EXECUTE FUNCTION pg_temp.reject_secure_session()
+          """)
+        end
+
+        handler = attach_handler([[:oli, :secure_assessment, :admission]])
+        on_exit(fn -> detach_handler(handler) end)
+        old = Application.get_env(:oli, :lti_seb_required_launches)
+
+        on_exit(fn ->
+          case old do
+            nil -> Application.delete_env(:oli, :lti_seb_required_launches)
+            value -> Application.put_env(:oli, :lti_seb_required_launches, value)
+          end
+        end)
+
+        Application.put_env(:oli, :lti_seb_required_launches, [
+          %{
+            "issuer" => registration.issuer,
+            "client_id" => registration.client_id,
+            "deployment_id" => "1",
+            "resource_link_id" => "20052"
+          }
+        ])
+
+        platform_jwk = jwk_fixture()
+        cache_keyset_for_registration(registration, platform_jwk)
+
+        signer =
+          Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, %{"kid" => platform_jwk.kid})
+
+        now = System.system_time(:second)
+
+        verified_at =
+          case mode do
+            :stale -> now - 301
+            _ -> now
+          end
+
+        custom =
+          case mode do
+            mode when mode in [:missing, :ordinary] ->
+              %{}
+
+            _ ->
+              %{
+                "secure_delivery" => "seb",
+                "secure_activity_id" => "42",
+                "seb_configuration_id" => "configuration-private-marker",
+                "secure_verified_at" => Integer.to_string(verified_at)
+              }
+          end
+
+        claims =
+          Oli.Lti.TestHelpers.all_default_claims()
+          |> Map.put("sub", stale_user.sub)
+          |> Map.delete("iss")
+          |> Map.delete("aud")
+          |> Map.put("https://purl.imsglobal.org/spec/lti/claim/context", %{
+            "id" => section.context_id
+          })
+          |> Map.put(
+            "https://purl.imsglobal.org/spec/lti/claim/custom",
+            Map.merge(custom, %{
+              "torus_resource_type" => "page",
+              "torus_resource_id" => page.slug
+            })
+          )
+
+        claims =
+          case mode do
+            :wrong_target ->
+              put_in(
+                claims,
+                ["https://purl.imsglobal.org/spec/lti/claim/custom", "torus_resource_id"],
+                "missing-page"
+              )
+
+            :ordinary ->
+              claims
+              |> Map.delete("https://purl.imsglobal.org/spec/lti/claim/custom")
+              |> put_in(
+                ["https://purl.imsglobal.org/spec/lti/claim/resource_link", "id"],
+                "ordinary-resource"
+              )
+
+            _ ->
+              claims
+          end
+
+        {:ok, claims} =
+          Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+          |> Joken.generate_claims(claims)
+
+        {:ok, token, _} = Joken.encode_and_sign(claims, signer)
+
+        token =
+          case mode do
+            :invalid_jwt ->
+              [header, payload, signature] = String.split(token, ".")
+
+              first =
+                case String.first(signature) do
+                  "A" -> "B"
+                  _ -> "A"
+                end
+
+              Enum.join([header, payload, first <> String.slice(signature, 1..-1//1)], ".")
+
+            _ ->
+              token
+          end
+
+        before_users = Oli.Repo.aggregate(User, :count)
+
+        logs =
+          capture_log([level: :info], fn ->
+            response =
+              conn
+              |> init_launch_session("secure-spike-state")
+              |> put_session(:user_token, stale_token)
+              |> post(Routes.lti_path(conn, :launch), %{
+                state: "secure-spike-state",
+                id_token: token
+              })
+
+            case mode do
+              :valid ->
+                assert redirected_to(response) == "/sections/#{section.slug}/page/#{page.slug}"
+
+                assert {:ok, %{scope: %{section_id: section_id, resource_id: resource_id}}} =
+                         Oli.Accounts.get_user_session(get_session(response, :user_token))
+
+                assert section_id == section.id
+                assert resource_id == page.resource_id
+
+              :ordinary ->
+                assert redirected_to(response) == "/sections/#{section.slug}"
+
+                assert {:ok, %{scope: nil}} =
+                         Oli.Accounts.get_user_session(get_session(response, :user_token))
+
+              :invalid_jwt ->
+                assert html_response(response, 400) =~ "LTI Launch Could Not Be Validated"
+                assert Oli.Repo.aggregate(User, :count) == before_users
+
+              :unsupported ->
+                assert html_response(response, 400) =~ "Secure Delivery Unavailable"
+                assert Oli.Repo.aggregate(User, :count) == before_users
+
+              :insert_failure ->
+                assert html_response(response, 400) =~ "Launch Completed but Course Access Failed"
+                assert get_session(response, :user_token) == stale_token
+                assert Oli.Repo.aggregate(User, :count) == before_users
+                assert Oli.Repo.aggregate(Oli.Accounts.UserToken, :count) == 2
+
+              mode when mode in [:wrong_target, :wrong_deployment, :ungraded] ->
+                assert html_response(response, 400) =~ "Secure Assessment Launch Unavailable"
+                assert Oli.Repo.aggregate(User, :count) == before_users
+
+              _ ->
+                assert html_response(response, 400) =~ "Safe Exam Browser Launch Required"
+                assert Oli.Repo.aggregate(User, :count) == before_users
+            end
+
+            assert {:ok, %{scope: nil}} = Oli.Accounts.get_user_session(ordinary_token)
+            assert {:ok, %{scope: %{}}} = Oli.Accounts.get_user_session(stale_token)
+          end)
+
+        secure_logs =
+          logs
+          |> String.split("\n")
+          |> Enum.filter(&String.contains?(&1, "LTI secure launch"))
+          |> Enum.join("\n")
+
+        assert secure_logs == ""
+
+        case mode do
+          :invalid_jwt ->
+            refute_received {:telemetry_event, [:oli, :secure_assessment, :admission], _, _}
+
+          _ ->
+            assert_received {:telemetry_event, [:oli, :secure_assessment, :admission],
+                             %{count: 1}, metadata}
+
+            assert Enum.sort(Map.keys(metadata)) == [:classification, :outcome]
+        end
+
+        refute logs =~ token
+        refute logs =~ "configuration-private-marker"
+        refute logs =~ "secure_activity_id"
+      end
+    end
+
     test "launch successful for valid params and creates lms user", %{
       conn: conn,
       registration: registration

@@ -2,11 +2,14 @@ defmodule OliWeb.LtiRedirect do
   use OliWeb, :verified_routes
 
   import Phoenix.Controller
+  import Ecto.Query
 
   alias Lti_1p3.Roles.{ContextRoles, PlatformRoles}
   alias Oli.Accounts
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Delivery.Sections.SectionResourceMigration
+  alias Oli.Repo
   alias Oli.Lti.LtiParams
 
   require Logger
@@ -56,7 +59,12 @@ defmodule OliWeb.LtiRedirect do
         can_configure_section = can_configure_section?(roles)
         can_create_section = allow_new_section_creation and can_configure_section
 
-        section = Sections.get_section_from_lti_params(lti_params)
+        target =
+          Keyword.get_lazy(opts, :target, fn ->
+            resolve_target(lti_params, Sections.get_section_from_lti_params(lti_params))
+          end)
+
+        section = target.section
 
         case section do
           nil when can_create_section ->
@@ -88,7 +96,8 @@ defmodule OliWeb.LtiRedirect do
               can_configure_section,
               context_id,
               source,
-              transport_method
+              transport_method,
+              target
             )
         end
 
@@ -120,14 +129,15 @@ defmodule OliWeb.LtiRedirect do
   end
 
   defp section_destination(
-         lti_params,
+         _lti_params,
          section,
          can_configure_section,
          context_id,
          source,
-         transport_method
+         transport_method,
+         target
        ) do
-    case direct_page_path(lti_params, section) do
+    case direct_page_path(target) do
       {:ok, path} ->
         observe_redirect_resolution(%{
           context_id: context_id,
@@ -163,26 +173,56 @@ defmodule OliWeb.LtiRedirect do
     end
   end
 
-  defp direct_page_path(
+  @doc "Resolves the current launch's direct page once, from authoritative section resources."
+  @spec resolve_target(map(), %Sections.Section{} | nil) :: map()
+  def resolve_target(claims, section) do
+    resource = resolve_resource(claims, section)
+    %{section: section, resource: resource}
+  end
+
+  defp resolve_resource(
          %{
            "https://purl.imsglobal.org/spec/lti/claim/custom" => %{
              "torus_resource_type" => "page",
              "torus_resource_id" => revision_slug
            }
          },
-         section
+         %Sections.Section{} = section
        )
        when is_binary(revision_slug) and revision_slug != "" do
-    case SectionResourceDepot.get_page_by_revision_slug(section.id, revision_slug) do
-      %{revision_slug: resolved_slug} ->
-        {:ok, ~p"/sections/#{section.slug}/page/#{resolved_slug}"}
-
-      _ ->
-        :fallback
+    # Only legacy projections need the migration's section-wide lock. Current
+    # launches serialize against their selected assessment row, not the course.
+    case section.section_resource_migration_version == SectionResourceMigration.current_version() do
+      true -> :ok
+      false -> {:ok, _} = SectionResourceMigration.ensure_current(section.id)
     end
+
+    page_type = Oli.Resources.ResourceType.id_for_page()
+
+    query =
+      from sr in SectionResource,
+        where:
+          sr.section_id == ^section.id and sr.revision_slug == ^revision_slug and
+            sr.resource_type_id == ^page_type
+
+    query =
+      case Repo.in_transaction?() do
+        true -> from sr in query, lock: "FOR UPDATE"
+        false -> query
+      end
+
+    Repo.one(query)
   end
 
-  defp direct_page_path(_lti_params, _section), do: :fallback
+  defp resolve_resource(_, _), do: nil
+
+  defp direct_page_path(%{section: section, resource: %SectionResource{revision_slug: slug}}),
+    do: {:ok, ~p"/sections/#{section.slug}/page/#{slug}"}
+
+  defp direct_page_path(_), do: :fallback
+
+  @doc "Applies a destination already resolved during successful launch admission."
+  def redirect_to_destination(conn, destination), do: apply_destination(conn, destination, [])
 
   defp apply_destination(conn, {:redirect, path}, _opts), do: redirect(conn, to: path)
 

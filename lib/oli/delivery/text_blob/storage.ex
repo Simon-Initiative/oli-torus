@@ -47,4 +47,16 @@ defmodule Oli.Delivery.TextBlob.Storage do
         {:ok, default_value}
     end
   end
+
+  @doc "Reads a dependency without treating storage outages as missing learner data."
+  def read_dependency(key, default_value) do
+    bucket = Application.fetch_env!(:oli, :blob_storage)[:bucket_name]
+
+    case S3.get_object(bucket, key) |> HTTP.aws().request() do
+      {:ok, %{status_code: 200, body: body}} -> {:ok, body}
+      {:error, {:http_error, 404, _}} -> {:ok, default_value}
+      {:ok, %{status_code: 404}} -> {:ok, default_value}
+      _ -> {:error, :dependency_unavailable}
+    end
+  end
 end

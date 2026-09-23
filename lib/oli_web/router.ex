@@ -15,6 +15,7 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_current_author)
     plug(:fetch_current_user)
+    plug(OliWeb.Plugs.SecureAssessment)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :default})
     plug(:put_layout, html: {OliWeb.LayoutView, :app})
@@ -32,6 +33,7 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_current_author)
     plug(:fetch_current_user)
+    plug(OliWeb.Plugs.SecureAssessment)
     plug(:fetch_live_flash)
     plug(:put_secure_browser_headers)
     plug(OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec)
@@ -43,6 +45,7 @@ defmodule OliWeb.Router do
     plug(:accepts, ["text/plain"])
     plug(:fetch_session)
     plug(:fetch_current_user)
+    plug(OliWeb.Plugs.SecureAssessment)
     plug(:put_secure_browser_headers)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
     plug(OliWeb.Plugs.SessionContext)
@@ -53,6 +56,7 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_current_author)
     plug(:fetch_current_user)
+    plug(OliWeb.Plugs.SecureAssessment)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :lti})
     plug(OliWeb.Plugs.SessionContext)
@@ -258,7 +262,10 @@ defmodule OliWeb.Router do
     pipe_through [:browser, :redirect_if_user_is_authenticated_and_not_guest]
 
     live_session :redirect_if_user_is_authenticated_and_not_guest,
-      on_mount: [{OliWeb.UserAuth, :redirect_if_user_is_authenticated_and_not_guest}] do
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.UserAuth, :redirect_if_user_is_authenticated_and_not_guest}
+      ] do
       live "/users/register", UserRegistrationLive, :new
       live "/users/log_in", UserLoginLive, :new
     end
@@ -270,7 +277,10 @@ defmodule OliWeb.Router do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
-      on_mount: [{OliWeb.UserAuth, :redirect_if_user_is_authenticated}] do
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.UserAuth, :redirect_if_user_is_authenticated}
+      ] do
       live "/instructors/log_in", UserLoginLive, :instructor_new
       live "/users/reset_password", UserForgotPasswordLive, :new
       live "/users/reset_password/:token", UserResetPasswordLive, :edit
@@ -289,6 +299,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSidebar,
@@ -303,9 +314,15 @@ defmodule OliWeb.Router do
     pipe_through [:browser]
 
     delete "/users/log_out", UserSessionController, :delete
+    get "/secure-assessment/restricted", SecureAssessmentController, :restricted
+    post "/secure-assessment/exit", SecureAssessmentController, :exit
+    get "/secure-assessment/signed-out", SecureAssessmentController, :signed_out
 
     live_session :current_user,
-      on_mount: [{OliWeb.UserAuth, :mount_current_user}] do
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.UserAuth, :mount_current_user}
+      ] do
       live "/users/confirm/:token", UserConfirmationLive, :edit
       live "/users/confirm", UserConfirmationInstructionsLive, :new
     end
@@ -328,6 +345,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :mount_current_user},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSidebar,
@@ -387,7 +405,10 @@ defmodule OliWeb.Router do
     pipe_through [:browser, :redirect_if_author_is_authenticated]
 
     live_session :redirect_if_author_is_authenticated,
-      on_mount: [{OliWeb.AuthorAuth, :redirect_if_author_is_authenticated}] do
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.AuthorAuth, :redirect_if_author_is_authenticated}
+      ] do
       live "/authors/register", AuthorRegistrationLive, :new
       live "/authors/log_in", AuthorLoginLive, :new
       live "/authors/reset_password", AuthorForgotPasswordLive, :new
@@ -404,6 +425,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSidebar,
@@ -420,7 +442,10 @@ defmodule OliWeb.Router do
     delete "/authors/log_out", AuthorSessionController, :delete
 
     live_session :current_author,
-      on_mount: [{OliWeb.AuthorAuth, :mount_current_author}] do
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.AuthorAuth, :mount_current_author}
+      ] do
       live "/authors/confirm/:token", AuthorConfirmationLive, :edit
       live "/authors/confirm", AuthorConfirmationInstructionsLive, :new
     end
@@ -538,6 +563,7 @@ defmodule OliWeb.Router do
 
     live_session :product_settings,
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx
       ] do
@@ -988,6 +1014,14 @@ defmodule OliWeb.Router do
   scope "/api/v1/state/course/:section_slug", OliWeb do
     pipe_through([:api, :require_section, :delivery_protected])
 
+    get "/resource_attempt/:resource_attempt_guid/shared",
+        Api.AssessmentDependencyController,
+        :read
+
+    put "/resource_attempt/:resource_attempt_guid/shared",
+        Api.AssessmentDependencyController,
+        :write
+
     get("/", Api.SectionStateController, :read)
     put("/", Api.SectionStateController, :upsert)
     delete("/", Api.SectionStateController, :delete)
@@ -1072,6 +1106,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,
@@ -1093,6 +1128,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,
@@ -1110,6 +1146,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,
@@ -1229,6 +1266,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,
@@ -1256,6 +1294,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,
@@ -1328,6 +1367,7 @@ defmodule OliWeb.Router do
 
     live_session :student_dashboard,
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetRouteName,
@@ -1341,6 +1381,7 @@ defmodule OliWeb.Router do
 
     live_session :student_dashboard_preview,
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         OliWeb.LiveSessionPlugs.SetRouteName,
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],
@@ -1361,6 +1402,7 @@ defmodule OliWeb.Router do
 
     live_session :instructor_dashboard_preview,
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.Delivery.InstructorDashboard.InitialAssigns
@@ -1394,6 +1436,7 @@ defmodule OliWeb.Router do
 
     live_session :instructor_dashboard,
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
@@ -1439,6 +1482,7 @@ defmodule OliWeb.Router do
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery},
         on_mount: [
+          OliWeb.LiveSessionPlugs.SecureAssessment,
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
@@ -1471,6 +1515,7 @@ defmodule OliWeb.Router do
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery},
         on_mount: [
+          OliWeb.LiveSessionPlugs.SecureAssessment,
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
@@ -1537,6 +1582,7 @@ defmodule OliWeb.Router do
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery_lesson},
         on_mount: [
+          OliWeb.LiveSessionPlugs.SecureAssessment,
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
@@ -1557,6 +1603,7 @@ defmodule OliWeb.Router do
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery_lesson},
         on_mount: [
+          OliWeb.LiveSessionPlugs.SecureAssessment,
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
@@ -1577,6 +1624,7 @@ defmodule OliWeb.Router do
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery_lesson},
         on_mount: [
+          OliWeb.LiveSessionPlugs.SecureAssessment,
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
@@ -1618,6 +1666,7 @@ defmodule OliWeb.Router do
     live_session :instructor_preview_lesson,
       root_layout: {OliWeb.LayoutView, :delivery},
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
@@ -1658,6 +1707,7 @@ defmodule OliWeb.Router do
 
     live_session :load_section,
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
@@ -1693,6 +1743,7 @@ defmodule OliWeb.Router do
 
     live_session :schedule_gating,
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
@@ -1730,6 +1781,7 @@ defmodule OliWeb.Router do
 
     live_session :manage_section,
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
@@ -1771,6 +1823,7 @@ defmodule OliWeb.Router do
 
     live_session :enrolled_students,
       on_mount: [
+        OliWeb.LiveSessionPlugs.SecureAssessment,
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetRouteName,

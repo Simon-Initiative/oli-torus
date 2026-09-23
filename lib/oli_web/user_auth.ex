@@ -98,12 +98,32 @@ defmodule OliWeb.UserAuth do
   def create_session(conn, user) do
     token = Accounts.generate_user_session_token(user)
 
-    conn
-    |> renew_session()
-    |> put_token_in_session(token)
-    # A lot of existing liveviews depends on the current_user_id being in the session.
-    # We eventually want to remove this, but for now, we will add it to appease the existing code.
-    |> put_user_id_in_session(user.id)
+    install_session(conn, user, token)
+  end
+
+  @doc "Installs a committed token, rotating only this browser session; scoped entry never enables remember-me."
+  def install_session(conn, %{id: user_id} = user, token) do
+    {:ok, %{user: %{id: ^user_id}} = session} = Accounts.get_user_session(token)
+
+    conn =
+      conn
+      |> renew_session()
+      |> put_token_in_session(token)
+      # A lot of existing liveviews depends on the current_user_id being in the session.
+      # We eventually want to remove this, but for now, we will add it to appease the existing code.
+      |> put_user_id_in_session(user.id)
+      |> assign(:current_user, user)
+      |> assign(:user_session, session)
+
+    case session.scope do
+      nil ->
+        conn
+
+      _ ->
+        conn
+        |> delete_resp_cookie(@remember_me_cookie)
+        |> put_session(:live_socket_id, "secure_session:#{session.token_id}")
+    end
   end
 
   # This function renews the session ID and erases the whole
@@ -162,7 +182,10 @@ defmodule OliWeb.UserAuth do
   """
   def log_out_user(conn, params \\ %{}) do
     redirect_to =
-      params["redirect_to"] || ~p"/"
+      case conn.assigns[:user_session] do
+        %{scope: %Oli.Delivery.SecureAssessments.Scope{}} -> "/secure-assessment/signed-out"
+        _ -> params["redirect_to"] || ~p"/"
+      end
 
     conn
     |> clear_all_session_data()
@@ -174,7 +197,18 @@ defmodule OliWeb.UserAuth do
   """
   def clear_all_session_data(conn) do
     user_token = get_session(conn, :user_token)
-    user_token && Accounts.delete_user_session_token(user_token)
+
+    case Accounts.revoke_user_session_token(user_token) do
+      {:ok, %{token_id: id, secure?: true}} ->
+        OliWeb.Endpoint.broadcast("secure_session:#{id}", "disconnect", %{})
+        :telemetry.execute([:oli, :secure_assessment, :exit], %{count: 1}, %{outcome: :revoked})
+
+      {:ok, %{secure?: false}} ->
+        :ok
+
+      :already_revoked ->
+        :ok
+    end
 
     if user_live_socket_id = get_session(conn, :user_live_socket_id) do
       OliWeb.Endpoint.broadcast(user_live_socket_id, "disconnect", %{})
@@ -200,16 +234,17 @@ defmodule OliWeb.UserAuth do
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
 
-    user =
-      case user_token do
-        nil -> nil
-        token -> Accounts.get_user_by_session_token(token)
+    context =
+      case Accounts.get_user_session(user_token) do
+        {:ok, context} -> context
+        _ -> nil
       end
 
     # TODO: PERFORMANCE this is making an extra query to the database to preload the user's roles.
     # Ideally, we should preload the user's roles in the same query that fetches the user.
     conn
-    |> assign(:current_user, Accounts.preload_platform_roles(user))
+    |> assign(:user_session, context)
+    |> assign(:current_user, Accounts.preload_platform_roles(context && context.user))
   end
 
   defp ensure_user_token(conn) do

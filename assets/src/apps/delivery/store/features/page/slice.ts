@@ -30,6 +30,10 @@ export interface PageState {
   screenIdleTimeOutInSeconds: number;
   screenIdleExpireTime?: number;
   reviewMode?: boolean;
+  secureDelivery?: boolean;
+  showFeedback?: boolean;
+  assessmentState?: boolean;
+  assessmentURL?: string;
   responsiveLayout?: boolean;
   preserveCapiIframeSize?: boolean;
   debuggerURL?: string;
@@ -97,8 +101,17 @@ const pageSlice = createSlice({
       state.blobStorageProvider = action.payload.blobStorageProvider || 'deprecated';
       state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds;
       state.reviewMode = action.payload.reviewMode;
-      state.preserveCapiIframeSize = !!action.payload.preserveCapiIframeSize;
+      state.secureDelivery = !!action.payload.secureDelivery;
+      state.showFeedback = action.payload.showFeedback !== false;
+      state.assessmentState = !!action.payload.assessmentState;
+      state.assessmentURL = action.payload.assessmentURL;
       state.debuggerURL = action.payload.debuggerURL;
+      if (state.secureDelivery) {
+        state.overviewURL = '';
+        state.debuggerURL = undefined;
+        state.isInstructor = false;
+      }
+      state.preserveCapiIframeSize = !!action.payload.preserveCapiIframeSize;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
       }
@@ -143,6 +156,16 @@ export const selectPageSlug = createSelector(selectState, (state) => state.pageS
 export const selectPageContent = createSelector(selectState, (state) => state.content);
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
 export const selectReviewMode = createSelector(selectState, (state) => state.reviewMode);
+export const selectSecureDelivery = createSelector(selectState, (state) => !!state.secureDelivery);
+export const selectShowFeedback = createSelector(
+  selectState,
+  (state) => state.showFeedback !== false,
+);
+export const selectAssessmentState = createSelector(selectState, (state) =>
+  state.assessmentState
+    ? { sectionSlug: state.sectionSlug, resourceAttemptGuid: state.resourceAttemptGuid }
+    : undefined,
+);
 export const selectIsInstructor = createSelector(selectState, (state) => state.isInstructor);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
 export const selectResponsiveLayout = createSelector(

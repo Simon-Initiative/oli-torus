@@ -1,9 +1,10 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
   import Oli.Factory
+  import Ecto.Query, only: [from: 2]
 
   alias Oli.Delivery.{Settings, Sections}
   alias Oli.Delivery
@@ -810,6 +811,103 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
   describe "settings tab" do
     setup [:user_conn, :create_project]
+
+    test "secure column follows runtime capability and edits persist", %{
+      conn: conn,
+      section: section,
+      page_1: page,
+      page_2: other_page,
+      user: instructor
+    } do
+      previous = Application.fetch_env(:oli, :supports_secure_delivery)
+
+      on_exit(fn ->
+        case previous do
+          {:ok, value} -> Application.put_env(:oli, :supports_secure_delivery, value)
+          :error -> Application.delete_env(:oli, :supports_secure_delivery)
+        end
+      end)
+
+      other_page
+      |> Ecto.Changeset.change(
+        content: Map.put(other_page.content || %{}, "advancedDelivery", true)
+      )
+      |> Repo.update!()
+
+      route = live_view_overview_route(section.slug, "settings", "all")
+      Application.put_env(:oli, :supports_secure_delivery, false)
+      {:ok, hidden, _} = live(conn, route)
+      refute has_element?(hidden, "select[name^=secure_delivery]")
+      Application.put_env(:oli, :supports_secure_delivery, true)
+      {:ok, view, _} = live(conn, route)
+      assert has_element?(view, "select[name=secure_delivery-#{page.resource_id}]")
+
+      assert has_element?(
+               view,
+               "select[name=secure_delivery-#{other_page.resource_id}]:not([disabled])"
+             )
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["secure_delivery-#{page.resource_id}"],
+        "secure_delivery-#{page.resource_id}" => "true"
+      })
+
+      assert Sections.get_section_resource(section.id, page.resource_id).secure_delivery
+
+      assert has_element?(
+               view,
+               "select[name=secure_delivery-#{page.resource_id}] option[value=true][selected]"
+             )
+
+      assert {:ok, _} =
+               Settings.AssessmentSettings.bulk_apply(section, instructor, page.resource_id)
+
+      assert Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
+
+      assert Repo.exists?(
+               from change in Settings.SettingsChanges,
+                 where:
+                   change.section_id == ^section.id and
+                     change.resource_id == ^other_page.resource_id and
+                     change.key == "secure_delivery" and change.new_value == "true"
+             )
+
+      assert {:error, :not_authorized} =
+               Settings.AssessmentSettings.bulk_apply(section, insert(:user), page.resource_id)
+
+      Application.put_env(:oli, :supports_secure_delivery, false)
+      # A previously rendered control cannot enable policy after instance disablement.
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["secure_delivery-#{page.resource_id}"],
+        "secure_delivery-#{page.resource_id}" => "true"
+      })
+
+      assert render(view) =~ "Secure delivery setting could not be updated"
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["secure_delivery-#{page.resource_id}"],
+        "secure_delivery-#{page.resource_id}" => "false"
+      })
+
+      refute Sections.get_section_resource(section.id, page.resource_id).secure_delivery
+
+      assert has_element?(
+               view,
+               "select[name=secure_delivery-#{page.resource_id}] option[value=false][selected]"
+             )
+
+      assert {:ok, _} =
+               Settings.AssessmentSettings.bulk_apply(section, instructor, page.resource_id)
+
+      # Unsupported bulk changes omit secure policy instead of propagating false.
+      assert Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
+    end
 
     test "gets a correct exception count", %{
       conn: conn,

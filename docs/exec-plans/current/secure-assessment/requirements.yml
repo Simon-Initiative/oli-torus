@@ -1,0 +1,573 @@
+version: 1
+feature: secure-assessment
+generated_from: docs/exec-plans/current/secure-assessment/constrain.md
+requirements:
+- id: FR-001
+  title: Persist the secure_delivery assessment setting for graded section resources
+    without student exceptions.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    1)
+  acceptance_criteria:
+  - id: AC-001
+    title: New and existing section resources default secure_delivery to false with
+      a non-null boolean; an authorized update can enable it on a graded page, while
+      enabling it on an ungraded or non-page resource is rejected.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-002
+    title: Combined delivery settings obtain secure_delivery directly from SectionResource;
+      student-exception inputs and settings cannot override it, and no student-exception
+      control is added.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: Configure instance secure-delivery support at runtime with SUPPORTS_SECURE_DELIVERY.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    2)
+  acceptance_criteria:
+  - id: AC-003
+    title: At application startup, SUPPORTS_SECURE_DELIVERY=true produces boolean
+      support true; false or unset produces false, using the existing whitespace/case
+      normalization and false fallback for other strings.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-004
+    title: Changing the deployment environment and restarting changes support without
+      recompilation; all nodes use consistent deployment configuration.
+    status: verified_plan
+    verification_method: hybrid
+    proofs: []
+- id: FR-003
+  title: Show the Secure Delivery assessment-settings column only on supporting instances.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    3)
+  acceptance_criteria:
+  - id: AC-005
+    title: With support true, an authorized instructor sees the Secure Delivery header
+      and editable Yes/No controls for graded assessments, initially No.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-006
+    title: With support false or unset, the column header and controls are absent
+      from rendered Assessment Settings, while other columns and normal settings edits
+      continue to work.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Enforce support and authorization for setting updates and preserve policy
+    through supported lifecycle operations.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    4)
+  acceptance_criteria:
+  - id: AC-007
+    title: An unauthorized settings caller cannot change secure_delivery; with support
+      false, direct context/API updates, forged LiveView events, bulk application
+      and course-copy inputs cannot introduce secure_delivery=true.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-008
+    title: With support true, authorized single and bulk settings updates persist
+      and use existing settings-change audit; a supported section copy preserves secure_delivery,
+      publication/projection refresh preserves the section override, and no authentication
+      tokens are copied.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-009
+    title: Unsupported instances omit secure_delivery from ordinary bulk-edit payloads;
+      unrelated setting edits succeed. An incompatible settings copy is rejected with
+      an explanation rather than silently dropping protection.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: Block protected assessment delivery without matching verified secure admission.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    5)
+  acceptance_criteria:
+  - id: AC-010
+    title: For secure_delivery=true, ordinary launches/sessions and direct URLs cannot
+      access prologue, delivery, start/resume, answer save or submission APIs; denial
+      leaves ordinary course access available and explains secure entry is required.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-011
+    title: A validated direct LTI resource-link launch for a graded protected page
+      in the resolved section, with instance support true and valid Moodle SEB evidence,
+      creates secure admission for that exact page.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-012
+    title: Missing, invalid, stale or mismatched secure evidence/selection rejects
+      protected entry before issuing a scoped credential or performing assessment
+      work; enrollment, a normal LTI launch, browser headers, client flags and saved
+      launch params alone cannot confer admission.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-013
+    title: Permitted submitted-attempt read-only review follows FR-013 instead of
+      requiring new secure admission; this exception never authorizes taking the assessment.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: Limit confinement to the current authenticated session and keep scope immutable.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    6)
+  acceptance_criteria:
+  - id: AC-014
+    title: Authorization resolves secure section/resource identity only from the currently
+      authenticated credential; it does not infer scope from user-wide records, enrollment,
+      an active attempt or latest launch history.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-015
+    title: A newly issued secure token is scoped atomically before use and remains
+      scoped to the same section/resource until expiry or revocation; invalid/malformed
+      token scope never falls back to ordinary authentication.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-016
+    title: Two independent valid secure entries may coexist for one learner without
+      a per-user conflict rule or revocation of the other token; existing attempt
+      concurrency rules continue to apply.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: Guarantee ordinary sessions and launches cannot be locked out by another
+    secure session.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    7)
+  acceptance_criteria:
+  - id: AC-017
+    title: For the same user and fixed normal permissions, ordinary authorization
+      outcomes are identical with another secure token absent, live, submitted, abandoned,
+      expired, revoked or dangling; exercise both same-section and different-section
+      access.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-018
+    title: Creating, rejecting, expiring or exiting a secure session does not mutate/revoke
+      an independent ordinary token or disconnect its existing LiveView/channel; verify
+      ordinary reads, writes and course launches remain normally authorized.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-019
+    title: Leave orphaned secure tokens present without a close event or cleanup,
+      including after restart/node change and with multiple unfinished untimed attempts;
+      existing and new ordinary access still succeeds without a user-wide secure-session
+      lookup.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-008
+  title: Keep ordinary launch/login behavior independent, including replacement of
+    a stale secure cookie.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    8)
+  acceptance_criteria:
+  - id: AC-020
+    title: A valid ordinary course launch with an incoming secure cookie creates a
+      fresh ordinary session even when the secure assessment is unfinished; ordinary
+      login routes are not blocked by the old token's navigation guard.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-021
+    title: A new ordinary launch uses its own current target rather than the same
+      user's previous secure launch destination; saved claims cannot attach secure
+      scope or redirect it back to that prior protected page.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-022
+    title: With the spike's former deployment-wide TORUS_SEB_REQUIRED_LAUNCHES selector
+      configured, a valid ordinary course or unprotected-page launch in that deployment
+      still succeeds without SEB after the refactor.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-009
+  title: Allow only the selected assessment and necessary dependencies within a secure
+    session.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    9)
+  acceptance_criteria:
+  - id: AC-023
+    title: A secure session for page A can access its prologue, owned delivery, permitted
+      review and assessment dependencies, but is denied course home, unrelated pages
+      and another section's copy of A even when the resource ID is shared.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-024
+    title: Required native state, models and media/upload dependencies work for the selected assessment through scoped authorization;
+      unrelated global/section state and subscriptions are not exposed as blanket
+      exemptions.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-025
+    title: Authentication/launch/logout transport remains available; static assets
+      and service-authenticated AGS/background processing retain appropriate existing
+      authorization without requiring a student's browser token.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-010
+  title: Enforce both resource protection and session scope across all delivery transports.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    10)
+  acceptance_criteria:
+  - id: AC-026
+    title: HTTP routes including legacy/fullscreen/pagination/start/review aliases,
+      LiveView disconnected/connected mounts, navigation, protected events/components/async
+      data, API calls and channel operations check applicable scope and resource policy
+      before sensitive reads or writes.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-027
+    title: Changed section/page/attempt/activity/part identifiers, mismatched URL/body
+      parents and another learner's GUIDs are denied; bulk/nested requests authorize
+      every member before processing and reject unauthorized mixtures without partial
+      mutation.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-028
+    title: Secure socket capabilities refer to the exact valid authentication session,
+      cannot become unscoped credentials, and do not push unrelated data; ordinary
+      legacy socket credentials cannot authorize protected assessment delivery.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-029
+    title: HTML denials provide a safe assessment/relaunch explanation or destination
+      without loops; API denials use stable forbidden responses rather than successful
+      empty data or HTML redirects, and expired credentials remain authentication
+      errors.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-011
+  title: Render an accessible assessment-only shell for secure sessions.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    11)
+  acceptance_criteria:
+  - id: AC-030
+    title: Secure HTML and client boot parameters omit course-linked logos, breadcrumbs,
+      back-to-course, previous/next course pages, search/profile/footer links and
+      unrelated panels/data; ordinary course UI is unchanged.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-031
+    title: Assessment instructions, timer, connectivity/save status, submission, permitted
+      review and internal question/screen navigation remain usable by keyboard with
+      labels, focus visibility and skip links; use established localization conventions.
+    status: verified_plan
+    verification_method: hybrid
+    proofs: []
+  - id: AC-032
+    title: Blocked prerequisites or unsupported-entry conditions show an explanation
+      with permitted exit rather than bypassing existing gates or navigating into
+      an unrelated course workflow.
+    status: verified_plan
+    verification_method: hybrid
+    proofs: []
+- id: FR-012
+  title: Support basic and adaptive assessment delivery and student REVIEW mode.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    12)
+  acceptance_criteria:
+  - id: AC-033
+    title: Exercise secure prologue, start/resume, save and submit for basic traditional,
+      basic one-at-a-time and adaptive pages; existing internal question/adaptive-screen
+      progression and required dependencies work.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-034
+    title: Basic and adaptive submitted attempts render in actual student REVIEW mode
+      in both secure and ordinary sessions; adaptive review restores saved state and
+      supports internal review navigation without falling back to writable delivery
+      or a basic-only renderer.
+    status: verified_plan
+    verification_method: hybrid
+    proofs: []
+- id: FR-013
+  title: Permit ordinary read-only student review independently of secure-session
+    lifetime.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    13)
+  acceptance_criteria:
+  - id: AC-035
+    title: An ordinary authenticated session may review an owned submitted basic or
+      adaptive attempt when existing ReviewPolicy and feedback timing allow, even
+      while a separate secure session remains live or dangling; no secure launch or
+      closure prerequisite is imposed.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-036
+    title: Review rejects other learners' attempts and ineligible feedback; review
+      initialization and dependency APIs cannot create/resume a writable attempt,
+      change answers/state or trigger scoring.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-037
+    title: A retry/start action from ordinary review requires new matching secure
+      admission; secure-session review remains limited to that token's assessment.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-014
+  title: Preserve saved work and valid scope on reconnect and secure resume.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    14)
+  acceptance_criteria:
+  - id: AC-038
+    title: Reload, LiveView/channel reconnect and application/node restart resolve
+      the same valid token's scope and saved attempt state without consuming an attempt
+      or resetting deadlines.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-039
+    title: A later verified secure entry resumes the existing unfinished attempt under
+      normal availability/timing rules, without requiring the old token to be cleaned
+      up, revoking independent sessions or resetting saved answers.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-040
+    title: If the current credential is expired or revoked, protected work requires
+      reauthentication through verified secure entry; no remember-me fallback silently
+      removes scope, and no ordinary credential on another device is revoked.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-015
+  title: Separate unfinished attempt lifetime from course access and session lifetime.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    15)
+  acceptance_criteria:
+  - id: AC-041
+    title: 'Abandon an untimed assessment for an extended period: it remains unfinished
+      with saved work for later secure resume, while ordinary course access continues
+      without a release procedure.'
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-042
+    title: Timed deadlines and configured auto-submit still operate independently;
+      neither unfinished attempts nor submitted-but-not-exited attempts impose course-access
+      restrictions on other sessions.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-016
+  title: Permit current-session exit before completion without relying on browser-close
+    detection.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    16)
+  acceptance_criteria:
+  - id: AC-043
+    title: Logout/exit before starting, during an attempt and after submission is
+      permitted and idempotent; it revokes only the current credential, disconnects
+      only its sockets and never silently submits unfinished work.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-044
+    title: Closing/crashing SEB or losing network without a logout/close callback
+      cannot prevent another ordinary launch; no heartbeat, lease, cleanup or finish-before-exit
+      prerequisite is introduced.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-045
+    title: An explicit exit returns only to a validated LMS destination or minimal
+      signed-out page, preserves saved work and exposes no quit secrets.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-017
+  title: Preserve existing learner authorization, attempt rules and grading behavior.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    17)
+  acceptance_criteria:
+  - id: AC-046
+    title: Secure entry and delivery retain enrollment, section/institution ownership,
+      availability, prerequisites, passwords, accommodations, attempt limits and timing;
+      admission alone bypasses none of them.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-047
+    title: Secure submission, auto-submit and grade retries preserve existing scoring
+      and correct AGS line-item placement, including when ordinary launches interleave
+      with secure work; ordinary launches are not blocked to protect grade routing.
+    status: verified_plan
+    verification_method: hybrid
+    proofs: []
+  - id: AC-048
+    title: Background/service-authenticated finalization and grade callbacks continue
+      under their existing trusted authorization rather than requiring a browser credential.
+    status: verified_plan
+    verification_method: hybrid
+    proofs: []
+- id: FR-018
+  title: Handle disabled capability and migration transitions without dropping protection
+    or affecting ordinary sessions.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    18)
+  acceptance_criteria:
+  - id: AC-049
+    title: After disabling instance support with pre-existing secure_delivery=true
+      resources, new secure admissions are rejected with a capability explanation;
+      stored policy and existing token scope remain intact, while ordinary course
+      access and permitted review continue.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-050
+    title: Enabling a resource policy applies to subsequent protected reads/writes,
+      including open ordinary lessons, without blocking unrelated coursework; disabling
+      the resource policy permits ordinary delivery but does not unrestrict an existing
+      scoped token.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-051
+    title: Migration up supplies safe defaults and scope constraints; rollback removing
+      scope invalidates only scoped credentials first, and ordinary tokens remain
+      valid. Target deletion cannot silently convert a scoped credential into an ordinary
+      one.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-019
+  title: Retain existing launch validation without adding deferred security mechanisms.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    19)
+  acceptance_criteria:
+  - id: AC-052
+    title: The Moodle/SEB entry adapter rejects invalid normal LTI state/nonce/JWT
+      validation before secure admission and retains existing signed assertion field
+      and freshness checks.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-053
+    title: No additional replay store, diagnostic-bypass exclusion or manually provisioned
+      secure resource-binding registry is required; existing validated LTI registration/deployment/context
+      and exact resource resolution supply the initial binding.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-020
+  title: Verify the complete delivery/review and no-lockout acceptance matrices before
+    rollout.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    20)
+  acceptance_criteria:
+  - id: AC-054
+    title: Retain automated results for each basic/adaptive delivery/review combination
+      and independent-cookie isolation with live, submitted, abandoned, expired, revoked
+      and dangling secure credentials in the same and different sections/deployments.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-055
+    title: Retain end-to-end Moodle/SEB evidence for basic/adaptive entry, save, reconnect,
+      submit, review, exit before completion, browser closure without logout, ordinary
+      second-computer access and correct grade placement.
+    status: verified_plan
+    verification_method: manual
+    proofs: []
+- id: FR-021
+  title: Keep secure entry extensible independently of Moodle, SEB and LTI.
+  status: verified_plan
+  source: docs/exec-plans/current/secure-assessment/constrain.md#requirements (item
+    21)
+  acceptance_criteria:
+  - id: AC-056
+    title: Shared admission/session creation and enforcement accept a server-produced
+      verified learner/section/resource result without requiring LTI/Moodle/SEB fields;
+      provider-specific evidence verification and errors remain in the initial adapter.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-057
+    title: Only the initially supported Moodle/SEB verifier can create production
+      admission; client-supplied provider names, headers or secure flags cannot bypass
+      verification, and a future non-LTI adapter must preserve identical resource
+      scope and session isolation.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-058
+    title: Contract tests exercise generic admission without provider-specific fields
+      and separately test the actual Moodle/SEB verifier; no Respondus implementation
+      or general plugin registry is required for this release.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+- id: FR-022
+  title: Provide bounded operational diagnostics without collecting sensitive assessment
+    or credential data.
+  status: verified_plan
+  source: harness.yml telemetry default; docs/OPERATIONS.md
+  acceptance_criteria:
+  - id: AC-059
+    title: Using existing telemetry/AppSignal conventions, record bounded admission
+      outcomes, authorization-denial reason codes and explicit secure-session exits
+      with ordinary/secure/review operation classification; do not infer browser closure
+      from inactivity.
+    status: verified_plan
+    verification_method: automated
+    proofs: []
+  - id: AC-060
+    title: Diagnostic payload/log tests exclude raw JWTs, cookies, authentication/socket
+      tokens, student answers and unnecessary identity/high-cardinality tags; emitting
+      signals does not change authorization or require user-wide session state.
+    status: verified_plan
+    verification_method: automated
+    proofs: []

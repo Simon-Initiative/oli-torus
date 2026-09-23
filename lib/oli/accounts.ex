@@ -1352,12 +1352,58 @@ defmodule Oli.Accounts do
   ## Session
 
   @doc """
-  Generates a session token.
+  Generates an independent session token. Trusted admission callers may supply
+  `scope: %Oli.Delivery.SecureAssessments.Scope{}`; this never updates other tokens.
   """
-  def generate_user_session_token(user) do
-    {token, user_token} = UserToken.build_session_token(user)
+  def generate_user_session_token(user, opts \\ []) do
+    {token, user_token} = UserToken.build_session_token(user, Keyword.get(opts, :scope))
     Repo.insert!(user_token)
     token
+  end
+
+  @doc "Loads the presented valid session and its scope; malformed scope fails closed."
+  @spec get_user_session(term()) ::
+          {:ok,
+           %{
+             user: %User{},
+             token_id: integer(),
+             scope: nil | Oli.Delivery.SecureAssessments.Scope.t()
+           }}
+          | {:error, :unauthenticated}
+  def get_user_session(token) when is_binary(token) do
+    session_context(Repo.one(UserToken.session_query(token)))
+  end
+
+  def get_user_session(_), do: {:error, :unauthenticated}
+
+  @doc "Reloads an exact session row from a server-verified signed capability, never client IDs."
+  def get_user_session_by_id(id) when is_integer(id) and id > 0 do
+    session_context(Repo.one(UserToken.session_id_query(id)))
+  end
+
+  def get_user_session_by_id(_), do: {:error, :unauthenticated}
+
+  defp session_context(record) do
+    case record do
+      {user, token_id, nil, nil} ->
+        {:ok, %{user: user, token_id: token_id, scope: nil}}
+
+      {user, token_id, section_id, resource_id}
+      when is_integer(section_id) and section_id > 0 and is_integer(resource_id) and
+             resource_id > 0 ->
+        {:ok,
+         %{
+           user: user,
+           token_id: token_id,
+           scope: %Oli.Delivery.SecureAssessments.Scope{
+             section_id: section_id,
+             resource_id: resource_id
+           }
+         }}
+
+      _ ->
+        {:error, :unauthenticated}
+    end
   end
 
   @doc """
@@ -1377,6 +1423,20 @@ defmodule Oli.Accounts do
     Repo.delete_all(UserToken.token_and_context_query(token, "session"))
     :ok
   end
+
+  @doc "Deletes only the supplied session token and returns non-secret metadata for token-local disconnect."
+  def revoke_user_session_token(token) when is_binary(token) do
+    query =
+      UserToken.token_and_context_query(token, "session")
+      |> select([t], %{token_id: t.id, secure?: not is_nil(t.secure_section_id)})
+
+    case Repo.delete_all(query) do
+      {1, [metadata]} -> {:ok, metadata}
+      {0, []} -> :already_revoked
+    end
+  end
+
+  def revoke_user_session_token(_), do: :already_revoked
 
   ## Confirmation
 

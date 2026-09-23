@@ -1,102 +1,117 @@
-<main role="main" class="relative flex flex-col">
-  <Components.Delivery.Layouts.template_preview_banner
-    template_preview_mode={assigns[:template_preview_mode]}
-    template_preview_exit_path={assigns[:template_preview_exit_path]}
-  />
-  <div class="sticky top-0 z-50">
-    <Components.Delivery.Layouts.instructor_preview_header
-      :if={assigns[:preview_mode] == true}
-      return_context={preview_return_context(assigns)}
+<%= if match?(%{scope: %{}}, assigns[:user_session]) do %>
+  <div id="eventIntercept" phx-hook="LoadSurveyScripts">
+    <script>
+      window.userToken = "<%= assigns[:user_token] %>";
+    </script>
+    <OliWeb.Components.SecureAssessment.shell>
+      <.flash_group flash={@flash} />
+      {@inner_content}
+    </OliWeb.Components.SecureAssessment.shell>
+  </div>
+<% else %>
+  <main role="main" class="relative flex flex-col">
+    <Components.Delivery.Layouts.template_preview_banner
+      template_preview_mode={assigns[:template_preview_mode]}
+      template_preview_exit_path={assigns[:template_preview_exit_path]}
     />
-    <Components.Delivery.Layouts.header
-      ctx={@ctx}
-      is_admin={@is_admin}
-      section={@section}
-      preview_mode={@preview_mode}
-      sidebar_expanded={@sidebar_expanded}
-      instructor_preview_return={assigns[:instructor_preview_return]}
-      sidebar_enabled={!@disable_sidebar?}
-      include_logo
-    />
-    <div class="absolute top-0">
-      <Components.Delivery.Layouts.sidebar_nav
-        :if={@section}
+    <div class="sticky top-0 z-50">
+      <Components.Delivery.Layouts.instructor_preview_header
+        :if={assigns[:preview_mode] == true}
+        return_context={preview_return_context(assigns)}
+      />
+      <Components.Delivery.Layouts.header
         ctx={@ctx}
         is_admin={@is_admin}
         section={@section}
-        active_tab={assigns[:active_tab]}
         preview_mode={@preview_mode}
-        notification_badges={assigns[:notification_badges] || %{}}
         sidebar_expanded={@sidebar_expanded}
         instructor_preview_return={assigns[:instructor_preview_return]}
-        notes_enabled={@notes_enabled}
-        discussions_enabled={@discussions_enabled}
-        has_scheduled_resources?={@has_scheduled_resources?}
+        sidebar_enabled={!@disable_sidebar?}
+        include_logo
       />
-    </div>
-  </div>
-  <div class={[
-    "relative flex-1 flex flex-col bg-Background-bg-primary",
-    if(assigns[:preview_mode] == true,
-      do: "min-h-[calc(100vh-136px)]",
-      else: "min-h-[calc(100vh-56px)]"
-    ),
-    if(@sidebar_expanded,
-      do: "md:w-[calc(100%-200px)] md:ml-[200px]",
-      else: "md:w-[calc(100%-60px)] md:ml-[60px]"
-    )
-  ]}>
-    <div
-      id="flash_container"
-      class={[
-        "container mx-auto sticky z-40",
-        if(assigns[:preview_mode] == true,
-          do: "top-[136px]",
-          else: "top-[60px]"
-        )
-      ]}
-    >
-      <.flash_group flash={@flash} />
-    </div>
-    <Components.Delivery.Layouts.sayg_saved_work_notice
-      container_class={
-        if assigns[:active_tab] == :learn,
-          do: "relative z-[45] mx-4 mt-4 mb-6 md:mx-6",
-          else: "absolute left-4 right-4 z-[45] md:left-6 md:right-6"
-      }
-      class={if(assigns[:active_tab] != :learn, do: "top-2", else: nil)}
-    />
-    <div
-      :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
-      id="pay_early_message"
-      class="system-banner flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between alert alert-warning mx-4 mt-4 md:mx-6"
-      role="alert"
-    >
-      {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
-      <div class="flex whitespace-nowrap items-center">
-        <.link href={Routes.payment_path(@socket, :guard, @section.slug)}>
-          Pay Now
-        </.link>
-        <button
-          class="ml-6 stroke-gray-500 hover:stroke-gray-400"
-          phx-click={JS.hide(to: "#pay_early_message")}
-        >
-          <OliWeb.Icons.close class="stroke-zinc-700" />
-        </button>
+      <div class="absolute top-0">
+        <Components.Delivery.Layouts.sidebar_nav
+          :if={@section}
+          ctx={@ctx}
+          is_admin={@is_admin}
+          section={@section}
+          active_tab={assigns[:active_tab]}
+          preview_mode={@preview_mode}
+          notification_badges={assigns[:notification_badges] || %{}}
+          sidebar_expanded={@sidebar_expanded}
+          instructor_preview_return={assigns[:instructor_preview_return]}
+          notes_enabled={@notes_enabled}
+          discussions_enabled={@discussions_enabled}
+          has_scheduled_resources?={@has_scheduled_resources?}
+        />
       </div>
     </div>
-    <%= if @section do %>
-      {live_render(@socket, OliWeb.Dialogue.WindowLive,
-        session: %{"section_slug" => @section.slug},
-        id: "dialogue-window"
-      )}
-    <% end %>
-    {@inner_content}
     <div class={[
-      "px-4 mt-auto",
-      if(@section && @section.assistant_enabled, do: "mr-28", else: "")
+      "relative flex-1 flex flex-col bg-Background-bg-primary",
+      if(assigns[:preview_mode] == true,
+        do: "min-h-[calc(100vh-136px)]",
+        else: "min-h-[calc(100vh-56px)]"
+      ),
+      if(@sidebar_expanded,
+        do: "md:w-[calc(100%-200px)] md:ml-[200px]",
+        else: "md:w-[calc(100%-60px)] md:ml-[60px]"
+      )
     ]}>
-      <OliWeb.Components.Footer.delivery_footer license={assigns[:license]} />
+      <div
+        id="flash_container"
+        class={[
+          "container mx-auto sticky z-40",
+          if(assigns[:preview_mode] == true,
+            do: "top-[136px]",
+            else: "top-[60px]"
+          )
+        ]}
+      >
+        <.flash_group flash={@flash} />
+      </div>
+      <Components.Delivery.Layouts.sayg_saved_work_notice
+        container_class={
+          if assigns[:active_tab] == :learn,
+            do: "relative z-[45] mx-4 mt-4 mb-6 md:mx-6",
+            else: "absolute left-4 right-4 z-[45] md:left-6 md:right-6"
+        }
+        class={if(assigns[:active_tab] != :learn, do: "top-2", else: nil)}
+      />
+      <div
+        :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
+        id="pay_early_message"
+        class="system-banner flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between alert alert-warning mx-4 mt-4 md:mx-6"
+        role="alert"
+      >
+        {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
+        <div class="flex whitespace-nowrap items-center">
+          <.link href={Routes.payment_path(@socket, :guard, @section.slug)}>
+            Pay Now
+          </.link>
+          <button
+            class="ml-6 stroke-gray-500 hover:stroke-gray-400"
+            phx-click={JS.hide(to: "#pay_early_message")}
+          >
+            <OliWeb.Icons.close class="stroke-zinc-700" />
+          </button>
+        </div>
+      </div>
+      <%= if not is_nil(@section) and not match?(%{scope: %{}}, assigns[:user_session]) do %>
+        {live_render(@socket, OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => @section.slug,
+            "secure_session_id" => assigns[:user_session] && assigns.user_session.token_id
+          },
+          id: "dialogue-window"
+        )}
+      <% end %>
+      {@inner_content}
+      <div class={[
+        "px-4 mt-auto",
+        if(@section && @section.assistant_enabled, do: "mr-28", else: "")
+      ]}>
+        <OliWeb.Components.Footer.delivery_footer license={assigns[:license]} />
+      </div>
     </div>
-  </div>
-</main>
+  </main>
+<% end %>

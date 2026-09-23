@@ -4,6 +4,7 @@ defmodule OliWeb.ClickhouseChunkLogsChannel do
   """
 
   use OliWeb, :channel
+  use OliWeb.SecureChannel
 
   alias Oli.Accounts
   alias Oli.Accounts.Author

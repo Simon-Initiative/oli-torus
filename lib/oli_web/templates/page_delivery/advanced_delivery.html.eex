@@ -15,12 +15,17 @@
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
 <div id="delivery_container">
-  <%= react_component("Components.Delivery", @app_params) %>
+  <%= if match?(%{scope: %{}}, @conn.assigns[:user_session]) do %>
+    <%= OliWeb.Components.SecureAssessment.shell(%{inner_block: [%{__slot__: :inner_block, inner_block: fn _, _ -> react_component("Components.Delivery", @app_params) end}]}) %>
+  <% else %>
+    <%= react_component("Components.Delivery", @app_params) %>
+  <% end %>
 </div>
 
-<%= if @mount_dialogue_window? do %>
+<%= if @mount_dialogue_window? and not match?(%{scope: %{}}, @conn.assigns[:user_session]) do %>
   <%= live_render(@conn, OliWeb.Dialogue.WindowLive,
     session: %{
+      "secure_session_id" => @conn.assigns[:user_session] && @conn.assigns.user_session.token_id,
       "section_slug" => @section_slug,
       "resource_id" => @resource_id,
       "revision_id" => @revision.id,

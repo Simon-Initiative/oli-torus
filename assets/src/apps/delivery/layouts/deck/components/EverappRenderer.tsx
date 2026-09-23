@@ -12,6 +12,7 @@ import { triggerCheck } from 'apps/delivery/store/features/adaptivity/actions/tr
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import { toggleEverapp } from 'apps/delivery/store/features/page/actions/toggleEverapp';
 import {
+  selectAssessmentState,
   selectBlobStorageProvider,
   selectPreviewMode,
   selectReviewMode,
@@ -49,6 +50,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
   const dispatch = useDispatch();
   const isPreviewMode = useSelector(selectPreviewMode);
   const isReviewMode = useSelector(selectReviewMode);
+  const assessmentState = useSelector(selectAssessmentState);
   const [isOpen, setIsOpen] = useState<boolean>(props.open);
   const blobStorageProvider = useSelector(selectBlobStorageProvider);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
@@ -114,7 +116,12 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
 
     // because the everapp attemptGuid and partAttemptGuid are always made up
     // can't save it like normal, instead setData should cover it
-    const result = await updateGlobalUserState(blobStorageProvider, updatedState, isPreviewMode);
+    const result = await updateGlobalUserState(
+      blobStorageProvider,
+      updatedState,
+      isPreviewMode,
+      assessmentState,
+    );
 
     /* console.log('EVERAPP SAVE PART', {
       activityId,

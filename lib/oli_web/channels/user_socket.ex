@@ -20,7 +20,19 @@ defmodule OliWeb.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(%{"token" => token}, socket, _connect_info) do
+  def connect(%{"token" => token}, socket, _connect_info) when is_binary(token) do
+    case OliWeb.SecureSocket.verify(socket, token) do
+      {:ok, session} ->
+        {:ok, socket |> assign(:user, session.user.sub) |> assign(:user_session, session)}
+
+      _ ->
+        legacy_connect(token, socket)
+    end
+  end
+
+  def connect(_, _, _), do: :error
+
+  defp legacy_connect(token, socket) do
     # max_age: 1209600 is equivalent to two weeks in seconds
     case Phoenix.Token.verify(socket, "user socket", token, max_age: 1_209_600) do
       {:ok, user_id} ->
@@ -41,5 +53,6 @@ defmodule OliWeb.UserSocket do
   #     OliWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
+  def id(%{assigns: %{user_session: %{token_id: id}}}), do: "secure_session:#{id}"
   def id(_socket), do: nil
 end

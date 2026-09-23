@@ -1,5 +1,6 @@
 defmodule OliWeb.SectionUserStateChannel do
   use Phoenix.Channel
+  use OliWeb.SecureChannel
 
   alias Oli.Delivery.ExtrinsicState
   alias Phoenix.PubSub
@@ -7,7 +8,7 @@ defmodule OliWeb.SectionUserStateChannel do
   def join("user_section_state:" <> section_user, _, socket) do
     case String.split(section_user, ":") do
       [section_slug, user_id] ->
-        send(self(), {:after_join, {section_slug, Integer.parse(user_id)}})
+        send(self(), {:after_join, {section_slug, user_id}})
         {:ok, socket}
 
       _ ->
