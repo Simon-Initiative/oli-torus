@@ -378,6 +378,33 @@ export async function acceptCookiesIfVisible(scope: Pick<RoleScope, 'locator'>, 
   }
 }
 
+// Waits for Phoenix LiveView's `phx-blur-loading` class (added to an element while its
+// `phx-blur` binding's server round trip is in flight, removed once the response patches the
+// DOM) to clear. Verified live that this transition can complete in well under 200ms, so
+// polling for the class from outside the browser risks missing it entirely; observing and
+// triggering blur in the same browser-side call closes that race.
+async function waitForPhxBlurRoundTrip(input: Locator) {
+  await input.evaluate((element: HTMLElement) => {
+    return new Promise<void>((resolve) => {
+      let appeared = false;
+      const observer = new MutationObserver(() => {
+        const loading = element.classList.contains('phx-blur-loading');
+        if (loading) appeared = true;
+        if (appeared && !loading) {
+          observer.disconnect();
+          resolve();
+        }
+      });
+      observer.observe(element, { attributes: true, attributeFilter: ['class'] });
+      (element as HTMLInputElement).blur();
+      setTimeout(() => {
+        observer.disconnect();
+        resolve();
+      }, 5_000);
+    });
+  });
+}
+
 export async function createTorusSectionFromLaunch(
   scope: RoleScope,
   {
@@ -394,12 +421,11 @@ export async function createTorusSectionFromLaunch(
   await searchInput.pressSequentially(sourceTitle, { delay: 20 });
 
   // The "Search" button reads a server-side LiveView assign (`params.query`) that is only
-  // updated by the input's own `phx-change`/`phx-blur` event, not the DOM value at click time.
-  // Clicking immediately after typing can race that event's round trip to the server, applying
-  // a stale (effectively empty) query and silently resetting the input once the server's
-  // unfiltered state re-renders it. Waiting here lets that round trip land first. `scope` may be
-  // a FrameLocator, which has no `waitForTimeout`, hence the plain timer instead.
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  // updated by the input's own `phx-blur` event, not the DOM value at click time. Clicking
+  // immediately after typing can race that event's round trip to the server, applying a stale
+  // (effectively empty) query and silently resetting the input once the server's unfiltered
+  // state re-renders it. Triggering blur and waiting for its round trip to finish avoids that.
+  await waitForPhxBlurRoundTrip(searchInput);
   await scope.getByRole('button', { name: 'Search' }).click();
   await expect(scope.getByText(`Results filtered on "${sourceTitle}"`)).toBeVisible();
 
