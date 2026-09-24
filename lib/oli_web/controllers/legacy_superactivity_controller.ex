@@ -109,6 +109,11 @@ defmodule OliWeb.LegacySuperactivityController do
           |> put_resp_content_type("text/xml")
           |> send_resp(200, xml)
 
+        {:ok, body, mime_type} ->
+          conn
+          |> put_resp_content_type(response_mime_type(mime_type))
+          |> send_resp(200, body)
+
         {:error, error, code} ->
           conn
           |> put_resp_content_type("text/text")
@@ -1194,7 +1199,7 @@ defmodule OliWeb.LegacySuperactivityController do
 
       case save_file do
         nil -> {:error, "file not found", 404}
-        _ -> {:ok, URI.decode(save_file.content)}
+        _ -> {:ok, URI.decode(save_file.content), save_file.mime_type}
       end
     end
   end
@@ -1495,7 +1500,7 @@ defmodule OliWeb.LegacySuperactivityController do
            ),
          {:ok, %{status_code: 200, body: body}} <-
            get_preview_file_object(preview_bucket_name, save_file.storage_key) do
-      {:ok, body}
+      {:ok, body, save_file.mime_type}
     else
       {:error, :not_found} -> {:error, "file not found", 404}
       {:error, _reason} -> {:error, "server error", 500}
@@ -1504,6 +1509,33 @@ defmodule OliWeb.LegacySuperactivityController do
       _ -> {:error, "server error", 500}
     end
   end
+
+  defp response_mime_type(mime_type) when is_binary(mime_type) do
+    mime_type =
+      mime_type
+      |> String.split(";", parts: 2)
+      |> hd()
+      |> String.trim()
+
+    case String.downcase(mime_type) do
+      "xml" ->
+        "text/xml"
+
+      "json" ->
+        "application/json"
+
+      _ ->
+        case Regex.match?(
+               ~r/^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/,
+               mime_type
+             ) do
+          true -> mime_type
+          false -> "text/xml"
+        end
+    end
+  end
+
+  defp response_mime_type(_mime_type), do: "text/xml"
 
   defp preview_file_directory(%LegacySuperactivityContext{} = context) do
     xml =

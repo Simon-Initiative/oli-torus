@@ -245,6 +245,70 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       assert conn.resp_body =~ ~s(command not supported)
     end
 
+    test "loads a saved activity file using its persisted MIME type", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      attempt_map =
+        map
+        |> Map.put(:user, user)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user,
+          :page,
+          :resource_attempt
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity,
+          :resource_attempt,
+          :activity_attempt
+        )
+
+      activity_attempt = attempt_map.activity_attempt
+      saved_state = ~s({"steps":["first"]})
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "writeFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "byteEncoding" => "utf8",
+            "fileName" => "state.json",
+            "fileRecordData" => saved_state,
+            "resourceTypeID" => "oli_embedded",
+            "mimeType" => "application/json",
+            "userGuid" => Integer.to_string(user.id),
+            "attemptNumber" => 1
+          }
+        )
+
+      assert get_resp_header(conn, "content-type") == ["text/xml; charset=utf-8"]
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "loadFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "fileName" => "state.json",
+            "attemptNumber" => 1
+          }
+        )
+
+      assert conn.resp_body == saved_state
+      assert get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
+    end
+
     test "creates and services an embedded preview session", %{
       conn: conn,
       content: content,
@@ -256,7 +320,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       preview_attempt_guid = Ecto.UUID.generate()
 
       preview_storage_path =
-        "/preview-save-files/#{preview_attempt_guid}/1/#{Base.url_encode64("preview.xml", padding: false)}"
+        "/preview-save-files/#{preview_attempt_guid}/1/#{Base.url_encode64("preview.json", padding: false)}"
+
+      saved_state = ~s({"preview":true})
 
       expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
         normalized_path = normalize_s3_path(op.path)
@@ -264,12 +330,12 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         cond do
           op.http_method == :put ->
             assert normalized_path == preview_storage_path
-            assert op.body == "<preview />"
+            assert op.body == saved_state
             {:ok, %{status_code: 200}}
 
           op.http_method == :get ->
             assert normalized_path == preview_storage_path
-            {:ok, %{status_code: 200, body: "<preview />"}}
+            {:ok, %{status_code: 200, body: saved_state}}
         end
       end)
 
@@ -371,17 +437,17 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
               "commandName" => "writeFileRecord",
               "activityContextGuid" => preview_attempt_guid,
               "byteEncoding" => "utf8",
-              "fileName" => "preview.xml",
-              "fileRecordData" => "<preview />",
+              "fileName" => "preview.json",
+              "fileRecordData" => saved_state,
               "resourceTypeID" => "oli_embedded",
-              "mimeType" => "xml",
+              "mimeType" => "application/json",
               "userGuid" => user.id,
               "attemptNumber" => 1
             }
           )
         )
 
-      assert conn.resp_body =~ ~s(<file_record file_name="preview.xml")
+      assert conn.resp_body =~ ~s(<file_record file_name="preview.json")
 
       conn =
         recycle(conn)
@@ -397,13 +463,14 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
             %{
               "commandName" => "loadFileRecord",
               "activityContextGuid" => preview_attempt_guid,
-              "fileName" => "preview.xml",
+              "fileName" => "preview.json",
               "attemptNumber" => 1
             }
           )
         )
 
-      assert conn.resp_body == "<preview />"
+      assert conn.resp_body == saved_state
+      assert get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
 
       conn =
         recycle(conn)
