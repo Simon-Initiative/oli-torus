@@ -22,12 +22,35 @@ const renderSearchOnlySelector = (selected: number[] = []) =>
     />,
   );
 
+const renderEmptyPageSelector = () =>
+  render(
+    <ObjectivesSelection
+      objectives={[]}
+      selected={[]}
+      editMode={true}
+      projectSlug="project"
+      attachmentType="page"
+      loWellFormed={true}
+      onEdit={jest.fn()}
+      onRegisterNewObjective={jest.fn()}
+    />,
+  );
+
 describe('well-formed activity objective search', () => {
+  it('uses the page descriptor when no objectives are available', () => {
+    renderEmptyPageSelector();
+
+    expect(screen.getByRole('textbox')).toHaveAttribute(
+      'placeholder',
+      'Select or create learning objectives...',
+    );
+  });
+
   it('identifies the input as search and explains when no eligible objective matches', () => {
     renderSearchOnlySelector();
 
     const input = screen.getByRole('textbox');
-    expect(input).toHaveAttribute('placeholder', 'Search learning objectives...');
+    expect(input).toHaveAttribute('placeholder', 'Select sub-objectives...');
 
     fireEvent.change(input, { target: { value: 'No matching objective' } });
 
