@@ -160,7 +160,7 @@ The implementation must preserve the non-production scenario-seeding boundary, t
 - Definition of Done:
   - A supported scenario produces varied course progress through authentic delivery lifecycles in fast or realistically paced mode with fixed profiles. Existing-history learners are skipped, process termination ends remaining work, and the implementation contains no limiter, per-action runner, central scheduler, resume machinery, or speculative benchmark/telemetry subsystem.
 - Gate:
-  - AC-013 and AC-027 through AC-034 have passing automated evidence and the development entry-point check is recorded. Preview `bin/seed` and longer paced-run manual checks are explicitly deferred to Phase 8. No legacy simulator branch remains.
+  - AC-013 and AC-027 through AC-034 have passing automated evidence and the development entry-point check is recorded. Preview `bin/seed` and longer paced-run manual checks are explicitly deferred to Phase 9. No legacy simulator branch remains.
 - Dependencies:
   - Phase 4's scenario services and directive contract; Phase 2's CLI and explicit ownership; Phase 1's preview release for release-level verification.
 - Parallelizable Work:
@@ -194,16 +194,40 @@ The implementation must preserve the non-production scenario-seeding boundary, t
 - Parallelizable Work:
   - The course blueprint precedes YAML authoring. Torus manifest examples and `oli-torus-gitops` implementation can proceed alongside scenario authoring once the command, image, environment, and readiness-ordering contract is fixed.
 
-## Phase 6: Implement Secure Masquerade Identity and Session Lifecycle
+## Phase 6: Add Protected Mailbox Access
+
+- Goal: Make captured preview email available to enabled current system administrators before masquerade implementation begins.
+- Requirements: FR-010; AC-025, AC-026 (current-admin access and compile/runtime/authentication boundaries; masquerade integration completes in Phase 7).
+- Tasks:
+  - [ ] Compile `/dev/mailbox` only for preview, consolidate the existing development/test mailbox declaration under one policy, and place `Plug.Swoosh.MailboxPreview` behind `:browser`, effective runtime enablement, and a dedicated mailbox authorization plug that requires a current system administrator.
+  - [ ] Keep authorization route-local and leave `current_user` unchanged. Reject unvalidated actor/session claims; Phase 7 adds the original-admin exception using its validated masquerade lifecycle.
+  - [ ] Return a non-disclosing response for disabled, unauthenticated, non-admin, expired, or invalid-session mailbox requests and prevent message contents and metadata from entering application telemetry.
+  - [ ] Document mailbox access and runtime activation so administrators can inspect captured email before masquerade is available.
+- Testing Tasks:
+  - [ ] Test mailbox compile/runtime/auth truth tables for preview and non-preview builds, including anonymous, author, ordinary user, stale-admin, current system-admin, expired/invalid sessions, and forged actor/session claims.
+  - [ ] Send representative email in preview with activation both on and off, prove it remains local, and verify only an enabled current system administrator can inspect it.
+  - [ ] Verify the mailbox plug leaves `current_user` unchanged and denied requests disclose no message contents or metadata in responses or telemetry.
+  - Command(s): `mix test <mailbox route, authorization, and preview email containment tests>`; `mix format`.
+- Definition of Done:
+  - Protected mailbox access works independently of masquerade, preview mail cannot leave through `Oli.Mailer`, and only an enabled current system administrator can inspect captured messages.
+- Gate:
+  - AC-025 and the non-masquerade portion of AC-026 pass; security review approves the compile/runtime/authentication matrix before Phase 7 starts. Full AC-026 acceptance requires the Phase 7 masquerade integration tests.
+- Dependencies:
+  - Phase 1 effective-enablement, compile boundary, and local email configuration; no masquerade dependency.
+- Parallelizable Work:
+  - Mailbox route/authorization work and email-containment verification can proceed alongside Phases 2 through 5 after Phase 1; this phase must complete before Phase 7 begins.
+
+## Phase 7: Implement Secure Masquerade Identity and Session Lifecycle
 
 - Goal: Let an enabled current system administrator act as an active delivery user while preserving actor accountability, target-only authorization, and fail-closed lifecycle behavior.
-- Requirements: FR-007, FR-008; AC-019, AC-020, AC-021, AC-022.
+- Requirements: FR-007, FR-008, FR-010; AC-019, AC-020, AC-021, AC-022, AC-026.
 - Tasks:
   - [ ] Add preview-compiled `Oli.PreviewQATools.Masquerade` start, restore, stop, expiry, and invalidation services with effective-enablement checks and system-administrator authorization at every actor-sensitive boundary.
   - [ ] Store only bounded actor ID, target ID, issued/expiry timestamps, and random session reference in the existing tamper-protected signed session; renew the session on start and make no application-wide encryption or active-session-table change.
   - [ ] Restrict targets to active delivery users, reject self/chained masquerade, revalidate actor, target, flag, expiry, and signed state on every restoration, and clear invalid state safely.
   - [ ] Install only the target as `current_user` across plugs, LiveView mounts, sockets, controllers, APIs, policies, context calls, and rendered navigation; never retain or expose an actor-derived admin role, permission set, current-author identity, or privileged assign while masquerade is active.
   - [ ] Keep actor identity in a separately named, private session/audit representation that no general authorization function accepts. Expose it only to audit emission and two dedicated authorization boundaries: stopping masquerade and accessing the preview mailbox at `/dev/mailbox`.
+  - [ ] Extend the Phase 6 mailbox authorization plug to accept the original system-administrator actor only after the masquerade service validates the active session, current actor privileges, target, expiry, and runtime enablement. Keep this exception route-local, retain the target as `current_user`, and expose no actor privileges to downstream general authorization helpers.
   - [ ] Add start to the existing system-admin user detail surface and add a CSRF-protected stop boundary with safe allowlisted return destinations.
   - [ ] Clear or reject masquerade on explicit stop, logout, expiry, target invalidation, runtime disablement, and entry into a fresh LTI login/launch identity flow.
   - [ ] Emit `Oli.Auditing` lifecycle events for start, stop, expiry, and invalidation with actor, target, timestamp, session reference, reason, and bounded request context; follow existing fail-closed behavior for required audit failures.
@@ -214,45 +238,40 @@ The implementation must preserve the non-production scenario-seeding boundary, t
   - [ ] Exercise system-admin controllers, LiveViews, APIs, navigation links, and privileged mutations while masquerading as a non-admin target; assert they are absent or denied exactly as they would be for that target when signed in directly, excluding only `/dev/mailbox`.
   - [ ] Add an authorization regression matrix comparing a direct target session with an admin-masquerading-as-target session and require identical capability decisions everywhere except the dedicated stop endpoint/control and preview mailbox route.
   - [ ] Prove actor identity cannot be passed to ordinary policy/context authorization and that forged requests cannot invoke any actor-authorized action outside the stop and mailbox boundaries.
+  - [ ] Extend the Phase 6 mailbox matrix to cover a valid admin masquerading as a non-admin target, revoked/stale actors, expired or invalid sessions, non-admin-originated and forged masquerade requests, and runtime disablement. Prove the valid actor can inspect captured mail while the target remains `current_user` and adjacent system-admin routes remain denied.
   - [ ] Capture intentional audit/log output and prove session state contains only the bounded signed identifiers and timestamps.
-  - Command(s): `mix test <masquerade service, auth/session, admin user detail, audit, and LTI boundary tests>`; `mix format`.
+  - Command(s): `mix test <masquerade service, auth/session, admin user detail, audit, mailbox integration, and LTI boundary tests>`; `mix format`.
 - Definition of Done:
   - Masquerade is preview-compiled, runtime-gated, system-admin initiated, non-chainable, expiring, auditable, safely stoppable, and capability-equivalent to signing in directly as the target user, except for the narrowly isolated actor-authorized stop and preview-mailbox capabilities.
 - Gate:
-  - AC-019 through AC-022 pass with direct-versus-masqueraded target capability parity, explicit denial of every sampled general admin surface and mutation, tamper/lifecycle evidence, and security-review confirmation that actor privilege is reachable only at stop and `/dev/mailbox`.
+  - AC-019 through AC-022 and full AC-026 pass with direct-versus-masqueraded target capability parity, explicit denial of every sampled general admin surface and mutation, tamper/lifecycle evidence, and security-review confirmation that actor privilege is reachable only at stop and `/dev/mailbox`.
 - Dependencies:
-  - Phase 1 effective-enablement and compile boundary.
+  - Phase 1 effective-enablement and compile boundary; Phase 6 protected mailbox gate must pass before masquerade implementation begins.
 - Parallelizable Work:
   - Audit event design, signed-session lifecycle, and system-admin surface integration can proceed concurrently after the session payload and service interface are agreed.
 
-## Phase 7: Add Persistent Masquerade UI and Protected Mailbox Access
+## Phase 8: Add Persistent Masquerade UI
 
-- Goal: Make active masquerade unmistakable and immediately reversible across authenticated shells, and expose captured preview email only to enabled current system administrators, including a valid original admin actor during masquerade.
-- Requirements: FR-009, FR-010; AC-023, AC-024, AC-026.
+- Goal: Make active masquerade unmistakable and immediately reversible across authenticated shells.
+- Requirements: FR-009; AC-023, AC-024.
 - Tasks:
   - [ ] Add `OliWeb.Components.MasqueradeBanner` with the target's identity, explicit “acting as” wording, high-contrast magenta styling, non-color warning cues, a keyboard-operable CSRF-protected stop control, and screen-reader labels/status semantics.
   - [ ] Integrate the banner once per authenticated root across `default`, `workspace`, `delivery`, `delivery_student_dashboard`, `delivery_dashboard`, authenticated LiveView, and authenticated `chromeless` surfaces without changing unauthenticated layout behavior.
-  - [ ] Keep `delivery_from_payment` and `lti` layouts banner-free, relying on the Phase 6 LTI identity-boundary clearing/rejection behavior.
-  - [ ] Compile `/dev/mailbox` only for preview, consolidate the existing development/test mailbox declaration under one policy, and place `Plug.Swoosh.MailboxPreview` behind `:browser`, effective runtime enablement, and a dedicated mailbox authorization plug that accepts either the current system administrator or the original system-administrator actor of a valid active masquerade.
-  - [ ] Keep the mailbox exception route-local: authorize from the actor identity only inside the dedicated mailbox plug, do not replace `current_user`, do not expose actor privileges to the mailbox plug's downstream general authorization helpers, and do not reuse this exception for any other admin route.
-  - [ ] Return a non-disclosing response for disabled, unauthenticated, non-admin, expired, or invalid-session mailbox requests and prevent message metadata from entering application telemetry.
+  - [ ] Keep `delivery_from_payment` and `lti` layouts banner-free, relying on the Phase 7 LTI identity-boundary clearing/rejection behavior.
 - Testing Tasks:
   - [ ] Add a layout matrix test proving exactly the required authenticated surfaces render one banner and that `delivery_from_payment`, `lti`, unauthenticated, disabled, and ordinary sessions do not.
   - [ ] Test visible target identification, non-color wording/iconography, focus order, keyboard activation, accessible name/status semantics, color contrast, responsive placement, and stop behavior.
-  - [ ] Test mailbox compile/runtime/auth truth tables for preview and non-preview builds, including anonymous, author, ordinary user, stale-admin, current system-admin, admin masquerading as a non-admin target, and non-admin-originated or forged masquerade requests.
-  - [ ] Prove a valid admin actor can access `/dev/mailbox` while masquerading, the request still retains the target as `current_user`, and adjacent or representative system-admin routes remain denied in the same session.
-  - [ ] Send representative email in preview with activation both on and off, prove it remains local, and verify only an enabled current system administrator or valid original admin actor during masquerade can inspect it.
-  - Command(s): `mix test <masquerade component/layout and mailbox route tests>`; `mix format`; targeted manual keyboard and screen-reader check.
+  - Command(s): `mix test <masquerade component/layout tests>`; `mix format`; targeted manual keyboard and screen-reader check.
 - Definition of Done:
-  - Every required authenticated surface communicates masquerade accessibly and offers immediate stop, excluded identity/payment layouts remain unchanged, preview mail cannot leave through `Oli.Mailer`, and mailbox contents are available to a current admin or valid masquerading admin actor but non-disclosing to every other state.
+  - Every required authenticated surface communicates masquerade accessibly and offers immediate stop; excluded identity/payment layouts remain unchanged.
 - Gate:
-  - AC-023, AC-024, and AC-026 pass; UI/accessibility and security reviews approve the complete layout and mailbox matrices.
+  - AC-023 and AC-024 pass; UI/accessibility and security reviews approve the complete layout matrix.
 - Dependencies:
-  - Phases 1 and 6.
+  - Phases 1 and 7; Phase 7 depends on completed Phase 6 protected mailbox access.
 - Parallelizable Work:
-  - Banner component/layout integration and mailbox route/authentication work can proceed in parallel after the shared effective-enablement boundary is stable.
+  - Banner component work and layout integration can proceed in parallel after the Phase 7 session and stop interfaces are agreed.
 
-## Phase 8: Integrated Verification, Review, and Rollout Readiness
+## Phase 9: Integrated Verification, Review, and Rollout Readiness
 
 - Goal: Prove end-to-end behavior, requirement coverage, scope exclusions, operational safety, and maintainability before preview rollout.
 - Requirements: FR-001 through FR-010; AC-001 through AC-034.
@@ -275,18 +294,18 @@ The implementation must preserve the non-production scenario-seeding boundary, t
 - Gate:
   - Final release-readiness review accepts the requirements evidence, preview build, deployment contract, security/performance/accessibility results, and operational rollback of disabling runtime QA tools; no unresolved implementation marker remains.
 - Dependencies:
-  - Phases 1 through 7, including Phase 4B.
+  - Phases 1 through 8, including Phase 4B.
 - Parallelizable Work:
   - Review lenses and documentation verification may run concurrently after the implementation diff stabilizes; end-to-end manual QA begins only after all phase gates pass.
 
 ## Parallelization Notes
 
 - Phase 1 is the critical-path foundation because all callable capabilities depend on its compile-time and runtime boundary.
-- After Phase 1, Phase 2 CLI/scenario ownership and Phase 6 masquerade lifecycle are independent workstreams. Phase 3 can begin once Phase 2 fixes the common CLI result interface.
+- After Phase 1, Phase 2 CLI/scenario ownership and Phase 6 protected mailbox access are independent workstreams. Phase 7 masquerade lifecycle starts only after the Phase 6 mailbox gate passes. Phase 3 can begin once Phase 2 fixes the common CLI result interface.
 - Phase 4 bulk-user work can overlap Phases 2 and 3. Phase 4B owns the replacement course simulation consumed by Phase 5. The Phase 5 course blueprint must precede YAML authoring, while Torus manifest examples and `oli-torus-gitops` work may proceed concurrently after the release command and readiness-ordering contract are fixed.
-- Phase 7 UI and mailbox work can overlap Phases 2 through 5 but requires the effective-enablement contract from Phase 1 and masquerade state contract from Phase 6.
+- Phase 8 UI work can overlap Phases 2 through 5 once the Phase 7 masquerade state and stop contracts are stable; the Phase 6 mailbox gate remains a prerequisite for Phase 7.
 - Assign one owner to changes in shared scenario parser/validator/runtime files and one owner to shared router/session/layout files to avoid conflicting edits. Integrate each workstream only after its focused gate is green.
-- Review and verification tasks should be performed continuously within phases; Phase 8 consolidates evidence rather than postponing security, performance, accessibility, or test work.
+- Review and verification tasks should be performed continuously within phases; Phase 9 consolidates evidence rather than postponing security, performance, accessibility, or test work.
 
 ## Phase Gate Summary
 
@@ -296,6 +315,7 @@ The implementation must preserve the non-production scenario-seeding boundary, t
 - Gate D — Scenario foundation: deterministic `bulk_create_enroll_users` passes integration checks, the existing bulk-user hook remains available, and the separate Stagehand path is retired; the final simulator is gated only by Phase 4B.
 - Gate D2 — Course simulation (Phase 4B): AC-027 through AC-034 verify that the replacement simulator and migrated Phase 4 scenario produce realistic practice/part retries, scored assessment histories, partial progress, and one deterministic DataShop ID per learner/section journey through shared learner operations, with fast defaults and optional wall-clock pacing. Verify isolated companion boot, foreground-process termination, normal fast task concurrency with small action delays, concurrent paced learner journeys, the 100-learner cap, compact aggregate output, deterministic response variation, complete input/result migration, and removed-option rejection; no legacy simulator branch remains and backdated history stays deferred.
 - Gate E — Demo scenario and deployment: the “Getting Started with OLI Torus” scenario passes dev and release execution, and each Argo CD PR preview runs the seed Job once after baseline setup and server readiness without rerunning on later syncs; Playwright remains independent.
-- Gate F — Masquerade security: a masqueraded session is capability-equivalent to the target's direct session outside the two explicit exceptions, all general admin access is absent or denied, actor identity is usable only for audit, stop, and route-local mailbox authorization, and signed-session lifecycle, LTI clearing, and safe stop behavior pass adversarial tests.
-- Gate G — UI and mailbox: required authenticated shells pass accessibility coverage and the runtime-enabled preview mailbox admits a current system administrator or the valid original admin actor during masquerade, without granting that session access to any other admin surface.
-- Gate H — Release readiness: all FR/AC evidence, required reviews, formatting/tests, preview build, deployment validation, documentation, manual QA, and scope-exclusion checks pass.
+- Gate F — Protected mailbox: preview-only routing, runtime activation, current-admin authentication, non-disclosing denials, local email containment, and telemetry privacy pass before masquerade implementation begins; Phase 7 completes the masquerade-specific portion of AC-026.
+- Gate G — Masquerade security: a masqueraded session is capability-equivalent to the target's direct session outside the two explicit exceptions, all general admin access is absent or denied, actor identity is usable only for audit, stop, and route-local mailbox authorization, the valid original admin actor can inspect the Phase 6 mailbox without changing target identity or gaining adjacent admin access, and signed-session lifecycle, LTI clearing, and safe stop behavior pass adversarial tests.
+- Gate H — Masquerade UI: required authenticated shells pass the banner layout and accessibility matrices, including target identification and immediate stop; excluded identity/payment layouts remain banner-free.
+- Gate I — Release readiness: all FR/AC evidence, required reviews, formatting/tests, preview build, deployment validation, documentation, manual QA, and scope-exclusion checks pass.
