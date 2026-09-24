@@ -10,8 +10,6 @@ defmodule Oli.Delivery.ExtrinsicState do
   works on a collection of keys (or key value pairs).
   """
 
-  import Ecto.Query, warn: false
-
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
@@ -113,8 +111,21 @@ defmodule Oli.Delivery.ExtrinsicState do
   Returns {:ok, map} of the new updated state.
   """
   def upsert_attempt(attempt_guid, key_values) do
-    key_values = Map.delete(key_values, "__secure_shared")
-    update_attempt_state(attempt_guid, &Map.merge(&1, key_values))
+    case Attempts.get_resource_attempt_by(attempt_guid: attempt_guid) do
+      nil ->
+        {:error, {:not_found}}
+
+      attempt ->
+        case Attempts.update_resource_attempt(attempt, %{
+               state: Map.merge(attempt.state, key_values)
+             }) do
+          {:ok, u} ->
+            {:ok, u.state}
+
+          e ->
+            e
+        end
+    end
   end
 
   @doc """
@@ -147,29 +158,19 @@ defmodule Oli.Delivery.ExtrinsicState do
   Returns {:ok, map} of the new updated state.
   """
   def delete_attempt(attempt_guid, keys) do
-    keys = MapSet.delete(keys, "__secure_shared")
-    update_attempt_state(attempt_guid, &delete_keys(&1, keys))
-  end
+    case Attempts.get_resource_attempt_by(attempt_guid: attempt_guid) do
+      nil ->
+        {:error, {:not_found}}
 
-  # Coordinate with snapshot initialization: stale state replacement must not
-  # erase a dependency snapshot installed by another request.
-  defp update_attempt_state(guid, update) do
-    Oli.Repo.transaction(fn ->
-      case Oli.Repo.one(
-             from r in Attempts.ResourceAttempt,
-               where: r.attempt_guid == ^guid,
-               lock: "FOR UPDATE"
-           ) do
-        nil ->
-          Oli.Repo.rollback({:not_found})
+      attempt ->
+        case Attempts.update_resource_attempt(attempt, %{state: delete_keys(attempt.state, keys)}) do
+          {:ok, u} ->
+            {:ok, u.state}
 
-        attempt ->
-          case Attempts.update_resource_attempt(attempt, %{state: update.(attempt.state || %{})}) do
-            {:ok, updated} -> updated.state
-            {:error, reason} -> Oli.Repo.rollback(reason)
-          end
-      end
-    end)
+          e ->
+            e
+        end
+    end
   end
 
   @doc """

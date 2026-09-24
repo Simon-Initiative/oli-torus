@@ -59,9 +59,6 @@ defmodule Oli.Delivery.SecureAssessmentDependenciesTest do
              ExtrinsicState.read_global(c.user.id, MapSet.new(["calculator"]))
 
     assert Dependencies.page_state(c.attempt, %{}) == %{"app.calculator.value" => 7}
-    assert {:ok, _} = ExtrinsicState.upsert_attempt(guid, %{"__secure_shared" => %{}})
-    assert {:ok, _} = ExtrinsicState.delete_attempt(guid, MapSet.new(["__secure_shared"]))
-    assert Dependencies.page_state(c.attempt, %{}) == %{"app.calculator.value" => 7}
   end
 
   test "snapshot preserves shared fields when saved attempt data overrides one key", c do
