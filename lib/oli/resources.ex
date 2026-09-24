@@ -13,6 +13,9 @@ defmodule Oli.Resources do
   alias Oli.Resources.ResourceType
   alias Oli.Rendering.Content.ResourceSummary
 
+  @typedoc "Trusted, server-controlled attributes applied outside the general revision changeset."
+  @type trusted_revision_opts :: [objective_type: Revision.objective_type()]
+
   @doc """
   Create a new resource with given attributes of a specific resource tyoe.
 
@@ -143,8 +146,11 @@ defmodule Oli.Resources do
       iex> create_resource_and_revision(%{title: "title", resource_type_id: 1})
       {:ok, %{%Resource{}, %Revision{}}
       iex> create_resource_and_revision(resource, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
+       {:error, %Ecto.Changeset{}}
   """
+  @spec create_resource_and_revision(map(), trusted_revision_opts()) ::
+          {:ok, %{resource: %Resource{}, revision: %Revision{}}}
+          | {:error, Ecto.Changeset.t()}
   def create_resource_and_revision(attrs, revision_opts \\ []) do
     case create_new_resource() do
       {:ok, resource} ->
@@ -296,8 +302,10 @@ defmodule Oli.Resources do
       iex> create_revision(%{field: value})
       {:ok, %Revision{}}
       iex> create_revision(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
+       {:error, %Ecto.Changeset{}}
   """
+  @spec create_revision(map(), trusted_revision_opts()) ::
+          {:ok, %Revision{}} | {:error, Ecto.Changeset.t()}
   def create_revision(attrs \\ %{}, opts \\ []) do
     changeset = Revision.changeset(%Revision{}, attrs)
 
@@ -332,6 +340,8 @@ defmodule Oli.Resources do
   `:objective_type` is inherited by default and may only be overridden through the
   trusted options argument.
   """
+  @spec create_revision_from_previous(%Revision{}, map(), trusted_revision_opts()) ::
+          {:ok, %Revision{}} | {:error, Ecto.Changeset.t()}
   def create_revision_from_previous(previous_revision, attrs, opts \\ []) do
     attrs = convert_strings_to_atoms(attrs)
     content = Map.get(attrs, :content, previous_revision.content)

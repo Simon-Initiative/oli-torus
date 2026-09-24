@@ -974,7 +974,6 @@ defmodule OliWeb.Icons do
   attr :width, :string, default: "24"
   attr :height, :string, default: "24"
   attr :stroke_width, :string, default: "2"
-  attr :variant, :string, default: "default"
 
   def unlink(assigns) do
     ~H"""

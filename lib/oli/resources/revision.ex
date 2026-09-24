@@ -6,6 +6,9 @@ defmodule Oli.Resources.Revision do
   alias Oli.LearningModel.Parameters
   alias Oli.LearningModel.Parameters.Validation
 
+  @typedoc "The persisted role of a learning-objective revision."
+  @type objective_type :: :objective | :sub_objective
+
   @derive {Jason.Encoder,
            only: [
              :content,
@@ -167,6 +170,8 @@ defmodule Oli.Resources.Revision do
   Keep this separate from `changeset/2` so client-derived revision attributes cannot
   reclassify a top-level objective as a sub-objective (or the reverse).
   """
+  @spec trusted_objective_type_changeset(%__MODULE__{} | Ecto.Changeset.t(), map()) ::
+          Ecto.Changeset.t()
   def trusted_objective_type_changeset(revision_or_changeset, attrs) do
     cast(revision_or_changeset, attrs, [:objective_type])
   end

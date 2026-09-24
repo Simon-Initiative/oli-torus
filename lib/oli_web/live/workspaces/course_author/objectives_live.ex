@@ -56,7 +56,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     project = socket.assigns.project
     author = socket.assigns.current_author
 
-    {all_objectives, all_children, objectives, table_model} = build_objectives(project)
+    {all_objectives, objectives, table_model} = build_objectives(project)
 
     socket =
       assign(socket,
@@ -66,7 +66,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         table_model: table_model,
         total_count: length(objectives),
         all_objectives: all_objectives,
-        all_children: all_children,
         coverage_model: nil,
         coverage_status: :loading,
         coverage_load_ref: make_ref(),
@@ -421,11 +420,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       |> ObjectiveEditor.fetch_objective_mappings()
       |> Enum.map(& &1.revision)
 
-    all_children = all_child_ids(all_objectives)
+    child_ids = all_child_ids(all_objectives)
 
     objectives =
       Enum.reduce(all_objectives, [], fn rev, acc ->
-        case sub_objective?(rev, all_children) do
+        case sub_objective?(rev, child_ids) do
           false ->
             mapped_children =
               Enum.map(rev.children, fn resource_id ->
@@ -454,17 +453,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
     {:ok, table_model} = TableModel.new(objectives)
 
-    {all_objectives, all_children, objectives, table_model}
+    {all_objectives, objectives, table_model}
   end
 
   defp all_child_ids(objectives) do
     objectives
     |> Enum.flat_map(& &1.children)
-    |> Enum.uniq()
+    |> MapSet.new()
   end
 
   defp sub_objective?(revision, child_ids) do
-    revision.objective_type == :sub_objective or revision.resource_id in child_ids
+    revision.objective_type == :sub_objective or MapSet.member?(child_ids, revision.resource_id)
   end
 
   defp objective_parent_counts(objectives) do
@@ -732,8 +731,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   defp return_updated_data(project, flash_fn, socket) do
-    {all_objectives, all_children, objectives, table_model} =
-      build_objectives(project)
+    {all_objectives, objectives, table_model} = build_objectives(project)
 
     socket = cancel_async(socket, :objective_coverage)
 
@@ -755,7 +753,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         table_model: table_model,
         total_count: length(objectives),
         all_objectives: all_objectives,
-        all_children: all_children,
         coverage_model: nil,
         coverage_status: :loading,
         coverage_issue_ids: MapSet.new(),

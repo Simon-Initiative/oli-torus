@@ -3,6 +3,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   alias Oli.Repo
   alias Oli.Resources
+  alias Oli.Resources.Revision
   alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
@@ -224,6 +225,14 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   when this was its final parent association. Both revisions are resolved from the
   current working publication and the requested relationship must still exist.
   """
+  @spec remove_sub_objective_from_parent(
+          binary(),
+          %Author{},
+          %Project{},
+          binary() | %{required(:slug) => binary()}
+        ) ::
+          {:ok, %Revision{}}
+          | {:error, :not_associated | :not_found | Ecto.Changeset.t()}
   def remove_sub_objective_from_parent(
         revision_slug,
         %Author{} = author,
@@ -236,22 +245,13 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       Repo.transaction(fn ->
         publication = Publishing.project_working_publication(project.slug)
 
-        revisions =
-          publication.id
-          |> Publishing.get_objective_mappings_by_publication(lock: true)
-          |> Enum.map(& &1.revision)
+        revisions = objective_revisions(publication.id, lock: true)
 
         with %{} = sub_objective <- Enum.find(revisions, &(&1.slug == revision_slug)),
              %{} = parent <- Enum.find(revisions, &(&1.slug == parent_slug)),
              true <- sub_objective.resource_id in parent.children,
              {:ok, updated_sub_objective} <-
-               Resources.create_revision_from_previous(
-                 sub_objective,
-                 %{author_id: author.id},
-                 objective_type: :sub_objective
-               ),
-             {:ok, _mapping} <-
-               Publishing.upsert_published_resource(publication, updated_sub_objective),
+               ensure_sub_objective_type(sub_objective, publication, author),
              {:ok, updated_parent} <-
                Resources.create_revision_from_previous(parent, %{
                  author_id: author.id,
@@ -282,13 +282,11 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   Checks whether a sub-objective may be permanently deleted from a project's
   working publication.
   """
+  @spec sub_objective_delete_eligibility(binary(), %Project{}) ::
+          {:ok, %Revision{}} | {:error, :associated | :not_found | :tagged}
   def sub_objective_delete_eligibility(revision_slug, %Project{} = project) do
     publication = Publishing.project_working_publication(project.slug)
-
-    revisions =
-      publication.id
-      |> Publishing.get_objective_mappings_by_publication()
-      |> Enum.map(& &1.revision)
+    revisions = objective_revisions(publication.id)
 
     sub_objective_delete_eligibility(revisions, revision_slug, publication.id)
   end
@@ -301,6 +299,10 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   objective mappings are locked so concurrent association edits cannot change the
   checked state before the deletion mapping is written.
   """
+  @spec delete_unassociated_sub_objective(binary(), %Author{}, %Project{}) ::
+          {:ok, %Revision{}}
+          | {:error,
+             :associated | :not_found | :tagged | :transaction_conflict | Ecto.Changeset.t()}
   def delete_unassociated_sub_objective(
         revision_slug,
         %Author{} = author,
@@ -310,10 +312,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       serializable_transaction(fn ->
         publication = Publishing.project_working_publication(project.slug)
 
-        revisions =
-          publication.id
-          |> Publishing.get_objective_mappings_by_publication(lock: true)
-          |> Enum.map(& &1.revision)
+        revisions = objective_revisions(publication.id, lock: true)
 
         with {:ok, sub_objective} <-
                sub_objective_delete_eligibility(revisions, revision_slug, publication.id),
@@ -359,6 +358,32 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
       _objective ->
         {:error, :not_found}
+    end
+  end
+
+  defp objective_revisions(publication_id, opts \\ []) do
+    publication_id
+    |> Publishing.get_objective_mappings_by_publication(opts)
+    |> Enum.map(& &1.revision)
+  end
+
+  defp ensure_sub_objective_type(
+         %Revision{objective_type: :sub_objective} = revision,
+         _publication,
+         _author
+       ),
+       do: {:ok, revision}
+
+  defp ensure_sub_objective_type(revision, publication, author) do
+    with {:ok, updated_revision} <-
+           Resources.create_revision_from_previous(
+             revision,
+             %{author_id: author.id},
+             objective_type: :sub_objective
+           ),
+         {:ok, _mapping} <-
+           Publishing.upsert_published_resource(publication, updated_revision) do
+      {:ok, updated_revision}
     end
   end
 

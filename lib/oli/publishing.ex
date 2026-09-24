@@ -814,6 +814,8 @@ defmodule Oli.Publishing do
   Pass `lock: true` only inside a transaction to lock the current mapping and
   revision rows while enforcing a cross-revision invariant.
   """
+  @spec get_objective_mappings_by_publication(integer(), lock: boolean()) ::
+          [%PublishedResource{}]
   def get_objective_mappings_by_publication(publication_id, opts \\ []) do
     objective = ResourceType.id_for_objective()
 
@@ -1471,6 +1473,7 @@ defmodule Oli.Publishing do
   Returns whether an objective is referenced by any active page, activity, or
   selection in a publication without materializing the matching revisions.
   """
+  @spec objective_referenced?(integer(), integer()) :: boolean()
   def objective_referenced?(resource_id, publication_id) do
     page_id = ResourceType.id_for_page()
     activity_id = ResourceType.id_for_activity()

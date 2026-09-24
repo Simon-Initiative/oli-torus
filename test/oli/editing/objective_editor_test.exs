@@ -455,6 +455,32 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
                )
     end
 
+    test "remove_sub_objective_from_parent/4 reuses an already classified child revision", %{
+      project: project,
+      author: author
+    } do
+      {:ok, %{revision: parent}} =
+        ObjectiveEditor.add_new(%{title: "Parent"}, author, project)
+
+      {:ok, %{revision: child}} =
+        ObjectiveEditor.add_new(%{title: "Child"}, author, project, parent.slug)
+
+      assert child.objective_type == :sub_objective
+
+      assert {:ok, _parent} =
+               ObjectiveEditor.remove_sub_objective_from_parent(
+                 child.slug,
+                 author,
+                 project,
+                 parent.slug
+               )
+
+      unchanged_child = AuthoringResolver.from_resource_id(project.slug, child.resource_id)
+
+      assert unchanged_child.id == child.id
+      assert unchanged_child.objective_type == :sub_objective
+    end
+
     test "delete_unassociated_sub_objective/3 rejects an associated sub-objective", %{
       author: author,
       project: project
