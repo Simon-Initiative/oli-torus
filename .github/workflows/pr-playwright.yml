@@ -15,6 +15,9 @@ name: PR Playwright Suite
 # doesn't depend on fixture data already present from elsewhere, or on real
 # third-party credentials (Canvas, Google, LTI tools, etc.) - this instance
 # has none of that.
+#
+# The suite also runs on pushes to feature integration branches (integ-*), so
+# the combined result of every PR merged into one is verified again.
 on:
   pull_request:
     branches:
@@ -22,6 +25,10 @@ on:
       - hotfix-*
       - prerelease-*
       - nextgen-ux
+      - integ-*
+  push:
+    branches:
+      - integ-*
 
 jobs:
   pr-playwright:

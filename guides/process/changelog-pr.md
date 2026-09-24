@@ -2,8 +2,8 @@
 
 ## Feature development / bug fixing
 
-1. Developer performs feature work or bug fix on a branch off of `master`.
-2. Developer opens a pull request against `master` once the work is completed.
+1. Developer performs feature work or bug fix on a branch off of `master`, or off a feature integration branch for multi-PR features (see [Feature Integration Branches](deployment.md#feature-integration-branches)).
+2. Developer opens a pull request against `master` (or the feature integration branch) once the work is completed.
 3. Reviewer reviews the PR and either requests changes or approves.
 4. After approval, the reviewer **squashes and merges** to master, updating the commit message to summarize the entirety of the work item. This aggregate commit message must be prefixed with the change type, a ticket reference and a description. For example, `[BUG FIX] [MER-1234] A description` or `[FEATURE] [NG23-29] Another description`.
 
