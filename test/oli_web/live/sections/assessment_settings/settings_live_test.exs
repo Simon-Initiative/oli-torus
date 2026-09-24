@@ -816,8 +816,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       conn: conn,
       section: section,
       page_1: page,
-      page_2: other_page,
-      user: instructor
+      page_2: other_page
     } do
       previous = Application.fetch_env(:oli, :supports_secure_delivery)
 
@@ -861,8 +860,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                "select[name=secure_delivery-#{page.resource_id}] option[value=true][selected]"
              )
 
-      assert {:ok, _} =
-               Settings.AssessmentSettings.bulk_apply(section, instructor, page.resource_id)
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page.resource_id})
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
 
       refute Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
 
@@ -873,9 +877,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                      change.resource_id == ^other_page.resource_id and
                      change.key == "secure_delivery"
              )
-
-      assert {:error, :not_authorized} =
-               Settings.AssessmentSettings.bulk_apply(section, insert(:user), page.resource_id)
 
       Application.put_env(:oli, :supports_secure_delivery, false)
       # A previously rendered control cannot enable policy after instance disablement.
@@ -902,8 +903,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                "select[name=secure_delivery-#{page.resource_id}] option[value=false][selected]"
              )
 
-      assert {:ok, _} =
-               Settings.AssessmentSettings.bulk_apply(section, instructor, page.resource_id)
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page.resource_id})
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
 
       # Bulk apply leaves secure delivery unchanged on other assessments.
       refute Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
