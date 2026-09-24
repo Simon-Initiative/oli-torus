@@ -5,7 +5,10 @@ defmodule OliWeb.Common.Stepper do
   alias OliWeb.Components.DesignTokens.Primitives.Button
 
   @moduledoc """
-  Stepper Component
+  Stepper Component.
+
+  Supports a `:course_creation` variant (see the `:variant` attr on `render/1`) with its
+  own left-panel/footer styling, alongside the shared default look used elsewhere.
   """
 
   @empty_step %Step{

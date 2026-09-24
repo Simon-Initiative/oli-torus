@@ -1,4 +1,10 @@
 defmodule OliWeb.Common.CardListing do
+  @moduledoc """
+  Renders a grid of clickable source cards for a `TableModel`, each with a cover image,
+  an identification tag and cost badge where applicable, and a type-appropriate hover
+  overlay (copy vs. create).
+  """
+
   use Phoenix.Component
 
   import OliWeb.Common.SourceImage

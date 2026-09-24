@@ -387,7 +387,6 @@ defmodule OliWeb.Dev.DesignTokensLive do
     |> String.trim("-")
   end
 
-  @doc false
   # Dispatches to a primitive-specific snippet generator when one exists (currently
   # only Button, which has bespoke slot/variant formatting), and otherwise falls back
   # to a generic attribute dump so a newly-added primitive never shows an incorrect

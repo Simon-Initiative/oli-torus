@@ -92,6 +92,7 @@ defmodule OliWeb.Delivery.NewCourse do
        changeset: changeset,
        copy_options: default_copy_options(),
        copy_source?: false,
+       source: nil,
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
        loading: false,
        initial_source_filter: parse_source_filter(params["filter"]),
