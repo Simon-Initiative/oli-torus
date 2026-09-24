@@ -864,14 +864,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert {:ok, _} =
                Settings.AssessmentSettings.bulk_apply(section, instructor, page.resource_id)
 
-      assert Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
+      refute Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
 
-      assert Repo.exists?(
+      refute Repo.exists?(
                from change in Settings.SettingsChanges,
                  where:
                    change.section_id == ^section.id and
                      change.resource_id == ^other_page.resource_id and
-                     change.key == "secure_delivery" and change.new_value == "true"
+                     change.key == "secure_delivery"
              )
 
       assert {:error, :not_authorized} =
@@ -905,8 +905,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert {:ok, _} =
                Settings.AssessmentSettings.bulk_apply(section, instructor, page.resource_id)
 
-      # Unsupported bulk changes omit secure policy instead of propagating false.
-      assert Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
+      # Bulk apply leaves secure delivery unchanged on other assessments.
+      refute Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
     end
 
     test "gets a correct exception count", %{

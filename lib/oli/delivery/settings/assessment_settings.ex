@@ -123,12 +123,6 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
           allow_hints: base_assessment.allow_hints
         ]
 
-    common_set_values =
-      case Oli.Delivery.SecureAssessments.supported?() do
-        true -> Keyword.put(common_set_values, :secure_delivery, base_assessment.secure_delivery)
-        false -> common_set_values
-      end
-
     replacement_strategy_set_values = [
       replacement_strategy: base_assessment.replacement_strategy
     ]
