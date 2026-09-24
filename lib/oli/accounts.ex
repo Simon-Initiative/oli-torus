@@ -1424,20 +1424,6 @@ defmodule Oli.Accounts do
     :ok
   end
 
-  @doc "Deletes only the supplied session token and returns non-secret metadata for token-local disconnect."
-  def revoke_user_session_token(token) when is_binary(token) do
-    query =
-      UserToken.token_and_context_query(token, "session")
-      |> select([t], %{token_id: t.id, secure?: not is_nil(t.secure_section_id)})
-
-    case Repo.delete_all(query) do
-      {1, [metadata]} -> {:ok, metadata}
-      {0, []} -> :already_revoked
-    end
-  end
-
-  def revoke_user_session_token(_), do: :already_revoked
-
   ## Confirmation
 
   @doc ~S"""

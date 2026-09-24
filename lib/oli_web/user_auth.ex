@@ -122,7 +122,7 @@ defmodule OliWeb.UserAuth do
       _ ->
         conn
         |> delete_resp_cookie(@remember_me_cookie)
-        |> put_session(:live_socket_id, "secure_session:#{session.token_id}")
+        |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
     end
   end
 
@@ -197,18 +197,7 @@ defmodule OliWeb.UserAuth do
   """
   def clear_all_session_data(conn) do
     user_token = get_session(conn, :user_token)
-
-    case Accounts.revoke_user_session_token(user_token) do
-      {:ok, %{token_id: id, secure?: true}} ->
-        OliWeb.Endpoint.broadcast("secure_session:#{id}", "disconnect", %{})
-        :telemetry.execute([:oli, :secure_assessment, :exit], %{count: 1}, %{outcome: :revoked})
-
-      {:ok, %{secure?: false}} ->
-        :ok
-
-      :already_revoked ->
-        :ok
-    end
+    user_token && Accounts.delete_user_session_token(user_token)
 
     if user_live_socket_id = get_session(conn, :user_live_socket_id) do
       OliWeb.Endpoint.broadcast(user_live_socket_id, "disconnect", %{})

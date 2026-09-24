@@ -1,6 +1,5 @@
 defmodule OliWeb.GlobalUserStateChannel do
   use Phoenix.Channel
-  use OliWeb.SecureChannel
 
   alias Oli.Delivery.ExtrinsicState
   alias Phoenix.PubSub

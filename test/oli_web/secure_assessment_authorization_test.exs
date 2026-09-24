@@ -1,8 +1,6 @@
 defmodule OliWeb.SecureAssessmentAuthorizationTest do
   use OliWeb.ConnCase, async: true
   import Oli.Factory
-  require Phoenix.ChannelTest
-  import Phoenix.ChannelTest, only: [subscribe_and_join: 3]
   alias Oli.Accounts
   alias Oli.Delivery.SecureAssessments, as: Policy
   alias Oli.Delivery.SecureAssessments.Scope
@@ -83,24 +81,9 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
   end
 
   test "explicit exit is current-token-only, idempotent and does not finish an attempt", c do
-    {:ok, ordinary_socket} =
-      Phoenix.ChannelTest.connect(OliWeb.UserSocket, %{
-        "token" => OliWeb.SecureSocket.sign(OliWeb.Endpoint, c.normal)
-      })
-
-    {:ok, _, ordinary_channel} =
-      subscribe_and_join(
-        ordinary_socket,
-        OliWeb.GlobalUserStateChannel,
-        "user_global_state:#{c.user.id}"
-      )
-
     other_secure = Accounts.generate_user_session_token(c.user, scope: c.scope)
-    {:ok, other} = Accounts.get_user_session(other_secure)
-    topic = "secure_session:#{c.secure.token_id}"
-    other_topic = "secure_session:#{other.token_id}"
+    other_topic = "users_sessions:#{Base.url_encode64(other_secure)}"
     live_topic = "users_sessions:#{Base.url_encode64(c.secure_token)}"
-    OliWeb.Endpoint.subscribe(topic)
     OliWeb.Endpoint.subscribe(other_topic)
     OliWeb.Endpoint.subscribe(live_topic)
     original_attempt = Oli.Repo.reload!(c.attempt)
@@ -113,12 +96,9 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     assert redirected_to(conn) == "/secure-assessment/signed-out"
     refute get_session(conn, :user_token)
     assert {:error, :unauthenticated} = Accounts.get_user_session(c.secure_token)
-    assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "disconnect"}
     assert_receive %Phoenix.Socket.Broadcast{topic: ^live_topic, event: "disconnect"}
     refute_receive %Phoenix.Socket.Broadcast{topic: ^other_topic, event: "disconnect"}
     assert {:ok, %{scope: nil}} = Accounts.get_user_session(c.normal_token)
-    assert Process.alive?(ordinary_channel.channel_pid)
-    assert OliWeb.SecureSocket.channel_allowed?(ordinary_channel, ordinary_channel.topic)
     assert {:ok, _} = Accounts.get_user_session(other_secure)
     assert Oli.Repo.reload!(c.attempt) == original_attempt
     repeated = recycle(conn) |> post("/secure-assessment/exit")
@@ -266,20 +246,6 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     assert {:ok, :ordinary_delivery} = Policy.authorize(nil, c.user.id, :deliver, target)
   end
 
-  test "signed socket capability rechecks deletion and does not expose raw token", c do
-    signed = OliWeb.SecureSocket.sign(OliWeb.Endpoint, c.secure)
-    assert {:ok, %{token_id: id}} = OliWeb.SecureSocket.verify(OliWeb.Endpoint, signed)
-    assert id == c.secure.token_id
-    refute OliWeb.SecureSocket.unrestricted?(%{assigns: %{user_session: c.secure}})
-    ordinary_socket = %{assigns: %{user_session: c.normal}}
-    assert OliWeb.SecureSocket.unrestricted?(ordinary_socket)
-    Accounts.delete_user_session_token(c.secure_token)
-    assert {:error, :unauthenticated} = OliWeb.SecureSocket.verify(OliWeb.Endpoint, signed)
-    assert OliWeb.SecureSocket.unrestricted?(ordinary_socket)
-    Accounts.delete_user_session_token(c.normal_token)
-    refute OliWeb.SecureSocket.unrestricted?(ordinary_socket)
-  end
-
   test "HTTP protected page is denied before delivery context and is not cached", c do
     conn =
       c.conn
@@ -392,35 +358,6 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
              OliWeb.LiveSessionPlugs.SecureAssessment.authorize(socket, params)
 
     assert {:ok, %{scope: nil}} = Accounts.get_user_session(c.normal_token)
-  end
-
-  test "secure global subscriptions and invalidated delayed/outbound messages are denied", c do
-    socket = %Phoenix.Socket{
-      topic: "user_global_state:#{c.user.id}",
-      assigns: %{user_session: c.secure, user: c.user.sub}
-    }
-
-    assert {:error, _} = OliWeb.GlobalUserStateChannel.join(socket.topic, %{}, socket)
-
-    assert {:stop, :normal, _} =
-             OliWeb.GlobalUserStateChannel.handle_info({:after_join, "#{c.user.id}"}, socket)
-
-    normal = %{socket | assigns: %{user_session: c.normal, user: c.user.sub}}
-    assert OliWeb.SecureSocket.channel_allowed?(normal, normal.topic)
-    refute OliWeb.SecureSocket.channel_allowed?(normal, "user_global_state:#{insert(:user).id}")
-    Accounts.delete_user_session_token(c.normal_token)
-
-    assert {:stop, :normal, _} =
-             OliWeb.GlobalUserStateChannel.handle_info({:delta, %{secret: true}}, normal)
-  end
-
-  test "legacy ordinary socket cannot subscribe to protected assessment discussion", c do
-    socket = %Phoenix.Socket{assigns: %{user: c.user.sub}}
-
-    refute OliWeb.SecureSocket.channel_allowed?(
-             socket,
-             "directed_discussion:#{c.section.slug}:#{c.revision.resource_id}"
-           )
   end
 
   test "malformed index and oversized state projection produce typed denials", c do

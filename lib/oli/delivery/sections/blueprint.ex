@@ -307,8 +307,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   """
   def duplicate(%Section{} = section, attrs \\ %{}, cloned_from_project_publication_ids \\ nil) do
     Repo.transaction(fn _ ->
-      with :ok <- validate_secure_copy(section),
-           {:ok, blueprint} <- dupe_section(section, attrs),
+      with {:ok, blueprint} <- dupe_section(section, attrs),
            {:ok, _} <-
              dupe_section_project_publications(
                section,
@@ -331,22 +330,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
         {:error, e} -> Repo.rollback(e)
       end
     end)
-  end
-
-  defp validate_secure_copy(section) do
-    case Oli.Delivery.SecureAssessments.supported?() do
-      true ->
-        :ok
-
-      false ->
-        case Repo.exists?(
-               from sr in Sections.SectionResource,
-                 where: sr.section_id == ^section.id and sr.secure_delivery == true
-             ) do
-          true -> {:error, :secure_delivery_unsupported}
-          false -> :ok
-        end
-    end
   end
 
   defp dupe_section(%Section{} = section, attrs) do

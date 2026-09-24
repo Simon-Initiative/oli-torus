@@ -1,6 +1,5 @@
 defmodule OliWeb.DirectedDiscussionChannel do
   use Phoenix.Channel
-  use OliWeb.SecureChannel
   alias Oli.Resources.Collaboration.Post
   alias Phoenix.PubSub
 

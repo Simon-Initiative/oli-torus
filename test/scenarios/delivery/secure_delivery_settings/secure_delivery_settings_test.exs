@@ -24,7 +24,7 @@ defmodule Oli.Scenarios.SecureDeliverySettingsTest do
     assert Enum.all?(result.verifications, & &1.passed)
   end
 
-  @doc "Enables section policy and verifies supported and unsupported copy behavior."
+  @doc "Enables section policy and verifies that duplication preserves it."
   def enable_and_copy(state) do
     section = state.sections["assessment_settings_section"]
     instructor = state.users["instructor_1"]
@@ -39,8 +39,10 @@ defmodule Oli.Scenarios.SecureDeliverySettingsTest do
     assert Sections.get_section_resource(copy.id, assessment.resource_id).secure_delivery
     Application.put_env(:oli, :supports_secure_delivery, false)
     count = Repo.aggregate(Section, :count)
-    assert {:error, :secure_delivery_unsupported} = Blueprint.duplicate(section)
-    assert Repo.aggregate(Section, :count) == count
+    assert {:ok, copy_when_disabled} = Blueprint.duplicate(section)
+
+    assert Sections.get_section_resource(copy_when_disabled.id, assessment.resource_id).secure_delivery
+    assert Repo.aggregate(Section, :count) == count + 1
     state
   end
 

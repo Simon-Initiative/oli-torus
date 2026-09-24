@@ -4075,11 +4075,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, other_view, _html} = live(other_conn, Utils.lesson_live_path(section.slug, page.slug))
       ensure_content_is_visible(other_view)
       # LiveViewTest mounts a channel without a real WebSocket transport. Check
-      # the transport ID/broadcast contract, then exercise revoked callback access.
+      # the token-derived disconnect topic, then exercise revoked callback access.
       transport = %Phoenix.Socket{private: %{connect_info: %{session: get_session(conn)}}}
       topic = Phoenix.LiveView.Socket.id(transport)
-      {:ok, %{token_id: token_id}} = Oli.Accounts.get_user_session(token)
-      assert topic == "secure_session:#{token_id}"
+      assert topic == "users_sessions:#{Base.url_encode64(token)}"
       OliWeb.Endpoint.subscribe(topic)
       response = conn |> post("/secure-assessment/exit")
       assert redirected_to(response) == "/secure-assessment/signed-out"
