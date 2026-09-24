@@ -408,6 +408,69 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       refute updated_sub_objective.deleted
     end
 
+    test "remove_sub_objective_from_parent/4 rejects a mismatched parent and keeps the type", %{
+      project: project,
+      author: author,
+      map: %{
+        objective1: %{revision: %Revision{slug: objective1_slug}},
+        subobjective3A: %{
+          revision: %Revision{slug: subobjective3A_slug, resource_id: subobjective3A_resource_id}
+        }
+      }
+    } do
+      assert {:error, :not_associated} =
+               ObjectiveEditor.remove_sub_objective_from_parent(
+                 subobjective3A_slug,
+                 author,
+                 project,
+                 objective1_slug
+               )
+
+      unchanged = AuthoringResolver.from_resource_id(project.slug, subobjective3A_resource_id)
+      assert unchanged.objective_type == :objective
+    end
+
+    test "remove_sub_objective_from_parent/4 rejects a repeated detach", %{
+      project: project,
+      author: author,
+      map: %{
+        objective1: %{revision: %Revision{slug: objective1_slug}},
+        subobjective12A: %{revision: %Revision{slug: subobjective12A_slug}}
+      }
+    } do
+      assert {:ok, _parent} =
+               ObjectiveEditor.remove_sub_objective_from_parent(
+                 subobjective12A_slug,
+                 author,
+                 project,
+                 objective1_slug
+               )
+
+      assert {:error, :not_associated} =
+               ObjectiveEditor.remove_sub_objective_from_parent(
+                 subobjective12A_slug,
+                 author,
+                 project,
+                 objective1_slug
+               )
+    end
+
+    test "delete_unassociated_sub_objective/3 rejects an associated sub-objective", %{
+      author: author,
+      project: project
+    } do
+      {:ok, %{revision: parent}} =
+        ObjectiveEditor.add_new(%{title: "Parent"}, author, project)
+
+      {:ok, %{revision: child}} =
+        ObjectiveEditor.add_new(%{title: "Child"}, author, project, parent.slug)
+
+      assert {:error, :associated} =
+               ObjectiveEditor.delete_unassociated_sub_objective(child.slug, author, project)
+
+      refute AuthoringResolver.from_resource_id(project.slug, child.resource_id).deleted
+    end
+
     test "detach_objective/3 preserves tags when removing an objective from a banked activity", %{
       author: author,
       project: project

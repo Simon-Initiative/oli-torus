@@ -5,6 +5,7 @@ defmodule Oli.Resources.ResourcesTest do
   import Oli.Factory
 
   alias Oli.Resources
+  alias Oli.Resources.Revision
   alias Oli.LearningModel.Parameters
   alias Oli.LearningModel.V2.{ActivityParameters, LearningObjectiveParameters, PartParameters}
   alias Oli.Utils.Seeder
@@ -24,6 +25,28 @@ defmodule Oli.Resources.ResourcesTest do
       container: %{resource: container_resource}
     } do
       assert Resources.get_resource!(container_resource.id) == container_resource
+    end
+  end
+
+  describe "objective type changesets" do
+    test "the general revision changeset cannot reclassify an objective" do
+      revision = %Revision{objective_type: :objective}
+
+      changeset = Revision.changeset(revision, %{objective_type: :sub_objective})
+
+      refute Map.has_key?(changeset.changes, :objective_type)
+      assert Ecto.Changeset.get_field(changeset, :objective_type) == :objective
+    end
+
+    test "the trusted changeset can reclassify an objective" do
+      revision = %Revision{objective_type: :objective}
+
+      changeset =
+        Revision.trusted_objective_type_changeset(revision, %{
+          objective_type: :sub_objective
+        })
+
+      assert Ecto.Changeset.get_change(changeset, :objective_type) == :sub_objective
     end
   end
 

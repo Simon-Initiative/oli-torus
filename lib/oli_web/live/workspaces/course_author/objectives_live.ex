@@ -78,6 +78,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         course_content_nodes_by_id: %{},
         course_content_root_ids: [],
         course_content_expanded_ids: MapSet.new(),
+        pending_sub_objective_detaches: MapSet.new(),
+        pending_sub_objective_delete_slugs: MapSet.new(),
         query: "",
         search_matching_ids: nil,
         search_expansion_ids: nil,
@@ -1133,7 +1135,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       ) do
     socket = clear_flash(socket)
 
-    case sub_objective_delete_eligibility(slug, socket.assigns.project) do
+    case ObjectiveEditor.sub_objective_delete_eligibility(slug, socket.assigns.project) do
       {:ok, sub_objective} ->
         modal_assigns = %{
           id: "delete_sub_objective_modal",
@@ -1184,62 +1186,68 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         socket
       ) do
     socket = clear_flash(socket)
-    %{project: project, author: author} = socket.assigns
+    %{project: %{slug: project_slug}, author: %{email: author_email}} = socket.assigns
+    operation = {slug, parent_slug}
 
-    flash_fn =
-      case parent_objective(project, parent_slug) do
-        nil ->
-          fn socket -> put_flash(socket, :error, "Could not detach sub-objective") end
+    case MapSet.member?(socket.assigns.pending_sub_objective_detaches, operation) do
+      true ->
+        {:noreply, put_flash(socket, :error, "That sub-objective is already being detached")}
 
-        parent ->
-          case ObjectiveEditor.remove_sub_objective_from_parent(slug, author, project, parent) do
-            {:ok, _revision} ->
-              fn socket ->
-                put_flash(socket, :info, "Sub-objective detached from learning objective")
-              end
+      false ->
+        socket =
+          socket
+          |> assign(
+            pending_sub_objective_detaches:
+              MapSet.put(socket.assigns.pending_sub_objective_detaches, operation)
+          )
+          |> start_async({:detach_sub_objective, slug, parent_slug}, fn ->
+            with %{} = project <- Course.get_project_by_slug(project_slug),
+                 %{} = author <- Accounts.get_author_by_email(author_email) do
+              ObjectiveEditor.remove_sub_objective_from_parent(
+                slug,
+                author,
+                project,
+                parent_slug
+              )
+            else
+              nil -> {:error, :not_found}
+            end
+          end)
 
-            {:error, _reason} ->
-              fn socket -> put_flash(socket, :error, "Could not detach sub-objective") end
-          end
-      end
-
-    return_updated_data(project, flash_fn, socket)
+        {:noreply, socket}
+    end
   end
 
   def handle_event("delete_sub_objective", %{"slug" => slug}, socket) do
     socket = clear_flash(socket)
-    %{project: project, author: author} = socket.assigns
+    %{project: %{slug: project_slug}, author: %{email: author_email}} = socket.assigns
 
-    flash_fn =
-      case sub_objective_delete_eligibility(slug, project) do
-        {:ok, _sub_objective} ->
-          case ObjectiveEditor.delete(slug, author, project) do
-            {:ok, _revision} ->
-              fn socket -> put_flash(socket, :info, "Sub-objective deleted") end
+    case MapSet.member?(socket.assigns.pending_sub_objective_delete_slugs, slug) do
+      true ->
+        {:noreply,
+         socket
+         |> hide_modal(modal_assigns: nil)
+         |> put_flash(:error, "That sub-objective is already being deleted")}
 
-            {:error, _reason} ->
-              fn socket -> put_flash(socket, :error, "Could not delete sub-objective") end
-          end
+      false ->
+        socket =
+          socket
+          |> assign(
+            pending_sub_objective_delete_slugs:
+              MapSet.put(socket.assigns.pending_sub_objective_delete_slugs, slug)
+          )
+          |> hide_modal(modal_assigns: nil)
+          |> start_async({:delete_sub_objective, slug}, fn ->
+            with %{} = project <- Course.get_project_by_slug(project_slug),
+                 %{} = author <- Accounts.get_author_by_email(author_email) do
+              ObjectiveEditor.delete_unassociated_sub_objective(slug, author, project)
+            else
+              nil -> {:error, :not_found}
+            end
+          end)
 
-        {:error, :associated} ->
-          fn socket ->
-            put_flash(socket, :error, "Associated sub-objectives cannot be permanently deleted")
-          end
-
-        {:error, :tagged} ->
-          fn socket ->
-            put_flash(
-              socket,
-              :error,
-              "This sub-objective cannot be deleted because it is tagged to course content"
-            )
-          end
-
-        {:error, :not_found} ->
-          fn socket -> put_flash(socket, :error, "Could not find that sub-objective") end
-      end
-
-    return_updated_data(project, flash_fn, socket)
+        {:noreply, socket}
+    end
   end
 
   def handle_event(
@@ -1328,45 +1336,117 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     end
   end
 
-  defp sub_objective_delete_eligibility(slug, project) do
-    objectives =
-      project
-      |> ObjectiveEditor.fetch_objective_mappings()
-      |> Enum.map(& &1.revision)
+  defp sub_objective_delete_flash({:ok, _revision}),
+    do: fn socket -> put_flash(socket, :info, "Sub-objective deleted") end
 
-    case Enum.find(objectives, &(&1.slug == slug)) do
-      nil ->
-        {:error, :not_found}
-
-      %{objective_type: :sub_objective} = sub_objective ->
-        parent_counts = objective_parent_counts(objectives)
-
-        cond do
-          Map.get(parent_counts, sub_objective.resource_id, 0) > 0 ->
-            {:error, :associated}
-
-          objective_tagged?(sub_objective.resource_id, project) ->
-            {:error, :tagged}
-
-          true ->
-            {:ok, sub_objective}
-        end
-
-      _objective ->
-        {:error, :not_found}
+  defp sub_objective_delete_flash({:error, :associated}) do
+    fn socket ->
+      put_flash(socket, :error, "Associated sub-objectives cannot be permanently deleted")
     end
   end
 
-  defp objective_tagged?(resource_id, project) do
-    publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
-
-    Oli.Publishing.find_objective_attachments(resource_id, publication_id) != [] or
-      Oli.Publishing.find_objective_in_selections(resource_id, publication_id) != []
+  defp sub_objective_delete_flash({:error, :tagged}) do
+    fn socket ->
+      put_flash(
+        socket,
+        :error,
+        "This sub-objective cannot be deleted because it is tagged to course content"
+      )
+    end
   end
+
+  defp sub_objective_delete_flash({:error, :not_found}),
+    do: fn socket -> put_flash(socket, :error, "Could not find that sub-objective") end
+
+  defp sub_objective_delete_flash({:error, :transaction_conflict}) do
+    fn socket ->
+      put_flash(
+        socket,
+        :error,
+        "The sub-objective changed while it was being deleted. Please try again"
+      )
+    end
+  end
+
+  defp sub_objective_delete_flash({:error, _reason}),
+    do: fn socket -> put_flash(socket, :error, "Could not delete sub-objective") end
 
   @impl Phoenix.LiveView
   def handle_async(:objective_coverage, {:ok, result}, socket),
     do: apply_coverage_result(result, socket)
+
+  def handle_async(
+        {:detach_sub_objective, slug, parent_slug},
+        {:ok, result},
+        socket
+      ) do
+    operation = {slug, parent_slug}
+
+    case MapSet.member?(socket.assigns.pending_sub_objective_detaches, operation) do
+      true ->
+        socket =
+          assign(
+            socket,
+            pending_sub_objective_detaches:
+              MapSet.delete(socket.assigns.pending_sub_objective_detaches, operation)
+          )
+
+        flash_fn =
+          case result do
+            {:ok, _revision} ->
+              fn socket ->
+                put_flash(socket, :info, "Sub-objective detached from learning objective")
+              end
+
+            {:error, _reason} ->
+              fn socket -> put_flash(socket, :error, "Could not detach sub-objective") end
+          end
+
+        return_updated_data(socket.assigns.project, flash_fn, socket)
+
+      false ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_async({:detach_sub_objective, slug, parent_slug}, {:exit, reason}, socket) do
+    Logger.error("Sub-objective detach failed: #{inspect(reason)}")
+
+    handle_async(
+      {:detach_sub_objective, slug, parent_slug},
+      {:ok, {:error, :task_failed}},
+      socket
+    )
+  end
+
+  def handle_async({:delete_sub_objective, slug}, {:ok, result}, socket) do
+    case MapSet.member?(socket.assigns.pending_sub_objective_delete_slugs, slug) do
+      true ->
+        socket =
+          assign(
+            socket,
+            pending_sub_objective_delete_slugs:
+              MapSet.delete(socket.assigns.pending_sub_objective_delete_slugs, slug)
+          )
+
+        flash_fn = sub_objective_delete_flash(result)
+
+        return_updated_data(socket.assigns.project, flash_fn, socket)
+
+      false ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_async({:delete_sub_objective, slug}, {:exit, reason}, socket) do
+    Logger.error("Sub-objective deletion failed: #{inspect(reason)}")
+
+    handle_async(
+      {:delete_sub_objective, slug},
+      {:ok, {:error, :task_failed}},
+      socket
+    )
+  end
 
   def handle_async(:objective_coverage, {:exit, {exception, stacktrace}}, socket)
       when is_exception(exception) do

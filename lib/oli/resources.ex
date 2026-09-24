@@ -136,17 +136,20 @@ defmodule Oli.Resources do
   @doc """
   Creates a new resource and revision pair, returning both newly
   created constructs.
+
+  Trusted server-controlled revision fields may be supplied separately through
+  `revision_opts`; they are never read from the general attribute map.
   ## Examples
       iex> create_resource_and_revision(%{title: "title", resource_type_id: 1})
       {:ok, %{%Resource{}, %Revision{}}
       iex> create_resource_and_revision(resource, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def create_resource_and_revision(attrs) do
+  def create_resource_and_revision(attrs, revision_opts \\ []) do
     case create_new_resource() do
       {:ok, resource} ->
         case Map.merge(attrs, %{resource_id: resource.id})
-             |> create_revision() do
+             |> create_revision(revision_opts) do
           {:ok, revision} -> {:ok, %{resource: resource, revision: revision}}
           error -> error
         end
@@ -286,16 +289,28 @@ defmodule Oli.Resources do
 
   @doc """
   Creates a revision.
+
+  The optional `:objective_type` setting is a trusted, server-controlled value.
+  Client-derived attributes must remain in the first argument.
   ## Examples
       iex> create_revision(%{field: value})
       {:ok, %Revision{}}
       iex> create_revision(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def create_revision(attrs \\ %{}) do
-    %Revision{}
-    |> Revision.changeset(attrs)
-    |> Repo.insert()
+  def create_revision(attrs \\ %{}, opts \\ []) do
+    changeset = Revision.changeset(%Revision{}, attrs)
+
+    changeset =
+      case Keyword.fetch(opts, :objective_type) do
+        {:ok, objective_type} ->
+          Revision.trusted_objective_type_changeset(changeset, %{objective_type: objective_type})
+
+        :error ->
+          changeset
+      end
+
+    Repo.insert(changeset)
   end
 
   @doc """
@@ -311,9 +326,17 @@ defmodule Oli.Resources do
     |> Repo.update()
   end
 
-  def create_revision_from_previous(previous_revision, attrs) do
+  @doc """
+  Creates a revision inheriting the previous revision's complete authoring state.
+
+  `:objective_type` is inherited by default and may only be overridden through the
+  trusted options argument.
+  """
+  def create_revision_from_previous(previous_revision, attrs, opts \\ []) do
     attrs = convert_strings_to_atoms(attrs)
     content = Map.get(attrs, :content, previous_revision.content)
+
+    objective_type = Keyword.get(opts, :objective_type, previous_revision.objective_type)
 
     learning_model_parameters =
       if Map.has_key?(attrs, :learning_model_parameters) do
@@ -331,7 +354,6 @@ defmodule Oli.Resources do
           content: previous_revision.content,
           objectives: previous_revision.objectives,
           children: previous_revision.children,
-          objective_type: previous_revision.objective_type,
           deleted: previous_revision.deleted,
           ids_added: previous_revision.ids_added,
           slug: previous_revision.slug,
@@ -372,7 +394,7 @@ defmodule Oli.Resources do
         attrs
       )
 
-    create_revision(attrs)
+    create_revision(attrs, objective_type: objective_type)
   end
 
   defp convert_legacy(nil), do: nil

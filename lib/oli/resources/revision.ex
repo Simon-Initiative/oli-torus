@@ -127,7 +127,6 @@ defmodule Oli.Resources.Revision do
       :resource_type_id,
       :content,
       :children,
-      :objective_type,
       :tags,
       :objectives,
       :graded,
@@ -160,6 +159,16 @@ defmodule Oli.Resources.Revision do
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])
     |> validate_learning_model_parameters()
     |> Slug.update_on_change("revisions")
+  end
+
+  @doc """
+  Applies the server-controlled learning-objective classification.
+
+  Keep this separate from `changeset/2` so client-derived revision attributes cannot
+  reclassify a top-level objective as a sub-objective (or the reverse).
+  """
+  def trusted_objective_type_changeset(revision_or_changeset, attrs) do
+    cast(revision_or_changeset, attrs, [:objective_type])
   end
 
   defp validate_learning_model_parameters(changeset) do

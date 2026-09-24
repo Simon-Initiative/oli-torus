@@ -1543,6 +1543,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> element("button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
 
+      render_async(view)
+
       assert has_element?(
                view,
                ~s{div[role="alert"].alert-info},
@@ -1629,6 +1631,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       )
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj_a.slug})
 
+      render_async(view)
+
       assert 3 ==
                project
                |> ObjectiveEditor.fetch_objective_mappings()
@@ -1667,6 +1671,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> element("button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
 
+      render_async(view)
+
       view
       |> element("button[phx-click='display_add_existing_sub_modal'][phx-value-slug=#{obj.slug}]")
       |> render_click(%{"slug" => obj.slug})
@@ -1703,6 +1709,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> element("button[phx-click='delete_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
       |> render_click(%{"slug" => sub_obj.slug})
 
+      render_async(view)
+
       assert has_element?(view, ~s{div[role="alert"].alert-info}, "Sub-objective deleted")
       assert 1 == length(ObjectiveEditor.fetch_objective_mappings(project))
 
@@ -1727,6 +1735,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       view
       |> element("button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
+
+      render_async(view)
 
       view
       |> element("button[phx-click='display_add_existing_sub_modal'][phx-value-slug=#{obj.slug}]")

@@ -261,6 +261,8 @@ defmodule Oli.PublishingTest do
       results = Publishing.find_objective_in_selections(one.resource.id, publication.id)
       assert length(results) == 2
       assert Enum.empty?(Publishing.find_objective_in_selections(two.resource.id, publication.id))
+      assert Publishing.objective_referenced?(one.resource.id, publication.id)
+      refute Publishing.objective_referenced?(two.resource.id, publication.id)
 
       assert Enum.at(results, 0).title != Enum.at(results, 1).title
 
@@ -451,6 +453,9 @@ defmodule Oli.PublishingTest do
       {:ok, %{revision: obj2}} = ObjectiveEditor.add_new(%{title: "two"}, author, project)
       {:ok, %{revision: obj3}} = ObjectiveEditor.add_new(%{title: "three"}, author, project)
 
+      {:ok, %{revision: page_only_objective}} =
+        ObjectiveEditor.add_new(%{title: "page only"}, author, project)
+
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       activity1 =
@@ -486,7 +491,9 @@ defmodule Oli.PublishingTest do
         )
 
       update = %{
-        "objectives" => %{"attached" => [obj1.resource_id]},
+        "objectives" => %{
+          "attached" => [obj1.resource_id, page_only_objective.resource_id]
+        },
         "content" => %{
           "version" => "0.1.0",
           "model" => [
@@ -526,6 +533,14 @@ defmodule Oli.PublishingTest do
       results = Publishing.find_objective_attachments(obj1.resource_id, publication.id)
 
       assert length(results) == 4
+      assert Publishing.objective_referenced?(obj1.resource_id, publication.id)
+      assert Publishing.objective_referenced?(obj3.resource_id, publication.id)
+      assert Publishing.objective_referenced?(page_only_objective.resource_id, publication.id)
+
+      {:ok, %{revision: untagged_objective}} =
+        ObjectiveEditor.add_new(%{title: "untagged"}, author, project)
+
+      refute Publishing.objective_referenced?(untagged_objective.resource_id, publication.id)
 
       # activity 2 should appear twice since it has the objective attached in multiple parts
       assert Enum.filter(results, fn r -> r.resource_id == activity2.resource_id end) |> length ==
