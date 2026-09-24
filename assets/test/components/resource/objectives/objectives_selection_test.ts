@@ -14,7 +14,7 @@ const objectives: Objective[] = [
 
 describe('objective attachment restrictions', () => {
   it('uses the Sub-LO descriptor for well-formed activity attachments', () => {
-    expect(getPlaceholderLabel(true, true)).toBe('Select sub-objectives…');
+    expect(getPlaceholderLabel(true, true)).toBe('Select sub-objectives...');
   });
 
   it('uses the LO descriptor for editable page attachments', () => {

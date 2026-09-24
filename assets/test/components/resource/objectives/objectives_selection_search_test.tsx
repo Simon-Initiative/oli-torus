@@ -50,7 +50,7 @@ describe('well-formed activity objective search', () => {
     renderSearchOnlySelector();
 
     const input = screen.getByRole('textbox');
-    expect(input).toHaveAttribute('placeholder', 'Select sub-objectives…');
+    expect(input).toHaveAttribute('placeholder', 'Select sub-objectives...');
 
     fireEvent.change(input, { target: { value: 'No matching objective' } });
 

@@ -33,7 +33,7 @@ export const isSearchOnly = (attachmentType?: AttachmentType, loWellFormed?: boo
   loWellFormed === true && attachmentType === 'activity';
 
 export const getPlaceholderLabel = (editMode: boolean, searchOnly: boolean) => {
-  if (editMode && searchOnly) return 'Select sub-objectives…';
+  if (editMode && searchOnly) return 'Select sub-objectives...';
 
   if (editMode) return 'Select or create learning objectives...';
 
