@@ -58,3 +58,94 @@ When a hotfix branch is ready to be deployed, it can be tagged using the **Relea
 > **Note:** Because hotfix branches are automatically packaged based on the branch name convention, there is no need to manually tag with `package` before deploying.
 
 Finally, make sure the hotfix branch is eventually merged back to master to be included in downstream development. To do this easily, create a new branch from the hotfix branch called `integrate-X.Y.Z` (the name here is not necessarily important, but just serves as an example). Then pull `master` into this integration branch. Once any/all merge conflicts are resolved, open a PR against master.
+
+## Feature Integration Branches
+
+When a feature or epic spans multiple PRs that should not land incrementally on `master`, develop it on a long-lived feature integration branch named `integ-<feature-name>`. Individual PRs target the integration branch, and the integration branch is merged to `master` once the feature is complete. Features delivered in a single PR keep targeting `master` directly.
+
+### Naming
+
+Integration branch names must follow `integ-<name>`, where `<name>` is lowercase letters and digits separated by single hyphens, for example `integ-student-dashboard` or `integ-genai-authoring`. CI for integration branches is configured through the `integ-*` branch pattern, so a differently named branch silently misses it. The **Validate Integration Branch Name** workflow fails for branches (and PRs based on branches) whose name starts with `integ` but does not follow the convention. Branches starting with `integrate-` belong to the hotfix back-merge process above and are not checked.
+
+### Creating an Integration Branch
+
+Create the branch from `master` and immediately open a draft PR from it against `master`, titled with the epic's ticket. GitHub cannot open a PR between identical branches, so the branch starts with an empty commit:
+
+```
+git fetch origin
+git switch -c integ-student-dashboard origin/master
+git commit --allow-empty -m "Start integ-student-dashboard"
+git push -u origin integ-student-dashboard
+gh pr create --draft --base master --head integ-student-dashboard --title "[FEATURE] [MER-XXXX] Student dashboard"
+```
+
+Keep this PR in draft until the feature is complete. Every PR gets a preview environment at `https://preview-<PR number>.plasma.oli.cmu.edu/`, so this draft PR provides a preview of the integration branch that is rebuilt on every merge into it. It also runs the PR checks against the integration branch merged with `master`, which surfaces incompatibilities with `master` early.
+
+### Working on the Feature
+
+Each unit of work is a normal PR whose base is the integration branch, following the usual title conventions:
+
+```
+git fetch origin
+git switch -c MER-1001-dashboard-skeleton origin/integ-student-dashboard
+# ...commit and push...
+gh pr create --base integ-student-dashboard --title "[FEATURE] [MER-1001] Dashboard skeleton"
+```
+
+PRs into an integration branch are reviewed and **squashed and merged**, exactly like PRs into `master`, and each one gets its own preview environment.
+
+When a PR depends on another PR that has not merged yet, branch from that PR's branch but still open the PR against the integration branch (its diff includes the other PR's commits until that one merges). Once the first PR is squashed and merged, rebase the dependent branch onto the integration branch:
+
+```
+git fetch origin
+git rebase --onto origin/integ-student-dashboard MER-1001-dashboard-skeleton
+git push --force-with-lease
+```
+
+### Keeping an Integration Branch in Sync with `master`
+
+Merge `master` into the integration branch regularly so conflicts are resolved in small steps rather than at the end:
+
+```
+git fetch origin
+git switch integ-student-dashboard
+git pull
+git merge origin/master
+git push origin integ-student-dashboard
+```
+
+This must be a real merge commit. Squashing a sync PR loses the merge base, so every later sync repeats the same conflicts. Because integration branches only accept changes through PRs, this push is done by a maintainer allowed to bypass the branch protection.
+
+### CI for Integration Branches
+
+Integration branches are protected like hotfix branches: changes arrive through PRs that must pass the `Elixir build and test` and `TypeScript build and test` checks, and force pushes and deletion are blocked.
+
+| Event | What runs |
+| --- | --- |
+| PR into `integ-*` | Everything a PR into `master` runs: build and tests, PR Playwright suite, PR title validation, Danger, AI review, and a preview environment |
+| Push to `integ-*` (every merge into it) | Build and tests and the PR Playwright suite, to verify the combined result of the merged PRs |
+| PR from `integ-*` into `master` (the draft PR) | Build and tests, PR Playwright suite, PR title validation, and a preview environment. Danger and AI review are skipped because every change on the branch already went through them in its own PR |
+
+### Merging an Integration Branch to `master`
+
+When the feature is complete, mark the draft PR as ready for review, bring the branch up to date with `master`, and merge it once it is approved and its checks pass. There are two ways to land it:
+
+**Squash and merge through the PR.**
+
+- Pros: it is the standard flow the repository is configured for, it needs no special permissions, and the whole feature can be reverted as a single commit.
+- Cons: `master` gets one large commit for the whole feature, so the individual PRs and their ticket references disappear from its history, and `git blame` and `git bisect` lose their granularity. The integration branch must not be reused afterwards, because its history no longer shares a merge base with `master`.
+
+**Merge commit pushed by a maintainer** (as done for recent hotfix back-merges, for example `integrate-v0.34.2`). After the PR is approved and green, a maintainer allowed to bypass branch protection merges it locally and pushes, and GitHub marks the PR as merged:
+
+```
+git fetch origin
+git switch master
+git pull
+git merge --no-ff origin/integ-student-dashboard
+git push origin master
+```
+
+- Pros: every squashed PR from the integration branch lands on `master` with its own commit and ticket reference, so history, `git blame`, and `git bisect` stay granular, and the whole feature can still be reverted with `git revert -m 1 <merge commit>`.
+- Cons: it bypasses the merge button and the repository's squash-only setting, requires a maintainer with bypass permissions, and makes `master` history non-linear.
+
+After the merge, delete the integration branch.
