@@ -46,7 +46,6 @@ import {
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
 import {
-  selectAssessmentState,
   selectBlobStorageProvider,
   selectIsLegacyTheme,
   selectPageContent,
@@ -248,7 +247,6 @@ const DeckLayoutFooter: React.FC = () => {
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const isPreviewMode = useSelector(selectPreviewMode);
   const isReviewMode = useSelector(selectReviewMode);
-  const assessmentState = useSelector(selectAssessmentState);
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -414,7 +412,7 @@ const DeckLayoutFooter: React.FC = () => {
 
   useEffect(() => {
     dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
-    if (isReviewMode || !lastCheckResults || !lastCheckResults.results.length) {
+    if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
     }
     // when this changes, notify check has completed
@@ -501,7 +499,7 @@ const DeckLayoutFooter: React.FC = () => {
           acc[everAppId][op.target.replace(`app.${everAppId}.`, '')] = envState[op.target];
           return acc;
         }, {});
-        updateGlobalUserState(blobStorageProvider, everAppState, isPreviewMode, assessmentState);
+        updateGlobalUserState(blobStorageProvider, everAppState, isPreviewMode);
       }
 
       const latestSnapshot = getLocalizedStateSnapshot(

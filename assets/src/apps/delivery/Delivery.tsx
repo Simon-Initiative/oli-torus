@@ -48,10 +48,6 @@ export interface DeliveryProps {
   blobStorageProvider: 'new' | 'deprecated';
   screenIdleTimeOutInSeconds?: number;
   reviewMode?: boolean;
-  secureDelivery?: boolean;
-  showFeedback?: boolean;
-  assessmentState?: boolean;
-  assessmentURL?: string;
   preserveCapiIframeSize?: boolean;
   signoutUrl?: string;
   currentServerTime?: number;
@@ -250,10 +246,6 @@ const Delivery: React.FC<DeliveryProps> = ({
   blobStorageProvider = 'deprecated',
   screenIdleTimeOutInSeconds = 1800,
   reviewMode = false,
-  secureDelivery = false,
-  showFeedback = true,
-  assessmentState = false,
-  assessmentURL = '',
   preserveCapiIframeSize = false,
   currentServerTime = 0,
   effectiveEndTime = 0,
@@ -379,10 +371,6 @@ const Delivery: React.FC<DeliveryProps> = ({
         blobStorageProvider,
         screenIdleTimeOutInSeconds,
         reviewMode,
-        secureDelivery,
-        showFeedback,
-        assessmentState,
-        assessmentURL,
         preserveCapiIframeSize,
         debuggerURL,
       }),
@@ -399,8 +387,7 @@ const Delivery: React.FC<DeliveryProps> = ({
     content?.displayApplicationChrome,
   );
   const insightsStageOnlyPreview = !!content?.custom?.insightsStageOnlyPreview;
-  const adaptiveDialogueBridgeEnabled =
-    !!content?.advancedDelivery && !previewMode && !reviewMode && !secureDelivery;
+  const adaptiveDialogueBridgeEnabled = !!content?.advancedDelivery && !previewMode && !reviewMode;
   const currentActivityAttemptGuid =
     currentActivityTreeAttemptState?.[currentActivityTreeAttemptState.length - 1]?.attemptGuid;
   const shouldReportAdaptiveIframeHeight = !!content?.displayApplicationChrome && !previewMode;
@@ -481,7 +468,6 @@ const Delivery: React.FC<DeliveryProps> = ({
         enabled={adaptiveDialogueBridgeEnabled}
       />
       {!insightsStageOnlyPreview &&
-        !secureDelivery &&
         (previewMode || (reviewMode && (isInstructor || isAdmin || isAuthor))) && (
           <PreviewTools
             reviewMode={reviewMode}
@@ -500,13 +486,7 @@ const Delivery: React.FC<DeliveryProps> = ({
           hideCloseButton={hideLessonFinishedCloseButton}
         />
       ) : null}
-      {!reviewMode && (
-        <DeadlineTimer
-          deadline={localDeadline}
-          lateSubmit={lateSubmit}
-          overviewURL={secureDelivery ? assessmentURL : overviewURL}
-        />
-      )}
+      <DeadlineTimer deadline={localDeadline} lateSubmit={lateSubmit} overviewURL={overviewURL} />
       {screenIdleTimeOutTriggered ? (
         <ScreenIdleTimeOutDialog remainingTime={5} signoutUrl={signoutUrl} />
       ) : null}

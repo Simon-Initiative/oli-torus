@@ -13,7 +13,6 @@ import {
   selectDebuggerURL,
   selectIsGraded,
   selectPreviewMode,
-  selectSecureDelivery,
   selectShowHistory,
   setShowHistory,
 } from '../../../store/features/page/slice';
@@ -43,7 +42,6 @@ const ReviewModeNavigation: React.FC = () => {
   const previewMode = useSelector(selectPreviewMode);
   const showHistory = useSelector(selectShowHistory);
   const sequences = useSelector(selectSequence);
-  const secureDelivery = useSelector(selectSecureDelivery);
   const dispatch = useDispatch();
   const canRestartLesson = !graded && !previewMode;
 
@@ -122,14 +120,7 @@ const ReviewModeNavigation: React.FC = () => {
   return (
     <Fragment>
       {
-        <div
-          className="review-button"
-          style={
-            secureDelivery
-              ? { position: 'relative', top: 'auto', left: 'auto', flexWrap: 'wrap' }
-              : undefined
-          }
-        >
+        <div className="review-button">
           <style>
             {`
             .review-button {

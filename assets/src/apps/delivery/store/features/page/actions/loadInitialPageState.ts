@@ -120,7 +120,7 @@ export const loadInitialPageState = createAsyncThunk(
       if (everApps) {
         everAppIds = params.content.custom.everApps.map((everApp: any) => everApp.id);
       }
-      if (params.blobStorageProvider === 'new' && !params.assessmentState) {
+      if (params.blobStorageProvider === 'new') {
         everAppIds = everAppIds.concat(['explorations', '0']);
       }
 
@@ -129,11 +129,8 @@ export const loadInitialPageState = createAsyncThunk(
       if (!isReviewMode && everAppIds && Array.isArray(everAppIds)) {
         const userState = await readGlobalUserState(
           params.blobStorageProvider,
-          params.assessmentState ? null : everAppIds,
+          everAppIds,
           params.previewMode,
-          params.assessmentState
-            ? { sectionSlug: params.sectionSlug, resourceAttemptGuid }
-            : undefined,
         );
         if (typeof userState === 'object') {
           const everAppState = Object.keys(userState).reduce((acc: any, key) => {
@@ -153,10 +150,9 @@ export const loadInitialPageState = createAsyncThunk(
 
       if (params.resourceAttemptState) {
         //EverApp state is already up-to date and merged with sessionState at this point. We should not update the Ever App state with params.resourceAttemptState
-        const partAttemptVariables =
-          isReviewMode || params.assessmentState
-            ? Object.keys(params.resourceAttemptState)
-            : Object.keys(params.resourceAttemptState).filter((key) => !key.startsWith('app.'));
+        const partAttemptVariables = isReviewMode
+          ? Object.keys(params.resourceAttemptState)
+          : Object.keys(params.resourceAttemptState).filter((key) => !key.startsWith('app.'));
         const resourceAttemptStateWithoutEverAppState = partAttemptVariables.reduce(
           (acc: Record<string, any>, entry) => {
             acc[entry] = params.resourceAttemptState[entry];

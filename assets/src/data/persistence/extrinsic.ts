@@ -5,11 +5,6 @@ import { makeRequest } from './common';
 
 // eslint-disable-next-line
 export type ExtrinsicRead = Object;
-export type AssessmentState = { sectionSlug: string; resourceAttemptGuid: string };
-const sharedURL = (assessment: AssessmentState) =>
-  `/state/course/${encodeURIComponent(
-    assessment.sectionSlug,
-  )}/resource_attempt/${encodeURIComponent(assessment.resourceAttemptGuid)}/shared`;
 
 // eslint-disable-next-line
 export type KeyValues = Object;
@@ -42,14 +37,7 @@ export const readGlobalUserState = async (
   provider: 'deprecated' | 'new',
   keys: string[] | null = null,
   useLocalStorage = false,
-  assessment?: AssessmentState,
 ) => {
-  if (assessment && !useLocalStorage) {
-    return makeRequest<ExtrinsicRead>({
-      method: 'GET',
-      url: sharedURL(assessment) + toKeyParams(keys),
-    });
-  }
   if (provider === 'new') {
     return Blob.readGlobalUserState(keys, useLocalStorage);
   }
@@ -126,15 +114,7 @@ export const updateGlobalUserState = async (
   provider: 'deprecated' | 'new',
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
-  assessment?: AssessmentState,
 ) => {
-  if (assessment && !useLocalStorage) {
-    return makeRequest<ExtrinsicRead>({
-      method: 'PUT',
-      url: sharedURL(assessment),
-      body: JSON.stringify({ updates }),
-    });
-  }
   if (provider === 'deprecated') {
     return deprecatedUpdateGlobalUserState(updates, useLocalStorage);
   }

@@ -7,19 +7,7 @@ export type BulkAttemptRetrieved = {
   activityAttempts: any[];
 };
 
-export const getBulkAttemptState = async (
-  sectionSlug: string,
-  attemptGuids: string[],
-): Promise<any[]> => {
-  if (attemptGuids.length > 100) {
-    const results: any[] = [];
-    for (let index = 0; index < attemptGuids.length; index += 100) {
-      results.push(
-        ...(await getBulkAttemptState(sectionSlug, attemptGuids.slice(index, index + 100))),
-      );
-    }
-    return results;
-  }
+export const getBulkAttemptState = async (sectionSlug: string, attemptGuids: string[]) => {
   const params = {
     method: 'POST',
     url: `/state/course/${sectionSlug}/activity_attempt`,

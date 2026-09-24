@@ -100,7 +100,6 @@ export const triggerCheck = createAsyncThunk(
       const rootState = getState() as DeliveryRootState;
       const isPreviewMode = selectPreviewMode(rootState);
       const isReviewMode = selectReviewMode(rootState);
-      if (isReviewMode) return;
       const sectionSlug = selectSectionSlug(rootState);
       const blobStorageProvider = rootState.page.blobStorageProvider;
       const resourceAttemptGuid = selectResourceAttemptGuid(rootState);

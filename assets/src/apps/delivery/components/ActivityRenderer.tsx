@@ -35,7 +35,6 @@ import {
 } from '../store/features/adaptivity/slice';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
 import {
-  selectAssessmentState,
   selectPageSlug,
   selectPreserveCapiIframeSize,
   selectPreviewMode,
@@ -150,7 +149,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const isReviewMode = useSelector(selectReviewMode);
-  const assessmentState = useSelector(selectAssessmentState);
   const currentUserId = useSelector(selectUserId);
   const preserveCapiIframeSize = useSelector(selectPreserveCapiIframeSize);
   const currentLessonId = useSelector(selectPageSlug);
@@ -164,7 +162,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       blobStorageProvider,
       { [simId]: { [key]: value } },
       isPreviewMode,
-      assessmentState,
     );
     try {
       // Review mode requires the ever app variable to be fetched from Resourse Attempt state so we need to update the variable in scripting so that
@@ -183,12 +180,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       const { snapshot } = await onRequestLatestState();
       return findReviewDataValue(snapshot, simId, key);
     }
-    const data = await Extrinsic.readGlobalUserState(
-      blobStorageProvider,
-      [simId],
-      isPreviewMode,
-      assessmentState,
-    );
+    const data = await Extrinsic.readGlobalUserState(blobStorageProvider, [simId], isPreviewMode);
     if (data) {
       const value = data[simId]?.[key];
       /* console.log('GOT DATA', { simId, key, value, data }); */
@@ -556,7 +548,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   // update all init state facts that target everApps using the app.
   const updateGlobalState = async (snapshot: any, initStates: any[]) => {
-    if (isReviewMode) return;
     const everAppInits = initStates.filter(
       (initState: any) => initState.target.indexOf('app.') === 0,
     );
@@ -573,12 +564,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         return data;
       }, {});
       /* console.log('updateGlobalState', { payloadData }); */
-      await Extrinsic.updateGlobalUserState(
-        blobStorageProvider,
-        payloadData,
-        isPreviewMode,
-        assessmentState,
-      );
+      await Extrinsic.updateGlobalUserState(blobStorageProvider, payloadData, isPreviewMode);
     }
   };
 
@@ -663,7 +649,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   }, [mutationTriggered]);
 
   const handleStateChangeEvents = async (changes: any) => {
-    if (isReviewMode) return;
     if (!ref.current) {
       return;
     }
@@ -678,12 +663,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         return data;
       }, {});
       /* console.log('CHANGE EVENT EVERAPP', { changes, appChanges, updatePayload }); */
-      await Extrinsic.updateGlobalUserState(
-        blobStorageProvider,
-        updatePayload,
-        isPreviewMode,
-        assessmentState,
-      );
+      await Extrinsic.updateGlobalUserState(blobStorageProvider, updatePayload, isPreviewMode);
     }
     // we send ALL of the changes to the components
     if (changes?.changed?.length > 1) {

@@ -9,8 +9,6 @@ import {
   selectReviewMode,
   selectScore,
   selectSectionSlug,
-  selectSecureDelivery,
-  selectShowFeedback,
 } from '../../store/features/page/slice';
 import EverappMenu from './components/EverappMenu';
 import { Everapp } from './components/EverappRenderer';
@@ -87,9 +85,6 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const isPreviewMode = useSelector(selectPreviewMode);
   const isInstructor = useSelector(selectIsInstructor);
   const isReviewMode = useSelector(selectReviewMode);
-  const secureDelivery = useSelector(selectSecureDelivery);
-  const showFeedback = useSelector(selectShowFeedback);
-  const displayScore = showScore && (!isReviewMode || showFeedback);
   const [backButtonUrl, setBackButtonUrl] = useState(backUrl);
   const [backButtonText, setBackButtonText] = useState('Back to Overview');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -144,7 +139,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
   return (
     <div className="headerContainer">
-      {!secureDelivery && (
+      {
         <div className="back-button">
           <style>
             {`
@@ -218,7 +213,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
             </a>
           )}
         </div>
-      )}
+      }
       {isReviewMode && <ReviewModeNavigation></ReviewModeNavigation>}
       <header id="delivery-header">
         <div className="defaultView">
@@ -237,7 +232,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
               )}
 
               <div className="name">{userName}</div>
-              {displayScore && <div className="score">{scoreText}</div>}
+              <div className={`score ${!showScore ? 'displayNone' : ''}`}>{scoreText}</div>
               {!isReviewMode && (
                 <button
                   className="optionsToggle"
@@ -254,13 +249,11 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
             <OptionsPanel open={showOptions} />
           </div>
           <div className={`theme-header ${isLegacyTheme ? 'displayNone' : ''}`}>
-            {displayScore && (
-              <div className="theme-header-score">
-                <div className="theme-header-score__icon"></div>
-                <span className="theme-header-score__label">Score:&nbsp;</span>
-                <span className="theme-header-score__value">{scoreText}</span>
-              </div>
-            )}
+            <div className={`theme-header-score ${!showScore ? 'displayNone' : ''}`}>
+              <div className="theme-header-score__icon"></div>
+              <span className="theme-header-score__label">Score:&nbsp;</span>
+              <span className="theme-header-score__value">{scoreText}</span>
+            </div>
             {!isLegacyTheme && hasEverApps && (
               <EverappMenu apps={everApps} isLegacyTheme={isLegacyTheme} />
             )}

@@ -280,10 +280,10 @@ const getSessionVisitHistory = async (
   blobStorageProvider: 'deprecated' | 'new',
   sectionSlug: string,
   resourceAttemptGuid: string,
-  useLocalState = false,
+  isPreviewMode = false,
 ) => {
   let pageAttemptState: any;
-  if (useLocalState) {
+  if (isPreviewMode) {
     const allState = getEnvState(defaultGlobalEnv);
     pageAttemptState = allState;
   } else {
@@ -318,7 +318,7 @@ export const findNextSequenceId = createAsyncThunk(
       blobStorageProvider,
       sectionSlug,
       resourceAttemptGuid,
-      isPreviewMode || selectReviewMode(rootState),
+      isPreviewMode,
     );
 
     const currentActivityId = selectCurrentActivityId(rootState);
@@ -478,12 +478,7 @@ export const loadActivities = createAsyncThunk(
       const activityIds = activityAttemptMapping.map((m) => m.id);
 
       results = isInstructor
-        ? await getBulkActivitiesForDelivery(
-            sectionSlug,
-            activityIds,
-            isPreviewMode,
-            rootState.page.assessmentState ? rootState.page.resourceAttemptGuid : undefined,
-          )
+        ? await getBulkActivitiesForDelivery(sectionSlug, activityIds, isPreviewMode)
         : await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
     } else {
       const attemptGuids = activityAttemptMapping.map((m) => m.attemptGuid);

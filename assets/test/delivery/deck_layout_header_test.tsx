@@ -12,8 +12,6 @@ import {
   selectReviewMode,
   selectScore,
   selectSectionSlug,
-  selectSecureDelivery,
-  selectShowFeedback,
 } from 'apps/delivery/store/features/page/slice';
 
 jest.mock('react-redux', () => ({
@@ -29,16 +27,10 @@ describe('DeckLayoutHeader', () => {
     previewMode,
     isInstructor,
     displayApplicationChrome,
-    secureDelivery = false,
-    reviewMode = false,
-    showFeedback = true,
   }: {
     previewMode: boolean;
     isInstructor: boolean;
     displayApplicationChrome: boolean;
-    secureDelivery?: boolean;
-    reviewMode?: boolean;
-    showFeedback?: boolean;
   }) => {
     (useSelector as jest.Mock).mockImplementation((selector) => {
       switch (selector) {
@@ -53,11 +45,7 @@ describe('DeckLayoutHeader', () => {
         case selectIsInstructor:
           return isInstructor;
         case selectReviewMode:
-          return reviewMode;
-        case selectSecureDelivery:
-          return secureDelivery;
-        case selectShowFeedback:
-          return showFeedback;
+          return false;
         case selectSectionSlug:
           return 'demo-project';
         case selectPageSlug:
@@ -71,32 +59,6 @@ describe('DeckLayoutHeader', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
-
-  it.each([undefined, 'default'])(
-    'hides course navigation and withheld review scores (%s theme)',
-    (themeId) => {
-      configureSelectors({
-        previewMode: false,
-        isInstructor: false,
-        displayApplicationChrome: true,
-        secureDelivery: true,
-        reviewMode: true,
-        showFeedback: false,
-      });
-      render(
-        <DeckLayoutHeader
-          pageName="Assessment"
-          userName="Student"
-          backUrl="/course"
-          showScore
-          themeId={themeId}
-        />,
-      );
-      expect(screen.queryByText(/Score:/)).not.toBeInTheDocument();
-      expect(document.querySelector('a[href="/course"]')).toBeNull();
-      expect(screen.queryByText('Back to Overview')).not.toBeInTheDocument();
-    },
-  );
 
   it('shows Exit Preview instead of fullscreen controls in author preview', async () => {
     configureSelectors({ previewMode: true, isInstructor: false, displayApplicationChrome: true });
