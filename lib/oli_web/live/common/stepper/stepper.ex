@@ -64,7 +64,7 @@ defmodule OliWeb.Common.Stepper do
         <div id="stepper_content" class="w-full flex-1 overflow-y-auto">
           <div
             id={"stepper_step_content_#{@current_step}"}
-            class="opacity-0"
+            class="opacity-0 motion-reduce:transition-none"
             phx-mounted={
               JS.transition(
                 {"transition-opacity ease-out duration-700", "opacity-0", "opacity-100"},

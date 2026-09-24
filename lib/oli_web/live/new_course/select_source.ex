@@ -327,6 +327,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       <div class="flex shrink-0">
         <label class={[
           "flex h-8 w-10 cursor-pointer items-center justify-center rounded-l-[2px] border border-Border-border-default",
+          "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2",
           if(@view_type == :card,
             do: "bg-Fill-fill-selection-active text-Icon-icon-white",
             else: "text-Icon-icon-default"
@@ -336,14 +337,16 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
             type="radio"
             id="card-view-type"
             name="view[type]"
-            class="hidden"
+            class="sr-only"
             value="card"
             checked={@view_type == :card}
+            aria-label="Card view"
           />
           <Icons.grid_view />
         </label>
         <label class={[
           "flex h-8 w-10 cursor-pointer items-center justify-center rounded-r-[2px] border border-l-0 border-Border-border-default",
+          "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2",
           if(@view_type == :list,
             do: "bg-Fill-fill-selection-active text-Icon-icon-white",
             else: "text-Icon-icon-default"
@@ -353,9 +356,10 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
             type="radio"
             id="list-view-type"
             name="view[type]"
-            class="hidden"
+            class="sr-only"
             value="list"
             checked={@view_type == :list}
+            aria-label="List view"
           />
           <i class="fa fa-list" />
         </label>
@@ -466,13 +470,12 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   defp filter_by_query(sources, ""), do: sources
 
   defp filter_by_query(sources, query) do
+    normalized_query = String.downcase(query)
+
     Enum.filter(sources, fn source ->
       title = TableModel.source_title(source)
 
-      String.contains?(
-        String.downcase(title),
-        String.downcase(query)
-      )
+      String.contains?(String.downcase(title), normalized_query)
     end)
   end
 
@@ -502,14 +505,18 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     Map.put(table_model, :rows, rows)
   end
 
-  def handle_event("update_view_type", %{"view" => %{"type" => view_type}}, socket) do
-    socket = assign(socket, :view_type, String.to_atom(view_type))
+  def handle_event("update_view_type", %{"view" => %{"type" => view_type}}, socket)
+      when view_type in ["card", "list"] do
+    socket = assign(socket, :view_type, String.to_existing_atom(view_type))
 
     {:noreply, push_patch(socket, to: patch_path(socket))}
   end
 
   # Defensive: a change event on the view-type radio group can fire with no checked
-  # radio in its payload (e.g. a rapid double-toggle), which carries only "_target".
+  # radio in its payload (e.g. a rapid double-toggle), which carries only "_target" — or,
+  # since this event's payload is client-controlled, with an unexpected "type" value.
+  # `String.to_existing_atom/1` above is itself guarded by the `in ["card", "list"]` clause,
+  # not the atom table, so this never risks unbounded atom creation from untrusted input.
   def handle_event("update_view_type", _params, socket), do: {:noreply, socket}
 
   def handle_event("filter_source", %{"filter" => filter}, socket) do
