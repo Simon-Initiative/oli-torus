@@ -18,7 +18,7 @@ describe('objective attachment restrictions', () => {
   });
 
   it('uses the LO descriptor for editable page attachments', () => {
-    expect(getPlaceholderLabel(true, false)).toBe('Select or create learning objectives');
+    expect(getPlaceholderLabel(true, false)).toBe('Select or create learning objectives...');
   });
 
   it('uses the read-only descriptor outside edit mode', () => {
