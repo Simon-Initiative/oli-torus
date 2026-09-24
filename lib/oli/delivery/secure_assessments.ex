@@ -23,7 +23,6 @@ defmodule Oli.Delivery.SecureAssessments do
     :save,
     :submit,
     :review,
-    :filtered_dependency_read,
     :dependency_read,
     :dependency_write
   ]
@@ -271,18 +270,12 @@ defmodule Oli.Delivery.SecureAssessments do
         operation == :review ->
           {:ok, :review}
 
-        operation == :filtered_dependency_read and
-            target.lifecycle_state in [:submitted, :evaluated] ->
-          {:ok, :review}
-
         target.secure_delivery and is_nil(scope) ->
           {:error, :secure_launch_required}
 
         (not is_nil(scope) or target.secure_delivery) and
           target.lifecycle_state in [:submitted, :evaluated] and
             operation in [:start, :save, :submit, :dependency_read, :dependency_write] ->
-          # Raw dependency adapters cannot expose finalized work. Only serializers
-          # which enforce feedback visibility use :filtered_dependency_read.
           {:error, :review_not_allowed}
 
         not is_nil(scope) ->
@@ -319,9 +312,9 @@ defmodule Oli.Delivery.SecureAssessments do
     with :ok <- result do
       review_targets =
         Enum.filter(targets, fn t ->
-          operation in [:review, :filtered_dependency_read] and
+          operation == :review and
             t.lifecycle_state in [:submitted, :evaluated] and
-            (not is_nil(scope) or t.secure_delivery or operation == :filtered_dependency_read)
+            (not is_nil(scope) or t.secure_delivery)
         end)
 
       case review_settings(review_targets) do

@@ -189,12 +189,12 @@ defmodule OliWeb.Plugs.SecureAssessment do
        )}
 
   defp classify(OliWeb.Api.AttemptController, :bulk_retrieve, p),
-    do: {:attempts, :activity, p["attemptGuids"], :filtered_dependency_read}
+    do: {:attempts, :activity, p["attemptGuids"], :review}
 
   defp classify(OliWeb.Api.AttemptController, action, p) do
     operation =
       case action do
-        :get_activity_attempt -> :filtered_dependency_read
+        :get_activity_attempt -> :review
         action when action in [:new_activity, :new_part] -> :start
         action when action in [:submit_part, :submit_activity, :submit_evaluations] -> :submit
         _ -> :save
@@ -207,11 +207,6 @@ defmodule OliWeb.Plugs.SecureAssessment do
   end
 
   defp classify(OliWeb.Api.ResourceAttemptStateController, action, p),
-    do:
-      {:attempts, :resource, [p["resource_attempt_guid"]],
-       if(action == :read, do: :dependency_read, else: :dependency_write)}
-
-  defp classify(OliWeb.Api.AssessmentDependencyController, action, p),
     do:
       {:attempts, :resource, [p["resource_attempt_guid"]],
        if(action == :read, do: :dependency_read, else: :dependency_write)}

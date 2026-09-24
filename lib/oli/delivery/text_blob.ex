@@ -15,11 +15,6 @@ defmodule Oli.Delivery.TextBlob do
     |> read(default_value)
   end
 
-  @doc "Reads a user-scoped secure dependency, distinguishing missing data from storage failure."
-  def read_dependency(user, key, default_value) do
-    user |> build_user_key(key) |> Oli.Delivery.TextBlob.Storage.read_dependency(default_value)
-  end
-
   @doc """
   Reads a text blob from a globally unique key.
 

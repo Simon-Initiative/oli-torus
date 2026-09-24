@@ -1014,14 +1014,6 @@ defmodule OliWeb.Router do
   scope "/api/v1/state/course/:section_slug", OliWeb do
     pipe_through([:api, :require_section, :delivery_protected])
 
-    get "/resource_attempt/:resource_attempt_guid/shared",
-        Api.AssessmentDependencyController,
-        :read
-
-    put "/resource_attempt/:resource_attempt_guid/shared",
-        Api.AssessmentDependencyController,
-        :write
-
     get("/", Api.SectionStateController, :read)
     put("/", Api.SectionStateController, :upsert)
     delete("/", Api.SectionStateController, :delete)

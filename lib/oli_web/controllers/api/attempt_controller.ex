@@ -296,16 +296,7 @@ defmodule OliWeb.Api.AttemptController do
       }) do
     case Attempts.get_activity_attempts(attempt_guids) do
       {:ok, attempts} ->
-        visibility = Oli.Delivery.SecureAssessments.Review.visibility(attempt_guids)
-
-        attempts =
-          Enum.map(attempts, fn attempt ->
-            Oli.Delivery.SecureAssessments.Review.project(
-              to_client_view(attempt),
-              Map.get(visibility, attempt.attempt_guid, true)
-            )
-          end)
-
+        attempts = Enum.map(attempts, &to_client_view/1)
         json(conn, %{"result" => "success", "activityAttempts" => attempts})
     end
   end
@@ -385,21 +376,11 @@ defmodule OliWeb.Api.AttemptController do
             effective_settings
           )
 
-        visible =
-          Oli.Delivery.SecureAssessments.Review.visibility([attempt_guid])
-          |> Map.get(attempt_guid, true)
-
-        json(
-          conn,
-          Oli.Delivery.SecureAssessments.Review.project(
-            %{
-              "result" => "success",
-              "state" => state,
-              "model" => Map.delete(model, "authoring")
-            },
-            visible
-          )
-        )
+        json(conn, %{
+          "result" => "success",
+          "state" => state,
+          "model" => Map.delete(model, "authoring")
+        })
     end
   end
 

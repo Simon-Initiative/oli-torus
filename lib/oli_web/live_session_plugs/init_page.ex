@@ -165,10 +165,10 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
          params
        ) do
     view =
-      case {match?(%{scope: %{}}, socket.assigns[:user_session]),
-            Map.get(content, "displayApplicationChrome", false)} do
-        {false, true} -> :adaptive_with_chrome
-        _ -> :adaptive_chromeless
+      if Map.get(content, "displayApplicationChrome", false) do
+        :adaptive_with_chrome
+      else
+        :adaptive_chromeless
       end
 
     screen_idle_timeout_enabled? = view != :adaptive_with_chrome
@@ -221,18 +221,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
           "deprecated"
         end
     }
-
-    resource =
-      Oli.Delivery.Sections.get_section_resource(section.id, page_context.page.resource_id)
-
-    app_params =
-      OliWeb.SecureAssessmentPresentation.adaptive_params(
-        app_params,
-        socket.assigns[:user_session],
-        resource.secure_delivery,
-        resource_attempt,
-        page_context.effective_settings
-      )
 
     assign(socket, %{
       view: view,
