@@ -374,6 +374,100 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       assert get_resp_header(conn, "x-content-type-options") == ["nosniff"]
     end
 
+    test "restricts saved-file reads to the attempt owner and section instructors", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      attempt_map =
+        map
+        |> Map.put(:user, user)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user,
+          :page,
+          :resource_attempt
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity,
+          :resource_attempt,
+          :activity_attempt
+        )
+
+      activity_attempt = attempt_map.activity_attempt
+      saved_state = ~s({"steps":["first"]})
+
+      recycle(conn)
+      |> log_in_user(user)
+      |> post(
+        Routes.legacy_superactivity_path(conn, :process),
+        %{
+          "commandName" => "writeFileRecord",
+          "activityContextGuid" => activity_attempt.attempt_guid,
+          "byteEncoding" => "utf8",
+          "fileName" => "state.json",
+          "fileRecordData" => saved_state,
+          "resourceTypeID" => "oli_embedded",
+          "mimeType" => "application/json",
+          "userGuid" => Integer.to_string(user.id),
+          "attemptNumber" => 1
+        }
+      )
+
+      other_learner = user_fixture()
+      Sections.enroll(other_learner.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      unauthorized_conn =
+        recycle(conn)
+        |> log_in_user(other_learner)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "loadFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "fileName" => "state.json",
+            "attemptNumber" => 1
+          }
+        )
+
+      assert response(unauthorized_conn, 403) == "Unauthorized"
+
+      unauthorized_context_conn =
+        recycle(conn)
+        |> log_in_user(other_learner)
+        |> get(Routes.legacy_superactivity_path(conn, :context, activity_attempt.attempt_guid))
+
+      assert response(unauthorized_context_conn, 403) == "Unauthorized"
+
+      {:ok, {hidden_instructor, _token}} = Sections.fetch_hidden_instructor(section.id)
+
+      instructor_conn =
+        recycle(conn)
+        |> log_in_user(hidden_instructor)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "loadFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "fileName" => "state.json",
+            "attemptNumber" => 1
+          }
+        )
+
+      assert response(instructor_conn, 200) == saved_state
+
+      instructor_context_conn =
+        recycle(conn)
+        |> log_in_user(hidden_instructor)
+        |> get(Routes.legacy_superactivity_path(conn, :context, activity_attempt.attempt_guid))
+
+      assert response(instructor_context_conn, 200) =~ activity_attempt.attempt_guid
+    end
+
     test "endAttempt broadcasts page finalization and schedules grade passback", %{
       conn: conn,
       user: user,

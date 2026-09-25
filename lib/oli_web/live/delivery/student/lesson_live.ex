@@ -1799,9 +1799,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          activities: activities
        })
        when is_map(activities) do
-    case Map.values(activities) do
-      [%{delivery_element: "oli-embedded-delivery", lifecycle_state: :active}] -> true
-      _ -> false
+    case map_size(activities) do
+      1 ->
+        Enum.any?(activities, fn
+          {_id, %{delivery_element: "oli-embedded-delivery", lifecycle_state: :active}} -> true
+          _ -> false
+        end)
+
+      _ ->
+        false
     end
   end
 
@@ -1813,9 +1819,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          activities: activities
        })
        when is_map(activities) do
-    case Map.values(activities) do
-      [%{delivery_element: "oli-embedded-delivery"}] -> true
-      _ -> false
+    case map_size(activities) do
+      1 ->
+        Enum.any?(activities, fn
+          {_id, %{delivery_element: "oli-embedded-delivery"}} -> true
+          _ -> false
+        end)
+
+      _ ->
+        false
     end
   end
 

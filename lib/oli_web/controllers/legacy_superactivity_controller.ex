@@ -73,9 +73,12 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   def context(conn, %{"attempt_guid" => attempt_guid} = _params) do
-    case fetch_context(conn, attempt_guid) do
-      {:ok, context} ->
-        json(conn, context_response(conn.host, context))
+    with {:ok, context} <- fetch_context(conn, attempt_guid),
+         :ok <- authorize_read(context) do
+      json(conn, context_response(conn.host, context))
+    else
+      {:error, :unauthorized} ->
+        error(conn, 403, "Unauthorized")
 
       {:error, :not_found} ->
         error(conn, 404, "Attempt not found")
@@ -154,14 +157,37 @@ defmodule OliWeb.LegacySuperactivityController do
 
   defp authorize_command(%LegacySuperactivityContext{} = context, command_name)
        when command_name in @mutating_commands do
-    if preview_context?(context) || context.user.id == context.attempt_user_id do
-      :ok
-    else
-      {:error, :unauthorized}
+    case preview_context?(context) || attempt_owner?(context) do
+      true -> :ok
+      false -> {:error, :unauthorized}
     end
   end
 
-  defp authorize_command(%LegacySuperactivityContext{}, _command_name), do: :ok
+  defp authorize_command(%LegacySuperactivityContext{} = context, _command_name),
+    do: authorize_read(context)
+
+  defp authorize_read(%LegacySuperactivityContext{} = context) do
+    case preview_context?(context) || attempt_owner?(context) || section_instructor?(context) do
+      true -> :ok
+      false -> {:error, :unauthorized}
+    end
+  end
+
+  defp attempt_owner?(%LegacySuperactivityContext{
+         user: %User{id: user_id},
+         attempt_user_id: user_id
+       }),
+       do: true
+
+  defp attempt_owner?(%LegacySuperactivityContext{}), do: false
+
+  defp section_instructor?(%LegacySuperactivityContext{
+         enrollment: %{context_roles: context_roles}
+       }) do
+    Sections.contains_instructor_role?(context_roles)
+  end
+
+  defp section_instructor?(%LegacySuperactivityContext{}), do: false
 
   def create_media(conn, %{"directory" => directory, "file" => file, "name" => name}) do
     case Base.decode64(file) do
