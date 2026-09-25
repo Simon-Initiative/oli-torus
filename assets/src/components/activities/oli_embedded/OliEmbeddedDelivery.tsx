@@ -2,14 +2,18 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch } from 'react-redux';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import { GradedPoints } from 'components/activities/common/delivery/graded_points/GradedPoints';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
 import * as ActivityTypes from 'components/activities/types';
+import { Checkmark } from 'components/misc/icons/Checkmark';
+import { Cross } from 'components/misc/icons/Cross';
 import {
   activityDeliverySlice,
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
+import { isCorrect } from 'data/activities/utils';
 import { finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
@@ -51,6 +55,19 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
   const reviewMode =
     mode === 'review' ||
     (typeof window !== 'undefined' && window.location.pathname.includes('/review'));
+  const maybeGradedPoints = (
+    <GradedPoints
+      shouldShow={
+        activityState.score !== null &&
+        activityContext.graded &&
+        reviewMode &&
+        activityContext.showFeedback === true &&
+        activityContext.surveyId === null
+      }
+      icon={isCorrect(activityState) ? <Checkmark /> : <Cross />}
+      attemptState={activityState}
+    />
+  );
 
   const dispatch = useDispatch();
   useEffect(() => {
@@ -368,6 +385,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           {pageFinalizeError}
         </div>
       ) : null}
+      {maybeGradedPoints}
       {(context || showLoadingUI) && (
         <div
           style={{
