@@ -8,6 +8,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   attr(:revision_history_link, :boolean, required: true)
   attr(:rows, :list, required: true)
   attr(:expanded_slugs, :any, default: MapSet.new())
+  attr(:pending_detaches, :any, default: MapSet.new())
   attr(:offset, :integer, default: 0)
   attr(:query, :string, default: "")
 
@@ -273,6 +274,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                       ]}
                     >
                       <% child_expanded? = MapSet.member?(@expanded_slugs, sub_objective.slug) %>
+                      <% detaching? =
+                        MapSet.member?(
+                          @pending_detaches,
+                          {sub_objective.slug, item.slug}
+                        ) %>
                       <button
                         type="button"
                         class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary disabled:cursor-default"
@@ -379,18 +385,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           <span class="group/action relative inline-flex">
                             <button
                               type="button"
-                              class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:bg-Fill-Buttons-fill-primary hover:text-white active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                              class={[
+                                "inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+                                !detaching? &&
+                                  "hover:bg-Fill-Buttons-fill-primary hover:text-white active:text-Icon-icon-active",
+                                detaching? && "cursor-wait opacity-70"
+                              ]}
                               phx-click="detach_sub_objective"
                               phx-value-slug={sub_objective.slug}
                               phx-value-parent_slug={item.slug}
-                              aria-label={"Detach #{sub_objective.title} from learning objective #{item.title}"}
+                              disabled={detaching?}
+                              aria-busy={to_string(detaching?)}
+                              aria-label={
+                                if detaching?,
+                                  do: "Detaching #{sub_objective.title}",
+                                  else:
+                                    "Detach #{sub_objective.title} from learning objective #{item.title}"
+                              }
                               aria-describedby={"detach-sub-objective-tooltip-#{item.resource_id}-#{sub_objective.resource_id}"}
                             >
                               <Icons.unlink
+                                :if={!detaching?}
                                 width="16"
                                 height="16"
                                 stroke_width="1.5"
                                 class="shrink-0 text-current"
+                              />
+                              <.loader
+                                :if={detaching?}
+                                class="flex items-center justify-center"
+                                icon_class="text-Icon-icon-default"
                               />
                             </button>
                             <span
@@ -398,7 +422,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                               role="tooltip"
                               class="pointer-events-none absolute bottom-[calc(100%+8px)] right-0 z-20 hidden whitespace-nowrap rounded border border-Border-border-default bg-Background-bg-secondary px-2 py-1 text-xs font-normal leading-4 text-Text-text-high shadow-[0px_2px_4px_rgba(0,52,99,0.10)] group-hover/action:block group-focus-within/action:block"
                             >
-                              Detach from learning objective
+                              {if detaching?,
+                                do: "Detaching…",
+                                else: "Detach from learning objective"}
                             </span>
                           </span>
                         </div>

@@ -1484,16 +1484,24 @@ defmodule Oli.Publishing do
         SELECT 1
         FROM published_resources AS mapping
         JOIN revisions AS rev ON mapping.revision_id = rev.id
-        CROSS JOIN LATERAL jsonb_object_keys(rev.objectives) AS objective_part(part)
         WHERE mapping.publication_id = $1
+          AND rev.resource_type_id = $2
           AND rev.deleted IS FALSE
-          AND (
-            (rev.resource_type_id = $2
-              AND rev.objectives->objective_part.part @> jsonb_build_array($4::bigint))
-            OR
-            (rev.resource_type_id = $3
-              AND rev.objectives->'attached' @> jsonb_build_array($4::bigint))
+          AND jsonb_path_exists(
+            rev.objectives,
+            '$.*[*] ? (@ == $objective)',
+            jsonb_build_object('objective', $4::bigint)
           )
+        LIMIT 1
+      )
+      OR EXISTS (
+        SELECT 1
+        FROM published_resources AS mapping
+        JOIN revisions AS rev ON mapping.revision_id = rev.id
+        WHERE mapping.publication_id = $1
+          AND rev.resource_type_id = $3
+          AND rev.deleted IS FALSE
+          AND rev.objectives->'attached' @> jsonb_build_array($4::bigint)
         LIMIT 1
       )
       OR EXISTS (

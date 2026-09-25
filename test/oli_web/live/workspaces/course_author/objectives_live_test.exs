@@ -1543,6 +1543,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> element("button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
 
+      assert has_element?(
+               view,
+               "button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}][disabled][aria-busy='true']"
+             )
+
+      assert has_element?(
+               view,
+               "button[aria-label='Detaching #{sub_obj.title}'] .spinner-border"
+             )
+
       render_async(view)
 
       assert has_element?(

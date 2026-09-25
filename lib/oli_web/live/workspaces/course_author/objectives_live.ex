@@ -404,6 +404,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             }
             rows={@table_model.rows}
             expanded_slugs={@expanded_objective_slugs}
+            pending_detaches={@pending_sub_objective_detaches}
             project_slug={@project.slug}
             offset={@offset}
             query={@query}
@@ -1277,13 +1278,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     %{project: project, all_objectives: all_objectives} = socket.assigns
 
     %{children: objective_children} = AuthoringResolver.from_revision_slug(project.slug, slug)
+    objective_child_ids = MapSet.new(objective_children)
     child_ids = all_child_ids(all_objectives)
     parent_counts = objective_parent_counts(all_objectives)
 
     sub_objectives =
       all_objectives
       |> Enum.filter(&sub_objective?(&1, child_ids))
-      |> Enum.reject(&(&1.resource_id in objective_children))
+      |> Enum.reject(&MapSet.member?(objective_child_ids, &1.resource_id))
       |> Enum.map(fn sub_objective ->
         Map.put(
           sub_objective,
