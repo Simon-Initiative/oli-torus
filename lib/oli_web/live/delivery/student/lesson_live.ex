@@ -14,6 +14,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Accounts
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Experiments.PageDecisions
@@ -137,6 +138,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       auto_submit = page_context.effective_settings.late_submit == :disallow
       batch_scoring = page_context.effective_settings.batch_scoring
+      single_embedded_page = single_embedded_page?(page_context)
       auto_finalize_single_embedded = auto_finalize_single_embedded?(page_context)
 
       now = DateTime.utc_now() |> to_epoch
@@ -152,6 +154,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         end
 
       Oli.Delivery.ScoreAsYouGoNotifications.subscribe(resource_attempt.id)
+
+      if single_embedded_page do
+        Broadcaster.subscribe_to_page_attempt_finalized(resource_attempt.attempt_guid)
+
+        case Core.get_resource_attempt_lifecycle_state(resource_attempt.attempt_guid) do
+          lifecycle_state when lifecycle_state not in [:active, nil] ->
+            send(self(), {:page_attempt_finalized, resource_attempt.attempt_guid})
+
+          _ ->
+            :ok
+        end
+      end
 
       # Get the latest ResourceAccess for this resource to get the current out_of value
       resource_access =
@@ -851,6 +865,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          assign(socket, current_score: score, current_out_of: out_of, questions: questions)}
     end
   end
+
+  def handle_info(
+        {:page_attempt_finalized, attempt_guid},
+        %{assigns: %{attempt_guid: attempt_guid, effective_settings: effective_settings}} = socket
+      ) do
+    redirect_after_finalization(socket, effective_settings)
+  end
+
+  def handle_info({:page_attempt_finalized, _attempt_guid}, socket), do: {:noreply, socket}
 
   def handle_info({:disable_question_inputs, question_id}, socket) do
     {:noreply, push_event(socket, "disable_question_inputs", %{"question_id" => question_id})}
@@ -1716,18 +1739,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         if section.grade_passback_enabled,
           do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 
-        redirect_to =
-          case effective_settings.review_submission do
-            :allow ->
-              Utils.review_live_path(section.slug, revision_slug, attempt_guid,
-                request_path: request_path
-              )
-
-            _ ->
-              Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
-          end
-
-        {:noreply, redirect(socket, to: redirect_to)}
+        redirect_after_finalization(socket, effective_settings)
 
       {:ok, %FinalizationSummary{graded: false}} ->
         {:noreply,
@@ -1756,19 +1768,70 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  defp redirect_after_finalization(
+         %{
+           assigns: %{
+             section: section,
+             request_path: request_path,
+             revision_slug: revision_slug,
+             attempt_guid: attempt_guid
+           }
+         } = socket,
+         effective_settings
+       ) do
+    redirect_to =
+      case effective_settings.review_submission do
+        :allow ->
+          Utils.review_live_path(section.slug, revision_slug, attempt_guid,
+            request_path: request_path
+          )
+
+        _ ->
+          Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
+      end
+
+    {:noreply, redirect(socket, to: redirect_to)}
+  end
+
   defp auto_finalize_single_embedded?(%{
          effective_settings: %{batch_scoring: true},
          review_mode: false,
          activities: activities
        })
        when is_map(activities) do
-    case Map.values(activities) do
-      [%{delivery_element: "oli-embedded-delivery", lifecycle_state: :active}] -> true
-      _ -> false
+    case map_size(activities) do
+      1 ->
+        Enum.any?(activities, fn
+          {_id, %{delivery_element: "oli-embedded-delivery", lifecycle_state: :active}} -> true
+          _ -> false
+        end)
+
+      _ ->
+        false
     end
   end
 
   defp auto_finalize_single_embedded?(_), do: false
+
+  defp single_embedded_page?(%{
+         effective_settings: %{batch_scoring: true},
+         review_mode: false,
+         activities: activities
+       })
+       when is_map(activities) do
+    case map_size(activities) do
+      1 ->
+        Enum.any?(activities, fn
+          {_id, %{delivery_element: "oli-embedded-delivery"}} -> true
+          _ -> false
+        end)
+
+      _ ->
+        false
+    end
+  end
+
+  defp single_embedded_page?(_), do: false
 
   defp get_post(socket, post_id) do
     Enum.find(socket.assigns.annotations.posts, fn post -> post.id == post_id end)

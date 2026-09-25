@@ -1367,6 +1367,29 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
     end
 
+    test "redirects when an embedded activity auto-finalizes the current page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      resource_attempt =
+        create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      send(view.pid, {:page_attempt_finalized, resource_attempt.attempt_guid})
+
+      {redirect_path, _flash} = assert_redirect(view)
+
+      assert redirect_path =~
+               "/sections/#{section.slug}/lesson/#{graded_page.slug}/attempt/#{resource_attempt.attempt_guid}/review"
+    end
+
     test "triggers CheckCertification job if certificate_enabled is true on submit", ctx do
       %{conn: conn, user: user, section: section, page_3: page_3} = ctx
       {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
