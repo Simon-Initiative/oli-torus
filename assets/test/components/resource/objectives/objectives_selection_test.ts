@@ -10,6 +10,7 @@ const objectives: Objective[] = [
   { id: 1, title: 'Parent', parentIds: null },
   { id: 2, title: 'Another parent', parentIds: [] },
   { id: 3, title: 'Child', parentIds: [1] },
+  { id: 4, title: 'Unassociated child', parentIds: null, objectiveType: 'sub_objective' },
 ];
 
 describe('objective attachment restrictions', () => {
@@ -34,6 +35,7 @@ describe('objective attachment restrictions', () => {
       { ...objectives[0], disabled: true },
       { ...objectives[1], disabled: true },
       { ...objectives[2], disabled: false },
+      { ...objectives[3], disabled: true },
     ]);
   });
 

@@ -37,7 +37,7 @@ export function arrangeObjectives(objectives: Objective[]): Immutable.List<Objec
 
   uniqueObjectives.forEach((o) => {
     // Initialize top-level objectives (those that are not children of anyone)
-    if (!childIds.has(o.id)) {
+    if (!childIds.has(o.id) && o.objectiveType !== 'sub_objective') {
       if (bucketed[o.id] === undefined) {
         bucketed[o.id] = [];
       }

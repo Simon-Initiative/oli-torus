@@ -6,6 +6,9 @@ defmodule Oli.Resources.Revision do
   alias Oli.LearningModel.Parameters
   alias Oli.LearningModel.Parameters.Validation
 
+  @typedoc "The persisted role of a learning-objective revision."
+  @type objective_type :: :objective | :sub_objective
+
   @derive {Jason.Encoder,
            only: [
              :content,
@@ -23,6 +26,7 @@ defmodule Oli.Resources.Revision do
              :scoring_strategy_id,
              :activity_type_id,
              :title,
+             :objective_type,
              :resource_id,
              :intro_video,
              :poster_image,
@@ -50,6 +54,11 @@ defmodule Oli.Resources.Revision do
     # fields that apply to only a subset of the types
     field :content, :map, default: %{}
     field :children, {:array, :id}, default: []
+
+    field :objective_type, Ecto.Enum,
+      values: [:objective, :sub_objective],
+      default: :objective
+
     field :tags, {:array, :id}, default: []
     field :activity_refs, {:array, :id}, default: []
     field :objectives, :map, default: %{}
@@ -153,6 +162,18 @@ defmodule Oli.Resources.Revision do
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])
     |> validate_learning_model_parameters()
     |> Slug.update_on_change("revisions")
+  end
+
+  @doc """
+  Applies the server-controlled learning-objective classification.
+
+  Keep this separate from `changeset/2` so client-derived revision attributes cannot
+  reclassify a top-level objective as a sub-objective (or the reverse).
+  """
+  @spec trusted_objective_type_changeset(%__MODULE__{} | Ecto.Changeset.t(), map()) ::
+          Ecto.Changeset.t()
+  def trusted_objective_type_changeset(revision_or_changeset, attrs) do
+    cast(revision_or_changeset, attrs, [:objective_type])
   end
 
   defp validate_learning_model_parameters(changeset) do
