@@ -24,6 +24,8 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
+  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Attempts.Core.ClientEvaluation
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Activities.Model.Feedback
@@ -37,6 +39,7 @@ defmodule OliWeb.LegacySuperactivityController do
   @default_preview_model_max_bytes 100_000
   @default_media_lookup_timeout_ms 15_000
   @preview_file_storage_prefix "preview-save-files"
+  @mutating_commands ~w(startAttempt scoreAttempt endAttempt writeFileRecord deleteFileRecord)
 
   defmodule LegacySuperactivityContext do
     @moduledoc false
@@ -102,6 +105,7 @@ defmodule OliWeb.LegacySuperactivityController do
         %{"commandName" => command_name, "activityContextGuid" => attempt_guid} = params
       ) do
     with {:ok, context} <- fetch_context(conn, attempt_guid),
+         :ok <- authorize_command(context, command_name),
          xml_response <- process_command(command_name, context, params) do
       case xml_response do
         {:ok, xml} ->
@@ -138,6 +142,17 @@ defmodule OliWeb.LegacySuperactivityController do
         |> send_resp(500, "server error")
     end
   end
+
+  defp authorize_command(%LegacySuperactivityContext{} = context, command_name)
+       when command_name in @mutating_commands do
+    if preview_context?(context) || context.user.id == context.attempt_user_id do
+      :ok
+    else
+      {:error, :unauthorized}
+    end
+  end
+
+  defp authorize_command(%LegacySuperactivityContext{}, _command_name), do: :ok
 
   def create_media(conn, %{"directory" => directory, "file" => file, "name" => name}) do
     case Base.decode64(file) do
@@ -1061,7 +1076,12 @@ defmodule OliWeb.LegacySuperactivityController do
       case finalize_activity_attempt(context) do
         {:ok, _} ->
           case maybe_finalize_parent_resource_attempt(context) do
-            :ok ->
+            {:ok, finalization_summary} ->
+              maybe_schedule_grade_update(context.section, finalization_summary)
+
+              Broadcaster.broadcast_page_attempt_finalized(context.resource_attempt.attempt_guid)
+
+            :not_applicable ->
               :ok
 
             {:error, reason} ->
@@ -1231,14 +1251,26 @@ defmodule OliWeb.LegacySuperactivityController do
              context.resource_attempt.attempt_guid,
              context.datashop_session_id
            ) do
-        {:ok, _} -> :ok
-        {:error, {:already_submitted}} -> :ok
+        {:ok, finalization_summary} -> {:ok, finalization_summary}
+        {:error, {:already_submitted}} -> {:ok, :already_submitted}
         {:error, reason} -> {:error, reason}
       end
     else
-      :ok
+      :not_applicable
     end
   end
+
+  defp maybe_schedule_grade_update(
+         %{grade_passback_enabled: true, id: section_id},
+         %FinalizationSummary{
+           graded: true,
+           resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: resource_access_id}
+         }
+       ) do
+    PageLifecycle.GradeUpdateWorker.create(section_id, resource_access_id, :inline)
+  end
+
+  defp maybe_schedule_grade_update(_section, _finalization_summary), do: :ok
 
   defp auto_finalize_single_embedded_page?(
          %LegacySuperactivityContext{

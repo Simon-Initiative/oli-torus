@@ -8,8 +8,10 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
   alias Oli.Seeder
 
   alias Oli.Delivery.Attempts.Core, as: Attempts
+  alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Activities
+  alias Oli.Activities.Model.Part
 
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -307,6 +309,95 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       assert conn.resp_body == saved_state
       assert get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
+    end
+
+    test "endAttempt broadcasts page finalization and schedules grade passback", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      {:ok, section} = Sections.update_section(section, %{grade_passback_enabled: true})
+
+      page_revision =
+        map.page.revision
+        |> Ecto.Changeset.change(%{graded: true})
+        |> Oli.Repo.update!()
+
+      Sections.get_section_resource(section.id, page_revision.resource_id)
+      |> Sections.update_section_resource(%{batch_scoring: true})
+
+      attempt_map =
+        map
+        |> put_in([:page, :revision], page_revision)
+        |> Map.put(:section, section)
+        |> Map.put(:user, user)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1, lifecycle_state: :active},
+          :user,
+          :page,
+          :resource_attempt
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, lifecycle_state: :active, transformed_model: nil},
+          :activity,
+          :resource_attempt,
+          :activity_attempt
+        )
+        |> Seeder.create_part_attempt(
+          %{attempt_number: 1, lifecycle_state: :active},
+          %Part{id: "1431162465", responses: [], hints: []},
+          :activity_attempt,
+          :part_attempt
+        )
+
+      Broadcaster.subscribe_to_page_attempt_finalized(attempt_map.resource_attempt.attempt_guid)
+
+      other_user = user_fixture()
+      Sections.enroll(other_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      unauthorized_conn =
+        recycle(conn)
+        |> log_in_user(other_user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "endAttempt",
+            "activityContextGuid" => attempt_map.activity_attempt.attempt_guid
+          }
+        )
+
+      assert response(unauthorized_conn, 403) == "Unauthorized"
+      refute_receive {:page_attempt_finalized, _resource_attempt_guid}
+
+      assert Attempts.get_resource_attempt_by(
+               attempt_guid: attempt_map.resource_attempt.attempt_guid
+             ).lifecycle_state == :active
+
+      assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() == []
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "endAttempt",
+            "activityContextGuid" => attempt_map.activity_attempt.attempt_guid
+          }
+        )
+
+      assert conn.resp_body =~ ~s(<attempt_history max_attempts=)
+
+      assert_receive {:page_attempt_finalized, resource_attempt_guid}
+      assert resource_attempt_guid == attempt_map.resource_attempt.attempt_guid
+
+      assert Attempts.get_resource_attempt_by(
+               attempt_guid: attempt_map.resource_attempt.attempt_guid
+             ).lifecycle_state == :evaluated
+
+      assert length(Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs()) == 1
     end
 
     test "creates and services an embedded preview session", %{
