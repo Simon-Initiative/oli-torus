@@ -7,8 +7,7 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Delivery.{Paywall, Sections, TemplatePreview}
   alias Oli.Delivery.Sections.{Blueprint, Section}
   alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
-  alias Oli.Utils.S3Storage
-  alias OliWeb.Common.{Breadcrumb, Confirm}
+  alias OliWeb.Common.{Breadcrumb, Confirm, CoverImageUpload}
   alias OliWeb.Components.{Common, Overview}
   alias OliWeb.Live.Components.Sections.AiAssistantComponent
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
@@ -460,30 +459,18 @@ defmodule OliWeb.Products.DetailsView do
   def handle_event("update_image", _, socket) do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
-    uploaded_files =
-      consume_uploaded_entries(socket, :cover_image, fn meta, entry ->
-        temp_file_path = meta.path
-        section_path = "sections/#{socket.assigns.product.slug}"
-        image_file_name = "#{entry.uuid}.#{ext(entry)}"
-        upload_path = "#{section_path}/#{image_file_name}"
+    case CoverImageUpload.upload(socket, bucket_name, socket.assigns.product) do
+      {:ok, section} ->
+        socket = put_flash(socket, :info, "Template changes saved")
+        {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
 
-        {:ok, uploaded_file} = S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
-        {:ok, uploaded_file}
-      end)
-
-    with uploaded_path <- Enum.at(uploaded_files, 0),
-         {:ok, section} <-
-           Sections.update_section(socket.assigns.product, %{cover_image: uploaded_path}) do
-      socket = put_flash(socket, :info, "Template changes saved")
-      {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
-    else
       {:error, %Ecto.Changeset{} = changeset} ->
-        socket = put_flash(socket, :info, "Couldn't update template image")
+        socket = put_flash(socket, :error, "Couldn't update template image")
         {:noreply, assign(socket, changeset: changeset)}
 
       {:error, payload} ->
         Logger.error("Error uploading product image to S3: #{inspect(payload)}")
-        socket = put_flash(socket, :info, "Couldn't update template image")
+        socket = put_flash(socket, :error, "Couldn't update template image")
         {:noreply, socket}
     end
   end
@@ -592,11 +579,6 @@ defmodule OliWeb.Products.DetailsView do
     do:
       {:noreply,
        SectionDefaultsHelpers.handle_collab_space_config_updated(socket, config, root_sr)}
-
-  defp ext(entry) do
-    [ext | _] = MIME.extensions(entry.client_type)
-    ext
-  end
 
   defp decode_welcome_title(%{"welcome_title" => nil} = project_params), do: project_params
 

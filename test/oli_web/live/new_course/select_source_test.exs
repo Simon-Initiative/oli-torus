@@ -42,7 +42,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
-      assert has_element?(view, "h2", "Select source")
+      assert has_element?(view, "h2", "Select Curriculum")
       assert has_element?(view, "button[phx-click='source_selection']")
       refute has_element?(view, "img[alt=\"course image\"]")
       refute has_element?(view, "form#update_view_type")
@@ -59,19 +59,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       view
-      |> element("input[placeholder=\"Search...\"]")
-      |> render_blur(%{value: "Testing"})
-
-      view
-      |> element("button", "Search")
-      |> render_click()
+      |> element("#search_filter_form")
+      |> render_change(%{value: "Testing"})
 
       assert has_element?(view, "div", s1.title)
       refute has_element?(view, "div", s2.title)
 
       view
-      |> element("button#reset_search")
-      |> render_click()
+      |> element("#search_filter_form")
+      |> render_change(%{value: ""})
 
       assert has_element?(view, "div", s1.title)
       assert has_element?(view, "div", s2.title)
@@ -81,11 +77,8 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       insert(:section, %{title: "Testing A", open_and_free: true})
       insert(:section, %{title: "Testing B", open_and_free: true})
 
-      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
-
-      view
-      |> element("th[phx-value-sort_by='title']")
-      |> render_click(%{sort_by: "title"})
+      {:ok, view, _html} =
+        live(conn, ~p"/admin/sections/create?sort_by=title&sort_order=asc")
 
       assert view
              |> element("tr:first-child > td:first-child + td")
@@ -106,11 +99,8 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       last_s = List.last(tail)
 
-      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
-
-      view
-      |> element("th[phx-value-sort_by='title']")
-      |> render_click(%{sort_by: "title"})
+      {:ok, view, _html} =
+        live(conn, ~p"/admin/sections/create?sort_by=title&sort_order=asc")
 
       assert has_element?(view, "div", first_s.title)
       refute has_element?(view, "div", last_s.title)
@@ -134,7 +124,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("button[phx-click='source_selection']")
       |> render_click(%{id: "product:#{section.id}"})
 
-      refute has_element?(view, "h2", "Select source")
+      refute has_element?(view, "h2", "Select Curriculum")
       assert has_element?(view, "h2", "Name your course")
     end
 
@@ -183,7 +173,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "h2", "Select source")
+      assert has_element?(view, "h2", "Select Curriculum")
       refute has_element?(view, "button[phx-click='source_selection']")
       assert has_element?(view, "img[alt=\"course image\"]")
       assert has_element?(view, "form#update_view_type")
@@ -250,19 +240,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
-      |> element("input[placeholder=\"Search...\"]")
-      |> render_blur(%{value: "Testing"})
-
-      view
-      |> element("button", "Search")
-      |> render_click()
+      |> element("#search_filter_form")
+      |> render_change(%{value: "Testing"})
 
       assert has_element?(view, "h5", "#{s1.title}")
       refute has_element?(view, "h5", "#{s2.title}")
 
       view
-      |> element("button#reset_search")
-      |> render_click()
+      |> element("#search_filter_form")
+      |> render_change(%{value: ""})
 
       assert has_element?(view, "h5", "#{s1.title}")
       assert has_element?(view, "h5", "#{s2.title}")
@@ -290,16 +276,16 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
-      |> element("form#sort")
-      |> render_change(%{sort_by: "title"})
+      |> element("#sort_by_menu button[phx-value-sort_by='title']")
+      |> render_click()
 
       assert view
              |> element(".card-deck:last-child")
              |> render() =~ "Testing B"
 
       view
-      |> element("form#sort")
-      |> render_change(%{sort_by: "title"})
+      |> element("#sort_by_menu button[phx-value-sort_by='title']")
+      |> render_click()
 
       assert view
              |> element(".card-deck:last-child")
@@ -314,21 +300,17 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       last_s = List.last(tail)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/new")
+      {:ok, view, _html} = live(conn, ~p"/sections/new?sort_by=title&sort_order=asc")
 
-      view
-      |> element("form#sort")
-      |> render_change(%{sort_by: "title"})
-
-      assert has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
-      refute has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
+      assert has_element?(view, "button[phx-value-id='publication:#{publication_id}']")
+      refute has_element?(view, "button[phx-value-id='product:#{last_s.id}']")
 
       view
       |> element(".page-item button", "2")
       |> render_click()
 
-      refute has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
-      assert has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
+      refute has_element?(view, "button[phx-value-id='publication:#{publication_id}']")
+      assert has_element?(view, "button[phx-value-id='product:#{last_s.id}']")
     end
 
     test "successfully goes to the next step", %{conn: conn} do
@@ -340,10 +322,10 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "button[disabled]", "Next step")
 
       view
-      |> element(".card-deck a:first-child")
+      |> element(".card-deck button:first-child")
       |> render_click(id: "publication:#{section.id}")
 
-      refute has_element?(view, "h2", "Select source")
+      refute has_element?(view, "h2", "Select Curriculum")
       assert has_element?(view, "h2", "Name your course")
     end
 
@@ -431,8 +413,708 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "a[phx-value-id='section:#{instructor_course.id}']")
-      refute has_element?(view, "a[phx-value-id='section:#{learner_course.id}']")
+      assert has_element?(view, "button[phx-value-id='section:#{instructor_course.id}']")
+      refute has_element?(view, "button[phx-value-id='section:#{learner_course.id}']")
+    end
+  end
+
+  describe "source filter tabs" do
+    setup [:instructor_conn]
+
+    test "renders all three tabs with accessible names and the correct selected state", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "button[role='tab'][aria-selected='true']", "All Sources")
+      assert has_element?(view, "button[role='tab'][aria-selected='false']", "Templates")
+      assert has_element?(view, "button[role='tab'][aria-selected='false']", "My Course Sections")
+
+      assert has_element?(
+               view,
+               ~s(button[role='tab'][aria-selected='true'].bg-Background-bg-primary.border-Text-text-button.text-Text-text-button),
+               "All Sources"
+             )
+    end
+
+    test "changing the active tab does not reset the previously selected sort order", %{
+      conn: conn
+    } do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Zeta Course"})
+      insert(:section, %{base_project: project, title: "Alpha Course"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("#sort_by_menu button[phx-value-sort_by='title']")
+      |> render_click()
+
+      sorted_last_row =
+        view
+        |> element(".card-deck:last-child")
+        |> render()
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      view
+      |> element("button[role='tab']", "All Sources")
+      |> render_click()
+
+      assert view
+             |> element(".card-deck:last-child")
+             |> render() == sorted_last_row
+    end
+
+    test "a search performed under one tab never returns rows belonging to a different tab", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      template =
+        insert(:section, %{
+          open_and_free: true,
+          type: :blueprint,
+          title: "Chemistry Template"
+        })
+
+      %Publication{project: project} = insert(:publication)
+
+      my_section =
+        insert(:section, %{base_project: project, type: :enrollable, title: "Chemistry Copy"})
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, my_section.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      view
+      |> element("#search_filter_form")
+      |> render_change(%{value: "Chemistry"})
+
+      assert has_element?(view, "h5", template.title)
+      refute has_element?(view, "h5", my_section.title)
+    end
+
+    test "clicking a non-default tab reflects the filter as a URL query param, and All Sources omits it",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      assert_patch(view, "/sections/new?filter=templates")
+
+      view
+      |> element("button[role='tab']", "My Course Sections")
+      |> render_click()
+
+      assert_patch(view, "/sections/new?filter=my_sections")
+
+      view
+      |> element("button[role='tab']", "All Sources")
+      |> render_click()
+
+      assert_patch(view, "/sections/new")
+    end
+
+    test "loading the page with ?filter=templates preselects that tab", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new?filter=templates")
+
+      assert has_element?(view, "button[role='tab'][aria-selected='true']", "Templates")
+      assert has_element?(view, "button[role='tab'][aria-selected='false']", "All Sources")
+    end
+
+    test "loading the page with ?filter=my_sections preselects that tab", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new?filter=my_sections")
+
+      assert has_element?(
+               view,
+               "button[role='tab'][aria-selected='true']",
+               "My Course Sections"
+             )
+    end
+
+    test "the text inside each tab button is vertically and horizontally centered", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               "button[role='tab'].flex.items-center.justify-center",
+               "All Sources"
+             )
+    end
+  end
+
+  describe "step navigation preserves the URL-synced select-source state" do
+    setup [:instructor_conn]
+
+    test "the active filter tab and its results survive going to step 2 and back", %{
+      conn: conn
+    } do
+      insert(:section, open_and_free: true, type: :blueprint, title: "Bio Template")
+
+      %Publication{project: project} = insert(:publication)
+      insert(:section, base_project: project, type: :enrollable, title: "Chem Copy")
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      assert_patch(view, "/sections/new?filter=templates")
+
+      view
+      |> element(".card-deck button:first-child")
+      |> render_click()
+
+      assert has_element?(view, "h2", "Name your course")
+
+      # Clicking "Previous step" from step 1 round-trips through the SubmitForm JS hook
+      # (to capture the in-progress form first), which LiveViewTest can't execute — so we
+      # simulate the hook's response directly, exactly like the existing name_course tests do.
+      view
+      |> element("#open_and_free_form")
+      |> render_hook("js_form_data_response", %{"section" => %{}, "current_step" => 0})
+
+      assert has_element?(view, "h2", "Select Curriculum")
+
+      assert has_element?(view, "button[role='tab'][aria-selected='true']", "Templates")
+      assert has_element?(view, ".course-card-link", "Bio Template")
+      refute has_element?(view, ".course-card-link", "Chem Copy")
+    end
+
+    test "returning to step 1 does not leave the previously selected card/row highlighted", %{
+      conn: conn
+    } do
+      insert(:section, open_and_free: true, type: :blueprint, title: "Bio Template")
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element(".card-deck button:first-child")
+      |> render_click()
+
+      assert has_element?(view, "h2", "Name your course")
+
+      view
+      |> element("#open_and_free_form")
+      |> render_hook("js_form_data_response", %{"section" => %{}, "current_step" => 0})
+
+      assert has_element?(view, "h2", "Select Curriculum")
+      refute render(view) =~ "bg-delivery-primary-100"
+
+      view
+      |> element("form#update_view_type")
+      |> render_change(%{view: %{type: "list"}})
+
+      refute has_element?(view, "tr[aria-selected='true']")
+      refute render(view) =~ "bg-delivery-primary-100"
+
+      view
+      |> element("form#update_view_type")
+      |> render_change(%{view: %{type: "card"}})
+
+      refute render(view) =~ "bg-delivery-primary-100"
+    end
+  end
+
+  describe "search bar and sort row" do
+    setup [:instructor_conn]
+
+    test "courses are sorted by Most Recent (Created, descending) by default", %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+
+      older =
+        insert(:section, %{
+          base_project: project,
+          title: "Older Course",
+          inserted_at: ~N[2020-01-01 00:00:00]
+        })
+
+      newer =
+        insert(:section, %{
+          base_project: project,
+          title: "Newer Course",
+          inserted_at: ~N[2024-01-01 00:00:00]
+        })
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "#sort_by_dropdown > button", "Created")
+
+      html = render(view)
+      newer_index = :binary.match(html, newer.title) |> elem(0)
+      older_index = :binary.match(html, older.title) |> elem(0)
+
+      assert newer_index < older_index
+    end
+
+    test "the search input is debounced, has no placeholder, no visible Search button, and no reset button while empty",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "input[aria-label='Search'][phx-debounce='300']")
+      assert has_element?(view, "input[aria-label='Search'][placeholder='']")
+      refute has_element?(view, "button", "Search")
+      refute has_element?(view, "#reset_search")
+    end
+
+    test "typing shows the reset button, and clicking it clears the query, results, and URL param",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Chemistry 101"})
+      insert(:section, %{base_project: project, title: "Biology 101"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("#search_filter_form")
+      |> render_change(%{value: "Chemistry"})
+
+      assert has_element?(view, "#reset_search")
+      assert_patch(view, "/sections/new?query=Chemistry")
+      assert has_element?(view, "h5", "Chemistry 101")
+      refute has_element?(view, "h5", "Biology 101")
+
+      view
+      |> element("#reset_search")
+      |> render_click()
+
+      refute has_element?(view, "#reset_search")
+      assert_patch(view, "/sections/new")
+      assert has_element?(view, "h5", "Chemistry 101")
+      assert has_element?(view, "h5", "Biology 101")
+      assert has_element?(view, "input[aria-label='Search'][value='']")
+    end
+
+    test "typing in the search input filters results immediately, without a separate apply step",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      s1 = insert(:section, %{base_project: project, title: "Chemistry 101"})
+      s2 = insert(:section, %{base_project: project, title: "Biology 101"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("#search_filter_form")
+      |> render_change(%{value: "Chemistry"})
+
+      assert has_element?(view, "h5", s1.title)
+      refute has_element?(view, "h5", s2.title)
+    end
+
+    test "the sort-by dropdown trigger shows the default 'Most Recent' sort label", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "#sort_by_dropdown > button", "Created")
+    end
+
+    test "clicking the sort-direction button keeps the previously selected sort-by column",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Z Course"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("#sort_by_menu button[phx-value-sort_by='type']")
+      |> render_click()
+
+      assert has_element?(view, "div", "Type")
+
+      view
+      |> element("button[phx-click='sort']")
+      |> render_click()
+
+      assert has_element?(view, "div", "Type")
+    end
+
+    test "the sort-by menu starts closed and lists every sortable column exactly once",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "#sort_by_menu.hidden")
+
+      for label <- ["Title", "Type", "Cost", "Created"] do
+        assert has_element?(view, "#sort_by_menu button", label)
+      end
+    end
+
+    test "selecting a sort-by option updates the visible trigger label, actually re-sorts the results, and persists across further interaction",
+         %{conn: conn} do
+      %Publication{project: p1} = insert(:publication)
+
+      insert(:section, %{
+        base_project: p1,
+        title: "Alpha",
+        type: :enrollable
+      })
+
+      %Publication{project: p2} = insert(:publication)
+      insert(:section, %{base_project: p2, title: "Beta", type: :blueprint})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "#sort_by_dropdown > button", "Created")
+
+      view
+      |> element("#sort_by_menu button[phx-value-sort_by='type']")
+      |> render_click()
+
+      # (a) the visible trigger reflects the new selection, not the old default
+      assert has_element?(view, "#sort_by_dropdown > button", "Type")
+      refute has_element?(view, "#sort_by_dropdown > button", "Created")
+
+      # (b) it's actually applied: reflected in the URL, and available to keep re-sorting
+      assert_patch(view, "/sections/new?sort_by=type")
+
+      # Selection persists through further interaction (e.g. toggling direction)
+      view
+      |> element("button[phx-click='sort']")
+      |> render_click()
+
+      assert has_element?(view, "#sort_by_dropdown > button", "Type")
+      assert_patch(view, "/sections/new?sort_by=type&sort_order=asc")
+    end
+
+    test "typing in the search box reflects the query in the URL, and clearing it omits the param",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Chemistry 101"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("#search_filter_form")
+      |> render_change(%{value: "Chemistry"})
+
+      assert_patch(view, "/sections/new?query=Chemistry")
+
+      view
+      |> element("#search_filter_form")
+      |> render_change(%{value: ""})
+
+      assert_patch(view, "/sections/new")
+    end
+
+    test "loading the page with ?query=Chemistry preselects that search text and filters immediately",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      s1 = insert(:section, %{base_project: project, title: "Chemistry 101"})
+      s2 = insert(:section, %{base_project: project, title: "Biology 101"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new?query=Chemistry")
+
+      assert has_element?(view, "h5", s1.title)
+      refute has_element?(view, "h5", s2.title)
+    end
+
+    test "changing sort-by and clicking direction both reflect in the URL, omitting sort params at their defaults",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("#sort_by_menu button[phx-value-sort_by='type']")
+      |> render_click()
+
+      assert_patch(view, "/sections/new?sort_by=type")
+
+      view
+      |> element("button[phx-click='sort']")
+      |> render_click()
+
+      assert_patch(view, "/sections/new?sort_by=type&sort_order=asc")
+
+      view
+      |> element("#sort_by_menu button[phx-value-sort_by='title']")
+      |> render_click()
+
+      assert_patch(view, "/sections/new?sort_by=title&sort_order=asc")
+    end
+
+    test "loading the page with ?sort_by=type&sort_order=asc preselects that sort state", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/new?sort_by=type&sort_order=asc")
+
+      assert has_element?(view, "#sort_by_dropdown > button", "Type")
+    end
+
+    test "toggling the view type reflects in the URL, and card (the default) omits the param",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("form#update_view_type")
+      |> render_change(%{view: %{type: "list"}})
+
+      assert_patch(view, "/sections/new?view=list")
+
+      view
+      |> element("form#update_view_type")
+      |> render_change(%{view: %{type: "card"}})
+
+      assert_patch(view, "/sections/new")
+    end
+
+    test "loading the page with ?view=list preselects the list view", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new?view=list")
+
+      assert has_element?(
+               view,
+               "label.bg-Fill-fill-selection-active input#list-view-type"
+             )
+    end
+
+    test "combining filter, query, sort, and view all appear together as URL query params",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      view
+      |> element("#search_filter_form")
+      |> render_change(%{value: "Chem"})
+
+      view
+      |> element("#sort_by_menu button[phx-value-sort_by='type']")
+      |> render_click()
+
+      view
+      |> element("form#update_view_type")
+      |> render_change(%{view: %{type: "list"}})
+
+      assert_patch(
+        view,
+        "/sections/new?filter=templates&query=Chem&sort_by=type&view=list"
+      )
+    end
+  end
+
+  describe "select curriculum title and filter-by label" do
+    setup [:instructor_conn]
+
+    test "renders the panel title, subtitle, and 'Filter by:' label above the tabs", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "h2", "Select Curriculum")
+      assert has_element?(view, "p", "Select a curriculum source to create your course section.")
+      assert has_element?(view, "p", "Filter by:")
+    end
+
+    test "the title and subtitle render exactly once, not duplicated by FilterBox's own default header",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+      html = render(view)
+
+      assert Regex.scan(~r/Select Curriculum/, html) |> length() == 1
+
+      assert Regex.scan(
+               ~r/Select a curriculum source to create your course section\./,
+               html
+             )
+             |> length() == 1
+    end
+  end
+
+  describe "new-feature banner and filter tooltips" do
+    setup [:instructor_conn]
+
+    test "the banner is hidden for All Sources and Templates, and only shows (with the agreed copy, positioned before the results) when filtering by My Course Sections",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      refute has_element?(view, "#new-course-banner")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      refute has_element?(view, "#new-course-banner")
+
+      view
+      |> element("button[role='tab']", "My Course Sections")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "#new-course-banner",
+               "Create a new course section by copying all or part of an existing section."
+             )
+
+      assert has_element?(
+               view,
+               "#new-course-banner",
+               "The new section will reflect the source section as it exists at the time it is copied."
+             )
+
+      assert has_element?(
+               view,
+               "#new-course-banner",
+               "Changes made to the source afterward will not appear in the new section."
+             )
+
+      assert has_element?(
+               view,
+               "#new-course-banner",
+               "Only course sections you currently have permission to access are shown."
+             )
+
+      html = render(view)
+      banner_index = :binary.match(html, ~s(id="new-course-banner")) |> elem(0)
+      results_index = :binary.match(html, ~s(id="select_source_results")) |> elem(0)
+
+      assert banner_index < results_index
+
+      view
+      |> element("button[role='tab']", "All Sources")
+      |> render_click()
+
+      refute has_element?(view, "#new-course-banner")
+    end
+
+    test "wires the GlobalTooltip hook with the agreed copy onto the Templates and My Course Sections tabs",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               ~s(button[role='tab'][phx-hook='GlobalTooltip'][data-tooltip='View and create courses from templates made by course authors.']),
+               "Templates"
+             )
+
+      assert has_element?(
+               view,
+               ~s(button[role='tab'][phx-hook='GlobalTooltip'][data-tooltip='View and copy your previously created course sections.']),
+               "My Course Sections"
+             )
+
+      refute has_element?(view, "button[role='tab'][phx-hook='GlobalTooltip']", "All Sources")
+    end
+
+    test "the tooltip-enabled tabs expand downward, not upward", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               ~s(button[role='tab'][data-tooltip-position='bottom']),
+               "Templates"
+             )
+
+      assert has_element?(
+               view,
+               ~s(button[role='tab'][data-tooltip-position='bottom']),
+               "My Course Sections"
+             )
+
+      refute has_element?(view, "button[role='tab'][data-tooltip-position]", "All Sources")
+    end
+  end
+
+  describe "card identification tag and cost badge" do
+    setup [:instructor_conn]
+
+    test "a Template card shows the Template tag and its cost badge; a My Course Sections card shows the My Section tag with no cost badge; an untagged source shows neither",
+         %{conn: conn, instructor: instructor} do
+      insert(:section, open_and_free: true, type: :blueprint, title: "Chem 101")
+
+      %Publication{project: my_section_project} = insert(:publication)
+
+      my_section =
+        insert(:section, %{
+          base_project: my_section_project,
+          type: :enrollable,
+          title: "Chem Copy"
+        })
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, my_section.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      %Publication{project: untagged_project} = insert(:publication)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      template_card =
+        view
+        |> element(".course-card-link", "Chem 101")
+        |> render()
+
+      assert template_card =~ "Template"
+      assert template_card =~ "Free"
+
+      my_section_card =
+        view
+        |> element(".course-card-link", "Chem Copy")
+        |> render()
+
+      assert my_section_card =~ "My Section"
+      refute my_section_card =~ "Free"
+
+      untagged_card =
+        view
+        |> element(".course-card-link", untagged_project.title)
+        |> render()
+
+      refute untagged_card =~ "Template"
+      refute untagged_card =~ "My Section"
+      refute untagged_card =~ "Free"
+    end
+  end
+
+  describe "My Course Sections card hover state" do
+    setup [:instructor_conn]
+
+    test "a My Course Sections card shows a copy label, while a Template card shows a create label",
+         %{conn: conn, instructor: instructor} do
+      insert(:section, open_and_free: true, type: :blueprint, title: "Chem 101")
+
+      %Publication{project: project} = insert(:publication)
+
+      my_section =
+        insert(:section, %{base_project: project, type: :enrollable, title: "Chem Copy"})
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, my_section.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert view
+             |> element(".course-card-link", "Chem Copy")
+             |> render() =~ "Select to Copy Course Section"
+
+      refute view
+             |> element(".course-card-link", "Chem Copy")
+             |> render() =~ "Select to Create Course Section"
+
+      assert view
+             |> element(".course-card-link", "Chem 101")
+             |> render() =~ "Select to Create Course Section"
+
+      refute view
+             |> element(".course-card-link", "Chem 101")
+             |> render() =~ "Select to Copy Course Section"
     end
 
     test "hides courses after template access is revoked while another template remains visible",
@@ -509,7 +1191,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "h2", "Select source")
+      assert has_element?(view, "h2", "Select Curriculum")
       refute has_element?(view, "button[phx-click='source_selection']")
       assert has_element?(view, "img[alt=\"course image\"]")
       assert has_element?(view, "form#update_view_type")
@@ -537,19 +1219,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
-      |> element("input[placeholder=\"Search...\"]")
-      |> render_blur(%{value: "testing"})
-
-      view
-      |> element("button", "Search")
-      |> render_click()
+      |> element("#search_filter_form")
+      |> render_change(%{value: "testing"})
 
       assert has_element?(view, "h5", "#{s1.title}")
       refute has_element?(view, "h5", "#{s2.title}")
 
       view
-      |> element("button#reset_search")
-      |> render_click()
+      |> element("#search_filter_form")
+      |> render_change(%{value: ""})
 
       assert has_element?(view, "h5", "#{s1.title}")
       assert has_element?(view, "h5", "#{s2.title}")
@@ -577,16 +1255,16 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
-      |> element("form#sort")
-      |> render_change(%{sort_by: "title"})
+      |> element("#sort_by_menu button[phx-value-sort_by='title']")
+      |> render_click()
 
       assert view
              |> element(".card-deck:last-child")
              |> render() =~ "Testing B"
 
       view
-      |> element("form#sort")
-      |> render_change(%{sort_by: "title"})
+      |> element("#sort_by_menu button[phx-value-sort_by='title']")
+      |> render_click()
 
       assert view
              |> element(".card-deck:last-child")
@@ -601,21 +1279,17 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       last_s = List.last(tail)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/new")
+      {:ok, view, _html} = live(conn, ~p"/sections/new?sort_by=title&sort_order=asc")
 
-      view
-      |> element("form#sort")
-      |> render_change(%{sort_by: "title"})
-
-      assert has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
-      refute has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
+      assert has_element?(view, "button[phx-value-id='publication:#{publication_id}']")
+      refute has_element?(view, "button[phx-value-id='product:#{last_s.id}']")
 
       view
       |> element(".page-item button", "2")
       |> render_click()
 
-      refute has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
-      assert has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
+      refute has_element?(view, "button[phx-value-id='publication:#{publication_id}']")
+      assert has_element?(view, "button[phx-value-id='product:#{last_s.id}']")
     end
 
     test "successfully goes to the next step", %{conn: conn} do
@@ -627,11 +1301,11 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "button[disabled]", "Next step")
 
       view
-      |> element(".card-deck a:first-child")
+      |> element(".card-deck button:first-child")
       |> render_click(id: "publication:#{section.id}")
 
       refute has_element?(view, "button[disabled]", "Next step")
-      refute has_element?(view, "h2", "Select source")
+      refute has_element?(view, "h2", "Select Curriculum")
       assert has_element?(view, "h2", "Name your course")
     end
 
@@ -647,6 +1321,106 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
              |> element(".card-deck:last-child")
              |> render() =~
                OliWeb.Common.Utils.render_date(section, :inserted_at, session_context)
+    end
+  end
+
+  describe "assistive-technology result-count announcement" do
+    setup [:instructor_conn]
+
+    test "announces the result count and active filter, and updates on filter/search changes (AC-017)",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Chem 101"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(view, "p[role='status'][aria-live='polite']")
+
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "p[role='status'][aria-live='polite']",
+               "Showing 1 result for Templates"
+             )
+
+      view
+      |> element("button[role='tab']", "My Course Sections")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "p[role='status'][aria-live='polite']",
+               "Showing 0 results for My Course Sections"
+             )
+    end
+
+    test "updates the announcement when a search is applied (AC-017)", %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, title: "Chemistry 101"})
+      insert(:section, %{base_project: project, title: "Biology 101"})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               "p[role='status'][aria-live='polite']",
+               "Showing 3 results for All Sources"
+             )
+
+      view
+      |> element("#search_filter_form")
+      |> render_change(%{value: "Chemistry"})
+
+      assert has_element?(
+               view,
+               "p[role='status'][aria-live='polite']",
+               "Showing 1 result for All Sources"
+             )
+    end
+  end
+
+  describe "telemetry" do
+    setup [:instructor_conn]
+
+    test "emits my_course_sections_filter_selected only when the My Course Sections tab is selected",
+         %{conn: conn} do
+      handler_id = "my-course-sections-filter-telemetry-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :course_builder, :my_course_sections_filter_selected],
+        fn event, measurements, metadata, pid ->
+          send(pid, {:telemetry_event, event, measurements, metadata})
+        end,
+        self()
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      # Not a strict `refute_received` here: `:telemetry` events are a global bus not scoped to
+      # this test process's own actions, so an unrelated concurrently-running test that also
+      # selects the My Course Sections tab could deliver a same-named event to this handler too.
+      # Confirming the Templates tab still becomes selected is the meaningful regression check
+      # for the "not My Course Sections" case; the positive assertion below is what actually
+      # proves this event fires for a real selection.
+      view
+      |> element("button[role='tab']", "Templates")
+      |> render_click()
+
+      assert has_element?(view, "button[role='tab'][aria-selected='true']", "Templates")
+
+      view
+      |> element("button[role='tab']", "My Course Sections")
+      |> render_click()
+
+      assert_received {:telemetry_event,
+                       [:oli, :course_builder, :my_course_sections_filter_selected], %{count: 1},
+                       %{}}
     end
   end
 

@@ -3,7 +3,7 @@ defmodule OliWeb.Sections.OverviewView do
   use OliWeb.Common.Modal
 
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
+  alias OliWeb.Common.{Breadcrumb, CoverImageUpload, DeleteModalNoConfirmation}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
@@ -17,7 +17,6 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias OliWeb.Delivery.Student.Utils, as: StudentUtils
-  alias Oli.Utils.S3Storage
   alias Oli.Repo
   alias OliWeb.Icons
 
@@ -679,28 +678,18 @@ defmodule OliWeb.Sections.OverviewView do
   def handle_event("update_image", _, socket) do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
-    [uploaded_path] =
-      consume_uploaded_entries(socket, :cover_image, fn meta, entry ->
-        temp_file_path = meta.path
-        section_path = "sections/#{socket.assigns.section.slug}"
-        image_file_name = "#{entry.uuid}.#{ext(entry)}"
-        upload_path = "#{section_path}/#{image_file_name}"
+    case CoverImageUpload.upload(socket, bucket_name, socket.assigns.section) do
+      {:ok, section} ->
+        socket = put_flash(socket, :info, "Section changes saved")
+        {:noreply, assign(socket, section: section, changeset: Section.changeset(section, %{}))}
 
-        S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
-      end)
-
-    with {:ok, section} <-
-           Sections.update_section(socket.assigns.section, %{cover_image: uploaded_path}) do
-      socket = put_flash(socket, :info, "Section changes saved")
-      {:noreply, assign(socket, section: section, changeset: Section.changeset(section, %{}))}
-    else
       {:error, %Ecto.Changeset{} = changeset} ->
-        socket = put_flash(socket, :info, "Couldn't update section image")
+        socket = put_flash(socket, :error, "Couldn't update section image")
         {:noreply, assign(socket, changeset: changeset)}
 
       {:error, payload} ->
         Logger.error("Error uploading section image to S3: #{inspect(payload)}")
-        socket = put_flash(socket, :info, "Couldn't update section image")
+        socket = put_flash(socket, :error, "Couldn't update section image")
         {:noreply, socket}
     end
   end
@@ -745,11 +734,6 @@ defmodule OliWeb.Sections.OverviewView do
   def handle_info({:scoped_feature_notice, type, message}, socket) do
     level = if type == :error, do: :error, else: :info
     {:noreply, put_flash(socket, level, message)}
-  end
-
-  defp ext(entry) do
-    [ext | _] = MIME.extensions(entry.client_type)
-    ext
   end
 
   defp is_content_admin?(%Oli.Accounts.Author{} = user) do

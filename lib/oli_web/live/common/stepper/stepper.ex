@@ -2,9 +2,13 @@ defmodule OliWeb.Common.Stepper do
   use OliWeb, :live_component
 
   alias OliWeb.Common.Stepper.Step
+  alias OliWeb.Components.DesignTokens.Primitives.Button
 
   @moduledoc """
-  Stepper Component
+  Stepper Component.
+
+  Supports a `:course_creation` variant (see the `:variant` attr on `render/1`) with its
+  own left-panel/footer styling, alongside the shared default look used elsewhere.
   """
 
   @empty_step %Step{
@@ -22,6 +26,110 @@ defmodule OliWeb.Common.Stepper do
   attr :on_cancel, :any, default: nil
   attr :next_step_disabled, :boolean, default: false
   attr :show_spinner, :boolean, default: false
+
+  @doc """
+  `:course_creation` opts this instance into the course-creation wizard's
+  spacing/color treatment (currently used by `OliWeb.Delivery.NewCourse`).
+  Callers that don't pass it (e.g. the student-onboarding wizard) get the
+  shared default look. Set explicitly by the caller rather than inferred
+  from `@id`, so the styling doesn't silently depend on a sibling string.
+  """
+  attr :variant, :atom, default: :default, values: [:default, :course_creation]
+
+  def render(%{variant: :course_creation} = assigns) do
+    assigns = assign(assigns, steps: Enum.with_index(assigns.steps))
+
+    assigns =
+      assign(assigns,
+        selected_step:
+          Enum.find(assigns.steps, {@empty_step, 0}, fn {_step, index} ->
+            index == assigns.current_step
+          end)
+          |> elem(0)
+      )
+
+    ~H"""
+    <div id={@id} class="flex h-full w-full flex-col md:flex-row">
+      <div class="w-full shrink-0 bg-blue-700 px-8 pb-10 pt-[77px] md:w-1/4 md:overflow-y-auto">
+        <div class="flex flex-col gap-6">
+          <%= for {step, index} <- @steps do %>
+            <.step
+              index={index + 1}
+              step={step}
+              active={index == @current_step}
+              completed={index < @current_step}
+              variant={@variant}
+            />
+          <% end %>
+        </div>
+      </div>
+      <div class="flex h-full w-full flex-col bg-Background-bg-primary md:w-3/4">
+        <div id="stepper_content" class="w-full flex-1 overflow-y-auto">
+          <div
+            id={"stepper_step_content_#{@current_step}"}
+            class="opacity-0 motion-reduce:transition-none"
+            phx-mounted={
+              JS.transition(
+                {"transition-opacity ease-out duration-700", "opacity-0", "opacity-100"},
+                time: 700
+              )
+            }
+          >
+            {@selected_step.render_fn.(@data)}
+          </div>
+        </div>
+
+        <div class={[
+          "flex items-center border-t border-Border-border-default bg-Background-bg-secondary px-[45px] py-3",
+          if(is_nil(@on_cancel), do: "justify-end", else: "justify-between")
+        ]}>
+          <Button.button
+            :if={!is_nil(@on_cancel)}
+            variant={:secondary}
+            size={:sm}
+            phx-click={@on_cancel}
+          >
+            {@cancel_button_label}
+          </Button.button>
+          <div class="flex gap-2">
+            <!-- Hidden automation helper button for E2E tests to bypass wizard -->
+            <button
+              id="automation-go-to-course"
+              class="absolute w-6 h-6 opacity-0 -left-10 -top-10"
+              aria-hidden="true"
+              aria-disabled="true"
+              tabindex="-1"
+              phx-click={@selected_step.on_next_step}
+            >
+              Automation go to course
+            </button>
+            <Button.button
+              :if={@current_step != 0}
+              variant={:secondary}
+              size={:sm}
+              phx-click={@selected_step.on_previous_step}
+            >
+              {@selected_step.previous_button_label || "Previous step"}
+            </Button.button>
+            <Button.button
+              variant={:primary}
+              size={:sm}
+              disabled={@next_step_disabled}
+              phx-click={@selected_step.on_next_step}
+            >
+              {@selected_step.next_button_label || "Next step"}
+              <:icon_right :if={@show_spinner}>
+                <div role="status">
+                  <.loader />
+                </div>
+              </:icon_right>
+            </Button.button>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
 
   def render(assigns) do
     assigns = assign(assigns, steps: Enum.with_index(assigns.steps))
@@ -47,13 +155,7 @@ defmodule OliWeb.Common.Stepper do
             <% end %>
           </div>
         </div>
-        <div class={[
-          "bg-white dark:bg-[#0B0C11] w-full h-4/5 md:h-none md:w-2/3 flex flex-col overflow-y-scroll shadow-xl",
-          if(@id == "course_creation_stepper",
-            do: "my-10",
-            else: "mt-4 hvxs:my-8 hvmd:my-16 hvlg:my-20 hvxl:my-24"
-          )
-        ]}>
+        <div class="bg-white dark:bg-[#0B0C11] w-full h-4/5 md:h-none md:w-2/3 flex flex-col overflow-y-scroll shadow-xl mt-4 hvxs:my-8 hvmd:my-16 hvlg:my-20 hvxl:my-24">
           <div id="stepper_content" class="flex flex-col h-[calc(100%-64px)] w-full">
             {@selected_step.render_fn.(@data)}
           </div>
@@ -116,7 +218,56 @@ defmodule OliWeb.Common.Stepper do
     {:noreply, assign(socket, current_step: String.to_integer(step))}
   end
 
-  def step(%{index: _index, step: %Step{}, active: _active} = assigns) do
+  attr :index, :integer, required: true
+  attr :step, Step, required: true
+  attr :active, :boolean, required: true
+  attr :completed, :boolean, default: false
+  attr :variant, :atom, default: :default
+
+  def step(%{variant: :course_creation} = assigns) do
+    ~H"""
+    <div class="flex items-start gap-3">
+      <div class={[
+        "flex h-[33px] w-[33px] shrink-0 items-center justify-center rounded-full text-[16px] font-extrabold leading-[28px] shadow-[0px_1px_1px_rgba(0,0,0,0.05)]",
+        "transition-colors duration-700",
+        cond do
+          @active ->
+            "bg-blue-500 text-white"
+
+          @completed ->
+            "bg-[rgba(255,255,255,0.74)] border border-[#3b3740] text-[#757682]"
+
+          true ->
+            "bg-white border border-Border-border-default text-Text-text-low-alpha dark:!text-[#757682]"
+        end
+      ]}>
+        {@index}
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <h4 class={[
+          "mb-[9px] text-[16px] font-bold leading-[24px] transition-colors duration-700",
+          if(@completed, do: "text-[#90a2c1]", else: "text-white")
+        ]}>
+          {@step.title}
+        </h4>
+        <p
+          :if={@step.description not in [nil, ""]}
+          class={[
+            "text-[16px] font-medium leading-[24px] transition-colors duration-700",
+            if(@completed,
+              do: "text-[#90a2c1]",
+              else: "text-Specially-Tokens-Text-text-tile-details"
+            )
+          ]}
+        >
+          {@step.description}
+        </p>
+      </div>
+    </div>
+    """
+  end
+
+  def step(assigns) do
     ~H"""
     <div class={[
       "gap-2 md:gap-6 items-center justify-between shrink-0 md:w-auto",

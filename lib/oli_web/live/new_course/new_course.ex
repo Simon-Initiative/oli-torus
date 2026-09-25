@@ -47,7 +47,7 @@ defmodule OliWeb.Delivery.NewCourse do
       %Step{
         title: "Course details",
         description:
-          "If you meet as a group, let us know what days of the week your class meets. Everyone needs to tell us your course’s start and end dates.",
+          "If you meet as a group, let us know what days of the week your class meets. Tell us your course’s start and end dates.",
         render_fn: fn assigns -> render_step(:course_details, assigns) end,
         on_previous_step:
           JS.push("change_step", value: %{form_id: "course-details-form", current_step: 1}),
@@ -91,8 +91,53 @@ defmodule OliWeb.Delivery.NewCourse do
        section_spec: section_spec,
        changeset: changeset,
        copy_options: default_copy_options(),
+       copy_source?: false,
+       source: nil,
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
-       loading: false
+       loading: false,
+       initial_source_filter: parse_source_filter(params["filter"]),
+       initial_query: params["query"] || "",
+       initial_sort_by: parse_sort_by(params["sort_by"]),
+       initial_sort_order: parse_sort_order(params["sort_order"]),
+       initial_view_type: parse_view_type(params["view"])
+     )}
+  end
+
+  defp parse_source_filter("templates"), do: :templates
+  defp parse_source_filter("my_sections"), do: :my_sections
+  defp parse_source_filter(_), do: :all
+
+  # Defaults to `:inserted_at` (Created) rather than `:title`: "Courses are sorted by Most
+  # Recent by default" is a product requirement, not just this table's own internal default
+  # (`TableModel.new/2` itself defaults to Title/desc — overridden here for every first load).
+  defp parse_sort_by(value) when value in ~w(title type requires_payment inserted_at),
+    do: String.to_existing_atom(value)
+
+  defp parse_sort_by(_), do: :inserted_at
+
+  # `:desc` on `:inserted_at` means most-recently-created first ("Most Recent" default).
+  defp parse_sort_order("asc"), do: :asc
+  defp parse_sort_order(_), do: :desc
+
+  defp parse_view_type("list"), do: :list
+  defp parse_view_type(_), do: :card
+
+  # `SelectSource` can remount fresh when step 0 is re-entered (each step has its own
+  # `render_fn`, so the component isn't part of the tree while on another step, and Phoenix can
+  # garbage-collect its state in the meantime) and re-seeds itself from `initial_*` on that
+  # first load. Without re-parsing `params` here, those `initial_*` assigns would stay frozen at
+  # whatever the URL was at the original page mount, so filtering/sorting/searching on step 0,
+  # moving to step 1, then coming back could silently drop back to the stale initial state even
+  # though the URL (kept in sync via `SelectSource`'s own `push_patch` calls) still shows the
+  # current filter/sort/query/view.
+  def handle_params(params, _uri, socket) do
+    {:noreply,
+     assign(socket,
+       initial_source_filter: parse_source_filter(params["filter"]),
+       initial_query: params["query"] || "",
+       initial_sort_by: parse_sort_by(params["sort_by"]),
+       initial_sort_order: parse_sort_order(params["sort_order"]),
+       initial_view_type: parse_view_type(params["view"])
      )}
   end
 
@@ -112,10 +157,18 @@ defmodule OliWeb.Delivery.NewCourse do
           include_logo
         />
     <% end %>
-    <div id={@form_id} phx-hook="SubmitForm" class="mt-14 h-[calc(100vh-56px)]">
+    <div
+      id={@form_id}
+      phx-hook="SubmitForm"
+      class={[
+        "h-[calc(100vh-56px)]",
+        if(@live_action == :admin, do: "mt-14")
+      ]}
+    >
       <.live_component
         id="course_creation_stepper"
         module={Stepper}
+        variant={:course_creation}
         on_cancel={JS.push("redirect_to_courses")}
         steps={@steps || []}
         current_step={@current_step}
@@ -131,10 +184,10 @@ defmodule OliWeb.Delivery.NewCourse do
 
   defp new_course_header(assigns) do
     ~H"""
-    <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
-      New course set up
-    </h5>
     <div class="overflow-y-auto scrollbar-hide relative h-full">
+      <h5 class="sticky top-0 z-10 bg-Background-bg-primary px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
+        New course set up
+      </h5>
       {render_slot(@inner_block)}
     </div>
     """
@@ -165,12 +218,16 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def render_step(:select_source, assigns) do
     assigns =
-      Map.put(assigns, :request_path, section_setup_request_path(Map.get(assigns, :context_id)))
+      assigns
+      |> Map.put(:request_path, section_setup_request_path(Map.get(assigns, :context_id)))
+      |> Map.put(
+        :base_path,
+        current_wizard_path(assigns.live_action, Map.get(assigns, :context_id))
+      )
 
     ~H"""
     <.new_course_header>
-      <div class="flex flex-col items-center gap-3 pr-9 pl-16 py-6">
-        <h2>Select source</h2>
+      <div class="flex flex-col gap-3 pr-9 pl-16 py-6">
         <.live_component
           id="select_source_step"
           module={SelectSource}
@@ -182,6 +239,12 @@ defmodule OliWeb.Delivery.NewCourse do
           is_admin={@is_admin}
           section_spec={@section_spec}
           request_path={@request_path}
+          base_path={@base_path}
+          initial_source_filter={@initial_source_filter}
+          initial_query={@initial_query}
+          initial_sort_by={@initial_sort_by}
+          initial_sort_order={@initial_sort_order}
+          initial_view_type={@initial_view_type}
         />
       </div>
     </.new_course_header>
@@ -233,6 +296,10 @@ defmodule OliWeb.Delivery.NewCourse do
   defp section_setup_request_path(nil), do: ~p"/sections/new"
   defp section_setup_request_path(context_id), do: ~p"/sections/new/#{context_id}"
 
+  defp current_wizard_path(:admin, _context_id), do: ~p"/admin/sections/create"
+  defp current_wizard_path(_live_action, nil), do: ~p"/sections/new"
+  defp current_wizard_path(_live_action, context_id), do: ~p"/sections/new/#{context_id}"
+
   defp get_step_data(assigns) do
     case assigns.current_step do
       0 ->
@@ -244,14 +311,20 @@ defmodule OliWeb.Delivery.NewCourse do
           current_user: assigns.current_user,
           section_spec: assigns.section_spec,
           is_admin: assigns.is_admin,
-          context_id: assigns[:context_id]
+          context_id: assigns[:context_id],
+          live_action: assigns.live_action,
+          initial_source_filter: assigns.initial_source_filter,
+          initial_query: assigns.initial_query,
+          initial_sort_by: assigns.initial_sort_by,
+          initial_sort_order: assigns.initial_sort_order,
+          initial_view_type: assigns.initial_view_type
         }
 
       1 ->
         %{
           changeset: assigns.changeset,
           flash: assigns.flash,
-          copy_source?: section_source?(assigns[:source]),
+          copy_source?: assigns.copy_source?,
           copy_options: assigns.copy_options
         }
 
@@ -370,7 +443,17 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def handle_event("source_selection", %{"id" => source}, socket) do
-    {:noreply, assign(socket, source: source, current_step: 1)}
+    copy_source? = section_source?(source)
+
+    if copy_source? do
+      :telemetry.execute(
+        [:oli, :course_builder, :my_course_sections_card_activated],
+        %{count: 1},
+        %{}
+      )
+    end
+
+    {:noreply, assign(socket, source: source, copy_source?: copy_source?, current_step: 1)}
   end
 
   def handle_event(
@@ -422,7 +505,11 @@ defmodule OliWeb.Delivery.NewCourse do
          assign(socket,
            changeset: changeset,
            copy_options: copy_options,
-           current_step: current_step
+           current_step: current_step,
+           # Returning to step 0 must not leave the previously selected card looking
+           # "selected" (`source` is only meant as momentary click feedback there);
+           # `copy_source?` already carries what step 1+ still need from that selection.
+           source: source_for_step(current_step, socket.assigns.source)
          )}
 
       2 ->
@@ -543,4 +630,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
   defp section_source?("section:" <> _id), do: true
   defp section_source?(_), do: false
+
+  defp source_for_step(0, _previous_source), do: nil
+  defp source_for_step(_step, previous_source), do: previous_source
 end
