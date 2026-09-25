@@ -311,6 +311,69 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       assert get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
     end
 
+    test "does not reflect an active saved-file MIME type", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      attempt_map =
+        map
+        |> Map.put(:user, user)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user,
+          :page,
+          :resource_attempt
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity,
+          :resource_attempt,
+          :activity_attempt
+        )
+
+      activity_attempt = attempt_map.activity_attempt
+      saved_state = "<script>alert('unsafe')</script>"
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "writeFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "byteEncoding" => "utf8",
+            "fileName" => "state.html",
+            "fileRecordData" => saved_state,
+            "resourceTypeID" => "oli_embedded",
+            "mimeType" => "text/html",
+            "userGuid" => Integer.to_string(user.id),
+            "attemptNumber" => 1
+          }
+        )
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "loadFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "fileName" => "state.html",
+            "attemptNumber" => 1
+          }
+        )
+
+      assert conn.resp_body == saved_state
+      assert get_resp_header(conn, "content-type") == ["application/octet-stream; charset=utf-8"]
+      assert get_resp_header(conn, "x-content-type-options") == ["nosniff"]
+    end
+
     test "endAttempt broadcasts page finalization and schedules grade passback", %{
       conn: conn,
       user: user,

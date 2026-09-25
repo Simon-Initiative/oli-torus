@@ -158,8 +158,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       if single_embedded_page do
         Broadcaster.subscribe_to_page_attempt_finalized(resource_attempt.attempt_guid)
 
-        case Core.get_resource_attempt_by(attempt_guid: resource_attempt.attempt_guid) do
-          %{lifecycle_state: lifecycle_state} when lifecycle_state != :active ->
+        case Core.get_resource_attempt_lifecycle_state(resource_attempt.attempt_guid) do
+          lifecycle_state when lifecycle_state not in [:active, nil] ->
             send(self(), {:page_attempt_finalized, resource_attempt.attempt_guid})
 
           _ ->

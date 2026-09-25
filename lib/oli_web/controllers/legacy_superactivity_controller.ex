@@ -40,6 +40,15 @@ defmodule OliWeb.LegacySuperactivityController do
   @default_media_lookup_timeout_ms 15_000
   @preview_file_storage_prefix "preview-save-files"
   @mutating_commands ~w(startAttempt scoreAttempt endAttempt writeFileRecord deleteFileRecord)
+  @file_record_mime_types %{
+    "application/json" => "application/json",
+    "application/octet-stream" => "application/octet-stream",
+    "application/xml" => "application/xml",
+    "json" => "application/json",
+    "text/plain" => "text/plain",
+    "text/xml" => "text/xml",
+    "xml" => "text/xml"
+  }
 
   defmodule LegacySuperactivityContext do
     @moduledoc false
@@ -1543,31 +1552,17 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp response_mime_type(mime_type) when is_binary(mime_type) do
-    mime_type =
+    normalized_mime_type =
       mime_type
       |> String.split(";", parts: 2)
       |> hd()
       |> String.trim()
+      |> String.downcase()
 
-    case String.downcase(mime_type) do
-      "xml" ->
-        "text/xml"
-
-      "json" ->
-        "application/json"
-
-      _ ->
-        case Regex.match?(
-               ~r/^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/,
-               mime_type
-             ) do
-          true -> mime_type
-          false -> "text/xml"
-        end
-    end
+    Map.get(@file_record_mime_types, normalized_mime_type, "application/octet-stream")
   end
 
-  defp response_mime_type(_mime_type), do: "text/xml"
+  defp response_mime_type(_mime_type), do: "application/octet-stream"
 
   defp preview_file_directory(%LegacySuperactivityContext{} = context) do
     xml =

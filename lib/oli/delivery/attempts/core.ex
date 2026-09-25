@@ -894,6 +894,19 @@ defmodule Oli.Delivery.Attempts.Core do
     do: Repo.get_by(ResourceAttempt, clauses) |> Repo.preload([:activity_attempts, :revision])
 
   @doc """
+  Gets the lifecycle state for a resource attempt without loading the full attempt or its
+  associations.
+  """
+  def get_resource_attempt_lifecycle_state(attempt_guid) do
+    Repo.one(
+      from(resource_attempt in ResourceAttempt,
+        where: resource_attempt.attempt_guid == ^attempt_guid,
+        select: resource_attempt.lifecycle_state
+      )
+    )
+  end
+
+  @doc """
   Gets a resource attempt by its id, preloading the resource revision
   in the same query.
   ## Examples
