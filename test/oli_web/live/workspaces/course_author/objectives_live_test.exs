@@ -1360,7 +1360,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(
                view,
-               "#select_existing_sub_modal button[aria-label='Close Select Existing Sub-Objective dialog'] svg"
+               "#select_existing_sub_modal button[aria-label='Close Select Existing Sub-Objective dialog'][class~='!size-11'] svg"
              )
 
       refute has_element?(
@@ -1590,7 +1590,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(
                view,
-               "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]",
+               "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}][class~='hover:text-white']",
                "Delete"
              )
 

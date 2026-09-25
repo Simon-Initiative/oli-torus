@@ -1485,36 +1485,28 @@ defmodule Oli.Publishing do
         FROM published_resources AS mapping
         JOIN revisions AS rev ON mapping.revision_id = rev.id
         WHERE mapping.publication_id = $1
-          AND rev.resource_type_id = $2
           AND rev.deleted IS FALSE
-          AND jsonb_path_exists(
-            rev.objectives,
-            '$.*[*] ? (@ == $objective)',
-            jsonb_build_object('objective', $4::bigint)
-          )
-        LIMIT 1
-      )
-      OR EXISTS (
-        SELECT 1
-        FROM published_resources AS mapping
-        JOIN revisions AS rev ON mapping.revision_id = rev.id
-        WHERE mapping.publication_id = $1
-          AND rev.resource_type_id = $3
-          AND rev.deleted IS FALSE
-          AND rev.objectives->'attached' @> jsonb_build_array($4::bigint)
-        LIMIT 1
-      )
-      OR EXISTS (
-        SELECT 1
-        FROM published_resources AS mapping
-        JOIN revisions AS rev ON mapping.revision_id = rev.id
-        WHERE mapping.publication_id = $1
-          AND rev.resource_type_id = $3
-          AND rev.deleted IS FALSE
-          AND jsonb_path_exists(
-            rev.content,
-            '$.**.conditions.** ? (@.fact == "objectives").value ? (@ == $objective)',
-            jsonb_build_object('objective', $4::bigint)
+          AND (
+            (
+              rev.resource_type_id = $2
+              AND jsonb_path_exists(
+                rev.objectives,
+                '$.*[*] ? (@ == $objective)',
+                jsonb_build_object('objective', $4::bigint)
+              )
+            )
+            OR
+            (
+              rev.resource_type_id = $3
+              AND (
+                rev.objectives->'attached' @> jsonb_build_array($4::bigint)
+                OR jsonb_path_exists(
+                  rev.content,
+                  '$.**.conditions.** ? (@.fact == "objectives").value ? (@ == $objective)',
+                  jsonb_build_object('objective', $4::bigint)
+                )
+              )
+            )
           )
         LIMIT 1
       )

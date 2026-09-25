@@ -57,7 +57,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
             </h2>
             <Button.button
               variant={:close}
-              class="absolute right-6 top-6 inline-flex h-5 w-5 items-center justify-center text-Icon-icon-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              class="absolute right-3 top-3 inline-flex !size-11 items-center justify-center text-Icon-icon-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
               data-bs-dismiss="modal"
               aria-label="Close Select Existing Sub-Objective dialog"
             />
@@ -148,7 +148,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
                     :if={sub_objective.association_count == 0}
                     id={"delete-sub-objective-#{sub_objective.slug}"}
                     type="button"
-                    class="inline-flex h-8 items-center justify-center rounded-md border border-Border-border-danger px-6 text-sm font-semibold leading-4 text-Text-text-danger hover:bg-Fill-fill-danger focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Icon-icon-danger"
+                    class="inline-flex h-8 items-center justify-center rounded-md border border-Border-border-danger px-6 text-sm font-semibold leading-4 text-Text-text-danger hover:bg-Fill-fill-danger hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Icon-icon-danger"
                     phx-value-slug={sub_objective.slug}
                     phx-value-parent_slug={@parent_slug}
                     phx-click={@delete}
