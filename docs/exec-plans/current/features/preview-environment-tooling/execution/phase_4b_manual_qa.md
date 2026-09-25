@@ -1,7 +1,7 @@
 # Phase 4B Manual QA
 
 The development fast run is Phase 4B evidence. The longer paced run and preview release checks are
-deferred to Phase 8 integrated verification.
+deferred to Phase 9 integrated verification.
 
 ## Development Fast Run
 
