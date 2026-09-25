@@ -5,6 +5,44 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
   alias OliWeb.Delivery.Pages.ActivitiesTableModel
 
+  test "linked mode retains expansion, question, attempts, and score columns only" do
+    {:ok, model} = ActivitiesTableModel.new([], columns: :linked_activities)
+
+    assert Enum.map(model.column_specs, & &1.label) == [
+             nil,
+             "Question Stem",
+             "Attempts",
+             "% Correct"
+           ]
+  end
+
+  test "the percent correct header stays on one line, as the design specifies" do
+    {:ok, model} = ActivitiesTableModel.new([], columns: :linked_activities)
+
+    score_column = Enum.find(model.column_specs, &(&1.name == :avg_score))
+
+    assert score_column.th_class =~ "whitespace-nowrap"
+  end
+
+  test "an unknown column mode raises instead of silently rendering the default columns" do
+    assert_raise FunctionClauseError, fn ->
+      ActivitiesTableModel.new([], columns: :not_a_mode)
+    end
+  end
+
+  test "default mode retains order and learning objective columns" do
+    {:ok, model} = ActivitiesTableModel.new([])
+
+    assert Enum.map(model.column_specs, & &1.name) == [
+             nil,
+             :order,
+             :title,
+             :learning_objectives,
+             :total_attempts,
+             :avg_score
+           ]
+  end
+
   test "render_question_column omits the empty subtitle for adaptive screens" do
     activity = %{
       title: "Second Screen",
@@ -94,6 +132,54 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
     assert html =~ "50%"
   end
 
+  test "render_assessment_details preserves the expanded activity content and analytics" do
+    assessment = %{
+      title: "Question with analytics",
+      resource_id: 10,
+      content: %{"partsLayout" => []}
+    }
+
+    current_activity = %{
+      resource_id: 10,
+      id: 10,
+      revision: %{activity_type_id: 1},
+      first_attempt_pct: 0.5,
+      all_attempt_pct: 0.75,
+      preview_rendered: """
+      <div>Answer Key</div>
+      <div>Hints</div>
+      <div>Explanation</div>
+      <div>Dynamic Variables</div>
+      <div>Answer distribution: Correct 1 of 2</div>
+      """
+    }
+
+    model = %{
+      data: %{
+        activity_summary_cache: %{10 => current_activity},
+        expanded_activity_ids: MapSet.new([10]),
+        scripts: [],
+        target: nil
+      }
+    }
+
+    html =
+      render_component(fn assigns ->
+        assigns = Map.merge(assigns, %{model: model, activity_types_map: %{}})
+        ActivitiesTableModel.render_assessment_details(assigns, assessment)
+      end)
+
+    assert html =~ "Answer Key"
+    assert html =~ "Hints"
+    assert html =~ "Explanation"
+    assert html =~ "Dynamic Variables"
+    assert html =~ "Answer distribution: Correct 1 of 2"
+    assert html =~ "First Try Correct"
+    assert html =~ "Eventually Correct"
+    assert html =~ "50%"
+    assert html =~ "75%"
+  end
+
   test "render_assessment_details defaults missing aggregate percentages to zero" do
     assessment = %{
       title: "Manual Screen",
@@ -124,6 +210,99 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
     assert html =~ "First Try Correct"
     assert html =~ "Eventually Correct"
     assert html =~ "0%"
+  end
+
+  test "render_assessment_details distinguishes the three summary states" do
+    assessment = %{title: "Question", resource_id: 55, content: %{"partsLayout" => []}}
+
+    render_status = fn current_activity ->
+      model = %{
+        data: %{
+          activity_summary_cache: %{55 => current_activity},
+          expanded_activity_ids: MapSet.new([55]),
+          target: nil
+        }
+      }
+
+      render_component(fn assigns ->
+        assigns = Map.merge(assigns, %{model: model, activity_types_map: %{}})
+        ActivitiesTableModel.render_assessment_details(assigns, assessment)
+      end)
+    end
+
+    base = %{
+      resource_id: 55,
+      id: 55,
+      preview_rendered: nil,
+      first_attempt_pct: 0.0,
+      all_attempt_pct: 0.0
+    }
+
+    no_observations = render_status.(Map.put(base, :summary_status, :no_observations))
+
+    assert no_observations =~ "No attempt registered for this question"
+    refute no_observations =~ "Value cannot be computed"
+    assert no_observations =~ "First Try Correct"
+    assert no_observations =~ "pct-bar-"
+
+    unavailable = render_status.(Map.put(base, :summary_status, :unavailable))
+
+    refute unavailable =~ "No attempt registered for this question"
+    refute unavailable =~ "Question analytics are not available"
+
+    # The designer asked for the copy in place of each bar, one per label, so each metric group must
+    # carry its own message and neither chart may render.
+    assert metric_groups(unavailable) == [
+             "First Try Correct Value cannot be computed",
+             "Eventually Correct Value cannot be computed"
+           ]
+
+    refute unavailable =~ "pct-bar-"
+
+    legacy = render_status.(base)
+
+    assert legacy =~ "No attempt registered for this question"
+    assert legacy =~ "First Try Correct"
+  end
+
+  test "render_assessment_details omits the percentage bars when metrics are unavailable" do
+    assessment = %{
+      title: "Manual Screen",
+      resource_id: 54,
+      content: %{"partsLayout" => []}
+    }
+
+    current_activity = %{
+      resource_id: 54,
+      id: 54,
+      preview_rendered: nil,
+      metrics_unavailable: true
+    }
+
+    model = %{
+      data: %{
+        activity_summary_cache: %{54 => current_activity},
+        expanded_activity_ids: MapSet.new([54]),
+        target: nil
+      }
+    }
+
+    html =
+      render_component(fn assigns ->
+        assigns = Map.merge(assigns, %{model: model, activity_types_map: %{}})
+        ActivitiesTableModel.render_assessment_details(assigns, assessment)
+      end)
+
+    # A failed summary load must not render 0%, which reads as genuinely zero performance. The labels
+    # stay so the reader knows which metric is missing.
+    assert metric_groups(html) == [
+             "First Try Correct Value cannot be computed",
+             "Eventually Correct Value cannot be computed"
+           ]
+
+    refute html =~ "Question analytics are not available"
+    refute html =~ "0%"
+    refute html =~ "pct-bar-"
   end
 
   test "render_assessment_details shows a repair notice while adaptive analytics refresh is in progress" do
@@ -200,5 +379,12 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
     assert html =~ "Adaptive analytics refreshed"
     assert html =~ "have been reloaded"
+  end
+
+  defp metric_groups(html) do
+    html
+    |> Floki.parse_fragment!()
+    |> Floki.find("div[class*=\"justify-start\"]")
+    |> Enum.map(fn group -> group |> Floki.text(sep: " ") |> String.split() |> Enum.join(" ") end)
   end
 end
