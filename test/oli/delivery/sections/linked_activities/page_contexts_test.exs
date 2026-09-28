@@ -4,7 +4,11 @@ defmodule Oli.Delivery.Sections.LinkedActivities.PageContextsTest do
   alias Oli.Delivery.Sections.LinkedActivities.PageContexts
 
   test "missing page revisions produce an empty index" do
-    assert PageContexts.from_activity_refs([%{resource_id: 100, revision_id: 9}], []) == %{}
+    assert PageContexts.from_activity_refs(
+             [%{resource_id: 100, revision_id: 9}],
+             [],
+             MapSet.new([7])
+           ) == %{}
   end
 
   test "indexes activity references by page and selects the first canonical context" do
@@ -18,11 +22,20 @@ defmodule Oli.Delivery.Sections.LinkedActivities.PageContextsTest do
       %{id: 2, resource_id: 200, activity_refs: [7]}
     ]
 
-    contexts = PageContexts.from_activity_refs(page_resources, revisions)
+    contexts = PageContexts.from_activity_refs(page_resources, revisions, MapSet.new([7, 8]))
 
     assert Enum.map(contexts[7], & &1.page_resource_id) == [100, 200]
     assert contexts[8] |> List.first() |> Map.get(:page_resource_id) == 100
     assert PageContexts.canonical(contexts)[7].page_resource_id == 100
+  end
+
+  test "declared references outside the requested activities are not indexed" do
+    page_resources = [%{resource_id: 100, revision_id: 1}]
+    revisions = [%{id: 1, resource_id: 100, activity_refs: [7, 8]}]
+
+    contexts = PageContexts.from_activity_refs(page_resources, revisions, MapSet.new([7]))
+
+    assert Map.keys(contexts) == [7]
   end
 
   test "indexes recorded responses by page, dropping pages absent from the section" do
@@ -81,8 +94,9 @@ defmodule Oli.Delivery.Sections.LinkedActivities.PageContextsTest do
       %{id: 2, resource_id: 200, activity_refs: [7]}
     ]
 
-    forward = PageContexts.from_activity_refs(page_resources, revisions)
-    reversed = PageContexts.from_activity_refs(Enum.reverse(page_resources), revisions)
+    all_ids = MapSet.new([7])
+    forward = PageContexts.from_activity_refs(page_resources, revisions, all_ids)
+    reversed = PageContexts.from_activity_refs(Enum.reverse(page_resources), revisions, all_ids)
 
     assert Enum.map(forward[7], & &1.page_resource_id) == [100, 200]
     assert Enum.map(reversed[7], & &1.page_resource_id) == [100, 200]

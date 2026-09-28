@@ -3581,6 +3581,60 @@ defmodule Oli.Delivery.SectionsTest do
       assert activity.percent_correct == 0
     end
 
+    test "indexes only the objective's own activities by page", %{
+      section: section,
+      objectives: %{objective_a: objective_a},
+      activities: activities
+    } do
+      # One page declares an activity of objective A and one of objective C, so the declared
+      # index sees an activity outside the objective.
+      page =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Mixed objectives page",
+          activity_refs: [
+            activities.page_1_mcq_1.resource_id,
+            activities.page_4_mcq_1.resource_id
+          ],
+          graded: false
+        )
+
+      insert(:section_resource,
+        section: section,
+        project: section.base_project,
+        resource_id: page.resource_id,
+        revision_id: page.id,
+        resource_type_id: ResourceType.id_for_page(),
+        hidden: false
+      )
+
+      Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+        section.id
+      )
+
+      handler = {__MODULE__, make_ref()}
+      parent = self()
+
+      :ok =
+        :telemetry.attach(
+          handler,
+          [:oli, :delivery, :linked_activities, :load],
+          fn _, _, metadata, _ -> send(parent, {handler, metadata}) end,
+          nil
+        )
+
+      on_exit(fn -> :telemetry.detach(handler) end)
+
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
+
+      assert_received {^handler, %{activity_count: activity_count, page_group_count: page_groups}}
+      assert activity_count == length(result)
+      assert activities.page_1_mcq_1.resource_id in Enum.map(result, & &1.resource_id)
+      refute activities.page_4_mcq_1.resource_id in Enum.map(result, & &1.resource_id)
+      assert page_groups == 1
+    end
+
     test "returns activities for objective C (multiple activities)", %{
       section: section,
       objectives: %{objective_c: objective_c},

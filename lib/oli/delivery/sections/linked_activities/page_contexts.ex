@@ -16,9 +16,12 @@ defmodule Oli.Delivery.Sections.LinkedActivities.PageContexts do
 
   @type index :: %{optional(integer()) => [t()]}
 
-  @doc "Indexes the activity references a page revision declares, as written by the authoring editor."
-  @spec from_activity_refs([map()], [Revision.t() | map()]) :: index()
-  def from_activity_refs(page_resources, page_revisions) do
+  @doc """
+  Indexes the activity references a page revision declares, as written by the authoring editor,
+  keeping only the activities in `activity_ids`.
+  """
+  @spec from_activity_refs([map()], [Revision.t() | map()], MapSet.t(integer())) :: index()
+  def from_activity_refs(page_resources, page_revisions, activity_ids) do
     revisions_by_id = Map.new(page_revisions, &{&1.id, &1})
 
     page_resources
@@ -31,6 +34,7 @@ defmodule Oli.Delivery.Sections.LinkedActivities.PageContexts do
           page_revision
           |> Map.get(:activity_refs, [])
           |> List.wrap()
+          |> Enum.filter(&MapSet.member?(activity_ids, &1))
           |> Enum.map(&{&1, page_resource.resource_id})
       end
     end)

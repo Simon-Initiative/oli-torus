@@ -164,7 +164,8 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
       |> response_activity_pages(activity_ids)
       |> PageContexts.from_page_pairs(page_resources, page_revisions)
 
-    declared = PageContexts.from_activity_refs(page_resources, page_revisions)
+    declared =
+      PageContexts.from_activity_refs(page_resources, page_revisions, MapSet.new(activity_ids))
 
     PageContexts.merge(observed, declared)
   end
