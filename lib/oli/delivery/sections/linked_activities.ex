@@ -308,14 +308,15 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
   defp activity_metrics(section_id, activity_ids) do
     started_at = System.monotonic_time()
 
-    # These rows are section-wide and partitioned by part, so one is taken per activity
-    # rather than summed. Mirrors how `Pages` reads the same column.
+    # These rows are section-wide and partitioned by part, so the parts are summed: the
+    # detail pane totals the same rows, and the row must describe the same numbers.
     metrics_by_id =
       from(summary in ResourceSummary,
         where:
           summary.section_id == ^section_id and summary.project_id == -1 and
             summary.user_id == -1 and summary.resource_id in ^activity_ids,
-        select: {summary.resource_id, summary.num_attempts, summary.num_correct}
+        group_by: summary.resource_id,
+        select: {summary.resource_id, sum(summary.num_attempts), sum(summary.num_correct)}
       )
       |> Repo.all()
       |> Map.new(fn {resource_id, attempts, correct} ->

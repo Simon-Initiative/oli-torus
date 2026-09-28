@@ -3843,22 +3843,22 @@ defmodule Oli.Delivery.SectionsTest do
       assert row.percent_correct == 40.0
     end
 
-    test "reports activity-level attempts for a multi-part activity", %{
+    test "sums every part of a multi-part activity, as the detail pane does", %{
       section: section,
       objectives: %{objective_a: objective_a},
       activities: activities
     } do
       activity = activities.page_1_mcq_1
 
-      for part_id <- ["1", "2", "3"] do
+      for {part_id, correct} <- [{"1", 10}, {"2", 2}] do
         Oli.Repo.insert!(%Oli.Analytics.Summary.ResourceSummary{
           project_id: -1,
           section_id: section.id,
           user_id: -1,
           resource_id: activity.resource_id,
           part_id: part_id,
-          num_attempts: 4,
-          num_correct: 3
+          num_attempts: 10,
+          num_correct: correct
         })
       end
 
@@ -3866,8 +3866,8 @@ defmodule Oli.Delivery.SectionsTest do
         LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
         |> Enum.find(&(&1.resource_id == activity.resource_id))
 
-      assert row.attempts == 4, "part attempt counts were summed into the activity total"
-      assert row.percent_correct == 75.0
+      assert row.attempts == 20
+      assert row.percent_correct == 60.0
     end
   end
 
