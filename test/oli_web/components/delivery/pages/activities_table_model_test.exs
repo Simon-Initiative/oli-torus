@@ -60,6 +60,52 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
     refute html =~ "[Empty]"
   end
 
+  test "render_question_column highlights nothing when the model carries no search term" do
+    activity = %{
+      title: "Scored <b>Question</b>",
+      resource_id: 3,
+      has_lti_activity: false,
+      content: %{
+        "stem" => %{"content" => [%{"type" => "p", "children" => [%{"text" => "Stem"}]}]}
+      }
+    }
+
+    html =
+      render_component(fn assigns ->
+        assigns = Map.put(assigns, :model, %{data: %{}})
+        ActivitiesTableModel.render_question_column(assigns, activity, nil)
+      end)
+
+    assert html =~ "Scored &lt;b&gt;Question&lt;/b&gt;:"
+    refute html =~ "search-highlight"
+  end
+
+  test "render_question_column highlights the search term in the title and stem, escaping both" do
+    activity = %{
+      title: "Unit <b>Rates</b>",
+      resource_id: 4,
+      has_lti_activity: false,
+      content: %{
+        "stem" => %{
+          "content" => [
+            %{"type" => "p", "children" => [%{"text" => "Compare rates <i>here</i>"}]}
+          ]
+        }
+      }
+    }
+
+    html =
+      render_component(fn assigns ->
+        assigns = Map.put(assigns, :model, %{data: %{text_search: "rates"}})
+        ActivitiesTableModel.render_question_column(assigns, activity, nil)
+      end)
+
+    assert html =~ ~s(Unit &lt;b&gt;<span class="search-highlight">Rates</span>&lt;/b&gt;:)
+    assert html =~ ~s(Compare <span class="search-highlight">rates</span> &lt;i&gt;here&lt;/i&gt;)
+    refute html =~ "<b>"
+    refute html =~ "<i>"
+  end
+
   test "render_assessment_details uses activity detail hooks and marks instructor preview panes to use the preview activity bridge" do
     assessment = %{
       title: "Second Screen",

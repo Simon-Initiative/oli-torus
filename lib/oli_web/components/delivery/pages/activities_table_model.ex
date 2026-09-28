@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   import OliWeb.Components.Common
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Utils
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
@@ -80,7 +81,9 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         header: activity.title,
         subtitle: subtitle,
         resource_id: activity.resource_id,
-        has_lti_activity: activity.has_lti_activity
+        has_lti_activity: activity.has_lti_activity,
+        text_search:
+          assigns |> Map.get(:model, %{}) |> Map.get(:data, %{}) |> Map.get(:text_search)
       })
 
     ~H"""
@@ -93,10 +96,10 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         class="flex items-center gap-2"
       >
         <Icons.plug />
-        <.question_text header={@header} subtitle={@subtitle} />
+        <.question_text header={@header} subtitle={@subtitle} text_search={@text_search} />
       </div>
     <% else %>
-      <.question_text header={@header} subtitle={@subtitle} />
+      <.question_text header={@header} subtitle={@subtitle} text_search={@text_search} />
     <% end %>
     """
   end
@@ -305,11 +308,18 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   defp question_text(assigns) do
     ~H"""
     <div class="flex flex-col">
-      <span class="font-bold">{@header}:</span>
-      <span :if={@subtitle} class="text-ellipsis">{@subtitle}</span>
+      <span class="font-bold">{highlight(@header, @text_search)}:</span>
+      <span :if={@subtitle} class="text-ellipsis">{highlight(@subtitle, @text_search)}</span>
     </div>
     """
   end
+
+  # Only Linked Activities passes a search term; without one the text renders as before.
+  defp highlight(text, text_search) when text_search in [nil, ""], do: text
+
+  defp highlight(text, text_search),
+    do:
+      Phoenix.HTML.raw(Utils.highlight_search_term(text, text_search, class: "search-highlight"))
 
   def render_learning_objectives_column(assigns, assessment, _) do
     assigns =

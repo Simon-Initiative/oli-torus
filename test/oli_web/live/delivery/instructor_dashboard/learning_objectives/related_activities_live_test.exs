@@ -407,6 +407,33 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       refute has_element?(view, "td", activity_3.title)
     end
 
+    test "highlights the search term in the question title and stem", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a
+    } do
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
+
+      refute has_element?(view, "td .search-highlight")
+
+      view
+      |> form("form[phx-change='search_activity']", %{activity_name: "basic"})
+      |> render_change()
+
+      assert has_element?(view, "td .search-highlight", "Basic")
+
+      view
+      |> form("form[phx-change='search_activity']", %{activity_name: "2 + 2"})
+      |> render_change()
+
+      assert has_element?(view, "td .search-highlight", "2 + 2")
+      refute has_element?(view, "td .search-highlight", "Basic")
+    end
+
     test "shows no activities message when no activities are found", %{
       conn: conn,
       instructor: instructor,

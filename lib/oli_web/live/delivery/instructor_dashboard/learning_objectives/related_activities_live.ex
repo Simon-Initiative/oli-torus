@@ -66,6 +66,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     socket = assign(socket, expanded_activity_ids: MapSet.new(), loaded_activity_summaries: %{})
 
     decoded_params = Filters.decode_params(params)
+    socket = assign(socket, params: decoded_params)
     selected_attempts_ids = Filters.decode_attempts_ids(decoded_params.selected_attempts_ids)
     {total_count, filtered_activities} = Filters.apply(activities, decoded_params)
 
@@ -87,7 +88,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
      |> assign(
        table_model: put_detail_state(table_model, socket),
        total_count: total_count,
-       params: decoded_params,
        attempts_options: Filters.attempts_options(selected_attempts_ids),
        selected_attempts_options: Filters.selected_attempts_options(selected_attempts_ids),
        selected_attempts_ids: selected_attempts_ids
@@ -361,6 +361,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         expanded_rows: ActivityInsightsState.expanded_rows(socket.assigns.expanded_activity_ids),
         activity_types_map: socket.assigns.activity_types_map,
         scripts: socket.assigns.scripts,
+        text_search: socket.assigns.params.text_search,
         target: nil
       })
     end)
