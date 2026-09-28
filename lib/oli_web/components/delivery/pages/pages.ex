@@ -22,6 +22,7 @@ defmodule OliWeb.Components.Delivery.Pages do
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Components.Delivery.Pages.PagesTableModel
   alias OliWeb.Delivery.Pages.ActivitiesTableModel
+  alias OliWeb.Delivery.ActivityInsightsState
 
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Icons
@@ -46,22 +47,14 @@ defmodule OliWeb.Components.Delivery.Pages do
     card_activity_props: []
   }
 
-  @attempts_options [
-    %{id: 1, name: "None", selected: false},
-    %{id: 2, name: "Less than 5", selected: false},
-    %{id: 3, name: "More than 5", selected: false}
-  ]
-
   def mount(socket) do
     {:ok,
-     assign(socket,
-       scripts_loaded: false,
-       table_model: nil,
-       current_page: nil,
-       activity_summary_cache: %{},
-       loaded_activity_summaries: %{},
-       expanded_activity_ids: MapSet.new(),
-       repair_poll_scheduled: false
+     assign(
+       socket,
+       Map.merge(
+         %{scripts_loaded: false, table_model: nil, current_page: nil},
+         ActivityInsightsState.initial_state()
+       )
      )}
   end
 
@@ -87,7 +80,7 @@ defmodule OliWeb.Components.Delivery.Pages do
           activity_types_map: assigns.activity_types_map,
           card_props: [],
           card_activity_props: [],
-          attempts_options: @attempts_options
+          attempts_options: ActivityHelpers.attempts_filter_options()
         )
         |> assign_new(:navigation_data, fn ->
           %{
@@ -136,7 +129,12 @@ defmodule OliWeb.Components.Delivery.Pages do
           ]
 
           selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
-          attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
+
+          attempts_options =
+            update_attempts_options(
+              selected_attempts_ids,
+              ActivityHelpers.attempts_filter_options()
+            )
 
           selected_attempts_options =
             Enum.reduce(attempts_options, %{}, fn option, acc ->
@@ -215,7 +213,12 @@ defmodule OliWeb.Components.Delivery.Pages do
               ]
 
               selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
-              attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
+
+              attempts_options =
+                update_attempts_options(
+                  selected_attempts_ids,
+                  ActivityHelpers.attempts_filter_options()
+                )
 
               selected_attempts_options =
                 Enum.reduce(attempts_options, %{}, fn option, acc ->
@@ -770,11 +773,6 @@ defmodule OliWeb.Components.Delivery.Pages do
       |> Map.values()
       |> Enum.sort_by(& &1.order)
 
-    expanded_rows =
-      expanded_activity_ids
-      |> Enum.map(&"row_#{&1}")
-      |> MapSet.new()
-
     table_model =
       table_model
       |> Map.update!(:data, fn data ->
@@ -782,7 +780,7 @@ defmodule OliWeb.Components.Delivery.Pages do
           activity_summary_cache: activity_summary_cache,
           loaded_activity_summaries: loaded_activity_summaries,
           expanded_activity_ids: expanded_activity_ids,
-          expanded_rows: expanded_rows,
+          expanded_rows: ActivityInsightsState.expanded_rows(expanded_activity_ids),
           scripts: scripts,
           activity_types_map: activity_types_map,
           target: socket.assigns.myself
@@ -1044,11 +1042,9 @@ defmodule OliWeb.Components.Delivery.Pages do
         socket
 
       _ ->
-        assign(socket,
-          loaded_activity_summaries: %{},
-          expanded_activity_ids: MapSet.new(),
-          selected_activities: []
-        )
+        socket
+        |> assign(ActivityInsightsState.reset())
+        |> assign(selected_activities: [])
     end
   end
 

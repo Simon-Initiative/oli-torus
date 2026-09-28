@@ -4,12 +4,31 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   import OliWeb.Components.Common
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Utils
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
-  def new(activities) do
-    column_specs = [
+  @doc """
+  Builds the instructor dashboard activity table.
+
+  `:columns` selects the column set: `:default` for the selected-page view used by Scored
+  and Practice Activities, or `:linked_activities` for the objective-scoped view, which
+  drops the order and Learning Objectives columns. An unknown value raises rather than
+  silently rendering the wrong columns.
+  """
+  def new(activities, opts \\ []) do
+    SortableTableModel.new(
+      rows: activities,
+      column_specs: column_specs_for(Keyword.get(opts, :columns, :default)),
+      event_suffix: "",
+      id_field: [:resource_id],
+      data: %{expandable_rows: true, view_type: :activities_instructor_dashboard}
+    )
+  end
+
+  defp column_specs_for(:default) do
+    [
       %ColumnSpec{
         render_fn: &render_expanded/3,
         sortable: false,
@@ -40,17 +59,14 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
       %ColumnSpec{
         name: :avg_score,
         label: "% Correct",
+        th_class: "whitespace-nowrap",
         render_fn: &render_avg_score_column/3
       }
     ]
+  end
 
-    SortableTableModel.new(
-      rows: activities,
-      column_specs: column_specs,
-      event_suffix: "",
-      id_field: [:resource_id],
-      data: %{expandable_rows: true, view_type: :activities_instructor_dashboard}
-    )
+  defp column_specs_for(:linked_activities) do
+    Enum.reject(column_specs_for(:default), &(&1.name in [:order, :learning_objectives]))
   end
 
   def render_question_column(assigns, %{content: content} = activity, _) do
@@ -65,7 +81,9 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         header: activity.title,
         subtitle: subtitle,
         resource_id: activity.resource_id,
-        has_lti_activity: activity.has_lti_activity
+        has_lti_activity: activity.has_lti_activity,
+        text_search:
+          assigns |> Map.get(:model, %{}) |> Map.get(:data, %{}) |> Map.get(:text_search)
       })
 
     ~H"""
@@ -78,10 +96,10 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         class="flex items-center gap-2"
       >
         <Icons.plug />
-        <.question_text header={@header} subtitle={@subtitle} />
+        <.question_text header={@header} subtitle={@subtitle} text_search={@text_search} />
       </div>
     <% else %>
-      <.question_text header={@header} subtitle={@subtitle} />
+      <.question_text header={@header} subtitle={@subtitle} text_search={@text_search} />
     <% end %>
     """
   end
@@ -90,13 +108,21 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     assigns =
       Map.merge(assigns, %{
         id: "#{assessment.resource_id}",
-        target: assigns.model.data.target,
-        assessment: assessment
+        target: Map.get(assigns.model.data, :target),
+        assessment: assessment,
+        expanded:
+          MapSet.member?(
+            Map.get(assigns.model.data, :expanded_activity_ids, MapSet.new()),
+            assessment.resource_id
+          )
       })
 
     ~H"""
     <.button
       id={"button_#{@id}"}
+      aria-expanded={to_string(@expanded)}
+      aria-controls={"details-row_#{@id}"}
+      aria-label={if @expanded, do: "Collapse activity details", else: "Expand activity details"}
       class="flex !p-0"
       phx-hook="PreserveScrollAnchor"
       data-anchor-selector={~s(tr[data-row-id="row_#{@id}"])}
@@ -141,6 +167,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         all_attempt_pct: Map.get(current_activity || %{}, :all_attempt_pct, 0.0),
         adaptive_summary_repair_status:
           Map.get(current_activity || %{}, :adaptive_summary_repair_status),
+        summary_status: summary_status(current_activity),
         detail_label:
           if(adaptive_screen?(assessment), do: "Screen details", else: "Question details")
       })
@@ -193,16 +220,16 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
               </div>
             </div>
           </div>
-          <%= if Map.get(@current_activity, :preview_rendered) != nil do %>
-            <ActivityHelpers.rendered_activity
-              activity={@current_activity}
-              activity_types_map={@activity_types_map}
-            />
-          <% else %>
-            <p class="pt-9 pb-5">No attempt registered for this question</p>
-          <% end %>
+          <.summary_body
+            summary_status={@summary_status}
+            current_activity={@current_activity}
+            activity_types_map={@activity_types_map}
+          />
         </div>
-        <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
+        <div
+          :if={@summary_status != :unavailable}
+          class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4"
+        >
           <ActivityHelpers.percentage_bar
             id={Integer.to_string(@current_activity.id) <> "_first_try_correct"}
             value={@first_attempt_pct}
@@ -228,14 +255,53 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     """
   end
 
+  attr :summary_status, :atom, required: true
+  attr :current_activity, :map, required: true
+  attr :activity_types_map, :map, default: %{}
+
+  defp summary_body(%{summary_status: :complete} = assigns) do
+    ~H"""
+    <ActivityHelpers.rendered_activity
+      activity={@current_activity}
+      activity_types_map={@activity_types_map}
+    />
+    """
+  end
+
+  defp summary_body(%{summary_status: :unavailable} = assigns) do
+    ~H"""
+    <p class="pt-9 pb-5">Question analytics cannot be computed for this question.</p>
+    """
+  end
+
+  defp summary_body(assigns) do
+    ~H"""
+    <p class="pt-9 pb-5">No attempt registered for this question</p>
+    """
+  end
+
+  defp summary_status(nil), do: :no_observations
+
+  defp summary_status(%{summary_status: status}) when not is_nil(status), do: status
+
+  defp summary_status(%{preview_rendered: preview}) when not is_nil(preview), do: :complete
+
+  defp summary_status(_activity), do: :no_observations
+
   defp question_text(assigns) do
     ~H"""
     <div class="flex flex-col">
-      <span class="font-bold">{@header}:</span>
-      <span :if={@subtitle} class="text-ellipsis">{@subtitle}</span>
+      <span class="font-bold">{highlight(@header, @text_search)}:</span>
+      <span :if={@subtitle} class="text-ellipsis">{highlight(@subtitle, @text_search)}</span>
     </div>
     """
   end
+
+  defp highlight(text, text_search) when text_search in [nil, ""], do: text
+
+  defp highlight(text, text_search),
+    do:
+      Phoenix.HTML.raw(Utils.highlight_search_term(text, text_search, class: "search-highlight"))
 
   def render_learning_objectives_column(assigns, assessment, _) do
     assigns =
