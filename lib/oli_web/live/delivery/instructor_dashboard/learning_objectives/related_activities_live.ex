@@ -372,13 +372,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   end
 
   defp maybe_load_activity_summary(socket, activity_id) do
-    if ActivityInsightsState.loaded?(socket.assigns.loaded_activity_summaries, activity_id) do
-      socket
-    else
-      socket
-      |> load_activity_summary(
-        Enum.find(socket.assigns.activities, &(&1.resource_id == activity_id))
-      )
+    cond do
+      ActivityInsightsState.loaded?(socket.assigns.loaded_activity_summaries, activity_id) ->
+        socket
+
+      summary = Map.get(socket.assigns.activity_summary_cache, activity_id) ->
+        cache_summary(socket, activity_id, summary)
+
+      true ->
+        load_activity_summary(
+          socket,
+          Enum.find(socket.assigns.activities, &(&1.resource_id == activity_id))
+        )
     end
   end
 

@@ -678,6 +678,60 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       assert :binary.match(html, "Activity 1") < :binary.match(html, "Activity 3")
     end
 
+    test "re-expanding a row after a search reuses its cached summary", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a,
+      activity_1: activity_1,
+      page_1: page_1
+    } do
+      :ok = seed_question_analytics(section, page_1, activity_1)
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
+
+      handler = {__MODULE__, make_ref()}
+      parent = self()
+      view_pid = view.pid
+
+      :ok =
+        :telemetry.attach(
+          handler,
+          [:oli, :repo, :query],
+          fn _, _, metadata, _ ->
+            if self() == view_pid and metadata.query =~ ~s("resource_summary"),
+              do: send(parent, {handler, :summary_query})
+          end,
+          nil
+        )
+
+      on_exit(fn -> :telemetry.detach(handler) end)
+
+      toggle = fn ->
+        view |> element("button#button_#{activity_1.resource_id}") |> render_click()
+      end
+
+      toggle.()
+      assert_received {^handler, :summary_query}
+      toggle.()
+
+      view
+      |> form("form[phx-change='search_activity']", %{activity_name: "Basic Math"})
+      |> render_change()
+
+      flush = fn flush ->
+        receive do: ({^handler, :summary_query} -> flush.(flush)), after: (0 -> :ok)
+      end
+
+      flush.(flush)
+
+      toggle.()
+      assert view |> element("#details-#{activity_1.resource_id}") |> render() =~ "What is 2 + 2?"
+      refute_received {^handler, :summary_query}
+    end
+
     test "expanding and collapsing a row keeps the sorted column marked", %{
       conn: conn,
       instructor: instructor,
