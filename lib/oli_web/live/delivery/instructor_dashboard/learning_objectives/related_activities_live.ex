@@ -366,10 +366,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     end)
   end
 
+  # Expanding or collapsing changes only the detail state, so the rows and sort stay as they are.
   defp refresh_table_model(socket) do
-    {_, rows} = Filters.apply(socket.assigns.activities, socket.assigns.params)
-    {:ok, table_model} = ActivitiesTableModel.new(rows, columns: :linked_activities)
-    assign(socket, table_model: put_detail_state(table_model, socket))
+    assign(socket, table_model: put_detail_state(socket.assigns.table_model, socket))
   end
 
   defp maybe_load_activity_summary(socket, activity_id) do

@@ -678,6 +678,37 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       assert :binary.match(html, "Activity 1") < :binary.match(html, "Activity 3")
     end
 
+    test "expanding and collapsing a row keeps the sorted column marked", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a,
+      activity_1: activity_1
+    } do
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_related_activities_route(section.slug, objective_a.resource_id, %{
+            "sort_by" => "avg_score",
+            "sort_order" => "desc"
+          })
+        )
+
+      sorted_header =
+        "th[phx-value-sort_by='avg_score'][data-sort-column='true'][data-sort-order='desc']"
+
+      assert has_element?(view, sorted_header)
+
+      view |> element("button#button_#{activity_1.resource_id}") |> render_click()
+      assert has_element?(view, "button#button_#{activity_1.resource_id}[aria-expanded='true']")
+      assert has_element?(view, sorted_header)
+
+      view |> element("button#button_#{activity_1.resource_id}") |> render_click()
+      assert has_element?(view, sorted_header)
+    end
+
     test "sorts linked activities by title and attempts in both directions", %{
       conn: conn,
       instructor: instructor,
