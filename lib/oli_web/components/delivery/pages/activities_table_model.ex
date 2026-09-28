@@ -268,8 +268,6 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     """
   end
 
-  # Both metrics come from the same summary, so they are unavailable together and one message
-  # stands in for the whole pane.
   defp summary_body(%{summary_status: :unavailable} = assigns) do
     ~H"""
     <p class="pt-9 pb-5">Question analytics cannot be computed for this question.</p>
@@ -299,7 +297,6 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     """
   end
 
-  # Only Linked Activities passes a search term; without one the text renders as before.
   defp highlight(text, text_search) when text_search in [nil, ""], do: text
 
   defp highlight(text, text_search),

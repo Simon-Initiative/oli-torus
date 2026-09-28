@@ -367,7 +367,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     end)
   end
 
-  # Expanding or collapsing changes only the detail state, so the rows and sort stay as they are.
   defp refresh_table_model(socket) do
     assign(socket, table_model: put_detail_state(socket.assigns.table_model, socket))
   end

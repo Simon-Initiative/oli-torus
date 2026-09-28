@@ -293,8 +293,6 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
     unavailable = render_status.(Map.put(base, :summary_status, :unavailable))
 
-    # Both metrics come from the same summary, so they are unavailable together: one message
-    # replaces the whole pane instead of an empty box and two identical lines.
     assert unavailable =~ "Question analytics cannot be computed for this question."
     refute unavailable =~ "No attempt registered for this question"
     refute unavailable =~ "First Try Correct"

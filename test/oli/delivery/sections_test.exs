@@ -3586,8 +3586,6 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{objective_a: objective_a},
       activities: activities
     } do
-      # One page declares an activity of objective A and one of objective C, so the declared
-      # index sees an activity outside the objective.
       page =
         insert(:revision,
           resource_type_id: ResourceType.id_for_page(),
@@ -3904,8 +3902,6 @@ defmodule Oli.Delivery.SectionsTest do
     } do
       activity = activities.page_1_mcq_1
 
-      # Unequal attempt counts, so averaging per-part percentages (70%) cannot pass for the
-      # weighted total (12 correct of 15 attempts = 80%).
       for {part_id, attempts, correct} <- [{"1", 10, 10}, {"2", 5, 2}] do
         Oli.Repo.insert!(%Oli.Analytics.Summary.ResourceSummary{
           project_id: -1,

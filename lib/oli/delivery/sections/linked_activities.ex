@@ -309,8 +309,7 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
   defp activity_metrics(section_id, activity_ids) do
     started_at = System.monotonic_time()
 
-    # These rows are section-wide and partitioned by part, so the parts are summed: the
-    # detail pane totals the same rows, and the row must describe the same numbers.
+    # resource_summary has one row per part, so the parts are summed.
     metrics_by_id =
       from(summary in ResourceSummary,
         where:
