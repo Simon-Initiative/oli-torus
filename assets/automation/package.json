@@ -40,6 +40,7 @@
   "dependencies": {
     "csv-parse": "^7.0.2",
     "eslint": "^9.27.0",
+    "json-rules-engine": "^6.0.1",
     "ww-torus-e2e": "file:"
   }
 }
