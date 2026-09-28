@@ -10,7 +10,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     )
   end
 
-  defp params(overrides \\ %{}) do
+  defp params(overrides) do
     Map.merge(
       %{
         offset: 0,

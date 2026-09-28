@@ -29,7 +29,7 @@ requirements:
     proofs:
     - lib/oli/delivery/sections/linked_activities.ex resolves the objective family from the depot
     - test/oli/delivery/sections/linked_activities_test.exs via targeted ExUnit suite covering parent, child and cycle cases
-    - test/oli/delivery/sections_test.exs plus test/scenarios/linked_activities/linked_activities.scenario.yaml and lib/oli/scenarios/linked_activities_hooks.ex via the real authoring-to-delivery scenario
+    - test/oli/delivery/sections_test.exs plus test/scenarios/linked_activities/linked_activities.scenario.yaml and lib/oli/scenarios/features/linked_activities_hooks.ex via the real authoring-to-delivery scenario
   - id: AC-003
     title: Duplicate activity resource IDs across objective relationship arrays render
       once and activities outside the objective family do not render
@@ -38,7 +38,7 @@ requirements:
     proofs:
     - lib/oli/delivery/sections/linked_activities.ex unions and de-duplicates related_activities
     - test/oli/delivery/sections/linked_activities_test.exs via targeted ExUnit suite
-    - lib/oli/scenarios/linked_activities_hooks.ex asserts a shared activity renders once and unrelated ones are excluded
+    - lib/oli/scenarios/features/linked_activities_hooks.ex asserts a shared activity renders once and unrelated ones are excluded
 - id: FR-003
   title: Render linked activities through the shared expandable instructor activity-detail
     experience
@@ -71,7 +71,7 @@ requirements:
     proofs:
     - lib/oli/delivery/sections/linked_activities.ex reads the section-scoped summary once per activity
     - test/oli/delivery/sections_test.exs places one activity on two delivered pages and on several parts
-    - lib/oli/scenarios/linked_activities_hooks.ex asserts aggregate attempts and correctness for the shared activity
+    - lib/oli/scenarios/features/linked_activities_hooks.ex asserts aggregate attempts and correctness for the shared activity
   - id: AC-020
     title: All linked activity rows start collapsed on initial page load, including
       after navigation, filtering, sorting, and pagination; no row auto-expands

@@ -313,4 +313,4 @@
     section: "linked_activities_section"
 
 - hook:
-    function: "Oli.Scenarios.LinkedActivitiesHooks.assert_linked_activity_rows/1"
+    function: "Oli.Scenarios.Features.LinkedActivitiesHooks.assert_linked_activity_rows/1"

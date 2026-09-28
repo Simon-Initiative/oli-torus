@@ -1,4 +1,4 @@
-defmodule Oli.Scenarios.LinkedActivitiesHooks do
+defmodule Oli.Scenarios.Features.LinkedActivitiesHooks do
   @moduledoc """
   Assertions for the real linked-activities scenario workflow.
 

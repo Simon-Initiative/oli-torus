@@ -298,8 +298,6 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
 
   defp summary_status(%{summary_status: status}) when not is_nil(status), do: status
 
-  defp summary_status(%{metrics_unavailable: true}), do: :unavailable
-
   defp summary_status(%{preview_rendered: preview}) when not is_nil(preview), do: :complete
 
   defp summary_status(_activity), do: :no_observations

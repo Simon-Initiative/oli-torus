@@ -34,7 +34,7 @@ Phases 1 through 6 are implemented and recorded in their execution records. The 
 - `OliWeb.Delivery.ActivityInsightsState` is the shared pure state projection; the route and `Pages` LiveViews keep their existing event boundaries rather than introducing a separate `ActivityInsightsTable` component.
 - `ActivitiesTableModel` supports `:linked_activities` mode and renders the shared details, accessible expansion state, and linked columns.
 - Cross-page aggregation, the real authoring/delivery scenario, and the phase 6 acceptance-criteria tests are complete.
-- Browser/Figma QA remains blocked until an authenticated instructor Browser MCP session is prepared. This is the only release-readiness item not automated in this work item.
+- The toolbar was compared against Figma node `275-7364` on 2026-09-17 (AC-022 proof in `requirements.yml`). Other manual browser QA (layout, responsive behavior, keyboard focus) remains pending; it is the only release-readiness work not automated in this work item.
 
 ## Phase 1: Define and Test the Data Contracts
 - Goal: establish deterministic objective-family resolution, page-context indexing, row normalization, and aggregation contracts before changing LiveView behavior.
@@ -223,7 +223,7 @@ Two verification activities are executed with repo-local skills rather than `har
 - Gate C: grouped page-context summaries pass merge, failure, privacy, and read-only tests.
 - Gate D: linked route passes complete LiveView workflow, authorization, accessibility, and empty-state tests.
 - Gate E: formatting, broader tests, requirements traceability, operational checks, and required reviews pass.
-- Gate F: every acceptance criterion listed in Phase 6 has a test that exercises it, and the real scenario coverage is complete. Visual QA is recorded as attempted but blocked pending an authenticated Browser MCP session.
+- Gate F: every acceptance criterion listed in Phase 6 has a test that exercises it, and the real scenario coverage is complete. The toolbar Figma comparison is recorded (AC-022, 2026-09-17); the remaining manual visual QA is pending.
 
 ## Decision Log
 

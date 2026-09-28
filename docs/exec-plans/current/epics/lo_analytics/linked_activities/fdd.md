@@ -237,7 +237,7 @@ Existing activity, section-resource, publication, attempt, response, and analyti
 - Product may later choose occurrence-level rows: isolate aggregation in the summary boundary so row semantics can change without rewriting route/filter/table code.
 
 ## 16. Open Questions & Follow-ups
-- Manual authenticated browser verification remains pending for layout, responsive behavior, keyboard focus, and Figma comparison.
+- Manual authenticated browser verification remains pending for layout, responsive behavior, and keyboard focus. The toolbar was compared against Figma node `275-7364` on 2026-09-17 (AC-022).
 - The implemented default is one aggregate row per activity resource across eligible page occurrences. A future occurrence-level product decision would require revising AC-006 and the row contract.
 - Telemetry uses bounded linked-activity events implemented by the resolver and LiveView summary path; any future namespace change is outside this work item.
 

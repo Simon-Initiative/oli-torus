@@ -276,7 +276,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
       resource_id: 54,
       id: 54,
       preview_rendered: nil,
-      metrics_unavailable: true
+      summary_status: :unavailable
     }
 
     model = %{
