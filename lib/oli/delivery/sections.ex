@@ -6528,47 +6528,75 @@ defmodule Oli.Delivery.Sections do
   defp realized_objective_container_pairs(section_id) do
     activity_type_id = ResourceType.id_for_activity()
 
-    from(summary in ResourceSummary,
-      join: enrollment in Enrollment,
-      on:
-        enrollment.section_id == summary.section_id and
-          enrollment.user_id == summary.user_id,
-      join: enrollment_context_role in EnrollmentContextRole,
-      on: enrollment_context_role.enrollment_id == enrollment.id,
-      join: resource_part_response in ResourcePartResponse,
-      on:
-        resource_part_response.resource_id == summary.resource_id and
-          resource_part_response.part_id == summary.part_id,
-      join: student_response in StudentResponse,
-      on:
-        student_response.section_id == summary.section_id and
-          student_response.user_id == summary.user_id and
-          student_response.resource_part_response_id == resource_part_response.id,
+    # Match each recorded response to its own learner's evidence. Joining summaries
+    # to all response variants for an activity/part first creates a learner-by-response
+    # cross product. Deduplicate page/part membership before expanding containers or
+    # loading revision JSON, whose work should not grow with enrollment.
+    attempted_part =
+      from(summary in ResourceSummary,
+        where:
+          summary.project_id == -1 and summary.section_id == ^section_id and
+            summary.resource_type_id == ^activity_type_id and summary.num_attempts > 0 and
+            summary.user_id == parent_as(:response).user_id and
+            summary.resource_id == parent_as(:response).resource_id and
+            summary.part_id == parent_as(:response).part_id,
+        select: 1
+      )
+
+    recorded_parts =
+      from(student_response in StudentResponse,
+        join: resource_part_response in ResourcePartResponse,
+        on: resource_part_response.id == student_response.resource_part_response_id,
+        join: enrollment in Enrollment,
+        on:
+          enrollment.section_id == student_response.section_id and
+            enrollment.user_id == student_response.user_id,
+        join: enrollment_context_role in EnrollmentContextRole,
+        on: enrollment_context_role.enrollment_id == enrollment.id,
+        where:
+          student_response.section_id == ^section_id and
+            enrollment.status == :enrolled and
+            enrollment_context_role.context_role_id == ^@student_role_id,
+        distinct: true,
+        select: %{
+          user_id: student_response.user_id,
+          page_id: student_response.page_id,
+          resource_id: resource_part_response.resource_id,
+          part_id: resource_part_response.part_id
+        }
+      )
+
+    realized_parts =
+      from(response in subquery(recorded_parts),
+        as: :response,
+        where: exists(subquery(attempted_part)),
+        distinct: true,
+        select: %{
+          page_id: response.page_id,
+          resource_id: response.resource_id,
+          part_id: response.part_id
+        }
+      )
+
+    from(part in subquery(realized_parts),
       join: contained_page in ContainedPage,
       on:
-        contained_page.section_id == student_response.section_id and
-          contained_page.page_id == student_response.page_id,
+        contained_page.section_id == ^section_id and
+          contained_page.page_id == part.page_id,
       join: spp in SectionsProjectsPublications,
-      on: spp.section_id == summary.section_id,
+      on: spp.section_id == ^section_id,
       join: published_resource in PublishedResource,
       on:
         published_resource.publication_id == spp.publication_id and
-          published_resource.resource_id == summary.resource_id,
+          published_resource.resource_id == part.resource_id,
       join: activity_revision in Revision,
       on: activity_revision.id == published_resource.revision_id,
-      where:
-        summary.project_id == -1 and
-          summary.section_id == ^section_id and
-          summary.resource_type_id == ^activity_type_id and
-          summary.num_attempts > 0 and
-          enrollment.status == :enrolled and
-          enrollment_context_role.context_role_id == ^@student_role_id and
-          activity_revision.deleted == false,
-      distinct: [contained_page.container_id, activity_revision.id, summary.part_id],
+      where: activity_revision.deleted == false,
+      distinct: [contained_page.container_id, activity_revision.id, part.part_id],
       select: %{
         container_id: contained_page.container_id,
         objectives: activity_revision.objectives,
-        part_id: summary.part_id
+        part_id: part.part_id
       }
     )
     |> Repo.all()

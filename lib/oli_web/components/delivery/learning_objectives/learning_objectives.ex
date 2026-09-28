@@ -223,6 +223,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         <.live_component
           id="objectives_containers_navigator"
           module={OliWeb.Components.Delivery.ListNavigator}
+          navigation_type={:patch}
           items={@navigator_items}
           current_item_resource_id={@params.filter_by}
           path_builder_fn={
