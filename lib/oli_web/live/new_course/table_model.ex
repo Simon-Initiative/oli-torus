@@ -136,12 +136,15 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
   end
 
   def render_action_column(assigns, item, _) do
-    id = source_identifier(item)
-
-    assigns = Map.merge(assigns, %{id: id})
+    assigns = Map.merge(assigns, %{id: source_identifier(item), title: source_title(item)})
 
     ~H"""
-    <button class="btn btn-primary btn-sm" phx-click="source_selection" phx-value-id={@id}>
+    <button
+      class="btn btn-primary btn-sm"
+      phx-click="source_selection"
+      phx-value-id={@id}
+      phx-value-title={@title}
+    >
       Select
     </button>
     """

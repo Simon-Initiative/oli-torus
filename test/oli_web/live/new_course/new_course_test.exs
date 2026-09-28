@@ -86,6 +86,167 @@ defmodule OliWeb.NewCourse.NewCourseTest do
     end
   end
 
+  describe "My Course Sections copy-choice modal" do
+    setup [:admin_conn]
+
+    test "selecting a My Course Section opens the modal instead of advancing to the next step",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+
+      course =
+        insert(:section,
+          type: :enrollable,
+          base_project: project,
+          title: "Chemistry 101 -- Fall 2025"
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      refute has_element?(view, "#copy-choice-modal")
+
+      view
+      |> element("button[phx-value-id='section:#{course.id}']")
+      |> render_click()
+
+      assert has_element?(view, "#copy-choice-modal")
+      assert has_element?(view, "h1", "Choose what to copy")
+      assert render(view) =~ course.title
+      refute has_element?(view, "h2", "Name your course")
+    end
+
+    test "selecting a Template does not open the modal and advances directly (regression)", %{
+      conn: conn
+    } do
+      template = insert(:section, open_and_free: true, type: :blueprint, title: "Bio Template")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      view
+      |> element("button[phx-value-id='product:#{template.id}']")
+      |> render_click()
+
+      assert has_element?(view, "h2", "Name your course")
+      refute has_element?(view, "#copy-choice-modal")
+    end
+
+    test "Cancel closes the modal without advancing, without leaving the card looking selected, and without breaking re-selection",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      course = insert(:section, type: :enrollable, base_project: project, title: "Chem Copy")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      view
+      |> element("button[phx-value-id='section:#{course.id}']")
+      |> render_click()
+
+      assert has_element?(view, "#copy-choice-modal")
+
+      view
+      |> element("#copy-choice-modal button", "Cancel")
+      |> render_click()
+
+      refute has_element?(view, "#copy-choice-modal")
+      refute has_element?(view, "h2", "Name your course")
+
+      refute has_element?(
+               view,
+               "button[phx-value-id='section:#{course.id}'] div.bg-delivery-primary-100"
+             )
+
+      view
+      |> element("button[phx-value-id='section:#{course.id}']")
+      |> render_click()
+
+      assert has_element?(view, "#copy-choice-modal")
+    end
+
+    test "dismissing via the close (X) button behaves the same as Cancel and does not break re-selection",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      course = insert(:section, type: :enrollable, base_project: project, title: "Chem Copy")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      view
+      |> element("button[phx-value-id='section:#{course.id}']")
+      |> render_click()
+
+      view
+      |> element("#copy-choice-modal button[aria-label='close']")
+      |> render_click()
+
+      refute has_element?(view, "#copy-choice-modal")
+
+      refute has_element?(
+               view,
+               "button[phx-value-id='section:#{course.id}'] div.bg-delivery-primary-100"
+             )
+
+      view
+      |> element("button[phx-value-id='section:#{course.id}']")
+      |> render_click()
+
+      assert has_element?(view, "#copy-choice-modal")
+    end
+
+    test "confirming with 'Copy entire course' (the default) advances to step 1 and pre-fills the title as '<source> (copy)'",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      course = insert(:section, type: :enrollable, base_project: project, title: "Chem Copy")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      view
+      |> element("button[phx-value-id='section:#{course.id}']")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "input[value='entire_course'][checked]"
+             )
+
+      view
+      |> element("#copy-choice-modal button", "Create Section")
+      |> render_click()
+
+      assert has_element?(view, "h2", "Name your course")
+      assert render(view) =~ ~s|value="Chem Copy (copy)"|
+    end
+
+    test "switching to 'Choose what to copy' defaults to only Content checked, and switching back mutes all checkboxes",
+         %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      course = insert(:section, type: :enrollable, base_project: project, title: "Chem Copy")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      view
+      |> element("button[phx-value-id='section:#{course.id}']")
+      |> render_click()
+
+      view
+      |> element("input[value='choose_what_to_copy']")
+      |> render_click()
+
+      assert has_element?(view, "input[name='copy_group_content'][checked][disabled]")
+      refute has_element?(view, "input[name='copy_group_schedule'][checked]")
+      assert has_element?(view, "input[name='copy_group_schedule']:not([disabled])")
+
+      view
+      |> element("input[name='copy_group_schedule']")
+      |> render_click()
+
+      assert has_element?(view, "input[name='copy_group_schedule'][checked]")
+
+      view
+      |> element("input[value='entire_course']")
+      |> render_click()
+
+      assert has_element?(view, "input[name='copy_group_schedule'][disabled]")
+    end
+  end
+
   describe "telemetry" do
     setup [:admin_conn]
 

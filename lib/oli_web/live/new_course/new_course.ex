@@ -15,7 +15,7 @@ defmodule OliWeb.Delivery.NewCourse do
   alias OliWeb.Common.{Breadcrumb, Stepper, FormatDateTime}
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Components.Common
-  alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
+  alias OliWeb.Delivery.NewCourse.{CopyChoiceModal, CourseDetails, NameCourse, SelectSource}
 
   alias Phoenix.LiveView.JS
 
@@ -91,8 +91,10 @@ defmodule OliWeb.Delivery.NewCourse do
        section_spec: section_spec,
        changeset: changeset,
        copy_options: default_copy_options(),
-       copy_source?: false,
+       copy_scope: :entire_course,
+       show_copy_modal?: false,
        source: nil,
+       source_title: nil,
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
        loading: false,
        initial_source_filter: parse_source_filter(params["filter"]),
@@ -176,6 +178,13 @@ defmodule OliWeb.Delivery.NewCourse do
         show_spinner={@loading}
         data={get_step_data(assigns)}
       />
+
+      <CopyChoiceModal.render
+        :if={@show_copy_modal?}
+        source_title={@source_title}
+        copy_scope={@copy_scope}
+        copy_options={@copy_options}
+      />
     </div>
     """
   end
@@ -258,11 +267,7 @@ defmodule OliWeb.Delivery.NewCourse do
         <img src="/images/icons/course-creation-wizard-step-1.svg" style="height: 170px;" />
         <h2>Name your course</h2>
         <.render_flash flash={@flash} />
-        <NameCourse.render
-          changeset={to_form(@changeset)}
-          copy_source?={@copy_source?}
-          copy_options={@copy_options}
-        />
+        <NameCourse.render changeset={to_form(@changeset)} />
       </div>
     </.new_course_header>
     """
@@ -305,7 +310,11 @@ defmodule OliWeb.Delivery.NewCourse do
       0 ->
         %{
           ctx: assigns.ctx,
-          source: assigns[:source],
+          # While the copy-choice modal is open, the underlying source grid stays mounted
+          # (current_step is still 0) but must never show the just-clicked card as
+          # "selected" — that highlight is meant only for a same-step re-render, not for a
+          # selection that's actually being decided in the modal on top of it.
+          source: if(assigns.show_copy_modal?, do: nil, else: assigns[:source]),
           on_select: JS.push("source_selection", target: "##{@form_id}"),
           actor: actor(assigns),
           current_user: assigns.current_user,
@@ -323,9 +332,7 @@ defmodule OliWeb.Delivery.NewCourse do
       1 ->
         %{
           changeset: assigns.changeset,
-          flash: assigns.flash,
-          copy_source?: assigns.copy_source?,
-          copy_options: assigns.copy_options
+          flash: assigns.flash
         }
 
       _ ->
@@ -442,18 +449,92 @@ defmodule OliWeb.Delivery.NewCourse do
      )}
   end
 
-  def handle_event("source_selection", %{"id" => source}, socket) do
-    copy_source? = section_source?(source)
-
-    if copy_source? do
+  def handle_event("source_selection", %{"id" => source} = params, socket) do
+    if section_source?(source) do
       :telemetry.execute(
         [:oli, :course_builder, :my_course_sections_card_activated],
         %{count: 1},
         %{}
       )
-    end
 
-    {:noreply, assign(socket, source: source, copy_source?: copy_source?, current_step: 1)}
+      {:noreply,
+       assign(socket,
+         source: source,
+         source_title: params["title"],
+         copy_scope: :entire_course,
+         copy_options: default_copy_options(),
+         show_copy_modal?: true
+       )}
+    else
+      {:noreply, assign(socket, source: source, current_step: 1)}
+    end
+  end
+
+  def handle_event("cancel_copy_modal", _params, socket) do
+    {:noreply,
+     assign(socket,
+       show_copy_modal?: false,
+       source: nil,
+       source_title: nil
+     )}
+  end
+
+  def handle_event("set_copy_scope", %{"scope" => scope}, socket)
+      when scope in ["entire_course", "choose_what_to_copy"] do
+    {:noreply, assign(socket, copy_scope: String.to_existing_atom(scope))}
+  end
+
+  # Defensive: these two radios have no enclosing <form>, so nothing stops a client from
+  # pushing this event with an unexpected/missing "scope" (e.g. a stale or hand-crafted
+  # socket payload) — fall back to a no-op instead of crashing the LiveView.
+  def handle_event("set_copy_scope", _params, socket), do: {:noreply, socket}
+
+  def handle_event("toggle_copy_group", %{"group" => "course_features"}, socket) do
+    currently_selected? = Map.get(socket.assigns.copy_options, :section_settings, false)
+
+    copy_options =
+      socket.assigns.copy_options
+      |> Map.put(:section_settings, !currently_selected?)
+      |> Map.put(:ai_settings, !currently_selected?)
+
+    {:noreply, assign(socket, copy_options: copy_options)}
+  end
+
+  def handle_event("toggle_copy_group", %{"group" => group}, socket)
+      when group in ["schedule", "assessment_settings"] do
+    group = String.to_existing_atom(group)
+    currently_selected? = Map.get(socket.assigns.copy_options, group, false)
+
+    copy_options = Map.put(socket.assigns.copy_options, group, !currently_selected?)
+
+    {:noreply, assign(socket, copy_options: copy_options)}
+  end
+
+  # Defensive: "content" is locked (its checkbox never carries phx-click) and any other
+  # value is unexpected client input — same rationale as `set_copy_scope/3` above.
+  def handle_event("toggle_copy_group", _params, socket), do: {:noreply, socket}
+
+  def handle_event("confirm_copy_modal", _params, socket) do
+    copy_options =
+      case socket.assigns.copy_scope do
+        :entire_course -> all_copy_groups_selected()
+        :choose_what_to_copy -> socket.assigns.copy_options
+      end
+
+    changeset =
+      Ecto.Changeset.put_change(
+        socket.assigns.changeset,
+        :title,
+        "#{socket.assigns.source_title} (copy)"
+      )
+
+    {:noreply,
+     assign(socket,
+       show_copy_modal?: false,
+       copy_options: copy_options,
+       changeset: changeset,
+       current_step: 1
+     )}
   end
 
   def handle_event(
@@ -475,7 +556,7 @@ defmodule OliWeb.Delivery.NewCourse do
   # This is the response returned from the SubmitForm hook
   def handle_event(
         "js_form_data_response",
-        %{"section" => section, "current_step" => current_step} = params,
+        %{"section" => section, "current_step" => current_step},
         socket
       ) do
     section =
@@ -493,22 +574,15 @@ defmodule OliWeb.Delivery.NewCourse do
       socket.assigns.changeset
       |> Section.changeset(section)
 
-    copy_options =
-      case params["copy_options"] do
-        nil -> socket.assigns.copy_options
-        submitted -> normalize_copy_options(submitted)
-      end
-
     case current_step do
       step when step == 0 or step == 1 ->
         {:noreply,
          assign(socket,
            changeset: changeset,
-           copy_options: copy_options,
            current_step: current_step,
            # Returning to step 0 must not leave the previously selected card looking
            # "selected" (`source` is only meant as momentary click feedback there);
-           # `copy_source?` already carries what step 1+ still need from that selection.
+           # `copy_options`/`source_title` already carry what step 1+ still need.
            source: source_for_step(current_step, socket.assigns.source)
          )}
 
@@ -517,7 +591,6 @@ defmodule OliWeb.Delivery.NewCourse do
           {:noreply,
            assign(socket,
              changeset: changeset,
-             copy_options: copy_options,
              current_step: current_step
            )}
         else
@@ -607,15 +680,16 @@ defmodule OliWeb.Delivery.NewCourse do
     DateTime.compare(start_date, end_date) == :lt
   end
 
+  # Interim default while the exact default-checked state is still pending PO
+  # confirmation (see docs/exec-plans/.../course_copy/informal.md): only Content
+  # is preselected when "Choose what to copy" is chosen; everything else starts
+  # unchecked. "Copy entire course" always selects every group regardless of this.
   defp default_copy_options do
-    Map.new(CopyOptions.groups(), &{&1, true})
+    Map.new(CopyOptions.groups(), &{&1, &1 == :content})
   end
 
-  defp normalize_copy_options(submitted) do
-    Map.new(CopyOptions.groups(), fn group ->
-      value = Map.get(submitted, Atom.to_string(group), false)
-      {group, group == :content or value in [true, "true", "on", "1", 1]}
-    end)
+  defp all_copy_groups_selected do
+    Map.new(CopyOptions.groups(), &{&1, true})
   end
 
   defp build_copy_options("section:" <> _id, selected) do
