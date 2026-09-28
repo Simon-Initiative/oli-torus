@@ -384,12 +384,12 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
         Sections.enroll(instructor.id, course.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
-      assert has_element?(view, "a[phx-value-id='section:#{course.id}']")
+      assert has_element?(view, "button[phx-value-id='section:#{course.id}']")
 
       project |> Ecto.Changeset.change(visibility: :selected) |> Oli.Repo.update!()
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
-      refute has_element?(view, "a[phx-value-id='section:#{course.id}']")
+      refute has_element?(view, "button[phx-value-id='section:#{course.id}']")
       assert has_element?(view, "p", "None exist")
     end
 
@@ -1155,16 +1155,16 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
         insert(:community_product_visibility, community: community, section: previous_template)
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
-      assert has_element?(view, "a[phx-value-id='section:#{previous_course.id}']")
-      assert has_element?(view, "a[phx-value-id='section:#{current_course.id}']")
+      assert has_element?(view, "button[phx-value-id='section:#{previous_course.id}']")
+      assert has_element?(view, "button[phx-value-id='section:#{current_course.id}']")
 
       Oli.Repo.delete!(visibility)
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
-      refute has_element?(view, "a[phx-value-id='section:#{previous_course.id}']")
-      refute has_element?(view, "a[phx-value-id='product:#{previous_template.id}']")
-      assert has_element?(view, "a[phx-value-id='section:#{current_course.id}']")
-      assert has_element?(view, "a[phx-value-id='product:#{current_template.id}']")
+      refute has_element?(view, "button[phx-value-id='section:#{previous_course.id}']")
+      refute has_element?(view, "button[phx-value-id='product:#{previous_template.id}']")
+      assert has_element?(view, "button[phx-value-id='section:#{current_course.id}']")
+      assert has_element?(view, "button[phx-value-id='product:#{current_template.id}']")
 
       view |> element("form#update_view_type") |> render_change(%{"view" => %{"type" => "list"}})
 
