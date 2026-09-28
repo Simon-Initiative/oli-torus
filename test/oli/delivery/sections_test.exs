@@ -3904,14 +3904,16 @@ defmodule Oli.Delivery.SectionsTest do
     } do
       activity = activities.page_1_mcq_1
 
-      for {part_id, correct} <- [{"1", 10}, {"2", 2}] do
+      # Unequal attempt counts, so averaging per-part percentages (70%) cannot pass for the
+      # weighted total (12 correct of 15 attempts = 80%).
+      for {part_id, attempts, correct} <- [{"1", 10, 10}, {"2", 5, 2}] do
         Oli.Repo.insert!(%Oli.Analytics.Summary.ResourceSummary{
           project_id: -1,
           section_id: section.id,
           user_id: -1,
           resource_id: activity.resource_id,
           part_id: part_id,
-          num_attempts: 10,
+          num_attempts: attempts,
           num_correct: correct
         })
       end
@@ -3920,8 +3922,8 @@ defmodule Oli.Delivery.SectionsTest do
         LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
         |> Enum.find(&(&1.resource_id == activity.resource_id))
 
-      assert row.attempts == 20
-      assert row.percent_correct == 60.0
+      assert row.attempts == 15
+      assert row.percent_correct == 80.0
     end
   end
 
