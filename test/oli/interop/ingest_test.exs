@@ -301,6 +301,103 @@ defmodule Oli.Interop.IngestTest do
     end
   end
 
+  describe "hierarchy entries that do not resolve" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "ingest drops items whose idref does not resolve instead of adding nil children", %{
+      author: author
+    } do
+      {:ok, project} =
+        simulate_unzipping()
+        |> update_hierarchy(fn hierarchy ->
+          missing_item = %{"type" => "item", "idref" => "missing-page", "children" => []}
+
+          hierarchy
+          |> update_first_unit(fn unit ->
+            Map.update!(unit, "children", &[missing_item | &1])
+          end)
+          |> Map.update!("children", &(&1 ++ [missing_item]))
+        end)
+        |> Ingest.process(author)
+
+      root = AuthoringResolver.root_container(project.slug)
+      [unit_id] = root.children
+      unit = AuthoringResolver.from_resource_id(project.slug, unit_id)
+
+      assert unit.title == "Unit 1"
+      assert length(unit.children) == 7
+      refute Enum.any?(unit.children, &is_nil/1)
+
+      assert %{children: [%{children: unit_nodes}]} =
+               AuthoringResolver.full_hierarchy(project.slug)
+
+      assert length(unit_nodes) == 7
+    end
+
+    test "ingest skips null entries in nested container children", %{author: author} do
+      {:ok, project} =
+        simulate_unzipping()
+        |> update_hierarchy(fn hierarchy ->
+          update_first_unit(hierarchy, fn unit ->
+            Map.update!(unit, "children", &[nil | &1])
+          end)
+        end)
+        |> Ingest.process(author)
+
+      root = AuthoringResolver.root_container(project.slug)
+      [unit_id] = root.children
+      unit = AuthoringResolver.from_resource_id(project.slug, unit_id)
+
+      assert length(unit.children) == 7
+      refute Enum.any?(unit.children, &is_nil/1)
+    end
+
+    test "an export whose container lists a deleted page can be ingested again", %{
+      author: author
+    } do
+      {:ok, project} =
+        simulate_unzipping()
+        |> Ingest.process(author)
+
+      root = AuthoringResolver.root_container(project.slug)
+      [unit_id] = root.children
+      unit = AuthoringResolver.from_resource_id(project.slug, unit_id)
+      [deleted_page_id | remaining_ids] = unit.children
+      deleted_page = AuthoringResolver.from_resource_id(project.slug, deleted_page_id)
+
+      # Mark the page deleted without removing it from the unit, leaving a dangling reference
+      {:ok, _} =
+        Oli.Publishing.ChangeTracker.track_revision(project.slug, deleted_page, %{deleted: true})
+
+      entries = Export.export(project) |> unzip_to_memory()
+
+      unit_entry =
+        entries
+        |> Enum.find_value(fn {file, contents} ->
+          if file == ~c"_hierarchy.json", do: Jason.decode!(contents)
+        end)
+        |> Map.get("children")
+        |> hd()
+
+      # Export writes the dangling child as a null entry (see "export handles nil" in export_test)
+      assert [nil | exported_items] = unit_entry["children"]
+
+      assert Enum.map(exported_items, & &1["idref"]) ==
+               Enum.map(remaining_ids, &Integer.to_string/1)
+
+      assert {:ok, reimported} = Ingest.process(entries, author)
+
+      reimported_root = AuthoringResolver.root_container(reimported.slug)
+      [reimported_unit_id] = reimported_root.children
+      reimported_unit = AuthoringResolver.from_resource_id(reimported.slug, reimported_unit_id)
+
+      assert length(reimported_unit.children) == length(remaining_ids)
+      refute Enum.any?(reimported_unit.children, &is_nil/1)
+    end
+  end
+
   describe "learning-model archive compatibility" do
     setup do
       Oli.Seeder.base_project_with_resource2()
@@ -564,6 +661,20 @@ defmodule Oli.Interop.IngestTest do
         end
       )
     end
+  end
+
+  defp update_hierarchy(entries, update_fn) do
+    Enum.map(entries, fn
+      {~c"_hierarchy.json", contents} ->
+        {~c"_hierarchy.json", contents |> Jason.decode!() |> update_fn.() |> Jason.encode!()}
+
+      entry ->
+        entry
+    end)
+  end
+
+  defp update_first_unit(hierarchy, update_fn) do
+    Map.update!(hierarchy, "children", fn [unit | rest] -> [update_fn.(unit) | rest] end)
   end
 
   defp minimal_digest(project, products \\ [], resources \\ []) do

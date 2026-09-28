@@ -23,7 +23,7 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
     # Process top-level items and containers, add recursively add container
     {container_id_map, children} =
       Map.get(hierarchy_details, "children")
-      |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
+      |> hierarchy_entries()
       |> Enum.reduce({container_id_map, []}, fn c, {container_id_map, children} ->
         case Map.get(c, "type") do
           "item" ->
@@ -37,6 +37,8 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
             {container_id_map, children ++ [id]}
         end
       end)
+
+    children = Enum.reject(children, &is_nil/1)
 
     labels =
       Map.get(hierarchy_details, "children")
@@ -80,6 +82,7 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
 
     {container_id_map, children_ids} =
       Map.get(container, "children")
+      |> hierarchy_entries()
       |> Enum.reduce({container_id_map, []}, fn c, {container_id_map, children} ->
         case Map.get(c, "type") do
           "item" ->
@@ -100,7 +103,7 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
       intro_content: Map.get(container, "introContent", %{}),
       intro_video: Map.get(container, "introVideo"),
       poster_image: Map.get(container, "posterImage"),
-      children: children_ids,
+      children: Enum.reject(children_ids, &is_nil/1),
       author_id: as_author.id,
       content: %{"model" => []},
       resource_type_id: Oli.Resources.ResourceType.id_for_container()
@@ -112,5 +115,17 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
     container_id_map = Map.put(container_id_map, Map.get(container, "id", UUID.uuid4()), revision)
 
     {container_id_map, revision.resource_id}
+  end
+
+  # Only item and container entries contribute to the hierarchy. Null entries (written by
+  # earlier exports for children that no longer resolved) and any other entry types are
+  # skipped, at every level of the tree. Items whose idref did not resolve to an ingested
+  # page are reported during preprocessing and dropped by the callers above, so a
+  # container never ends up with a nil child.
+  defp hierarchy_entries(entries) do
+    Enum.filter(entries, fn
+      %{"type" => type} when type in ["item", "container"] -> true
+      _ -> false
+    end)
   end
 end
