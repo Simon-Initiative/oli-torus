@@ -293,16 +293,12 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
     unavailable = render_status.(Map.put(base, :summary_status, :unavailable))
 
+    # Both metrics come from the same summary, so they are unavailable together: one message
+    # replaces the whole pane instead of an empty box and two identical lines.
+    assert unavailable =~ "Question analytics cannot be computed for this question."
     refute unavailable =~ "No attempt registered for this question"
-    refute unavailable =~ "Question analytics are not available"
-
-    # The designer asked for the copy in place of each bar, one per label, so each metric group must
-    # carry its own message and neither chart may render.
-    assert metric_groups(unavailable) == [
-             "First Try Correct Value cannot be computed",
-             "Eventually Correct Value cannot be computed"
-           ]
-
+    refute unavailable =~ "First Try Correct"
+    refute unavailable =~ "Value cannot be computed"
     refute unavailable =~ "pct-bar-"
 
     legacy = render_status.(base)
@@ -311,7 +307,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
     assert legacy =~ "First Try Correct"
   end
 
-  test "render_assessment_details omits the percentage bars when metrics are unavailable" do
+  test "render_assessment_details replaces the pane with one message when analytics are unavailable" do
     assessment = %{
       title: "Manual Screen",
       resource_id: 54,
@@ -339,14 +335,10 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
         ActivitiesTableModel.render_assessment_details(assigns, assessment)
       end)
 
-    # A failed summary load must not render 0%, which reads as genuinely zero performance. The labels
-    # stay so the reader knows which metric is missing.
-    assert metric_groups(html) == [
-             "First Try Correct Value cannot be computed",
-             "Eventually Correct Value cannot be computed"
-           ]
-
-    refute html =~ "Question analytics are not available"
+    # A failed summary load must not render 0%, which reads as genuinely zero performance.
+    assert html =~ "Question analytics cannot be computed for this question."
+    assert metric_groups(html) == []
+    refute html =~ "Eventually Correct"
     refute html =~ "0%"
     refute html =~ "pct-bar-"
   end

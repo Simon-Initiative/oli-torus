@@ -670,11 +670,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       assert has_element?(
                view,
                "#details-#{activity_1.resource_id}",
-               "Value cannot be computed"
+               "Question analytics cannot be computed for this question."
              )
 
-      assert has_element?(view, "#details-#{activity_1.resource_id}", "First Try Correct")
-      assert has_element?(view, "#details-#{activity_1.resource_id}", "Eventually Correct")
+      refute has_element?(view, "#details-#{activity_1.resource_id}", "First Try Correct")
 
       assert has_element?(
                view,
@@ -844,8 +843,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       assert has_element?(
                view,
                "#details-#{activity_3.resource_id}",
-               "Value cannot be computed"
+               "Question analytics cannot be computed for this question."
              )
+
+      refute has_element?(view, "#details-#{activity_3.resource_id}", "No attempt registered")
     end
 
     test "keeps all linked activity rows collapsed after filtering, sorting, and paging", %{

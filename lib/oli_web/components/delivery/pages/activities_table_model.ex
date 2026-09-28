@@ -226,15 +226,16 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
             activity_types_map={@activity_types_map}
           />
         </div>
-        <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
-          <.metric_value
-            summary_status={@summary_status}
+        <div
+          :if={@summary_status != :unavailable}
+          class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4"
+        >
+          <ActivityHelpers.percentage_bar
             id={Integer.to_string(@current_activity.id) <> "_first_try_correct"}
             value={@first_attempt_pct}
             label="First Try Correct"
           />
-          <.metric_value
-            summary_status={@summary_status}
+          <ActivityHelpers.percentage_bar
             id={Integer.to_string(@current_activity.id) <> "_eventually_correct"}
             value={@all_attempt_pct}
             label="Eventually Correct"
@@ -267,33 +268,17 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     """
   end
 
+  # Both metrics come from the same summary, so they are unavailable together and one message
+  # stands in for the whole pane.
   defp summary_body(%{summary_status: :unavailable} = assigns) do
-    ~H""
+    ~H"""
+    <p class="pt-9 pb-5">Question analytics cannot be computed for this question.</p>
+    """
   end
 
   defp summary_body(assigns) do
     ~H"""
     <p class="pt-9 pb-5">No attempt registered for this question</p>
-    """
-  end
-
-  attr :summary_status, :atom, required: true
-  attr :id, :string, required: true
-  attr :value, :any, required: true
-  attr :label, :string, required: true
-
-  defp metric_value(%{summary_status: :unavailable} = assigns) do
-    ~H"""
-    <div class="flex justify-start font-bold">
-      <div class="mt-2 mr-3">{@label}</div>
-      <div class="mt-2 font-normal">Value cannot be computed</div>
-    </div>
-    """
-  end
-
-  defp metric_value(assigns) do
-    ~H"""
-    <ActivityHelpers.percentage_bar id={@id} value={@value} label={@label} />
     """
   end
 
