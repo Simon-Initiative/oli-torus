@@ -591,6 +591,150 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       assert has_element?(view, "g[aria-label^='Limited Activity, 3 students']")
     end
 
+    test "the student table is not rendered until a group is selected", %{
+      conn: conn,
+      section: section,
+      objective: objective,
+      instructor: instructor
+    } do
+      objective_data = %{
+        resource_id: objective.resource_id,
+        title: objective.title || "Test Objective"
+      }
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, ExpandedObjectiveView, %{
+          id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
+          objective: objective_data,
+          section_id: section.id,
+          section_slug: section.slug,
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
+        })
+
+      refute has_element?(view, "#student-distribution-table-test-#{objective.resource_id}")
+    end
+
+    test "selecting a group renders the student table beside the chart, which stays highlighted",
+         %{
+           conn: conn,
+           section: section,
+           objective: objective,
+           instructor: instructor
+         } do
+      objective_data = %{
+        resource_id: objective.resource_id,
+        title: objective.title || "Test Objective"
+      }
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, ExpandedObjectiveView, %{
+          id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
+          objective: objective_data,
+          section_id: section.id,
+          section_slug: section.slug,
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
+        })
+
+      # All 3 fixture students have no attempted activities, so they land in Limited Activity.
+      view
+      |> element("g[aria-label^='Limited Activity']")
+      |> render_click(%{"group" => "limited_activity"})
+
+      assert has_element?(view, "#student-distribution-table-test-#{objective.resource_id}")
+      assert has_element?(view, "g[aria-label^='Limited Activity'][aria-pressed='true']")
+      assert has_element?(view, "h4", "Limited Activity")
+      assert has_element?(view, "table")
+    end
+
+    test "switching groups updates the table without requiring it to close first", %{
+      conn: conn,
+      section: section,
+      objective: objective,
+      instructor: instructor
+    } do
+      objective_data = %{
+        resource_id: objective.resource_id,
+        title: objective.title || "Test Objective"
+      }
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, ExpandedObjectiveView, %{
+          id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
+          objective: objective_data,
+          section_id: section.id,
+          section_slug: section.slug,
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
+        })
+
+      view
+      |> element("g[aria-label^='Limited Activity']")
+      |> render_click(%{"group" => "limited_activity"})
+
+      assert has_element?(view, "table")
+
+      view
+      |> element("g[aria-label^='Excelling']")
+      |> render_click(%{"group" => "excelling"})
+
+      # The table never disappears across the switch -- it stays mounted and its content
+      # updates to the newly selected (in this fixture, empty) group.
+      assert has_element?(view, "#student-distribution-table-test-#{objective.resource_id}")
+      assert has_element?(view, "g[aria-label^='Excelling'][aria-pressed='true']")
+      assert has_element?(view, "g[aria-label^='Limited Activity'][aria-pressed='false']")
+      assert has_element?(view, "[data-role='empty-group-message']")
+      refute has_element?(view, "table")
+    end
+
+    test "closing via the table's X control closes the table, deselects the group, and does not mutate data",
+         %{
+           conn: conn,
+           section: section,
+           objective: objective,
+           instructor: instructor
+         } do
+      objective_data = %{
+        resource_id: objective.resource_id,
+        title: objective.title || "Test Objective"
+      }
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, ExpandedObjectiveView, %{
+          id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
+          objective: objective_data,
+          section_id: section.id,
+          section_slug: section.slug,
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
+        })
+
+      view
+      |> element("g[aria-label^='Limited Activity']")
+      |> render_click(%{"group" => "limited_activity"})
+
+      assert has_element?(view, "table")
+      assert has_element?(view, "h3", "Student Distribution: 3 Students")
+
+      view
+      |> element("button[aria-label='Close Limited Activity student list']")
+      |> render_click()
+
+      refute has_element?(view, "#student-distribution-table-test-#{objective.resource_id}")
+      refute has_element?(view, "g[aria-pressed='true']")
+      assert has_element?(view, "h3", "Student Distribution: 3 Students")
+      assert has_element?(view, "g[aria-label^='Limited Activity, 3 students']")
+    end
+
     test "widens the linked-activity denominator to include effective sub-objectives", %{
       conn: conn,
       section: section,
@@ -843,9 +987,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
   end
 
   describe "deselect_student_group/2" do
-    # No rendered control currently calls this event -- see the comment on the handler
-    # itself. Tested directly at the callback level so a future close control can be wired
-    # to it with confidence the behavior it dispatches to is already correct.
+    # Exercised end-to-end (via the table's close control) in the tests above; this covers
+    # the callback directly against a bare socket, independent of any rendered control.
     test "clears the selected group and does not raise" do
       socket = %Phoenix.LiveView.Socket{
         assigns: %{

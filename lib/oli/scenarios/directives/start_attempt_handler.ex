@@ -9,6 +9,8 @@ defmodule Oli.Scenarios.Directives.StartAttemptHandler do
   def handle(%StartAttemptDirective{} = directive, %ExecutionState{} = state) do
     expected = directive.expect || :started
 
+    datashop_session_id = Oli.Scenarios.LearnerSession.transient_id()
+
     with {:ok, user} <- AttemptSupport.get_user(state, directive.student),
          {:ok, section} <- AttemptSupport.get_section(state, directive.section),
          {:ok, _enrollment} <- AttemptSupport.ensure_enrollment(user, section),
@@ -16,7 +18,10 @@ defmodule Oli.Scenarios.Directives.StartAttemptHandler do
            AttemptSupport.get_page_revision(state, directive.section, directive.page) do
       start_result =
         user
-        |> AttemptSupport.visit_page(section, page_revision, password: directive.password)
+        |> AttemptSupport.visit_page(section, page_revision,
+          password: directive.password,
+          datashop_session_id: datashop_session_id
+        )
         |> AttemptSupport.normalize_start_error()
 
       handle_result(start_result, expected, directive, state)

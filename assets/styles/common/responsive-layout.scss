@@ -97,12 +97,16 @@
   // Override absolute positioning for all components in responsive layout
   // This ensures components contribute to their parent's height
   .responsive-item > * {
+    display: block;
     position: relative !important;
     top: auto !important;
     left: auto !important;
     right: auto !important;
     bottom: auto !important;
     width: 100% !important;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   // Override react-rnd absolute positioning in responsive layout

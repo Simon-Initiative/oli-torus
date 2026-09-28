@@ -76,6 +76,10 @@ end
 config :oli,
   author_email_verification_required: true,
   user_email_verification_required: true,
+  preview_qa_tools: [preview_build?: false],
+  enable_playwright_scenarios: false,
+  enable_e2e_mailbox: false,
+  playwright_scenario_token: nil,
   logger_truncation_enabled: get_env_as_boolean.("LOGGER_TRUNCATION_ENABLED", "true"),
   logger_truncation_length: get_env_as_integer.("LOGGER_TRUNCATION_LENGTH", "5000"),
   instructor_dashboard_details: get_env_as_boolean.("INSTRUCTOR_DASHBOARD_DETAILS", "true"),
@@ -252,7 +256,9 @@ config :oli, Oban,
   ],
   queues: [
     default: 10,
-    snapshots: 20,
+    # Snapshot jobs perform several database-heavy analytics operations. Keep their concurrency below
+    # the Repo pool size so the server and other queues retain connection capacity.
+    snapshots: 4,
     embeddings: 1,
     selections: 2,
     updates: 10,

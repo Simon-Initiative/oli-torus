@@ -24,6 +24,8 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
+  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Attempts.Core.ClientEvaluation
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Activities.Model.Feedback
@@ -37,6 +39,16 @@ defmodule OliWeb.LegacySuperactivityController do
   @default_preview_model_max_bytes 100_000
   @default_media_lookup_timeout_ms 15_000
   @preview_file_storage_prefix "preview-save-files"
+  @mutating_commands ~w(startAttempt scoreAttempt endAttempt writeFileRecord deleteFileRecord)
+  @file_record_mime_types %{
+    "application/json" => "application/json",
+    "application/octet-stream" => "application/octet-stream",
+    "application/xml" => "application/xml",
+    "json" => "application/json",
+    "text/plain" => "text/plain",
+    "text/xml" => "text/xml",
+    "xml" => "text/xml"
+  }
 
   defmodule LegacySuperactivityContext do
     @moduledoc false
@@ -61,9 +73,12 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   def context(conn, %{"attempt_guid" => attempt_guid} = _params) do
-    case fetch_context(conn, attempt_guid) do
-      {:ok, context} ->
-        json(conn, context_response(conn.host, context))
+    with {:ok, context} <- fetch_context(conn, attempt_guid),
+         :ok <- authorize_read(context) do
+      json(conn, context_response(conn.host, context))
+    else
+      {:error, :unauthorized} ->
+        error(conn, 403, "Unauthorized")
 
       {:error, :not_found} ->
         error(conn, 404, "Attempt not found")
@@ -102,12 +117,18 @@ defmodule OliWeb.LegacySuperactivityController do
         %{"commandName" => command_name, "activityContextGuid" => attempt_guid} = params
       ) do
     with {:ok, context} <- fetch_context(conn, attempt_guid),
+         :ok <- authorize_command(context, command_name),
          xml_response <- process_command(command_name, context, params) do
       case xml_response do
         {:ok, xml} ->
           conn
           |> put_resp_content_type("text/xml")
           |> send_resp(200, xml)
+
+        {:ok, body, mime_type} ->
+          conn
+          |> put_resp_content_type(response_mime_type(mime_type))
+          |> send_resp(200, body)
 
         {:error, error, code} ->
           conn
@@ -133,6 +154,40 @@ defmodule OliWeb.LegacySuperactivityController do
         |> send_resp(500, "server error")
     end
   end
+
+  defp authorize_command(%LegacySuperactivityContext{} = context, command_name)
+       when command_name in @mutating_commands do
+    case preview_context?(context) || attempt_owner?(context) do
+      true -> :ok
+      false -> {:error, :unauthorized}
+    end
+  end
+
+  defp authorize_command(%LegacySuperactivityContext{} = context, _command_name),
+    do: authorize_read(context)
+
+  defp authorize_read(%LegacySuperactivityContext{} = context) do
+    case preview_context?(context) || attempt_owner?(context) || section_instructor?(context) do
+      true -> :ok
+      false -> {:error, :unauthorized}
+    end
+  end
+
+  defp attempt_owner?(%LegacySuperactivityContext{
+         user: %User{id: user_id},
+         attempt_user_id: user_id
+       }),
+       do: true
+
+  defp attempt_owner?(%LegacySuperactivityContext{}), do: false
+
+  defp section_instructor?(%LegacySuperactivityContext{
+         enrollment: %{context_roles: context_roles}
+       }) do
+    Sections.contains_instructor_role?(context_roles)
+  end
+
+  defp section_instructor?(%LegacySuperactivityContext{}), do: false
 
   def create_media(conn, %{"directory" => directory, "file" => file, "name" => name}) do
     case Base.decode64(file) do
@@ -1056,7 +1111,12 @@ defmodule OliWeb.LegacySuperactivityController do
       case finalize_activity_attempt(context) do
         {:ok, _} ->
           case maybe_finalize_parent_resource_attempt(context) do
-            :ok ->
+            {:ok, finalization_summary} ->
+              maybe_schedule_grade_update(context.section, finalization_summary)
+
+              Broadcaster.broadcast_page_attempt_finalized(context.resource_attempt.attempt_guid)
+
+            :not_applicable ->
               :ok
 
             {:error, reason} ->
@@ -1194,7 +1254,7 @@ defmodule OliWeb.LegacySuperactivityController do
 
       case save_file do
         nil -> {:error, "file not found", 404}
-        _ -> {:ok, URI.decode(save_file.content)}
+        _ -> {:ok, URI.decode(save_file.content), save_file.mime_type}
       end
     end
   end
@@ -1226,14 +1286,26 @@ defmodule OliWeb.LegacySuperactivityController do
              context.resource_attempt.attempt_guid,
              context.datashop_session_id
            ) do
-        {:ok, _} -> :ok
-        {:error, {:already_submitted}} -> :ok
+        {:ok, finalization_summary} -> {:ok, finalization_summary}
+        {:error, {:already_submitted}} -> {:ok, :already_submitted}
         {:error, reason} -> {:error, reason}
       end
     else
-      :ok
+      :not_applicable
     end
   end
+
+  defp maybe_schedule_grade_update(
+         %{grade_passback_enabled: true, id: section_id},
+         %FinalizationSummary{
+           graded: true,
+           resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: resource_access_id}
+         }
+       ) do
+    PageLifecycle.GradeUpdateWorker.create(section_id, resource_access_id, :inline)
+  end
+
+  defp maybe_schedule_grade_update(_section, _finalization_summary), do: :ok
 
   defp auto_finalize_single_embedded_page?(
          %LegacySuperactivityContext{
@@ -1495,7 +1567,7 @@ defmodule OliWeb.LegacySuperactivityController do
            ),
          {:ok, %{status_code: 200, body: body}} <-
            get_preview_file_object(preview_bucket_name, save_file.storage_key) do
-      {:ok, body}
+      {:ok, body, save_file.mime_type}
     else
       {:error, :not_found} -> {:error, "file not found", 404}
       {:error, _reason} -> {:error, "server error", 500}
@@ -1504,6 +1576,19 @@ defmodule OliWeb.LegacySuperactivityController do
       _ -> {:error, "server error", 500}
     end
   end
+
+  defp response_mime_type(mime_type) when is_binary(mime_type) do
+    normalized_mime_type =
+      mime_type
+      |> String.split(";", parts: 2)
+      |> hd()
+      |> String.trim()
+      |> String.downcase()
+
+    Map.get(@file_record_mime_types, normalized_mime_type, "application/octet-stream")
+  end
+
+  defp response_mime_type(_mime_type), do: "application/octet-stream"
 
   defp preview_file_directory(%LegacySuperactivityContext{} = context) do
     xml =

@@ -6,7 +6,7 @@ import guid from 'utils/guid';
 import { htmlToPlainText, normalizeRichLabelForStorage } from 'utils/richOptionLabel';
 import { AdvancedAuthoringModal } from '../../../apps/authoring/components/AdvancedAuthoringModal';
 import ConfirmDelete from '../../../apps/authoring/components/Modal/DeleteConfirmationModal';
-import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
+import { QuillEditor } from '../janus-text-flow/QuillEditor';
 import './AccordionAuthorModal.scss';
 import { getSectionPreviewText } from './accordion-util';
 import { AccordionSection, MAX_ACCORDION_SECTIONS, createDefaultSection } from './schema';
@@ -21,19 +21,26 @@ export interface AccordionAuthorModalProps {
 type AccordionSectionContentEditorProps = {
   sectionId: string;
   contentNodes: MarkupTree[];
+  onChange: (sectionId: string, contentNodes: MarkupTree[]) => void;
 };
 
 const AccordionSectionContentEditor = memo(function AccordionSectionContentEditor({
   sectionId,
   contentNodes,
+  onChange,
 }: AccordionSectionContentEditorProps) {
   return (
     <div className="acc-modal-quill-wrap" data-field="content" data-section-id={sectionId}>
-      {React.createElement(quillEditorTagName, {
-        key: `${sectionId}-content`,
-        tree: JSON.stringify(contentNodes || []),
-        showimagecontrol: true,
-      })}
+      <QuillEditor
+        key={`${sectionId}-content`}
+        tree={contentNodes}
+        showimagecontrol
+        enableImageResize
+        ModalComponent={AdvancedAuthoringModal}
+        onChange={({ value }) => onChange(sectionId, value)}
+        onSave={(value) => onChange(sectionId, value)}
+        onCancel={() => undefined}
+      />
     </div>
   );
 });
@@ -50,7 +57,6 @@ const AccordionAuthorModal: React.FC<AccordionAuthorModalProps> = ({
   );
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
-  const editorChangeDebounce = useRef<number | null>(null);
   const titleCommitDebounce = useRef<number | null>(null);
   const titleDraftRef = useRef('');
   const activeSectionIdRef = useRef<string | null>(activeSectionId);
@@ -62,10 +68,6 @@ const AccordionAuthorModal: React.FC<AccordionAuthorModalProps> = ({
   useEffect(() => {
     titleDraftRef.current = titleDraft;
   }, [titleDraft]);
-
-  useEffect(() => {
-    registerEditor();
-  }, []);
 
   const commitTitleToSection = useCallback((sectionId: string, title: string) => {
     const normalized = normalizeRichLabelForStorage(title);
@@ -107,37 +109,16 @@ const AccordionAuthorModal: React.FC<AccordionAuthorModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSectionId]);
 
+  const handleContentChange = useCallback((sectionId: string, contentNodes: MarkupTree[]) => {
+    setDraftSections((sections) =>
+      sections.map((section) =>
+        section.id === sectionId ? { ...section, contentNodes } : section,
+      ),
+    );
+  }, []);
+
   useEffect(() => {
-    const handleEditorChange = (e: any) => {
-      const wrapper = (e.target as HTMLElement | null)?.closest(
-        '[data-section-id]',
-      ) as HTMLElement | null;
-      const field = wrapper?.dataset.field;
-      const sectionId = wrapper?.dataset.sectionId;
-      if (!field || !sectionId) return;
-
-      const nodes = e.detail?.payload?.value;
-      if (!nodes) return;
-
-      if (editorChangeDebounce.current) {
-        window.clearTimeout(editorChangeDebounce.current);
-      }
-
-      editorChangeDebounce.current = window.setTimeout(() => {
-        if (field === 'content') {
-          setDraftSections((sections) =>
-            sections.map((s) => (s.id === sectionId ? { ...s, contentNodes: nodes } : s)),
-          );
-        }
-      }, 300);
-    };
-
-    document.addEventListener(`${quillEditorTagName}-change`, handleEditorChange);
     return () => {
-      document.removeEventListener(`${quillEditorTagName}-change`, handleEditorChange);
-      if (editorChangeDebounce.current) {
-        window.clearTimeout(editorChangeDebounce.current);
-      }
       if (titleCommitDebounce.current) {
         window.clearTimeout(titleCommitDebounce.current);
       }
@@ -146,17 +127,17 @@ const AccordionAuthorModal: React.FC<AccordionAuthorModalProps> = ({
 
   const handleTitleChange = useCallback(
     (title: string) => {
+      titleDraftRef.current = title;
       setTitleDraft(title);
-      if (!activeSectionIdRef.current) return;
+      const sectionId = activeSectionIdRef.current;
+      if (!sectionId) return;
 
       if (titleCommitDebounce.current) {
         window.clearTimeout(titleCommitDebounce.current);
       }
 
       titleCommitDebounce.current = window.setTimeout(() => {
-        if (activeSectionIdRef.current) {
-          commitTitleToSection(activeSectionIdRef.current, title);
-        }
+        commitTitleToSection(sectionId, title);
       }, 200);
     },
     [commitTitleToSection],
@@ -203,10 +184,6 @@ const AccordionAuthorModal: React.FC<AccordionAuthorModalProps> = ({
   }, [confirmDeleteId, deleteSection]);
 
   const handleSave = useCallback(() => {
-    if (editorChangeDebounce.current) {
-      window.clearTimeout(editorChangeDebounce.current);
-      editorChangeDebounce.current = null;
-    }
     if (titleCommitDebounce.current) {
       window.clearTimeout(titleCommitDebounce.current);
       titleCommitDebounce.current = null;
@@ -317,6 +294,7 @@ const AccordionAuthorModal: React.FC<AccordionAuthorModalProps> = ({
                 <AccordionSectionContentEditor
                   sectionId={activeSectionId}
                   contentNodes={activeSection.contentNodes}
+                  onChange={handleContentChange}
                 />
               </div>
             </>

@@ -2,7 +2,11 @@ import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState
 import { MarkupTree, renderFlow } from 'components/parts/janus-text-flow/TextFlow';
 import './Flashcard.css';
 import { flashcardThemeStyles } from './flashcard-util';
-import { getFaceNodes, stripFlashcardImageDimensions } from './flashcardContent';
+import {
+  announceFlashcardImages,
+  getFaceNodes,
+  stripFlashcardImageDimensions,
+} from './flashcardContent';
 import {
   FLASHCARDS_GRID_GAP_REM,
   FLASHCARD_NARROW_MIN_HEIGHT_PX,
@@ -71,7 +75,10 @@ export const FlashcardFaceContent: React.FC<FlashcardFaceContentProps> = ({
     .filter(Boolean)
     .join(' ');
 
-  const renderNodes = useMemo(() => stripFlashcardImageDimensions(nodes), [nodes]);
+  const renderNodes = useMemo(
+    () => announceFlashcardImages(stripFlashcardImageDimensions(nodes)),
+    [nodes],
+  );
 
   return (
     <div className={className}>

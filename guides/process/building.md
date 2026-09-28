@@ -1,3 +1,90 @@
+# Build Environments
+
+Torus uses five Mix environments with explicit scenario-seeding boundaries:
+
+- `dev` supports local development and the token-protected Playwright scenario interface.
+- `test` runs automated tests, includes test-support modules, and compiles `seeding/lib` solely to verify seeding and preview release tooling. Pull-request test workflows build in this environment; it is not a deployable release boundary.
+- `ci_e2e` supports ephemeral CI browser testing through the token-protected Playwright scenario interface.
+- `preview` builds production-shaped QA releases for preview instances and exposes the privileged release scenario CLI without another runtime flag. `.github/workflows/build-preview-image.yml` explicitly selects it.
+- `prod` builds deployable production releases. It exposes neither the Playwright scenario routes nor preview release tooling and remains the default for the Dockerfile and production package workflow.
+
+`config/preview.exs` is standalone and deliberately owns the small production-shaped configuration needed by a release plus the preview safety boundary. In particular, every preview build uses `Swoosh.Adapters.Local`, so email is retained locally and cannot be delivered externally regardless of whether QA tools are active.
+
+The shared scenario engine remains available to trusted development and automation callers, but production has no supported scenario-seeding entry point. Mix environment files are compile-time configuration. `config/runtime.exs` supplies deployment-specific values when a release starts. Building with `MIX_ENV=preview` makes `bin/seed` available and compiles the web QA features into the artifact. Running `bin/seed` is an explicit low-level operation and needs no runtime feature flag. To activate web-accessible masquerade and mailbox features, set the runtime variable below to the exact value `true`, ignoring letter case:
+
+```bash
+PREVIEW_QA_TOOLS_ENABLED=true
+```
+
+Missing, blank, whitespace-padded, false, or malformed values leave masquerade and mailbox access disabled without affecting `bin/seed`. Setting the variable on a `prod` build cannot add or activate preview-only capabilities. A preview application server with web QA features disabled logs one startup warning with the activation instruction; the dedicated seeding process does not.
+
+Preview instances must use fresh databases or explicitly sanitized non-production copies and non-production credentials. Local email containment does not suppress LTI grade passback, payment providers, webhooks, analytics destinations, background jobs, or other integrations; unsanitized production clones are unsupported.
+
+### Seeding a preview course
+
+The bundled `oli_torus_getting_started_course` scenario creates a themed course, publishes it,
+creates a section and synthetic cohort, and simulates learner progress. In development, run it in a
+separate shell alongside the Phoenix server:
+
+```bash
+mix seed scenarios run --name oli_torus_getting_started_course
+```
+
+Use the equivalent command from a preview release; no runtime feature flag is required:
+
+```bash
+./bin/seed scenarios run --name oli_torus_getting_started_course
+```
+
+Pull-request preview automation may set
+`PREVIEW_QA_SEED_SCENARIO=oli_torus_getting_started_course` and pass that value to a retained,
+later-wave Kubernetes Job. The selector is independent of the web QA feature flag. See
+`docs/manifests/preview-seeding/` for the Job, Kustomize/Argo CD contract, observation commands, and
+fresh-data recovery procedure. Automated initialization uses fast simulation; paced simulation is
+only started explicitly by an operator. Playwright's per-spec scenario fixtures remain independent
+of deployment seeding.
+
+A preview release can ingest a Torus project archive synchronously for one explicitly
+selected active author:
+
+```bash
+./bin/seed projects ingest --url https://example.test/project.zip --author default_admin
+./bin/seed projects ingest --url https://example.test/project.zip --author email:author@example.test
+```
+
+The command accepts only HTTP or HTTPS, follows a bounded number of redirects, applies finite
+connection and receive timeouts, limits downloaded bytes, and removes its temporary archive after
+success or failure. Deployment network policy determines which HTTP destinations are reachable;
+the CLI does not add an SSRF destination allowlist because release-shell access is already the
+trusted operational boundary. Operators remain responsible for supplying synthetic, non-sensitive
+archives and for evaluating any partial domain mutation reported after ingestion begins.
+
+### Ingesting from a private S3 bucket
+
+For an archive in a private S3 bucket, generate a short-lived presigned HTTPS URL outside Torus and
+pass that URL to the same command. For example, an operator with access through the normal AWS
+credential chain can generate a URL valid for 15 minutes:
+
+```bash
+aws s3 presign s3://private-preview-assets/project.zip --expires-in 900
+```
+
+Then quote the returned URL so its query parameters remain one shell argument:
+
+```bash
+./bin/seed projects ingest \
+  --url 'https://private-preview-assets.s3.amazonaws.com/project.zip?...' \
+  --author default_admin
+```
+
+Use the shortest expiry that allows the download to complete, and generate a new URL for a retry
+after expiration. Do not pass an AWS access key or secret access key to `bin/seed`; the command does
+not accept them, and command-line credentials can leak through shell history, process listings,
+deployment manifests, or audit output. Prefer workload identity or an IAM role when generating the
+presigned URL. Although Torus redacts the source URL from its routine output and logs, the complete
+presigned URL is a temporary credential: avoid recording it in tickets, checked-in files, shared
+logs, or persistent shell history.
+
 # Production Deployments
 
 ## Using a Prebuilt Release (Recommended)

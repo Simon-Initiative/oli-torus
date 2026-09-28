@@ -476,6 +476,12 @@ export const PartPropertyEditor: React.FC<Props> = ({
     <div
       className={`component-tab p-3 overflow-hidden part-property-editor ${selectPartType}-part-property`}
     >
+      {responsiveLayout && partDef.type === 'janus-image' && (
+        <p className="mb-3 rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-700 dark:bg-blue-900 dark:text-blue-100">
+          Responsive layout is enabled. To resize this image, use the Width and Height settings
+          under {partEditMode === 'expert' ? 'Dimensions' : 'Layout'} in this panel.
+        </p>
+      )}
       {selectPartType === 'janus-fill-blanks' && (
         <Alert variant="info" className="part-documentation">
           <a

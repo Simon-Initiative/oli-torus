@@ -199,8 +199,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   # clause above only matches the full assign set (it requires objectives_tab, params,
   # section_slug, v25_migration), so a send_update carrying only :email_modal_payload does not
   # match it and falls through to this clause. The modal is rendered by this component (a sibling
-  # of the objectives table), not the in-row StudentProficiencyList, so it escapes the table's
-  # sticky-header stacking context and overlays the page correctly.
+  # of the objectives table), not the in-row expanded-objective student table, so it escapes
+  # the table's sticky-header stacking context and overlays the page correctly.
   def update(%{email_modal_payload: payload}, socket) do
     {:ok, assign(socket, :email_modal_payload, payload)}
   end

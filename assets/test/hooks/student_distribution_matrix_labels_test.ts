@@ -131,4 +131,77 @@ describe('StudentDistributionMatrixLabels', () => {
 
     expect(coveredLabel).not.toHaveClass('opacity-25');
   });
+
+  test('destroyed() removes the window scroll and resize listeners', () => {
+    const { svg } = buildMatrix();
+    const hook = { el: svg } as any;
+    const removeSpy = jest.spyOn(window, 'removeEventListener');
+
+    StudentDistributionMatrixLabels.mounted!.call(hook);
+    StudentDistributionMatrixLabels.destroyed!.call(hook);
+
+    expect(removeSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(removeSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+    removeSpy.mockRestore();
+  });
+
+  test('a scroll invalidates the cached label rects for the next mousemove', () => {
+    const { svg, coveredLabel } = buildMatrix();
+    const hook = { el: svg } as any;
+
+    StudentDistributionMatrixLabels.mounted!.call(hook);
+    const rectSpy = coveredLabel.getBoundingClientRect as jest.Mock;
+    rectSpy.mockClear();
+
+    window.dispatchEvent(new Event('scroll'));
+    mousemove(svg, 10, 10);
+
+    expect(rectSpy).toHaveBeenCalled();
+    expect(coveredLabel).toHaveClass('opacity-25');
+  });
+
+  test('a resize invalidates the cached label rects for the next mousemove', () => {
+    const { svg, coveredLabel } = buildMatrix();
+    const hook = { el: svg } as any;
+
+    StudentDistributionMatrixLabels.mounted!.call(hook);
+    const rectSpy = coveredLabel.getBoundingClientRect as jest.Mock;
+    rectSpy.mockClear();
+
+    window.dispatchEvent(new Event('resize'));
+    mousemove(svg, 10, 10);
+
+    expect(rectSpy).toHaveBeenCalled();
+    expect(coveredLabel).toHaveClass('opacity-25');
+  });
+
+  test('a scroll only forces one recompute, not one per subsequent mousemove', () => {
+    const { svg, coveredLabel } = buildMatrix();
+    const hook = { el: svg } as any;
+
+    StudentDistributionMatrixLabels.mounted!.call(hook);
+    window.dispatchEvent(new Event('scroll'));
+    mousemove(svg, 10, 10);
+
+    const rectSpy = coveredLabel.getBoundingClientRect as jest.Mock;
+    rectSpy.mockClear();
+    mousemove(svg, 11, 11);
+
+    expect(rectSpy).not.toHaveBeenCalled();
+  });
+
+  test('without a scroll, moving the label on screen (e.g. a reflow) is not picked up', () => {
+    // This documents the tradeoff, not just a happy path: only a scroll (or a dot layout
+    // change via updated()) invalidates the cache. A reflow from some other cause, with no
+    // scroll and no dot layout change, still uses the stale rect.
+    const { svg, coveredLabel } = buildMatrix();
+    const hook = { el: svg } as any;
+
+    StudentDistributionMatrixLabels.mounted!.call(hook);
+    mockRect(coveredLabel, { left: 200, top: 200, right: 220, bottom: 220 });
+
+    mousemove(svg, 10, 10);
+
+    expect(coveredLabel).toHaveClass('opacity-25');
+  });
 });

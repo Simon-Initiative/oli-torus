@@ -149,13 +149,22 @@ function normalizeSchema(schema) {
   return normalized;
 }
 
-function buildPrompt({ functions, messages }) {
+function buildPrompt({ functions, messages, jsonMode }) {
   const instructions = [
     'You are acting as an OpenAI-compatible chat completion backend for a local development proxy.',
     'Return exactly one JSON object matching the provided schema.',
     'Do not wrap the JSON in markdown.',
-    'Do not put a second JSON object inside the content string.',
   ];
+
+  if (jsonMode) {
+    instructions.push(
+      'The conversation below (see its system message) requires your reply to itself be a JSON object matching a schema described there.',
+      'Put that JSON object, serialized as a single string with escaped quotes/newlines, as the value of the "content" field.',
+      'In this case "content" containing JSON is expected and correct — do not describe the JSON in prose instead of emitting it.',
+    );
+  } else {
+    instructions.push('Do not put a second JSON object inside the content string.');
+  }
 
   const functionInstructions = functions.length
     ? [
@@ -178,7 +187,7 @@ function buildPrompt({ functions, messages }) {
   ].join('\n');
 }
 
-async function runCodex({ functions, messages }) {
+async function runCodex({ functions, messages, jsonMode }) {
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'codex-openai-proxy-'));
   const schemaPath = path.join(tmpDir, 'schema.json');
   const outputPath = path.join(tmpDir, 'output.json');
@@ -229,7 +238,7 @@ async function runCodex({ functions, messages }) {
         }
       });
 
-      child.stdin.write(buildPrompt({ functions, messages }));
+      child.stdin.write(buildPrompt({ functions, messages, jsonMode }));
       child.stdin.end();
     });
 
@@ -467,15 +476,17 @@ const server = http.createServer(async (req, res) => {
     const functions = Array.isArray(body.functions) ? body.functions : [];
     const messages = Array.isArray(body.messages) ? body.messages : [];
     const model = body.model || 'codex-proxy';
+    const jsonMode = body.response_format?.type === 'json_object';
     debugLog(id, 'parsed request body', {
       function_names: functions.map((fn) => fn?.name).filter(Boolean),
+      json_mode: jsonMode,
       message_count: messages.length,
       messages,
       model,
       stream: body.stream === true,
     });
 
-    const result = await runCodex({ functions, messages });
+    const result = await runCodex({ functions, jsonMode, messages });
     debugLog(id, 'normalized codex result', result);
 
     switch (body.stream) {

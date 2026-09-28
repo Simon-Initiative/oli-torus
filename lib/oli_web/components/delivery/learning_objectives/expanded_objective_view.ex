@@ -4,7 +4,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   Learning Objectives table: loading per-student proficiency/activity data (synchronously or
   asynchronously) only while the row is expanded, classifying students into distribution
   groups, tracking which group is currently selected, and rendering the Student Distribution
-  matrix and the sub-objectives table for that row.
+  matrix, the student table for the selected group, and the sub-objectives table for that row.
   """
 
   use OliWeb, :live_component
@@ -15,11 +15,14 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   alias Oli.Accounts
   alias OliWeb.Common.Utils
   alias OliWeb.Components.Delivery.LearningObjectives.StudentDistributionMatrix
+  alias OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
+  alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
 
   attr :unique_id, :string, required: true
   attr :objective, :map, required: true
   attr :section_id, :integer, required: true
   attr :section_slug, :string, required: true
+  attr :section_title, :string, default: nil
   attr :current_user, :map, required: true
   attr :text_search, :string, default: nil
   attr :sync_load, :boolean, default: false
@@ -30,6 +33,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   end
 
   def update(assigns, socket) do
+    socket = assign_new(socket, :section_title, fn -> nil end)
+
     cond do
       # Handle async data loading completion
       Map.has_key?(assigns, :loaded_data) ->
@@ -180,9 +185,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     end
   end
 
-  # No rendered control currently calls this event -- `StudentDistributionMatrix` only emits
-  # "select_student_group", which already toggles a group off when it is re-activated. This
-  # handler exists as a ready, tested target for a future explicit close/dismiss control.
+  # Fired by StudentDistributionTable's close ("X") control, targeted at this component's
+  # `@myself` since deselecting the group is state this component owns, not the table.
   def handle_event("deselect_student_group", _params, socket) do
     {:noreply, assign(socket, selected_student_group: nil)}
   end
@@ -222,13 +226,28 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
             </h3>
           </div>
           
-    <!-- Student Distribution Matrix: pure HEEx/SVG, no React or client-side charting library. -->
-          <div class="mb-6">
+    <!-- Student Distribution Matrix: pure HEEx/SVG, no React or client-side charting library.
+         The student table (once a group is selected) renders beside it, not below. -->
+          <div class="mb-6 flex flex-col items-start gap-6 xl:flex-row">
             <StudentDistributionMatrix.matrix
               students={@student_proficiency}
               selected_group={@selected_student_group}
               myself={@myself}
               unique_id={@unique_id}
+            />
+            <.live_component
+              :if={@selected_student_group != nil}
+              module={StudentDistributionTable}
+              id={"student-distribution-table-#{@unique_id}"}
+              students={@student_proficiency}
+              selected_group={@selected_student_group}
+              parent_target={@myself}
+              section_id={@section_id}
+              section_slug={@section_slug}
+              section_title={@section_title}
+              objective_title={@objective_title}
+              instructor_email={instructor_email(@current_user)}
+              instructor_name={instructor_name(@current_user)}
             />
           </div>
           
@@ -369,7 +388,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
               full_name: student_full_name,
               name: student.name,
               given_name: student.given_name,
-              family_name: student.family_name
+              family_name: student.family_name,
+              picture: student.picture
             })
 
           [student_data | acc]
@@ -441,6 +461,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
           name: student.name,
           given_name: student.given_name,
           family_name: student.family_name,
+          picture: student.picture,
           proficiency: 0.0,
           proficiency_range: "Not enough data",
           activities_attempted_count: activities_attempted,
@@ -484,4 +505,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   end
 
   defp parse_group(_group), do: nil
+
+  defp instructor_email(nil), do: nil
+  defp instructor_email(current_user), do: current_user.email
+
+  defp instructor_name(nil), do: nil
+  defp instructor_name(current_user), do: DeliveryUtils.user_name(current_user)
 end

@@ -12,8 +12,10 @@ type LabelOverlap = {
 type StudentDistributionMatrixLabelsState = {
   __studentDistributionMatrixMouseMove?: (event: MouseEvent) => void;
   __studentDistributionMatrixMouseLeave?: () => void;
+  __studentDistributionMatrixInvalidate?: () => void;
   __studentDistributionMatrixDotSignature?: string;
   __studentDistributionMatrixLabelOverlap?: LabelOverlap[];
+  __studentDistributionMatrixNeedsRecompute?: boolean;
 };
 
 const FADED_LABEL_CLASS = 'opacity-25';
@@ -95,8 +97,21 @@ export const StudentDistributionMatrixLabels: Hook<StudentDistributionMatrixLabe
   mounted() {
     this.__studentDistributionMatrixLabelOverlap = computeLabelOverlap(this.el);
     this.__studentDistributionMatrixDotSignature = dotSignature(this.el);
+    this.__studentDistributionMatrixNeedsRecompute = false;
 
     this.__studentDistributionMatrixMouseMove = (event: MouseEvent) => {
+      // getBoundingClientRect() is viewport-relative, so a scroll or resize anywhere since
+      // the last computation (of the page, a scrollable ancestor, or the window itself) can
+      // leave the cached label rects pointing at stale on-screen positions even though dot
+      // layout (dotSignature) never changed. Recomputing here -- once, lazily, only after
+      // one of those actually happened -- keeps that cost off the common case of a
+      // mousemove with neither in between, which is the hot path this cache exists to
+      // protect.
+      if (this.__studentDistributionMatrixNeedsRecompute) {
+        this.__studentDistributionMatrixLabelOverlap = computeLabelOverlap(this.el);
+        this.__studentDistributionMatrixNeedsRecompute = false;
+      }
+
       updateFadedLabel(this.el, event, this.__studentDistributionMatrixLabelOverlap ?? []);
     };
 
@@ -104,8 +119,21 @@ export const StudentDistributionMatrixLabels: Hook<StudentDistributionMatrixLabe
       clearFadedLabels(this.el);
     };
 
+    this.__studentDistributionMatrixInvalidate = () => {
+      this.__studentDistributionMatrixNeedsRecompute = true;
+    };
+
     this.el.addEventListener('mousemove', this.__studentDistributionMatrixMouseMove);
     this.el.addEventListener('mouseleave', this.__studentDistributionMatrixMouseLeave);
+    // capture: true so this also sees scroll events from a scrollable ancestor -- those
+    // don't bubble, but they do fire during the capture phase.
+    window.addEventListener('scroll', this.__studentDistributionMatrixInvalidate, {
+      capture: true,
+      passive: true,
+    });
+    window.addEventListener('resize', this.__studentDistributionMatrixInvalidate, {
+      passive: true,
+    });
   },
 
   updated() {
@@ -114,6 +142,7 @@ export const StudentDistributionMatrixLabels: Hook<StudentDistributionMatrixLabe
     if (signature !== this.__studentDistributionMatrixDotSignature) {
       this.__studentDistributionMatrixDotSignature = signature;
       this.__studentDistributionMatrixLabelOverlap = computeLabelOverlap(this.el);
+      this.__studentDistributionMatrixNeedsRecompute = false;
     }
   },
 
@@ -124,6 +153,13 @@ export const StudentDistributionMatrixLabels: Hook<StudentDistributionMatrixLabe
 
     if (this.__studentDistributionMatrixMouseLeave) {
       this.el.removeEventListener('mouseleave', this.__studentDistributionMatrixMouseLeave);
+    }
+
+    if (this.__studentDistributionMatrixInvalidate) {
+      window.removeEventListener('scroll', this.__studentDistributionMatrixInvalidate, {
+        capture: true,
+      });
+      window.removeEventListener('resize', this.__studentDistributionMatrixInvalidate);
     }
   },
 };

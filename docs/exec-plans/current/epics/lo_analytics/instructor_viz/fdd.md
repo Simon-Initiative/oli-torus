@@ -222,13 +222,15 @@ repository (section 3) and a deliberate engineering-risk-driven delivery sequenc
   - `toggle_all(all_ids :: [id], selected_ids :: [id]) :: [id]`
   - `selected_emails(students :: [map()], selected_ids :: [id]) :: String.t()`
 
-  `StudentProficiencyList` (being replaced by `StudentDistributionTable` in this ticket) does not need
-  to be migrated to this module — it is deleted, not refactored. `StudentSupportTile` (a live,
-  unrelated MER-5252 feature) **is** migrated to call this module as part of this ticket's PR3, purely
-  to remove the third duplicate; its existing test suite
-  (`test/.../student_support_tile_test.exs`, exact path to confirm at implementation time) must
-  continue to pass unmodified in behavior. (Supports AC-020, AC-021; see section 15 for the
-  cross-feature-touch risk this introduces.)
+  `StudentProficiencyList` (replaced by `StudentDistributionTable` in this ticket) does not need to be
+  migrated to this module — it is deleted, not refactored. `StudentDistributionTable` shipped its own
+  inline `MapSet`-based selection/select-all logic in PR2 (ahead of this module's extraction) and is
+  migrated onto this shared module in PR3, purely to remove the duplication, alongside
+  `StudentSupportTile` (a live, unrelated MER-5252 feature) — both migrations are pure refactors with
+  no intended behavior change; their existing test suites (`student_distribution_table_test.exs`,
+  `test/.../student_support_tile_test.exs`, exact path to confirm at implementation time) must
+  continue to pass unmodified. (Supports AC-020, AC-021; see section 15 for the cross-feature-touch
+  risk `StudentSupportTile`'s migration introduces.)
 
 - **`StudentDistributionTable`** (new LiveComponent,
   `lib/oli_web/components/delivery/learning_objectives/student_distribution_table.ex`, superseding
@@ -236,23 +238,44 @@ repository (section 3) and a deliberate engineering-risk-driven delivery sequenc
   Responsibilities:
   - Filters the already-computed `student_proficiency` list by `distribution_group ==
     selected_student_group` — never recomputes grouping.
-  - Renders the header block: group title, count, guidance copy, and suggested action, sourced from a
-    static content map, plus the close ("X") control firing `deselect_student_group` on the parent.
-  - Renders the proficiency sub-filter (`filter_by_proficiency` event), same four options in all three
-    groups for implementation simplicity (section 16 tracks confirming the Figma dropdown's actual
-    option list).
+  - Renders the header block: group title, count (as a colored badge next to the title, matching the
+    Figma reference — not the "(N Students)" parenthetical form an earlier draft used), guidance copy,
+    plus the close ("X") control firing `deselect_student_group` on the parent. The panel's left
+    border is a real `border-left` (`border-l-[3px]` + a per-group `border-l-{token}` color override
+    on top of the panel's own 1px `border`), colored to match the group (Needs Support/Excelling/
+    Limited Activity mirror the existing Low/High/neutral chip color families). This required adding
+    per-side border-color utilities (`.border-t/-r/-b/-l-{token}`) to the shared
+    `assets/tailwind.plugins.js` token plugin, which previously only generated an all-sides
+    `.border-{token}` rule — see `phase_2_execution_record.md` for the investigation.
+  - Renders the proficiency sub-filter (`filter_by_proficiency` event, submitted through a real
+    `<.form>` wrapper — not a bare `<select phx-change=...>`, which this codebase's established
+    convention never uses and which does not reliably fire), same four options in all three groups for
+    implementation simplicity (section 16 tracks confirming the Figma dropdown's actual option list).
+  - Renders its own `<table>` (see `StudentDistributionTableModel` below) rather than reusing
+    `OliWeb.Common.SortableTable.Table`, including a selection checkbox column and a header
+    "select all" control (AC-020) — shipped in PR2, ahead of the original plan's PR3 placement, as
+    local `MapSet`-based state (not yet calling the `StudentSelection` module above; that migration is
+    PR3, alongside `StudentSupportTile`'s).
   - Reuses `OliWeb.Delivery.LearningObjectives.Proficiency.chip/1` for the Proficiency column.
-  - Reuses `OliWeb.Components.Delivery.Students.EmailButton` and the existing
-    `email_modal_payload`/`DraftEmailModal` forwarding pattern, calling the new `StudentSelection`
-    module instead of reimplementing toggle/select-all/email-derivation.
+  - Will reuse `OliWeb.Components.Delivery.Students.EmailButton` and the existing
+    `email_modal_payload`/`DraftEmailModal` forwarding pattern in PR3, calling the (by-then-migrated)
+    `StudentSelection` module for the current selection instead of reimplementing selected-email
+    derivation.
   - Owns Load More as a `visible_count` assign + `Enum.take/2` slice over the already-loaded,
     already-filtered list (no server pagination). (AC-010, AC-011, AC-015, AC-016, AC-017, AC-018,
     AC-020, AC-021, AC-022, AC-023, AC-029, AC-030, AC-033, AC-035, AC-036)
 
-- **`StudentDistributionTableModel`** (new, superseding `StudentProficiencyTableModel`): same
-  `SortableTableModel` pattern, columns: selection (native `<input type="checkbox">`, per section 2),
-  student name, proficiency (via `Proficiency.chip/1`), activity completion — with the group-specific
-  default `sort_by_spec` chosen when the table mounts for a given group (AC-015, AC-016, AC-017).
+- **`StudentDistributionTableModel`** (new, superseding `StudentProficiencyTableModel`): column
+  metadata (key/label pairs: student name, proficiency, activities) and sort logic only — **not** a
+  `SortableTableModel`/`ColumnSpec` instance. That shared renderer applies its row-striping class
+  identically to every row (no real alternation) and its sortable `<th>` has no keyboard/`aria-sort`
+  support; `StudentDistributionTable` renders its own `<table>` against this module's `sort/4` and
+  `columns/0` instead, with real `rem(index, 2)`-based striping (matching `StudentSupportTile`'s
+  existing pattern) and a real `<button>` inside each sortable `<th>` (with `aria-sort` on the `<th>`
+  itself), resolving the sortable-header keyboard gap flagged against the shared component in PR2
+  review for this table specifically (the shared component itself is unchanged for its other
+  consumers). The group-specific default sort order is chosen when the table mounts for a given group
+  (AC-015, AC-016, AC-017), and re-applies whenever sorting by that column, not just on first render.
 
 ### 4.2 State & Data Flow
 
@@ -460,23 +483,33 @@ the next release):
     exactly-one-group tests), plus the `total_related_activities == 0` and nil-`proficiency` cases from
     section 10.
   - ExUnit, denominator-widening tests: correctness of the parent+sub-objective union.
-- **PR2 (table added, read-only)**: `StudentDistributionTable` renders beside the chart when a group is
-  selected, no selection checkboxes or Email button yet. Verifies:
+- **PR2 (table added, read-only, with selection state)**: `StudentDistributionTable` renders beside
+  the chart when a group is selected. Per a mid-phase scope decision, selection checkboxes and
+  select-all ship here too (state only, `MapSet`-based, local to the component); the Email button and
+  the `StudentSelection` extraction remain PR3. Verifies:
   - AC-007: table is absent until a group is selected (now meaningfully testable).
   - AC-008, AC-009, AC-010, AC-011: table position, persistent highlight, header content, filtered rows.
   - AC-015, AC-016, AC-017, AC-018: per-group guidance copy, default sort, proficiency filter.
+  - AC-020 (partial): row checkboxes and select-all toggle selection state correctly; the Email button
+    consuming that selection is still AC-021/PR3.
   - AC-025, AC-026, AC-028: switching groups updates the table without closing first, the table's "X"
     closes it, and no data is mutated by closing.
   - AC-029, AC-030: empty-group rendering.
-- **PR3 (selection, email, shared-selection extraction)**: adds the checkbox column, select-all,
-  `EmailButton` wiring, and migrates `StudentSupportTile` onto the new `StudentSelection` module.
-  Verifies:
-  - AC-020, AC-021: row/select-all checkboxes and the Email button acting on the current selection.
-  - AC-022, AC-023, AC-033: Load More append behavior.
-  - AC-035: every table control (checkboxes, Email, Load More, filter, Close) is keyboard-operable.
+  - AC-022, AC-023, AC-033: Load More append behavior (`plan.md` Phase 2 tasks this PR, not PR3 --
+    corrected here to match the delivery plan).
+  - Also verified, not originally an FDD-tracked AC: real alternating row striping, and that clicking
+    each sortable column header actually reorders rows (a regression guard for a real bug found during
+    this phase -- the Student Name column's sort silently no-op'd because its default comparator
+    looked up a field name the student data didn't carry; see `phase_2_execution_record.md`).
+- **PR3 (email & shared-selection extraction)**: wires `EmailButton` onto PR2's selection state, and
+  migrates both `StudentDistributionTable` and `StudentSupportTile` onto the new `StudentSelection`
+  module. Verifies:
+  - AC-021: the Email button acts on the current selection.
+  - AC-035: every table control (checkboxes, Email, Load More, filter, Close, sort headers) is
+    keyboard-operable.
   - AC-036 (final pass): focus-visible styling across every control introduced across all three PRs.
-  - Regression: `StudentSupportTile`'s existing test suite still passes unmodified after migrating it
-    onto `StudentSelection`.
+  - Regression: `StudentDistributionTable`'s and `StudentSupportTile`'s existing test suites still pass
+    unmodified after migrating both onto `StudentSelection`.
 
 ## 14. Backwards Compatibility
 
@@ -500,6 +533,24 @@ the next release):
   top-level objective that has sub-objectives. Mitigation: this is an intentional, PRD-approved
   correction (Requirement 1 in `informal.md`), called out in the PR1 description so reviewers don't
   mistake it for an unrelated behavior change.
+  - **Concrete cross-surface consequence, observed during PR2 manual QA**: the collapsed
+    (non-expanded) Learning Objectives row still shows its own "Linked Activities" column
+    (`ObjectivesTableModel`'s `:related_activities_count`, `objectives_table_model.ex`), populated
+    by `Sections.get_objectives_and_subobjectives/2`'s `include_related_activities_count: true`
+    (`sections.ex`), which per `informal.md` ("`related_activities` is direct-only") counts only
+    the top-level objective's own directly-attached activities. This ticket's expanded-view
+    `total_related_activities` is the *union* with sub-objectives (this section's `4.2 State &
+    Data Flow`). For an objective with sub-objectives that themselves have linked activities, an
+    instructor will see two different, non-reconcilable "how many activities" numbers for the same
+    objective on the same page -- e.g. the collapsed row's "View 1 Activity" button next to the
+    expanded table's "Activities" column reading "0 of 3". Both numbers are individually correct
+    for what they measure; they simply measure different things (direct-only vs. union-with-
+    sub-objectives), and nothing on either surface currently explains that to the instructor.
+    **Decision (explicit, this ticket)**: leave the collapsed row's column as-is. It is a
+    pre-existing, separate component (`ObjectivesTableModel`) outside this ticket's planned scope
+    (`plan.md` phases 1-3 never touch it), and widening it to match would be a distinct scope
+    decision with its own review, not a PR2 fix. Flagged here so it isn't mistaken for a bug by a
+    future reader.
 - Risk: `StudentSelection` extraction in PR3 touches `StudentSupportTile`, a file this ticket does not
   otherwise own. Mitigation: keep that migration mechanical (call the new module instead of inline
   `MapSet` logic, no behavior change), run `StudentSupportTile`'s existing tests unmodified, and flag
@@ -550,6 +601,15 @@ Carried forward from `prd.md` (not re-litigated here) plus follow-ups from this 
   container widths, independent of the chart-vs-table stacking layout question already tracked in
   `plan.md`) is planned future work, to be scoped once real usage/viewport data is available. Do not
   treat the current fixed dimensions as a constraint when that work is picked up.
+- **Sort-header keyboard access (PR2 `.review/ui.md` finding, resolved for this table)**: an earlier
+  draft of `StudentDistributionTable` reused the pre-existing shared `OliWeb.Common.SortableTable.Table`
+  for its sortable columns, whose `<th>` sort controls are a bare `phx-click`-bound element with no
+  `tabindex`, keydown handling, or `aria-sort`. Later in PR2, `StudentDistributionTable` moved off that
+  shared component entirely (see the `StudentDistributionTableModel` entry in section 4.1, driven by
+  the striping/sorting bugs recorded in `phase_2_execution_record.md`) and now renders its own sortable
+  `<th>` with a real `<button>` and `aria-sort`, resolving this finding for this table specifically. The
+  shared `OliWeb.Common.SortableTable.Table` component itself is unchanged and still has this gap for
+  its other consumers elsewhere in the codebase -- out of this ticket's scope to fix generally.
 
 ## 17. References
 
@@ -577,4 +637,10 @@ Carried forward from `prd.md` (not re-litigated here) plus follow-ups from this 
 - `docs/exec-plans/current/epics/lo_analytics/instructor_viz/phase_1_execution_record.md` —
   "Visual Fidelity Pass" and "Tidewave Follow-up Fidelity Iteration" sections record the full history
   of how this component's visual design converged on the above
+- `docs/exec-plans/current/epics/lo_analytics/instructor_viz/phase_2_execution_record.md` — full
+  history of the PR2 table build, including the border-color plugin fix and the striping/sorting bugs
+- `lib/oli_web/components/delivery/learning_objectives/student_distribution_table.ex`
+- `lib/oli_web/components/delivery/learning_objectives/student_distribution_table_model.ex`
+- `assets/tailwind.plugins.js` — `tokenColorPlugin`, extended in PR2 to also generate per-side
+  border-color utilities (`.border-t/-r/-b/-l-{token}`)
 - `docs/BACKEND.md`, `docs/FRONTEND.md`, `docs/TESTING.md`, `docs/DESIGN.md`, `docs/OPERATIONS.md`

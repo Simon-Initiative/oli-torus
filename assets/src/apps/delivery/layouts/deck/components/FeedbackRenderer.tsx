@@ -116,13 +116,9 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
     setRenderId(Date.now());
   }, [feedbacks, pending]);
 
-  const handlePartInit = useCallback(
-    async (partId: string) => {
-      // console.log('FEEDBACK part init', { partId, snapshot });
-      return { snapshot };
-    },
-    [snapshot],
-  );
+  const handlePartInit = useCallback(async () => {
+    return { snapshot };
+  }, [snapshot]);
 
   return (
     <Fragment>

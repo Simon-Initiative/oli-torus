@@ -8,18 +8,23 @@ defmodule Oli.Scenarios.Directives.VisitPageHandler do
 
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, VisitPageDirective}
   alias Oli.Scenarios.Directives.AttemptSupport
+  alias Oli.Scenarios.LearnerActions
 
   def handle(%VisitPageDirective{} = directive, %ExecutionState{} = state) do
     handle_visit(directive.student, directive.section, directive.page, state)
   end
 
   def handle_visit(student_name, section_name, page_title, %ExecutionState{} = state) do
+    datashop_session_id = Oli.Scenarios.LearnerSession.transient_id()
+
     with {:ok, user} <- AttemptSupport.get_user(state, student_name),
          {:ok, section} <- AttemptSupport.get_section(state, section_name),
          {:ok, _enrollment} <- AttemptSupport.ensure_enrollment(user, section),
          {:ok, page_revision} <- AttemptSupport.get_page_revision(state, section_name, page_title),
-         {:ok, attempt_result} <- AttemptSupport.visit_page(user, section, page_revision) do
+         {:ok, visit} <- LearnerActions.visit(section, page_revision, user, datashop_session_id) do
       AttemptSupport.align_enrollment_time(user.id, section.id, state.scenario_time)
+
+      attempt_result = {visit.progress_state, visit.attempt_state}
 
       {:ok,
        AttemptSupport.put_attempt_result(
@@ -30,6 +35,9 @@ defmodule Oli.Scenarios.Directives.VisitPageHandler do
          attempt_result
        )}
     else
+      {:blocked, reason} ->
+        {:error, "Failed to visit page: #{format_reason(reason)}"}
+
       {:error, reason} ->
         {:error, "Failed to visit page: #{format_reason(reason)}"}
     end

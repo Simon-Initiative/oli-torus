@@ -1,0 +1,43 @@
+- user:
+    name: seed_author
+    type: author
+    email: seed-update-author@example.edu
+    given_name: Seed
+    family_name: Author
+- institution:
+    name: Seed Update Institution
+    country_code: US
+    institution_email: seed-update@example.edu
+    institution_url: https://example.edu
+- ownership:
+    author: ref:seed_author
+    institution: ref:Seed Update Institution
+- project:
+    name: seed_project
+    title: Seed Publication Update
+    root:
+      children:
+        - page: Original Page
+- publish:
+    to: seed_project
+- section:
+    name: seed_section
+    from: seed_project
+- manipulate:
+    to: seed_project
+    ops:
+      - add_page:
+          title: Added Page
+          to: root
+- publish:
+    to: seed_project
+- update:
+    from: seed_project
+    to: seed_section
+- assert:
+    structure:
+      to: seed_section
+      root:
+        children:
+          - page: Original Page
+          - page: Added Page

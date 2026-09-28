@@ -259,7 +259,11 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       assert is_nil(copy.institution_id)
     end
 
-    test "copying a paid course does not remove its paywall", %{source: source, project: project} do
+    test "copying a paid course does not remove its paywall", %{
+      source: source,
+      project: project,
+      author: author
+    } do
       price = Money.new(1000, "USD")
 
       product =
@@ -279,7 +283,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
           has_grace_period: false
         })
 
-      instructor = insert(:user, can_create_sections: true)
+      instructor = insert(:user, can_create_sections: true, author: author)
 
       {:ok, _} =
         Sections.enroll(instructor.id, source.id, [
@@ -670,7 +674,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       assert survey.resource_id
       assert is_nil(source.required_survey_resource_id)
 
-      instructor = insert(:user, can_create_sections: true)
+      instructor = insert(:user, can_create_sections: true, author: author)
 
       {:ok, _enrollment} =
         Sections.enroll(instructor.id, source.id, [
@@ -712,7 +716,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
     end
 
     test "selected: a per-page override survives the whole creation path",
-         %{source: source, page1: page1} do
+         %{source: source, page1: page1, project: project, author: author} do
       # SectionCopy.copy/3 is not the last thing that touches ai_enabled: the
       # creation path runs contained-page and contained-objective rebuilds and a
       # second post-processing pass afterwards. Assert through all of it.
@@ -721,8 +725,11 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
 
       update_page_settings(source, page1, %{ai_enabled: override})
 
+      {:ok, _publication} =
+        Oli.Publishing.publish_project(project, "Course copy source", author.id)
+
       {:ok, options} = CopyOptions.for_previous_section([:content, :ai_settings])
-      instructor = insert(:user)
+      instructor = insert(:user, author: author)
 
       {:ok, _enrollment} =
         Sections.enroll(instructor.id, source.id, [

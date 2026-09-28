@@ -52,6 +52,49 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
       assert map_size(result.state.sections) == 1
     end
 
+    test "bulk_create_enroll_users directive creates and enrolls stable user references" do
+      yaml = """
+      - project:
+          name: bulk_project
+          title: Bulk Project
+          root:
+            children:
+              - page: Page 1
+      - section:
+          name: bulk_section
+          title: Bulk Section
+          from: bulk_project
+      - bulk_create_enroll_users:
+          section: bulk_section
+          prefix: test_bulk
+          instructors: 1
+          learners: 4
+      - bulk_create_enroll_users:
+          section: bulk_section
+          prefix: test_bulk
+          instructors: 1
+          learners: 4
+      """
+
+      directives = DirectiveParser.parse_yaml!(yaml)
+      result = Engine.execute(directives)
+
+      assert result.errors == []
+
+      bulk_create_enroll_users =
+        result.state.users
+        |> Map.keys()
+        |> Enum.filter(&String.starts_with?(&1, "test_bulk_"))
+
+      assert length(bulk_create_enroll_users) == 5
+
+      assert result.state.scenario_results.bulk_create_enroll_users == %{
+               created: 0,
+               enrolled: 5,
+               reused: 5
+             }
+    end
+
     test "hook can create bulk users" do
       yaml = """
       - hook:
@@ -62,7 +105,7 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
       result = Engine.execute(directives)
 
       assert result.errors == []
-      # Should have created 5 bulk users
+
       bulk_users =
         result.state.users
         |> Map.keys()

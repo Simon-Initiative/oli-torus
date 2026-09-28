@@ -146,6 +146,7 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, state, projectSl
 const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props) => {
   const { configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
   const [ready, setReady] = useState<boolean>(false);
+  const [responsiveLayout, setResponsiveLayout] = useState(false);
   const id: string = props.id;
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
 
@@ -164,6 +165,8 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   }, [configuremode]);
 
   const initialize = useCallback(async (pModel) => {
+    const initResult = await props.onInit({ id, responses: [] });
+    setResponsiveLayout(initResult.context?.responsiveLayout === true);
     setReady(true);
   }, []);
 
@@ -192,7 +195,8 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   if (padding?.trim()?.length) {
     styles.padding = padding;
   }
-  if (overrideHeight) {
+  // Keep the authored height for fixed layout; responsive text must grow with its content.
+  if (overrideHeight && !responsiveLayout) {
     styles.height = height;
   }
   if (fontSize) {

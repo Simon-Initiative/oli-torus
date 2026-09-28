@@ -3,8 +3,12 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { EventEmitter } from 'events';
 import { NotificationType } from '../../src/apps/delivery/components/NotificationContext';
 import Flashcard from '../../src/components/parts/janus-flashcards/Flashcard';
+import { FlashcardsView } from '../../src/components/parts/janus-flashcards/FlashcardsView';
 import '../../src/components/parts/janus-flashcards/authoring-entry';
-import { stripFlashcardImageDimensions } from '../../src/components/parts/janus-flashcards/flashcardContent';
+import {
+  announceFlashcardImages,
+  stripFlashcardImageDimensions,
+} from '../../src/components/parts/janus-flashcards/flashcardContent';
 import {
   adaptivitySchema,
   computeCardsPerRow,
@@ -13,6 +17,7 @@ import {
   resolveCardsPerRowBounds,
   resolveContainerWidth,
 } from '../../src/components/parts/janus-flashcards/schema';
+import { MarkupTree } from '../../src/components/parts/janus-text-flow/TextFlow';
 
 const fourCardModel = {
   width: 480,
@@ -169,6 +174,153 @@ describe('stripFlashcardImageDimensions', () => {
     });
   });
 });
+
+describe('announceFlashcardImages', () => {
+  test('announces nested images without changing source nodes or other content', () => {
+    const nodes: MarkupTree[] = [
+      {
+        tag: 'p',
+        style: { color: 'red' },
+        children: [
+          { tag: 'text', text: 'Identify this structure.' },
+          {
+            tag: 'span',
+            children: [
+              {
+                tag: 'img',
+                src: '/images/cell.png',
+                alt: 'A plant cell',
+                style: { width: '320px', height: '180px' },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const originalNodes = JSON.parse(JSON.stringify(nodes));
+
+    const announced = announceFlashcardImages(nodes);
+
+    expect(announced[0].children?.[1].children?.[0]).toEqual({
+      ...nodes[0].children?.[1].children?.[0],
+      alt: 'Image: A plant cell',
+    });
+    expect(announced[0].children?.[0]).toEqual(nodes[0].children?.[0]);
+    expect(announced[0].style).toEqual({ color: 'red' });
+    expect(announced[0]).not.toBe(nodes[0]);
+    expect(announced[0].children?.[1].children?.[0]).not.toBe(nodes[0].children?.[1].children?.[0]);
+    expect(nodes).toEqual(originalNodes);
+  });
+
+  test.each([
+    ['A plant cell', 'Image: A plant cell'],
+    ['Image: A plant cell', 'Image: A plant cell'],
+    ['image of a plant cell', 'image of a plant cell'],
+    ['  IMAGE of a plant cell', '  IMAGE of a plant cell'],
+    ['Imagery of a plant cell', 'Image: Imagery of a plant cell'],
+    ['', ''],
+    ['   ', '   '],
+    [undefined, undefined],
+  ])('prepares alt text %p as %p and is idempotent', (alt, expected) => {
+    const nodes: MarkupTree[] = [{ tag: 'img', src: '/images/cell.png', alt }];
+
+    const announced = announceFlashcardImages(nodes);
+
+    expect(announced[0].alt).toBe(expected);
+    expect(announceFlashcardImages(announced)).toEqual(announced);
+    expect(nodes[0].alt).toBe(alt);
+  });
+});
+
+describe.each(['authoring', 'delivery'] as const)(
+  'flashcard image accessibility (%s)',
+  (cssBundle) => {
+    test.each([
+      ['image-only', ''],
+      ['image-plus-text', 'Identify the organism. '],
+    ])('announces only the visible %s face across keyboard flips', (_description, prompt) => {
+      const model = {
+        ...fourCardModel,
+        cards: [
+          {
+            id: 'image-card',
+            frontNodes: [
+              {
+                tag: 'p',
+                children: [
+                  ...(prompt ? [{ tag: 'text', text: prompt, children: [] }] : []),
+                  { tag: 'img', src: '/images/cell.png', alt: 'A plant cell', children: [] },
+                ],
+              },
+            ],
+            backNodes: [
+              {
+                tag: 'p',
+                children: [
+                  ...(prompt ? [{ tag: 'text', text: prompt, children: [] }] : []),
+                  { tag: 'img', src: '/images/tree.png', alt: 'An oak tree', children: [] },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      render(<FlashcardsView model={model} cssBundle={cssBundle} />);
+
+      const card = screen.getByRole('button');
+      const frontName =
+        `Flashcard 1, showing front. Press Enter or Space to show back. ${prompt}` +
+        'Image: A plant cell';
+      const backName =
+        `Flashcard 1, showing back. Press Enter or Space to show front. ${prompt}` +
+        'Image: An oak tree';
+
+      expect(card).toHaveAccessibleName(frontName);
+      expect(card).toHaveAttribute('aria-pressed', 'false');
+      card.focus();
+
+      fireEvent.keyDown(card, { key: 'Enter' });
+
+      expect(card).toHaveAccessibleName(backName);
+      expect(card).toHaveAttribute('aria-pressed', 'true');
+      expect(card).toHaveFocus();
+
+      fireEvent.keyDown(card, { key: ' ' });
+
+      expect(card).toHaveAccessibleName(frontName);
+      expect(card).toHaveAttribute('aria-pressed', 'false');
+      expect(card).toHaveFocus();
+    });
+
+    test('keeps decorative images silent alongside card text', () => {
+      const model = {
+        ...fourCardModel,
+        cards: [
+          {
+            id: 'decorative-card',
+            frontNodes: [
+              {
+                tag: 'p',
+                children: [
+                  { tag: 'text', text: 'Study the vocabulary.', children: [] },
+                  { tag: 'img', src: '/images/decoration.png', alt: '', children: [] },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      render(<FlashcardsView model={model} cssBundle={cssBundle} />);
+
+      expect(screen.getByAltText('')).toHaveAttribute('alt', '');
+      expect(screen.getByRole('button')).toHaveAccessibleName(
+        'Flashcard 1, showing front. Press Enter or Space to show back. Study the vocabulary.',
+      );
+    });
+  },
+);
 
 describe('FlashcardAuthor custom element', () => {
   test('honors lowercase editmode and emits one complete resize update', async () => {

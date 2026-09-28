@@ -82,23 +82,15 @@ export const accordionThemeStyles = (themeColor?: string): CSSProperties => {
   };
 };
 
-// model.height is the minimum collapsed height floor, not a maximum cap.
-export const accordionMinHeight = (height?: number): number => height ?? DEFAULT_ACCORDION_HEIGHT;
-
+/** Preserve the author's collapsed height while allowing expanded content to grow beyond it. */
 export const accordionContainerStyles = (
   width?: number | string,
   height?: number,
-): CSSProperties => {
-  const minHeight = accordionMinHeight(height);
-  const cssVar = { ['--accordion-min-height' as string]: `${minHeight}px` };
-
-  return {
-    width,
-    minHeight,
-    height: 'auto',
-    ...cssVar,
-  };
-};
+): CSSProperties => ({
+  width,
+  height: 'auto',
+  minHeight: height ?? DEFAULT_ACCORDION_HEIGHT,
+});
 
 const parseNodes = (nodes: unknown): MarkupTree[] => {
   if (!nodes) return plainTextToDefaultNodes('');
@@ -141,8 +133,8 @@ export const uniqueSortedIndexes = (indexes: number[]): number[] =>
 export const parseSectionIndexes = (val: unknown, sectionCount: number): number[] => {
   const parsed = parseArray(val);
   const indexes = parsed
-    .map((item) => (typeof item === 'number' ? item : parseInt(String(item).replace(/"/g, ''), 10)))
-    .filter((n) => Number.isFinite(n) && n >= 1 && n <= sectionCount);
+    .map((item) => (typeof item === 'number' ? item : Number(String(item).replace(/"/g, ''))))
+    .filter((n) => Number.isInteger(n) && n >= 1 && n <= sectionCount);
   return uniqueSortedIndexes(indexes);
 };
 

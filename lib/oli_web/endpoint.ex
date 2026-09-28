@@ -25,7 +25,7 @@ defmodule OliWeb.Endpoint do
   plug(Plug.Static,
     at: "/",
     from: :oli,
-    gzip: Mix.env() == :prod,
+    gzip: Mix.env() in [:prod, :preview],
     only:
       ~w(assets css fonts images js custom branding vlab favicon.ico robots.txt flame_graphs ebsco superactivity)
   )

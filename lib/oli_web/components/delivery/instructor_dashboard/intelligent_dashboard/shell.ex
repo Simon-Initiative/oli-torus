@@ -20,10 +20,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
-    assigns =
-      assigns
-      |> assign(:show_prototype_validation_ui, show_prototype_validation_ui?())
-      |> assign_new(:browser_timezone, fn -> nil end)
+    assigns = assign_new(assigns, :browser_timezone, fn -> nil end)
 
     ~H"""
     <div id="learning-dashboard" class="container mx-auto mb-10" phx-hook="Scroller">
@@ -85,36 +82,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
           <% end %>
         </div>
       </div>
-
-      <%= if @show_prototype_validation_ui do %>
-        <%!--
-          TODO(intelligent-dashboard): Remove this prototype validation UI once the
-          epic is fully implemented and production tiles render the final data model.
-        --%>
-        <div
-          id="learning-dashboard-runtime-status"
-          class="my-4 p-4 bg-white dark:bg-gray-800 shadow-sm"
-        >
-          <h3 class="font-semibold mb-2">Lane 1 Runtime Status</h3>
-          <pre class="text-xs whitespace-pre-wrap">{@dashboard.runtime_status_text}</pre>
-        </div>
-
-        <div
-          id="learning-dashboard-progress-tile-debug"
-          class="mb-4 p-4 bg-white dark:bg-gray-800 shadow-sm"
-        >
-          <h3 class="font-semibold mb-2">Progress</h3>
-          <pre class="text-xs whitespace-pre-wrap">{@dashboard.progress_text}</pre>
-        </div>
-
-        <div
-          id="learning-dashboard-student-support-tile-debug"
-          class="p-4 bg-white dark:bg-gray-800 shadow-sm"
-        >
-          <h3 class="font-semibold mb-2">Progress / Proficiency</h3>
-          <pre class="text-xs whitespace-pre-wrap">{@dashboard.student_support_text}</pre>
-        </div>
-      <% end %>
     </div>
     """
   end
@@ -200,10 +167,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   end
 
   defp normalize_tile_progress_params(_), do: %{}
-
-  defp show_prototype_validation_ui? do
-    Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :dev
-  end
 
   defp download_form_inputs(params, dashboard_scope, browser_timezone) do
     params

@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: oli-torus-preview-seed
+  labels:
+    app.kubernetes.io/name: oli-torus
+    app.kubernetes.io/component: preview-seeding
+    app.kubernetes.io/environment: preview
+    oli.cmu.edu/scenario: oli-torus-getting-started-course
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oli-torus
+        app.kubernetes.io/component: preview-seeding
+        app.kubernetes.io/environment: preview
+        oli.cmu.edu/scenario: oli-torus-getting-started-course
+    spec:
+      serviceAccountName: oli-torus-preview
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      containers:
+        - name: seed
+          image: oli-torus-preview
+          imagePullPolicy: IfNotPresent
+          command:
+            - /app/bin/seed
+          args:
+            - scenarios
+            - run
+            - --name
+            - oli_torus_getting_started_course
+          envFrom:
+            - configMapRef:
+                name: oli-torus-preview-runtime
+            - secretRef:
+                name: oli-torus-preview-runtime
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi

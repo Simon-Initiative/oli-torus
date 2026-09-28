@@ -1,0 +1,745 @@
+# Creates a cohesive introductory Torus course, a synthetic cohort, and realistic progress.
+# This is a one-time initializer for a fresh or deliberately reset development/preview database.
+
+- institution:
+    name: "OLI Torus Demo Institution"
+    country_code: "US"
+    institution_email: "oli-torus-demo@scenarios.invalid"
+    institution_url: "https://scenarios.invalid/oli-torus-demo"
+
+- ownership:
+    # Requires an active system administrator from baseline priv/repo/seeds.exs.
+    # Fresh non-dev previews must supply ADMIN_EMAIL and ADMIN_PASSWORD in the runtime Secret.
+    # See docs/manifests/preview-seeding/README.md for the bootstrap prerequisite.
+    author: default_admin
+    institution: "ref:OLI Torus Demo Institution"
+
+- project:
+    name: "oli_torus_getting_started_course"
+    title: "Getting Started with OLI Torus"
+    objectives:
+      - Author effective course content:
+          - "Organize projects into units and pages"
+          - "Align activities with learning objectives"
+      - Publish course materials:
+          - "Distinguish projects, publications, and sections"
+          - "Sequence the authoring-to-delivery workflow"
+    root:
+      children:
+        - container: "Authoring with Torus"
+          children:
+            - page: "Welcome to OLI Torus"
+            - page: "Organize Your Course"
+            - page: "Design Activities for Learning"
+        - container: "Publishing and Delivery"
+          children:
+            - page: "Publish and Deliver Your Course"
+            - page: "Getting Started Assessment"
+
+- create_activity:
+    project: "oli_torus_getting_started_course"
+    title: "The Torus Authoring Workspace"
+    virtual_id: "torus_workspace_mcq"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Distinguish projects, publications, and sections"
+    content_format: "json"
+    content:
+      activityType: "oli_multiple_choice"
+      stem:
+        id: "workspace_mcq_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Which Torus object is the editable workspace where authors organize and revise course content?"
+      choices:
+        - id: "project"
+          content:
+            - type: "p"
+              children:
+                - text: "A project"
+        - id: "publication"
+          content:
+            - type: "p"
+              children:
+                - text: "A publication"
+        - id: "section"
+          content:
+            - type: "p"
+              children:
+                - text: "A section"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "workspace_mcq_correct"
+                rule: "input like {project}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "workspace_mcq_correct_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "Correct. A project is the editable authoring workspace."
+              - id: "workspace_mcq_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "workspace_mcq_incorrect_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "Publications are stable snapshots and sections deliver them; authors edit projects."
+            hints:
+              - id: "getting_started_orientation_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Look for the object where authors arrange and revise content."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "getting_started_reasoning_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Separate the editable source from its stable snapshot and learner delivery instance."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "getting_started_bottom_out_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "The editable authoring workspace is the project."
+                editor: "slate"
+                textDirection: "ltr"
+
+- create_activity:
+    project: "oli_torus_getting_started_course"
+    title: "Build a Course Structure"
+    virtual_id: "course_structure_ordering"
+    type: "oli_ordering"
+    objectives:
+      - "Organize projects into units and pages"
+    content_format: "json"
+    content:
+      activityType: "oli_ordering"
+      stem:
+        id: "course_structure_ordering_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Put these course-organization steps in a sensible order."
+      choices:
+        - id: "create_project"
+          content:
+            - type: "p"
+              children:
+                - text: "Create the project workspace"
+        - id: "add_unit"
+          content:
+            - type: "p"
+              children:
+                - text: "Add a unit or module"
+        - id: "add_pages"
+          content:
+            - type: "p"
+              children:
+                - text: "Add lesson and practice pages"
+        - id: "review_sequence"
+          content:
+            - type: "p"
+              children:
+                - text: "Review the learner sequence"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        correct:
+          - ["create_project", "add_unit", "add_pages", "review_sequence"]
+          - "course_structure_ordering_correct"
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "course_structure_ordering_correct"
+                rule: "input like {create_project add_unit add_pages review_sequence}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "course_structure_ordering_correct_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "Correct. Build from the workspace to units and pages, then review the learner path."
+              - id: "course_structure_ordering_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "course_structure_ordering_incorrect_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "Create the workspace before adding its structure, and review the sequence last."
+            hints:
+              - id: "course_structure_orientation_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Start with the authoring workspace and finish by checking the learner path."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "course_structure_reasoning_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "The project must exist before you add its unit and pages."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "course_structure_bottom_out_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Create the project, add a unit, add pages, and then review the sequence."
+                editor: "slate"
+                textDirection: "ltr"
+
+- create_activity:
+    project: "oli_torus_getting_started_course"
+    title: "Choose Aligned Authoring Practices"
+    virtual_id: "aligned_activity_cata"
+    type: "oli_check_all_that_apply"
+    objectives:
+      - "Align activities with learning objectives"
+    content_format: "json"
+    content:
+      activityType: "oli_check_all_that_apply"
+      stem:
+        id: "aligned_activity_cata_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Which authoring choices support an aligned learning experience? Select all that apply."
+      choices:
+        - id: "attach_objectives"
+          content:
+            - type: "p"
+              children:
+                - text: "Attach activities to the objectives they assess"
+        - id: "use_feedback"
+          content:
+            - type: "p"
+              children:
+                - text: "Provide useful hints and explanatory feedback"
+        - id: "decorate_only"
+          content:
+            - type: "p"
+              children:
+                - text: "Add decorative content without checking the learning goal"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        correct:
+          - ["attach_objectives", "use_feedback"]
+          - "aligned_activity_cata_correct"
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "aligned_activity_cata_correct"
+                rule: "input like {attach_objectives use_feedback}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "aligned_activity_cata_correct_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "Correct. Alignment provides evidence, and actionable support helps learners improve."
+              - id: "aligned_activity_cata_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "aligned_activity_cata_incorrect_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "Choose practices that connect evidence and learner support to the intended objective."
+            hints:
+              - id: "aligned_activity_orientation_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Choose practices that connect evidence and learner support to the intended outcome."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "aligned_activity_reasoning_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Look for both objective alignment and guidance that helps a learner improve."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "aligned_activity_bottom_out_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Select attaching activities to objectives and providing useful hints and feedback."
+                editor: "slate"
+                textDirection: "ltr"
+
+- create_activity:
+    project: "oli_torus_getting_started_course"
+    title: "Name the Snapshot Action"
+    virtual_id: "publication_term_short_answer"
+    type: "oli_short_answer"
+    objectives:
+      - "Distinguish projects, publications, and sections"
+    content_format: "json"
+    content:
+      activityType: "oli_short_answer"
+      stem:
+        id: "publication_term_short_answer_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "What action creates a stable snapshot of a Torus project for delivery?"
+      inputType: "text"
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "publication_term_short_answer_correct"
+                rule: "input contains {publish}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "publication_term_short_answer_correct_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "Correct. Publishing creates the stable snapshot used for delivery."
+              - id: "publication_term_short_answer_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "publication_term_short_answer_incorrect_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "Preview checks the content, but publishing creates the delivery snapshot."
+            hints:
+              - id: "publication_term_orientation_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Think of the action between authoring and section delivery."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "publication_term_reasoning_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "The action shares its root word with publication."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "publication_term_bottom_out_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Publish the project to create its stable delivery snapshot."
+                editor: "slate"
+                textDirection: "ltr"
+
+- create_activity:
+    project: "oli_torus_getting_started_course"
+    title: "Connect Authoring and Delivery"
+    virtual_id: "delivery_objects_multi_input"
+    type: "oli_multi_input"
+    objectives:
+      - "Sequence the authoring-to-delivery workflow"
+    content_format: "json"
+    content:
+      activityType: "oli_multi_input"
+      submitPerPart: false
+      choices: []
+      inputs:
+        - id: "authoring_object"
+          inputType: "text"
+          partId: "authoring_part"
+        - id: "delivery_object"
+          inputType: "text"
+          partId: "delivery_part"
+      stem:
+        id: "delivery_objects_multi_input_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Complete the flow: authors revise a "
+              - type: "input_ref"
+                id: "authoring_object"
+                children:
+                  - text: ""
+              - text: "; learners study in a "
+              - type: "input_ref"
+                id: "delivery_object"
+                children:
+                  - text: ""
+              - text: "."
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "authoring_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "delivery_objects_authoring_correct"
+                rule: "input contains {project}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "delivery_objects_authoring_correct_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "Correct. Authors revise the project."
+              - id: "delivery_objects_authoring_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "delivery_objects_authoring_incorrect_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "The editable source is the project."
+            hints:
+              - id: "delivery_objects_authoring_orientation_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "The first blank names the object authors can continue editing."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "delivery_objects_authoring_reasoning_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "A publication is a snapshot, while this object is the editable source."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "delivery_objects_authoring_bottom_out_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Authors revise a project."
+                editor: "slate"
+                textDirection: "ltr"
+          - id: "delivery_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "delivery_objects_delivery_correct"
+                rule: "input contains {section}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "delivery_objects_delivery_correct_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "Correct. Learners study the published material in a section."
+              - id: "delivery_objects_delivery_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "delivery_objects_delivery_incorrect_feedback"
+                  content:
+                    - type: "p"
+                      children:
+                        - text: "The learner-facing delivery instance is the section."
+            hints:
+              - id: "delivery_objects_delivery_orientation_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "The second blank names the learner-facing delivery instance."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "delivery_objects_delivery_reasoning_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "This object is created from a publication and contains enrollments."
+                editor: "slate"
+                textDirection: "ltr"
+              - id: "delivery_objects_delivery_bottom_out_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Learners study in a section."
+                editor: "slate"
+                textDirection: "ltr"
+
+- edit_page:
+    project: "oli_torus_getting_started_course"
+    page: "Welcome to OLI Torus"
+    objectives:
+      - "Distinguish projects, publications, and sections"
+    content: |
+      title: "Welcome to OLI Torus"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: |
+            # Welcome to OLI Torus
+
+            OLI Torus helps teams author, publish, and deliver evidence-centered learning
+            experiences. This short course follows content from its editable source to the
+            learner-facing course.
+
+            ## Three objects to know
+
+            - A **project** is the editable authoring workspace.
+            - A **publication** is a stable snapshot of project content.
+            - A **section** delivers a publication to enrolled learners.
+
+            Authors can continue improving a project without silently changing the stable
+            experience learners are already using.
+        - type: activity_reference
+          virtual_id: "torus_workspace_mcq"
+
+- edit_page:
+    project: "oli_torus_getting_started_course"
+    page: "Organize Your Course"
+    objectives:
+      - "Organize projects into units and pages"
+    content: |
+      title: "Organize Your Course"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: |
+            # Organize Your Course
+
+            A useful curriculum makes its structure visible. **Containers** group related
+            material into units or modules. **Pages** hold explanations, examples, media, and
+            activities.
+
+            Use clear titles and a deliberate order. Before publishing, read the curriculum like
+            a learner: check where each idea begins, where practice appears, and what comes next.
+        - type: activity_reference
+          virtual_id: "course_structure_ordering"
+
+- edit_page:
+    project: "oli_torus_getting_started_course"
+    page: "Design Activities for Learning"
+    objectives:
+      - "Align activities with learning objectives"
+    content: |
+      title: "Design Activities for Learning"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: |
+            # Design Activities for Learning
+
+            Start with an observable learning objective, then attach activities that provide
+            evidence for it. Low-stakes practice gives learners room to try, request a hint,
+            review feedback, reset, and improve.
+
+            Helpful feedback explains why a response works or what to reconsider. Preview both
+            correct and incorrect paths so every response supports the intended learning goal.
+        - type: activity_reference
+          virtual_id: "aligned_activity_cata"
+
+- edit_page:
+    project: "oli_torus_getting_started_course"
+    page: "Publish and Deliver Your Course"
+    objectives:
+      - "Distinguish projects, publications, and sections"
+      - "Sequence the authoring-to-delivery workflow"
+    content: |
+      title: "Publish and Deliver Your Course"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: |
+            # Publish and Deliver Your Course
+
+            Preview and review the project before publishing. Publishing creates the stable
+            snapshot that can be delivered to learners.
+
+            Create a section from that publication and enroll learners in the section. Later
+            authoring changes stay in the project until a new publication is created and the
+            section is intentionally updated.
+        - type: activity_reference
+          virtual_id: "publication_term_short_answer"
+        - type: activity_reference
+          virtual_id: "delivery_objects_multi_input"
+
+- edit_page:
+    project: "oli_torus_getting_started_course"
+    page: "Getting Started Assessment"
+    objectives:
+      - "Organize projects into units and pages"
+      - "Align activities with learning objectives"
+      - "Distinguish projects, publications, and sections"
+      - "Sequence the authoring-to-delivery workflow"
+    content: |
+      title: "Getting Started Assessment"
+      graded: true
+      blocks:
+        - type: prose
+          body_md: |
+            # Getting Started Assessment
+
+            Demonstrate your understanding of course structure, activity alignment, publication,
+            and delivery. Your responses are scored by the same Torus evaluators used in normal
+            learner delivery.
+        - type: activity_reference
+          virtual_id: "torus_workspace_mcq"
+        - type: activity_reference
+          virtual_id: "course_structure_ordering"
+        - type: activity_reference
+          virtual_id: "aligned_activity_cata"
+        - type: activity_reference
+          virtual_id: "publication_term_short_answer"
+        - type: activity_reference
+          virtual_id: "delivery_objects_multi_input"
+
+- publish:
+    to: "oli_torus_getting_started_course"
+    description: "Publish the Getting Started with OLI Torus demo course"
+
+- section:
+    name: "oli_torus_getting_started_section"
+    title: "Getting Started with OLI Torus"
+    from: "oli_torus_getting_started_course"
+
+- bulk_create_enroll_users:
+    section: "oli_torus_getting_started_section"
+    prefix: "simulated"
+    instructors: 1
+    learners: 12
+
+- assert:
+    structure:
+      to: "oli_torus_getting_started_section"
+      root:
+        children:
+          - container: "Authoring with Torus"
+            children:
+              - page: "Welcome to OLI Torus"
+              - page: "Organize Your Course"
+              - page: "Design Activities for Learning"
+          - container: "Publishing and Delivery"
+            children:
+              - page: "Publish and Deliver Your Course"
+              - page: "Getting Started Assessment"
+
+- assert:
+    page_objectives:
+      section: "oli_torus_getting_started_section"
+      page: "Welcome to OLI Torus"
+      expected:
+        - "Distinguish projects, publications, and sections"
+
+- assert:
+    page_objectives:
+      section: "oli_torus_getting_started_section"
+      page: "Organize Your Course"
+      expected:
+        - "Organize projects into units and pages"
+
+- assert:
+    page_objectives:
+      section: "oli_torus_getting_started_section"
+      page: "Design Activities for Learning"
+      expected:
+        - "Align activities with learning objectives"
+
+- assert:
+    page_objectives:
+      section: "oli_torus_getting_started_section"
+      page: "Publish and Deliver Your Course"
+      expected:
+        - "Distinguish projects, publications, and sections"
+        - "Sequence the authoring-to-delivery workflow"
+
+- assert:
+    page_objectives:
+      section: "oli_torus_getting_started_section"
+      page: "Getting Started Assessment"
+      expected:
+        - "Align activities with learning objectives"
+        - "Distinguish projects, publications, and sections"
+        - "Organize projects into units and pages"
+        - "Sequence the authoring-to-delivery workflow"
+
+- assert:
+    activity_objectives:
+      project: "oli_torus_getting_started_course"
+      activity_virtual_id: "torus_workspace_mcq"
+      expected:
+        - "Distinguish projects, publications, and sections"
+
+- assert:
+    activity_objectives:
+      project: "oli_torus_getting_started_course"
+      activity_virtual_id: "course_structure_ordering"
+      expected:
+        - "Organize projects into units and pages"
+
+- assert:
+    activity_objectives:
+      project: "oli_torus_getting_started_course"
+      activity_virtual_id: "aligned_activity_cata"
+      expected:
+        - "Align activities with learning objectives"
+
+- assert:
+    activity_objectives:
+      project: "oli_torus_getting_started_course"
+      activity_virtual_id: "publication_term_short_answer"
+      expected:
+        - "Distinguish projects, publications, and sections"
+
+- assert:
+    activity_objectives:
+      project: "oli_torus_getting_started_course"
+      activity_virtual_id: "delivery_objects_multi_input"
+      expected:
+        - "Sequence the authoring-to-delivery workflow"
+
+- simulate_progress:
+    section: "oli_torus_getting_started_section"
+    seed: 20260914
+    cohorts:
+      - profile: "high_proficiency"
+        count: 3
+      - profile: "steady_learner"
+        count: 4
+      - profile: "persistent_learner"
+        count: 3
+      - profile: "low_engagement"
+        count: 2

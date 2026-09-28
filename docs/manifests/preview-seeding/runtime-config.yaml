@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oli-torus-preview-runtime
+  labels:
+    app.kubernetes.io/name: oli-torus
+    app.kubernetes.io/component: preview-seeding
+    app.kubernetes.io/environment: preview
+data:
+  PREVIEW_QA_TOOLS_ENABLED: "true"
+  PREVIEW_QA_SEED_SCENARIO: oli_torus_getting_started_course

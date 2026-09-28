@@ -2,15 +2,18 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch } from 'react-redux';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import { GradedPoints } from 'components/activities/common/delivery/graded_points/GradedPoints';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
 import * as ActivityTypes from 'components/activities/types';
+import { Checkmark } from 'components/misc/icons/Checkmark';
+import { Cross } from 'components/misc/icons/Cross';
 import {
   activityDeliverySlice,
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
-import { finalizePageAttempt } from 'data/persistence/page_lifecycle';
+import { isCorrect } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 
@@ -22,11 +25,6 @@ interface Context {
   user_guid: string;
   mode: string;
   part_ids: string;
-  auto_finalize_page?: boolean;
-  auto_finalize_redirect_url?: string;
-  revision_slug?: string;
-  section_slug?: string;
-  page_attempt_guid?: string;
 }
 
 const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
@@ -46,11 +44,23 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
   const [iframeReady, setIframeReady] = useState<boolean>(false);
   const [preview, setPreview] = useState<boolean>(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [pageFinalizeError, setPageFinalizeError] = useState<string | null>(null);
   const [iframeHeight, setIframeHeight] = useState(500);
   const reviewMode =
     mode === 'review' ||
     (typeof window !== 'undefined' && window.location.pathname.includes('/review'));
+  const maybeGradedPoints = (
+    <GradedPoints
+      shouldShow={
+        activityState.score !== null &&
+        activityContext.graded &&
+        reviewMode &&
+        activityContext.showFeedback === true &&
+        activityContext.surveyId === null
+      }
+      icon={isCorrect(activityState) ? <Checkmark /> : <Cross />}
+      attemptState={activityState}
+    />
+  );
 
   const dispatch = useDispatch();
   useEffect(() => {
@@ -109,17 +119,6 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
         setPreview(true);
         setInitializing(false);
       });
-  };
-
-  const revealSubmitAnswersButton = () => {
-    const submitButton = document.getElementById('submit_answers') as HTMLButtonElement | null;
-
-    if (!submitButton) {
-      return;
-    }
-
-    submitButton.classList.remove('hidden', 'd-none');
-    submitButton.disabled = false;
   };
 
   const fetchPreviewContext = () => {
@@ -242,120 +241,6 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
     };
   }, [shouldShowLoadingState, showLoadingUI]);
 
-  useEffect(() => {
-    if (!context) {
-      return;
-    }
-
-    if (mode === 'author_preview' || mode === 'preview' || mode === 'review') {
-      return;
-    }
-
-    if (
-      !activityContext.graded ||
-      !activityContext.batchScoring ||
-      activityContext.surveyId !== null
-    ) {
-      return;
-    }
-
-    if (!context.auto_finalize_page) {
-      return;
-    }
-
-    let cancelled = false;
-    let finalizeRequested = false;
-    let pendingPoll = false;
-
-    const pollForSubmission = async () => {
-      if (cancelled || finalizeRequested || pendingPoll) {
-        return;
-      }
-
-      pendingPoll = true;
-
-      try {
-        const response = await fetch(
-          `/api/v1/state/course/${activityContext.sectionSlug}/activity_attempt/${activityState.attemptGuid}`,
-          {
-            method: 'GET',
-            headers: {
-              Accept: 'application/json',
-            },
-          },
-        );
-
-        if (!response.ok) {
-          return;
-        }
-
-        const json = await response.json();
-        const attemptState = json?.state;
-        const submitted =
-          attemptState?.dateEvaluated !== null ||
-          attemptState?.dateSubmitted !== null ||
-          attemptState?.lifecycle_state === 'evaluated' ||
-          attemptState?.lifecycle_state === 'submitted';
-
-        if (!submitted) {
-          return;
-        }
-
-        finalizeRequested = true;
-        setPageFinalizeError(null);
-
-        if (context.section_slug && context.revision_slug && context.page_attempt_guid) {
-          const finalizeResult = await finalizePageAttempt(
-            context.section_slug,
-            context.revision_slug,
-            context.page_attempt_guid,
-          );
-
-          if (
-            'redirectTo' in finalizeResult &&
-            typeof finalizeResult.redirectTo === 'string' &&
-            finalizeResult.redirectTo.length > 0
-          ) {
-            window.location.href = finalizeResult.redirectTo;
-            return;
-          }
-        }
-
-        if (context.auto_finalize_redirect_url) {
-          window.location.href = context.auto_finalize_redirect_url;
-          return;
-        }
-
-        finalizeRequested = false;
-        revealSubmitAnswersButton();
-        setPageFinalizeError(
-          'Embedded activity submission completed, but automatic page redirect was unavailable. Use Submit Answers to finish the page.',
-        );
-      } catch (error) {
-        console.error(error);
-      } finally {
-        pendingPoll = false;
-      }
-    };
-
-    const intervalId = window.setInterval(pollForSubmission, 1500);
-    void pollForSubmission();
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [
-    activityContext.batchScoring,
-    activityContext.graded,
-    activityContext.pageAttemptGuid,
-    activityContext.sectionSlug,
-    activityContext.surveyId,
-    activityState.attemptGuid,
-    context,
-    mode,
-  ]);
-
   return (
     <>
       {previewError ? (
@@ -363,11 +248,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           {previewError}
         </div>
       ) : null}
-      {pageFinalizeError ? (
-        <div className="alert alert-warning" role="alert">
-          {pageFinalizeError}
-        </div>
-      ) : null}
+      {maybeGradedPoints}
       {(context || showLoadingUI) && (
         <div
           style={{

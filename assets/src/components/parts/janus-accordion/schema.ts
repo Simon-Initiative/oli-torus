@@ -4,7 +4,8 @@ import { MarkupTree } from '../janus-text-flow/TextFlow';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export const DEFAULT_ACCORDION_THEME = '#0070F3';
-export const DEFAULT_ACCORDION_HEIGHT = 197;
+// Three collapsed 44px headers, two section dividers, and the outer border.
+export const DEFAULT_ACCORDION_HEIGHT = 136;
 export const DEFAULT_ACCORDION_WIDTH = 480;
 export const MIN_ACCORDION_SECTIONS = 1;
 export const MAX_ACCORDION_SECTIONS = 10;

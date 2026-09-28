@@ -7,6 +7,25 @@ For a complete list of changes and release notes, please refer to the [GitHub re
 If a PR is opened that adds a new environment config or requires infrastructure changes, please
 update this file accordingly.
 
+## 0.35.0
+
+### Environment Configs
+
+| Name                       | Required | Description                                              |
+| -------------------------- | -------- | -------------------------------------------------------- |
+| OBAN_QUEUE_SIZE_SNAPSHOTS  | No       | Snapshot queue concurrency per node (Default: 4)         |
+
+- `OBAN_QUEUE_SIZE_SNAPSHOTS` controls the maximum number of snapshot jobs that each production or
+  preview application node executes concurrently. Keep it lower than the database connection
+  `POOL_SIZE` so snapshot processing leaves connections available for web requests and other
+  background queues.
+
+### Infrastructure Changes
+
+None
+
+---
+
 ## 0.34.0
 
 ### Environment Configs
