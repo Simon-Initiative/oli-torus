@@ -532,9 +532,16 @@ defmodule OliWeb.Delivery.NewCourse do
     source_section = Sections.get_section!(section_id(socket.assigns.source))
     attrs = attrs_from_source_section(source_section)
 
-    socket
-    |> assign(show_copy_modal?: false, copy_options: copy_options)
-    |> do_create_section(attrs)
+    # `do_create_section/2` still needs `source` (read from socket.assigns) to build the
+    # request, so it's cleared only after that call returns — otherwise, during the brief
+    # `loading: true` window before the redirect lands, the still-mounted step-0 grid would
+    # flash the just-clicked card back into its "selected" state.
+    {:noreply, socket} =
+      socket
+      |> assign(show_copy_modal?: false, copy_options: copy_options)
+      |> do_create_section(attrs)
+
+    {:noreply, assign(socket, source: nil, source_title: nil)}
   end
 
   def handle_event(

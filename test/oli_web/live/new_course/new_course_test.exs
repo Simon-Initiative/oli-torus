@@ -9,6 +9,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
+  alias Oli.Resources.ResourceType
 
   describe "wizard left-panel step copy" do
     setup [:instructor_conn]
@@ -182,8 +183,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
     test "confirming the modal creates the section immediately (no wizard steps), copying the source's title (with a '(copy)' suffix), dates, and section details, but not course_section_number",
          %{conn: conn} do
-      author = insert(:author)
-      %{project: project, publication: publication} = insert_project_with_resource(author)
+      %{project: project, publication: publication} = published_project_with_resource()
 
       course =
         insert(:section,
@@ -215,6 +215,13 @@ defmodule OliWeb.NewCourse.NewCourseTest do
       refute has_element?(view, "#copy-choice-modal")
       refute has_element?(view, "h2", "Name your course")
       refute has_element?(view, "h2", "Course details")
+
+      # During the loading window before the redirect lands, the still-mounted source grid
+      # must not flash the just-copied card back into its "selected" state.
+      refute has_element?(
+               view,
+               "button[phx-value-id='section:#{course.id}'] div.bg-delivery-primary-100"
+             )
 
       wait_for_completion()
       assert_redirect(view)
@@ -320,5 +327,39 @@ defmodule OliWeb.NewCourse.NewCourseTest do
     view
     |> element("button[phx-value-id='section:#{course.id}']")
     |> render_click()
+  end
+
+  # `Oli.Factory.insert_project_with_resource/1` builds an intentionally *unpublished*
+  # project (`published: nil`), meant for authoring-flow tests — not eligible as a course-copy
+  # source, since `SectionCreation.permitted_publications_query/2` requires a published
+  # publication. This builds the same shape but published (the factory's own default), so the
+  # resulting section actually shows up as a My Course Section.
+  defp published_project_with_resource do
+    author = insert(:author)
+    project = insert(:project, authors: [])
+    resource = insert(:resource)
+
+    revision =
+      insert(:revision,
+        author: author,
+        resource: resource,
+        resource_type_id: ResourceType.id_for_container(),
+        title: "Curriculum",
+        children: []
+      )
+
+    insert(:author_project, author_id: author.id, project_id: project.id)
+    insert(:project_resource, project_id: project.id, resource_id: resource.id)
+
+    publication = insert(:publication, project: project, root_resource_id: resource.id)
+
+    insert(:published_resource,
+      publication: publication,
+      resource: resource,
+      revision: revision,
+      author: author
+    )
+
+    %{project: project, publication: publication}
   end
 end
