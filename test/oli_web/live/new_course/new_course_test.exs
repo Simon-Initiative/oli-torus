@@ -199,7 +199,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
       assert has_element?(view, "#copy-choice-modal")
     end
 
-    test "confirming the modal creates the section immediately (no wizard steps), copying the source's title (with a '(copy)' suffix), dates, and section details",
+    test "confirming the modal creates the section immediately (no wizard steps), copying the source's title (with a '(copy)' suffix), dates, and section details, but not course_section_number",
          %{conn: conn} do
       author = insert(:author)
       %{project: project, publication: publication} = insert_project_with_resource(author)
@@ -241,7 +241,9 @@ defmodule OliWeb.NewCourse.NewCourseTest do
       assert_redirect(view)
 
       created = Repo.get_by!(Section, title: "Chem Copy (copy)")
-      assert created.course_section_number == "CHEM-101-03"
+      # course_section_number has no edit surface anywhere in the app after creation, so it's
+      # deliberately left out of the copy rather than durably locking in the source's value.
+      assert created.course_section_number == nil
       assert created.class_modality == :hybrid
       assert created.class_days == [:monday, :wednesday]
       assert created.start_date == course.start_date

@@ -706,10 +706,12 @@ defmodule OliWeb.Delivery.NewCourse do
 
   defp section_id("section:" <> id), do: String.to_integer(id)
 
+  # `course_section_number` is deliberately left out: it has no edit surface anywhere in the
+  # app after a section is created (for any section, not only copies), so copying it forward
+  # would leave the new section durably stuck with a value the instructor can never change.
   defp attrs_from_source_section(%Section{} = source) do
     %{
       title: "#{source.title} (copy)",
-      course_section_number: source.course_section_number,
       class_modality: source.class_modality,
       class_days: source.class_days,
       start_date: source.start_date,
