@@ -2,8 +2,13 @@ defmodule OliWeb.CollaboratorControllerTest do
   use OliWeb.ConnCase
 
   import ExUnit.CaptureLog
+  import Oli.Factory
 
   alias Oli.Accounts
+  alias Oli.Accounts.AuthorToken
+  alias Oli.AssentAuth.AuthorIdentity
+  alias Oli.Authoring.{Collaborators, Course}
+  alias Oli.Repo
 
   @admin_email System.get_env("ADMIN_EMAIL", "admin@example.edu")
   @invalid_email "hey@example.com"
@@ -148,6 +153,85 @@ defmodule OliWeb.CollaboratorControllerTest do
   end
 
   describe "delete" do
+    for {account_type, status} <- [
+          {:google, :pending_confirmation},
+          {:google, :accepted},
+          {:password, :pending_confirmation},
+          {:unregistered, :pending_confirmation}
+        ] do
+      @account_type account_type
+      @status status
+      test "preserves #{@account_type} accounts when removing #{@status} collaborations", %{
+        conn: conn,
+        project: project
+      } do
+        author =
+          case @account_type do
+            :google ->
+              insert(:author,
+                password_hash: nil,
+                user_identities: [
+                  %AuthorIdentity{uid: "collaborator-removal", provider: "google"}
+                ]
+              )
+
+            :password ->
+              author_fixture()
+
+            :unregistered ->
+              insert(:author, password_hash: nil)
+          end
+
+        original = insert(:project, authors: [])
+
+        original_membership =
+          insert(:author_project, author_id: author.id, project_id: original.id)
+
+        user = insert(:user, author: author)
+        session_token = Accounts.generate_author_session_token(author)
+        identities = Repo.preload(author, :user_identities).user_identities
+
+        {:ok, _} = Collaborators.do_add_collaborator(author.email, project.slug, @status)
+
+        tokens =
+          for slug <- [project.slug, project.slug, original.slug] do
+            {encoded, token} =
+              AuthorToken.build_email_token(author, "collaborator_invitation:#{slug}")
+
+            Repo.insert!(token)
+            encoded
+          end
+
+        conn = delete(conn, Routes.collaborator_path(conn, :delete, project, author.email))
+
+        assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Author removed from project"
+        assert Accounts.get_author_by_email(author.email).id == author.id
+        assert Course.get_author_project(original.slug, author.id) == original_membership
+        assert Course.get_author_project(project.slug, author.id, filter_by_status: false) == nil
+        assert Repo.reload!(user).author_id == author.id
+        assert Repo.preload(Repo.reload!(author), :user_identities).user_identities == identities
+        assert Accounts.get_author_by_session_token(session_token).id == author.id
+
+        [removed_token, another_removed_token, retained_token] = tokens
+        assert Accounts.get_author_token_by_collaboration_invitation_token(removed_token) == nil
+
+        assert Accounts.get_author_token_by_collaboration_invitation_token(another_removed_token) ==
+                 nil
+
+        assert Accounts.get_author_token_by_collaboration_invitation_token(retained_token)
+
+        {:ok, reinvited} =
+          Collaborators.invite_collaborator(
+            "Owner",
+            "owner@example.edu",
+            author.email,
+            project.slug
+          )
+
+        assert reinvited.author_id == author.id
+      end
+    end
+
     test "redirects to project path when data is valid", %{conn: conn, project: project} do
       Oli.Authoring.Collaborators.add_collaborator(@admin_email, project.slug)
       conn = delete(conn, Routes.collaborator_path(conn, :delete, project, @admin_email))

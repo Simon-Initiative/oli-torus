@@ -131,6 +131,9 @@ defmodule OliWeb.CollaboratorController do
     # For later use -> change author role within project
   end
 
+  @doc """
+  Removes a project collaboration and its invitations while preserving the author account.
+  """
   def delete(conn, %{"project_id" => project_slug, "author_email" => author_email}) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:author, fn _repo, _changes ->
@@ -142,30 +145,12 @@ defmodule OliWeb.CollaboratorController do
     |> Ecto.Multi.run(:remove_author_from_project, fn _repo, _changes ->
       Collaborators.remove_collaborator(author_email, project_slug)
     end)
-    |> Ecto.Multi.run(:remove_invitation, fn _repo, %{author: author} ->
-      case author.password_hash do
-        nil ->
-          # the author was invited but still did not accept the invitation
-          # We then delete the author and the correponding author_token will be deleted automatically (on delete cascade)
-          Oli.Accounts.delete_author(author)
-
-        _some_hashed_password ->
-          # the author is already a member of Torus
-          # so we must manually delete the author_token created when the invitation was sent
-
-          Oli.Accounts.AuthorToken.author_and_contexts_query(
-            author,
-            ["collaborator_invitation:#{project_slug}"]
-          )
-          |> Oli.Repo.one()
-          |> case do
-            nil ->
-              {:ok, "Author token already deleted"}
-
-            author_token ->
-              Oli.Repo.delete(author_token)
-          end
-      end
+    |> Ecto.Multi.delete_all(:remove_invitation, fn %{author: author} ->
+      # Passwordless authors may already use SSO or have other project invitations.
+      Oli.Accounts.AuthorToken.author_and_contexts_query(
+        author,
+        ["collaborator_invitation:#{project_slug}"]
+      )
     end)
     |> Oli.Repo.transaction()
     |> case do
