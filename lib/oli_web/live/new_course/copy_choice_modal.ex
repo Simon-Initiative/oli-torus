@@ -56,7 +56,7 @@ defmodule OliWeb.Delivery.NewCourse.CopyChoiceModal do
 
       <div class="flex w-full flex-col gap-1.5 rounded-md border border-Border-border-subtle bg-Surface-surface-secondary px-5 py-3">
         <.copy_group_checkbox
-          label="Content / curriculum"
+          label="Content / curriculum (Required)"
           group="content"
           checked={true}
           locked={true}

@@ -5,7 +5,10 @@ defmodule OliWeb.NewCourse.NewCourseTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.Publications.Publication
+  alias Oli.Repo
 
   describe "wizard left-panel step copy" do
     setup [:instructor_conn]
@@ -112,6 +115,12 @@ defmodule OliWeb.NewCourse.NewCourseTest do
       assert has_element?(view, "h1", "Choose what to copy")
       assert render(view) =~ course.title
       refute has_element?(view, "h2", "Name your course")
+
+      assert has_element?(
+               view,
+               "label",
+               "Content / curriculum (Required)"
+             )
     end
 
     test "selecting a Template does not open the modal and advances directly (regression)", %{
@@ -190,10 +199,26 @@ defmodule OliWeb.NewCourse.NewCourseTest do
       assert has_element?(view, "#copy-choice-modal")
     end
 
-    test "confirming with 'Copy entire course' (the default) advances to step 1 and pre-fills the title as '<source> (copy)'",
+    test "confirming the modal creates the section immediately (no wizard steps), copying the source's title (with a '(copy)' suffix), dates, and section details",
          %{conn: conn} do
-      %Publication{project: project} = insert(:publication)
-      course = insert(:section, type: :enrollable, base_project: project, title: "Chem Copy")
+      author = insert(:author)
+      %{project: project, publication: publication} = insert_project_with_resource(author)
+
+      course =
+        insert(:section,
+          type: :enrollable,
+          base_project: project,
+          title: "Chem Copy",
+          course_section_number: "CHEM-101-03",
+          class_modality: :hybrid,
+          class_days: [:monday, :wednesday],
+          start_date: ~U[2026-01-10 00:00:00Z],
+          end_date: ~U[2026-05-10 00:00:00Z],
+          preferred_scheduling_time: ~T[10:30:00],
+          timezone: "US/Pacific"
+        )
+
+      {:ok, course} = Sections.create_section_resources(course, publication)
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
@@ -201,17 +226,28 @@ defmodule OliWeb.NewCourse.NewCourseTest do
       |> element("button[phx-value-id='section:#{course.id}']")
       |> render_click()
 
-      assert has_element?(
-               view,
-               "input[value='entire_course'][checked]"
-             )
+      assert has_element?(view, "input[value='entire_course'][checked]")
 
       view
       |> element("#copy-choice-modal button", "Create Section")
       |> render_click()
 
-      assert has_element?(view, "h2", "Name your course")
-      assert render(view) =~ ~s|value="Chem Copy (copy)"|
+      # No wizard steps are shown — the workflow ends on this button.
+      refute has_element?(view, "#copy-choice-modal")
+      refute has_element?(view, "h2", "Name your course")
+      refute has_element?(view, "h2", "Course details")
+
+      wait_for_completion()
+      assert_redirect(view)
+
+      created = Repo.get_by!(Section, title: "Chem Copy (copy)")
+      assert created.course_section_number == "CHEM-101-03"
+      assert created.class_modality == :hybrid
+      assert created.class_days == [:monday, :wednesday]
+      assert created.start_date == course.start_date
+      assert created.end_date == course.end_date
+      assert created.preferred_scheduling_time == course.preferred_scheduling_time
+      assert created.timezone == "US/Pacific"
     end
 
     test "switching to 'Choose what to copy' defaults to only Content checked, and switching back mutes all checkboxes",

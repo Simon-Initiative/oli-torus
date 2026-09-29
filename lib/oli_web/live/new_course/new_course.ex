@@ -237,6 +237,7 @@ defmodule OliWeb.Delivery.NewCourse do
     ~H"""
     <.new_course_header>
       <div class="flex flex-col gap-3 pr-9 pl-16 py-6">
+        <.render_flash flash={@flash} />
         <.live_component
           id="select_source_step"
           module={SelectSource}
@@ -310,6 +311,7 @@ defmodule OliWeb.Delivery.NewCourse do
       0 ->
         %{
           ctx: assigns.ctx,
+          flash: assigns.flash,
           # While the copy-choice modal is open, the underlying source grid stays mounted
           # (current_step is still 0) but must never show the just-clicked card as
           # "selected" — that highlight is meant only for a same-step re-render, not for a
@@ -365,16 +367,16 @@ defmodule OliWeb.Delivery.NewCourse do
   defp suggest_title(_), do: nil
 
   def create_section(socket) do
-    %{
-      source: source,
-      changeset: changeset,
-      section_spec: section_spec
-    } = socket.assigns
-
     attrs =
-      changeset
+      socket.assigns.changeset
       |> Ecto.Changeset.apply_changes()
       |> Map.from_struct()
+
+    do_create_section(socket, attrs)
+  end
+
+  defp do_create_section(socket, attrs) do
+    %{source: source, section_spec: section_spec} = socket.assigns
 
     case SectionCreationRequest.new(actor(socket.assigns), source, attrs, section_spec) do
       {:ok, request} ->
@@ -514,6 +516,12 @@ defmodule OliWeb.Delivery.NewCourse do
   # value is unexpected client input — same rationale as `set_copy_scope/3` above.
   def handle_event("toggle_copy_group", _params, socket), do: {:noreply, socket}
 
+  # Per product decision (Laura Delince, PO, 2026-09-29 — see informal.md): confirming the
+  # modal ends the workflow immediately for a My Course Section copy rather than continuing
+  # into wizard steps 1/2. The new section is created straight from the source section's own
+  # destination-field values (title gets a "(copy)" suffix; everything else — course section
+  # number, modality, days, dates, scheduling time, timezone — carries over verbatim), so the
+  # instructor never has to re-enter details the copy is meant to already have.
   def handle_event("confirm_copy_modal", _params, socket) do
     copy_options =
       case socket.assigns.copy_scope do
@@ -521,20 +529,12 @@ defmodule OliWeb.Delivery.NewCourse do
         :choose_what_to_copy -> socket.assigns.copy_options
       end
 
-    changeset =
-      Ecto.Changeset.put_change(
-        socket.assigns.changeset,
-        :title,
-        "#{socket.assigns.source_title} (copy)"
-      )
+    source_section = Sections.get_section!(section_id(socket.assigns.source))
+    attrs = attrs_from_source_section(source_section)
 
-    {:noreply,
-     assign(socket,
-       show_copy_modal?: false,
-       copy_options: copy_options,
-       changeset: changeset,
-       current_step: 1
-     )}
+    socket
+    |> assign(show_copy_modal?: false, copy_options: copy_options)
+    |> do_create_section(attrs)
   end
 
   def handle_event(
@@ -680,10 +680,9 @@ defmodule OliWeb.Delivery.NewCourse do
     DateTime.compare(start_date, end_date) == :lt
   end
 
-  # Interim default while the exact default-checked state is still pending PO
-  # confirmation (see docs/exec-plans/.../course_copy/informal.md): only Content
-  # is preselected when "Choose what to copy" is chosen; everything else starts
-  # unchecked. "Copy entire course" always selects every group regardless of this.
+  # Per product decision (Laura Delince, PO, 2026-09-29 — see informal.md): only Content
+  # is preselected when "Choose what to copy" is chosen; everything else starts unchecked.
+  # "Copy entire course" always selects every group regardless of this.
   defp default_copy_options do
     Map.new(CopyOptions.groups(), &{&1, &1 == :content})
   end
@@ -704,6 +703,21 @@ defmodule OliWeb.Delivery.NewCourse do
 
   defp section_source?("section:" <> _id), do: true
   defp section_source?(_), do: false
+
+  defp section_id("section:" <> id), do: String.to_integer(id)
+
+  defp attrs_from_source_section(%Section{} = source) do
+    %{
+      title: "#{source.title} (copy)",
+      course_section_number: source.course_section_number,
+      class_modality: source.class_modality,
+      class_days: source.class_days,
+      start_date: source.start_date,
+      end_date: source.end_date,
+      preferred_scheduling_time: source.preferred_scheduling_time,
+      timezone: source.timezone
+    }
+  end
 
   defp source_for_step(0, _previous_source), do: nil
   defp source_for_step(_step, previous_source), do: previous_source

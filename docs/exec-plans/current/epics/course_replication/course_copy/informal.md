@@ -1,6 +1,6 @@
 # Independent Course Copy - Informal Feature Context
 
-Last updated: 2026-09-28
+Last updated: 2026-09-29
 
 This feature delivers one-time Course Copy from an instructor's existing course section. It is intentionally independent from Blueprint synchronization.
 
@@ -69,10 +69,17 @@ from checkbox to group(s) changes:
 
 | Modal checkbox (Figma) | `CopyOptions` group(s) selected |
 |---|---|
-| Content / curriculum (mandatory, always checked) | `:content` |
+| Content / curriculum **(Required)** — locked checked | `:content` |
 | Schedule | `:schedule` |
 | Assessment settings (includes availability & due dates) | `:assessment_settings` |
 | Course features (AI Assistant, Notes, Course Discussions) | `:section_settings` **and** `:ai_settings` together |
+
+**Resolved 2026-09-29** (Slack, Laura Delince — PO, standing in for Jess): Content/curriculum
+is mandatory by product decision, not just as a side effect of the backend constraint — "there
+is nothing to copy over as everything else is content-dependent-or-related." The checkbox label
+must read **"Content / curriculum (Required)"** so it's visually clear it can't be unchecked and
+why (currently reads just "Content / curriculum" with no such annotation — label text change
+needed, not yet implemented).
 
 Notes on why "Course features" maps to two groups instead of being its own group:
 
@@ -92,30 +99,52 @@ Notes on why "Course features" maps to two groups instead of being its own group
   mention without further changes. It also carries fields the modal's label doesn't explicitly
   name — `description`, custom unit/module numbering, `welcome_title`/`encouraging_subtitle`,
   `agenda`, `brand_id`, and certificate settings — treated as included under the same
-  "instructor-owned section settings" umbrella (open decision #1 below asks the PO to confirm
-  this reading).
+  "instructor-owned section settings" umbrella (see "Open decisions" below — still unconfirmed
+  with the PO).
 
 ### Default checkbox state (when "Choose what to copy" is selected)
 
-Only **Content / curriculum** is checked by default; Schedule, Assessment settings, and Course
-features start unchecked (matches Figma node `40:2747`). This is a real behavior change from
-MER-5831's current inline UI, which defaults every optional checkbox to checked. See open
-decision #2.
+**Resolved 2026-09-29** (Slack, Laura Delince): only **Content / curriculum** is checked by
+default; Schedule, Assessment settings, and Course features start unchecked (matches Figma node
+`40:2747`, and matches the already-implemented interim default). This is a real behavior change
+from MER-5831's original inline UI, which defaulted every optional checkbox to checked.
+
+Additional requirement confirmed in the same reply, already implemented but now confirmed
+intentional rather than interim: when **"Copy entire course"** is selected, all four checkboxes
+(box, border, checkmark, and label text) must render visually muted/disabled — "these options
+should not be enabled until [Choose what to copy] is selected." No further change needed here.
 
 ### Wizard steps after the modal
 
-Current best reading (backed by code, not yet confirmed with the PO — see open decision #3):
-selecting a copy scope in the modal does **not** skip the wizard's "Name your course" /
-"Course details" steps. `@course_destination_fields` in `section_copy.ex` (title,
-course_section_number, class_modality, class_days, start_date, end_date,
-preferred_scheduling_time, timezone, context_id) is explicitly documented as "owned by the new
-course rather than copied from the source" — no `CopyOptions` group touches them, so the
-backend already assumes they're always filled fresh via the wizard. The AC's "Default name of
-copy should be 'course name (copy)' **in course setup wizard**" supports this: the wizard still
-runs, only the suggested title defaults to `"<source title> (copy)"` instead of blank. The
-open question is specifically about the modal's Figma button being labeled "Create Section"
-rather than "Next step", which could (but is not currently believed to) mean the modal
-short-circuits straight to creation.
+**Resolved 2026-09-29** (Slack, Laura Delince) — reverses the previous "best reading" below:
+clicking **"Create Section"** in the modal must end the workflow right there. It does **not**
+proceed into wizard steps "Name your course" / "Course details" — it creates the new section
+immediately, carrying over the source section's own details (Laura's examples: "starting and
+ending date and title, but with a Copy on the course title"). Rationale: "an instructor wanting
+to copy a course section is not the same as an instructor wanting to go and set up a new course
+section then and there" — the copy flow should let the instructor finish without being routed
+through unrelated setup screens.
+
+This was a real scope/architecture change, not just a button-label swap — **implemented
+2026-09-29**:
+
+- `@course_destination_fields` in `section_copy.ex` (title, course_section_number,
+  class_modality, class_days, start_date, end_date, preferred_scheduling_time, timezone,
+  context_id) was documented as "owned by the new course rather than copied from the source" —
+  no `CopyOptions` group touches them, and the wizard used to be the only thing that ever filled
+  them in. For a section-source copy this no longer holds: every one of those fields except
+  `context_id` (LTI-specific, not part of "the source section's own details") now comes straight
+  from the source section, via `attrs_from_source_section/1` in `new_course.ex`. `title` gets a
+  `"(copy)"` suffix; everything else (`course_section_number` included, per an explicit decision
+  to copy it verbatim rather than leave it ambiguous or blank, given it isn't system-enforced as
+  unique and isn't displayed anywhere in the app today — see the resolved item below) carries
+  over unchanged.
+- `confirm_copy_modal` no longer advances to `current_step: 1` for a section source — it loads
+  the source section (`Sections.get_section!/1`) and calls section creation directly (the same
+  `do_create_section/2` path the final wizard step already used), passing those source-derived
+  attrs instead of the (never-filled, for this flow) wizard changeset.
+- Template/Project sources are unaffected — they never open this modal and still go through the
+  full wizard as before; this change is scoped entirely to the My Course Sections copy flow.
 
 ## Technical guidance
 
@@ -146,6 +175,22 @@ Use existing Resource/Revision/Publication conventions where appropriate, but en
 ## Open decisions
 
 - Whether “created by the current instructor” means creator, owner, institution, or permission-based eligibility.
-- Exact selective-copy categories and the meaning of content/curriculum.
-- Treatment of external integrations, identifiers, dates, and publication state.
+- Treatment of external integrations, identifiers, and publication state.
 - Whether large copies require background operations and progress status.
+- Whether "Course features" can implicitly cover the rest of `:section_settings`'s field list
+  that the modal's label doesn't explicitly name (custom unit/module numbering, welcome
+  message, agenda, certificate settings) — not yet asked/confirmed with the PO.
+
+Resolved 2026-09-29 (Slack, Laura Delince — PO, standing in for Jess, who returns week of the
+12th): default checkbox state when "Choose what to copy" is selected (only Content checked);
+all four checkboxes visually muted/disabled when "Copy entire course" is selected; Content /
+curriculum is mandatory by product decision and its label must read "Content / curriculum
+(Required)"; and "Create Section" ends the workflow immediately for a section-source copy
+rather than continuing into wizard steps 2/3 (Template/Project sources are unaffected).
+
+Resolved 2026-09-29 (follow-up decision, pending final PO sign-off but implemented in the
+interim): `course_section_number` is not required or unique-enforced anywhere in the system
+(no DB constraint, optional in the changeset) and isn't displayed anywhere in the app after
+creation — so, consistent with "copy the source as closely as possible," it copies verbatim
+from the source along with every other course-destination field, same as `class_modality`,
+`class_days`, `preferred_scheduling_time`, and `timezone`.
