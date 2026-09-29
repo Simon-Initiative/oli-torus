@@ -20,35 +20,35 @@ describe('GlobalTooltip', () => {
       return 1;
     }) as typeof window.requestAnimationFrame;
 
-    jest.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
-      this: HTMLElement,
-    ) {
-      if (this.id === WRAPPER_ID) {
+    jest
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        if (this.id === WRAPPER_ID) {
+          return {
+            width: 220,
+            height: 44,
+            top: 0,
+            left: 0,
+            bottom: 44,
+            right: 220,
+            x: 0,
+            y: 0,
+            toJSON() {},
+          } as DOMRect;
+        }
+
         return {
-          width: 220,
-          height: 44,
-          top: 0,
-          left: 0,
-          bottom: 44,
-          right: 220,
-          x: 0,
-          y: 0,
+          width: 40,
+          height: 30,
+          top: 100,
+          left: 50,
+          bottom: 130,
+          right: 90,
+          x: 50,
+          y: 100,
           toJSON() {},
         } as DOMRect;
-      }
-
-      return {
-        width: 40,
-        height: 30,
-        top: 100,
-        left: 50,
-        bottom: 130,
-        right: 90,
-        x: 50,
-        y: 100,
-        toJSON() {},
-      } as DOMRect;
-    });
+      });
   });
 
   afterAll(() => {
