@@ -44,7 +44,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       assert has_element?(view, "h2", "Select Curriculum")
       assert has_element?(view, "button[phx-click='source_selection']")
-      refute has_element?(view, "img[alt=\"course image\"]")
+      refute has_element?(view, "img.object-cover")
       refute has_element?(view, "form#update_view_type")
 
       assert view
@@ -175,7 +175,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       assert has_element?(view, "h2", "Select Curriculum")
       refute has_element?(view, "button[phx-click='source_selection']")
-      assert has_element?(view, "img[alt=\"course image\"]")
+      assert has_element?(view, "img.object-cover")
       assert has_element?(view, "form#update_view_type")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
       assert has_element?(view, "h5", "#{section.title}")
@@ -228,7 +228,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       assert has_element?(
                view,
-               ~s{img[alt="course image"][src="/images/course_default.png"]}
+               ~s{img.object-cover[src="/images/course_default.png"]}
              )
     end
 
@@ -265,7 +265,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> render_change(%{"view" => %{"type" => "list"}})
 
       assert has_element?(view, "button[phx-click='source_selection']")
-      refute has_element?(view, "img[alt=\"course image\"]")
+      refute has_element?(view, "img.object-cover")
     end
 
     test "applies sorting", %{conn: conn} do
@@ -1193,7 +1193,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       assert has_element?(view, "h2", "Select Curriculum")
       refute has_element?(view, "button[phx-click='source_selection']")
-      assert has_element?(view, "img[alt=\"course image\"]")
+      assert has_element?(view, "img.object-cover")
       assert has_element?(view, "form#update_view_type")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
       assert has_element?(view, "h5", "#{section.title}")
@@ -1207,7 +1207,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       assert has_element?(
                view,
-               ~s{img[alt="course image"][src="/images/course_default.png"]}
+               ~s{img.object-cover[src="/images/course_default.png"]}
              )
     end
 
@@ -1244,7 +1244,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> render_change(%{"view" => %{"type" => "list"}})
 
       assert has_element?(view, "button[phx-click='source_selection']")
-      refute has_element?(view, "img[alt=\"course image\"]")
+      refute has_element?(view, "img.object-cover")
     end
 
     test "applies sorting", %{conn: conn} do

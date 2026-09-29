@@ -79,15 +79,57 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
          view_type: view_type
        )}
     else
-      case assigns[:source] do
-        nil ->
-          {:ok, socket}
+      socket = maybe_apply_selection(socket, assigns[:source])
 
-        source ->
-          params = Map.put(socket.assigns.params, :selection, source)
+      incoming_url_state = %{
+        source_filter: initial_source_filter,
+        query: initial_query,
+        sort_by: initial_sort_by,
+        sort_order: initial_sort_order,
+        view_type: initial_view_type
+      }
 
-          {:ok, update_source_list(socket, params)}
-      end
+      {:ok, maybe_resync_from_url(socket, incoming_url_state)}
+    end
+  end
+
+  defp maybe_apply_selection(socket, nil), do: socket
+
+  defp maybe_apply_selection(socket, source) do
+    update_source_list(socket, Map.put(socket.assigns.params, :selection, source))
+  end
+
+  # The component only re-seeds its filter/query/sort/view from the parent's `initial_*`
+  # assigns on first mount; without this, browser back/forward navigation (which updates
+  # `initial_*` via the parent's `handle_params/3` without remounting this still-mounted
+  # component) would leave the UI silently showing stale state instead of following the URL.
+  # A round trip through this component's own `push_patch/2` calls leaves `initial_*` equal
+  # to the currently active params, so this is a no-op in that case.
+  defp maybe_resync_from_url(socket, %{
+         source_filter: source_filter,
+         query: query,
+         sort_by: sort_by,
+         sort_order: sort_order,
+         view_type: view_type
+       }) do
+    params = socket.assigns.params
+
+    if params.source_filter != source_filter or params.applied_query != query or
+         params.sort_by != sort_by or params.sort_order != sort_order or
+         socket.assigns.view_type != view_type do
+      socket
+      |> assign(view_type: view_type)
+      |> update_source_list(%{
+        params
+        | source_filter: source_filter,
+          query: query,
+          applied_query: query,
+          sort_by: sort_by,
+          sort_order: sort_order,
+          offset: 0
+      })
+    else
+      socket
     end
   end
 

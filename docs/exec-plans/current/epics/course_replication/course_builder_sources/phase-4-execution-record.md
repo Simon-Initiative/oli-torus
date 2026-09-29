@@ -11,7 +11,7 @@ Phase: `4 — New-feature banner and filter tooltips`
 - [x] Core behavior changes:
   - New private `new_feature_banner/1` function component in `select_source.ex`, rendered between `FilterBox.render` and the `#select_source_results` wrapper. Static copy (agreed 2026-09-17 via the `ui_workflow` design brief, `get_design_context` on node `44:1146`), token-driven styling (`bg-Table-table-select`, `text-Text-text-high`).
   - `source_filter_tab/1` gained an optional `attr :tooltip, :string, default: nil`; the Templates and My Course Sections tab invocations in `source_filter_tabs/1` pass the agreed tooltip copy, "All Sources" does not.
-  - `phx-hook`, `data-tooltip`, and `data-tooltip-style` are all conditionally rendered (`if @tooltip, do: ...`) so the "All Sources" button carries none of them — reuses the existing `GlobalTooltip` hook (`assets/src/hooks/global_tooltip.ts`) unmodified, same pattern already used at `sortable_table.ex`/`settings_table_model.ex`.
+  - `phx-hook`, `data-tooltip`, and `data-tooltip-style` are all conditionally rendered (`if @tooltip, do: ...`) so the "All Sources" button carries none of them — reuses the existing `GlobalTooltip` hook (`assets/src/hooks/global_tooltip.ts`), same pattern already used at `sortable_table.ex`/`settings_table_model.ex`. The hook itself gained a new `data-tooltip-position="bottom"` branch (wired onto the Templates/My Course Sections tabs so the tooltip renders below the tab instead of the default above-trigger placement) — its focus/blur/Escape/click-away wiring is unchanged.
 - [x] Data or interface changes — none; no new assigns, no new params, no server-side state.
 - [x] Access-control or safety checks — n/a (presentation-only, no new routes/mounts/event handlers; existing `filter_source` handler untouched).
 - [x] Observability or operational updates — none needed for this phase.
@@ -24,7 +24,8 @@ Phase: `4 — New-feature banner and filter tooltips`
 - [x] Tests added (`select_source_test.exs`, `describe "new-feature banner and filter tooltips"`):
   - AC-009: the banner renders with all four sentences of the agreed copy, inside `#new-course-banner`, and precedes `#select_source_results` in DOM order.
   - AC-010: the Templates and My Course Sections tab buttons each carry `phx-hook="GlobalTooltip"` with their respective agreed tooltip copy in `data-tooltip`; "All Sources" carries neither.
-  - AC-011 (keyboard reachability): not independently re-tested here — the `GlobalTooltip` hook's `focus`/`blur`/`Escape` wiring is pre-existing, shared, unmodified code, and this phase's tests confirm the hook is actually attached to the right elements, which is the only new surface. Manual keyboard tab-through was verified during the UI review pass (see Review Loop).
+  - AC-011 (keyboard reachability): not independently re-tested here — the `GlobalTooltip` hook's `focus`/`blur`/`Escape` wiring is pre-existing, shared code untouched by this phase, and this phase's tests confirm the hook is actually attached to the right elements, which is the only new surface at the call sites. Manual keyboard tab-through was verified during the UI review pass (see Review Loop).
+  - `assets/test/hooks/global_tooltip_test.ts` (added during review follow-up): covers the hook's new `data-tooltip-position="bottom"` branch directly — asserts the computed `top` offset and the caret/tooltip DOM ordering for both the bottom and default (top) positions.
 - [x] Required verification commands run:
   - `mix compile --warnings-as-errors` — clean.
   - `mix test test/oli_web/live/new_course/ test/oli_web/live/products/ test/oli_web/live/delivery/student_onboarding/ test/oli_web/live/common/ test/oli_web/live/dev/ test/oli_web/components/design_tokens/` — 137 tests, 0 failures.

@@ -20,22 +20,26 @@ defmodule OliWeb.Common.CoverImageUpload do
   `"sections/\#{target.slug}/<uuid>.<ext>"` in `bucket_name`, then persists the
   resulting URL on `target`'s `cover_image` field.
 
-  Returns `{:ok, updated_section}`, `{:error, %Ecto.Changeset{}}` on a validation
-  failure, or `{:error, term()}` on an S3 upload failure (the caller is expected to
-  log this case, since the failure reason shape comes from the S3 client).
+  Returns `{:ok, updated_section}`, `{:error, :no_upload}` when no entry was staged,
+  `{:error, %Ecto.Changeset{}}` on a validation failure, or `{:error, term()}` on an
+  S3 upload failure (the caller is expected to log this case, since the failure
+  reason shape comes from the S3 client).
   """
   @spec upload(Phoenix.LiveView.Socket.t(), String.t(), Section.t()) ::
-          {:ok, Section.t()} | {:error, Ecto.Changeset.t() | term()}
+          {:ok, Section.t()} | {:error, :no_upload | Ecto.Changeset.t() | term()}
   def upload(socket, bucket_name, %Section{} = target) do
-    [upload_result] =
-      consume_uploaded_entries(socket, :cover_image, fn meta, entry ->
-        upload_path = "sections/#{target.slug}/#{entry.uuid}.#{ext(entry)}"
+    case consume_uploaded_entries(socket, :cover_image, fn meta, entry ->
+           upload_path = "sections/#{target.slug}/#{entry.uuid}.#{ext(entry)}"
 
-        {:ok, S3Storage.upload_file(bucket_name, upload_path, meta.path)}
-      end)
+           {:ok, S3Storage.upload_file(bucket_name, upload_path, meta.path)}
+         end) do
+      [] ->
+        {:error, :no_upload}
 
-    with {:ok, uploaded_path} <- upload_result do
-      Sections.update_section(target, %{cover_image: uploaded_path})
+      [upload_result] ->
+        with {:ok, uploaded_path} <- upload_result do
+          Sections.update_section(target, %{cover_image: uploaded_path})
+        end
     end
   end
 
