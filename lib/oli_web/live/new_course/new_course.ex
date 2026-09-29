@@ -516,12 +516,12 @@ defmodule OliWeb.Delivery.NewCourse do
   # value is unexpected client input — same rationale as `set_copy_scope/3` above.
   def handle_event("toggle_copy_group", _params, socket), do: {:noreply, socket}
 
-  # Per product decision (Laura Delince, PO, 2026-09-29 — see informal.md): confirming the
-  # modal ends the workflow immediately for a My Course Section copy rather than continuing
-  # into wizard steps 1/2. The new section is created straight from the source section's own
-  # destination-field values (title gets a "(copy)" suffix; everything else — course section
-  # number, modality, days, dates, scheduling time, timezone — carries over verbatim), so the
-  # instructor never has to re-enter details the copy is meant to already have.
+  # Confirming the modal ends the workflow immediately for a My Course Section copy rather
+  # than continuing into wizard steps 1/2. The new section is created straight from the
+  # source section's own destination-field values (title gets a "(copy)" suffix; modality,
+  # days, dates, and scheduling time/timezone carry over verbatim — see
+  # `attrs_from_source_section/1` for the exact field list), so the instructor never has to
+  # re-enter details the copy is meant to already have.
   def handle_event("confirm_copy_modal", _params, socket) do
     copy_options =
       case socket.assigns.copy_scope do
@@ -680,9 +680,8 @@ defmodule OliWeb.Delivery.NewCourse do
     DateTime.compare(start_date, end_date) == :lt
   end
 
-  # Per product decision (Laura Delince, PO, 2026-09-29 — see informal.md): only Content
-  # is preselected when "Choose what to copy" is chosen; everything else starts unchecked.
-  # "Copy entire course" always selects every group regardless of this.
+  # Only Content is preselected when "Choose what to copy" is chosen; everything else
+  # starts unchecked. "Copy entire course" always selects every group regardless of this.
   defp default_copy_options do
     Map.new(CopyOptions.groups(), &{&1, &1 == :content})
   end

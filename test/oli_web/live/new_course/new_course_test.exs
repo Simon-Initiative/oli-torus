@@ -94,22 +94,13 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
     test "selecting a My Course Section opens the modal instead of advancing to the next step",
          %{conn: conn} do
-      %Publication{project: project} = insert(:publication)
-
-      course =
-        insert(:section,
-          type: :enrollable,
-          base_project: project,
-          title: "Chemistry 101 -- Fall 2025"
-        )
+      course = my_course_section(title: "Chemistry 101 -- Fall 2025")
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       refute has_element?(view, "#copy-choice-modal")
 
-      view
-      |> element("button[phx-value-id='section:#{course.id}']")
-      |> render_click()
+      select_my_course_section(view, course)
 
       assert has_element?(view, "#copy-choice-modal")
       assert has_element?(view, "h1", "Choose what to copy")
@@ -140,14 +131,11 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
     test "Cancel closes the modal without advancing, without leaving the card looking selected, and without breaking re-selection",
          %{conn: conn} do
-      %Publication{project: project} = insert(:publication)
-      course = insert(:section, type: :enrollable, base_project: project, title: "Chem Copy")
+      course = my_course_section()
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
-      view
-      |> element("button[phx-value-id='section:#{course.id}']")
-      |> render_click()
+      select_my_course_section(view, course)
 
       assert has_element?(view, "#copy-choice-modal")
 
@@ -163,23 +151,18 @@ defmodule OliWeb.NewCourse.NewCourseTest do
                "button[phx-value-id='section:#{course.id}'] div.bg-delivery-primary-100"
              )
 
-      view
-      |> element("button[phx-value-id='section:#{course.id}']")
-      |> render_click()
+      select_my_course_section(view, course)
 
       assert has_element?(view, "#copy-choice-modal")
     end
 
     test "dismissing via the close (X) button behaves the same as Cancel and does not break re-selection",
          %{conn: conn} do
-      %Publication{project: project} = insert(:publication)
-      course = insert(:section, type: :enrollable, base_project: project, title: "Chem Copy")
+      course = my_course_section()
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
-      view
-      |> element("button[phx-value-id='section:#{course.id}']")
-      |> render_click()
+      select_my_course_section(view, course)
 
       view
       |> element("#copy-choice-modal button[aria-label='close']")
@@ -192,9 +175,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
                "button[phx-value-id='section:#{course.id}'] div.bg-delivery-primary-100"
              )
 
-      view
-      |> element("button[phx-value-id='section:#{course.id}']")
-      |> render_click()
+      select_my_course_section(view, course)
 
       assert has_element?(view, "#copy-choice-modal")
     end
@@ -222,9 +203,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
-      view
-      |> element("button[phx-value-id='section:#{course.id}']")
-      |> render_click()
+      select_my_course_section(view, course)
 
       assert has_element?(view, "input[value='entire_course'][checked]")
 
@@ -254,14 +233,11 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
     test "switching to 'Choose what to copy' defaults to only Content checked, and switching back mutes all checkboxes",
          %{conn: conn} do
-      %Publication{project: project} = insert(:publication)
-      course = insert(:section, type: :enrollable, base_project: project, title: "Chem Copy")
+      course = my_course_section()
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
-      view
-      |> element("button[phx-value-id='section:#{course.id}']")
-      |> render_click()
+      select_my_course_section(view, course)
 
       view
       |> element("input[value='choose_what_to_copy']")
@@ -323,13 +299,26 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
-      view
-      |> element("button[phx-value-id='section:#{course.id}']")
-      |> render_click()
+      select_my_course_section(view, course)
 
       assert_received {:telemetry_event,
                        [:oli, :course_builder, :my_course_sections_card_activated], %{count: 1},
                        %{}}
     end
+  end
+
+  defp my_course_section(attrs \\ %{}) do
+    %Publication{project: project} = insert(:publication)
+
+    insert(
+      :section,
+      Map.merge(%{type: :enrollable, base_project: project, title: "Chem Copy"}, Map.new(attrs))
+    )
+  end
+
+  defp select_my_course_section(view, course) do
+    view
+    |> element("button[phx-value-id='section:#{course.id}']")
+    |> render_click()
   end
 end

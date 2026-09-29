@@ -130,7 +130,11 @@ defmodule OliWeb.Delivery.NewCourse.CopyChoiceModal do
   end
 
   attr :label, :string, required: true
-  attr :group, :string, required: true
+
+  attr :group, :string,
+    required: true,
+    values: ["content", "schedule", "assessment_settings", "course_features"]
+
   attr :checked, :boolean, required: true
   attr :locked, :boolean, required: true
   attr :muted, :boolean, required: true
@@ -157,14 +161,7 @@ defmodule OliWeb.Delivery.NewCourse.CopyChoiceModal do
         class={[
           "relative flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border transition",
           "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2",
-          if(@muted,
-            do: "border-Text-text-low-alpha bg-transparent",
-            else:
-              if(@checked,
-                do: "border-Fill-Buttons-fill-primary bg-Fill-Buttons-fill-primary",
-                else: "border-Border-border-active bg-transparent"
-              )
-          )
+          checkbox_indicator_class(@muted, @checked)
         ]}
       >
         <Icons.checkmark :if={@checked and not @muted} class="h-2.5 w-2.5 text-Text-text-white" />
@@ -178,4 +175,13 @@ defmodule OliWeb.Delivery.NewCourse.CopyChoiceModal do
     </label>
     """
   end
+
+  defp checkbox_indicator_class(true = _muted, _checked),
+    do: "border-Text-text-low-alpha bg-transparent"
+
+  defp checkbox_indicator_class(false = _muted, true = _checked),
+    do: "border-Fill-Buttons-fill-primary bg-Fill-Buttons-fill-primary"
+
+  defp checkbox_indicator_class(false = _muted, false = _checked),
+    do: "border-Border-border-active bg-transparent"
 end
