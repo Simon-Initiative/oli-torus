@@ -904,7 +904,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         document = Floki.parse_document!(html)
         assert length(Floki.find(document, "#secure-assessment-content")) == 1
         assert length(Floki.find(document, "form[action='/secure-assessment/exit']")) == 1
-        assert Floki.find(document, "#sticky_panel, [role='prev_page'], [role='next_page']") == []
+
+        assert Floki.find(
+                 document,
+                 "#bottom-bar-wrapper, #bottom_page_navigator, #sticky_panel, [role='prev_page'], [role='next_page']"
+               ) == []
 
         if unquote(page_key) == :graded_adaptive_page_revision do
           props =

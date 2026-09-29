@@ -112,14 +112,16 @@ defmodule Oli.Delivery.SecureAssessments do
       from sr in SectionResource,
         join: s in Section,
         on: s.id == sr.section_id,
-        join: r in Revision,
-        on: r.resource_id == sr.resource_id,
-        where: s.slug == ^section_slug and r.slug == ^revision_slug,
+        where: s.slug == ^section_slug,
+        where:
+          sr.resource_id in subquery(
+            from r in Revision, where: r.slug == ^revision_slug, select: r.resource_id
+          ),
         select: %Target{
           section_id: s.id,
           resource_id: sr.resource_id,
           secure_delivery: sr.secure_delivery,
-          revision_id: r.id
+          revision_id: sr.revision_id
         }
 
     case Repo.one(query) do

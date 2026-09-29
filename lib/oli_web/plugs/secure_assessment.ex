@@ -368,26 +368,36 @@ defmodule OliWeb.Plugs.SecureAssessment do
             "Use your approved secure assessment launch to access this assessment. Other ordinary browser sessions are not restricted."
           )
 
-        body = Phoenix.HTML.safe_to_string(Phoenix.HTML.html_escape(message))
-        title = Phoenix.HTML.safe_to_string(Phoenix.HTML.html_escape(title))
+        scoped? = match?(%{scope: %{}}, conn.assigns[:user_session])
 
-        exit =
-          case conn.assigns[:user_session] do
-            %{scope: %{}} ->
-              csrf =
-                Phoenix.HTML.safe_to_string(
-                  Phoenix.HTML.html_escape(Plug.CSRFProtection.get_csrf_token())
-                )
+        section =
+          case {scoped?, reason, conn.params["section_slug"]} do
+            {false, :secure_launch_required, slug} when is_binary(slug) ->
+              case Repo.get_by(Section, slug: slug) do
+                nil ->
+                  nil
 
-              "<form action=\"/secure-assessment/exit\" method=\"post\" target=\"_top\"><input type=\"hidden\" name=\"_csrf_token\" value=\"#{csrf}\"><button type=\"submit\">Exit assessment</button></form>"
+                section ->
+                  Repo.preload(section, [
+                    :brand,
+                    lti_1p3_deployment: [institution: [:default_brand]]
+                  ])
+              end
 
             _ ->
-              ""
+              nil
           end
 
         conn
-        |> Phoenix.Controller.html(
-          "<!doctype html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>#{title}</title></head><body><main><h1>#{title}</h1><p>#{body}</p>#{exit}</main></body></html>"
+        |> Phoenix.Controller.put_root_layout(html: {OliWeb.LayoutView, :secure_restricted})
+        |> Phoenix.Controller.put_layout(html: false)
+        |> Phoenix.Controller.put_view(html: OliWeb.SecureAssessmentHTML)
+        |> Phoenix.Controller.render(:restricted,
+          title: title,
+          page_title: title,
+          message: message,
+          scoped?: scoped?,
+          section: section
         )
         |> halt()
     end

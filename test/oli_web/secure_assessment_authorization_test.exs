@@ -15,6 +15,8 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
       insert(:section_resource,
         section: section,
         resource_id: revision.resource_id,
+        revision_id: revision.id,
+        revision_slug: revision.slug,
         secure_delivery: true
       )
 
@@ -252,8 +254,32 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
       |> init_test_session(%{user_token: c.normal_token})
       |> get("/sections/#{c.section.slug}/page/#{c.revision.slug}")
 
-    assert html_response(conn, 403) =~ "Assessment access restricted"
+    body = html_response(conn, 403)
+    assert body =~ "Assessment access restricted"
+    assert body =~ "/css/app.css"
+    assert body =~ "id=\"header\""
+    assert body =~ c.section.title
+    refute body =~ "/js/app.js"
+    refute body =~ "data-phx-main"
     assert get_resp_header(conn, "cache-control") == ["no-store"]
+  end
+
+  test "a secure lesson with multiple revisions sharing its slug is denied outside a secure session",
+       c do
+    insert(:revision, resource: c.revision.resource, slug: c.revision.slug)
+    insert(:revision, resource: c.revision.resource, slug: c.revision.slug)
+
+    assert {:ok, %{revision_id: revision_id}} =
+             Policy.resolve_page(c.section.slug, c.revision.slug)
+
+    assert revision_id == c.revision.id
+
+    conn =
+      c.conn
+      |> init_test_session(%{user_token: c.normal_token})
+      |> get("/sections/#{c.section.slug}/lesson/#{c.revision.slug}")
+
+    assert html_response(conn, 403) =~ "Assessment access restricted"
   end
 
   test "a forged review GUID cannot turn delivery or prologue into review", c do
