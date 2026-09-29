@@ -11,9 +11,24 @@ update this file accordingly.
 
 ### Environment Configs
 
-| Name                       | Required | Description                                              |
-| -------------------------- | -------- | -------------------------------------------------------- |
-| OBAN_QUEUE_SIZE_SNAPSHOTS  | No       | Snapshot queue concurrency per node (Default: 4)         |
+| Name                              | Required | Description                                                                     |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------- |
+| MOODLE_BASE_URL                    | No       | Moodle base URL for Moodle LTI Playwright automation                            |
+| MOODLE_INSTRUCTOR_EMAIL            | No       | Moodle instructor username required by Moodle LTI Playwright automation         |
+| MOODLE_INSTRUCTOR_PASSWORD         | No       | Moodle instructor password required by Moodle LTI Playwright automation         |
+| MOODLE_STUDENT_EMAIL               | No       | Moodle student username required by the Moodle grade passback Playwright test   |
+| MOODLE_STUDENT_PASSWORD            | No       | Moodle student password required by the Moodle grade passback Playwright test   |
+| MOODLE_API_TOKEN                   | No       | Moodle web service token used to create/delete/import the fixture course via API |
+| MOODLE_LTI_TOOL_NAME                | No       | Pre-registered Moodle course tool display name to select (default "Tokamak")     |
+| OBAN_QUEUE_SIZE_SNAPSHOTS          | No       | Snapshot queue concurrency per node (Default: 4)                                |
+
+- `MOODLE_*` environment variables configure the Moodle-to-Torus LTI launch and grade passback
+  Playwright automation. They are not required by the Torus application runtime. See
+  `assets/automation/tests/torus/lti_moodle/moodle_playwright.md` for the full setup.
+
+- Moodle LTI course-provisioning Playwright settings are local/test-runner configuration only
+  and are not required for the Torus application runtime. Do not commit real Moodle credentials
+  or API tokens.
 
 - `OBAN_QUEUE_SIZE_SNAPSHOTS` controls the maximum number of snapshot jobs that each production or
   preview application node executes concurrently. Keep it lower than the database connection
