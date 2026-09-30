@@ -136,6 +136,7 @@ test.describe('Instructor Dashboard @nightly @smoke', () => {
     const details = new CourseManagePO(page);
     const students = new InstructorStudentsPO(page);
     const studentContext = await browser.newContext({
+      baseURL: baseUrl,
       ignoreHTTPSErrors: true,
       viewport: { width: 1920, height: 1080 },
     });
