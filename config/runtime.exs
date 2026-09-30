@@ -18,6 +18,8 @@ get_env_as_boolean = fn key, default ->
   end
 end
 
+config :oli, :supports_secure_delivery, get_env_as_boolean.("SUPPORTS_SECURE_DELIVERY", "false")
+
 get_env_as_integer = fn key, default ->
   System.get_env(key, default)
   |> String.to_integer()

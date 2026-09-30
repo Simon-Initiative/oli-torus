@@ -1,0 +1,28 @@
+- use:
+    file: "../assessment_settings/setup.yaml"
+- enroll:
+    user: "instructor_1"
+    section: "assessment_settings_section"
+    role: "instructor"
+- hook:
+    function: "Oli.Scenarios.SecureDeliverySettingsTest.enable_and_copy/1"
+- manipulate:
+    to: "assessment_settings_source"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            title: "Updated Quiz"
+- publish:
+    to: "assessment_settings_source"
+- update:
+    from: "assessment_settings_source"
+    to: "assessment_settings_section"
+- assert:
+    structure:
+      to: "assessment_settings_section"
+      root:
+        children:
+          - page: "Updated Quiz"
+- hook:
+    function: "Oli.Scenarios.SecureDeliverySettingsTest.verify_preservation/1"

@@ -88,6 +88,7 @@ defmodule Oli.Delivery.Sections.SectionResourceCopy do
     review_submission: :allow,
     feedback_mode: :allow,
     allow_hints: false,
+    secure_delivery: false,
     explanation_strategy: nil
   }
 
