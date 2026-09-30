@@ -10,6 +10,7 @@ defmodule Oli.LearningModel.Parameters do
   alias Oli.LearningModel.V2.{ActivityParameters, LearningObjectiveParameters, PartParameters}
 
   @enforce_keys [:schema_version, :model, :model_version, :parameter_type, :payload]
+  @derive Jason.Encoder
   defstruct [:schema_version, :model, :model_version, :parameter_type, :payload]
 
   @type parameter_type :: :learning_objective | :activity
