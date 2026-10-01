@@ -99,23 +99,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   @decorate transaction_event("Ungraded.start")
   def start(
         %VisitContext{
-          page_revision: page_revision,
-          section_slug: section_slug,
-          user: user
+          page_revision: page_revision
         } = context
       ) do
-    resource_access =
-      get_resource_access(page_revision.resource_id, section_slug, user.id)
-
-    case resource_access do
-      nil ->
-        {:error, :not_found}
-
-      _resource_access ->
-        {:ok, resource_attempt} = Hierarchy.create(context)
-
+    case Hierarchy.create(context) do
+      {:ok, resource_attempt} ->
         AttemptState.fetch_attempt_state(resource_attempt, context.page_revision)
         |> update_progress(page_revision, resource_attempt)
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

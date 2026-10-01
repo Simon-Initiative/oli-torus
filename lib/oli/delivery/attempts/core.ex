@@ -706,95 +706,110 @@ defmodule Oli.Delivery.Attempts.Core do
     scoring_strategy_id = resolve_scoring_strategy_id(attempt_guid, scoring_strategy_id)
 
     case Repo.transaction(fn ->
-           case Repo.one(
-                  from(ra in ResourceAttempt,
-                    join: access in ResourceAccess,
-                    on: access.id == ra.resource_access_id,
-                    join: revision in Revision,
-                    on: revision.id == ra.revision_id,
-                    join: section in Section,
-                    on: section.id == access.section_id,
-                    where: ra.attempt_guid == ^attempt_guid,
-                    select: {ra, access, revision, section},
-                    lock: "FOR UPDATE"
-                  )
-                ) do
+           resource_access_id =
+             Repo.one(
+               from(ra in ResourceAttempt,
+                 where: ra.attempt_guid == ^attempt_guid,
+                 select: ra.resource_access_id
+               )
+             )
+
+           case lock_resource_access(resource_access_id) do
              nil ->
                Repo.rollback(:not_found)
 
-             {resource_attempt, resource_access, revision, section} ->
-               latest_attempt =
-                 Repo.one(
-                   from(ra in ResourceAttempt,
-                     where: ra.resource_access_id == ^resource_access.id,
-                     order_by: [desc: ra.attempt_number, desc: ra.id],
-                     limit: 1
-                   )
-                 )
+             _locked_access ->
+               case Repo.one(
+                      from(ra in ResourceAttempt,
+                        join: access in ResourceAccess,
+                        on: access.id == ra.resource_access_id,
+                        join: revision in Revision,
+                        on: revision.id == ra.revision_id,
+                        join: section in Section,
+                        on: section.id == access.section_id,
+                        where:
+                          ra.attempt_guid == ^attempt_guid and
+                            ra.resource_access_id == ^resource_access_id,
+                        select: {ra, access, revision, section}
+                      )
+                    ) do
+                 nil ->
+                   Repo.rollback(:not_found)
 
-               case latest_attempt.id == resource_attempt.id do
-                 false ->
-                   Repo.rollback(:not_latest)
-
-                 true ->
-                   attempt_count =
-                     Repo.aggregate(
+                 {resource_attempt, resource_access, revision, section} ->
+                   latest_attempt =
+                     Repo.one(
                        from(ra in ResourceAttempt,
-                         where: ra.resource_access_id == ^resource_access.id
-                       ),
-                       :count,
-                       :id
+                         where: ra.resource_access_id == ^resource_access.id,
+                         order_by: [desc: ra.attempt_number, desc: ra.id],
+                         limit: 1
+                       )
                      )
 
-                   Repo.delete_all(
-                     from(log in CustomActivityLog,
-                       where:
-                         log.activity_attempt_id in subquery(
-                           from(aa in ActivityAttempt,
-                             where: aa.resource_attempt_id == ^resource_attempt.id,
-                             select: aa.id
-                           )
-                         )
-                     )
-                   )
+                   case latest_attempt.id == resource_attempt.id do
+                     false ->
+                       Repo.rollback(:not_latest)
 
-                   Repo.delete_all(
-                     from(reward in AcceptedReward,
-                       where: reward.resource_attempt_id == ^resource_attempt.id
-                     )
-                   )
-
-                   resource_attempt = %{
-                     resource_attempt
-                     | resource_access: resource_access,
-                       revision: revision
-                   }
-
-                   case Repo.delete(resource_attempt) do
-                     {:ok, _} ->
-                       resource_access =
-                         update_resource_access_after_delete(
-                           resource_access,
-                           attempt_count,
-                           scoring_strategy_id
+                     true ->
+                       attempt_count =
+                         Repo.aggregate(
+                           from(ra in ResourceAttempt,
+                             where: ra.resource_access_id == ^resource_access.id
+                           ),
+                           :count,
+                           :id
                          )
 
-                       {resource_access,
-                        %{
-                          section: section,
-                          details: %{
-                            "attempt_guid" => resource_attempt.attempt_guid,
-                            "attempt_number" => resource_attempt.attempt_number,
-                            "resource_access_id" => resource_access.id,
-                            "resource_id" => resource_access.resource_id,
-                            "user_id" => resource_access.user_id,
-                            "section_id" => resource_access.section_id,
-                            "grade_sync_triggered" => false
-                          }
-                        }}
+                       Repo.delete_all(
+                         from(log in CustomActivityLog,
+                           where:
+                             log.activity_attempt_id in subquery(
+                               from(aa in ActivityAttempt,
+                                 where: aa.resource_attempt_id == ^resource_attempt.id,
+                                 select: aa.id
+                               )
+                             )
+                         )
+                       )
 
-                     {:error, changeset} ->
-                       Repo.rollback(changeset)
+                       Repo.delete_all(
+                         from(reward in AcceptedReward,
+                           where: reward.resource_attempt_id == ^resource_attempt.id
+                         )
+                       )
+
+                       resource_attempt = %{
+                         resource_attempt
+                         | resource_access: resource_access,
+                           revision: revision
+                       }
+
+                       case Repo.delete(resource_attempt) do
+                         {:ok, _} ->
+                           resource_access =
+                             update_resource_access_after_delete(
+                               resource_access,
+                               attempt_count,
+                               scoring_strategy_id
+                             )
+
+                           {resource_access,
+                            %{
+                              section: section,
+                              details: %{
+                                "attempt_guid" => resource_attempt.attempt_guid,
+                                "attempt_number" => resource_attempt.attempt_number,
+                                "resource_access_id" => resource_access.id,
+                                "resource_id" => resource_access.resource_id,
+                                "user_id" => resource_access.user_id,
+                                "section_id" => resource_access.section_id,
+                                "grade_sync_triggered" => false
+                              }
+                            }}
+
+                         {:error, changeset} ->
+                           Repo.rollback(changeset)
+                       end
                    end
                end
            end
@@ -867,9 +882,14 @@ defmodule Oli.Delivery.Attempts.Core do
         on: revision.id == ra.revision_id,
         where:
           ra.resource_access_id == ^resource_access.id and
-            ra.lifecycle_state == :evaluated and revision.graded == true
+            ra.lifecycle_state == :evaluated and revision.graded == true,
+        order_by: [desc: ra.attempt_number, desc: ra.id]
       )
-      |> select([ra, _revision], %{score: ra.score, out_of: ra.out_of})
+      |> select([ra, _revision], %{
+        score: ra.score,
+        out_of: ra.out_of,
+        date_evaluated: ra.date_evaluated
+      })
       |> lock("FOR UPDATE")
       |> Repo.all()
 
