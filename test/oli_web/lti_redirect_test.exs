@@ -267,6 +267,33 @@ defmodule OliWeb.LtiRedirectTest do
       end
     end
 
+    for {role, suffix} <- [{"Learner", ""}, {"Instructor", "/manage"}] do
+      @role role
+      @suffix suffix
+      test "a mistyped page slug falls back to the ordinary #{@role} launch", %{conn: conn} do
+        user = insert(:user, independent_learner: false)
+        section = insert(:section)
+
+        claims =
+          lti_params(section, @role, %{
+            "torus_resource_type" => "page",
+            "torus_resource_id" => "mistyped-page-slug"
+          })
+
+        assert %{resource: nil} = LtiRedirect.resolve_target(claims, section)
+
+        response =
+          conn
+          |> assign(:current_user, user)
+          |> LtiRedirect.redirect_from_lti_params(claims)
+
+        assert redirected_to(response) == "/sections/#{section.slug}#{@suffix}"
+
+        assert LtiRedirect.launch_destination(claims) ==
+                 LtiRedirect.launch_destination(lti_params(section, @role, %{}))
+      end
+    end
+
     test "falls back to the normal destination when the page is not in the launched section", %{
       conn: conn
     } do

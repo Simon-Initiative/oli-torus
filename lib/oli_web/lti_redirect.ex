@@ -173,6 +173,9 @@ defmodule OliWeb.LtiRedirect do
 
   defp resolve_resource(_, _), do: nil
 
+  # An unknown or mistyped LMS slug is an ordinary section launch.
+  defp direct_page_path(%{resource: nil}), do: :fallback
+
   defp direct_page_path(%{section: section, resource: %Revision{} = revision}) do
     case revision.resource_type_id == ResourceType.id_for_page() do
       true -> {:ok, ~p"/sections/#{section.slug}/page/#{revision.slug}"}
