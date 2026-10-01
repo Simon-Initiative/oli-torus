@@ -10,6 +10,8 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Common.Utils
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Common.Chip
+  alias Oli.Delivery.Metrics
+  alias OliWeb.Components.Delivery.ThresholdValue
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Phoenix.LiveView.JS
 
@@ -206,14 +208,23 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   end
 
   def render_progress_column(assigns, user, _) do
-    assigns = Map.merge(assigns, %{progress: parse_progress(user.progress)})
+    assigns =
+      Map.merge(assigns, %{
+        progress: parse_progress(user.progress),
+        low_progress: is_nil(user.progress) or Metrics.progress_range(user.progress) == "Low"
+      })
 
     ~H"""
     <span
-      class={"text-Text-text-high text-base font-bold leading-normal #{if @progress < 50, do: " text-Text-text-danger"}"}
-      data-progress-check={if @progress >= 50, do: "true", else: "false"}
+      class={"text-Text-text-high text-base font-bold leading-normal #{if @low_progress, do: " text-Text-text-danger"}"}
+      data-progress-check={if @low_progress, do: "false", else: "true"}
     >
-      {@progress}%
+      <ThresholdValue.render
+        at_risk={@low_progress}
+        warning_label="Low student progress"
+      >
+        {@progress}%
+      </ThresholdValue.render>
     </span>
     """
   end

@@ -1251,9 +1251,11 @@ defmodule Oli.Delivery.Metrics do
     end
   end
 
+  @doc "Classifies normalized progress using exclusive 50% and 80% upper boundaries."
+  @spec progress_range(number() | nil) :: String.t()
   def progress_range(nil), do: "Not enough data"
-  def progress_range(progress) when progress <= 0.5, do: "Low"
-  def progress_range(progress) when progress <= 0.8, do: "Medium"
+  def progress_range(progress) when progress < 0.5, do: "Low"
+  def progress_range(progress) when progress < 0.8, do: "Medium"
   def progress_range(_progress), do: "High"
 
   @doc """
