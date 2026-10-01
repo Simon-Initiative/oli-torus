@@ -8,8 +8,14 @@ export const ModalLaunch = {
     // ($('#' + id) as any).modal({});
     // ($(this.el) as any).modal({});
 
+    this.triggerElement = document.activeElement as HTMLElement;
     this.modal = new (window as any).Modal(this.el, {});
     this.modal.show();
+
+    $(`#${id}`).on('shown.bs.modal', () => {
+      const autofocus = this.el.querySelector('[autofocus]') as HTMLElement | null;
+      autofocus?.focus();
+    });
 
     const scrollPosition = lockScroll();
 
@@ -23,6 +29,7 @@ export const ModalLaunch = {
     $(`#${id}`).on('hidden.bs.modal', () => {
       (this as any).pushEvent('phx_modal.unmount');
       unlockScroll(scrollPosition);
+      this.triggerElement?.focus();
     });
   },
   destroyed(): void {

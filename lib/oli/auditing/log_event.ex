@@ -23,7 +23,8 @@ defmodule Oli.Auditing.LogEvent do
     :feature_rollout_exemption_upserted,
     :feature_rollout_exemption_deleted,
     :account_internal_flag_changed,
-    :clickhouse_admin_operation_initiated
+    :clickhouse_admin_operation_initiated,
+    :resource_attempt_deleted
   ]
 
   schema "audit_log_events" do

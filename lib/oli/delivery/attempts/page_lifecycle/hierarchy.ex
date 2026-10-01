@@ -28,19 +28,52 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   Returns {:ok, %ResourceAttempt{}}
   """
   def create(%VisitContext{datashop_session_id: datashop_session_id} = context) do
-    {resource_access_id, next_attempt_number} =
-      case context.latest_resource_attempt do
-        nil ->
-          {get_resource_access(
-             context.page_revision.resource_id,
-             context.section_slug,
-             context.user.id
-           ).id, 1}
+    prepared = prepare_attempt_content(context)
 
-        attempt ->
-          {attempt.resource_access_id, attempt.attempt_number + 1}
-      end
+    resource_access =
+      get_resource_access(
+        context.page_revision.resource_id,
+        context.section_slug,
+        context.user.id
+      )
 
+    case resource_access do
+      nil ->
+        {:error, :not_found}
+
+      resource_access ->
+        case lock_resource_access(resource_access.id) do
+          nil ->
+            {:error, :not_found}
+
+          _locked_access ->
+            latest_resource_attempt =
+              get_latest_resource_attempt(
+                context.page_revision.resource_id,
+                context.section_slug,
+                context.user.id
+              )
+
+            context = %{context | latest_resource_attempt: latest_resource_attempt}
+
+            prepared =
+              if same_attempt?(prepared.latest_resource_attempt, latest_resource_attempt) do
+                prepared
+              else
+                prepare_attempt_content(context)
+              end
+
+            create_attempt_hierarchy(
+              context,
+              prepared,
+              resource_access.id,
+              datashop_session_id
+            )
+        end
+    end
+  end
+
+  defp prepare_attempt_content(context) do
     constraining_attempt_prototypes = construct_attempt_prototypes(context)
 
     audience_filtered_content =
@@ -74,11 +107,35 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
         Oli.Publishing.DeliveryResolver
       )
 
+    %{
+      latest_resource_attempt: context.latest_resource_attempt,
+      errors: errors,
+      prototypes: prototypes,
+      transformed_content: transformed_content,
+      unscored: unscored,
+      alternative_groups_by_id: alternative_groups_by_id,
+      experiment_decisions: experiment_decisions,
+      experiment_attributions: experiment_attributions
+    }
+  end
+
+  defp create_attempt_hierarchy(
+         context,
+         prepared,
+         resource_access_id,
+         datashop_session_id
+       ) do
+    next_attempt_number =
+      case context.latest_resource_attempt do
+        nil -> 1
+        attempt -> attempt.attempt_number + 1
+      end
+
     case create_resource_attempt(%{
-           content: transformed_content,
-           errors: errors,
+           content: prepared.transformed_content,
+           errors: prepared.errors,
            out_of:
-             Enum.reduce(prototypes, 0.0, fn p, acc ->
+             Enum.reduce(prepared.prototypes, 0.0, fn p, acc ->
                case p.out_of do
                  nil -> acc
                  _ -> p.out_of + acc
@@ -93,23 +150,27 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
         bulk_create_attempts(
           resource_attempt,
           context.latest_resource_attempt,
-          prototypes,
-          unscored,
+          prepared.prototypes,
+          prepared.unscored,
           datashop_session_id
         )
 
         {:ok,
          %{
            resource_attempt
-           | alternative_groups_by_id: alternative_groups_by_id,
-             experiment_decisions: experiment_decisions,
-             experiment_attributions: experiment_attributions
+           | alternative_groups_by_id: prepared.alternative_groups_by_id,
+             experiment_decisions: prepared.experiment_decisions,
+             experiment_attributions: prepared.experiment_attributions
          }}
 
       error ->
         error
     end
   end
+
+  defp same_attempt?(nil, nil), do: true
+  defp same_attempt?(%ResourceAttempt{id: id}, %ResourceAttempt{id: id}), do: true
+  defp same_attempt?(_, _), do: false
 
   defp construct_attempt_prototypes(%VisitContext{latest_resource_attempt: nil}), do: []
 

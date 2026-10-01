@@ -6,12 +6,18 @@ defmodule Oli.Delivery.Attempts.Core do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
+  alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.Auditing
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Attempts.Scoring
+  alias Oli.Delivery.Settings
+  alias Oli.Delivery.CustomLogs.CustomActivityLog
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Accounts.User
+  alias Oli.Experiments.Schemas.AcceptedReward
 
   alias Oli.Delivery.Attempts.Core.{
     PartAttempt,
@@ -678,6 +684,224 @@ defmodule Oli.Delivery.Attempts.Core do
         {access, attempt_representation}
     end
   end
+
+  @doc """
+  Deletes a resource attempt and all of its dependent activity and part attempts.
+
+  Only the most recent attempt for its resource access may be deleted. When the
+  deleted attempt is the only attempt for its resource access, the access score
+  and out-of values are cleared. No grade update or passback is triggered.
+  """
+  @spec delete_resource_attempt(String.t(), integer() | nil, any()) ::
+          {:ok, ResourceAccess.t()}
+          | {:error, :unauthorized | :not_found | :not_latest | Ecto.Changeset.t()}
+  def delete_resource_attempt(attempt_guid, scoring_strategy_id \\ nil, actor \\ nil) do
+    case Accounts.is_system_admin?(actor) do
+      true -> do_delete_resource_attempt(attempt_guid, scoring_strategy_id, actor)
+      false -> {:error, :unauthorized}
+    end
+  end
+
+  defp do_delete_resource_attempt(attempt_guid, scoring_strategy_id, actor) do
+    scoring_strategy_id = resolve_scoring_strategy_id(attempt_guid, scoring_strategy_id)
+
+    case Repo.transaction(fn ->
+           case Repo.one(
+                  from(ra in ResourceAttempt,
+                    join: access in ResourceAccess,
+                    on: access.id == ra.resource_access_id,
+                    join: revision in Revision,
+                    on: revision.id == ra.revision_id,
+                    join: section in Section,
+                    on: section.id == access.section_id,
+                    where: ra.attempt_guid == ^attempt_guid,
+                    select: {ra, access, revision, section},
+                    lock: "FOR UPDATE"
+                  )
+                ) do
+             nil ->
+               Repo.rollback(:not_found)
+
+             {resource_attempt, resource_access, revision, section} ->
+               latest_attempt =
+                 Repo.one(
+                   from(ra in ResourceAttempt,
+                     where: ra.resource_access_id == ^resource_access.id,
+                     order_by: [desc: ra.attempt_number, desc: ra.id],
+                     limit: 1
+                   )
+                 )
+
+               case latest_attempt.id == resource_attempt.id do
+                 false ->
+                   Repo.rollback(:not_latest)
+
+                 true ->
+                   attempt_count =
+                     Repo.aggregate(
+                       from(ra in ResourceAttempt,
+                         where: ra.resource_access_id == ^resource_access.id
+                       ),
+                       :count,
+                       :id
+                     )
+
+                   Repo.delete_all(
+                     from(log in CustomActivityLog,
+                       where:
+                         log.activity_attempt_id in subquery(
+                           from(aa in ActivityAttempt,
+                             where: aa.resource_attempt_id == ^resource_attempt.id,
+                             select: aa.id
+                           )
+                         )
+                     )
+                   )
+
+                   Repo.delete_all(
+                     from(reward in AcceptedReward,
+                       where: reward.resource_attempt_id == ^resource_attempt.id
+                     )
+                   )
+
+                   resource_attempt = %{
+                     resource_attempt
+                     | resource_access: resource_access,
+                       revision: revision
+                   }
+
+                   case Repo.delete(resource_attempt) do
+                     {:ok, _} ->
+                       resource_access =
+                         update_resource_access_after_delete(
+                           resource_access,
+                           attempt_count,
+                           scoring_strategy_id
+                         )
+
+                       {resource_access,
+                        %{
+                          section: section,
+                          details: %{
+                            "attempt_guid" => resource_attempt.attempt_guid,
+                            "attempt_number" => resource_attempt.attempt_number,
+                            "resource_access_id" => resource_access.id,
+                            "resource_id" => resource_access.resource_id,
+                            "user_id" => resource_access.user_id,
+                            "section_id" => resource_access.section_id,
+                            "grade_sync_triggered" => false
+                          }
+                        }}
+
+                     {:error, changeset} ->
+                       Repo.rollback(changeset)
+                   end
+               end
+           end
+         end) do
+      {:ok, {resource_access, %{section: section, details: details}}} ->
+        case Auditing.capture(actor, :resource_attempt_deleted, section, details) do
+          {:ok, _event} ->
+            :ok
+
+          {:error, changeset} ->
+            Logger.error(
+              "Failed to capture resource attempt deletion audit event: #{inspect(changeset)}"
+            )
+        end
+
+        {:ok, resource_access}
+
+      result ->
+        result
+    end
+  end
+
+  defp resolve_scoring_strategy_id(_attempt_guid, scoring_strategy_id)
+       when not is_nil(scoring_strategy_id),
+       do: scoring_strategy_id
+
+  defp resolve_scoring_strategy_id(attempt_guid, nil) do
+    case Repo.one(
+           from(ra in ResourceAttempt,
+             where: ra.attempt_guid == ^attempt_guid,
+             preload: [:revision, :resource_access]
+           )
+         ) do
+      nil ->
+        nil
+
+      resource_attempt ->
+        Settings.get_combined_settings(resource_attempt).scoring_strategy_id
+    end
+  end
+
+  @doc """
+  Locks a resource access row for the duration of the surrounding transaction.
+
+  Attempt creation, grading, and deletion use this lock to serialize changes to
+  the attempt history and its aggregate score.
+  """
+  def lock_resource_access(resource_access_id) do
+    Repo.one(
+      from(access in ResourceAccess,
+        where: access.id == ^resource_access_id,
+        lock: "FOR UPDATE"
+      )
+    )
+  end
+
+  defp update_resource_access_after_delete(resource_access, 1, _scoring_strategy_id) do
+    case resource_access
+         |> ResourceAccess.changeset(%{score: nil, out_of: nil})
+         |> Repo.update() do
+      {:ok, resource_access} -> resource_access
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp update_resource_access_after_delete(resource_access, _attempt_count, scoring_strategy_id) do
+    graded_attempts =
+      from(ra in ResourceAttempt,
+        join: revision in Revision,
+        on: revision.id == ra.revision_id,
+        where:
+          ra.resource_access_id == ^resource_access.id and
+            ra.lifecycle_state == :evaluated and revision.graded == true
+      )
+      |> select([ra, _revision], %{score: ra.score, out_of: ra.out_of})
+      |> lock("FOR UPDATE")
+      |> Repo.all()
+
+    case graded_attempts do
+      [] ->
+        update_resource_access_score(resource_access, %{score: nil, out_of: nil})
+
+      _ ->
+        Scoring.calculate_score(scoring_strategy_id, graded_attempts)
+        |> ensure_valid_grade()
+        |> then(fn {score, out_of} ->
+          update_resource_access_score(resource_access, %{score: score, out_of: out_of})
+        end)
+    end
+  end
+
+  defp update_resource_access_score(resource_access, attrs) do
+    case resource_access
+         |> ResourceAccess.changeset(attrs)
+         |> Repo.update() do
+      {:ok, resource_access} -> resource_access
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp ensure_valid_grade({score, out_of}) do
+    out_of = max(out_of, 1.0)
+    {max(score, 0.0) |> min(out_of), out_of}
+  end
+
+  defp ensure_valid_grade(%{score: score, out_of: out_of}),
+    do: ensure_valid_grade({score, out_of})
 
   @doc """
   Retrieves all graded resource attempts for a given resource access.
