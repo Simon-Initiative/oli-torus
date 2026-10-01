@@ -163,6 +163,67 @@ defmodule OliWeb.LtiRedirectTest do
       assert redirected_to(conn) == "/sections/#{section.slug}/page/#{page_revision.slug}"
     end
 
+    test "an old LMS slug resolves to the revision pinned to the launched section", %{conn: conn} do
+      user = insert(:user, independent_learner: false)
+      old = insert(:revision, resource_type_id: Oli.Resources.ResourceType.id_for_page())
+
+      current =
+        insert(:revision,
+          resource: old.resource,
+          resource_type_id: old.resource_type_id,
+          title: "Published replacement"
+        )
+
+      {:ok, [section: section, project: _project, author: _author]} =
+        section_with_pages(%{revisions: [current]})
+
+      unpublished =
+        insert(:revision,
+          resource: old.resource,
+          resource_type_id: old.resource_type_id,
+          title: "Unpublished replacement"
+        )
+
+      assert old.slug != current.slug
+      assert unpublished.slug != current.slug
+
+      for role <- ["Learner", "Instructor"] do
+        response =
+          conn
+          |> assign(:current_user, user)
+          |> LtiRedirect.redirect_from_lti_params(
+            lti_params(section, role, %{
+              "torus_resource_type" => "page",
+              "torus_resource_id" => old.slug
+            })
+          )
+
+        assert redirected_to(response) == "/sections/#{section.slug}/page/#{current.slug}"
+      end
+    end
+
+    test "a page claim cannot target a container in the section", %{conn: conn} do
+      user = insert(:user, independent_learner: false)
+      page = insert(:revision, resource_type_id: Oli.Resources.ResourceType.id_for_page())
+
+      {:ok, [section: section, project: _project, author: _author]} =
+        section_with_pages(%{revisions: [page]})
+
+      root = Oli.Publishing.DeliveryResolver.root_container(section.slug)
+
+      response =
+        conn
+        |> assign(:current_user, user)
+        |> LtiRedirect.redirect_from_lti_params(
+          lti_params(section, "Learner", %{
+            "torus_resource_type" => "page",
+            "torus_resource_id" => root.slug
+          })
+        )
+
+      assert redirected_to(response) == "/sections/#{section.slug}"
+    end
+
     test "launches an instructor directly into a page instead of section management", %{
       conn: conn
     } do

@@ -180,7 +180,10 @@ signed custom claim `https://purl.imsglobal.org/spec/lti/claim/custom`:
 Despite its name, `torus_resource_id` contains the page's revision slug, not its
 numeric resource ID. The page must belong to the section resolved from the
 launch's registration, deployment, and context. A valid target sends learners
-and instructors to that page, subject to the normal page access controls.
+and instructors to that page, subject to the normal page access controls. Older
+revision slugs stored in the LMS resolve to the revision in the section's pinned
+publication, so the redirect uses that revision's slug rather than an unpublished
+or otherwise newer revision outside the section's publication.
 
 Missing, unsupported, or unmatched page claims retain the ordinary destination:
 section home for learners and section management for instructors. Section

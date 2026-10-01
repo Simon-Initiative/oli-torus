@@ -5,9 +5,9 @@ defmodule OliWeb.LtiRedirect do
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.SectionResourceMigration
-  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Lti.LtiParams
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.{ResourceType, Revision}
 
   require Logger
   @telemetry_prefix [:oli, :lti]
@@ -151,7 +151,7 @@ defmodule OliWeb.LtiRedirect do
     end
   end
 
-  @doc "Resolves the current launch's direct page once, from authoritative section resources."
+  @doc "Resolves an LMS revision slug to the revision pinned to the launched section."
   @spec resolve_target(map(), %Sections.Section{} | nil) :: map()
   def resolve_target(claims, section) do
     resource = resolve_resource(claims, section)
@@ -168,18 +168,17 @@ defmodule OliWeb.LtiRedirect do
          %Sections.Section{} = section
        )
        when is_binary(revision_slug) and revision_slug != "" do
-    case section.section_resource_migration_version == SectionResourceMigration.current_version() do
-      true -> :ok
-      false -> {:ok, _} = SectionResourceMigration.ensure_current(section.id)
-    end
-
-    SectionResourceDepot.get_page_by_revision_slug(section.id, revision_slug)
+    DeliveryResolver.from_revision_slug(section.slug, revision_slug)
   end
 
   defp resolve_resource(_, _), do: nil
 
-  defp direct_page_path(%{section: section, resource: %{revision_slug: slug}}),
-    do: {:ok, ~p"/sections/#{section.slug}/page/#{slug}"}
+  defp direct_page_path(%{section: section, resource: %Revision{} = revision}) do
+    case revision.resource_type_id == ResourceType.id_for_page() do
+      true -> {:ok, ~p"/sections/#{section.slug}/page/#{revision.slug}"}
+      false -> :fallback
+    end
+  end
 
   defp direct_page_path(_), do: :fallback
 
