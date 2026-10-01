@@ -6,6 +6,7 @@ import { seedScenarioFromFile, SeedScenarioResponse } from '@core/seedScenario';
 import { runWorkflowFromFile } from '@core/workflow/runWorkflow';
 import { RunWorkflowOptions, WorkflowState } from '@core/workflow/types';
 import { AdministrationTask } from '@tasks/AdministrationTask';
+import { AccountLinkingTask } from '@tasks/AccountLinkingTask';
 import { CurriculumTask } from '@tasks/CurriculumTask';
 import { HomeTask } from '@tasks/HomeTask';
 import { ProjectTask } from '@tasks/ProjectTask';
@@ -22,6 +23,7 @@ type MyFixtures = {
   utils: Utils;
   verifier: Verifier;
   administrationTask: AdministrationTask;
+  accountLinkingTask: AccountLinkingTask;
   curriculumTask: CurriculumTask;
   homeTask: HomeTask;
   projectTask: ProjectTask;
@@ -61,6 +63,12 @@ export const test = base.extend<MyFixtures>({
       await use(new AdministrationTask(page));
     },
     { title: '🏢 Administration Task' },
+  ],
+  accountLinkingTask: [
+    async ({ page }, use) => {
+      await use(new AccountLinkingTask(page));
+    },
+    { title: '🔗 Account Linking Task' },
   ],
   curriculumTask: [
     async ({ page }, use) => {

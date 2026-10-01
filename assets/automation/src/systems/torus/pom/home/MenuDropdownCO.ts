@@ -27,6 +27,22 @@ export class MenuDropdownCO {
     await adminPanelLink.click({ force: true });
   }
 
+  async goToLinkAuthoringAccount() {
+    const linkAccount = await this.getWorkspaceMenuLink('Link authoring account');
+    await linkAccount.click();
+  }
+
+  async expectLinkedAuthoringAccount(email: string) {
+    const menu = await this.waitForWorkspaceMenu();
+    const linkedAccount = menu.locator('[role="linked authoring account email"]');
+    await linkedAccount.waitFor({ state: 'visible' });
+
+    const actualEmail = (await linkedAccount.textContent())?.trim();
+    if (actualEmail !== email) {
+      throw new Error(`Expected linked authoring account '${email}', received '${actualEmail}'`);
+    }
+  }
+
   async signOut(isAdminScreen = false) {
     const menuButton = isAdminScreen ? this.menuButtonAdmin : this.menuButton;
 

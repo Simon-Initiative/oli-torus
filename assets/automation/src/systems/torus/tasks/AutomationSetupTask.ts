@@ -23,6 +23,7 @@ export type AutomationSetupResponse = {
 type AutomationOptions = {
   baseUrl: string;
   apiKey: string;
+  strictTeardown?: boolean;
   teardownTimeoutMs?: number;
 };
 
@@ -112,7 +113,7 @@ function isTransientNetworkError(error: unknown) {
 export async function teardownAutomationCourse(
   request: APIRequestContext,
   seeded: AutomationSetupResponse,
-  { baseUrl, apiKey, teardownTimeoutMs }: AutomationOptions,
+  { baseUrl, apiKey, strictTeardown = false, teardownTimeoutMs }: AutomationOptions,
 ) {
   const context = `project=${seeded.project.slug} section=${seeded.section.slug}`;
   let response;
@@ -138,14 +139,16 @@ export async function teardownAutomationCourse(
     // No response at all: connection refused, socket hang up, or the request
     // timeout. This runs in afterAll, where throwing would fail a test that
     // passed, so report it and let the run keep its result.
-    console.warn(`automation_teardown request failed (${context}): ${(error as Error).message}`);
+    const message = `automation_teardown request failed (${context}): ${(error as Error).message}`;
+    if (strictTeardown) throw new Error(message);
+    console.warn(message);
     return;
   }
 
   if (!response.ok()) {
-    console.warn(
-      `automation_teardown failed (${response.status()}): ${await truncatedBody(response)}`,
-    );
+    const message = `automation_teardown failed (${response.status()}): ${await truncatedBody(response)}`;
+    if (strictTeardown) throw new Error(message);
+    console.warn(message);
     return;
   }
 
@@ -156,9 +159,9 @@ export async function teardownAutomationCourse(
     payload = null;
   }
   if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
-    console.warn(
-      `automation_teardown returned unreadable payload (${context}): ${await truncatedBody(response)}`,
-    );
+    const message = `automation_teardown returned unreadable payload (${context}): ${await truncatedBody(response)}`;
+    if (strictTeardown) throw new Error(message);
+    console.warn(message);
     return;
   }
 
@@ -180,7 +183,9 @@ export async function teardownAutomationCourse(
   });
 
   if (failures.length > 0) {
-    console.warn(`automation_teardown left records behind (${context}): ${failures.join('; ')}`);
+    const message = `automation_teardown left records behind (${context}): ${failures.join('; ')}`;
+    if (strictTeardown) throw new Error(message);
+    console.warn(message);
   }
 }
 
