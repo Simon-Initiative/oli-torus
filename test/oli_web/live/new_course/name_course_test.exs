@@ -200,7 +200,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
     |> render_click(%{id: "publication:#{section.id}"})
 
     view
-    |> Phoenix.LiveViewTest.element("button", "Next step")
+    |> Phoenix.LiveViewTest.element("button", "Next Step")
     |> Phoenix.LiveViewTest.render_click()
   end
 
@@ -210,7 +210,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
     |> Phoenix.LiveViewTest.render_click(id: "publication:#{section.id}")
 
     view
-    |> Phoenix.LiveViewTest.element("button", "Next step")
+    |> Phoenix.LiveViewTest.element("button", "Next Step")
     |> Phoenix.LiveViewTest.render_click()
   end
 

@@ -117,7 +117,7 @@ defmodule OliWeb.Common.Stepper do
               disabled={@next_step_disabled}
               phx-click={@selected_step.on_next_step}
             >
-              {@selected_step.next_button_label || "Next step"}
+              {@selected_step.next_button_label || "Next Step"}
               <:icon_right :if={@show_spinner}>
                 <div role="status">
                   <.loader />

@@ -71,10 +71,15 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Badge do
     """
   end
 
-  attr :variant, :atom, values: [:my_section, :template, nil], default: nil
+  attr :variant, :atom, values: [:my_section, :template, :cost, nil], default: nil
+  slot :inner_block
 
   @doc """
   Render the identification tag, or nothing when `variant` is `nil`.
+
+  `:cost` renders whatever is passed via the default slot instead of a fixed
+  label (used for the Free/price pill, whose text comes from
+  `TableModel.render_payment_column/3`).
   """
   def badge(assigns) do
     ~H"""
@@ -85,17 +90,21 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Badge do
         variant_classes(@variant)
       ]}
     >
-      {label(@variant)}
+      {if @inner_block != [], do: render_slot(@inner_block), else: label(@variant)}
     </span>
     """
   end
 
   defp label(:my_section), do: "My Section"
   defp label(:template), do: "Template"
+  defp label(:cost), do: ""
 
   defp variant_classes(:my_section),
     do: "bg-Fill-Accent-fill-accent-purple text-Text-text-accent-purple"
 
   defp variant_classes(:template),
     do: "bg-Fill-Accent-fill-accent-orange text-Text-text-accent-orange"
+
+  defp variant_classes(:cost),
+    do: "bg-Fill-Chip-Green text-Text-text-accent-green"
 end

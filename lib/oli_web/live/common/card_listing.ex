@@ -72,12 +72,9 @@ defmodule OliWeb.Common.CardListing do
       <div class="flex flex-1 flex-col gap-2 overflow-hidden px-2 pt-3">
         <div :if={@tag_variant || @show_cost_badge?} class="flex items-center gap-2">
           <Badge.badge variant={@tag_variant} />
-          <span
-            :if={@show_cost_badge?}
-            class="inline-flex w-fit items-center rounded bg-Fill-Chip-Green px-2 py-1 text-sm font-bold leading-none text-Text-text-accent-green"
-          >
+          <Badge.badge :if={@show_cost_badge?} variant={:cost}>
             {TableModel.render_payment_column(%{}, @item, nil)}
-          </span>
+          </Badge.badge>
         </div>
 
         <h5
@@ -96,13 +93,16 @@ defmodule OliWeb.Common.CardListing do
         {render_date(@item, @ctx)}
       </div>
 
-      <div class={[
-        "pointer-events-none absolute inset-0 flex items-start justify-center px-8 pt-10",
-        "bg-[rgba(0,0,0,0.71)] text-center text-sm font-bold uppercase leading-4",
-        "text-Text-text-white opacity-0 transition-opacity",
-        "group-hover:opacity-100 group-focus-visible:opacity-100"
-      ]}>
-        {hover_select_label(@tag_variant)}
+      <div
+        :if={!@preview_mode}
+        class={[
+          "pointer-events-none absolute inset-0 flex items-start justify-center px-8 pt-10",
+          "bg-[rgba(0,0,0,0.71)] text-center text-sm font-bold uppercase leading-4",
+          "text-Text-text-white opacity-0 transition-opacity",
+          "group-hover:opacity-100 group-focus-visible:opacity-100"
+        ]}
+      >
+        <span class="max-w-[138px]">{hover_select_label(@tag_variant)}</span>
       </div>
     </div>
     """
@@ -112,8 +112,9 @@ defmodule OliWeb.Common.CardListing do
     title = TableModel.source_title(item)
 
     case TableModel.tag_variant(item) do
-      :my_section -> "Select #{title} to copy this course section"
-      _ -> "Select #{title} to create this course section"
+      :my_section -> "Select My Section #{title} to copy this course section"
+      :template -> "Select Template #{title} to create this course section"
+      nil -> "Select #{title} to create this course section"
     end
   end
 

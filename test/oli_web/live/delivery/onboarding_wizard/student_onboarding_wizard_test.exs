@@ -433,18 +433,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
 
       assert has_element?(view, "#student-onboarding-wizard")
       refute has_element?(view, "#course_creation_stepper")
-
-      refute has_element?(
-               view,
-               ~s(button.torus-button.secondary[class*="Border-border-bold"]),
-               "Cancel"
-             )
-
-      refute has_element?(
-               view,
-               ~s(button.torus-button.primary[class*="Fill-Buttons-fill-primary-bold"]),
-               "Go to course"
-             )
+      refute has_element?(view, "[id^=stepper_step_content_]")
     end
   end
 
