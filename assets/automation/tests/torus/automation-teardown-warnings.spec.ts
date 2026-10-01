@@ -39,7 +39,7 @@ function stubRequest(response: {
   } as unknown as APIRequestContext & { postOptions: unknown[] };
 }
 
-function stubFailingRequest(error: Error): APIRequestContext {
+function stubFailingRequest(error: unknown): APIRequestContext {
   return {
     post: async () => {
       throw error;
@@ -184,4 +184,11 @@ test('request errors warn without failing the test', async () => {
   expect(warnings[0]).toContain('automation_teardown request failed');
   expect(warnings[0]).toContain('project=proj-slug section=sect-slug');
   expect(warnings[0]).toContain('socket hang up');
+});
+
+test('request errors preserve non-Error failure details', async () => {
+  await teardownAutomationCourse(stubFailingRequest('socket closed'), seeded, options);
+
+  expect(warnings).toHaveLength(1);
+  expect(warnings[0]).toContain('socket closed');
 });

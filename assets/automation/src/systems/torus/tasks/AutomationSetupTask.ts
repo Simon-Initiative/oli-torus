@@ -139,7 +139,8 @@ export async function teardownAutomationCourse(
     // No response at all: connection refused, socket hang up, or the request
     // timeout. This runs in afterAll, where throwing would fail a test that
     // passed, so report it and let the run keep its result.
-    const message = `automation_teardown request failed (${context}): ${(error as Error).message}`;
+    const detail = error instanceof Error ? error.message : String(error);
+    const message = `automation_teardown request failed (${context}): ${detail}`;
     if (strictTeardown) throw new Error(message);
     console.warn(message);
     return;
