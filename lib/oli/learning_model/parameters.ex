@@ -5,6 +5,11 @@ defmodule Oli.LearningModel.Parameters do
   The persisted JSON representation is self-describing. Decoding dispatches on
   the schema version, model version, and parameter type instead of exposing raw
   maps to consumers.
+
+  This struct also derives `Jason.Encoder` so it can be encoded directly (e.g. for
+  display or logging). That path serializes whatever is currently in the struct
+  as-is and does not re-validate it; prefer `encode/1` when the normalized,
+  validated representation is required.
   """
 
   alias Oli.LearningModel.V2.{ActivityParameters, LearningObjectiveParameters, PartParameters}

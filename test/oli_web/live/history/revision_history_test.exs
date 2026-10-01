@@ -5,8 +5,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias Oli.LearningModel.Parameters
-  alias Oli.LearningModel.V2.LearningObjectiveParameters
+  alias Oli.LearningModel.LktAoaFixtures
   alias Oli.Resources.ResourceType
 
   defp revision_history_route(project_slug, revision_slug) do
@@ -35,13 +34,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
         resource_type_id: ResourceType.id_for_objective(),
         title: "Objective with LKT params",
         author_id: author.id,
-        learning_model_parameters: %Parameters{
-          schema_version: 1,
-          model: :lkt_aoa,
-          model_version: 2,
-          parameter_type: :learning_objective,
-          payload: %LearningObjectiveParameters{beta_lo: 1.5}
-        }
+        learning_model_parameters: LktAoaFixtures.learning_objective_parameters(1.5)
       )
 
     page_1_revision =
