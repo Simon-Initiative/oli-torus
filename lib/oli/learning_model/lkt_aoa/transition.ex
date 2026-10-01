@@ -53,35 +53,11 @@ defmodule Oli.LearningModel.LktAoa.Transition do
     }
   end
 
-  @doc """
-  Updates confidence from the cumulative unique activity-part count using the Hill curve
-  `n^steepness / (n^steepness + midpoint^steepness)`. Repeated parts do not increase n.
-  """
-  @spec apply_confidence(LearningState.t(), non_neg_integer(), Config.t()) :: LearningState.t()
-  def apply_confidence(%LearningState{} = state, increment, %Config{} = config)
+  @doc "Increments the persisted unique-part count; confidence is derived when reading estimates."
+  @spec apply_evidence_count(LearningState.t(), non_neg_integer()) :: LearningState.t()
+  def apply_evidence_count(%LearningState{} = state, increment)
       when is_integer(increment) and increment >= 0 do
-    unique_activity_part_count = state.unique_activity_part_count + increment
-
-    %{
-      state
-      | unique_activity_part_count: unique_activity_part_count,
-        confidence:
-          hill_confidence(
-            unique_activity_part_count,
-            config.confidence_midpoint,
-            config.confidence_steepness
-          )
-    }
-  end
-
-  # Keep the base at most one to avoid overflowing powers for large counts or steepness.
-  defp hill_confidence(n, midpoint, steepness) when n <= midpoint do
-    ratio = :math.pow(n / midpoint, steepness)
-    ratio / (1.0 + ratio)
-  end
-
-  defp hill_confidence(n, midpoint, steepness) do
-    1.0 / (1.0 + :math.pow(midpoint / n, steepness))
+    %{state | unique_activity_part_count: state.unique_activity_part_count + increment}
   end
 
   @spec replay_by_state(
@@ -112,7 +88,7 @@ defmodule Oli.LearningModel.LktAoa.Transition do
               |> Enum.reduce(state, fn contribution, state ->
                 apply_proficiency(state, contribution, config)
               end)
-              |> apply_confidence(Map.get(confidence_increments, state_key, 0), config)
+              |> apply_evidence_count(Map.get(confidence_increments, state_key, 0))
 
             {:cont, {:ok, Map.put(states, state_key, final_state)}}
 
