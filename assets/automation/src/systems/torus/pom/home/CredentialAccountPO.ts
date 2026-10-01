@@ -138,27 +138,9 @@ export class CredentialAccountPO {
     const consent = this.page.locator('#cookie_consent_display');
     const acceptButton = consent.getByRole('button', { name: 'Accept', exact: true });
 
-    const consentVisible = await acceptButton
-      .waitFor({ state: 'visible', timeout: 5_000 })
-      .then(() => true)
-      .catch(() => false);
-
-    if (consentVisible) {
+    if (await acceptButton.isVisible({ timeout: 1_000 }).catch(() => false)) {
       await acceptButton.click({ force: true });
       await expect(consent).toBeHidden();
-
-      // Bootstrap occasionally leaves the fading backdrop behind after the
-      // consent modal is gone. It no longer represents an actionable modal,
-      // but it still intercepts clicks in a fresh browser context.
-      const backdrop = this.page.locator('.modal-backdrop.fade.show');
-      const backdropHidden = await backdrop
-        .waitFor({ state: 'hidden', timeout: 2_000 })
-        .then(() => true)
-        .catch(() => false);
-
-      if (!backdropHidden) {
-        await backdrop.evaluateAll((nodes) => nodes.forEach((node) => node.remove()));
-      }
     }
   }
 }
