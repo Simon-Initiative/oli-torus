@@ -7,7 +7,7 @@
     email: 'link-author${RUN_ID}@example.com'
     given_name: 'Test'
     family_name: 'Author'
-    password: 'changeme123456'
+    password: '${ACCOUNT_LINKING_PASSWORD}'
 
 - user:
     name: 'account_linking_instructor'
@@ -15,7 +15,7 @@
     email: 'link-instructor${RUN_ID}@example.com'
     given_name: 'Test'
     family_name: 'Educator'
-    password: 'changeme123456'
+    password: '${ACCOUNT_LINKING_PASSWORD}'
     can_create_sections: true
 
 - user:
@@ -24,7 +24,7 @@
     email: 'link-learner${RUN_ID}@example.com'
     given_name: 'Test'
     family_name: 'Learner'
-    password: 'changeme123456'
+    password: '${ACCOUNT_LINKING_PASSWORD}'
 
 - project:
     name: 'Account Linking Smoke${RUN_ID}'

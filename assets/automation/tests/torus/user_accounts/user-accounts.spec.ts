@@ -3,6 +3,7 @@ import { AutomationSetupResponse, teardownAutomationCourse } from '@tasks/Automa
 import { test } from '@fixture/my-fixture';
 import { TYPE_USER } from '@pom/types/type-user';
 import { expect } from '@playwright/test';
+import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 
 const runId = `-${Date.now()}`;
@@ -12,6 +13,7 @@ const adminPassword = 'changeme123456';
 const scenarioPath = path.resolve(__dirname, './playwright_user_accounts.yaml');
 const accountLinkingScenarioPath = path.resolve(__dirname, './playwright_account_linking.yaml');
 const accountLinkingRunId = `-${Date.now()}-link`;
+const accountLinkingPassword = randomBytes(24).toString('hex');
 const projectName = `Account Linking Smoke${accountLinkingRunId}`;
 const sectionName = `account_linking_section${accountLinkingRunId}`;
 const linkingAuthorEmail = `link-author${accountLinkingRunId}@example.com`;
@@ -130,13 +132,14 @@ test.describe('Account linking @account-linking @nightly @smoke', () => {
           welcomeText: 'Welcome to OLI Torus',
           welcomeTitle: 'Instructor Dashboard',
           email: linkingInstructorEmail,
-          pass: defaultPassword,
+          pass: accountLinkingPassword,
           header: 'Instructor Dashboard',
         },
       },
     });
 
     const result = await seedScenario(accountLinkingScenarioPath, {
+      ACCOUNT_LINKING_PASSWORD: accountLinkingPassword,
       RUN_ID: accountLinkingRunId,
     });
     const projects = result.outputs?.projects as Record<string, string> | undefined;
@@ -144,9 +147,9 @@ test.describe('Account linking @account-linking @nightly @smoke', () => {
 
     seededCourse = {
       success: true,
-      author: { email: linkingAuthorEmail, password: defaultPassword },
-      educator: { email: linkingInstructorEmail, password: defaultPassword },
-      learner: { email: linkingLearnerEmail, password: defaultPassword },
+      author: { email: linkingAuthorEmail, password: accountLinkingPassword },
+      educator: { email: linkingInstructorEmail, password: accountLinkingPassword },
+      learner: { email: linkingLearnerEmail, password: accountLinkingPassword },
       project: { slug: projects?.[projectName] ?? '', title: projectName },
       section: { slug: sections?.[sectionName] ?? '' },
     };
@@ -185,7 +188,7 @@ test.describe('Account linking @account-linking @nightly @smoke', () => {
     await accountLinkingTask.link(linkingAuthorEmail, 'invalid-password');
     await accountLinkingTask.verifyInvalidCredentials();
 
-    await accountLinkingTask.link(linkingAuthorEmail, defaultPassword);
+    await accountLinkingTask.link(linkingAuthorEmail, accountLinkingPassword);
     await accountLinkingTask.verifyLinkSucceeded();
 
     await page.reload();
