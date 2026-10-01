@@ -17,6 +17,7 @@ const sectionName = `account_linking_section${accountLinkingRunId}`;
 const linkingAuthorEmail = `link-author${accountLinkingRunId}@example.com`;
 const linkingInstructorEmail = `link-instructor${accountLinkingRunId}@example.com`;
 const linkingLearnerEmail = `link-learner${accountLinkingRunId}@example.com`;
+const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 
 let seededCourse: AutomationSetupResponse | undefined;
 
@@ -112,6 +113,11 @@ test.describe('User Accounts', () => {
 });
 
 test.describe('Account linking @account-linking @nightly @smoke', () => {
+  test.skip(
+    !automationApiKey,
+    'Set PLAYWRIGHT_AUTOMATION_API_KEY to run the account-linking smoke test',
+  );
+
   test.beforeAll(async ({ seedScenario }) => {
     setRuntimeConfig({
       baseUrl,
@@ -155,12 +161,8 @@ test.describe('Account linking @account-linking @nightly @smoke', () => {
     try {
       if (!seededCourse) return;
 
-      const apiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
-
-      if (!apiKey) return;
-
       await teardownAutomationCourse(request, seededCourse, {
-        apiKey,
+        apiKey: automationApiKey!,
         baseUrl,
         strictTeardown: true,
         teardownTimeoutMs: 120_000,
