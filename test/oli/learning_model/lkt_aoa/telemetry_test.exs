@@ -116,10 +116,11 @@ defmodule Oli.LearningModel.LktAoa.TelemetryTest do
     %{section: section, group: group} = LktAoaFixtures.lkt_fixture()
 
     invalid_config = %Config{
-      gamma: 0.1,
+      gamma: nil,
       rho: 1.0,
       recency_decay: 0.9,
-      confidence_saturation: 0.0
+      confidence_midpoint: 5.0,
+      confidence_steepness: 3.0
     }
 
     events =

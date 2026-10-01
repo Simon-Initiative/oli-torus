@@ -78,7 +78,7 @@ defmodule Oli.LearningModel.LktAoa.ApplicationTest do
       assert_in_delta state.failure_score, 0.0, 1.0e-12
       assert_in_delta state.recency_logit, :math.log(2.0), 1.0e-12
       assert state.unique_activity_part_count == 1
-      assert_in_delta state.confidence, 1.0 - :math.exp(-1 / 3.0), 1.0e-12
+      assert_in_delta state.confidence, 1 / 126, 1.0e-12
     end
 
     test "resolves objectives from the attempted remixed project's publication" do
