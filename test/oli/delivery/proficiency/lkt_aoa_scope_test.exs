@@ -127,6 +127,33 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
     refute Enum.any?(queries, &String.contains?(&1, ~s(FROM "resource_summaries")))
   end
 
+  test "container metrics treat persisted nil container IDs as the course scope" do
+    %{section: section, root: root, page: page, objectives: [objective | _]} = scope_fixture()
+    user = insert(:user)
+    insert_state(section, user, objective, aoa: 0.2, attempt_count: 3)
+
+    {:ok, _} = Oli.Delivery.Sections.rebuild_contained_pages(section)
+    contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+    assert [%ContainedPage{container_id: nil, page_id: page_id}] = contained_pages
+    assert page_id == page.resource_id
+
+    assert Metrics.proficiency_per_container(section, contained_pages) == %{nil => "Low"}
+
+    assert Metrics.proficiency_for_student_per_container(section, user.id, contained_pages) ==
+             %{nil => "Low"}
+
+    # Root and explicit container scopes can occur in the same request.
+    mixed_pages = [
+      %ContainedPage{container_id: root.resource_id, page_id: page_id} | contained_pages
+    ]
+
+    expected = %{nil => "Low", root.resource_id => "Low"}
+    assert Metrics.proficiency_per_container(section, mixed_pages) == expected
+
+    assert Metrics.proficiency_for_student_per_container(section, user.id, mixed_pages) ==
+             expected
+  end
+
   test "depot failure returns unavailable without querying state or falling back to naive" do
     section = insert(:section, learning_model_version: :lkt_aoa)
     user = insert(:user)
