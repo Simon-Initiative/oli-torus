@@ -25,6 +25,26 @@ Rollout is primarily controlled through normal deployment flow plus selective fe
 - merged `master` changes flow to the test environment through the normal deployment pipeline
 - tagged releases drive production deployment
 
+## Proficiency Confidence
+
+LKT-AOA confidence uses the Hill curve `n^s / (n^s + m^s)`, where `n` is the
+number of unique activity parts attempted for the learner/objective, `m` is the
+midpoint (confidence 0.5), and `s` controls steepness. Repeated attempts on the
+same part do not increase `n`.
+
+| Environment variable | Default | Constraint |
+| --- | --- | --- |
+| `PROFICIENCY_CONFIDENCE_MIDPOINT` | `5.0` | Finite and greater than zero |
+| `PROFICIENCY_CONFIDENCE_STEEPNESS` | `3.0` | Finite and greater than zero |
+
+These settings are loaded at startup; restart the application after changing them.
+They replace the exponential curve's `LKT_AOA_CONFIDENCE_SATURATION` setting,
+which is no longer used. The Low/Medium/High thresholds remain 0.4 and 0.8;
+the defaults first reach Medium at 5 unique parts and High at 8.
+
+Stored confidence is recalculated when a learner/objective state next processes
+an evaluated attempt. Changing these settings does not backfill existing states.
+
 ## Canonical References
 
 - deployment process: `guides/process/deployment.md`

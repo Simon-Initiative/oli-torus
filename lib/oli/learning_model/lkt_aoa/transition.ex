@@ -53,6 +53,10 @@ defmodule Oli.LearningModel.LktAoa.Transition do
     }
   end
 
+  @doc """
+  Updates confidence from the cumulative unique activity-part count using the Hill curve
+  `n^steepness / (n^steepness + midpoint^steepness)`. Repeated parts do not increase n.
+  """
   @spec apply_confidence(LearningState.t(), non_neg_integer(), Config.t()) :: LearningState.t()
   def apply_confidence(%LearningState{} = state, increment, %Config{} = config)
       when is_integer(increment) and increment >= 0 do
@@ -61,8 +65,23 @@ defmodule Oli.LearningModel.LktAoa.Transition do
     %{
       state
       | unique_activity_part_count: unique_activity_part_count,
-        confidence: 1.0 - :math.exp(-unique_activity_part_count / config.confidence_saturation)
+        confidence:
+          hill_confidence(
+            unique_activity_part_count,
+            config.confidence_midpoint,
+            config.confidence_steepness
+          )
     }
+  end
+
+  # Keep the base at most one to avoid overflowing powers for large counts or steepness.
+  defp hill_confidence(n, midpoint, steepness) when n <= midpoint do
+    ratio = :math.pow(n / midpoint, steepness)
+    ratio / (1.0 + ratio)
+  end
+
+  defp hill_confidence(n, midpoint, steepness) do
+    1.0 / (1.0 + :math.pow(midpoint / n, steepness))
   end
 
   @spec replay_by_state(
