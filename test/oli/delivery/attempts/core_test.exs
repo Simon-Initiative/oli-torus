@@ -83,6 +83,11 @@ defmodule Oli.Delivery.Attempts.CoreTest do
       assert Repo.get(ResourceAttempt, ctx.resource_attempt.id)
     end
 
+    test "returns not found for a missing attempt", ctx do
+      assert {:error, :not_found} =
+               Core.delete_resource_attempt("missing-attempt-guid", nil, ctx.admin_author)
+    end
+
     test "deletes custom activity logs associated with the attempt", ctx do
       log =
         %CustomActivityLog{}
