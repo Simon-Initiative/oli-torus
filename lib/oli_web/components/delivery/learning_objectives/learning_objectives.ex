@@ -112,6 +112,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           Map.merge(objectives_table_model.data, %{
             section_slug: section_slug,
             section_id: assigns[:section_id],
+            confidence_supported?: confidence_supported?,
+            sub_objective_confidences:
+              Map.new(objectives_tab.objectives, fn objective ->
+                {objective.resource_id, Map.get(objective, :confidence_subobj)}
+              end),
             section_title: assigns[:section_title],
             current_user: assigns[:current_user],
             current_params: encode_params_for_url(params),

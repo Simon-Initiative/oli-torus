@@ -4,8 +4,16 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
   alias OliWeb.Delivery.LearningObjectives.Proficiency
+  alias OliWeb.Icons
 
-  def new(sub_objectives, parent_unique_id \\ nil, text_search \\ nil) do
+  @doc "Builds the sub-objective table with optional model-supported confidence labels keyed by resource ID."
+  def new(
+        sub_objectives,
+        parent_unique_id \\ nil,
+        text_search \\ nil,
+        confidence_supported? \\ false,
+        sub_objective_confidences \\ %{}
+      ) do
     column_specs = [
       %ColumnSpec{
         name: :sub_objective,
@@ -34,12 +42,30 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       }
     ]
 
+    column_specs =
+      case confidence_supported? do
+        true ->
+          List.insert_at(column_specs, 2, %ColumnSpec{
+            name: :confidence,
+            label: "Confidence",
+            render_fn: &custom_render/3,
+            sortable: false
+          })
+
+        false ->
+          column_specs
+      end
+
     SortableTableModel.new(
       rows: sub_objectives,
       column_specs: column_specs,
       event_suffix: "",
       id_field: ["subobj", :id],
-      data: %{parent_unique_id: parent_unique_id, text_search: text_search}
+      data: %{
+        parent_unique_id: parent_unique_id,
+        text_search: text_search,
+        sub_objective_confidences: sub_objective_confidences
+      }
     )
   end
 
@@ -66,6 +92,20 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
 
     ~H"""
     <Proficiency.chip label={@student_proficiency} />
+    """
+  end
+
+  # CONFIDENCE
+  defp custom_render(assigns, sub_objective, %ColumnSpec{name: :confidence}) do
+    confidence = Map.get(assigns.model.data.sub_objective_confidences, sub_objective.id)
+    assigns = Map.put(assigns, :confidence, confidence)
+
+    ~H"""
+    <div :if={@confidence} class="flex items-center gap-1.5 text-Text-text-high">
+      <Icons.confidence_bars level={@confidence} />
+      <span>{@confidence}</span>
+    </div>
+    <span :if={is_nil(@confidence)}>-</span>
     """
   end
 
