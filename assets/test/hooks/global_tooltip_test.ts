@@ -102,4 +102,21 @@ describe('GlobalTooltip', () => {
     const wrapper = document.getElementById(WRAPPER_ID) as HTMLElement;
     expect(wrapper.style.top).toBe('52px');
   });
+
+  test('opens on keyboard focus, describes the trigger, and closes on blur', () => {
+    const el = buildTrigger('bottom');
+    mount(el);
+
+    el.dispatchEvent(new Event('focus'));
+
+    const wrapper = document.getElementById(WRAPPER_ID) as HTMLElement;
+    expect(wrapper).not.toBeNull();
+    expect(wrapper.textContent).toBe('Some help text');
+    expect(el.getAttribute('aria-describedby')).toBe(WRAPPER_ID);
+
+    el.dispatchEvent(new Event('blur'));
+
+    expect(document.getElementById(WRAPPER_ID)).toBeNull();
+    expect(el.hasAttribute('aria-describedby')).toBe(false);
+  });
 });

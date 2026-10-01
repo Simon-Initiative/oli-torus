@@ -36,9 +36,7 @@ defmodule OliWeb.Common.FilterBox do
         <%= if @card_body != [] do %>
           {render_slot(@card_body)}
         <% else %>
-          <p :if={@card_body_text not in [nil, ""]} class={@card_body_text_class}>
-            {@card_body_text}
-          </p>
+          <p class={@card_body_text_class}>{@card_body_text}</p>
         <% end %>
         <div class={@filter_opts_class}>
           <div class={@inner_block_class}>

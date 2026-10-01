@@ -118,7 +118,10 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
          params.sort_by != sort_by or params.sort_order != sort_order or
          socket.assigns.view_type != view_type do
       socket
-      |> assign(view_type: view_type)
+      |> assign(
+        view_type: view_type,
+        table_model: apply_initial_sort(socket.assigns.table_model, sort_by, sort_order)
+      )
       |> update_source_list(%{
         params
         | source_filter: source_filter,
@@ -185,6 +188,8 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       <.result_count_announcement
         total_count={@total_count}
         source_filter={@params[:source_filter]}
+        sort_label={@table_model.sort_by_spec.label}
+        sort_order={@table_model.sort_order}
       />
 
       <div id={@source_results_id}>
@@ -227,22 +232,18 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   attr :myself, :any, required: true
 
   defp source_filter_tabs(assigns) do
-    assigns = assign(assigns, :results_id, @source_results_id)
-
     ~H"""
-    <div class="flex gap-4 items-center mb-4" role="tablist" aria-label="Source filters">
+    <div class="flex gap-4 items-center mb-4" aria-label="Source filters">
       <.source_filter_tab
         filter={:all}
         label={source_filter_label(:all)}
         active={@source_filter == :all}
-        results_id={@results_id}
         myself={@myself}
       />
       <.source_filter_tab
         filter={:templates}
         label={source_filter_label(:templates)}
         active={@source_filter == :templates}
-        results_id={@results_id}
         myself={@myself}
         tooltip="View and create courses from templates made by course authors."
       />
@@ -250,7 +251,6 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         filter={:my_sections}
         label={source_filter_label(:my_sections)}
         active={@source_filter == :my_sections}
-        results_id={@results_id}
         myself={@myself}
         tooltip="View and copy your previously created course sections."
       />
@@ -261,7 +261,6 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   attr :filter, :atom, required: true
   attr :label, :string, required: true
   attr :active, :boolean, required: true
-  attr :results_id, :string, required: true
   attr :myself, :any, required: true
   attr :tooltip, :string, default: nil
 
@@ -270,9 +269,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     <button
       type="button"
       id={"source-filter-tab-#{@filter}"}
-      role="tab"
-      aria-selected={to_string(@active)}
-      aria-controls={@results_id}
+      aria-pressed={to_string(@active)}
       phx-click="filter_source"
       phx-value-filter={@filter}
       phx-target={@myself}
@@ -422,18 +419,23 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
   attr :total_count, :integer, required: true
   attr :source_filter, :atom, required: true
+  attr :sort_label, :string, required: true
+  attr :sort_order, :atom, required: true
 
   defp result_count_announcement(assigns) do
     ~H"""
     <p class="sr-only" role="status" aria-live="polite">
-      {result_count_message(@total_count, @source_filter)}
+      {result_count_message(@total_count, @source_filter, @sort_label, @sort_order)}
     </p>
     """
   end
 
-  defp result_count_message(total_count, source_filter) do
-    "Showing #{total_count} #{pluralize_result(total_count)} for #{source_filter_label(source_filter)}"
+  defp result_count_message(total_count, source_filter, sort_label, sort_order) do
+    "Showing #{total_count} #{pluralize_result(total_count)} for #{source_filter_label(source_filter)}, sorted by #{sort_label} #{sort_order_label(sort_order)}"
   end
+
+  defp sort_order_label(:asc), do: "ascending"
+  defp sort_order_label(_), do: "descending"
 
   defp pluralize_result(1), do: "result"
   defp pluralize_result(_), do: "results"
@@ -562,12 +564,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   def handle_event("update_view_type", _params, socket), do: {:noreply, socket}
 
   def handle_event("filter_source", %{"filter" => filter}, socket) do
-    source_filter =
-      case filter do
-        "templates" -> :templates
-        "my_sections" -> :my_sections
-        _other_filter -> :all
-      end
+    source_filter = parse_source_filter(filter)
 
     if source_filter == :my_sections do
       :telemetry.execute(
@@ -630,6 +627,11 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
     {:noreply, update_source_list(socket, params)}
   end
+
+  @doc "Maps a `filter` URL/event value to a source filter atom; unknown values fall back to `:all`."
+  def parse_source_filter("templates"), do: :templates
+  def parse_source_filter("my_sections"), do: :my_sections
+  def parse_source_filter(_), do: :all
 
   # Builds the current filter/search/sort/view state as a shareable, reloadable URL, omitting
   # each query param when it's at its default value (so the common "no filters applied" case

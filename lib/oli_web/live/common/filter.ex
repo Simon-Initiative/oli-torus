@@ -23,7 +23,7 @@ defmodule OliWeb.Common.Filter do
       id="search_filter_form"
       phx-change={@change}
       phx-submit={@change}
-      class="relative flex h-9 w-full items-center gap-3 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input py-1 pl-2.5 pr-2"
+      class="relative flex h-9 w-full items-center gap-3 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input py-1 pl-2.5 pr-2 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2"
     >
       <Icons.search class="size-5 shrink-0 text-Icon-icon-default" />
 

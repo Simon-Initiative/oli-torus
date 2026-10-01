@@ -34,7 +34,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       assert has_element?(view, "p", "None exist")
-      assert has_element?(view, "button[disabled]", "Next step")
+      assert has_element?(view, "button[disabled]", "Next Step")
     end
 
     test "loads correctly when there are sections in table view", %{conn: conn} do
@@ -118,7 +118,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
-      assert has_element?(view, "button[disabled]", "Next step")
+      assert has_element?(view, "button[disabled]", "Next Step")
 
       view
       |> element("button[phx-click='source_selection']")
@@ -164,7 +164,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert has_element?(view, "p", "None exist")
-      assert has_element?(view, "button[disabled]", "Next step")
+      assert has_element?(view, "button[disabled]", "Next Step")
     end
 
     test "loads correctly when there are sections in cards view", %{conn: conn} do
@@ -319,7 +319,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "button[disabled]", "Next step")
+      assert has_element?(view, "button[disabled]", "Next Step")
 
       view
       |> element(".card-deck button:first-child")
@@ -426,13 +426,13 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "button[role='tab'][aria-selected='true']", "All Sources")
-      assert has_element?(view, "button[role='tab'][aria-selected='false']", "Templates")
-      assert has_element?(view, "button[role='tab'][aria-selected='false']", "My Course Sections")
+      assert has_element?(view, "button[aria-pressed='true']", "All Sources")
+      assert has_element?(view, "button[aria-pressed='false']", "Templates")
+      assert has_element?(view, "button[aria-pressed='false']", "My Course Sections")
 
       assert has_element?(
                view,
-               ~s(button[role='tab'][aria-selected='true'].bg-Background-bg-primary.border-Text-text-button.text-Text-text-button),
+               ~s(button[aria-pressed='true'].bg-Background-bg-primary.border-Text-text-button.text-Text-text-button),
                "All Sources"
              )
     end
@@ -456,11 +456,11 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
         |> render()
 
       view
-      |> element("button[role='tab']", "Templates")
+      |> element("button[aria-pressed]", "Templates")
       |> render_click()
 
       view
-      |> element("button[role='tab']", "All Sources")
+      |> element("button[aria-pressed]", "All Sources")
       |> render_click()
 
       assert view
@@ -492,7 +492,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
-      |> element("button[role='tab']", "Templates")
+      |> element("button[aria-pressed]", "Templates")
       |> render_click()
 
       view
@@ -508,19 +508,19 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
-      |> element("button[role='tab']", "Templates")
+      |> element("button[aria-pressed]", "Templates")
       |> render_click()
 
       assert_patch(view, "/sections/new?filter=templates")
 
       view
-      |> element("button[role='tab']", "My Course Sections")
+      |> element("button[aria-pressed]", "My Course Sections")
       |> render_click()
 
       assert_patch(view, "/sections/new?filter=my_sections")
 
       view
-      |> element("button[role='tab']", "All Sources")
+      |> element("button[aria-pressed]", "All Sources")
       |> render_click()
 
       assert_patch(view, "/sections/new")
@@ -529,8 +529,8 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     test "loading the page with ?filter=templates preselects that tab", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/sections/new?filter=templates")
 
-      assert has_element?(view, "button[role='tab'][aria-selected='true']", "Templates")
-      assert has_element?(view, "button[role='tab'][aria-selected='false']", "All Sources")
+      assert has_element?(view, "button[aria-pressed='true']", "Templates")
+      assert has_element?(view, "button[aria-pressed='false']", "All Sources")
     end
 
     test "loading the page with ?filter=my_sections preselects that tab", %{conn: conn} do
@@ -538,7 +538,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       assert has_element?(
                view,
-               "button[role='tab'][aria-selected='true']",
+               "button[aria-pressed='true']",
                "My Course Sections"
              )
     end
@@ -550,7 +550,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       assert has_element?(
                view,
-               "button[role='tab'].flex.items-center.justify-center",
+               "button[aria-pressed].flex.items-center.justify-center",
                "All Sources"
              )
     end
@@ -570,7 +570,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
-      |> element("button[role='tab']", "Templates")
+      |> element("button[aria-pressed]", "Templates")
       |> render_click()
 
       assert_patch(view, "/sections/new?filter=templates")
@@ -590,7 +590,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       assert has_element?(view, "h2", "Select Curriculum")
 
-      assert has_element?(view, "button[role='tab'][aria-selected='true']", "Templates")
+      assert has_element?(view, "button[aria-pressed='true']", "Templates")
       assert has_element?(view, ".course-card-link", "Bio Template")
       refute has_element?(view, ".course-card-link", "Chem Copy")
     end
@@ -715,7 +715,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       refute has_element?(view, "h5", s2.title)
     end
 
-    test "the sort-by dropdown trigger shows the default 'Most Recent' sort label", %{
+    test "the sort-by dropdown trigger shows the default 'Created' sort label", %{
       conn: conn
     } do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
@@ -734,13 +734,13 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("#sort_by_menu button[phx-value-sort_by='type']")
       |> render_click()
 
-      assert has_element?(view, "div", "Type")
+      assert has_element?(view, "#sort_by_trigger", "Type")
 
       view
       |> element("button[phx-click='sort']")
       |> render_click()
 
-      assert has_element?(view, "div", "Type")
+      assert has_element?(view, "#sort_by_trigger", "Type")
     end
 
     test "the sort-by menu starts closed and lists every sortable column exactly once",
@@ -885,7 +885,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
-      |> element("button[role='tab']", "Templates")
+      |> element("button[aria-pressed]", "Templates")
       |> render_click()
 
       view
@@ -945,13 +945,13 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       refute has_element?(view, "#new-course-banner")
 
       view
-      |> element("button[role='tab']", "Templates")
+      |> element("button[aria-pressed]", "Templates")
       |> render_click()
 
       refute has_element?(view, "#new-course-banner")
 
       view
-      |> element("button[role='tab']", "My Course Sections")
+      |> element("button[aria-pressed]", "My Course Sections")
       |> render_click()
 
       assert has_element?(
@@ -985,7 +985,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert banner_index < results_index
 
       view
-      |> element("button[role='tab']", "All Sources")
+      |> element("button[aria-pressed]", "All Sources")
       |> render_click()
 
       refute has_element?(view, "#new-course-banner")
@@ -997,17 +997,17 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       assert has_element?(
                view,
-               ~s(button[role='tab'][phx-hook='GlobalTooltip'][data-tooltip='View and create courses from templates made by course authors.']),
+               ~s(button[aria-pressed][phx-hook='GlobalTooltip'][data-tooltip='View and create courses from templates made by course authors.']),
                "Templates"
              )
 
       assert has_element?(
                view,
-               ~s(button[role='tab'][phx-hook='GlobalTooltip'][data-tooltip='View and copy your previously created course sections.']),
+               ~s(button[aria-pressed][phx-hook='GlobalTooltip'][data-tooltip='View and copy your previously created course sections.']),
                "My Course Sections"
              )
 
-      refute has_element?(view, "button[role='tab'][phx-hook='GlobalTooltip']", "All Sources")
+      refute has_element?(view, "button[aria-pressed][phx-hook='GlobalTooltip']", "All Sources")
     end
 
     test "the tooltip-enabled tabs expand downward, not upward", %{conn: conn} do
@@ -1015,17 +1015,17 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       assert has_element?(
                view,
-               ~s(button[role='tab'][data-tooltip-position='bottom']),
+               ~s(button[aria-pressed][data-tooltip-position='bottom']),
                "Templates"
              )
 
       assert has_element?(
                view,
-               ~s(button[role='tab'][data-tooltip-position='bottom']),
+               ~s(button[aria-pressed][data-tooltip-position='bottom']),
                "My Course Sections"
              )
 
-      refute has_element?(view, "button[role='tab'][data-tooltip-position]", "All Sources")
+      refute has_element?(view, "button[aria-pressed][data-tooltip-position]", "All Sources")
     end
   end
 
@@ -1182,7 +1182,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert has_element?(view, "p", "None exist")
-      assert has_element?(view, "button[disabled]", "Next step")
+      assert has_element?(view, "button[disabled]", "Next Step")
     end
 
     test "loads correctly when there are sections in cards view", %{conn: conn} do
@@ -1298,13 +1298,13 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "button[disabled]", "Next step")
+      assert has_element?(view, "button[disabled]", "Next Step")
 
       view
       |> element(".card-deck button:first-child")
       |> render_click(id: "publication:#{section.id}")
 
-      refute has_element?(view, "button[disabled]", "Next step")
+      refute has_element?(view, "button[disabled]", "Next Step")
       refute has_element?(view, "h2", "Select Curriculum")
       assert has_element?(view, "h2", "Name your course")
     end
@@ -1337,23 +1337,23 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "p[role='status'][aria-live='polite']")
 
       view
-      |> element("button[role='tab']", "Templates")
+      |> element("button[aria-pressed]", "Templates")
       |> render_click()
 
       assert has_element?(
                view,
                "p[role='status'][aria-live='polite']",
-               "Showing 1 result for Templates"
+               "Showing 1 result for Templates, sorted by Created descending"
              )
 
       view
-      |> element("button[role='tab']", "My Course Sections")
+      |> element("button[aria-pressed]", "My Course Sections")
       |> render_click()
 
       assert has_element?(
                view,
                "p[role='status'][aria-live='polite']",
-               "Showing 0 results for My Course Sections"
+               "Showing 0 results for My Course Sections, sorted by Created descending"
              )
     end
 
@@ -1367,7 +1367,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(
                view,
                "p[role='status'][aria-live='polite']",
-               "Showing 3 results for All Sources"
+               "Showing 3 results for All Sources, sorted by Created descending"
              )
 
       view
@@ -1377,50 +1377,8 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(
                view,
                "p[role='status'][aria-live='polite']",
-               "Showing 1 result for All Sources"
+               "Showing 1 result for All Sources, sorted by Created descending"
              )
-    end
-  end
-
-  describe "telemetry" do
-    setup [:instructor_conn]
-
-    test "emits my_course_sections_filter_selected only when the My Course Sections tab is selected",
-         %{conn: conn} do
-      handler_id = "my-course-sections-filter-telemetry-#{System.unique_integer([:positive])}"
-
-      :telemetry.attach(
-        handler_id,
-        [:oli, :course_builder, :my_course_sections_filter_selected],
-        fn event, measurements, metadata, pid ->
-          send(pid, {:telemetry_event, event, measurements, metadata})
-        end,
-        self()
-      )
-
-      on_exit(fn -> :telemetry.detach(handler_id) end)
-
-      {:ok, view, _html} = live(conn, ~p"/sections/new")
-
-      # Not a strict `refute_received` here: `:telemetry` events are a global bus not scoped to
-      # this test process's own actions, so an unrelated concurrently-running test that also
-      # selects the My Course Sections tab could deliver a same-named event to this handler too.
-      # Confirming the Templates tab still becomes selected is the meaningful regression check
-      # for the "not My Course Sections" case; the positive assertion below is what actually
-      # proves this event fires for a real selection.
-      view
-      |> element("button[role='tab']", "Templates")
-      |> render_click()
-
-      assert has_element?(view, "button[role='tab'][aria-selected='true']", "Templates")
-
-      view
-      |> element("button[role='tab']", "My Course Sections")
-      |> render_click()
-
-      assert_received {:telemetry_event,
-                       [:oli, :course_builder, :my_course_sections_filter_selected], %{count: 1},
-                       %{}}
     end
   end
 

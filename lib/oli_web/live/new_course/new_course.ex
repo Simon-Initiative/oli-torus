@@ -95,17 +95,13 @@ defmodule OliWeb.Delivery.NewCourse do
        source: nil,
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
        loading: false,
-       initial_source_filter: parse_source_filter(params["filter"]),
+       initial_source_filter: SelectSource.parse_source_filter(params["filter"]),
        initial_query: params["query"] || "",
        initial_sort_by: parse_sort_by(params["sort_by"]),
        initial_sort_order: parse_sort_order(params["sort_order"]),
        initial_view_type: parse_view_type(params["view"])
      )}
   end
-
-  defp parse_source_filter("templates"), do: :templates
-  defp parse_source_filter("my_sections"), do: :my_sections
-  defp parse_source_filter(_), do: :all
 
   # Defaults to `:inserted_at` (Created) rather than `:title`: "Courses are sorted by Most
   # Recent by default" is a product requirement, not just this table's own internal default
@@ -133,7 +129,7 @@ defmodule OliWeb.Delivery.NewCourse do
   def handle_params(params, _uri, socket) do
     {:noreply,
      assign(socket,
-       initial_source_filter: parse_source_filter(params["filter"]),
+       initial_source_filter: SelectSource.parse_source_filter(params["filter"]),
        initial_query: params["query"] || "",
        initial_sort_by: parse_sort_by(params["sort_by"]),
        initial_sort_order: parse_sort_order(params["sort_order"]),

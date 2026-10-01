@@ -62,12 +62,12 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "button[disabled]", "Next step")
+      assert has_element?(view, "button[disabled]", "Next Step")
 
       assert has_element?(
                view,
                ~s(button[class*="Fill-Buttons-fill-primary-muted"]),
-               "Next step"
+               "Next Step"
              )
 
       view
@@ -76,61 +76,13 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
       assert has_element?(view, "h2", "Name your course")
 
-      refute has_element?(view, "button[disabled]", "Next step")
+      refute has_element?(view, "button[disabled]", "Next Step")
 
       refute has_element?(
                view,
                ~s(button[class*="Fill-Buttons-fill-primary-muted"]),
-               "Next step"
+               "Next Step"
              )
-    end
-  end
-
-  describe "telemetry" do
-    setup [:admin_conn]
-
-    test "emits my_course_sections_card_activated only when a My Course Sections source is selected",
-         %{conn: conn} do
-      handler_id = "my-course-sections-card-telemetry-#{System.unique_integer([:positive])}"
-
-      :telemetry.attach(
-        handler_id,
-        [:oli, :course_builder, :my_course_sections_card_activated],
-        fn event, measurements, metadata, pid ->
-          send(pid, {:telemetry_event, event, measurements, metadata})
-        end,
-        self()
-      )
-
-      on_exit(fn -> :telemetry.detach(handler_id) end)
-
-      %Publication{project: project} = insert(:publication)
-      template = insert(:section, base_project: project, title: "Chem Template")
-      course = insert(:section, type: :enrollable, base_project: project, title: "Chem Copy")
-
-      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
-
-      # Not a strict `refute_received` here: `:telemetry` events are a global bus not scoped to
-      # this test process's own actions, so an unrelated concurrently-running test that also
-      # activates a My Course Sections card could deliver a same-named event to this handler
-      # too. Clicking a Template source and confirming it still advances the wizard normally is
-      # the meaningful regression check for the "not a My Course Section" case; the positive
-      # assertion below is what actually proves this event fires for a real activation.
-      view
-      |> element("button[phx-value-id='product:#{template.id}']")
-      |> render_click()
-
-      assert has_element?(view, "h2", "Name your course")
-
-      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
-
-      view
-      |> element("button[phx-value-id='section:#{course.id}']")
-      |> render_click()
-
-      assert_received {:telemetry_event,
-                       [:oli, :course_builder, :my_course_sections_card_activated], %{count: 1},
-                       %{}}
     end
   end
 end

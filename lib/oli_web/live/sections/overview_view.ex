@@ -687,6 +687,10 @@ defmodule OliWeb.Sections.OverviewView do
         socket = put_flash(socket, :error, "Couldn't update section image")
         {:noreply, assign(socket, changeset: changeset)}
 
+      {:error, :no_upload} ->
+        socket = put_flash(socket, :error, "Couldn't update section image")
+        {:noreply, socket}
+
       {:error, payload} ->
         Logger.error("Error uploading section image to S3: #{inspect(payload)}")
         socket = put_flash(socket, :error, "Couldn't update section image")

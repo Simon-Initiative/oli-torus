@@ -504,6 +504,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         socket = put_flash(socket, :error, "Couldn't update template image")
         {:noreply, assign(socket, changeset: changeset)}
 
+      {:error, :no_upload} ->
+        socket = put_flash(socket, :error, "Couldn't update template image")
+        {:noreply, socket}
+
       {:error, payload} ->
         Logger.error("Error uploading product image to S3: #{inspect(payload)}")
         socket = put_flash(socket, :error, "Couldn't update template image")
