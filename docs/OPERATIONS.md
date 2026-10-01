@@ -42,8 +42,15 @@ They replace the exponential curve's `LKT_AOA_CONFIDENCE_SATURATION` setting,
 which is no longer used. The Low/Medium/High thresholds remain 0.4 and 0.8;
 the defaults first reach Medium at 5 unique parts and High at 8.
 
-Stored confidence is recalculated when a learner/objective state next processes
-an evaluated attempt. Changing these settings does not backfill existing states.
+Confidence is calculated on read from the persisted unique-part count, before
+parent or class aggregation. No confidence value is stored in `learning_states`.
+After a restart, fresh reads use the new settings for existing learners without
+a backfill or another attempt; already-loaded dashboard views need refreshing.
+
+Deploy the confidence-column removal with the corresponding application version;
+older versions still reference that column. Stop older instances before applying
+the migration. For rollback, restore the column before starting the older version;
+the down migration reconstructs confidence using the active Hill parameters.
 
 ## Canonical References
 

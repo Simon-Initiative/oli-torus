@@ -40,8 +40,7 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
       success_score: 2.0,
       failure_score: 1.0,
       recency_logit: :math.log(3.0 / 2.0),
-      unique_activity_part_count: 0,
-      confidence: 0.0
+      unique_activity_part_count: 0
     }
 
     result =
@@ -80,13 +79,6 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
     assert low == 0.0
   end
 
-  test "confidence uses unique part count and the default Hill curve" do
-    result = Transition.apply_confidence(neutral_state(), 2, @config)
-
-    assert result.unique_activity_part_count == 2
-    assert_close(result.confidence, 8 / 133)
-  end
-
   test "replay sorts each state by date_evaluated and guid tie breaker" do
     key = {1, 2, 3}
 
@@ -113,55 +105,14 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
     assert_close(final.recency_logit, manual.recency_logit)
   end
 
-  test "default confidence reaches Medium at five unique parts and High at eight" do
-    for {count, expected, label} <- [
-          {0, 0.0, "Low"},
-          {4, 64 / 189, "Low"},
-          {5, 0.5, "Medium"},
-          {7, 343 / 468, "Medium"},
-          {8, 512 / 637, "High"}
-        ] do
-      result = Transition.apply_confidence(neutral_state(), count, @config)
-      assert_close(result.confidence, expected)
-      assert Oli.Delivery.Metrics.confidence_label(result.confidence) == label
-    end
-  end
-
-  test "confidence honors midpoint and fractional steepness overrides" do
-    config = %Config{@config | confidence_midpoint: 4.0, confidence_steepness: 0.5}
-
-    for {count, expected} <- [{0, 0.0}, {1, 1 / 3}, {4, 0.5}, {16, 2 / 3}] do
-      assert_close(
-        Transition.apply_confidence(neutral_state(), count, config).confidence,
-        expected
-      )
-    end
-  end
-
-  test "confidence uses accumulated evidence and stays unchanged without new parts" do
-    state = Transition.apply_confidence(neutral_state(), 4, @config)
-    assert Transition.apply_confidence(state, 0, @config) == state
-    result = Transition.apply_confidence(state, 1, @config)
+  test "unique part count accumulates only new evidence" do
+    state = Transition.apply_evidence_count(neutral_state(), 4)
+    assert Transition.apply_evidence_count(state, 0) == state
+    result = Transition.apply_evidence_count(state, 1)
     assert result.unique_activity_part_count == 5
-    assert_close(result.confidence, 0.5)
   end
 
-  test "confidence is monotonic and bounded even with large powers" do
-    values =
-      Enum.map(0..100, fn count ->
-        Transition.apply_confidence(neutral_state(), count, @config).confidence
-      end)
-
-    assert values == Enum.sort(values)
-    assert Enum.all?(values, &(&1 >= 0.0 and &1 < 1.0))
-
-    config = %Config{@config | confidence_steepness: 1_000.0}
-    assert Transition.apply_confidence(neutral_state(), 0, config).confidence == 0.0
-    assert Transition.apply_confidence(neutral_state(), 5, config).confidence == 0.5
-    assert Transition.apply_confidence(neutral_state(), 1_000_000, config).confidence == 1.0
-  end
-
-  test "replay applies confidence increments independently per state" do
+  test "replay applies unique-part increments independently per state" do
     first_key = {1, 2, 3}
     second_key = {1, 2, 4}
 
@@ -209,8 +160,7 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
       failure_score: 0.0,
       recency_logit: 0.0,
       aoa: 0.0,
-      unique_activity_part_count: 0,
-      confidence: 0.0
+      unique_activity_part_count: 0
     }
   end
 
