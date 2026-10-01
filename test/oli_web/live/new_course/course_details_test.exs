@@ -389,20 +389,20 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     })
 
     view
-    |> Phoenix.LiveViewTest.element("button", "Next step")
+    |> Phoenix.LiveViewTest.element("button", "Next Step")
     |> Phoenix.LiveViewTest.render_click()
   end
 
   defp select_source(_, view, source) do
     view
-    |> Phoenix.LiveViewTest.element(".card-deck a:first-child")
+    |> Phoenix.LiveViewTest.element(".card-deck button:first-child")
     |> render_click(%{
       id:
         "#{if Map.get(source, :type) == :blueprint, do: "product", else: "publication"}:#{Map.get(source, :id) || Map.get(source, :publication_id)}"
     })
 
     view
-    |> Phoenix.LiveViewTest.element("button", "Next step")
+    |> Phoenix.LiveViewTest.element("button", "Next Step")
     |> Phoenix.LiveViewTest.render_click()
   end
 

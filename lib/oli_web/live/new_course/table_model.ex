@@ -88,6 +88,16 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
     end
   end
 
+  @doc "Returns the type-tag variant for a source-list item, or nil when none applies."
+  @spec tag_variant(map()) :: :template | :my_section | nil
+  def tag_variant(item) do
+    case {is_product?(item), is_course?(item)} do
+      {true, _} -> :template
+      {_, true} -> :my_section
+      _ -> nil
+    end
+  end
+
   def render_payment_column(_, item, _) do
     if payable_source?(item) do
       case Money.to_string(item.amount) do

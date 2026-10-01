@@ -1,64 +1,124 @@
 # Course Builder Source Selection - Informal Feature Context
 
-Last updated: 2026-07-27
+Last updated: 2026-09-18
 
-This feature updates the shared course-builder source-selection experience so instructors can discover and choose ordinary curriculum sources, their own sections for independent copy, and authorized Blueprints without confusing the resulting relationships.
+> **Scope correction (2026-09-17):** the entire Blueprint Courses workstream — `MER-5825`, `MER-5826`, `MER-5827`, `MER-5829`, `MER-5830`, `MER-5833` — is `Closed Won't Do` epic-wide (confirmed on `MER-5841` by Eli Knebel and Francisco Castro, decision by Darren, 2026-09-08). There is no linked/child Blueprint relationship anywhere in current scope, in this lane or any other. Everything below reflects that. The epic-level `../informal.md` and `../plan.md` still describe the cancelled workstream and need their own refresh pass (e.g. via `harness-update_docs`) — do not treat them as current for this lane.
+
+> **Scope correction #2 (2026-09-18):** `MER-5831` (Course Copy: Rules) merged to `master` ([PR #6855](https://github.com/Simon-Initiative/oli-torus/pull/6855), merge commit `7908b1002e`) and this branch is rebased onto it. That merge did not just expose an authorization rule to call later — it already wired the full My Course Sections selection flow end to end: `select_source.ex` already calls `Oli.Delivery.SectionCreation.authorize_actor/2` + `.permitted_sections/2` (alongside the existing `.permitted_publications/2`/`.permitted_products/2`) and merges the results into one `sources` list; `table_model.ex` already normalizes all three source kinds through `is_product?/1`, `is_course?/1`, `source_title/1`, `source_description/1`, and `source_identifier/1` (the last returning `"section:#{id}"` for a Course/My-Section row); `card_listing.ex`'s selection click is already unconditional for every row regardless of kind; and step 2 of the wizard (`name_course.ex`) already has a working, unstyled "Choose what to copy" `copy_options` fieldset for `section:<id>` sources. **Selecting a My Course Sections card today already creates a real copy, through the old/unstyled step-2 UI — it is not a no-op.** Gastón confirmed the decision on 2026-09-18: this ticket (`MER-5828`) does not gate or disable that already-working flow; it only adds the visual/discovery layer (tabs, tags, banner, tooltips, density, the My Section hover state) on top of it. Step 2's "Choose what to copy" UI stays exactly as `MER-5831` shipped it — unstyled — until `MER-5832` polishes it. Torus ships by release rather than immediately on merge, and `MER-5832` follows this ticket immediately, so the brief unstyled-step-2 window is acceptable. Every mention below of the My Course Sections action being a "no-op", "dummy", "disabled", or "deferred until `MER-5832`" is obsolete and has been corrected in place.
+
+This feature updates the shared course-builder source-selection experience so instructors can discover ordinary curriculum sources ("Templates" — the existing project/product sources) and browse and select their own course sections ("My Course Sections") to copy. This ticket (`MER-5828`) ships the visual/discovery layer for step 1 of the wizard: filter tabs, card redesign with type tags, the new-feature banner, filter tooltips, and a hover state for My Course Sections cards. Selecting a My Course Sections card already works end to end — via `MER-5831`, merged — and proceeds into the existing, unstyled step-2 "Choose what to copy" flow; this ticket does not change that flow's functionality, only step 1's presentation. `MER-5832` is expected to polish that step-2 experience (and the overall copy-initiation UX) next.
+
+The codebase is Phoenix LiveView/HEEx (`OliWeb.Common.CardListing`, `OliWeb.Delivery.NewCourse.{SelectSource,TableModel}`, `OliWeb.Common.Listing`), not React — prior mentions of "React components" in this doc were inaccurate and have been corrected below.
+
+## Design references
+
+Figma file: [Course replication feature](https://www.figma.com/design/ZAfwBt1ek94xAyriR6wy8S/Course-replication-feature). All node-ids below are confirmed by Gastón (2026-09-17); the two node-ids previously listed here from the Jira description text alone (`44-721`, `40-2883`) turn out to be correct and are kept, now with confirmed content.
+
+**Scope boundary confirmed with these designs:** all of it is the section-creation wizard's **step 1 of 3** ("Select source materials") only. Steps 2 and 3 (`name_course`, `course_details`) are not touched.
+
+Full-screen references:
+
+1. Node `44-721` — full step 1 view, light mode.
+2. Node `44-1146` — new-feature explanatory banner, rendered between the filter/search bar and the pagination + "Showing X-Y of Z" row. New element; in code this slot is between `FilterBox.render`/`Filter.render` and `Listing.render` inside `select_source.ex`.
+3. Node `40-2883` — same as (1), dark mode.
+4. Node `74-4025` — hover tooltip on the "Templates" filter button.
+5. Node `74-4023` — hover tooltip on the "My Course Sections" filter button.
+
+Component-level detail (subsets of 1/3, called out because they carry the changes with the most implementation risk):
+
+6. Left-panel background `#1D4481` — **already satisfied, no new token needed.** `assets/tailwind.theme.js` defines a custom `blue.700 = '#1D4481'` in the Tailwind theme, and `lib/oli_web/live/common/stepper/stepper.ex:40` already renders the left panel as `bg-blue-700 dark:bg-black`. Keep using `bg-blue-700`; do not introduce a raw hex value.
+7. Node `44-842` — left-panel step titles/descriptions (the 3-step content). This is data owned by `new_course.ex`'s `steps` list (title/description strings passed into `OliWeb.Common.Stepper`), not shared markup — low risk to replace.
+8. Node `44-789` — reference card for the new "My Section" identification tag. No cost badge visible on this card — My Course Sections are not a payable source, so the (restyled) cost badge should not render here.
+9. Node `44-805` — reference card for the **existing cost badge**, restyled. **Resolved (2026-09-18, Jess/design via Slack):** the green "Free" pill on this card is not the new "Template" identification tag — it is the already-existing cost badge (`TableModel.render_payment_column/3`, currently a plain Bootstrap `badge badge-success` in `card_listing.ex`), which Jess "made prettier" without changing its functionality (still "Free" or a price, per `payable_source?/1`). The new "Template" identification tag is a **separate** label that can appear on the same card at the same time (Jess: "both can exist at the same time (a free template)") — this reference card just doesn't happen to show that combination. Implementation for Phase 3: restyle the existing cost badge to this pill look (green bg/text tokens, unchanged Free/price logic) **and** add the "Template" tag alongside it when applicable. No Figma reference shows a paid template's card; treat that as unconfirmed and don't invent it.
+10. Node `44-824` — reference card with neither tag: no "Template"/"My Section" identification tag, **and no cost badge** either, even though the current (pre-redesign) code renders the cost badge unconditionally on every card via `payable_source?/1`'s `else -> "Free"` branch. Read together with (8) and (9), the design implies the (restyled) cost badge should be scoped to display only on product/Template cards, not on Projects or My Course Sections — a display-only visibility change in `card_listing.ex`, not a change to the underlying `render_payment_column/3` Free/price computation.
+11. Node `44-1459` — "My Section" card hover state: same card with a darkened overlay and the label "SELECT TO COPY COURSE SECTION". This hover sits on a card that is genuinely selectable (see the 2026-09-18 scope correction above) — the label accurately describes what clicking already does. **Open question from Gastón:** whether other card types get an equivalent hover treatment — needs designer confirmation.
+12. Node `44-838` — wizard footer (Cancel / Next Step buttons), same layout as today with new styling only.
+
+**Shared-component risk on (7) and (12):** `OliWeb.Common.Stepper` (`lib/oli_web/live/common/stepper/stepper.ex`) is not exclusive to course creation — `lib/oli_web/live/delivery/student_onboarding/wizard.ex` renders the same component for an unrelated student-onboarding flow. The footer button markup and the step-item chrome live in the shared component, so any new styling there must be scoped to the `course_creation_stepper` instance (the component already has one such conditional, keyed on `@id`, at stepper.ex:50-55) rather than restyling the shared component globally, or the student-onboarding wizard picks up unintended visual changes.
 
 ## Source tickets
 
-- `MER-5828` Course Builder UI Updates
-- UI integration portions of `MER-5829` Course Builder: Selecting a blueprint
-- UI integration portions of `MER-5832` Course Builder: Selecting a section to copy
-- Epic context: `../informal.md`
-- Parent lane plan: `../plan.md`
+- `MER-5828` Course Builder UI Updates — this ticket, branch `MER-5828-course-builder-ui-updates`, status In Progress.
+- `MER-5841` Replication contracts and safety foundation — **merged to master 2026-09-17** ([PR #6854](https://github.com/Simon-Initiative/oli-torus/pull/6854)). Defines the server-side authorization contract (`Oli.Delivery.SectionCreation.authorize_actor/2`) that `MER-5831` builds on. This branch has been **rebased onto master and already includes it.**
+- `MER-5831` Course Copy: Rules — **merged to master 2026-09-18** ([PR #6855](https://github.com/Simon-Initiative/oli-torus/pull/6855), merge commit `7908b1002e`). This branch is **rebased onto master and already includes it.** Already wires `Oli.Delivery.SectionCreation.permitted_sections/2` into `select_source.ex`'s source list, normalizes all source kinds in `table_model.ex` (`is_product?/1`, `is_course?/1`, `source_title/1`, `source_description/1`, `source_identifier/1`), and ships a working (unstyled) "Choose what to copy" step in `name_course.ex` for `section:<id>` sources. `MER-5828` reuses this normalization directly rather than introducing the typed source-kind shape originally proposed in Darren Siegel's design comment (2026-08-06) — `MER-5831` already solved that problem in its own, simpler way.
+- `MER-5832` Course Builder: Selecting a section to copy — consumes the tab/filter/tag built here and replaces the existing unstyled step-2 "Choose what to copy" UI with the polished copy-options modal/step described in its Jira ticket. It is a UI/UX polish pass on an already-functional flow, not the ticket that makes selection work.
+- Epic context: `../informal.md` (stale, see scope correction above).
+- Parent lane plan: `../plan.md` (same staleness caveat).
 
 ## Product outcome
 
-The course builder lets an instructor quickly find an appropriate source and understand what will happen next: Blueprint selection creates a linked child, while My Course Sections selection creates an independent copy.
+The course builder lets an instructor quickly find an appropriate source: an existing Template (project or product) to build from immediately, exactly as today, or one of their own course sections to copy. Selecting a My Course Section in this PR surfaces the section (searchable, sortable, tagged) and already proceeds into the existing (unstyled) copy-creation flow, exactly as a Template card proceeds into ordinary creation — `MER-5832` polishes that flow's presentation, it does not enable it.
 
 ## Functional scope
 
-- Improve course-card density, layout, spacing, and metadata scanability.
-- Add source filters: All Sources, My Course Sections, and Blueprint Courses.
+- Improve course-card density, layout, spacing, and metadata scanability in the existing card/list components (`CardListing`, `TableModel`, `Listing`).
+- Add source filters/tabs: **All Sources**, **Templates** (the existing Project/Product sources — today rendered via `TableModel.render_type_column/3` as "Project"/"Template"), and **My Course Sections** (new).
+- "My Course Sections" already lists active enrollable sections where the current instructor holds an instructor/content-developer role (admins: any active enrollable section) — `select_source.ex` already calls `Oli.Delivery.SectionCreation.permitted_sections/2` for this; this ticket does not touch that query, only the presentation of its results.
 - Preserve Most Recent as the default sort and preserve a user-selected sort while filters change.
 - Keep search and sorting scoped to the selected source semantics.
-- Add consistent source/type tags such as Blueprint and My Section, with a final decision for Blueprint Child presentation.
-- Add accessible Blueprint child-creation and independent-copy initiation actions.
-- Show explanatory messaging for linked versus independent creation, permissions, editable settings, and future synchronization.
-- Surface server-derived Blueprint source/owner information on the resulting child Manage experience where applicable.
+- Add consistent source/type tags: "Template" (existing "Template"/"Project" values, now rendered as a visual tag instead of a table-only label) and a new "My Section" tag, both derived from `table_model.ex`'s existing `is_product?/1`/`is_course?/1`.
+- My Course Sections cards are searchable, sortable, taggable, and **already selectable** — clicking one proceeds into the existing (unstyled) step-2 "Choose what to copy" flow shipped by `MER-5831`. This ticket does not add, remove, or gate that behavior; it only adds the card's visual treatment (tag, density, hover state).
+- No Blueprint linked-child creation action, no linked/child explanatory messaging, and no Blueprint source/owner surfacing on Manage — removed from scope; the feature is cancelled, not deferred.
+- Add a new-feature explanatory banner between the filter/search bar and the pagination row (design reference 2).
+- Add hover tooltips on the "Templates" and "My Course Sections" filter buttons, with a keyboard/focus equivalent (design references 4-5).
+- Restyle the source cards per type: "My Section" and "Template" get distinct identification-tag treatments; a source that is neither gets no identification tag at all (design references 8-10). Separately, restyle the **existing** cost badge (`TableModel.render_payment_column/3`, today a plain Bootstrap `badge badge-success`) to the pill look shown in design reference 9, without changing its Free/price logic, and scope its display to product/Template cards only (design references 8-10 show it absent on My Section and no-tag cards). A card can show both the identification tag and the cost badge at once (e.g. a free Template).
+- "My Section" cards get a hover state — darkened overlay plus "SELECT TO COPY COURSE SECTION" label (design reference 10). The label is accurate: the card is already clickable and the click already starts the real (if unstyled) copy flow. Whether other card types share this hover treatment is an open decision (see below).
+- Update the wizard's left-panel step titles/descriptions (design reference 7) and footer button styling (design reference 11) for **step 1 of the section-creation wizard only** — steps 2 and 3 are unchanged, and none of this may leak into the unrelated student-onboarding wizard that shares `OliWeb.Common.Stepper` (see Design references, item 6/11 risk note).
 
 ## Technical guidance
 
-Define a normalized, authorization-safe source-card/query contract consumed by all filters. Do not rely on client-side filtering to protect Blueprint names, owners, counts, or statuses. Search and sorting must not create or mutate relationships.
+`MER-5841`'s authorization contract and `MER-5831`'s query/row-normalization work are both already merged and already called from `select_source.ex`/`table_model.ex`. This ticket does not write a new eligibility query and does not need to introduce a new row-kind abstraction: `table_model.ex` already exposes `is_product?/1`, `is_course?/1`, `source_title/1`, `source_description/1`, and `source_identifier/1` as the normalized interface across Project/Template/My-Section rows — build the new tag and hover treatment directly on top of these existing predicates rather than inventing a parallel typed-tuple shape (the `{:project,...}|{:publication,...}|{:product,...}|{:previous_section,...}` shape floated in `MER-5831`'s earlier design comment was superseded by this simpler, already-shipped predicate-pair approach).
 
-Keep initiation actions semantically distinct even if cards/components are shared. Blueprint cards invoke linked child creation; My Section cards invoke independent copy. The UI must not infer relationship type from visual tags alone.
+Do not implement any Blueprint relationship, synchronization, or linked-child messaging or actions — none of that exists in scope anywhere in the epic anymore.
 
-All filters, sort controls, tabs, cards, and actions need keyboard operation, accessible names, selected states, and focus behavior. Hover text must have a keyboard/focus equivalent. Dynamic result updates should be announced where appropriate. Avoid duplicating relationship or authorization rules in React components.
+Do not add any gating, confirmation, or "coming soon" state to the My Course Sections card's selection action. It is already wired to the real (if visually unstyled) copy-creation flow via `MER-5831`; this ticket must not disable, intercept, or short-circuit that click. `card_listing.ex`'s existing unconditional `phx-click` is correct as-is — leave it alone and only change the card's visual markup.
+
+All filters, sort controls, tabs, and cards need keyboard operation, accessible names, selected states, and focus behavior. Hover text must have a keyboard/focus equivalent. Dynamic result updates should be announced where appropriate.
+
+Use the existing `bg-blue-700` Tailwind color for the wizard left panel; it already renders `#1D4481` exactly (`assets/tailwind.theme.js`), so no new color token is needed for that value. Any other color/token gaps surfaced while implementing the new banner, tooltips, or card states should be checked against `lib/oli_web/components/design_tokens/` first, per the repo's `implement_ui`/`ui_workflow` token-reuse guardrails, before introducing anything new.
+
+`assets/tailwind.tokens.js` is a separate, auto-generated token layer from `tailwind.theme.js`: it mirrors this Figma file's semantic variables 1:1 (e.g. `surface/surface-primary` → `Surface-surface-primary`), and `tailwind.plugins.js`'s `tokenColorPlugin` turns every key into `bg-<Token>`/`text-<Token>`/`border-<Token>` utilities with automatic light/dark switching. Almost every color in this ticket's designs (card surface/border, "My Section"/"Template" pill colors, tooltip surface/border/text, Cancel button text/border) maps directly by name to a key in that file — check there by name before assuming a color needs a raw hex or a new token. The full mapping produced during design-brief research is recorded in the `ui_workflow` runtime brief for this scope (`~/.codex/memories/oli-torus-ng/ui-work/MER-5828/brief.md`); re-derive it from `assets/tailwind.tokens.js` if that external file is unavailable.
+
+The repo also already has a generic, reusable tooltip mechanism — the `GlobalTooltip` phx-hook (`assets/src/hooks/global_tooltip.ts`, used via `phx-hook="GlobalTooltip" data-tooltip="..." data-tooltip-style="body"`) — that already renders with the exact tokens the Templates/My Course Sections filter tooltips need. Reuse it; do not build a new tooltip component.
+
+`OliWeb.Common.Stepper` (`lib/oli_web/live/common/stepper/stepper.ex`) is shared with `lib/oli_web/live/delivery/student_onboarding/wizard.ex`. Any left-panel/footer styling change (design references 7, 11) must be scoped to the `course_creation_stepper` id, following the existing `if @id == "course_creation_stepper"` conditional pattern already in that component, not applied unconditionally.
 
 ## Out of scope
 
-- Blueprint relationship and synchronization behavior; see `../blueprint_lifecycle/`.
-- Course Copy backend semantics; see `../course_copy/`.
-- Admin relationship reporting; see `../blueprint_visibility/`.
+- Blueprint parent/child relationship, synchronization, enable/disable, and linked-section visibility — **cancelled epic-wide** (`MER-5825`/`5826`/`5827`/`5829`/`5830`/`5833`, all `Closed Won't Do`). Not built here or elsewhere.
+- Redesigning the step-2 "Choose what to copy" UI (the `copy_options` fieldset in `name_course.ex`) — `MER-5832`. It already works today via `MER-5831`; this ticket leaves it untouched.
+- Course Copy backend semantics (allowlist, transaction, learner-data exclusion) — already implemented by `MER-5831` / `../course_copy/`; not re-touched here.
 
 ## Dependencies and handoff
 
-- Can begin with design/component inventory immediately.
-- Soft dependency on `../replication_contracts/` for source classifications, permissions, and safe queries.
-- Hard dependency on `../blueprint_lifecycle/` for Blueprint eligibility, child-creation action, and relationship metadata.
-- Hard dependency on `../course_copy/` for My Course Sections and copy initiation behavior.
+- Hard dependency on `../replication_contracts/` (`MER-5841`) — merged to master 2026-09-17; **this branch is rebased and includes it.**
+- Hard dependency on `../course_copy/` (`MER-5831`) — merged to master 2026-09-18 ([PR #6855](https://github.com/Simon-Initiative/oli-torus/pull/6855)); **this branch is rebased and includes it.** This ticket builds its card/tab/tag UI directly on top of `MER-5831`'s already-shipped query and row-normalization work, and must not disable the selection behavior it already wired up.
+- No dependency on `../blueprint_lifecycle/` or `../blueprint_visibility/` — both lanes are cancelled.
+- Hands off to `MER-5832`: the My Course Sections tab, query, cards, and tag are functionally complete; `MER-5832` only needs to redesign the step-2 copy-options presentation, not enable selection.
 
 ## Verification expectations
 
-- Query/filter tests for source membership, authorization, search, and sort preservation.
-- UI tests for all source filters, card tags, actions, and explanatory messages.
-- End-to-end tests distinguishing Blueprint child creation from independent Course Copy.
+- UI tests for the All Sources / Templates / My Course Sections filters, tags, density, banner, and tooltips.
+- UI test confirming the identification tag and the (restyled, scoped-to-Template) cost badge can render together on the same card without visual collision, and that the cost badge's Free/price value is unchanged from `render_payment_column/3`'s existing computation.
+- Regression test confirming My Course Sections membership still matches `MER-5841`'s/`MER-5831`'s existing authorization behavior after the presentation changes (no new eligibility logic is introduced, but the query call sites are touched by this ticket's refactor of `select_source.ex`/`table_model.ex`, so a regression check is warranted).
+- Regression test confirming that activating a My Course Sections card still proceeds into the existing step-2 copy flow exactly as before this ticket, and that activating a Template card still proceeds into ordinary creation, unchanged.
 - Accessibility tests for keyboard-only operation, focus, selected state, hover equivalents, and dynamic result announcements.
-- Regression tests for ordinary course creation and non-replication sources.
+- Regression tests for ordinary Template-based course creation (unchanged select/copy flow).
+- No Blueprint-vs-Copy end-to-end distinction test — Blueprint is out of scope, not a parallel path to distinguish from.
 
 ## Open decisions
 
-- Final Blueprint Child tag/filter behavior.
+- ~~Whether the "Template" tag's Figma reference card (node `44-805`) showing a green "Free" pill instead of the word "Template" meant the identification tag itself should say "Free".~~ **Resolved 2026-09-18 (Jess, design, via Slack):** the "Free" pill is the existing, unrelated cost badge, only restyled — not the identification tag. The "Template" identification tag and the "Free"/price cost badge are separate labels that can both appear on the same card. See design references 8-10 above for the resulting Phase 3 implementation plan.
+- Still open, inferred rather than explicitly confirmed by Jess: whether the (restyled) cost badge should display only on product/Template cards (as design references 8, 9, and 10 collectively suggest by omitting it from the My Section and no-tag reference cards) versus continuing to render unconditionally on every card as the current `payable_source?/1`/`render_payment_column/3` pairing does today. Proceeding with the product/Template-only scoping as the reading most consistent with the actual mockups; flag to Jess if this turns out wrong.
+- No Figma reference exists for a *paid* Template's card — what it should show instead of "Free" isn't confirmed. Not inventing it; `render_payment_column/3`'s existing price-string behavior is reused as-is until a reference or explicit confirmation exists.
+- ~~Exact wording for the new-feature explanatory banner (design reference 2) and the two filter tooltips (design references 4-5).~~ **Resolved** via the `ui_workflow` design brief (`get_design_context` on nodes `44:1146`, `74:4025`, `74:4023`, 2026-09-17): banner — "Create a new course section by copying all or part of an existing section. The new section will reflect the source section as it exists at the time it is copied. Changes made to the source afterward will not appear in the new section. Only course sections you currently have permission to access are shown."; Templates tooltip — "View and create courses from templates made by course authors."; My Course Sections tooltip — "View and copy your previously created course sections."
 - Exact card metadata and sort options.
-- Whether source selection and copy/Blueprint setup are separate steps or share a modal/flow.
-- Final relationship messaging and terminology.
+- Whether the darkened-overlay + "SELECT TO COPY COURSE SECTION" hover treatment (design reference 11) extends to Template cards, or is exclusive to "My Section" cards — no other card type shows this hover state in the designs fetched so far; still needs designer confirmation before extending it.
+- ~~Footer "Next Step" button color: the Figma frame's local fallback for `fill/buttons/fill-primary` is `#0073E5`, but the repo's synced token `Fill-Buttons-fill-primary` (`assets/tailwind.tokens.js`) is `#0080FF`.~~ **Resolved 2026-09-18, Phase 5 implementation + `$harness-review`:** neither value was used. `Fill-Buttons-fill-primary` (`#0080FF`) was tried first per the "use the token" plan, but its existing white button text only reaches ~3.8:1 contrast against it, failing WCAG AA's 4.5:1 minimum for normal-size text. Switched to the same token family's `Fill-Buttons-fill-primary-bold` (`#0062F2`, ~5.2:1, passes AA) instead — still the repo's synced token layer, not a raw hex or Figma's local fallback. Flag to design that the plain `-primary` token doesn't pair safely with white button text anywhere it's used this way.
+- **Resolved 2026-09-18, Phase 5 implementation:** Footer "Cancel" button border — added directly to the course-creation `Stepper` instance's Cancel button (`border-Border-border-bold`, `#8AB8E5`) and its text color (`text-Specially-Tokens-Text-text-button-secondary`), via a new explicit `variant={:course_creation}` attr on `OliWeb.Common.Stepper` (not by editing the shared `.secondary`/`.outline` CSS classes in `assets/css/button.css`, which are used app-wide well beyond this wizard). Still open, not code-changed: `$harness-review` found this exact border color measures ~2.1:1 against the button's white background in light mode, under WCAG 1.4.11's 3:1 non-text-contrast threshold (dark mode is fine, ~5.3:1). Unlike the Next Step fill above, this color is Figma's own explicit, confirmed value (node `44:838`), so it wasn't silently substituted — flag to design; the button stays identifiable via fill/shape/label without the border in the meantime.
+
+## Follow-up: doc reconciliation
+
+As one of the last steps of this ticket (after implementation, before closing the PR), run **`harness-update_docs`** against this work item directory (`docs/exec-plans/current/epics/course_replication/course_builder_sources/`) to reconcile `prd.md`/`fdd.md`/`plan.md` (produced by the `harness-analyze`/`harness-architect`/`harness-plan` steps) with what was actually implemented — in particular any further drift discovered while touching `select_source.ex`/`table_model.ex`/`card_listing.ex` beyond what `MER-5831`'s merge already revealed and was folded into these docs on 2026-09-18. It only rewrites this work item's own PRD/FDD/plan and re-validates them; it does not touch `informal.md` files.
+
+It does **not** cover the epic-level drift found in this pass: `../informal.md` and `../plan.md` (and, transitively, `../blueprint_lifecycle/informal.md` and `../blueprint_visibility/informal.md`) still describe the cancelled Blueprint workstream as active scope. That reconciliation is bigger than this ticket (it spans lanes not owned here) and should be tracked as separate follow-up work once all in-flight lanes are known, rather than folded into this PR.

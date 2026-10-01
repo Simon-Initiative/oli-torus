@@ -421,6 +421,22 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
     end
   end
 
+  describe "MER-5828 regression - shared Stepper footer is unaffected" do
+    setup [:user_conn]
+
+    test "the onboarding wizard's Stepper instance is not the course-creation instance and does not pick up its footer color overrides",
+         %{conn: conn, user: student} do
+      %{section: section} = basic_section(nil, %{title: "Chemistry 301"})
+      enroll_student(student, section)
+
+      {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
+
+      assert has_element?(view, "#student-onboarding-wizard")
+      refute has_element?(view, "#course_creation_stepper")
+      refute has_element?(view, "[id^=stepper_step_content_]")
+    end
+  end
+
   defp enroll_student(student, section, opts \\ [has_visited_section: false]) do
     {:ok, enrollment} = enroll_user_to_section(student, section, :context_learner)
 
