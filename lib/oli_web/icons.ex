@@ -974,6 +974,33 @@ defmodule OliWeb.Icons do
   attr :width, :string, default: "24"
   attr :height, :string, default: "24"
   attr :stroke_width, :string, default: "2"
+
+  def unlink(assigns) do
+    ~H"""
+    <svg
+      width={@width}
+      height={@height}
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+      aria-hidden="true"
+    >
+      <path
+        d="M11.3333 14.6667V13.3333M6 10L10 6M7.33333 4L7.642 3.64267C8.2672 3.01755 9.11513 2.6664 9.99924 2.66646C10.8833 2.66653 11.7312 3.0178 12.3563 3.643C12.9814 4.2682 13.3326 5.11613 13.3325 6.00024C13.3325 6.88434 12.9812 7.73222 12.356 8.35733L12 8.66667M8.66668 12L8.40201 12.356C7.76951 12.9815 6.91587 13.3323 6.02635 13.3323C5.13682 13.3323 4.28318 12.9815 3.65068 12.356C3.33892 12.0477 3.09141 11.6807 2.92249 11.2761C2.75356 10.8715 2.66659 10.4374 2.66659 9.999C2.66659 9.56057 2.75356 9.12649 2.92249 8.7219C3.09141 8.31732 3.33892 7.95027 3.65068 7.642L4.00001 7.33333M13.3333 11.3333H14.6667M1.33333 4.66667H2.66667M4.66667 1.33333V2.66667"
+        stroke="currentColor"
+        stroke-width={@stroke_width}
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "stroke-black dark:stroke-white"
+  attr :width, :string, default: "24"
+  attr :height, :string, default: "24"
+  attr :stroke_width, :string, default: "2"
   attr :variant, :string, default: "default"
 
   def trash(assigns) do

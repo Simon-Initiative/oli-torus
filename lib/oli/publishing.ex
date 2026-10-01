@@ -808,10 +808,18 @@ defmodule Oli.Publishing do
     end)
   end
 
-  def get_objective_mappings_by_publication(publication_id) do
+  @doc """
+  Returns active objective mappings for a publication.
+
+  Pass `lock: true` only inside a transaction to lock the current mapping and
+  revision rows while enforcing a cross-revision invariant.
+  """
+  @spec get_objective_mappings_by_publication(integer(), lock: boolean()) ::
+          [%PublishedResource{}]
+  def get_objective_mappings_by_publication(publication_id, opts \\ []) do
     objective = ResourceType.id_for_objective()
 
-    Repo.all(
+    query =
       from mapping in PublishedResource,
         join: rev in Revision,
         on: mapping.revision_id == rev.id,
@@ -820,7 +828,14 @@ defmodule Oli.Publishing do
             mapping.publication_id == ^publication_id,
         select: mapping,
         preload: [:resource, :revision]
-    )
+
+    query =
+      case Keyword.get(opts, :lock, false) do
+        true -> from mapping in query, lock: "FOR UPDATE"
+        false -> query
+      end
+
+    Repo.all(query)
   end
 
   @doc """
@@ -1452,6 +1467,60 @@ defmodule Oli.Publishing do
         scope: scope
       }
     end)
+  end
+
+  @doc """
+  Returns whether an objective is referenced by any active page, activity, or
+  selection in a publication without materializing the matching revisions.
+  """
+  @spec objective_referenced?(integer(), integer()) :: boolean()
+  def objective_referenced?(resource_id, publication_id) do
+    page_id = ResourceType.id_for_page()
+    activity_id = ResourceType.id_for_activity()
+
+    sql = """
+    SELECT
+      EXISTS (
+        SELECT 1
+        FROM published_resources AS mapping
+        JOIN revisions AS rev ON mapping.revision_id = rev.id
+        WHERE mapping.publication_id = $1
+          AND rev.deleted IS FALSE
+          AND (
+            (
+              rev.resource_type_id = $2
+              AND jsonb_path_exists(
+                rev.objectives,
+                '$.*[*] ? (@ == $objective)',
+                jsonb_build_object('objective', $4::bigint)
+              )
+            )
+            OR
+            (
+              rev.resource_type_id = $3
+              AND (
+                rev.objectives->'attached' @> jsonb_build_array($4::bigint)
+                OR jsonb_path_exists(
+                  rev.content,
+                  '$.**.conditions.** ? (@.fact == "objectives").value ? (@ == $objective)',
+                  jsonb_build_object('objective', $4::bigint)
+                )
+              )
+            )
+          )
+        LIMIT 1
+      )
+    """
+
+    %{rows: [[referenced?]]} =
+      Ecto.Adapters.SQL.query!(Repo, sql, [
+        publication_id,
+        activity_id,
+        page_id,
+        resource_id
+      ])
+
+    referenced?
   end
 
   @doc """

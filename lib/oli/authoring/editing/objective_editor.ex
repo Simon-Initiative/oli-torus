@@ -3,10 +3,10 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   alias Oli.Repo
   alias Oli.Resources
+  alias Oli.Resources.Revision
   alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
-  alias Oli.Repo
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ActivityEditor
@@ -14,7 +14,17 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   import Oli.Utils
 
+  @serializable_retries 1
+
+  @doc """
+  Creates a learning objective or sub-objective and optionally associates it with a parent.
+
+  Passing a non-empty `container_slug` creates a sub-objective. The persisted type remains
+  stable if that final parent association is later removed.
+  """
   def add_new(attrs, %Author{} = author, %Project{} = project, container_slug \\ nil) do
+    objective_type = objective_type(container_slug)
+
     attrs =
       Map.merge(attrs, %{
         author_id: author.id,
@@ -24,7 +34,11 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     result =
       Repo.transaction(fn ->
         with {:ok, %{resource: resource, revision: revision}} <-
-               Oli.Authoring.Course.create_and_attach_resource(project, attrs),
+               Oli.Authoring.Course.create_and_attach_resource(
+                 project,
+                 attrs,
+                 objective_type: objective_type
+               ),
              publication <- Publishing.project_working_publication(project.slug),
              {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
              {:ok, container} <-
@@ -203,23 +217,197 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     end)
   end
 
+  @doc """
+  Removes only the association between a sub-objective and one parent objective.
+
+  The sub-objective remains published in the project, retains its course-content
+  attachments and other parent associations, and is marked as a sub-objective even
+  when this was its final parent association. Both revisions are resolved from the
+  current working publication and the requested relationship must still exist.
+  """
+  @spec remove_sub_objective_from_parent(
+          binary(),
+          %Author{},
+          %Project{},
+          binary() | %{required(:slug) => binary()}
+        ) ::
+          {:ok, %Revision{}}
+          | {:error, :not_associated | :not_found | Ecto.Changeset.t()}
   def remove_sub_objective_from_parent(
         revision_slug,
         %Author{} = author,
         %Project{} = project,
-        parent_objective
+        parent_objective_or_slug
       ) do
-    resource = Resources.get_resource_from_slug(revision_slug)
+    parent_slug = objective_slug(parent_objective_or_slug)
 
-    edit(
-      parent_objective.slug,
-      %{
-        children: Enum.filter(parent_objective.children, fn id -> id != resource.id end)
-      },
-      author,
-      project
-    )
+    result =
+      Repo.transaction(fn ->
+        publication = Publishing.project_working_publication(project.slug)
+
+        revisions = objective_revisions(publication.id, lock: true)
+
+        with %{} = sub_objective <- Enum.find(revisions, &(&1.slug == revision_slug)),
+             %{} = parent <- Enum.find(revisions, &(&1.slug == parent_slug)),
+             true <- sub_objective.resource_id in parent.children,
+             {:ok, updated_sub_objective} <-
+               ensure_sub_objective_type(sub_objective, publication, author),
+             {:ok, updated_parent} <-
+               Resources.create_revision_from_previous(parent, %{
+                 author_id: author.id,
+                 children: Enum.reject(parent.children, &(&1 == sub_objective.resource_id))
+               }),
+             {:ok, _mapping} <-
+               Publishing.upsert_published_resource(publication, updated_parent) do
+          %{parent: updated_parent, sub_objective: updated_sub_objective}
+        else
+          nil -> Repo.rollback(:not_found)
+          false -> Repo.rollback(:not_associated)
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+
+    case result do
+      {:ok, %{parent: parent, sub_objective: sub_objective}} ->
+        Broadcaster.broadcast_resource(sub_objective, project.slug)
+        Broadcaster.broadcast_resource(parent, project.slug)
+        {:ok, parent}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
+
+  @doc """
+  Checks whether a sub-objective may be permanently deleted from a project's
+  working publication.
+  """
+  @spec sub_objective_delete_eligibility(binary(), %Project{}) ::
+          {:ok, %Revision{}} | {:error, :associated | :not_found | :tagged}
+  def sub_objective_delete_eligibility(revision_slug, %Project{} = project) do
+    publication = Publishing.project_working_publication(project.slug)
+    revisions = objective_revisions(publication.id)
+
+    sub_objective_delete_eligibility(revisions, revision_slug, publication.id)
+  end
+
+  @doc """
+  Permanently deletes a sub-objective only when its latest working-publication
+  revision has no parent objective or course-content references.
+
+  Eligibility and deletion execute in the same serializable transaction. Current
+  objective mappings are locked so concurrent association edits cannot change the
+  checked state before the deletion mapping is written.
+  """
+  @spec delete_unassociated_sub_objective(binary(), %Author{}, %Project{}) ::
+          {:ok, %Revision{}}
+          | {:error,
+             :associated | :not_found | :tagged | :transaction_conflict | Ecto.Changeset.t()}
+  def delete_unassociated_sub_objective(
+        revision_slug,
+        %Author{} = author,
+        %Project{} = project
+      ) do
+    result =
+      serializable_transaction(fn ->
+        publication = Publishing.project_working_publication(project.slug)
+
+        revisions = objective_revisions(publication.id, lock: true)
+
+        with {:ok, sub_objective} <-
+               sub_objective_delete_eligibility(revisions, revision_slug, publication.id),
+             {:ok, deleted_sub_objective} <-
+               Resources.create_revision_from_previous(sub_objective, %{
+                 author_id: author.id,
+                 deleted: true
+               }),
+             {:ok, _mapping} <-
+               Publishing.upsert_published_resource(publication, deleted_sub_objective) do
+          deleted_sub_objective
+        else
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+
+    case result do
+      {:ok, revision} ->
+        Broadcaster.broadcast_resource(revision, project.slug)
+        {:ok, revision}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp sub_objective_delete_eligibility(revisions, revision_slug, publication_id) do
+    case Enum.find(revisions, &(&1.slug == revision_slug)) do
+      nil ->
+        {:error, :not_found}
+
+      %{objective_type: :sub_objective} = sub_objective ->
+        cond do
+          Enum.any?(revisions, &(sub_objective.resource_id in &1.children)) ->
+            {:error, :associated}
+
+          Publishing.objective_referenced?(sub_objective.resource_id, publication_id) ->
+            {:error, :tagged}
+
+          true ->
+            {:ok, sub_objective}
+        end
+
+      _objective ->
+        {:error, :not_found}
+    end
+  end
+
+  defp objective_revisions(publication_id, opts \\ []) do
+    publication_id
+    |> Publishing.get_objective_mappings_by_publication(opts)
+    |> Enum.map(& &1.revision)
+  end
+
+  defp ensure_sub_objective_type(
+         %Revision{objective_type: :sub_objective} = revision,
+         _publication,
+         _author
+       ),
+       do: {:ok, revision}
+
+  defp ensure_sub_objective_type(revision, publication, author) do
+    with {:ok, updated_revision} <-
+           Resources.create_revision_from_previous(
+             revision,
+             %{author_id: author.id},
+             objective_type: :sub_objective
+           ),
+         {:ok, _mapping} <-
+           Publishing.upsert_published_resource(publication, updated_revision) do
+      {:ok, updated_revision}
+    end
+  end
+
+  defp serializable_transaction(fun, retries \\ @serializable_retries) do
+    Repo.transaction(fun, isolation: :serializable)
+  rescue
+    error in Postgrex.Error ->
+      case {serialization_failure?(error), retries} do
+        {true, retries} when retries > 0 -> serializable_transaction(fun, retries - 1)
+        {true, _retries} -> {:error, :transaction_conflict}
+        {false, _retries} -> reraise error, __STACKTRACE__
+      end
+  end
+
+  defp serialization_failure?(%Postgrex.Error{postgres: %{code: :serialization_failure}}),
+    do: true
+
+  defp serialization_failure?(_error), do: false
+
+  defp objective_slug(%{slug: slug}), do: slug
+  defp objective_slug(slug) when is_binary(slug), do: slug
+
+  defp objective_type(container_slug) when container_slug in [nil, ""], do: :objective
+  defp objective_type(_container_slug), do: :sub_objective
 
   @doc """
   Detaches an objective from all unlocked pages and activites that currently reference it.

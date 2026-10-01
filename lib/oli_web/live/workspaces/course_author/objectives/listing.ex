@@ -1,8 +1,6 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   use OliWeb, :html
 
-  import OliWeb.Components.Common
-
   alias OliWeb.Icons
   alias OliWeb.Workspaces.CourseAuthor.Objectives.Actions
 
@@ -10,7 +8,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   attr(:revision_history_link, :boolean, required: true)
   attr(:rows, :list, required: true)
   attr(:expanded_slugs, :any, default: MapSet.new())
-  attr(:pending_delete_slugs, :any, default: MapSet.new())
+  attr(:pending_detaches, :any, default: MapSet.new())
   attr(:offset, :integer, default: 0)
   attr(:query, :string, default: "")
 
@@ -86,22 +84,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                 />
               </button>
 
-              <button
-                type="button"
-                class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-                phx-click="display_delete_modal"
-                phx-value-slug={item.slug}
-                aria-label={"Delete #{item.title}"}
-                title={"Delete #{item.title}"}
-              >
-                <Icons.trash
-                  width="14"
-                  height="15"
-                  stroke_width="1.23853"
-                  variant="objective"
-                  class="shrink-0 text-current"
-                />
-              </button>
+              <span class="group/action relative inline-flex">
+                <button
+                  type="button"
+                  class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                  phx-click="display_delete_modal"
+                  phx-value-slug={item.slug}
+                  aria-label={"Delete Learning Objective: #{item.title}"}
+                  aria-describedby={"delete-objective-tooltip-#{item.resource_id}"}
+                >
+                  <Icons.trash
+                    width="14"
+                    height="15"
+                    stroke_width="1.23853"
+                    variant="objective"
+                    class="shrink-0 text-current"
+                  />
+                </button>
+                <span
+                  id={"delete-objective-tooltip-#{item.resource_id}"}
+                  role="tooltip"
+                  class="pointer-events-none absolute bottom-[calc(100%+8px)] right-0 z-20 hidden whitespace-nowrap rounded border border-Border-border-default bg-Background-bg-secondary px-2 py-1 text-xs font-normal leading-4 text-Text-text-high shadow-[0px_2px_4px_rgba(0,52,99,0.10)] group-hover/action:block group-focus-within/action:block"
+                >
+                  Delete Learning Objective
+                </span>
+              </span>
 
               <.link
                 :if={@revision_history_link}
@@ -263,11 +270,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                       :if={!is_nil(sub_objective)}
                       class={[
                         "group/item flex flex-wrap items-center gap-[10px] rounded-md border bg-Background-bg-secondary p-3",
-                        issue_border_class(sub_objective.any_issue),
-                        MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "opacity-50"
+                        issue_border_class(sub_objective.any_issue)
                       ]}
                     >
                       <% child_expanded? = MapSet.member?(@expanded_slugs, sub_objective.slug) %>
+                      <% detaching? =
+                        MapSet.member?(
+                          @pending_detaches,
+                          {sub_objective.slug, item.slug}
+                        ) %>
                       <button
                         type="button"
                         class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary disabled:cursor-default"
@@ -295,10 +306,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                             ]}
                           />
                         </span>
-                        <span class={[
-                          "min-w-0 flex-1 text-sm font-normal leading-[19.25px] text-Text-text-high",
-                          MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "line-through"
-                        ]}>
+                        <span class="min-w-0 flex-1 text-sm font-normal leading-[19.25px] text-Text-text-high">
                           <.highlighted_title
                             title={sub_objective.title}
                             regex={@highlight_regex}
@@ -306,15 +314,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           />
                         </span>
                       </button>
-                      <.loader
-                        :if={MapSet.member?(@pending_delete_slugs, sub_objective.slug)}
-                        class="ml-2"
-                        icon_class="text-secondary"
-                      />
-                      <div
-                        :if={!MapSet.member?(@pending_delete_slugs, sub_objective.slug)}
-                        class="flex shrink-0 items-center gap-4"
-                      >
+                      <div class="flex shrink-0 items-center gap-4">
                         <div
                           id={"sub-objective-summary-#{item.slug}-#{sub_objective.resource_id}"}
                           class="flex shrink-0 items-center gap-1"
@@ -382,24 +382,51 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                               class="shrink-0 text-current"
                             />
                           </button>
-                          <button
-                            type="button"
-                            class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-                            phx-click="display_sub_objective_delete_modal"
-                            phx-value-slug={sub_objective.slug}
-                            phx-value-parent_slug={item.slug}
-                            phx-value-title={sub_objective.title}
-                            aria-label={"Delete #{sub_objective.title}"}
-                            title={"Delete #{sub_objective.title}"}
-                          >
-                            <Icons.trash
-                              width="14"
-                              height="15"
-                              stroke_width="1.23853"
-                              variant="objective"
-                              class="shrink-0 text-current"
-                            />
-                          </button>
+                          <span class="group/action relative inline-flex">
+                            <button
+                              type="button"
+                              class={[
+                                "inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+                                !detaching? &&
+                                  "hover:bg-Fill-Buttons-fill-primary hover:text-white active:text-Icon-icon-active",
+                                detaching? && "cursor-wait opacity-70"
+                              ]}
+                              phx-click="detach_sub_objective"
+                              phx-value-slug={sub_objective.slug}
+                              phx-value-parent_slug={item.slug}
+                              disabled={detaching?}
+                              aria-busy={to_string(detaching?)}
+                              aria-label={
+                                if detaching?,
+                                  do: "Detaching #{sub_objective.title}",
+                                  else:
+                                    "Detach #{sub_objective.title} from learning objective #{item.title}"
+                              }
+                              aria-describedby={"detach-sub-objective-tooltip-#{item.resource_id}-#{sub_objective.resource_id}"}
+                            >
+                              <Icons.unlink
+                                :if={!detaching?}
+                                width="16"
+                                height="16"
+                                stroke_width="1.5"
+                                class="shrink-0 text-current"
+                              />
+                              <.loader
+                                :if={detaching?}
+                                class="flex items-center justify-center"
+                                icon_class="text-Icon-icon-default"
+                              />
+                            </button>
+                            <span
+                              id={"detach-sub-objective-tooltip-#{item.resource_id}-#{sub_objective.resource_id}"}
+                              role="tooltip"
+                              class="pointer-events-none absolute bottom-[calc(100%+8px)] right-0 z-20 hidden whitespace-nowrap rounded border border-Border-border-default bg-Background-bg-secondary px-2 py-1 text-xs font-normal leading-4 text-Text-text-high shadow-[0px_2px_4px_rgba(0,52,99,0.10)] group-hover/action:block group-focus-within/action:block"
+                            >
+                              {if detaching?,
+                                do: "Detaching…",
+                                else: "Detach from learning objective"}
+                            </span>
+                          </span>
                         </div>
                       </div>
                       <div

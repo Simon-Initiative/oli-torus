@@ -156,6 +156,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
                     id: result.resourceId,
                     title: createdObjective.title,
                     parentIds: null,
+                    objectiveType: 'objective',
                   });
 
                   // Use the newly created resource id instead of the id of

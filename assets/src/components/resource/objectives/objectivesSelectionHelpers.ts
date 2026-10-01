@@ -12,7 +12,9 @@ export const objectivesForAttachment = (
 
   switch (attachmentType) {
     case 'page':
-      return objectives.filter((objective) => !objective.parentIds?.length);
+      return objectives.filter(
+        (objective) => objective.objectiveType !== 'sub_objective' && !objective.parentIds?.length,
+      );
     case 'activity':
       return objectives.map((objective) => ({
         ...objective,

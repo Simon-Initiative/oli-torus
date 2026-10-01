@@ -876,6 +876,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   #   id: the slug of the objective
   #   title: the title of the objective
   #   parentIds: a list of parent objective ids, nil if no parent objectives
+  #   objectiveType: whether the item is a top-level objective or sub-objective
   # }
   #
   # Note: This function returns a unique entry per objective, with parentIds as a list
@@ -900,7 +901,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
       %{
         id: revision.resource_id,
         title: revision.title,
-        parentIds: parent_ids
+        parentIds: parent_ids,
+        objectiveType: Map.get(revision, :objective_type, :objective)
       }
     end)
   end
