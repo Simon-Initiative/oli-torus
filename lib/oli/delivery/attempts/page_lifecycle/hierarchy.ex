@@ -30,19 +30,28 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   def create(%VisitContext{datashop_session_id: datashop_session_id} = context) do
     prepared = prepare_attempt_content(context)
 
-    resource_access =
-      get_resource_access(
-        context.page_revision.resource_id,
-        context.section_slug,
-        context.user.id
-      )
+    resource_access_id =
+      case context.latest_resource_attempt do
+        nil ->
+          case get_resource_access(
+                 context.page_revision.resource_id,
+                 context.section_slug,
+                 context.user.id
+               ) do
+            nil -> nil
+            resource_access -> resource_access.id
+          end
 
-    case resource_access do
+        attempt ->
+          attempt.resource_access_id
+      end
+
+    case resource_access_id do
       nil ->
         {:error, :not_found}
 
-      resource_access ->
-        case lock_resource_access(resource_access.id) do
+      resource_access_id ->
+        case lock_resource_access(resource_access_id) do
           nil ->
             {:error, :not_found}
 
@@ -66,7 +75,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
             create_attempt_hierarchy(
               context,
               prepared,
-              resource_access.id,
+              resource_access_id,
               datashop_session_id
             )
         end

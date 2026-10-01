@@ -890,7 +890,6 @@ defmodule Oli.Delivery.Attempts.Core do
         out_of: ra.out_of,
         date_evaluated: ra.date_evaluated
       })
-      |> lock("FOR UPDATE")
       |> Repo.all()
 
     case graded_attempts do
