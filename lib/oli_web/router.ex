@@ -1893,6 +1893,7 @@ defmodule OliWeb.Router do
     ])
 
     # General
+    get("/confidence.html", ConfidenceController, :index)
     live("/", Admin.AdminView)
     live("/vr_user_agents", Admin.VrUserAgentsView)
     live("/products", Products.ProductsView)

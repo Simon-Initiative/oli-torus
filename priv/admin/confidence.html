@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Confidence Curve · Hill Function Explorer</title>
+    <style>
+      :root {
+        /* Light-mode colors from assets/tailwind.tokens.js. */
+        --background-primary: #F3F4F8;
+        --surface-primary: #FFFFFF;
+        --surface-hover: #F2F9FF;
+        --fill-info: #CADFFC;
+        --text-high: #353740;
+        --text-medium: #737373;
+        --text-low: #45464C;
+        --text-button: #006CD9;
+        --border-subtle: #E6E9F2;
+        --border-default: #CED1D9;
+        --border-hover: #8AB8E5;
+        --accent: #0080FF;
+        color-scheme: light;
+        font-family: "Open Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text-high);
+        background: var(--background-primary);
+        accent-color: var(--accent);
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: clamp(20px, 5vw, 64px) 20px; }
+      main { max-width: 1180px; margin: auto; }
+      .eyebrow { color: var(--accent); font-size: 11px; font-weight: 750; letter-spacing: .18em; text-transform: uppercase; }
+      h1 { margin: 10px 0 12px; font-size: clamp(32px, 4vw, 46px); letter-spacing: -.045em; font-weight: 650; }
+      .intro { margin: 0; color: var(--text-medium); max-width: 680px; line-height: 1.65; font-size: 15px; }
+      .panel { margin-top: 28px; background: var(--surface-primary); border: 1px solid var(--border-subtle); border-radius: 22px; box-shadow: 0 12px 40px #35374008; overflow: hidden; }
+      .chart-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 25px 28px 0; flex-wrap: wrap; }
+      .chart-title { font-size: 14px; font-weight: 650; }
+      .formula { display: inline-flex; align-items: center; justify-content: center; gap: 10px; flex: 0 0 260px; width: 260px; height: 76px; padding: 10px 16px; border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--surface-hover); color: var(--text-button); font-family: Georgia, "Times New Roman", serif; font-size: 19px; font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
+      .formula sup { font-size: 11px; line-height: 0; vertical-align: super; }
+      .fraction { display: inline-grid; grid-template-rows: 25px 25px; text-align: center; }
+      .numerator, .denominator { display: flex; align-items: center; justify-content: center; padding: 0 7px; }
+      .numerator { border-bottom: 1px solid currentColor; }
+      .chart-scroll { overflow-x: auto; padding: 12px 16px 0; }
+      #chart { display: block; width: 100%; min-width: 640px; height: auto; }
+      #chart text { font-family: inherit; font-size: 12px; fill: var(--text-medium); }
+      .grid { stroke: var(--border-subtle); stroke-width: 1; }
+      .axis-label { font-size: 12px; font-weight: 600; fill: var(--text-low); }
+      .threshold { stroke: var(--border-hover); stroke-width: 1.2; stroke-dasharray: 6 5; }
+      #chart .threshold-label { fill: var(--text-low); font-size: 10px; font-weight: 650; letter-spacing: .05em; }
+      .legend { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; padding: 0 28px 22px; font-size: 12px; color: var(--text-medium); }
+      .legend span { display: inline-flex; align-items: center; gap: 7px; }
+      .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+      .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 28px; background: var(--background-primary); border-top: 1px solid var(--border-subtle); }
+      .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      label { font-size: 15px; font-weight: 650; }
+      output { min-width: 52px; padding: 7px 10px; background: var(--surface-hover); color: var(--text-button); border-radius: 9px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; }
+      .hint { margin: 9px 0 19px; color: var(--text-medium); font-size: 12px; line-height: 1.5; }
+      input[type="range"] { display: block; width: 100%; margin: 0; height: 28px; cursor: pointer; }
+      input:focus-visible, button:focus-visible { outline: 3px solid var(--border-hover); outline-offset: 5px; border-radius: 6px; }
+      .range-labels { display: flex; justify-content: space-between; color: var(--text-medium); font-size: 11px; margin-top: 5px; }
+      .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 18px; }
+      .stat { background: var(--surface-primary); border: 1px solid var(--border-subtle); border-radius: 15px; padding: 20px 23px; }
+      .stat-label { color: var(--text-medium); font-size: 12px; }
+      .stat-value { display: block; margin-top: 8px; font-size: 25px; letter-spacing: -.035em; font-weight: 650; font-variant-numeric: tabular-nums; }
+      .stat-note { display: block; margin-top: 5px; font-size: 11px; color: var(--text-medium); }
+      footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 22px; color: var(--text-medium); font-size: 12px; line-height: 1.6; }
+      button { flex-shrink: 0; background: var(--surface-primary); border: 1px solid var(--border-default); padding: 10px 16px; border-radius: 9px; color: var(--text-button); cursor: pointer; font: inherit; font-weight: 600; }
+      button:hover { background: var(--surface-hover); border-color: var(--border-hover); }
+      @media (max-width: 640px) {
+        .controls { grid-template-columns: 1fr; gap: 24px; padding: 22px; }
+        .chart-header { padding: 22px 22px 0; }
+        .stats { gap: 8px; }
+        .stat { padding: 16px 12px; }
+        .stat-value { font-size: 21px; }
+        footer { align-items: flex-start; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="eyebrow">Learning proficiency · Interactive explorer</div>
+        <h1>Confidence, shaped by evidence.</h1>
+        <p class="intro">Explore how the Hill function turns unique part attempts into confidence.
+          Move the midpoint to shift the curve, or increase steepness to sharpen its rise.</p>
+      </header>
+
+      <section class="panel" aria-label="Confidence curve explorer">
+        <div class="chart-header">
+          <span class="chart-title">The confidence curve</span>
+          <span class="formula" id="formula" aria-label="Current Hill function"></span>
+        </div>
+        <div class="chart-scroll">
+          <svg id="chart" viewBox="0 0 1100 350" role="img" aria-labelledby="chart-title chart-description">
+            <title id="chart-title">Confidence versus unique part attempts</title>
+            <desc id="chart-description"></desc>
+            <defs>
+              <linearGradient id="area-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity=".15" />
+                <stop offset="100%" stop-color="var(--accent)" stop-opacity=".01" />
+              </linearGradient>
+            </defs>
+            <g id="confidence-bands"></g>
+            <g id="grid"></g>
+            <path id="area" fill="url(#area-gradient)"></path>
+            <path id="curve" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></path>
+            <g id="thresholds"></g>
+            <line id="midpoint-line" stroke="var(--accent)" stroke-opacity=".35" stroke-dasharray="4 5"></line>
+            <circle id="midpoint-dot" r="5" fill="var(--accent)" stroke="var(--surface-primary)" stroke-width="2"></circle>
+            <text class="axis-label" x="574" y="335" text-anchor="middle">Unique part attempts</text>
+            <text class="axis-label" transform="translate(19 152) rotate(-90)" text-anchor="middle">Confidence</text>
+          </svg>
+        </div>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--border-default)"></i>Low ≤ 0.4</span>
+          <span><i class="swatch" style="background:var(--border-hover)"></i>Medium &gt; 0.4 to 0.8</span>
+          <span><i class="swatch" style="background:var(--accent)"></i>High &gt; 0.8</span>
+          <span>● Midpoint = 0.5 confidence</span>
+        </div>
+        <div class="controls">
+          <div>
+            <div class="control-heading">
+              <label for="midpoint">Midpoint <span aria-hidden="true">· m</span></label>
+              <output id="midpoint-value" for="midpoint">5.0</output>
+            </div>
+            <p class="hint" id="midpoint-hint">The number of unique part attempts at 50% confidence.</p>
+            <input id="midpoint" type="range" min="2" max="15" step="0.1" value="5" aria-describedby="midpoint-hint" />
+            <div class="range-labels"><span>2 · Earlier rise</span><span>Later rise · 15</span></div>
+          </div>
+          <div>
+            <div class="control-heading">
+              <label for="steepness">Steepness <span aria-hidden="true">· s</span></label>
+              <output id="steepness-value" for="steepness">3.0</output>
+            </div>
+            <p class="hint" id="steepness-hint">How sharply confidence rises around the midpoint.</p>
+            <input id="steepness" type="range" min="2" max="8" step="0.1" value="3" aria-describedby="steepness-hint" />
+            <div class="range-labels"><span>2 · Gentler</span><span>Sharper · 8</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats" aria-label="Curve summary" aria-live="polite" aria-atomic="true">
+        <div class="stat">
+          <span class="stat-label">First Medium confidence</span>
+          <strong class="stat-value" id="medium-attempts"></strong>
+          <span class="stat-note">First whole count above 0.4</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">First High confidence</span>
+          <strong class="stat-value" id="high-attempts"></strong>
+          <span class="stat-note">First whole count above 0.8</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Confidence at 30 attempts</span>
+          <strong class="stat-value" id="confidence-at-30"></strong>
+          <span class="stat-note">Approaches 1.0 asymptotically</span>
+        </div>
+      </section>
+
+      <footer>
+        <span>C(n) = n<sup>s</sup> / (n<sup>s</sup> + m<sup>s</sup>). Each count represents a unique activity part attempted for an objective.
+          Repeating the same part does not increase confidence.</span>
+        <button id="reset" type="button">Reset defaults</button>
+      </footer>
+      <noscript><p>Please enable JavaScript to use the interactive chart.</p></noscript>
+    </main>
+    <script>
+      (() => {
+        'use strict';
+        const $ = (id) => document.getElementById(id);
+        const midpoint = $('midpoint');
+        const steepness = $('steepness');
+        const plot = { left: 68, top: 22, width: 1010, height: 260 };
+        const x = (n) => plot.left + (n / 30) * plot.width;
+        const y = (confidence) => plot.top + (1 - confidence) * plot.height;
+        const svgNS = 'http://www.w3.org/2000/svg';
+
+        function element(tag, attrs, parent, label) {
+          const node = document.createElementNS(svgNS, tag);
+          for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+          if (label !== undefined) node.textContent = label;
+          parent.appendChild(node);
+          return node;
+        }
+
+        for (const [lower, upper, fill] of [
+          [0, 0.4, 'var(--background-primary)'],
+          [0.4, 0.8, 'var(--surface-hover)'],
+          [0.8, 1, 'var(--fill-info)'],
+        ]) {
+          element('rect', {
+            x: x(0), y: y(upper), width: plot.width, height: y(lower) - y(upper), fill,
+          }, $('confidence-bands'));
+        }
+
+        for (let n = 0; n <= 30; n += 5) {
+          element('line', { x1: x(n), x2: x(n), y1: y(0), y2: y(1), class: 'grid' }, $('grid'));
+          element('text', { x: x(n), y: y(0) + 24, 'text-anchor': 'middle' }, $('grid'), n);
+        }
+        for (let i = 0; i <= 5; i++) {
+          const value = i / 5;
+          element('line', { x1: x(0), x2: x(30), y1: y(value), y2: y(value), class: 'grid' }, $('grid'));
+          element('text', { x: x(0) - 14, y: y(value) + 4, 'text-anchor': 'end' }, $('grid'), value.toFixed(1));
+        }
+        for (const [value, label] of [[0.4, 'LOW / MEDIUM · 0.4'], [0.8, 'MEDIUM / HIGH · 0.8']]) {
+          element('line', { x1: x(0), x2: x(30), y1: y(value), y2: y(value), class: 'threshold' }, $('thresholds'));
+          element('text', {
+            x: x(30) - 12, y: y(value) + 18, 'text-anchor': 'end', class: 'threshold-label',
+          }, $('thresholds'), label);
+        }
+
+        // Equivalent to n^s / (n^s + m^s); bounded bases avoid overflowing powers.
+        function confidence(n, m, s) {
+          if (n <= m) {
+            const ratio = Math.pow(n / m, s);
+            return ratio / (1 + ratio);
+          }
+          return 1 / (1 + Math.pow(m / n, s));
+        }
+
+        function renderFormula() {
+          const m = Number(midpoint.value).toFixed(1);
+          const s = Number(steepness.value).toFixed(1);
+          const formula = $('formula');
+          formula.setAttribute('aria-label', `C of n equals n to the power ${s} divided by n to the power ${s} plus ${m} to the power ${s}`);
+
+          formula.innerHTML = `
+            <span aria-hidden="true"><i>C</i>(<i>n</i>) =</span>
+            <span class="fraction" aria-hidden="true">
+              <span class="numerator"><span><i>n</i><sup>${s}</sup></span></span>
+              <span class="denominator"><span><i>n</i><sup>${s}</sup> + ${m}<sup>${s}</sup></span></span>
+            </span>`;
+        }
+
+        function render() {
+          const m = Number(midpoint.value);
+          const s = Number(steepness.value);
+          $('midpoint-value').value = m.toFixed(1);
+          $('steepness-value').value = s.toFixed(1);
+          renderFormula();
+
+          // Dense samples draw a smooth continuous curve, independent of integer attempt counts.
+          const points = Array.from({ length: 1201 }, (_, i) => {
+            const n = i / 40;
+            return `${x(n).toFixed(3)},${y(confidence(n, m, s)).toFixed(3)}`;
+          });
+          const path = `M${points.join(' L')}`;
+          $('curve').setAttribute('d', path);
+          $('area').setAttribute('d', `${path} L${x(30)},${y(0)} L${x(0)},${y(0)} Z`);
+          $('midpoint-line').setAttribute('x1', x(m));
+          $('midpoint-line').setAttribute('x2', x(m));
+          $('midpoint-line').setAttribute('y1', y(0));
+          $('midpoint-line').setAttribute('y2', y(0.5));
+          $('midpoint-dot').setAttribute('cx', x(m));
+          $('midpoint-dot').setAttribute('cy', y(0.5));
+
+          const firstCountAbove = (threshold) => {
+            let n = 0;
+            while (confidence(n, m, s) <= threshold) n++;
+            return n;
+          };
+          const medium = firstCountAbove(0.4);
+          const high = firstCountAbove(0.8);
+          $('medium-attempts').textContent = `${medium} attempts`;
+          $('high-attempts').textContent = `${high} attempts`;
+          $('confidence-at-30').textContent = confidence(30, m, s).toFixed(4);
+          $('chart-description').textContent = `Hill curve with midpoint ${m} and steepness ${s}. Confidence starts at zero and approaches one. Shaded bands and dashed horizontal lines mark Low through 0.4, Medium above 0.4 through 0.8, and High above 0.8. Medium confidence begins at ${medium} unique part attempts and High at ${high}.`;
+        }
+
+        midpoint.addEventListener('input', render);
+        steepness.addEventListener('input', render);
+        $('reset').addEventListener('click', () => {
+          midpoint.value = '5';
+          steepness.value = '3';
+          render();
+        });
+        render();
+      })();
+    </script>
+  </body>
+</html>

@@ -93,6 +93,61 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
   describe "objectives" do
     setup [:instructor_conn, :create_project_with_objectives]
 
+    test "unit and module navigation reuses the loaded objectives", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      module_revision: module_revision
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      # The full-course data is already loaded. Navigating should only filter it,
+      # without remounting the LiveView and querying learner metrics again.
+      handler_id = "objectives-navigation-#{System.unique_integer([:positive])}"
+      test_pid = self()
+      view_pid = view.pid
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _event, _measurements, metadata, _config ->
+          if self() == view_pid and
+               Enum.any?(
+                 ["resource_summary", "student_responses", "learning_states"],
+                 &String.contains?(metadata.query, &1)
+               ) do
+            send(test_pid, {:objectives_metrics_query, metadata.query})
+          end
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert has_element?(view, "a[role='next item link'][data-phx-link='patch']")
+      view |> element("a[role='next item link']") |> render_click()
+      assert_patch(view)
+
+      view
+      |> element("button[role='option'][phx-click*='#{module_revision.resource_id}']")
+      |> render_click()
+
+      assert_patch(
+        view,
+        live_view_learning_objectives_route(section.slug, %{
+          filter_by: module_revision.resource_id
+        })
+      )
+
+      assert has_element?(view, "#objectives-table", "Objective 2")
+      refute has_element?(view, "#objectives-table", "Objective 1")
+
+      view |> element("a[role='previous item link']") |> render_click()
+      assert_patch(view)
+      refute_received {:objectives_metrics_query, _query}
+    end
+
     test "deep-link params load learning objectives without normalizing the url", %{
       conn: conn,
       instructor: instructor,
@@ -1033,13 +1088,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
         section_id: section.id,
         user_id: student.id,
         learning_objective_id: child_1_resource.id,
-        attempt_count: 5,
+        attempt_count: 10,
         success_score: 4.75,
         failure_score: 0.25,
         recency_logit: 0.0,
         aoa: 0.95,
-        unique_activity_part_count: 5,
-        confidence: 0.95,
+        unique_activity_part_count: 10,
         inserted_at: now,
         updated_at: now
       },
@@ -1047,13 +1101,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
         section_id: section.id,
         user_id: student.id,
         learning_objective_id: child_2_resource.id,
-        attempt_count: 5,
+        attempt_count: 10,
         success_score: 1.0,
         failure_score: 4.0,
         recency_logit: 0.0,
         aoa: 0.2,
-        unique_activity_part_count: 5,
-        confidence: 0.2,
+        unique_activity_part_count: 2,
         inserted_at: now,
         updated_at: now
       }

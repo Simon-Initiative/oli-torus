@@ -1000,6 +1000,9 @@ defmodule Oli.Delivery.Metrics do
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every container of a given section
 
+  A nil container ID represents the course root and is evaluated as the course scope.
+  The returned map preserves nil as the root key.
+
     It returns a map:
 
     %{container_id_1 => "High",
@@ -1011,7 +1014,7 @@ defmodule Oli.Delivery.Metrics do
         %Section{} = section,
         contained_pages
       ) do
-    scopes = contained_pages |> Enum.map(&{:container, &1.container_id}) |> Enum.uniq()
+    scopes = contained_pages |> Enum.map(&container_scope(&1.container_id)) |> Enum.uniq()
     membership = page_membership(contained_pages, scopes)
     learner_ids = scope_user_ids(section, scopes, page_membership: membership)
 
@@ -1020,13 +1023,13 @@ defmodule Oli.Delivery.Metrics do
            page_membership: membership
          ) do
       {:ok, aggregates} ->
-        Map.new(aggregates, fn {{:container, container_id}, aggregate} ->
+        Map.new(aggregates, fn {scope, aggregate} ->
           distribution =
             Map.new(aggregate.distribution, fn {label, count} ->
               {estimate_label(%{label: label}), count}
             end)
 
-          {container_id, mode_label(distribution)}
+          {scope_container_id(scope), mode_label(distribution)}
         end)
 
       {:error, _reason} ->
@@ -1062,6 +1065,9 @@ defmodule Oli.Delivery.Metrics do
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every container of a given section for a given student
 
+  A nil container ID represents the course root and is evaluated as the course scope.
+  The returned map preserves nil as the root key.
+
     It returns a map:
 
     %{container_id_1 => "High",
@@ -1074,13 +1080,13 @@ defmodule Oli.Delivery.Metrics do
         student_id,
         contained_pages
       ) do
-    scopes = contained_pages |> Enum.map(&{:container, &1.container_id}) |> Enum.uniq()
+    scopes = contained_pages |> Enum.map(&container_scope(&1.container_id)) |> Enum.uniq()
 
     estimates_for_scope_labels(section, [student_id], scopes,
       page_membership: page_membership(contained_pages, scopes)
     )
-    |> Map.new(fn {{:container, container_id}, by_user} ->
-      {container_id, Map.get(by_user, student_id, "Not enough data")}
+    |> Map.new(fn {scope, by_user} ->
+      {scope_container_id(scope), Map.get(by_user, student_id, "Not enough data")}
     end)
   end
 
@@ -1162,10 +1168,16 @@ defmodule Oli.Delivery.Metrics do
   defp page_membership(contained_pages, scopes) do
     pages_by_container = Enum.group_by(contained_pages, & &1.container_id, & &1.page_id)
 
-    Map.new(scopes, fn {:container, container_id} = scope ->
-      {scope, MapSet.new(Map.get(pages_by_container, container_id, []))}
+    Map.new(scopes, fn scope ->
+      {scope, MapSet.new(Map.get(pages_by_container, scope_container_id(scope), []))}
     end)
   end
+
+  defp container_scope(nil), do: :course
+  defp container_scope(container_id), do: {:container, container_id}
+
+  defp scope_container_id(:course), do: nil
+  defp scope_container_id({:container, container_id}), do: container_id
 
   defp scope_user_ids(section, scopes, opts \\ []) do
     enrolled_ids = Sections.enrolled_student_ids(section.slug)

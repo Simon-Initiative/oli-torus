@@ -413,7 +413,6 @@ defmodule Oli.LearningModel.LktAoa.Application do
       state.recency_logit,
       state.aoa,
       state.unique_activity_part_count,
-      state.confidence,
       state.inserted_at,
       state.updated_at
     FROM learning_states AS state
@@ -525,7 +524,6 @@ defmodule Oli.LearningModel.LktAoa.Application do
           recency_logit: state.recency_logit,
           aoa: state.aoa,
           unique_activity_part_count: state.unique_activity_part_count,
-          confidence: state.confidence,
           inserted_at: state.inserted_at || now,
           updated_at: now
         }
@@ -545,7 +543,6 @@ defmodule Oli.LearningModel.LktAoa.Application do
              :recency_logit,
              :aoa,
              :unique_activity_part_count,
-             :confidence,
              :updated_at
            ]},
         conflict_target: [:section_id, :user_id, :learning_objective_id]
@@ -566,7 +563,6 @@ defmodule Oli.LearningModel.LktAoa.Application do
          recency_logit,
          aoa,
          unique_activity_part_count,
-         confidence,
          inserted_at,
          updated_at
        ]) do
@@ -580,7 +576,6 @@ defmodule Oli.LearningModel.LktAoa.Application do
       recency_logit: recency_logit,
       aoa: aoa,
       unique_activity_part_count: unique_activity_part_count,
-      confidence: confidence,
       inserted_at: utc_datetime(inserted_at),
       updated_at: utc_datetime(updated_at)
     }
