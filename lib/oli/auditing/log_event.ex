@@ -12,6 +12,7 @@ defmodule Oli.Auditing.LogEvent do
   @event_types [
     :user_deleted,
     :author_deleted,
+    :author_role_changed,
     :project_published,
     :section_created,
     :feature_flag_enabled,
@@ -117,6 +118,9 @@ defmodule Oli.Auditing.LogEvent do
 
       :author_deleted ->
         "Deleted author account"
+
+      :author_role_changed ->
+        "#{event.details["previous_role"]} → #{event.details["new_role"]}"
 
       :project_published ->
         "Published project #{get_in(event.details, ["project_title"]) || ""}"
