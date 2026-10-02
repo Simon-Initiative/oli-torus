@@ -128,14 +128,7 @@ Integration branches are protected like hotfix branches: changes arrive through 
 
 ### Merging an Integration Branch to `master`
 
-When the feature is complete, mark the draft PR as ready for review, bring the branch up to date with `master`, and merge it once it is approved and its checks pass. There are two ways to land it:
-
-**Squash and merge through the PR.**
-
-- Pros: it is the standard flow the repository is configured for, it needs no special permissions, and the whole feature can be reverted as a single commit.
-- Cons: `master` gets one large commit for the whole feature, so the individual PRs and their ticket references disappear from its history, and `git blame` and `git bisect` lose their granularity. The integration branch must not be reused afterwards, because its history no longer shares a merge base with `master`.
-
-**Merge commit pushed by a maintainer** (as done for recent hotfix back-merges, for example `integrate-v0.34.2`). After the PR is approved and green, a maintainer allowed to bypass branch protection merges it locally and pushes, and GitHub marks the PR as merged:
+When the feature is complete, mark the draft PR as ready for review and bring the branch up to date with `master`. Once it is approved and its checks pass, a maintainer allowed to bypass branch protection merges it locally with a merge commit and pushes it. GitHub then marks the PR as merged:
 
 ```
 git fetch origin
@@ -145,7 +138,6 @@ git merge --no-ff origin/integ-student-dashboard
 git push origin master
 ```
 
-- Pros: every squashed PR from the integration branch lands on `master` with its own commit and ticket reference, so history, `git blame`, and `git bisect` stay granular, and the whole feature can still be reverted with `git revert -m 1 <merge commit>`.
-- Cons: it bypasses the merge button and the repository's squash-only setting, requires a maintainer with bypass permissions, and makes `master` history non-linear.
+This preserves each squashed PR from the integration branch as its own commit and ticket reference on `master`, keeping history, `git blame`, and `git bisect` granular. The feature can still be reverted with `git revert -m 1 <merge commit>`. This path bypasses the merge button and the repository's squash-only setting, so it requires a maintainer with bypass permissions and makes `master` history non-linear.
 
 After the merge, delete the integration branch.

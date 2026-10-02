@@ -80,7 +80,7 @@ belong to the hotfix back-merge convention.
 when to use one, naming, creating the branch together with a long-lived draft PR
 to `master` (which provides a continuously updated preview of the integration
 branch), PRs into the branch (squash), syncing with `master`, CI behavior, and
-the pros and cons of the two strategies for the final merge to `master`.
+the prescribed maintainer-performed merge commit for the final merge to `master`.
 
 ## Out of Scope
 
@@ -201,10 +201,12 @@ the pros and cons of the two strategies for the final merge to `master`.
   > 3. Leave **Allow force pushes** and **Allow deletions** unchecked. Deleting an
   >    integration branch after its final merge is then done by an admin.
   > 4. Under **Allow specified actors to bypass required pull requests**, add the
-  >    maintainers who sync integration branches with `master`. The repository
-  >    allows squash merges only, and a sync must be a real merge commit pushed
-  >    directly (see "Keeping an Integration Branch in Sync with `master`" in
-  >    `guides/process/deployment.md`). Do not add the simon-bot account.
+  >    maintainers who sync integration branches with `master` and perform their
+  >    final merge. The repository allows squash merges only through its UI, so
+  >    these operations must be real merge commits pushed directly (see
+  >    "Keeping an Integration Branch in Sync with `master`" and "Merging an
+  >    Integration Branch to `master`" in `guides/process/deployment.md`). Do
+  >    not add the simon-bot account.
   >
   > To verify, create any `integ-*` branch and check that
   > `gh api repos/Simon-Initiative/oli-torus/branches/<branch> --jq '.protected, .protection.required_status_checks.contexts'`
@@ -218,9 +220,10 @@ the pros and cons of the two strategies for the final merge to `master`.
   merges, and anyone with write access could push unreviewed code that the final
   PR would then carry to `master` without Danger or AI review. The protection
   handoff is a prerequisite for relying on that skip.
-- The repository allows squash merges only. Syncing `master` into an integration
-  branch must be a real merge commit pushed by someone on the bypass list;
-  squashing a sync PR loses the merge base and repeats conflicts on every sync.
+- The repository allows squash merges only through its UI. Syncing `master` into
+  an integration branch and the final merge to `master` must be real merge commits
+  pushed by someone on the bypass list; squashing a sync PR loses the merge base
+  and repeats conflicts on every sync.
 - With the draft PR convention, each merge into an integration branch runs build
   and Playwright twice (push run and draft PR `synchronize`). This cost is
   accepted; the push run guarantees verification even without a draft PR.
