@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
+  alias Oli.Repo
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
 
@@ -319,6 +320,22 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       attempt = create_attempt(user, section, page_1)
 
       {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
+
+      assert redirect_path == Utils.learn_live_path(section.slug)
+    end
+
+    test "redirects when the reviewed attempt was deleted", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      attempt = create_attempt(user, section, page_1)
+      Repo.delete!(attempt)
+
+      {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
       assert redirect_path == Utils.learn_live_path(section.slug)

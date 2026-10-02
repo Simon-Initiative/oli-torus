@@ -217,7 +217,10 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
       {isReviewMode && <ReviewModeNavigation></ReviewModeNavigation>}
       <header id="delivery-header">
         <div className="defaultView">
-          <h1 className="lessonTitle">{pageName}</h1>
+          <div className="lessonTitle">
+            <span className="sr-only">Title: </span>
+            {pageName}
+          </div>
           {isAdaptivePage && (
             <div className="questionTitle" style={{ fontSize: '1rem', opacity: 0.8 }}>
               {`Attempt ${resourceAttemptNumber}${isReviewMode ? ' • Review' : ''}`}

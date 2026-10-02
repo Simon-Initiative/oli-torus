@@ -5,7 +5,13 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
   alias Oli.LearningModel.LearningState
   alias Oli.LearningModel.LktAoa.Transition
 
-  @config %Config{gamma: 0.1, rho: 1.0, recency_decay: 0.9, confidence_saturation: 3.0}
+  @config %Config{
+    gamma: 0.1,
+    rho: 1.0,
+    recency_decay: 0.9,
+    confidence_midpoint: 5.0,
+    confidence_steepness: 3.0
+  }
   @base_time ~U[2026-08-24 12:00:00Z]
 
   test "first opportunity predicts from neutral state before applying the observed outcome" do
@@ -34,8 +40,7 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
       success_score: 2.0,
       failure_score: 1.0,
       recency_logit: :math.log(3.0 / 2.0),
-      unique_activity_part_count: 0,
-      confidence: 0.0
+      unique_activity_part_count: 0
     }
 
     result =
@@ -74,13 +79,6 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
     assert low == 0.0
   end
 
-  test "confidence uses unique part count and saturation constant" do
-    result = Transition.apply_confidence(neutral_state(), 2, @config)
-
-    assert result.unique_activity_part_count == 2
-    assert_close(result.confidence, 1.0 - :math.exp(-2 / 3.0))
-  end
-
   test "replay sorts each state by date_evaluated and guid tie breaker" do
     key = {1, 2, 3}
 
@@ -107,7 +105,14 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
     assert_close(final.recency_logit, manual.recency_logit)
   end
 
-  test "replay applies confidence increments independently per state" do
+  test "unique part count accumulates only new evidence" do
+    state = Transition.apply_evidence_count(neutral_state(), 4)
+    assert Transition.apply_evidence_count(state, 0) == state
+    result = Transition.apply_evidence_count(state, 1)
+    assert result.unique_activity_part_count == 5
+  end
+
+  test "replay applies unique-part increments independently per state" do
     first_key = {1, 2, 3}
     second_key = {1, 2, 4}
 
@@ -155,8 +160,7 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
       failure_score: 0.0,
       recency_logit: 0.0,
       aoa: 0.0,
-      unique_activity_part_count: 0,
-      confidence: 0.0
+      unique_activity_part_count: 0
     }
   end
 

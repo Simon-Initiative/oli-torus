@@ -22,6 +22,7 @@ defmodule Oli.Delivery.Sections do
     SectionResourceDepot,
     SectionResourceMigration,
     ContainedObjective,
+    LinkedActivities,
     SectionsProjectsPublications,
     Enrollment,
     EnrollmentBrowseOptions,
@@ -6215,7 +6216,7 @@ defmodule Oli.Delivery.Sections do
           |> Map.new()
       end
 
-    objectives =
+    section_objectives =
       objectives_section_resources
       |> Enum.map(fn sr ->
         children =
@@ -6255,14 +6256,14 @@ defmodule Oli.Delivery.Sections do
     # From `objectives`, so membership proves a section resource exists: `children` may come from
     # the revision fallback and name objectives absent here, breaking `lookup_map` below.
     root_contained_ids =
-      objectives
+      section_objectives
       |> Enum.filter(&root_contained?.(&1.resource_id))
       |> MapSet.new(& &1.resource_id)
 
     # Applied before proficiency so discards never reach the metrics queries. The parent rule
     # reads `children`, not the expanded rows, so `exclude_sub_objectives` cannot change it.
     contained_ids =
-      objectives
+      section_objectives
       |> Enum.filter(fn objective ->
         MapSet.member?(root_contained_ids, objective.resource_id) or
           Enum.any?(objective.children, &MapSet.member?(root_contained_ids, &1))
@@ -6270,27 +6271,17 @@ defmodule Oli.Delivery.Sections do
       |> MapSet.new(& &1.resource_id)
 
     objectives =
-      objectives
+      section_objectives
       |> Enum.filter(&MapSet.member?(contained_ids, &1.resource_id))
       |> Enum.map(fn objective ->
         Map.merge(objective, %{
           container_ids: Map.get(objective_to_container_ids_map, objective.resource_id, [])
         })
       end)
-
-    objectives =
-      if include_related_activities_count do
-        # Use pre-calculated related_activities field for performance
-        Enum.map(objectives, fn objective ->
-          Map.put(
-            objective,
-            :related_activities_count,
-            length(objective.related_activities || [])
-          )
-        end)
-      else
-        objectives
-      end
+      |> put_related_activities_count(
+        objectives_section_resources,
+        include_related_activities_count
+      )
 
     proficiencies_for_objectives =
       Metrics.aggregated_proficiency_per_student_for_objectives(section, objectives,
@@ -6508,6 +6499,20 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  defp put_related_activities_count(objectives, _objectives_section_resources, false),
+    do: objectives
+
+  defp put_related_activities_count(objectives, objectives_section_resources, true) do
+    counts =
+      objectives_section_resources
+      |> SectionResourceDepot.hydrate_objective_children()
+      |> LinkedActivities.activity_counts_by_family()
+
+    Enum.map(objectives, fn objective ->
+      Map.put(objective, :related_activities_count, Map.fetch!(counts, objective.resource_id))
+    end)
+  end
+
   defp objective_to_container_ids_map(section_id) do
     from(co in ContainedObjective,
       where: co.section_id == ^section_id,
@@ -6528,47 +6533,75 @@ defmodule Oli.Delivery.Sections do
   defp realized_objective_container_pairs(section_id) do
     activity_type_id = ResourceType.id_for_activity()
 
-    from(summary in ResourceSummary,
-      join: enrollment in Enrollment,
-      on:
-        enrollment.section_id == summary.section_id and
-          enrollment.user_id == summary.user_id,
-      join: enrollment_context_role in EnrollmentContextRole,
-      on: enrollment_context_role.enrollment_id == enrollment.id,
-      join: resource_part_response in ResourcePartResponse,
-      on:
-        resource_part_response.resource_id == summary.resource_id and
-          resource_part_response.part_id == summary.part_id,
-      join: student_response in StudentResponse,
-      on:
-        student_response.section_id == summary.section_id and
-          student_response.user_id == summary.user_id and
-          student_response.resource_part_response_id == resource_part_response.id,
+    # Match each recorded response to its own learner's evidence. Joining summaries
+    # to all response variants for an activity/part first creates a learner-by-response
+    # cross product. Deduplicate page/part membership before expanding containers or
+    # loading revision JSON, whose work should not grow with enrollment.
+    attempted_part =
+      from(summary in ResourceSummary,
+        where:
+          summary.project_id == -1 and summary.section_id == ^section_id and
+            summary.resource_type_id == ^activity_type_id and summary.num_attempts > 0 and
+            summary.user_id == parent_as(:response).user_id and
+            summary.resource_id == parent_as(:response).resource_id and
+            summary.part_id == parent_as(:response).part_id,
+        select: 1
+      )
+
+    recorded_parts =
+      from(student_response in StudentResponse,
+        join: resource_part_response in ResourcePartResponse,
+        on: resource_part_response.id == student_response.resource_part_response_id,
+        join: enrollment in Enrollment,
+        on:
+          enrollment.section_id == student_response.section_id and
+            enrollment.user_id == student_response.user_id,
+        join: enrollment_context_role in EnrollmentContextRole,
+        on: enrollment_context_role.enrollment_id == enrollment.id,
+        where:
+          student_response.section_id == ^section_id and
+            enrollment.status == :enrolled and
+            enrollment_context_role.context_role_id == ^@student_role_id,
+        distinct: true,
+        select: %{
+          user_id: student_response.user_id,
+          page_id: student_response.page_id,
+          resource_id: resource_part_response.resource_id,
+          part_id: resource_part_response.part_id
+        }
+      )
+
+    realized_parts =
+      from(response in subquery(recorded_parts),
+        as: :response,
+        where: exists(subquery(attempted_part)),
+        distinct: true,
+        select: %{
+          page_id: response.page_id,
+          resource_id: response.resource_id,
+          part_id: response.part_id
+        }
+      )
+
+    from(part in subquery(realized_parts),
       join: contained_page in ContainedPage,
       on:
-        contained_page.section_id == student_response.section_id and
-          contained_page.page_id == student_response.page_id,
+        contained_page.section_id == ^section_id and
+          contained_page.page_id == part.page_id,
       join: spp in SectionsProjectsPublications,
-      on: spp.section_id == summary.section_id,
+      on: spp.section_id == ^section_id,
       join: published_resource in PublishedResource,
       on:
         published_resource.publication_id == spp.publication_id and
-          published_resource.resource_id == summary.resource_id,
+          published_resource.resource_id == part.resource_id,
       join: activity_revision in Revision,
       on: activity_revision.id == published_resource.revision_id,
-      where:
-        summary.project_id == -1 and
-          summary.section_id == ^section_id and
-          summary.resource_type_id == ^activity_type_id and
-          summary.num_attempts > 0 and
-          enrollment.status == :enrolled and
-          enrollment_context_role.context_role_id == ^@student_role_id and
-          activity_revision.deleted == false,
-      distinct: [contained_page.container_id, activity_revision.id, summary.part_id],
+      where: activity_revision.deleted == false,
+      distinct: [contained_page.container_id, activity_revision.id, part.part_id],
       select: %{
         container_id: contained_page.container_id,
         objectives: activity_revision.objectives,
-        part_id: summary.part_id
+        part_id: part.part_id
       }
     )
     |> Repo.all()
@@ -7345,147 +7378,5 @@ defmodule Oli.Delivery.Sections do
     Enum.any?(@instructor_roles, fn r ->
       ContextRoles.contains_role?(roles, r)
     end)
-  end
-
-  @doc """
-  Gets all evaluated activities that have a specific objective attached to them in the given section.
-  Now uses the pre-calculated related_activities field from SectionResourceDepot for performance.
-  """
-  def get_activities_for_objective(section, resource_id) do
-    # Get the objective section resource with its pre-calculated related_activities
-    case SectionResourceDepot.get_section_resource(section.id, resource_id) do
-      nil ->
-        []
-
-      objective_sr ->
-        # Get the related activity IDs from the pre-calculated field
-        activity_ids = objective_sr.related_activities || []
-
-        if Enum.empty?(activity_ids) do
-          []
-        else
-          # Resolve activity revisions for the related activities
-          activities =
-            activity_ids
-            |> Enum.map(fn activity_resource_id ->
-              case DeliveryResolver.from_resource_id(section.slug, activity_resource_id) do
-                nil ->
-                  nil
-
-                revision ->
-                  %{
-                    resource_id: revision.resource_id,
-                    title: revision.title,
-                    content: revision.content,
-                    slug: revision.slug
-                  }
-              end
-            end)
-            |> Enum.reject(&is_nil/1)
-
-          # Single query to get all metrics at once
-          metrics_map = calculate_all_activity_metrics(section, activity_ids)
-
-          # Map activities with their pre-calculated metrics
-          activities
-          |> Enum.map(fn activity ->
-            question_stem = extract_question_stem(activity.content)
-            {attempts, percent_correct} = Map.get(metrics_map, activity.resource_id, {0, 0})
-
-            %{
-              resource_id: activity.resource_id,
-              title: activity.title,
-              question_stem: question_stem,
-              attempts: attempts,
-              percent_correct: percent_correct,
-              slug: activity.slug
-            }
-          end)
-        end
-    end
-  end
-
-  # Extracts question text from activity content for display purposes.
-  #
-  # This function follows the same pattern as activity renderers to extract text from
-  # activity content structures. It prioritizes the activity stem content, falls back
-  # to general activity content, and leverages the robust content rendering system.
-  #
-  # Content Structure Patterns:
-  # - content["stem"]["content"] - Structured activity stem content (most common)
-  # - content["stem"] - Simple stem text string
-  # - content["content"] - General activity content as fallback
-  #
-  # Returns "No question stem available" if no text can be extracted.
-  defp extract_question_stem(content) when is_map(content) do
-    # Follow the same pattern as the activity renderers
-    case Map.get(content, "stem") do
-      %{"content" => stem_content} when is_list(stem_content) ->
-        OliWeb.Common.Utils.extract_text_from_content(stem_content)
-
-      stem_text when is_binary(stem_text) ->
-        stem_text
-
-      _ ->
-        # Fallback to activity content field
-        case Map.get(content, "content") do
-          content_list when is_list(content_list) ->
-            OliWeb.Common.Utils.extract_text_from_content(content_list)
-
-          _ ->
-            "No question stem available"
-        end
-    end
-  rescue
-    _ -> "No question stem available"
-  end
-
-  defp extract_question_stem(_), do: "No question stem available"
-
-  defp calculate_all_activity_metrics(section, activity_ids) when is_list(activity_ids) do
-    if Enum.empty?(activity_ids) do
-      %{}
-    else
-      # Single query to get all attempt data for all activities at once
-      query =
-        from(aa in Oli.Delivery.Attempts.Core.ActivityAttempt,
-          join: ra in Oli.Delivery.Attempts.Core.ResourceAttempt,
-          on: aa.resource_attempt_id == ra.id,
-          join: rac in Oli.Delivery.Attempts.Core.ResourceAccess,
-          on: ra.resource_access_id == rac.id,
-          where:
-            rac.section_id == ^section.id and aa.resource_id in ^activity_ids and
-              aa.lifecycle_state == :evaluated,
-          select: %{
-            resource_id: aa.resource_id,
-            score: aa.score,
-            out_of: aa.out_of
-          }
-        )
-
-      attempts_data = Repo.all(query)
-
-      # Group by resource_id and calculate metrics
-      attempts_data
-      |> Enum.group_by(& &1.resource_id)
-      |> Enum.reduce(%{}, fn {resource_id, attempts}, acc ->
-        total_attempts = length(attempts)
-
-        correct_attempts =
-          attempts
-          |> Enum.count(fn attempt ->
-            attempt.score && attempt.out_of && attempt.score == attempt.out_of
-          end)
-
-        percent_correct =
-          if total_attempts > 0 do
-            (correct_attempts / total_attempts * 100) |> Float.round(1)
-          else
-            0
-          end
-
-        Map.put(acc, resource_id, {total_attempts, percent_correct})
-      end)
-    end
   end
 end

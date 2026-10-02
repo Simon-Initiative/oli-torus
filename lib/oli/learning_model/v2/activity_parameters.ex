@@ -6,6 +6,7 @@ defmodule Oli.LearningModel.V2.ActivityParameters do
   alias Oli.LearningModel.V2.PartParameters
 
   @enforce_keys [:parts]
+  @derive Jason.Encoder
   defstruct [:parts]
 
   @type t :: %__MODULE__{parts: %{String.t() => PartParameters.t()}}

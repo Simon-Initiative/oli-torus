@@ -3,6 +3,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
 
   alias OliWeb.Common.Table.ColumnSpec
   alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Components.Delivery.ThresholdValue
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Common.Chip
 
@@ -104,7 +105,12 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       class={"font-bold #{if @progress < 50, do: "text-[#CE2C31] dark:text-[#FF8787]", else: "text-[#353740] dark:text-[#EEEBF5]"}"}
       data-progress-check={if @progress >= 50, do: "true", else: "false"}
     >
-      {@progress}%
+      <ThresholdValue.render
+        at_risk={@progress < 50}
+        warning_label="Student progress below threshold"
+      >
+        {@progress}%
+      </ThresholdValue.render>
     </div>
     """
   end

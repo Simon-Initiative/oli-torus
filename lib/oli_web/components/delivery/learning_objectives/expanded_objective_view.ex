@@ -33,7 +33,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   end
 
   def update(assigns, socket) do
-    socket = assign_new(socket, :section_title, fn -> nil end)
+    socket =
+      socket
+      |> assign_new(:section_title, fn -> nil end)
+      |> assign_new(:confidence_supported?, fn -> false end)
+      |> assign_new(:sub_objective_confidences, fn -> %{} end)
 
     cond do
       # Handle async data loading completion
@@ -260,6 +264,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
                 module={OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList}
                 id={"sub-objectives-list-#{@unique_id}"}
                 sub_objectives_data={@sub_objectives_data}
+                confidence_supported?={@confidence_supported?}
+                sub_objective_confidences={@sub_objective_confidences}
                 parent_unique_id={@unique_id}
                 text_search={@text_search}
               />

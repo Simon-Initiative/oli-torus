@@ -5,7 +5,9 @@ defmodule OliWeb.Progress.StudentResourceView do
 
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
+  alias Oli.Accounts
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
+  alias Oli.Delivery.Settings
   alias Oli.CertificationEligibility
   alias Oli.Repo
   alias OliWeb.Common.{Breadcrumb, Confirm, Utils}
@@ -79,6 +81,10 @@ defmodule OliWeb.Progress.StudentResourceView do
                last_failed: fetch_last_failed(resource_access),
                user: user,
                show_confirm: false,
+               show_delete_confirm: false,
+               delete_attempt_guid: nil,
+               delete_confirmation_error: nil,
+               can_delete_attempt: Accounts.is_system_admin?(socket.assigns[:current_author]),
                is_editing: false,
                grade_sync_result: nil
              )}
@@ -220,6 +226,7 @@ defmodule OliWeb.Progress.StudentResourceView do
           section={@section}
           resource_attempts={@resource_attempts}
           ctx={@ctx}
+          can_delete_attempt={@can_delete_attempt}
           request_path={~p"/sections/#{@section.slug}/progress/#{@user.id}/#{@revision.resource_id}"}
         />
       </Group.render>
@@ -232,6 +239,20 @@ defmodule OliWeb.Progress.StudentResourceView do
         cancel="cancel_modal"
       >
         Are you sure that you wish to finalize this attempt on behalf of the student?
+      </Confirm.render>
+    <% end %>
+    <%= if @show_delete_confirm do %>
+      <Confirm.render
+        title="Confirm Attempt Deletion"
+        id="delete-attempt-dialog"
+        ok="do_delete_attempt"
+        cancel="cancel_delete_attempt"
+        confirmation="delete this attempt"
+        ok_label="Delete Attempt"
+        ok_variant="danger"
+        confirmation_error={@delete_confirmation_error}
+      >
+        This permanently deletes the attempt and all of its activity responses. This action cannot be undone.
       </Confirm.render>
     <% end %>
     """
@@ -264,12 +285,126 @@ defmodule OliWeb.Progress.StudentResourceView do
     {:noreply, assign(socket, show_confirm: false)}
   end
 
+  def handle_event("cancel_delete_attempt", _, socket) do
+    {:noreply,
+     assign(socket,
+       show_delete_confirm: false,
+       delete_attempt_guid: nil,
+       delete_confirmation_error: nil
+     )}
+  end
+
   def handle_event("submit_attempt", %{"guid" => attempt_guid}, socket) do
     {:noreply, assign(socket, show_confirm: true, attempt_guid: attempt_guid)}
   end
 
   def handle_event("phx_modal.unmount", _, socket) do
-    {:noreply, assign(socket, show_confirm: false)}
+    {:noreply,
+     assign(socket,
+       show_confirm: false,
+       show_delete_confirm: false,
+       delete_attempt_guid: nil,
+       delete_confirmation_error: nil
+     )}
+  end
+
+  def handle_event("delete_attempt", %{"guid" => attempt_guid}, socket) do
+    if socket.assigns.can_delete_attempt do
+      {:noreply,
+       assign(socket,
+         show_delete_confirm: true,
+         delete_attempt_guid: attempt_guid,
+         delete_confirmation_error: nil
+       )}
+    else
+      {:noreply, put_flash(socket, :error, "You must be a system admin to delete an attempt.")}
+    end
+  end
+
+  def handle_event("do_delete_attempt", %{"confirmation" => "delete this attempt"}, socket) do
+    if socket.assigns.can_delete_attempt do
+      scoring_strategy_id =
+        Settings.get_combined_settings(
+          socket.assigns.revision,
+          socket.assigns.section.id,
+          socket.assigns.user.id
+        ).scoring_strategy_id
+
+      case Core.delete_resource_attempt(
+             socket.assigns.delete_attempt_guid,
+             scoring_strategy_id,
+             socket.assigns[:current_author]
+           ) do
+        {:ok, _resource_access} ->
+          {:noreply,
+           socket
+           |> refresh_attempt_history()
+           |> put_flash(:info, "Attempt deleted.")
+           |> assign(
+             show_delete_confirm: false,
+             delete_attempt_guid: nil,
+             delete_confirmation_error: nil
+           )}
+
+        {:error, :not_found} ->
+          {:noreply,
+           socket
+           |> refresh_attempt_history()
+           |> put_flash(:error, "Unable to delete attempt.")
+           |> assign(
+             show_delete_confirm: false,
+             delete_attempt_guid: nil,
+             delete_confirmation_error: nil
+           )}
+
+        {:error, :unauthorized} ->
+          {:noreply,
+           socket
+           |> put_flash(:error, "You must be a system admin to delete an attempt.")
+           |> assign(
+             show_delete_confirm: false,
+             delete_attempt_guid: nil,
+             delete_confirmation_error: nil
+           )}
+
+        {:error, :not_latest} ->
+          {:noreply,
+           socket
+           |> refresh_attempt_history()
+           |> put_flash(:error, "Only the most recent attempt can be deleted.")
+           |> assign(
+             show_delete_confirm: false,
+             delete_attempt_guid: nil,
+             delete_confirmation_error: nil
+           )}
+
+        {:error, _reason} ->
+          {:noreply,
+           socket
+           |> put_flash(:error, "Unable to delete attempt.")
+           |> assign(
+             show_delete_confirm: false,
+             delete_attempt_guid: nil,
+             delete_confirmation_error: nil
+           )}
+      end
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, "You must be a system admin to delete an attempt.")
+       |> assign(
+         show_delete_confirm: false,
+         delete_attempt_guid: nil,
+         delete_confirmation_error: nil
+       )}
+    end
+  end
+
+  def handle_event("do_delete_attempt", _params, socket) do
+    {:noreply,
+     assign(socket,
+       delete_confirmation_error: "Type \"delete this attempt\" to continue."
+     )}
   end
 
   def handle_event("do_submit_attempt", _, socket) do
@@ -440,6 +575,40 @@ defmodule OliWeb.Progress.StudentResourceView do
        last_failed: fetch_last_failed(resource_access),
        grade_sync_result: grade_sync_result
      )}
+  end
+
+  defp resource_access_changeset(nil), do: nil
+
+  defp resource_access_changeset(resource_access) do
+    score =
+      case resource_access.score do
+        nil -> nil
+        score -> Utils.format_score(score)
+      end
+
+    ResourceAccess.changeset(resource_access, %{score: score})
+  end
+
+  defp refresh_attempt_history(socket) do
+    resource_access =
+      get_resource_access(
+        socket.assigns.revision.resource_id,
+        socket.assigns.section.slug,
+        socket.assigns.user.id
+      )
+
+    resource_attempts =
+      case resource_access do
+        nil -> []
+        access -> Enum.sort(access.resource_attempts, &(&1.attempt_number < &2.attempt_number))
+      end
+
+    assign(socket,
+      resource_access: resource_access,
+      resource_attempts: resource_attempts,
+      changeset: resource_access_changeset(resource_access),
+      last_failed: fetch_last_failed(resource_access)
+    )
   end
 
   defp ensure_no_nil(params, key) do

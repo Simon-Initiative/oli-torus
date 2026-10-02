@@ -85,10 +85,43 @@ defmodule OliWeb.Grades.GradebookTableModelTest do
         |> IO.iodata_to_binary()
 
       assert html =~ "text-red-500"
+      assert html =~ ~s(aria-label="Assessment score below threshold")
+      assert html =~ "stroke-current"
     end
   end
 
   describe "render_score/3" do
+    test "renders low rolled-up scores with the red warning icon" do
+      row =
+        %{
+          id: 1,
+          section: %{slug: "test_section"}
+        }
+        |> Map.put(10, %ResourceAccess{
+          resource_id: 10,
+          user_id: 1,
+          section_id: 1,
+          score: 3,
+          out_of: 10,
+          resource_attempts_count: 1,
+          was_late: false
+        })
+
+      html =
+        Phoenix.HTML.Safe.to_iodata(
+          GradebookTableModel.render_score(%{show_all_links: true}, row, %ColumnSpec{name: 10})
+        )
+        |> IO.iodata_to_binary()
+
+      assert html =~ "text-Text-text-danger"
+      assert html =~ ~s(aria-label="Assessment score below threshold")
+      assert html =~ "stroke-current"
+      assert html =~ "/10"
+
+      assert html =~ "inline-flex items-center gap-1 whitespace-nowrap"
+      assert html =~ ~r/3\s*<span class="text-Text-text-high">\/10<\/span>/
+    end
+
     test "renders missing resource access as linked No Attempt" do
       row = %{id: 1, section: %{slug: "test_section"}}
       assigns = %{show_all_links: true}
