@@ -32,6 +32,7 @@ defmodule OliWeb.Common.CardListing do
             phx-click={@selected}
             class="course-card-link group mb-2 w-full max-w-[310px] border-0 bg-transparent p-0 text-left no-underline hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
             phx-value-id={action_id(item)}
+            phx-value-title={TableModel.source_title(item)}
             aria-label={card_aria_label(item)}
           >
             <.card_listing_card item={item} ctx={@ctx} />
