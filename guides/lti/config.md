@@ -165,3 +165,28 @@ To manually configure an LTI 1.3 integration in Torus, we need to gather some im
 1. Click "Add Deployment" and enter the Deployment ID saved from the instructions below when you created a deployment in your LMS. Click "Save".
 
 1. Once you have a **Registration** and a **Deployment** configured for your **Institution**, you can now return to your LMS and launch into Torus and you will be guided through course setup, which is outside the scope of this document.
+
+## Direct page launches
+
+An LTI 1.3 launch can select a page within the launched Torus section using the
+signed custom claim `https://purl.imsglobal.org/spec/lti/claim/custom`:
+
+```json
+{
+  "torus_resource_type": "page",
+  "torus_resource_id": "the-page-revision-slug"
+}
+```
+
+Despite its name, `torus_resource_id` contains the page's revision slug, not its
+numeric resource ID. The page must belong to the section resolved from the
+launch's registration, deployment, and context. A valid target sends learners
+and instructors to that page, subject to the normal page access controls. Older
+revision slugs stored in the LMS resolve to the revision in the section's pinned
+publication, so the redirect uses that revision's slug rather than an unpublished
+or otherwise newer revision outside the section's publication.
+
+Missing, unsupported, or unmatched page claims retain the ordinary destination:
+section home for learners and section management for instructors. Section
+creation and unconfigured-course behavior remain unchanged. This does not create
+an LTI Deep Linking picker or require a secure browser.
