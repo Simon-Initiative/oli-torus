@@ -1,0 +1,46 @@
+name: "Validate Integration Branch Name"
+
+# CI for feature integration branches is configured through the integ-* branch
+# pattern, so a branch that is meant to be one but is named differently (for
+# example Integ-Foo, integ_foo, or integration-foo) silently misses it. This
+# fails when a branch name starts with "integ" (any case) but does not follow
+# integ-<name>, where <name> is lowercase letters and digits separated by single
+# hyphens. Branches starting with integrate- belong to the hotfix back-merge
+# process and are ignored.
+#
+# Pull requests are checked against their base branch; newly created branches
+# are checked on creation.
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+    # Case-insensitive "starts with integ" so only candidate bases start a runner.
+    branches:
+      - "[iI][nN][tT][eE][gG]**"
+  create:
+
+permissions: {}
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref_type == 'branch'
+
+    steps:
+      - name: Validate integration branch name
+        env:
+          BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+        run: |
+          lowercase_branch="$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]')"
+
+          if [[ "$lowercase_branch" != integ* || "$lowercase_branch" == integrate-* ]]; then
+            echo "'$BRANCH' is not an integration branch; nothing to validate."
+            exit 0
+          fi
+
+          if [[ "$BRANCH" =~ ^integ-[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "'$BRANCH' follows the integration branch naming convention."
+            exit 0
+          fi
+
+          echo "::error::'$BRANCH' looks like a feature integration branch but does not match integ-<name> (lowercase letters and digits separated by single hyphens). CI configured for integ-* branches does not run for it; rename the branch."
+          exit 1
