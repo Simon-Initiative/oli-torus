@@ -326,6 +326,10 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
       return null;
     }
     const windowProps = {
+      accessibleName:
+        (shouldShowLabel && htmlToPlainText(labelText)) ||
+        description?.trim() ||
+        'Additional Information',
       config,
       parts: partComponents,
       snapshot: initSnapshot.snapshot,

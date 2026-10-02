@@ -304,6 +304,10 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
       return null;
     }
     const windowProps = {
+      accessibleName:
+        (shouldShowLabel && htmlToPlainText(labelText)) ||
+        description?.trim() ||
+        'Additional Information',
       config: windowConfig,
       parts: windowParts,
       snapshot: {},
