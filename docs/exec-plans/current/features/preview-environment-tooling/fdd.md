@@ -14,7 +14,7 @@ Torus adds no seed web UI or API, Oban worker or queue, durable seed-run state, 
   - FR-001 through FR-003 define the preview-build/runtime-activation boundary, synchronous release commands, scenario listing/execution, and URL archive ingestion.
   - FR-004 through FR-006 add the Stagehand-derived directives, invoke `oli_torus_getting_started_course` from Kubernetes, and preserve Playwright-owned setup.
   - FR-007 through FR-009 retain secure, auditable, accessible user masquerade.
-  - FR-010 replaces outbound email delivery with a local non-delivering adapter and provides an authenticated mailbox in QA mode.
+  - FR-010 replaces outbound email delivery with a local non-delivering adapter and provides a deployment-proxy-protected mailbox in QA mode without Torus login.
 - Non-functional requirements:
   - CLI commands return bounded output and deterministic exit codes and never print complete YAML, credentials, learner responses, or archive contents.
   - Kubernetes owns Job status and resource limits. The deployment seed is a one-shot initializer with automatic retry disabled. Scenario handlers own their existing transaction boundaries; partial changes are not rolled back.
@@ -30,14 +30,16 @@ Torus adds no seed web UI or API, Oban worker or queue, durable seed-run state, 
 
 - What we know:
   - `Oli.Scenarios` already parses and synchronously executes YAML, including `use`, assertions, and hooks.
-  - `Oli.Scenarios.RuntimeOpts` currently selects the first existing author/institution and the engine otherwise creates defaults; deployed CLI scenario execution needs an explicit-ownership mode.
-  - `Oli.Utils.Stagehand` contains bulk enrollment and learner simulation behavior to move behind scenario directives.
+  - `Oli.Scenarios.RuntimeOpts` preserves legacy defaults for existing callers and supports explicit ownership for deployed CLI scenario execution.
+  - Bulk enrollment and learner simulation now live behind `Oli.Scenarios` directives; the separate `Oli.Utils.Stagehand` API has been removed.
   - `Oli.Interop.Ingest.ingest/2` is the existing non-interactive project archive ingestion boundary.
   - `rel/overlays/bin/migrate` demonstrates the repository's release-command wrapper pattern.
   - Playwright already owns per-spec YAML setup through its test-only controller and fixtures.
   - Existing system-admin routes, auth/session restoration, root layouts, and `Oli.Auditing` provide the masquerade integration points.
 - Unknowns to confirm:
   - None. Command syntax, deployment Job behavior, layout coverage, and contained external integrations are defined below; implementation waypointing must confirm the exact code targets.
+
+The current implementation includes Phases 1 through 6. The masquerade services, session lifecycle, and banner described below remain planned in Phases 7/8; Phase 9 owns integrated and live deployment verification.
 
 ## 4. Proposed Design
 
@@ -77,11 +79,11 @@ The runner admits at most 100 learners, uses `Task.async_stream/3` defaults in f
 
 The bundled `oli_torus_getting_started_course` scenario creates a cohesive “Getting Started with OLI Torus” course without embedded credentials. Its design artifact, `design/oli-torus-getting-started-course.md`, defines learning objectives, rich authoring and publishing content, several unscored practice pages, one scored assessment, and each activity's hints and correct/incorrect feedback before the YAML is authored. The scenario publishes the course, creates its section and synthetic cohort, then invokes fast `simulate_progress` to produce progress and grades. It is a one-shot initializer for a fresh or deliberately reset preview database and adds no cross-run reconciliation or resume behavior (AC-015 through AC-017).
 
-`Oli.PreviewQATools.Masquerade` owns start, stop, restore, expiry, and invalidation. The existing tamper-protected signed session holds only the actor identifier, target identifier, issued/expiry timestamps, and a random reference; this work does not change application-wide session encryption. Ordinary authorization sees only the target; actor identity is available only to auditing, the stop operation, and route-local `/dev/mailbox` authorization. Chaining is rejected and invalid state is cleared (AC-019 through AC-022).
+`Oli.PreviewQATools.Masquerade` owns start, stop, restore, expiry, and invalidation. The existing tamper-protected signed session holds only the actor identifier, target identifier, issued/expiry timestamps, and a random reference; this work does not change application-wide session encryption. Ordinary authorization sees only the target; actor identity is available only to auditing and the stop operation. Mailbox access is independent of Torus identity and requires no actor exception. Chaining is rejected and invalid state is cleared (AC-019 through AC-022).
 
 `OliWeb.Components.MasqueradeBanner` renders from `default`, `workspace`, `delivery`, `delivery_student_dashboard`, `delivery_dashboard`, authenticated LiveView, and authenticated `chromeless` surfaces. It names the target, uses text plus high-contrast magenta treatment, and exposes a CSRF-protected stop action with keyboard and screen-reader support (AC-023 and AC-024). `delivery_from_payment` is excluded because its Cashnet callback pipeline does not restore a current user. `lti` is excluded because LTI establishes a fresh external identity; entering LTI login/launch clears or rejects an active masquerade before rendering.
 
-Every preview release uses `Swoosh.Adapters.Local`, even when interactive QA tooling is runtime-disabled, so a misconfigured preview deployment cannot deliver email externally. A preview-compiled `/dev/mailbox` forward to `Plug.Swoosh.MailboxPreview` sits behind `:browser`, runtime-enable checks, and a dedicated authorization plug that accepts either the current system administrator or the original system-administrator actor of a valid active masquerade. The plug does not replace the target `current_user`, and no other admin route accepts actor identity. Disabled, unauthenticated, non-admin-originated, expired, invalid, and forged requests are non-disclosing. The existing unauthenticated dev/test mailbox declaration is consolidated into this protected route so the mailbox has one access policy (AC-025 and AC-026).
+Every preview release uses `Swoosh.Adapters.Local`, even when interactive QA tooling is runtime-disabled. A preview-compiled `/dev/mailbox` forward to `Plug.Swoosh.MailboxPreview` sits behind `:browser` and a router-local `:preview_mailbox` pipeline, which reuses `Oli.Plugs.NoCache` and checks effective runtime enablement. The viewer uses standard browser security headers without a custom CSP or nonce policy. No Torus login, administrator role, or actor/session claim is required. The browser pipeline retains CSRF protection and leaves `current_user` unchanged. The deployment OAuth proxy authorizes the preview audience for the complete mailbox subtree, including JSON, body, attachment, asset, and clear paths; deployments must prevent external access around that proxy. Anyone authorized for the preview may inspect all its captured email, including preview-account confirmation/reset links. Disabled mailbox requests return a non-disclosing response. The old unauthenticated dev/test route is removed (AC-025 and AC-026).
 
 No preview-specific branches are added to LTI grade passback, Stripe, Cashnet, webhooks, analytics destinations, or other external integrations. Fresh or explicitly sanitized databases and non-production runtime credentials are the operational boundary for those effects. An unsanitized production clone is unsupported; making one safe would require a separate, comprehensive design rather than a partial integration allowlist.
 
@@ -111,7 +113,7 @@ Project ingest flow:
 
 Kubernetes flow:
 
-1. The pull-request preview overlay selects `PREVIEW_QA_SEED_SCENARIO=oli_torus_getting_started_course` and includes a fixed-name retained seed Job. It may independently set `PREVIEW_QA_TOOLS_ENABLED=true` for masquerade and mailbox access, but the Job does not depend on that flag.
+1. The pull-request preview overlay selects `PREVIEW_QA_SEED_SCENARIO=oli_torus_getting_started_course` and includes a fixed-name retained seed Job. It also sets `PREVIEW_QA_TOOLS_ENABLED=true` for masquerade and mailbox access, but the Job does not depend on that flag.
 2. Argo CD applies ordinary application resources first. The Deployment becomes Healthy only after its `release-setup` init container completes baseline create/migrate/seed and the web readiness probe succeeds.
 3. A later sync wave applies the Job, which uses the same preview release image, service account, runtime ConfigMap, and runtime Secret as the application and passes `scenarios run --name oli_torus_getting_started_course` as discrete arguments to `/app/bin/seed`.
 4. The Job uses `restartPolicy: Never`, `backoffLimit: 0`, and explicit CPU/memory requests and limits. It is a normal resource, not an Argo CD hook.
@@ -168,7 +170,7 @@ Masquerade flow:
   - Kubernetes owns logs and its existing retention policy; Torus persists no Job identity or result.
 - Web interface:
   - Only masquerade start/stop and the persistent banner are added for preview tooling. There is no new preview seed route, LiveView, controller, or API; the existing token-protected Playwright scenario route remains limited to `dev`, `test`, and `ci_e2e`.
-  - `/dev/mailbox` forwards to `Plug.Swoosh.MailboxPreview` only in preview-compiled/runtime-enabled images and only through current system-admin authentication or the original system-administrator actor of a valid active masquerade.
+  - `/dev/mailbox` forwards to `Plug.Swoosh.MailboxPreview` only in preview-compiled/runtime-enabled images. Deployment OAuth proxy authorization protects all mailbox paths; Torus imposes no login or role check and needs no masquerade exception.
 - External-effect interface:
   - `Oli.Mailer` uses `Swoosh.Adapters.Local` for every `MIX_ENV=preview` release, independent of runtime QA-tool activation.
   - No preview-specific behavior is added to other external-integration interfaces.
@@ -213,7 +215,7 @@ Masquerade flow:
 - Simulator interruption: the foreground seed VM owns its linked learner workers, so terminating the command terminates all simulator processes immediately. Already committed database transactions remain committed; an operation interrupted inside its transaction follows the domain operation's normal rollback behavior. Server-owned jobs created by committed actions continue normally.
 - Existing learner history: skip and report those learners before dispatch while continuing with fresh learners. Neither Phase 4B nor Phase 5 resumes or reconciles partial progress. A failed `oli_torus_getting_started_course` Job requires operator inspection and a recreated or deliberately reset preview dataset before another invocation.
 - Invalid/expired masquerade state or entry into a new LTI login/launch flow: clear or reject it, audit the reason, and continue as the actor when safe or signed out otherwise.
-- Mailbox access while disabled or without current system-admin authorization: return a non-disclosing response and expose no message metadata.
+- Mailbox access while runtime-disabled: return a non-disclosing response. An unauthenticated or unauthorized preview visitor is rejected by the deployment OAuth proxy before reaching Torus, regardless of any Torus session.
 - Unsanitized production database clone or production credentials: unsupported deployment configuration; the feature provides no claim of broad external-effect containment beyond application email.
 
 ## 11. Observability
@@ -222,7 +224,7 @@ Masquerade flow:
 - Process exit is the authoritative command result. Kubernetes collects logs and owns Job status, duration, and resource monitoring; automatic seed retry is disabled.
 - Application-server startup emits one web-QA warning only for preview-compiled/runtime-disabled state and an enabled signal when the preview environment and runtime flag are both active. Dedicated seeding-process startup emits neither web-tools status.
 - Audit masquerade start, stop, expiry, and invalidation with actor, target, timestamp, session reference, and bounded request context.
-- Local mailbox inspection relies on authenticated access logs; email contents are visible only inside the protected mailbox UI and excluded from application telemetry.
+- Local mailbox inspection relies on deployment OAuth proxy access logs. Do not add message contents or metadata to application logging or exported telemetry.
 
 ## 12. Security & Privacy
 
@@ -230,25 +232,25 @@ Masquerade flow:
 - The release command is powerful by design and is not a sandbox. Documentation warns that arbitrary custom scenarios and hooks execute trusted application behavior and mutate real data.
 - URL ingestion accepts only HTTP/HTTPS, bounds resource usage, redacts credentials, and relies on deployment network policy for destination control.
 - YAML ownership is explicit and no first-record/generated-default fallback is allowed in CLI mode.
-- Masquerade independently requires a current system administrator, prohibits chaining, separates actor from target authorization, renews sessions, and expires state. Actor authorization is limited to two narrowly scoped boundaries: stop and `/dev/mailbox`; every other capability is authorized solely as the target.
-- The preview environment forces `Swoosh.Adapters.Local`; runtime enablement additionally exposes the system-admin-protected mailbox. Other external integrations and custom hook effects remain outside this feature's containment boundary and require fresh or explicitly sanitized data plus non-production credentials.
+- Masquerade independently requires a current system administrator, prohibits chaining, separates actor from target authorization, renews sessions, and expires state. Actor authorization is limited to stopping masquerade; every other application capability uses the target identity. The preview mailbox requires no Torus identity and grants no actor privileges.
+- The preview environment forces `Swoosh.Adapters.Local`; runtime enablement exposes the mailbox behind the deployment OAuth proxy. The preview audience may inspect all captured synthetic QA mail without logging into Torus. No external ingress or direct public service may bypass the proxy. Other external integrations remain outside this feature and require fresh or explicitly sanitized data and non-production credentials.
 
 ## 13. Testing Strategy
 
-- Configuration tests cover the Mix-environment/runtime-flag matrix, casing variants, disabled values, warning behavior, production-safe Docker defaults, preview build arguments, and the required existing production-like branch classifications (AC-001 through AC-004). The preview-image workflow supplies the preview release build check; existing production packaging remains unchanged.
+- `test/oli/preview_qa_tools/config_test.exs` covers the effective-enablement truth table, casing variants, disabled values, warning behavior, and local email capture. Source-string Docker/workflow/build-policy tests are removed. Existing preview-image and production-package workflows verify their respective build paths; Phase 9 checks actual artifacts and production exclusion (AC-001 through AC-004). Historical release evidence remains in the Phase 1/2 execution records.
 - Release command tests cover listing, bundled and custom execution, full DSL compatibility, explicit ownership, bounded output, exit codes, and absence of application authorization/run persistence (AC-005 through AC-009).
 - Ingest tests use a controlled HTTP server for scheme validation, redirects, timeout, byte limits, credential redaction, cleanup, author selection, and successful/failed `Oli.Interop.Ingest` calls (AC-010 and AC-011).
 - Scenario tests cover `bulk_create_enroll_users`, fixed-profile/count-cohort parsing and schema parity, seeded policy/session identity, ordered traversal, all supported native activity configurations, whole-activity and per-part retries, repeated scored assessments and grade aggregation, existing-history skipping, pacing primitives, fixed caps, compact state, and Stagehand migration (AC-012 through AC-014 and AC-027 through AC-034).
 - Scenario/deployment tests execute `oli_torus_getting_started_course` through development and release dispatchers on fresh data; verify its curriculum, activities, cohort, progress, gradebook state, and bounded partial-failure reporting; and render the zero-retry, later-wave retained Job contract. A disposable pull-request preview verifies ready-before-seed ordering, no replay after a later image sync, and pruning on close. Static checks prove no Oban seeding, reconciliation layer, run schema, or status endpoint exists (AC-015 through AC-017).
 - Playwright compatibility tests preserve existing fixture behavior (AC-018).
 - Masquerade tests cover authorization, chaining, expiry, logout, target invalidation, runtime disablement, actor/target separation, audit attribution, persistent target mutations, safe redirects, keyboard operation, accessible names, and non-color cues (AC-019 through AC-024). The layout matrix includes `default`, `workspace`, `delivery`, `delivery_student_dashboard`, `delivery_dashboard`, authenticated LiveView, and authenticated `chromeless`; it excludes `delivery_from_payment` and `lti` and verifies LTI entry clears or rejects masquerade.
-- Mail containment tests verify the preview adapter override regardless of runtime flag, absence of external delivery, preview/runtime route gating, mailbox access for a current system administrator and for a valid original admin actor during masquerade, continued target identity within that mailbox request, denial of adjacent admin routes, and denial to anonymous, lesser-role, expired, invalid, or forged states (AC-025 and AC-026).
+- Mailbox tests in `test/oli_web/preview_mailbox_test.exs` cover only unauthenticated viewer/JSON access in the preview-enabled case and rejection when the preview marker or runtime activation is absent. They compare an isolated preview-compiled router with the normal non-preview test router; they do not build a production release. Configuration tests separately verify local mail capture regardless of the runtime flag (AC-025). No account, role, admin, token, custom-CSP, or mailbox-specific framework regression tests are retained. GitOps rendering and the existing policy validator check the enabled flag; ingress/service topology is inspected rather than enforced by new assertions. Phase 9 deployment QA verifies live OAuth rejection, subpath access without a Torus session, and absence of a proxy bypass to complete hybrid AC-026.
 - A scope guard confirms no preview-specific LTI grade-passback, Stripe, Cashnet, or broad production-clone safety behavior is introduced.
 - Required gates are targeted `mix test`, `mix format`, the existing preview-image release build, build-documentation review, and security/performance/Elixir/UI/requirements reviews. No additional `MIX_ENV=prod` PR gate is added.
 
 Acceptance-criterion traceability clarifications:
 
-- AC-002 and AC-003 are verified by negative enablement and startup log-capture tests.
+- Negative enablement tests cover the runtime portion of AC-002; production artifact exclusion remains a build/Phase 9 check. Startup log-capture tests cover AC-003.
 - AC-006 and AC-008 are verified by release-dispatch and explicit-ownership integration tests.
 - AC-013 is verified by deterministic `simulate_progress` scenario tests.
 - AC-016 is verified by the `oli_torus_getting_started_course` end-to-end scenario test.
@@ -258,7 +260,7 @@ Acceptance-criterion traceability clarifications:
 
 - Existing unrelated `Oli.Scenarios` directives and Playwright execution remain available. Explicit ownership is enforced only by the new release adapter.
 - `simulate_progress` keeps its directive name but intentionally replaces the Phase 4 syntax and result. Every existing caller and assertion migrates; removed top-level options fail with migration guidance and no compatibility adapter remains.
-- Stagehand call sites migrate before its standalone API is removed or reduced to temporary local wrappers.
+- Stagehand call sites have migrated to scenario directives and its standalone API is removed.
 - No database migration is introduced for seed tooling.
 - Non-masqueraded sessions and existing authorization behavior remain unchanged.
 
@@ -295,12 +297,25 @@ None.
 - `docs/design-docs/scoped_feature_flags.md`
 - `lib/oli/scenarios.ex`
 - `lib/oli/scenarios/runtime_opts.ex`
-- `lib/oli/utils/stagehand.ex`
+- `lib/oli/scenarios/bulk_create_enroll_users.ex`
 - `lib/oli/interop/ingest.ex`
 - `lib/oli_web/router.ex`
 - `rel/overlays/bin/migrate`
 
+
 ## Decision Log
+
+### 2026-09-24 - Reconcile Phase 6 with the approved minimal implementation
+- Change: Keep mailbox gating in the router with existing browser/NoCache plugs; omit custom CSP, a dedicated mailbox plug, Torus-role tests, and source-string build-policy tests. Limit GitOps changes to the enabled flag, its existing policy assertion, and deployment guidance.
+- Reason: The user approved proxy-owned mailbox access and requested focused behavior tests and minimum deployment changes.
+- Evidence: `lib/oli_web/router.ex`, `test/oli_web/preview_mailbox_test.exs`, `test/oli/preview_qa_tools/config_test.exs`, and `docs/exec-plans/current/features/preview-environment-tooling/execution/phase_6.md`; GitOps commit `f0e2b50`.
+- Impact: Phase 6 is implemented with three mailbox and seven configuration tests. Phase 7/8 masquerade work and Phase 9 live deployment/artifact verification remain outstanding. Historical execution records retain their original test results; deleted tests are not current coverage.
+
+
+### 2026-09-24 - Use deployment OAuth authorization for the preview mailbox
+- Decision: Require a preview build and enabled `PREVIEW_QA_TOOLS_ENABLED`, but no Torus login or application role for `/dev/mailbox`. Authorize access through the deployment OAuth proxy for the whole mailbox subtree; deployments must not expose an external bypass.
+- Rationale: The preview audience is already restricted by GitHub organization/team membership and explicit allowed users. Everyone admitted to a preview is trusted to inspect its synthetic QA mail, including account confirmation/reset links. A second Torus admin login impedes QA without serving a separate audience boundary.
+- Impact: Enable `PREVIEW_QA_TOOLS_ENABLED=true` in the GitOps preview overlay, replace admin mailbox tests with identity-independent access and runtime-gate tests, retain CSRF, standard browser headers, and no-store controls, and remove the mailbox actor exception from masquerade. Masquerade start/stop authorization remains unchanged. AC-026 is hybrid because proxy rejection requires deployment verification.
 
 ### 2026-09-15 - Make release seeding available without the web QA flag
 - Question: Should a `MIX_ENV=preview` release require `PREVIEW_QA_TOOLS_ENABLED=true` before its low-level `bin/seed` command can run?
@@ -320,7 +335,7 @@ None.
 - Rationale: Queue depth does not control simultaneous snapshot execution or serialize conflicting analytics updates. The polling duplicated queue-management responsibility, queried PostgreSQL every second during long paced waits, and did not prevent the observed contention below its 1,000-job threshold.
 - Impact: Remove queue state from simulator results and paced progress logs, delete backlog-observer tests, and treat snapshot worker sizing and project-scoped serialization as separate Oban/analytics operational concerns.
 
-### 2026-09-09 - Preserve mailbox access during administrator masquerade
+### 2026-09-09 - Preserve mailbox access during administrator masquerade (superseded 2026-09-24)
 - Question: May the original administrator inspect `/dev/mailbox` while masquerading as a non-admin user?
 - Decision: Yes. Stop and `/dev/mailbox` are the only actor-authorized operations during masquerade; every other authorization decision uses only the target identity.
 - Rationale: Mail inspection is part of the preview QA workflow and should not require ending the user session being tested.
@@ -333,6 +348,8 @@ None.
 - Impact: Add standalone `config/preview.exs`; parameterize Docker release paths with a safe `prod` default; pass `MIX_ENV=preview` from both preview-image jobs; intentionally copy applicable settings; treat `:preview` as production-like for permanent startup, gzip, compiler behavior, and applicable dependency selectors; document all environment build paths in `guides/process/building.md`. No new production PR build gate or drift audit is added.
 
 ### 2026-09-09 - Contain email and exclude broad production-clone safety
+
+The 2026-09-24 decision supersedes only the mailbox application-authorization requirement below.
 - Question: Which external effects must this preview-tooling feature contain?
 - Decision: Every preview release overrides outbound email with `Swoosh.Adapters.Local`; `Plug.Swoosh.MailboxPreview` is exposed at `/dev/mailbox` only to current system administrators, including the original admin actor during a valid active masquerade, while runtime QA tools are enabled. Do not add preview-specific suppression for LTI grade passback, Stripe, Cashnet, or other integrations.
 - Rationale: Email is routinely triggered by QA flows. Fresh preview databases do not configure the other integrations, and suppressing only a few effects would create a misleading claim that unsanitized production clones are safe.

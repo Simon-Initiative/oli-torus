@@ -20,6 +20,31 @@ Missing, blank, whitespace-padded, false, or malformed values leave masquerade a
 
 Preview instances must use fresh databases or explicitly sanitized non-production copies and non-production credentials. Local email containment does not suppress LTI grade passback, payment providers, webhooks, analytics destinations, background jobs, or other integrations; unsanitized production clones are unsupported.
 
+Mailbox access is implemented. Masquerade remains planned work; setting the flag does not add that capability to the current implementation.
+
+### Inspecting captured preview email
+
+In a `MIX_ENV=preview` build, set `PREVIEW_QA_TOOLS_ENABLED=true` and open
+`/dev/mailbox` after authenticating through the deployment's GitHub OAuth proxy.
+The standard GitOps preview overlay sets this flag. No Torus login or administrator
+role is required, and access works while testing any application identity.
+Everyone admitted by the preview proxy can inspect all captured mail, including
+preview-account confirmation and reset links; use synthetic or sanitized QA data.
+
+The proxy must protect the complete mailbox subtree (including JSON, message bodies,
+attachments, assets, and clearing), and no externally reachable ingress or app service
+may bypass it. Torus does not implement a second proxy-header authentication scheme.
+Disabling the runtime flag returns 404 without message details; email still stays local.
+CSRF protection, no-store headers, and standard browser security headers remain enabled.
+The mailbox uses Swoosh's normal rendering without a custom CSP or nonce policy.
+
+Email remains local even when mailbox access is disabled. Storage is in memory on
+the application node: restarting that node clears messages, and different replicas
+may hold different messages. The mailbox is a QA inspection tool, not durable storage.
+The former unauthenticated development/test mailbox is removed; `/dev/mailbox` is
+absent from `dev`, `test`, `ci_e2e`, and `prod` builds. Token-protected Playwright email
+endpoints retain their existing automation contract.
+
 ### Seeding a preview course
 
 The bundled `oli_torus_getting_started_course` scenario creates a themed course, publishes it,
