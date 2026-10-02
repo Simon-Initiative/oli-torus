@@ -130,7 +130,8 @@ Coming soon...
 
 ### Moodle
 
-Coming soon...
+For local Moodle and Torus development over HTTPS, see
+[Local Moodle HTTPS setup](moodle-local.md).
 
 ## Manual LTI 1.3 Configuration in Torus (Torus Admin)
 
