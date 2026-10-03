@@ -132,25 +132,25 @@ defmodule OliWeb.LegacySuperactivityController do
 
         {:error, error, code} ->
           conn
-          |> put_resp_content_type("text/text")
+          |> put_resp_content_type("text/plain")
           |> send_resp(code, error)
       end
     else
       {:error, :not_found} ->
         conn
-        |> put_resp_content_type("text/text")
+        |> put_resp_content_type("text/plain")
         |> send_resp(404, "Attempt not found")
 
       {:error, :unauthorized} ->
         conn
-        |> put_resp_content_type("text/text")
+        |> put_resp_content_type("text/plain")
         |> send_resp(403, "Unauthorized")
 
       {:error, reason} ->
         Logger.error("Could not process legacy superactivity command: #{inspect(reason)}")
 
         conn
-        |> put_resp_content_type("text/text")
+        |> put_resp_content_type("text/plain")
         |> send_resp(500, "server error")
     end
   end

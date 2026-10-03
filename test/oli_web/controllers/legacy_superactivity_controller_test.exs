@@ -245,6 +245,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         )
 
       assert conn.resp_body =~ ~s(command not supported)
+      assert get_resp_header(conn, "content-type") == ["text/plain; charset=utf-8"]
     end
 
     test "loads a saved activity file using its persisted MIME type", %{
