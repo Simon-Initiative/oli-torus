@@ -23,6 +23,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
     <img
       class="object-cover hidden hvxl:block hvxl:h-[150px] hv2xl:h-[300px] w-full"
       src={cover_image(@section)}
+      alt=""
     />
     <div class="flex flex-col gap-3 px-[50px] hvsm:px-[70px] hvxl:px-[84px] py-9 dark:text-white">
       <%= if @has_welcome_title or @has_encouraging_subtitle or @has_description do %>

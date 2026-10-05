@@ -25,8 +25,18 @@
       title: "Scored Activity"
       graded: true
       blocks:
-        - type: prose
-          body_md: "Scored activity coverage content"
+        - type: activity
+          virtual_id: "scored_activity"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Which option is correct?"
+            choices:
+              - id: "correct"
+                body_md: "Correct option"
+                score: 1
+              - id: "incorrect"
+                body_md: "Incorrect option"
+                score: 0
 
 - publish:
     to: 'student_dashboard_coverage_project'

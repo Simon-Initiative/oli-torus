@@ -45,10 +45,13 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             class="flex self-stretch h-fit flex-col justify-start items-start gap-3.5 pb-7"
           >
             <div :if={week_range} class="flex self-stretch justify-between items-baseline">
-              <div role="schedule_title" class="dark:text-white text-lg font-bold tracking-tight">
+              <div data-role="schedule_title" class="dark:text-white text-lg font-bold tracking-tight">
                 {this_or_next_week(week_range)}
               </div>
-              <div role="schedule_date_range" class="dark:text-white text-sm font-bold tracking-tight">
+              <div
+                data-role="schedule_date_range"
+                class="dark:text-white text-sm font-bold tracking-tight"
+              >
                 {Phoenix.HTML.raw(week_range(week_range))}
               </div>
             </div>
@@ -100,7 +103,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
           <div
             :if={unit_label || module_label}
-            role="container_label"
+            data-role="container_label"
             class="justify-start items-start gap-2 flex uppercase"
           >
             <div
@@ -122,7 +125,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
               </div>
             </div>
           </div>
-          <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
+          <div data-role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
             <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold">
               {@item.container_title}
             </div>
@@ -175,7 +178,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
             <div
               :if={unit_label || module_label}
-              role="container_label"
+              data-role="container_label"
               class="justify-start items-start gap-2 flex uppercase"
             >
               <div
@@ -197,7 +200,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                 </div>
               </div>
             </div>
-            <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
+            <div data-role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
               <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold">
                 {@resource.resource.title}
               </div>
@@ -263,7 +266,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
     assigns = Map.put(assigns, :resource, resource)
 
     ~H"""
-    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
+    <div data-role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
       <div class="flex justify-start items-center gap-5">
         <div
           :if={!is_nil(@resource.raw_avg_score) and @resource.last_attempt[:state] != :active}
@@ -295,7 +298,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             <div class="dark:text-white text-opacity-60 text-xs font-semibold ">
               Time Remaining:
             </div>
-            <div role="countdown" class="dark:text-white text-xs font-semibold">
+            <div data-role="countdown" class="dark:text-white text-xs font-semibold">
               {effective_attempt_expiration_date(@resource) |> Utils.format_time_remaining()}
             </div>
           </div>
@@ -320,7 +323,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
   defp schedule_item_details(assigns) do
     ~H"""
-    <div role="details" class="w-full h-full flex flex-col items-stretch gap-5 relative">
+    <div data-role="details" class="w-full h-full flex flex-col items-stretch gap-5 relative">
       <.schedule_group_content
         :if={@item_type == :expandable}
         item_id={@item_id}
@@ -336,7 +339,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         <div class="flex items-end gap-1">
           <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold h-5">
             <span :if={@completed}>Completed</span>
-            <span :if={!@completed and @has_scheduled_resources?} role="schedule details">
+            <span :if={!@completed and @has_scheduled_resources?} data-role="schedule details">
               {if is_nil(hd(@resources).effective_settings),
                 do:
                   Utils.days_difference(
@@ -388,12 +391,13 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         phx-click="expand_item"
         phx-value-item_id={@item_id}
         phx-target={@target}
+        aria-label={if @expanded, do: "Collapse scheduled pages", else: "Expand scheduled pages"}
         class="hover:cursor-pointer absolute top-3.5 left-3 z-10"
       >
         <div class={[
           "bg-Fill-Buttons-fill-primary text-Text-text-white flex px-2 py-0.5 rounded-xl shadow tracking-tight gap-2 items-center align-center"
         ]}>
-          <div role="count" class="pl-1 justify-start items-center gap-2.5 flex">
+          <div data-role="count" class="pl-1 justify-start items-center gap-2.5 flex">
             <div class="text-xs font-semibold">
               {length(@resources)} pages
             </div>
@@ -424,7 +428,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           >
             <% resource_completed = resource.progress == 100 %>
             <div
-              role="group_item"
+              data-role="group_item"
               class="w-full flex self-stretch px-3 md:pl-7 pr-4 py-2.5 rounded-lg justify-start items-start gap-2 md:gap-5 hover:bg-[#000000]/5 dark:hover:bg-[#FFFFFF]/5 hover:font-medium hover:cursor-pointer"
             >
               <div class="grow shrink h-auto justify-start items-start gap-2 md:gap-5 flex">

@@ -62,7 +62,11 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def score_summary(assigns) do
     ~H"""
-    <div :if={@raw_avg_score[:score]} role="score summary" class="flex items-center gap-[6px] ml-auto">
+    <div
+      :if={@raw_avg_score[:score]}
+      data-role="score summary"
+      class="flex items-center gap-[6px] ml-auto"
+    >
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path
           d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
@@ -80,7 +84,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def score_as_you_go_summary(assigns) do
     ~H"""
-    <div role="score summary" class="flex gap-[6px] ml-auto">
+    <div data-role="score summary" class="flex gap-[6px] ml-auto">
       <Icons.score_as_you_go color="text-Text-text-accent-green" />
       <span class="text-[12px] leading-[16px] tracking-[0.02px] text-Text-text-accent-green font-semibold whitespace-nowrap">
         {Utils.format_score(@raw_avg_score[:score])} / {Utils.format_score(@raw_avg_score[:out_of])}
@@ -453,7 +457,7 @@ defmodule OliWeb.Components.Delivery.Student do
       <span class="text-xs text-Text-text-low mr-1">
         Time Remaining:
       </span>
-      <div role="countdown">
+      <div data-role="countdown">
         {Utils.format_time_remaining(@end_date)}
       </div>
     </div>
@@ -475,7 +479,7 @@ defmodule OliWeb.Components.Delivery.Student do
         <Icons.clock />
       </div>
       <div class="text-right text-Text-text-low whitespace-nowrap">
-        <span class="text-sm font-semibold" role="duration in minutes">
+        <span class="text-sm font-semibold" data-role="duration in minutes">
           {@duration_minutes}
           <span class="w-[25px] self-stretch text-[13px] font-semibold">
             min
@@ -494,7 +498,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :exploration} = assigns) do
     ~H"""
-    <div role="resource_type" aria-label="exploration" class="justify-start items-start flex">
+    <div data-role="resource_type" aria-label="exploration" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-purple bg-Fill-Accent-fill-accent-purple rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -513,7 +517,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :checkpoint} = assigns) do
     ~H"""
-    <div role="resource_type" aria-label="checkpoint" class="justify-start items-start flex">
+    <div data-role="resource_type" aria-label="checkpoint" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-orange bg-Fill-Accent-fill-accent-orange rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -532,7 +536,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :practice} = assigns) do
     ~H"""
-    <div role="resource_type" aria-label="practice" class="justify-start items-start flex">
+    <div data-role="resource_type" aria-label="practice" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-blue bg-Fill-Accent-fill-accent-blue rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -551,7 +555,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :lesson} = assigns) do
     ~H"""
-    <div role="resource_type" aria-label="reading" class="justify-start items-start flex">
+    <div data-role="resource_type" aria-label="reading" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-teal bg-Fill-Accent-fill-accent-teal rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">

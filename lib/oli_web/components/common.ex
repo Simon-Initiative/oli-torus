@@ -670,7 +670,7 @@ defmodule OliWeb.Components.Common do
     doc: "shows a blurry halo at the end of the progress bar"
   )
 
-  attr(:role, :string, default: "progress_bar")
+  attr(:role, :string, default: "progressbar")
   attr(:height, :string, default: "h-1")
   attr(:rounded, :string, default: "rounded-[60px]")
 
@@ -695,7 +695,10 @@ defmodule OliWeb.Components.Common do
       <div class="flex justify-center w-full relative">
         <div class={"#{@rounded} #{@height} #{@not_completed_colour}"} style={"width: #{@width}"}>
           <div
-            role="progress"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow={@percent}
             class={[
               "#{@rounded} #{@height}",
               if(@percent == 100, do: @completed_colour, else: @on_going_colour)
@@ -707,7 +710,7 @@ defmodule OliWeb.Components.Common do
 
         <div
           :if={@show_halo}
-          role="halo"
+          aria-hidden="true"
           class="absolute -top-[5px] z-50 w-6 h-3.5 bg-[#39e581]/40 rounded-[47px] blur-[8px]"
           style={"left: #{@percent}%; transform: translateX(-12px);"}
         >
@@ -751,7 +754,7 @@ defmodule OliWeb.Components.Common do
           )
         }
         id={@id}
-        role={@role}
+        data-role={@role}
         class={[@button_class]}
       >
         {render_slot(@inner_block)}
@@ -769,7 +772,7 @@ defmodule OliWeb.Components.Common do
                 "flex items-center w-full gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50",
                 option[:class]
               ]}
-              role={"dropdown-item #{option.text}"}
+              data-role={"dropdown-item #{option.text}"}
             >
               <span class="text-[14px] leading-[20px] whitespace-nowrap">{option.text}</span>
               {Phoenix.HTML.raw(option[:icon])}
