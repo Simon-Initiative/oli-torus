@@ -3,26 +3,35 @@ defmodule OliWeb.PreviewMailboxTest do
 
   alias Swoosh.Adapters.Local.Storage.Memory
 
-  # Compile isolated copies of the real configuration and router with the
-  # preview marker. The application's test artifact remains non-preview.
+  # Compile isolated copies of the real configuration and router for each build
+  # policy. The application's test artifact remains unchanged.
   @preview_router OliWeb.MailboxTestRouter
+  @dev_router OliWeb.DevMailboxTestRouter
+  @prod_router OliWeb.ProdMailboxTestRouter
 
   setup_all do
     previous = Application.get_env(:oli, :preview_qa_tools)
-    Application.put_env(:oli, :preview_qa_tools, preview_build?: true)
+    previous_env = Application.fetch_env!(:oli, :env)
 
     try do
-      for path <- [
-            "lib/oli/preview_qa_tools/config.ex",
-            "lib/oli_web/router.ex"
-          ] do
-        path
-        |> File.read!()
-        |> String.replace("Oli.PreviewQATools.Config", "Oli.PreviewQATools.MailboxTestConfig")
-        |> String.replace("defmodule OliWeb.Router do", "defmodule #{@preview_router} do")
-        |> Code.compile_string(path)
+      for {env, router} <- [preview: @preview_router, dev: @dev_router, prod: @prod_router] do
+        Application.put_env(:oli, :env, env)
+        Application.put_env(:oli, :preview_qa_tools, preview_build?: env == :preview)
+
+        for path <- [
+              "lib/oli/preview_qa_tools/config.ex",
+              "lib/oli_web/router.ex"
+            ] do
+          path
+          |> File.read!()
+          |> String.replace("Oli.PreviewQATools.Config", "#{router}.Config")
+          |> String.replace("defmodule OliWeb.Router do", "defmodule #{router} do")
+          |> Code.compile_string(path)
+        end
       end
     after
+      Application.put_env(:oli, :env, previous_env)
+
       case previous do
         nil -> Application.delete_env(:oli, :preview_qa_tools)
         value -> Application.put_env(:oli, :preview_qa_tools, value)
@@ -67,7 +76,21 @@ defmodule OliWeb.PreviewMailboxTest do
     end
   end
 
-  test "mailbox is unavailable outside a preview build regardless of the QA tools flag" do
+  test "mailbox remains accessible in dev and test regardless of the QA tools flag" do
+    for value <- ["true", "false", nil] do
+      case value do
+        nil -> System.delete_env("PREVIEW_QA_TOOLS_ENABLED")
+        value -> System.put_env("PREVIEW_QA_TOOLS_ENABLED", value)
+      end
+
+      for router <- [@dev_router, OliWeb.Router] do
+        assert html_response(request("/dev/mailbox", router), 200)
+        assert json_response(request("/dev/mailbox/json", router), 200)["data"] == []
+      end
+    end
+  end
+
+  test "mailbox is unavailable in production regardless of the QA tools flag" do
     for value <- ["true", "false", nil] do
       case value do
         nil -> System.delete_env("PREVIEW_QA_TOOLS_ENABLED")
@@ -77,7 +100,7 @@ defmodule OliWeb.PreviewMailboxTest do
       for path <- ["/dev/mailbox", "/dev/mailbox/json"] do
         error =
           assert_raise Phoenix.Router.NoRouteError, fn ->
-            request(path, OliWeb.Router)
+            request(path, @prod_router)
           end
 
         assert error.plug_status == 404

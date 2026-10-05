@@ -205,20 +205,20 @@ Phase 7 masquerade lifecycle and Phase 8 UI remain unimplemented. Phase 9 retain
 - Goal: Make captured preview email available to the deployment-authorized preview audience without a second Torus login, before masquerade implementation begins.
 - Requirements: FR-010; AC-025, AC-026.
 - Tasks:
-  - [x] Compile `/dev/mailbox` only for preview, remove the development/test mailbox declaration, and forward to `Plug.Swoosh.MailboxPreview` behind `:browser` and a router-local effective-runtime-enablement check. Do not require a Torus login or application role.
+  - [x] Compile a runtime-gated `/dev/mailbox` for preview, preserve the ungated development/test mailbox, and place only the preview forward to `Plug.Swoosh.MailboxPreview` behind `:browser` and a router-local effective-runtime-enablement check. Do not require a Torus login or application role.
   - [x] Leave `current_user` unchanged and ignore actor/session role claims. Mailbox access requires no masquerade-specific exception.
   - [x] Preserve non-disclosing runtime-disabled responses, no-store headers, CSRF protection, and standard browser security headers; add no message content or metadata logging.
   - [x] Set `PREVIEW_QA_TOOLS_ENABLED=true` in the GitOps preview overlay and update its existing flag policy assertion and deployment guidance. Reuse the existing OAuth proxy and internal service topology; live coverage of all mailbox paths remains a deployment verification step.
   - [x] Document proxy-owned access, access to all captured synthetic QA messages, runtime activation/disablement, and local storage behavior.
 - Testing Tasks:
-  - [x] Keep three mailbox tests: unauthenticated viewer/JSON access with the preview marker and enabled flag; rejection with the flag disabled or unset; absent routes in the normal non-preview test artifact regardless of the flag. Do not add account, role, admin, or token fixtures.
+  - [x] Keep four mailbox tests: unauthenticated viewer/JSON access with the preview marker and enabled flag; rejection with the flag disabled or unset; local dev/test access regardless of the flag; absent production-configured routes regardless of the flag. Do not add account, role, admin, or token fixtures.
   - [x] Retain configuration tests for strict flag parsing, startup signals, and local mail delivery with activation on/off. Standard browser protections and `NoCache` are reused without mailbox-specific regression tests.
   - [x] Render the GitOps preview overlay and run the existing validators, including the enabled flag assertion. Inspect the existing ingress/service configuration; no new full-path or service-exposure policy assertions are added. Keep the live OAuth rejection/access matrix in Phase 9.
   - Command(s): `mix test test/oli_web/preview_mailbox_test.exs test/oli/preview_qa_tools/config_test.exs`; `MIX_ENV=preview mix compile`; `mix format`; GitOps render/policy validators. Evidence: `docs/exec-plans/current/features/preview-environment-tooling/execution/phase_6.md`.
 - Definition of Done:
   - Mailbox access works without Torus login in enabled preview builds, email remains local, application identities remain unchanged, and GitOps declares the OAuth proxy access boundary.
 - Gate:
-  - AC-025 local capture and the application access-gate portion of AC-026 pass (10 configuration/mailbox tests). Code review confirms the mailbox adds no identity mutation. AC-026 remains hybrid and incomplete until Phase 9 verifies live OAuth rejection/access and external-bypass exclusion; no mailbox work depends on Phase 7 masquerade.
+  - AC-025 local capture and the application access-gate portion of AC-026 pass (11 configuration/mailbox tests). Code review confirms the mailbox adds no identity mutation. AC-026 remains hybrid and incomplete until Phase 9 verifies live OAuth rejection/access and external-bypass exclusion; no mailbox work depends on Phase 7 masquerade.
 - Dependencies:
   - Phase 1 effective-enablement, compile boundary, and local email configuration; deployment-owned preview OAuth proxy.
 - Parallelizable Work:

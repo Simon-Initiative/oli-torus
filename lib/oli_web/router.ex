@@ -2123,24 +2123,31 @@ defmodule OliWeb.Router do
     get("/openfree", Api.OpenAndFreeController, :index)
   end
 
-  if Application.compile_env(:oli, [:preview_qa_tools, :preview_build?], false) do
-    pipeline :preview_mailbox do
-      plug(Oli.Plugs.NoCache)
-      plug(:require_preview_qa_tools)
-    end
-
-    defp require_preview_qa_tools(conn, _opts) do
-      case Oli.PreviewQATools.Config.enabled?() do
-        true -> conn
-        false -> conn |> send_resp(:not_found, "Not Found") |> halt()
+  cond do
+    Application.compile_env(:oli, [:preview_qa_tools, :preview_build?], false) ->
+      pipeline :preview_mailbox do
+        plug(Oli.Plugs.NoCache)
+        plug(:require_preview_qa_tools)
       end
-    end
 
-    scope "/dev" do
-      pipe_through([:browser, :preview_mailbox])
+      defp require_preview_qa_tools(conn, _opts) do
+        case Oli.PreviewQATools.Config.enabled?() do
+          true -> conn
+          false -> conn |> send_resp(:not_found, "Not Found") |> halt()
+        end
+      end
 
-      forward("/mailbox", Plug.Swoosh.MailboxPreview)
-    end
+      scope "/dev" do
+        pipe_through([:browser, :preview_mailbox])
+
+        forward("/mailbox", Plug.Swoosh.MailboxPreview)
+      end
+
+    Application.compile_env!(:oli, :env) in [:dev, :test] ->
+      forward("/dev/mailbox", Plug.Swoosh.MailboxPreview)
+
+    true ->
+      :ok
   end
 
   # routes only accessible to developers

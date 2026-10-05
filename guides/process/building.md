@@ -41,9 +41,9 @@ The mailbox uses Swoosh's normal rendering without a custom CSP or nonce policy.
 Email remains local even when mailbox access is disabled. Storage is in memory on
 the application node: restarting that node clears messages, and different replicas
 may hold different messages. The mailbox is a QA inspection tool, not durable storage.
-The former unauthenticated development/test mailbox is removed; `/dev/mailbox` is
-absent from `dev`, `test`, `ci_e2e`, and `prod` builds. Token-protected Playwright email
-endpoints retain their existing automation contract.
+The existing unauthenticated `/dev/mailbox` remains available in `dev` and `test`
+without `PREVIEW_QA_TOOLS_ENABLED`. It is absent from `ci_e2e` and `prod` builds.
+Token-protected Playwright email endpoints retain their existing automation contract.
 
 ### Seeding a preview course
 
