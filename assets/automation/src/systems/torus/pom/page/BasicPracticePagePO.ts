@@ -166,9 +166,9 @@ export class BasicPracticePagePO {
     await this.completeSimpleAuthorOnboardingIfPresent();
 
     const hasToggle = (await this.adaptiveReadOnlyInput.count().catch(() => 0)) > 0;
+    // The toggle reflects the lock state only once it is enabled.
+    if (hasToggle) await expect(this.adaptiveReadOnlyInput).toBeEnabled({ timeout: 30000 });
     if (hasToggle && (await this.adaptiveReadOnlyInput.isChecked().catch(() => false))) {
-      await expect(this.adaptiveReadOnlyInput).toBeEnabled({ timeout: 30000 });
-
       await this.page.evaluate(() => {
         const input = document.querySelector<HTMLInputElement>('input[name="adaptive_read_only"]');
 
