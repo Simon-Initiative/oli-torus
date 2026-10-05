@@ -1026,6 +1026,7 @@ defmodule OliWeb.Router do
     post("/auth/token", Api.LtiController, :auth_token)
 
     post("/deep_link/:section_slug/:resource_id", LtiController, :deep_link)
+    post("/authoring_deep_link", LtiController, :authoring_deep_link)
   end
 
   # LTI routes WITHOUT CSRF protection (entry points from external LMS)
@@ -1805,6 +1806,8 @@ defmodule OliWeb.Router do
 
   scope "/api/v1/lti/projects/:project_slug", OliWeb, as: :api do
     pipe_through([:api, :authoring_protected])
+
+    post("/deep_link_result/:activity_id", Api.LtiController, :authoring_deep_link_result)
 
     get(
       "/launch_details/:activity_id",

@@ -14,6 +14,7 @@ defmodule Oli.Lti.PlatformExternalTools do
   alias Oli.Lti.PlatformExternalTools.{BrowseOptions, LtiExternalToolActivityDeployment}
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Publishing.PublishedResource
   alias Oli.Resources.{ResourceType, Revision}
 
   @doc """
@@ -409,6 +410,54 @@ defmodule Oli.Lti.PlatformExternalTools do
       select: {p, lad}
     )
     |> Repo.one()
+  end
+
+  @doc """
+  Initializes a newly created section's LTI selections from its chosen publication.
+
+  Only LTI activity revisions present in both the destination and that publication are
+  considered. Missing or cleared selections create no records. Inserts are transactional
+  and never replace existing section selections. Returns the number of records created.
+  """
+  @spec initialize_section_deep_links(integer(), integer()) ::
+          {:ok, non_neg_integer()} | {:error, term()}
+  def initialize_section_deep_links(section_id, publication_id) do
+    activity_type = ResourceType.id_for_activity()
+
+    Repo.transaction(fn ->
+      # Section revision IDs are populated later in creation; use publication mappings here.
+      from(sr in SectionResource,
+        join: pr in PublishedResource,
+        on: pr.resource_id == sr.resource_id,
+        join: r in Revision,
+        on: r.id == pr.revision_id,
+        join: d in LtiExternalToolActivityDeployment,
+        on: d.activity_registration_id == r.activity_type_id,
+        where:
+          sr.section_id == ^section_id and pr.publication_id == ^publication_id and
+            r.resource_type_id == ^activity_type and r.deleted == false,
+        select: {sr.resource_id, fragment("?->'deepLink'", r.content)}
+      )
+      |> Repo.all()
+      |> Enum.reduce(0, fn
+        {_resource_id, nil}, count ->
+          count
+
+        {resource_id, %{"type" => "ltiResourceLink"} = selection}, count ->
+          attrs =
+            selection
+            |> Map.take(["type", "url", "custom", "title", "text"])
+            |> Map.merge(%{"section_id" => section_id, "resource_id" => resource_id})
+
+          case create_section_resource_deep_link(attrs) do
+            {:ok, _} -> count + 1
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        {_resource_id, _invalid_selection}, _count ->
+          Repo.rollback(:invalid_lti_deep_link_selection)
+      end)
+    end)
   end
 
   @doc """

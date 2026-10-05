@@ -5,7 +5,7 @@ defmodule OliWeb.Api.LtiController do
   alias Lti_1p3.Platform.LoginHints
   alias Oli.Accounts
   alias Oli.Delivery.Sections
-  alias Oli.Publishing.{DeliveryResolver, AuthoringResolver}
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
   alias Oli.Lti.PlatformInstances
@@ -81,48 +81,86 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
-  def launch_details(conn, %{"project_slug" => project_slug, "activity_id" => activity_id}) do
-    with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
-           AuthoringResolver.from_resource_id(project_slug, activity_id),
-         %LtiExternalToolActivityDeployment{
-           platform_instance: platform_instance,
-           status: status,
-           deep_linking_enabled: deep_linking_enabled
-         } =
-           deployment =
-           PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
-             activity_registration_id: activity_type_id
-           ) do
-      author = conn.assigns[:current_author]
+  def launch_details(
+        conn,
+        %{"project_slug" => project_slug, "activity_id" => activity_id} = params
+      ) do
+    author = conn.assigns[:current_author]
+    role = Map.get(params, "role", "developer")
+    launch_type = Map.get(params, "launch_type", "regular")
+
+    with true <- role in ["developer", "instructor"] and launch_type in ["regular", "deep_link"],
+         {:ok, revision, deployment} <-
+           Oli.Lti.AuthoringLaunch.resolve(author, project_slug, activity_id),
+         true <- launch_type != "deep_link" or deployment.deep_linking_enabled do
+      request_id = Ecto.UUID.generate()
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(author.id, %{
-          "project" => project_slug,
-          "resource_id" => activity_id
+          "project_id" => Oli.Authoring.Course.get_project_by_slug(project_slug).id,
+          "resource_id" => activity_id,
+          "role" => role,
+          "launch_type" => launch_type,
+          "request_id" => request_id
         })
 
+      message_type =
+        case launch_type do
+          "deep_link" -> "LtiDeepLinkingRequest"
+          _ -> nil
+        end
+
+      platform = deployment.platform_instance
+      selected_url = get_in(revision.content, ["deepLink", "url"])
+
+      target =
+        case {launch_type, selected_url} do
+          {"regular", url} when is_binary(url) -> url
+          _ -> platform.target_link_uri
+        end
+
       launch_params =
-        build_launch_params(
-          platform_instance,
-          login_hint,
-          deployment,
+        build_launch_params(platform, login_hint, deployment,
           endpoint: :project_launch_details,
-          resource_id: activity_id
+          resource_id: activity_id,
+          lti_message_type: message_type
         )
+        |> Map.put(:target_link_uri, target)
 
       json(conn, %{
-        name: platform_instance.name,
+        name: platform.name,
         launch_params: launch_params,
-        status: status,
-        deep_linking_enabled: deep_linking_enabled,
-        can_configure_tool: false
+        status: deployment.status,
+        deep_linking_enabled: deployment.deep_linking_enabled,
+        can_configure_tool: deployment.deep_linking_enabled,
+        request_id: request_id
       })
     else
       _ ->
         conn
-        |> put_status(:not_found)
-        |> json(%{error: "Activity not found"})
-        |> halt()
+        |> put_status(:forbidden)
+        |> json(%{error: "Launch unavailable for this author, activity, or launch choice"})
+    end
+  end
+
+  @doc "Returns a server-validated authoring selection to its initiating editor."
+  def authoring_deep_link_result(conn, %{
+        "project_slug" => project,
+        "activity_id" => activity,
+        "token" => token
+      }) do
+    with {:ok, %{"request" => request, "selection" => selection}} <-
+           Phoenix.Token.verify(OliWeb.Endpoint, "lti-authoring-result", token, max_age: 600),
+         %{"author_id" => author_id, "project" => ^project, "activity" => ^activity} <- request,
+         %{id: ^author_id} = author <- conn.assigns[:current_author],
+         {:ok, _revision, deployment} <-
+           Oli.Lti.AuthoringLaunch.resolve(author, project, activity),
+         true <-
+           deployment.deployment_id == request["deployment_id"] and
+             deployment.deep_linking_enabled do
+      json(conn, %{selection: selection, request_id: request["request_id"]})
+    else
+      _ -> conn |> put_status(:forbidden) |> json(%{error: "Selection expired or unavailable"})
     end
   end
 

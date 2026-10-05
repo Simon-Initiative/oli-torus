@@ -825,14 +825,7 @@ defmodule OliWeb.LtiControllerTest do
     end
 
     test "authorize_redirect get successful for author", %{conn: conn} do
-      author = author_fixture()
-      project = insert(:project)
-
-      {:ok, %LoginHint{value: login_hint}} =
-        LoginHints.create_login_hint(author.id, %{
-          "project" => project.slug,
-          "resource_id" => "some_resource_id"
-        })
+      %{author: author, project: project} = Oli.Seeder.base_project_with_resource2()
 
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"
@@ -840,7 +833,7 @@ defmodule OliWeb.LtiControllerTest do
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, {_, _, _}} =
+      {:ok, {_, activity_registration, _}} =
         PlatformExternalTools.register_lti_external_tool_activity(%{
           "name" => "some-platform",
           "description" => "some-description",
@@ -849,6 +842,21 @@ defmodule OliWeb.LtiControllerTest do
           "login_url" => "some-login-url",
           "keyset_url" => "some-keyset-url",
           "redirect_uris" => "some-valid-url"
+        })
+
+      {:ok, {activity, _}} =
+        ActivityEditor.create(
+          project.slug,
+          activity_registration.slug,
+          author,
+          %{"openInNewTab" => true, "authoring" => %{"parts" => []}},
+          []
+        )
+
+      {:ok, %LoginHint{value: login_hint}} =
+        LoginHints.create_login_hint(author.id, %{
+          "project" => project.slug,
+          "resource_id" => to_string(activity.resource_id)
         })
 
       params = %{
@@ -879,14 +887,7 @@ defmodule OliWeb.LtiControllerTest do
     end
 
     test "authorize_redirect get successful for author from login hint", %{conn: conn} do
-      author = author_fixture()
-      project = insert(:project)
-
-      {:ok, %LoginHint{value: login_hint}} =
-        LoginHints.create_login_hint(author.id, %{
-          "project" => project.slug,
-          "resource_id" => "some_resource_id"
-        })
+      %{author: author, project: project} = Oli.Seeder.base_project_with_resource2()
 
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"
@@ -894,7 +895,7 @@ defmodule OliWeb.LtiControllerTest do
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, {_, _, _}} =
+      {:ok, {_, activity_registration, _}} =
         PlatformExternalTools.register_lti_external_tool_activity(%{
           "name" => "some-platform",
           "description" => "some-description",
@@ -903,6 +904,21 @@ defmodule OliWeb.LtiControllerTest do
           "login_url" => "some-login-url",
           "keyset_url" => "some-keyset-url",
           "redirect_uris" => "some-valid-url"
+        })
+
+      {:ok, {activity, _}} =
+        ActivityEditor.create(
+          project.slug,
+          activity_registration.slug,
+          author,
+          %{"openInNewTab" => true, "authoring" => %{"parts" => []}},
+          []
+        )
+
+      {:ok, %LoginHint{value: login_hint}} =
+        LoginHints.create_login_hint(author.id, %{
+          "project" => project.slug,
+          "resource_id" => to_string(activity.resource_id)
         })
 
       params = %{

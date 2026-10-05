@@ -305,6 +305,16 @@ defmodule OliWeb.LtiController do
         )
 
       %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
+        # Login-hint context has a 255-character limit; new authoring hints store a project ID.
+        context =
+          case context do
+            %{"project_id" => project_id} ->
+              Map.put(context, "project", Oli.Authoring.Course.get_project!(project_id).slug)
+
+            _ ->
+              context
+          end
+
         client_id = params["client_id"]
 
         {:ok, platform_instance} =
@@ -319,7 +329,8 @@ defmodule OliWeb.LtiController do
                 platform_instance,
                 project_slug,
                 activity_resource_id,
-                session_user_id
+                session_user_id,
+                context
               )
 
             %{
@@ -424,15 +435,26 @@ defmodule OliWeb.LtiController do
          platform_instance,
          project_slug,
          activity_resource_id,
-         author_id
+         author_id,
+         launch_context
        ) do
     author = conn.assigns[:current_author] || Accounts.get_author(author_id)
+    true = author.id == author_id
     project = Oli.Authoring.Course.get_project_by_slug(project_slug)
 
+    {:ok, revision, deployment} =
+      Oli.Lti.AuthoringLaunch.resolve(author, project_slug, activity_resource_id)
+
+    true = deployment.platform_instance_id == platform_instance.id
+
+    role =
+      case Map.get(launch_context, "role", "developer") do
+        "instructor" -> :context_instructor
+        "developer" -> :context_content_developer
+      end
+
     roles =
-      [
-        Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
-      ] ++
+      [Lti_1p3.Roles.ContextRoles.get_role(role)] ++
         if Oli.Accounts.is_admin?(author),
           do: [
             Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
@@ -448,6 +470,39 @@ defmodule OliWeb.LtiController do
       )
     ]
 
+    {target, additional_claims, message_type} =
+      case Map.get(launch_context, "launch_type", "regular") do
+        "deep_link" ->
+          true = deployment.deep_linking_enabled
+
+          settings =
+            Lti_1p3.Claims.DeepLinkingSettings.deep_linking_settings(
+              Oli.Utils.get_base_url() <> "/lti/authoring_deep_link",
+              ["ltiResourceLink"],
+              ["iframe"],
+              accept_multiple: false,
+              auto_create: true,
+              data:
+                Oli.Lti.AuthoringLaunch.sign_request(
+                  author,
+                  project_slug,
+                  activity_resource_id,
+                  deployment,
+                  launch_context["request_id"]
+                )
+            )
+
+          {platform_instance.target_link_uri, [settings | additional_claims],
+           :deep_linking_request}
+
+        "regular" ->
+          selection = Map.get(revision.content, "deepLink") || %{}
+
+          {selection["url"] || platform_instance.target_link_uri,
+           additional_claims ++ maybe_add_custom_claims(selection["custom"]),
+           :resource_link_request}
+      end
+
     {%Accounts.User{
        id: author.id,
        sub: "author-#{author.id}",
@@ -457,8 +512,7 @@ defmodule OliWeb.LtiController do
        given_name: author.given_name,
        family_name: author.family_name,
        picture: author.picture
-     }, platform_instance.target_link_uri, activity_resource_id, roles, additional_claims,
-     :resource_link_request}
+     }, target, activity_resource_id, roles, additional_claims, message_type}
   end
 
   defp build_authorization_for(
@@ -832,6 +886,33 @@ defmodule OliWeb.LtiController do
       nil ->
         {:error, :section_not_found}
     end
+  end
+
+  @doc "Validates a project deep-link return and hands a signed result back to the editor."
+  def authoring_deep_link(conn, %{"JWT" => jwt}) do
+    result =
+      with {:ok, claims} <- validate_deep_linking_jwt(jwt),
+           {:ok, request} <- Oli.Lti.AuthoringLaunch.validate_return(claims),
+           [%{"type" => "ltiResourceLink"} = item] <-
+             claims["https://purl.imsglobal.org/spec/lti-dl/claim/content_items"],
+           {:ok, selection} <- Oli.Lti.AuthoringLaunch.selection(item) do
+        token =
+          Phoenix.Token.sign(OliWeb.Endpoint, "lti-authoring-result", %{
+            "request" => request,
+            "selection" => selection
+          })
+
+        %{token: token, request_id: request["request_id"]}
+      else
+        _ ->
+          %{error: "The tool selection could not be validated. Close this window and try again."}
+      end
+
+    conn
+    |> put_view(OliWeb.LtiHTML)
+    |> put_layout(false)
+    |> put_format("html")
+    |> render(:authoring_deep_link, result: result)
   end
 
   defp validate_deep_linking_jwt(jwt) do

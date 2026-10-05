@@ -102,6 +102,8 @@ export class InlineActivityEditor extends React.Component<
 
     this.customEventHandler = ((event: Event) => {
       const e = event as CustomEvent;
+      // The page editor owns persistence; let this request reach its listener.
+      if (e.detail.payload?.eventName === 'ltiAuthoringSave') return;
       e.preventDefault();
       e.stopPropagation();
 

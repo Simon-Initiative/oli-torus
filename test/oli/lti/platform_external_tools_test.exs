@@ -679,6 +679,23 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       assert deep_link.resource_id == valid_attrs.resource_id
     end
 
+    test "preserves tool-returned strings longer than 255 characters", %{valid_attrs: valid_attrs} do
+      attrs =
+        Map.merge(valid_attrs, %{
+          url: "https://example.com/launch?selection=" <> String.duplicate("a", 300),
+          title: String.duplicate("Writing practice ", 30),
+          text: String.duplicate("<p>Detailed writing instructions.</p>", 100)
+        })
+
+      assert {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(attrs)
+      saved = PlatformExternalTools.get_section_resource_deep_link_by(id: deep_link.id)
+
+      assert saved.url == attrs.url
+      assert saved.title == attrs.title
+      assert saved.text == attrs.text
+      assert saved.custom == attrs.custom
+    end
+
     test "creates a deep link with minimal required attributes", %{
       section: section,
       resource: resource

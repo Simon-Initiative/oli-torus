@@ -1,4 +1,7 @@
+import { LTIDeepLinkSelection } from 'components/activities/lti_external_tool/schema';
+
 export type LTIExternalToolDetails = {
+  request_id?: string;
   name: string;
   launch_params: {
     iss: string;
@@ -24,8 +27,10 @@ export function getLtiExternalToolDetails(
   projectsOrSections: 'projects' | 'sections',
   slug: string,
   activityId: string,
+  options?: { role: 'developer' | 'instructor'; launch_type: 'regular' | 'deep_link' },
 ): Promise<LTIExternalToolDetails> {
-  return fetch(`/api/v1/lti/${projectsOrSections}/${slug}/launch_details/${activityId}`, {
+  const query = options ? '?' + new URLSearchParams(options).toString() : '';
+  return fetch(`/api/v1/lti/${projectsOrSections}/${slug}/launch_details/${activityId}${query}`, {
     method: 'GET',
   }).then((response) => {
     if (!response.ok) return Promise.reject(new Error('Failed to fetch external tool details'));
@@ -70,4 +75,19 @@ export function listAvailableExternalTools(): Promise<AvailableExternalTools> {
 
     return response.json();
   });
+}
+
+/** Retrieve a selection from a server-signed deep-link return, bound to this author/activity. */
+export async function getAuthoringDeepLinkResult(
+  project: string,
+  activity: string,
+  token: string,
+): Promise<{ selection: LTIDeepLinkSelection; request_id: string }> {
+  const response = await fetch(`/api/v1/lti/projects/${project}/deep_link_result/${activity}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  if (!response.ok) throw new Error('The tool selection could not be retrieved. Please try again.');
+  return response.json();
 }

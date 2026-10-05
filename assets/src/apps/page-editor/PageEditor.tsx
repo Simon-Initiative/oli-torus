@@ -212,6 +212,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   }
 
   componentDidMount() {
+    window.addEventListener('customEvent', this.ltiAuthoringSaveListener);
     const { projectSlug, onLoadPreferences } = this.props;
 
     onLoadPreferences();
@@ -301,7 +302,43 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     }
   }
 
+  ltiAuthoringSaveListener = (event: Event) => {
+    const { payload, continuation, props } = (event as CustomEvent).detail || {};
+    if (payload?.eventName !== 'ltiAuthoringSave' || props.projectSlug !== this.props.projectSlug)
+      return;
+    const entry = this.state.activityContexts.find(
+      (activity) => activity.activityId === props.activityId,
+    );
+    if (!entry) return;
+    event.stopPropagation();
+    const persist = async () => {
+      if (!this.state.editMode) throw new Error('Enable editing before configuring this activity.');
+      const persistence = this.activityPersistence[entry.activitySlug];
+      // Do not flush a queued save on top of an already-running activity save.
+      if (persistence instanceof DeferredPersistenceStrategy && persistence.inFlight) {
+        await new Promise<void>((resolve) => persistence.idleResolvers.push(resolve));
+      }
+      await persistence.flushPendingChangesAsync?.(false);
+      if (payload.payload?.selection) {
+        const current = this.state.activityContexts.get(entry.activitySlug);
+        if (!current) throw new Error('This activity is no longer in the page.');
+        const content = { ...current.model, deepLink: payload.payload.selection };
+        await this.onEditActivity(
+          entry.activitySlug,
+          { title: current.title, objectives: current.objectives, tags: current.tags, content },
+          true,
+        );
+      }
+      return true;
+    };
+    persist().then(
+      (result) => continuation(result),
+      (error) => continuation(undefined, error),
+    );
+  };
+
   componentWillUnmount() {
+    window.removeEventListener('customEvent', this.ltiAuthoringSaveListener);
     this.persistence.destroy();
 
     unregisterUnload(this.windowUnloadListener);
@@ -397,9 +434,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     );
   }
 
-  onEditActivity(id: string, update: ActivityEditorUpdate): void {
+  onEditActivity(id: string, update: ActivityEditorUpdate, immediate = false): Promise<void> {
     // only update if editMode is active
-    if (!this.state.editMode) return;
+    if (!this.state.editMode) return Promise.resolve();
 
     const constrainedContent = this.adjustActivityForConstraints(
       this.state.activityContexts.get(id)?.typeSlug,
@@ -415,18 +452,31 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     const merged = Object.assign({}, this.state.activityContexts.get(id), withModel);
     const activityContexts = this.state.activityContexts.set(id, merged);
 
-    this.setState({ activityContexts }, () => {
-      const saveFn = (releaseLock: boolean) =>
-        ActivityPersistence.edit(
-          this.props.projectSlug,
-          this.props.resourceId,
-          merged.activityId,
-          { ...update, content: constrainedContent },
-          releaseLock,
-        );
+    return new Promise((resolve, reject) =>
+      this.setState({ activityContexts }, () => {
+        const saveFn = (releaseLock: boolean) =>
+          ActivityPersistence.edit(
+            this.props.projectSlug,
+            this.props.resourceId,
+            merged.activityId,
+            { ...update, content: constrainedContent },
+            releaseLock,
+          );
 
-      this.activityPersistence[id].save(saveFn);
-    });
+        if (immediate) {
+          saveFn(false).then((result) => {
+            if (result.result !== 'success') {
+              reject(new Error(result.message || 'Unable to save the activity.'));
+            } else {
+              resolve();
+            }
+          }, reject);
+        } else {
+          this.activityPersistence[id].save(saveFn);
+          resolve();
+        }
+      }),
+    );
   }
 
   onRemove(key: string) {

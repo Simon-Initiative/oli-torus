@@ -13,6 +13,11 @@ type LTIExternalToolFrameProps = {
   onEditHeight?: (height: number | undefined) => void;
   onDeepLinkingComplete?: () => void;
   onCloseModal?: () => void;
+  onAuthoringDeepLinkComplete?: (result: {
+    token?: string;
+    request_id?: string;
+    error?: string;
+  }) => void;
 };
 
 /**
@@ -33,6 +38,7 @@ export const LTIExternalToolFrame = ({
   onEditHeight,
   onDeepLinkingComplete,
   onCloseModal,
+  onAuthoringDeepLinkComplete,
 }: LTIExternalToolFrameProps) => {
   const frameName = `tool-content-${resourceId}`;
   const target = openInNewTab ? '_blank' : frameName;
@@ -62,6 +68,13 @@ export const LTIExternalToolFrame = ({
     const handleMessage = (event: MessageEvent) => {
       // Verify the message is from the iframe
       if (frameRef.current && event.source === frameRef.current.contentWindow) {
+        if (
+          event.origin === window.location.origin &&
+          event.data?.type === 'lti_authoring_deep_link_response'
+        ) {
+          onAuthoringDeepLinkComplete?.(event.data);
+          return;
+        }
         // Check if this is a deep linking completion message
         if (event.data && event.data.type === 'lti_deep_linking_response') {
           console.log('Deep linking response received:', event.data);
@@ -80,7 +93,7 @@ export const LTIExternalToolFrame = ({
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [onDeepLinkingComplete, onCloseModal]);
+  }, [onDeepLinkingComplete, onCloseModal, onAuthoringDeepLinkComplete]);
 
   // Reset the iframe any time the openInNewTab setting changes
   useEffect(() => {

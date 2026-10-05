@@ -1,16 +1,14 @@
-# LTI External Tool Authoring and Availability
+# LTI External Tool Authoring and Deep-Link Inheritance
 
-Last updated: 2026-09-23
+Last updated: 2026-10-05
 
 Related ticket: [MER-5978 — Author-configured LTI deep links that persist from projects to course sections](https://eliterate.atlassian.net/browse/MER-5978).
 
 ## Problem and Intended Outcome
 
-An author should be able to configure MyProse writing activities once and carry those selections into new course sections. Instructors should not have to open and configure every activity before students can use the course.
+An author should be able to configure LTI activities once and carry those selections into new course sections. Instructors should not have to open and configure every activity before students can use the course.
 
 Extend Torus's existing LTI External Tools feature so authors can establish selections in project authoring and product templates, then preserve them when creating or copying sections. MyProse is the primary validation tool; the implementation should support other LTI 1.3 tools with compatible portable deep-link configuration.
-
-Separately, let tool administrators restrict which projects may add a private external tool through Advanced Activities → “+ Activities and Tools.”
 
 ## Portable Deep-Link Configuration
 
@@ -20,7 +18,7 @@ A compatible tool can use that copied configuration without requiring an instruc
 
 ### Example: Configure Once and Carry the Selection Forward
 
-An author chooses “Select Resource” in a project or template, then selects cover-letter writing in drafting mode inside the tool. The tool returns an LTI deep-link response containing a selected resource such as:
+In project authoring, an author chooses a launch role (Developer or Instructor), selects the Deep Link launch type, and chooses “Select Resource.” In a template, the author uses the existing selection workflow. The author then selects cover-letter writing in drafting mode inside the tool. The tool returns an LTI deep-link response containing a selected resource such as:
 
 ```json
 {
@@ -36,8 +34,8 @@ An author chooses “Select Resource” in a project or template, then selects c
 
 The parameter names are illustrative. The tool defines the `custom` keys and values; Torus preserves them.
 
-1. **Save the selection.** After validating the response, Torus saves a project selection as a separate versioned resource associated with the activity, or a template selection in its existing section deep-link record. The stored `custom` value is the object supplied by the tool: `{"writing_type":"cover_letter","mode":"drafting"}`. Torus also stores the selected URL and descriptive metadata. Project selection changes follow the revision/publication lifecycle; template selection changes update the template's record.
-2. **Create the destination.** For project → template or project → section creation, Torus reads the selection revision from the chosen publication and creates a destination section deep-link record. For template → section inheritance and checkbox-enabled section copying, Torus clones the source's section deep-link record. Each new record belongs to the destination and references its corresponding activity resource, preserving the tool's URL and `custom` values.
+1. **Save the selection.** After validating the response, Torus saves a project selection in the existing activity revision’s `content` field, or a template selection in its existing section deep-link record. No additional authoring resource is created. The stored `custom` value is the object supplied by the tool: `{"writing_type":"cover_letter","mode":"drafting"}`. Torus also stores the selected URL and descriptive metadata. Project selection changes follow the revision/publication lifecycle; template selection changes update the template's record.
+2. **Create the destination.** For project → template or project → section creation, Torus reads the selection from the activity revision’s content in the chosen publication and creates a destination section deep-link record. For template → section inheritance and checkbox-enabled section copying, Torus clones the source's section deep-link record. Each new record belongs to the destination and references its corresponding activity resource, preserving the tool's URL and `custom` values.
 3. **Launch the activity.** Torus uses the destination's selection record and sends its custom values in the LTI launch claim `https://purl.imsglobal.org/spec/lti/claim/custom`, together with the destination's launch context and the current user's identity.
 4. **Use the saved configuration.** If the tool treats those custom values as the authoritative activity configuration, it launches cover-letter writing in drafting mode in the new section without requiring the instructor to select the resource again. This is the portability behavior the enhancement relies on: the copied configuration remains usable when the launch context changes.
 
@@ -52,15 +50,29 @@ This is a tool compatibility and documentation concern. Torus preserves independ
 
 Shared references can support portable selections without supporting independent editing. Document the tool's behavior for authors and instructors, and validate it with MyProse. No additional Torus storage mechanism is required for this distinction.
 
-## Template Inheritance
+## Current Storage and Required Creation Steps
 
-A product/template is represented by a section blueprint. Selecting a resource through template preview already persists a deep link, and launching that selection in preview has been confirmed to work.
+Today, inserting an LTI activity creates an ordinary activity resource and revision. The page stores an `activity-reference` to that activity resource, and the publication resolves its revision. The revision’s `activity_type_id` identifies the registered tool. Its `content` currently contains presentation settings (`openInNewTab` and optional `height`) and the standard activity authoring structure (`authoring.parts` and initially empty `authoring.previewText`).
 
-The missing behavior is inheritance during section creation:
+Course sections store deep-link selections separately in `lti_section_resource_deep_links`, with one record per `(section_id, resource_id)`. The existing “Select Resource from Tool” workflow saves the returned type, URL, `custom`, title, and text in that record; changing a selection updates it without changing the activity revision. Later launches use the record’s URL and custom parameters with the current section and user context. These section records are not versioned resources.
 
-- Copy existing template deep-link selections into records owned by the new section, preserving their selected resource and configuration.
-- Leave activities without a template selection unconfigured. Do not create placeholder records or fill missing selections from the project's current configuration.
-- Allow instructors to change the new section's selections through the existing workflow.
+A product/template is represented by a section blueprint and uses the same selection table. Selecting a resource through template preview already persists a deep link, and launching that selection in preview has been confirmed to work. The Phase 2 prototype implements initialization for direct project → course section creation. Project → template initialization and template → course section copying remain to be implemented. The required behavior for all three paths is described below.
+
+| Creation path | Source of selection | Required step |
+| --- | --- | --- |
+| Project → template | LTI activity revision content from the chosen publication | Create a `lti_section_resource_deep_links` record for each initialized activity, owned by the new template’s section ID. |
+| Project → course section | LTI activity revision content from the chosen publication | Create a `lti_section_resource_deep_links` record for each initialized activity, owned by the new course section’s ID. |
+| Template → course section | The template’s existing `lti_section_resource_deep_links` records | Copy selections into new records owned by the new course section. Use the template’s current selections, including any changes made in template preview. |
+
+Run selection initialization after the destination section and corresponding activity resources are available, as part of the creation transaction. Preserve the selected type, URL, `custom`, title, and text, and associate each record with the corresponding destination activity resource. Create records only for activities included in the destination. Creation must not report success with required selections only partially initialized.
+
+For project-based creation, read the published activity content, never the latest project draft. For template-based creation, copy the template’s records, never reinitialize from the project’s activity content. If the source has no selection for an activity, create no destination record; do not create placeholders or restore a missing or cleared template selection from the project.
+
+Thus, project → template → section involves two explicit steps: initialize the template’s records from published activity content, then copy the template’s records when creating a course section. Direct project → section creation uses the same publication-based initialization without an intermediate template.
+
+Each destination owns its records. Later source changes do not automatically overwrite existing destinations. Allow instructors to change inherited section selections through the existing workflow.
+
+## Template Configuration
 
 Optional: add an **“LTI External Tools”** link to the template overview UI, using the existing section Manage page's **“LTI 1.3 External Tools”** link and listing as the basis. Adapt that experience for templates, retaining tool grouping, search, and navigation to the content containing each activity. Add configuration status and a badge counting activity instances whose integrations support deep linking but have no saved selection, making it easy to find and configure them.
 
@@ -83,9 +95,22 @@ The checkbox defaults to checked. It follows the same full-copy/select-all behav
 
 ## Project Authoring
 
-Add “Select Resource” and “Change Selection from Tool” to the project authoring activity UI. Use the existing integration-level `LtiExternalToolActivityDeployment.deep_linking_enabled` setting and author permissions to govern access.
+Extend the authoring view of each LTI activity with two independent choices before launching the tool:
 
-Persist project selections as separate versioned resources and use the chosen publication's selections to initialize corresponding records when creating a template or a section directly from that project. The intended paths are:
+| Control | Choices | Behavior |
+| --- | --- | --- |
+| Launch as | **Developer** or **Instructor** | Set the launch’s LTI context role to ContentDeveloper or Instructor, respectively. |
+| Launch type | **Regular** or **Deep Link** | Send a regular resource-link launch or open the tool’s deep-link selection workflow, respectively. |
+
+Support all four combinations when the integration supports deep linking: Developer + Regular, Instructor + Regular, Developer + Deep Link, and Instructor + Deep Link. Default to Developer + Regular to preserve the existing authoring launch behavior. Make both controls visible before launching so the author can deliberately choose how to enter the tool.
+
+- **Regular:** launch an `LtiResourceLinkRequest` with the selected role. When the activity has a saved selection, use its URL and `custom` values from the current authoring revision; otherwise use the integration’s default launch URL. A regular launch does not itself save or replace the deep-link selection in Torus.
+- **Deep Link:** launch an `LtiDeepLinkingRequest` with the selected role and the project/activity return correlation described below. Provide “Select Resource” or “Change Selection from Tool,” according to whether the activity already has a saved selection. Validate the returned selection and save it in the activity revision’s content, then refresh the editor model and displayed selection.
+- Offer Deep Link only when the existing integration-level `LtiExternalToolActivityDeployment.deep_linking_enabled` setting permits it. Enforce author permissions and supported launch choices on the server as well as in the UI.
+- Carry the selected role and launch type through launch-details generation, the login hint, and authorization redirect so the signed launch reflects the author’s choices. Treat Developer/Instructor as the selected context role; preserve applicable platform roles separately. The launch continues to identify the initiating author and the project context. Choosing Instructor does not impersonate a course instructor or switch to a course-section context.
+- Treat these controls as authoring launch options, not as part of the tool-returned selection. They do not determine learner roles or launch types in created templates or course sections.
+
+Persist project selections in the existing activity revision’s `content` field and use the chosen publication’s activity revisions to initialize corresponding records when creating a template or a section directly from that project. The intended paths are:
 
 - Project → template → section.
 - Project → section.
@@ -96,29 +121,29 @@ Each destination owns its selection records. Later edits to a project's or templ
 
 **Problem:** How will project selections be stored and associated with the publication used to create a template or section, so later draft edits do not silently affect published content?
 
-Introduce an `lti_deep_link_selection` resource type with its own revisions and publication mappings. Each selection belongs to an activity resource; store that association on the selection side, rather than in the activity's editable content. The selection revision stores the tool-returned URL, `custom` values, and descriptive metadata. Torus's existing secondary-resource pattern provides a precedent for associating an independently versioned resource with an activity.
+Store the selected type, URL, `custom` object, and descriptive metadata in a dedicated optional field within the LTI activity revision’s `content`, alongside the existing presentation settings and authoring structure. The field name will be finalized in the detailed schema. Preserve tool-defined custom keys and values.
 
-- Each successful authoring configuration change, including clearing a selection, creates a new selection revision and updates its mapping in the project's working publication. Published selection revisions remain unchanged.
-- Publishing captures the activity and selection revisions in the same publication. Creating a template or section resolves the selection from that specific publication, never from the latest draft.
-- If that publication has no configured selection for an activity, create no destination deep-link record. Clearing a selection must also follow the revision/publication lifecycle, preserving older publications' selections.
-- Template and section selections continue to use `lti_section_resource_deep_links`. They are independent destination records initialized from the published project selection or copied source context.
-- Publication change detection, activity duplication/remixing, deletion, and export/import must account for the new resource and preserve or rewrite its owning-activity association as appropriate.
+No new resource type, separate selection resource, or separate publication mapping is needed. The page continues to reference the existing activity resource, and the activity’s own revision/publication lifecycle versions its selection together with its other content.
+
+- Saving, replacing, or clearing a project selection uses the activity’s existing editing and revision lifecycle. Published activity revisions remain unchanged.
+- Publishing captures the activity revision containing the selection. Project-based template or section creation reads that exact revision’s content and creates the destination selection record as described above.
+- An absent or cleared selection in that published activity content produces no destination deep-link record. Older publications retain their prior selections.
+- Template and course-section selections continue to use `lti_section_resource_deep_links`; they are independent destination records initialized from published activity content or copied from the source template/section.
+- Verify that existing activity duplication/remixing and export/import preserve the added content field and that publication change detection recognizes selection edits through the normal activity revision lifecycle.
 
 For example, publication A can retain MyProse's cover-letter drafting configuration while the working publication changes to proposal review. A section created from publication A still receives cover-letter drafting; the draft change becomes available for project-based creation only after publication B is published. Neither change overwrites existing destination selections.
 
 ### Configuration Returns and Editor State
 
-The separate selection resource is preferred over storing the selection directly in the activity resource's revision because the client-side activity editor still has its previous model and holds an editing lock when the tool returns. If the callback changed the activity's content, a subsequent editor save could overwrite the newly stored selection with that stale model.
+The selection is part of the activity model, so the configuration return must coordinate with the existing editor and its editing lock. Persist pending activity edits before starting configuration and capture the resulting activity revision ID. On successful return, update only the selection field while preserving the other activity content, then synchronize the editor with the saved model and revision before allowing further saves. Coordinate in-flight autosaves so a stale client model cannot overwrite the new selection. Refresh the displayed selection status as part of that synchronization.
 
-The callback updates the separate selection resource, leaving the activity's content unchanged. Ordinary activity saves therefore cannot overwrite the selection. Refresh the selection's displayed status after configuration; replacing the activity editor's model or adding page-wide locks is unnecessary for this purpose.
+Correlate the return with the initiating author and activity using a short-lived Torus-signed Phoenix token in `deep_linking_settings.data`, which the tool returns unchanged. Use a signing salt dedicated to deep-link configuration and enforce a maximum token age. Include the author, project, activity, expected tool deployment, and the activity’s starting revision ID. This self-contained token requires no server-side pending-request record.
 
-Correlate the return with the initiating author and activity using a short-lived Torus-signed Phoenix token in `deep_linking_settings.data`, which the tool returns unchanged. Use a signing salt dedicated to deep-link configuration and enforce a maximum token age. Include the author, project, activity, expected tool deployment, and the deep-link selection resource's starting revision ID (or its absence). This self-contained token requires no server-side pending-request record.
+Apply standard LTI validation to the tool-signed response JWT, including signature, issuer/audience, lifetime, nonce/replay checks, message type, version, deployment, and accepted content items. Separately verify the returned Phoenix token’s Torus signature and age; the tool’s signature alone does not prove that `data` is unchanged from what Torus issued. Verify that the activity still exists in the project and uses the expected tool integration, and recheck the initiating author’s permissions and applicable editing lock.
 
-Capture only the deep-link selection resource's revision ID, or its absence if no selection resource exists. On return, save only if that selection revision is unchanged, or still absent. A revision representing a cleared selection still has an ID to track. The activity resource has a separate revision ID that is not part of this comparison; edits to the activity resource do not affect this check. This selection revision check is a Torus concurrency safeguard, not an LTI requirement.
+Compare the current draft activity revision ID with the captured ID and reject a stale return rather than overwriting intervening edits. This comparison now covers ordinary activity edits as well as selection changes. Serialize the comparison, selection update in a new activity revision, and working-publication mapping update atomically. Verify that this path advances revision identity even when the editor already holds a lock, so a successfully saved response cannot be applied again using the same starting revision. Signing alone does not make a token single-use. Keep concurrency checks scoped to revision identity; do not add content hashes or timestamp comparisons.
 
-Apply standard LTI validation to the tool-signed response JWT, including signature, issuer/audience, lifetime, nonce/replay checks, message type, version, deployment, and accepted content items. Separately verify the returned Phoenix token's Torus signature and age; the tool's signature alone does not prove that `data` is unchanged from what Torus issued. Verify that the activity still exists in the project and uses the expected tool integration, and recheck the initiating author's permissions and applicable editing lock. Compare the current draft selection revision ID with the captured ID, rejecting a mismatch or the creation of a previously absent selection. Because every configuration change creates a new selection revision, an older configuration window cannot overwrite a newer saved selection. Keep concurrency checks scoped to revision identity; do not add content hashes or timestamp comparisons.
-
-Serialize selection changes and perform the revision comparison, new revision creation, and working-publication mapping update atomically, including first-time selection creation. Once a response is saved, its captured selection revision no longer matches, preventing it from being applied again without a separate consumed-request registry. This protection uses the persisted selection state; signing alone does not make a token single-use. Cancellation, validation failures, and failed saves preserve the previous selection.
+Cancellation, validation failures, stale returns, and failed saves preserve the previous selection and any independently saved activity edits.
 
 ## LTI Resource-Link Identity and Compatibility
 
@@ -134,32 +159,23 @@ Use context-specific LTI `resource_link.id` values for new projects, templates, 
 
 This policy implements distinct link identity for new copies while protecting existing integrations. With MyProse, verify that destination sections receive different link IDs but identical copied custom configuration, and that both launch without instructor setup.
 
-## Project-Scoped Tool Availability
-
-Add Public/Private availability to each external tool deployment configuration. Migrate all existing tool configurations to Public for backward compatibility. New tool configurations default to Private. This visibility migration preserves existing deployment status and project associations.
-
-- Public tools may be added to any project, subject to existing platform enablement and project permissions.
-- Private tools may be added only to explicitly specified projects.
-- Enforce eligibility in both the “+ Activities and Tools” UI and the server-side addition operation.
-- Keep eligibility grants separate from the `activity_registration_projects` association that records whether a project has added and enabled a tool.
-- Making a tool private or removing a project grant must not remove existing associations, prevent their management, or block existing activity launches solely because of the scope change.
-
-Institution scoping is outside this epic and may be considered as a future follow-on.
-
 ## Validation with MyProse
 
 Demonstrate the complete author-to-student workflow using MyProse:
 
+- Exercise all four authoring role/launch-type combinations and verify the emitted context role and message type. Confirm Developer + Regular is the default and Deep Link is unavailable when disabled for the integration.
+- Confirm a regular authoring launch uses the saved selection when present, while a deep-link launch can create or replace that selection under either chosen role. Confirm the launch retains the initiating author’s identity and project context.
 - Configure activities with distinct writing types, such as proposal and cover-letter writing, and cover both drafting and review modes.
 - Preserve the selected writing type and mode through template → section, project → template → section, project → section, and checkbox-enabled section → section copying.
+- Confirm project → template and project → section creation initialize destination selection records from the chosen publication’s activity content. Confirm template → section creation copies the template’s records, including template-local changes, without falling back to project content.
 - Confirm persistence after reload and successful student launch without initial instructor configuration.
-- Confirm later draft selection changes do not affect creation from an older publication, and ordinary activity edits after a configuration return do not overwrite the saved selection.
+- Confirm later draft selection changes and clearing do not affect creation from an older publication. Confirm ordinary activity edits after a configuration return do not overwrite the saved selection, and stale or repeated returns cannot overwrite newer activity revisions.
 - Confirm an instructor can change an inherited selection without changing source or sibling Torus selection records. Verify whether MyProse configuration edits are independent or affect shared tool-side content, and document the observed behavior for instructors.
 - Confirm unchecked section copying and unconfigured source activities produce no destination selection records.
 - Confirm the selection-copy checkbox defaults to checked and follows the same full-copy/select-all behavior as the other copy-rules checkboxes.
 
 ## Documentation
 
-Provide author/instructor guidance for selection, inheritance, local changes, and section-copy behavior, including whether tool-side configuration edits affect other destinations. Provide tool-developer guidance explaining the portability contract, the cited LTI copy guidance, launch context, and how to support independent destination changes when configuration is referenced through `custom`. Explain Public/Private availability for tool administrators.
+Provide author/instructor guidance for the Developer/Instructor and Regular/Deep Link launch choices, selection, inheritance, local changes, and section-copy behavior, including whether tool-side configuration edits affect other destinations. Provide tool-developer guidance explaining the portability contract, the cited LTI copy guidance, launch context, and how to support independent destination changes when configuration is referenced through `custom`.
 
 Detailed schema choices, implementation tasks, and verification will be developed in subsequent specifications.

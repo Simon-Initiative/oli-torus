@@ -12,6 +12,7 @@ defmodule Oli.Delivery do
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ActivityAttempt, ResourceAccess}
   alias Oli.Delivery.ResearchConsent
   alias Oli.Lti.LaunchIdentity
+  alias Oli.Lti.PlatformExternalTools
   alias Oli.Delivery.{SectionCreation, SectionCreationAuditor, SectionCreationRequest}
   alias Oli.Accounts.{Author, User}
 
@@ -182,6 +183,8 @@ defmodule Oli.Delivery do
     with {:ok, section} <-
            Sections.create_section_from_source(section_params, publication.project),
          {:ok, section} <- Sections.create_section_resources(section, publication),
+         {:ok, _} <-
+           PlatformExternalTools.initialize_section_deep_links(section.id, publication.id),
          {:ok, _} <- Sections.rebuild_contained_pages(section),
          {:ok, _} <- Sections.rebuild_contained_objectives(section),
          {:ok, section} <- enroll_actor(actor, section),
