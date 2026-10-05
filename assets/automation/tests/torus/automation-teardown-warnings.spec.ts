@@ -192,3 +192,94 @@ test('request errors preserve non-Error failure details', async () => {
   expect(warnings).toHaveLength(1);
   expect(warnings[0]).toContain('socket closed');
 });
+
+const withExtras: AutomationSetupResponse = {
+  ...seeded,
+  additionalAuthors: [
+    { email: 'grantor@example.com', password: 'pw1' },
+    { email: 'target@example.com', password: 'pw2' },
+  ],
+};
+
+const extrasDeleted = [
+  { email: 'grantor@example.com', success: true },
+  { email: 'target@example.com', success: true },
+];
+
+test('sends additional authors and accepts one success per requested email', async () => {
+  const request = stubRequest({
+    ok: true,
+    json: { ...allSuccess, additional_authors_deleted: extrasDeleted },
+  });
+
+  await teardownAutomationCourse(request, withExtras, { ...options, strictTeardown: true });
+
+  const [postOptions] = request.postOptions as { data: Record<string, unknown> }[];
+  expect(postOptions.data.additional_authors).toEqual(withExtras.additionalAuthors);
+  expect(warnings).toEqual([]);
+});
+
+test('does not send additional_authors when none were seeded', async () => {
+  const request = stubRequest({ ok: true, json: allSuccess });
+
+  await teardownAutomationCourse(request, seeded, options);
+
+  const [postOptions] = request.postOptions as { data: Record<string, unknown> }[];
+  expect(postOptions.data).not.toHaveProperty('additional_authors');
+  expect(warnings).toEqual([]);
+});
+
+test('strict teardown rejects a response without additional author results', async () => {
+  await expect(
+    teardownAutomationCourse(stubRequest({ ok: true, json: allSuccess }), withExtras, {
+      ...options,
+      strictTeardown: true,
+    }),
+  ).rejects.toThrow('additional_authors_deleted: missing or malformed result');
+});
+
+test('additional author failures and unmatched results are reported by email', async () => {
+  await teardownAutomationCourse(
+    stubRequest({
+      ok: true,
+      json: {
+        ...allSuccess,
+        additional_authors_deleted: [
+          { email: 'grantor@example.com', success: false, message: "Credentials didn't match" },
+          { email: 'someone-else@example.com', success: true },
+        ],
+      },
+    }),
+    withExtras,
+    options,
+  );
+
+  expect(warnings).toHaveLength(1);
+  expect(warnings[0]).toContain("additional_author grantor@example.com: Credentials didn't match");
+  expect(warnings[0]).toContain('additional_author target@example.com: missing result');
+  expect(warnings[0]).toContain(
+    'additional_authors_deleted: unexpected result for someone-else@example.com',
+  );
+});
+
+for (const [name, results] of [
+  [
+    'a duplicate failure after a success',
+    [...extrasDeleted, { email: 'target@example.com', success: false }],
+  ],
+  [
+    'an unrequested extra entry',
+    [...extrasDeleted, { email: 'someone-else@example.com', success: true }],
+  ],
+  ['a null entry', [...extrasDeleted, null]],
+] as const) {
+  test(`strict teardown rejects additional author results with ${name}`, async () => {
+    await expect(
+      teardownAutomationCourse(
+        stubRequest({ ok: true, json: { ...allSuccess, additional_authors_deleted: results } }),
+        withExtras,
+        { ...options, strictTeardown: true },
+      ),
+    ).rejects.toThrow('additional_authors_deleted');
+  });
+}
