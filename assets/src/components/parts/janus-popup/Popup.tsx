@@ -12,6 +12,7 @@ import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptio
 import { PartComponentProps } from '../types/parts';
 import { getIcon, getIconSrc } from './GetIcon';
 import PopupWindow from './PopupWindow';
+import { getPopupAccessibleName } from './popupAccessibility';
 import { PopupModel } from './schema';
 import { InitResultProps } from './types';
 
@@ -326,10 +327,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
       return null;
     }
     const windowProps = {
-      accessibleName:
-        (shouldShowLabel && htmlToPlainText(labelText)) ||
-        description?.trim() ||
-        'Additional Information',
+      accessibleName: getPopupAccessibleName(labelText, Boolean(shouldShowLabel), description),
       config,
       parts: partComponents,
       snapshot: initSnapshot.snapshot,
