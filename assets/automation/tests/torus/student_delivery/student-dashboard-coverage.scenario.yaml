@@ -6,6 +6,7 @@
     root:
       children:
         - page: 'Coverage Page'
+        - page: 'Scored Activity'
 
 - edit_page:
     project: 'student_dashboard_coverage_project'
@@ -16,6 +17,16 @@
       blocks:
         - type: prose
           body_md: "Coverage content"
+
+- edit_page:
+    project: 'student_dashboard_coverage_project'
+    page: 'Scored Activity'
+    content: |
+      title: "Scored Activity"
+      graded: true
+      blocks:
+        - type: prose
+          body_md: "Scored activity coverage content"
 
 - publish:
     to: 'student_dashboard_coverage_project'
