@@ -135,7 +135,7 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
   async author_image_workflow({ curriculumTask, homeTask, page }, params) {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
-    const pngName = 'image_coding_sample.png';
+    const pngName = 'image-test-01.png';
     const jpgName = 'img-mock-05-16-2025.jpg';
     const caption = 'IMAGE-D authored image caption';
     const alt = 'IMAGE-E alternative text';
@@ -152,7 +152,7 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     );
     await uploadImage(
       page,
-      path.resolve(process.cwd(), 'tests/torus/student_delivery/support', pngName),
+      path.resolve(process.cwd(), 'tests/resources/media_files', pngName),
       pngName,
     );
     await page.locator('.name').getByText(jpgName, { exact: true }).click();
