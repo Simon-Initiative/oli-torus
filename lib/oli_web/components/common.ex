@@ -671,6 +671,7 @@ defmodule OliWeb.Components.Common do
   )
 
   attr(:role, :string, default: "progressbar")
+  attr(:rest, :global)
   attr(:height, :string, default: "h-1")
   attr(:rounded, :string, default: "rounded-[60px]")
 
@@ -691,14 +692,18 @@ defmodule OliWeb.Components.Common do
 
   def progress_bar(assigns) do
     ~H"""
-    <div class="flex flex-row items-center gap-3 mx-auto w-full" role={@role}>
+    <div
+      class="flex flex-row items-center gap-3 mx-auto w-full"
+      role={@role}
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow={@percent}
+      {@rest}
+    >
       <div class="flex justify-center w-full relative">
         <div class={"#{@rounded} #{@height} #{@not_completed_colour}"} style={"width: #{@width}"}>
           <div
-            role="progressbar"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            aria-valuenow={@percent}
+            aria-hidden="true"
             class={[
               "#{@rounded} #{@height}",
               if(@percent == 100, do: @completed_colour, else: @on_going_colour)
