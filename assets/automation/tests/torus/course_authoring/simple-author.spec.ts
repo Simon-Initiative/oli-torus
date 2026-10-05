@@ -7,7 +7,7 @@ import { TYPE_USER } from '@pom/types/type-user';
 import { teardownAutomationCourse, type AutomationSetupResponse } from '@tasks/AutomationSetupTask';
 import { HomeTask } from '@tasks/HomeTask';
 import { SimpleAuthorTask } from '@tasks/SimpleAuthorTask';
-import { Browser, expect, Locator, Page } from '@playwright/test';
+import { BrowserContext, expect, Locator, Page } from '@playwright/test';
 import path from 'node:path';
 
 const runId = `-${Date.now()}-${process.pid}`;
@@ -206,25 +206,40 @@ const componentCases: ComponentCase[] = [
   },
 ];
 
-test.describe('Simple Author components @pr', () => {
-  let editorUrl = '';
+// The component cases share one signed-in page with the editor open, so they
+// skip a login and an editor load each. Every case still reloads the editor to
+// prove its configuration persisted.
+test.describe.serial('Simple Author components @pr', () => {
+  let context: BrowserContext;
+  let simpleAuthorTask: SimpleAuthorTask;
 
   test.beforeAll(async ({ browser }) => {
     test.setTimeout(180_000);
-    editorUrl = await createLessonAsAuthor(browser, 'Simple Author Components');
+    context = await browser.newContext({
+      baseURL: baseUrl,
+      ignoreHTTPSErrors: true,
+      viewport: { width: 1920, height: 1080 },
+    });
+
+    const page = await context.newPage();
+    const homeTask = new HomeTask(page);
+    await homeTask.goToSite('/');
+    await homeTask.login('author');
+    simpleAuthorTask = new SimpleAuthorTask(page);
+    await simpleAuthorTask.createLesson(projectTitle, 'Simple Author Components');
+    await simpleAuthorTask.editor.switchToScreenPanel();
+  });
+
+  test.afterAll(async () => {
+    await context?.close();
   });
 
   for (const componentCase of componentCases) {
-    test(`${componentCase.name} keeps its configuration after save and refresh`, async ({
-      homeTask,
-      simpleAuthorTask,
-    }) => {
-      test.setTimeout(150_000);
+    test(`${componentCase.name} keeps its configuration after save and refresh`, async () => {
+      test.setTimeout(120_000);
       const screenTitle = `${componentCase.name} screen`;
       const editor = simpleAuthorTask.editor;
 
-      await homeTask.login('author');
-      await simpleAuthorTask.openLesson(editorUrl);
       await simpleAuthorTask.addScreen(screenTitle, componentCase.screenType);
       await componentCase.configure(editor);
 
@@ -233,16 +248,11 @@ test.describe('Simple Author components @pr', () => {
     });
   }
 
-  test('copy/paste and undo/redo update the screen and respect question limits', async ({
-    homeTask,
-    simpleAuthorTask,
-  }) => {
-    test.setTimeout(180_000);
+  test('copy/paste and undo/redo update the screen and respect question limits', async () => {
+    test.setTimeout(150_000);
     const editor = simpleAuthorTask.editor;
     const textFlows = editor.partsOfType('janus-text-flow');
 
-    await homeTask.login('author');
-    await simpleAuthorTask.openLesson(editorUrl);
     await simpleAuthorTask.addScreen('Copy paste screen', 'Instructional Screen');
     await expect(textFlows).toHaveCount(3);
 
@@ -438,24 +448,6 @@ test.describe.serial('Simple Author lesson delivery @pr', () => {
     await expect(page.locator('.feedbackContainer')).toContainText(sliderFeedback);
   });
 });
-
-async function createLessonAsAuthor(browser: Browser, lessonTitle: string) {
-  const context = await browser.newContext({
-    baseURL: baseUrl,
-    ignoreHTTPSErrors: true,
-    viewport: { width: 1920, height: 1080 },
-  });
-
-  try {
-    const page = await context.newPage();
-    const homeTask = new HomeTask(page);
-    await homeTask.goToSite('/');
-    await homeTask.login('author');
-    return await new SimpleAuthorTask(page).createLesson(projectTitle, lessonTitle);
-  } finally {
-    await context.close();
-  }
-}
 
 async function openLessonAsStudent(page: Page, lessonTitle: string) {
   const studentCourse = new StudentCoursePO(page);

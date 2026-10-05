@@ -33,7 +33,8 @@ export type SliderFeedbackOperator =
 
 const SAVE_REQUEST =
   /\/api\/v1\/(storage\/project\/[^/]+\/resource|project\/[^/]+\/(resource|activity))/;
-const SAVE_QUIET_MS = 1_500;
+// Longer than the editor's 500ms save debounce, so a pending write always shows up.
+const SAVE_QUIET_MS = 800;
 
 /**
  * Page object for the adaptive Simple Author (flowchart-mode) editor.
@@ -111,20 +112,19 @@ export class SimpleAuthorPO {
     await this.waitForEditorLoaded();
   }
 
-  async openEditor(editorUrl: string) {
-    await this.page.goto(editorUrl);
-    await this.waitForEditorLoaded();
-  }
-
   /**
    * Waits for the editor and leaves it editable: a reopened lesson can start in
-   * read-only mode, and `ensureSimpleAuthorReady` switches that toggle off.
+   * read-only mode. Once the editor header renders, the onboarding wizard is not
+   * showing, so only the read-only toggle needs handling.
    */
   async waitForEditorLoaded() {
     await expect(this.modeHeader('Flowchart'), 'Simple Author editor should load').toBeVisible({
       timeout: 60_000,
     });
-    await this.pagePO.ensureSimpleAuthorReady();
+    await this.pagePO.disableAdaptiveReadOnly();
+    await this.page.waitForFunction(() => customElements.get('janus-mcq') != null, undefined, {
+      timeout: 30_000,
+    });
   }
 
   // ------------------------------------------------------------ modes
@@ -149,14 +149,19 @@ export class SimpleAuthorPO {
 
   // ------------------------------------------------------------ screens
 
-  /** Adds a screen from the Screen Panel "Add new screen" dialog; the new screen becomes active. */
+  /**
+   * Adds a screen from the Screen Panel "Add new screen" dialog; the new screen
+   * becomes active.
+   *
+   * Creating the first screen after a load can re-render the editor and drop the
+   * dialog without creating anything. The dialog flow is retried only when no
+   * screen-creation request went out, so a creation in flight is never repeated.
+   */
   async addScreen(title: string, type: SimpleAuthorScreenType) {
-    // The dialog can close without creating the screen while the editor is
-    // still settling after a load, so the whole dialog flow is retried once.
+    const modal = this.page.locator('.add-screen-modal');
+
     for (let attempt = 0; attempt < 2; attempt += 1) {
       await this.page.getByRole('button', { name: 'Add new screen' }).click();
-
-      const modal = this.page.locator('.add-screen-modal');
       await expect(modal).toBeVisible();
       await modal.locator('input.title-input').fill(title);
       const typeButton = modal.locator('button.screen-type', {
@@ -164,17 +169,24 @@ export class SimpleAuthorPO {
       });
       await typeButton.click();
       await expect(typeButton).toHaveClass(/active/);
-      await modal.getByRole('button', { name: 'Next' }).click();
 
-      const created = await expect(this.screenListItem(title))
-        .toBeVisible({ timeout: 20_000 })
-        .then(() => true)
-        .catch(() => false);
-      if (created) break;
+      const creationRequest = this.page
+        .waitForRequest(
+          (request) =>
+            request.method() === 'POST' &&
+            /\/api\/v1\/project\/[^/]+\/activity\//.test(request.url()),
+          { timeout: 5_000 },
+        )
+        .catch(() => null);
+      await modal.getByRole('button', { name: 'Next' }).click();
+      if (await creationRequest) break;
+
       if (await modal.isVisible().catch(() => false)) await this.page.keyboard.press('Escape');
+      await expect(modal).toBeHidden();
     }
 
-    await expect(this.page.locator('.add-screen-modal')).toBeHidden({ timeout: 30_000 });
+    await expect(this.screenListItem(title)).toBeVisible({ timeout: 30_000 });
+    await expect(modal).toBeHidden({ timeout: 30_000 });
     await this.expectActiveScreen(title);
     // The new screen's initial save must land before edits, or the two
     // concurrent writes can persist the template over the edit.

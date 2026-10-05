@@ -29,6 +29,9 @@ permutations. Broad exploratory and subjective visual review stays manual.
 
 - `beforeAll` seeds `playwright_simple_author.yaml` with a per-run `RUN_ID`. Lessons, screens,
   and components are created through the UI, because that is what the suite covers.
+- The component cases run serially on one signed-in page with the editor already open, created
+  in `beforeAll`. Each case still reloads the editor to verify persistence, and Playwright's
+  trace for each test includes that shared page.
 - Media is set through the picker's "External URL" tab, so no S3 upload is needed. The image is
   Torus's own `/images/oli_torus_logo.png`. The video is the shared fixture
   `tests/resources/media_files/video-test-01.mp4`, served by `GET /test/support/video-test-01.mp4`
@@ -55,12 +58,16 @@ nightly job targets a persistent deployment where `/test/scenario-yaml` is not a
 ## Editor behaviors the page object handles
 
 - Simple Author has no "All changes saved" indicator. `waitForSaves()` tracks the
-  `/api/v1/storage/...` and `/api/v1/project/.../resource|activity` writes and waits for a quiet
-  window, measured from the call, longer than the editor's 500ms save debounce. Every editing
+  `/api/v1/storage/...` and `/api/v1/project/.../resource|activity` writes and waits for an
+  800ms quiet window, measured from the call, longer than the editor's 500ms save debounce. Every editing
   action waits for its write. Without this, quick successive edits, such as editing right
   after a screen is created, can persist an older state over a newer one.
-- A reopened lesson can load in read-only mode. `BasicPracticePagePO.ensureSimpleAuthorReady`
-  switches it off.
+- A reopened lesson can load in read-only mode. `BasicPracticePagePO.disableAdaptiveReadOnly`
+  switches it off. Once the editor header renders, the onboarding wizard is not showing, so the
+  editor load does not wait for it.
+- Creating the first screen after a load can re-render the editor and drop the "Add new screen"
+  dialog without creating anything. `addScreen` retries only when no screen-creation request
+  went out, so a creation in flight is never repeated.
 - Right after a screen is created, the toolbar can drop the first component click.
   `addComponent` retries only while no new part appeared, so a slow add is never doubled.
 - Adding a screen from the Screen Panel adds "Unknown Rule" paths. The editor also re-sorts
