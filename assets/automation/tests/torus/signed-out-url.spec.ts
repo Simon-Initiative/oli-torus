@@ -16,3 +16,8 @@ test('pages that require a session do not count as signed out', () => {
   expect(isSignedOutUrl(at('/admin/audit_log'))).toBe(false);
   expect(isSignedOutUrl(at('/admin/authors/12'))).toBe(false);
 });
+
+test('only the exact author login path counts, not routes that merely start with it', () => {
+  expect(isSignedOutUrl(at('/authors/log_in_help'))).toBe(false);
+  expect(isSignedOutUrl(at('/authors/log_in/extra'))).toBe(false);
+});
