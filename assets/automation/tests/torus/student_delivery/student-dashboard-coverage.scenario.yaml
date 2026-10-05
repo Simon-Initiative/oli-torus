@@ -57,6 +57,14 @@
     family_name: 'Instructor'
     password: 'changeme123456'
 
+- user:
+    name: 'student_dashboard_coverage_author'
+    type: 'author'
+    email: 'student-dashboard-coverage-author${RUN_ID}@example.com'
+    given_name: 'Coverage'
+    family_name: 'Author'
+    password: 'changeme123456'
+
 - enroll:
     user: 'student_dashboard_coverage_student'
     section: 'student_dashboard_coverage_section'

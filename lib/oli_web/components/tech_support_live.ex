@@ -44,6 +44,7 @@ defmodule OliWeb.TechSupportLive do
     <button
       id="trigger-tech-support-modal"
       class="hidden"
+      aria-label="Open tech support"
       phx-click={Modal.show_modal(@modal_id)}
       data-hide_modal={Modal.hide_modal(@modal_id)}
     />
@@ -74,6 +75,8 @@ defmodule OliWeb.TechSupportLive do
           value="true"
           checked={@requires_sender_data}
           class="hidden"
+          label="Include sender details"
+          label_class="hidden"
         />
         <.input
           :if={@requires_sender_data}
