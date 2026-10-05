@@ -17,12 +17,12 @@ defmodule OliWeb.LegacyLogsController do
     case LegacyLogs.create(doc, host_name()) do
       :ok ->
         conn
-        |> put_resp_content_type("text/xml")
+        |> put_resp_content_type("text/plain")
         |> send_resp(200, "status=success")
 
       _ ->
         conn
-        |> put_resp_content_type("text/xml")
+        |> put_resp_content_type("text/plain")
         |> send_resp(500, "status=error")
     end
   end
