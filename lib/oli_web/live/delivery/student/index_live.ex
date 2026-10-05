@@ -855,7 +855,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             on_going_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
             completed_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
             not_completed_colour="bg-[#385581]"
-      data-role="course progress bar"
+            data-role="course progress bar"
             show_percent={false}
             show_halo={true}
           />
@@ -1078,7 +1078,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             <div class="grow shrink basis-0 text-lg tracking-tight font-bold">Latest</div>
           </button>
         </div>
-        <div data-role="assignments" class="w-full h-fit flex-col justify-start items-start gap-2.5 flex">
+        <div
+          data-role="assignments"
+          class="w-full h-fit flex-col justify-start items-start gap-2.5 flex"
+        >
           <%= if Enum.empty?(@lessons) do %>
             <div data-role="message" class="flex-col justify-start items-start gap-2.5 flex">
               <div class="dark:text-white text-base font-normal font-sans tracking-[0.32px] break-words">
@@ -1328,7 +1331,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <div data-role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
       <%= if @lesson.last_attempt_state != :active do %>
         <div class="flex px-2 py-0.5 bg-white/10 rounded-xl shadow tracking-tight gap-2 items-center align-center">
-            <div data-role="count" class="pl-1 justify-start items-center gap-2.5 flex">
+          <div data-role="count" class="pl-1 justify-start items-center gap-2.5 flex">
             <div class="dark:text-white text-xs font-semibold">
               Attempt {"#{@lesson.attempts_count}/#{max_attempts(@lesson.settings.max_attempts)}"}
             </div>
