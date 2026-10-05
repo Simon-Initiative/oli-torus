@@ -11,14 +11,14 @@ export type SimpleAuthorScreenType =
   | 'Dropdown'
   | 'Hub and Spoke';
 
-/** Toolbar slugs; each part renders as the custom element `slug.replace('_', '-')`. */
-export type SimpleAuthorComponent = 'janus_text_flow' | 'janus_image' | 'janus_video';
+/** Toolbar slugs; each part renders as a custom element named after the slug with `-` for `_`. */
+export type SimpleAuthorComponent = 'janus_image' | 'janus_video';
 
 export type SimpleAuthorTab = 'Lesson' | 'Screen' | 'Component';
 
 export type SimpleAuthorPartWidth = '100%' | '50% left' | '50% right';
 
-export type SimpleAuthorPathType = 'Always' | 'Correct' | 'Any Incorrect' | 'Go To End Screen';
+export type SimpleAuthorPathType = 'Always' | 'Correct' | 'Any Incorrect';
 
 /** A flowchart path type and, when the type navigates, its destination screen title. */
 export type SimpleAuthorPathRule = [SimpleAuthorPathType, string?];
@@ -186,7 +186,7 @@ export class SimpleAuthorPO {
     await this.expectActiveScreen(title);
   }
 
-  async expectActiveScreen(title: string) {
+  private async expectActiveScreen(title: string) {
     await expect(this.screenList.locator('li.active')).toHaveText(title, { timeout: 30_000 });
     await expect(this.stage.locator('oli-adaptive-authoring')).toBeVisible({ timeout: 30_000 });
   }
@@ -250,7 +250,7 @@ export class SimpleAuthorPO {
     return added!;
   }
 
-  componentButton(component: SimpleAuthorComponent) {
+  private componentButton(component: SimpleAuthorComponent) {
     return this.componentToolbar.locator(`button.component-button[data-component="${component}"]`);
   }
 
@@ -272,13 +272,13 @@ export class SimpleAuthorPO {
     await this.waitForSaves();
   }
 
-  selectionToolbarButton(title: 'Edit' | 'Copy' | 'Delete' | 'Move Forward' | 'Move Back') {
+  private selectionToolbarButton(title: 'Edit' | 'Copy') {
     return this.page.locator(`.active-selection-toolbar button[title="${title}"]`).first();
   }
 
   // ------------------------------------------------------------ property panel
 
-  tab(name: SimpleAuthorTab) {
+  private tab(name: SimpleAuthorTab) {
     return this.rightPanel.getByRole('tab', { name, exact: true });
   }
 
@@ -368,7 +368,7 @@ export class SimpleAuthorPO {
     await this.waitForSaves();
   }
 
-  responsiveItem(partId: string) {
+  private responsiveItem(partId: string) {
     return this.stage.locator(`.responsive-item[data-part-id="${partId}"]`);
   }
 
@@ -500,12 +500,12 @@ export class SimpleAuthorPO {
     return this.flowchartSidebar.locator('.validation-error h3');
   }
 
-  paths() {
+  private paths() {
     return this.flowchartSidebar.locator('.path-editor-completed, .path-editor-incomplete');
   }
 
   /** Opens the path at `index` and sets its type and destination. */
-  async editPath(index: number, type: SimpleAuthorPathType, destination?: string) {
+  private async editPath(index: number, type: SimpleAuthorPathType, destination?: string) {
     const path = this.paths().nth(index);
     await expect(path).toBeVisible({ timeout: 10_000 });
     if (!(await this.isEditing(path))) await path.click();
@@ -513,7 +513,7 @@ export class SimpleAuthorPO {
   }
 
   /** Adds a rule; the editor opens the new path in edit mode, wherever it sorts. */
-  async addPath(type: SimpleAuthorPathType, destination?: string) {
+  private async addPath(type: SimpleAuthorPathType, destination?: string) {
     const count = await this.paths().count();
     await this.flowchartSidebar.getByRole('button', { name: 'Add Rule' }).click();
     await expect(this.paths()).toHaveCount(count + 1);
@@ -557,7 +557,7 @@ export class SimpleAuthorPO {
       .catch(() => false);
   }
 
-  async deletePath(index: number) {
+  private async deletePath(index: number) {
     const count = await this.paths().count();
     const path = this.paths().nth(index);
     if (!(await this.isEditing(path))) await path.click();

@@ -259,7 +259,7 @@ test.describe('Simple Author components @pr', () => {
       (await editor.part('para-1').innerText()).trim().slice(0, 40),
     );
 
-    // MER-3420: the clipboard is single-use, so a second paste adds nothing.
+    // The clipboard is single-use, so a second paste adds nothing.
     await expect(editor.pasteButton()).toBeHidden();
     await editor.pasteWithKeyboard('para-2');
     await editor.waitForSaves();
@@ -275,7 +275,7 @@ test.describe('Simple Author components @pr', () => {
     await expect(editor.part(pastedId!)).toHaveCount(1);
     await expect(textFlows).toHaveCount(4);
 
-    // MER-4109: a screen keeps a single question component, even through paste.
+    // A screen keeps a single question component, even through paste.
     await simpleAuthorTask.addScreen('Paste limits screen', 'Multiple Choice');
     await editor.selectPart('question-1');
     await editor.copySelectedPart();
@@ -288,7 +288,7 @@ test.describe('Simple Author components @pr', () => {
     await expect(editor.pasteBlockedModal()).toBeHidden();
     await expect(editor.partsOfType('janus-mcq')).toHaveCount(1);
 
-    // MER-4572: static components can still be pasted next to the question.
+    // Static components can still be pasted next to the question.
     await editor.selectPart('para-1');
     await editor.copySelectedPart();
     await editor.pasteWithToolbar();
@@ -302,7 +302,6 @@ test.describe.serial('Simple Author lesson delivery @pr', () => {
   const quizTitle = 'Quiz Screen';
   const sliderTitle = 'Slider Screen';
   const sliderFeedback = 'Close, 2.5 is the halfway mark';
-  let lessonSlug = '';
 
   test('author validates, scores, and publishes a multi-screen lesson', async ({
     homeTask,
@@ -312,8 +311,7 @@ test.describe.serial('Simple Author lesson delivery @pr', () => {
     const editor = simpleAuthorTask.editor;
 
     await homeTask.login('author');
-    const editorUrl = await simpleAuthorTask.createLesson(projectTitle, lessonTitle);
-    lessonSlug = revisionSlugFrom(editorUrl);
+    await simpleAuthorTask.createLesson(projectTitle, lessonTitle);
     await editor.switchToScreenPanel();
 
     // Responsive layout: a half-width paragraph and image share a row on the
@@ -334,7 +332,7 @@ test.describe.serial('Simple Author lesson delivery @pr', () => {
     await editor.selectField('max_maxAttempt', '4');
     await editor.fillField('max_maxScore', '10');
 
-    // MER-3919: decimal values in slider advanced feedback must not be truncated.
+    // Decimal values in slider advanced feedback must not be truncated.
     await simpleAuthorTask.addScreen(sliderTitle, 'Slider');
     await editor.selectPart('question-1');
     await editor.fillField('custom_maximum', '5');
@@ -391,7 +389,7 @@ test.describe.serial('Simple Author lesson delivery @pr', () => {
     const deck = new AdaptiveDeckPO(page);
 
     await homeTask.login('student');
-    await openLessonAsStudent(page, lessonSlug);
+    await openLessonAsStudent(page, lessonTitle);
     await deck.waitForDeckReady();
     await page.setViewportSize(desktopViewport);
 
@@ -415,8 +413,8 @@ test.describe.serial('Simple Author lesson delivery @pr', () => {
     // The video authored on the welcome screen loads in delivery.
     await expectVideoLoaded(page.locator('janus-video video'));
 
-    await footerButton(page).click();
-    await expect(footerButton(page)).toHaveText('Check Answer', { timeout: 30_000 });
+    await deck.footerButton().click();
+    await expect(deck.footerButton()).toHaveText('Check Answer', { timeout: 30_000 });
 
     // A wrong first answer shows the authored feedback and keeps the student on the screen.
     const mcq = page.locator('janus-mcq');
@@ -428,11 +426,11 @@ test.describe.serial('Simple Author lesson delivery @pr', () => {
 
     // Answering correctly and checking again follows the "Correct" path to the slider screen.
     await mcq.getByText('Option 1', { exact: true }).click();
-    await footerButton(page).click();
+    await deck.footerButton().click();
     const slider = page.locator('janus-slider input[type="range"]');
     await advancePastFeedback(deck, slider);
 
-    // MER-3919: the decimal advanced-feedback rule matches the learner's value.
+    // The decimal advanced-feedback rule matches the learner's value.
     await slider.fill('2.5');
     await expect(slider).toHaveValue('2.5');
     await deck.submitCheck();
@@ -459,23 +457,13 @@ async function createLessonAsAuthor(browser: Browser, lessonTitle: string) {
   }
 }
 
-async function openLessonAsStudent(page: Page, lessonSlug: string) {
-  expect(lessonSlug, 'The author test should have recorded the lesson slug').toBeTruthy();
+async function openLessonAsStudent(page: Page, lessonTitle: string) {
+  const studentCourse = new StudentCoursePO(page);
 
   await page.goto(`/sections/${sectionSlug}`);
-  await new StudentCoursePO(page).goToCourseIfPrompted();
-  await page.goto(`/sections/${sectionSlug}/adaptive_lesson/${lessonSlug}`);
-}
-
-/** Editor URLs look like `/workspaces/course_author/<project>/curriculum/<revision>/edit`. */
-function revisionSlugFrom(editorUrl: string) {
-  const match = new URL(editorUrl).pathname.match(/\/curriculum\/([^/]+)\/edit$/);
-  expect(match, `Unexpected Simple Author editor URL: ${editorUrl}`).toBeTruthy();
-  return match![1];
-}
-
-function footerButton(page: Page) {
-  return page.locator('.checkContainer .buttonContainer button').first();
+  await studentCourse.goToCourseIfPrompted();
+  await page.goto(`/sections/${sectionSlug}/learn`);
+  await studentCourse.openPage(lessonTitle);
 }
 
 function deliveryItem(page: Page, partId: string) {
