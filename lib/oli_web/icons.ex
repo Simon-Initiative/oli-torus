@@ -773,7 +773,7 @@ defmodule OliWeb.Icons do
   def plus(assigns) do
     ~H"""
     <svg
-      role="plus icon"
+      data-role="plus icon"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

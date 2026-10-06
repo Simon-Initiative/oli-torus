@@ -128,7 +128,9 @@ async function assertSignedInWorkspace(page: Page, account: OAuthAccountParamete
   await expect(settingsLink).toHaveAttribute('href', account.account_settings_path);
 
   if (account.account_label) {
-    await expect(accountMenu.locator('[role="account label"]')).toHaveText(account.account_label);
+    await expect(accountMenu.locator('[data-role="account label"]')).toHaveText(
+      account.account_label,
+    );
   }
 
   return accountMenu;

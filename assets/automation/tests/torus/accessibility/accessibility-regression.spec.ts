@@ -77,6 +77,9 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await scanPageAccessibility(page, 'course outline');
     await expectKeyboardFocus(page, 'a, button, input');
 
+    const studentCourse = new StudentCoursePO(page);
+    await studentCourse.openPage('Coverage Page');
+
     const notesToggle = page.getByRole('button', { name: 'Toggle Notes panel' });
     await expect(notesToggle).toBeVisible();
     await notesToggle.click();
@@ -89,6 +92,8 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await page.goto(learnPath(), { waitUntil: 'domcontentloaded' });
     const studentCourse = new StudentCoursePO(page);
     await studentCourse.goToCourseIfPrompted();
+    await expect(page.locator('#student_learn')).toBeVisible();
+    await expect(page.locator('[id^="outline_rows-"] button').first()).toBeVisible();
     await studentCourse.openPage('Scored Activity');
     await scanPageAccessibility(page, 'scored activity');
     await expectKeyboardFocus(page, 'a, button, input');

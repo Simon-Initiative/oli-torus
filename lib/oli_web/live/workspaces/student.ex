@@ -187,7 +187,14 @@ defmodule OliWeb.Workspaces.Student do
               text={@params.text_search}
             />
 
-            <button class="hidden" name="submit" value="disabled" disabled />
+            <button
+              class="hidden"
+              name="submit"
+              value="disabled"
+              type="submit"
+              aria-label="Submit course search"
+              disabled
+            />
           </.form>
         </div>
       </div>
@@ -290,7 +297,7 @@ defmodule OliWeb.Workspaces.Student do
     <% end %>
     <span
       :if={@section.progress == 100}
-      role={"complete_badge_for_section_#{@section.id}"}
+      data-role={"complete_badge_for_section_#{@section.id}"}
       class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
     >
       Complete
@@ -299,7 +306,7 @@ defmodule OliWeb.Workspaces.Student do
       <div class="flex flex-col items-start gap-2">
         <div
           class="justify-center text-[#bab8bf] text-xs font-bold uppercase leading-3"
-          role="start_end_date"
+          data-role="start_end_date"
         >
           {FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}")} - {FormatDateTime.to_formatted_datetime(
             @section.end_date,
@@ -312,7 +319,7 @@ defmodule OliWeb.Workspaces.Student do
         </h3>
         <div
           class="justify-center text-[#bab8bf] text-base font-bold leading-normal"
-          role="instructors"
+          data-role="instructors"
         >
           <%= if length(@instructors) == 1 do %>
             Instructor:
@@ -323,7 +330,7 @@ defmodule OliWeb.Workspaces.Student do
         </div>
         <div
           class="flex flex-col md:flex-row items-center drop-shadow-md md:mt-4"
-          role={"progress_for_section_#{@section.id}"}
+          data-role={"progress_for_section_#{@section.id}"}
         >
           <h4 class="text-sm md:text-[16px] md:leading-[32px] tracking-[1.28px] uppercase mr-9 whitespace-nowrap">
             Course Progress
