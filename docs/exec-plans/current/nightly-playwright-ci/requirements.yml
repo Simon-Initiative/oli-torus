@@ -82,7 +82,8 @@ requirements:
       and expose /test/emails and /test/emails/:id only with the existing scenario-token authorization.
       Verify authorized retrieval and rejection of missing/invalid tokens on both builds.
       Email tests use run-unique recipients; document instance-local, in-memory storage and
-      loss on restart.
+      loss on restart. Each nightly application deployment starts with a fresh mailbox; no
+      scheduled mailbox cleanup service is required initially.
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -140,7 +141,8 @@ requirements:
     title: A successful build publishes an immutable image tagged
       sha-<full SHA>-playwright-<run ID>-<attempt>, distinct from standard production images,
       and records its registry digest, source version, and full commit SHA;
-      an existing tag is never overwritten with different content.
+      an existing tag causes publication to fail before GitOps is changed and is never overwritten
+      or reused for the run.
     status: proposed
     verification_method: automated
     proofs: []
@@ -162,9 +164,12 @@ requirements:
     verification_method: hybrid
     proofs: []
   - id: AC-010
-    title: The update passes required record/policy validation and reaches the tracked GitOps
-      branch through the agreed branch-rule-compliant path before readiness polling begins;
-      failure or timeout stops the run.
+    title: The update passes required record/policy checks and reaches the tracked GitOps
+      branch through a bot PR with automatic merge permitted by branch rules, without per-run
+      human approval. Readiness polling begins only after merge is confirmed; failure or
+      timeout stops the run, with a default merge-wait deadline of 15 minutes. Verify branch
+      rules and bot permissions before unattended launch.
+      Do not fall back to direct commits.
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -266,9 +271,11 @@ requirements:
     verification_method: automated
     proofs: []
   - id: AC-017
-    title: Polling uses an explicit total deadline, per-request timeout, and nonzero interval.
-      If the expected response is never observed, the run fails at readiness and Playwright
-      does not start.
+    title: Readiness polling defaults to a 20-minute total deadline after GitOps merge,
+      a maximum 10-second request timeout, and a 10-second polling interval. Bound each request
+      and wait by the remaining total deadline. If the expected response is never observed,
+      the run fails at readiness and Playwright does not start. These timeouts are failure-handling
+      safeguards rather than performance targets.
     status: proposed
     verification_method: automated
     proofs: []
@@ -305,8 +312,9 @@ requirements:
     title: The @nightly tags in test sources are the sole source of truth for nightly suite
       membership; no separately maintained test manifest or expected-test list is required.
       Verify during implementation that the eight audited adaptive cases are tagged. Document
-      initial Canvas/Dot targeting or an explicit tag change to defer them; subsequent membership
-      changes use tags and normal code review.
+      initial Canvas/Dot targeting. Initial delivery includes all currently tagged nightly
+      tests, including Canvas LTI and Dot; subsequent membership changes use tags and normal
+      code review.
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -314,14 +322,18 @@ requirements:
     title: After a clean automation dependency installation, the test invocation executes
       tests selected by @nightly. Collection/import errors or zero matching tests fail the run. Missing asset access,
       scenario credentials, automation credentials, or other configuration required by selected
-      tests produces a setup failure rather than a skip or passing result.
+      tests produces a setup failure rather than a skip or passing result. Use existing configured
+      archives and answer keys without a new asset-versioning mechanism for initial delivery;
+      QA/test owners maintain them together and keep them unchanged during active runs.
     status: proposed
     verification_method: hybrid
     proofs: []
   - id: AC-023
-    title: Adaptive tests target the nightly public hostname; any selected Canvas/Dot cases
-      use explicitly configured, documented integration targets. Existing Torus account, scenario,
-      and automation API authentication is retained.
+    title: Adaptive tests target the nightly public hostname, Canvas launches into the nightly
+      Torus deployment, and Dot uses a dedicated fixture on that deployment. Specific external
+      URLs and credentials are supplied during provisioning; both integrations must be configured
+      before unattended launch. Existing Torus account, scenario, and automation API authentication
+      is retained.
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -364,8 +376,10 @@ requirements:
     proofs: []
   - id: AC-026
     title: Tests retain their isolated setup/cleanup behavior, cleanup failures remain visible
-      for an identified operator to address, and browser or deployment failure does not automatically
-      reverse database migrations.
+      for Torus maintainers to address by cleaning stale failed-run data between runs as needed,
+      preserving durable integration fixtures. No new scheduled cleanup service or database reset
+      is required initially, and browser or deployment failure does not automatically reverse
+      database migrations.
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -378,7 +392,9 @@ requirements:
       image reference/digest when published, accepted GitOps revision when available, and
       expected/observed readiness identity without exposing credentials. Browser-stage reports
       identify which tests ran by spec/title/project and their individual outcomes, including
-      skips and retries.
+      skips and retries. Torus maintainers own failure triage through GitHub Actions failures,
+      run summaries and reports; no new Slack integration, custom email alerts or dedicated
+      on-call rotation is required.
     status: proposed
     verification_method: hybrid
     proofs: []

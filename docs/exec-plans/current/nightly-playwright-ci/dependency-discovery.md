@@ -5,7 +5,9 @@
 On September 29, 2026, the user requested that the existing unstaged dependency and
 workflow changes be captured and removed while CI strategy remains in discovery.
 The three tracked files are retained; only the experimental edits are reverted.
-Canonical requirements are FR-008, AC-022, AC-030, and AC-031 in `requirements.yml`.
+The current dependency fix is tracked by FR-008, AC-022 and AC-030 in `requirements.yml`.
+The experiment’s separate collection step was superseded: AC-031 now requires direct
+nightly execution without `--list`. Follow the FDD and requirements for implementation.
 All remain proposed with no current implementation proofs. Results below describe
 the earlier experiment, not a passing implementation in the current working tree.
 
@@ -18,18 +20,19 @@ test-title selection. The dependency was declared by the parent product package 
 not by the automation package installed in the nightly job. Local parent dependencies
 could therefore mask the missing declaration.
 
-## Captured changes for later implementation
+## Historical experiment
 
-1. In `assets/automation/package.json`, add the direct dependency
-   `"json-rules-engine": "6.1.2"`, matching the resolved product version in
-   `assets/yarn.lock` at discovery time. Recheck that lockfile when implementing.
-2. Regenerate `assets/automation/package-lock.json` with npm. The experiment added
+1. Added `"json-rules-engine": "6.1.2"` directly to `assets/automation/package.json`,
+   matching `assets/yarn.lock` at discovery time. The current implementation should
+   recheck the product lockfile version.
+2. Regenerated `assets/automation/package-lock.json` with npm, adding
    `json-rules-engine` 6.1.2 and its previously absent dependencies: `clone` 2.1.2,
    `eventemitter2` 6.4.9, `hash-it` 5.0.2, `jsonpath-plus` 5.1.0, and
    `lodash.isobjectlike` 4.0.0. These are historical resolutions; use the package
    manager and validate compatibility rather than editing lockfile entries by hand.
-3. In `.github/workflows/nightly-playwright.yml`, after `npm ci` and before browser
-   installation, add the collection check in the automation working directory:
+3. Added a collection check after `npm ci` and before browser installation in
+   `.github/workflows/nightly-playwright.yml`. This step is historical and must not
+   be restored; the approved design runs tagged tests directly:
 
    ```yaml
    - name: Check nightly test collection
@@ -59,4 +62,6 @@ sources, and their TypeScript configuration, but no parent `assets/node_modules`
 Security and performance review found no issues in that scoped experiment. A full
 remote browser run was not performed. Required target/asset/integration configuration
 and failure-on-missing-configuration behavior were not established by these checks.
-Repeat relevant verification after implementing the captured requirements.
+Repeat dependency isolation/version checks during implementation, and verify direct
+nightly execution against the current requirements rather than restoring the old
+collection-step ordering check.
