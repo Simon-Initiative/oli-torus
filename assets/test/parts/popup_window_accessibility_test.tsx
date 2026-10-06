@@ -95,7 +95,9 @@ describe('PopupWindow accessibility', () => {
     expect(
       within(dialog).getByRole('img', { name: 'Diagram of a water molecule' }),
     ).toBeInTheDocument();
-    act(() => jest.advanceTimersByTime(20));
+    act(() => {
+      jest.advanceTimersByTime(20);
+    });
     expect(description).toHaveFocus();
     expect(within(description).queryByRole('button', { name: 'Close' })).toBeNull();
     expect(within(dialog).getByRole('button', { name: 'Close' })).toBeInTheDocument();
@@ -139,7 +141,9 @@ describe('PopupWindow accessibility', () => {
     const description = descriptionFor(dialog);
     expect(description).not.toHaveAttribute('hidden');
     expect(within(description).getByRole('link', { name: 'Help' })).toBeVisible();
-    act(() => jest.advanceTimersByTime(20));
+    act(() => {
+      jest.advanceTimersByTime(20);
+    });
     expect(dialog).toHaveFocus();
   });
 
@@ -155,19 +159,25 @@ describe('PopupWindow accessibility', () => {
         />
       );
       const { rerender } = render(popup(null));
-      act(() => jest.advanceTimersByTime(20));
+      act(() => {
+        jest.advanceTimersByTime(20);
+      });
       const dialog = screen.getByRole('dialog');
       expect(dialog).toHaveFocus();
       const close = screen.getByRole('button', { name: 'Close' });
       if (moveToClose) close.focus();
 
       rerender(popup(<p>Complete late content.</p>));
-      act(() => jest.advanceTimersByTime(20));
+      act(() => {
+        jest.advanceTimersByTime(20);
+      });
       expect(moveToClose ? close : readingFor(dialog)).toHaveFocus();
 
       close.focus();
       rerender(popup(<p>Updated content.</p>));
-      act(() => jest.advanceTimersByTime(20));
+      act(() => {
+        jest.advanceTimersByTime(20);
+      });
       expect(close).toHaveFocus();
     },
   );
