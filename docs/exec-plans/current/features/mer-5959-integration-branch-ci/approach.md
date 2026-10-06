@@ -4,10 +4,17 @@ Jira: <https://eliterate.atlassian.net/browse/MER-5959>
 
 ## Purpose
 
-Multi-PR features that must not land incrementally on `master` will be developed on
-long-lived `integ-<feature-name>` branches (for example `integ-student-dashboard`).
-Individual PRs target the integration branch; when the feature is complete, the
-integration branch is opened as a PR against `master`.
+Every feature will be developed on a long-lived, feature-specific
+`integ-<feature-name>` branch (for example `integ-student-dashboard`). A feature
+is one standalone, deployable Jira Story. When a Story needs smaller units of work,
+those units are child Tasks whose individual PRs target the Story's integration
+branch. This applies even when the feature has only one implementation PR; when the
+feature is complete, its integration branch is opened as a PR against `master`.
+
+An integration branch supports exactly one feature. An Epic may contain multiple
+Stories, so each Story receives its own integration branch rather than sharing one
+for the Epic. Bug fixes and operational or configuration changes are outside this
+feature workflow until their process is defined separately.
 
 PRs whose base is an `integ-*` branch must run the same checks and steps that PRs
 against `master` run.
@@ -77,10 +84,12 @@ belong to the hotfix back-merge convention.
 ### Documented developer workflow
 
 `guides/process/deployment.md` gains a "Feature Integration Branches" section:
-when to use one, naming, creating the branch together with a long-lived draft PR
-to `master` (which provides a continuously updated preview of the integration
-branch), PRs into the branch (squash), syncing with `master`, CI behavior, and
-the prescribed maintainer-performed merge commit for the final merge to `master`.
+one integration branch per standalone Jira Story/feature (including a feature with
+one implementation PR), child-Task PRs into that branch, naming, creating the
+branch together with a long-lived draft PR to `master` (which provides a
+continuously updated preview of the integration branch), squashing PRs into the
+branch, syncing with `master`, CI behavior, and the prescribed maintainer-performed
+merge commit for the final merge to `master`.
 
 ## Out of Scope
 

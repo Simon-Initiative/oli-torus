@@ -61,7 +61,9 @@ Finally, make sure the hotfix branch is eventually merged back to master to be i
 
 ## Feature Integration Branches
 
-When a feature or epic spans multiple PRs that should not land incrementally on `master`, develop it on a long-lived feature integration branch named `integ-<feature-name>`. Individual PRs target the integration branch, and the integration branch is merged to `master` once the feature is complete. Features delivered in a single PR keep targeting `master` directly.
+Every feature is developed on a long-lived, feature-specific integration branch named `integ-<feature-name>`. A feature is represented by one standalone, deployable Jira Story. If that Story is broken into smaller pieces, create child Tasks; each Task's implementation PR targets the Story's integration branch. The integration branch is merged to `master` only after the complete feature passes acceptance testing.
+
+An integration branch supports exactly one feature. An Epic may contain multiple Stories, so it does not receive one shared integration branch: each Story has its own. This process applies even when a feature has only one implementation PR. Bug fixes and operational or configuration changes are outside this feature workflow until their process is defined separately.
 
 ### Naming
 
@@ -69,7 +71,7 @@ Integration branch names must follow `integ-<name>`, where `<name>` is lowercase
 
 ### Creating an Integration Branch
 
-Create the branch from `master` and immediately open a draft PR from it against `master`, titled with the epic's ticket. GitHub cannot open a PR between identical branches, so the branch starts with an empty commit:
+Create the branch from `master` and immediately open a draft PR from it against `master`, titled with the feature Story's ticket. GitHub cannot open a PR between identical branches, so the branch starts with an empty commit:
 
 ```
 git fetch origin
@@ -83,7 +85,7 @@ Keep this PR in draft until the feature is complete. Every PR gets a preview env
 
 ### Working on the Feature
 
-Each unit of work is a normal PR whose base is the integration branch, following the usual title conventions:
+Each child Task is implemented as a normal PR whose base is the feature's integration branch, following the usual title conventions:
 
 ```
 git fetch origin
