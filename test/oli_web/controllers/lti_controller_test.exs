@@ -49,6 +49,12 @@ defmodule OliWeb.LtiControllerTest do
       assert redirected_to(conn) =~ "state="
 
       assert get_session(conn, "state") != nil
+
+      assert get_resp_header(conn, "cache-control") == ["private, no-store"]
+      assert [cookie] = get_resp_header(conn, "set-cookie")
+      assert cookie =~ "SameSite=None"
+      assert cookie =~ "; secure"
+      assert cookie =~ "; HttpOnly"
     end
 
     test "login get successful", %{conn: conn, registration: registration} do
@@ -118,6 +124,18 @@ defmodule OliWeb.LtiControllerTest do
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
       assert html_response(conn, 200) =~ "This course section is not available"
+      assert get_resp_header(conn, "cache-control") == ["private, no-store"]
+      assert [csp] = get_resp_header(conn, "content-security-policy")
+      refute csp =~ "form-action"
+      refute csp =~ "script-src"
+
+      replay =
+        build_conn()
+        |> init_launch_session(state)
+        |> post(Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert html_response(replay, 400)
+      assert get_resp_header(replay, "cache-control") == ["private, no-store"]
     end
 
     @tag capture_log: true
