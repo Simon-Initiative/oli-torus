@@ -16,6 +16,9 @@ defmodule OliWeb.ObjectivesLiveTest do
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Resources.ResourceType
 
+  @moduletag isolation: "serializable"
+  setup :setup_tags
+
   defp live_view_route(project_slug, params \\ %{}),
     do: Routes.live_path(OliWeb.Endpoint, OliWeb.ObjectivesLive.Objectives, project_slug, params)
 
