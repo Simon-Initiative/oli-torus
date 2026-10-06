@@ -2455,7 +2455,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       outline_html =
         view
-        |> element(~s{div[role="page_#{practice_page.resource_id}"]})
+        |> element(~s{div[data-role="page_#{practice_page.resource_id}"]})
         |> render()
 
       assert outline_html =~ ~r/>\s*\d+\s*</
@@ -2649,7 +2649,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(
-               ~s{div[role="page_#{top_level_page.resource_id}"] span[role="page title"]}
+               ~s{div[data-role="page_#{top_level_page.resource_id}"] span[data-role="page title"]}
              )
              |> render() =~ "Top Level Page"
     end
@@ -3455,7 +3455,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       end)
 
       Enum.each(all_page_titles, fn title ->
-        assert has_element?(view, "span[role='page title']", title)
+        assert has_element?(view, "span[data-role='page title']", title)
       end)
     end
 
@@ -3471,13 +3471,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # Should only show the matching page and its parent structure
       assert view |> has_element?("div[role='unit title']", "Introduction")
       assert view |> has_element?("div[role='module title']", "How to use this course")
-      assert view |> has_element?("span[role='page title']", "Page 1")
+      assert view |> has_element?("span[data-role='page title']", "Page 1")
 
       refute view |> has_element?("div[role='unit title']", "Building a Phoenix app")
       refute view |> has_element?("div[role='module title']", "Configure your setup")
-      refute view |> has_element?("span[role='page title']", "Page 2")
-      refute view |> has_element?("span[role='page title']", "Page 3")
-      refute view |> has_element?("span[role='page title']", "Page 4")
+      refute view |> has_element?("span[data-role='page title']", "Page 2")
+      refute view |> has_element?("span[data-role='page title']", "Page 3")
+      refute view |> has_element?("span[data-role='page title']", "Page 4")
     end
 
     test "filters content when searching for a container title", %{conn: conn, section: section} do
@@ -3491,8 +3491,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Should show the Introduction unit and its children
       assert view |> has_element?("div[role='unit title']", "Introduction")
-      assert view |> has_element?("span[role='page title']", "Page 2")
-      assert view |> has_element?("span[role='page title']", "Page 3")
+      assert view |> has_element?("span[data-role='page title']", "Page 2")
+      assert view |> has_element?("span[data-role='page title']", "Page 3")
 
       # Should not show unrelated content
       refute view |> has_element?("div[role='unit title']", "OTP")
@@ -3512,8 +3512,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Should show the same results as case-sensitive search
       assert view |> has_element?("div[role='unit title']", "Introduction")
-      assert view |> has_element?("span[role='page title']", "Page 2")
-      assert view |> has_element?("span[role='page title']", "Page 3")
+      assert view |> has_element?("span[data-role='page title']", "Page 2")
+      assert view |> has_element?("span[data-role='page title']", "Page 3")
 
       # Should not show unrelated content
       refute view |> has_element?("div[role='unit title']", "OTP")
@@ -3591,7 +3591,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # and all pages
       Enum.each(all_page_titles, fn title ->
-        assert view |> has_element?("span[role='page title']", title)
+        assert view |> has_element?("span[data-role='page title']", title)
       end)
 
       # Update the search term
@@ -3603,11 +3603,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Should now only show matching content
       assert view |> has_element?("div[role='unit title']", "Introduction")
-      assert view |> has_element?("span[role='page title']", "Page 1")
+      assert view |> has_element?("span[data-role='page title']", "Page 1")
 
       # Learning Macros unit contains a page called "Page 10" that partially matches the search term
       assert view |> has_element?("div[role='unit title']", "Learning Macros")
-      assert view |> has_element?("span[role='page title']", "Page 10")
+      assert view |> has_element?("span[data-role='page title']", "Page 10")
 
       Enum.each(
         [
@@ -3624,7 +3624,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       all_page_titles
       |> Enum.reject(&String.contains?(&1, "Page 1"))
       |> Enum.each(fn title ->
-        refute view |> has_element?("span[role='page title']", title)
+        refute view |> has_element?("span[data-role='page title']", title)
       end)
     end
 
@@ -3642,8 +3642,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_change(%{"search_term" => "Page 1"})
 
       # Verify search results are shown (no error occurred)
-      assert has_element?(view, "span[role='page title']", "Page 1")
-      assert has_element?(view, "span[role='page title']", "Page 10")
+      assert has_element?(view, "span[data-role='page title']", "Page 1")
+      assert has_element?(view, "span[data-role='page title']", "Page 10")
 
       # Clear the search by searching for empty string
       view
@@ -3652,7 +3652,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Verify all content is shown again after clearing search
       assert has_element?(view, "div[role='unit title']", "Introduction")
-      assert has_element?(view, "span[role='page title']", "Page 2")
+      assert has_element?(view, "span[data-role='page title']", "Page 2")
     end
   end
 
@@ -3817,7 +3817,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "div[role='unit title']", "Introduction")
 
       # Verify the page is accessible in the unit layer
-      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[data-role='page title']", "Page 1")
     end
 
     test "complete mobile outline navigation flow", %{
@@ -3987,7 +3987,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Verify unit layer is shown and contains the page
       assert has_element?(view, "div#mobile_outline_unit")
-      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[data-role='page title']", "Page 1")
 
       # Perform search for "Page 1"
       view
@@ -4001,7 +4001,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
 
       # Verify matching page is still visible
-      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[data-role='page title']", "Page 1")
     end
 
     test "search triggers js-exec event to mobile_outline_unit when in unit layer", %{
@@ -4184,7 +4184,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "div#mobile_outline_unit[data-show-matches-with-search-term]")
 
       # Verify matching page is visible (container should be expanded)
-      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[data-role='page title']", "Page 1")
     end
   end
 end

@@ -2205,7 +2205,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={@id}
-      role={"top_level_page_#{@row["resource_id"]}"}
+      data-role={"top_level_page_#{@row["resource_id"]}"}
       data-completed={"#{@progress == 100}"}
       class="flex flex-col"
       phx-click="navigate_to_resource"
@@ -2276,12 +2276,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={@id}
-      role={"top_level_page_#{@row["resource_id"]}"}
+      data-role={"top_level_page_#{@row["resource_id"]}"}
       data-completed={"#{@row["completed"]}"}
       class="flex flex-col"
       phx-update="replace"
     >
-      <div class="px-4 sm:px-6" role={"row_#{@row["numbering"]["index"]}"}>
+      <div class="px-4 sm:px-6" data-role={"row_#{@row["numbering"]["index"]}"}>
         <div class="flex flex-col">
           <.outline_row
             section={@section}
@@ -2596,13 +2596,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={@id}
-      role={"page_#{@row["resource_id"]}"}
+      data-role={"page_#{@row["resource_id"]}"}
       data-completed={"#{@row["completed"]}"}
       class={"flex flex-col #{if @row["numbering"]["level"] == 2, do: "sm:pl-4"}"}
       phx-update="replace"
     >
       <button
-        role={"page #{@row["numbering"]["index"]} details"}
+        data-role={"page #{@row["numbering"]["index"]} details"}
         class={[
           "w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-2 flex focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5 border-b border-Border-border-default sm:border-b-0",
           if(@row["graded"],
@@ -2644,7 +2644,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ]}>
             <div class="flex flex-col sm:flex-row">
               <span
-                role="page title"
+                data-role="page title"
                 class={
                   [
                     "search-result text-left text-base leading-6",
@@ -2664,9 +2664,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 graded={@row["graded"]}
               />
             </div>
-            <div :if={@row["graded"]} role="due date and score" class="flex flex-col sm:flex-row">
+            <div :if={@row["graded"]} data-role="due date and score" class="flex flex-col sm:flex-row">
               <span
-                role="page due date"
+                data-role="page due date"
                 class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
@@ -3538,7 +3538,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def video_player(assigns) do
     ~H"""
     <div id="student_video_wrapper" phx-hook="VideoPlayer" class="hidden">
-      <iframe id="youtube_video" frameborder="0" allowfullscreen></iframe>
+      <iframe
+        id="youtube_video"
+        title="YouTube video player"
+        frameborder="0"
+        allowfullscreen
+      >
+      </iframe>
       <video id="cloud_video" controls>
         <source src="" type="video/mp4" /> Your browser does not support the video tag.
       </video>

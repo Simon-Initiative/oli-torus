@@ -79,7 +79,7 @@ defmodule OliWeb.Icons do
   def flag(assigns) do
     ~H"""
     <svg
-      role="flag icon"
+      data-role="flag icon"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -397,7 +397,7 @@ defmodule OliWeb.Icons do
   def square_checked(assigns) do
     ~H"""
     <svg
-      role="square checked icon"
+      data-role="square checked icon"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
