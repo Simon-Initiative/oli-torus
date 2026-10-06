@@ -65,6 +65,27 @@ describe('ModalLaunch confirmation focus', () => {
     expect(document.body).not.toHaveClass('fix-position');
   });
 
+  test('focuses the autofocus element when no explicit initial-focus target is set', () => {
+    const modal = document.getElementById('confirmation') as HTMLElement;
+    delete modal.dataset.initialFocus;
+    document.getElementById('cancel')?.setAttribute('autofocus', '');
+
+    mount();
+
+    expect(document.getElementById('cancel')).toHaveFocus();
+  });
+
+  test('prefers the explicit initial-focus target over an autofocus element', () => {
+    const autofocus = document.createElement('button');
+    autofocus.setAttribute('autofocus', '');
+    document.getElementById('confirmation')?.append(autofocus);
+
+    mount();
+
+    expect(document.getElementById('cancel')).toHaveFocus();
+    expect(autofocus).not.toHaveFocus();
+  });
+
   test('unmounts on server dismissal even if the triggering control was removed', () => {
     const { hook, trigger } = mount();
     trigger.remove();

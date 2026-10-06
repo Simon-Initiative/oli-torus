@@ -22,6 +22,7 @@ defmodule OliWeb.Components.Delivery.Pages do
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Components.Delivery.Pages.PagesTableModel
   alias OliWeb.Delivery.Pages.ActivitiesTableModel
+  alias OliWeb.Delivery.ActivityInsightsState
 
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Icons
@@ -46,22 +47,14 @@ defmodule OliWeb.Components.Delivery.Pages do
     card_activity_props: []
   }
 
-  @attempts_options [
-    %{id: 1, name: "None", selected: false},
-    %{id: 2, name: "Less than 5", selected: false},
-    %{id: 3, name: "More than 5", selected: false}
-  ]
-
   def mount(socket) do
     {:ok,
-     assign(socket,
-       scripts_loaded: false,
-       table_model: nil,
-       current_page: nil,
-       activity_summary_cache: %{},
-       loaded_activity_summaries: %{},
-       expanded_activity_ids: MapSet.new(),
-       repair_poll_scheduled: false
+     assign(
+       socket,
+       Map.merge(
+         %{scripts_loaded: false, table_model: nil, current_page: nil},
+         ActivityInsightsState.initial_state()
+       )
      )}
   end
 
@@ -87,7 +80,7 @@ defmodule OliWeb.Components.Delivery.Pages do
           activity_types_map: assigns.activity_types_map,
           card_props: [],
           card_activity_props: [],
-          attempts_options: @attempts_options
+          attempts_options: ActivityHelpers.attempts_filter_options()
         )
         |> assign_new(:navigation_data, fn ->
           %{
@@ -136,7 +129,12 @@ defmodule OliWeb.Components.Delivery.Pages do
           ]
 
           selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
-          attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
+
+          attempts_options =
+            update_attempts_options(
+              selected_attempts_ids,
+              ActivityHelpers.attempts_filter_options()
+            )
 
           selected_attempts_options =
             Enum.reduce(attempts_options, %{}, fn option, acc ->
@@ -215,7 +213,12 @@ defmodule OliWeb.Components.Delivery.Pages do
               ]
 
               selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
-              attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
+
+              attempts_options =
+                update_attempts_options(
+                  selected_attempts_ids,
+                  ActivityHelpers.attempts_filter_options()
+                )
 
               selected_attempts_options =
                 Enum.reduce(attempts_options, %{}, fn option, acc ->
@@ -770,11 +773,6 @@ defmodule OliWeb.Components.Delivery.Pages do
       |> Map.values()
       |> Enum.sort_by(& &1.order)
 
-    expanded_rows =
-      expanded_activity_ids
-      |> Enum.map(&"row_#{&1}")
-      |> MapSet.new()
-
     table_model =
       table_model
       |> Map.update!(:data, fn data ->
@@ -782,7 +780,7 @@ defmodule OliWeb.Components.Delivery.Pages do
           activity_summary_cache: activity_summary_cache,
           loaded_activity_summaries: loaded_activity_summaries,
           expanded_activity_ids: expanded_activity_ids,
-          expanded_rows: expanded_rows,
+          expanded_rows: ActivityInsightsState.expanded_rows(expanded_activity_ids),
           scripts: scripts,
           activity_types_map: activity_types_map,
           target: socket.assigns.myself
@@ -1044,11 +1042,9 @@ defmodule OliWeb.Components.Delivery.Pages do
         socket
 
       _ ->
-        assign(socket,
-          loaded_activity_summaries: %{},
-          expanded_activity_ids: MapSet.new(),
-          selected_activities: []
-        )
+        socket
+        |> assign(ActivityInsightsState.reset())
+        |> assign(selected_activities: [])
     end
   end
 
@@ -1389,7 +1385,7 @@ defmodule OliWeb.Components.Delivery.Pages do
           rs.resource_id,
           rs.num_attempts,
           fragment(
-            "CAST(? as float) / CAST(? as float)",
+            "CAST(? as float) / NULLIF(CAST(? as float), 0)",
             rs.num_correct,
             rs.num_attempts
           )
@@ -1404,7 +1400,9 @@ defmodule OliWeb.Components.Delivery.Pages do
       DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)
       |> Enum.reject(fn rev -> is_nil(rev) end)
       |> Enum.map(fn rev ->
-        {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
+        {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, nil})
+
+        avg_score = normalize_activity_score(total_attempts, avg_score)
 
         Map.merge(rev, %{
           total_attempts: total_attempts,
@@ -1415,6 +1413,17 @@ defmodule OliWeb.Components.Delivery.Pages do
 
     add_objective_mapper(activities, section.slug)
   end
+
+  @doc """
+  Preserves the distinction between an unmeasured activity and an attempted score of zero.
+
+  Activities without attempts have no average score. Once an attempt exists, the measured score,
+  including numeric zero, is retained.
+  """
+  def normalize_activity_score(total_attempts, _avg_score) when total_attempts in [nil, 0],
+    do: nil
+
+  def normalize_activity_score(_total_attempts, avg_score), do: avg_score
 
   defp get_unique_activities_from_responses(page_id, section_id) do
     from(rs in ResponseSummary,

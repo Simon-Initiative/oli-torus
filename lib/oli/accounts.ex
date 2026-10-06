@@ -1869,12 +1869,49 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Updates an author as an admin.
+  Updates an author on behalf of an admin. Role changes are restricted to system
+  admins and recorded atomically with the update, including identity snapshots.
+  Reloads and locks the author so the audit reflects the persisted previous role.
   """
-  def admin_update_author(author, attrs \\ %{}) do
-    author
-    |> Author.noauth_changeset(attrs)
-    |> Repo.update()
+  def admin_update_author(%Author{} = author, attrs, %Author{} = admin) do
+    Repo.transaction(fn ->
+      previous = Repo.one!(from a in Author, where: a.id == ^author.id, lock: "FOR UPDATE")
+
+      changeset =
+        previous
+        |> Author.noauth_changeset(attrs)
+        |> Ecto.Changeset.validate_inclusion(:system_role_id, Map.values(SystemRole.role_id()))
+
+      changeset =
+        case is_system_admin?(admin) do
+          true -> changeset
+          false -> Ecto.Changeset.delete_change(changeset, :system_role_id)
+        end
+
+      with {:ok, updated} <- Repo.update(changeset),
+           {:ok, _event} <- audit_author_role_change(admin, previous, updated) do
+        updated
+      else
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp audit_author_role_change(_admin, %{system_role_id: role}, %{system_role_id: role}),
+    do: {:ok, nil}
+
+  defp audit_author_role_change(admin, previous, updated) do
+    Oli.Auditing.log_admin_action(admin, :author_role_changed, updated, %{
+      "actor_name" => admin.name,
+      "actor_email" => admin.email,
+      "author_id" => updated.id,
+      "author_name" => updated.name,
+      "author_email" => updated.email,
+      "previous_role_id" => previous.system_role_id,
+      "new_role_id" => updated.system_role_id,
+      "previous_role" => SystemRole.label(previous.system_role_id),
+      "new_role" => SystemRole.label(updated.system_role_id)
+    })
   end
 
   @doc """

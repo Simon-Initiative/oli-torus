@@ -12,6 +12,7 @@ defmodule Oli.Auditing.LogEvent do
   @event_types [
     :user_deleted,
     :author_deleted,
+    :author_role_changed,
     :project_published,
     :section_created,
     :feature_flag_enabled,
@@ -23,7 +24,8 @@ defmodule Oli.Auditing.LogEvent do
     :feature_rollout_exemption_upserted,
     :feature_rollout_exemption_deleted,
     :account_internal_flag_changed,
-    :clickhouse_admin_operation_initiated
+    :clickhouse_admin_operation_initiated,
+    :resource_attempt_deleted
   ]
 
   schema "audit_log_events" do
@@ -116,6 +118,9 @@ defmodule Oli.Auditing.LogEvent do
 
       :author_deleted ->
         "Deleted author account"
+
+      :author_role_changed ->
+        "#{event.details["previous_role"]} → #{event.details["new_role"]}"
 
       :project_published ->
         "Published project #{get_in(event.details, ["project_title"]) || ""}"

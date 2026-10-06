@@ -39,7 +39,7 @@ function stubRequest(response: {
   } as unknown as APIRequestContext & { postOptions: unknown[] };
 }
 
-function stubFailingRequest(error: Error): APIRequestContext {
+function stubFailingRequest(error: unknown): APIRequestContext {
   return {
     post: async () => {
       throw error;
@@ -113,6 +113,22 @@ test('partial failure warns once naming failed entities, messages, and slugs', a
   expect(warnings[0]).not.toContain('author_deleted');
 });
 
+test('strict teardown rejects partial cleanup', async () => {
+  await expect(
+    teardownAutomationCourse(
+      stubRequest({
+        ok: true,
+        json: {
+          ...allSuccess,
+          section_deleted: { success: false, message: 'Could not delete section' },
+        },
+      }),
+      seeded,
+      { ...options, strictTeardown: true },
+    ),
+  ).rejects.toThrow('section_deleted: Could not delete section');
+});
+
 test('invalid JSON body warns as unreadable without rejecting', async () => {
   await teardownAutomationCourse(
     stubRequest({ ok: true, text: 'not json at all' }),
@@ -168,4 +184,11 @@ test('request errors warn without failing the test', async () => {
   expect(warnings[0]).toContain('automation_teardown request failed');
   expect(warnings[0]).toContain('project=proj-slug section=sect-slug');
   expect(warnings[0]).toContain('socket hang up');
+});
+
+test('request errors preserve non-Error failure details', async () => {
+  await teardownAutomationCourse(stubFailingRequest('socket closed'), seeded, options);
+
+  expect(warnings).toHaveLength(1);
+  expect(warnings[0]).toContain('socket closed');
 });

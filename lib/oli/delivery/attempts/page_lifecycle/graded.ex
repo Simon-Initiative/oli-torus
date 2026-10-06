@@ -408,7 +408,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
         resource_access_id,
         was_late
       ) do
-    access = Oli.Repo.get(ResourceAccess, resource_access_id)
+    access = Core.lock_resource_access(resource_access_id)
 
     graded_attempts =
       get_graded_attempts_from_access(access.id)

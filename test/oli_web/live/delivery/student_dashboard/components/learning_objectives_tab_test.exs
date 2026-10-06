@@ -34,6 +34,35 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
   describe "Learning Objectives tab" do
     setup [:instructor_conn, :create_project_with_objectives, :enrolled_student_and_instructor]
 
+    test "patches module navigation while retaining the selected student", %{
+      conn: conn,
+      section: section,
+      student: student,
+      module_revision: module_revision
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
+
+      assert has_element?(view, "a[role='next item link'][data-phx-link='patch']")
+
+      view
+      |> element("button[role='option'][phx-click*='#{module_revision.resource_id}']")
+      |> render_click()
+
+      assert_patch(
+        view,
+        live_view_students_dashboard_route(section.slug, student.id, :learning_objectives, %{
+          filter_by: module_revision.resource_id
+        })
+      )
+
+      assert has_element?(view, "#objectives-table", "Objective 2")
+      refute has_element?(view, "#objectives-table", "Objective 1")
+    end
+
     test "renders subobjectives", %{
       section: section,
       conn: conn,

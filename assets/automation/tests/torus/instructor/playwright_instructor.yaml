@@ -1,61 +1,54 @@
 # Scenario for instructor invite/enrollment flow.
 # Parameters:
 #   RUN_ID - optional suffix to make user emails unique.
+# The Test Author/Educator/Learner display names and Automation test section title
+# satisfy the guarded automation teardown contract used by the companion spec.
 
 - user:
-    name: "playwright_author"
-    type: "author"
-    email: "author${RUN_ID}@example.com"
-    given_name: "Playwright"
-    family_name: "Author"
-    password: "changeme123456"
+    name: 'playwright_author'
+    type: 'author'
+    email: 'author${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Author'
+    password: 'changeme123456'
 
 - user:
-    name: "playwright_instructor"
-    type: "instructor"
-    email: "instructor${RUN_ID}@example.com"
-    given_name: "Playwright"
-    family_name: "Instructor"
-    password: "changeme123456"
+    name: 'playwright_instructor'
+    type: 'instructor'
+    email: 'instructor${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Educator'
+    password: 'changeme123456'
     can_create_sections: true
 
 - user:
-    name: "playwright_student"
-    type: "student"
-    email: "student${RUN_ID}@example.com"
-    given_name: "Jane"
-    family_name: "Student"
-    password: "changeme123456"
-
-- user:
-    name: "playwright_admin"
-    type: "author"
-    system_role: "system_admin"
-    email: "admin${RUN_ID}@example.com"
-    given_name: "Playwright"
-    family_name: "Admin"
-    password: "changeme123456"
+    name: 'playwright_student'
+    type: 'student'
+    email: 'student${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Learner'
+    password: 'changeme123456'
 
 - project:
-    name: "Instructor Course${RUN_ID}"
-    title: "Instructor Course${RUN_ID}"
+    name: 'Instructor Course${RUN_ID}'
+    title: 'Instructor Course${RUN_ID}'
     visibility: global
     root:
       children:
-        - page: "Intro"
+        - page: 'Intro'
 
 - publish:
-    to: "Instructor Course${RUN_ID}"
+    to: 'Instructor Course${RUN_ID}'
 
 - section:
-    name: "Instructor Course${RUN_ID}"
-    title: "Instructor Course${RUN_ID}"
-    from: "Instructor Course${RUN_ID}"
+    name: 'Instructor Course${RUN_ID}'
+    title: 'Automation test section'
+    from: 'Instructor Course${RUN_ID}'
     open_and_free: true
-    end_date: "2027-12-31T23:59:59Z"
+    end_date: '2027-12-31T23:59:59Z'
 
 - enroll:
-    user: "playwright_instructor"
-    email: "instructor${RUN_ID}@example.com"
-    section: "Instructor Course${RUN_ID}"
+    user: 'playwright_instructor'
+    email: 'instructor${RUN_ID}@example.com'
+    section: 'Instructor Course${RUN_ID}'
     role: instructor

@@ -41,6 +41,30 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Broadcaster do
     end
   end
 
+  @doc """
+  Broadcasts that a page attempt was finalized outside the delivery LiveView.
+
+  Unlike live attempt-debugging updates, this notification is always emitted so an active
+  delivery LiveView can redirect after server-side auto-finalization.
+  """
+  def broadcast_page_attempt_finalized(resource_attempt_guid) do
+    PubSub.broadcast(
+      Oli.PubSub,
+      message_page_attempt_finalized(resource_attempt_guid),
+      {:page_attempt_finalized, resource_attempt_guid}
+    )
+  end
+
+  @doc "Subscribes to page-finalization notifications for one resource attempt."
+  def subscribe_to_page_attempt_finalized(resource_attempt_guid) do
+    PubSub.subscribe(Oli.PubSub, message_page_attempt_finalized(resource_attempt_guid))
+  end
+
+  @doc "Returns the PubSub topic for a resource attempt's finalization notification."
+  def message_page_attempt_finalized(resource_attempt_guid) do
+    "page_attempt_finalized:#{resource_attempt_guid}"
+  end
+
   def subscribe_to_lms_grade_update(section_id, resource_access_id, _) do
     PubSub.subscribe(Oli.PubSub, message_grade_update(section_id, resource_access_id))
   end

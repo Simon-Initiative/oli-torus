@@ -2,7 +2,7 @@ import { lockScroll, unlockScroll } from 'components/modal/utils';
 
 export const ModalLaunch = {
   mounted(): void {
-    (this as any).trigger =
+    this.triggerElement =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     // initialize the bootstrap modal
@@ -14,12 +14,10 @@ export const ModalLaunch = {
     this.modal = new (window as any).Modal(this.el, {});
 
     const initialFocus = this.el.dataset.initialFocus;
-    if (initialFocus) {
-      $(`#${id}`).on('shown.bs.modal', () => {
-        const target = this.el.querySelector(initialFocus);
-        if (target instanceof HTMLElement) target.focus();
-      });
-    }
+    $(`#${id}`).on('shown.bs.modal', () => {
+      const target = this.el.querySelector(initialFocus || '[autofocus]');
+      if (target instanceof HTMLElement) target.focus();
+    });
 
     this.modal.show();
 
@@ -37,7 +35,7 @@ export const ModalLaunch = {
 
       unlockScroll(scrollPosition);
 
-      const trigger = (this as any).trigger;
+      const trigger = this.triggerElement;
       if (trigger?.isConnected) {
         window.requestAnimationFrame(() => trigger.focus());
       }
