@@ -2257,7 +2257,7 @@ defmodule OliWeb.Icons do
   def timezone_world(assigns) do
     ~H"""
     <svg
-      aria-hidden="true"
+      role="timezone world icon"
       width="20"
       height="20"
       viewBox="0 0 20 20"
