@@ -133,11 +133,19 @@ jobs:
         run: yarn install --frozen-lockfile
 
       # Watchers are disabled for MIX_ENV=ci_e2e (config/ci_e2e.exs),
-      # so the JS/CSS bundles the app serves must be built once, upfront,
-      # rather than relying on the dev watcher process to build them live.
+      # so the assets the app serves must be built once, upfront, rather
+      # than relying on the dev watcher processes to build them live.
+      # Webpack builds the JS bundles here; the Tailwind CSS is built by
+      # Mix in the next step.
       - name: Build frontend assets
         working-directory: assets
         run: yarn run deploy
+
+      # Writes priv/static/css/app.css, which every layout loads. Without
+      # it, pages render unstyled and responsive (md:hidden, etc.) markup
+      # stays visible.
+      - name: Build Tailwind CSS
+        run: set -a && source oli.env && mix tailwind default --minify
 
       - name: Install Playwright dependencies
         working-directory: assets/automation
