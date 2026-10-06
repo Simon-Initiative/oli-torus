@@ -29,7 +29,7 @@ requirements:
     verification_method: hybrid
     proofs: []
 - id: FR-002
-  title: Consolidate PR and nightly browser testing on one configurable Playwright compile
+  title: Consolidate PR and nightly browser testing on one shared Playwright compile
     environment
   status: proposed
   acceptance_criteria:
@@ -42,8 +42,8 @@ requirements:
     proofs: []
   - id: AC-005
     title: A standard production build continues to exclude its existing compile-time-gated
-      Playwright routes and selects normal reCAPTCHA verification, even when Playwright capability
-      environment variables and the test token are present. Runtime changes cannot enable
+      Playwright routes and selects normal reCAPTCHA verification, even when the runtime
+      test token is present. Runtime changes cannot enable
       capabilities absent from the compiled artifact.
     status: proposed
     verification_method: hybrid
@@ -58,18 +58,22 @@ requirements:
     proofs: []
   - id: AC-032
     title: 'Both PR and nightly workflows use one standalone config/playwright.exs with MIX_ENV=playwright
-      and env: :playwright, without importing dev.exs. Migrate active ci_e2e workflow/configuration
-      references and remove config/ci_e2e.exs; both builds disable development reloaders,
+      and env: :playwright, without importing dev.exs. Delete config/ci_e2e.exs in the same
+      change and migrate all active workflow, script, configuration and documentation references
+      to playwright. No ci_e2e compatibility alias, wrapper or fallback remains; MIX_ENV=ci_e2e
+      is no longer supported. Both builds disable development reloaders,
       watchers, debug errors, and development credential defaults.'
     status: proposed
     verification_method: hybrid
     proofs: []
   - id: AC-033
-    title: Both workflows explicitly set PLAYWRIGHT_ENABLE_SCENARIOS=true, PLAYWRIGHT_ENABLE_MAILBOX=true,
-      and PLAYWRIGHT_DETERMINISTIC_RECAPTCHA=true before compilation. These non-secret inputs
-      select test capabilities in config/playwright.exs, are strictly parsed at compile time,
-      default false when omitted, reject invalid values, and cannot be changed by setting
-      process environment variables after compilation.
+    title: Selecting MIX_ENV=playwright loads config/playwright.exs, which directly sets
+      enable_playwright_scenarios and enable_e2e_mailbox to true, recaptcha_module to
+      Oli.Playwright.Recaptcha, and the Oli.Mailer adapter to Swoosh.Adapters.Local at compile
+      time for both workflows. Runtime configuration is still required, including the same
+      PLAYWRIGHT_RECAPTCHA_TOKEN value supplied to the Torus server and Playwright runner.
+      Secrets are never passed as Docker build arguments. Runtime configuration and
+      post-compilation process environment changes cannot override these compiled selections.
     status: proposed
     verification_method: automated
     proofs: []
@@ -92,20 +96,23 @@ requirements:
     verification_method: hybrid
     proofs: []
   - id: AC-036
-    title: Compile caches and image build inputs account for all Playwright capability settings
-      and workflow trust boundaries. Verification builds enabled and disabled configurations
-      separately and proves that cached test capabilities cannot carry into a build where
-      they are disabled or into production.
+    title: Compile caches and image build layers account for Mix environment, compile
+      configuration, lockfiles and toolchain, with source changes invalidating application
+      compilation. Separate PR and trusted nightly cache namespaces prevent nightly from
+      restoring PR compile artifacts. Verify clean and cached Playwright and production
+      builds independently, including configuration-change invalidation, and prove that
+      Playwright test capabilities cannot carry into production.
     status: proposed
     verification_method: automated
     proofs: []
   - id: AC-037
     title: Both PR and nightly compile a reCAPTCHA verifier that accepts a nonempty exact
       match to the runtime-only PLAYWRIGHT_RECAPTCHA_TOKEN using constant-time comparison
-      without contacting Google. Other nonempty string responses delegate to normal reCAPTCHA
-      verification and preserve its success/failure result; empty or malformed responses fail.
+      without contacting Google. Incorrect, missing, empty or malformed responses fail locally;
+      no Playwright verification path calls Google or falls back to normal verification.
       Missing server test-token configuration fails startup. PR generates a job-scoped token;
-      nightly uses a dedicated secret and valid Google reCAPTCHA configuration for human use.
+      nightly uses a dedicated secret. Neither requires Google reCAPTCHA keys or human widget
+      support; production retains normal reCAPTCHA verification.
       Application captcha call sites use the shared verifier, and token-bearing fields are
       excluded from logs and artifacts.
     status: proposed
@@ -119,7 +126,9 @@ requirements:
       test submissions and migrate missing support. Required CI flows fail before submission
       when the token is missing, with no hardcoded or empty fallback. Verify registration,
       enrollment and payment submissions carry the configured token and complete without Google
-      verification; human browser flows retain the normal widget.
+      verification or widget interaction. Omit the external widget and Google script dependency
+      in the Playwright environment while preserving form submission behavior. Production
+      retains the normal widget.
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -128,8 +137,9 @@ requirements:
   status: proposed
   acceptance_criteria:
   - id: AC-007
-    title: A successful build publishes an immutable image reference distinct from standard
-      production images and records its registry digest, source version, and full commit SHA;
+    title: A successful build publishes an immutable image tagged
+      sha-<full SHA>-playwright-<run ID>-<attempt>, distinct from standard production images,
+      and records its registry digest, source version, and full commit SHA;
       an existing tag is never overwritten with different content.
     status: proposed
     verification_method: automated
@@ -211,7 +221,8 @@ requirements:
       application restart. Graceful shutdown enters draining before request-serving services
       stop; /readyz becomes 503 while /healthz remains 200 until the HTTP stack stops. Availability
       checks use a documented narrow set of critical local services rather than all workers
-      or warm caches.
+      or warm caches. Exclude the local NodeJS evaluator pool from all probe checks, regardless
+      of evaluator configuration; its unavailability alone does not change probe status.
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -241,7 +252,8 @@ requirements:
   - id: AC-015
     title: After the accepted GitOps image update, CI polls the configured public HTTPS /readyz
       URL without an infrastructure authentication header, OAuth login, Argo CD token, or
-      Kubernetes credential. CI also uses /readyz for its final identity check.
+      Kubernetes credential. This identity check gates test startup; no post-test identity
+      check is required.
     status: proposed
     verification_method: automated
     proofs: []
@@ -273,15 +285,15 @@ requirements:
   acceptance_criteria:
   - id: AC-019
     title: Two scheduled/manual runs targeting the nightly deployment cannot overlap their
-      GitOps update, readiness, test, and final identity-check interval; a new run does not
+      GitOps update, readiness, test, and finalization interval; a new run does not
       automatically cancel an active test run.
     status: proposed
     verification_method: hybrid
     proofs: []
   - id: AC-020
-    title: The workflow checks the public version/hash again after tests and cannot report
-      a successful validated run if the identity changed or cannot be verified. The target's
-      update ownership and pending-run policy are documented.
+    title: The target's update ownership and pending-run policy are documented. Operators
+      pause new runs and wait for the active run to finish before manually changing the
+      deployment; the workflow is the sole routine deployment writer.
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -299,8 +311,8 @@ requirements:
     verification_method: hybrid
     proofs: []
   - id: AC-022
-    title: A clean automation dependency installation can collect tests selected by @nightly.
-      Collection/import errors or zero matching tests fail the run. Missing asset access,
+    title: After a clean automation dependency installation, the test invocation executes
+      tests selected by @nightly. Collection/import errors or zero matching tests fail the run. Missing asset access,
       scenario credentials, automation credentials, or other configuration required by selected
       tests produces a setup failure rather than a skip or passing result.
     status: proposed
@@ -323,17 +335,19 @@ requirements:
     verification_method: automated
     proofs: []
   - id: AC-031
-    title: The nightly workflow runs Playwright collection with --grep @nightly after installing
-      automation dependencies and before installing browsers or executing tests. An import/collection
-      error or zero matching tests fails this check and prevents downstream browser steps.
+    title: The nightly test step directly runs Playwright with its nightly configuration and
+      --grep @nightly after installing automation dependencies and the browser. Test selection
+      occurs during this invocation without a separate listing or collection step. Preserve
+      the invocation failure status through artifact upload and summary generation; zero matching
+      tests must not be allowed to pass.
     status: proposed
     verification_method: automated
     proofs: []
   - id: AC-024
-    title: The overall run fails when a selected test fails or unexpectedly skips; all tests
-      in the initial @nightly selection are expected to execute. Results distinguish pass,
-      failure, skip, interruption and retry outcomes, and test execution has a finite job
-      timeout.
+    title: The browser step uses Playwright's exit status under the configured retry policy
+      and has a finite timeout. Standard reports show failures, skips and retry outcomes.
+      No custom results validator or blanket skip-failure rule is required; successful
+      artifact upload or summary generation cannot mask a failed test step.
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -360,7 +374,7 @@ requirements:
   status: proposed
   acceptance_criteria:
   - id: AC-027
-    title: Every run reports completed/failed/skipped stages, durations, source version/SHA,
+    title: Every run reports completed/failed/skipped stages, source version/SHA,
       image reference/digest when published, accepted GitOps revision when available, and
       expected/observed readiness identity without exposing credentials. Browser-stage reports
       identify which tests ran by spec/title/project and their individual outcomes, including
@@ -369,9 +383,11 @@ requirements:
     verification_method: hybrid
     proofs: []
   - id: AC-028
-    title: Test-stage completion or failure uploads generated reports and test diagnostics
-      using the established 14-day retention; pre-test failures produce stage-specific diagnostics
-      and do not claim that browser tests ran.
+    title: After test-stage completion or failure, always attempt to upload available
+      assets/automation/playwright-report/ and assets/automation/test-results/ as GitHub
+      Actions artifacts named playwright-report and playwright-test-results attached to
+      the workflow run, each with 14-day retention, and write the run summary. Pre-test
+      failures produce stage-specific diagnostics and do not claim that browser tests ran.
     status: proposed
     verification_method: hybrid
     proofs: []
