@@ -2609,9 +2609,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive(:gc, 2_000)
 
       assert has_element?(view, ~s{button[data-role="page 2 details"]})
-      refute has_element?(view, ~s{button[data-role="page 1 details"] svg[role="visited check icon"]})
+
+      refute has_element?(
+               view,
+               ~s{button[data-role="page 1 details"] svg[role="visited check icon"]}
+             )
+
       assert has_element?(view, ~s{button[data-role="page 2 details"]})
-      refute has_element?(view, ~s{button[data-role="page 2 details"] svg[role="visited check icon"]})
+
+      refute has_element?(
+               view,
+               ~s{button[data-role="page 2 details"] svg[role="visited check icon"]}
+             )
     end
 
     test "can visit a page", %{conn: conn, section: section, page_1: page_1} do
