@@ -35,6 +35,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
 
+  @moduletag isolation: "serializable"
+  setup :setup_tags
+
   defp live_view_route(project_slug, params \\ %{}),
     do: ~p"/workspaces/course_author/#{project_slug}/objectives?#{params}"
 
@@ -1454,8 +1457,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, ".collapse", "#{title}")
 
       assert Enum.any?(ObjectiveEditor.fetch_objective_mappings(project), fn mapping ->
-               mapping.revision.title == title and
-                 mapping.revision.objective_type == :sub_objective
+               mapping.revision.title == title
              end)
 
       wait_for_coverage(view)
@@ -1506,12 +1508,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       wait_for_coverage(view)
     end
 
-    test "detaching a final association preserves the sub-objective and exposes it as unassociated",
-         %{
-           conn: conn,
-           project: project,
-           publication: publication
-         } do
+    test "final association requires confirmation, can be canceled, and is deleted only on confirmation",
+         %{conn: conn, project: project, publication: publication} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
 
       {:ok, obj} =
@@ -1519,18 +1517,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
-      assert has_element?(view, "##{obj.slug}")
-      assert has_element?(view, ".collapse", "#{sub_obj.title}")
-
-      assert has_element?(
+      refute has_element?(
                view,
                "button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}]"
-             )
-
-      assert has_element?(
-               view,
-               "[role='tooltip']",
-               "Detach from learning objective"
              )
 
       assert has_element?(
@@ -1539,82 +1528,62 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
                "Delete Learning Objective"
              )
 
+      assert has_element?(view, "[role='tooltip']", "Delete sub-objective")
+
       view
-      |> element("button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
-      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
+      |> element(
+        "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
+      )
+      |> render_click()
+
+      assert has_element?(view, "#delete_sub_objective_modal", sub_obj.title)
+      assert has_element?(view, "#delete_sub_objective_modal", "final association")
+      assert has_element?(view, "#delete_sub_objective_modal", "This action cannot be undone")
 
       assert has_element?(
                view,
-               "button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}][disabled][aria-busy='true']"
+               "#delete_sub_objective_modal[data-initial-focus='#cancel-sub-objective-delete']"
              )
 
-      assert has_element?(
-               view,
-               "button[aria-label='Detaching #{sub_obj.title}'] .spinner-border"
-             )
+      refute AuthoringResolver.from_resource_id(project.slug, sub_obj.resource_id).deleted
+
+      render_hook(view, "phx_modal.unmount", %{})
+      refute has_element?(view, "#delete_sub_objective_modal")
+      refute AuthoringResolver.from_resource_id(project.slug, sub_obj.resource_id).deleted
+
+      assert sub_obj.resource_id in AuthoringResolver.from_resource_id(
+               project.slug,
+               obj.resource_id
+             ).children
+
+      view
+      |> element(
+        "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
+      )
+      |> render_click()
+
+      view
+      |> element("button[phx-click='delete_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
+      |> render_click()
 
       render_async(view)
-
-      assert has_element?(
-               view,
-               ~s{div[role="alert"].alert-info},
-               "Sub-objective detached from learning objective"
-             )
-
-      assert 2 ==
-               project
-               |> ObjectiveEditor.fetch_objective_mappings()
-               |> length()
-
-      refute has_element?(view, ".collapse", "#{sub_obj.title}")
-
-      detached = AuthoringResolver.from_revision_slug(project.slug, sub_obj.slug)
-      refute detached.deleted
-      assert detached.objective_type == :sub_objective
+      assert has_element?(view, ~s{div[role="alert"].alert-info}, "Sub-objective deleted")
+      assert AuthoringResolver.from_resource_id(project.slug, sub_obj.resource_id).deleted
+      assert AuthoringResolver.from_resource_id(project.slug, obj.resource_id).children == []
+      assert length(ObjectiveEditor.fetch_objective_mappings(project)) == 1
+      refute has_element?(view, "##{sub_obj.slug}")
 
       view
       |> element("button[phx-click='display_add_existing_sub_modal'][phx-value-slug=#{obj.slug}]")
-      |> render_click(%{"slug" => obj.slug})
-
-      view
-      |> element("#select_existing_sub_modal-filters")
-      |> render_change(%{"query" => "", "status" => "unassociated"})
-
-      assert has_element?(view, "#existing-sub-objective-#{sub_obj.resource_id}", sub_obj.title)
-
-      assert has_element?(
-               view,
-               "button[phx-click='add_existing_sub'][phx-value-slug=#{sub_obj.slug}]",
-               "Add"
-             )
-
-      assert has_element?(
-               view,
-               "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}][class~='hover:text-white']",
-               "Delete"
-             )
-
-      view
-      |> element("button[phx-click='add_existing_sub'][phx-value-slug=#{sub_obj.slug}]")
-      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
-
-      view
-      |> element("button[phx-click='display_add_existing_sub_modal'][phx-value-slug=#{obj.slug}]")
-      |> render_click(%{"slug" => obj.slug})
-
-      view
-      |> element("#select_existing_sub_modal-filters")
-      |> render_change(%{"query" => "", "status" => "unassociated"})
+      |> render_click()
 
       refute has_element?(view, "#existing-sub-objective-#{sub_obj.resource_id}")
+      refute has_element?(view, "#select_existing_sub_modal-status")
+      refute has_element?(view, "#select_existing_sub_modal button", "Delete")
     end
 
-    test "detaching one of multiple associations preserves the other and does not expose delete",
-         %{
-           conn: conn,
-           project: project,
-           publication: publication
-         } do
+    test "shared unlink preserves course content and other parents and updates the remaining action",
+         %{conn: conn, project: project, publication: publication} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
 
       {:ok, obj_a} =
@@ -1623,117 +1592,75 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, obj_b} =
         create_objective(project, publication, "obj_b", "Objective B", [sub_obj.resource_id])
 
-      {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj_a.slug}))
+      {:ok, page} = create_page_with_objective(project, publication, [sub_obj.resource_id])
 
-      assert has_element?(view, "##{obj_a.slug}")
-      assert has_element?(view, "##{obj_b.slug}")
-      assert has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj.title}")
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_route(project.slug, %{expanded: Enum.join([obj_a.slug, obj_b.slug], ",")})
+        )
 
-      view
-      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_b.slug}]")
-      |> render_click(%{"slug" => obj_b.slug})
-
-      assert has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj.title}")
-
-      view
-      |> element(
-        "##{obj_a.slug} button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}]"
-      )
-      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj_a.slug})
-
-      render_async(view)
-
-      assert 3 ==
-               project
-               |> ObjectiveEditor.fetch_objective_mappings()
-               |> length()
-
-      refute has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj.title}")
-      assert has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj.title}")
-
-      view
-      |> element(
-        "##{obj_a.slug} button[phx-click='display_add_existing_sub_modal'][phx-value-slug=#{obj_a.slug}]"
-      )
-      |> render_click(%{"slug" => obj_a.slug})
-
-      assert has_element?(view, "#existing-sub-objective-#{sub_obj.resource_id}", sub_obj.title)
+      assert has_element?(view, "[role='tooltip']", "Detach from learning objective")
 
       refute has_element?(
                view,
                "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
              )
-    end
-
-    test "permanently deletes only an unassociated, untagged sub-objective", %{
-      conn: conn,
-      project: project,
-      publication: publication
-    } do
-      {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
-
-      {:ok, obj} =
-        create_objective(project, publication, "obj", "Objective", [sub_obj.resource_id])
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
-
-      view
-      |> element("button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
-      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
-
-      render_async(view)
-
-      view
-      |> element("button[phx-click='display_add_existing_sub_modal'][phx-value-slug=#{obj.slug}]")
-      |> render_click(%{"slug" => obj.slug})
 
       view
       |> element(
-        "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
+        "##{obj_a.slug} button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}]"
       )
-      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
+      |> render_click()
 
-      assert has_element?(view, "#delete_sub_objective_modal", "Delete sub-objective?")
-      assert has_element?(view, "#delete_sub_objective_modal", sub_obj.title)
-      assert has_element?(view, "#delete_sub_objective_modal", "This action cannot be undone")
+      render_async(view)
+      assert has_element?(view, ~s{div[role="alert"].alert-info}, "Sub-objective detached")
+      assert length(ObjectiveEditor.fetch_objective_mappings(project)) == 3
+      refute AuthoringResolver.from_resource_id(project.slug, sub_obj.resource_id).deleted
 
-      refute AuthoringResolver.from_revision_slug(project.slug, sub_obj.slug).deleted
+      assert AuthoringResolver.from_resource_id(project.slug, page.resource_id).objectives ==
+               page.objectives
 
-      render_hook(view, "return_to_add_existing", %{
-        "parent_slug" => obj.slug,
-        "focus_delete_slug" => sub_obj.slug
-      })
+      assert AuthoringResolver.from_resource_id(project.slug, obj_a.resource_id).children == []
+
+      assert sub_obj.resource_id in AuthoringResolver.from_resource_id(
+               project.slug,
+               obj_b.resource_id
+             ).children
 
       assert has_element?(
                view,
-               "#select_existing_sub_modal[data-initial-focus='#delete-sub-objective-#{sub_obj.slug}']"
+               "##{obj_b.slug} button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
              )
 
       view
-      |> element(
-        "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
-      )
-      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
+      |> element("##{obj_a.slug} button[phx-click='display_add_existing_sub_modal']")
+      |> render_click()
+
+      assert has_element?(view, "#existing-sub-objective-#{sub_obj.resource_id}", sub_obj.title)
+
+      assert has_element?(
+               view,
+               "#select_existing_sub_modal button[phx-click='add_existing_sub'][class~='h-11']"
+             )
+
+      refute has_element?(view, "#select_existing_sub_modal button", "Delete")
 
       view
-      |> element("button[phx-click='delete_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
-      |> render_click(%{"slug" => sub_obj.slug})
+      |> element("#select_existing_sub_modal-filters")
+      |> render_submit(%{"query" => "not found"})
 
-      render_async(view)
+      assert has_element?(view, "#select_existing_sub_modal-empty")
 
-      assert has_element?(view, ~s{div[role="alert"].alert-info}, "Sub-objective deleted")
-      assert 1 == length(ObjectiveEditor.fetch_objective_mappings(project))
+      view
+      |> element("#select_existing_sub_modal-filters")
+      |> render_submit(%{"query" => "Sub Objective"})
 
-      refute Enum.any?(ObjectiveEditor.fetch_objective_mappings(project), fn mapping ->
-               mapping.revision.slug == sub_obj.slug
-             end)
+      assert has_element?(view, "#existing-sub-objective-#{sub_obj.resource_id}")
     end
 
-    test "blocks permanent deletion when an unassociated sub-objective is tagged", %{
-      conn: conn,
-      project: project,
-      publication: publication
-    } do
+    test "tagged final association cannot be deleted or detached",
+         %{conn: conn, project: project, publication: publication} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
 
       {:ok, obj} =
@@ -1743,30 +1670,98 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       view
-      |> element("button[phx-click='detach_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
-      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
+      |> element(
+        "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
+      )
+      |> render_click()
+
+      refute has_element?(view, "#delete_sub_objective_modal")
+      assert has_element?(view, ~s{div[role="alert"].alert-danger}, "tagged to course content")
+
+      render_hook(view, "delete", %{"slug" => sub_obj.slug})
+      refute AuthoringResolver.from_resource_id(project.slug, sub_obj.resource_id).deleted
+
+      render_hook(view, "detach_sub_objective", %{
+        "slug" => sub_obj.slug,
+        "parent_slug" => obj.slug
+      })
 
       render_async(view)
+      assert has_element?(view, ~s{div[role="alert"].alert-danger}, "final association")
+      refute AuthoringResolver.from_resource_id(project.slug, sub_obj.resource_id).deleted
 
-      view
-      |> element("button[phx-click='display_add_existing_sub_modal'][phx-value-slug=#{obj.slug}]")
-      |> render_click(%{"slug" => obj.slug})
+      assert sub_obj.resource_id in AuthoringResolver.from_resource_id(
+               project.slug,
+               obj.resource_id
+             ).children
+    end
+
+    test "confirmation rechecks whether another parent was added",
+         %{conn: conn, project: project, publication: publication} do
+      {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
+
+      {:ok, obj} =
+        create_objective(project, publication, "obj", "Objective", [sub_obj.resource_id])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       view
       |> element(
         "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
       )
-      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
+      |> render_click()
 
-      refute has_element?(view, "#delete_sub_objective_modal")
+      {:ok, other_parent} =
+        create_objective(project, publication, "other", "Other Objective", [sub_obj.resource_id])
+
+      view |> element("button[phx-click='delete_sub_objective']") |> render_click()
+      render_async(view)
 
       assert has_element?(
                view,
                ~s{div[role="alert"].alert-danger},
-               "cannot be deleted because it is tagged to course content"
+               "other learning-objective associations"
              )
 
-      refute AuthoringResolver.from_revision_slug(project.slug, sub_obj.slug).deleted
+      refute AuthoringResolver.from_resource_id(project.slug, sub_obj.resource_id).deleted
+
+      assert sub_obj.resource_id in AuthoringResolver.from_resource_id(
+               project.slug,
+               obj.resource_id
+             ).children
+
+      assert sub_obj.resource_id in AuthoringResolver.from_resource_id(
+               project.slug,
+               other_parent.resource_id
+             ).children
+    end
+
+    test "confirmation rechecks whether course content was tagged",
+         %{conn: conn, project: project, publication: publication} do
+      {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
+
+      {:ok, obj} =
+        create_objective(project, publication, "obj", "Objective", [sub_obj.resource_id])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
+
+      view
+      |> element(
+        "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
+      )
+      |> render_click()
+
+      {:ok, _page} = create_page_with_objective(project, publication, [sub_obj.resource_id])
+      view |> element("button[phx-click='delete_sub_objective']") |> render_click()
+      render_async(view)
+
+      assert has_element?(view, ~s{div[role="alert"].alert-danger}, "tagged to course content")
+      refute AuthoringResolver.from_resource_id(project.slug, sub_obj.resource_id).deleted
+
+      assert sub_obj.resource_id in AuthoringResolver.from_resource_id(
+               project.slug,
+               obj.resource_id
+             ).children
     end
 
     test "renders links to revision history if #show_links is added to the url (being an admin)",

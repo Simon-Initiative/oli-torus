@@ -4,6 +4,9 @@ defmodule Oli.Scenarios.Objectives.ObjectivesTest do
   alias Oli.Scenarios
   alias Oli.Scenarios.RuntimeOpts
 
+  @moduletag isolation: "serializable"
+  setup :setup_tags
+
   @scenario_path Path.join(__DIR__, "authoring_objectives.scenario.yaml")
 
   test "objective authoring scenario" do

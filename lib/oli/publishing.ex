@@ -812,9 +812,10 @@ defmodule Oli.Publishing do
   Returns active objective mappings for a publication.
 
   Pass `lock: true` only inside a transaction to lock the current mapping and
-  revision rows while enforcing a cross-revision invariant.
+  revision rows while enforcing a cross-revision invariant. Use `slugs: [...]`
+  to restrict the query to selected objective revisions.
   """
-  @spec get_objective_mappings_by_publication(integer(), lock: boolean()) ::
+  @spec get_objective_mappings_by_publication(integer(), keyword()) ::
           [%PublishedResource{}]
   def get_objective_mappings_by_publication(publication_id, opts \\ []) do
     objective = ResourceType.id_for_objective()
@@ -827,7 +828,14 @@ defmodule Oli.Publishing do
           rev.deleted == false and rev.resource_type_id == ^objective and
             mapping.publication_id == ^publication_id,
         select: mapping,
+        order_by: mapping.resource_id,
         preload: [:resource, :revision]
+
+    query =
+      case Keyword.fetch(opts, :slugs) do
+        {:ok, slugs} -> from [mapping, rev] in query, where: rev.slug in ^slugs
+        :error -> query
+      end
 
     query =
       case Keyword.get(opts, :lock, false) do
@@ -836,6 +844,25 @@ defmodule Oli.Publishing do
       end
 
     Repo.all(query)
+  end
+
+  @doc """
+  Returns resource IDs of active objectives that contain the given child in a publication.
+  """
+  @spec objective_parent_ids(integer(), integer()) :: [integer()]
+  def objective_parent_ids(resource_id, publication_id) do
+    objective = ResourceType.id_for_objective()
+
+    Repo.all(
+      from mapping in PublishedResource,
+        join: rev in Revision,
+        on: mapping.revision_id == rev.id,
+        where:
+          mapping.publication_id == ^publication_id and rev.deleted == false and
+            rev.resource_type_id == ^objective and ^resource_id in rev.children,
+        select: rev.resource_id,
+        distinct: true
+    )
   end
 
   @doc """

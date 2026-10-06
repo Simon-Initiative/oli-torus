@@ -16,9 +16,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SubObjectiveDeleteModal do
       aria-modal="true"
       aria-labelledby={"#{@id}-title"}
       aria-describedby={"#{@id}-description"}
-      data-dismiss-event="return_to_add_existing"
-      data-parent-slug={@parent_slug}
-      data-focus-delete-slug={@slug}
+      data-initial-focus="#cancel-sub-objective-delete"
       phx-hook="ModalLaunch"
     >
       <div class="modal-dialog modal-dialog-centered" role="document">
@@ -36,12 +34,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SubObjectiveDeleteModal do
             </button>
           </div>
           <div id={"#{@id}-description"} class="modal-body text-Text-text-high">
-            <strong>“{@title}”</strong> is not associated with any learning objectives. Deleting it
-            will permanently remove it from this course. This action cannot be undone.
+            <strong>“{@title}”</strong> is associated only with this learning objective. Removing
+            its final association will permanently delete it from this course. This action cannot be undone.
           </div>
           <div class="modal-footer border-Border-border-default">
             <button
               type="button"
+              id="cancel-sub-objective-delete"
               class="rounded-md px-4 py-2 font-semibold text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
               data-bs-dismiss="modal"
             >
@@ -50,7 +49,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SubObjectiveDeleteModal do
             <button
               phx-click="delete_sub_objective"
               phx-value-slug={@slug}
-              phx-key="enter"
+              phx-value-parent_slug={@parent_slug}
+              type="button"
               class="rounded-md bg-Border-border-danger px-4 py-2 font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Icon-icon-danger"
             >
               Delete sub-objective

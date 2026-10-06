@@ -9,6 +9,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   attr(:rows, :list, required: true)
   attr(:expanded_slugs, :any, default: MapSet.new())
   attr(:pending_detaches, :any, default: MapSet.new())
+  attr(:pending_deletes, :any, default: MapSet.new())
+  attr(:objective_parents, :map, default: %{})
   attr(:offset, :integer, default: 0)
   attr(:query, :string, default: "")
 
@@ -279,6 +281,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           @pending_detaches,
                           {sub_objective.slug, item.slug}
                         ) %>
+                      <% deleting? = MapSet.member?(@pending_deletes, sub_objective.slug) %>
+                      <% shared? =
+                        length(Map.get(@objective_parents, sub_objective.resource_id, [])) > 1 %>
+                      <% action_label =
+                        if shared?, do: "Detach from learning objective", else: "Delete sub-objective" %>
                       <button
                         type="button"
                         class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary disabled:cursor-default"
@@ -391,28 +398,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                                   "hover:bg-Fill-Buttons-fill-primary hover:text-white active:text-Icon-icon-active",
                                 detaching? && "cursor-wait opacity-70"
                               ]}
-                              phx-click="detach_sub_objective"
+                              id={"sub-objective-action-#{item.resource_id}-#{sub_objective.resource_id}"}
+                              phx-click={
+                                if shared?,
+                                  do: "detach_sub_objective",
+                                  else: "display_sub_objective_delete_modal"
+                              }
                               phx-value-slug={sub_objective.slug}
                               phx-value-parent_slug={item.slug}
-                              disabled={detaching?}
-                              aria-busy={to_string(detaching?)}
-                              aria-label={
-                                if detaching?,
-                                  do: "Detaching #{sub_objective.title}",
-                                  else:
-                                    "Detach #{sub_objective.title} from learning objective #{item.title}"
-                              }
+                              disabled={detaching? or deleting?}
+                              aria-busy={to_string(detaching? or deleting?)}
+                              aria-label={"#{action_label}: #{sub_objective.title}"}
                               aria-describedby={"detach-sub-objective-tooltip-#{item.resource_id}-#{sub_objective.resource_id}"}
                             >
                               <Icons.unlink
-                                :if={!detaching?}
+                                :if={shared? and !detaching?}
                                 width="16"
                                 height="16"
                                 stroke_width="1.5"
                                 class="shrink-0 text-current"
                               />
+                              <Icons.trash
+                                :if={!shared? and !deleting?}
+                                width="14"
+                                height="15"
+                                stroke_width="1.23853"
+                                variant="objective"
+                                class="shrink-0 text-current"
+                              />
                               <.loader
-                                :if={detaching?}
+                                :if={detaching? or deleting?}
                                 class="flex items-center justify-center"
                                 icon_class="text-Icon-icon-default"
                               />
@@ -424,7 +439,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                             >
                               {if detaching?,
                                 do: "Detaching…",
-                                else: "Detach from learning objective"}
+                                else: action_label}
                             </span>
                           </span>
                         </div>

@@ -27,23 +27,13 @@ export const ModalLaunch = {
 
     // wire up server-side hide event
     (this as any).handleEvent('phx_modal.hide', () => {
-      (this as any).serverHiding = true;
       this.modal.hide();
     });
 
     // handle hiding of a modal as a result of many different methods
     // (modal close button, escape key, etc...)
     $(`#${id}`).on('hidden.bs.modal', () => {
-      const dismissEvent = this.el.dataset.dismissEvent;
-
-      if (dismissEvent && !(this as any).serverHiding) {
-        (this as any).pushEvent(dismissEvent, {
-          parent_slug: this.el.dataset.parentSlug,
-          focus_delete_slug: this.el.dataset.focusDeleteSlug,
-        });
-      } else {
-        (this as any).pushEvent('phx_modal.unmount');
-      }
+      (this as any).pushEvent('phx_modal.unmount');
 
       unlockScroll(scrollPosition);
 

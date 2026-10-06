@@ -56,7 +56,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     project = socket.assigns.project
     author = socket.assigns.current_author
 
-    {all_objectives, objectives, table_model} = build_objectives(project)
+    {all_objectives, objectives, table_model, objective_parents} = build_objectives(project)
 
     socket =
       assign(socket,
@@ -66,6 +66,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         table_model: table_model,
         total_count: length(objectives),
         all_objectives: all_objectives,
+        objective_parents: objective_parents,
         coverage_model: nil,
         coverage_status: :loading,
         coverage_load_ref: make_ref(),
@@ -405,6 +406,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             rows={@table_model.rows}
             expanded_slugs={@expanded_objective_slugs}
             pending_detaches={@pending_sub_objective_detaches}
+            objective_parents={@objective_parents}
+            pending_deletes={@pending_sub_objective_delete_slugs}
             project_slug={@project.slug}
             offset={@offset}
             query={@query}
@@ -421,58 +424,34 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       |> ObjectiveEditor.fetch_objective_mappings()
       |> Enum.map(& &1.revision)
 
-    child_ids = all_child_ids(all_objectives)
+    objectives_by_id = Map.new(all_objectives, &{&1.resource_id, &1})
+
+    objective_parents =
+      Enum.reduce(all_objectives, %{}, fn objective, parents ->
+        Enum.reduce(Enum.uniq(objective.children), parents, fn child_id, parents ->
+          Map.update(parents, child_id, [objective.resource_id], &[objective.resource_id | &1])
+        end)
+      end)
 
     objectives =
-      Enum.reduce(all_objectives, [], fn rev, acc ->
-        case sub_objective?(rev, child_ids) do
-          false ->
-            mapped_children =
-              Enum.map(rev.children, fn resource_id ->
-                case Enum.find(all_objectives, fn rev -> rev.resource_id == resource_id end) do
-                  nil ->
-                    nil
+      all_objectives
+      |> Enum.reject(&Map.has_key?(objective_parents, &1.resource_id))
+      |> Enum.map(fn revision ->
+        children =
+          Enum.map(revision.children, fn resource_id ->
+            case Map.get(objectives_by_id, resource_id) do
+              nil -> nil
+              child -> Map.merge(child, base_coverage_fields())
+            end
+          end)
 
-                  child ->
-                    Map.merge(child, base_coverage_fields())
-                end
-              end)
-
-            [
-              rev
-              |> Map.merge(base_coverage_fields())
-              |> Map.merge(%{
-                children: mapped_children,
-                sub_objectives_count: length(mapped_children)
-              })
-            ] ++ acc
-
-          true ->
-            acc
-        end
+        revision
+        |> Map.merge(base_coverage_fields())
+        |> Map.merge(%{children: children, sub_objectives_count: length(children)})
       end)
 
     {:ok, table_model} = TableModel.new(objectives)
-
-    {all_objectives, objectives, table_model}
-  end
-
-  defp all_child_ids(objectives) do
-    objectives
-    |> Enum.flat_map(& &1.children)
-    |> MapSet.new()
-  end
-
-  defp sub_objective?(revision, child_ids) do
-    revision.objective_type == :sub_objective or MapSet.member?(child_ids, revision.resource_id)
-  end
-
-  defp objective_parent_counts(objectives) do
-    Enum.reduce(objectives, %{}, fn objective, counts ->
-      Enum.reduce(objective.children, counts, fn child_id, counts ->
-        Map.update(counts, child_id, 1, &(&1 + 1))
-      end)
-    end)
+    {all_objectives, objectives, table_model, objective_parents}
   end
 
   defp base_coverage_fields do
@@ -732,7 +711,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   defp return_updated_data(project, flash_fn, socket) do
-    {all_objectives, objectives, table_model} = build_objectives(project)
+    {all_objectives, objectives, table_model, objective_parents} = build_objectives(project)
 
     socket = cancel_async(socket, :objective_coverage)
 
@@ -754,6 +733,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         table_model: table_model,
         total_count: length(objectives),
         all_objectives: all_objectives,
+        objective_parents: objective_parents,
         coverage_model: nil,
         coverage_status: :loading,
         coverage_issue_ids: MapSet.new(),
@@ -1058,14 +1038,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     show_add_existing_sub_modal(socket, slug)
   end
 
-  def handle_event(
-        "return_to_add_existing",
-        %{"parent_slug" => parent_slug, "focus_delete_slug" => focus_delete_slug},
-        socket
-      ) do
-    show_add_existing_sub_modal(socket, parent_slug, focus_delete_slug)
-  end
-
   def handle_event("display_delete_modal", %{"slug" => slug}, socket) do
     socket = clear_flash(socket)
 
@@ -1133,7 +1105,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       ) do
     socket = clear_flash(socket)
 
-    case ObjectiveEditor.sub_objective_delete_eligibility(slug, socket.assigns.project) do
+    case ObjectiveEditor.sub_objective_delete_eligibility(
+           slug,
+           socket.assigns.project,
+           parent_slug
+         ) do
       {:ok, sub_objective} ->
         modal_assigns = %{
           id: "delete_sub_objective_modal",
@@ -1152,7 +1128,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
       {:error, :associated} ->
         {:noreply,
-         put_flash(socket, :error, "Associated sub-objectives cannot be permanently deleted")}
+         put_flash(
+           socket,
+           :error,
+           "This sub-objective has other learning-objective associations. Refresh and detach it instead."
+         )}
 
       {:error, :tagged} ->
         {:noreply,
@@ -1162,8 +1142,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
            "This sub-objective cannot be deleted because it is tagged to course content"
          )}
 
-      {:error, :not_found} ->
-        {:noreply, put_flash(socket, :error, "Could not find that sub-objective")}
+      {:error, reason} when reason in [:not_found, :not_associated] ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "The sub-objective association changed. Please refresh and try again"
+         )}
     end
   end
 
@@ -1216,7 +1201,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     end
   end
 
-  def handle_event("delete_sub_objective", %{"slug" => slug}, socket) do
+  def handle_event(
+        "delete_sub_objective",
+        %{"slug" => slug, "parent_slug" => parent_slug},
+        socket
+      ) do
     socket = clear_flash(socket)
     %{project: %{slug: project_slug}, author: %{email: author_email}} = socket.assigns
 
@@ -1238,7 +1227,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           |> start_async({:delete_sub_objective, slug}, fn ->
             with %{} = project <- Course.get_project_by_slug(project_slug),
                  %{} = author <- Accounts.get_author_by_email(author_email) do
-              ObjectiveEditor.delete_unassociated_sub_objective(slug, author, project)
+              ObjectiveEditor.delete_sub_objective(slug, author, project, parent_slug)
             else
               nil -> {:error, :not_found}
             end
@@ -1274,33 +1263,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     return_updated_data(project, flash_fn, socket)
   end
 
-  defp show_add_existing_sub_modal(socket, slug, focus_delete_slug \\ nil) do
-    %{project: project, all_objectives: all_objectives} = socket.assigns
+  defp show_add_existing_sub_modal(socket, slug) do
+    %{project: project, all_objectives: all_objectives, objective_parents: parents} =
+      socket.assigns
 
     %{children: objective_children} = AuthoringResolver.from_revision_slug(project.slug, slug)
     objective_child_ids = MapSet.new(objective_children)
-    child_ids = all_child_ids(all_objectives)
-    parent_counts = objective_parent_counts(all_objectives)
 
     sub_objectives =
       all_objectives
-      |> Enum.filter(&sub_objective?(&1, child_ids))
+      |> Enum.filter(&Map.has_key?(parents, &1.resource_id))
       |> Enum.reject(&MapSet.member?(objective_child_ids, &1.resource_id))
-      |> Enum.map(fn sub_objective ->
-        Map.put(
-          sub_objective,
-          :association_count,
-          Map.get(parent_counts, sub_objective.resource_id, 0)
-        )
-      end)
 
     modal_assigns = %{
       id: "select_existing_sub_modal",
       parent_slug: slug,
       sub_objectives: sub_objectives,
-      add: "add_existing_sub",
-      delete: "display_sub_objective_delete_modal",
-      focus_delete_slug: focus_delete_slug
+      add: "add_existing_sub"
     }
 
     modal = fn assigns ->
@@ -1309,12 +1288,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       """
     end
 
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   defp delete_objective(slug, parent_slug, project, author) do
@@ -1325,13 +1299,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   defp delete_objective_result(slug, parent_slug, project, author) do
-    %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
+    publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
 
-    ObjectiveEditor.detach_objective(resource_id, project, author)
+    with "" <- parent_slug,
+         %{resource_id: resource_id, children: []} <-
+           AuthoringResolver.from_revision_slug(project.slug, slug),
+         [] <- Oli.Publishing.objective_parent_ids(resource_id, publication_id) do
+      ObjectiveEditor.detach_objective(resource_id, project, author)
 
-    case ObjectiveEditor.delete(slug, author, project, parent_objective(project, parent_slug)) do
-      {:ok, _} -> :ok
-      {:error, _error} -> :error
+      case ObjectiveEditor.delete(slug, author, project) do
+        {:ok, _} -> :ok
+        {:error, _error} -> :error
+      end
+    else
+      _ -> :error
     end
   end
 
@@ -1340,7 +1321,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   defp sub_objective_delete_flash({:error, :associated}) do
     fn socket ->
-      put_flash(socket, :error, "Associated sub-objectives cannot be permanently deleted")
+      put_flash(
+        socket,
+        :error,
+        "This sub-objective has other learning-objective associations. Refresh and detach it instead."
+      )
     end
   end
 
@@ -1353,6 +1338,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       )
     end
   end
+
+  defp sub_objective_delete_flash({:error, :not_associated}),
+    do: fn socket ->
+      put_flash(socket, :error, "The sub-objective association changed. Please try again")
+    end
 
   defp sub_objective_delete_flash({:error, :not_found}),
     do: fn socket -> put_flash(socket, :error, "Could not find that sub-objective") end
@@ -1395,6 +1385,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             {:ok, _revision} ->
               fn socket ->
                 put_flash(socket, :info, "Sub-objective detached from learning objective")
+              end
+
+            {:error, :last_association} ->
+              fn socket ->
+                put_flash(
+                  socket,
+                  :error,
+                  "This is the final association. Refresh and confirm deletion instead."
+                )
               end
 
             {:error, _reason} ->
@@ -1472,11 +1471,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       {:noreply, socket}
     end
   end
-
-  defp parent_objective(_project, ""), do: nil
-
-  defp parent_objective(project, slug),
-    do: AuthoringResolver.from_revision_slug(project.slug, slug)
 
   defp apply_coverage_result({:ok, model}, socket) do
     assessment_buckets =

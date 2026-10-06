@@ -6,6 +6,9 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
 
+  @moduletag isolation: "serializable"
+  setup :setup_tags
+
   describe "objective editing" do
     setup do
       map =
@@ -404,11 +407,10 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       updated_sub_objective =
         AuthoringResolver.from_revision_slug(project.slug, subobjective12A_slug)
 
-      assert updated_sub_objective.objective_type == :sub_objective
       refute updated_sub_objective.deleted
     end
 
-    test "remove_sub_objective_from_parent/4 rejects a mismatched parent and keeps the type", %{
+    test "remove_sub_objective_from_parent/4 rejects a mismatched parent", %{
       project: project,
       author: author,
       map: %{
@@ -427,7 +429,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
                )
 
       unchanged = AuthoringResolver.from_resource_id(project.slug, subobjective3A_resource_id)
-      assert unchanged.objective_type == :objective
+      refute unchanged.deleted
     end
 
     test "remove_sub_objective_from_parent/4 rejects a repeated detach", %{
@@ -455,7 +457,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
                )
     end
 
-    test "remove_sub_objective_from_parent/4 reuses an already classified child revision", %{
+    test "unlink rejects the final association without changing either revision", %{
       project: project,
       author: author
     } do
@@ -465,9 +467,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       {:ok, %{revision: child}} =
         ObjectiveEditor.add_new(%{title: "Child"}, author, project, parent.slug)
 
-      assert child.objective_type == :sub_objective
-
-      assert {:ok, _parent} =
+      assert {:error, :last_association} =
                ObjectiveEditor.remove_sub_objective_from_parent(
                  child.slug,
                  author,
@@ -475,26 +475,138 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
                  parent.slug
                )
 
-      unchanged_child = AuthoringResolver.from_resource_id(project.slug, child.resource_id)
+      assert AuthoringResolver.from_resource_id(project.slug, child.resource_id).id == child.id
 
-      assert unchanged_child.id == child.id
-      assert unchanged_child.objective_type == :sub_objective
+      assert child.resource_id in AuthoringResolver.from_resource_id(
+               project.slug,
+               parent.resource_id
+             ).children
     end
 
-    test "delete_unassociated_sub_objective/3 rejects an associated sub-objective", %{
+    test "delete_sub_objective/4 removes an untagged final association atomically", %{
       author: author,
       project: project
     } do
-      {:ok, %{revision: parent}} =
-        ObjectiveEditor.add_new(%{title: "Parent"}, author, project)
+      {:ok, %{revision: parent}} = ObjectiveEditor.add_new(%{title: "Parent"}, author, project)
 
       {:ok, %{revision: child}} =
         ObjectiveEditor.add_new(%{title: "Child"}, author, project, parent.slug)
 
+      assert {:ok, _} =
+               ObjectiveEditor.sub_objective_delete_eligibility(child.slug, project, parent.slug)
+
+      assert {:ok, deleted} =
+               ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug)
+
+      assert deleted.deleted
+      assert AuthoringResolver.from_resource_id(project.slug, parent.resource_id).children == []
+
+      refute Enum.any?(
+               ObjectiveEditor.fetch_objective_mappings(project),
+               &(&1.resource_id == child.resource_id)
+             )
+
+      assert {:error, :not_found} =
+               ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug)
+
+      assert {:error, :not_found} =
+               ObjectiveEditor.add_new_parent_for_sub_objective(
+                 child.slug,
+                 parent.slug,
+                 project.slug,
+                 author
+               )
+    end
+
+    test "delete_sub_objective/4 rejects shared children", %{
+      author: author,
+      project: project,
+      map: %{
+        objective1: %{revision: parent},
+        subobjective12A: %{revision: child}
+      }
+    } do
       assert {:error, :associated} =
-               ObjectiveEditor.delete_unassociated_sub_objective(child.slug, author, project)
+               ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug)
 
       refute AuthoringResolver.from_resource_id(project.slug, child.resource_id).deleted
+
+      assert child.resource_id in AuthoringResolver.from_resource_id(
+               project.slug,
+               parent.resource_id
+             ).children
+    end
+
+    test "delete_sub_objective/4 rejects activity-tagged children and preserves their final association",
+         %{
+           author: author,
+           project: project
+         } do
+      {:ok, %{revision: parent}} = ObjectiveEditor.add_new(%{title: "Parent"}, author, project)
+
+      {:ok, %{revision: child}} =
+        ObjectiveEditor.add_new(%{title: "Child"}, author, project, parent.slug)
+
+      {:ok, {%{resource_id: activity_id}, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_multiple_choice",
+          author,
+          %{"stem" => "one"},
+          [],
+          :banked
+        )
+
+      activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
+
+      assert {:ok, tagged_activity} =
+               ObjectiveEditor.edit(
+                 activity.slug,
+                 %{objectives: %{"part" => [child.resource_id]}},
+                 author,
+                 project
+               )
+
+      assert {:error, :tagged} =
+               ObjectiveEditor.sub_objective_delete_eligibility(child.slug, project, parent.slug)
+
+      assert {:error, :tagged} =
+               ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug)
+
+      refute AuthoringResolver.from_resource_id(project.slug, child.resource_id).deleted
+
+      assert child.resource_id in AuthoringResolver.from_resource_id(
+               project.slug,
+               parent.resource_id
+             ).children
+
+      assert AuthoringResolver.from_resource_id(project.slug, activity_id).objectives ==
+               tagged_activity.objectives
+    end
+
+    test "shared unlink preserves child revision and course tags", %{
+      author: author,
+      project: project,
+      map: %{
+        objective1: %{revision: parent},
+        subobjective12A: %{revision: child}
+      }
+    } do
+      assert {:ok, tagged_child} =
+               ObjectiveEditor.edit(child.slug, %{tags: [1, 2]}, author, project)
+
+      assert {:ok, _} =
+               ObjectiveEditor.remove_sub_objective_from_parent(
+                 tagged_child.slug,
+                 author,
+                 project,
+                 parent.slug
+               )
+
+      assert AuthoringResolver.from_resource_id(project.slug, child.resource_id).id ==
+               tagged_child.id
+
+      assert AuthoringResolver.from_resource_id(project.slug, child.resource_id).tags == [1, 2]
     end
 
     test "detach_objective/3 preserves tags when removing an objective from a banked activity", %{

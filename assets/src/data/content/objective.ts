@@ -6,5 +6,4 @@ export type Objective = {
   id: ResourceId;
   title: string;
   parentIds: ResourceId[] | null;
-  objectiveType?: 'objective' | 'sub_objective';
 };
