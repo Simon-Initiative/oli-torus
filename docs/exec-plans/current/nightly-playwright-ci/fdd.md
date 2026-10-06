@@ -6,7 +6,7 @@ Extend `.github/workflows/nightly-playwright.yml` with a serialized build-to-tes
 
 Split probes by purpose: `/healthz` serves dependency-free startup/liveness, and `/readyz` checks application readiness and returns compiled `version`/`sha`. Include startup completion, draining and reviewed GitOps probe/lifecycle changes in this work. CI’s pre-test `/readyz` check observes the expected public source identity; it does not establish replica convergence or distinguish same-source rebuilds.
 
-GitOps branch policy, integration provisioning, and operational ownership remain launch gates in section 16. The provisional design retains all ten currently tagged cases, including the eight required adaptive cases, and uses validated bot PRs with automatic merge subject to repository rules.
+The GitOps update path uses validated bot PRs with automatic merge after required checks pass and repository rules permit it. Verify branch rules and bot permissions during implementation before launch. Integration provisioning remains a launch gate; maintenance responsibilities are assigned by role in section 4.3. Deferred implementation audits are summarized in section 16. Initial delivery includes all currently tagged nightly tests, including adaptive, Canvas LTI and Dot coverage; tags remain the sole source of membership.
 
 ## 2. Requirements & Assumptions
 
@@ -30,9 +30,9 @@ Assumptions and scope:
 - Keep the daily `17 5 * * *` schedule and manual dispatch. Both nightly entry points resolve `refs/heads/master` once after obtaining the target lock. Manual dispatch is restricted to the protected master workflow; arbitrary branch/SHA deployments are outside initial scope. Record the workflow SHA separately if it differs from the selected source SHA.
 - Both PR and nightly use `MIX_ENV=playwright`; their shared configuration directly enables scenarios and mailbox access. Both select secret-protected deterministic reCAPTCHA at compile time, with distinct runtime tokens. PR continues to test its existing pull-request checkout with disposable services.
 - Use the existing GHCR repository `ghcr.io/simon-initiative/oli-torus` with a distinct Playwright image tag namespace; the GitOps record only accepts an image tag, not a different repository or digest field.
-- Propose all ten current nightly cases as required. Until scope is confirmed, missing Canvas/Dot configuration blocks launch rather than implicitly reducing coverage.
+- Include all currently tagged nightly tests in initial delivery, including Canvas LTI and Dot. Missing Canvas/Dot configuration blocks unattended launch. Provision Canvas to launch into the nightly Torus deployment and Dot with a dedicated fixture on that deployment; supply external URLs and credentials during provisioning.
 - The deployment is currently disabled in the inspected GitOps draft. Provisioning and enabling it are separate reviewed GitOps work. Recurring CI cannot change lifecycle, access policy, overlay, hostname, or infrastructure.
-- No UI, domain schema, new feature flags, or application throughput SLA. Per `harness.yml`, include telemetry, review and Jira traceability; CI summaries provide orchestration telemetry without new AppSignal instrumentation.
+- No production UI or domain schema changes, new feature flags, or throughput SLA. Playwright forms omit the external captcha widget/script. CI summaries provide telemetry; implementation retains required review and Jira traceability.
 
 ## 3. Repository Context Summary
 
@@ -74,12 +74,12 @@ Proposed implementation boundaries:
 | `lib/oli/health.ex` (new), `lib/oli/application.ex` | Own node-local startup/drain state and bounded readiness checks; wire actual application startup/shutdown transitions |
 | Existing health controller/view, new readiness controller/view, router, SSL plug and tests | Local-only `/healthz`; `/readyz` with readiness status/metadata, HTTP 503 failures, direct pod HTTP and no-store responses |
 | `assets/automation/package.json`, `package-lock.json` | Direct engine dependency aligned with product lockfile |
-| `assets/automation/playwright.nightly.config.ts` (new) | Extend shared settings with explicit CI reporters and privacy settings without altering local/PR defaults |
+| `assets/automation/playwright.nightly.config.ts` (new) | Extend shared settings with nightly reporters and privacy controls; apply token-protection changes to PR tests as specified in the captcha contract |
 | `assets/automation/tests/resources/nightly-ci.md` | Operator setup, tag-based selection, integration target policy, cleanup and incident procedures |
 | GitOps updater/record checks in `oli-torus-gitops` | Content-preserving allowlisted update and policy-conforming merge; separate repository ownership |
 | GitOps application deployment manifests in `oli-torus-gitops` | Reviewed startup/liveness/readiness probe and shutdown-drain configuration, independently of recurring image updates |
 
-Use the existing Node/TypeScript execution tooling or compile the small automation helper with its installed TypeScript compiler; do not introduce another test orchestration framework. Python handles CI orchestration outside browser fixtures; Playwright handles selection, execution and reporting.
+Use existing automation tooling for the shared form helper. Python handles CI orchestration; Playwright handles selection, execution and reporting. No separate suite orchestration or results-validation helper is required.
 
 ### 4.2 State & Data Flow
 
@@ -96,9 +96,15 @@ A run provenance record contains source ref/SHA/version, workflow SHA, run ID/at
 
 ### 4.3 Lifecycle & Ownership
 
-Torus maintainers own workflow/helpers, release capabilities, probe lifecycle/readiness metadata, and selected-test execution checks. GitOps maintainers own provisioning, branch policy, ingress, secrets, probe/drain manifests, image write permissions and Argo reconciliation. QA/test owners own private fixture correctness and Canvas/Dot registrations. Named on-call/cleanup ownership is a launch gate.
+| Owner | Responsibility |
+| --- | --- |
+| Torus maintainers | Workflows/helpers, release settings, application probes/lifecycle, automation credentials, failure triage and stale test-data/mailbox cleanup procedures |
+| GitOps maintainers | Deployment provisioning, runtime-secret installation, branch policy, ingress, probe/drain manifests, image permissions and Argo reconciliation |
+| QA/test owners | Private assets and answer keys, Canvas accounts/registration and Dot fixtures |
 
-The target has one routine writer: this workflow. Operators pause new target runs and wait for the active interval to finish before manual image changes. The pre-test identity check, serialized runs and this operator policy provide the deployment-stability contract (AC-020).
+Ownership is role-based; no named individuals or dedicated on-call rotation are required. Reporting is defined in section 11.
+
+This workflow is the sole routine deployment writer. Operators pause new runs and wait for the active run to finish before manual image changes (AC-020).
 
 ### 4.4 Alternatives Considered
 
@@ -107,7 +113,7 @@ The target has one routine writer: this workflow. Operators pause new target run
 - **Production image with runtime-only test flags:** cannot enable compiled-out routes. A standalone `playwright` compile environment keeps production exclusions intact.
 - **Argo/Kubernetes rollout polling:** offers different rollout evidence but adds infrastructure credentials and exceeds the chosen public-readiness contract.
 - **Split deployment and test jobs:** would require a lock spanning jobs. One job gives a clear protected interval without another lock service.
-- **Direct bot commits:** simpler and avoids pending auto-merge state, but only valid if branch rules explicitly permit it. Do not fall back to direct writes when PR checks fail.
+- **Direct bot commits:** not selected. Bot PRs retain required validation and visible deployment history. Do not fall back to direct writes when PR checks fail.
 
 ## 5. Interfaces
 
@@ -125,7 +131,7 @@ config :oli,
 config :oli, Oli.Mailer, adapter: Swoosh.Adapters.Local
 ```
 
-Selecting `MIX_ENV=playwright` sets the shared compile-time application configuration for both workflows. Runtime configuration is still required, including `PLAYWRIGHT_RECAPTCHA_TOKEN`, supplied with the same value to the Torus server and Playwright runner. Secrets are never passed as Docker build arguments. Keep existing router `Application.compile_env` gates and capture the selected reCAPTCHA module through the shared verifier’s compile-time configuration. `runtime.exs` must not override these selections, and changing process environment variables after compilation must not change compiled capabilities. Production retains disabled test routes and normal reCAPTCHA even when the runtime test token is present (AC-005). Existing dev/test behavior need not change.
+Selecting `MIX_ENV=playwright` sets these application values at compile time; runtime configuration, including the shared server/runner `PLAYWRIGHT_RECAPTCHA_TOKEN`, is still required. Keep router `Application.compile_env` gates and capture the verifier module at compile time. `runtime.exs` and post-build process environment changes must not override these choices. Production excludes test routes and uses normal reCAPTCHA even with a runtime test token present (AC-005). Preserve existing dev/test behavior; secret handling is defined below.
 
 The PR workflow sets `MIX_ENV=playwright` before all Mix steps; the nightly Docker build selects the same environment and supplies `SHA` for build identity. Configuration changes must invalidate relevant compile caches and Docker layers (AC-036). Runtime token values are independent of the artifact. Do not publish or promote a PR artifact into the durable target.
 
@@ -133,7 +139,7 @@ Configure static asset manifests, info-level logging and `Swoosh.Adapters.Local`
 
 ### PR migration and runtime inputs
 
-The existing PR workflow continues using its pull-request checkout, disposable Postgres service, `mix ecto.setup`, `mix phx.server` and `--grep @pr`; change its server wait from `/` to HTTP 200 `/readyz`. Sharing the Mix environment does not require registry publication or GitOps operations (AC-003, AC-035). Set `MIX_ENV=playwright` throughout, update cache names and explanatory comments, and delete `config/ci_e2e.exs` in the same change. Migrate all active workflow, script, configuration and documentation references to `playwright`; leave no `ci_e2e` alias, wrapper or fallback. Replace development-derived startup values with an explicit job configuration. Build frontend and server-side bundles plus Tailwind/digested assets through the supported release asset pipeline before startup; `yarn run deploy` alone is not the design contract for a release-style endpoint.
+Preserve the PR checkout, disposable Postgres, `mix ecto.setup`, `mix phx.server` and `--grep @pr`; wait for HTTP 200 `/readyz` instead of `/` (AC-003, AC-035). Use `MIX_ENV=playwright` throughout and explicit runtime values below. Delete `config/ci_e2e.exs` and migrate active workflow/script/configuration/docs references together, without an alias, wrapper or fallback. Update cache names. Build frontend/server bundles, Tailwind and digested assets through the release asset pipeline before startup; `yarn run deploy` alone is insufficient. PR needs no publication, GitOps permissions or nightly credentials.
 
 | Runtime concern | PR workflow | Durable nightly deployment |
 | --- | --- | --- |
@@ -144,11 +150,11 @@ The existing PR workflow continues using its pull-request checkout, disposable P
 | Storage settings | Explicit test bucket/media settings required for boot, with no real storage credentials or private asset dependency for the current `@pr` selection | Dedicated media/xAPI/test buckets, endpoints and server-side credentials |
 | reCAPTCHA token | Generate a dedicated job-scoped `PLAYWRIGHT_RECAPTCHA_TOKEN`, shared by server and runner | Dedicated `PLAYWRIGHT_RECAPTCHA_TOKEN` deployment/CI secret, separate from the scenario/mailbox token |
 
-Load `PLAYWRIGHT_SCENARIO_TOKEN` into the existing application key at runtime and fail startup if empty/missing when scenario or mailbox capabilities are compiled in. Load `PLAYWRIGHT_ASSETS_BUCKET` and ExAws settings at runtime. The shared environment must permit PR startup without a private-assets bucket; nightly preflight requires that bucket and checks authenticated access before tests. Missing storage configuration remains an error when an asset-dependent operation is invoked. Tokens, database credentials, signing salts and storage keys are runtime inputs, never Docker build arguments or compile-time configuration values (AC-006). Keep both workflow startup commands and build contexts consistent with that separation; compilation must succeed without deployment secrets.
+Load `PLAYWRIGHT_SCENARIO_TOKEN` into its existing application key at startup; missing/empty tokens fail boot when scenario/mailbox routes are compiled in. Load `PLAYWRIGHT_ASSETS_BUCKET` and ExAws settings at runtime. PR must boot without the private-assets bucket; nightly validates it and authenticated access before tests. Asset-dependent operations fail without required storage configuration. All tokens, database credentials, signing salts and storage keys are runtime-only (AC-006): compilation needs no deployment secrets, and none enter Docker build arguments or layers.
 
 ### reCAPTCHA test-token contract
 
-Replace the unconditional success behavior in `Oli.Playwright.Recaptcha` with token verification for both workflows (AC-037). Compile `Oli.Recaptcha` with `Oli.Playwright.Recaptcha`, selected directly in `config/playwright.exs`. Route remaining direct calls to `Oli.Utils.Recaptcha.verify/1` through `Oli.Recaptcha.verify/1`, preserving production’s normal implementation and response contract. This keeps registration, invitations, LTI, delivery and other captcha-protected entry points consistent.
+Replace the unconditional success behavior in `Oli.Playwright.Recaptcha` with token verification for both workflows (AC-037). Compile `Oli.Recaptcha` with `Oli.Playwright.Recaptcha`, selected directly in `config/playwright.exs`. Route remaining direct calls to `Oli.Utils.Recaptcha.verify/1` through `Oli.Recaptcha.verify/1`, preserving production’s normal implementation and response contract. Apply this boundary to registration, invitations, LTI, delivery and other captcha-protected entry points.
 
 When the test implementation is selected, require a nonempty `PLAYWRIGHT_RECAPTCHA_TOKEN` at runtime and fail startup on missing/empty configuration. For a nonempty string `g-recaptcha-response`, compare with that token using `Plug.Crypto.secure_compare/2`. A match returns `{:success, true}` without contacting Google. Nonmatching, missing, empty or non-string responses return `{:success, false}` locally. No Playwright verification path calls Google or falls back to the normal verifier. The test secret does not replace account or API authentication. Neither PR nor nightly requires Google reCAPTCHA site/server keys or human widget support. Normal production verification remains unchanged.
 
@@ -168,19 +174,19 @@ Migrate these confirmed call sites:
 | `assets/automation/src/systems/torus/pom/course/StudentCoursePO.ts`, `fillAutomationRecaptchaResponse` | Injects `playwright-test-token` and suggests development keys/load-testing mode on failure | Replace injection with the shared helper and update the failure message for runtime token configuration |
 | `assets/automation/tests/torus/student_payment/support.ts`, `submitPaymentCode` | Injects `playwright-test-token` into the payment form | Use the shared helper before payment-code submission |
 
-Audit remaining protected form submissions and add the helper where necessary, including any invitation/LTI flows exercised by the selected suites. Update fixtures together with the verifier so no existing test is left dependent on accepting a missing/arbitrary response. Tests that do not submit a captcha-protected form need no token injection. Scope widget omission to the Playwright environment. Verify protected forms submit with the test token without Google keys or widget interaction, and reject incorrect or missing responses.
+Migrate any other protected submissions exercised by the suites, including invitation/LTI flows, together with the verifier. Forms without captcha need no token injection. Verify correct token submission and rejection of missing/incorrect responses under the contract above.
 
 ### Mailbox contract
 
-Both workflows compile `enable_e2e_mailbox: true` and use `Swoosh.Adapters.Local` (AC-034). Preserve `GET /test/emails?to=<recipient>` and `GET /test/emails/:id`, including the existing optional subject filter and JSON contract. Both endpoints require the existing `x-playwright-scenario-token` authorization; missing/wrong tokens fail. No extra nightly-only mailbox gate is needed. Captured mail is not sent through SES/SMTP.
+The shared compile settings above enable local mail capture and the mailbox API (AC-034). Preserve `GET /test/emails?to=<recipient>` and `GET /test/emails/:id`, including the existing optional subject filter and JSON contract. Both endpoints require the existing `x-playwright-scenario-token` authorization; missing/wrong tokens fail. No extra nightly-only mailbox gate is needed. Captured mail is not sent through SES/SMTP.
 
-Tests use run-unique recipients and retrieve only the messages they created. Mailbox state is in-memory and instance-local: startup/restart begins a new mailbox, and mailbox-dependent flows initially require a single application replica. Deployment serialization keeps routine rollouts outside test execution, but restart during an email flow can still fail that flow. Do not add shared mailbox persistence or replica routing in this work item; revisit those boundaries before scaling mailbox-dependent tests. Define bounded mailbox retention or controlled instance recycling between runs in the operator runbook; do not clear all messages during active test execution. Reports and traces must not expose captured confirmation/reset links or message bodies.
+Tests use run-unique recipients and retrieve only the messages they created. Mailbox state is in-memory and instance-local: startup/restart begins a new mailbox, and mailbox-dependent flows initially require a single application replica. Deployment serialization keeps routine rollouts outside test execution, but restart during an email flow can still fail that flow. Do not add shared mailbox persistence or replica routing in this work item; revisit those boundaries before scaling mailbox-dependent tests. Use the fresh application process created by each nightly deployment to clear the instance-local, in-memory mailbox. No scheduled mailbox cleanup service is required initially; do not clear messages or recycle the instance during active test execution. Reports and traces must not expose captured confirmation/reset links or message bodies.
 
 ### Nightly image publication
 
-Use tag `sha-<full SHA>-playwright-<run ID>-<attempt>` in the existing GHCR repository. Include source/version OCI labels and retain the published digest in provenance. Treat a pre-existing tag as a collision: fail or reuse the already published digest without rebuilding/overwriting it. Never publish nightly output to production tag names or `latest`. Build from a clean context before materializing runtime configuration; exclude automation dependencies, reports, downloaded assets and local secret files from the Docker context. Scope cache keys by Mix environment, toolchain, lockfiles, compile configuration and workflow trust boundary.
+Use tag `sha-<full SHA>-playwright-<run ID>-<attempt>` in the existing GHCR repository. Include source/version OCI labels and retain the published digest in provenance. A pre-existing tag is a collision: fail publication before changing GitOps intent. Never overwrite or reuse it for this run. Never publish nightly output to production tag names or `latest`. Build from a clean context before materializing runtime configuration; exclude automation dependencies, reports, downloaded assets and local secret files from the Docker context. Scope cache keys by Mix environment, toolchain, lockfiles, compile configuration and workflow trust boundary.
 
-Required adaptive/scenario logic lives in `lib/`; do not add `test/support` or preview seeding modules to `playwright` `elixirc_paths`. Existing support asset endpoints resolve paths from the source tree, which a final release does not retain. During implementation, verify every selected case's support-asset needs; package any required public fixtures under release `priv/` and resolve them via application paths, with existing local behavior retained. Private course archives remain exclusively in object storage. A release smoke check must catch missing runtime files/modules rather than assuming compilation proves functionality.
+Required adaptive/scenario logic lives in `lib/`; do not add `test/support` or preview seeding modules to `playwright` `elixirc_paths`. Existing support asset endpoints resolve paths from the source tree, which a final release does not retain. During implementation, verify every selected case's support-asset needs; package any required public fixtures under release `priv/` and resolve them via application paths, with existing local behavior retained. Private course archives remain exclusively in object storage. Initial delivery uses the existing configured archives and answer keys without a new asset-versioning mechanism. QA/test owners maintain these together and do not change them during active runs. Rerunning the same application commit may use updated assets; revisit version pinning if reproducing historical runs becomes necessary. A release smoke check must catch missing runtime files/modules rather than assuming compilation proves functionality.
 
 ### Probe contracts
 
@@ -230,7 +236,7 @@ Set an initial 60-second termination grace period. Bound the local drain RPC to 
 
 ### Readiness helper contract
 
-Inputs: fixed public HTTPS `/readyz` URL, expected version, expected full lowercase SHA, total deadline, request timeout, polling interval, diagnostic output path. Validate inputs before requests. Initial defaults: 20-minute readiness deadline, 10-second maximum per request, 10-second interval; clamp request/sleep duration to remaining monotonic deadline. No redirects, TLS bypass, cookies or infrastructure auth header. Reject URLs with userinfo or a hostname other than the configured nightly target.
+Inputs: fixed public HTTPS `/readyz` URL, expected version, expected full lowercase SHA, total deadline, request timeout, polling interval, diagnostic output path. Validate inputs before requests. Approved defaults: 20-minute readiness deadline after GitOps merge, 10-second maximum per request, 10-second interval; clamp request/sleep duration to remaining monotonic deadline. No redirects, TLS bypass, cookies or infrastructure auth header. Reject URLs with userinfo or a hostname other than the configured nightly target.
 
 Accept only HTTP 200 with JSON object containing string `status`, `version`, `sha`, `status == "ready"`, and exact version/SHA equality. Missing/malformed fields, login HTML, 3xx, other HTTP codes, network errors and old identities are failed observations and retried until deadline. Disable intermediary probe caching through deployment configuration and send no-cache request headers. Record only bounded status/category and allowlisted identity fields, not arbitrary response bodies. Exit nonzero on timeout/invalid input and write expected/last-observed identity with elapsed time.
 
@@ -244,13 +250,13 @@ All paths in this paragraph are relative to `oli-torus-gitops`. Preflight requir
 
 Allowed semantic changes are exactly `imageTag`, `metadata.sourceRef`, and `metadata.commitSha`. Preserve other values and unrelated textual content/comments. The current `yaml.safe_dump` writer needs a content-preserving adjustment verified by fixture tests before use under AC-009. Run `scripts/validate_deployments.py`, `scripts/validate_gitops_policy.py` and the repository's required static renders/checks. Revalidate on branch conflicts; do not force-push the tracked branch.
 
-Proposed transport: a repository-scoped GitHub App installation token creates a bot branch/PR and enables automatic merge only after required checks and branch rules permit it. Target a configured protected branch; record the accepted commit and confirm the record at that branch before polling. Acceptance deadline: 15 minutes, configurable. On timeout/cancellation, disable auto-merge and close any unmerged run-owned PR; if merge raced closure, reconcile and record the accepted state. A subsequent run must reject or settle outstanding prior run PRs before changing intent, including PRs left by a hard runner termination. Do not leave an unattended update capable of merging during a later test interval. Branch policy must support this lifecycle before scheduling is enabled.
+Use a repository-scoped GitHub App installation token to create a bot branch/PR and enable automatic merge after required checks pass and branch rules permit it. Target a configured protected branch; record the accepted commit and confirm the record at that branch before polling. Approved merge-wait deadline: 15 minutes by default, configurable. On timeout/cancellation, disable auto-merge and close any unmerged run-owned PR; if merge raced closure, reconcile and record the accepted state. A subsequent run must reject or settle outstanding prior run PRs before changing intent, including PRs left by a hard runner termination. Do not leave an unattended update capable of merging during a later test interval. During implementation, verify the target branch, required checks and installation permissions support this lifecycle without per-run human approval before scheduling is enabled. Direct commits are not an alternative or fallback.
 
 ### Tag-based suite selection
 
 The `@nightly` tags in test sources are the sole source of suite membership (AC-021). Run `npx playwright test --config playwright.nightly.config.ts --grep @nightly` at the same source checkout, with selection handled by the test invocation (AC-031). Adding or removing a tag changes selection through normal code review, without an expected-test list to update.
 
-During implementation, verify the eight audited adaptive cases documented in `assets/automation/tests/resources/adaptive-tests-setup.md` retain their tags. Canvas LTI and Dot are also currently tagged; they execute unless a reviewed tag change explicitly defers them. The setup documentation records asset/configuration needs, not a second source of test selection.
+During implementation, verify the eight audited adaptive cases documented in `assets/automation/tests/resources/adaptive-tests-setup.md` retain their tags. Canvas LTI and Dot are also currently tagged and included in initial delivery. Subsequent membership changes follow normal tag review. The setup documentation records asset/configuration needs, not a second source of test selection.
 
 Fail collection/import errors or zero matching tests during the test invocation; do not enable a pass-with-no-tests option. Validate configuration required by the selected tests; absent credentials, assets or integration settings must fail setup rather than cause a silent skip (AC-022). Use Playwright’s exit status to determine the browser-step outcome (AC-024). Skips and retries remain visible in standard reports; no blanket skip-failure rule, expected-results inventory or custom results validator is required. Retain the existing retry policy.
 
@@ -264,7 +270,7 @@ Explicit configuration:
 | --- | --- |
 | Adaptive | Exact nightly `PLAYWRIGHT_BASE_URL`, nonempty scenario token and automation API key; all eight archives and seven answer files documented in `assets/automation/tests/resources/adaptive-tests-setup.md` must be accessible via authenticated Torus asset routes. No default `my-token` fallback in nightly. |
 | Canvas | Explicit `CANVAS_BASE_URL`, account ID/API token, instructor credentials, tool name, and `CANVAS_TOOL_LAUNCH_URL`; `TORUS_BASE_URL` and launch origin must equal the nightly origin. Supply dedicated Torus admin credentials required by the current fixture. Provision corresponding LTI registration. Do not inherit Tokamak defaults. |
-| Dot | Require protected `PLAYWRIGHT_PARAMETER_CONFIG_URL`; validate downloaded YAML without logging it and require its `target.base_url` to equal the nightly origin. Prefer existing-fixture mode for initial durable use, with a dedicated enrolled test user/section and working Dot service configuration; scenario mode needs an explicit cleanup policy before adoption. |
+| Dot | Require protected `PLAYWRIGHT_PARAMETER_CONFIG_URL`; validate downloaded YAML without logging it and require its `target.base_url` to equal the nightly origin. Use existing-fixture mode initially, with a dedicated enrolled test user/section on the nightly deployment and working Dot service configuration; scenario mode needs an explicit cleanup policy before adoption. |
 
 Missing selected integration configuration is a setup failure. Freeze the validated Dot parameter document in runner temporary storage for the test invocation so a second download cannot change its target; add a narrow loader option for this local file if needed. Do not include secrets in test output or upload that file. Configuration validation is a nightly-specific gate, preserving optional local test behavior.
 
@@ -272,13 +278,13 @@ Missing selected integration configuration is a setup failure. Freeze the valida
 
 No database migration or application schema change. Nightly releases run applicable migrations via the GitOps init container; persistent Postgres, MinIO and integration registrations survive image updates. Nightly CI never resets the database, deletes a namespace, or recreates shared credentials. PR CI continues to create, migrate and seed a disposable database that is destroyed with its runner.
 
-Transient run data lives on the runner: provenance, sanitized stage diagnostics, HTML reports and permitted test diagnostics/screenshots/traces. Upload only explicit allowlisted artifacts to the GitHub Actions workflow run with 14-day retention; remove downloaded private assets and secret parameter files. GHCR stores immutable images, and Git records deployment intent/provenance. Private asset contents are not new source-controlled data. Captured email is transient Swoosh memory, not part of the persistent nightly database/object-storage contract; operation must bound its accumulation between runs.
+Transient run data lives on the runner: provenance, sanitized stage diagnostics, HTML reports and permitted test diagnostics/screenshots/traces. Upload only explicit allowlisted artifacts to the GitHub Actions workflow run with 14-day retention; remove downloaded private assets and secret parameter files. GHCR stores immutable images, and Git records deployment intent/provenance. Private asset contents are not new source-controlled data. Captured email is transient Swoosh memory, not part of the persistent nightly database/object-storage contract; each nightly application deployment starts with a fresh mailbox.
 
 ## 7. Consistency & Transactions
 
 There is no distributed transaction across GHCR, GitHub, Argo and Torus. Order operations so publication precedes intent, branch acceptance precedes readiness, and readiness precedes tests. An orphaned published image is acceptable; failed publication cannot alter deployment intent. An accepted update remains deployed after test failure until an operator decides otherwise.
 
-The job lock spans preflight through test execution and finalization. Test fixtures retain run-specific identities and existing cleanup. Plate-tectonics currently bounds teardown and logs leaked slugs; retain those warnings in actionable diagnostics. Dot existing-fixture mode avoids adding a new scenario's users/projects nightly, but conversations/attempts may still accumulate and need operator retention. Named cleanup ownership and an inventory/retention procedure are required before launch. Do not convert existing best-effort cleanup to database resets or automatic migration rollback.
+The job lock spans preflight through test execution and finalization. Test fixtures retain run-specific identities and existing cleanup. Plate-tectonics currently bounds teardown and logs leaked slugs; retain those warnings in actionable diagnostics. Dot existing-fixture mode avoids adding a new scenario's users/projects nightly, but conversations/attempts may still accumulate. Torus maintainers clean stale data from failed runs between runs as needed, preserving durable integration fixtures. Document this procedure in the operator runbook; no new scheduled cleanup service is required initially. Do not convert existing best-effort cleanup to database resets or automatic migration rollback.
 
 ## 8. Caching Strategy
 
@@ -306,7 +312,7 @@ The bounded requests, polling and job timeouts specified elsewhere remain failur
 | Release migration/init failure | Readiness times out; operator inspects deployment via their normal access. CI has no cluster credentials. |
 | Missing asset/authentication or wrong integration target | Fail setup with consumer/key identifier, without secret values or asset contents. |
 | Playwright exits nonzero or the test step times out | Mark the test step failed; upload available diagnostics and preserve stage provenance. |
-| Cleanup fails | Preserve warning and affected synthetic fixture identifiers for the named operator; no rollback/reset. |
+| Cleanup fails | Preserve warning and affected synthetic fixture identifiers for Torus maintainers; no rollback/reset. |
 | Cancellation/runner loss | No validated success; next run settles stale bot PRs and rechecks intent/configuration. Artifacts and cleanup are best-effort on hard termination. |
 
 Do not automatically retry full deployments or rerun the whole suite indefinitely. A manual rerun selects current master anew and records that selection; exact-source replay is not promised by initial manual policy.
@@ -317,7 +323,7 @@ Always produce a GitHub step summary when the runner remains available. Include 
 
 Use an explicit nightly reporter set: line and HTML with `open: never`. Do not override the configured reporters with `--reporter=line`. Retain `actions/upload-artifact` steps with `if: always()` to upload available reports/diagnostics even after test failure. Upload `assets/automation/playwright-report/` as `playwright-report` and `assets/automation/test-results/` as `playwright-test-results`, each with 14-day retention (AC-028). These are downloadable GitHub Actions artifacts attached to the specific workflow run, available from its summary’s Artifacts section. The HTML report is not published as a website. Pre-test failures still produce sanitized stage diagnostics and a summary; upload only files that were generated, without introducing a missing-results success gate.
 
-GitHub Actions outcomes are the initial failure signal. Named notification ownership/channel remains a launch gate; no new Slack/email integration is assumed. Existing AppSignal operational monitoring is unchanged.
+Torus maintainers own failure triage. GitHub Actions failures, run summaries and reports are the initial reporting channel; no new Slack integration, custom email alerts or dedicated on-call rotation is required. Revisit additional alerting if failures go unnoticed. Existing AppSignal operational monitoring is unchanged.
 
 ## 12. Security & Privacy
 
@@ -332,7 +338,7 @@ GitHub Actions outcomes are the initial failure signal. Named notification owner
 
 ## 13. Testing Strategy
 
-This documentation change runs only design/traceability checks. Implementation must supply the following evidence:
+This documentation change runs only design/traceability checks. Operational verification is deferred to implementation, required before unattended launch: Torus maintainers verify application probe/drain behavior and that the `nightly-ui` GitHub environment permits unattended runs; GitOps maintainers verify deployment configuration. No performance measurements are required. The release fixture and mailbox audit is also deferred to implementation, required before unattended launch: Torus maintainers verify selected PR/nightly runtime paths, package only demonstrated fixture requirements and verify mailbox reset on deployment; GitOps maintainers verify the single-replica setting. Implementation must supply the following evidence:
 
 | Layer | Verification |
 | --- | --- |
@@ -358,39 +364,33 @@ Record actual launch results and proof artifacts against canonical acceptance cr
 
 ## 14. Backwards Compatibility
 
-`/healthz` intentionally changes to local-only startup/liveness with `status: ok` after initialization. `/readyz` owns database readiness and version/SHA metadata. Migrate readiness consumers, PR startup waiting and GitOps probes as part of this work; do not retain the combined database-dependent liveness contract. Both routes remain unauthenticated. Review shared GitOps overlays so the new readiness path is activated only with capable images. Production uses the unchanged default Docker environment and retains route exclusions. PR moves to the shared Mix environment with its triggers, source selection, `@pr` coverage and disposable lifecycle preserved. Shared browser-runner defaults and independent nightly backend scenario triggers/test behavior stay intact. A nightly-specific config/helper applies stricter coverage and target checks only to the durable job.
+The probe contract intentionally changes: deploy a capable image before switching GitOps readiness to `/readyz`, and migrate PR waiting and other readiness consumers. See section 5 for response and rollout details.
 
-Land shared compile/runtime configuration, PR workflow migration, asset setup, deletion of `config/ci_e2e.exs`, and removal of remaining active references together, with passing `@pr` verification. `MIX_ENV=ci_e2e` is no longer supported; no compatibility alias, wrapper or fallback remains. Historical discovery notes may retain the old name. Deploy a probe-capable image, then activate the reviewed GitOps probe/drain configuration and complete provisioning/branch policy plus dedicated assets/accounts before the manual nightly run and scheduled proof. Keep automatic execution operationally gated until launch prerequisites are met. Stop scheduling during incidents; choose any image rollback through reviewed GitOps changes with database compatibility assessed separately. Do not automatically reverse migrations.
+Land shared configuration, PR asset/runtime setup and deletion of `ci_e2e` together, with passing `@pr` verification. Preserve PR triggers, source selection, test coverage and disposable lifecycle, while applying the documented token-submission and trace/attachment protections. Keep other shared browser-runner defaults and the independent backend scenario job unchanged. Nightly configuration supplies reporting, target and required-configuration checks; it adds no custom coverage validator.
+
+Keep unattended runs gated on provisioning and the audits in section 13. Pause scheduling during incidents; any rollback uses reviewed GitOps changes and a database-compatibility assessment. Do not automatically reverse migrations. Historical notes may retain old names when clearly marked as superseded.
 
 ## 15. Risks & Mitigations
 
 | Risk | Mitigation / accepted limitation |
 | --- | --- |
-| Same-commit rebuild or mixed replicas | Keep digest provenance but state the public observation's limits. Before/after identity checks do not prove continuous or all-replica identity. |
+| Same-commit rebuild or mixed replicas | Keep digest provenance but state the public observation's limits. The pre-test identity check does not prove continuous or all-replica identity. |
 | Auto-merge proceeds after cancellation | Run-owned PR lifecycle, next-run stale-update gate, branch ownership and a cancellation/late-merge test before unattended launch. |
 | GitOps updater rewrites comments | Add content-preserving updates and exact fixture/diff checks before adopting the existing writer. |
 | PR migration loses inherited settings or assets | Explicit runtime input table, release-style asset builds, existing account/email suite and disposable-database verification. |
 | Shared cache carries Playwright settings into production | Mix environment and configuration-sensitive keys, separate trusted/untrusted cache namespaces and fresh PR/nightly/production build checks. |
-| Mailbox messages disappear or grow indefinitely | Single-instance mailbox tests, run-unique recipients, restart-aware setup and a documented mailbox retention/recycling procedure. |
+| Mailbox messages disappear or grow indefinitely | Single-instance mailbox tests, run-unique recipients and restart-aware setup; each nightly application deployment starts with a fresh mailbox. |
 | Incorrect startup/drain state | Set completion after initialization, enter drain before service shutdown, reset state on app restart and verify real lifecycle transitions. |
 | Probe change restarts or removes healthy instances | Bound readiness work, keep dependencies out of liveness, allow slow startup and validate database-outage behavior and rendered probe timing. |
 | Release omits development-only config/files | Standalone Playwright release settings, explicit runtime branches and packaged-fixture smoke checks. |
 | Privileged public test endpoints or secret traces | Retain authentication, dedicated target credentials, default nightly traces off and restricted artifact inspection. |
-| Slow cleanup/data accumulation | Preserve bounded teardown warnings, prefer Dot existing-fixture mode, and require a named cleanup/retention operator. |
+| Slow cleanup/data accumulation | Preserve bounded teardown warnings, use Dot existing-fixture mode, with Torus maintainers cleaning stale failed-run data between runs as needed. |
 | Integration target drift | Explicit Canvas launch/Torus origins, frozen Dot configuration, tag-based selection and setup failures for missing required configuration. |
 | Longer CI runtime | Keep one worker initially; investigate timings and tune only if runtime becomes a practical concern. |
 
 ## 16. Open Questions & Follow-ups
 
-These items do not prevent documenting the architecture but must be resolved before unattended launch:
-
-1. **GitOps merge policy:** confirm bot PR automatic merge, required checks/approvals, branch name and installation permissions. If direct commits are selected instead, document the permitted branch-rule path and revise PR lifecycle handling; never silently bypass policy.
-2. **Initial suite scope:** confirm the proposed ten cases or explicitly stage Canvas/Dot later while retaining all eight adaptive cases. A staged decision must update test-source tags and operator docs, identify deferred coverage, and keep canonical AC-021 satisfied.
-3. **Provisioning and ownership:** name owners for deployment enablement, runtime secrets, private assets/answer keys, automation key, Canvas registration, Dot fixture/service, failed runs and stale-data cleanup. Confirm retention and whether pinned/versioned asset keys are required initially.
-4. **Operational policy:** confirm finite failure-handling timeouts and name the notification channel/owner. Verify probe/drain behavior; performance measurement and tuning are deferred until needed. Confirm the `nightly-ui` environment can execute unattended under repository policy.
-5. **Release fixture audit:** verify selected PR and nightly runtime paths, including support assets resolved today from the source tree; package only demonstrated requirements. Confirm mailbox retention/recycling ownership and the initial single-replica deployment setting.
-
-Technical defaults selected here: master-only manual/scheduled source, full SHA supplied to build, shared standalone `playwright` Mix environment with scenarios/mailbox enabled for PR and nightly and secret-protected deterministic reCAPTCHA for both, unique `sha-…-playwright-…` tags, a job-scoped target lock with newest pending replacement, `/healthz` startup/liveness and `/readyz` readiness/identity with a one-second DB budget, 20-minute CI readiness/10-second request/10-second interval, one browser worker/retry, a single instance for mailbox-dependent flows, and 14-day artifacts. These are design decisions subject to implementation verification, not claims about deployed configuration.
+No unresolved design questions remain. Operational verification and the release fixture/mailbox audit are explicitly deferred to implementation and remain required before unattended launch. Responsibilities and verification scope are recorded in section 13 and the Decision Log.
 
 ## 17. References
 
@@ -405,3 +405,17 @@ Repository paths are relative to the named repository root.
 - In `oli-torus-gitops`: `deployments/nightly-playwright.yml`, `scripts/update_deployment_record.py`, `scripts/validate_deployments.py`, `scripts/validate_gitops_policy.py`, `apps/oli-torus/base/deployment.yaml`.
 - [GitHub Actions concurrency](https://docs.github.com/en/actions/concepts/workflows-and-actions/concurrency) and [Playwright CLI](https://playwright.dev/docs/test-cli), checked during design.
 - [MER-5918](https://eliterate.atlassian.net/browse/MER-5918), tracking reference from the PRD; no Jira mutation is part of this task.
+
+## Decision Log
+
+| Date | Topic | Approved decision and rationale |
+| --- | --- | --- |
+| 2026-10-06 | GitOps update path | Bot PRs merge automatically after required checks, without per-run human approval or a direct-commit fallback. Verify branch rules/permissions before launch. Preserves validation and deployment history. |
+| 2026-10-06 | Initial nightly suite and integration targets | Include all tagged tests; tags remain the sole membership source. Canvas launches into nightly Torus and Dot uses a dedicated fixture there. Provision both integrations before launch to preserve coverage. |
+| 2026-10-06 | Merge and readiness timeout defaults | Default to 15 minutes for merge, then 20 minutes for readiness, with 10-second polling and a maximum 10-second request timeout. These bound failures, not performance. |
+| 2026-10-06 | Failure triage and reporting | Torus maintainers triage GitHub Actions failures using summaries/reports. No new Slack/email integration or on-call rotation. Revisit alerting if failures go unnoticed. |
+| 2026-10-06 | Provisioning and maintenance ownership | GitOps maintains deployment/secret installation; QA/test owners maintain assets and Canvas/Dot fixtures; Torus maintains automation credentials and cleanup. Role-based ownership needs no named individuals. |
+| 2026-10-06 | Initial asset versioning | Use existing archives/answer keys, maintained together and unchanged during active runs. No new versioning mechanism; same-commit reruns may use newer assets. Revisit pinning for historical reproduction. |
+| 2026-10-06 | Initial cleanup and mailbox retention | Retain per-test cleanup and fresh mailboxes on deployment. Torus maintainers clean stale failed-run data between runs as needed, preserving durable fixtures. No scheduled cleanup service or database reset. |
+| 2026-10-06 | Operational verification | Deferred to implementation, required before launch. Torus verifies application probes/draining and unattended nightly-ui permissions; GitOps verifies deployment configuration. No performance measurements required. |
+| 2026-10-06 | Release fixture and mailbox audit | Deferred to implementation, required before launch. Torus verifies runtime paths, packages demonstrated fixture needs and checks mailbox reset; GitOps verifies one replica. Requires an implemented release. |
