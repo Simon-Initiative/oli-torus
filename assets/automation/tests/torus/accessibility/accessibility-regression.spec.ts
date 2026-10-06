@@ -9,6 +9,7 @@ import {
   configureStudentDeliveryRuntimeConfig,
   seedStudentDeliveryScenario,
 } from '../student_delivery/support';
+import { StudentCoursePO } from '@pom/course/StudentCoursePO';
 import { expect } from '@playwright/test';
 
 const runId = `-${Date.now()}`;
@@ -50,11 +51,14 @@ configureStudentDeliveryRuntimeConfig(runId, {
 });
 
 let sectionSlug = '';
+let projectSlug = '';
 
 test.beforeAll(async ({ seedScenario }) => {
   const outputs = await seedStudentDeliveryScenario(seedScenario, scenarioPath, runId);
   sectionSlug = outputs.sections?.student_dashboard_coverage_section ?? '';
+  projectSlug = outputs.projects?.student_dashboard_coverage_project ?? '';
   expect(sectionSlug).toBeTruthy();
+  expect(projectSlug).toBeTruthy();
 });
 
 test.describe('accessibility regression coverage @pr @accessibility', () => {
@@ -73,18 +77,19 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await scanPageAccessibility(page, 'course outline');
     await expectKeyboardFocus(page, 'a, button, input');
 
-    const notesLink = page.getByRole('link', { name: 'Notes' });
-    await expect(notesLink).toBeVisible();
-    await notesLink.click();
+    const notesToggle = page.getByRole('button', { name: 'Toggle Notes panel' });
+    await expect(notesToggle).toBeVisible();
+    await notesToggle.click();
+    await expect(page.getByRole('complementary', { name: 'Notes Panel' })).toBeVisible();
     await scanPageAccessibility(page, 'notes');
   });
 
   test('scored activity has no automated accessibility violations', async ({ page, homeTask }) => {
     await homeTask.login('student');
     await page.goto(learnPath(), { waitUntil: 'domcontentloaded' });
-    const scoredActivity = page.getByText('Scored Activity', { exact: true }).first();
-    await expect(scoredActivity).toBeVisible();
-    await scoredActivity.click();
+    const studentCourse = new StudentCoursePO(page);
+    await studentCourse.goToCourseIfPrompted();
+    await studentCourse.openPage('Scored Activity');
     await scanPageAccessibility(page, 'scored activity');
     await expectKeyboardFocus(page, 'a, button, input');
   });
@@ -110,7 +115,9 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     homeTask,
   }) => {
     await homeTask.login('author');
-    await homeTask.enterToCurriculum();
+    await page.goto(`/workspaces/course_author/${projectSlug}/curriculum`, {
+      waitUntil: 'domcontentloaded',
+    });
     await scanPageAccessibility(page, 'authoring curriculum');
     await expectKeyboardFocus(page, 'a, button, input');
   });

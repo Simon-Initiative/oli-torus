@@ -9,6 +9,7 @@ export const defaultPassword = 'changeme123456';
 export const scenarioToken = process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token';
 
 export type StudentDeliveryScenarioOutputs = {
+  projects?: Record<string, string>;
   sections?: Record<string, string>;
 };
 
