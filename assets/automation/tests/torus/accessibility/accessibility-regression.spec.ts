@@ -13,6 +13,7 @@ import { StudentCoursePO } from '@pom/course/StudentCoursePO';
 import { expect } from '@playwright/test';
 
 const runId = `-${Date.now()}`;
+const sectionTitle = `MER-5489 Student Dashboard Coverage ${runId}`;
 const scenarioPath = path.resolve(
   __dirname,
   '../student_delivery/student-dashboard-coverage.scenario.yaml',
@@ -71,13 +72,17 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
   test('course outline and notes have no automated accessibility violations', async ({
     page,
     homeTask,
+    studentTask,
   }) => {
     await homeTask.login('student');
+    await studentTask.searchProject(sectionTitle);
     await page.goto(learnPath(), { waitUntil: 'domcontentloaded' });
+    const studentCourse = new StudentCoursePO(page);
+    await studentCourse.goToCourseIfPrompted();
+    await expect(page.locator('#student_learn')).toBeVisible();
     await scanPageAccessibility(page, 'course outline');
     await expectKeyboardFocus(page, 'a, button, input');
 
-    const studentCourse = new StudentCoursePO(page);
     await studentCourse.openPage('Coverage Page');
 
     const notesToggle = page.getByRole('button', { name: 'Toggle Notes panel' });
@@ -87,8 +92,13 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await scanPageAccessibility(page, 'notes');
   });
 
-  test('scored activity has no automated accessibility violations', async ({ page, homeTask }) => {
+  test('scored activity has no automated accessibility violations', async ({
+    page,
+    homeTask,
+    studentTask,
+  }) => {
     await homeTask.login('student');
+    await studentTask.searchProject(sectionTitle);
     await page.goto(learnPath(), { waitUntil: 'domcontentloaded' });
     const studentCourse = new StudentCoursePO(page);
     await studentCourse.goToCourseIfPrompted();
