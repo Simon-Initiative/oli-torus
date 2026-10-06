@@ -147,6 +147,13 @@ jobs:
       - name: Build Tailwind CSS
         run: set -a && source oli.env && mix tailwind default --minify
 
+      # Adaptive lesson rules are evaluated server-side by Node.js
+      # (priv/node/rules.js and eval.js, as built in the Dockerfile).
+      # Without these bundles every adaptive "Check" fails with a 500.
+      - name: Build server-side evaluation bundles
+        working-directory: assets
+        run: yarn run deploy-node
+
       - name: Install Playwright dependencies
         working-directory: assets/automation
         run: npm ci
