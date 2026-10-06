@@ -257,9 +257,9 @@ export class SimpleAuthorPO {
     await expect(this.partsOfType(elementType)).toHaveCount(before.length + 1);
     const after = await this.partIds(elementType);
     const added = after.find((id) => !before.includes(id));
-    expect(added, `A new ${elementType} part should be added`).toBeTruthy();
+    if (!added) throw new Error(`A new ${elementType} part should be added`);
     await this.waitForSaves();
-    return added!;
+    return added;
   }
 
   private componentButton(component: SimpleAuthorComponent) {

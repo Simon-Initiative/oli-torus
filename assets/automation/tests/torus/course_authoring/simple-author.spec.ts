@@ -264,8 +264,10 @@ test.describe.serial('Simple Author components @pr', () => {
     const pastedId = (await editor.partIds('janus-text-flow')).find(
       (id) => !['header-1', 'para-1', 'para-2'].includes(id),
     );
+    if (!pastedId) throw new Error('The pasted text flow should be on the stage');
     expect(pastedId).toMatch(/^janus-text-flow-\d+$/);
-    await expect(editor.part(pastedId!)).toContainText(
+    const pasted = editor.part(pastedId);
+    await expect(pasted).toContainText(
       (await editor.part('para-1').innerText()).trim().slice(0, 40),
     );
 
@@ -276,13 +278,13 @@ test.describe.serial('Simple Author components @pr', () => {
     await expect(textFlows).toHaveCount(4);
 
     await editor.undoButton().click();
-    await expect(editor.part(pastedId!)).toHaveCount(0);
+    await expect(pasted).toHaveCount(0);
     await expect(textFlows).toHaveCount(3);
     await editor.redoButton().click();
-    await expect(editor.part(pastedId!)).toHaveCount(1);
+    await expect(pasted).toHaveCount(1);
 
     await simpleAuthorTask.reloadAndOpenScreen('Copy paste screen');
-    await expect(editor.part(pastedId!)).toHaveCount(1);
+    await expect(pasted).toHaveCount(1);
     await expect(textFlows).toHaveCount(4);
 
     // A screen keeps a single question component, even through paste.
