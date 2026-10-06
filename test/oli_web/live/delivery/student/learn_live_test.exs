@@ -2569,7 +2569,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[role="page 4 details"] div[role="orange flag icon"]}
+               ~s{button[data-role="page 4 details"] div[role="orange flag icon"]}
              )
     end
 
@@ -2608,10 +2608,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # since the gc message is sent from the handle_info that loads the async metrics
       assert_receive(:gc, 2_000)
 
-      assert has_element?(view, ~s{button[role="page 2 details"]})
-      refute has_element?(view, ~s{button[role="page 1 details"] svg[role="visited check icon"]})
-      assert has_element?(view, ~s{button[role="page 2 details"]})
-      refute has_element?(view, ~s{button[role="page 2 details"] svg[role="visited check icon"]})
+      assert has_element?(view, ~s{button[data-role="page 2 details"]})
+      refute has_element?(view, ~s{button[data-role="page 1 details"] svg[role="visited check icon"]})
+      assert has_element?(view, ~s{button[data-role="page 2 details"]})
+      refute has_element?(view, ~s{button[data-role="page 2 details"] svg[role="visited check icon"]})
     end
 
     test "can visit a page", %{conn: conn, section: section, page_1: page_1} do
@@ -2866,7 +2866,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(
-               ~s{button[role="page 4 details"] div[role="due date and score"] span[role="page due date"]}
+               ~s{button[data-role="page 4 details"] div[data-role="due date and score"] span[data-role="page due date"]}
              )
              |> render() =~ "Read by: Fri Nov 3, 2023"
     end
@@ -2895,7 +2895,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> has_element?(
-               ~s{button[role="page 4 details"] div[role="due date and score"] span[role="page due date"]}
+               ~s{button[data-role="page 4 details"] div[data-role="due date and score"] span[data-role="page due date"]}
              )
     end
   end

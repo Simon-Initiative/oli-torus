@@ -2110,8 +2110,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="next_page"]}, page_2.title)
 
       refute has_element?(view, ~s{div[role="check icon"]})
-      refute has_element?(view, ~s{svg[role="square checked icon"]})
-      refute has_element?(view, ~s{svg[role="flag icon"]})
+      refute has_element?(view, ~s{svg[data-role="square checked icon"]})
+      refute has_element?(view, ~s{svg[data-role="flag icon"]})
     end
 
     test "no auto-submit when late disallowed, no time limit, and scheduling type is read_by", %{
