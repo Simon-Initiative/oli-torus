@@ -437,7 +437,11 @@ test.describe.serial('Simple Author lesson delivery @pr', () => {
     await expect(mcq).toBeVisible();
 
     // Answering correctly and checking again follows the "Correct" path to the slider screen.
+    // With the feedback still open, the footer control re-checks the current
+    // answer, so the student just changes the answer and checks again.
+    const correctOption = mcq.getByRole('radio', { name: 'Option 1' });
     await mcq.getByText('Option 1', { exact: true }).click();
+    await expect(correctOption).toBeChecked();
     await deck.footerButton().click();
     const slider = page.locator('janus-slider input[type="range"]');
     await advancePastFeedback(deck, slider);
