@@ -54,6 +54,34 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
     assert {:error, :invalid_secure_delivery_target} = change_setting(ctx, true)
   end
 
+  for {description, attrs} <- [
+        {"becomes ungraded", %{graded: false}},
+        {"changes resource type", %{resource_type_id: 2}}
+      ] do
+    test "policy can be disabled after its target #{description}", ctx do
+      assert {:ok, _} = change_setting(ctx, true)
+      sr = Repo.get!(SectionResource, ctx.sr.id)
+      assert {:ok, sr} = Sections.update_section_resource(sr, unquote(Macro.escape(attrs)))
+      assert sr.secure_delivery
+      Oli.Delivery.Sections.SectionResourceDepot.update_section_resource(sr)
+      ctx = %{ctx | sr: sr}
+
+      assert {:error, :invalid_secure_delivery_target} = change_setting(ctx, true)
+      Application.put_env(:oli, :supports_secure_delivery, false)
+      assert {:ok, %{assessment: %{secure_delivery: false}}} = change_setting(ctx, false)
+      refute Repo.get!(SectionResource, sr.id).secure_delivery
+    end
+  end
+
+  test "enabling and disabling require a resource in the section", ctx do
+    other_resource = insert(:section_resource)
+    ctx = %{ctx | sr: other_resource}
+
+    for value <- [true, false] do
+      assert {:error, :invalid_secure_delivery_target} = change_setting(ctx, value)
+    end
+  end
+
   test "stored policy survives disablement and unrelated edits", ctx do
     assert {:ok, _} = change_setting(ctx, true)
     Application.put_env(:oli, :supports_secure_delivery, false)
@@ -79,7 +107,9 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
       ctx.instructor,
       ctx.sr.resource_id,
       %{secure_delivery: value},
-      %{assessments: [%{resource_id: ctx.sr.resource_id, secure_delivery: false}]}
+      %{
+        assessments: [%{resource_id: ctx.sr.resource_id, secure_delivery: ctx.sr.secure_delivery}]
+      }
     )
   end
 end

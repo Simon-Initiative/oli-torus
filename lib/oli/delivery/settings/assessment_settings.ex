@@ -41,7 +41,12 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
 
   def supported_keys, do: @supported_keys
 
-  @doc "Updates assessment settings, with authoritative authorization for secure policy changes."
+  @doc """
+  Updates assessment settings, with authoritative authorization for secure policy changes.
+
+  Enabling secure delivery requires a graded page; disabling only requires an existing
+  section resource so policies can be cleared after their targets become ineligible.
+  """
   def update(%Section{} = section, user, assessment_setting_id, attrs, opts \\ %{})
       when is_map(attrs) do
     attrs =
@@ -85,7 +90,10 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
           value and not Oli.Delivery.SecureAssessments.supported?() ->
             {:error, :secure_delivery_unsupported}
 
-          is_nil(resource) or resource.graded != true or resource.resource_type_id != 1 ->
+          is_nil(resource) ->
+            {:error, :invalid_secure_delivery_target}
+
+          value and (resource.graded != true or resource.resource_type_id != 1) ->
             {:error, :invalid_secure_delivery_target}
 
           true ->
