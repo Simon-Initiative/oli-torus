@@ -46,13 +46,13 @@ defmodule OliWeb.ResponseSecurityTest do
   end
 
   test "static assets and public verification keys retain caching", %{conn: conn} do
-    response = get(conn, "/robots.txt")
+    # Schemas are checked in; priv/static assets require a separate frontend build.
+    response = get(conn, "/schemas/v0-1-0/activity.schema.json")
     assert response(response, 200)
 
-    refute Enum.any?(
-             get_resp_header(response, "cache-control"),
-             &String.contains?(&1, "no-store")
-           )
+    assert [cache_control] = get_resp_header(response, "cache-control")
+    assert cache_control =~ "public"
+    refute cache_control =~ "no-store"
 
     response =
       conn |> put_req_header("accept", "application/json") |> get("/.well-known/jwks.json")
