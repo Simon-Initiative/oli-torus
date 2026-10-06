@@ -186,7 +186,7 @@ jobs:
       # serial because playwright.config.ts keeps fullyParallel off.
       - name: Run @pr-tagged Playwright tests
         working-directory: assets/automation
-        run: npx playwright test --grep @pr --reporter=line --workers=3
+        run: npx playwright test --grep @pr --reporter=line --workers=2
 
       - name: Upload Playwright report
         if: failure()
