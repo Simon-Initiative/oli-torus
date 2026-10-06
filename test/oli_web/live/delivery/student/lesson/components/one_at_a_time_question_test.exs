@@ -498,7 +498,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       # 0.5% is the width of the progress bar when no question is submitted
       # (to match the Figma designs where a minimun width is set)
       assert lcd
-             |> element(~s{div[role="progress bar"] div[role="progress"]})
+             |> element(~s{div[role="progress bar"] div[data-role="progress"]})
              |> render()
              |> Floki.parse_fragment!()
              |> Floki.attribute("style") == ["width: 0.5%"]
@@ -512,7 +512,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
 
       # 1 out of 3 questions submitted => 33% of the progress bar
       assert lcd
-             |> element(~s{div[role="progress bar"] div[role="progress"]})
+             |> element(~s{div[role="progress bar"] div[data-role="progress"]})
              |> render()
              |> Floki.parse_fragment!()
              |> Floki.attribute("style") == ["width: 33.33333333333333%"]

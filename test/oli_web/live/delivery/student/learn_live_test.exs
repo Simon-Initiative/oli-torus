@@ -1554,7 +1554,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[role="duration in minutes"]},
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[data-role="duration in minutes"]},
                "22"
              )
     end
@@ -2375,7 +2375,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "#timezone_info")
 
       # Verify that it contains the timezone world icon
-      assert has_element?(view, "[role='timezone world icon']")
+      assert has_element?(view, "[data-role='timezone world icon']")
 
       # Verify that it displays timezone text
       assert has_element?(view, "#timezone_info span")
@@ -2588,7 +2588,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[role="duration in minutes"]},
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[data-role="duration in minutes"]},
                "22"
              )
     end
