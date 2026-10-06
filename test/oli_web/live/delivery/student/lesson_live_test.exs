@@ -2073,7 +2073,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(view, ~s{div[role="prev_page"]}, page_5.title)
 
-      assert has_element?(view, ~s{svg[role="square checked icon"]})
+      assert has_element?(view, ~s{svg[data-role="square checked icon"]})
     end
 
     test "show orange flag icon when page is graded and is not completed", %{
@@ -2091,7 +2091,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(view, ~s{div[role="prev_page"]}, page_5.title)
 
-      assert has_element?(view, ~s{svg[role="flag icon"]})
+      assert has_element?(view, ~s{svg[data-role="flag icon"]})
     end
 
     test "does not show any icon when page is not graded and is not completed", %{

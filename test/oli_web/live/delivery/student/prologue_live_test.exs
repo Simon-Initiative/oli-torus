@@ -606,7 +606,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                ~s{#page_due_terms [aria-hidden="true"] svg[role="schedule icon"]}
              )
 
-      assert has_element?(view, ~s{#attempts_summary [aria-hidden="true"] svg[role="flag icon"]})
+    assert has_element?(view, ~s{#attempts_summary [aria-hidden="true"] svg[data-role="flag icon"]})
     end
 
     test "can see prologue on graded adaptive pages with no attempt in progress", %{
