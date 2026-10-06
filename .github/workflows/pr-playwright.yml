@@ -182,9 +182,11 @@ jobs:
           cat /tmp/torus-server.log
           exit 1
 
+      # Spec files run in parallel across workers; tests within a file stay
+      # serial because playwright.config.ts keeps fullyParallel off.
       - name: Run @pr-tagged Playwright tests
         working-directory: assets/automation
-        run: npx playwright test --grep @pr --reporter=line
+        run: npx playwright test --grep @pr --reporter=line --workers=2
 
       - name: Upload Playwright report
         if: failure()
