@@ -671,7 +671,6 @@ defmodule OliWeb.Components.Common do
   )
 
   attr(:role, :string, default: "progressbar")
-  attr(:rest, :global)
   attr(:height, :string, default: "h-1")
   attr(:rounded, :string, default: "rounded-[60px]")
 
@@ -698,7 +697,6 @@ defmodule OliWeb.Components.Common do
       aria-valuemin="0"
       aria-valuemax="100"
       aria-valuenow={@percent}
-      {@rest}
     >
       <div class="flex justify-center w-full relative">
         <div class={"#{@rounded} #{@height} #{@not_completed_colour}"} style={"width: #{@width}"}>
@@ -759,7 +757,7 @@ defmodule OliWeb.Components.Common do
           )
         }
         id={@id}
-        data-role={@role}
+        role={@role}
         class={[@button_class]}
       >
         {render_slot(@inner_block)}
@@ -777,7 +775,7 @@ defmodule OliWeb.Components.Common do
                 "flex items-center w-full gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50",
                 option[:class]
               ]}
-              data-role={"dropdown-item #{option.text}"}
+              role={"dropdown-item #{option.text}"}
             >
               <span class="text-[14px] leading-[20px] whitespace-nowrap">{option.text}</span>
               {Phoenix.HTML.raw(option[:icon])}
