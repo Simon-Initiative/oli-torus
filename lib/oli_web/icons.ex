@@ -1215,7 +1215,7 @@ defmodule OliWeb.Icons do
   def discussions(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active discussions icon"
+      data-role="active discussions icon"
       class={@class || "dark:fill-white fill-black/90"}
       width="18"
       height="17"
@@ -1235,7 +1235,7 @@ defmodule OliWeb.Icons do
   def discussions(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="discussions icon"
+      data-role="discussions icon"
       class={@class || "dark:stroke-[#B8B4BF] stroke-black/70"}
       width="18"
       height="17"
