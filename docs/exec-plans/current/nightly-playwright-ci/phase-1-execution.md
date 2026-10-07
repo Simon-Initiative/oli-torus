@@ -5,7 +5,7 @@ Phase: `1 — Application lifecycle and probe contracts`
 
 ## Scope from plan.md
 
-- Node-local startup/drain state, dependency-free liveness, bounded readiness and compiled identity.
+- Node-local startup/drain state, dependency-free liveness, bounded readiness and Playwright-only compiled identity.
 - Application/release lifecycle integration, session-free HTTP endpoints and SSL exemptions.
 - Focused failure/lifecycle verification and readiness-consumer inventory; no infrastructure activation.
 
@@ -14,7 +14,7 @@ Phase: `1 — Application lifecycle and probe contracts`
 - [x] Core behavior changes: `Oli.Health`, application startup/pre-stop and local release drain.
 - [x] Data or interface changes: `/healthz` and `/readyz` status/body contracts.
 - [x] Access-control or safety checks: session-free routes, exact SSL exemptions, no-store and generic errors.
-- [x] Observability or operational updates: compiled identity and consumer inventory below.
+- [x] Observability or operational updates: Playwright-only compiled identity and consumer inventory below.
 
 ## Test Blocks
 
@@ -49,13 +49,14 @@ A repository-wide search found no additional active `/healthz` consumers outside
 - Disposable `MIX_ENV=test` release build and a temporary release smoke script: passed during implementation. The script used the configured local test database and loopback HTTP without migrations/data writes. It was removed afterward at the user's request; these results retain the historical validation evidence. Production/Playwright image packaging remains Phase 3.
 - The release smoke held the first terminating child during actual `Application.stop(:oli)`, observed readiness 503 and liveness 200 over HTTP, allowed termination, restarted the application, then verified readiness recovery and idempotent release drain. It exposed duplicate Cowboy and feature telemetry registration; both now tolerate existing handlers. Feature telemetry regression coverage also asserts one handler per event.
 - Database tests use a real normal one-connection pool. Repeated exhaustion respects the single one-second budget and leaves no linked query workers; a loopback relay stalls actual PostgreSQL responses and drops sockets, verifying failure bounds and same-pool recovery. Additional cases cover query errors, missing/recovered local service names, NodeJS pool/supervisor absence, and drain during query completion.
-- HTTP tests cover exact 200/503 JSON, compiled identity unaffected by runtime metadata or client-supplied desired identity, no-store, session-free routing, and HTTP/HTTPS connection schemes. SSL tests exercise both exact exemptions with redirects enabled.
+- Original HTTP tests covered exact 200/503 JSON and compiled identity unaffected by runtime metadata or client-supplied desired identity. The review follow-up below restricts identity to Playwright builds and retains coverage for no-store, session-free routing, and HTTP/HTTPS connection schemes. SSL tests exercise both exact exemptions with redirects enabled.
 - Healthy-status follow-up: restored `Ayup!` at the user's request and reran both affected controller test modules (6 tests, 0 failures), formatting, work-item validation and `git diff --check`. The release smoke was not rerun for this response-literal change.
+- Metadata review follow-up (2026-10-07): restricted version/SHA to compiled Playwright builds; all other builds return only readiness status. HTTP tests verify exact status-only bodies, and isolated VM tests compile the real view for Playwright, production, preview, development, test and the existing browser-test environment. Both readiness statuses retain the compiled field set and identity despite runtime application-setting changes. The complete focused suite passed (29 tests, 0 failures), with clean ExUnit output; formatting, work-item validation and `git diff --check` passed. Production/Playwright release packaging remains a Phase 3 gate.
 
 Reproduce focused verification:
 
 ```sh
-mix test test/oli/health_test.exs test/oli/health_database_test.exs test/oli/feature_telemetry_test.exs test/oli_web/controllers/api/health_controller_test.exs test/oli_web/controllers/api/readiness_controller_test.exs test/oli_web/plugs/ssl_test.exs
+mix test test/oli/health_test.exs test/oli/health_database_test.exs test/oli/feature_telemetry_test.exs test/oli_web/controllers/api/health_controller_test.exs test/oli_web/controllers/api/readiness_controller_test.exs test/oli_web/plugs/ssl_test.exs test/oli_web/views/readiness_view_test.exs
 mix format --check-formatted
 git diff --check
 ```
@@ -73,6 +74,8 @@ Run the installed harness validator before and after implementation with `--chec
 
 - Round 1: dedicated security, performance and Elixir reviewers found no actionable findings. Performance review requested stronger stalled-query evidence; the real TCP-relay test closes that gap.
 - Follow-up review: Elixir and performance reviewers accepted the release harness, real database coverage and idempotent telemetry registration fixes. No findings remain.
+- Metadata restriction review: security, performance, Elixir and requirements reviewers found no actionable issues. Corrected the controller API documentation to state the Playwright-only metadata contract; packaged release verification remains Phase 3.
+- PR pool-contention findings: explicitly deferred by the user on 2026-10-07. Retain the lightweight `SELECT 1`, one-second checkout/query budget and cancellation; add concurrency controls only if observed probe traffic causes contention or exhaustion. The existing deadline does not bound aggregate request concurrency.
 
 ## Done Definition
 

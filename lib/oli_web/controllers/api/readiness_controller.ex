@@ -1,7 +1,7 @@
 defmodule OliWeb.ReadinessController do
   use OliWeb, :controller
 
-  @doc "Returns bounded readiness and this build's compiled identity."
+  @doc "Returns bounded readiness, including compiled identity only in Playwright builds."
   def index(conn, _params) do
     {code, status} =
       case Oli.Health.ready?() do
