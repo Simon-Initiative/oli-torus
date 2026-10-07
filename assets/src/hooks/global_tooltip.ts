@@ -36,8 +36,6 @@ export const GlobalTooltip = {
     const showTooltip = () => {
       clearActiveTooltip();
 
-      const position = el.dataset.tooltipPosition === 'bottom' ? 'bottom' : 'top';
-
       const wrapper = document.createElement('div');
       wrapper.id = tooltipId;
       wrapper.setAttribute('role', 'tooltip');
@@ -61,27 +59,14 @@ export const GlobalTooltip = {
       tooltip.textContent = el.dataset.tooltip || '';
 
       const caret = document.createElement('div');
-      caret.className =
-        position === 'bottom'
-          ? `
-            w-2 h-2 bg-Surface-surface-background
-            border-l-[0.5px] border-b-[0.5px] border-Border-border-default
-            rotate-[135deg] -mb-1
-          `
-          : `
-            w-2 h-2 bg-Surface-surface-background
-            border-l-[0.5px] border-b-[0.5px] border-Border-border-default
-            -rotate-45 -mt-1
-          `;
+      caret.className = `
+        w-2 h-2 bg-Surface-surface-background
+        border-l-[0.5px] border-b-[0.5px] border-Border-border-default
+        -rotate-45 -mt-1
+      `;
 
-      if (position === 'bottom') {
-        wrapper.appendChild(caret);
-        wrapper.appendChild(tooltip);
-      } else {
-        wrapper.appendChild(tooltip);
-        wrapper.appendChild(caret);
-      }
-
+      wrapper.appendChild(tooltip);
+      wrapper.appendChild(caret);
       document.body.appendChild(wrapper);
 
       activePreviousAriaDescribedBy = el.getAttribute('aria-describedby');
@@ -108,10 +93,7 @@ export const GlobalTooltip = {
             wrapper.style.transform = 'translateX(-50%)';
           }
 
-          wrapper.style.top =
-            position === 'bottom'
-              ? `${rect.bottom + 4}px`
-              : `${rect.top - wrapperRect.height - 4}px`;
+          wrapper.style.top = `${rect.top - wrapperRect.height - 4}px`;
 
           wrapper.style.visibility = 'visible'; // Show after positioning
         });
@@ -141,7 +123,7 @@ export const GlobalTooltip = {
     };
 
     const handleKeydown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && activeDescribedElement === el) {
+      if (event.key === 'Escape') {
         hideTooltip();
       }
     };
@@ -151,7 +133,7 @@ export const GlobalTooltip = {
     el.addEventListener('click', handleClick);
     el.addEventListener('mouseleave', hideTooltip);
     el.addEventListener('blur', hideTooltip);
-    document.addEventListener('keydown', handleKeydown);
+    el.addEventListener('keydown', handleKeydown);
     document.addEventListener('click', handleDocumentClick);
 
     cleanupByElement.set(el, () => {
@@ -161,7 +143,7 @@ export const GlobalTooltip = {
       el.removeEventListener('click', handleClick);
       el.removeEventListener('mouseleave', hideTooltip);
       el.removeEventListener('blur', hideTooltip);
-      document.removeEventListener('keydown', handleKeydown);
+      el.removeEventListener('keydown', handleKeydown);
       document.removeEventListener('click', handleDocumentClick);
     });
   },
