@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings.AssessmentSettings
   alias Oli.Delivery.Sections.SectionResource
+  alias Lti_1p3.Roles.PlatformRoles
 
   setup do
     previous = Application.fetch_env(:oli, :supports_secure_delivery)
@@ -43,6 +44,37 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
                  c.section_id == ^ctx.section.id and c.key == "secure_delivery" and
                    c.new_value == "true"
            )
+  end
+
+  test "LMS context administrator without instructor role can edit secure delivery", ctx do
+    administrator = insert(:user)
+
+    {:ok, _} =
+      Sections.enroll(administrator.id, ctx.section.id, [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_administrator)
+      ])
+
+    refute Sections.is_instructor?(administrator, ctx.section.slug)
+    assert Sections.is_admin?(Repo.preload(administrator, :platform_roles), ctx.section.slug)
+
+    assert {:ok, _} = change_setting(%{ctx | instructor: administrator}, true)
+    assert Repo.get!(SectionResource, ctx.sr.id).secure_delivery
+    assert {:ok, _} = change_setting(%{ctx | instructor: administrator}, false)
+    refute Repo.get!(SectionResource, ctx.sr.id).secure_delivery
+  end
+
+  test "institution administrator without instructor role can edit secure delivery", ctx do
+    administrator = insert(:user)
+
+    {:ok, administrator} =
+      Oli.Accounts.update_user_platform_roles(administrator, [
+        PlatformRoles.get_role(:institution_administrator)
+      ])
+
+    refute Sections.is_instructor?(administrator, ctx.section.slug)
+    assert Sections.is_admin?(administrator, ctx.section.slug)
+    assert {:ok, _} = change_setting(%{ctx | instructor: administrator}, true)
+    assert Repo.get!(SectionResource, ctx.sr.id).secure_delivery
   end
 
   test "unsupported enabling and forged user/target are rejected", ctx do

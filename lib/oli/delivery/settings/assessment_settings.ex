@@ -108,7 +108,10 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
          Sections.Blueprint.is_author_of_blueprint?(section.slug, author.id))
   end
 
-  defp settings_editor?(section, user), do: Sections.is_instructor?(user, section.slug)
+  defp settings_editor?(section, user) do
+    Sections.is_instructor?(user, section.slug) or
+      Sections.is_admin?(Oli.Accounts.preload_platform_roles(user), section.slug)
+  end
 
   def do_update(:late_policy, asmt_set_id, new_value, resources) do
     %{section: section, user: user, assessments: asmts} = resources
