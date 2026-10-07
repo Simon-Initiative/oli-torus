@@ -38,17 +38,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
       phx-hook="ModalLaunch"
     >
       <div class="modal-dialog modal-dialog-centered !max-w-[860px]" role="document">
-        <div class="modal-content !rounded-2xl border-0 bg-Background-bg-secondary shadow-xl">
-          <div class="flex items-center px-8 pb-6 pt-8 sm:px-16 sm:pt-16">
+        <div class="modal-content !rounded-2xl !border !border-solid !border-Border-border-default bg-Surface-surface-background shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]">
+          <div class="flex items-center pb-6 pl-8 pr-16 pt-8 sm:px-16 sm:pt-16">
             <h2
               id={"#{@id}-title"}
-              class="m-0 text-2xl font-bold leading-9 text-Text-text-high"
+              class="m-0 text-2xl font-bold leading-8 text-Text-text-high"
             >
               Select Existing Sub-Objective
             </h2>
             <Button.button
               variant={:close}
-              class="absolute right-3 top-3 inline-flex !size-11 items-center justify-center text-Icon-icon-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              class="absolute right-3 top-3 inline-flex !h-11 !w-11 items-center justify-center !opacity-100 text-Icon-icon-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
               data-bs-dismiss="modal"
               aria-label="Close Select Existing Sub-Objective dialog"
             />
@@ -57,7 +57,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
           <div class="px-8 pb-10 sm:pb-16 sm:pl-16 sm:pr-9">
             <form
               id={"#{@id}-filters"}
-              class="mb-6 flex flex-col gap-3 sm:flex-row sm:gap-6"
+              class="mb-2.5 flex flex-col gap-3 sm:flex-row sm:gap-6"
               phx-change="filters_changed"
               phx-submit="filters_changed"
               phx-target={@myself}
@@ -99,26 +99,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
               No sub-objectives match these filters.
             </p>
 
-            <ul class="m-0 flex list-none flex-col gap-2 p-0">
+            <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
               <li
                 :for={sub_objective <- @filtered_sub_objectives}
                 id={"existing-sub-objective-#{sub_objective.resource_id}"}
-                class="flex flex-col gap-3 rounded-md py-2 sm:flex-row sm:items-center"
+                class="flex flex-col gap-1 rounded-md py-2 sm:flex-row sm:items-start"
               >
                 <span class="min-w-0 flex-1 text-base leading-6 text-Text-text-high">
                   {sub_objective.title}
                 </span>
                 <div class="flex shrink-0 gap-2">
-                  <button
-                    type="button"
-                    class="inline-flex h-11 items-center justify-center rounded-md border border-Fill-Buttons-fill-primary px-6 text-sm font-semibold leading-4 text-Text-text-button hover:bg-Fill-Buttons-fill-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                  <Button.button
+                    variant={:secondary}
+                    size={:sm}
                     phx-value-slug={sub_objective.slug}
                     phx-value-parent_slug={@parent_slug}
                     phx-click={@add}
                     aria-label={"Add #{sub_objective.title} to this learning objective"}
                   >
                     Add
-                  </button>
+                  </Button.button>
                 </div>
               </li>
             </ul>

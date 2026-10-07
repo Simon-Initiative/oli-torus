@@ -1360,7 +1360,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(
                view,
-               "#select_existing_sub_modal button[aria-label='Close Select Existing Sub-Objective dialog'][class~='!size-11'] svg"
+               "#select_existing_sub_modal button[aria-label='Close Select Existing Sub-Objective dialog'][class~='!h-11'][class~='!w-11'] svg"
+             )
+
+      assert has_element?(
+               view,
+               "#select_existing_sub_modal .modal-content[class~='!border'][class~='!border-Border-border-default']"
+             )
+
+      assert has_element?(
+               view,
+               "#select_existing_sub_modal-title[class~='leading-8']"
+             )
+
+      assert has_element?(
+               view,
+               "#select_existing_sub_modal-filters[class~='mb-2.5']"
              )
 
       refute has_element?(
@@ -1655,7 +1670,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(
                view,
-               "#select_existing_sub_modal button[phx-click='add_existing_sub'][class~='h-11']"
+               "#select_existing_sub_modal button[phx-click='add_existing_sub'][class~='h-8'][class~='border-Border-border-bold']"
              )
 
       refute has_element?(view, "#select_existing_sub_modal button", "Delete")
