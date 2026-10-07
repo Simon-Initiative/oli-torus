@@ -5,6 +5,15 @@ defmodule Oli.Release do
   """
   @app :oli
 
+  @doc """
+  Marks the running node unready while keeping HTTP and liveness available.
+
+  Invoke with `bin/oli rpc 'Oli.Release.drain()'` before the deployment's
+  propagation wait and graceful shutdown. Repeated calls are safe.
+  """
+  @spec drain() :: :ok
+  def drain, do: Oli.Health.drain()
+
   def reset() do
     drop()
     create()
