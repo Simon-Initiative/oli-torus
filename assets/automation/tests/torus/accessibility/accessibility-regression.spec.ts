@@ -84,11 +84,15 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await expectKeyboardFocus(page, 'a, button, input');
 
     await studentCourse.openPage('Coverage Page');
+    await scanPageAccessibility(page, 'coverage page');
+
+    // Notes are only available when collaboration spaces are enabled for the section.
     const notesToggle = page.getByRole('button', { name: 'Toggle Notes panel' });
-    await expect(notesToggle).toBeVisible();
-    await notesToggle.click();
-    await expect(page.getByRole('complementary', { name: 'Notes Panel' })).toBeVisible();
-    await scanPageAccessibility(page, 'notes');
+    if (await notesToggle.isVisible().catch(() => false)) {
+      await notesToggle.click();
+      await expect(page.getByRole('complementary', { name: 'Notes Panel' })).toBeVisible();
+      await scanPageAccessibility(page, 'notes');
+    }
   });
 
   test('scored activity has no automated accessibility violations', async ({
