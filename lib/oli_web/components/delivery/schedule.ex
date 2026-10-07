@@ -371,7 +371,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
         <% @progress == 100 -> %>
           <Icons.check progress={1.0} />
         <% true -> %>
-          <div role="no icon" class="flex justify-center items-center"></div>
+          <div data-role="no icon" class="flex justify-center items-center"></div>
       <% end %>
     </div>
     """

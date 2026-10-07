@@ -603,7 +603,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               ~s{#page_due_terms [aria-hidden="true"] svg[role="schedule icon"]}
+               ~s{#page_due_terms [aria-hidden="true"] svg[data-role="schedule icon"]}
              )
 
       assert has_element?(

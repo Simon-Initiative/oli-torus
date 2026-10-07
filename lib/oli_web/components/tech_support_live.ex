@@ -146,7 +146,7 @@ defmodule OliWeb.TechSupportLive do
             <div class="value">
               {entry.progress}%
             </div>
-            <div class="bar">
+            <div data-role="upload progress bar" class="bar">
               <span style={"width: #{entry.progress}%"}></span>
             </div>
             <.error :for={err <- upload_errors(@uploads.attached_screenshots, entry)}>

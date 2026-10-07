@@ -11,7 +11,8 @@ defmodule OliWeb.Icons do
 
   def no_icon(assigns) do
     ~H"""
-    <div role="no icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0"></div>
+    <div data-role="no icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
+    </div>
     """
   end
 
@@ -1074,7 +1075,7 @@ defmodule OliWeb.Icons do
   def home(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active home icon"
+      data-role="active home icon"
       class="dark:fill-white dark:stroke-white fill-black/90 stroke-black/90"
       width="18"
       height="18"
@@ -1090,7 +1091,7 @@ defmodule OliWeb.Icons do
   def home(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="home icon"
+      data-role="home icon"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="18"
       height="18"
@@ -1119,7 +1120,7 @@ defmodule OliWeb.Icons do
   def learn(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active learn icon"
+      data-role="active learn icon"
       class="dark:fill-white dark:stroke-white fill-black/90 stroke-black/90"
       width="16"
       height="16"
@@ -1140,7 +1141,7 @@ defmodule OliWeb.Icons do
   def learn(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="learn icon"
+      data-role="learn icon"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="16"
       height="16"
@@ -1163,7 +1164,7 @@ defmodule OliWeb.Icons do
   def schedule(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active schedule icon"
+      data-role="active schedule icon"
       width="16"
       height="18"
       viewBox="0 0 16 18"
@@ -1190,7 +1191,7 @@ defmodule OliWeb.Icons do
   def schedule(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="schedule icon"
+      data-role="schedule icon"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="16"
       height="18"
