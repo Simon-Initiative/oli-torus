@@ -185,10 +185,12 @@ requirements:
   status: proposed
   acceptance_criteria:
   - id: AC-012
-    title: An unauthenticated GET /readyz returns HTTP 200 with JSON string fields status,
-      version and sha when application startup is complete, the instance is not draining,
+    title: An unauthenticated GET /readyz returns HTTP 200 with JSON string status
+      when application startup is complete, the instance is not draining,
       critical local request-serving services are available, and SELECT 1 succeeds through
-      Oli.Repo. Status is ready; version/sha equal the running application’s compiled metadata.
+      Oli.Repo. Status is ready. Only MIX_ENV=playwright builds also include string version/sha
+      equal to the running application’s compiled metadata. Other builds return only status;
+      runtime settings cannot enable metadata or replace compiled identity.
       The endpoint does not compare against a CI-expected revision.
     status: proposed
     verification_method: automated
@@ -197,13 +199,14 @@ requirements:
     title: GET /readyz returns HTTP 503 when startup is incomplete, the instance is draining,
       a required local service is unavailable, or database connection checkout/query fails
       or times out. The database check has a one-second total budget including checkout, and
-      timed-out work does not accumulate. Failure responses expose only status=not_ready and
-      compiled version/sha, with no exception or dependency details.
+      timed-out work does not accumulate. Failure responses expose only status=not_ready, plus
+      compiled version/sha only in Playwright builds, with no exception or dependency details.
     status: proposed
     verification_method: automated
     proofs: []
   - id: AC-014
-    title: Probe responses contain only the specified status and, for /readyz, compiled version/SHA.
+    title: Probe responses contain only the specified status and, for /readyz in Playwright builds,
+      compiled version/SHA.
       Neither probe queries Git, a registry, Kubernetes or other integrations; /readyz only
       checks node-local state/services and Oli.Repo. Probes perform no migrations, external
       integration checks or cache warming and expose no run identifier, credentials, account

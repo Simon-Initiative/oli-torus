@@ -1,11 +1,19 @@
 defmodule OliWeb.ReadinessView do
   use OliWeb, :view
 
-  @version Application.compile_env!(:oli, [:build, :version])
-  @sha Application.compile_env!(:oli, [:build, :sha])
+  @build_identity (case Application.compile_env!(:oli, [:build, :env]) do
+                     :playwright ->
+                       %{
+                         version: Application.compile_env!(:oli, [:build, :version]),
+                         sha: Application.compile_env!(:oli, [:build, :sha])
+                       }
 
-  @doc "Renders only status and the compiled version/SHA, never runtime configuration."
+                     _ ->
+                       %{}
+                   end)
+
+  @doc "Renders status, including compiled version/SHA only in Playwright builds."
   def render("index.json", %{status: status}) do
-    %{status: status, version: @version, sha: @sha}
+    Map.put(@build_identity, :status, status)
   end
 end

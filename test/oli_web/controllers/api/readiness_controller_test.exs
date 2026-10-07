@@ -1,8 +1,6 @@
 defmodule OliWeb.ReadinessControllerTest do
   use OliWeb.ConnCase, async: false
 
-  @build Application.compile_env!(:oli, :build)
-
   setup do
     Oli.Health.starting()
     Oli.Health.started()
@@ -13,19 +11,17 @@ defmodule OliWeb.ReadinessControllerTest do
     end)
   end
 
-  test "HTTP and HTTPS return only ready and this compiled build identity", %{conn: conn} do
+  test "HTTP and HTTPS return only status outside Playwright builds", %{conn: conn} do
     for scheme <- [:http, :https] do
       conn = get(%{conn | scheme: scheme}, "/readyz")
       assert json_response(conn, 200) == body("ready")
-      assert is_binary(json_response(conn, 200)["version"])
-      assert is_binary(json_response(conn, 200)["sha"])
       assert get_resp_header(conn, "cache-control") == ["no-store"]
       assert get_resp_header(conn, "location") == []
       assert conn.private[:plug_session_fetch] != :done
     end
   end
 
-  test "startup and drain return generic 503 with the same build identity", %{conn: conn} do
+  test "startup and drain return only generic 503 status", %{conn: conn} do
     for transition <- [&Oli.Health.starting/0, &Oli.Health.drain/0] do
       transition.()
       response = get(conn, "/readyz")
@@ -34,12 +30,18 @@ defmodule OliWeb.ReadinessControllerTest do
     end
   end
 
-  test "runtime metadata and a client's desired SHA cannot replace compiled identity", %{
+  test "runtime build settings and client parameters cannot enable metadata", %{
     conn: conn
   } do
     previous = Application.fetch_env!(:oli, :build)
     on_exit(fn -> Application.put_env(:oli, :build, previous) end)
-    Application.put_env(:oli, :build, %{version: "future", sha: "different", secret: "private"})
+
+    Application.put_env(:oli, :build, %{
+      env: :playwright,
+      version: "future",
+      sha: "different",
+      secret: "private"
+    })
 
     assert conn |> get("/readyz?sha=different&version=future") |> json_response(200) ==
              body("ready")
@@ -53,5 +55,5 @@ defmodule OliWeb.ReadinessControllerTest do
     assert conn |> get("/healthz") |> json_response(200) == %{"status" => "Ayup!"}
   end
 
-  defp body(status), do: %{"status" => status, "version" => @build.version, "sha" => @build.sha}
+  defp body(status), do: %{"status" => status}
 end
