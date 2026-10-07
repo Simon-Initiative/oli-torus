@@ -250,6 +250,15 @@ defmodule Oli.Delivery.SecureAssessments do
     end
   end
 
+  @doc "Checks whether any existing member of a bounded attempt batch is protected."
+  def protected_attempts?(kind, guids)
+      when kind in [:resource, :activity, :part] and is_list(guids) do
+    kind
+    |> attempt_query(Enum.uniq(guids))
+    |> Repo.all()
+    |> Enum.any?(& &1.secure_delivery)
+  end
+
   @doc "Checks current-token confinement independently of the resource's current policy."
   def authorize_session_scope(nil, operation, %Target{}) when operation in @operations, do: :ok
 
@@ -266,6 +275,11 @@ defmodule Oli.Delivery.SecureAssessments do
   preliminary authorization: the caller must still apply ReviewPolicy and feedback
   filtering. Neither instance disablement nor resource toggles remove token scope.
   """
+  # Existing handlers retain ordinary attempt ownership and review decisions.
+  def authorize(nil, _user_id, operation, %Target{secure_delivery: false})
+      when operation in @operations,
+      do: {:ok, :ordinary_delivery}
+
   def authorize(scope, user_id, operation, %Target{} = target) when operation in @operations do
     with :ok <- authorize_session_scope(scope, operation, target),
          :ok <- owner(target, user_id) do

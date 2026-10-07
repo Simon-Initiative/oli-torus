@@ -108,12 +108,8 @@ defmodule OliWeb.Plugs.SecureAssessment do
             Policy.authorize_batch(scope, user_id, operation, targets)
 
           {nil, {:error, :not_found}} ->
-            # Preview capabilities are server-created, distinct from persisted attempts.
-            # The controller still applies its existing actor/author ownership check.
-            case Oli.Interop.CustomActivities.PreviewSessions.get(guid) do
-              {:ok, _} -> :ok
-              _ -> {:error, :not_found}
-            end
+            # Preserve the ordinary controller's preview and missing-attempt behavior.
+            :ok
 
           {nil, error} ->
             error
@@ -121,11 +117,33 @@ defmodule OliWeb.Plugs.SecureAssessment do
 
       {:attempts, kind, guids, operation} ->
         with :ok <- projection_limit(params),
-             {:ok, targets} <- Policy.resolve_attempts(kind, guids, mutation?(operation)),
-             {:ok, parents} <- parents(params),
-             :ok <- Policy.authorize_batch(scope, user_id, operation, targets, parents),
-             :ok <- nested_parts(scope, user_id, operation, params, parents) do
-          :ok
+             {:ok, targets} <- Policy.resolve_attempts(kind, guids, mutation?(operation)) do
+          protected_targets =
+            case scope do
+              nil -> Enum.filter(targets, & &1.secure_delivery)
+              _ -> targets
+            end
+
+          case protected_targets do
+            [] ->
+              :ok
+
+            targets ->
+              with {:ok, parents} <- parents(params),
+                   :ok <- Policy.authorize_batch(scope, user_id, operation, targets, parents),
+                   :ok <- nested_parts(scope, user_id, operation, params, parents) do
+                :ok
+              end
+          end
+        else
+          {:error, :not_found} when is_nil(scope) ->
+            case Policy.protected_attempts?(kind, guids) do
+              true -> {:error, :not_found}
+              false -> :ok
+            end
+
+          error ->
+            error
         end
     end
   end
@@ -358,11 +376,16 @@ defmodule OliWeb.Plugs.SecureAssessment do
 
     conn = conn |> put_resp_header("cache-control", "no-store") |> put_status(status)
 
-    case String.starts_with?(conn.request_path, "/api/") do
-      true ->
+    format = Phoenix.Controller.get_format(conn)
+
+    cond do
+      format == "json" or (is_nil(format) and String.starts_with?(conn.request_path, "/api/")) ->
         conn |> Phoenix.Controller.json(%{error: reason}) |> halt()
 
-      false ->
+      format in ["text", "txt", "text/plain"] ->
+        conn |> send_resp(status, "Assessment access restricted") |> halt()
+
+      true ->
         title = Gettext.gettext(OliWeb.Gettext, "Assessment access restricted")
 
         message =

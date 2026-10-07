@@ -228,6 +228,49 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     end
   end
 
+  test "ordinary review reaches its existing handler while mixed protected batches fail closed",
+       c do
+    params = %{
+      "section_slug" => c.section.slug,
+      "attempt_guid" => c.attempt.attempt_guid
+    }
+
+    assert {:error, :not_found} =
+             Boundary.check(c.normal, OliWeb.Api.AttemptController, :bulk_retrieve, %{
+               "section_slug" => c.section.slug,
+               "attemptGuids" => [c.activity.attempt_guid, "missing"]
+             })
+
+    Oli.Repo.update!(Ecto.Changeset.change(c.sr, secure_delivery: false))
+
+    assert :ok = Boundary.check(c.normal, OliWeb.Delivery.Student.ReviewLive, :show, params)
+
+    assert :ok =
+             Boundary.check(
+               c.normal,
+               OliWeb.Delivery.Student.ReviewLive,
+               :show,
+               %{params | "attempt_guid" => "missing"}
+             )
+  end
+
+  test "scoped denials use each API route's response format", c do
+    json_conn =
+      c.conn
+      |> init_test_session(%{user_token: c.secure_token})
+      |> get("/jcourse/superactivity/context/#{c.activity.attempt_guid}")
+
+    assert json_response(json_conn, 403)["error"] == "secure_resource_mismatch"
+
+    text_conn =
+      c.conn
+      |> recycle()
+      |> init_test_session(%{user_token: c.secure_token})
+      |> get("/api/v1/blob/missing")
+
+    assert response(text_conn, 403) == "Assessment access restricted"
+  end
+
   test "excluded superactivity routes stay closed to secure sessions", c do
     assert {:error, :secure_resource_mismatch} =
              Boundary.check(c.secure, OliWeb.LegacySuperactivityController, :context, %{
