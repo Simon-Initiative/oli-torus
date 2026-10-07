@@ -498,13 +498,13 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="prev_page"]},
+               ~s{div[data-role="prev_page"]},
                module_1.title
              )
 
       assert has_element?(
                view,
-               ~s{div[role="next_page"]},
+               ~s{div[data-role="next_page"]},
                page_2.title
              )
     end
@@ -1180,7 +1180,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         )
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click
 
       assert_redirected(view, request_path)
@@ -1204,7 +1204,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         )
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click
 
       assert_redirected(view, request_path)
@@ -1234,7 +1234,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         )
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click
 
       assert_redirected(view, request_path)
@@ -1272,7 +1272,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       [href] =
         view
-        |> element(~s{div[role="back_link"] a})
+        |> element(~s{div[data-role="back_link"] a})
         |> render()
         |> Floki.parse_document!()
         |> Floki.find("a")

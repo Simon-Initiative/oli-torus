@@ -1093,13 +1093,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="prev_page"]},
+               ~s{div[data-role="prev_page"]},
                module_1.title
              )
 
       assert has_element?(
                view,
-               ~s{div[role="next_page"]},
+               ~s{div[data-role="next_page"]},
                page_2.title
              )
     end
@@ -1794,7 +1794,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="next_page"] a})
+      |> element(~s{div[data-role="next_page"] a})
       |> render_click
 
       # It redirects to the next page, but still referencing the targeted Learn view in the URL with the next page resource
@@ -1838,7 +1838,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="next_page"] a})
+      |> element(~s{div[data-role="next_page"] a})
       |> render_click
 
       assert_redirected(
@@ -1873,7 +1873,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="next_page"] a})
+      |> element(~s{div[data-role="next_page"] a})
       |> render_click
 
       assert_redirected(
@@ -1889,7 +1889,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="prev_page"] a})
+      |> element(~s{div[data-role="prev_page"] a})
       |> render_click
 
       assert_redirected(
@@ -1922,7 +1922,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click
 
       assert_redirected(
@@ -1948,7 +1948,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click
 
       assert_redirected(
@@ -2053,7 +2053,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
 
-      assert has_element?(view, ~s{div[role="next_page"]}, page_2.title)
+      assert has_element?(view, ~s{div[data-role="next_page"]}, page_2.title)
 
       assert has_element?(view, ~s{div[data-role="check icon"]})
     end
@@ -2071,7 +2071,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_6.slug))
       ensure_content_is_visible(view)
 
-      assert has_element?(view, ~s{div[role="prev_page"]}, page_5.title)
+      assert has_element?(view, ~s{div[data-role="prev_page"]}, page_5.title)
 
       assert has_element?(view, ~s{svg[data-role="square checked icon"]})
     end
@@ -2089,7 +2089,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_6.slug))
       ensure_content_is_visible(view)
 
-      assert has_element?(view, ~s{div[role="prev_page"]}, page_5.title)
+      assert has_element?(view, ~s{div[data-role="prev_page"]}, page_5.title)
 
       assert has_element?(view, ~s{svg[data-role="flag icon"]})
     end
@@ -2107,7 +2107,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
 
-      assert has_element?(view, ~s{div[role="next_page"]}, page_2.title)
+      assert has_element?(view, ~s{div[data-role="next_page"]}, page_2.title)
 
       refute has_element?(view, ~s{div[role="check icon"]})
       refute has_element?(view, ~s{svg[data-role="square checked icon"]})

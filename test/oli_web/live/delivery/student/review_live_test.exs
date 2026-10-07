@@ -390,13 +390,13 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="prev_page"]},
+               ~s{div[data-role="prev_page"]},
                module_1.title
              )
 
       assert has_element?(
                view,
-               ~s{div[role="next_page"]},
+               ~s{div[data-role="next_page"]},
                page_2.title
              )
     end
@@ -534,7 +534,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="next_page"] a})
+      |> element(~s{div[data-role="next_page"] a})
       |> render_click
 
       # It redirects to the next page, but still referencing the targeted Learn view in the URL with the next page resource
@@ -579,7 +579,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="next_page"] a})
+      |> element(~s{div[data-role="next_page"] a})
       |> render_click
 
       assert_redirected(
@@ -617,7 +617,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="next_page"] a})
+      |> element(~s{div[data-role="next_page"] a})
       |> render_click
 
       assert_redirected(
@@ -638,7 +638,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="prev_page"] a})
+      |> element(~s{div[data-role="prev_page"] a})
       |> render_click
 
       assert_redirected(
@@ -673,7 +673,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click
 
       assert_redirected(

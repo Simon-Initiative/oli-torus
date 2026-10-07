@@ -847,7 +847,7 @@ defmodule OliWeb.Icons do
   def world(assigns) do
     ~H"""
     <svg
-      role="world icon"
+      data-role="world icon"
       width="20"
       height="20"
       viewBox="0 0 20 20"
