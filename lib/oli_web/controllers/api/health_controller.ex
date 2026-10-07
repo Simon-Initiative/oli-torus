@@ -1,11 +1,17 @@
 defmodule OliWeb.HealthController do
   use OliWeb, :controller
 
-  action_fallback OliWeb.FallbackController
-
+  @doc "Returns local startup/liveness without querying dependencies."
   def index(conn, _params) do
-    with {:ok, _} <- Ecto.Adapters.SQL.query(Oli.Repo, "select 1", []) do
-      render(conn, "index.json", status: "Ayup!")
-    end
+    {code, status} =
+      case Oli.Health.live?() do
+        true -> {200, "Ayup!"}
+        false -> {503, "starting"}
+      end
+
+    conn
+    |> put_resp_header("cache-control", "no-store")
+    |> put_status(code)
+    |> render("index.json", status: status)
   end
 end
