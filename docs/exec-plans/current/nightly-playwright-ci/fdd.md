@@ -194,7 +194,7 @@ Use two unauthenticated endpoints in all server environments, including producti
 
 | Probe | Endpoint | Checks and response |
 | --- | --- | --- |
-| Startup | `/healthz` | HTTP responds and application initialization completed. Before completion return HTTP 503 with `{"status":"starting"}`; afterward return HTTP 200 with `{"status":"ok"}`. Allow a generous startup window. |
+| Startup | `/healthz` | HTTP responds and application initialization completed. Before completion return HTTP 503 with `{"status":"starting"}`; afterward return HTTP 200 with `{"status":"Ayup!"}`. Allow a generous startup window. |
 | Liveness | `/healthz` | After startup, the HTTP stack responds and local startup state remains complete. No database or external-service calls. Draining or a database outage alone must not change its HTTP 200 response. |
 | Readiness | `/readyz` | Startup complete, not draining, critical local services available, and bounded `SELECT 1` through `Oli.Repo`. Return HTTP 200 with `status: ready` on success; otherwise HTTP 503 with `status: not_ready`. Both responses include compiled string `version` and `sha`. |
 

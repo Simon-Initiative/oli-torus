@@ -71,7 +71,7 @@ Requirements are found in requirements.yml
 
 | Probe | Endpoint | Contract |
 | --- | --- | --- |
-| Startup/liveness | `/healthz` | Local startup state and HTTP response only. Return 503 `starting` before initialization completes, then 200 `ok`, including during draining or database outage. |
+| Startup/liveness | `/healthz` | Local startup state and HTTP response only. Return 503 `starting` before initialization completes, then 200 `Ayup!`, including during draining or database outage. |
 | Readiness | `/readyz` | Require startup complete, not draining, critical local services available, and bounded `SELECT 1` through `Oli.Repo`. Return 200 `ready` or 503 `not_ready`, both with compiled string `version` and `sha`. |
 
 Both endpoints are unauthenticated, support pod HTTP without redirects and public HTTPS, and send `Cache-Control: no-store`. Readiness has a one-second total database checkout/query budget. Exclude the NodeJS evaluator pool, external integrations, queue depth, cluster membership and cache warming. Startup has a generous allowance; shutdown marks draining before services stop. The FDD defines lifecycle and probe timing details.
