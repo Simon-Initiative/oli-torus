@@ -1389,7 +1389,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       view
       |> element("#select_existing_sub_modal-filters")
-      |> render_change(%{"query" => "testing", "status" => "all"})
+      |> render_change(%{"query" => "testing"})
 
       assert has_element?(
                view,
@@ -1553,7 +1553,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(
                view,
-               "#delete_sub_objective_modal[data-initial-focus='#cancel-sub-objective-delete']"
+               "#delete_sub_objective_modal #cancel-sub-objective-delete[autofocus]"
              )
 
       refute AuthoringResolver.from_resource_id(project.slug, sub_obj.resource_id).deleted

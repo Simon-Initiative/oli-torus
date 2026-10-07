@@ -16,7 +16,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SubObjectiveDeleteModal do
       aria-modal="true"
       aria-labelledby={"#{@id}-title"}
       aria-describedby={"#{@id}-description"}
-      data-initial-focus="#cancel-sub-objective-delete"
       phx-hook="ModalLaunch"
     >
       <div class="modal-dialog modal-dialog-centered" role="document">
@@ -41,6 +40,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SubObjectiveDeleteModal do
             <button
               type="button"
               id="cancel-sub-objective-delete"
+              autofocus
               class="rounded-md px-4 py-2 font-semibold text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
               data-bs-dismiss="modal"
             >

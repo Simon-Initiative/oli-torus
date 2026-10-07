@@ -975,6 +975,9 @@ defmodule OliWeb.Icons do
   attr :height, :string, default: "24"
   attr :stroke_width, :string, default: "2"
 
+  @doc """
+  Renders a decorative unlink icon; the triggering control must provide its accessible name.
+  """
   def unlink(assigns) do
     ~H"""
     <svg

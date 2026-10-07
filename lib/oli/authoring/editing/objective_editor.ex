@@ -73,6 +73,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   The selected mappings are locked to prevent adding a reference to a child that
   is being deleted concurrently.
   """
+  @spec add_new_parent_for_sub_objective(binary(), binary(), binary(), %Author{}) ::
+          {:ok, %Revision{}} | {:error, :not_found | {:not_found}}
   def add_new_parent_for_sub_objective(slug, container_slug, project_slug, author) do
     result =
       Repo.transaction(fn ->

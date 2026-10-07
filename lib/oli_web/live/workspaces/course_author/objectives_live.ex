@@ -1126,21 +1126,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
         {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
 
-      {:error, :associated} ->
-        {:noreply,
-         put_flash(
-           socket,
-           :error,
-           "This sub-objective has other learning-objective associations. Refresh and detach it instead."
-         )}
-
-      {:error, :tagged} ->
-        {:noreply,
-         put_flash(
-           socket,
-           :error,
-           "This sub-objective cannot be deleted because it is tagged to course content"
-         )}
+      {:error, reason} when reason in [:associated, :tagged] ->
+        flash_fn = sub_objective_delete_flash({:error, reason})
+        {:noreply, flash_fn.(socket)}
 
       {:error, reason} when reason in [:not_found, :not_associated] ->
         {:noreply,
@@ -1169,7 +1157,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         socket
       ) do
     socket = clear_flash(socket)
-    %{project: %{slug: project_slug}, author: %{email: author_email}} = socket.assigns
+    %{project: project, author: author} = socket.assigns
     operation = {slug, parent_slug}
 
     case MapSet.member?(socket.assigns.pending_sub_objective_detaches, operation) do
@@ -1184,17 +1172,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
               MapSet.put(socket.assigns.pending_sub_objective_detaches, operation)
           )
           |> start_async({:detach_sub_objective, slug, parent_slug}, fn ->
-            with %{} = project <- Course.get_project_by_slug(project_slug),
-                 %{} = author <- Accounts.get_author_by_email(author_email) do
-              ObjectiveEditor.remove_sub_objective_from_parent(
-                slug,
-                author,
-                project,
-                parent_slug
-              )
-            else
-              nil -> {:error, :not_found}
-            end
+            ObjectiveEditor.remove_sub_objective_from_parent(
+              slug,
+              author,
+              project,
+              parent_slug
+            )
           end)
 
         {:noreply, socket}
@@ -1207,7 +1190,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         socket
       ) do
     socket = clear_flash(socket)
-    %{project: %{slug: project_slug}, author: %{email: author_email}} = socket.assigns
+    %{project: project, author: author} = socket.assigns
 
     case MapSet.member?(socket.assigns.pending_sub_objective_delete_slugs, slug) do
       true ->
@@ -1225,12 +1208,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           )
           |> hide_modal(modal_assigns: nil)
           |> start_async({:delete_sub_objective, slug}, fn ->
-            with %{} = project <- Course.get_project_by_slug(project_slug),
-                 %{} = author <- Accounts.get_author_by_email(author_email) do
-              ObjectiveEditor.delete_sub_objective(slug, author, project, parent_slug)
-            else
-              nil -> {:error, :not_found}
-            end
+            ObjectiveEditor.delete_sub_objective(slug, author, project, parent_slug)
           end)
 
         {:noreply, socket}
