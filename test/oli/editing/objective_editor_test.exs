@@ -6,9 +6,6 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
 
-  @moduletag isolation: "serializable"
-  setup :setup_tags
-
   describe "objective editing" do
     setup do
       map =

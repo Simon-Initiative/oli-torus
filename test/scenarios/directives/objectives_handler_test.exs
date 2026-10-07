@@ -4,9 +4,6 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandlerTest do
   alias Oli.Scenarios.DirectiveParser
   alias Oli.Scenarios.Engine
 
-  @moduletag isolation: "serializable"
-  setup :setup_tags
-
   test "objectives directive creates and removes objective hierarchy entries" do
     yaml = """
     - project:

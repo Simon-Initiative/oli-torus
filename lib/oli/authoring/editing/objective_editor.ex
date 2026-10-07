@@ -14,8 +14,6 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   import Oli.Utils
 
-  @serializable_retries 1
-
   @doc """
   Creates a learning objective or sub-objective and optionally associates it with a parent.
 
@@ -77,7 +75,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   """
   def add_new_parent_for_sub_objective(slug, container_slug, project_slug, author) do
     result =
-      serializable_transaction(fn ->
+      Repo.transaction(fn ->
         publication = Publishing.project_working_publication(project_slug)
         revisions = objective_revisions(publication.id, slugs: [slug, container_slug], lock: true)
 
@@ -234,7 +232,6 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
              :last_association
              | :not_associated
              | :not_found
-             | :transaction_conflict
              | Ecto.Changeset.t()}
   def remove_sub_objective_from_parent(
         revision_slug,
@@ -245,7 +242,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     parent_slug = objective_slug(parent_objective_or_slug)
 
     result =
-      serializable_transaction(fn ->
+      Repo.transaction(fn ->
         publication = Publishing.project_working_publication(project.slug)
 
         revisions =
@@ -297,7 +294,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   Only the selected child and parent mappings are locked, sharing the child lock
   with association creation so unrelated objective edits are not blocked.
-  Association and course-content references are checked again within a serializable
+  Association and course-content references are checked again within the
   transaction, including when they changed after the confirmation dialog opened.
   """
   @spec delete_sub_objective(binary(), %Author{}, %Project{}, binary()) ::
@@ -307,11 +304,10 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
              | :not_associated
              | :not_found
              | :tagged
-             | :transaction_conflict
              | Ecto.Changeset.t()}
   def delete_sub_objective(revision_slug, %Author{} = author, %Project{} = project, parent_slug) do
     result =
-      serializable_transaction(fn ->
+      Repo.transaction(fn ->
         publication = Publishing.project_working_publication(project.slug)
 
         revisions =
@@ -386,25 +382,6 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     |> Publishing.get_objective_mappings_by_publication(opts)
     |> Enum.map(& &1.revision)
   end
-
-  defp serializable_transaction(fun, retries \\ @serializable_retries) do
-    Repo.transaction(fn ->
-      Repo.query!("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
-      fun.()
-    end)
-  rescue
-    error in Postgrex.Error ->
-      case {serialization_failure?(error), retries} do
-        {true, retries} when retries > 0 -> serializable_transaction(fun, retries - 1)
-        {true, _retries} -> {:error, :transaction_conflict}
-        {false, _retries} -> reraise error, __STACKTRACE__
-      end
-  end
-
-  defp serialization_failure?(%Postgrex.Error{postgres: %{code: :serialization_failure}}),
-    do: true
-
-  defp serialization_failure?(_error), do: false
 
   defp objective_slug(%{slug: slug}), do: slug
   defp objective_slug(slug) when is_binary(slug), do: slug

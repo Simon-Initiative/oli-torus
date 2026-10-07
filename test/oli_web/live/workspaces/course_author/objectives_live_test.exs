@@ -35,9 +35,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
 
-  @moduletag isolation: "serializable"
-  setup :setup_tags
-
   defp live_view_route(project_slug, params \\ %{}),
     do: ~p"/workspaces/course_author/#{project_slug}/objectives?#{params}"
 

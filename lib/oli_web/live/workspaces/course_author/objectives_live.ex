@@ -1347,16 +1347,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   defp sub_objective_delete_flash({:error, :not_found}),
     do: fn socket -> put_flash(socket, :error, "Could not find that sub-objective") end
 
-  defp sub_objective_delete_flash({:error, :transaction_conflict}) do
-    fn socket ->
-      put_flash(
-        socket,
-        :error,
-        "The sub-objective changed while it was being deleted. Please try again"
-      )
-    end
-  end
-
   defp sub_objective_delete_flash({:error, _reason}),
     do: fn socket -> put_flash(socket, :error, "Could not delete sub-objective") end
 

@@ -23,7 +23,4 @@ defmodule Oli.Scenarios.ScenarioRunnerTest do
       end)
     end
   end
-
-  @moduletag isolation: "serializable"
-  setup :setup_tags
 end
