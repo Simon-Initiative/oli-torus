@@ -146,7 +146,15 @@ defmodule OliWeb.TechSupportLive do
             <div class="value">
               {entry.progress}%
             </div>
-            <div data-role="upload progress bar" class="bar">
+            <div
+              data-role="upload progress bar"
+              class="bar"
+              role="progressbar"
+              aria-label="Screenshot upload progress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow={entry.progress}
+            >
               <span style={"width: #{entry.progress}%"}></span>
             </div>
             <.error :for={err <- upload_errors(@uploads.attached_screenshots, entry)}>

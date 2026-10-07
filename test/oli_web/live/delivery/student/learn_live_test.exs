@@ -1549,7 +1549,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[role="clock icon"]}
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[data-role="clock icon"]}
              )
 
       assert has_element?(
@@ -2583,7 +2583,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[role="clock icon"]}
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[data-role="clock icon"]}
              )
 
       assert has_element?(
