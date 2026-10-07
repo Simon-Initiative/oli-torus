@@ -1595,14 +1595,14 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
       ensure_content_is_visible(view)
-      assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
-      assert has_element?(view, ~s{div[role="page read time"]}, "15")
-      assert has_element?(view, ~s{div[role="page schedule"]}, "Read by:")
-      assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
-      assert has_element?(view, ~s{div[role="page start schedule"]}, "Available by:")
-      assert has_element?(view, ~s{div[role="page start schedule"]}, "Fri Nov 10, 2023")
+      assert has_element?(view, ~s{div[data-role="container label"]}, "Module 1")
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
+      assert has_element?(view, ~s{div[data-role="page read time"]}, "15")
+      assert has_element?(view, ~s{div[data-role="page schedule"]}, "Read by:")
+      assert has_element?(view, ~s{div[data-role="page schedule"]}, "Tue Nov 14, 2023")
+      assert has_element?(view, ~s{div[data-role="page start schedule"]}, "Available by:")
+      assert has_element?(view, ~s{div[data-role="page start schedule"]}, "Fri Nov 10, 2023")
     end
 
     test "hides numbering in page header when curriculum numbering is disabled", %{
@@ -1620,10 +1620,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
       ensure_content_is_visible(view)
 
-      refute has_element?(view, ~s{div[role="container label"]})
-      refute has_element?(view, ~s{div[role="container label"]}, "Module")
+      refute has_element?(view, ~s{div[data-role="container label"]})
+      refute has_element?(view, ~s{div[data-role="container label"]}, "Module")
       refute has_element?(view, ~s{div[role="page header divider"]})
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
     end
 
     test "can not see page duration time when it is not set", %{
@@ -2055,7 +2055,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(view, ~s{div[role="next_page"]}, page_2.title)
 
-      assert has_element?(view, ~s{div[role="check icon"]})
+      assert has_element?(view, ~s{div[data-role="check icon"]})
     end
 
     test "show square checked icon when page is graded and is completed", %{
@@ -2073,7 +2073,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(view, ~s{div[role="prev_page"]}, page_5.title)
 
-      assert has_element?(view, ~s{svg[role="square checked icon"]})
+      assert has_element?(view, ~s{svg[data-role="square checked icon"]})
     end
 
     test "show orange flag icon when page is graded and is not completed", %{
@@ -2091,7 +2091,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(view, ~s{div[role="prev_page"]}, page_5.title)
 
-      assert has_element?(view, ~s{svg[role="flag icon"]})
+      assert has_element?(view, ~s{svg[data-role="flag icon"]})
     end
 
     test "does not show any icon when page is not graded and is not completed", %{
@@ -2110,8 +2110,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="next_page"]}, page_2.title)
 
       refute has_element?(view, ~s{div[role="check icon"]})
-      refute has_element?(view, ~s{svg[role="square checked icon"]})
-      refute has_element?(view, ~s{svg[role="flag icon"]})
+      refute has_element?(view, ~s{svg[data-role="square checked icon"]})
+      refute has_element?(view, ~s{svg[data-role="flag icon"]})
     end
 
     test "no auto-submit when late disallowed, no time limit, and scheduling type is read_by", %{
@@ -2139,7 +2139,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       ## assert that redirect is not happening and the submit button and title are present
-      assert has_element?(view, "h1[role='page title']", page_3.title)
+      assert has_element?(view, "h1[data-role='page title']", page_3.title)
       assert has_element?(view, "button[id='submit_answers']", "Submit Answers")
     end
 
@@ -3066,7 +3066,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "h1[role='page title']",
+               "h1[data-role='page title']",
                "This is a page configured to show one question at a time"
              )
 
@@ -3161,7 +3161,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "h1[role='page title']",
+               "h1[data-role='page title']",
                "This is a page configured to show one question at a time with no questions"
              )
 
@@ -3977,7 +3977,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page loads correctly
       assert has_element?(
                view,
-               "h1[role='page title']",
+               "h1[data-role='page title']",
                "This is a page configured to show one question at a time"
              )
 
@@ -4027,7 +4027,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page still loads correctly
       assert has_element?(
                view,
-               "h1[role='page title']",
+               "h1[data-role='page title']",
                "This is a page configured to show one question at a time"
              )
     end
@@ -4067,7 +4067,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page still loads correctly
       assert has_element?(
                view,
-               "h1[role='page title']",
+               "h1[data-role='page title']",
                "This is a page configured to show one question at a time"
              )
     end
@@ -4104,7 +4104,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page loads correctly
       assert has_element?(
                view,
-               "h1[role='page title']",
+               "h1[data-role='page title']",
                "This is a page configured to show one question at a time"
              )
     end

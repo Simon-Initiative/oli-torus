@@ -79,7 +79,7 @@ defmodule OliWeb.Icons do
   def flag(assigns) do
     ~H"""
     <svg
-      role="flag icon"
+      data-role="flag icon"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -397,7 +397,7 @@ defmodule OliWeb.Icons do
   def square_checked(assigns) do
     ~H"""
     <svg
-      role="square checked icon"
+      data-role="square checked icon"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -463,11 +463,11 @@ defmodule OliWeb.Icons do
 
   def check(assigns) do
     ~H"""
-    <div role="check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
+    <div data-role="check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
       <svg
         :if={@progress == 1.0}
         xmlns="http://www.w3.org/2000/svg"
-        role={@role}
+        data-role={@role}
         width="24"
         height="24"
         viewBox="0 0 24 24"
@@ -773,7 +773,7 @@ defmodule OliWeb.Icons do
   def plus(assigns) do
     ~H"""
     <svg
-      role="plus icon"
+      data-role="plus icon"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -2257,7 +2257,8 @@ defmodule OliWeb.Icons do
   def timezone_world(assigns) do
     ~H"""
     <svg
-      role="timezone world icon"
+      data-role="timezone world icon"
+      aria-hidden="true"
       width="20"
       height="20"
       viewBox="0 0 20 20"

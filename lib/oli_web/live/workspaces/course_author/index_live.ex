@@ -261,7 +261,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
                           checked={@show_all}
                           phx-click="toggle_show_all"
                         />
-                        <label class="dark:text-[#eeebf5] text-base font-normal font-['Roboto'] mt-1">
+                        <label
+                          for="allCheck"
+                          class="dark:text-[#eeebf5] text-base font-normal font-['Roboto'] mt-1"
+                        >
                           Show all projects
                         </label>
                       </div>
@@ -274,7 +277,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
                         checked={@show_deleted}
                         phx-click="toggle_show_deleted"
                       />
-                      <label class="dark:text-[#eeebf5] text-base font-normal font-['Roboto'] mt-1">
+                      <label
+                        for="deletedCheck"
+                        class="dark:text-[#eeebf5] text-base font-normal font-['Roboto'] mt-1"
+                      >
                         Show deleted projects
                       </label>
                     </div>

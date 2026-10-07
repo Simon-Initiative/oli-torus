@@ -340,7 +340,13 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
 
       # Displays Graded 1 in Unit 1
       assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="container_label"]}, "Unit 1")
-      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="resource_type"]}, "Assignment")
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_1_1 div[data-role="resource_type"]},
+               "Assignment"
+             )
+
       assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="title"]}, "Graded 1")
 
       assert has_element?(
@@ -352,7 +358,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       # Displays Lesson group in Unit 1 > Module 1 (contains Graded 2 and Practice 1)
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]}, "Unit 1")
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]}, "Module 1")
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="resource_type"]}, "Lesson")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[data-role="resource_type"]}, "Lesson")
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="title"]}, "Module 1")
 
       assert has_element?(
@@ -372,14 +378,20 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       # Displays Exploration 1 in Unit 1 > Module 2
       assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="container_label"]}, "Unit 1")
       assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="container_label"]}, "Module 2")
-      assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="resource_type"]}, "Exploration")
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_2_1 div[data-role="resource_type"]},
+               "Exploration"
+             )
+
       assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="title"]}, "Exploration 1")
       assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="details"]}, "7 days left")
 
       # Displays Practice 2 in Unit 1 > Module 2
       assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="container_label"]}, "Unit 1")
       assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="container_label"]}, "Module 2")
-      assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="resource_type"]}, "Practice")
+      assert has_element?(lcd, ~s{#schedule_item_2_2 div[data-role="resource_type"]}, "Practice")
       assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="title"]}, "Practice 2")
       assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="details"]}, "10 days left")
     end
@@ -525,7 +537,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
 
       assert has_element?(
                lcd,
-               ~s{#schedule_item_1_2 div[role="group_item"]:first-of-type div[role="check icon"]}
+               ~s{#schedule_item_1_2 div[role="group_item"]:first-of-type div[data-role="check icon"]}
              )
 
       # Now displays Graded 2

@@ -462,7 +462,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def sidebar_toggler(assigns) do
     ~H"""
     <button
-      role="toggle sidebar"
+      data-role="toggle sidebar"
       phx-click={
         JS.patch(
           path_for(
@@ -495,10 +495,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def workspace_sidebar_toggler(assigns) do
     ~H"""
     <button
-      role="toggle sidebar"
+      data-role="toggle sidebar"
       phx-click={
         JS.patch(toggled_workspace_path(@sidebar_expanded, @uri))
-        |> JS.hide(to: "div[role='expandable_submenu']")
+        |> JS.hide(to: "div[data-role='expandable_submenu']")
         |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}

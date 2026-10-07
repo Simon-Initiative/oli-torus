@@ -151,7 +151,14 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         class="flex flex-col gap-6"
         id="password_attempt_form"
       >
-        <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
+        <input
+          id="password_attempt_input"
+          type="password"
+          name="password"
+          field={:password}
+          value=""
+          aria-label="Assessment password"
+        />
         <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
       </.form>
     </Modal.modal>

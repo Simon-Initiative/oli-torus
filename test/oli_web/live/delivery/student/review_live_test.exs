@@ -418,11 +418,11 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       ensure_content_is_visible(view)
 
-      assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
-      assert has_element?(view, ~s{div[role="page read time"]}, "15")
-      assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
+      assert has_element?(view, ~s{div[data-role="container label"]}, "Module 1")
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
+      assert has_element?(view, ~s{div[data-role="page read time"]}, "15")
+      assert has_element?(view, ~s{div[data-role="page schedule"]}, "Tue Nov 14, 2023")
 
       assert has_element?(
                view,
@@ -455,10 +455,10 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       ensure_content_is_visible(view)
 
-      refute has_element?(view, ~s{div[role="container label"]})
+      refute has_element?(view, ~s{div[data-role="container label"]})
       refute has_element?(view, ~s{div[role="page header divider"]})
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
     end
 
     test "loads review header for pages inside an unnumbered unit", %{
@@ -480,9 +480,9 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       ensure_content_is_visible(view)
 
-      refute has_element?(view, ~s{div[role="container label"]})
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+      refute has_element?(view, ~s{div[data-role="container label"]})
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
     end
 
     test "back to summary screen button redirects to the prologue page", %{
@@ -805,7 +805,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       ensure_content_is_visible(view)
       assert has_element?(view, "span", "The best course ever!")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 1")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 1")
     end
 
     test "student cannot access attempt when review_submission is disallowed", %{

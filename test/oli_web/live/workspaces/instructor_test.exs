@@ -22,7 +22,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
     test "does not see any label on user menu", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
-      refute has_element?(view, "div[role='account label']")
+      refute has_element?(view, "div[data-role='account label']")
     end
 
     test "can see product title, image and description in sections index with a link to it on instructor workspace",
@@ -344,7 +344,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
     test "sees the instructor label on user menu", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
-      assert has_element?(view, "div[role='account label']", "Instructor")
+      assert has_element?(view, "div[data-role='account label']", "Instructor")
     end
 
     test "sees linked account email on user menu", %{conn: conn, instructor: instructor} do

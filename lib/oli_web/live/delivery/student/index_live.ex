@@ -855,7 +855,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             on_going_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
             completed_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
             not_completed_colour="bg-[#385581]"
-            role="course progress bar"
+            role="progressbar"
+            aria-label="Course progress"
             show_percent={false}
             show_halo={true}
           />
@@ -1078,9 +1079,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             <div class="grow shrink basis-0 text-lg tracking-tight font-bold">Latest</div>
           </button>
         </div>
-        <div role="assignments" class="w-full h-fit flex-col justify-start items-start gap-2.5 flex">
+        <div
+          data-role="assignments"
+          class="w-full h-fit flex-col justify-start items-start gap-2.5 flex"
+        >
           <%= if Enum.empty?(@lessons) do %>
-            <div role="message" class="flex-col justify-start items-start gap-2.5 flex">
+            <div data-role="message" class="flex-col justify-start items-start gap-2.5 flex">
               <div class="dark:text-white text-base font-normal font-sans tracking-[0.32px] break-words">
                 {empty_assignments_message(@assignments_tab)}
               </div>
@@ -1185,7 +1189,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <div class="flex flex-col justify-start items-start gap-2.5 flex-grow min-w-0 overflow-hidden pr-2">
             <div
               :if={unit_label || module_label}
-              role="container_label"
+              data-role="container_label"
               class="uppercase w-full min-w-0 dark:text-white text-opacity-60 text-xs font-bold break-words"
             >
               <span class="break-words">
@@ -1197,7 +1201,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             </div>
 
             <div
-              role="title"
+              data-role="title"
               class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex min-w-0"
             >
               <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold break-words">
@@ -1238,7 +1242,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp lesson_details(%{upcoming: true} = assigns) do
     ~H"""
-    <div role="details" class="w-full h-full flex flex-col items-stretch gap-5 relative">
+    <div data-role="details" class="w-full h-full flex flex-col items-stretch gap-5 relative">
       <div class="pr-2 pl-1 self-end">
         <div class="flex items-end gap-1">
           <div
@@ -1264,7 +1268,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   # Completed page
   defp lesson_details(%{completed: true} = assigns) do
     ~H"""
-    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
+    <div data-role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
       <div class="justify-end items-end gap-2.5 flex ml-auto">
         <div class="flex items-end gap-1">
           <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold">
@@ -1280,20 +1284,20 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   # Non-completed graded page (assignment)
   defp lesson_details(%{lesson: %{graded: true, batch_scoring: false}} = assigns) do
     ~H"""
-    <div role="details" class="pt-2 pb-1 px-2 flex self-stretch justify-between gap-5">
+    <div data-role="details" class="pt-2 pb-1 px-2 flex self-stretch justify-between gap-5">
       <div class="flex items-center justify-between gap-2.5 w-full">
         <div class="text-sm font-semibold leading-4 text-Text-text-low-alpha">Score as you go</div>
         <div class="flex justify-end items-center gap-1 text-Icon-icon-accent-green-bold">
           <div class="inline-flex h-4 w-4 shrink-0 items-center justify-center">
             <Icons.score_as_you_go color="text-Icon-icon-accent-green-bold" />
           </div>
-          <div role="score" class="text-sm font-semibold tracking-tight">
+          <div data-role="score" class="text-sm font-semibold tracking-tight">
             {Utils.format_score(@lesson.score)}
           </div>
           <div class="text-sm font-semibold tracking-widest">
             /
           </div>
-          <div role="out_of" class="text-sm font-semibold tracking-tight">
+          <div data-role="out_of" class="text-sm font-semibold tracking-tight">
             {Utils.format_score(@lesson.out_of)}
           </div>
         </div>
@@ -1306,7 +1310,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           Time Remaining:
         </div>
         <div
-          role="countdown"
+          data-role="countdown"
           class={[
             if(@lesson.purpose == :application,
               do: "text-exploration dark:text-exploration-dark",
@@ -1325,10 +1329,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   # Non-completed graded page (assignment)
   defp lesson_details(%{lesson: %{graded: true}} = assigns) do
     ~H"""
-    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
+    <div data-role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
       <%= if @lesson.last_attempt_state != :active do %>
         <div class="flex px-2 py-0.5 bg-white/10 rounded-xl shadow tracking-tight gap-2 items-center align-center">
-          <div role="count" class="pl-1 justify-start items-center gap-2.5 flex">
+          <div data-role="count" class="pl-1 justify-start items-center gap-2.5 flex">
             <div class="dark:text-white text-xs font-semibold">
               Attempt {"#{@lesson.attempts_count}/#{max_attempts(@lesson.settings.max_attempts)}"}
             </div>
@@ -1343,7 +1347,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             Time Remaining:
           </div>
           <div
-            role="countdown"
+            data-role="countdown"
             class={[
               if(@lesson.purpose == :application,
                 do: "text-exploration dark:text-exploration-dark",
@@ -1362,13 +1366,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       >
         <div class="flex justify-end items-center gap-1 text-Icon-icon-accent-green-bold">
           <div class="inline-flex h-4 w-4 shrink-0 items-center justify-center"><Icons.star /></div>
-          <div role="score" class="text-sm font-semibold tracking-tight">
+          <div data-role="score" class="text-sm font-semibold tracking-tight">
             {Utils.format_score(@lesson.score)}
           </div>
           <div class="text-sm font-semibold tracking-widest">
             /
           </div>
-          <div role="out_of" class="text-sm font-semibold tracking-tight">
+          <div data-role="out_of" class="text-sm font-semibold tracking-tight">
             {Utils.format_score(@lesson.out_of)}
           </div>
         </div>
@@ -1380,7 +1384,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   # Non-completed practice page
   defp lesson_details(assigns) do
     ~H"""
-    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
+    <div data-role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
       <div
         :if={lesson_expires?(@lesson)}
         class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex"
@@ -1388,7 +1392,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="opacity-50 text-black dark:text-white text-xs font-normal">
           Time Remaining:
         </div>
-        <div role="countdown" class="text-practice dark:text-practice-dark text-xs font-normal">
+        <div data-role="countdown" class="text-practice dark:text-practice-dark text-xs font-normal">
           {effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining()}
         </div>
       </div>

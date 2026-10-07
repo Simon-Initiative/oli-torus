@@ -606,7 +606,10 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                ~s{#page_due_terms [aria-hidden="true"] svg[role="schedule icon"]}
              )
 
-      assert has_element?(view, ~s{#attempts_summary [aria-hidden="true"] svg[role="flag icon"]})
+      assert has_element?(
+               view,
+               ~s{#attempts_summary [aria-hidden="true"] svg[data-role="flag icon"]}
+             )
     end
 
     test "can see prologue on graded adaptive pages with no attempt in progress", %{
@@ -981,12 +984,12 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
-      assert has_element?(view, ~s{div[role="page read time"]}, "15")
-      refute has_element?(view, ~s{div[role="page schedule"]})
-      refute has_element?(view, ~s{div[role="assignment marker"]})
+      assert has_element?(view, ~s{div[data-role="container label"]}, "Module 1")
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
+      assert has_element?(view, ~s{div[data-role="page read time"]}, "15")
+      refute has_element?(view, ~s{div[data-role="page schedule"]})
+      refute has_element?(view, ~s{div[data-role="assignment marker"]})
     end
 
     test "hides numbering in scored page header when curriculum numbering is disabled", %{
@@ -1003,10 +1006,10 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      refute has_element?(view, ~s{div[role="container label"]})
+      refute has_element?(view, ~s{div[data-role="container label"]})
       refute has_element?(view, ~s{div[role="page header divider"]})
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
     end
 
     test "loads scored page header for pages inside an unnumbered unit", %{
@@ -1024,9 +1027,9 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      refute has_element?(view, ~s{div[role="container label"]})
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+      refute has_element?(view, ~s{div[data-role="container label"]})
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
     end
 
     test "can see learning objectives and proficiency on page header", %{

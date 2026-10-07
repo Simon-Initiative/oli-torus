@@ -10,6 +10,7 @@ export const scenarioToken = process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token'
 
 export type StudentDeliveryScenarioOutputs = {
   sections?: Record<string, string>;
+  projects?: Record<string, string>;
 };
 
 type LoginRecordOptions = {
