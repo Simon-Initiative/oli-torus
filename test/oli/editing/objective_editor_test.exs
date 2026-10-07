@@ -495,8 +495,33 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       assert {:ok, _} =
                ObjectiveEditor.sub_objective_delete_eligibility(child.slug, project, parent.slug)
 
-      assert {:ok, deleted} =
-               ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug)
+      handler_id = {__MODULE__, :deletion_locks, make_ref()}
+
+      :ok =
+        :telemetry.attach(
+          handler_id,
+          [:oli, :repo, :query],
+          fn _event, _measurements, metadata, owner ->
+            case self() == owner and String.contains?(metadata.query, "FOR UPDATE") do
+              true -> send(owner, {:deletion_lock_query, metadata.params})
+              false -> :ok
+            end
+          end,
+          self()
+        )
+
+      result =
+        try do
+          ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug)
+        after
+          :telemetry.detach(handler_id)
+        end
+
+      assert {:ok, deleted} = result
+
+      assert_receive {:deletion_lock_query, params}
+      assert [child.slug, parent.slug] in params
+      refute_receive {:deletion_lock_query, _params}
 
       assert deleted.deleted
       assert AuthoringResolver.from_resource_id(project.slug, parent.resource_id).children == []

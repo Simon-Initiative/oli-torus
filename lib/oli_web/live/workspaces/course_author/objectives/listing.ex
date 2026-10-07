@@ -86,31 +86,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                 />
               </button>
 
-              <span class="group/action relative inline-flex">
-                <button
-                  type="button"
-                  class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-                  phx-click="display_delete_modal"
-                  phx-value-slug={item.slug}
-                  aria-label={"Delete Learning Objective: #{item.title}"}
-                  aria-describedby={"delete-objective-tooltip-#{item.resource_id}"}
-                >
-                  <Icons.trash
-                    width="14"
-                    height="15"
-                    stroke_width="1.23853"
-                    variant="objective"
-                    class="shrink-0 text-current"
-                  />
-                </button>
-                <span
-                  id={"delete-objective-tooltip-#{item.resource_id}"}
-                  role="tooltip"
-                  class="pointer-events-none absolute bottom-[calc(100%+8px)] right-0 z-20 hidden whitespace-nowrap rounded border border-Border-border-default bg-Background-bg-secondary px-2 py-1 text-xs font-normal leading-4 text-Text-text-high shadow-[0px_2px_4px_rgba(0,52,99,0.10)] group-hover/action:block group-focus-within/action:block"
-                >
-                  Delete Learning Objective
-                </span>
-              </span>
+              <button
+                id={"delete-objective-action-#{item.resource_id}"}
+                type="button"
+                class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                phx-click="display_delete_modal"
+                phx-value-slug={item.slug}
+                phx-hook="GlobalTooltip"
+                data-tooltip="Delete Learning Objective"
+                aria-label={"Delete Learning Objective: #{item.title}"}
+              >
+                <Icons.trash
+                  width="14"
+                  height="15"
+                  stroke_width="1.23853"
+                  variant="objective"
+                  class="shrink-0 text-current"
+                />
+              </button>
 
               <.link
                 :if={@revision_history_link}
@@ -389,59 +382,49 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                               class="shrink-0 text-current"
                             />
                           </button>
-                          <span class="group/action relative inline-flex">
-                            <button
-                              type="button"
-                              class={[
-                                "inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
-                                !detaching? &&
-                                  "hover:bg-Fill-Buttons-fill-primary hover:text-white active:text-Icon-icon-active",
-                                detaching? && "cursor-wait opacity-70"
-                              ]}
-                              id={"sub-objective-action-#{item.resource_id}-#{sub_objective.resource_id}"}
-                              phx-click={
-                                if shared?,
-                                  do: "detach_sub_objective",
-                                  else: "display_sub_objective_delete_modal"
-                              }
-                              phx-value-slug={sub_objective.slug}
-                              phx-value-parent_slug={item.slug}
-                              disabled={detaching? or deleting?}
-                              aria-busy={to_string(detaching? or deleting?)}
-                              aria-label={"#{action_label}: #{sub_objective.title}"}
-                              aria-describedby={"detach-sub-objective-tooltip-#{item.resource_id}-#{sub_objective.resource_id}"}
-                            >
-                              <Icons.unlink
-                                :if={shared? and !detaching?}
-                                width="16"
-                                height="16"
-                                stroke_width="1.5"
-                                class="shrink-0 text-current"
-                              />
-                              <Icons.trash
-                                :if={!shared? and !deleting?}
-                                width="14"
-                                height="15"
-                                stroke_width="1.23853"
-                                variant="objective"
-                                class="shrink-0 text-current"
-                              />
-                              <.loader
-                                :if={detaching? or deleting?}
-                                class="flex items-center justify-center"
-                                icon_class="text-Icon-icon-default"
-                              />
-                            </button>
-                            <span
-                              id={"detach-sub-objective-tooltip-#{item.resource_id}-#{sub_objective.resource_id}"}
-                              role="tooltip"
-                              class="pointer-events-none absolute bottom-[calc(100%+8px)] right-0 z-20 hidden whitespace-nowrap rounded border border-Border-border-default bg-Background-bg-secondary px-2 py-1 text-xs font-normal leading-4 text-Text-text-high shadow-[0px_2px_4px_rgba(0,52,99,0.10)] group-hover/action:block group-focus-within/action:block"
-                            >
-                              {if detaching?,
-                                do: "Detaching…",
-                                else: action_label}
-                            </span>
-                          </span>
+                          <button
+                            type="button"
+                            class={[
+                              "inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+                              !detaching? &&
+                                "hover:bg-Fill-Buttons-fill-primary hover:text-white active:text-Icon-icon-active",
+                              detaching? && "cursor-wait opacity-70"
+                            ]}
+                            id={"sub-objective-action-#{item.resource_id}-#{sub_objective.resource_id}"}
+                            phx-click={
+                              if shared?,
+                                do: "detach_sub_objective",
+                                else: "display_sub_objective_delete_modal"
+                            }
+                            phx-value-slug={sub_objective.slug}
+                            phx-value-parent_slug={item.slug}
+                            phx-hook="GlobalTooltip"
+                            data-tooltip={if detaching?, do: "Detaching…", else: action_label}
+                            disabled={detaching? or deleting?}
+                            aria-busy={to_string(detaching? or deleting?)}
+                            aria-label={"#{action_label}: #{sub_objective.title}"}
+                          >
+                            <Icons.unlink
+                              :if={shared? and !detaching?}
+                              width="16"
+                              height="16"
+                              stroke_width="1.5"
+                              class="shrink-0 text-current"
+                            />
+                            <Icons.trash
+                              :if={!shared? and !deleting?}
+                              width="14"
+                              height="15"
+                              stroke_width="1.23853"
+                              variant="objective"
+                              class="shrink-0 text-current"
+                            />
+                            <.loader
+                              :if={detaching? or deleting?}
+                              class="flex items-center justify-center"
+                              icon_class="text-Icon-icon-default"
+                            />
+                          </button>
                         </div>
                       </div>
                       <div

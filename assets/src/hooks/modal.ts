@@ -15,7 +15,15 @@ export const ModalLaunch = {
 
     const initialFocus = this.el.dataset.initialFocus;
     $(`#${id}`).on('shown.bs.modal', () => {
-      const target = this.el.querySelector(initialFocus || '[autofocus]');
+      let target: Element | null = null;
+      if (initialFocus) {
+        try {
+          target = this.el.querySelector(initialFocus);
+        } catch {
+          // A malformed custom selector must not prevent the autofocus fallback.
+        }
+      }
+      target ??= this.el.querySelector('[autofocus]');
       if (target instanceof HTMLElement) target.focus();
     });
 

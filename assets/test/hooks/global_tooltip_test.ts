@@ -13,6 +13,7 @@ function buildTrigger(position?: string): HTMLElement {
 
 describe('GlobalTooltip', () => {
   const originalRequestAnimationFrame = window.requestAnimationFrame;
+  const mountedElements: HTMLElement[] = [];
 
   beforeAll(() => {
     window.requestAnimationFrame = ((callback: FrameRequestCallback) => {
@@ -57,11 +58,14 @@ describe('GlobalTooltip', () => {
   });
 
   afterEach(() => {
+    mountedElements.forEach((el) => GlobalTooltip.destroyed!.call({ el } as any));
+    mountedElements.length = 0;
     document.getElementById(WRAPPER_ID)?.remove();
   });
 
   function mount(el: HTMLElement) {
     GlobalTooltip.mounted!.call({ el } as any);
+    mountedElements.push(el);
   }
 
   test('positions a bottom tooltip below the trigger and orders the caret before the tooltip', () => {
@@ -118,5 +122,57 @@ describe('GlobalTooltip', () => {
 
     expect(document.getElementById(WRAPPER_ID)).toBeNull();
     expect(el.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  test('Escape dismisses a focused tooltip without moving focus and restores its description', () => {
+    const el = buildTrigger();
+    el.setAttribute('aria-describedby', 'existing-description');
+    mount(el);
+    el.focus();
+
+    expect(document.getElementById(WRAPPER_ID)).not.toBeNull();
+    expect(el.getAttribute('aria-describedby')).toBe(`existing-description ${WRAPPER_ID}`);
+
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(document.getElementById(WRAPPER_ID)).toBeNull();
+    expect(el).toHaveFocus();
+    expect(el.getAttribute('aria-describedby')).toBe('existing-description');
+  });
+
+  test('Escape dismisses a hovered tooltip while focus remains on another control', () => {
+    const el = buildTrigger();
+    const focusedControl = document.createElement('button');
+    document.body.append(focusedControl);
+    focusedControl.focus();
+    mount(el);
+    el.dispatchEvent(new Event('mouseenter'));
+
+    expect(document.getElementById(WRAPPER_ID)).not.toBeNull();
+
+    focusedControl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(document.getElementById(WRAPPER_ID)).toBeNull();
+    expect(focusedControl).toHaveFocus();
+    expect(el.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  test('Escape dismisses only the currently active tooltip when multiple hooks are mounted', () => {
+    const first = buildTrigger();
+    const second = document.createElement('button');
+    second.dataset.tooltip = 'Second help text';
+    document.body.append(second);
+    mount(first);
+    mount(second);
+    first.focus();
+    second.focus();
+
+    expect(document.getElementById(WRAPPER_ID)?.textContent).toBe('Second help text');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(document.getElementById(WRAPPER_ID)).toBeNull();
+    expect(second).toHaveFocus();
+    expect(second.hasAttribute('aria-describedby')).toBe(false);
   });
 });

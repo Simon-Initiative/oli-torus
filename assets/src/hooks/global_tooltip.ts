@@ -141,7 +141,7 @@ export const GlobalTooltip = {
     };
 
     const handleKeydown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && activeDescribedElement === el) {
         hideTooltip();
       }
     };
@@ -151,7 +151,7 @@ export const GlobalTooltip = {
     el.addEventListener('click', handleClick);
     el.addEventListener('mouseleave', hideTooltip);
     el.addEventListener('blur', hideTooltip);
-    el.addEventListener('keydown', handleKeydown);
+    document.addEventListener('keydown', handleKeydown);
     document.addEventListener('click', handleDocumentClick);
 
     cleanupByElement.set(el, () => {
@@ -161,7 +161,7 @@ export const GlobalTooltip = {
       el.removeEventListener('click', handleClick);
       el.removeEventListener('mouseleave', hideTooltip);
       el.removeEventListener('blur', hideTooltip);
-      el.removeEventListener('keydown', handleKeydown);
+      document.removeEventListener('keydown', handleKeydown);
       document.removeEventListener('click', handleDocumentClick);
     });
   },

@@ -82,6 +82,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
             </form>
 
             <p
+              id={"#{@id}-results-status"}
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              class="sr-only"
+            >
+              {results_status(@filtered_sub_objectives)}
+            </p>
+
+            <p
               :if={@filtered_sub_objectives == []}
               id={"#{@id}-empty"}
               class="m-0 rounded-md border border-Border-border-default px-4 py-6 text-center text-sm text-Text-text-low-alpha"
@@ -137,4 +147,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
 
     assign(socket, filtered_sub_objectives: filtered_sub_objectives)
   end
+
+  defp results_status([]), do: "No sub-objectives match these filters."
+  defp results_status([_]), do: "1 sub-objective available."
+  defp results_status(sub_objectives), do: "#{length(sub_objectives)} sub-objectives available."
 end

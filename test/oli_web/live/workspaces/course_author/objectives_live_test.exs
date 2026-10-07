@@ -1374,6 +1374,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(
                view,
+               "#select_existing_sub_modal-results-status[role='status'][aria-live='polite'][aria-atomic='true']",
+               "2 sub-objectives available."
+             )
+
+      assert has_element?(
+               view,
                "button[phx-click='add_existing_sub'][phx-value-slug=#{sub_obj_b.slug}]",
                "Add"
              )
@@ -1387,6 +1393,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       view
       |> element("#select_existing_sub_modal-filters")
       |> render_change(%{"query" => "testing", "status" => "all"})
+
+      assert has_element?(
+               view,
+               "#select_existing_sub_modal-results-status",
+               "1 sub-objective available."
+             )
 
       assert has_element?(
                view,
@@ -1524,11 +1536,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(
                view,
-               "#delete-objective-tooltip-#{obj.resource_id}",
-               "Delete Learning Objective"
+               "#delete-objective-action-#{obj.resource_id}[phx-hook='GlobalTooltip'][data-tooltip='Delete Learning Objective']"
              )
 
-      assert has_element?(view, "[role='tooltip']", "Delete sub-objective")
+      assert has_element?(
+               view,
+               "#sub-objective-action-#{obj.resource_id}-#{sub_obj.resource_id}[phx-hook='GlobalTooltip'][data-tooltip='Delete sub-objective']"
+             )
 
       view
       |> element(
@@ -1600,7 +1614,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
           live_view_route(project.slug, %{expanded: Enum.join([obj_a.slug, obj_b.slug], ",")})
         )
 
-      assert has_element?(view, "[role='tooltip']", "Detach from learning objective")
+      assert has_element?(
+               view,
+               "#sub-objective-action-#{obj_a.resource_id}-#{sub_obj.resource_id}[phx-hook='GlobalTooltip'][data-tooltip='Detach from learning objective']"
+             )
 
       refute has_element?(
                view,
@@ -1652,11 +1669,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(view, "#select_existing_sub_modal-empty")
 
+      assert has_element?(
+               view,
+               "#select_existing_sub_modal-results-status[role='status'][aria-live='polite']",
+               "No sub-objectives match these filters."
+             )
+
       view
       |> element("#select_existing_sub_modal-filters")
       |> render_submit(%{"query" => "Sub Objective"})
 
       assert has_element?(view, "#existing-sub-objective-#{sub_obj.resource_id}")
+
+      assert has_element?(
+               view,
+               "#select_existing_sub_modal-results-status",
+               "1 sub-objective available."
+             )
     end
 
     test "tagged final association cannot be deleted or detached",

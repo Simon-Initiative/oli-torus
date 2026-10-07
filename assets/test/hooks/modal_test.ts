@@ -86,6 +86,19 @@ describe('ModalLaunch confirmation focus', () => {
     expect(autofocus).not.toHaveFocus();
   });
 
+  test.each(['[', '#missing'])(
+    'falls back to autofocus when the initial-focus selector is invalid or missing: %s',
+    (selector) => {
+      const modal = document.getElementById('confirmation') as HTMLElement;
+      modal.dataset.initialFocus = selector;
+      document.getElementById('cancel')?.setAttribute('autofocus', '');
+
+      expect(() => mount()).not.toThrow();
+
+      expect(document.getElementById('cancel')).toHaveFocus();
+    },
+  );
+
   test('unmounts on server dismissal even if the triggering control was removed', () => {
     const { hook, trigger } = mount();
     trigger.remove();

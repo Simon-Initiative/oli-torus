@@ -295,6 +295,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   @doc """
   Deletes an untagged sub-objective and removes its final parent association.
 
+  Only the selected child and parent mappings are locked, sharing the child lock
+  with association creation so unrelated objective edits are not blocked.
   Association and course-content references are checked again within a serializable
   transaction, including when they changed after the confirmation dialog opened.
   """
@@ -311,7 +313,9 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     result =
       serializable_transaction(fn ->
         publication = Publishing.project_working_publication(project.slug)
-        revisions = objective_revisions(publication.id, lock: true)
+
+        revisions =
+          objective_revisions(publication.id, slugs: [revision_slug, parent_slug], lock: true)
 
         with {:ok, sub_objective, parent} <-
                associated_revisions(revisions, revision_slug, parent_slug),
