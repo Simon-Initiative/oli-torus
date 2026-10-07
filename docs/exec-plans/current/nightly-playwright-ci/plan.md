@@ -34,19 +34,20 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
 - Goal: Establish the application contract consumed by PR startup, GitOps probes and nightly identity polling.
 - Coverage: FR-005 — AC-012, AC-013, AC-014, AC-039, AC-040, AC-042; application prerequisites for AC-041.
 - Tasks:
-  - [ ] Add documented `Oli.Health` APIs in `lib/oli/health.ex` for starting/running/draining state, liveness and readiness. Reset on each application start, mark complete after successful supervision and mandatory initialization, and never overwrite a requested drain with startup completion.
-  - [ ] Wire `lib/oli/application.ex` startup and `prep_stop/1`; expose idempotent drain through a local release function in `lib/oli/release.ex`, with no HTTP mutation endpoint.
-  - [ ] Check only named `Oli.Repo`, `Oli.PubSub` and `Oli.Vault` availability plus a normal-pool `SELECT 1`. Bound checkout and query together to one second, cancel expired work and recheck draining before returning ready. Exclude NodeJS and external dependencies.
-  - [ ] Replace the existing health controller/view response with local-only 503 `starting` or 200 `ok`; add `/readyz` controller/view returning 200 `ready` or 503 `not_ready`, each with only compiled string version/SHA. Add unauthenticated routes, no-store headers and both HTTP probe exemptions in `lib/oli_web/plugs/ssl.ex`.
-  - [ ] Inventory readiness consumers of `/healthz`; assign PR migration to Phase 2 and GitOps migration to Phase 5. Preserve rollout ordering: capable images precede activation of new readiness probes.
+  - [x] Add documented `Oli.Health` APIs in `lib/oli/health.ex` for starting/running/draining state, liveness and readiness. Reset on each application start, mark complete after successful supervision and mandatory initialization, and never overwrite a requested drain with startup completion.
+  - [x] Wire `lib/oli/application.ex` startup and `prep_stop/1`; expose idempotent drain through a local release function in `lib/oli/release.ex`, with no HTTP mutation endpoint.
+  - [x] Check only named `Oli.Repo`, `Oli.PubSub` and `Oli.Vault` availability plus a normal-pool `SELECT 1`. Bound checkout and query together to one second, cancel expired work and recheck draining before returning ready. Exclude NodeJS and external dependencies.
+  - [x] Replace the existing health controller/view response with local-only 503 `starting` or 200 `Ayup!`; add `/readyz` controller/view returning 200 `ready` or 503 `not_ready`, each with only compiled string version/SHA. Add unauthenticated routes, no-store headers and both HTTP probe exemptions in `lib/oli_web/plugs/ssl.ex`.
+  - [x] Inventory readiness consumers of `/healthz`; assign PR migration to Phase 2 and GitOps migration to Phase 5. Preserve rollout ordering: capable images precede activation of new readiness probes.
 - Testing Tasks:
-  - [ ] Add focused ExUnit coverage for exact bodies/status/headers, unauthenticated HTTP without redirects, compiled identity and absence of dependency calls from liveness. An old but ready build returns 200 with its own identity.
-  - [ ] Exercise startup/reset, missing/recovered required services, NodeJS unavailability, exhausted DB pool, disconnection/query errors/timeouts and drain during a query. Assert the total DB budget and absence of accumulating work; isolate lifecycle mutations and capture intentional logs.
-  - [ ] Verify actual graceful release shutdown marks draining while HTTP remains available; repeat operational termination checks in Phase 7.
+  - [x] Add focused ExUnit coverage for exact bodies/status/headers, unauthenticated HTTP without redirects, compiled identity and absence of dependency calls from liveness. An old but ready build returns 200 with its own identity.
+  - [x] Exercise startup/reset, missing/recovered required services, NodeJS unavailability, exhausted DB pool, disconnection/query errors/timeouts and drain during a query. Assert the total DB budget and absence of accumulating work; isolate lifecycle mutations and capture intentional logs.
+  - [x] Verify actual graceful release shutdown marks draining while HTTP remains available; repeat operational termination checks in Phase 7.
   - Commands: `mix format --check-formatted` and targeted `mix test` for health, readiness, SSL and lifecycle modules. Add `mix test` in full if shared test support/configuration changes. Run Mix commands with scoped escalation under the Codex repository contract.
 - Definition of Done:
   - Exact public contracts and lifecycle transitions pass focused tests; liveness stays healthy during database outage/draining, and readiness fails safely within its budget.
 - Gate: G1 — application probe contract verified; no infrastructure consumer is switched ahead of a capable image.
+- Evidence: `docs/exec-plans/current/nightly-playwright-ci/phase-1-execution.md`.
 - Dependencies: None.
 - Parallelizable Work: Phase 2 configuration/helper drafting and Phase 4 runner work can start against the documented contract; coordinate shared router, release and test files.
 

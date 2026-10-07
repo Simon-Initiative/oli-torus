@@ -1,12 +1,12 @@
-defmodule OliWeb.HealthController do
+defmodule OliWeb.ReadinessController do
   use OliWeb, :controller
 
-  @doc "Returns local startup/liveness without querying dependencies."
+  @doc "Returns bounded readiness and this build's compiled identity."
   def index(conn, _params) do
     {code, status} =
-      case Oli.Health.live?() do
-        true -> {200, "Ayup!"}
-        false -> {503, "starting"}
+      case Oli.Health.ready?() do
+        true -> {200, "ready"}
+        false -> {503, "not_ready"}
       end
 
     conn

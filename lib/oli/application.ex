@@ -6,7 +6,11 @@ defmodule Oli.Application do
   use Application
   require Logger
 
+  @doc "Starts application services and marks startup complete after initialization."
+  @impl true
   def start(_type, _args) do
+    Oli.Health.starting()
+
     # Install the logger truncator
     Oli.LoggerTruncator.init()
     maybe_add_appsignal_logger_backend()
@@ -148,13 +152,15 @@ defmodule Oli.Application do
       end
 
     if role == :server and log_incomplete_requests?() do
-      :ok =
-        :telemetry.attach(
-          "cowboy-request-handler",
-          [:cowboy, :request, :early_error],
-          &Oli.LogIncompleteRequestHandler.handle_event/4,
-          nil
-        )
+      case :telemetry.attach(
+             "cowboy-request-handler",
+             [:cowboy, :request, :early_error],
+             &Oli.LogIncompleteRequestHandler.handle_event/4,
+             nil
+           ) do
+        :ok -> :ok
+        {:error, :already_exists} -> :ok
+      end
     end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -164,12 +170,20 @@ defmodule Oli.Application do
     case Supervisor.start_link(children, opts) do
       {:ok, pid} ->
         maybe_start_inventory_recovery(role)
+        Oli.Health.started()
 
         {:ok, pid}
 
       other ->
         other
     end
+  end
+
+  @doc "Marks this node draining before OTP stops the supervision tree."
+  @impl true
+  def prep_stop(state) do
+    Oli.Health.drain()
+    state
   end
 
   @doc "Returns the persistence, publication, and evaluation services required by seed scenarios."
@@ -198,8 +212,8 @@ defmodule Oli.Application do
     ] ++ maybe_node_js_config()
   end
 
-  # Tell Phoenix to update the endpoint configuration
-  # whenever the application is updated.
+  @doc "Updates the endpoint configuration when the application is upgraded."
+  @impl true
   def config_change(changed, _new, removed) do
     OliWeb.Endpoint.config_change(changed, removed)
     :ok

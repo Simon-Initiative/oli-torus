@@ -5,6 +5,17 @@ defmodule Oli.FeatureTelemetryTest do
 
   @event [:torus, :feature, :exec]
 
+  test "application restart can attach the feature handler without duplicating it" do
+    assert :ok = OliWeb.Telemetry.attach()
+    assert :ok = OliWeb.Telemetry.attach()
+
+    for suffix <- [:start, :stop, :exception] do
+      assert [_handler] =
+               :telemetry.list_handlers(@event ++ [suffix])
+               |> Enum.filter(&(&1.id == "torus-appsignal-handler"))
+    end
+  end
+
   describe "span/5" do
     test "emits start/stop events with merged metadata" do
       handler_id = unique_handler_id()

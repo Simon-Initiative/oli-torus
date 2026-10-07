@@ -214,7 +214,7 @@ requirements:
   - id: AC-039
     title: An unauthenticated GET /healthz uses only local startup state and the functioning
       HTTP stack. It returns HTTP 503 with status=starting before application initialization
-      completes and HTTP 200 with status=ok afterward while the application can respond, including
+      completes and HTTP 200 with status=Ayup! afterward while the application can respond, including
       during draining or a database/external-service outage. It performs no database or external-service
       request.
     status: proposed

@@ -502,9 +502,12 @@ defmodule OliWeb.Router do
 
     # update limited session information
     post("/set_session", StaticPageController, :set_session)
+  end
 
-    # general health check for application & db
+  # Probes must not fetch sessions/users or require browser authentication.
+  scope "/", OliWeb do
     get("/healthz", HealthController, :index)
+    get("/readyz", ReadinessController, :index)
   end
 
   scope "/.well-known", OliWeb do
