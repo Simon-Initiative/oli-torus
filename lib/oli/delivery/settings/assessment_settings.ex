@@ -35,17 +35,31 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     :feedback_scheduled_date,
     :review_submission,
     :password,
-    :allow_hints
+    :allow_hints,
+    :secure_delivery
   ]
 
   def supported_keys, do: @supported_keys
 
+  @doc """
+  Updates assessment settings, with authoritative authorization for secure policy changes.
+
+  Enabling secure delivery requires a graded page; disabling only requires an existing
+  section resource so policies can be cleared after their targets become ineligible.
+  """
   def update(%Section{} = section, user, assessment_setting_id, attrs, opts \\ %{})
       when is_map(attrs) do
+    attrs =
+      case Map.fetch(attrs, "secure_delivery") do
+        :error -> attrs
+        {:ok, value} -> attrs |> Map.delete("secure_delivery") |> Map.put(:secure_delivery, value)
+      end
+
     assessments = Map.get(opts, :assessments)
     ctx = Map.get(opts, :ctx)
 
-    with {:ok, assessment} <- fetch_assessment(section, assessment_setting_id, assessments),
+    with :ok <- authorize_secure_change(section, user, assessment_setting_id, attrs),
+         {:ok, assessment} <- fetch_assessment(section, assessment_setting_id, assessments),
          {:ok, changes} <- normalize_changes(attrs, assessment, ctx),
          setting_changes <- build_settings_changes(changes, assessment, section.id, user),
          {:ok, _result} <- persist_update(section, assessment, changes, setting_changes) do
@@ -55,6 +69,48 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
          applied_changes: changes
        }}
     end
+  end
+
+  defp authorize_secure_change(section, user, resource_id, attrs) do
+    case Map.has_key?(attrs, :secure_delivery) or Map.has_key?(attrs, "secure_delivery") do
+      false ->
+        :ok
+
+      true ->
+        value = Map.get(attrs, :secure_delivery, Map.get(attrs, "secure_delivery"))
+        resource = Repo.get_by(SectionResource, section_id: section.id, resource_id: resource_id)
+
+        cond do
+          not settings_editor?(section, user) ->
+            {:error, :not_authorized}
+
+          value not in [true, false] ->
+            {:error, :invalid_secure_delivery}
+
+          value and not Oli.Delivery.SecureAssessments.supported?() ->
+            {:error, :secure_delivery_unsupported}
+
+          is_nil(resource) ->
+            {:error, :invalid_secure_delivery_target}
+
+          value and (resource.graded != true or resource.resource_type_id != 1) ->
+            {:error, :invalid_secure_delivery_target}
+
+          true ->
+            :ok
+        end
+    end
+  end
+
+  defp settings_editor?(section, %Author{} = author) do
+    Oli.Accounts.is_admin?(author) or
+      (section.type == :blueprint and
+         Sections.Blueprint.is_author_of_blueprint?(section.slug, author.id))
+  end
+
+  defp settings_editor?(section, user) do
+    Sections.is_instructor?(user, section.slug) or
+      Sections.is_admin?(Oli.Accounts.preload_platform_roles(user), section.slug)
   end
 
   def do_update(:late_policy, asmt_set_id, new_value, resources) do
