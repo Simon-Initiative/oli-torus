@@ -23,8 +23,11 @@ export const ModalLaunch = {
           // A malformed custom selector must not prevent the autofocus fallback.
         }
       }
-      target ??= this.el.querySelector('[autofocus]');
       if (target instanceof HTMLElement) target.focus();
+      if (!(target instanceof HTMLElement) || document.activeElement !== target) {
+        const autofocus = this.el.querySelector('[autofocus]');
+        if (autofocus instanceof HTMLElement) autofocus.focus();
+      }
     });
 
     this.modal.show();

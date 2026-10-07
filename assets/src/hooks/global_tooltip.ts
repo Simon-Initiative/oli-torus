@@ -8,6 +8,7 @@ const clearActiveTooltip = () => {
   if (wrapper) wrapper.remove();
 
   if (activeDescribedElement) {
+    document.removeEventListener('keydown', handleTooltipKeydown);
     if (activePreviousAriaDescribedBy) {
       activeDescribedElement.setAttribute('aria-describedby', activePreviousAriaDescribedBy);
     } else {
@@ -17,6 +18,10 @@ const clearActiveTooltip = () => {
 
   activeDescribedElement = null;
   activePreviousAriaDescribedBy = null;
+};
+
+const handleTooltipKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') clearActiveTooltip();
 };
 
 export const GlobalTooltip = {
@@ -90,6 +95,7 @@ export const GlobalTooltip = {
         [activePreviousAriaDescribedBy, tooltipId].filter(Boolean).join(' '),
       );
       activeDescribedElement = el;
+      document.addEventListener('keydown', handleTooltipKeydown);
       tooltipVisible = true;
       shownAt = Date.now();
 
@@ -140,18 +146,11 @@ export const GlobalTooltip = {
       }
     };
 
-    const handleKeydown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && activeDescribedElement === el) {
-        hideTooltip();
-      }
-    };
-
     el.addEventListener('mouseenter', showTooltip);
     el.addEventListener('focus', showTooltip);
     el.addEventListener('click', handleClick);
     el.addEventListener('mouseleave', hideTooltip);
     el.addEventListener('blur', hideTooltip);
-    document.addEventListener('keydown', handleKeydown);
     document.addEventListener('click', handleDocumentClick);
 
     cleanupByElement.set(el, () => {
@@ -161,7 +160,6 @@ export const GlobalTooltip = {
       el.removeEventListener('click', handleClick);
       el.removeEventListener('mouseleave', hideTooltip);
       el.removeEventListener('blur', hideTooltip);
-      document.removeEventListener('keydown', handleKeydown);
       document.removeEventListener('click', handleDocumentClick);
     });
   },
