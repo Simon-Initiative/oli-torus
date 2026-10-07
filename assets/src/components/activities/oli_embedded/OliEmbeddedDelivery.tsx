@@ -4,6 +4,10 @@ import { Provider, useDispatch } from 'react-redux';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { GradedPoints } from 'components/activities/common/delivery/graded_points/GradedPoints';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
+import {
+  isEmbeddedActivityReviewMode,
+  isReviewInteractionSuppressed,
+} from 'components/activities/oli_embedded/utils';
 import * as ActivityTypes from 'components/activities/types';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { Cross } from 'components/misc/icons/Cross';
@@ -45,9 +49,11 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
   const [preview, setPreview] = useState<boolean>(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [iframeHeight, setIframeHeight] = useState(500);
-  const reviewMode =
-    mode === 'review' ||
-    (typeof window !== 'undefined' && window.location.pathname.includes('/review'));
+  const reviewMode = isEmbeddedActivityReviewMode(
+    mode,
+    typeof window !== 'undefined' ? window.location.pathname : undefined,
+  );
+  const blockReviewInteraction = reviewMode && isReviewInteractionSuppressed(model);
   const maybeGradedPoints = (
     <GradedPoints
       shouldShow={
@@ -101,7 +107,9 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
       return;
     }
 
-    fetch('/jcourse/superactivity/context/' + activityState.attemptGuid, {
+    const activityMode = reviewMode ? 'review' : 'delivery';
+
+    fetch(`/jcourse/superactivity/context/${activityState.attemptGuid}?mode=${activityMode}`, {
       method: 'GET',
     })
       .then((response) => response.json())
@@ -249,6 +257,11 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
         </div>
       ) : null}
       {maybeGradedPoints}
+      {blockReviewInteraction ? (
+        <div className="small text-muted mb-2" role="status">
+          This embedded activity is read-only during review.
+        </div>
+      ) : null}
       {(context || showLoadingUI) && (
         <div
           style={{
@@ -261,6 +274,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           {context ? (
             <iframe
               id={activityState.attemptGuid}
+              title={model.title || 'Embedded activity'}
               src={context.src_url}
               width="100%"
               style={{
@@ -268,12 +282,13 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
                 resize: 'vertical',
                 border: 'none',
                 height: `${iframeHeight}px`,
-                pointerEvents: reviewMode ? 'none' : 'auto',
+                pointerEvents: blockReviewInteraction ? 'none' : 'auto',
                 opacity: iframeReady ? 1 : 0,
                 transition: 'opacity 220ms ease-out',
               }}
               height={iframeHeight}
-              tabIndex={reviewMode ? -1 : undefined}
+              tabIndex={blockReviewInteraction ? -1 : undefined}
+              {...(blockReviewInteraction ? { inert: '' } : {})}
               onLoad={() => {
                 setIframeReady(true);
                 setInitializing(false);
@@ -291,7 +306,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
               data-mode="oli"
             ></iframe>
           ) : null}
-          {reviewMode && context ? (
+          {blockReviewInteraction && context ? (
             <div
               aria-hidden="true"
               style={{
