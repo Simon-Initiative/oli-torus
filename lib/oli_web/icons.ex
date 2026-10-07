@@ -463,11 +463,11 @@ defmodule OliWeb.Icons do
 
   def check(assigns) do
     ~H"""
-    <div role="check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
+    <div data-role="check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
       <svg
         :if={@progress == 1.0}
         xmlns="http://www.w3.org/2000/svg"
-        role={@role}
+        data-role={@role}
         width="24"
         height="24"
         viewBox="0 0 24 24"

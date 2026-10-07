@@ -1116,23 +1116,23 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="intro_card_#{unit_1.resource_id}"] div[role="card badge"] div[role="check icon"]}
+               ~s{div[id="intro_card_#{unit_1.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page_#{practice_page.resource_id}"] div[role="card badge"] div[role="check icon"]}
+               ~s{div[id="page_#{practice_page.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
              )
 
       # this page is not yet completed, so we do not expect to see the check icon
       refute has_element?(
                view,
-               ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"] div[role="check icon"]}
+               ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"] div[role="check icon"]}
+               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
              )
     end
 
@@ -1302,7 +1302,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[role="orange flag icon"]}
+               ~s{button[role="resource page 4 details"] div[data-role="orange flag icon"]}
              )
 
       assert has_element?(
@@ -1357,7 +1357,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # graded page with title "Page 4" in the hierarchy has the correct icon
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[role="square check icon"]}
+               ~s{button[role="resource page 4 details"] div[data-role="square check icon"]}
              )
 
       # correct due date
@@ -1592,14 +1592,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{button[role="resource page 1 details"] svg[role="visited check icon"]}
+               ~s{button[role="resource page 1 details"] svg[data-role="visited check icon"]}
              )
 
       assert has_element?(view, ~s{button[role="resource page 2 details"]})
 
       refute has_element?(
                view,
-               ~s{button[role="resource page 2 details"] svg[role="visited check icon"]}
+               ~s{button[role="resource page 2 details"] svg[data-role="visited check icon"]}
              )
     end
 
@@ -2569,7 +2569,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[data-role="page 4 details"] div[role="orange flag icon"]}
+               ~s{button[data-role="page 4 details"] div[data-role="orange flag icon"]}
              )
     end
 

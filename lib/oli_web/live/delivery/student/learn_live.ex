@@ -3152,7 +3152,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       {true, "page", true, raw_avg_score} when not is_nil(raw_avg_score) ->
         # completed graded page
         ~H"""
-        <div role="square check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
+        <div
+          data-role="square check icon"
+          class="flex justify-center items-center w-[22px] h-[22px] shrink-0"
+        >
           <Icons.square_checked />
         </div>
         """
@@ -3160,7 +3163,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       {_, "page", true, _} ->
         # not completed graded page
         ~H"""
-        <div role="orange flag icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
+        <div
+          data-role="orange flag icon"
+          class="flex justify-center items-center w-[22px] h-[22px] shrink-0"
+        >
           <Icons.flag />
         </div>
         """
