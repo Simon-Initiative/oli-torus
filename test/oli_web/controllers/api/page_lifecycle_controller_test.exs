@@ -39,7 +39,7 @@ defmodule OliWeb.PageLifecycleTest do
           %{"attempt_guid" => "this_guid_does_not_exist", "action" => "mark_completed"}
         )
 
-      assert %{"result" => "success", "commandResult" => "failure"} = json_response(conn, 200)
+      assert %{"error" => "not_found"} = json_response(conn, 404)
     end
   end
 
