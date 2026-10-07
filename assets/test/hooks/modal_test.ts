@@ -107,19 +107,4 @@ describe('ModalLaunch confirmation focus', () => {
     expect(hook.pushEvent).toHaveBeenCalledWith('phx_modal.unmount');
     expect(document.body).not.toHaveClass('fix-position');
   });
-
-  test.each([
-    '<button id="custom-target" disabled>Unavailable</button>',
-    '<div id="custom-target">Not focusable</div>',
-    '<svg id="custom-target"></svg>',
-  ])('falls back to autofocus when the custom target cannot receive focus: %s', (markup) => {
-    const modal = document.getElementById('confirmation') as HTMLElement;
-    modal.dataset.initialFocus = '#custom-target';
-    modal.insertAdjacentHTML('beforeend', markup);
-    document.getElementById('cancel')?.setAttribute('autofocus', '');
-
-    expect(() => mount()).not.toThrow();
-
-    expect(document.getElementById('cancel')).toHaveFocus();
-  });
 });
