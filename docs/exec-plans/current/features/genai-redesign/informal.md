@@ -518,11 +518,19 @@ protection; do not carry forward the current coupling by accident.
 
 ## Migration and rollout considerations
 
-- Inventory RegisteredModels by actual endpoint, credential context, vendor, and
-  adapter before grouping them into Providers. Adapter enum alone is insufficient.
-- Create Provider records and migrate encrypted credentials without exposing values
-  in logs or artifacts.
-- Link every RegisteredModel to the correct Provider; reconcile conflicting settings.
+### Initial Provider data migration
+
+Build a migration that creates exactly one Provider named "OpenAI" initially. Find
+the first RegisteredModel with API keys, ordered by RegisteredModel ID, and migrate
+its API keys to that Provider. Link **every existing RegisteredModel** to this same
+Provider, including models that have no API keys. Do not create a Provider per model
+or group existing models into multiple Providers during this initial migration.
+Migrate encrypted credentials without exposing their values in logs or artifacts.
+
+This single-Provider assignment is the initial data state. Administrators can create
+additional Providers and reassign models afterward to establish distinct provider
+failure domains and satisfy the backup routing requirements.
+
 - Add the editable RegisteredModel `health_check` boolean, defaulting to `false`.
   Resolve and validate each Provider's probe model using the selection rule, and
   persist automatic designation when none of its models is flagged.
