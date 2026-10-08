@@ -76,7 +76,7 @@ defmodule OliWeb.TechSupportLive do
           checked={@requires_sender_data}
           class="hidden"
           label="Include sender details"
-          label_class="hidden"
+          label_class="sr-only"
         />
         <.input
           :if={@requires_sender_data}

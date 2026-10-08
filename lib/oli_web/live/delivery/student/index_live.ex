@@ -856,7 +856,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             completed_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
             not_completed_colour="bg-[#385581]"
             role="progressbar"
-            aria-label="Course progress"
+            aria_label="Course progress"
             show_percent={false}
             show_halo={true}
           />

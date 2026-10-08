@@ -671,6 +671,7 @@ defmodule OliWeb.Components.Common do
   )
 
   attr(:role, :string, default: "progressbar")
+  attr(:aria_label, :string, default: "Progress")
   attr(:rest, :global)
   attr(:height, :string, default: "h-1")
   attr(:rounded, :string, default: "rounded-[60px]")
@@ -695,7 +696,7 @@ defmodule OliWeb.Components.Common do
     <div
       class="flex flex-row items-center gap-3 mx-auto w-full"
       role={@role}
-      aria-label="Progress"
+      aria-label={@aria_label}
       aria-valuemin="0"
       aria-valuemax="100"
       aria-valuenow={@percent}
