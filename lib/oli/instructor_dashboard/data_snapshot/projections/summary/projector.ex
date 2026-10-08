@@ -2,8 +2,20 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
   @moduledoc false
 
   @recommendation_label "AI Recommendation"
+  @metric_oracles [
+    :oracle_instructor_progress_proficiency,
+    :oracle_instructor_objectives_proficiency,
+    :oracle_instructor_grades
+  ]
   @proficiency_weights %{"Low" => 30.0, "Medium" => 60.0, "High" => 90.0}
 
+  @doc """
+  Builds summary cards using successful scope content to determine applicability.
+
+  Only progress uses an initial zero presentation default. Proficiency and score
+  remain uncalculated until numeric evidence exists, including before activity.
+  Loading dependencies and unavailable dependencies remain distinct.
+  """
   @spec build(map(), keyword()) :: map()
   def build(optional_oracles, opts \\ []) when is_map(optional_oracles) do
     progress_rows = Map.get(optional_oracles, :oracle_instructor_progress_proficiency, [])
@@ -21,20 +33,37 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
     scope_resources = Map.get(optional_oracles, :oracle_instructor_scope_resources, %{})
     oracle_statuses = Keyword.get(opts, :oracle_statuses, %{})
     recommendation_oracle_keys = Keyword.get(opts, :recommendation_oracle_keys, [])
+    activity_state = activity_state(optional_oracles, oracle_statuses)
+
+    oracle_states =
+      Map.new(@metric_oracles, &{&1, oracle_state(optional_oracles, oracle_statuses, &1)})
 
     recommendation_source =
       recommendation_source(optional_oracles, oracle_statuses, recommendation_oracle_keys)
 
     cards =
       [
-        class_proficiency_card(objective_rows),
-        assessment_score_card(grades_rows),
-        progress_card(progress_rows)
+        class_proficiency_card(
+          objective_rows,
+          oracle_states.oracle_instructor_objectives_proficiency,
+          activity_state
+        ),
+        assessment_score_card(
+          grades_rows,
+          oracle_states.oracle_instructor_grades,
+          activity_state
+        ),
+        progress_card(
+          progress_rows,
+          oracle_states.oracle_instructor_progress_proficiency,
+          activity_state
+        )
       ]
       |> Enum.reject(&is_nil/1)
 
     %{
       cards: cards,
+      activity_state: activity_state,
       recommendation:
         recommendation_view_model(
           recommendation_source.payload,
@@ -42,15 +71,15 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
         ),
       layout: layout_metadata(cards),
       available_slots:
-        available_slots(progress_rows, objective_rows, grades_rows, recommendation_source),
+        available_slots(oracle_states, objective_rows, grades_rows, recommendation_source),
       missing_slots:
-        missing_slots(progress_rows, objective_rows, grades_rows, recommendation_source),
+        missing_slots(oracle_states, objective_rows, grades_rows, recommendation_source),
       scope_label: Map.get(scope_resources, :scope_label),
       course_title: Map.get(scope_resources, :course_title)
     }
   end
 
-  defp progress_card(progress_rows) do
+  defp progress_card(progress_rows, oracle_state, activity_state) do
     progress_rows
     |> Enum.flat_map(fn row ->
       case normalize_pct(Map.get(row, :progress_pct)) do
@@ -59,35 +88,95 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
       end
     end)
     |> average()
-    |> card(:average_student_progress, "Average Student Progress")
+    |> card(:average_student_progress, "Average Student Progress", oracle_state, activity_state)
   end
 
-  defp class_proficiency_card(objective_rows) do
+  defp class_proficiency_card([], :ready, _activity_state), do: nil
+
+  defp class_proficiency_card(objective_rows, oracle_state, activity_state) do
     objective_rows
     |> aggregate_objective_proficiency()
-    |> card(:average_class_proficiency, "Average Class Proficiency")
+    |> card(:average_class_proficiency, "Average Class Proficiency", oracle_state, activity_state)
   end
 
-  defp assessment_score_card(grades_rows) do
+  defp assessment_score_card([], :ready, _activity_state), do: nil
+
+  defp assessment_score_card(grades_rows, oracle_state, activity_state) do
     grades_rows
     |> Enum.map(&normalize_pct(Map.get(&1, :mean)))
     |> Enum.reject(&is_nil/1)
     |> average()
-    |> card(:average_assessment_score, "Average Assessment Score")
+    |> card(:average_assessment_score, "Average Assessment Score", oracle_state, activity_state)
   end
 
-  defp card(nil, _id, _label), do: nil
+  defp card(value, id, label, oracle_state, activity_state) do
+    {value_number, value_text, status} =
+      case {oracle_state, value, activity_state} do
+        {:ready, value, _} when is_number(value) ->
+          {value, percent_text(value), :ready}
 
-  defp card(value, id, label) do
+        {:ready, nil, :not_started} when id == :average_student_progress ->
+          {nil, "0%", :not_started}
+
+        {:ready, nil, _} ->
+          {nil, "--", :no_data}
+
+        {status, _, _} ->
+          {nil, "--", status}
+      end
+
     %{
       id: id,
       label: label,
-      value_number: value,
-      value_text: percent_text(value),
+      value_number: value_number,
+      value_text: value_text,
       tooltip_key: id,
-      status: :ready
+      status: status
     }
   end
+
+  defp oracle_state(oracles, statuses, key) do
+    case {Map.has_key?(oracles, key), get_in(statuses, [key, :status])} do
+      {true, status} when status in [nil, :ready] -> :ready
+      {_, status} when status in [nil, :loading, :pending, :requested, :in_progress] -> :loading
+      _ -> :unavailable
+    end
+  end
+
+  defp activity_state(oracles, statuses) do
+    progress_rows = Map.get(oracles, :oracle_instructor_progress_proficiency, [])
+
+    objective_rows =
+      get_in(oracles, [:oracle_instructor_objectives_proficiency, :objective_rows]) || []
+
+    grades_rows = get_in(oracles, [:oracle_instructor_grades, :grades]) || []
+
+    has_activity? =
+      Enum.any?(progress_rows, fn row ->
+        positive?(Map.get(row, :progress_pct)) or
+          positive?(Map.get(row, :proficiency_attempt_count)) or
+          is_number(Map.get(row, :proficiency_pct))
+      end) or
+        is_number(aggregate_objective_proficiency(objective_rows)) or
+        Enum.any?(
+          grades_rows,
+          &(positive?(Map.get(&1, :completed_count)) or is_number(Map.get(&1, :mean)))
+        )
+
+    cond do
+      has_activity? ->
+        :started
+
+      Enum.all?(@metric_oracles, &(oracle_state(oracles, statuses, &1) == :ready)) and
+          Enum.all?(progress_rows, &(Map.get(&1, :proficiency_attempt_count) == 0)) ->
+        :not_started
+
+      true ->
+        :unknown
+    end
+  end
+
+  defp positive?(value), do: is_number(value) and value > 0
 
   defp layout_metadata(cards) do
     visible_card_count = length(cards)
@@ -103,20 +192,17 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
   defp grid_class(3), do: "grid-cols-3"
   defp grid_class(_count), do: "grid-cols-1"
 
-  defp available_slots(progress_rows, objective_rows, grades_rows, recommendation_source) do
+  defp available_slots(oracle_states, objective_rows, grades_rows, recommendation_source) do
     []
-    |> maybe_add_slot(progress_rows != [], :progress)
+    |> maybe_add_slot(oracle_states.oracle_instructor_progress_proficiency == :ready, :progress)
     |> maybe_add_slot(objective_rows != [], :proficiency_progress)
     |> maybe_add_slot(grades_rows != [], :assessment)
     |> maybe_add_slot(recommendation_available?(recommendation_source), :recommendation)
   end
 
-  defp missing_slots(progress_rows, objective_rows, grades_rows, recommendation_source) do
-    []
-    |> maybe_add_slot(progress_rows == [], :progress)
-    |> maybe_add_slot(objective_rows == [], :proficiency_progress)
-    |> maybe_add_slot(grades_rows == [], :assessment)
-    |> maybe_add_slot(not recommendation_available?(recommendation_source), :recommendation)
+  defp missing_slots(oracle_states, objective_rows, grades_rows, recommendation_source) do
+    [:progress, :proficiency_progress, :assessment, :recommendation] --
+      available_slots(oracle_states, objective_rows, grades_rows, recommendation_source)
   end
 
   defp maybe_add_slot(slots, true, slot), do: slots ++ [slot]

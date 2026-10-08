@@ -20,6 +20,29 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.SummaryTest do
   end
 
   describe "derive/2" do
+    test "initial display defaults do not manufacture calculated or export metrics" do
+      snapshot =
+        snapshot_fixture(%{
+          oracle_instructor_progress_proficiency: [],
+          oracle_instructor_progress_bins: %{total_students: 0},
+          oracle_instructor_objectives_proficiency: %{
+            objective_rows: [%{objective_id: 1001, numeric_proficiency: nil}]
+          },
+          oracle_instructor_grades: %{grades: [%{page_id: 11, mean: nil}]},
+          oracle_instructor_recommendation: %{
+            state: :no_signal,
+            id: 42,
+            message: "Insufficient data."
+          }
+        })
+
+      assert {:ok, projection} = Summary.derive(snapshot, [])
+      assert Enum.all?(Map.values(projection.metrics), &is_nil/1)
+
+      assert Enum.map(projection.summary_tile.cards, & &1.value_text) == ["--", "--", "0%"]
+      assert Enum.all?(projection.summary_tile.cards, &is_nil(&1.value_number))
+    end
+
     test "builds a partial summary projection with tile and export fields from available inputs" do
       assert {:partial, projection, {:dependency_unavailable, missing}} =
                Summary.derive(snapshot_fixture(), [])
@@ -34,10 +57,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.SummaryTest do
       assert projection.metrics.average_class_proficiency == 60.0
       assert projection.missing_optional_oracles == missing
 
-      assert projection.summary_tile.layout.visible_card_count == 2
+      assert projection.summary_tile.layout.visible_card_count == 3
 
       assert Enum.map(projection.summary_tile.cards, & &1.id) == [
                :average_class_proficiency,
+               :average_assessment_score,
                :average_student_progress
              ]
 

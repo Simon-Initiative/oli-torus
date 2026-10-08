@@ -5,8 +5,119 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   import LiveComponentTests
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.SummaryTile
+  alias Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector
+
+  @beginning_copy "Students haven’t started yet. This dashboard will surface progress, proficiency, and areas needing attention as soon as activity begins."
 
   describe "SummaryTile" do
+    for has_objectives <- [true, false],
+        has_assessments <- [true, false],
+        has_activity <- [true, false] do
+      @has_objectives has_objectives
+      @has_assessments has_assessments
+      @has_activity has_activity
+
+      test "renders objectives=#{has_objectives}, assessments=#{has_assessments}, activity=#{has_activity}",
+           %{conn: conn} do
+        projection = scope_projection(@has_objectives, @has_assessments, @has_activity)
+
+        {:ok, component, _html} =
+          live_component_isolated(conn, SummaryTile, %{
+            id: "summary_tile",
+            projection: projection,
+            projection_status: %{status: :ready}
+          })
+
+        assert has_element?(component, "#summary-metric-card-average_class_proficiency") ==
+                 @has_objectives
+
+        assert has_element?(component, "#summary-metric-card-average_assessment_score") ==
+                 @has_assessments
+
+        assert has_element?(component, "#summary-metric-card-average_student_progress")
+        assert has_element?(component, "#summary-recommendation-panel-summary_tile")
+
+        for {id, applicable?, calculated_value} <- [
+              {:average_class_proficiency, @has_objectives, "70%"},
+              {:average_assessment_score, @has_assessments, "80%"}
+            ],
+            applicable? do
+          assert has_element?(
+                   component,
+                   "#summary-metric-card-#{id} p",
+                   case @has_activity do
+                     true -> calculated_value
+                     false -> "--"
+                   end
+                 )
+        end
+
+        assert has_element?(
+                 component,
+                 "#summary-metric-card-average_student_progress p",
+                 case @has_activity do
+                   true -> "25%"
+                   false -> "0%"
+                 end
+               )
+
+        assert has_element?(
+                 component,
+                 "#summary-recommendation-panel-summary_tile p",
+                 case @has_activity do
+                   true -> "Review the first unit."
+                   false -> @beginning_copy
+                 end
+               )
+
+        html = render(component)
+        assert html =~ "px-[23px] py-[22px]"
+        refute html =~ "lg:col-span-3"
+        refute html =~ "Summary metrics will appear"
+      end
+    end
+
+    test "keeps incalculable proficiency and score visible alongside partial progress", %{
+      conn: conn
+    } do
+      projection = scope_projection(true, true, true)
+
+      cards =
+        Enum.map(projection.cards, fn
+          %{id: :average_student_progress} = card -> card
+          card -> %{card | value_number: nil, value_text: "--", status: :no_data}
+        end)
+
+      projection = %{
+        projection
+        | cards: cards,
+          recommendation: %{
+            projection.recommendation
+            | status: :beginning_course,
+              body: "There isn't enough student data."
+          }
+      }
+
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
+          projection: projection,
+          projection_status: %{status: :ready}
+        })
+
+      assert has_element?(component, "#summary-metric-card-average_class_proficiency p", "--")
+      assert has_element?(component, "#summary-metric-card-average_assessment_score p", "--")
+      assert has_element?(component, "#summary-metric-card-average_student_progress p", "25%")
+
+      assert has_element?(
+               component,
+               "#summary-recommendation-panel-summary_tile p",
+               "There isn't enough student data."
+             )
+
+      refute render(component) =~ @beginning_copy
+    end
+
     test "renders scoped metric cards and accessible tooltip wiring", %{conn: conn} do
       {:ok, component, _html} =
         live_component_isolated(conn, SummaryTile, %{
@@ -118,6 +229,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assert has_element?(component, "#summary-recommendation-panel-summary_tile")
       assert has_element?(component, "span[role='status']", "Thinking...")
       refute has_element?(component, "button[aria-label='Regenerate recommendation']")
+      refute render(component) =~ "lg:col-span-3"
     end
 
     test "hides recommendation panel when instructor recommendations are disabled", %{conn: conn} do
@@ -366,6 +478,43 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assert html =~ "Shift attention to Module 3."
       refute html =~ "Scoped overview for Unit 2."
     end
+  end
+
+  defp scope_projection(has_objectives, has_assessments, has_activity) do
+    {progress, proficiency, score, state, body} =
+      case has_activity do
+        true -> {25.0, 0.7, 80.0, :ready, "Review the first unit."}
+        false -> {0.0, nil, nil, :no_signal, "There isn't enough student data."}
+      end
+
+    objectives =
+      case has_objectives do
+        true -> [%{objective_id: 10, numeric_proficiency: proficiency}]
+        false -> []
+      end
+
+    grades =
+      case has_assessments do
+        true -> [%{page_id: 20, mean: score}]
+        false -> []
+      end
+
+    Projector.build(
+      %{
+        oracle_instructor_progress_proficiency: [
+          %{
+            student_id: 1,
+            progress_pct: progress,
+            proficiency_pct: proficiency,
+            proficiency_attempt_count: 0
+          }
+        ],
+        oracle_instructor_objectives_proficiency: %{objective_rows: objectives},
+        oracle_instructor_grades: %{grades: grades},
+        oracle_instructor_recommendation: %{id: 42, state: state, message: body}
+      },
+      recommendation_oracle_keys: [:oracle_instructor_recommendation]
+    )
   end
 
   defp ready_projection(recommendation_overrides \\ %{}) do

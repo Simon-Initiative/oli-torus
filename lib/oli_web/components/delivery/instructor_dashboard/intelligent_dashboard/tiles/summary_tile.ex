@@ -10,6 +10,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
+  @beginning_course_message "Students haven’t started yet. This dashboard will surface progress, proficiency, and areas needing attention as soon as activity begins."
+
   @tooltip_copy %{
     average_student_progress:
       "Shows how far students, on average, have progressed through the course.",
@@ -49,7 +51,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
      |> assign(:cards, Map.get(projection, :cards, []))
      |> assign(
        :recommendation,
-       normalize_recommendation(Map.get(projection, :recommendation, default_recommendation()))
+       projection
+       |> Map.get(:recommendation, default_recommendation())
+       |> normalize_recommendation()
+       |> recommendation_for_activity(Map.get(projection, :activity_state))
      )
      |> assign(
        :layout,
@@ -76,7 +81,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       >
         <div class={["grid items-stretch gap-2", row_grid_classes(@layout, @show_recommendation)]}>
           <%= if @cards == [] do %>
-            <div class="rounded-2xl bg-Surface-surface-secondary px-6 py-5 text-sm leading-6 text-Text-text-high opacity-80 lg:col-span-3">
+            <div class="rounded-2xl bg-Surface-surface-secondary px-6 py-5 text-sm leading-6 text-Text-text-high opacity-80">
               Summary metrics will appear as scoped progress, proficiency, and assessment data become available.
             </div>
           <% else %>
@@ -480,6 +485,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     }
   end
 
+  # Async recommendation updates can replace the projector's recommendation payload.
+  # Resolve initial presentation from metric evidence on every component update.
+  defp recommendation_for_activity(%{status: :beginning_course} = recommendation, :not_started) do
+    %{
+      recommendation
+      | body: @beginning_course_message,
+        aria_label: "AI Recommendation: #{@beginning_course_message}"
+    }
+  end
+
+  defp recommendation_for_activity(recommendation, _activity_state), do: recommendation
+
   defp normalize_recommendation(%{label: _, status: _, recommendation_id: _} = recommendation),
     do: Map.merge(default_recommendation(), recommendation)
 
@@ -674,7 +691,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         recommendation_body_during_regeneration(recommendation)
 
       :beginning_course ->
-        "Students have not generated enough activity in this scope yet. A recommendation will appear once meaningful work is available."
+        recommendation_body(recommendation)
 
       :ready ->
         recommendation_body(recommendation)

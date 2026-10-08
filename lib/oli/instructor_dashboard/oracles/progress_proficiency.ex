@@ -1,6 +1,9 @@
 defmodule Oli.InstructorDashboard.Oracles.ProgressProficiency do
   @moduledoc """
   Returns per-student progress and proficiency tuples for the requested scope.
+
+  Includes the evidence count even when proficiency is not yet reportable, so
+  consumers can distinguish no activity from insufficient proficiency evidence.
   """
 
   use Oli.Dashboard.Oracle
@@ -14,7 +17,7 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressProficiency do
   def key, do: :oracle_instructor_progress_proficiency
 
   @impl true
-  def version, do: 2
+  def version, do: 3
 
   @impl true
   def load(%OracleContext{} = context, _opts) do
@@ -29,15 +32,18 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressProficiency do
           container_id = scope.container_id
           progress_by_student = Metrics.progress_for(section_id, learner_ids, container_id)
           section = Helpers.section(section_id)
-          proficiency_by_student = proficiency_by_student(section, learner_ids, container_id)
+          estimates = proficiency_by_student(section, learner_ids, container_id)
 
           result =
             learner_ids
             |> Enum.map(fn learner_id ->
+              estimate = Map.get(estimates, learner_id, %{})
+
               %{
                 student_id: learner_id,
                 progress_pct: Map.get(progress_by_student, learner_id, 0.0) * 100.0,
-                proficiency_pct: Map.get(proficiency_by_student, learner_id)
+                proficiency_pct: Map.get(estimate, :score),
+                proficiency_attempt_count: Map.get(estimate, :attempt_count)
               }
             end)
 
@@ -51,7 +57,7 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressProficiency do
 
     with {:ok, %{^scope => estimates}} <-
            Proficiency.estimates_for_scopes(section, learner_ids, [scope]) do
-      Map.new(estimates, fn {learner_id, estimate} -> {learner_id, estimate.score} end)
+      estimates
     else
       {:error, _reason} -> %{}
     end
