@@ -85,6 +85,7 @@ type ComponentCase = {
 
 const staticTextContent = 'Static text authored by automation';
 const imageUrl = `${baseUrl}/images/oli_torus_logo.png`;
+const videoUrl = `${baseUrl}/test/support/video-test-01.mp4`;
 
 /**
  * One row per Phase 1 component. Each row authors the component on its own
@@ -122,6 +123,20 @@ const componentCases: ComponentCase[] = [
       await editor.selectPart(imageId);
       await expect(editor.tabPanel()).toContainText(imageUrl);
       await expect(editor.field('custom_alt')).toHaveValue('Torus logo');
+    },
+  },
+  {
+    name: 'video',
+    configure: async (editor) => {
+      const videoId = await editor.addComponent('janus_video');
+      await editor.selectPart(videoId);
+      await editor.setMediaUrl('Select Video File', videoUrl);
+    },
+    verifyPersisted: async (editor) => {
+      const [videoId] = await editor.partIds('janus-video');
+      expect(videoId, 'The video part should be persisted').toBeTruthy();
+      await editor.selectPart(videoId);
+      await expect(editor.tabPanel()).toContainText(videoUrl);
     },
   },
 ];
