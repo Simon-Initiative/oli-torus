@@ -1,0 +1,30 @@
+name: Move Jira ticket to QA
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions: {}
+
+jobs:
+  notify-jira:
+    if: >-
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Notify Jira automation
+        env:
+          JIRA_WEBHOOK_URL: ${{ secrets.JIRA_WEBHOOK_URL }}
+          JIRA_WEBHOOK_SECRET: ${{ secrets.JIRA_WEBHOOK_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --connect-timeout 10 --max-time 30 \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "X-Automation-Webhook-Token: ${JIRA_WEBHOOK_SECRET}" \
+            --data-binary "@${GITHUB_EVENT_PATH}" \
+            "${JIRA_WEBHOOK_URL}"
