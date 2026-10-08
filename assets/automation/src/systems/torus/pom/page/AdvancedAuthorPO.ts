@@ -69,6 +69,7 @@ export class AdvancedAuthorPO {
   private readonly stage: Locator;
   private readonly toolbar: Locator;
   private readonly sequenceEditor: Locator;
+  private readonly leftPanel: Locator;
   private readonly rightPanel: Locator;
   private readonly pagePO: BasicPracticePagePO;
 
@@ -77,7 +78,8 @@ export class AdvancedAuthorPO {
     this.stage = page.locator('section.aa-stage');
     this.toolbar = page.locator('#advanced-authoring nav.aa-header-nav');
     this.sequenceEditor = page.locator('.aa-sequence-editor');
-    this.rightPanel = page.locator('.fixed-right-panel');
+    this.leftPanel = page.locator('.aa-panel.left-panel');
+    this.rightPanel = page.locator('.aa-panel.right-panel');
 
     page.on('request', (request) => {
       if (this.isSaveRequest(request)) {
@@ -145,10 +147,11 @@ export class AdvancedAuthorPO {
    * tab's "Title" field.
    */
   async addScreen(title: string) {
+    await this.ensureLeftPanelOpen();
     const before = await this.sequenceItemTitles();
 
     await this.page.locator('#sequence-add').click();
-    await this.page.getByRole('button', { name: 'Screen', exact: true }).click();
+    await this.sequenceAddMenuItem('Screen').click();
 
     const newTitle = await this.waitForNewSequenceItemTitle(before);
     await this.selectScreen(newTitle);
@@ -157,9 +160,49 @@ export class AdvancedAuthorPO {
     await this.waitForSaves();
   }
 
+  /**
+   * An item in the "+" menu ("Screen", "Layer", "Question Bank"). These are
+   * Bootstrap `Dropdown.Item`s with an icon rendered via a Font Awesome `<i>`
+   * tag; the icon's CSS-generated glyph leaks into the computed accessible
+   * name, so `getByRole('button', { name: ... })` never matches even though
+   * the element has an explicit `role="button"`. Matching by DOM text content
+   * (`hasText`) sidesteps that: `hasText` compares `textContent`, which the
+   * icon's `::before` glyph does not affect.
+   */
+  private sequenceAddMenuItem(label: 'Screen' | 'Layer' | 'Question Bank') {
+    return this.page.locator('.dropdown-menu.show a.dropdown-item').filter({ hasText: label });
+  }
+
   async selectScreen(title: string) {
+    await this.ensureLeftPanelOpen();
     await this.sequenceItem(title).click();
     await this.expectActiveScreen(title);
+  }
+
+  /**
+   * A newly added part always starts at (or near) x:0, y:0 on its screen (the
+   * canvas's `newPartAddOffset` resets for every screen), which sits directly
+   * under the left Sequence Editor panel: the panel then intercepts clicks on
+   * the part's floating `.active-selection-toolbar`. Collapsing the panel
+   * before any such interaction avoids this; `addScreen`/`selectScreen`
+   * reopen it since sequence navigation needs it.
+   */
+  private async ensureLeftPanelOpen() {
+    if (!(await this.leftPanel.evaluate((el) => el.classList.contains('open')))) {
+      await this.leftPanelToggle().click();
+      await expect(this.leftPanel).toHaveClass(/open/, { timeout: 10_000 });
+    }
+  }
+
+  private async collapseLeftPanel() {
+    if (await this.leftPanel.evaluate((el) => el.classList.contains('open'))) {
+      await this.leftPanelToggle().click();
+      await expect(this.leftPanel).not.toHaveClass(/open/, { timeout: 10_000 });
+    }
+  }
+
+  private leftPanelToggle() {
+    return this.page.locator('button.aa-panel-side-toggle.left');
   }
 
   private async expectActiveScreen(title: string) {
@@ -208,6 +251,9 @@ export class AdvancedAuthorPO {
     await expect(this.tab('Component')).toHaveAttribute('aria-selected', 'true', {
       timeout: 10_000,
     });
+    // Parts commonly sit at x:0, y:0 (see `ensureLeftPanelOpen`'s doc comment),
+    // which puts their floating toolbar under the left panel.
+    await this.collapseLeftPanel();
   }
 
   /**
@@ -258,14 +304,16 @@ export class AdvancedAuthorPO {
   /**
    * Opens the config modal for a text-flow part and replaces its text. The
    * modal (`ConfigurationModal` in `apps/authoring/components/EditingCanvas`)
-   * is shared with Simple Author, which is why this mirrors
-   * `SimpleAuthorPO.setTextFlowText` even though the trigger button differs
-   * (an unlabeled pencil icon in the "Component Tools" toolbar here, instead
-   * of Simple Author's `.active-selection-toolbar`).
+   * is shared with Simple Author. The trigger is the same
+   * `.active-selection-toolbar button[title="Edit"]` Simple Author uses too
+   * (rendered by the shared `LayoutEditor`, under
+   * `components/activities/adaptive`) — a *different*, unlabeled "Edit JSON"
+   * affordance also exists in the Component tab's own toolbar
+   * (`PartPropertyEditor`), which is not this one.
    */
   async setTextFlowText(partId: string, text: string) {
     await this.selectPart(partId);
-    await this.componentToolButton('fa-edit').click();
+    await this.selectionToolbarButton('Edit').click();
 
     const modal = this.page.locator('.config-modal');
     const editor = modal.locator('.ql-editor');
@@ -281,12 +329,8 @@ export class AdvancedAuthorPO {
   }
 
   /** The selected part's floating copy/edit/delete toolbar. */
-  private componentTools() {
-    return this.page.getByRole('toolbar', { name: 'Component Tools' });
-  }
-
-  private componentToolButton(iconClass: 'fa-copy' | 'fa-edit' | 'fa-trash') {
-    return this.componentTools().locator(`button:has(i.${iconClass})`);
+  private selectionToolbarButton(title: 'Edit' | 'Copy' | 'Delete') {
+    return this.page.locator(`.active-selection-toolbar button[title="${title}"]`).first();
   }
 
   // ------------------------------------------------------------ property panel
