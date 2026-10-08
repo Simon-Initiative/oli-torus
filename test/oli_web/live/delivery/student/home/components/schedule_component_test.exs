@@ -335,7 +335,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       ## Displays current week
       assert has_element?(lcd, ~s{#schedule_week_1 div[role="schedule_title"]}, "This Week")
 
-      assert element(lcd, ~s{#schedule_week_1 div[role="schedule_date_range"]}) |> render() =~
+      assert element(lcd, ~s{#schedule_week_1 div[data-role="schedule_date_range"]}) |> render() =~
                "May 5<sup>th</sup> - May 11<sup>th</sup> 2024"
 
       # Displays Graded 1 in Unit 1
@@ -372,7 +372,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       ## Displays next week
       assert has_element?(lcd, ~s{#schedule_week_2 div[role="schedule_title"]}, "Next Week")
 
-      assert element(lcd, ~s{#schedule_week_2 div[role="schedule_date_range"]}) |> render() =~
+      assert element(lcd, ~s{#schedule_week_2 div[data-role="schedule_date_range"]}) |> render() =~
                "May 12<sup>th</sup> - May 18<sup>th</sup> 2024"
 
       # Displays Exploration 1 in Unit 1 > Module 2

@@ -2612,14 +2612,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{button[data-role="page 1 details"] svg[role="visited check icon"]}
+               ~s{button[data-role="page 1 details"] svg[data-role="visited check icon"]}
              )
 
       assert has_element?(view, ~s{button[data-role="page 2 details"]})
 
       refute has_element?(
                view,
-               ~s{button[data-role="page 2 details"] svg[role="visited check icon"]}
+               ~s{button[data-role="page 2 details"] svg[data-role="visited check icon"]}
              )
     end
 

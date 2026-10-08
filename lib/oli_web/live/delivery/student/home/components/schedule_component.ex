@@ -49,7 +49,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                 {this_or_next_week(week_range)}
               </div>
               <div
-                role="schedule_date_range"
+                data-role="schedule_date_range"
                 class="dark:text-white text-sm font-bold tracking-tight"
               >
                 {Phoenix.HTML.raw(week_range(week_range))}

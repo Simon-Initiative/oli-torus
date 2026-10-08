@@ -128,7 +128,7 @@ defmodule OliWeb.Workspaces.Utils do
         }
         xphx-mouseover={
           !@sidebar_expanded &&
-            JS.hide(to: "div[data-role='expandable_submenu'") |> JS.show(to: "##{@item_id}_children")
+            JS.hide(to: "div[data-role='expandable_submenu']") |> JS.show(to: "##{@item_id}_children")
         }
         phx-click={
           @sidebar_expanded &&
