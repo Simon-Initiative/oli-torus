@@ -78,7 +78,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       <section
         id={"learning-dashboard-summary-metrics-#{@id}"}
         aria-label={summary_scope_copy(@scope_label, @course_title)}
-        class="rounded-2xl bg-[linear-gradient(90deg,#6D3C97_0%,#2D628E_46%,#0DBBD3_100%)] px-[23px] py-[22px] shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
+        class="rounded-2xl bg-[linear-gradient(95.67775419553948deg,#BE60D1_10.262%,#1EB3C7_40.159%,#87D7E0_80.021%)] dark:bg-[linear-gradient(95.67775419553948deg,#5F3A79_10.262%,#236F8A_40.159%,#00A8BF_80.021%)] px-[23px] py-[22px] shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
       >
         <div class={["grid items-stretch gap-2", row_grid_classes(@layout, @show_recommendation)]}>
           <%= if @cards == [] do %>
