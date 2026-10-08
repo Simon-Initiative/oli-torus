@@ -139,6 +139,24 @@ const componentCases: ComponentCase[] = [
       await expect(editor.tabPanel()).toContainText(videoUrl);
     },
   },
+  {
+    name: 'multiple choice',
+    configure: async (editor) => {
+      const mcqId = await editor.addComponent('janus_mcq');
+      await editor.selectPart(mcqId);
+      await editor.selectField('custom_layoutType', 'horizontalLayout');
+      await editor.setCheckbox('custom_multipleSelection', true);
+    },
+    verifyPersisted: async (editor) => {
+      const [mcqId] = await editor.partIds('janus-mcq');
+      expect(mcqId, 'The MCQ part should be persisted').toBeTruthy();
+      await editor.selectPart(mcqId);
+      await expect(editor.field('custom_layoutType')).toHaveValue('horizontalLayout');
+      await expect(editor.field('custom_multipleSelection')).toBeChecked();
+      // Multiple selection renders checkboxes (one per default option) instead of radios.
+      await expect(editor.part(mcqId).getByRole('checkbox')).toHaveCount(3);
+    },
+  },
 ];
 
 // The component cases share one signed-in page with the editor open, so they
