@@ -12,7 +12,7 @@ export async function scanPageAccessibility(
   pageName: string,
   options: AccessibilityScanOptions = {},
 ) {
-  const builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag412']);
+  const builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag412']);
 
   if (options.excludeCookieConsent ?? true) {
     builder.exclude('#cookie_consent_display');
