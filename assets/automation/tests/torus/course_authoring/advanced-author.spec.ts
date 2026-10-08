@@ -84,6 +84,7 @@ type ComponentCase = {
 };
 
 const staticTextContent = 'Static text authored by automation';
+const imageUrl = `${baseUrl}/images/oli_torus_logo.png`;
 
 /**
  * One row per Phase 1 component. Each row authors the component on its own
@@ -105,6 +106,22 @@ const componentCases: ComponentCase[] = [
     verifyPersisted: async (editor) => {
       const part = editor.partsOfType('janus-text-flow').filter({ hasText: staticTextContent });
       await expect(part, 'The authored text part should be persisted').toHaveCount(1);
+    },
+  },
+  {
+    name: 'image',
+    configure: async (editor) => {
+      const imageId = await editor.addComponent('janus_image');
+      await editor.selectPart(imageId);
+      await editor.setMediaUrl('Select Image', imageUrl);
+      await editor.fillField('custom_alt', 'Torus logo');
+    },
+    verifyPersisted: async (editor) => {
+      const [imageId] = await editor.partIds('janus-image');
+      expect(imageId, 'The image part should be persisted').toBeTruthy();
+      await editor.selectPart(imageId);
+      await expect(editor.tabPanel()).toContainText(imageUrl);
+      await expect(editor.field('custom_alt')).toHaveValue('Torus logo');
     },
   },
 ];

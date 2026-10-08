@@ -16,6 +16,9 @@ export type AdvancedAuthorComponent =
 
 export type AdvancedAuthorTab = 'Lesson' | 'Screen' | 'Component';
 
+/** The accessible name of the button that opens a part's media picker. */
+export type AdvancedAuthorMediaPicker = 'Select Image' | 'Select Video File';
+
 const SAVE_REQUEST =
   /\/api\/v1\/(storage\/project\/[^/]+\/resource|project\/[^/]+\/(resource|activity))/;
 // Longer than the editor's 500ms save debounce, so a pending write always shows up.
@@ -155,6 +158,9 @@ export class AdvancedAuthorPO {
 
     const newTitle = await this.waitForNewSequenceItemTitle(before);
     await this.selectScreen(newTitle);
+    // The new screen's own creation write must land before the rename, or the
+    // two concurrent writes can persist the template title over the rename.
+    await this.waitForSaves();
     await this.openTab('Screen');
     await this.fillField('title', title);
     await this.waitForSaves();
@@ -331,6 +337,26 @@ export class AdvancedAuthorPO {
   /** The selected part's floating copy/edit/delete toolbar. */
   private selectionToolbarButton(title: 'Edit' | 'Copy' | 'Delete') {
     return this.page.locator(`.active-selection-toolbar button[title="${title}"]`).first();
+  }
+
+  /**
+   * Chooses a media source through the picker's "External URL" tab. The
+   * picker (`MediaPickerModal` / `UrlOrUpload`, under
+   * `apps/authoring/components`) is shared with Simple Author and was built
+   * for Advanced Author first, so the flow is identical.
+   */
+  async setMediaUrl(pickerLabel: AdvancedAuthorMediaPicker, url: string) {
+    await this.tabPanel().getByRole('button', { name: pickerLabel }).click();
+
+    const modal = this.page.locator('.modal').filter({ hasText: pickerLabel }).last();
+    await expect(modal).toBeVisible();
+    await modal.getByRole('button', { name: 'External URL' }).click();
+    const input = modal.getByPlaceholder('Enter the media URL address');
+    await input.fill(url);
+    await modal.getByRole('button', { name: 'OK', exact: true }).click();
+    await expect(modal).toBeHidden();
+    await expect(this.tabPanel()).toContainText(url);
+    await this.waitForSaves();
   }
 
   // ------------------------------------------------------------ property panel
