@@ -1,9 +1,16 @@
+import { HtmlTooltip } from './html_tooltip';
+
+type TooltipHook = {
+  el: HTMLElement;
+  cleanup?: () => void;
+};
+
 export const TooltipInit = {
-  mounted() {
+  mounted(this: TooltipHook) {
     const id = this.el.getAttribute('id');
     ($('#' + id) as any).tooltip();
   },
-  updated() {
+  updated(this: TooltipHook) {
     const id = this.el.getAttribute('id');
     ($('#' + id) as any).tooltip();
   },
@@ -12,8 +19,9 @@ export const TooltipInit = {
 export const TooltipWithTarget = {
   // This hook is used to show a tooltip when the user hovers over the element that has this hook attached.
   // The tooltip_target_id is the id of the tooltip element to be shown on mouseover.
-  mounted() {
-    const tooltip = document.getElementById(this.el.dataset['tooltipTargetId']);
+  mounted(this: TooltipHook) {
+    const targetId = this.el.dataset['tooltipTargetId'];
+    const tooltip = targetId ? document.getElementById(targetId) : null;
 
     this.el.addEventListener('mouseover', () => {
       if (tooltip?.classList.contains('hidden')) {
@@ -88,7 +96,7 @@ export const TooltipWithTarget = {
 //      ```
 
 export const AutoHideTooltip = {
-  mounted() {
+  mounted(this: TooltipHook) {
     let hideTimeout: number | null = null;
     const triggerId = this.el.dataset['triggerId'];
     const triggerElement = triggerId ? document.getElementById(triggerId) : null;
@@ -175,7 +183,7 @@ export const AutoHideTooltip = {
     };
   },
 
-  destroyed() {
+  destroyed(this: TooltipHook) {
     if (this.cleanup) this.cleanup();
   },
 };
@@ -215,7 +223,11 @@ export const AutoHideTooltip = {
 //    - Example: `<button data-dismiss-tooltip>Learn more</button>`
 
 export const Popover = {
-  mounted() {
+  mounted(this: TooltipHook) {
+    if (this.el.dataset.tooltipMode) {
+      HtmlTooltip.mounted.call(this);
+      return;
+    }
     const triggerId = this.el.dataset['triggerId'];
     const triggerElement = triggerId ? document.getElementById(triggerId) : null;
 
@@ -283,7 +295,15 @@ export const Popover = {
     };
   },
 
-  destroyed() {
+  updated(this: TooltipHook) {
+    if (this.el.dataset.tooltipMode) HtmlTooltip.updated.call(this);
+  },
+
+  destroyed(this: TooltipHook) {
+    if (this.el.dataset.tooltipMode) {
+      HtmlTooltip.destroyed.call(this);
+      return;
+    }
     if (this.cleanup) this.cleanup();
   },
 };

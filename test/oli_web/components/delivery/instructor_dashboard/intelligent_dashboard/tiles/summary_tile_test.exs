@@ -159,12 +159,24 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
       assert has_element?(component, "p", "72%")
 
+      for metric <-
+            ~w(average_class_proficiency average_assessment_score average_student_progress) do
+        assert has_element?(
+                 component,
+                 "#summary-tooltip-#{metric}[phx-hook='Popover'][data-tooltip-mode='tooltip'][data-tooltip-align='right'][data-tooltip-offset='8'][data-tooltip-position='bottom']"
+               )
+      end
+
       assert has_element?(
                component,
-               "button[aria-describedby='summary-tooltip-average_class_proficiency']"
+               "#summary-tooltip-average_class_proficiency-content[role='tooltip'][popover='manual'][hidden]"
              )
 
-      assert has_element?(component, "#summary-tooltip-average_class_proficiency[role='tooltip']")
+      assert has_element?(
+               component,
+               "#summary-tooltip-trigger-average_class_proficiency[aria-describedby='summary-tooltip-average_class_proficiency-content']"
+             )
+
       assert has_element?(component, "h4", "AI Recommendation")
       assert has_element?(component, "p", "Focus on Unit 2 before the next quiz.")
       assert has_element?(component, "#summary-recommendation-panel-summary_tile")
@@ -247,6 +259,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assert has_element?(component, "p", "76%")
       assert has_element?(component, "p", "72%")
       assert render(component) =~ "lg:max-w-[1076px]"
+
+      assert has_element?(
+               component,
+               "#summary-tooltip-average_class_proficiency[phx-hook='Popover'][data-tooltip-mode='tooltip']"
+             )
     end
 
     test "disables sentiment buttons after submission for the active recommendation", %{

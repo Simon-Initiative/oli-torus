@@ -7,6 +7,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Components.Modal
+  alias OliWeb.Components.Tooltip
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
@@ -99,25 +100,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       <p class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[0] text-Text-text-high">
                         <span class="inline-flex items-center gap-3 align-middle pr-1">
                           <span class="whitespace-nowrap">{card_title_line_two(card.label)}</span>
-                          <span class="group relative inline-flex items-center text-Text-text-high">
-                            <button
-                              id={"summary-tooltip-trigger-#{card.id}"}
-                              type="button"
-                              aria-label={"#{card.label} definition"}
-                              aria-describedby={"summary-tooltip-#{card.id}"}
-                              class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                            >
-                              <span class="scale-[0.9]">
-                                <Icons.info />
-                              </span>
-                            </button>
-                            <span
+                          <span class="inline-flex items-center text-Text-text-high">
+                            <Tooltip.render
                               id={"summary-tooltip-#{card.id}"}
-                              role="tooltip"
-                              class="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-20 hidden w-64 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                              trigger_id={"summary-tooltip-trigger-#{card.id}"}
+                              label={"#{card.label} definition"}
+                              position="bottom"
+                              align="right"
+                              offset={8}
+                              trigger_class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                             >
-                              {tooltip_copy(card.tooltip_key)}
-                            </span>
+                              <:trigger>
+                                <span class="scale-[0.9]">
+                                  <Icons.info />
+                                </span>
+                              </:trigger>
+                              <:content>{tooltip_copy(card.tooltip_key)}</:content>
+                            </Tooltip.render>
                           </span>
                         </span>
                       </p>
@@ -128,25 +127,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                     <p class="font-open-sans text-[16px] font-bold leading-[20px] tracking-[0] text-Text-text-high">
                       <span class="inline-flex items-center gap-1 align-middle">
                         <span>{card.label}</span>
-                        <span class="group relative inline-flex items-center text-Text-text-high">
-                          <button
-                            id={"summary-tooltip-trigger-#{card.id}"}
-                            type="button"
-                            aria-label={"#{card.label} definition"}
-                            aria-describedby={"summary-tooltip-#{card.id}"}
-                            class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                          >
-                            <span class="scale-[0.9]">
-                              <Icons.info />
-                            </span>
-                          </button>
-                          <span
+                        <span class="inline-flex items-center text-Text-text-high">
+                          <Tooltip.render
                             id={"summary-tooltip-#{card.id}"}
-                            role="tooltip"
-                            class="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-20 hidden w-64 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                            trigger_id={"summary-tooltip-trigger-#{card.id}"}
+                            label={"#{card.label} definition"}
+                            position="bottom"
+                            align="right"
+                            offset={8}
+                            trigger_class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                           >
-                            {tooltip_copy(card.tooltip_key)}
-                          </span>
+                            <:trigger>
+                              <span class="scale-[0.9]">
+                                <Icons.info />
+                              </span>
+                            </:trigger>
+                            <:content>{tooltip_copy(card.tooltip_key)}</:content>
+                          </Tooltip.render>
                         </span>
                       </span>
                     </p>
