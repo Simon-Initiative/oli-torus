@@ -300,11 +300,17 @@ export class AdvancedAuthorPO {
     return this.toolbar.locator(`img[src="/images/icons/${icon}"]`).locator('xpath=..');
   }
 
+  /**
+   * Each popover entry's icon carries a `title` attribute (its description),
+   * which — like the "+" menu's Font Awesome icons (see `sequenceAddMenuItem`)
+   * — leaks into the computed accessible name, so `getByRole(..., { name })`
+   * does not match. Matching by DOM text content (`hasText`) sidesteps it.
+   */
   private async addFromMoreComponents(label: string) {
     await this.clickToolbarIcon('icon-componentList.svg');
     const popover = this.page.locator('#moreComponents-popover');
     await expect(popover).toBeVisible({ timeout: 10_000 });
-    await popover.getByRole('button', { name: label, exact: true }).click();
+    await popover.locator('.list-group-item').filter({ hasText: label }).click();
   }
 
   /**

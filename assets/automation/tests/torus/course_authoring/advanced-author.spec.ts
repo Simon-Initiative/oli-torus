@@ -157,6 +157,24 @@ const componentCases: ComponentCase[] = [
       await expect(editor.part(mcqId).getByRole('checkbox')).toHaveCount(3);
     },
   },
+  {
+    name: 'number input',
+    configure: async (editor) => {
+      const numberId = await editor.addComponent('janus_input_number');
+      await editor.selectPart(numberId);
+      await editor.fillField('custom_minValue', '0');
+      await editor.fillField('custom_maxValue', '100');
+      await editor.fillField('custom_unitsLabel', 'cm');
+    },
+    verifyPersisted: async (editor) => {
+      const [numberId] = await editor.partIds('janus-input-number');
+      expect(numberId, 'The number input part should be persisted').toBeTruthy();
+      await editor.selectPart(numberId);
+      await expect(editor.field('custom_minValue')).toHaveValue('0');
+      await expect(editor.field('custom_maxValue')).toHaveValue('100');
+      await expect(editor.field('custom_unitsLabel')).toHaveValue('cm');
+    },
+  },
 ];
 
 // The component cases share one signed-in page with the editor open, so they
