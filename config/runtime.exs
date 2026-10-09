@@ -323,6 +323,23 @@ end
 force_ssl_default = if runtime_env in [:prod, :preview], do: "true", else: "false"
 config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", force_ssl_default)
 
+# Opt-in measurement only. See guides/deployment/transport-and-headers.md before
+# configuring a reporting destination or promoting any directive to enforcement.
+csp_report_only = System.get_env("CSP_REPORT_ONLY")
+
+case csp_report_only do
+  policy when is_binary(policy) ->
+    case byte_size(policy) <= 4096 and not String.contains?(policy, ["\r", "\n", <<0>>]) do
+      true -> :ok
+      false -> raise "CSP_REPORT_ONLY must be a single header value of at most 4096 bytes"
+    end
+
+  nil ->
+    :ok
+end
+
+config :oli, :csp_report_only, csp_report_only
+
 config :oli,
        :author_email_verification_required,
        get_env_as_boolean.("AUTHOR_EMAIL_VERIFICATION_REQUIRED", "true")
@@ -620,17 +637,19 @@ if runtime_env in [:prod, :preview] do
 
   if System.get_env("SSL_CERT_PATH") && System.get_env("SSL_KEY_PATH") do
     config :oli, OliWeb.Endpoint,
-      https: [
-        port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
-        otp_app: :oli,
-        keyfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.key"),
-        certfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.crt"),
-        protocol_options: [
-          max_header_name_length: http_max_header_name_length,
-          max_header_value_length: http_max_header_value_length,
-          max_headers: http_max_headers
-        ]
-      ]
+      https:
+        OliWeb.TransportSecurity.https_options() ++
+          [
+            port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
+            otp_app: :oli,
+            keyfile: System.fetch_env!("SSL_KEY_PATH"),
+            certfile: System.fetch_env!("SSL_CERT_PATH"),
+            protocol_options: [
+              max_header_name_length: http_max_header_name_length,
+              max_header_value_length: http_max_header_value_length,
+              max_headers: http_max_headers
+            ]
+          ]
   end
 
   truncate =
