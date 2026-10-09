@@ -11,8 +11,11 @@ defmodule OliWeb.LiveSessionPlugs.SetToken do
   alias Oli.Accounts.User
 
   def on_mount(:default, _params, _session, socket) do
-    case socket.assigns[:current_user] do
-      %User{sub: sub} ->
+    case {socket.assigns[:current_user], socket.assigns[:user_session]} do
+      {%User{}, %{scope: scope}} when not is_nil(scope) ->
+        {:cont, assign(socket, user_token: nil)}
+
+      {%User{sub: sub}, _} ->
         token = Phoenix.Token.sign(socket, "user socket", sub)
 
         {:cont, assign(socket, user_token: token)}

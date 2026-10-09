@@ -2,6 +2,7 @@ defmodule Oli.Accounts.UserToken do
   use Ecto.Schema
   import Ecto.Query
   alias Oli.Accounts.UserToken
+  alias Oli.Delivery.SecureAssessments.Scope
 
   @hash_algorithm :sha256
   @rand_size 32
@@ -20,6 +21,8 @@ defmodule Oli.Accounts.UserToken do
     # such as "session", "confirm" (for email confirmation), "reset_password", "change:<current_email>", "enrollment_invitation:<section_slug>".
     field :context, :string
     field :sent_to, :string
+    field :secure_section_id, :id
+    field :secure_resource_id, :id
     belongs_to :user, Oli.Accounts.User
 
     timestamps(type: :utc_datetime, updated_at: false)
@@ -44,9 +47,36 @@ defmodule Oli.Accounts.UserToken do
   and devices in the UI and allow users to explicitly expire any
   session they deem invalid.
   """
-  def build_session_token(user) do
+  def build_session_token(user, scope \\ nil)
+
+  def build_session_token(user, nil) do
     token = :crypto.strong_rand_bytes(@rand_size)
     {token, %UserToken{token: token, context: "session", user_id: user.id}}
+  end
+
+  def build_session_token(user, %Scope{section_id: section_id, resource_id: resource_id})
+      when is_integer(section_id) and section_id > 0 and is_integer(resource_id) and
+             resource_id > 0 do
+    {token, record} = build_session_token(user)
+    {token, %{record | secure_section_id: section_id, secure_resource_id: resource_id}}
+  end
+
+  @doc "Returns the exact valid session record and user, without consulting other tokens."
+  @spec session_query(binary()) :: Ecto.Query.t()
+  def session_query(token) do
+    from record in token_and_context_query(token, "session"),
+      join: user in assoc(record, :user),
+      where: record.inserted_at > ago(@session_validity_in_days, "day"),
+      select: {user, record.id, record.secure_section_id, record.secure_resource_id}
+  end
+
+  @doc "Looks up one signed capability's session row with the normal session expiry."
+  def session_id_query(id) do
+    from record in __MODULE__,
+      join: user in assoc(record, :user),
+      where: record.id == ^id and record.context == "session",
+      where: record.inserted_at > ago(@session_validity_in_days, "day"),
+      select: {user, record.id, record.secure_section_id, record.secure_resource_id}
   end
 
   @doc """
