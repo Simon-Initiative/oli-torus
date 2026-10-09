@@ -1,0 +1,50 @@
+name: Move Jira ticket to QA
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+
+jobs:
+  move-jira-ticket-to-qa:
+    if: >-
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # Load the helper from the reviewed base, never from the PR's head.
+      - name: Checkout trusted workflow helper
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Check Development team membership
+        id: development-review
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ secrets.TEAM_MEMBERS_READ_TOKEN }}
+          script: |
+            const isDevelopmentReviewer = require('./.github/scripts/development-review.cjs');
+            return await isDevelopmentReviewer({ github, context });
+
+      - name: Notify Jira automation
+        if: steps.development-review.outputs.result == 'true'
+        env:
+          JIRA_WEBHOOK_URL: ${{ secrets.JIRA_WEBHOOK_URL }}
+          JIRA_WEBHOOK_SECRET: ${{ secrets.JIRA_WEBHOOK_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --connect-timeout 10 --max-time 30 \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "X-Automation-Webhook-Token: ${JIRA_WEBHOOK_SECRET}" \
+            --data-binary "@${GITHUB_EVENT_PATH}" \
+            "${JIRA_WEBHOOK_URL}"
