@@ -15,6 +15,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
   Only progress uses an initial zero presentation default. Proficiency and score
   remain uncalculated until numeric evidence exists, including before activity.
   Loading dependencies and unavailable dependencies remain distinct.
+  Recommendation presentation uses the displayed metric values, not attempt counts:
+  a calculated proficiency or score (including zero), or positive average progress,
+  establishes a signal. Absence of signals requires all metric oracles to be ready.
   """
   @spec build(map(), keyword()) :: map()
   def build(optional_oracles, opts \\ []) when is_map(optional_oracles) do
@@ -38,9 +41,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
       Map.new(@metric_oracles, &{&1, oracle_state(optional_oracles, oracle_statuses, &1)})
 
     objective_proficiency = aggregate_objective_proficiency(objective_rows)
+    progress = aggregate_progress(progress_rows)
+    assessment_score = aggregate_assessment_score(grades_rows)
 
     activity_state =
-      activity_state(progress_rows, objective_proficiency, grades_rows, oracle_states)
+      activity_state(progress, objective_proficiency, assessment_score, oracle_states)
 
     recommendation_source =
       recommendation_source(optional_oracles, oracle_statuses, recommendation_oracle_keys)
@@ -57,11 +62,12 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
         ),
         assessment_score_card(
           grades_rows,
+          assessment_score,
           oracle_states.oracle_instructor_grades,
           activity_state
         ),
         progress_card(
-          progress_rows,
+          progress,
           oracle_states.oracle_instructor_progress_proficiency,
           activity_state
         )
@@ -84,7 +90,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
     }
   end
 
-  defp progress_card(progress_rows, oracle_state, activity_state) do
+  defp aggregate_progress(progress_rows) do
     progress_rows
     |> Enum.flat_map(fn row ->
       case normalize_pct(Map.get(row, :progress_pct)) do
@@ -93,7 +99,16 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
       end
     end)
     |> average()
-    |> card(:average_student_progress, "Average Student Progress", oracle_state, activity_state)
+  end
+
+  defp progress_card(value, oracle_state, activity_state) do
+    card(
+      value,
+      :average_student_progress,
+      "Average Student Progress",
+      oracle_state,
+      activity_state
+    )
   end
 
   defp class_proficiency_card([], _value, :ready, _activity_state), do: nil
@@ -108,14 +123,23 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
     )
   end
 
-  defp assessment_score_card([], :ready, _activity_state), do: nil
-
-  defp assessment_score_card(grades_rows, oracle_state, activity_state) do
+  defp aggregate_assessment_score(grades_rows) do
     grades_rows
     |> Enum.map(&normalize_pct(Map.get(&1, :mean)))
     |> Enum.reject(&is_nil/1)
     |> average()
-    |> card(:average_assessment_score, "Average Assessment Score", oracle_state, activity_state)
+  end
+
+  defp assessment_score_card([], _value, :ready, _activity_state), do: nil
+
+  defp assessment_score_card(_grades_rows, value, oracle_state, activity_state) do
+    card(
+      value,
+      :average_assessment_score,
+      "Average Assessment Score",
+      oracle_state,
+      activity_state
+    )
   end
 
   defp card(value, id, label, oracle_state, activity_state) do
@@ -152,25 +176,20 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
     end
   end
 
-  defp activity_state(progress_rows, objective_proficiency, grades_rows, oracle_states) do
-    has_activity? =
-      Enum.any?(progress_rows, fn row ->
-        positive?(Map.get(row, :progress_pct)) or
-          positive?(Map.get(row, :proficiency_attempt_count)) or
-          is_number(Map.get(row, :proficiency_pct))
-      end) or
-        is_number(objective_proficiency) or
-        Enum.any?(
-          grades_rows,
-          &(positive?(Map.get(&1, :completed_count)) or is_number(Map.get(&1, :mean)))
-        )
+  # These states describe visible metric signals, not whether any response ever occurred.
+  # Shared-LO attempts can exist without a calculable proficiency in this summary.
+  defp activity_state(progress, objective_proficiency, assessment_score, oracle_states) do
+    has_metric_signal? =
+      (oracle_states.oracle_instructor_progress_proficiency == :ready and positive?(progress)) or
+        (oracle_states.oracle_instructor_objectives_proficiency == :ready and
+           is_number(objective_proficiency)) or
+        (oracle_states.oracle_instructor_grades == :ready and is_number(assessment_score))
 
     cond do
-      has_activity? ->
+      has_metric_signal? ->
         :started
 
-      Enum.all?(@metric_oracles, &(Map.fetch!(oracle_states, &1) == :ready)) and
-          Enum.all?(progress_rows, &(Map.get(&1, :proficiency_attempt_count) == 0)) ->
+      Enum.all?(@metric_oracles, &(Map.fetch!(oracle_states, &1) == :ready)) ->
         :not_started
 
       true ->

@@ -51,7 +51,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.ProjectorTest
     end
   end
 
-  test "keeps applicable cards without a numeric estimate after attempts have begun" do
+  test "shared-LO attempts without displayed metric values retain the initial presentation state" do
     oracles =
       scope_oracles(true, true, :not_started)
       |> Map.put(:oracle_instructor_progress_proficiency, [
@@ -61,7 +61,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.ProjectorTest
     projection =
       Projector.build(oracles, recommendation_oracle_keys: [:oracle_instructor_recommendation])
 
-    assert projection.activity_state == :started
+    assert projection.activity_state == :not_started
     assert Enum.map(projection.cards, & &1.value_text) == ["--", "--", "0%"]
 
     assert Enum.all?(
@@ -87,7 +87,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.ProjectorTest
     assert projection.recommendation.body == "There isn't enough student data."
   end
 
-  test "old snapshots without evidence counts do not manufacture initial zeros" do
+  test "ready snapshots do not require evidence counts to determine the initial presentation" do
     oracles =
       scope_oracles(true, true, :not_started)
       |> Map.put(:oracle_instructor_progress_proficiency, [
@@ -95,8 +95,62 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.ProjectorTest
       ])
 
     projection = Projector.build(oracles)
-    assert projection.activity_state == :unknown
+    assert projection.activity_state == :not_started
     assert Enum.map(projection.cards, & &1.value_text) == ["--", "--", "0%"]
+  end
+
+  test "learner proficiency and completed assessment counts alone are not displayed signals" do
+    oracles =
+      scope_oracles(true, true, :not_started)
+      |> Map.put(:oracle_instructor_progress_proficiency, [
+        %{student_id: 1, progress_pct: 0.0, proficiency_pct: 0.7, proficiency_attempt_count: 3}
+      ])
+      |> Map.put(:oracle_instructor_grades, %{
+        grades: [%{page_id: 20, mean: nil, completed_count: 1}]
+      })
+
+    projection = Projector.build(oracles)
+    assert projection.activity_state == :not_started
+    assert Enum.map(projection.cards, & &1.value_text) == ["--", "--", "0%"]
+  end
+
+  for {oracle, payload, expected_value} <- [
+        {:oracle_instructor_objectives_proficiency,
+         %{objective_rows: [%{objective_id: 10, numeric_proficiency: 0.0}]}, "0%"},
+        {:oracle_instructor_grades, %{grades: [%{page_id: 20, mean: 0.0}]}, "0%"},
+        {:oracle_instructor_progress_proficiency, [%{student_id: 1, progress_pct: 5.0}], "5%"}
+      ] do
+    @signal_oracle oracle
+    @signal_payload payload
+    @expected_value expected_value
+
+    test "#{oracle} supplies a displayed signal without waiting for other metrics" do
+      oracles = scope_oracles(true, true, :not_started)
+
+      projection =
+        Projector.build(Map.put(oracles, @signal_oracle, @signal_payload),
+          oracle_statuses:
+            Map.new(Map.keys(oracles) -- [@signal_oracle], &{&1, %{status: :loading}})
+        )
+
+      assert projection.activity_state == :started
+
+      assert Enum.find(projection.cards, &(&1.status == :ready)).value_text == @expected_value
+
+      assert Enum.count(projection.cards, &(&1.status == :loading)) == 2
+    end
+
+    test "#{oracle} stale numeric data does not supply a signal while loading" do
+      oracles =
+        scope_oracles(true, true, :not_started)
+        |> Map.put(@signal_oracle, @signal_payload)
+
+      projection =
+        Projector.build(oracles, oracle_statuses: %{@signal_oracle => %{status: :loading}})
+
+      assert projection.activity_state == :unknown
+      assert Enum.find(projection.cards, &(&1.status == :loading)).value_text == "--"
+    end
   end
 
   for oracle <- [

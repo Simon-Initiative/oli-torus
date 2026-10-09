@@ -118,6 +118,227 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       refute render(component) =~ @beginning_copy
     end
 
+    test "shared-LO attempts without a summary value keep the initial copy", %{conn: conn} do
+      projection =
+        scope_projection(true, true, false, %{
+          oracle_instructor_progress_proficiency: [
+            %{
+              student_id: 1,
+              progress_pct: 0.0,
+              proficiency_pct: nil,
+              proficiency_attempt_count: 1
+            }
+          ]
+        })
+
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
+          projection: projection,
+          projection_status: %{status: :ready}
+        })
+
+      assert has_element?(
+               component,
+               "#summary-recommendation-panel-summary_tile p",
+               @beginning_copy
+             )
+
+      assert has_element?(component, "#summary-metric-card-average_class_proficiency p", "--")
+      assert has_element?(component, "#summary-metric-card-average_assessment_score p", "--")
+      assert has_element?(component, "#summary-metric-card-average_student_progress p", "0%")
+    end
+
+    for {signal, overrides} <- [
+          {:proficiency_zero,
+           %{
+             oracle_instructor_objectives_proficiency: %{
+               objective_rows: [%{objective_id: 10, numeric_proficiency: 0.0}]
+             }
+           }},
+          {:shared_lo_proficiency,
+           %{
+             oracle_instructor_objectives_proficiency: %{
+               objective_rows: [%{objective_id: 10, numeric_proficiency: 0.7}]
+             }
+           }},
+          {:assessment_zero, %{oracle_instructor_grades: %{grades: [%{page_id: 20, mean: 0.0}]}}},
+          {:progress,
+           %{oracle_instructor_progress_proficiency: [%{student_id: 1, progress_pct: 5.0}]}}
+        ] do
+      @signal_overrides overrides
+
+      test "#{signal} keeps insufficient-data copy instead of the initial copy", %{conn: conn} do
+        projection = scope_projection(true, true, false, @signal_overrides)
+
+        {:ok, component, _html} =
+          live_component_isolated(conn, SummaryTile, %{
+            id: "summary_tile",
+            projection: projection,
+            projection_status: %{status: :ready}
+          })
+
+        assert has_element?(
+                 component,
+                 "#summary-recommendation-panel-summary_tile p",
+                 "There isn't enough student data."
+               )
+
+        refute render(component) =~ @beginning_copy
+      end
+    end
+
+    for oracle <- [
+          :oracle_instructor_progress_proficiency,
+          :oracle_instructor_objectives_proficiency,
+          :oracle_instructor_grades
+        ] do
+      @loading_oracle oracle
+
+      test "cached no-signal copy waits for #{oracle} before choosing initial copy", %{conn: conn} do
+        projection =
+          scope_projection(true, true, false, %{},
+            oracle_statuses: %{@loading_oracle => %{status: :loading}}
+          )
+
+        {:ok, component, _html} =
+          live_component_isolated(conn, SummaryTile, %{
+            id: "summary_tile",
+            projection: projection,
+            projection_status: %{status: :partial}
+          })
+
+        assert has_element?(
+                 component,
+                 "#summary-recommendation-panel-summary_tile p",
+                 "Generating a scoped recommendation for this selection."
+               )
+
+        refute render(component) =~ @beginning_copy
+        refute render(component) =~ "There isn't enough student data."
+        refute has_element?(component, "button[aria-label='Regenerate recommendation']")
+
+        LiveComponentTests.Driver.run(component, fn socket ->
+          updated_attrs =
+            socket.assigns.lc_attrs
+            |> Map.put(:projection, scope_projection(true, true, false))
+            |> Map.put(:projection_status, %{status: :ready})
+
+          {:reply, :ok, Phoenix.Component.assign(socket, :lc_attrs, updated_attrs)}
+        end)
+
+        assert has_element?(
+                 component,
+                 "#summary-recommendation-panel-summary_tile p",
+                 @beginning_copy
+               )
+
+        refute render(component) =~ "Generating a scoped recommendation for this selection."
+      end
+    end
+
+    test "one displayed signal resolves cached no-signal copy while other metrics load", %{
+      conn: conn
+    } do
+      projection =
+        scope_projection(
+          true,
+          true,
+          false,
+          %{oracle_instructor_progress_proficiency: [%{student_id: 1, progress_pct: 5.0}]},
+          oracle_statuses: %{
+            oracle_instructor_objectives_proficiency: %{status: :loading},
+            oracle_instructor_grades: %{status: :loading}
+          }
+        )
+
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
+          projection: projection,
+          projection_status: %{status: :partial}
+        })
+
+      assert has_element?(
+               component,
+               "#summary-recommendation-panel-summary_tile p",
+               "There isn't enough student data."
+             )
+
+      refute render(component) =~ @beginning_copy
+      refute render(component) =~ "Generating a scoped recommendation for this selection."
+    end
+
+    for metric_status <- [:ready, :loading, :failed] do
+      @metric_status metric_status
+
+      test "a valid recommendation stays visible with #{metric_status} metrics", %{conn: conn} do
+        projection =
+          scope_projection(
+            true,
+            true,
+            false,
+            %{
+              oracle_instructor_recommendation: %{
+                id: 42,
+                state: :ready,
+                message: "Review the first unit."
+              }
+            },
+            oracle_statuses:
+              Map.new(
+                [
+                  :oracle_instructor_progress_proficiency,
+                  :oracle_instructor_objectives_proficiency,
+                  :oracle_instructor_grades
+                ],
+                &{&1, %{status: @metric_status}}
+              )
+          )
+
+        {:ok, component, _html} =
+          live_component_isolated(conn, SummaryTile, %{
+            id: "summary_tile",
+            projection: projection,
+            projection_status: %{status: :partial}
+          })
+
+        assert has_element?(
+                 component,
+                 "#summary-recommendation-panel-summary_tile p",
+                 "Review the first unit."
+               )
+
+        refute render(component) =~ @beginning_copy
+        refute render(component) =~ "Generating a scoped recommendation for this selection."
+      end
+    end
+
+    test "failed metrics do not confirm initial copy or keep cached no-signal copy loading", %{
+      conn: conn
+    } do
+      projection =
+        scope_projection(true, true, false, %{},
+          oracle_statuses: %{oracle_instructor_grades: %{status: :failed}}
+        )
+
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
+          projection: projection,
+          projection_status: %{status: :partial}
+        })
+
+      assert has_element?(
+               component,
+               "#summary-recommendation-panel-summary_tile p",
+               "There isn't enough student data."
+             )
+
+      refute render(component) =~ @beginning_copy
+      refute render(component) =~ "Generating a scoped recommendation for this selection."
+    end
+
     test "renders scoped metric cards and accessible tooltip wiring", %{conn: conn} do
       {:ok, component, _html} =
         live_component_isolated(conn, SummaryTile, %{
@@ -497,7 +718,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     end
   end
 
-  defp scope_projection(has_objectives, has_assessments, has_activity) do
+  defp scope_projection(
+         has_objectives,
+         has_assessments,
+         has_activity,
+         oracle_overrides \\ %{},
+         opts \\ []
+       ) do
     {progress, proficiency, score, state, body} =
       case has_activity do
         true -> {25.0, 0.7, 80.0, :ready, "Review the first unit."}
@@ -516,21 +743,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         false -> []
       end
 
+    oracles = %{
+      oracle_instructor_progress_proficiency: [
+        %{
+          student_id: 1,
+          progress_pct: progress,
+          proficiency_pct: proficiency,
+          proficiency_attempt_count: 0
+        }
+      ],
+      oracle_instructor_objectives_proficiency: %{objective_rows: objectives},
+      oracle_instructor_grades: %{grades: grades},
+      oracle_instructor_recommendation: %{id: 42, state: state, message: body}
+    }
+
     Projector.build(
-      %{
-        oracle_instructor_progress_proficiency: [
-          %{
-            student_id: 1,
-            progress_pct: progress,
-            proficiency_pct: proficiency,
-            proficiency_attempt_count: 0
-          }
-        ],
-        oracle_instructor_objectives_proficiency: %{objective_rows: objectives},
-        oracle_instructor_grades: %{grades: grades},
-        oracle_instructor_recommendation: %{id: 42, state: state, message: body}
-      },
-      recommendation_oracle_keys: [:oracle_instructor_recommendation]
+      Map.merge(oracles, oracle_overrides),
+      Keyword.merge([recommendation_oracle_keys: [:oracle_instructor_recommendation]], opts)
     )
   end
 

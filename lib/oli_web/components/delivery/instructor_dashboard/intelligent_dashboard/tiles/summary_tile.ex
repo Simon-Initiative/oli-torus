@@ -55,7 +55,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
        projection
        |> Map.get(:recommendation, default_recommendation())
        |> normalize_recommendation()
-       |> recommendation_for_activity(Map.get(projection, :activity_state))
+       |> recommendation_for_activity(
+         Map.get(projection, :activity_state),
+         Enum.any?(Map.get(projection, :cards, []), &(Map.get(&1, :status) == :loading))
+       )
      )
      |> assign(
        :layout,
@@ -484,7 +487,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   # Async recommendation updates can replace the projector's recommendation payload.
   # Resolve initial presentation from metric evidence on every component update.
-  defp recommendation_for_activity(%{status: :beginning_course} = recommendation, :not_started) do
+  defp recommendation_for_activity(
+         %{status: :beginning_course} = recommendation,
+         :not_started,
+         _metrics_loading?
+       ) do
     %{
       recommendation
       | body: @beginning_course_message,
@@ -492,7 +499,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     }
   end
 
-  defp recommendation_for_activity(recommendation, _activity_state), do: recommendation
+  defp recommendation_for_activity(
+         %{status: :beginning_course} = recommendation,
+         :unknown,
+         true
+       ) do
+    %{
+      recommendation
+      | status: :thinking,
+        body: nil,
+        aria_label: "AI Recommendation",
+        can_regenerate?: false,
+        can_submit_sentiment?: false
+    }
+  end
+
+  defp recommendation_for_activity(recommendation, _activity_state, _metrics_loading?),
+    do: recommendation
 
   defp normalize_recommendation(%{label: _, status: _, recommendation_id: _} = recommendation),
     do: Map.merge(default_recommendation(), recommendation)
