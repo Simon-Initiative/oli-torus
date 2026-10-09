@@ -1,11 +1,13 @@
 import { resetRuntimeConfig, setRuntimeConfig } from '@core/runtimeConfig';
 import { test } from '@fixture/my-fixture';
 import { AdvancedAuthorPO } from '@pom/page/AdvancedAuthorPO';
+import { StudentCoursePO } from '@pom/course/StudentCoursePO';
+import { AdaptiveDeckPO } from '@pom/delivery/AdaptiveDeckPO';
 import { TYPE_USER } from '@pom/types/type-user';
 import { teardownAutomationCourse, type AutomationSetupResponse } from '@tasks/AutomationSetupTask';
 import { AdvancedAuthorTask } from '@tasks/AdvancedAuthorTask';
 import { HomeTask } from '@tasks/HomeTask';
-import { BrowserContext, expect } from '@playwright/test';
+import { BrowserContext, expect, Page } from '@playwright/test';
 import path from 'node:path';
 
 const runId = `-${Date.now()}-${process.pid}`;
@@ -19,21 +21,38 @@ const scenarioPath = path.resolve(__dirname, './playwright_advanced_author.yaml'
 let sectionSlug = '';
 let seededCourse: AutomationSetupResponse | undefined;
 
+const correctStudentEmail = `advanced-student${runId}@example.com`;
+const incorrectStudentEmail = `advanced-student-2${runId}@example.com`;
+
+/** Rebuilds the full login map, varying only which student is "student". */
+const loginData = (studentEmail = correctStudentEmail, studentName = 'Test') => ({
+  author: {
+    type: TYPE_USER.author,
+    pageTitle: 'OLI Torus',
+    role: 'Course Author',
+    welcomeText: 'Welcome to OLI Torus',
+    welcomeTitle: 'Course Author',
+    email: `advanced-author${runId}@example.com`,
+    pass: defaultPassword,
+    header: 'Course Author',
+  },
+  student: {
+    type: TYPE_USER.student,
+    pageTitle: 'OLI Torus',
+    role: 'Student',
+    welcomeText: 'Welcome to OLI Torus',
+    welcomeTitle: `Hi, ${studentName}`,
+    email: studentEmail,
+    name: studentName,
+    last_name: 'Learner',
+    pass: defaultPassword,
+  },
+});
+
 setRuntimeConfig({
   baseUrl,
   scenarioToken,
-  loginData: {
-    author: {
-      type: TYPE_USER.author,
-      pageTitle: 'OLI Torus',
-      role: 'Course Author',
-      welcomeText: 'Welcome to OLI Torus',
-      welcomeTitle: 'Course Author',
-      email: `advanced-author${runId}@example.com`,
-      pass: defaultPassword,
-      header: 'Course Author',
-    },
-  },
+  loginData: loginData(),
 });
 
 test.beforeAll(async ({ seedScenario }) => {
@@ -302,3 +321,95 @@ test.describe.serial('Advanced Author components @pr', () => {
     await expect(editor.responsiveItem(rightId)).toHaveClass(/responsive-align-right/);
   });
 });
+
+test.describe.serial('Advanced Author lesson delivery @pr', () => {
+  const lessonTitle = 'Advanced Author Branching Lesson';
+  const correctText = 'You answered correctly!';
+  const incorrectText = 'That is not correct.';
+  let mcqId: string;
+
+  test('author builds a branching lesson with a real trap-state rule and publishes', async ({
+    homeTask,
+    advancedAuthorTask,
+  }) => {
+    test.setTimeout(240_000);
+    const editor = advancedAuthorTask.editor;
+
+    setRuntimeConfig({ loginData: loginData() });
+    await homeTask.login('author');
+    await advancedAuthorTask.createLesson(projectTitle, lessonTitle);
+
+    mcqId = await editor.addComponent('janus_mcq');
+
+    await advancedAuthorTask.addScreen('Correct Terminal');
+    const correctTextId = await editor.addComponent('janus_text_flow');
+    await editor.setTextFlowText(correctTextId, correctText);
+
+    await advancedAuthorTask.addScreen('Incorrect Terminal');
+    const incorrectTextId = await editor.addComponent('janus_text_flow');
+    await editor.setTextFlowText(incorrectTextId, incorrectText);
+
+    await editor.selectScreen('Welcome Screen');
+    await editor.selectPart(mcqId);
+
+    await editor.selectRule('correct');
+    await editor.setRuleCondition(`stage.${mcqId}.selectedChoice`, '1');
+    await editor.setRuleDestination('Correct Terminal');
+
+    await editor.selectRule('defaultWrong');
+    await editor.setRuleDestination('Incorrect Terminal');
+
+    await advancedAuthorTask.publish();
+  });
+
+  test('student answering correctly reaches the correct terminal', async ({ homeTask, page }) => {
+    test.setTimeout(120_000);
+    setRuntimeConfig({ loginData: loginData(correctStudentEmail) });
+
+    await homeTask.login('student');
+    await openPublishedLesson(page, lessonTitle);
+    await answerMcqAndExpectTerminal(page, 'Option 1', correctText);
+  });
+
+  test('student answering incorrectly reaches the incorrect terminal', async ({
+    homeTask,
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    setRuntimeConfig({ loginData: loginData(incorrectStudentEmail) });
+
+    await homeTask.login('student');
+    await openPublishedLesson(page, lessonTitle);
+    await answerMcqAndExpectTerminal(page, 'Option 2', incorrectText);
+  });
+});
+
+async function openPublishedLesson(page: Page, title: string) {
+  const studentCourse = new StudentCoursePO(page);
+
+  await page.goto(`/sections/${sectionSlug}`);
+  await studentCourse.goToCourseIfPrompted();
+  await page.goto(`/sections/${sectionSlug}/learn`);
+  await studentCourse.openPage(title);
+}
+
+/**
+ * Selects an MCQ option, checks it, and expects the resulting terminal text.
+ * "defaultWrong" carries two actions — the built-in "Incorrect, please try
+ * again." feedback, then the authored Navigate To — so an incorrect answer
+ * needs its feedback dismissed before navigation continues; `advance()`
+ * handles that click-dismiss cycle generically (a correct answer, with only
+ * the Navigate To action, just advances on the first click).
+ */
+async function answerMcqAndExpectTerminal(page: Page, optionName: string, terminalText: string) {
+  const deck = new AdaptiveDeckPO(page);
+  await deck.waitForDeckReady();
+
+  const mcq = page.locator('janus-mcq').first();
+  await expect(mcq).toBeVisible({ timeout: 30_000 });
+  await mcq.getByText(optionName, { exact: true }).click();
+  await expect(mcq.getByRole('radio', { name: optionName })).toBeChecked();
+
+  await deck.advance();
+  await expect(page.getByText(terminalText, { exact: true })).toBeVisible({ timeout: 15_000 });
+}

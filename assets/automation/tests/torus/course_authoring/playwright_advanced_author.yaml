@@ -29,6 +29,14 @@
     family_name: 'Learner'
     password: 'changeme123456'
 
+- user:
+    name: 'advanced_author_student_2'
+    type: 'student'
+    email: 'advanced-student-2${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Learner Two'
+    password: 'changeme123456'
+
 - project:
     name: 'Advanced Author Suite${RUN_ID}'
     title: 'Advanced Author Suite${RUN_ID}'
@@ -52,5 +60,11 @@
 - enroll:
     user: 'advanced_author_student'
     email: 'advanced-student${RUN_ID}@example.com'
+    section: 'Advanced Author Suite${RUN_ID}'
+    role: student
+
+- enroll:
+    user: 'advanced_author_student_2'
+    email: 'advanced-student-2${RUN_ID}@example.com'
     section: 'Advanced Author Suite${RUN_ID}'
     role: student

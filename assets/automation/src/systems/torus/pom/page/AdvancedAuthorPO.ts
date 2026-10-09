@@ -21,6 +21,9 @@ export type AdvancedAuthorMediaPicker = 'Select Image' | 'Select Video File';
 
 export type AdvancedAuthorPartWidth = '100%' | '50% left' | '50% right';
 
+/** Every part's Adaptivity list starts with these three rules. */
+export type AdvancedAuthorRuleName = 'Initial State' | 'correct' | 'defaultWrong';
+
 const SAVE_REQUEST =
   /\/api\/v1\/(storage\/project\/[^/]+\/resource|project\/[^/]+\/(resource|activity))/;
 // Longer than the editor's 500ms save debounce, so a pending write always shows up.
@@ -388,6 +391,91 @@ export class AdvancedAuthorPO {
 
   responsiveItem(partId: string) {
     return this.stage.locator(`.responsive-item[data-part-id="${partId}"]`);
+  }
+
+  // ------------------------------------------------------------ adaptivity rules
+
+  /**
+   * Selects a rule in the selected part's Adaptivity list (bottom panel).
+   * Every part starts with "Initial State", "correct", and "defaultWrong".
+   */
+  async selectRule(name: AdvancedAuthorRuleName) {
+    // The Adaptivity list lives in the same left panel as the Sequence
+    // Editor, which `selectPart` collapses to dodge the active-selection
+    // toolbar overlap (see `ensureLeftPanelOpen`'s doc comment) — reopen it.
+    await this.ensureLeftPanelOpen();
+    await this.ruleListItem(name).click();
+  }
+
+  private ruleListItem(name: AdvancedAuthorRuleName) {
+    return this.page
+      .locator('.aa-rules-list-item')
+      .filter({
+        has: this.page.locator('.title', { hasText: new RegExp(`^${escapeRegExp(name)}$`) }),
+      });
+  }
+
+  /**
+   * Sets the currently selected rule's single condition (adding one first if
+   * needed). The target/value inputs are plain text fields — no Variable
+   * Picker dialog is required, unlike the manual authoring flow the
+   * regression spreadsheet describes. Only one condition per rule is
+   * supported here; the default "=" operator is left as is.
+   */
+  async setRuleCondition(target: string, value: string) {
+    const targetInput = this.page.locator('input[placeholder="Target"]').first();
+    if ((await targetInput.count()) === 0) {
+      await this.page.locator('.aa-conditions .dropdown-toggle.aa-add-button').click();
+      await this.page
+        .locator('.dropdown-menu.show')
+        .locator('a, button')
+        .filter({ hasText: 'Single Condition' })
+        .first()
+        .click();
+    }
+
+    await targetInput.fill(target);
+    await targetInput.press('Tab');
+    await this.waitForSaves();
+
+    const valueInput = this.page.locator('input[placeholder="Value"]').first();
+    await valueInput.fill(value);
+    await valueInput.press('Tab');
+    await this.waitForSaves();
+  }
+
+  /**
+   * Sets the currently selected rule's "Navigate To" action (adding one first
+   * if needed) to the given screen. The destination control
+   * (`ScreenDropdownTemplate`) is a Bootstrap dropdown, not a `<select>`, and
+   * its toggle's id is regenerated on every change, so it's located by its
+   * "Navigate To" label instead.
+   */
+  async setRuleDestination(screenTitle: string) {
+    let navToggle = this.navigateToToggle();
+    if ((await navToggle.count()) === 0) {
+      await this.page.locator('#adaptive-editor-add-context-trigger').click();
+      await this.page
+        .locator('.dropdown-menu.show a.dropdown-item')
+        .filter({ hasText: 'Navigate To' })
+        .click();
+      navToggle = this.navigateToToggle();
+    }
+
+    await navToggle.click();
+    await this.page
+      .locator('.dropdown-menu.show .aa-sequence-item')
+      .filter({ hasText: new RegExp(`^${escapeRegExp(screenTitle)}$`) })
+      .click();
+    await this.waitForSaves();
+    await expect(this.navigateToToggle()).toHaveText(screenTitle);
+  }
+
+  private navigateToToggle() {
+    return this.page
+      .locator('.aa-action')
+      .filter({ hasText: 'Navigate To' })
+      .locator('.dropdown-toggle');
   }
 
   // ------------------------------------------------------------ editing commands
