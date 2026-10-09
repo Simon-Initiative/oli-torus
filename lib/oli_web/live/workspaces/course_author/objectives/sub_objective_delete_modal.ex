@@ -1,6 +1,8 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SubObjectiveDeleteModal do
   use OliWeb, :html
 
+  alias OliWeb.Components.DesignTokens.Primitives.Button
+
   attr(:id, :string, required: true)
   attr(:parent_slug, :string, required: true)
   attr(:slug, :string, required: true)
@@ -46,15 +48,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SubObjectiveDeleteModal do
             >
               Cancel
             </button>
-            <button
+            <Button.button
+              variant={:danger}
               phx-click="delete_sub_objective"
               phx-value-slug={@slug}
               phx-value-parent_slug={@parent_slug}
-              type="button"
-              class="rounded-md bg-Border-border-danger px-4 py-2 font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Icon-icon-danger"
             >
               Delete sub-objective
-            </button>
+            </Button.button>
           </div>
         </div>
       </div>
