@@ -175,6 +175,24 @@ const componentCases: ComponentCase[] = [
       await expect(editor.field('custom_unitsLabel')).toHaveValue('cm');
     },
   },
+  {
+    name: 'multiline text',
+    configure: async (editor) => {
+      const multilineId = await editor.addComponent('janus_multi_line_text');
+      await editor.selectPart(multilineId);
+      await editor.fillField('custom_label', 'Describe your answer');
+      await editor.fillField('custom_prompt', 'Type here...');
+      await editor.setCheckbox('custom_showCharacterCount', true);
+    },
+    verifyPersisted: async (editor) => {
+      const [multilineId] = await editor.partIds('janus-multi-line-text');
+      expect(multilineId, 'The multiline text part should be persisted').toBeTruthy();
+      await editor.selectPart(multilineId);
+      await expect(editor.field('custom_label')).toHaveValue('Describe your answer');
+      await expect(editor.field('custom_prompt')).toHaveValue('Type here...');
+      await expect(editor.field('custom_showCharacterCount')).toBeChecked();
+    },
+  },
 ];
 
 // The component cases share one signed-in page with the editor open, so they
@@ -217,4 +235,70 @@ test.describe.serial('Advanced Author components @pr', () => {
       await componentCase.verifyPersisted(editor);
     });
   }
+
+  test('copy/paste and undo/redo update the screen', async () => {
+    test.setTimeout(150_000);
+    const editor = advancedAuthorTask.editor;
+    const textFlows = editor.partsOfType('janus-text-flow');
+    const copyText = 'Original text to copy';
+
+    await advancedAuthorTask.addScreen('Copy paste screen');
+    const partId = await editor.addComponent('janus_text_flow');
+    await editor.setTextFlowText(partId, copyText);
+    const beforeIds = await editor.partIds('janus-text-flow');
+
+    await editor.selectPart(partId);
+    await editor.copySelectedPart();
+    await editor.pasteWithToolbar();
+
+    await expect(textFlows).toHaveCount(beforeIds.length + 1);
+    const afterPasteIds = await editor.partIds('janus-text-flow');
+    const pastedId = afterPasteIds.find((id) => !beforeIds.includes(id));
+    if (!pastedId) throw new Error('The pasted text flow should be on the stage');
+    const pasted = editor.part(pastedId);
+    await expect(pasted).toContainText(copyText);
+
+    // The clipboard is single-use, so a second paste adds nothing.
+    await expect(editor.pasteButton()).toBeHidden();
+    await editor.pasteWithKeyboard(partId);
+    await editor.waitForSaves();
+    await expect(textFlows).toHaveCount(beforeIds.length + 1);
+
+    await editor.undoButton().click();
+    await expect(pasted).toHaveCount(0);
+    await expect(textFlows).toHaveCount(beforeIds.length);
+    await editor.redoButton().click();
+    await expect(pasted).toHaveCount(1);
+
+    await advancedAuthorTask.reloadAndOpenScreen('Copy paste screen');
+    await expect(pasted).toHaveCount(1);
+    await expect(textFlows).toHaveCount(beforeIds.length + 1);
+  });
+
+  test('responsive layout arranges components side by side', async () => {
+    test.setTimeout(150_000);
+    const editor = advancedAuthorTask.editor;
+
+    await advancedAuthorTask.addScreen('Responsive layout screen');
+    // Responsive widths only take effect once the lesson enables them.
+    await editor.openTab('Lesson');
+    await editor.setCheckbox('Properties_responsiveLayout', true);
+    await editor.openTab('Screen');
+
+    const leftId = await editor.addComponent('janus_text_flow');
+    await editor.setTextFlowText(leftId, 'Left column text');
+    await editor.setPartWidth(leftId, '50% left');
+
+    const rightId = await editor.addComponent('janus_image');
+    await editor.selectPart(rightId);
+    await editor.setMediaUrl('Select Image', imageUrl);
+    await editor.setPartWidth(rightId, '50% right');
+
+    await advancedAuthorTask.reloadAndOpenScreen('Responsive layout screen');
+
+    await expect(editor.responsiveItem(leftId)).toHaveClass(/half-width/);
+    await expect(editor.responsiveItem(leftId)).toHaveClass(/responsive-align-left/);
+    await expect(editor.responsiveItem(rightId)).toHaveClass(/half-width/);
+    await expect(editor.responsiveItem(rightId)).toHaveClass(/responsive-align-right/);
+  });
 });

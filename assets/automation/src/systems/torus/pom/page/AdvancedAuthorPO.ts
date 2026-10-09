@@ -19,6 +19,8 @@ export type AdvancedAuthorTab = 'Lesson' | 'Screen' | 'Component';
 /** The accessible name of the button that opens a part's media picker. */
 export type AdvancedAuthorMediaPicker = 'Select Image' | 'Select Video File';
 
+export type AdvancedAuthorPartWidth = '100%' | '50% left' | '50% right';
+
 const SAVE_REQUEST =
   /\/api\/v1\/(storage\/project\/[^/]+\/resource|project\/[^/]+\/(resource|activity))/;
 // Longer than the editor's 500ms save debounce, so a pending write always shows up.
@@ -365,6 +367,68 @@ export class AdvancedAuthorPO {
     await this.waitForSaves();
   }
 
+  /**
+   * Sets a part's responsive width. Only visible once the lesson's "Enable
+   * Responsive Layout" setting (Lesson tab) is on; a part added before that
+   * can render with this select disabled. The resulting `.responsive-item`
+   * wrapper and its `half-width`/`full-width`/`responsive-align-*` classes
+   * come from the same shared `LayoutEditor` Simple Author uses.
+   */
+  async setPartWidth(partId: string, width: AdvancedAuthorPartWidth) {
+    await this.selectPart(partId);
+    const select = this.field('Size_responsiveLayoutWidth');
+    await expect(select).toBeVisible();
+    await select.selectOption({ label: width });
+    await expect(this.responsiveItem(partId)).toHaveClass(
+      width === '100%' ? /full-width/ : /half-width/,
+      { timeout: 10_000 },
+    );
+    await this.waitForSaves();
+  }
+
+  responsiveItem(partId: string) {
+    return this.stage.locator(`.responsive-item[data-part-id="${partId}"]`);
+  }
+
+  // ------------------------------------------------------------ editing commands
+
+  /**
+   * Copies the selected part. `.active-selection-toolbar button[title="Copy"]`
+   * dispatches the shared `setCopiedPart` Redux action (`EditingCanvas`'s
+   * `handlePartCopy`, under `apps/authoring/components/EditingCanvas`) — the
+   * same action Simple Author's copy relies on — which is why a paste
+   * affordance then appears in `AddComponentToolbar` here too.
+   */
+  async copySelectedPart() {
+    await this.selectionToolbarButton('Copy').click();
+    await expect(this.pasteButton()).toBeVisible();
+  }
+
+  /** Only exists on the toolbar while a part is on the clipboard. */
+  pasteButton() {
+    return this.toolbarIconButton('icon-paste.svg');
+  }
+
+  async pasteWithToolbar() {
+    await expect(this.pasteButton()).toBeEnabled();
+    await this.pasteButton().click();
+    await this.waitForSaves();
+  }
+
+  /** Ctrl/Cmd+V only pastes while a stage part has focus. */
+  async pasteWithKeyboard(focusPartId: string) {
+    await this.part(focusPartId).click();
+    await this.page.keyboard.press('ControlOrMeta+v');
+  }
+
+  undoButton() {
+    return this.toolbarIconButton('icon-undo.svg');
+  }
+
+  redoButton() {
+    return this.toolbarIconButton('icon-redo.svg');
+  }
+
   // ------------------------------------------------------------ property panel
 
   private tab(name: AdvancedAuthorTab) {
@@ -381,8 +445,17 @@ export class AdvancedAuthorPO {
     return this.rightPanel.locator('.tab-pane.active');
   }
 
+  /**
+   * Some fields (e.g. ones with a help tooltip, like "Enable Responsive
+   * Layout") render the same id on their wrapper `<div>`s AND the actual
+   * `<input>`/`<select>` — a real app bug (logged to the console as
+   * "Multiple IDs detected") — so this only matches real form-control tags,
+   * never a wrapper div sharing the id.
+   */
   field(suffix: string) {
-    return this.tabPanel().locator(`[id$="_${suffix}"]`).first();
+    return this.tabPanel()
+      .locator(`input[id$="_${suffix}"], select[id$="_${suffix}"], textarea[id$="_${suffix}"]`)
+      .first();
   }
 
   /**
