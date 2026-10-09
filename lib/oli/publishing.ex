@@ -828,7 +828,6 @@ defmodule Oli.Publishing do
           rev.deleted == false and rev.resource_type_id == ^objective and
             mapping.publication_id == ^publication_id,
         select: mapping,
-        order_by: mapping.resource_id,
         preload: [:resource, :revision]
 
     query =
@@ -839,7 +838,7 @@ defmodule Oli.Publishing do
 
     query =
       case Keyword.get(opts, :lock, false) do
-        true -> from mapping in query, lock: "FOR UPDATE"
+        true -> from mapping in query, order_by: mapping.resource_id, lock: "FOR UPDATE"
         false -> query
       end
 

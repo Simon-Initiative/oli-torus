@@ -296,8 +296,9 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   Only the selected child and parent mappings are locked, sharing the child lock
   with association creation so unrelated objective edits are not blocked.
-  Association and course-content references are checked again within the
-  transaction, including when they changed after the confirmation dialog opened.
+  Parent associations and course-content references are rechecked within the
+  transaction before deletion. Objective-association writers share the child
+  mapping lock; course-content reference writers do not.
   """
   @spec delete_sub_objective(binary(), %Author{}, %Project{}, binary()) ::
           {:ok, %Revision{}}

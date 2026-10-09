@@ -56,7 +56,7 @@ defmodule Oli.PublishingTest do
       %{publication: insert(:publication)}
     end
 
-    test "returns only active objectives in resource order with their associations preloaded", %{
+    test "returns only active objectives with their associations preloaded", %{
       publication: publication
     } do
       first_resource = insert(:resource)
@@ -67,8 +67,12 @@ defmodule Oli.PublishingTest do
       insert_published_mapping(publication, %{resource_type_id: ResourceType.id_for_page()})
       insert_published_mapping(insert(:publication))
 
-      assert [first_result, second_result] =
-               Publishing.get_objective_mappings_by_publication(publication.id)
+      results = Publishing.get_objective_mappings_by_publication(publication.id)
+
+      assert MapSet.new(Enum.map(results, & &1.id)) == MapSet.new([first.id, second.id])
+
+      first_result = Enum.find(results, &(&1.id == first.id))
+      second_result = Enum.find(results, &(&1.id == second.id))
 
       assert first_result.id == first.id
       assert second_result.id == second.id
@@ -103,7 +107,10 @@ defmodule Oli.PublishingTest do
     test "locks only the selected mappings when requested inside a transaction", %{
       publication: publication
     } do
-      selected = insert_published_mapping(publication)
+      first_resource = insert(:resource)
+      second_resource = insert(:resource)
+      second = insert_published_mapping(publication, %{resource: second_resource})
+      first = insert_published_mapping(publication, %{resource: first_resource})
       insert_published_mapping(publication)
       handler_id = {__MODULE__, :objective_mapping_locks, make_ref()}
 
@@ -113,7 +120,7 @@ defmodule Oli.PublishingTest do
           [:oli, :repo, :query],
           fn _event, _measurements, metadata, owner ->
             case self() == owner and String.contains?(metadata.query, "FOR UPDATE") do
-              true -> send(owner, {:objective_mapping_lock, metadata.params})
+              true -> send(owner, {:objective_mapping_lock, metadata.query, metadata.params})
               false -> :ok
             end
           end,
@@ -124,7 +131,7 @@ defmodule Oli.PublishingTest do
         try do
           Repo.transaction(fn ->
             Publishing.get_objective_mappings_by_publication(publication.id,
-              slugs: [selected.revision.slug],
+              slugs: [second.revision.slug, first.revision.slug],
               lock: true
             )
           end)
@@ -132,11 +139,13 @@ defmodule Oli.PublishingTest do
           :telemetry.detach(handler_id)
         end
 
-      assert {:ok, [%PublishedResource{id: id}]} = result
-      assert id == selected.id
-      assert_receive {:objective_mapping_lock, params}
-      assert [selected.revision.slug] in params
-      refute_receive {:objective_mapping_lock, _params}
+      assert {:ok, [%PublishedResource{id: first_id}, %PublishedResource{id: second_id}]} = result
+      assert first_id == first.id
+      assert second_id == second.id
+      assert_receive {:objective_mapping_lock, query, params}
+      assert query =~ "ORDER BY"
+      assert [second.revision.slug, first.revision.slug] in params
+      refute_receive {:objective_mapping_lock, _, _}
     end
   end
 
