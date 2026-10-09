@@ -314,6 +314,20 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       assert_in_delta row_a.proficiency_pct, 0.84, 0.0001
       assert row_b.progress_pct == 0.0
       assert row_b.proficiency_pct == nil
+      assert row_a.proficiency_attempt_count == 5
+      assert row_b.proficiency_attempt_count == 2
+    end
+
+    test "reports zero evidence for enrolled learners before activity starts", %{map: map} do
+      context = build_context(map.section.id, map.instructor.id, %{container_type: :course})
+      assert {:ok, rows} = ProgressProficiency.load(context, [])
+      assert length(rows) == 2
+
+      assert Enum.all?(
+               rows,
+               &(&1.progress_pct == 0.0 and is_nil(&1.proficiency_pct) and
+                   &1.proficiency_attempt_count == 0)
+             )
     end
   end
 

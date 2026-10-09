@@ -1,9 +1,17 @@
+import { HtmlTooltip } from './html_tooltip';
+
+type TooltipHook = {
+  el: HTMLElement;
+  cleanup?: () => void;
+  popoverImplementation?: 'html' | 'legacy';
+};
+
 export const TooltipInit = {
-  mounted() {
+  mounted(this: TooltipHook) {
     const id = this.el.getAttribute('id');
     ($('#' + id) as any).tooltip();
   },
-  updated() {
+  updated(this: TooltipHook) {
     const id = this.el.getAttribute('id');
     ($('#' + id) as any).tooltip();
   },
@@ -12,8 +20,9 @@ export const TooltipInit = {
 export const TooltipWithTarget = {
   // This hook is used to show a tooltip when the user hovers over the element that has this hook attached.
   // The tooltip_target_id is the id of the tooltip element to be shown on mouseover.
-  mounted() {
-    const tooltip = document.getElementById(this.el.dataset['tooltipTargetId']);
+  mounted(this: TooltipHook) {
+    const targetId = this.el.dataset['tooltipTargetId'];
+    const tooltip = targetId ? document.getElementById(targetId) : null;
 
     this.el.addEventListener('mouseover', () => {
       if (tooltip?.classList.contains('hidden')) {
@@ -88,7 +97,7 @@ export const TooltipWithTarget = {
 //      ```
 
 export const AutoHideTooltip = {
-  mounted() {
+  mounted(this: TooltipHook) {
     let hideTimeout: number | null = null;
     const triggerId = this.el.dataset['triggerId'];
     const triggerElement = triggerId ? document.getElementById(triggerId) : null;
@@ -175,7 +184,7 @@ export const AutoHideTooltip = {
     };
   },
 
-  destroyed() {
+  destroyed(this: TooltipHook) {
     if (this.cleanup) this.cleanup();
   },
 };
@@ -215,7 +224,14 @@ export const AutoHideTooltip = {
 //    - Example: `<button data-dismiss-tooltip>Learn more</button>`
 
 export const Popover = {
-  mounted() {
+  mounted(this: TooltipHook) {
+    // LiveView may patch away the opt-in attribute before updated/destroyed run.
+    // Keep lifecycle dispatch tied to the implementation mounted on this instance.
+    this.popoverImplementation = this.el.dataset.tooltipMode ? 'html' : 'legacy';
+    if (this.popoverImplementation === 'html') {
+      HtmlTooltip.mounted.call(this);
+      return;
+    }
     const triggerId = this.el.dataset['triggerId'];
     const triggerElement = triggerId ? document.getElementById(triggerId) : null;
 
@@ -283,7 +299,16 @@ export const Popover = {
     };
   },
 
-  destroyed() {
-    if (this.cleanup) this.cleanup();
+  updated(this: TooltipHook) {
+    if (this.popoverImplementation === 'html') HtmlTooltip.updated.call(this);
+  },
+
+  destroyed(this: TooltipHook) {
+    if (this.popoverImplementation === 'html') {
+      HtmlTooltip.destroyed.call(this);
+    } else {
+      this.cleanup?.();
+    }
+    this.popoverImplementation = undefined;
   },
 };

@@ -7,6 +7,42 @@ defmodule Oli.InstructorDashboard.Recommendations.BuilderTest do
   alias Oli.Resources.ResourceType
 
   describe "build_input_contract/2" do
+    test "partial progress without proficiency or assessment scores is enough for AI generation" do
+      snapshot = snapshot_fixture()
+
+      oracles =
+        snapshot.oracles
+        |> Map.put(:oracle_instructor_progress_proficiency, [
+          %{student_id: 1, progress_pct: 1.0, proficiency_pct: nil, proficiency_attempt_count: 0}
+        ])
+        |> Map.put(:oracle_instructor_grades, %{grades: []})
+
+      assert {:ok, contract} =
+               Builder.build_input_contract(%{snapshot | oracles: oracles},
+                 student_support_settings: StudentSupportParameters.default_settings()
+               )
+
+      assert contract.signal_summary.state == :ready
+    end
+
+    test "evidence count for summary presentation does not change AI generation eligibility" do
+      snapshot = snapshot_fixture()
+
+      oracles =
+        snapshot.oracles
+        |> Map.put(:oracle_instructor_progress_proficiency, [
+          %{student_id: 1, progress_pct: 0.0, proficiency_pct: nil, proficiency_attempt_count: 1}
+        ])
+        |> Map.put(:oracle_instructor_grades, %{grades: []})
+
+      assert {:ok, contract} =
+               Builder.build_input_contract(%{snapshot | oracles: oracles},
+                 student_support_settings: StudentSupportParameters.default_settings()
+               )
+
+      assert contract.signal_summary.state == :no_signal
+    end
+
     test "builds a sanitized recommendation input contract from normalized projections" do
       assert {:ok, contract} =
                Builder.build_input_contract(snapshot_fixture(),
