@@ -71,12 +71,12 @@ dedicated seeding runtime.
   learner-worker design and defer optimization until observed need.
 - Security review found no authorization, scoping, exposure, or worker-lifecycle regression.
 
-## Deferred Phase 8 Hybrid Checks
+## Deferred Phase 9 Hybrid Checks
 
 - Run a staged copy through preview `bin/seed` next to a preview server.
 - Observe a longer paced run, then terminate the foreground command and verify that the VM and
   learner workers stop while the server remains healthy and committed data remains visible.
 
 See `docs/exec-plans/current/features/preview-environment-tooling/execution/phase_4b_manual_qa.md`
-for commands and expected observations. These checks are part of Phase 8 integrated verification
+for commands and expected observations. These checks are part of Phase 9 integrated verification
 and do not block the Phase 4B implementation gate.

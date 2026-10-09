@@ -563,18 +563,46 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       refute copied.allow_hints
     end
 
-    test "assessment settings copy independently of the schedule",
+    test "selected: available/due dates and scheduling type are carried even without schedule",
          %{source: source, page1: page1} do
       update_page_settings(source, page1, %{
         max_attempts: 7,
-        start_date: ~U[2026-02-01 12:00:00Z]
+        start_date: ~U[2026-02-01 12:00:00Z],
+        end_date: ~U[2026-02-08 12:00:00Z],
+        scheduling_type: :due_by,
+        manually_scheduled: true,
+        removed_from_schedule: true
       })
 
       {:ok, copy} = copy(source, [:content, :assessment_settings])
       copied = page_resource(copy, page1)
 
       assert copied.max_attempts == 7
+      assert copied.start_date == ~U[2026-02-01 12:00:00Z]
+      assert copied.end_date == ~U[2026-02-08 12:00:00Z]
+      assert copied.scheduling_type == :due_by
+
+      # `removed_from_schedule`/`manually_scheduled` are the Course Schedule tool's own
+      # presentation flags, not part of the Assessment Settings tab, so they stay exclusive
+      # to `:schedule`.
+      refute copied.manually_scheduled
+      refute copied.removed_from_schedule
+    end
+
+    test "unselected (and schedule unselected): dates reset like any other unselected group",
+         %{source: source, page1: page1} do
+      update_page_settings(source, page1, %{
+        start_date: ~U[2026-02-01 12:00:00Z],
+        end_date: ~U[2026-02-08 12:00:00Z],
+        scheduling_type: :due_by
+      })
+
+      {:ok, copy} = copy(source, [:content])
+      copied = page_resource(copy, page1)
+
       assert is_nil(copied.start_date)
+      assert is_nil(copied.end_date)
+      assert copied.scheduling_type == :read_by
     end
 
     test "feedback_scheduled_date needs both assessment settings and schedule",

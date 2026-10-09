@@ -478,7 +478,11 @@ defmodule OliWeb.Users.AuthorsDetailView do
     filtered_params = if admin?, do: params, else: Map.delete(params, "is_internal")
     previous_author = socket.assigns.author
 
-    case Accounts.admin_update_author(previous_author, filtered_params) do
+    case Accounts.admin_update_author(
+           previous_author,
+           filtered_params,
+           socket.assigns.current_author
+         ) do
       {:ok, author} ->
         updated_form = author_form(author, params)
 
@@ -580,23 +584,5 @@ defmodule OliWeb.Users.AuthorsDetailView do
     |> to_form()
   end
 
-  defp role(system_role_id) do
-    admin_role_id = SystemRole.role_id().system_admin
-    account_role_id = SystemRole.role_id().account_admin
-    content_role_id = SystemRole.role_id().content_admin
-
-    case system_role_id do
-      ^admin_role_id ->
-        "System Admin"
-
-      ^account_role_id ->
-        "Account Admin"
-
-      ^content_role_id ->
-        "Content Admin"
-
-      _ ->
-        "Author"
-    end
-  end
+  defp role(system_role_id), do: SystemRole.label(system_role_id)
 end

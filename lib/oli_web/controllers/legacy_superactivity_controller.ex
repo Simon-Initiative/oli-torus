@@ -72,10 +72,10 @@ defmodule OliWeb.LegacySuperactivityController do
     ]
   end
 
-  def context(conn, %{"attempt_guid" => attempt_guid} = _params) do
+  def context(conn, %{"attempt_guid" => attempt_guid} = params) do
     with {:ok, context} <- fetch_context(conn, attempt_guid),
          :ok <- authorize_read(context) do
-      json(conn, context_response(conn.host, context))
+      json(conn, context_response(conn.host, context, request_mode(params, context)))
     else
       {:error, :unauthorized} ->
         error(conn, 403, "Unauthorized")
@@ -114,11 +114,14 @@ defmodule OliWeb.LegacySuperactivityController do
 
   def process(
         conn,
-        %{"commandName" => command_name, "activityContextGuid" => attempt_guid} = params
+        %{"commandName" => command_name} = params
       ) do
-    with {:ok, context} <- fetch_context(conn, attempt_guid),
-         :ok <- authorize_command(context, command_name),
-         xml_response <- process_command(command_name, context, params) do
+    with {:ok, attempt_guid} <- command_attempt_guid(params),
+         {:ok, context} <- fetch_context(conn, attempt_guid),
+         mode = request_mode(params, context),
+         :ok <- authorize_command(context, command_name, mode),
+         params = Map.put(params, "activityContextGuid", attempt_guid),
+         xml_response <- process_command(command_name, context, params, mode) do
       case xml_response do
         {:ok, xml} ->
           conn
@@ -132,30 +135,46 @@ defmodule OliWeb.LegacySuperactivityController do
 
         {:error, error, code} ->
           conn
-          |> put_resp_content_type("text/text")
+          |> put_resp_content_type("text/plain")
           |> send_resp(code, error)
       end
     else
       {:error, :not_found} ->
         conn
-        |> put_resp_content_type("text/text")
+        |> put_resp_content_type("text/plain")
         |> send_resp(404, "Attempt not found")
 
       {:error, :unauthorized} ->
         conn
-        |> put_resp_content_type("text/text")
+        |> put_resp_content_type("text/plain")
         |> send_resp(403, "Unauthorized")
 
       {:error, reason} ->
         Logger.error("Could not process legacy superactivity command: #{inspect(reason)}")
 
         conn
-        |> put_resp_content_type("text/text")
+        |> put_resp_content_type("text/plain")
         |> send_resp(500, "server error")
     end
   end
 
-  defp authorize_command(%LegacySuperactivityContext{} = context, command_name)
+  defp command_attempt_guid(params) do
+    case Map.get(params, "activityContextGuid") do
+      attempt_guid when is_binary(attempt_guid) and attempt_guid not in ["", "undefined"] ->
+        {:ok, attempt_guid}
+
+      _ ->
+        case Map.get(params, "reviewAttemptGuid") do
+          attempt_guid when is_binary(attempt_guid) and attempt_guid != "" -> {:ok, attempt_guid}
+          _ -> {:error, :not_found}
+        end
+    end
+  end
+
+  defp authorize_command(%LegacySuperactivityContext{} = context, _command_name, "review"),
+    do: authorize_read(context)
+
+  defp authorize_command(%LegacySuperactivityContext{} = context, command_name, _mode)
        when command_name in @mutating_commands do
     case preview_context?(context) || attempt_owner?(context) do
       true -> :ok
@@ -163,7 +182,7 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp authorize_command(%LegacySuperactivityContext{} = context, _command_name),
+  defp authorize_command(%LegacySuperactivityContext{} = context, _command_name, _mode),
     do: authorize_read(context)
 
   defp authorize_read(%LegacySuperactivityContext{} = context) do
@@ -866,16 +885,19 @@ defmodule OliWeb.LegacySuperactivityController do
     }
   end
 
-  defp context_response(_host, %LegacySuperactivityContext{} = context) do
+  defp context_response(host, %LegacySuperactivityContext{} = context),
+    do: context_response(host, context, "delivery")
+
+  defp context_response(_host, %LegacySuperactivityContext{} = context, mode) do
     auto_finalize_page = auto_finalize_single_embedded_page?(context)
 
     %{
       attempt_guid: context.activity_attempt.attempt_guid,
       src_url: "#{context.host_url}/superactivity/#{context.base}/#{context.src}",
       activity_type: context.activity_attempt.revision.activity_type.slug,
-      server_url: "#{context.host_url}/jcourse/superactivity/server",
+      server_url: command_server_url(context, mode),
       user_guid: context.user.id,
-      mode: "delivery",
+      mode: mode,
       part_ids: Enum.map(context.activity_attempt.part_attempts, & &1.part_id),
       auto_finalize_page: auto_finalize_page,
       auto_finalize_redirect_url: auto_finalize_redirect_url(context),
@@ -885,6 +907,33 @@ defmodule OliWeb.LegacySuperactivityController do
       page_attempt_guid:
         if(auto_finalize_page, do: context.resource_attempt.attempt_guid, else: nil)
     }
+  end
+
+  defp command_server_url(%LegacySuperactivityContext{} = context, "review") do
+    query =
+      URI.encode_query(%{
+        mode: "review",
+        reviewAttemptGuid: context.activity_attempt.attempt_guid
+      })
+
+    "#{context.host_url}/jcourse/superactivity/server?#{query}"
+  end
+
+  defp command_server_url(%LegacySuperactivityContext{} = context, _mode),
+    do: "#{context.host_url}/jcourse/superactivity/server"
+
+  defp request_mode(params, %LegacySuperactivityContext{} = context) do
+    requested_mode = Map.get(params, "mode") || Map.get(params, "activityMode")
+
+    cond do
+      review_context?(context) -> "review"
+      requested_mode == "review" -> "review"
+      true -> "delivery"
+    end
+  end
+
+  defp review_context?(%LegacySuperactivityContext{} = context) do
+    not attempt_owner?(context) || not is_nil(context.activity_attempt.date_evaluated)
   end
 
   defp preview_part_ids(%{"authoring" => %{"parts" => parts}}) when is_list(parts) do
@@ -983,6 +1032,48 @@ defmodule OliWeb.LegacySuperactivityController do
         "https://#{actual_host}"
     end
   end
+
+  defp process_command(command_name, %LegacySuperactivityContext{} = context, params, "review")
+       when command_name in @mutating_commands do
+    review_mutation_response(command_name, context, params)
+  end
+
+  defp process_command(command_name, %LegacySuperactivityContext{} = context, params, _mode),
+    do: process_command(command_name, context, params)
+
+  defp review_mutation_response(
+         "writeFileRecord",
+         %LegacySuperactivityContext{} = context,
+         params
+       ) do
+    xml =
+      FileRecord.setup(%{
+        context: context,
+        date_created: DateTime.utc_now() |> DateTime.to_unix(),
+        file_name: Map.get(params, "fileName", "review"),
+        guid: Ecto.UUID.generate()
+      })
+      |> XmlBuilder.document()
+      |> XmlBuilder.generate()
+
+    {:ok, xml}
+  end
+
+  defp review_mutation_response(
+         "deleteFileRecord",
+         %LegacySuperactivityContext{} = context,
+         _params
+       ) do
+    xml =
+      FileDirectory.setup(%{context: context})
+      |> XmlBuilder.document()
+      |> XmlBuilder.generate()
+
+    {:ok, xml}
+  end
+
+  defp review_mutation_response(_command_name, %LegacySuperactivityContext{} = context, _params),
+    do: attempt_history(context)
 
   defp process_command("loadClientConfig", %LegacySuperactivityContext{} = context, _params) do
     xml =

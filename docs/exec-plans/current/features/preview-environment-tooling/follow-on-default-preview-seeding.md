@@ -2,8 +2,10 @@
 
 ## Status
 
-Deferred until the Torus preview-environment tooling PR lands. This is an informal follow-on
-feature note, not an approved implementation phase or detailed design.
+The GitOps repository implementation is complete: commit `44438cc` made seeding part of
+the standard preview overlay after the prerequisite Torus PR #6858 merged. Live rollout
+acceptance remains pending in the GitOps execution plan. This note preserves the cutover
+contract and rollout checks; it is no longer a deferred implementation proposal.
 
 ## Objective
 
@@ -11,7 +13,7 @@ Seed the bundled `oli_torus_getting_started_course` scenario once in every compa
 pull-request preview deployment. Remove the temporary PR-label opt-in after the preview release
 artifact reliably contains `bin/seed`, `Oli.Seeding.Runtime`, and the bundled scenario.
 
-## Proposed GitOps Changes
+## Implemented GitOps Contract
 
 - Make course seeding part of the standard pull-request preview overlay instead of selecting a
   separate seeding overlay through the `preview-seeding` label.
@@ -24,9 +26,10 @@ artifact reliably contains `bin/seed`, `Oli.Seeding.Runtime`, and the bundled sc
   - `backoffLimit: 0` and `restartPolicy: Never`;
   - no Argo CD hook annotation or successful-Job TTL; and
   - ignored pod-template drift so later image updates do not replay completed seeding.
-- Keep `PREVIEW_QA_TOOLS_ENABLED` independent from CLI seeding. Add it to the standard preview
-  configuration only if masquerade and mailbox access should also become universal preview
-  capabilities. `bin/seed` itself must not require the flag.
+- Keep `PREVIEW_QA_TOOLS_ENABLED` independent from CLI seeding. The 2026-09-24 mailbox
+  access decision now enables this flag in the standard preview overlay for web QA tools;
+  that decision is complete independently of this seeding follow-on. `bin/seed` itself
+  must not require the flag.
 - Reduce the preview AppProject's documented approved source paths to the remaining standard
   preview overlay.
 - Update GitOps policy validation to enforce the unconditional preview path, standard-overlay seed
@@ -69,5 +72,14 @@ the database.
 
 ## Activation Trigger
 
-Begin this follow-on only after the Torus feature PR is merged and its preview release packaging
-fix is present on the baseline used by new pull-request branches.
+The implementation prerequisite was satisfied by Torus PR #6858. At rollout, verify that
+each preview image includes the release packaging fix and bundled scenario before relying
+on automatic seeding; do not infer live rollout success from repository implementation.
+
+## Decision Log
+
+### 2026-09-24 - Record completed GitOps implementation
+- Change: Mark default preview seeding as implemented in GitOps, with live rollout acceptance still pending.
+- Reason: The previous deferred status predates the completed deployment configuration.
+- Evidence: GitOps commit `44438cc` and `docs/exec-plans/current/default-preview-seeding/plan.md` in `oli-torus-gitops`; web QA activation was subsequently enabled by commit `f0e2b50`.
+- Impact: No seeding implementation remains in this follow-on note; image compatibility and live rollout checks still apply.

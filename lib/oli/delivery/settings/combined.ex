@@ -19,7 +19,8 @@ defmodule Oli.Delivery.Settings.Combined do
             feedback_scheduled_date: nil,
             collab_space_config: nil,
             explanation_strategy: nil,
-            allow_hints: false
+            allow_hints: false,
+            secure_delivery: false
 
   @type t() :: %__MODULE__{
           resource_id: integer(),
@@ -42,6 +43,7 @@ defmodule Oli.Delivery.Settings.Combined do
           feedback_scheduled_date: DateTime.t(),
           collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{},
           explanation_strategy: %Oli.Resources.ExplanationStrategy{},
-          allow_hints: boolean()
+          allow_hints: boolean(),
+          secure_delivery: boolean()
         }
 end

@@ -18,6 +18,7 @@ defmodule OliWeb.Api.MediaProxyController do
     with true <- authenticated?(conn),
          {:ok, body} <- fetch_gif(url) do
       conn
+      |> Oli.Plugs.NoCache.public_content()
       |> put_resp_content_type("image/gif")
       |> put_resp_header("cache-control", "private, max-age=300")
       |> send_resp(200, body)
