@@ -50,7 +50,11 @@ defmodule OliWeb.Components.Tooltip do
     doc: "Show a decorative arrow pointing toward the button."
 
   attr :class, :string, default: nil, doc: "Replaces default bubble classes when supplied."
-  attr :trigger_class, :string, default: "", doc: "Classes for the generated button."
+
+  attr :trigger_class, :string,
+    default:
+      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+    doc: "Button classes; replaces the default visible keyboard focus outline."
 
   slot :trigger,
     required: true,
@@ -83,16 +87,20 @@ defmodule OliWeb.Components.Tooltip do
 
   Both modes close on Escape or an outside click. Escape from inside the content,
   or a `data-dismiss-tooltip` control, restores focus to the trigger. In tooltip
-  mode, opening another instance closes the previous tooltip.
+  mode, restoring focus during dismissal does not reopen the bubble. A subsequent
+  focus, hover or activation can open it again. Opening another instance closes
+  the previous tooltip. Keyboard focus opens tooltip mode without moving focus
+  into the content; this lets keyboard users discover the same help as hover users.
 
   ## Content and LiveView
 
   `trigger` supplies the content of a generated button, not the button itself.
   `content` accepts text and HTML, including images, links and LiveView event
-  handlers. Use popover mode for interactive content. The bubble is a `span`;
-  use phrasing HTML such as `span`, `strong`, `img`, `a` and `button`, rather
-  than block elements such as `div` or `p`. Do not place the component inside
-  another button or link.
+  handlers. Use popover mode for interactive content. The root and bubble are
+  `div` elements, so content may include block layouts such as `div`, `p`, lists
+  and forms as well as text and images. Place the component in a container that
+  accepts flow content (for example, a `div`), not inside a paragraph, `span`,
+  button or link. Its `inline-flex` root can sit alongside a label in a flex row.
 
   Slot nodes stay under the component in the LiveView-owned DOM. They are not
   cloned or moved to `document.body`; event handlers and updates keep working.
@@ -106,8 +114,9 @@ defmodule OliWeb.Components.Tooltip do
   text, normal weight, semantic background/text/border colors, padding, rounded
   corners and a shadow, with a preferred width between 210 and 260 px.
   Supplying `class` replaces those classes entirely, so include all desired
-  typography, colors, border, spacing and width. `trigger_class` independently
-  styles the button; include a visible keyboard focus style for custom triggers.
+  typography, colors, border, spacing and width. The generated button has a visible
+  `focus-visible` outline by default. `trigger_class` independently replaces its
+  classes; include a visible keyboard focus style when supplying custom classes.
   `arrow={true}` adds a decorative arrow; the default is `false`. It follows the
   actual placement after flips and shifts, and uses the bubble's computed solid
   background and border colors. With an arrow, the styled bubble is wrapped in
@@ -161,8 +170,10 @@ defmodule OliWeb.Components.Tooltip do
       <Tooltip.render id="score-help" label="Assessment score information" mode={:popover}>
         <:trigger>About scores</:trigger>
         <:content>
-          Scores summarize submitted assessments.
-          <a href="/help/assessment-scores" class="underline">Read how scores are calculated</a>
+          <div class="flex flex-col gap-2">
+            <p>Scores summarize submitted assessments.</p>
+            <a href="/help/assessment-scores" class="underline">Read how scores are calculated</a>
+          </div>
         </:content>
       </Tooltip.render>
 
@@ -206,7 +217,7 @@ defmodule OliWeb.Components.Tooltip do
       |> assign(:bubble_class, assigns.class || default_classes())
 
     ~H"""
-    <span
+    <div
       id={@id}
       phx-hook="Popover"
       data-tooltip-mode={@mode}
@@ -229,7 +240,7 @@ defmodule OliWeb.Components.Tooltip do
       >
         {render_slot(@trigger)}
       </button>
-      <span
+      <div
         id={"#{@id}-content"}
         data-tooltip-content
         popover={if @mode == :popover, do: "auto", else: "manual"}
@@ -247,9 +258,9 @@ defmodule OliWeb.Components.Tooltip do
       >
         <%= case @arrow do %>
           <% true -> %>
-            <span data-tooltip-body class={["block", @bubble_class]}>
+            <div data-tooltip-body class={["block", @bubble_class]}>
               {render_slot(@content)}
-            </span>
+            </div>
             <span data-tooltip-arrow aria-hidden="true" class="pointer-events-none absolute h-2 w-3">
               <svg
                 width="12"
@@ -266,8 +277,8 @@ defmodule OliWeb.Components.Tooltip do
           <% false -> %>
             {render_slot(@content)}
         <% end %>
-      </span>
-    </span>
+      </div>
+    </div>
     """
   end
 

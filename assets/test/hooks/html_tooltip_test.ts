@@ -22,19 +22,19 @@ describe('HEEx content through the Popover hook', () => {
   const nativeOpen = new WeakSet<HTMLElement>();
 
   function mount(mode = 'tooltip', native = true, withArrow = false) {
-    const root = document.createElement('span');
+    const root = document.createElement('div');
     root.id = `help-${roots.length}`;
     root.dataset.tooltipMode = mode;
     root.dataset.tooltipPosition = 'bottom';
     root.dataset.tooltipAlign = 'right';
     root.dataset.tooltipOffset = '8';
     root.innerHTML = `<button data-tooltip-trigger aria-expanded="false">Help</button>
-      <span id="${root.id}-content" data-tooltip-content hidden class="bubble">
-        <span data-copy>Explanation</span><img alt="Example"><a href="#details">Learn more</a>
-      </span>`;
+      <div id="${root.id}-content" data-tooltip-content hidden class="bubble">
+        <div class="flex flex-col"><span data-copy>Explanation</span><img alt="Example"><a href="#details">Learn more</a></div>
+      </div>`;
     if (withArrow) {
       const content = root.querySelector('[data-tooltip-content]') as HTMLElement;
-      content.innerHTML = `<span data-tooltip-body class="bubble">${content.innerHTML}</span>
+      content.innerHTML = `<div data-tooltip-body class="bubble">${content.innerHTML}</div>
         <span data-tooltip-arrow aria-hidden="true" style="position:absolute">
           <svg><path data-tooltip-arrow-fill/><path data-tooltip-arrow-border/></svg>
         </span>`;
@@ -274,6 +274,82 @@ describe('HEEx content through the Popover hook', () => {
     expect(content.hidden).toBe(true);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(trigger);
+  });
+
+  test.each([true, false])(
+    'tooltip Escape from focused content stays closed after restoring focus (native=%s)',
+    async (native) => {
+      const { root, trigger, content } = mount('tooltip', native);
+      trigger.focus();
+      await settle();
+      const link = content.querySelector('a') as HTMLAnchorElement;
+      link.focus();
+
+      link.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await settle();
+
+      expect(content.hidden).toBe(true);
+      expect(document.activeElement).toBe(trigger);
+      Popover.updated.call({ el: root } as any);
+      expect(content.hidden).toBe(true);
+
+      trigger.blur();
+      trigger.focus();
+      await settle();
+      expect(content.hidden).toBe(false);
+    },
+  );
+
+  test.each([true, false])(
+    'tooltip dismiss control stays closed after restoring focus (native=%s)',
+    async (native) => {
+      const { trigger, content } = mount('tooltip', native);
+      const dismiss = document.createElement('button');
+      dismiss.dataset.dismissTooltip = '';
+      content.appendChild(dismiss);
+      trigger.focus();
+      await settle();
+      dismiss.focus();
+      dismiss.click();
+      await settle();
+
+      expect(content.hidden).toBe(true);
+      expect(document.activeElement).toBe(trigger);
+      trigger.dispatchEvent(new Event('mouseenter'));
+      await settle();
+      expect(content.hidden).toBe(false);
+    },
+  );
+
+  test('native focus restoration during hidePopover does not reopen the tooltip', async () => {
+    const { trigger, content } = mount();
+    (content as HTMLElement & { hidePopover: jest.Mock }).hidePopover.mockImplementation(() => {
+      nativeOpen.delete(content);
+      trigger.focus();
+    });
+    trigger.focus();
+    await settle();
+    (content.querySelector('a') as HTMLAnchorElement).focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await settle();
+
+    expect(content.hidden).toBe(true);
+    expect(document.activeElement).toBe(trigger);
+    expect(nativeOpen.has(content)).toBe(false);
+  });
+
+  test('moving keyboard focus outside the tooltip closes it after the leave delay', async () => {
+    jest.useFakeTimers();
+    const { trigger, content } = mount();
+    const nextButton = document.createElement('button');
+    document.body.appendChild(nextButton);
+    trigger.focus();
+    await settle();
+    nextButton.focus();
+    jest.advanceTimersByTime(121);
+
+    expect(document.activeElement).toBe(nextButton);
+    expect(content.hidden).toBe(true);
   });
 
   test('closes on outside clicks and synchronizes native dismissal', async () => {

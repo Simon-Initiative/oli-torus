@@ -100,37 +100,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       <p class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[0] text-Text-text-high">
                         {card_title_line_one(card.label)}
                       </p>
-                      <p class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[0] text-Text-text-high">
-                        <span class="inline-flex items-center gap-3 align-middle pr-1">
+                      <div class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[0] text-Text-text-high">
+                        <div class="inline-flex items-center gap-3 align-middle pr-1">
                           <span class="whitespace-nowrap">{card_title_line_two(card.label)}</span>
-                          <span class="inline-flex items-center text-Text-text-high">
-                            <Tooltip.render
-                              id={"summary-tooltip-#{card.id}"}
-                              trigger_id={"summary-tooltip-trigger-#{card.id}"}
-                              label={"#{card.label} definition"}
-                              position="bottom"
-                              align="right"
-                              offset={8}
-                              trigger_class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                            >
-                              <:trigger>
-                                <span class="scale-[0.9]">
-                                  <Icons.info />
-                                </span>
-                              </:trigger>
-                              <:content>{tooltip_copy(card.tooltip_key)}</:content>
-                            </Tooltip.render>
-                          </span>
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div :if={!@show_recommendation} class="min-h-[40px] min-w-0">
-                    <p class="font-open-sans text-[16px] font-bold leading-[20px] tracking-[0] text-Text-text-high">
-                      <span class="inline-flex items-center gap-1 align-middle">
-                        <span>{card.label}</span>
-                        <span class="inline-flex items-center text-Text-text-high">
                           <Tooltip.render
                             id={"summary-tooltip-#{card.id}"}
                             trigger_id={"summary-tooltip-trigger-#{card.id}"}
@@ -138,7 +110,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                             position="bottom"
                             align="right"
                             offset={8}
-                            trigger_class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                           >
                             <:trigger>
                               <span class="scale-[0.9]">
@@ -147,9 +118,32 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                             </:trigger>
                             <:content>{tooltip_copy(card.tooltip_key)}</:content>
                           </Tooltip.render>
-                        </span>
-                      </span>
-                    </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div :if={!@show_recommendation} class="min-h-[40px] min-w-0">
+                    <div class="font-open-sans text-[16px] font-bold leading-[20px] tracking-[0] text-Text-text-high">
+                      <div class="inline-flex items-center gap-1 align-middle">
+                        <span>{card.label}</span>
+                        <Tooltip.render
+                          id={"summary-tooltip-#{card.id}"}
+                          trigger_id={"summary-tooltip-trigger-#{card.id}"}
+                          label={"#{card.label} definition"}
+                          position="bottom"
+                          align="right"
+                          offset={8}
+                        >
+                          <:trigger>
+                            <span class="scale-[0.9]">
+                              <Icons.info />
+                            </span>
+                          </:trigger>
+                          <:content>{tooltip_copy(card.tooltip_key)}</:content>
+                        </Tooltip.render>
+                      </div>
+                    </div>
                   </div>
 
                   <p class="mt-3 font-open-sans text-[40px] font-semibold leading-[54px] tracking-[0] text-Text-text-high">

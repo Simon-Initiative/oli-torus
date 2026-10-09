@@ -356,7 +356,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
       assert has_element?(
                component,
-               "#summary-metric-card-average_class_proficiency p",
+               "#summary-metric-card-average_class_proficiency span.whitespace-nowrap",
                "Class Proficiency"
              )
 
@@ -365,7 +365,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
       assert has_element?(
                component,
-               "#summary-metric-card-average_assessment_score p",
+               "#summary-metric-card-average_assessment_score span.whitespace-nowrap",
                "Assessment Score"
              )
 
@@ -374,7 +374,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
       assert has_element?(
                component,
-               "#summary-metric-card-average_student_progress p",
+               "#summary-metric-card-average_student_progress span.whitespace-nowrap",
                "Student Progress"
              )
 
@@ -399,6 +399,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
              )
 
       assert has_element?(component, "h4", "AI Recommendation")
+
+      # Block slot content must not be nested in a paragraph or phrasing wrapper:
+      # browser HTML parsing would detach it from the bubble that the hook hides.
+      refute has_element?(component, "p [data-tooltip-content]")
+      refute has_element?(component, "span [data-tooltip-content]")
       assert has_element?(component, "p", "Focus on Unit 2 before the next quiz.")
       assert has_element?(component, "#summary-recommendation-panel-summary_tile")
       assert has_element?(component, "button[aria-label='Good recommendation']")

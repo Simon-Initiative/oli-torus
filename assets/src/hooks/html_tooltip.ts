@@ -17,6 +17,8 @@
  * Popover mode has no hover opening/closing. Use it for links/buttons; slots are not
  * restricted, but interactive content does not match tooltip accessibility semantics.
  * A content control with data-dismiss-tooltip closes the bubble and restores focus.
+ * Restoring focus during dismissal never reopens the tooltip; a new focus, hover or
+ * activation can open it again. Callers provide keyboard focus styling in HEEx.
  * LiveView updates and ResizeObserver refresh positioning; close/destroy clean up all
  * positioning resources, listeners and timers. Only one HTML tooltip is open at once.
  */
@@ -44,6 +46,7 @@ export const HtmlTooltip = {
     let shownAt = 0;
     let triggerHovered = false;
     let contentHovered = false;
+    let restoringFocus = false;
     let hideTimer: number | undefined;
     let positioner: Instance | null = null;
     let observer: ResizeObserver | null = null;
@@ -64,12 +67,20 @@ export const HtmlTooltip = {
       open = false;
       cancelHide();
       stopPositioning();
-      if (native && content.matches(':popover-open')) content.hidePopover();
-      content.hidden = true;
-      content.style.visibility = '';
-      if (interactive) trigger.setAttribute('aria-expanded', 'false');
-      if (closeActiveTooltip === dismissTooltip) closeActiveTooltip = null;
-      if (restoreFocus && trigger.isConnected) trigger.focus();
+      // hidePopover may itself restore focus, so suppress focus opening throughout
+      // dismissal rather than only around our explicit trigger.focus() call.
+      restoringFocus = true;
+      try {
+        if (native && content.matches(':popover-open')) content.hidePopover();
+        content.hidden = true;
+        content.style.visibility = '';
+        if (interactive) trigger.setAttribute('aria-expanded', 'false');
+        if (closeActiveTooltip === dismissTooltip) closeActiveTooltip = null;
+        if (restoreFocus && trigger.isConnected) trigger.focus();
+      } finally {
+        restoringFocus = false;
+        cancelHide();
+      }
     };
     const dismissTooltip = () => close();
     const sizeContent = (body: HTMLElement, hasArrow: boolean) => {
@@ -224,7 +235,9 @@ export const HtmlTooltip = {
         triggerHovered = false;
         scheduleHide();
       });
-      listen(trigger, 'focus', show);
+      listen(trigger, 'focus', () => {
+        if (!restoringFocus) show();
+      });
       listen(root, 'focusout', scheduleHide);
       listen(content, 'mouseenter', () => {
         contentHovered = true;

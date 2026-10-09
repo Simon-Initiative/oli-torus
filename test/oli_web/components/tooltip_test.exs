@@ -22,10 +22,12 @@ defmodule OliWeb.Components.TooltipTest do
       <Tooltip.render id="help" label="Metric definition" mode={@mode} arrow={@arrow}>
         <:trigger><span>?</span></:trigger>
         <:content>
-          <strong>Attempt count: {@count}</strong>
-          <img src="/example.png" alt="Metric example" />
-          <a :if={@mode == :popover} href="/details">Details</a>
-          <button :if={@mode == :popover} id="increment" phx-click="increment">Increment</button>
+          <div class="flex flex-col gap-2">
+            <strong>Attempt count: {@count}</strong>
+            <img src="/example.png" alt="Metric example" />
+            <a :if={@mode == :popover} href="/details">Details</a>
+            <button :if={@mode == :popover} id="increment" phx-click="increment">Increment</button>
+          </div>
         </:content>
       </Tooltip.render>
       <Tooltip.render
@@ -52,7 +54,7 @@ defmodule OliWeb.Components.TooltipTest do
   test "renders rich slots with a described trigger and default bubble styling", %{conn: conn} do
     {:ok, view, _} = live_isolated(conn, Fixture)
 
-    assert has_element?(view, "#help[phx-hook='Popover'][data-tooltip-mode='tooltip']")
+    assert has_element?(view, "div#help[phx-hook='Popover'][data-tooltip-mode='tooltip']")
     assert has_element?(view, "#help-trigger[aria-describedby='help-content']", "?")
 
     assert has_element?(
@@ -62,6 +64,7 @@ defmodule OliWeb.Components.TooltipTest do
            )
 
     assert has_element?(view, "#help-content img[alt='Metric example']")
+    assert has_element?(view, "div#help-content[hidden] > div.flex.flex-col.gap-2 strong")
     assert has_element?(view, "#help-content.text-sm.min-w-\\[210px\\]")
     refute has_element?(view, "#help-trigger[aria-expanded]")
     refute has_element?(view, "#help-content a")
