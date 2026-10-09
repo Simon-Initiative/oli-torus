@@ -79,6 +79,8 @@ defmodule OliWeb.Components.Tooltip do
   can close the bubble before the pointer reaches it, especially with a large
   `offset`. The trigger also supports click activation/toggling, with a brief
   guard against immediately closing a bubble just opened by hover or focus.
+  Tooltip trigger clicks preserve native actions and bubble to ancestor event
+  handlers; only popover mode cancels the trigger's default action and propagation.
 
   In `:popover` mode, click or keyboard activation toggles the bubble; hover and
   focus alone do not open it, and leaving it with the pointer does not close it.
@@ -89,7 +91,8 @@ defmodule OliWeb.Components.Tooltip do
   or a `data-dismiss-tooltip` control, restores focus to the trigger. In tooltip
   mode, restoring focus during dismissal does not reopen the bubble. A subsequent
   focus, hover or activation can open it again. Opening another instance closes
-  the previous tooltip. Keyboard focus opens tooltip mode without moving focus
+  the previous bubble, regardless of either instance's mode or native popover
+  support. Keyboard focus opens tooltip mode without moving focus
   into the content; this lets keyboard users discover the same help as hover users.
 
   ## Content and LiveView

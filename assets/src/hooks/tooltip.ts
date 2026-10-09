@@ -3,6 +3,7 @@ import { HtmlTooltip } from './html_tooltip';
 type TooltipHook = {
   el: HTMLElement;
   cleanup?: () => void;
+  popoverImplementation?: 'html' | 'legacy';
 };
 
 export const TooltipInit = {
@@ -224,7 +225,10 @@ export const AutoHideTooltip = {
 
 export const Popover = {
   mounted(this: TooltipHook) {
-    if (this.el.dataset.tooltipMode) {
+    // LiveView may patch away the opt-in attribute before updated/destroyed run.
+    // Keep lifecycle dispatch tied to the implementation mounted on this instance.
+    this.popoverImplementation = this.el.dataset.tooltipMode ? 'html' : 'legacy';
+    if (this.popoverImplementation === 'html') {
       HtmlTooltip.mounted.call(this);
       return;
     }
@@ -296,14 +300,15 @@ export const Popover = {
   },
 
   updated(this: TooltipHook) {
-    if (this.el.dataset.tooltipMode) HtmlTooltip.updated.call(this);
+    if (this.popoverImplementation === 'html') HtmlTooltip.updated.call(this);
   },
 
   destroyed(this: TooltipHook) {
-    if (this.el.dataset.tooltipMode) {
+    if (this.popoverImplementation === 'html') {
       HtmlTooltip.destroyed.call(this);
-      return;
+    } else {
+      this.cleanup?.();
     }
-    if (this.cleanup) this.cleanup();
+    this.popoverImplementation = undefined;
   },
 };

@@ -19,6 +19,7 @@ describe('HEEx content through the Popover hook', () => {
   let triggerRect: DOMRect;
   let roots: HTMLElement[];
   let stylesheet: HTMLStyleElement;
+  const hooks = new WeakMap<HTMLElement, { el: HTMLElement }>();
   const nativeOpen = new WeakSet<HTMLElement>();
 
   function mount(mode = 'tooltip', native = true, withArrow = false) {
@@ -52,7 +53,9 @@ describe('HEEx content through the Popover hook', () => {
             : Element.prototype.matches.call(content, selector),
       });
     }
-    Popover.mounted.call({ el: root } as any);
+    const hook = { el: root };
+    Popover.mounted.call(hook);
+    hooks.set(root, hook);
     roots.push(root);
     return { root, content, trigger: root.querySelector('button') as HTMLButtonElement };
   }
@@ -113,7 +116,7 @@ describe('HEEx content through the Popover hook', () => {
     triggerRect = rect(250, 100, 40, 30);
   });
   afterEach(() => {
-    roots.forEach((el) => HtmlTooltip.destroyed.call({ el }));
+    roots.forEach((el) => Popover.destroyed.call(hooks.get(el)!));
     document.body.innerHTML = '';
     jest.useRealTimers();
   });
@@ -135,6 +138,80 @@ describe('HEEx content through the Popover hook', () => {
     expect(listener).toHaveBeenCalledTimes(1);
     expect(content.style.top).toBe('138px');
   });
+
+  test.each(['tooltip', 'popover'])(
+    '%s trigger clicks preserve native actions and delegation only in tooltip mode',
+    async (mode) => {
+      const { root, trigger, content } = mount(mode);
+      const form = document.createElement('form');
+      document.body.appendChild(form);
+      form.appendChild(root);
+      trigger.type = 'submit';
+      const submit = jest.fn((event: Event) => event.preventDefault());
+      const delegatedClick = jest.fn();
+      form.addEventListener('submit', submit);
+      form.addEventListener('click', delegatedClick);
+
+      trigger.click();
+      await settle();
+
+      expect(content.hidden).toBe(false);
+      if (mode === 'tooltip') {
+        expect(submit).toHaveBeenCalledTimes(1);
+        expect(delegatedClick).toHaveBeenCalledTimes(1);
+        expect(delegatedClick.mock.calls[0][0].defaultPrevented).toBe(false);
+      } else {
+        expect(submit).not.toHaveBeenCalled();
+        expect(delegatedClick).not.toHaveBeenCalled();
+        expect(trigger.getAttribute('aria-expanded')).toBe('true');
+        trigger.click();
+        expect(content.hidden).toBe(true);
+        expect(trigger.getAttribute('aria-expanded')).toBe('false');
+      }
+    },
+  );
+
+  test.each([
+    ['tooltip', 'tooltip', true],
+    ['tooltip', 'popover', true],
+    ['popover', 'tooltip', true],
+    ['popover', 'popover', true],
+    ['tooltip', 'tooltip', false],
+    ['tooltip', 'popover', false],
+    ['popover', 'tooltip', false],
+    ['popover', 'popover', false],
+  ] as const)(
+    'opening %s then %s leaves only the second bubble open (native=%s)',
+    async (firstMode, secondMode, native) => {
+      const first = mount(firstMode, native);
+      const second = mount(secondMode, native);
+      if (firstMode === 'popover') first.trigger.click();
+      else await show(first.trigger);
+      await settle();
+      expect(first.content.hidden).toBe(false);
+
+      if (secondMode === 'popover') second.trigger.click();
+      else await show(second.trigger);
+      await settle();
+
+      expect(first.content.hidden).toBe(true);
+      expect(second.content.hidden).toBe(false);
+      if (firstMode === 'popover')
+        expect(first.trigger.getAttribute('aria-expanded')).toBe('false');
+      if (native) {
+        expect(nativeOpen.has(first.content)).toBe(false);
+        expect(nativeOpen.has(second.content)).toBe(true);
+      }
+
+      // Destroying a closed instance must not clear another instance's registration.
+      Popover.destroyed.call(hooks.get(first.root)!);
+      const third = mount('popover', native);
+      third.trigger.click();
+      await settle();
+      expect(second.content.hidden).toBe(true);
+      expect(third.content.hidden).toBe(false);
+    },
+  );
 
   test('corrects top-layer coordinates within a transformed ancestor and flips near the bottom', async () => {
     const { root, trigger, content } = mount();
@@ -177,7 +254,7 @@ describe('HEEx content through the Popover hook', () => {
     expect(content.style.overflowY).toBe('');
 
     triggerRect = rect(250, 260, 40, 30);
-    Popover.updated.call({ el: root } as any);
+    Popover.updated.call(hooks.get(root)!);
     await settle();
     expect(content.dataset.popperPlacement).toBe('top-end');
     expect(arrow.style.bottom).toBe('0px');
@@ -196,7 +273,7 @@ describe('HEEx content through the Popover hook', () => {
 
     body.replaceWith(...Array.from(body.childNodes));
     arrow.remove();
-    Popover.updated.call({ el: root } as any);
+    Popover.updated.call(hooks.get(root)!);
     await settle();
     expect(content.style.paddingTop).toBe('');
     expect(content.style.paddingBottom).toBe('');
@@ -209,7 +286,7 @@ describe('HEEx content through the Popover hook', () => {
     const copy = content.querySelector('[data-copy]') as HTMLElement;
     copy.textContent = 'Updated explanation';
     content.hidden = true;
-    Popover.updated.call({ el: root } as any);
+    Popover.updated.call(hooks.get(root)!);
     await settle();
     expect(content.hidden).toBe(false);
     expect(content.querySelector('[data-copy]')).toBe(copy);
@@ -222,7 +299,7 @@ describe('HEEx content through the Popover hook', () => {
     const replacement = content.cloneNode(true) as HTMLElement;
     replacement.textContent = 'Replacement';
     content.replaceWith(replacement);
-    Popover.updated.call({ el: root } as any);
+    Popover.updated.call(hooks.get(root)!);
     await settle();
     expect(replacement.hidden).toBe(false);
     expect(replacement.style.visibility).not.toBe('hidden');
@@ -268,7 +345,7 @@ describe('HEEx content through the Popover hook', () => {
     link.focus();
     expect(content.hidden).toBe(false);
     trigger.setAttribute('aria-expanded', 'false');
-    Popover.updated.call({ el: root } as any);
+    Popover.updated.call(hooks.get(root)!);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     link.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(content.hidden).toBe(true);
@@ -290,7 +367,7 @@ describe('HEEx content through the Popover hook', () => {
 
       expect(content.hidden).toBe(true);
       expect(document.activeElement).toBe(trigger);
-      Popover.updated.call({ el: root } as any);
+      Popover.updated.call(hooks.get(root)!);
       expect(content.hidden).toBe(true);
 
       trigger.blur();
@@ -372,7 +449,7 @@ describe('HEEx content through the Popover hook', () => {
     const { root, trigger, content } = mount();
     await show(trigger);
     const removeListener = jest.spyOn(window, 'removeEventListener');
-    Popover.destroyed.call({ el: root } as any);
+    Popover.destroyed.call(hooks.get(root)!);
     expect(content.isConnected).toBe(true);
     expect(content.hidden).toBe(true);
     expect(removeListener).toHaveBeenCalledWith('resize', expect.any(Function), expect.any(Object));
@@ -381,6 +458,44 @@ describe('HEEx content through the Popover hook', () => {
     removeListener.mockRestore();
   });
 
+  test.each([true, false])(
+    'updates and cleans up the mounted HTML controller after mode removal (native=%s)',
+    async (native) => {
+      jest.useFakeTimers();
+      const { root, trigger, content } = mount('tooltip', native);
+      await show(trigger);
+      delete root.dataset.tooltipMode;
+      content.hidden = true;
+      Popover.updated.call(hooks.get(root)!);
+      await settle();
+      expect(content.hidden).toBe(false);
+
+      trigger.dispatchEvent(new Event('mouseleave'));
+      expect(jest.getTimerCount()).toBeGreaterThan(0);
+      const removeDocumentListener = jest.spyOn(document, 'removeEventListener');
+      const removeWindowListener = jest.spyOn(window, 'removeEventListener');
+      try {
+        Popover.destroyed.call(hooks.get(root)!);
+        expect(content.hidden).toBe(true);
+        expect(jest.getTimerCount()).toBe(0);
+        expect(removeDocumentListener).toHaveBeenCalledWith('click', expect.any(Function));
+        expect(removeDocumentListener).toHaveBeenCalledWith('keydown', expect.any(Function));
+        expect(removeWindowListener).toHaveBeenCalledWith(
+          'resize',
+          expect.any(Function),
+          expect.any(Object),
+        );
+        trigger.click();
+        trigger.dispatchEvent(new Event('mouseenter'));
+        trigger.focus();
+        expect(content.hidden).toBe(true);
+      } finally {
+        removeDocumentListener.mockRestore();
+        removeWindowListener.mockRestore();
+      }
+    },
+  );
+
   test('supports browsers without native popovers without moving slot content', async () => {
     const { root, trigger, content } = mount('tooltip', false);
     await show(trigger);
@@ -388,6 +503,28 @@ describe('HEEx content through the Popover hook', () => {
     expect(content.parentElement).toBe(root);
     document.body.click();
     expect(content.hidden).toBe(true);
+  });
+
+  test('keeps legacy update and cleanup when a patch adds the HTML mode attribute', () => {
+    jest.useFakeTimers();
+    document.body.innerHTML =
+      '<button id="legacy-trigger">Help</button><span id="legacy" data-trigger-id="legacy-trigger" class="invisible opacity-0">Legacy content</span>';
+    const el = document.getElementById('legacy') as HTMLElement;
+    const hook = { el };
+    Popover.mounted.call(hook);
+    el.dataset.tooltipMode = 'tooltip';
+    const updateHtml = jest.spyOn(HtmlTooltip, 'updated');
+    const removeWindowListener = jest.spyOn(window, 'removeEventListener');
+    try {
+      Popover.updated.call(hook);
+      expect(updateHtml).not.toHaveBeenCalled();
+      Popover.destroyed.call(hook);
+      expect(removeWindowListener).toHaveBeenCalledWith('resize', expect.any(Function));
+      expect(removeWindowListener).toHaveBeenCalledWith('scroll', expect.any(Function), true);
+    } finally {
+      updateHtml.mockRestore();
+      removeWindowListener.mockRestore();
+    }
   });
 
   test('keeps the old Popover contract on its existing implementation', () => {

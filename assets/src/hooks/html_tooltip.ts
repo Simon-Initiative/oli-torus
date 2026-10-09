@@ -20,9 +20,12 @@
  * Restoring focus during dismissal never reopens the tooltip; a new focus, hover or
  * activation can open it again. Callers provide keyboard focus styling in HEEx.
  * LiveView updates and ResizeObserver refresh positioning; close/destroy clean up all
- * positioning resources, listeners and timers. Only one HTML tooltip is open at once.
+ * positioning resources, listeners and timers. Only one HTML tooltip or popover is open
+ * at once, including without native popover support. Tooltip trigger clicks retain
+ * native actions and event bubbling; popover mode owns and cancels trigger activation.
  */
-import { Instance, Placement, createPopper } from '@popperjs/core';
+import { createPopper } from '@popperjs/core';
+import type { Instance, Placement } from '@popperjs/core';
 
 type NativeContent = HTMLElement & {
   showPopover: (options?: { source: HTMLElement }) => void;
@@ -30,7 +33,7 @@ type NativeContent = HTMLElement & {
 };
 type Controller = { show: () => void; update: () => void; destroy: () => void };
 const controllers = new WeakMap<HTMLElement, Controller>();
-let closeActiveTooltip: (() => void) | null = null;
+let closeActiveBubble: (() => void) | null = null;
 
 export const HtmlTooltip = {
   mounted(this: { el: HTMLElement }): void {
@@ -75,14 +78,14 @@ export const HtmlTooltip = {
         content.hidden = true;
         content.style.visibility = '';
         if (interactive) trigger.setAttribute('aria-expanded', 'false');
-        if (closeActiveTooltip === dismissTooltip) closeActiveTooltip = null;
+        if (closeActiveBubble === dismissBubble) closeActiveBubble = null;
         if (restoreFocus && trigger.isConnected) trigger.focus();
       } finally {
         restoringFocus = false;
         cancelHide();
       }
     };
-    const dismissTooltip = () => close();
+    const dismissBubble = () => close();
     const sizeContent = (body: HTMLElement, hasArrow: boolean) => {
       body.style.minWidth = '';
       body.style.maxWidth = '';
@@ -200,10 +203,8 @@ export const HtmlTooltip = {
     const show = () => {
       cancelHide();
       if (open) return;
-      if (!interactive) {
-        closeActiveTooltip?.();
-        closeActiveTooltip = dismissTooltip;
-      }
+      closeActiveBubble?.();
+      closeActiveBubble = dismissBubble;
       open = true;
       shownAt = Date.now();
       content.style.visibility = 'hidden';
@@ -220,9 +221,11 @@ export const HtmlTooltip = {
     };
 
     listen(trigger, 'click', (event) => {
-      // The hook coordinates native visibility with Popper instead of default toggling.
-      event.preventDefault();
-      event.stopPropagation();
+      if (interactive) {
+        // The hook coordinates native popover visibility instead of default toggling.
+        event.preventDefault();
+        event.stopPropagation();
+      }
       if (open && (interactive || Date.now() - shownAt > 100)) close();
       else show();
     });
