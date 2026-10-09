@@ -45,6 +45,7 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandlerTest do
 
     assert child.resource_id in parent.children
     refute removed_child.resource_id in parent.children
+    assert removed_child.deleted
   end
 
   test "objectives directive reports missing parents" do

@@ -4,6 +4,7 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
   """
 
   alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, ObjectivesDirective}
 
   @max_objective_ops 25
@@ -84,14 +85,12 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
     with {:ok, parent} <- get_objective(built_project, parent_title),
          {:ok, child} <- get_objective(built_project, title),
          :ok <- validate_child(parent, child),
-         {:ok, updated_parent} <-
-           ObjectiveEditor.remove_sub_objective_from_parent(
-             child.slug,
-             author,
-             built_project.project,
-             parent
-           ) do
-      {:ok, put_objective(built_project, parent_title, updated_parent)}
+         {:ok, updated_parent, updated_child} <-
+           remove_sub_objective(child, parent, author, built_project.project) do
+      {:ok,
+       built_project
+       |> put_objective(parent_title, updated_parent)
+       |> put_objective(title, updated_child)}
     else
       {:error, reason} ->
         {:error, "Could not remove sub-objective '#{title}': #{inspect(reason)}"}
@@ -101,6 +100,23 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
   defp apply_op(_built_project, _author, op) do
     {:error,
      "Unsupported objective operation #{inspect(op)}. Expected create, create_sub, or remove_sub"}
+  end
+
+  defp remove_sub_objective(child, parent, author, project) do
+    case ObjectiveEditor.remove_sub_objective_from_parent(child.slug, author, project, parent) do
+      {:ok, updated_parent} ->
+        {:ok, updated_parent, child}
+
+      {:error, :last_association} ->
+        with {:ok, deleted_child} <-
+               ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug) do
+          updated_parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
+          {:ok, updated_parent, deleted_child}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp get_objective(built_project, title) do
