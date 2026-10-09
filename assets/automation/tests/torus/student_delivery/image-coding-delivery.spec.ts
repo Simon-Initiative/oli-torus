@@ -25,15 +25,15 @@ const activityStems = {
 };
 
 const imageCodingImagePrograms = {
-  exact: ['image = new SimpleImage("image_coding_sample.png");', 'print(image);'].join('\n'),
+  exact: ['image = new SimpleImage("image-test-01.png");', 'print(image);'].join('\n'),
   slightDifference: [
-    'image = new SimpleImage("image_coding_sample.png");',
+    'image = new SimpleImage("image-test-01.png");',
     'pixel = image.getPixel(0, 0);',
     'pixel.setRed(pixel.getRed() + 1);',
     'print(image);',
   ].join('\n'),
   largeDifference: [
-    'image = new SimpleImage("image_coding_sample.png");',
+    'image = new SimpleImage("image-test-01.png");',
     'var width = image.getWidth();',
     'var height = image.getHeight();',
     'var targetWidth = Math.floor(width * 0.3);',
@@ -253,7 +253,7 @@ test.describe('image coding delivery', () => {
       // Table-processing correct path: read the expected csv field through SimpleTable.
       await setImageCodingSource(
         activity,
-        'var table = new SimpleTable("image_coding_table.csv"); print(table.getRow(1).getField("value"))',
+        'var table = new SimpleTable("table-test-01.csv"); print(table.getRow(1).getField("value"))',
       );
       await runImageCodingUntilTextReady(activity, output, '7');
       await expect(output).toContainText('7');
@@ -267,7 +267,7 @@ test.describe('image coding delivery', () => {
 
       await setImageCodingSource(
         activity,
-        'var table = new SimpleTable("image_coding_table.csv"); print(table.getRow(0).getField("name"))',
+        'var table = new SimpleTable("table-test-01.csv"); print(table.getRow(0).getField("name"))',
       );
       await runImageCodingUntilTextReady(activity, output, 'alpha');
       await expect(output).toContainText('alpha');

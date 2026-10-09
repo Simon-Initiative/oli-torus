@@ -112,6 +112,15 @@ export class AdaptiveDeckPO {
       .catch(() => '');
   }
 
+  /**
+   * The deck's single footer control, including while it is disabled during a
+   * check. Its label follows the screen state (the screen's check label, then
+   * the feedback's button label).
+   */
+  footerButton(): Locator {
+    return this.page.locator('.checkContainer .buttonContainer button').first();
+  }
+
   // ------------------------------------------------------------ navigation
 
   /**

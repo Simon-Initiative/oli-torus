@@ -140,11 +140,26 @@ jobs:
         run: yarn install --frozen-lockfile
 
       # Watchers are disabled for MIX_ENV=ci_e2e (config/ci_e2e.exs),
-      # so the JS/CSS bundles the app serves must be built once, upfront,
-      # rather than relying on the dev watcher process to build them live.
+      # so the assets the app serves must be built once, upfront, rather
+      # than relying on the dev watcher processes to build them live.
+      # Webpack builds the JS bundles here; the Tailwind CSS is built by
+      # Mix in the next step.
       - name: Build frontend assets
         working-directory: assets
         run: yarn run deploy
+
+      # Writes priv/static/css/app.css, which every layout loads. Without
+      # it, pages render unstyled and responsive (md:hidden, etc.) markup
+      # stays visible.
+      - name: Build Tailwind CSS
+        run: set -a && source oli.env && mix tailwind default --minify
+
+      # Adaptive lesson rules are evaluated server-side by Node.js
+      # (priv/node/rules.js and eval.js, as built in the Dockerfile).
+      # Without these bundles every adaptive "Check" fails with a 500.
+      - name: Build server-side evaluation bundles
+        working-directory: assets
+        run: yarn run deploy-node
 
       - name: Install Playwright dependencies
         working-directory: assets/automation
@@ -174,9 +189,11 @@ jobs:
           cat /tmp/torus-server.log
           exit 1
 
+      # Spec files run in parallel across workers; tests within a file stay
+      # serial because playwright.config.ts keeps fullyParallel off.
       - name: Run @pr-tagged Playwright tests
         working-directory: assets/automation
-        run: npx playwright test --grep @pr --reporter=line
+        run: npx playwright test --grep @pr --reporter=line --workers=2
 
       - name: Upload Playwright report
         if: failure()
