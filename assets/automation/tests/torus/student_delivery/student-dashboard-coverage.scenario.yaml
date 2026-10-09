@@ -1,4 +1,4 @@
-# Scenario: Seed a minimal published course for student dashboard, assignments, and schedule coverage.
+# Scenario: Seed a minimal published course for dashboard and accessibility coverage.
 
 - project:
     name: 'student_dashboard_coverage_project'
@@ -6,6 +6,7 @@
     root:
       children:
         - page: 'Coverage Page'
+        - page: 'Scored Activity'
 
 - edit_page:
     project: 'student_dashboard_coverage_project'
@@ -16,6 +17,26 @@
       blocks:
         - type: prose
           body_md: "Coverage content"
+
+- edit_page:
+    project: 'student_dashboard_coverage_project'
+    page: 'Scored Activity'
+    content: |
+      title: "Scored Activity"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "scored_activity"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Which option is correct?"
+            choices:
+              - id: "correct"
+                body_md: "Correct option"
+                score: 1
+              - id: "incorrect"
+                body_md: "Incorrect option"
+                score: 0
 
 - publish:
     to: 'student_dashboard_coverage_project'
@@ -36,6 +57,14 @@
     email: 'student-dashboard-coverage-student${RUN_ID}@example.com'
     given_name: 'Coverage'
     family_name: 'Student'
+    password: 'changeme123456'
+
+- user:
+    name: 'student_dashboard_coverage_author'
+    type: 'author'
+    email: 'student-dashboard-coverage-author${RUN_ID}@example.com'
+    given_name: 'Coverage'
+    family_name: 'Author'
     password: 'changeme123456'
 
 - user:

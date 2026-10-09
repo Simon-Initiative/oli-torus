@@ -1116,23 +1116,23 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="intro_card_#{unit_1.resource_id}"] div[role="card badge"] div[role="check icon"]}
+               ~s{div[id="intro_card_#{unit_1.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page_#{practice_page.resource_id}"] div[role="card badge"] div[role="check icon"]}
+               ~s{div[id="page_#{practice_page.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
              )
 
       # this page is not yet completed, so we do not expect to see the check icon
       refute has_element?(
                view,
-               ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"] div[role="check icon"]}
+               ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"] div[role="check icon"]}
+               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
              )
     end
 
@@ -1302,7 +1302,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[role="orange flag icon"]}
+               ~s{button[role="resource page 4 details"] div[data-role="orange flag icon"]}
              )
 
       assert has_element?(
@@ -1357,7 +1357,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # graded page with title "Page 4" in the hierarchy has the correct icon
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[role="square check icon"]}
+               ~s{button[role="resource page 4 details"] div[data-role="square check icon"]}
              )
 
       # correct due date
@@ -1549,12 +1549,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[role="clock icon"]}
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[data-role="clock icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[role="duration in minutes"]},
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[data-role="duration in minutes"]},
                "22"
              )
     end
@@ -1592,14 +1592,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{button[role="resource page 1 details"] svg[role="visited check icon"]}
+               ~s{button[role="resource page 1 details"] svg[data-role="visited check icon"]}
              )
 
       assert has_element?(view, ~s{button[role="resource page 2 details"]})
 
       refute has_element?(
                view,
-               ~s{button[role="resource page 2 details"] svg[role="visited check icon"]}
+               ~s{button[role="resource page 2 details"] svg[data-role="visited check icon"]}
              )
     end
 
@@ -2375,7 +2375,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "#timezone_info")
 
       # Verify that it contains the timezone world icon
-      assert has_element?(view, "[role='timezone world icon']")
+      assert has_element?(view, "[data-role='timezone world icon']")
 
       # Verify that it displays timezone text
       assert has_element?(view, "#timezone_info span")
@@ -2455,7 +2455,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       outline_html =
         view
-        |> element(~s{div[role="page_#{practice_page.resource_id}"]})
+        |> element(~s{div[data-role="page_#{practice_page.resource_id}"]})
         |> render()
 
       assert outline_html =~ ~r/>\s*\d+\s*</
@@ -2569,7 +2569,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[role="page 4 details"] div[role="orange flag icon"]}
+               ~s{button[data-role="page 4 details"] div[data-role="orange flag icon"]}
              )
     end
 
@@ -2583,12 +2583,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[role="clock icon"]}
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[data-role="clock icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[role="duration in minutes"]},
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[data-role="duration in minutes"]},
                "22"
              )
     end
@@ -2608,10 +2608,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # since the gc message is sent from the handle_info that loads the async metrics
       assert_receive(:gc, 2_000)
 
-      assert has_element?(view, ~s{button[role="page 2 details"]})
-      refute has_element?(view, ~s{button[role="page 1 details"] svg[role="visited check icon"]})
-      assert has_element?(view, ~s{button[role="page 2 details"]})
-      refute has_element?(view, ~s{button[role="page 2 details"] svg[role="visited check icon"]})
+      assert has_element?(view, ~s{button[data-role="page 2 details"]})
+
+      refute has_element?(
+               view,
+               ~s{button[data-role="page 1 details"] svg[data-role="visited check icon"]}
+             )
+
+      assert has_element?(view, ~s{button[data-role="page 2 details"]})
+
+      refute has_element?(
+               view,
+               ~s{button[data-role="page 2 details"] svg[data-role="visited check icon"]}
+             )
     end
 
     test "can visit a page", %{conn: conn, section: section, page_1: page_1} do
@@ -2649,7 +2658,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(
-               ~s{div[role="page_#{top_level_page.resource_id}"] span[role="page title"]}
+               ~s{div[data-role="page_#{top_level_page.resource_id}"] span[data-role="page title"]}
              )
              |> render() =~ "Top Level Page"
     end
@@ -2866,7 +2875,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(
-               ~s{button[role="page 4 details"] div[role="due date and score"] span[role="page due date"]}
+               ~s{button[data-role="page 4 details"] div[data-role="due date and score"] span[data-role="page due date"]}
              )
              |> render() =~ "Read by: Fri Nov 3, 2023"
     end
@@ -2895,7 +2904,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> has_element?(
-               ~s{button[role="page 4 details"] div[role="due date and score"] span[role="page due date"]}
+               ~s{button[data-role="page 4 details"] div[data-role="due date and score"] span[data-role="page due date"]}
              )
     end
   end
@@ -3455,7 +3464,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       end)
 
       Enum.each(all_page_titles, fn title ->
-        assert has_element?(view, "span[role='page title']", title)
+        assert has_element?(view, "span[data-role='page title']", title)
       end)
     end
 
@@ -3471,13 +3480,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # Should only show the matching page and its parent structure
       assert view |> has_element?("div[role='unit title']", "Introduction")
       assert view |> has_element?("div[role='module title']", "How to use this course")
-      assert view |> has_element?("span[role='page title']", "Page 1")
+      assert view |> has_element?("span[data-role='page title']", "Page 1")
 
       refute view |> has_element?("div[role='unit title']", "Building a Phoenix app")
       refute view |> has_element?("div[role='module title']", "Configure your setup")
-      refute view |> has_element?("span[role='page title']", "Page 2")
-      refute view |> has_element?("span[role='page title']", "Page 3")
-      refute view |> has_element?("span[role='page title']", "Page 4")
+      refute view |> has_element?("span[data-role='page title']", "Page 2")
+      refute view |> has_element?("span[data-role='page title']", "Page 3")
+      refute view |> has_element?("span[data-role='page title']", "Page 4")
     end
 
     test "filters content when searching for a container title", %{conn: conn, section: section} do
@@ -3491,8 +3500,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Should show the Introduction unit and its children
       assert view |> has_element?("div[role='unit title']", "Introduction")
-      assert view |> has_element?("span[role='page title']", "Page 2")
-      assert view |> has_element?("span[role='page title']", "Page 3")
+      assert view |> has_element?("span[data-role='page title']", "Page 2")
+      assert view |> has_element?("span[data-role='page title']", "Page 3")
 
       # Should not show unrelated content
       refute view |> has_element?("div[role='unit title']", "OTP")
@@ -3512,8 +3521,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Should show the same results as case-sensitive search
       assert view |> has_element?("div[role='unit title']", "Introduction")
-      assert view |> has_element?("span[role='page title']", "Page 2")
-      assert view |> has_element?("span[role='page title']", "Page 3")
+      assert view |> has_element?("span[data-role='page title']", "Page 2")
+      assert view |> has_element?("span[data-role='page title']", "Page 3")
 
       # Should not show unrelated content
       refute view |> has_element?("div[role='unit title']", "OTP")
@@ -3591,7 +3600,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # and all pages
       Enum.each(all_page_titles, fn title ->
-        assert view |> has_element?("span[role='page title']", title)
+        assert view |> has_element?("span[data-role='page title']", title)
       end)
 
       # Update the search term
@@ -3603,11 +3612,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Should now only show matching content
       assert view |> has_element?("div[role='unit title']", "Introduction")
-      assert view |> has_element?("span[role='page title']", "Page 1")
+      assert view |> has_element?("span[data-role='page title']", "Page 1")
 
       # Learning Macros unit contains a page called "Page 10" that partially matches the search term
       assert view |> has_element?("div[role='unit title']", "Learning Macros")
-      assert view |> has_element?("span[role='page title']", "Page 10")
+      assert view |> has_element?("span[data-role='page title']", "Page 10")
 
       Enum.each(
         [
@@ -3624,7 +3633,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       all_page_titles
       |> Enum.reject(&String.contains?(&1, "Page 1"))
       |> Enum.each(fn title ->
-        refute view |> has_element?("span[role='page title']", title)
+        refute view |> has_element?("span[data-role='page title']", title)
       end)
     end
 
@@ -3642,8 +3651,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_change(%{"search_term" => "Page 1"})
 
       # Verify search results are shown (no error occurred)
-      assert has_element?(view, "span[role='page title']", "Page 1")
-      assert has_element?(view, "span[role='page title']", "Page 10")
+      assert has_element?(view, "span[data-role='page title']", "Page 1")
+      assert has_element?(view, "span[data-role='page title']", "Page 10")
 
       # Clear the search by searching for empty string
       view
@@ -3652,7 +3661,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Verify all content is shown again after clearing search
       assert has_element?(view, "div[role='unit title']", "Introduction")
-      assert has_element?(view, "span[role='page title']", "Page 2")
+      assert has_element?(view, "span[data-role='page title']", "Page 2")
     end
   end
 
@@ -3817,7 +3826,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "div[role='unit title']", "Introduction")
 
       # Verify the page is accessible in the unit layer
-      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[data-role='page title']", "Page 1")
     end
 
     test "complete mobile outline navigation flow", %{
@@ -3987,7 +3996,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Verify unit layer is shown and contains the page
       assert has_element?(view, "div#mobile_outline_unit")
-      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[data-role='page title']", "Page 1")
 
       # Perform search for "Page 1"
       view
@@ -4001,7 +4010,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
 
       # Verify matching page is still visible
-      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[data-role='page title']", "Page 1")
     end
 
     test "search triggers js-exec event to mobile_outline_unit when in unit layer", %{
@@ -4184,7 +4193,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "div#mobile_outline_unit[data-show-matches-with-search-term]")
 
       # Verify matching page is visible (container should be expanded)
-      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[data-role='page title']", "Page 1")
     end
   end
 end

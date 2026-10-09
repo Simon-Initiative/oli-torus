@@ -1899,7 +1899,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       )
       |> render_click()
 
-      assert has_element?(view, "svg[role='assignments icon']")
+      assert has_element?(view, "svg[data-role='assignments icon']")
     end
   end
 
