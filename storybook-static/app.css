@@ -20407,6 +20407,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 2.5rem !important;
 }
 
+.\!h-11 {
+  height: 2.75rem !important;
+}
+
 .\!h-20 {
   height: 5rem !important;
 }
@@ -21140,6 +21144,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 2.5rem !important;
 }
 
+.\!w-11 {
+  width: 2.75rem !important;
+}
+
 .\!w-8 {
   width: 2rem !important;
 }
@@ -21856,6 +21864,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: max-content;
 }
 
+.\!max-w-\[860px\] {
+  max-width: 860px !important;
+}
+
 .max-w-2xl {
   max-width: 42rem;
 }
@@ -22506,6 +22518,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .cursor-text {
   cursor: text;
+}
+
+.cursor-wait {
+  cursor: wait;
 }
 
 .touch-none {
@@ -23247,12 +23263,20 @@ table.table-striped tbody tr:nth-child(even) {
   border-radius: 0.25rem !important;
 }
 
+.\!rounded-2xl {
+  border-radius: 1rem !important;
+}
+
 .\!rounded-\[3px\] {
   border-radius: 3px !important;
 }
 
 .\!rounded-lg {
   border-radius: 0.5rem !important;
+}
+
+.\!rounded-xl {
+  border-radius: 0.75rem !important;
 }
 
 .rounded {
@@ -23499,6 +23523,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-top-right-radius: 0.75rem;
 }
 
+.\!border {
+  border-width: 1px !important;
+}
+
 .\!border-0 {
   border-width: 0px !important;
 }
@@ -23643,6 +23671,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .border-t-4 {
   border-top-width: 4px;
+}
+
+.\!border-solid {
+  border-style: solid !important;
 }
 
 .border-solid {
@@ -26114,6 +26146,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pr-12 {
   padding-right: 3rem;
+}
+
+.pr-16 {
+  padding-right: 4rem;
 }
 
 .pr-2 {
@@ -33957,6 +33993,14 @@ Not supports in Firefox and IE */
   background-color: #FFFFFF1A;
 }
 
+.hover\:bg-Fill-Buttons-fill-primary:hover {
+  background-color: #0080FF;
+}
+
+.dark .hover\:bg-Fill-Buttons-fill-primary:hover {
+  background-color: #0080FF;
+}
+
 .hover\:\!bg-Fill-Buttons-fill-primary-hover:hover {
   background-color: #003179 !important;
 }
@@ -39368,6 +39412,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .sm\:w-3\/4 {
     width: 75%;
+  }
+
+  .sm\:w-56 {
+    width: 14rem;
   }
 
   .sm\:w-6 {
