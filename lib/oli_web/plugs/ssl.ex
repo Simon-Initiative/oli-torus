@@ -1,6 +1,6 @@
 defmodule Oli.Plugs.SSL do
   @moduledoc """
-    SSL redirect excluding the health endpoint.
+    SSL redirect excluding startup/liveness and readiness probe endpoints.
   """
   @behaviour Plug
 
@@ -8,7 +8,8 @@ defmodule Oli.Plugs.SSL do
   def init(opts), do: Plug.SSL.init(opts)
 
   @impl true
-  def call(%{request_path: "/healthz"} = conn, _opts), do: conn
+  def call(%{request_path: path} = conn, _opts) when path in ["/healthz", "/readyz"],
+    do: conn
 
   def call(conn, opts) do
     if force_ssl?() do

@@ -71,8 +71,8 @@ Requirements are found in requirements.yml
 
 | Probe | Endpoint | Contract |
 | --- | --- | --- |
-| Startup/liveness | `/healthz` | Local startup state and HTTP response only. Return 503 `starting` before initialization completes, then 200 `ok`, including during draining or database outage. |
-| Readiness | `/readyz` | Require startup complete, not draining, critical local services available, and bounded `SELECT 1` through `Oli.Repo`. Return 200 `ready` or 503 `not_ready`, both with compiled string `version` and `sha`. |
+| Startup/liveness | `/healthz` | Local startup state and HTTP response only. Return 503 `starting` before initialization completes, then 200 `Ayup!`, including during draining or database outage. |
+| Readiness | `/readyz` | Require startup complete, not draining, critical local services available, and bounded `SELECT 1` through `Oli.Repo`. Return 200 `ready` or 503 `not_ready`, both with compiled string `version` and `sha` only in `MIX_ENV=playwright` builds. Other builds return only status; runtime settings cannot enable metadata. |
 
 Both endpoints are unauthenticated, support pod HTTP without redirects and public HTTPS, and send `Cache-Control: no-store`. Readiness has a one-second total database checkout/query budget. Exclude the NodeJS evaluator pool, external integrations, queue depth, cluster membership and cache warming. Startup has a generous allowance; shutdown marks draining before services stop. The FDD defines lifecycle and probe timing details.
 
@@ -165,3 +165,4 @@ After provisioning, demonstrate manual and scheduled runs, failed readiness prev
 | 2026-10-06 | Initial cleanup and mailbox retention | Retain per-test cleanup and fresh mailboxes on deployment. Torus maintainers clean stale failed-run data between runs as needed, preserving durable fixtures. No scheduled cleanup service or database reset. |
 | 2026-10-06 | Operational verification | Deferred to implementation, required before launch. Torus verifies application probes/draining and unattended nightly-ui permissions; GitOps verifies deployment configuration. No performance measurements required. |
 | 2026-10-06 | Release fixture and mailbox audit | Deferred to implementation, required before launch. Torus verifies runtime paths, packages demonstrated fixture needs and checks mailbox reset; GitOps verifies one replica. Requires an implemented release. |
+| 2026-10-07 | Readiness metadata visibility | Expose compiled version/SHA only in Playwright builds for CI identity checks. Other builds retain unauthenticated status-only readiness; runtime settings cannot enable metadata. |
