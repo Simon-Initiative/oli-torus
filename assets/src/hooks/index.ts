@@ -45,7 +45,6 @@ import { LiveModal } from './live_modal';
 import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ManualGradingMobileFocus } from './manual_grading_mobile_focus';
-import { ManualGradingScoreInput } from './manual_grading_score_input';
 import { MathPrototype } from './math_prototype';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
@@ -71,6 +70,7 @@ import {
   ScoreAsYouGoNavigationNotice,
   ScoreAsYouGoSavedWorkNotice,
 } from './score_as_you_go_saved_work_notice';
+import { ScoringChip, ScoringHeading, ScoringScoreInput, ScoringTabs } from './scoring_inputs';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SectionCreatedUrlCleanup } from './section_created_url_cleanup';
@@ -139,9 +139,12 @@ export const Hooks = {
   HoverAway,
   BeforeUnloadListener,
   NavigationGuard,
+  ScoringScoreInput,
+  ScoringChip,
+  ScoringTabs,
+  ScoringHeading,
   ThemeToggle,
   LtiConnectInstructions,
-  ManualGradingScoreInput,
   ManualGradingMobileFocus,
   MathPrototype,
   HierarchySelector,

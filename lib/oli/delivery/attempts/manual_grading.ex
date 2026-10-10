@@ -7,7 +7,8 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.{Enrollment, Section}
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Activities.AdaptiveParts
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Delivery.Settings
@@ -41,30 +42,283 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     Repo.exists?(query)
   end
 
+  @unfiltered %BrowseOptions{
+    user_ids: [],
+    activity_ids: [],
+    page_ids: [],
+    graded: nil,
+    text_search: ""
+  }
+
   @doc """
   Browsing-based query support for activity attempts that require manual grading.
+
+  Rows are ordered by the requested sort key and then by attempt id in the same direction, so
+  paging and the Previous/Next navigation see the same order for tied rows.
   """
   def browse_submitted_attempts(
         %Section{id: section_id},
         %Paging{limit: limit, offset: offset},
-        %Sorting{field: field, direction: direction},
+        %Sorting{} = sorting,
         %BrowseOptions{} = options
       ) do
+    section_id
+    |> submitted_attempts_query(options)
+    |> order_by(^order_by_sorting(sorting))
+    |> limit(^limit)
+    |> offset(^offset)
+    |> select_browse_fields()
+    |> select_merge([aa], %{total_count: fragment("count(*) OVER()")})
+    |> Repo.all()
+  end
+
+  @doc """
+  Loads one attempt awaiting manual scoring, scoped to the section, with the same fields as the
+  rows of `browse_submitted_attempts/4`. Returns `nil` when the attempt is not pending, belongs to
+  another section, or does not exist.
+  """
+  def fetch_submitted_attempt(%Section{id: section_id}, attempt_id) do
+    section_id
+    |> submitted_attempts_query(@unfiltered)
+    |> where([aa], aa.id == ^attempt_id)
+    |> select_browse_fields()
+    |> Repo.one()
+  end
+
+  defp select_browse_fields(query) do
+    query
+    |> select([aa, _, _, _, _, _], aa)
+    |> select_merge(
+      [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
+      %{
+        activity_type_id: activity_revision.activity_type_id,
+        activity_title: activity_revision.title,
+        page_title: resource_revision.title,
+        page_id: resource_revision.resource_id,
+        resource_attempt_number: resource_attempt.attempt_number,
+        graded: resource_revision.graded,
+        user: user,
+        revision: activity_revision,
+        resource_attempt_guid: resource_attempt.attempt_guid,
+        resource_access_id: resource_access.id
+      }
+    )
+  end
+
+  @doc """
+  Counts the attempts of the section that await manual scoring, ignoring any filter.
+  """
+  def count_submitted_attempts(%Section{id: section_id}) do
+    section_id
+    |> submitted_attempts_query(@unfiltered)
+    |> select([aa], count(aa.id))
+    |> Repo.one()
+  end
+
+  @doc """
+  Returns the values the table filters can offer: one entry per student, activity resource and
+  page resource with at least one attempt awaiting scoring in the section. Activity and page
+  titles come from the most recently submitted pending attempt of that resource.
+  """
+  def filter_options(%Section{id: section_id}) do
+    base = submitted_attempts_query(section_id, @unfiltered)
+
+    users =
+      base
+      |> distinct([_aa, _ra, _rac, user], user.id)
+      |> select([_aa, _ra, _rac, user], user)
+      |> Repo.all()
+
+    activities =
+      base
+      |> distinct([_aa, _ra, _rac, _u, activity_revision], activity_revision.resource_id)
+      |> order_by([aa, _ra, _rac, _u, activity_revision],
+        asc: activity_revision.resource_id,
+        desc_nulls_last: aa.date_submitted,
+        desc: aa.id
+      )
+      |> select([_aa, _ra, _rac, _u, activity_revision], %{
+        id: activity_revision.resource_id,
+        title: activity_revision.title
+      })
+      |> Repo.all()
+
+    pages =
+      base
+      |> distinct([_aa, _ra, resource_access], resource_access.resource_id)
+      |> order_by([aa, _ra, resource_access],
+        asc: resource_access.resource_id,
+        desc_nulls_last: aa.date_submitted,
+        desc: aa.id
+      )
+      |> select([_aa, _ra, resource_access, _u, _ar, resource_revision], %{
+        id: resource_access.resource_id,
+        title: resource_revision.title
+      })
+      |> Repo.all()
+
+    %{users: users, activities: activities, pages: pages}
+  end
+
+  @doc """
+  Labels for filter values that no longer have pending submissions, looked up only inside the
+  section: users enrolled in it, and resources of its publications. Ids that do not belong to
+  the section are absent from the result.
+  """
+  def filter_value_labels(%Section{id: section_id, slug: slug}, %{
+        user_ids: user_ids,
+        activity_ids: activity_ids,
+        page_ids: page_ids
+      }) do
+    users =
+      case user_ids do
+        [] ->
+          %{}
+
+        ids ->
+          from(e in Enrollment,
+            join: u in assoc(e, :user),
+            where: e.section_id == ^section_id and u.id in ^ids,
+            select: u
+          )
+          |> Repo.all()
+          |> Map.new(&{&1.id, &1})
+      end
+
+    %{
+      users: users,
+      activities: resource_titles(slug, activity_ids),
+      pages: resource_titles(slug, page_ids)
+    }
+  end
+
+  defp resource_titles(_slug, []), do: %{}
+
+  defp resource_titles(slug, ids) do
+    slug
+    |> DeliveryResolver.from_resource_id(ids)
+    |> Enum.reject(&is_nil/1)
+    |> Map.new(&{&1.resource_id, &1.title})
+  end
+
+  @doc """
+  Returns the value of `field`'s sort key in a row of `browse_submitted_attempts/4`, captured as
+  the navigation anchor for `submission_position/4`.
+  """
+  def sort_key_value(row, :user), do: row.user.family_name
+  def sort_key_value(row, field), do: Map.fetch!(row, field)
+
+  @doc """
+  Locates the anchor attempt inside the filtered, sorted set of attempts awaiting scoring.
+
+  The anchor is `%{id: id, key: value}` captured with `sort_key_value/2` when the attempt was
+  opened. When the anchor is still in the set, its real row is used and `position` is its
+  1-based index; when it left the set (scored, or excluded by the filters), a virtual row with
+  the captured key takes its place, `position` is `nil` and the neighbours are the attempts
+  around that place. `total` counts the eligible attempts only.
+  """
+  def submission_position(
+        %Section{id: section_id},
+        %Sorting{field: field, direction: direction},
+        %BrowseOptions{} = options,
+        %{id: anchor_id, key: anchor_key}
+      ) do
+    key = sort_key(field)
+
+    eligible =
+      section_id
+      |> submitted_attempts_query(options)
+      |> select([aa], %{id: aa.id, eligible: true})
+      |> select_merge(^%{key: key})
+
+    # Only asks whether the anchor is in the queue; the window query reads the whole queue.
+    anchor_in_queue =
+      section_id
+      |> submitted_attempts_query(options)
+      |> where([aa], aa.id == ^anchor_id)
+      |> select([aa], aa.id)
+
+    virtual_key = typed_anchor_key(anchor_key, sort_key_type(field))
+
+    virtual =
+      from(v in fragment("SELECT ?::bigint AS id", ^anchor_id),
+        where: v.id not in subquery(anchor_in_queue),
+        select: %{id: v.id, eligible: false}
+      )
+      |> select_merge(^%{key: virtual_key})
+
+    union = union_all(eligible, ^virtual)
+
+    windowed =
+      case direction do
+        :asc ->
+          from(s in subquery(union),
+            windows: [w: [order_by: [asc: s.key, asc: s.id]]],
+            select: %{
+              id: s.id,
+              eligible: s.eligible,
+              previous_id: s.id |> lag() |> over(:w),
+              next_id: s.id |> lead() |> over(:w),
+              position: s.id |> count() |> over(:w),
+              total: fragment("count(*) FILTER (WHERE ?) OVER ()", s.eligible)
+            }
+          )
+
+        :desc ->
+          from(s in subquery(union),
+            windows: [w: [order_by: [desc: s.key, desc: s.id]]],
+            select: %{
+              id: s.id,
+              eligible: s.eligible,
+              previous_id: s.id |> lag() |> over(:w),
+              next_id: s.id |> lead() |> over(:w),
+              position: s.id |> count() |> over(:w),
+              total: fragment("count(*) FILTER (WHERE ?) OVER ()", s.eligible)
+            }
+          )
+      end
+
+    from(r in subquery(windowed), where: r.id == ^anchor_id)
+    |> Repo.one()
+    |> case do
+      %{eligible: true} = row ->
+        %{
+          position: row.position,
+          total: row.total,
+          previous_id: row.previous_id,
+          next_id: row.next_id,
+          anchor_eligible?: true
+        }
+
+      %{eligible: false} = row ->
+        %{
+          position: nil,
+          total: row.total,
+          previous_id: row.previous_id,
+          next_id: row.next_id,
+          anchor_eligible?: false
+        }
+    end
+  end
+
+  defp typed_anchor_key(value, :string), do: dynamic(type(^value, :string))
+  defp typed_anchor_key(value, :integer), do: dynamic(type(^value, :integer))
+  defp typed_anchor_key(value, :boolean), do: dynamic(type(^value, :boolean))
+  defp typed_anchor_key(value, :utc_datetime), do: dynamic(type(^value, :utc_datetime))
+
+  defp sort_key_type(field) when field in [:user, :activity_title, :page_title], do: :string
+
+  defp sort_key_type(field) when field in [:resource_attempt_number, :activity_type_id],
+    do: :integer
+
+  defp sort_key_type(:graded), do: :boolean
+  defp sort_key_type(field), do: ActivityAttempt.__schema__(:type, field)
+
+  defp submitted_attempts_query(section_id, %BrowseOptions{} = options) do
     filter_by_user =
-      if is_nil(options.user_id) do
-        true
-      else
-        dynamic(
-          [
-            _aa,
-            _resource_attempt,
-            _resource_access,
-            user,
-            _activity_revision,
-            _resource_revision
-          ],
-          user.id == ^options.user_id
-        )
+      case options.user_ids do
+        [] -> true
+        ids -> dynamic([_aa, _ra, _rac, user, _ar, _rr], user.id in ^ids)
       end
 
     filter_by_graded =
@@ -85,37 +339,24 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
       end
 
     filter_by_activity =
-      if is_nil(options.activity_id) do
-        true
-      else
-        dynamic(
-          [
-            _aa,
-            _resource_attempt,
-            _resource_access,
-            _user,
-            activity_revision,
-            _resource_revision
-          ],
-          activity_revision.resource_id == ^options.activity_id
-        )
+      case options.activity_ids do
+        [] ->
+          true
+
+        ids ->
+          dynamic(
+            [_aa, _ra, _rac, _u, activity_revision, _rr],
+            activity_revision.resource_id in ^ids
+          )
       end
 
     filter_by_page =
-      if is_nil(options.page_id) do
-        true
-      else
-        dynamic(
-          [
-            _aa,
-            _resource_attempt,
-            resource_access,
-            _user,
-            _activity_revision,
-            _resource_revision
-          ],
-          resource_access.resource_id == ^options.page_id
-        )
+      case options.page_ids do
+        [] ->
+          true
+
+        ids ->
+          dynamic([_aa, _ra, resource_access, _u, _ar, _rr], resource_access.resource_id in ^ids)
       end
 
     filter_by_text =
@@ -137,100 +378,53 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
         )
       end
 
-    query =
-      ActivityAttempt
-      |> join(:left, [aa], resource_attempt in ResourceAttempt,
-        on: aa.resource_attempt_id == resource_attempt.id
-      )
-      |> join(:left, [_, resource_attempt], ra in ResourceAccess,
-        on: resource_attempt.resource_access_id == ra.id
-      )
-      |> join(:left, [_, _, ra], a in assoc(ra, :user))
-      |> join(:left, [aa, _, _, _], activity_revision in Revision,
-        on: activity_revision.id == aa.revision_id
-      )
-      |> join(:left, [_, resource_attempt, _, _, _], resource_revision in Revision,
-        on: resource_revision.id == resource_attempt.revision_id
-      )
-      |> where(^filter_by_user)
-      |> where(^filter_by_activity)
-      |> where(^filter_by_page)
-      |> where(^filter_by_graded)
-      |> where(^filter_by_text)
-      |> where(
-        [aa, _resource_attempt, resource_access, _u, _activity_revision, _resource_revision],
-        resource_access.section_id == ^section_id and aa.lifecycle_state == :submitted
-      )
-      |> limit(^limit)
-      |> offset(^offset)
-      |> select([aa, _, _, _, _, _], aa)
-      |> select_merge(
-        [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
-        %{
-          total_count: fragment("count(*) OVER()"),
-          activity_type_id: activity_revision.activity_type_id,
-          activity_title: activity_revision.title,
-          page_title: resource_revision.title,
-          page_id: resource_revision.resource_id,
-          resource_attempt_number: resource_attempt.attempt_number,
-          graded: resource_revision.graded,
-          user: user,
-          revision: activity_revision,
-          resource_attempt_guid: resource_attempt.attempt_guid,
-          resource_access_id: resource_access.id
-        }
-      )
-
-    query =
-      case field do
-        :activity_type_id ->
-          order_by(
-            query,
-            [_aa, _resource_attempt, _resource_access, _u, activity_revision, _resource_revision],
-            {^direction, activity_revision.activity_type_id}
-          )
-
-        :activity_title ->
-          order_by(
-            query,
-            [_aa, _resource_attempt, _resource_access, _u, activity_revision, _resource_revision],
-            {^direction, activity_revision.title}
-          )
-
-        :page_title ->
-          order_by(
-            query,
-            [_aa, _resource_attempt, _resource_access, _u, _activity_revision, resource_revision],
-            {^direction, resource_revision.title}
-          )
-
-        :resource_attempt_number ->
-          order_by(
-            query,
-            [_aa, resource_attempt, _resource_access, _u, _activity_revision, _resource_revision],
-            {^direction, resource_attempt.attempt_number}
-          )
-
-        :graded ->
-          order_by(
-            query,
-            [_aa, _resource_attempt, _resource_access, _u, _activity_revision, resource_revision],
-            {^direction, resource_revision.graded}
-          )
-
-        :user ->
-          order_by(
-            query,
-            [_aa, _resource_attempt, _resource_access, u, _activity_revision, resource_revision],
-            {^direction, u.family_name}
-          )
-
-        _ ->
-          order_by(query, [aa, _, _, _, _, _], {^direction, field(aa, ^field)})
-      end
-
-    Repo.all(query)
+    ActivityAttempt
+    |> join(:left, [aa], resource_attempt in ResourceAttempt,
+      on: aa.resource_attempt_id == resource_attempt.id
+    )
+    |> join(:left, [_, resource_attempt], ra in ResourceAccess,
+      on: resource_attempt.resource_access_id == ra.id
+    )
+    |> join(:left, [_, _, ra], a in assoc(ra, :user))
+    |> join(:left, [aa, _, _, _], activity_revision in Revision,
+      on: activity_revision.id == aa.revision_id
+    )
+    |> join(:left, [_, resource_attempt, _, _, _], resource_revision in Revision,
+      on: resource_revision.id == resource_attempt.revision_id
+    )
+    |> where(^filter_by_user)
+    |> where(^filter_by_activity)
+    |> where(^filter_by_page)
+    |> where(^filter_by_graded)
+    |> where(^filter_by_text)
+    |> where(
+      [aa, _resource_attempt, resource_access, _u, _activity_revision, _resource_revision],
+      resource_access.section_id == ^section_id and aa.lifecycle_state == :submitted
+    )
   end
+
+  defp order_by_sorting(%Sorting{field: field, direction: direction}) do
+    [{direction, sort_key(field)}, {direction, dynamic([aa], aa.id)}]
+  end
+
+  defp sort_key(:activity_type_id),
+    do: dynamic([_aa, _ra, _rac, _u, activity_revision, _rr], activity_revision.activity_type_id)
+
+  defp sort_key(:activity_title),
+    do: dynamic([_aa, _ra, _rac, _u, activity_revision, _rr], activity_revision.title)
+
+  defp sort_key(:page_title),
+    do: dynamic([_aa, _ra, _rac, _u, _ar, resource_revision], resource_revision.title)
+
+  defp sort_key(:resource_attempt_number),
+    do: dynamic([_aa, resource_attempt, _rac, _u, _ar, _rr], resource_attempt.attempt_number)
+
+  defp sort_key(:graded),
+    do: dynamic([_aa, _ra, _rac, _u, _ar, resource_revision], resource_revision.graded)
+
+  defp sort_key(:user), do: dynamic([_aa, _ra, _rac, user, _ar, _rr], user.family_name)
+
+  defp sort_key(field), do: dynamic([aa], field(aa, ^field))
 
   @doc """
   Applies a collection of manual scores and feedbacks to the part attempts of a given activity attempt.

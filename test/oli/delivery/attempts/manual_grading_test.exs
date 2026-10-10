@@ -10,10 +10,19 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
   alias Oli.Experiments.Schemas.{AcceptedReward, PolicyState}
   alias Oli.Test.ExperimentRewardSetup
 
-  def add_submitted_activity(map, resource_attempt_tag, activity_tag, activity_attempt_tag) do
+  def add_submitted_activity(
+        map,
+        resource_attempt_tag,
+        activity_tag,
+        activity_attempt_tag,
+        activity_attempt_attrs \\ %{}
+      ) do
     map
     |> Seeder.create_activity_attempt(
-      %{attempt_number: 1, transformed_model: %{some: :thing}, lifecycle_state: :submitted},
+      Map.merge(
+        %{attempt_number: 1, transformed_model: %{some: :thing}, lifecycle_state: :submitted},
+        activity_attempt_attrs
+      ),
       activity_tag,
       resource_attempt_tag,
       activity_attempt_tag
@@ -129,9 +138,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 4, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -231,9 +240,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 3, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -249,9 +258,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 3, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: user1.id,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [user1.id],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -267,9 +276,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 3, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: activity_a.resource.id,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [activity_a.resource.id],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -285,9 +294,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 3, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: true,
             text_search: nil
           }
@@ -302,9 +311,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 3, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: false,
             text_search: nil
           }
@@ -320,9 +329,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 3, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: "title 2"
           }
@@ -358,9 +367,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 10, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -372,6 +381,681 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       assert selected_attempt.page_title == original_page_title
       assert selected_attempt.revision_id == activity_a.revision.id
       assert selected_attempt.revision.id == activity_a.revision.id
+    end
+  end
+
+  describe "deterministic order" do
+    @sort_fields [
+      :user,
+      :activity_title,
+      :attempt_number,
+      :page_title,
+      :resource_attempt_number,
+      :activity_type_id,
+      :graded,
+      :date_submitted
+    ]
+
+    setup do
+      submitted_at = ~U[2026-10-01 12:00:00Z]
+
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_user(%{family_name: "Tied", given_name: "Ana"}, :user1)
+        |> Seeder.add_user(%{family_name: "Tied", given_name: "Bea"}, :user2)
+        |> Seeder.add_activity(%{title: "Same activity"}, :publication, :project, :author, :act_a)
+        |> Seeder.add_activity(%{title: "Same activity"}, :publication, :project, :author, :act_b)
+        |> Seeder.create_section_resources()
+        |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page1, :revision1, :ra1)
+        |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user2, :page1, :revision1, :ra2)
+        |> add_submitted_activity(:ra1, :act_a, :tied_1, %{date_submitted: submitted_at})
+        |> add_submitted_activity(:ra1, :act_b, :tied_2, %{date_submitted: submitted_at})
+        |> add_submitted_activity(:ra2, :act_a, :tied_3, %{date_submitted: submitted_at})
+        |> add_submitted_activity(:ra2, :act_b, :tied_4, %{date_submitted: submitted_at})
+
+      tied_ids = Enum.map([:tied_1, :tied_2, :tied_3, :tied_4], &map[&1].id)
+
+      {:ok, section: map.section, tied_ids: tied_ids}
+    end
+
+    test "rows tied on the sort key come out by attempt id, in the sort direction, for every key",
+         %{section: section, tied_ids: tied_ids} do
+      for field <- @sort_fields, direction <- [:asc, :desc] do
+        ids =
+          section
+          |> browse_all(%Sorting{field: field, direction: direction})
+          |> Enum.map(& &1.id)
+
+        assert ids == Enum.sort(tied_ids, direction), "sort by #{field} #{direction}"
+      end
+    end
+
+    test "the ORDER BY always ends with the attempt id in the sort direction, for every key",
+         %{section: section} do
+      handler = attach_query_telemetry()
+      on_exit(fn -> :telemetry.detach(handler) end)
+
+      for field <- @sort_fields, direction <- [:asc, :desc] do
+        browse_all(section, %Sorting{field: field, direction: direction})
+        assert_receive {:query, sql}
+
+        case direction do
+          :asc ->
+            assert sql =~ ~r/ORDER BY [^,]+, a0\."id" LIMIT/, "sort by #{field} asc: #{sql}"
+            refute sql =~ " DESC", "sort by #{field} asc: #{sql}"
+
+          :desc ->
+            assert sql =~ ~r/ORDER BY [^,]+ DESC, a0\."id" DESC LIMIT/,
+                   "sort by #{field} desc: #{sql}"
+        end
+      end
+    end
+
+    defp browse_all(section, sorting) do
+      ManualGrading.browse_submitted_attempts(
+        section,
+        %Paging{limit: 50, offset: 0},
+        sorting,
+        %BrowseOptions{
+          user_ids: [],
+          activity_ids: [],
+          page_ids: [],
+          graded: nil,
+          text_search: nil
+        }
+      )
+    end
+
+    defp attach_query_telemetry do
+      handler_id = "manual-grading-query-#{System.unique_integer([:positive])}"
+      parent = self()
+
+      :ok =
+        :telemetry.attach(
+          handler_id,
+          [:oli, :repo, :query],
+          fn _event, _measurements, %{query: query}, _config ->
+            if self() == parent, do: send(parent, {:query, query})
+          end,
+          nil
+        )
+
+      handler_id
+    end
+  end
+
+  describe "multi-value filters" do
+    setup do
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_user(%{family_name: "Alpha"}, :user_a)
+        |> Seeder.add_user(%{family_name: "Beta"}, :user_b)
+        |> Seeder.add_user(%{family_name: "Gamma"}, :user_c)
+        |> Seeder.add_activity(%{title: "Activity one"}, :publication, :project, :author, :act_1)
+        |> Seeder.add_activity(%{title: "Activity two"}, :publication, :project, :author, :act_2)
+        |> Seeder.add_activity(
+          %{title: "Activity three"},
+          :publication,
+          :project,
+          :author,
+          :act_3
+        )
+        |> Seeder.create_section_resources()
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user_a,
+          :page1,
+          :revision1,
+          :ra_a1
+        )
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user_a,
+          :page2,
+          :revision2,
+          :ra_a2
+        )
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user_b,
+          :page1,
+          :revision1,
+          :ra_b1
+        )
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user_c,
+          :page2,
+          :revision2,
+          :ra_c2
+        )
+        |> add_submitted_activity(:ra_a1, :act_1, :a_1_p1)
+        |> add_submitted_activity(:ra_a1, :act_2, :a_2_p1)
+        |> add_submitted_activity(:ra_a2, :act_3, :a_3_p2)
+        |> add_submitted_activity(:ra_b1, :act_1, :b_1_p1)
+        |> add_submitted_activity(:ra_c2, :act_2, :c_2_p2)
+
+      {:ok, map}
+    end
+
+    test "two chosen activities return the rows of both and no other; [] means no filter", ctx do
+      ids = browse_ids(ctx.section, activity_ids: [ctx.act_1.resource.id, ctx.act_2.resource.id])
+
+      assert ids == ids_of(ctx, [:a_1_p1, :a_2_p1, :b_1_p1, :c_2_p2])
+      refute ctx.a_3_p2.id in ids
+
+      assert browse_ids(ctx.section, activity_ids: []) ==
+               ids_of(ctx, ~w(a_1_p1 a_2_p1 a_3_p2 b_1_p1 c_2_p2)a)
+    end
+
+    test "two chosen students return the rows of both and no other", ctx do
+      ids = browse_ids(ctx.section, user_ids: [ctx.user_a.id, ctx.user_b.id])
+
+      assert ids == ids_of(ctx, [:a_1_p1, :a_2_p1, :a_3_p2, :b_1_p1])
+      refute ctx.c_2_p2.id in ids
+    end
+
+    test "two chosen pages return the rows of both; one page returns only its rows", ctx do
+      page1 = ctx.page1.id
+      page2 = ctx.page2.id
+
+      assert browse_ids(ctx.section, page_ids: [page2]) == ids_of(ctx, [:a_3_p2, :c_2_p2])
+
+      assert browse_ids(ctx.section, page_ids: [page1, page2]) ==
+               ids_of(ctx, ~w(a_1_p1 a_2_p1 a_3_p2 b_1_p1 c_2_p2)a)
+    end
+
+    test "list filters combine with each other (AND)", ctx do
+      ids =
+        browse_ids(ctx.section,
+          user_ids: [ctx.user_a.id, ctx.user_c.id],
+          activity_ids: [ctx.act_2.resource.id]
+        )
+
+      assert ids == ids_of(ctx, [:a_2_p1, :c_2_p2])
+    end
+
+    defp browse_ids(section, overrides) do
+      options =
+        struct!(
+          %BrowseOptions{
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
+            graded: nil,
+            text_search: nil
+          },
+          overrides
+        )
+
+      section
+      |> ManualGrading.browse_submitted_attempts(
+        %Paging{limit: 50, offset: 0},
+        %Sorting{field: :date_submitted, direction: :desc},
+        options
+      )
+      |> Enum.map(& &1.id)
+      |> Enum.sort()
+    end
+
+    defp ids_of(ctx, tags), do: tags |> Enum.map(&ctx[&1].id) |> Enum.sort()
+  end
+
+  describe "filter options and counts" do
+    setup do
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_user(%{family_name: "Pending one"}, :u1)
+        |> Seeder.add_user(%{family_name: "Pending two"}, :u2)
+        |> Seeder.add_user(%{family_name: "Scored only"}, :u3)
+        |> Seeder.add_activity(%{title: "Old title"}, :publication, :project, :author, :act_a)
+        |> Seeder.add_activity(%{title: "Activity B"}, :publication, :project, :author, :act_b)
+        |> Seeder.add_activity(
+          %{title: "Scored activity"},
+          :publication,
+          :project,
+          :author,
+          :act_c
+        )
+        |> Seeder.create_section_resources()
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :u1,
+          :page1,
+          :revision1,
+          :ra_u1_p1
+        )
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :u2,
+          :page1,
+          :revision1,
+          :ra_u2_p1
+        )
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :u3,
+          :page2,
+          :revision2,
+          :ra_u3_p2
+        )
+
+      {:ok, new_revision} =
+        Oli.Resources.create_revision_from_previous(map.act_a.revision, %{title: "New title"})
+
+      map =
+        map
+        |> Map.put(:act_a_new, %{resource: map.act_a.resource, revision: new_revision})
+        |> add_submitted_activity(:ra_u1_p1, :act_a, :a_old_first, %{
+          date_submitted: ~U[2026-10-01 10:00:00Z]
+        })
+        |> add_submitted_activity(:ra_u2_p1, :act_a_new, :a_new, %{
+          date_submitted: ~U[2026-10-03 10:00:00Z]
+        })
+        |> add_submitted_activity(:ra_u1_p1, :act_a, :a_old_last, %{
+          date_submitted: ~U[2026-10-02 10:00:00Z]
+        })
+        |> add_submitted_activity(:ra_u2_p1, :act_b, :b)
+        |> add_evaluated_activity(:ra_u3_p2, :act_c, :c_scored)
+
+      {:ok, map}
+    end
+
+    test "one option per student, activity and page with pending submissions in this section",
+         ctx do
+      options = ManualGrading.filter_options(ctx.section)
+
+      assert Enum.map(options.users, & &1.id) == Enum.sort([ctx.u1.id, ctx.u2.id])
+      refute ctx.u3.id in Enum.map(options.users, & &1.id)
+
+      assert options.activities == [
+               %{id: ctx.act_a.resource.id, title: "New title"},
+               %{id: ctx.act_b.resource.id, title: "Activity B"}
+             ]
+
+      assert options.pages == [%{id: ctx.page1.id, title: ctx.revision1.title}]
+    end
+
+    test "labels come from the latest pending submission: a later date beats a higher id, and equal dates go to the higher id",
+         ctx do
+      new_revision = fn revision, title ->
+        {:ok, revision} = Oli.Resources.create_revision_from_previous(revision, %{title: title})
+        revision
+      end
+
+      act_b_new = new_revision.(ctx.act_b.revision, "Activity B, higher id")
+
+      ctx
+      |> Map.merge(%{
+        page1_new: new_revision.(ctx.revision1, "Page one, latest"),
+        page2_new: new_revision.(ctx.revision2, "Page two, higher id"),
+        act_b_new: %{resource: ctx.act_b.resource, revision: act_b_new}
+      })
+      # Page one: the latest submission is created first, so date and id disagree.
+      |> Seeder.create_resource_attempt(%{attempt_number: 2}, :u1, :page1, :page1_new, :ra_p1_new)
+      |> add_submitted_activity(:ra_p1_new, :act_a_new, :p1_latest, %{
+        date_submitted: ~U[2026-10-09 10:00:00Z]
+      })
+      |> add_submitted_activity(:ra_u1_p1, :act_a_new, :p1_older, %{
+        date_submitted: ~U[2026-10-08 10:00:00Z]
+      })
+      # Page two and Activity B: same date, so only the id decides.
+      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :u1, :page2, :revision2, :ra_p2_old)
+      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :u2, :page2, :page2_new, :ra_p2_new)
+      |> add_submitted_activity(:ra_p2_old, :act_b, :tie_lower_id, %{
+        date_submitted: ~U[2026-10-07 10:00:00Z]
+      })
+      |> add_submitted_activity(:ra_p2_new, :act_b_new, :tie_higher_id, %{
+        date_submitted: ~U[2026-10-07 10:00:00Z]
+      })
+
+      options = ManualGrading.filter_options(ctx.section)
+
+      assert Map.new(options.pages, &{&1.id, &1.title}) == %{
+               ctx.page1.id => "Page one, latest",
+               ctx.page2.id => "Page two, higher id"
+             }
+
+      assert Map.new(options.activities, &{&1.id, &1.title}) == %{
+               ctx.act_a.resource.id => "New title",
+               ctx.act_b.resource.id => "Activity B, higher id"
+             }
+    end
+
+    test "filter_value_labels/2 labels only ids that belong to the section", ctx do
+      Oli.Delivery.Sections.enroll(ctx.u1.id, ctx.section.id, [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
+      ])
+
+      stranger = Oli.Utils.Seeder.AccountsFixtures.user_fixture()
+
+      Oli.Delivery.Sections.enroll(stranger.id, Oli.Factory.insert(:section).id, [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
+      ])
+
+      foreign_activity =
+        Oli.Factory.insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          title: "Foreign activity"
+        )
+
+      foreign_page =
+        Oli.Factory.insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Foreign page"
+        )
+
+      labels =
+        ManualGrading.filter_value_labels(ctx.section, %{
+          user_ids: [ctx.u1.id, stranger.id, 999_999],
+          activity_ids: [ctx.act_a.resource.id, foreign_activity.resource_id, 999_998],
+          page_ids: [ctx.page1.id, foreign_page.resource_id, 999_997]
+        })
+
+      assert Map.keys(labels.users) == [ctx.u1.id]
+      assert labels.users[ctx.u1.id].id == ctx.u1.id
+      assert labels.activities == %{ctx.act_a.resource.id => ctx.act_a.revision.title}
+      assert labels.pages == %{ctx.page1.id => ctx.revision1.title}
+    end
+
+    test "count_submitted_attempts/1 counts the pending submissions of the section", ctx do
+      assert ManualGrading.count_submitted_attempts(ctx.section) == 4
+
+      Repo.update!(Ecto.Changeset.change(ctx.b, lifecycle_state: :evaluated))
+
+      assert ManualGrading.count_submitted_attempts(ctx.section) == 3
+    end
+  end
+
+  describe "submission_position/4" do
+    @no_filter %BrowseOptions{
+      user_ids: [],
+      activity_ids: [],
+      page_ids: [],
+      graded: nil,
+      text_search: nil
+    }
+
+    setup do
+      mc = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+      sa = Oli.Activities.get_registration_by_slug("oli_short_answer")
+
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_user(%{family_name: "Beta"}, :u1)
+        |> Seeder.add_user(%{family_name: "Alpha"}, :u2)
+        |> Seeder.add_user(%{family_name: "To be nulled"}, :u3)
+        |> then(fn map ->
+          # the changeset requires a last name; the column allows NULL and the order must handle it
+          Map.put(map, :u3, Repo.update!(Ecto.Changeset.change(map.u3, family_name: nil)))
+        end)
+        |> Seeder.add_activity(%{title: "Essay"}, :publication, :project, :author, :a1, mc.id)
+        |> Seeder.add_activity(%{title: "Essay"}, :publication, :project, :author, :a2, sa.id)
+        |> Seeder.add_activity(%{title: "Diagram"}, :publication, :project, :author, :a3, mc.id)
+        |> Seeder.add_page(%{title: "Page one", graded: true}, :p1)
+        |> Seeder.add_page(%{title: "Page two", graded: false}, :p2)
+        |> then(
+          &Map.merge(&1, %{
+            p1_res: &1.p1.resource,
+            p1_rev: &1.p1.revision,
+            p2_res: &1.p2.resource,
+            p2_rev: &1.p2.revision
+          })
+        )
+        |> Seeder.create_section_resources()
+        |> Seeder.create_resource_attempt(%{attempt_number: 1}, :u1, :p1_res, :p1_rev, :ra_u1_p1)
+        |> Seeder.create_resource_attempt(%{attempt_number: 1}, :u1, :p2_res, :p2_rev, :ra_u1_p2)
+        |> Seeder.create_resource_attempt(%{attempt_number: 2}, :u2, :p2_res, :p2_rev, :ra_u2_p2)
+        |> Seeder.create_resource_attempt(%{attempt_number: 2}, :u2, :p1_res, :p1_rev, :ra_u2_p1)
+        |> Seeder.create_resource_attempt(%{attempt_number: 1}, :u3, :p1_res, :p1_rev, :ra_u3_p1)
+        |> add_submitted_activity(:ra_u1_p1, :a1, :t1, %{
+          attempt_number: 1,
+          date_submitted: ~U[2026-10-01 00:00:00Z]
+        })
+        |> add_submitted_activity(:ra_u2_p2, :a2, :t2, %{
+          attempt_number: 1,
+          date_submitted: ~U[2026-10-03 00:00:00Z]
+        })
+        |> add_submitted_activity(:ra_u3_p1, :a3, :t3, %{attempt_number: 2, date_submitted: nil})
+        |> add_submitted_activity(:ra_u1_p2, :a1, :t4, %{
+          attempt_number: 1,
+          date_submitted: ~U[2026-10-02 00:00:00Z]
+        })
+        |> add_submitted_activity(:ra_u2_p1, :a3, :t5, %{
+          attempt_number: 2,
+          date_submitted: ~U[2026-10-03 00:00:00Z]
+        })
+
+      {type_asc, type_desc} =
+        if mc.id < sa.id,
+          do: {~w(t1 t3 t4 t5 t2)a, ~w(t2 t5 t4 t3 t1)a},
+          else: {~w(t2 t1 t3 t4 t5)a, ~w(t5 t4 t3 t1 t2)a}
+
+      # Hand-written orderings: NULLS LAST for asc, NULLS FIRST for desc, ties by id in the direction
+      expected = %{
+        {:user, :asc} => ~w(t2 t5 t1 t4 t3)a,
+        {:user, :desc} => ~w(t3 t4 t1 t5 t2)a,
+        {:activity_title, :asc} => ~w(t3 t5 t1 t2 t4)a,
+        {:activity_title, :desc} => ~w(t4 t2 t1 t5 t3)a,
+        {:attempt_number, :asc} => ~w(t1 t2 t4 t3 t5)a,
+        {:attempt_number, :desc} => ~w(t5 t3 t4 t2 t1)a,
+        {:page_title, :asc} => ~w(t1 t3 t5 t2 t4)a,
+        {:page_title, :desc} => ~w(t4 t2 t5 t3 t1)a,
+        {:resource_attempt_number, :asc} => ~w(t1 t3 t4 t2 t5)a,
+        {:resource_attempt_number, :desc} => ~w(t5 t2 t4 t3 t1)a,
+        {:activity_type_id, :asc} => type_asc,
+        {:activity_type_id, :desc} => type_desc,
+        {:graded, :asc} => ~w(t2 t4 t1 t3 t5)a,
+        {:graded, :desc} => ~w(t5 t3 t1 t4 t2)a,
+        {:date_submitted, :asc} => ~w(t1 t4 t2 t5 t3)a,
+        {:date_submitted, :desc} => ~w(t3 t5 t2 t4 t1)a
+      }
+
+      {:ok, Map.merge(map, %{expected: expected, no_filter: @no_filter})}
+    end
+
+    test "position, total and neighbours follow the hand-written order for every key, direction and anchor",
+         ctx do
+      for {{field, direction}, order} <- ctx.expected do
+        sorting = %Sorting{field: field, direction: direction}
+        rows = browse_rows(ctx.section, sorting, @no_filter)
+
+        assert Enum.map(rows, & &1.id) == Enum.map(order, &ctx[&1].id),
+               "table order #{field} #{direction}"
+
+        for {tag, index} <- Enum.with_index(order) do
+          row = Enum.find(rows, &(&1.id == ctx[tag].id))
+          anchor = %{id: row.id, key: ManualGrading.sort_key_value(row, field)}
+
+          assert ManualGrading.submission_position(ctx.section, sorting, @no_filter, anchor) == %{
+                   position: index + 1,
+                   total: 5,
+                   previous_id: order |> Enum.at(index - 1) |> id_or_nil(ctx, index - 1),
+                   next_id: order |> Enum.at(index + 1) |> id_or_nil(ctx, index + 1),
+                   anchor_eligible?: true
+                 },
+                 "#{field} #{direction} anchor #{tag}"
+        end
+      end
+    end
+
+    test "sort_key_value/2 captures the value the table sorts by, for every key", ctx do
+      row =
+        ctx.section
+        |> browse_rows(%Sorting{field: :date_submitted, direction: :asc}, @no_filter)
+        |> Enum.find(&(&1.id == ctx.t1.id))
+
+      mc = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+
+      assert ManualGrading.sort_key_value(row, :user) == "Beta"
+      assert ManualGrading.sort_key_value(row, :activity_title) == "Essay"
+      assert ManualGrading.sort_key_value(row, :attempt_number) == 1
+      assert ManualGrading.sort_key_value(row, :page_title) == "Page one"
+      assert ManualGrading.sort_key_value(row, :resource_attempt_number) == 1
+      assert ManualGrading.sort_key_value(row, :activity_type_id) == mc.id
+      assert ManualGrading.sort_key_value(row, :graded) == true
+      assert ManualGrading.sort_key_value(row, :date_submitted) == ~U[2026-10-01 00:00:00Z]
+    end
+
+    test "an anchor that left the queue keeps its captured place: no position, neighbours from the captured key",
+         ctx do
+      sorting = %Sorting{field: :date_submitted, direction: :desc}
+      row = ctx.section |> browse_rows(sorting, @no_filter) |> Enum.find(&(&1.id == ctx.t4.id))
+      anchor = %{id: row.id, key: ManualGrading.sort_key_value(row, :date_submitted)}
+
+      Repo.update!(
+        Ecto.Changeset.change(ctx.t4,
+          lifecycle_state: :evaluated,
+          date_submitted: DateTime.utc_now() |> DateTime.truncate(:second)
+        )
+      )
+
+      assert ManualGrading.submission_position(ctx.section, sorting, @no_filter, anchor) == %{
+               position: nil,
+               total: 4,
+               previous_id: ctx.t2.id,
+               next_id: ctx.t1.id,
+               anchor_eligible?: false
+             }
+
+      assert ManualGrading.submission_position(
+               ctx.section,
+               %{sorting | direction: :asc},
+               @no_filter,
+               anchor
+             ) == %{
+               position: nil,
+               total: 4,
+               previous_id: ctx.t1.id,
+               next_id: ctx.t2.id,
+               anchor_eligible?: false
+             }
+    end
+
+    test "an anchor with a NULL key that left the queue is placed with the NULLs", ctx do
+      sorting = %Sorting{field: :date_submitted, direction: :desc}
+      anchor = %{id: ctx.t3.id, key: nil}
+
+      Repo.update!(
+        Ecto.Changeset.change(ctx.t3,
+          lifecycle_state: :evaluated,
+          date_submitted: DateTime.utc_now() |> DateTime.truncate(:second)
+        )
+      )
+
+      assert ManualGrading.submission_position(ctx.section, sorting, @no_filter, anchor) == %{
+               position: nil,
+               total: 4,
+               previous_id: nil,
+               next_id: ctx.t5.id,
+               anchor_eligible?: false
+             }
+    end
+
+    test "an anchor excluded by the filters is not eligible, not counted, and keeps its neighbours",
+         ctx do
+      sorting = %Sorting{field: :date_submitted, direction: :desc}
+      options = %{@no_filter | user_ids: [ctx.u2.id]}
+      anchor = %{id: ctx.t1.id, key: ctx.t1.date_submitted}
+
+      assert ManualGrading.submission_position(ctx.section, sorting, options, anchor) == %{
+               position: nil,
+               total: 2,
+               previous_id: ctx.t2.id,
+               next_id: nil,
+               anchor_eligible?: false
+             }
+    end
+
+    test "rows excluded by the filters between two neighbours are skipped", ctx do
+      sorting = %Sorting{field: :date_submitted, direction: :desc}
+      options = %{@no_filter | activity_ids: [ctx.a1.resource.id, ctx.a3.resource.id]}
+      anchor = %{id: ctx.t5.id, key: ctx.t5.date_submitted}
+
+      assert ManualGrading.submission_position(ctx.section, sorting, options, anchor) == %{
+               position: 2,
+               total: 4,
+               previous_id: ctx.t3.id,
+               next_id: ctx.t4.id,
+               anchor_eligible?: true
+             }
+    end
+
+    test "an empty eligible set gives total 0 and no neighbours", ctx do
+      sorting = %Sorting{field: :date_submitted, direction: :desc}
+      options = %{@no_filter | text_search: "nothing matches this"}
+      anchor = %{id: ctx.t1.id, key: ctx.t1.date_submitted}
+
+      assert ManualGrading.submission_position(ctx.section, sorting, options, anchor) == %{
+               position: nil,
+               total: 0,
+               previous_id: nil,
+               next_id: nil,
+               anchor_eligible?: false
+             }
+    end
+
+    defp browse_rows(section, sorting, options) do
+      ManualGrading.browse_submitted_attempts(
+        section,
+        %Paging{limit: 50, offset: 0},
+        sorting,
+        options
+      )
+    end
+
+    defp id_or_nil(_tag, _ctx, index) when index < 0, do: nil
+    defp id_or_nil(nil, _ctx, _index), do: nil
+    defp id_or_nil(tag, ctx, _index), do: ctx[tag].id
+  end
+
+  describe "fetch_submitted_attempt/2" do
+    setup do
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_user(%{family_name: "Pending"}, :u1)
+        |> Seeder.add_activity(%{title: "Essay"}, :publication, :project, :author, :act)
+        |> Seeder.create_section_resources()
+        |> Seeder.create_resource_attempt(%{attempt_number: 1}, :u1, :page1, :revision1, :ra)
+        |> add_submitted_activity(:ra, :act, :pending)
+        |> add_evaluated_activity(:ra, :act, :scored)
+
+      foreign =
+        Oli.Factory.insert(:activity_attempt,
+          lifecycle_state: :submitted,
+          resource_attempt:
+            Oli.Factory.build(:resource_attempt,
+              resource_access:
+                Oli.Factory.build(:resource_access, section: Oli.Factory.insert(:section))
+            )
+        )
+
+      {:ok, Map.put(map, :foreign, foreign)}
+    end
+
+    test "returns the pending attempt of the section with the same fields as the table rows",
+         ctx do
+      row = ManualGrading.fetch_submitted_attempt(ctx.section, ctx.pending.id)
+
+      assert row.id == ctx.pending.id
+      assert row.user.id == ctx.u1.id
+      assert row.activity_title == "Essay"
+      assert row.page_title == ctx.revision1.title
+      assert row.resource_attempt_number == 1
+      assert row.resource_attempt_guid == ctx.ra.attempt_guid
+      assert row.revision.id == ctx.act.revision.id
+    end
+
+    test "returns nil for a scored attempt, for another section's pending attempt, and for an unknown id",
+         ctx do
+      assert ManualGrading.fetch_submitted_attempt(ctx.section, ctx.scored.id) == nil
+      assert ManualGrading.fetch_submitted_attempt(ctx.section, ctx.foreign.id) == nil
+      assert ManualGrading.fetch_submitted_attempt(ctx.section, 999_999) == nil
     end
   end
 
@@ -418,9 +1102,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 1, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -475,9 +1159,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 1, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -535,9 +1219,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 1, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -591,9 +1275,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 1, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -641,9 +1325,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 1, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -670,9 +1354,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
                  %Paging{limit: 10, offset: 0},
                  %Sorting{field: :date_submitted, direction: :desc},
                  %BrowseOptions{
-                   user_id: nil,
-                   activity_id: nil,
-                   page_id: nil,
+                   user_ids: [],
+                   activity_ids: [],
+                   page_ids: [],
                    graded: nil,
                    text_search: nil
                  }
@@ -788,9 +1472,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 1, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -856,9 +1540,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 10, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -915,9 +1599,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %Paging{limit: 10, offset: 0},
           %Sorting{field: :date_submitted, direction: :desc},
           %BrowseOptions{
-            user_id: nil,
-            activity_id: nil,
-            page_id: nil,
+            user_ids: [],
+            activity_ids: [],
+            page_ids: [],
             graded: nil,
             text_search: nil
           }
@@ -939,9 +1623,9 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
                  %Paging{limit: 10, offset: 0},
                  %Sorting{field: :date_submitted, direction: :desc},
                  %BrowseOptions{
-                   user_id: nil,
-                   activity_id: nil,
-                   page_id: nil,
+                   user_ids: [],
+                   activity_ids: [],
+                   page_ids: [],
                    graded: nil,
                    text_search: nil
                  }
