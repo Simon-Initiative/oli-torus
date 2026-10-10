@@ -19,7 +19,7 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :additional_row_class, :string, default: ""
   attr :render_top_info, :boolean, default: true
   attr :scrollable, :boolean, default: true
-  attr :show_limit_change, :boolean, default: false
+  attr :show_limit_change, :boolean, default: true
   attr :no_records_message, :string, default: "None exist"
   attr :overflow_class, :string, default: "inline"
   attr :sticky_header_offset, :integer, default: 0
@@ -33,6 +33,15 @@ defmodule OliWeb.Common.StripedPagedTable do
     default: nil,
     doc:
       "Optional function to render custom expandable row content. Function receives (assigns, row) and returns rendered content."
+
+  attr :sort_button, :boolean,
+    default: false,
+    doc:
+      "Passed through to StripedTable: sortable headers render a <button> that carries the sort click; the sorted <th> exposes aria-sort."
+
+  attr :table_id, :string,
+    default: nil,
+    doc: "Passed through to StripedTable as the fixed id of the <table>."
 
   def render(assigns) do
     ~H"""
@@ -55,7 +64,9 @@ defmodule OliWeb.Common.StripedPagedTable do
             additional_row_class: @additional_row_class,
             details_render_fn: @details_render_fn,
             sticky_header_offset: @sticky_header_offset,
-            header_bg_class: @header_bg_class
+            header_bg_class: @header_bg_class,
+            sort_button: @sort_button,
+            table_id: @table_id
           })}
         </div>
         <Paging.render
@@ -66,7 +77,7 @@ defmodule OliWeb.Common.StripedPagedTable do
           click={@page_change}
           limit_change={@limit_change}
           has_shorter_label={false}
-          show_limit_change={true}
+          show_limit_change={@show_limit_change}
           should_add_empty_flex={false}
           is_page_size_right={true}
         />
@@ -91,6 +102,8 @@ defmodule OliWeb.Common.StripedPagedTable do
         details_render_fn={@details_render_fn}
         sticky_header_offset={@sticky_header_offset}
         header_bg_class={@header_bg_class}
+        sort_button={@sort_button}
+        id={@table_id}
       />
       """
     else
@@ -103,6 +116,8 @@ defmodule OliWeb.Common.StripedPagedTable do
         details_render_fn={@details_render_fn}
         sticky_header_offset={@sticky_header_offset}
         header_bg_class={@header_bg_class}
+        sort_button={@sort_button}
+        id={@table_id}
       />
       """
     end
