@@ -3,6 +3,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
+  import ExUnit.CaptureLog
 
   alias Oli.Auditing
 
@@ -40,6 +41,23 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
       # Check that the view is properly initialized
       assert view.module == OliWeb.Admin.AuditLogLive
+    end
+  end
+
+  describe "handle_event/3" do
+    test "stays alive and logs a warning when no delegate handles an event", %{conn: conn} do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().system_admin)
+
+      {:ok, view, _html} =
+        conn
+        |> log_in_author(admin)
+        |> live(~p"/admin/audit_log")
+
+      log = capture_log(fn -> render_hook(view, "unknown_event", %{"a" => 1}) end)
+
+      assert log =~ "unknown_event"
+      assert log =~ "OliWeb.Admin.AuditLogLive"
+      assert render(view) =~ "Audit Log"
     end
   end
 
