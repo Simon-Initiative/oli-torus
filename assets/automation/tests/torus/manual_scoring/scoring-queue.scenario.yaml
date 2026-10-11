@@ -1,0 +1,236 @@
+# Scenario: four students waiting for manual scoring on one two-part activity.
+# Every student submits after the previous one, so the queue's default order (newest first) is
+# Pedro, Maria, Kevin, Ana. Both parts are manually graded so the scoring page has a part to hide.
+
+- project:
+    name: 'scoring_queue_project'
+    title: 'Scoring Queue ${RUN_ID}'
+    root:
+      children:
+        - page: 'Manual Two Part'
+
+- create_activity:
+    project: 'scoring_queue_project'
+    title: 'Two Part Manual'
+    virtual_id: 'two_part'
+    type: 'oli_multi_input'
+    content_format: 'json'
+    content:
+      activityType: 'oli_multi_input'
+      submitPerPart: false
+      choices: []
+      inputs:
+        - id: 'in_a'
+          inputType: 'text'
+          partId: 'part_a'
+        - id: 'in_b'
+          inputType: 'text'
+          partId: 'part_b'
+      stem:
+        id: 'two_part_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Explain A: '
+              - type: 'input_ref'
+                id: 'in_a'
+                children:
+                  - text: ''
+              - text: ' and B: '
+              - type: 'input_ref'
+                id: 'in_b'
+                children:
+                  - text: ''
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ''
+        parts:
+          - id: 'part_a'
+            scoringStrategy: 'best'
+            gradingApproach: 'manual'
+            outOf: 4
+            responses:
+              - id: 'part_a_any'
+                rule: 'input like {.*}'
+                score: 0
+                feedback:
+                  id: 'part_a_fb'
+                  content: []
+            hints: []
+          - id: 'part_b'
+            scoringStrategy: 'best'
+            gradingApproach: 'manual'
+            outOf: 4
+            responses:
+              - id: 'part_b_any'
+                rule: 'input like {.*}'
+                score: 0
+                feedback:
+                  id: 'part_b_fb'
+                  content: []
+            hints: []
+
+- edit_page:
+    project: 'scoring_queue_project'
+    page: 'Manual Two Part'
+    content: |
+      title: "Manual Two Part"
+      graded: true
+      blocks:
+        - type: activity_reference
+          virtual_id: "two_part"
+
+- publish:
+    to: 'scoring_queue_project'
+    description: 'Scoring queue publication'
+
+- section:
+    name: 'scoring_queue_section'
+    title: 'Scoring Queue ${RUN_ID}'
+    from: 'scoring_queue_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'scoring_queue_instructor'
+    type: 'instructor'
+    email: 'scoring-queue-instructor${RUN_ID}@example.com'
+    given_name: 'Queue'
+    family_name: 'Instructor'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'scoring_queue_instructor'
+    section: 'scoring_queue_section'
+    role: 'instructor'
+
+- user:
+    name: 'ana'
+    type: 'student'
+    email: 'scoring-queue-ana${RUN_ID}@example.com'
+    given_name: 'Ana'
+    family_name: 'Alvarez'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'ana'
+    section: 'scoring_queue_section'
+    role: 'student'
+
+- visit_page:
+    student: 'ana'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+
+- answer_question:
+    student: 'ana'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+    activity_virtual_id: 'two_part'
+    response:
+      # Long enough, in both parts, to make the submission taller than the scoring panel
+      # (layout spec): which part the page opens on is not fixed.
+      'in_a': 'Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example. Ana explains every step of part A in detail, citing the reading and her own worked example.'
+      'in_b': 'Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example. Ana explains every step of part B in detail, citing the reading and her own worked example.'
+
+- finalize_attempt:
+    student: 'ana'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+
+- user:
+    name: 'kevin'
+    type: 'student'
+    email: 'scoring-queue-kevin${RUN_ID}@example.com'
+    given_name: 'Kevin'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'kevin'
+    section: 'scoring_queue_section'
+    role: 'student'
+
+- visit_page:
+    student: 'kevin'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+
+- answer_question:
+    student: 'kevin'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+    activity_virtual_id: 'two_part'
+    response:
+      'in_a': 'Kevin answer A'
+      'in_b': 'Kevin answer B'
+
+- finalize_attempt:
+    student: 'kevin'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+
+- user:
+    name: 'maria'
+    type: 'student'
+    email: 'scoring-queue-maria${RUN_ID}@example.com'
+    given_name: 'Maria'
+    family_name: 'Lopez'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'maria'
+    section: 'scoring_queue_section'
+    role: 'student'
+
+- visit_page:
+    student: 'maria'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+
+- answer_question:
+    student: 'maria'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+    activity_virtual_id: 'two_part'
+    response:
+      'in_a': 'Maria answer A'
+      'in_b': 'Maria answer B'
+
+- finalize_attempt:
+    student: 'maria'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+
+- user:
+    name: 'pedro'
+    type: 'student'
+    email: 'scoring-queue-pedro${RUN_ID}@example.com'
+    given_name: 'Pedro'
+    family_name: 'Ruiz'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'pedro'
+    section: 'scoring_queue_section'
+    role: 'student'
+
+- visit_page:
+    student: 'pedro'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+
+- answer_question:
+    student: 'pedro'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
+    activity_virtual_id: 'two_part'
+    response:
+      'in_a': 'Pedro answer A'
+      'in_b': 'Pedro answer B'
+
+- finalize_attempt:
+    student: 'pedro'
+    section: 'scoring_queue_section'
+    page: 'Manual Two Part'
