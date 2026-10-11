@@ -39,6 +39,7 @@ import { HomeMobileTabs } from './home_mobile_tabs';
 import { IframeLoadState } from './iframe_load_state';
 import { InputAutoSelect } from './input_auto_select';
 import { InstructorPreviewCustomization } from './instructor_preview_customization';
+import { KeepInViewport } from './keep_in_viewport';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
 import { ListNavigatorDropdown } from './list_navigator_dropdown';
 import { LiveModal } from './live_modal';
@@ -139,6 +140,7 @@ export const Hooks = {
   HoverAway,
   BeforeUnloadListener,
   NavigationGuard,
+  KeepInViewport,
   ScoringScoreInput,
   ScoringChip,
   ScoringTabs,

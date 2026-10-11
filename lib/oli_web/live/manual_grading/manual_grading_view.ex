@@ -11,7 +11,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   alias Oli.Delivery.Attempts.ManualGrading
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, StripedPagedTable, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, StripedPagedTable, TextSearch, Utils}
+  alias OliWeb.Components.Filters.CheckboxFilter
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Icons
   alias OliWeb.ManualGrading.BrowseParams
@@ -69,6 +70,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
            title: "Manual Scoring",
            total_count: 0,
            unfiltered_count: 0,
+           filter_options: %{users: [], activities: [], pages: []},
            table_model: table_model,
            options: @default_options,
            offset: 0,
@@ -79,8 +81,10 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
   def handle_params(params, _, socket) do
     table_params = BrowseParams.table_params(params)
+    in_play = ManualGrading.filter_options(socket.assigns.section)
+    socket = assign(socket, filter_options: in_play)
 
-    case {legacy_selection(params), out_of_play_filter_values(params, socket)} do
+    case {legacy_selection(params), out_of_play_filter_values(params, in_play)} do
       {{:ok, attempt_id}, _} ->
         {:noreply,
          redirect(socket,
@@ -144,9 +148,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
   # A selected filter value with no pending submission in the section leaves the filter.
   # The dropdown options are exactly the ids with pending submissions, so no extra query is needed.
-  defp out_of_play_filter_values(params, socket) do
+  defp out_of_play_filter_values(params, in_play) do
     options = BrowseParams.browse_options(params)
-    in_play = ManualGrading.filter_options(socket.assigns.section)
 
     removed = %{
       user_ids: options.user_ids -- Enum.map(in_play.users, & &1.id),
@@ -280,14 +283,51 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     ~H"""
     <div class="container mx-auto">
       <Group.render>
-        <div class="d-flex justify-content-between">
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <TextSearch.render id="text-search" text={@options.text_search} />
-          <button
-            class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2 hover:text-Text-text-button"
-            phx-click="clear_all_filters"
-          >
-            <Icons.trash /> Clear All Filters
-          </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <.live_component
+              module={CheckboxFilter}
+              id="student-filter"
+              label="Student"
+              options={user_options(@filter_options.users)}
+              selected_ids={@options.user_ids}
+              searchable={true}
+              on_apply={:user_ids}
+            />
+            <.live_component
+              module={CheckboxFilter}
+              id="activity-filter"
+              label="Activity"
+              options={resource_options(@filter_options.activities)}
+              selected_ids={@options.activity_ids}
+              searchable={true}
+              on_apply={:activity_ids}
+            />
+            <.live_component
+              module={CheckboxFilter}
+              id="page-filter"
+              label="Page"
+              options={resource_options(@filter_options.pages)}
+              selected_ids={@options.page_ids}
+              searchable={true}
+              on_apply={:page_ids}
+            />
+            <.live_component
+              module={CheckboxFilter}
+              id="purpose-filter"
+              label="Purpose"
+              options={purpose_options()}
+              selected_ids={graded_ids(@options.graded)}
+              on_apply={:graded}
+            />
+            <button
+              class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2 hover:text-Text-text-button"
+              phx-click="clear_all_filters"
+            >
+              <Icons.trash /> Clear All Filters
+            </button>
+          </div>
         </div>
 
         <div class="mb-3" />
@@ -383,4 +423,39 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       &StripedPagedTable.handle_delegated/4
     ])
   end
+
+  def handle_info({:filter_applied, :graded, values}, socket) do
+    graded =
+      case values do
+        [value] -> value
+        _none_or_both -> nil
+      end
+
+    patch_with(socket, %{graded: graded, offset: 0})
+  end
+
+  def handle_info({:filter_applied, key, ids}, socket) do
+    patch_with(socket, %{list_param(key) => Jason.encode!(ids), offset: 0})
+  end
+
+  defp list_param(:user_ids), do: :selected_user_ids
+  defp list_param(:activity_ids), do: :selected_activity_ids
+  defp list_param(:page_ids), do: :selected_page_ids
+
+  defp user_options(users) do
+    users
+    |> Enum.map(&%{id: &1.id, label: Utils.name(&1)})
+    |> Enum.sort_by(&String.downcase(&1.label))
+  end
+
+  defp resource_options(resources) do
+    resources
+    |> Enum.map(&%{id: &1.id, label: &1.title})
+    |> Enum.sort_by(&String.downcase(&1.label))
+  end
+
+  defp graded_ids(nil), do: []
+  defp graded_ids(graded), do: [graded]
+
+  defp purpose_options, do: [%{id: true, label: "Scored"}, %{id: false, label: "Practice"}]
 end

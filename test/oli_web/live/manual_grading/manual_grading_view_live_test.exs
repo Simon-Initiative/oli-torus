@@ -195,6 +195,177 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
     end
   end
 
+  describe "table filters" do
+    setup [:instructor_conn, :create_queue]
+
+    defp filter_values(html, filter) do
+      html
+      |> Floki.parse_document!()
+      |> Floki.find(~s(##{filter}-panel input[type="checkbox"]))
+      |> Enum.map(fn input ->
+        {hd(Floki.attribute(input, "value")),
+         input |> Floki.attribute("id") |> hd() |> then(&label_text(html, &1))}
+      end)
+    end
+
+    defp label_text(html, input_id) do
+      html
+      |> Floki.parse_document!()
+      |> Floki.find(~s(label[for="#{input_id}"]))
+      |> Floki.text()
+      |> String.trim()
+    end
+
+    defp apply_filter(view, filter, values) do
+      view |> element("##{filter}-trigger") |> render_click()
+      view |> element("##{filter}-form") |> render_submit(%{"selected" => values})
+    end
+
+    test "each filter offers only the values with submissions awaiting scoring", ctx do
+      {:ok, _view, html} = live(ctx.conn, ctx.route)
+
+      assert filter_values(html, "student-filter") == [
+               {"#{ctx.user_a.id}", Utils.name(ctx.user_a)},
+               {"#{ctx.user_b.id}", Utils.name(ctx.user_b)}
+             ]
+
+      assert filter_values(html, "activity-filter") == [
+               {"#{ctx.act_1.resource.id}", "Essay one"},
+               {"#{ctx.act_2.resource.id}", "Essay two"}
+             ]
+
+      assert filter_values(html, "page-filter") == [{"#{ctx.page1.id}", ctx.revision1.title}]
+      assert filter_values(html, "purpose-filter") == [{"true", "Scored"}, {"false", "Practice"}]
+
+      assert html =~ ~s(id="student-filter-search")
+
+      refute html =~ ~s(id="purpose-filter-search")
+    end
+
+    test "options are listed alphabetically, not in the order the values were created", ctx do
+      later =
+        ctx
+        |> Seeder.add_user(%{family_name: "Aguilar", given_name: "Al"}, :user_d)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user_d,
+          :page1,
+          :revision1,
+          :ra_d
+        )
+        |> add_attempt(:ra_d, :act_1, :d_1, :submitted)
+        |> Seeder.add_activity(%{title: "Abstract"}, :publication, :project, :author, :act_0)
+        |> add_attempt(:ra_d, :act_0, :d_0, :submitted)
+
+      enroll_user_to_section(later.user_d, ctx.section, :context_learner)
+
+      {:ok, _view, html} = live(ctx.conn, ctx.route)
+
+      assert html |> filter_values("student-filter") |> Enum.map(&elem(&1, 1)) == [
+               Utils.name(later.user_d),
+               Utils.name(ctx.user_a),
+               Utils.name(ctx.user_b)
+             ]
+
+      assert html |> filter_values("activity-filter") |> Enum.map(&elem(&1, 1)) == [
+               "Abstract",
+               "Essay one",
+               "Essay two"
+             ]
+    end
+
+    test "Apply puts the chosen values in the URL on the first page, keeping the sort and the search",
+         ctx do
+      {:ok, view, _html} =
+        live(ctx.conn, ctx.route <> "?sort_by=user&sort_order=asc&text_search=a&offset=1")
+
+      apply_filter(view, "student-filter", ["#{ctx.user_a.id}"])
+      path = assert_patch(view)
+
+      assert %{
+               "selected_user_ids" => selected,
+               "offset" => "0",
+               "sort_by" => "user",
+               "sort_order" => "asc",
+               "text_search" => "a"
+             } = query(path)
+
+      assert Jason.decode!(selected) == [ctx.user_a.id]
+      assert row_students(render(view)) == [Utils.name(ctx.user_a), Utils.name(ctx.user_a)]
+    end
+
+    test "Activity and Page apply their own lists", ctx do
+      {:ok, view, _html} = live(ctx.conn, ctx.route)
+
+      apply_filter(view, "activity-filter", ["#{ctx.act_2.resource.id}"])
+
+      assert Jason.decode!(query(assert_patch(view))["selected_activity_ids"]) == [
+               ctx.act_2.resource.id
+             ]
+
+      assert row_students(render(view)) == [Utils.name(ctx.user_a)]
+
+      apply_filter(view, "page-filter", ["#{ctx.page1.id}"])
+      assert Jason.decode!(query(assert_patch(view))["selected_page_ids"]) == [ctx.page1.id]
+    end
+
+    test "Purpose: one value filters by it, on the first page; both or none is no filter", ctx do
+      {:ok, view, _html} = live(ctx.conn, ctx.route <> "?sort_by=user&sort_order=asc&offset=1")
+
+      apply_filter(view, "purpose-filter", ["false"])
+      path = assert_patch(view)
+      assert %{"graded" => "false", "offset" => "0"} = query(path)
+
+      assert row_students(render(view)) == [
+               Utils.name(ctx.user_a),
+               Utils.name(ctx.user_a),
+               Utils.name(ctx.user_b)
+             ]
+
+      apply_filter(view, "purpose-filter", ["true"])
+      assert query(assert_patch(view))["graded"] == "true"
+
+      apply_filter(view, "purpose-filter", ["true", "false"])
+      assert query(assert_patch(view))["graded"] == ""
+
+      apply_filter(view, "purpose-filter", [])
+      assert query(assert_patch(view))["graded"] == ""
+    end
+
+    test "each filter shows the values the URL applies", ctx do
+      {:ok, view, _html} =
+        live(ctx.conn, ctx.route <> "?selected_user_ids=[#{ctx.user_a.id}]&graded=false")
+
+      assert view |> element("#student-filter-trigger") |> render() =~
+               ~r/1\s*<span[^>]*>\s*selected/
+
+      assert view |> element("#purpose-filter-trigger") |> render() =~
+               ~r/1\s*<span[^>]*>\s*selected/
+
+      refute view |> element("#activity-filter-trigger") |> render() =~ "selected"
+
+      view |> element("#student-filter-trigger") |> render_click()
+
+      assert view
+             |> element(
+               ~s(#student-filter-panel input[type="checkbox"][value="#{ctx.user_a.id}"])
+             )
+             |> render() =~ "checked"
+
+      view |> element("#purpose-filter-trigger") |> render_click()
+
+      assert view
+             |> element(~s(#purpose-filter-panel input[type="checkbox"][value="false"]))
+             |> render() =~
+               "checked"
+
+      refute view
+             |> element(~s(#purpose-filter-panel input[type="checkbox"][value="true"]))
+             |> render() =~
+               "checked"
+    end
+  end
+
   describe "opening a submission from the table" do
     setup [:instructor_conn, :create_queue]
 
