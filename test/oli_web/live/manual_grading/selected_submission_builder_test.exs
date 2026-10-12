@@ -3,6 +3,42 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
 
   alias OliWeb.ManualGrading.SelectedSubmissionBuilder
 
+  test "input labels number a repeated type by its place in the list, as its heading does" do
+    attempt = multi_input_attempt(["text", "dropdown", "text"])
+    part_attempts = for n <- [3, 2, 1], do: part_attempt(n)
+    types = %{10 => %{slug: "oli_multi_input"}}
+
+    labels = SelectedSubmissionBuilder.input_labels(attempt, part_attempts, types)
+
+    assert Enum.map(labels, fn {part_attempt, label} -> {part_attempt.attempt_guid, label} end) ==
+             [{"attempt-3", "Text 1"}, {"attempt-2", "Dropdown"}, {"attempt-1", "Text 3"}]
+
+    headings =
+      for {part_attempt, _label} <- labels,
+          do:
+            SelectedSubmissionBuilder.build(
+              attempt,
+              part_attempts,
+              part_attempt.attempt_guid,
+              types
+            ).title
+
+    assert headings == ["Question Input 1", "Question Input 2", "Question Input 3"]
+  end
+
+  test "input labels stay distinct when a numbered label matches another input's type" do
+    attempt = multi_input_attempt(["text", "text", "text-1"])
+    part_attempts = for n <- 1..3, do: part_attempt(n)
+
+    labels =
+      SelectedSubmissionBuilder.input_labels(attempt, part_attempts, %{
+        10 => %{slug: "oli_multi_input"}
+      })
+
+    assert Enum.map(labels, fn {_part_attempt, label} -> label end) ==
+             ["Text 1", "Text 2", "Text 1 3"]
+  end
+
   test "builds a typed dropdown view for regular multi input parts" do
     attempt = %{
       activity_type_id: 10,
@@ -441,4 +477,51 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
     # description is nil so the renderer's empty-state is the single source of the message
     assert submission.response_view.description == nil
   end
+
+  test "an input type with no visible name is labelled Input, so no two buttons read the same" do
+    part_attempts = for n <- 1..3, do: part_attempt(n)
+
+    for input_types <- [["", "", "1"], [" ", "-", "1"]] do
+      labels =
+        input_types
+        |> multi_input_attempt()
+        |> SelectedSubmissionBuilder.input_labels(part_attempts, %{
+          10 => %{slug: "oli_multi_input"}
+        })
+
+      assert Enum.map(labels, fn {_part_attempt, label} -> label end) == [
+               "Input 1",
+               "Input 2",
+               "1"
+             ]
+    end
+  end
+
+  defp multi_input_attempt(input_types) do
+    inputs =
+      input_types
+      |> Enum.with_index(1)
+      |> Enum.map(fn {type, n} ->
+        %{"id" => "input-#{n}", "partId" => "part-#{n}", "inputType" => type}
+      end)
+
+    %{
+      activity_type_id: 10,
+      revision: %{
+        content: %{
+          "inputs" => inputs,
+          "authoring" => %{"parts" => Enum.map(inputs, &%{"id" => &1["partId"]})}
+        }
+      }
+    }
+  end
+
+  defp part_attempt(n),
+    do: %{
+      attempt_guid: "attempt-#{n}",
+      part_id: "part-#{n}",
+      response: nil,
+      score: nil,
+      out_of: nil
+    }
 end

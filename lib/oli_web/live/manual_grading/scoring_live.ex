@@ -254,7 +254,14 @@ defmodule OliWeb.ManualGrading.ScoringLive do
 
           <div class="mt-2 flex flex-wrap gap-2">
             <button
-              :for={pa <- @part_attempts}
+              :for={
+                {pa, label} <-
+                  SelectedSubmissionBuilder.input_labels(
+                    @attempt,
+                    @part_attempts,
+                    @activity_types_map
+                  )
+              }
               type="button"
               id={"select_" <> pa.attempt_guid}
               phx-click="select_part"
@@ -266,7 +273,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
                   "bg-Fill-Accent-fill-accent-blue-bold text-Text-text-white"
               ]}
             >
-              {SelectedSubmissionBuilder.input_type_label(@attempt, pa, @activity_types_map)}
+              {label}
             </button>
           </div>
 

@@ -388,6 +388,18 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert Floki.find(d, ~s|#scoring-form input[name^="out_of_"]|) == []
     end
 
+    test "two inputs of the same type carry the number of the submission they select", ctx do
+      d = doc(ctx.html)
+      heading = "#scoring-tabs-tabpanel-review .text-lg"
+
+      assert text(d, "button#select_#{ctx.g1}") == "Short Answer 1"
+      assert text(d, "button#select_#{ctx.g2}") == "Short Answer 2"
+      assert text(d, heading) == "Part 1"
+
+      html = ctx.view |> element("button#select_#{ctx.g2}") |> render_click()
+      assert text(doc(html), heading) == "Part 2"
+    end
+
     test "echoes the draft back into the inputs after each change, so unfocused inputs keep it",
          ctx do
       html =
