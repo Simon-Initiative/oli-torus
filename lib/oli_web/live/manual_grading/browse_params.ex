@@ -113,8 +113,14 @@ defmodule OliWeb.ManualGrading.BrowseParams do
 
   defp parse_decimal(value) do
     case Regex.match?(~r/\A\d+\z/, value) do
-      true -> String.to_integer(value)
+      true -> value |> String.trim_leading("0") |> digits_to_integer()
       false -> -1
     end
   end
+
+  # More significant digits than the largest bigint (19) is past the range without converting:
+  # String.to_integer/1 raises on a long enough string and costs more than linear time before that.
+  defp digits_to_integer(""), do: 0
+  defp digits_to_integer(digits) when byte_size(digits) > 19, do: @max_bigint + 1
+  defp digits_to_integer(digits), do: String.to_integer(digits)
 end

@@ -99,6 +99,30 @@ defmodule OliWeb.ManualGrading.BrowseParamsTest do
       assert BrowseParams.offset(%{"offset" => "5\n"}) == 0
       assert BrowseParams.attempt_id("5\n") == :error
     end
+
+    test "a decimal with more digits than any bigint is past the range for every reader, never raising" do
+      # String.to_integer/1 raises SystemLimitError from about 1.3 million digits.
+      digits = String.duplicate("9", 1_300_000)
+
+      assert BrowseParams.offset(%{"offset" => digits}) == 9_223_372_036_854_775_807
+      assert BrowseParams.id_list(%{"user_id" => digits}, "selected_user_ids", "user_id") == []
+
+      assert BrowseParams.id_list(
+               %{"selected_user_ids" => ~s|["#{digits}"]|},
+               "selected_user_ids"
+             ) ==
+               []
+
+      assert BrowseParams.attempt_id(digits) == :error
+    end
+
+    test "leading zeros do not make a decimal longer than its value" do
+      padded = String.duplicate("0", 30) <> "5"
+
+      assert BrowseParams.offset(%{"offset" => padded}) == 5
+      assert BrowseParams.id_list(%{"user_id" => padded}, "selected_user_ids", "user_id") == [5]
+      assert BrowseParams.attempt_id(padded) == {:ok, 5}
+    end
   end
 
   describe "offset/1 bounds" do
