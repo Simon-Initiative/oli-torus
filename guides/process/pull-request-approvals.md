@@ -27,8 +27,8 @@ alone does not grant or revoke merge approval.
 
 ## Jira handoff
 
-`.github/workflows/jira-move-ticket-qa.yml` handles submitted approvals for open,
-non-draft PRs from this repository. It loads its helper from the immutable PR base
+`.github/workflows/jira-move-ticket-qa.yml` handles submitted approvals for open
+PRs from this repository, including drafts. It loads its helper from the immutable PR base
 commit and checks the review author's active Development team membership. Team
 maintainers and inherited members qualify. QA-only reviewers do not trigger Jira.
 A reviewer belonging to both teams qualifies because they belong to Development.
@@ -73,7 +73,9 @@ before expecting the new handoff to run: the helper is deliberately read from th
 PR's base commit. Enable the ruleset and verify the following with test PRs and a
 test Jira ticket:
 
-1. A Development approval sends the existing webhook and moves the ticket to QA.
+1. A Development approval sends the existing webhook and moves the ticket to QA
+   for both draft and ready-for-review PRs. Draft PRs remain unmergeable until marked
+   ready for review.
 2. A QA-only approval sends no Jira webhook.
 3. A repeated developer approval leaves tickets already in QA or Done unchanged.
 4. Only Development approval, only QA approval, or two approvals from one team
