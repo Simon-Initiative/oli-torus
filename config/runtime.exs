@@ -29,6 +29,21 @@ end
 # mutable runtime environment variable to select a different configuration.
 runtime_env = config_env()
 
+# These capabilities are selected by the build, never by runtime flags. Keep
+# secrets out of compile configuration so they can rotate without rebuilding.
+if runtime_env == :playwright do
+  required_token = fn name ->
+    case System.get_env(name) do
+      value when is_binary(value) and byte_size(value) > 0 -> value
+      _ -> raise "#{name} must be set and nonempty for the Playwright environment"
+    end
+  end
+
+  config :oli,
+    playwright_scenario_token: required_token.("PLAYWRIGHT_SCENARIO_TOKEN"),
+    playwright_assets_bucket: System.get_env("PLAYWRIGHT_ASSETS_BUCKET")
+end
+
 # Read model overrides at release startup, including PROFICIENCY_CONFIDENCE_MIDPOINT
 # (default 5.0) and PROFICIENCY_CONFIDENCE_STEEPNESS (default 3.0).
 {lkt_aoa_config, lkt_aoa_sources} = Oli.LearningModel.Config.load_from_env!()
@@ -320,7 +335,7 @@ if runtime_env != :test do
     host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
 end
 
-force_ssl_default = if runtime_env in [:prod, :preview], do: "true", else: "false"
+force_ssl_default = if runtime_env in [:prod, :preview, :playwright], do: "true", else: "false"
 config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", force_ssl_default)
 
 # Opt-in measurement only. See guides/deployment/transport-and-headers.md before
@@ -352,9 +367,9 @@ config :oli, :vendor_property,
   billing_descriptor: System.get_env("VENDOR_PROPERTY_BILLING_DESCRIPTOR", "CARNEGIE MELLON UNI")
 
 ######################## Release-only configurations #########################
-## Note: These configurations are applied in production and preview releases.
+## Note: These configurations are applied in production, preview and Playwright releases.
 ###############################################################################
-if runtime_env in [:prod, :preview] do
+if runtime_env in [:prod, :preview, :playwright] do
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """

@@ -19,7 +19,7 @@ defmodule OliWeb.CollaboratorControllerTest do
 
   describe "create" do
     test "redirects to project path when data is valid", %{conn: conn, project: project} do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
@@ -35,7 +35,7 @@ defmodule OliWeb.CollaboratorControllerTest do
     end
 
     test "allows multiple comma separated values", %{conn: conn, project: project} do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
@@ -51,7 +51,7 @@ defmodule OliWeb.CollaboratorControllerTest do
     end
 
     test "allows capital letters in emails", %{conn: conn, project: project} do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
@@ -67,7 +67,7 @@ defmodule OliWeb.CollaboratorControllerTest do
     end
 
     test "some emails succeed, some fail", %{conn: conn, project: project} do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       assert capture_log(fn ->
                conn =
@@ -87,7 +87,7 @@ defmodule OliWeb.CollaboratorControllerTest do
     end
 
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
@@ -103,7 +103,7 @@ defmodule OliWeb.CollaboratorControllerTest do
       conn: conn,
       project: project
     } do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       author_email =
         project |> Oli.Repo.preload(:authors) |> Map.get(:authors) |> hd |> Map.get(:email)
@@ -125,7 +125,7 @@ defmodule OliWeb.CollaboratorControllerTest do
       conn: conn,
       project: project
     } do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       list_of_emails =
         Enum.reduce(1..25, "", fn index, acc ->

@@ -53,10 +53,10 @@ A repository-wide search found no additional active `/healthz` consumers outside
 - Healthy-status follow-up: restored `Ayup!` at the user's request and reran both affected controller test modules (6 tests, 0 failures), formatting, work-item validation and `git diff --check`. The release smoke was not rerun for this response-literal change.
 - Metadata review follow-up (2026-10-07): restricted version/SHA to compiled Playwright builds; all other builds return only readiness status. HTTP tests verify exact status-only bodies, and isolated VM tests compile the real view for Playwright, production, preview, development, test and the existing browser-test environment. Both readiness statuses retain the compiled field set and identity despite runtime application-setting changes. The complete focused suite passed (29 tests, 0 failures), with clean ExUnit output; formatting, work-item validation and `git diff --check` passed. Production/Playwright release packaging remains a Phase 3 gate.
 
-Reproduce focused verification:
+Reproduce retained focused verification (the embedded-script view test was removed in the Phase 2 follow-up; cross-build coverage is now assigned to Phase 3 release smoke checks):
 
 ```sh
-mix test test/oli/health_test.exs test/oli/health_database_test.exs test/oli/feature_telemetry_test.exs test/oli_web/controllers/api/health_controller_test.exs test/oli_web/controllers/api/readiness_controller_test.exs test/oli_web/plugs/ssl_test.exs test/oli_web/views/readiness_view_test.exs
+mix test test/oli/health_test.exs test/oli/health_database_test.exs test/oli/feature_telemetry_test.exs test/oli_web/controllers/api/health_controller_test.exs test/oli_web/controllers/api/readiness_controller_test.exs test/oli_web/plugs/ssl_test.exs
 mix format --check-formatted
 git diff --check
 ```

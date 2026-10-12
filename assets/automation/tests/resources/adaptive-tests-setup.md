@@ -27,10 +27,10 @@ The `/test/assets/*`, `/api/v1/automation_setup`, `/api/v1/automation_teardown`,
 scenario-seeding routes are **compiled out of the production router** unless
 `enable_playwright_scenarios: true` is set at **compile time** (this is a value in the Mix config
 file used to build the app, not a runtime environment variable). The default in `config/prod.exs`
-is `false`. `config/ci_e2e.exs` already sets it to `true`.
+is `false`. `config/playwright.exs` already sets it to `true`.
 
 Any environment intended to run nightly tests must be built with `enable_playwright_scenarios: true`
-— either by using `MIX_ENV=ci_e2e` or by configuring a dedicated Mix environment. This is a
+— using the shared `MIX_ENV=playwright` environment. This is a
 deployment decision to coordinate with DevOps.
 
 ## S3 key naming convention
@@ -135,3 +135,19 @@ npx playwright test --grep @nightly
    test description string. This works with `--grep` today. Migrating to
    `test('...', { tag: '@nightly' }, ...)` is a future clean-up item that enables native UI
    filtering in Playwright, but it is not a blocker.
+
+### Captcha-protected forms
+
+Both PR and nightly use the compile-selected `Oli.Playwright.Recaptcha` verifier,
+which accepts any response, including missing or empty values, without contacting
+Google. No captcha token, Google keys, client replacement or field injection is
+needed. Registration, enrollment and payment submit their normal forms. Keep
+application templates and LiveView hooks unchanged. Production uses normal Google
+verification; runtime configuration cannot select the Playwright bypass.
+
+Scenario/mailbox access still requires `PLAYWRIGHT_SCENARIO_TOKEN`, and normal
+account authentication remains enforced. CI and scenario-token-bearing local runs
+disable traces/screenshots. Do not attach request payloads, raw server logs,
+mailbox bodies or confirmation/reset URLs. The Playwright environment needs the
+release frontend/server bundles and `mix assets.deploy`; it does not run
+development watchers.
