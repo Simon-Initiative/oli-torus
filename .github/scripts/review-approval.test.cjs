@@ -39,32 +39,32 @@ function fixture({
   };
 }
 
-test("classifies an active Development approval using the review author, not the rerun actor", async () => {
-  const input = fixture({ memberships: { development: "active" } });
-  assert.equal(await getApprovalTeam(input), "development");
+test("returns torus-dev using the review author, not the rerun actor", async () => {
+  const input = fixture({ memberships: { "torus-dev": "active" } });
+  assert.equal(await getApprovalTeam(input), "torus-dev");
   assert.deepEqual(input.calls, [
-    ["team", { org: "Simon-Initiative", team_slug: "development" }],
+    ["team", { org: "Simon-Initiative", team_slug: "torus-dev" }],
     [
       "membership",
       {
         org: "Simon-Initiative",
-        team_slug: "development",
+        team_slug: "torus-dev",
         username: "review-author",
       },
     ],
   ]);
 });
 
-test("classifies a QA-only approval using the same review author", async () => {
-  const input = fixture({ memberships: { qa: "active" } });
-  assert.equal(await getApprovalTeam(input), "qa");
+test("returns torus-qa for a QA-only approval using the same review author", async () => {
+  const input = fixture({ memberships: { "torus-qa": "active" } });
+  assert.equal(await getApprovalTeam(input), "torus-qa");
   assert.deepEqual(input.calls.slice(2), [
-    ["team", { org: "Simon-Initiative", team_slug: "qa" }],
+    ["team", { org: "Simon-Initiative", team_slug: "torus-qa" }],
     [
       "membership",
       {
         org: "Simon-Initiative",
-        team_slug: "qa",
+        team_slug: "torus-qa",
         username: "review-author",
       },
     ],
@@ -76,12 +76,12 @@ test("Development takes precedence when both memberships are active", async () =
     await getApprovalTeam(
       fixture({
         memberships: {
-          development: "active",
-          qa: "active",
+          "torus-dev": "active",
+          "torus-qa": "active",
         },
       })
     ),
-    "development"
+    "torus-dev"
   );
 });
 
@@ -89,7 +89,14 @@ test("does not classify reviewers outside both teams", async () => {
   assert.equal(await getApprovalTeam(fixture()), null);
 });
 
-for (const team of ["development", "qa"]) {
+test("parent torus membership alone does not qualify for either approval", async () => {
+  assert.equal(
+    await getApprovalTeam(fixture({ memberships: { torus: "active" } })),
+    null
+  );
+});
+
+for (const team of ["torus-dev", "torus-qa"]) {
   for (const state of ["pending", null]) {
     test(`does not classify ${team} membership with state ${state}`, async () => {
       assert.equal(
@@ -138,20 +145,20 @@ test("pending Development membership still permits an active QA membership", asy
     await getApprovalTeam(
       fixture({
         memberships: {
-          development: "pending",
-          qa: "active",
+          "torus-dev": "pending",
+          "torus-qa": "active",
         },
       })
     ),
-    "qa"
+    "torus-qa"
   );
 });
 
 test("does not fall back to QA when the Development membership lookup fails", async () => {
   const error = Object.assign(new Error("Access denied"), { status: 403 });
   const input = fixture({
-    memberships: { qa: "active" },
-    membershipErrors: { development: error },
+    memberships: { "torus-qa": "active" },
+    membershipErrors: { "torus-dev": error },
   });
   await assert.rejects(getApprovalTeam(input), error);
   assert.equal(input.calls.length, 2);
