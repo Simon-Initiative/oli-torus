@@ -1,8 +1,10 @@
-import { setRuntimeConfig } from '@core/runtimeConfig';
+import { resetRuntimeConfig, setRuntimeConfig } from '@core/runtimeConfig';
 import { expect, test } from '@playwright/test';
 import { logInAsScenarioUser } from './support';
 
 test.describe('student payment support', () => {
+  test.afterEach(() => resetRuntimeConfig());
+
   test('logInAsScenarioUser authenticates with header and not query params', async ({ page }) => {
     const baseUrl = 'http://localhost';
     const email = 'student@example.com';

@@ -70,8 +70,8 @@ requirements:
     title: Selecting MIX_ENV=playwright loads config/playwright.exs, which directly sets
       enable_playwright_scenarios and enable_e2e_mailbox to true, recaptcha_module to
       Oli.Playwright.Recaptcha, and the Oli.Mailer adapter to Swoosh.Adapters.Local at compile
-      time for both workflows. Runtime service configuration and the scenario/mailbox token
-      are still required; no captcha secret is required.
+      time for both workflows. Runtime service configuration and separate scenario/mailbox and captcha tokens
+      are required; missing or empty tokens prevent server startup.
       Secrets are never passed as Docker build arguments. Runtime configuration and
       post-compilation process environment changes cannot override these compiled selections.
     status: proposed
@@ -89,7 +89,7 @@ requirements:
     proofs: []
   - id: AC-035
     title: The migrated PR workflow explicitly configures its disposable database, local HTTP
-      endpoint, signing/encryption values and runtime scenario token; builds the required
+      endpoint, signing/encryption values and runtime scenario/captcha tokens; builds the required
       frontend, server-side and digested assets; and passes the existing @pr suite including
       registration, confirmation and password-reset flows. It requires no nightly credentials,
       private assets, registry publication, or GitOps access.
@@ -107,22 +107,24 @@ requirements:
     verification_method: automated
     proofs: []
   - id: AC-037
-    title: Both PR and nightly compile Oli.Playwright.Recaptcha, which accepts any response,
-      including missing, empty and malformed values, without contacting Google or falling
-      back to normal verification. No captcha token or Google keys are required. Application
-      captcha call sites use the compile-selected shared verifier. Production retains normal
+    title: Both PR and nightly compile Oli.Playwright.Recaptcha, which accepts only the
+      configured nonempty PLAYWRIGHT_CAPTCHA_TOKEN using constant-time comparison. Missing,
+      empty, incorrect and malformed responses fail without Google requests or fallback.
+      The server and runner receive the secret only at runtime; no Google keys are needed.
+      Application call sites use the compile-selected verifier. Production retains normal
       Google verification regardless of runtime configuration. Account authentication and
-      scenario/mailbox token authorization remain required; captcha fields remain filtered from logs.
+      scenario/mailbox authorization remain required; captcha fields remain filtered from logs.
     status: proposed
     verification_method: hybrid
     proofs: []
   - id: AC-038
-    title: Preserve existing captcha templates, scripts and LiveView hooks. Remove captcha
-      injection and placeholder responses from registration, StudentCoursePO enrollment and
-      student_payment/support.ts. Use no replacement client or captcha form helper. Verify
-      registration, enrollment and payment complete through the real form flows with empty or
-      absent captcha responses and no widget interaction. Audit other protected submissions;
-      production retains its normal widget and verification behavior.
+    title: Preserve captcha templates and LiveView hooks while blocking Google scripts in
+      Playwright contexts. Central runner setup supplies the private runtime token during
+      native POST and LiveView FormData serialization, with no injected DOM fields,
+      per-captcha conditions or deployed replacement client. Prevent native GET or external
+      destination credential leaks, including submitter overrides and external frames.
+      Verify real registration, enrollment and payment success plus rejection without a
+      valid credential. Audit other protected submissions; production behavior is unchanged.
     status: proposed
     verification_method: hybrid
     proofs: []

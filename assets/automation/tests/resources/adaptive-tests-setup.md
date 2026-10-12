@@ -75,6 +75,7 @@ The following environment variables must be set on the Torus server for the targ
 | Variable | Required | Notes |
 |----------|----------|-------|
 | `PLAYWRIGHT_ASSETS_BUCKET` | Yes | Name of the S3/MinIO bucket containing test assets |
+| `PLAYWRIGHT_CAPTCHA_TOKEN` | Yes | Separate random secret shared with the runner; authorizes captcha-protected form submissions. Missing/empty configuration prevents Playwright server startup. |
 | `PLAYWRIGHT_SCENARIO_TOKEN` | Yes | Shared secret you choose — must match the value set on the CI runner. No admin UI needed; set it as an env var on both sides. |
 | `AWS_ACCESS_KEY_ID` | Yes (prod S3) | S3 access key. Use `AWS_S3_ACCESS_KEY_ID` to override with a dedicated key for the PW bucket, separate from other AWS credentials the server may already have. |
 | `AWS_SECRET_ACCESS_KEY` | Yes (prod S3) | S3 secret key. Same override pattern via `AWS_S3_SECRET_ACCESS_KEY`. |
@@ -104,6 +105,7 @@ admin access to the repository — they are not set in the codebase.
 | Variable | Type | Description |
 |----------|------|-------------|
 | `PLAYWRIGHT_BASE_URL` | Variable | URL of the target Torus server |
+| `PLAYWRIGHT_CAPTCHA_TOKEN` | Secret | Same captcha token as the server (Step 2); keep separate from the scenario token. |
 | `PLAYWRIGHT_SCENARIO_TOKEN` | Secret | Same value as the server-side token (Step 2) |
 | `PLAYWRIGHT_AUTOMATION_API_KEY` | Secret | Key created in Step 3 |
 | `PLAYWRIGHT_PARAMETER_CONFIG_URL` | Secret | URL to the Dot chatbot YAML config (see `nightly-ci.md`) |
@@ -138,16 +140,24 @@ npx playwright test --grep @nightly
 
 ### Captcha-protected forms
 
-Both PR and nightly use the compile-selected `Oli.Playwright.Recaptcha` verifier,
-which accepts any response, including missing or empty values, without contacting
-Google. No captcha token, Google keys, client replacement or field injection is
-needed. Registration, enrollment and payment submit their normal forms. Keep
-application templates and LiveView hooks unchanged. Production uses normal Google
-verification; runtime configuration cannot select the Playwright bypass.
+Both PR and nightly use `Oli.Playwright.Recaptcha`, which accepts only the configured
+nonempty `PLAYWRIGHT_CAPTCHA_TOKEN` using constant-time comparison. Generate a random
+secret (for example, `openssl rand -base64 32`) and provide it to both the server and
+runner. Do not commit it or include it in public configuration. The PR workflow generates
+its own disposable token; nightly uses its protected environment secret. Missing, empty
+or incorrect responses are rejected without contacting Google.
 
-Scenario/mailbox access still requires `PLAYWRIGHT_SCENARIO_TOKEN`, and normal
-account authentication remains enforced. CI and scenario-token-bearing local runs
-disable traces/screenshots. Do not attach request payloads, raw server logs,
+The shared fixture configures captcha submission before navigation. Runner routing blocks
+Google's scripts. A native POST `formdata` listener and LiveView `FormData` adapter supply
+the token without DOM fields or a deployed replacement client. Captcha templates and
+LiveView hooks remain unchanged. Custom browser contexts submitting protected forms must
+call `configureCaptcha(context, baseUrl)` before creating pages. The helper restricts
+injection to protected forms on the configured origin and guards native GET and unsafe
+submitter overrides. Production continues to use normal Google verification.
+
+Scenario/mailbox access requires its separate `PLAYWRIGHT_SCENARIO_TOKEN`, and normal
+account authentication remains enforced. CI and local runs carrying either automation
+token disable traces/screenshots. Do not attach request payloads, raw server logs,
 mailbox bodies or confirmation/reset URLs. The Playwright environment needs the
 release frontend/server bundles and `mix assets.deploy`; it does not run
 development watchers.

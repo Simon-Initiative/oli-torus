@@ -5,6 +5,7 @@ Nightly Playwright CI expects these environment variables:
 - `PLAYWRIGHT_BASE_URL`
 - `PLAYWRIGHT_AUTOMATION_API_KEY`
 - `PLAYWRIGHT_SCENARIO_TOKEN`
+- `PLAYWRIGHT_CAPTCHA_TOKEN` (a separate secret matching the Playwright server; required for protected forms)
 
 For GitHub Actions, store them as environment secrets on the `nightly-ui` environment, then reference that environment from `.github/workflows/nightly-playwright.yml`.
 

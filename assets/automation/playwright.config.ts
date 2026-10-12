@@ -1,7 +1,9 @@
 import { defineConfig } from '@playwright/test';
 
-// Mailbox credentials and account links must never enter CI traces or screenshots.
-const protectSecrets = Boolean(process.env.CI || process.env.PLAYWRIGHT_SCENARIO_TOKEN);
+// Runtime credentials and account links must never enter traces or screenshots.
+const protectSecrets = Boolean(
+  process.env.CI || process.env.PLAYWRIGHT_SCENARIO_TOKEN || process.env.PLAYWRIGHT_CAPTCHA_TOKEN,
+);
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 
