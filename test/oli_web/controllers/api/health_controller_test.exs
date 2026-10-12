@@ -18,7 +18,7 @@ defmodule OliWeb.HealthControllerTest do
   test "unauthenticated startup returns only starting with no cache or redirect" do
     conn = get(build_conn(), "/healthz")
     assert json_response(conn, 503) == %{"status" => "starting"}
-    assert get_resp_header(conn, "cache-control") == ["no-store"]
+    assert get_resp_header(conn, "cache-control") == ["private, no-store"]
     assert get_resp_header(conn, "location") == []
     assert conn.private[:plug_session_fetch] != :done
   end
@@ -33,7 +33,7 @@ defmodule OliWeb.HealthControllerTest do
       for scheme <- [:http, :https] do
         conn = get(%{build_conn() | scheme: scheme}, "/healthz")
         assert json_response(conn, 200) == %{"status" => "Ayup!"}
-        assert get_resp_header(conn, "cache-control") == ["no-store"]
+        assert get_resp_header(conn, "cache-control") == ["private, no-store"]
       end
     end
   end
