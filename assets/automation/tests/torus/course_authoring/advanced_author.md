@@ -23,11 +23,13 @@ delivery of a lesson built with it, including real Adaptivity trap-state rules.
 | `author builds a branching lesson ...`               | A real Adaptivity rule pair (MCQ `correct` condition + `defaultWrong` fallback), each with a "Navigate To" action to a distinct terminal screen, persists after reload, then publishes.     |
 | `student answering correctly ...`                    | Selecting the correct MCQ option and checking navigates straight to the authored "Correct Terminal" screen's text.                                                                          |
 | `student answering incorrectly ...`                  | Selecting a wrong option shows the built-in "Incorrect, please try again." feedback, then (once dismissed) navigates to the authored "Incorrect Terminal" screen's text.                    |
+| `item bank renders its default items and layout ...` | Item Bank (`janus_item_bank`) renders its default columns (Item Bank + 2 categories) and items, in its default responsive layout, and that persists after reload.                           |
 
 Deferred to later phases: component library, list sort, flashcards, z-order, advanced bank
-permutations, and the regression checks named in the ticket (slider feedback, CAPI/iframe
-sizing, responsive subscreens, item-bank layout) — see "Open questions" below. Broad exploratory
-and subjective visual review stays manual.
+permutations, and two of the regression checks named in the ticket (slider feedback, blocked on a
+real bug — see "Open questions"; responsive subscreens, ambiguous — see "Open questions"). CAPI
+sizing and item-bank layout are resolved, see below. Broad exploratory and subjective visual review
+stays manual.
 
 ## Setup and teardown
 
@@ -113,20 +115,43 @@ button[title="Edit"]` (shared with Simple Author, rendered by `LayoutEditor`) op
 - **The "Navigate To" destination control regenerates its id on every change** (`ScreenDropdownTemplate`
   assigns a fresh `guid()` per render), so `setRuleDestination` locates it by its "Navigate To"
   label rather than a stable id.
+- **Every new Advanced Author screen starts in Flow (responsive) layout.** `LayoutEditor.tsx`'s
+  `renderPart` always passes `width: '100%'` to parts on such a screen, regardless of the lesson's
+  "Enable Responsive Layout" setting. Most parts don't care, but Item Bank (`janus-item-bank`) reads
+  its own `width` prop to decide its internal `grouping--fixed`/`grouping--responsive` layout class
+  (`grouping-util.ts`), so it renders responsive from the moment it's added — there's no author-
+  facing way found yet to get a non-Flow screen to see the fixed variant.
 
 ## Open questions
 
-Carried over from `advanced_author_plan.md` (this doc's working predecessor), still unresolved —
-see that file's §7 for the full reasoning:
+Carried over from `advanced_author_plan.md` (this doc's working predecessor) — see that file's §7
+and §7a for the full reasoning.
 
-1. **Slider regression** — does the "max count can't be changed from 3" bug Raphael described
-   belong to Advanced Author at all, or to Simple Author/Flowchart (where the spreadsheet actually
-   lists a Slider component, and where MER-5988 already covers a _different_ slider regression)?
-2. **Responsive subscreens** — the per-part `responsiveLayoutWidth` workflow is now covered; is
-   "responsive subscreens" the same thing, or something specific to subscreens (nested under a
-   Layer/Question Bank) across breakpoints?
-3. **CAPI/iframe sizing** — `tests/torus/capi/capi.spec.ts` already covers iframe resize messages;
-   is that sufficient, or is there authoring-side CAPI component sizing still uncovered?
-4. **Item-bank layout** — is this the Sequence Editor's "Question Bank" node type (random
-   subscreen selection), or the separate `janus_item_bank` stage component (via "More
-   Components")? Both exist and are easy to confuse.
+### Resolved
+
+- **CAPI/iframe sizing** — `tests/torus/capi/capi.spec.ts` already covers the only CAPI sizing
+  mechanism that exists (the `RESIZE_PARENT_CONTAINER_REQUEST`/`RESPONSE` postMessage protocol);
+  there is no distinct authoring-side sizing control to add here.
+- **Item-bank layout** — refers to the `janus_item_bank` stage component (via "More Components"),
+  not the Sequence Editor's "Question Bank" node (which has no rendering surface of its own and so
+  can't have a layout regression). Covered by `item bank renders its default items and layout ...`
+  above.
+
+### Still open
+
+- **Responsive subscreens** — the per-part `responsiveLayoutWidth` workflow is now covered; is
+  "responsive subscreens" the same thing, or something specific to subscreens (nested under a
+  Layer/Question Bank) across breakpoints? Nothing in the codebase suggests a distinct subscreen-
+  responsiveness feature exists, so this needs Raphael's input before anything gets built.
+
+### Confirmed bug, not testable yet
+
+- **Slider regression** — Raphael's Jira comment clarified the intended test (change the Slider's
+  option-label count, save, confirm the new max persists and is enforced in delivery). Running that
+  flow locally shows it's genuinely broken: `SliderTextAuthor.tsx` recomputes `maximum` but saves it
+  through `onSaveConfigure`, which `EditingCanvas.tsx`'s `handlePartSaveConfigure` ignores entirely
+  (it only sets a UI focus flag) — the recompute never reaches Redux or the backend. See plan file
+  §7a for the full trace. No test was added: asserting the current (broken) behavior would mislead
+  whoever fixes it, and asserting the correct behavior would fail on every PR until that happens.
+  Recommend filing this as its own bug ticket; the test is fully specified in §7a for whenever it's
+  fixed.
