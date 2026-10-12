@@ -1,4 +1,4 @@
-name: Move Jira ticket to QA
+name: Update Jira status on PR approval
 
 on:
   pull_request_review:
@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  move-jira-ticket-to-qa:
+  transition-jira-ticket-on-approval:
     if: >-
       github.event.review.state == 'approved' &&
       github.event.pull_request.state == 'open' &&
@@ -25,25 +25,29 @@ jobs:
           persist-credentials: false
           sparse-checkout: .github/scripts
 
-      - name: Check Development team membership
-        id: development-review
+      - name: Identify approval team
+        id: approval-team
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           github-token: ${{ secrets.TEAM_MEMBERS_READ_TOKEN }}
+          result-encoding: string
           script: |
-            const isDevelopmentReviewer = require('./.github/scripts/development-review.cjs');
-            return await isDevelopmentReviewer({ github, context });
+            const getApprovalTeam = require('./.github/scripts/review-approval.cjs');
+            return (await getApprovalTeam({ github, context })) ?? '';
 
       - name: Notify Jira automation
-        if: steps.development-review.outputs.result == 'true'
+        if: steps.approval-team.outputs.result != ''
         env:
           JIRA_WEBHOOK_URL: ${{ secrets.JIRA_WEBHOOK_URL }}
           JIRA_WEBHOOK_SECRET: ${{ secrets.JIRA_WEBHOOK_SECRET }}
+          APPROVAL_TEAM: ${{ steps.approval-team.outputs.result }}
         run: |
+          jq --arg team "$APPROVAL_TEAM" '. + {approval_team: $team}' \
+            "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/jira-approval.json"
           curl --fail-with-body --silent --show-error \
             --connect-timeout 10 --max-time 30 \
             --request POST \
             --header "Content-Type: application/json" \
             --header "X-Automation-Webhook-Token: ${JIRA_WEBHOOK_SECRET}" \
-            --data-binary "@${GITHUB_EVENT_PATH}" \
+            --data-binary "@${RUNNER_TEMP}/jira-approval.json" \
             "${JIRA_WEBHOOK_URL}"
