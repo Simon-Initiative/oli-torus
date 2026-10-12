@@ -384,6 +384,48 @@ test.describe.serial('Advanced Author lesson delivery @pr', () => {
   });
 });
 
+test.describe('Advanced Author known regressions @pr', () => {
+  test('item bank renders its default items and layout, and it persists after reload', async ({
+    homeTask,
+    advancedAuthorTask,
+  }) => {
+    test.setTimeout(150_000);
+    const editor = advancedAuthorTask.editor;
+
+    setRuntimeConfig({ loginData: loginData() });
+    await homeTask.login('author');
+    await advancedAuthorTask.createLesson(projectTitle, 'Advanced Author Item Bank Layout');
+
+    const itemBankId = await editor.addComponent('janus_item_bank');
+    const board = editor.part(itemBankId).locator('.grouping-author');
+
+    await expect(board.locator('.grouping-column-header')).toHaveText([
+      'Item Bank',
+      'Category 1',
+      'Category 2',
+    ]);
+    await expect(
+      board.locator('.grouping-dropzone-bank .grouping-item'),
+      'The two default items should start in the Item Bank column',
+    ).toHaveCount(2);
+    // Every new Advanced Author screen starts in Flow layout, so a new part's
+    // width is already the responsive "100%" (`LayoutEditor.tsx`'s
+    // `renderPart`) — Item Bank reflects that in its own internal layout
+    // class (`grouping-util.ts`'s `isResponsiveGroupingLayout`), which is
+    // distinct from the generic per-part `responsive-item` wrapper class
+    // every other component gets (see "responsive layout arranges..." above).
+    await expect(board, 'Item Bank should render responsive by default').toHaveClass(
+      /grouping--responsive/,
+    );
+
+    await advancedAuthorTask.reloadAndOpenScreen('Welcome Screen');
+    await expect(board, 'The layout and default items should persist after reload').toHaveClass(
+      /grouping--responsive/,
+    );
+    await expect(board.locator('.grouping-dropzone-bank .grouping-item')).toHaveCount(2);
+  });
+});
+
 async function openPublishedLesson(page: Page, title: string) {
   const studentCourse = new StudentCoursePO(page);
 

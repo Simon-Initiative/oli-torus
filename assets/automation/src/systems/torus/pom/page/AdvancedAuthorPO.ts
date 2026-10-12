@@ -12,7 +12,8 @@ export type AdvancedAuthorComponent =
   | 'janus_video'
   | 'janus_mcq'
   | 'janus_multi_line_text'
-  | 'janus_input_number';
+  | 'janus_input_number'
+  | 'janus_item_bank';
 
 export type AdvancedAuthorTab = 'Lesson' | 'Screen' | 'Component';
 
@@ -50,6 +51,7 @@ const TOOLBAR_ICON: Partial<Record<AdvancedAuthorComponent, string>> = {
 const MORE_COMPONENTS_LABEL: Partial<Record<AdvancedAuthorComponent, string>> = {
   janus_multi_line_text: 'MultiLine Text Input',
   janus_input_number: 'Number Input',
+  janus_item_bank: 'Item Bank',
 };
 
 /**
@@ -408,11 +410,9 @@ export class AdvancedAuthorPO {
   }
 
   private ruleListItem(name: AdvancedAuthorRuleName) {
-    return this.page
-      .locator('.aa-rules-list-item')
-      .filter({
-        has: this.page.locator('.title', { hasText: new RegExp(`^${escapeRegExp(name)}$`) }),
-      });
+    return this.page.locator('.aa-rules-list-item').filter({
+      has: this.page.locator('.title', { hasText: new RegExp(`^${escapeRegExp(name)}$`) }),
+    });
   }
 
   /**
