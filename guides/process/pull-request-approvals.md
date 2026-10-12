@@ -8,10 +8,13 @@ Jira transitions expect Development approval first and QA approval afterward.
 
 Configure an active repository branch ruleset targeting `master` and `integ-*` with:
 
-- One required approval from `Simon-Initiative/development`, matching all files (`*`).
-- One required approval from the QA team, matching all files (`*`).
+- One required approval from `Simon-Initiative/torus-dev` (Development), matching all files (`*`).
+- One required approval from `Simon-Initiative/torus-qa` (QA), matching all files (`*`).
 - Two required approvals overall, so two different people must approve.
 - Stale approvals dismissed when new commits change the reviewed code.
+
+Use these two child teams as required reviewers. The parent `Simon-Initiative/torus`
+team does not distinguish Development from QA.
 
 Both teams must have repository write permission or higher. Configure the QA team
 and its membership before enabling the rule. Prefer separate Development and QA
@@ -31,7 +34,8 @@ alone does not grant or revoke merge approval.
 `.github/workflows/jira-pr-approval.yml` handles submitted approvals for open
 PRs from this repository, including drafts, regardless of the target branch.
 It loads its helper from the immutable PR base commit and checks the review
-author's active membership in `development`, then `qa`. Team maintainers and
+author's active membership in `torus-dev` (Development), then `torus-qa` (QA).
+Membership in the parent `torus` team alone does not qualify. Team maintainers and
 inherited members qualify. Development takes precedence for reviewers in both
 teams; their approval requests only the Development transition. A QA-only reviewer
 must submit the QA approval for the automated completion transition.
@@ -44,10 +48,11 @@ Development lookup never falls back to QA. The helper never runs PR code.
 The webhook retains the original GitHub review event and adds one verified field:
 
 ```json
-{ "approval_team": "development" }
+{ "approval_team": "torus-dev" }
 ```
 
-The other possible value is `qa`. Existing `pull_request` and `review` fields
+The webhook uses the exact GitHub team slug: `torus-dev` or `torus-qa`.
+Existing `pull_request` and `review` fields
 remain available to Jira, including the PR title and review author. The workflow
 does not fetch earlier reviews or replay an early QA approval after Development
 approves.
@@ -73,8 +78,8 @@ if/else-if block using these exact conditions:
 
 | `{{webhookData.approval_team}}`                 | Current Jira status | Action               |
 | ----------------------------------------------- | ------------------- | -------------------- |
-| `development`                                   | `PR`                | Transition to `QA`   |
-| `qa`                                            | `QA`                | Transition to `Done` |
+| `torus-dev`                                     | `PR`                | Transition to `QA`   |
+| `torus-qa`                                      | `QA`                | Transition to `Done` |
 | Any other combination, including a missing team | Any                 | No transition        |
 
 Use an Issue fields condition on Status for each branch, plus a smart-value
@@ -116,10 +121,10 @@ commit. Enable the merge-approval ruleset
 on the branches it should protect, and verify the following with test PRs and a
 test Jira ticket:
 
-1. A Development approval sends `approval_team: development` and moves a PR-status ticket to QA
+1. A Development approval sends `approval_team: torus-dev` and moves a PR-status ticket to QA
    for both draft and ready-for-review PRs, regardless of the target branch.
    Draft PRs remain unmergeable until marked ready for review.
-2. A QA-only approval sends `approval_team: qa` and moves a QA-status ticket to Done.
+2. A QA-only approval sends `approval_team: torus-qa` and moves a QA-status ticket to Done.
 3. An early QA approval leaves a PR-status ticket unchanged. Development approval
    then moves it to QA; a newly submitted QA approval moves it to Done.
 4. Repeated Development approvals leave QA and Done tickets unchanged; repeated
