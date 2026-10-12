@@ -384,7 +384,7 @@ test.describe.serial('Advanced Author lesson delivery @pr', () => {
   });
 });
 
-test.describe('Advanced Author known regressions @pr', () => {
+test.describe.serial('Advanced Author known regressions @pr', () => {
   test('item bank renders its default items and layout, and it persists after reload', async ({
     homeTask,
     advancedAuthorTask,
@@ -423,6 +423,69 @@ test.describe('Advanced Author known regressions @pr', () => {
       /grouping--responsive/,
     );
     await expect(board.locator('.grouping-dropzone-bank .grouping-item')).toHaveCount(2);
+  });
+
+  const subscreenLessonTitle = 'Advanced Author Subscreen Layout';
+  let subscreenPartId: string;
+
+  /**
+   * "Responsive subscreens" (Raphael, Slack, 2026-10-12): there's no distinct
+   * subscreen-specific responsive mechanism — it's the same per-part
+   * `responsiveLayoutWidth` behavior already covered by "responsive layout
+   * arranges..." above, just verified on a part that lives on a subscreen
+   * nested under a Layer, including persistence and the resulting
+   * preview/delivery geometry (which that other test never checks — it only
+   * asserts the authoring-side CSS class).
+   */
+  test('author builds a responsive subscreen nested under a layer and publishes', async ({
+    homeTask,
+    advancedAuthorTask,
+  }) => {
+    test.setTimeout(180_000);
+    const editor = advancedAuthorTask.editor;
+
+    setRuntimeConfig({ loginData: loginData() });
+    await homeTask.login('author');
+    await advancedAuthorTask.createLesson(projectTitle, subscreenLessonTitle);
+
+    await editor.openTab('Lesson');
+    await editor.setCheckbox('Properties_responsiveLayout', true);
+
+    await editor.addLayer('Layer A');
+    await editor.addSubscreen('Layer A', 'Layer A Subscreen');
+
+    subscreenPartId = await editor.addComponent('janus_text_flow');
+    await editor.setTextFlowText(subscreenPartId, 'Subscreen responsive text');
+    await editor.setPartWidth(subscreenPartId, '50% left');
+
+    await advancedAuthorTask.reloadAndOpenScreen('Layer A Subscreen');
+    await expect(editor.responsiveItem(subscreenPartId)).toHaveClass(/half-width/);
+    await expect(editor.responsiveItem(subscreenPartId)).toHaveClass(/responsive-align-left/);
+
+    await advancedAuthorTask.publish();
+  });
+
+  test('student sees the subscreen part with its authored responsive width in delivery', async ({
+    homeTask,
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    setRuntimeConfig({ loginData: loginData(correctStudentEmail) });
+
+    await homeTask.login('student');
+    await openPublishedLesson(page, subscreenLessonTitle);
+
+    const deck = new AdaptiveDeckPO(page);
+    await deck.waitForDeckReady();
+    // Welcome Screen has no scorable part, so a single advance reaches the
+    // Layer — the deck auto-descends into its one subscreen as part of the
+    // same step (`findNextSequenceId`'s Layer-resolution loop).
+    await deck.advance();
+
+    const deliveredPart = page.locator(`.responsive-item[data-part-id="${subscreenPartId}"]`);
+    await expect(deliveredPart).toBeVisible({ timeout: 15_000 });
+    await expect(deliveredPart).toHaveClass(/half-width/);
+    await expect(deliveredPart).toHaveClass(/responsive-align-left/);
   });
 });
 

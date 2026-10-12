@@ -24,12 +24,13 @@ delivery of a lesson built with it, including real Adaptivity trap-state rules.
 | `student answering correctly ...`                    | Selecting the correct MCQ option and checking navigates straight to the authored "Correct Terminal" screen's text.                                                                          |
 | `student answering incorrectly ...`                  | Selecting a wrong option shows the built-in "Incorrect, please try again." feedback, then (once dismissed) navigates to the authored "Incorrect Terminal" screen's text.                    |
 | `item bank renders its default items and layout ...` | Item Bank (`janus_item_bank`) renders its default columns (Item Bank + 2 categories) and items, in its default responsive layout, and that persists after reload.                           |
+| `author builds a responsive subscreen ...`           | A part placed on a subscreen (nested under a Layer, added via "Add Subscreen") takes a `50% left` width, persists after reload, then publishes.                                             |
+| `student sees the subscreen part ...`                | The published lesson's Layer auto-resolves to its one subscreen on the first "Next", and the delivered part carries the same `half-width`/`responsive-align-left` classes as authoring.     |
 
 Deferred to later phases: component library, list sort, flashcards, z-order, advanced bank
-permutations, and two of the regression checks named in the ticket (slider feedback, blocked on a
-real bug — see "Open questions"; responsive subscreens, ambiguous — see "Open questions"). CAPI
-sizing and item-bank layout are resolved, see below. Broad exploratory and subjective visual review
-stays manual.
+permutations, and one regression check named in the ticket (slider feedback — blocked on a real
+bug, see "Open questions"). CAPI sizing, item-bank layout, and responsive subscreens are resolved
+and covered, see below. Broad exploratory and subjective visual review stays manual.
 
 ## Setup and teardown
 
@@ -121,6 +122,15 @@ button[title="Edit"]` (shared with Simple Author, rendered by `LayoutEditor`) op
   its own `width` prop to decide its internal `grouping--fixed`/`grouping--responsive` layout class
   (`grouping-util.ts`), so it renders responsive from the moment it's added — there's no author-
   facing way found yet to get a non-Flow screen to see the fixed variant.
+- **A sequence row's own "⋮" context menu is not the "+" menu's dropdown.** "Add Subscreen" lives
+  in a single, globally-rendered popup (`LeftMenu`/`SequenceItemContextMenu.tsx`) reused for
+  whichever row's `.aa-context-menu-trigger` was clicked; unlike the "+" menu, its wrapper never
+  actually gets the `.dropdown-menu.show` class its own JSX names (the `show` prop that expression
+  reads is never passed down), so `addSubscreen` matches its items by text alone. A Layer with
+  exactly one subscreen resolves deterministically during normal delivery "Next" advancement
+  (`deck.ts`'s `findNextSequenceId` auto-descends to the Layer's only child) — no extra navigation
+  step needed, which is why the suite uses a Layer rather than a Question Bank for this test (a
+  Question Bank's subscreen selection is only deterministic on a first, forward-only pass).
 
 ## Open questions
 
@@ -136,16 +146,13 @@ and §7a for the full reasoning.
   not the Sequence Editor's "Question Bank" node (which has no rendering surface of its own and so
   can't have a layout regression). Covered by `item bank renders its default items and layout ...`
   above.
-
-### Resolved, not yet implemented
-
 - **Responsive subscreens** — asked Raphael directly (Slack, 2026-10-12); confirmed there's no
   separate breakpoint behavior for subscreens — it's the same per-part `responsiveLayoutWidth`
   workflow already covered, just verified on a part placed inside a nested subscreen (under a Layer
-  or Question Bank), including persistence and the resulting preview/delivery geometry. Tracked as
-  plan file §8 step 13: the existing responsive-width coverage needs to run against a subscreen
-  fixture, plus a new check of actual rendered width post-publish (the current responsive-layout
-  test only asserts the authoring-side CSS class).
+  or Question Bank), including persistence and the resulting preview/delivery geometry. Covered by
+  `author builds a responsive subscreen ...` and `student sees the subscreen part ...` above (a
+  Layer, not a Question Bank, to keep delivery navigation deterministic without touching
+  `bankShowCount`/`bankEndTarget`).
 
 ### Confirmed bug, not testable yet
 

@@ -151,22 +151,61 @@ export class AdvancedAuthorPO {
   // ------------------------------------------------------------ screens
 
   /**
-   * Adds a screen from the Sequence Editor's "+" menu and renames it. Unlike
-   * Simple Author, there is no creation modal: the screen is created and
-   * selected immediately, and its title is set afterward through the Screen
-   * tab's "Title" field.
+   * Adds a top-level screen from the Sequence Editor's "+" menu and renames
+   * it. Unlike Simple Author, there is no creation modal: the item is created
+   * and selected immediately, and its title is set afterward through the
+   * Screen tab's "Title" field.
    */
   async addScreen(title: string) {
+    await this.addSequenceItem('Screen', title);
+  }
+
+  /**
+   * Adds a top-level Layer the same way `addScreen` adds a Screen — same "+"
+   * menu, same create-then-rename lifecycle (`SequenceEditor.tsx`'s
+   * `handleItemAdd` is shared by all three "+" menu entries, differing only
+   * by an `isLayer`/`isBank` flag). A Layer renders its own parts stacked
+   * together with whichever of its subscreens (added via `addSubscreen`) is
+   * currently active, rather than being a plain top-level screen.
+   */
+  async addLayer(title: string) {
+    await this.addSequenceItem('Layer', title);
+  }
+
+  private async addSequenceItem(kind: 'Screen' | 'Layer' | 'Question Bank', title: string) {
     await this.ensureLeftPanelOpen();
     const before = await this.sequenceItemTitles();
 
     await this.page.locator('#sequence-add').click();
-    await this.sequenceAddMenuItem('Screen').click();
+    await this.sequenceAddMenuItem(kind).click();
 
     const newTitle = await this.waitForNewSequenceItemTitle(before);
     await this.selectScreen(newTitle);
-    // The new screen's own creation write must land before the rename, or the
+    // The new item's own creation write must land before the rename, or the
     // two concurrent writes can persist the template title over the rename.
+    await this.waitForSaves();
+    await this.openTab('Screen');
+    await this.fillField('title', title);
+    await this.waitForSaves();
+  }
+
+  /**
+   * Adds a subscreen nested under an existing top-level Layer/Question Bank
+   * row, via that row's "⋮" context-menu "Add Subscreen" entry, then renames
+   * it the same way `addScreen` does. This is the only way to reach the
+   * "responsive subscreens" scope Raphael described: verifying a part's
+   * `responsiveLayoutWidth` behavior still works when the part lives on a
+   * subscreen instead of a top-level screen.
+   */
+  async addSubscreen(parentTitle: string, title: string) {
+    await this.selectScreen(parentTitle);
+    const before = await this.sequenceItemTitles();
+
+    await this.sequenceItem(parentTitle).locator('.aa-context-menu-trigger').click();
+    await this.contextMenuItem('Add Subscreen').click();
+
+    const newTitle = await this.waitForNewSequenceItemTitle(before);
+    await this.selectScreen(newTitle);
     await this.waitForSaves();
     await this.openTab('Screen');
     await this.fillField('title', title);
@@ -184,6 +223,19 @@ export class AdvancedAuthorPO {
    */
   private sequenceAddMenuItem(label: 'Screen' | 'Layer' | 'Question Bank') {
     return this.page.locator('.dropdown-menu.show a.dropdown-item').filter({ hasText: label });
+  }
+
+  /**
+   * A sequence row's own "⋮" context menu ("Add Subscreen", "Rename", ...).
+   * Unlike the "+" menu's dropdown, this one is rendered globally (a single
+   * popup reused for whichever row triggered it, `LeftMenu`/
+   * `SequenceItemContextMenu.tsx`) and its wrapper never actually receives
+   * the `.dropdown-menu.show` class its own JSX names (the `show` prop that
+   * class expression reads is never passed down) — only its items' visible
+   * text can be relied on.
+   */
+  private contextMenuItem(label: string) {
+    return this.page.locator('.dropdown-item').filter({ hasText: label });
   }
 
   async selectScreen(title: string) {
