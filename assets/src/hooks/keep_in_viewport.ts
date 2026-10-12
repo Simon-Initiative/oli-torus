@@ -1,12 +1,18 @@
 const MARGIN = 8;
 
-// LiveView re-renders the element without the inline style, so every update places it again.
+// LiveView re-renders the element without the inline style, so every update places it again;
+// a window resize changes the room it has, so it places it again too.
 export const KeepInViewport = {
   mounted(this: any) {
+    this.onResize = () => place(this.el as HTMLElement);
+    window.addEventListener('resize', this.onResize);
     place(this.el as HTMLElement);
   },
   updated(this: any) {
     place(this.el as HTMLElement);
+  },
+  destroyed(this: any) {
+    window.removeEventListener('resize', this.onResize);
   },
 };
 

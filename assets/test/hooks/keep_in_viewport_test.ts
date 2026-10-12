@@ -1,5 +1,14 @@
 import { KeepInViewport } from '../../src/hooks/keep_in_viewport';
 
+let hooks: any[] = [];
+
+const mount = (el: HTMLElement) => {
+  const hook = { el };
+  hooks.push(hook);
+  KeepInViewport.mounted.call(hook);
+  return hook;
+};
+
 const place = (left: number, width: number, viewport: number, hidden = false) => {
   document.body.innerHTML = `<div id="panel" ${hidden ? 'hidden' : ''}></div>`;
   const el = document.getElementById('panel') as HTMLElement;
@@ -11,12 +20,18 @@ const place = (left: number, width: number, viewport: number, hidden = false) =>
   el.getBoundingClientRect = () =>
     ({ left, right: left + width, width, top: 0, bottom: 0, height: 0 } as DOMRect);
 
-  KeepInViewport.mounted.call({ el });
+  mount(el);
 
   return el;
 };
 
 describe('KeepInViewport', () => {
+  afterEach(() => {
+    hooks.forEach((hook) => KeepInViewport.destroyed.call(hook));
+    hooks = [];
+    jest.restoreAllMocks();
+  });
+
   test('a panel that fits is left where it is', () => {
     expect(place(100, 288, 1280).style.transform).toBe('');
   });
@@ -45,18 +60,59 @@ describe('KeepInViewport', () => {
       configurable: true,
       value: 640,
     });
-    KeepInViewport.mounted.call({ el });
+    const hook = mount(el);
     expect(el.style.transform).toBe('translateX(-78px)');
 
     Object.defineProperty(document.documentElement, 'clientWidth', {
       configurable: true,
       value: 1280,
     });
-    KeepInViewport.updated.call({ el });
+    KeepInViewport.updated.call(hook);
     expect(el.style.transform).toBe('');
   });
 
   test('a hidden panel is not moved', () => {
     expect(place(422, 288, 640, true).style.transform).toBe('');
+  });
+
+  test('a window resize places the panel again for the new width', () => {
+    const el = place(422, 288, 1280);
+    expect(el.style.transform).toBe('');
+
+    Object.defineProperty(document.documentElement, 'clientWidth', {
+      configurable: true,
+      value: 640,
+    });
+    window.dispatchEvent(new Event('resize'));
+
+    expect(el.style.transform).toBe('translateX(-78px)');
+    expect(el.style.maxWidth).toBe('624px');
+  });
+
+  test('a destroyed panel no longer follows window resizes', () => {
+    document.body.innerHTML = '<div id="panel"></div>';
+    const el = document.getElementById('panel') as HTMLElement;
+    el.getBoundingClientRect = () => ({ left: 422, right: 710, width: 288 } as DOMRect);
+    Object.defineProperty(document.documentElement, 'clientWidth', {
+      configurable: true,
+      value: 1280,
+    });
+
+    const added = jest.spyOn(window, 'addEventListener');
+    const removed = jest.spyOn(window, 'removeEventListener');
+    const hook = mount(el);
+    KeepInViewport.destroyed.call(hook);
+
+    const [, listener] = added.mock.calls.find(([type]) => type === 'resize')!;
+    expect(removed).toHaveBeenCalledWith('resize', listener);
+
+    Object.defineProperty(document.documentElement, 'clientWidth', {
+      configurable: true,
+      value: 640,
+    });
+    window.dispatchEvent(new Event('resize'));
+
+    expect(el.style.transform).toBe('');
+    expect(el.style.maxWidth).toBe('1264px');
   });
 });
