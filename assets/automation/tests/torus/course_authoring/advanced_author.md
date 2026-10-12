@@ -158,10 +158,14 @@ and §7a for the full reasoning.
 
 - **Slider regression** — Raphael's Jira comment clarified the intended test (change the Slider's
   option-label count, save, confirm the new max persists and is enforced in delivery). Running that
-  flow locally shows it's genuinely broken: `SliderTextAuthor.tsx` recomputes `maximum` but saves it
-  through `onSaveConfigure`, which `EditingCanvas.tsx`'s `handlePartSaveConfigure` ignores entirely
-  (it only sets a UI focus flag) — the recompute never reaches Redux or the backend. See plan file
-  §7a for the full trace. No test was added: asserting the current (broken) behavior would mislead
-  whoever fixes it, and asserting the correct behavior would fail on every PR until that happens.
-  Recommend filing this as its own bug ticket; the test is fully specified in §7a for whenever it's
-  fixed.
+  flow locally shows it's genuinely broken, confirmed by instrumenting the browser's own
+  `saveconfigure`/`modelUpdated` DOM events live: adding an option computes the correct new
+  `maximum` and it reaches `dispatch(saveActivity(...))` correctly, but still isn't what's in the
+  backend after a reload (lost somewhere inside or after that shared save pipeline); removing an
+  option is a second, separate failure where the recompute doesn't even trigger. Neither is a
+  small, localized fix — `saveActivity` is shared by every part type in Advanced Author, so a wrong
+  guess there risks breaking saves broadly, not just this component. See plan file §7a for the full
+  trace. No test was added and no fix was attempted here: asserting the current (broken) behavior
+  would mislead whoever fixes it, and asserting the correct behavior would fail on every PR until
+  that happens. Recommend filing this as its own bug ticket (the trace in §7a is a starting point);
+  the test is fully specified there for whenever it's fixed.
