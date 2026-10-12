@@ -179,14 +179,7 @@ export class AdvancedAuthorPO {
     await this.page.locator('#sequence-add').click();
     await this.sequenceAddMenuItem(kind).click();
 
-    const newTitle = await this.waitForNewSequenceItemTitle(before);
-    await this.selectScreen(newTitle);
-    // The new item's own creation write must land before the rename, or the
-    // two concurrent writes can persist the template title over the rename.
-    await this.waitForSaves();
-    await this.openTab('Screen');
-    await this.fillField('title', title);
-    await this.waitForSaves();
+    await this.renameNewSequenceItem(before, title);
   }
 
   /**
@@ -204,8 +197,20 @@ export class AdvancedAuthorPO {
     await this.sequenceItem(parentTitle).locator('.aa-context-menu-trigger').click();
     await this.contextMenuItem('Add Subscreen').click();
 
+    await this.renameNewSequenceItem(before, title);
+  }
+
+  /**
+   * Selects whichever sequence item appeared since `before` was captured and
+   * renames it through the Screen tab's "Title" field. Shared by every way of
+   * creating a sequence item (top-level "+" menu, or a row's "Add Subscreen"
+   * context-menu entry) — they differ only in how the new item is triggered.
+   */
+  private async renameNewSequenceItem(before: string[], title: string) {
     const newTitle = await this.waitForNewSequenceItemTitle(before);
     await this.selectScreen(newTitle);
+    // The new item's own creation write must land before the rename, or the
+    // two concurrent writes can persist the template title over the rename.
     await this.waitForSaves();
     await this.openTab('Screen');
     await this.fillField('title', title);

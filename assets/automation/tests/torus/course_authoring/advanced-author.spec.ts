@@ -451,8 +451,8 @@ test.describe.serial('Advanced Author known regressions @pr', () => {
     await editor.openTab('Lesson');
     await editor.setCheckbox('Properties_responsiveLayout', true);
 
-    await editor.addLayer('Layer A');
-    await editor.addSubscreen('Layer A', 'Layer A Subscreen');
+    await advancedAuthorTask.addLayer('Layer A');
+    await advancedAuthorTask.addSubscreen('Layer A', 'Layer A Subscreen');
 
     subscreenPartId = await editor.addComponent('janus_text_flow');
     await editor.setTextFlowText(subscreenPartId, 'Subscreen responsive text');

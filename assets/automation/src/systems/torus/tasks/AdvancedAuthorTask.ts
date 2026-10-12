@@ -37,6 +37,16 @@ export class AdvancedAuthorTask {
     await this.editor.addScreen(title);
   }
 
+  @step('Add layer "{title}"')
+  async addLayer(title: string) {
+    await this.editor.addLayer(title);
+  }
+
+  @step('Add subscreen "{title}" under "{parentTitle}"')
+  async addSubscreen(parentTitle: string, title: string) {
+    await this.editor.addSubscreen(parentTitle, title);
+  }
+
   /** Reloads the editor once every write settled and reopens the given screen. */
   @step('Reload the editor and reopen screen "{title}"')
   async reloadAndOpenScreen(title: string) {
