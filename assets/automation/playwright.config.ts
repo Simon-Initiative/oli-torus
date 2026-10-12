@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
+// Mailbox credentials and account links must never enter CI traces or screenshots.
+const protectSecrets = Boolean(process.env.CI || process.env.PLAYWRIGHT_SCENARIO_TOKEN);
+
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 
 /**
@@ -33,8 +36,8 @@ export default defineConfig({
     baseURL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on',
-    screenshot: 'on',
+    trace: protectSecrets ? 'off' : 'on',
+    screenshot: protectSecrets ? 'off' : 'on',
   },
 
   /* Configure projects for major browsers */

@@ -3,9 +3,8 @@ name: PR Playwright Suite
 # Runs Playwright tests against a dedicated Torus instance built and torn
 # down for this job only, with an isolated database, Swoosh.Adapters.Local
 # for email, and the /test/scenario-yaml and /test/emails endpoints enabled
-# (MIX_ENV=ci_e2e). This is the counterpart to nightly-playwright.yml,
-# which targets a real, persistent Torus deployment and must never gain
-# access to those endpoints.
+# (MIX_ENV=playwright). Nightly uses the same compile configuration with
+# dedicated runtime secrets and persistent services.
 #
 # To include a Playwright test here, tag its title (or its
 # test.describe title) with "@pr", the same way existing suites use
@@ -56,9 +55,11 @@ jobs:
           --health-retries 5
 
     env:
-      MIX_ENV: ci_e2e
+      MIX_ENV: playwright
       DB_NAME: oli_playwright_ci
-      DB_HOST: localhost
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/oli_playwright_ci
+      DB_SSL: "false"
+      FORCE_SSL: "false"
       # HOST and PLAYWRIGHT_BASE_URL must name the same host: the server
       # builds absolute confirmation/reset links in emails from HOST, while
       # Playwright resolves every relative page.goto(...) against
@@ -70,26 +71,30 @@ jobs:
       HTTP_PORT: 4002
       PORT: 4002
       PLAYWRIGHT_BASE_URL: http://localhost:4002
-      # Scoped to this ephemeral, unreachable-from-outside-the-job instance
-      # only; it never needs to be a real secret.
-      PLAYWRIGHT_SCENARIO_TOKEN: ci-ephemeral-token
+      PLAYWRIGHT_HTML_OPEN: never
+      S3_MEDIA_BUCKET_NAME: torus-pr-media
+      S3_XAPI_BUCKET_NAME: torus-pr-xapi
+      BLOB_STORAGE_BUCKET_NAME: torus-pr-blob
+      MEDIA_URL: http://localhost:9000/torus-pr-media
+      AWS_S3_HOST: localhost
+      AWS_S3_PORT: 9000
+      AWS_S3_SCHEME: http
+      AWS_ACCESS_KEY_ID: pr-unused
+      AWS_SECRET_ACCESS_KEY: pr-unused
+      AWS_EC2_METADATA_DISABLED: "true"
+      XAPI_ETL_MODE: file
+      EMAIL_FROM_ADDRESS: no-reply@example.test
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
-      # Provides sane, non-secret defaults (e.g. CLOAK_VAULT_KEY) the same
-      # way nightly-scenarios does, so this job doesn't have to hand-list
-      # every variable the app reads at boot.
-      - name: Configure
-        run: cp oli.example.env oli.env
 
       - name: Setup BEAM toolchain
         uses: erlef/setup-beam@v1
         with:
           elixir-version: 1.19.2
           otp-version: 28.1.1
-          gleam-version: '1.16.0'
+          gleam-version: "1.16.0"
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -103,10 +108,8 @@ jobs:
         with:
           path: |
             deps
-            _build
-          key: ${{ runner.os }}-mix-ci-e2e-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-ci-e2e-
+            _build/playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-pr-playwright-beam-1.19.2-28.1.1-gleam-1.16.0-${{ hashFiles('.tool-versions', 'mix.exs', 'mix.lock', 'config/**', 'gleam/gleam.toml', 'gleam/manifest.toml') }}
 
       - name: Install Gleam Mix archive
         run: |
@@ -124,8 +127,27 @@ jobs:
       - name: Build dependencies
         run: mix deps.compile
 
-      - name: Compile (MIX_ENV=ci_e2e)
-        run: set -a && source oli.env && mix compile --warnings-as-errors
+      - name: Compile (MIX_ENV=playwright)
+        run: mix compile --warnings-as-errors
+
+      # Generate runtime-only values after compilation; none enter build caches.
+      - name: Generate job-scoped runtime secrets
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          import base64
+          import os
+          import secrets
+
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              for key, size in [("PLAYWRIGHT_SCENARIO_TOKEN", 32),
+                                ("SECRET_KEY_BASE", 64),
+                                ("LIVE_VIEW_SALT", 32),
+                                ("CLOAK_VAULT_KEY", 32)]:
+                  value = base64.b64encode(secrets.token_bytes(size)).decode()
+                  print(f"::add-mask::{value}")
+                  env.write(f"{key}={value}\n")
+          PYTHON
 
       # mix.exs's ecto.setup alias runs create, migrate, and
       # priv/repo/seeds.exs. Seeding is required, not optional: the
@@ -135,18 +157,21 @@ jobs:
       # and still reject every author insert with a foreign_key_constraint
       # error.
       - name: Create, migrate, and seed the ephemeral database
-        run: set -a && source oli.env && mix ecto.setup
+        run: mix ecto.setup
 
       - name: Install frontend dependencies
         working-directory: assets
         run: yarn install --frozen-lockfile
 
-      # Watchers are disabled for MIX_ENV=ci_e2e (config/ci_e2e.exs),
-      # so the JS/CSS bundles the app serves must be built once, upfront,
-      # rather than relying on the dev watcher process to build them live.
-      - name: Build frontend assets
+      # Match the release asset pipeline, including the Node evaluator bundle.
+      - name: Build frontend and server assets
         working-directory: assets
-        run: yarn run deploy
+        run: |
+          NODE_ENV=production yarn run deploy
+          NODE_ENV=production yarn run deploy-node
+
+      - name: Build Tailwind and digested assets
+        run: mix assets.deploy
 
       - name: Install Playwright dependencies
         working-directory: assets/automation
@@ -156,17 +181,15 @@ jobs:
         working-directory: assets/automation
         run: npx playwright install --with-deps chrome
 
-      - name: Start Torus (MIX_ENV=ci_e2e)
+      - name: Start Torus (MIX_ENV=playwright)
         run: |
-          set -a
-          source oli.env
-          set +a
           nohup mix phx.server > /tmp/torus-server.log 2>&1 &
 
       - name: Wait for Torus to be ready
         run: |
           for _ in $(seq 1 60); do
-            if curl --silent --fail --output /dev/null "http://localhost:4002/"; then
+            status=$(curl --silent --max-time 2 --output /dev/null --write-out '%{http_code}' "http://localhost:4002/readyz" || true)
+            if [ "$status" = "200" ]; then
               echo "Torus is ready."
               exit 0
             fi
@@ -178,7 +201,7 @@ jobs:
 
       - name: Run @pr-tagged Playwright tests
         working-directory: assets/automation
-        run: npx playwright test --grep @pr --reporter=line
+        run: npx playwright test --grep @pr --reporter=line,html
 
       - name: Upload Playwright report
         if: failure()
@@ -196,13 +219,15 @@ jobs:
           path: assets/automation/test-results/
           retention-days: 14
 
-      - name: Upload Torus server log
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr-playwright-torus-server-log
-          path: /tmp/torus-server.log
-          retention-days: 14
+      # Raw request logs contain confirmation/reset URL credentials. Keep them
+      # on the disposable runner until a sanitization contract is available.
+      # - name: Upload Torus server log
+      #   if: failure()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: pr-playwright-torus-server-log
+      #     path: /tmp/torus-server.log
+      #     retention-days: 14
 
     # The postgres service container (and its `oli_playwright_ci` database)
     # is destroyed with the job's runner; no manual cleanup step is needed.

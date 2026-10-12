@@ -1,15 +1,14 @@
 defmodule Oli.Playwright.Recaptcha do
   @moduledoc """
-  Deterministic reCAPTCHA implementation for the isolated Playwright environment.
-
-  The credential-account browser suite exercises Torus registration flows but
-  must not depend on the external reCAPTCHA service. `config/ci_e2e.exs`
-  selects this module only for that ephemeral environment.
+  Unconditional local captcha verification for compile-selected Playwright builds.
+  Browser tests exercise application workflows without solving Google challenges.
+  Production builds retain the normal verifier through `Oli.Recaptcha`.
   """
 
   @behaviour Oli.Recaptcha
 
   @impl true
-  @doc "Returns a successful verification without contacting reCAPTCHA."
+  @doc "Accepts any response, including missing or empty values, without contacting Google."
+  @spec verify(term()) :: {:success, true}
   def verify(_response), do: {:success, true}
 end
