@@ -1,11 +1,11 @@
 # Development and QA approvals
 
-GitHub enforces merge approval for `master`. Jira tracks the handoff to QA and
-testing progress. Approval order is not enforced.
+GitHub enforces merge approval for `master` and `integ-*` branches. Jira tracks the
+handoff to QA and testing progress. Approval order is not enforced.
 
 ## GitHub ruleset
 
-Configure an active repository branch ruleset for `master` with:
+Configure an active repository branch ruleset targeting `master` and `integ-*` with:
 
 - One required approval from `Simon-Initiative/development`, matching all files (`*`).
 - One required approval from the QA team, matching all files (`*`).
@@ -28,8 +28,9 @@ alone does not grant or revoke merge approval.
 ## Jira handoff
 
 `.github/workflows/jira-move-ticket-qa.yml` handles submitted approvals for open
-PRs from this repository, including drafts. It loads its helper from the immutable PR base
-commit and checks the review author's active Development team membership. Team
+PRs from this repository, including drafts, regardless of the target branch.
+It loads its helper from the immutable PR base commit and checks the review
+author's active Development team membership. Team
 maintainers and inherited members qualify. QA-only reviewers do not trigger Jira.
 A reviewer belonging to both teams qualifies because they belong to Development.
 
@@ -69,13 +70,14 @@ node --test .github/scripts/development-review.test.cjs
 ```
 
 Configure the membership credential and QA team, then merge the workflow/helper
-before expecting the new handoff to run: the helper is deliberately read from the
-PR's base commit. Enable the ruleset and verify the following with test PRs and a
+into the target branches before expecting the new handoff to run there: the helper
+is deliberately read from the PR's base commit. Enable the merge-approval ruleset
+on the branches it should protect, and verify the following with test PRs and a
 test Jira ticket:
 
 1. A Development approval sends the existing webhook and moves the ticket to QA
-   for both draft and ready-for-review PRs. Draft PRs remain unmergeable until marked
-   ready for review.
+   for both draft and ready-for-review PRs, regardless of the target branch.
+   Draft PRs remain unmergeable until marked ready for review.
 2. A QA-only approval sends no Jira webhook.
 3. A repeated developer approval leaves tickets already in QA or Done unchanged.
 4. Only Development approval, only QA approval, or two approvals from one team
