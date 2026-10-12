@@ -41,6 +41,7 @@ if runtime_env == :playwright do
 
   config :oli,
     playwright_scenario_token: required_token.("PLAYWRIGHT_SCENARIO_TOKEN"),
+    playwright_captcha_token: required_token.("PLAYWRIGHT_CAPTCHA_TOKEN"),
     playwright_assets_bucket: System.get_env("PLAYWRIGHT_ASSETS_BUCKET")
 end
 

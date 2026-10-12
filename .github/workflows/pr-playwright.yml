@@ -145,6 +145,7 @@ jobs:
 
           with open(os.environ["GITHUB_ENV"], "a") as env:
               for key, size in [("PLAYWRIGHT_SCENARIO_TOKEN", 32),
+                                ("PLAYWRIGHT_CAPTCHA_TOKEN", 32),
                                 ("SECRET_KEY_BASE", 64),
                                 ("LIVE_VIEW_SALT", 32),
                                 ("CLOAK_VAULT_KEY", 32)]:

@@ -57,25 +57,26 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
 - Coverage: FR-001, FR-002 — AC-003, AC-005, AC-006, AC-032, AC-033, AC-034, AC-035, AC-036, AC-037, AC-038; PR consumer portion of AC-042.
 - Tasks:
   - [x] Add `config/playwright.exs` with direct compile-time scenario/mailbox enablement, `Oli.Playwright.Recaptcha`, `Swoosh.Adapters.Local`, release assets and `env: :playwright`. Disable development debug/reload/watch settings without importing `dev.exs`; retain normal origin checks and exclude preview QA defaults.
-  - [x] Extend release runtime/SSL branches, `mix.exs` permanence and endpoint static gzip handling for `:playwright`. Load the scenario/mailbox token only at runtime; fail boot when it is absent/empty. No captcha secret is required. Permit PR boot without private-assets configuration; asset-dependent operations still fail clearly when unavailable.
-  - [x] Keep an unconditional Playwright verifier that accepts every response, including nil/empty/malformed values, without Google requests. Route application verification through compile-selected `Oli.Recaptcha`; preserve production selection regardless of runtime configuration.
-  - [x] Preserve existing captcha templates, scripts and LiveView hooks. Remove injection helpers and placeholder responses from registration, enrollment and payment; use no replacement client or per-form branches. Audit other exercised protected forms.
+  - [x] Extend release runtime/SSL branches, `mix.exs` permanence and endpoint static gzip handling for `:playwright`. Load separate scenario/mailbox and captcha tokens only at runtime; fail boot when either is absent/empty. Permit PR boot without private-assets configuration; asset-dependent operations still fail clearly when unavailable.
+  - [x] Require the configured nonempty captcha token with constant-time comparison; reject missing/empty/incorrect/malformed responses without Google requests. Route application verification through compile-selected `Oli.Recaptcha`; preserve production selection regardless of runtime configuration.
+  - [x] Preserve captcha templates and LiveView hooks; block Google scripts in runner contexts. Centralize token submission in context setup for native POST and LiveView FormData, with destination/method safeguards and no DOM fields, deployed client substitute or per-captcha branches. Audit manually created contexts and protected forms.
   - [x] Redact captcha fields in request logs and prevent mailbox credentials/account links from entering traces or attachments in both CI paths.
   - [x] Migrate `.github/workflows/pr-playwright.yml` with explicit disposable database, local HTTP, signing/encryption and storage boot inputs; generate a job-scoped scenario secret using at least 32 random bytes. Build frontend/server/Tailwind/digested assets through the release pipeline before `mix phx.server`, and wait on `/readyz`.
   - [x] Delete `config/ci_e2e.exs` and migrate active scripts/config/docs/cache references in the same landing change. Retain no alias, wrapper or fallback. Preserve PR triggers, checkout, `@pr`, create/migrate/seed and runner-owned teardown.
   - [x] Key compile caches by environment, configuration, toolchain and lockfiles; separate PR, trusted nightly and production namespaces. Prevent broad restore fallbacks from loading incompatible compile artifacts.
 - Testing Tasks:
-  - [x] Test unconditional acceptance of missing/empty/arbitrary/malformed responses, no Google calls, immutable compile selection and normal production verification. Verify real standard/LiveView forms complete without captcha injection or interaction.
+  - [x] Test correct-token acceptance, invalid-token rejection, missing-secret startup failure, no Google calls, immutable compile selection and normal production verification. Verify real standard/LiveView form success and rejection plus native GET, submitter override and external-frame safety.
   - [x] Verify local mail retrieval by unique recipient/ID, optional subject filtering and missing/wrong-token rejection; confirm messages are never sent through SES/SMTP and diagnostics omit email/reset content.
   - [x] Run clean and cached PR builds, mutate compile configuration to verify invalidation, and run the complete existing `@pr` suite including registration/confirmation/reset plus affected enrollment/payment specs with their required fixtures.
   - [x] Audit active `ci_e2e` references and dev imports; historical migration notes may retain the retired name. Confirm PR requires no nightly secrets, private assets, publish or GitOps access.
   - Commands: affected ExUnit modules and formatting; frontend targeted `yarn test`/`yarn lint` from `assets/` as applicable; `npm ci`, `npx playwright install --with-deps chrome`, and `npx playwright test --grep @pr` from `assets/automation/` with explicit local runtime inputs. Run full `mix test` whenever shared test support/configuration changes and require clean ExUnit output.
 - Definition of Done:
   - Shared compile selections, runtime secret boundaries, mailbox authorization and simplified captcha flows pass; the full PR suite works with its original isolation and source selection.
+- Verification status: review follow-up local verification passed (26 doctests, 9,617 backend tests, 0 failures; 32 browser tests passed). See `docs/exec-plans/current/nightly-playwright-ci/phase-2-execution.md`. G2 still requires hosted PR checks on the follow-up revision before landing.
 - Gate: G2 — land configuration, captcha behavior, PR migration and environment deletion together only after G1 and PR verification pass.
 - Evidence: `docs/exec-plans/current/nightly-playwright-ci/phase-2-execution.md` (local build/browser/backend verification; hosted CI and packaged images remain later validation).
 - Dependencies: G1 for PR startup waiting and integrated lifecycle verification.
-- Parallelizable Work: Backend acceptance and removal of browser captcha injection can proceed independently, but merge and verify together. Phase 4 dependency work can proceed independently.
+- Parallelizable Work: Backend token verification and runner context setup can proceed independently, but merge and verify together. Phase 4 dependency work can proceed independently.
 
 ## Phase 3: Release packaging and build isolation
 
@@ -118,7 +119,7 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
   - Direct invocation and setup failures are verified; dependency isolation, target rules, secret handling and standard reporting are covered without a second suite-membership source.
 - Gate: G4 — runner is ready to integrate; provisioned Canvas/Dot and full nightly execution remain launch gates.
 - Dependencies: G2 for shared captcha behavior; G3 for release-based asset/mailbox verification. Dependency/configuration development may start earlier.
-- Parallelizable Work: Runner dependencies/reporters can proceed alongside Phases 1–3; integrate captcha helper removals with Phase 2.
+- Parallelizable Work: Runner dependencies/reporters can proceed alongside Phases 1–3; integrate captcha context setup with Phase 2.
 
 ## Phase 5: GitOps update contract and target provisioning
 

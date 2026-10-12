@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { configureCaptcha } from '@core/captcha';
 import { test as base } from '@playwright/test';
 import { Utils } from '@core/Utils';
 import { Verifier } from '@core/verify/Verifier';
@@ -38,6 +39,13 @@ type MyFixtures = {
 };
 
 export const test = base.extend<MyFixtures>({
+  context: async ({ context }, use, testInfo) => {
+    const baseUrl = hasRuntimeBaseUrl()
+      ? getBaseUrl()
+      : ((testInfo.project.use.baseURL as string) ?? getBaseUrl());
+    await configureCaptcha(context, baseUrl);
+    await use(context);
+  },
   forEachTest: [
     async ({ homeTask }, use, testInfo) => {
       const baseUrl = hasRuntimeBaseUrl()

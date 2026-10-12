@@ -11,6 +11,7 @@ defmodule Oli.Playwright.ConfigTest do
     assert oli[Oli.Mailer][:adapter] == Swoosh.Adapters.Local
     refute oli[:preview_qa_tools]
     refute oli[:playwright_scenario_token]
+    refute oli[:playwright_captcha_token]
     endpoint = oli[OliWeb.Endpoint]
     assert endpoint[:check_origin]
     refute endpoint[:debug_errors]
@@ -21,7 +22,7 @@ defmodule Oli.Playwright.ConfigTest do
   end
 
   @tag timeout: 120_000
-  test "runtime requires the scenario secret, permits no private bucket and does not change compile selections" do
+  test "runtime requires automation secrets, permits no private bucket and does not change compile selections" do
     script = ~S'''
     import ExUnit.Assertions
     require Logger
@@ -51,9 +52,20 @@ defmodule Oli.Playwright.ConfigTest do
       end
     end
     System.put_env("PLAYWRIGHT_SCENARIO_TOKEN", "scenario-secret")
+    for absent <- [nil, ""] do
+      case absent do
+        nil -> System.delete_env("PLAYWRIGHT_CAPTCHA_TOKEN")
+        value -> System.put_env("PLAYWRIGHT_CAPTCHA_TOKEN", value)
+      end
+      assert_raise RuntimeError, ~r/PLAYWRIGHT_CAPTCHA_TOKEN must be set and nonempty/, fn ->
+        Config.Reader.read!("config/runtime.exs", env: :playwright)
+      end
+    end
+    System.put_env("PLAYWRIGHT_CAPTCHA_TOKEN", "captcha-secret")
     config = Config.Reader.read!("config/runtime.exs", env: :playwright)
     oli = config[:oli]
     assert oli[:playwright_scenario_token] == "scenario-secret"
+    assert oli[:playwright_captcha_token] == "captcha-secret"
     refute oli[:recaptcha][:site_key]
     refute oli[:recaptcha][:secret]
     assert oli[:force_ssl_redirect?]
@@ -83,6 +95,7 @@ defmodule Oli.Playwright.ConfigTest do
       end
       Code.compiler_options(ignore_module_conflict: true)
       Code.compile_file("lib/oli/recaptcha.ex")
+      Application.put_env(:oli, :playwright_captcha_token, "captcha-secret")
       # Any unexpected Google invocation fails the Playwright checks locally.
       defmodule Oli.Utils.Recaptcha do
         def verify("production-response"), do: {:success, true}
@@ -93,8 +106,9 @@ defmodule Oli.Playwright.ConfigTest do
         Application.put_env(:oli, :recaptcha_module, Oli.Playwright.Recaptcha)
         case env do
           :playwright ->
+            assert Oli.Recaptcha.verify("captcha-secret") == {:success, true}
             for value <- [nil, "", "invalid", %{}, 17] do
-              assert Oli.Recaptcha.verify(value) == {:success, true}
+              assert Oli.Recaptcha.verify(value) == {:success, false}
             end
           :prod ->
             assert Oli.Recaptcha.verify("production-response") == {:success, true}
