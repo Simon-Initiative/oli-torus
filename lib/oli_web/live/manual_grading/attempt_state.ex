@@ -108,12 +108,20 @@ defmodule OliWeb.ManualGrading.AttemptState do
   defp normalize_number(value) when is_integer(value), do: value * 1.0
   defp normalize_number(value) when is_float(value), do: value
 
-  defp normalize_number(value) when is_binary(value) do
-    case Float.parse(value) do
+  defp normalize_number(value) when is_binary(value), do: parse_number(value)
+  defp normalize_number(_), do: nil
+
+  @doc """
+  Parses a whole text as a float, or `nil` when it is not one. Never raises: `Float.parse/1`
+  raises on an integer part too large for a float, which takes at least 309 characters, so a
+  longer text is never converted.
+  """
+  def parse_number(text) when is_binary(text) and byte_size(text) <= 308 do
+    case Float.parse(text) do
       {parsed, ""} -> parsed
       _ -> nil
     end
   end
 
-  defp normalize_number(_), do: nil
+  def parse_number(_), do: nil
 end

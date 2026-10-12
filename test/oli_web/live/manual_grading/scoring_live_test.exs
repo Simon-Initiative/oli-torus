@@ -931,6 +931,22 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert {:submitted, nil, nil} = part_states(ctx)[ctx.g1]
     end
 
+    test "a score too long to be a float is not a score either: the page stays up, Apply stays disabled and a submit scores nothing",
+         ctx do
+      html = change_draft(ctx.view, valid(ctx))
+      assert [_] = Floki.find(doc(html), "button#apply-button:not([disabled])")
+
+      # Float.parse/1 raises on 309 digits instead of returning :error.
+      params = Map.put(valid(ctx), "score_#{ctx.g2}", String.duplicate("9", 309))
+      html = change_draft(ctx.view, params)
+      assert [_] = Floki.find(doc(html), "button#apply-button[disabled]")
+
+      html = ctx.view |> form("#scoring-form", params) |> render_submit()
+      refute html =~ "applied successfully"
+      assert {:submitted, nil, nil} = part_states(ctx)[ctx.g1]
+      assert {:submitted, nil, nil} = part_states(ctx)[ctx.g2]
+    end
+
     # Submitted straight to the server, so the browser's own clamp never runs. Persistence keeps
     # every score within the maximum it receives; the page owns sending the authored maximum.
     test "a score above the part's maximum is saved as the maximum the activity authors", ctx do

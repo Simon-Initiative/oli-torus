@@ -552,13 +552,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
 
   defp present_score?(v), do: parse_score(v) != nil
 
-  defp parse_score(v) when is_binary(v) do
-    case Float.parse(String.trim(v)) do
-      {n, ""} -> n
-      _ -> nil
-    end
-  end
-
+  defp parse_score(v) when is_binary(v), do: v |> String.trim() |> AttemptState.parse_number()
   defp parse_score(_), do: nil
 
   # Score given but feedback blank: the only validation message the panel shows live.
