@@ -15,7 +15,7 @@ defmodule OliWeb.ReadinessControllerTest do
     for scheme <- [:http, :https] do
       conn = get(%{conn | scheme: scheme}, "/readyz")
       assert json_response(conn, 200) == body("ready")
-      assert get_resp_header(conn, "cache-control") == ["no-store"]
+      assert get_resp_header(conn, "cache-control") == ["private, no-store"]
       assert get_resp_header(conn, "location") == []
       assert conn.private[:plug_session_fetch] != :done
     end
@@ -26,7 +26,7 @@ defmodule OliWeb.ReadinessControllerTest do
       transition.()
       response = get(conn, "/readyz")
       assert json_response(response, 503) == body("not_ready")
-      assert get_resp_header(response, "cache-control") == ["no-store"]
+      assert get_resp_header(response, "cache-control") == ["private, no-store"]
     end
   end
 

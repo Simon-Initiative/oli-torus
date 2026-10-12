@@ -206,7 +206,7 @@ Example successful readiness response in a Playwright build:
 
 The version above is illustrative. Select metadata visibility at compile time using `:build.env`, which records `Mix.env()`: only `:playwright` includes version/SHA from the compiled `:build` configuration, never the entire map. Production and all other builds return only `{"status":"ready"}` or `{"status":"not_ready"}`. Runtime application settings, process environment changes and request parameters cannot enable metadata or replace compiled identity. Failure bodies retain the environment-specific field set with `status: not_ready`; do not expose dependency errors, credentials or process internals. The endpoint never receives or compares a desired deployment SHA. A ready older revision correctly returns 200, while CI rejects the identity mismatch (AC-012–AC-014).
 
-Add `/readyz` in the router and exempt both probe paths from application HTTPS redirects in `Oli.Plugs.SSL` so kubelet can reach them directly over pod HTTP (AC-042). Public CI continues to require HTTPS. Both handlers send `Cache-Control: no-store`; no login/session, CSRF token or infrastructure credentials are required. Keep these routes outside Playwright capability gates.
+Add `/readyz` in the router and exempt both probe paths from application HTTPS redirects in `Oli.Plugs.SSL` so kubelet can reach them directly over pod HTTP (AC-042). Public CI continues to require HTTPS. Both handlers send `Cache-Control: private, no-store`; no login/session, CSRF token or infrastructure credentials are required. Keep these routes outside Playwright capability gates.
 
 ### Startup, local services and draining
 
