@@ -137,12 +137,15 @@ and §7a for the full reasoning.
   can't have a layout regression). Covered by `item bank renders its default items and layout ...`
   above.
 
-### Still open
+### Resolved, not yet implemented
 
-- **Responsive subscreens** — the per-part `responsiveLayoutWidth` workflow is now covered; is
-  "responsive subscreens" the same thing, or something specific to subscreens (nested under a
-  Layer/Question Bank) across breakpoints? Nothing in the codebase suggests a distinct subscreen-
-  responsiveness feature exists, so this needs Raphael's input before anything gets built.
+- **Responsive subscreens** — asked Raphael directly (Slack, 2026-10-12); confirmed there's no
+  separate breakpoint behavior for subscreens — it's the same per-part `responsiveLayoutWidth`
+  workflow already covered, just verified on a part placed inside a nested subscreen (under a Layer
+  or Question Bank), including persistence and the resulting preview/delivery geometry. Tracked as
+  plan file §8 step 13: the existing responsive-width coverage needs to run against a subscreen
+  fixture, plus a new check of actual rendered width post-publish (the current responsive-layout
+  test only asserts the authoring-side CSS class).
 
 ### Confirmed bug, not testable yet
 
