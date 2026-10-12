@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
 import { setRuntimeConfig } from '@core/runtimeConfig';
+import { expect, test } from '@playwright/test';
 import { logInAsScenarioUser } from './support';
 
 test.describe('student payment support', () => {
@@ -18,32 +18,28 @@ test.describe('student payment support', () => {
     let capturedEmailParam: string | null = null;
     let capturedRequestPathParam: string | null = null;
 
-    await page.route(`${baseUrl}/test/log_in_user**`, async (route) => {
-      const request = route.request();
-      const url = new URL(request.url());
+    await page.route(
+      (url) => url.origin === baseUrl && url.pathname === '/test/log_in_user',
+      async (route) => {
+        const request = route.request();
+        const url = new URL(request.url());
 
-      capturedHeader = request.headers()['x-playwright-scenario-token'];
-      capturedTokenParam = url.searchParams.get('token');
-      capturedEmailParam = url.searchParams.get('email');
-      capturedRequestPathParam = url.searchParams.get('request_path');
+        capturedHeader = request.headers()['x-playwright-scenario-token'];
+        capturedTokenParam = url.searchParams.get('token');
+        capturedEmailParam = url.searchParams.get('email');
+        capturedRequestPathParam = url.searchParams.get('request_path');
 
-      await route.fulfill({
-        status: 302,
-        headers: {
-          location: `${baseUrl}${requestPath}`,
-        },
-      });
-    });
+        // Assert the request contract on a local response; real redirects are
+        // covered by the payment integration specs.
+        await route.fulfill({
+          status: 200,
+          contentType: 'text/html',
+          body: '<html><body>ok</body></html>',
+        });
+      },
+    );
 
-    await page.route(`${baseUrl}${requestPath}`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'text/html',
-        body: '<html><body>ok</body></html>',
-      });
-    });
-
-    await logInAsScenarioUser(page, email, requestPath);
+    await logInAsScenarioUser(page, email, requestPath, '/test/log_in_user');
 
     expect(capturedHeader).toBe('scenario-secret');
     expect(capturedTokenParam).toBeNull();

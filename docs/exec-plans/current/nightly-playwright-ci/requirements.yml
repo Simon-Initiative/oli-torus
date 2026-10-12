@@ -42,8 +42,8 @@ requirements:
     proofs: []
   - id: AC-005
     title: A standard production build continues to exclude its existing compile-time-gated
-      Playwright routes and selects normal reCAPTCHA verification, even when the runtime
-      test token is present. Runtime changes cannot enable
+      Playwright routes and selects normal reCAPTCHA verification, even when the scenario/mailbox token is present or runtime verifier settings are changed.
+      Runtime changes cannot enable
       capabilities absent from the compiled artifact.
     status: proposed
     verification_method: hybrid
@@ -70,8 +70,8 @@ requirements:
     title: Selecting MIX_ENV=playwright loads config/playwright.exs, which directly sets
       enable_playwright_scenarios and enable_e2e_mailbox to true, recaptcha_module to
       Oli.Playwright.Recaptcha, and the Oli.Mailer adapter to Swoosh.Adapters.Local at compile
-      time for both workflows. Runtime configuration is still required, including the same
-      PLAYWRIGHT_RECAPTCHA_TOKEN value supplied to the Torus server and Playwright runner.
+      time for both workflows. Runtime service configuration and the scenario/mailbox token
+      are still required; no captcha secret is required.
       Secrets are never passed as Docker build arguments. Runtime configuration and
       post-compilation process environment changes cannot override these compiled selections.
     status: proposed
@@ -107,29 +107,22 @@ requirements:
     verification_method: automated
     proofs: []
   - id: AC-037
-    title: Both PR and nightly compile a reCAPTCHA verifier that accepts a nonempty exact
-      match to the runtime-only PLAYWRIGHT_RECAPTCHA_TOKEN using constant-time comparison
-      without contacting Google. Incorrect, missing, empty or malformed responses fail locally;
-      no Playwright verification path calls Google or falls back to normal verification.
-      Missing server test-token configuration fails startup. PR generates a job-scoped token;
-      nightly uses a dedicated secret. Neither requires Google reCAPTCHA keys or human widget
-      support; production retains normal reCAPTCHA verification.
-      Application captcha call sites use the shared verifier, and token-bearing fields are
-      excluded from logs and artifacts.
+    title: Both PR and nightly compile Oli.Playwright.Recaptcha, which accepts any response,
+      including missing, empty and malformed values, without contacting Google or falling
+      back to normal verification. No captcha token or Google keys are required. Application
+      captcha call sites use the compile-selected shared verifier. Production retains normal
+      Google verification regardless of runtime configuration. Account authentication and
+      scenario/mailbox token authorization remain required; captcha fields remain filtered from logs.
     status: proposed
     verification_method: hybrid
     proofs: []
   - id: AC-038
-    title: Add a shared Playwright form helper that reads PLAYWRIGHT_RECAPTCHA_TOKEN at runtime
-      and submits it through g-recaptcha-response for standard and LiveView forms. Update
-      CredentialAccountPO.register to supply it and replace the hardcoded playwright-test-token
-      in StudentCoursePO enrollment and student_payment/support.ts. Audit other captcha-protected
-      test submissions and migrate missing support. Required CI flows fail before submission
-      when the token is missing, with no hardcoded or empty fallback. Verify registration,
-      enrollment and payment submissions carry the configured token and complete without Google
-      verification or widget interaction. Omit the external widget and Google script dependency
-      in the Playwright environment while preserving form submission behavior. Production
-      retains the normal widget.
+    title: Preserve existing captcha templates, scripts and LiveView hooks. Remove captcha
+      injection and placeholder responses from registration, StudentCoursePO enrollment and
+      student_payment/support.ts. Use no replacement client or captcha form helper. Verify
+      registration, enrollment and payment complete through the real form flows with empty or
+      absent captcha responses and no widget interaction. Audit other protected submissions;
+      production retains its normal widget and verification behavior.
     status: proposed
     verification_method: hybrid
     proofs: []
