@@ -2,10 +2,12 @@ defmodule OliWeb.Components.Filters.CheckboxFilter do
   @moduledoc """
   A dropdown filter of checkboxes, with an optional search box, composed from
   `OliWeb.Components.Filters.DropdownFilter`. The applied values belong to the parent
-  (`selected_ids`). Checking changes a draft that the panel renders; searching only hides options.
-  Apply sends the form's checked options to the parent as `{:filter_applied, on_apply, ids}`.
-  Cancel, Escape and a click outside discard the draft; Apply, Cancel and Escape return focus to
-  the trigger.
+  (`selected_ids`) and the boxes show them. Each checkbox change sends the form's checked options
+  to the parent as `{:filter_applied, on_apply, ids}`; searching only hides options. With
+  `max_selected`, a change that would check more options sends
+  `{:filter_limit_reached, on_apply, max_selected}` instead and every box is rendered again, so
+  the browser drops the refused check. Escape, a click outside and the trigger close the panel;
+  Escape returns focus to the trigger.
   """
 
   use OliWeb, :live_component
@@ -14,7 +16,8 @@ defmodule OliWeb.Components.Filters.CheckboxFilter do
   alias Phoenix.LiveView.JS
 
   def mount(socket) do
-    {:ok, assign(socket, open: false, draft: [], query: "", searchable: false)}
+    {:ok,
+     assign(socket, open: false, query: "", searchable: false, max_selected: nil, refusals: 0)}
   end
 
   def update(assigns, socket) do
@@ -26,7 +29,7 @@ defmodule OliWeb.Components.Filters.CheckboxFilter do
     <div
       id={@id}
       class="relative inline-block"
-      phx-click-away={@open && JS.push("cancel", target: @myself)}
+      phx-click-away={@open && JS.push("close", target: @myself)}
       phx-window-keydown={@open && close_and_focus_trigger(@id, @myself)}
       phx-key="Escape"
     >
@@ -43,7 +46,7 @@ defmodule OliWeb.Components.Filters.CheckboxFilter do
           for={%{}}
           id={"#{@id}-form"}
           phx-change="change"
-          phx-submit={JS.push("apply", target: @myself) |> JS.focus(to: "##{@id}-trigger")}
+          phx-submit="search"
           phx-auto-recover="recover"
           phx-target={@myself}
         >
@@ -55,13 +58,14 @@ defmodule OliWeb.Components.Filters.CheckboxFilter do
             value={@query}
           />
           <DropdownFilter.checkbox_options
+            :if={@open}
             id={@id}
             legend={@label}
             options={@options}
-            checked={@draft}
+            checked={@selected_ids}
             visible={visible_ids(@options, @query)}
+            revision={@refusals}
           />
-          <DropdownFilter.actions id={@id} cancel={close_and_focus_trigger(@id, @myself)} />
         </.form>
       </DropdownFilter.panel>
     </div>
@@ -72,48 +76,44 @@ defmodule OliWeb.Components.Filters.CheckboxFilter do
     do: {:noreply, close(socket)}
 
   def handle_event("toggle", _params, socket),
-    do: {:noreply, assign(socket, open: true, draft: socket.assigns.selected_ids, query: "")}
+    do: {:noreply, assign(socket, open: true, query: "")}
 
-  # A debounced search change can arrive after a reconnect has restored the draft, carrying no
-  # checked boxes; only a checkbox change sets the draft.
+  # A debounced search change can arrive after the panel closed; only a checkbox change applies.
   def handle_event("change", %{"_target" => ["query" | _]} = params, socket) do
     {:noreply, assign(socket, query: search_query(params, socket.assigns.query))}
   end
 
   def handle_event("change", params, socket) do
-    {:noreply,
-     assign(socket,
-       draft: checked_ids(params, socket.assigns.options),
-       query: search_query(params, socket.assigns.query)
-     )}
+    %{options: options, on_apply: on_apply, max_selected: max} = socket.assigns
+    ids = checked_ids(params, options)
+    socket = assign(socket, query: search_query(params, socket.assigns.query))
+
+    case is_integer(max) and length(ids) > max do
+      true ->
+        send(self(), {:filter_limit_reached, on_apply, max})
+        {:noreply, update(socket, :refusals, &(&1 + 1))}
+
+      false ->
+        send(self(), {:filter_applied, on_apply, ids})
+        {:noreply, socket}
+    end
   end
 
-  # After a reconnect, LiveView replays each form here; only a form rendered open says so. A late
-  # `change` never reopens: Escape's blur can flush a debounced search after the close.
+  def handle_event("search", params, socket),
+    do: {:noreply, assign(socket, query: search_query(params, socket.assigns.query))}
+
+  # After a reconnect, LiveView replays each form here; only a form rendered open says so. The
+  # boxes keep showing the applied values: a check the server never received is not applied.
   def handle_event("recover", params, socket) do
-    {:noreply,
-     assign(socket,
-       open: params["open"] == "true",
-       draft: checked_ids(params, socket.assigns.options),
-       query: search_query(params, "")
-     )}
+    {:noreply, assign(socket, open: params["open"] == "true", query: search_query(params, ""))}
   end
 
-  def handle_event("apply", params, socket) do
-    send(
-      self(),
-      {:filter_applied, socket.assigns.on_apply, checked_ids(params, socket.assigns.options)}
-    )
+  def handle_event("close", _params, socket), do: {:noreply, close(socket)}
 
-    {:noreply, close(socket)}
-  end
-
-  def handle_event("cancel", _params, socket), do: {:noreply, close(socket)}
-
-  defp close(socket), do: assign(socket, open: false, draft: [], query: "")
+  defp close(socket), do: assign(socket, open: false)
 
   defp close_and_focus_trigger(id, target),
-    do: JS.push("cancel", target: target) |> JS.focus(to: "##{id}-trigger")
+    do: JS.push("close", target: target) |> JS.focus(to: "##{id}-trigger")
 
   # Form values are strings; only the ids of real options go back, as the options carry them.
   defp checked_ids(params, options) do

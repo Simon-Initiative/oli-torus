@@ -8,6 +8,16 @@ defmodule OliWeb.ManualGrading.BrowseParams do
   alias OliWeb.Common.Params
 
   @max_bigint 9_223_372_036_854_775_807
+  @max_ids 200
+  # The longest text a list of @max_ids ids can take: each id a quoted 19-digit decimal and ", ".
+  @max_list_bytes @max_ids * 23 + 2
+  # Room for both purposes written with spacing, as in `[false, true]`.
+  @max_purposes_bytes 32
+  @list_params [
+    user_ids: "selected_user_ids",
+    activity_ids: "selected_activity_ids",
+    page_ids: "selected_page_ids"
+  ]
 
   @doc "Builds the browse options from the URL params, normalizing every field."
   def browse_options(params) do
@@ -20,17 +30,37 @@ defmodule OliWeb.ManualGrading.BrowseParams do
     }
   end
 
+  @doc "The most ids a filter list holds; a URL list with more is ignored."
+  def max_ids, do: @max_ids
+
   @doc """
   Reads `key` as a JSON list of positive bigints (integers or decimal strings), deduplicated and
-  sorted; invalid elements are dropped and any other shape is `[]`. When `key` is absent and
-  `legacy_key` is given, its scalar value is read as a one-element list.
+  sorted; invalid elements are dropped and any other shape is `[]`, as is a list of more than
+  `max_ids/0` ids. When `key` is absent and `legacy_key` is given, its value is read as a
+  one-element list; a legacy value that is not a single value is `[]`.
   """
   def id_list(params, key, legacy_key \\ nil) do
     cond do
-      Map.has_key?(params, key) -> params |> Params.get_list_param(key, []) |> normalize_ids()
-      is_nil(legacy_key) -> []
-      true -> params |> Map.get(legacy_key) |> List.wrap() |> normalize_ids()
+      Map.has_key?(params, key) ->
+        case list_ids(params, key) do
+          {:ok, ids} -> ids
+          :over_limit -> []
+        end
+
+      is_nil(legacy_key) ->
+        []
+
+      true ->
+        case Map.get(params, legacy_key) do
+          value when is_binary(value) or is_integer(value) -> normalize_ids([value])
+          _absent_or_not_a_single_value -> []
+        end
     end
+  end
+
+  @doc "The browse options whose URL list holds more than `max_ids/0` ids, and so filter nothing."
+  def over_limit(params) do
+    for {option, key} <- @list_params, list_ids(params, key) == :over_limit, do: option
   end
 
   @table_param_keys ~w(sort_by sort_order text_search selected_user_ids selected_activity_ids selected_page_ids graded offset)
@@ -63,8 +93,30 @@ defmodule OliWeb.ManualGrading.BrowseParams do
     end
   end
 
-  @doc "Reads `graded` as `true`, `false` or `nil` (no filter)."
-  def graded(params), do: Params.get_boolean_param(params, "graded", nil)
+  @doc """
+  Reads `graded` as the purposes chosen, sorted: `true` (scored) and `false` (practice), given as
+  one value or as a JSON list. Anything that is not a purpose is dropped, and a value longer than
+  both purposes need is no filter.
+  """
+  def purposes(params) do
+    values =
+      case Map.get(params, "graded") do
+        "true" -> [true]
+        "false" -> [false]
+        value when is_binary(value) and byte_size(value) > @max_purposes_bytes -> []
+        _ -> Params.get_list_param(params, "graded", [])
+      end
+
+    values |> Enum.filter(&is_boolean/1) |> Enum.uniq() |> Enum.sort()
+  end
+
+  @doc "Reads `graded` as the purpose to filter by, or `nil` (no filter) when none or both are chosen."
+  def graded(params) do
+    case purposes(params) do
+      [purpose] -> purpose
+      _none_or_both -> nil
+    end
+  end
 
   @sort_fields ~w(user activity_title attempt_number page_title resource_attempt_number activity_type_id graded date_submitted)a
   @sort_fields_by_name Map.new(@sort_fields, &{Atom.to_string(&1), &1})
@@ -98,6 +150,21 @@ defmodule OliWeb.ManualGrading.BrowseParams do
     case normalize_ids([value]) do
       [id] -> {:ok, id}
       [] -> :error
+    end
+  end
+
+  defp list_ids(params, key) do
+    case Map.get(params, key) do
+      value when is_binary(value) and byte_size(value) > @max_list_bytes ->
+        :over_limit
+
+      _value ->
+        ids = params |> Params.get_list_param(key, []) |> normalize_ids()
+
+        case length(ids) > @max_ids do
+          true -> :over_limit
+          false -> {:ok, ids}
+        end
     end
   end
 

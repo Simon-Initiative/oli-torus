@@ -16,7 +16,8 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
          test_pid: session["test_pid"],
          options: session["options"],
          selected: session["selected"],
-         searchable: session["searchable"]
+         searchable: session["searchable"],
+         max_selected: session["max_selected"]
        )}
     end
 
@@ -30,6 +31,7 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
         selected_ids={@selected}
         searchable={@searchable}
         on_apply={:user_ids}
+        max_selected={@max_selected}
       />
       """
     end
@@ -37,6 +39,11 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     def handle_info({:filter_applied, key, ids}, socket) do
       send(socket.assigns.test_pid, {:applied, key, ids})
       {:noreply, assign(socket, selected: ids)}
+    end
+
+    def handle_info({:filter_limit_reached, key, max}, socket) do
+      send(socket.assigns.test_pid, {:limit_reached, key, max})
+      {:noreply, socket}
     end
 
     def handle_info({:parent_update, selected}, socket),
@@ -49,14 +56,15 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     %{id: 3, label: "Cruz, Cata"}
   ]
 
-  defp mount_filter(conn, selected, searchable \\ true) do
+  defp mount_filter(conn, selected, searchable \\ true, max_selected \\ nil) do
     {:ok, view, _html} =
       live_isolated(conn, Host,
         session: %{
           "test_pid" => self(),
           "options" => @options,
           "selected" => selected,
-          "searchable" => searchable
+          "searchable" => searchable,
+          "max_selected" => max_selected
         }
       )
 
@@ -65,6 +73,9 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
 
   defp open(view), do: view |> element("#student-filter-trigger") |> render_click()
   defp form(view), do: element(view, "#student-filter-form")
+
+  defp change(view, params),
+    do: render_change(form(view), Map.put(params, "_target", ["selected"]))
 
   defp open?(view) do
     view |> element("#student-filter-trigger") |> render() =~ ~s(aria-expanded="true") and
@@ -79,7 +90,24 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     |> Enum.flat_map(&Floki.attribute(&1, "value"))
   end
 
-  test "opening starts the draft from the applied values; Apply sends the draft and closes",
+  defp box_markup(view) do
+    view
+    |> render()
+    |> Floki.parse_document!()
+    |> Floki.find(~s(#student-filter-panel input[type="checkbox"]))
+    |> Map.new(&{hd(Floki.attribute(&1, "value")), Floki.raw_html(&1)})
+  end
+
+  defp click_away_event(view) do
+    view
+    |> render()
+    |> Floki.parse_document!()
+    |> Floki.attribute("#student-filter", "phx-click-away")
+    |> hd()
+    |> Jason.decode!()
+  end
+
+  test "checking or unchecking a box sends the checked options to the parent at once and keeps the panel open",
        %{conn: conn} do
     view = mount_filter(conn, [1])
     refute open?(view)
@@ -88,71 +116,117 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     assert open?(view)
     assert checked(view) == ["1"]
 
-    render_change(form(view), %{"selected" => ["1", "2"]})
-    assert checked(view) == ["1", "2"]
-    refute_received {:applied, _, _}
-
-    render_submit(form(view), %{"selected" => ["1", "2"]})
+    change(view, %{"selected" => ["1", "2"]})
     assert_receive {:applied, :user_ids, [1, 2]}
-    refute open?(view)
+    assert open?(view)
+    assert checked(view) == ["1", "2"]
 
     assert view |> element("#student-filter-trigger") |> render() =~
              ~r/2\s*<span[^>]*>\s*selected/
+
+    change(view, %{"selected" => ["2"]})
+    assert_receive {:applied, :user_ids, [2]}
+
+    change(view, %{"selected" => []})
+    assert_receive {:applied, :user_ids, []}
+    assert open?(view)
   end
 
-  test "Cancel and Escape close without applying and discard the draft and the search",
+  test "the panel has no Apply or Cancel: Escape, a click outside and the trigger only close it",
        %{conn: conn} do
     view = mount_filter(conn, [1])
-
     open(view)
-    render_change(form(view), %{"query" => "bea", "selected" => ["1", "2"]})
-    view |> element("#student-filter-cancel") |> render_click()
 
-    refute open?(view)
-    refute_received {:applied, _, _}
+    refute has_element?(view, "#student-filter-apply")
+    refute has_element?(view, "#student-filter-cancel")
 
-    open(view)
-    assert checked(view) == ["1"]
-    assert view |> element("#student-filter-search") |> render() =~ ~s(value="")
-
-    render_change(form(view), %{"selected" => ["3"]})
     view |> element("#student-filter") |> render_keydown(%{"key" => "Escape"})
-
     refute open?(view)
+
     open(view)
+    assert [["push", %{"event" => "close"}]] = click_away_event(view)
+    view |> with_target("#student-filter") |> render_hook("close", %{})
+    refute open?(view)
+
+    open(view)
+    open(view)
+    refute open?(view)
+
+    refute_received {:applied, _, _}
+  end
+
+  test "a search change or Enter in the search applies nothing and keeps the panel open",
+       %{conn: conn} do
+    view = mount_filter(conn, [1])
+    open(view)
+
+    render_change(form(view), %{
+      "_target" => ["query"],
+      "query" => "bea",
+      "selected" => ["1", "2"]
+    })
+
+    assert view |> element("#student-filter-search") |> render() =~ ~s(value="bea")
+
+    render_submit(form(view), %{"query" => "cru", "selected" => ["1", "3"]})
+    assert view |> element("#student-filter-search") |> render() =~ ~s(value="cru")
+
+    assert open?(view)
     assert checked(view) == ["1"]
     refute_received {:applied, _, _}
   end
 
-  test "the search hides options that do not match, ignoring case, and keeps checked hidden ones",
+  test "the search starts empty each time the panel opens, even after a late search change",
+       %{conn: conn} do
+    view = mount_filter(conn, [])
+    open(view)
+    render_change(form(view), %{"_target" => ["query"], "query" => "bea"})
+    view |> element("#student-filter") |> render_keydown(%{"key" => "Escape"})
+    render_change(form(view), %{"_target" => ["query"], "query" => "cru"})
+
+    open(view)
+
+    assert view |> element("#student-filter-search") |> render() =~ ~s(value="")
+  end
+
+  test "the search hides options that do not match, ignoring case, and a checked hidden one stays applied",
        %{conn: conn} do
     view = mount_filter(conn, [2])
     open(view)
 
-    render_change(form(view), %{"query" => "ALV", "selected" => ["2"]})
+    render_change(form(view), %{"_target" => ["query"], "query" => "ALV", "selected" => ["2"]})
 
     assert view |> element("#student-filter-option-1") |> render() =~ ~r/^<div(?![^>]*hidden)/
     assert view |> element("#student-filter-option-2") |> render() =~ ~r/^<div[^>]*hidden/
     assert view |> element("#student-filter-option-3") |> render() =~ ~r/^<div[^>]*hidden/
     assert checked(view) == ["2"]
 
-    render_submit(form(view), %{"query" => "ALV", "selected" => ["1", "2"]})
+    change(view, %{"query" => "ALV", "selected" => ["1", "2"]})
     assert_receive {:applied, :user_ids, [1, 2]}
+    assert view |> element("#student-filter-search") |> render() =~ ~s(value="ALV")
   end
 
-  test "while open, a parent update keeps the draft; once closed, the filter shows the parent's values",
-       %{conn: conn} do
+  test "the boxes show the parent's values, open or closed", %{conn: conn} do
     view = mount_filter(conn, [1])
     open(view)
-    render_change(form(view), %{"selected" => ["1", "2"]})
 
     send(view.pid, {:parent_update, [3]})
-    assert checked(view) == ["1", "2"]
+    assert checked(view) == ["3"]
     assert open?(view)
 
-    view |> element("#student-filter-cancel") |> render_click()
+    view |> element("#student-filter") |> render_keydown(%{"key" => "Escape"})
+    send(view.pid, {:parent_update, [2]})
     open(view)
-    assert checked(view) == ["3"]
+    assert checked(view) == ["2"]
+  end
+
+  test "closed, the panel holds no options; they render when it opens", %{conn: conn} do
+    view = mount_filter(conn, [1])
+
+    refute has_element?(view, ~s(#student-filter-panel input[type="checkbox"]))
+
+    open(view)
+    assert has_element?(view, ~s(#student-filter-panel input[type="checkbox"][value="3"]))
   end
 
   test "a value sent back to the parent is the option's own id, not its form string",
@@ -160,7 +234,7 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     view = mount_filter(conn, [])
     open(view)
 
-    render_submit(form(view), %{"selected" => ["3", "999", "x"]})
+    change(view, %{"selected" => ["3", "999", "x"]})
     assert_receive {:applied, :user_ids, [3]}
   end
 
@@ -170,7 +244,7 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     open(view)
 
     for forged <- [%{"x" => "y"}, ["Ana"]] do
-      render_change(form(view), %{"query" => forged})
+      render_change(form(view), %{"_target" => ["query"], "query" => forged})
 
       assert open?(view)
 
@@ -181,14 +255,14 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     end
   end
 
-  test "a recovered form that was open reopens the panel with its draft and search" do
+  test "a recovered form that was open reopens the panel with its search and applies nothing" do
     closed = %Phoenix.LiveView.Socket{
       assigns: %{
         __changed__: %{},
         options: @options,
         selected_ids: [1],
+        on_apply: :user_ids,
         open: false,
-        draft: [],
         query: ""
       }
     }
@@ -200,7 +274,8 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
         closed
       )
 
-    assert %{open: true, draft: [2], query: "bea"} = recovered.assigns
+    assert %{open: true, query: "bea", selected_ids: [1]} = recovered.assigns
+    refute_received {:filter_applied, _, _}
 
     {:noreply, still_closed} =
       CheckboxFilter.handle_event("recover", %{"query" => "", "selected" => []}, closed)
@@ -221,41 +296,11 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
            )
   end
 
-  test "a search change leaves the checked choices alone; a checkbox change replaces them, even with none left" do
-    open_with_draft = %Phoenix.LiveView.Socket{
-      assigns: %{
-        __changed__: %{},
-        options: @options,
-        selected_ids: [1],
-        open: true,
-        draft: [2],
-        query: ""
-      }
-    }
-
-    {:noreply, searched} =
-      CheckboxFilter.handle_event(
-        "change",
-        %{"_target" => ["query"], "query" => "a", "open" => "true"},
-        open_with_draft
-      )
-
-    assert %{draft: [2], query: "a"} = searched.assigns
-
-    {:noreply, unchecked} =
-      CheckboxFilter.handle_event(
-        "change",
-        %{"_target" => ["selected"], "query" => "a", "open" => "true"},
-        open_with_draft
-      )
-
-    assert %{draft: [], query: "a"} = unchecked.assigns
-  end
-
-  test "a late change event after the panel closed does not reopen it", %{conn: conn} do
+  test "a late search change after the panel closed does not reopen it or apply anything",
+       %{conn: conn} do
     view = mount_filter(conn, [1])
     open(view)
-    view |> element("#student-filter-cancel") |> render_click()
+    view |> element("#student-filter") |> render_keydown(%{"key" => "Escape"})
 
     render_change(form(view), %{
       "_target" => ["query"],
@@ -265,8 +310,39 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     })
 
     refute open?(view)
+    refute_received {:applied, _, _}
     open(view)
     assert checked(view) == ["1"]
+  end
+
+  describe "with max_selected" do
+    test "a change within the limit applies", %{conn: conn} do
+      view = mount_filter(conn, [1], true, 2)
+      open(view)
+
+      change(view, %{"selected" => ["1", "2"]})
+      assert_receive {:applied, :user_ids, [1, 2]}
+    end
+
+    test "a change past the limit applies nothing, tells the parent, and re-renders every box so the browser drops the refused check",
+         %{conn: conn} do
+      view = mount_filter(conn, [1, 2], true, 2)
+      open(view)
+      before = box_markup(view)
+
+      change(view, %{"selected" => ["1", "2", "3"]})
+
+      assert_receive {:limit_reached, :user_ids, 2}
+      refute_received {:applied, _, _}
+      assert checked(view) == ["1", "2"]
+      assert open?(view)
+
+      after_refusal = box_markup(view)
+
+      for {id, markup} <- before do
+        refute after_refusal[id] == markup, "box #{id} was not re-rendered"
+      end
+    end
   end
 
   test "without search, the panel has no search box", %{conn: conn} do

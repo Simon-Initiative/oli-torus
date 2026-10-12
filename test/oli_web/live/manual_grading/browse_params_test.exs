@@ -55,6 +55,101 @@ defmodule OliWeb.ManualGrading.BrowseParamsTest do
     end
   end
 
+  describe "the limit of 200 ids per list" do
+    defp ids_json(count), do: Jason.encode!(Enum.to_list(1..count))
+
+    test "a list of up to 200 ids applies; a longer one is an empty filter and is reported" do
+      at_limit = %{"selected_user_ids" => ids_json(200)}
+      past_limit = %{"selected_user_ids" => ids_json(201)}
+
+      assert BrowseParams.id_list(at_limit, "selected_user_ids") == Enum.to_list(1..200)
+      assert BrowseParams.over_limit(at_limit) == []
+
+      assert BrowseParams.id_list(past_limit, "selected_user_ids") == []
+      assert BrowseParams.browse_options(past_limit).user_ids == []
+      assert BrowseParams.over_limit(past_limit) == [:user_ids]
+    end
+
+    test "the limit counts distinct valid ids, not list elements" do
+      repeated = %{"selected_page_ids" => Jason.encode!(Enum.to_list(1..200) ++ [1, 2, -5, "x"])}
+
+      assert length(BrowseParams.id_list(repeated, "selected_page_ids")) == 200
+      assert BrowseParams.over_limit(repeated) == []
+    end
+
+    test "every list is checked on its own" do
+      params = %{
+        "selected_user_ids" => ids_json(3),
+        "selected_activity_ids" => ids_json(201),
+        "selected_page_ids" => ids_json(250)
+      }
+
+      assert BrowseParams.over_limit(params) == [:activity_ids, :page_ids]
+      assert BrowseParams.browse_options(params).user_ids == [1, 2, 3]
+      assert BrowseParams.browse_options(params).activity_ids == []
+      assert BrowseParams.browse_options(params).page_ids == []
+    end
+
+    test "an old filter key is read only as a single value; a list in it is no filter" do
+      assert BrowseParams.browse_options(%{"user_id" => "5"}).user_ids == [5]
+
+      for {legacy, option} <- [user_id: :user_ids, activity_id: :activity_ids, page_id: :page_ids] do
+        two = Plug.Conn.Query.decode("#{legacy}[]=1&#{legacy}[]=2")
+        many = Plug.Conn.Query.decode(Enum.map_join(1..201, "&", &"#{legacy}[]=#{&1}"))
+
+        assert Map.fetch!(BrowseParams.browse_options(two), option) == []
+        assert Map.fetch!(BrowseParams.browse_options(many), option) == []
+      end
+
+      assert BrowseParams.table_params(Plug.Conn.Query.decode("user_id[]=1&user_id[]=2")) ==
+               %{"selected_user_ids" => "[]"}
+    end
+
+    test "the byte budget admits 200 of the longest ids; a longer text, valid or not, is past the limit" do
+      longest = ~s|"#{9_223_372_036_854_775_807}", |
+      at_limit = "[" <> String.duplicate(longest, 199) <> ~s|"9223372036854775806"]|
+
+      assert length(BrowseParams.id_list(%{"selected_user_ids" => at_limit}, "selected_user_ids")) ==
+               2
+
+      not_json = "[" <> String.duplicate("1, ", 2_000)
+
+      assert BrowseParams.over_limit(%{"selected_user_ids" => not_json}) == [:user_ids]
+
+      assert BrowseParams.over_limit(%{
+               "selected_user_ids" => "[" <> String.duplicate("1, ", 100)
+             }) == []
+    end
+  end
+
+  describe "purposes/1" do
+    test "reads graded as the purposes chosen: one value, both as a JSON list, or none" do
+      assert BrowseParams.purposes(%{"graded" => "true"}) == [true]
+      assert BrowseParams.purposes(%{"graded" => "false"}) == [false]
+      assert BrowseParams.purposes(%{"graded" => "[true]"}) == [true]
+      assert BrowseParams.purposes(%{"graded" => "[true,false]"}) == [false, true]
+      assert BrowseParams.purposes(%{"graded" => "[false,true,true]"}) == [false, true]
+
+      for value <- ["", "[]", "yes", "[1]", "[[true]]", %{"a" => "b"}, nil] do
+        assert BrowseParams.purposes(%{"graded" => value}) == [], inspect(value)
+      end
+    end
+
+    test "graded filters by a single purpose; both purposes, like none, filter nothing" do
+      assert BrowseParams.graded(%{"graded" => "[false]"}) == false
+      assert BrowseParams.graded(%{"graded" => "[true,false]"}) == nil
+      assert BrowseParams.browse_options(%{"graded" => "[false,true]"}).graded == nil
+    end
+
+    test "a graded value longer than both purposes need is no filter" do
+      many = "[" <> Enum.map_join(1..100, ",", fn _ -> "true" end) <> "]"
+
+      assert BrowseParams.purposes(%{"graded" => "[false, true]"}) == [false, true]
+      assert BrowseParams.purposes(%{"graded" => many}) == []
+      assert BrowseParams.graded(%{"graded" => many}) == nil
+    end
+  end
+
   describe "scalar params" do
     test "text_search is a string or empty" do
       assert BrowseParams.text_search(%{"text_search" => " ana "}) == " ana "

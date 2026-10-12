@@ -1,13 +1,12 @@
 defmodule OliWeb.Components.Filters.DropdownFilter do
   @moduledoc """
-  Stateless pieces of a dropdown filter: `trigger/1`, `panel/1`, `search/1`, `checkbox_options/1`
-  and `actions/1`. Every element id derives from the filter's `id`, so a page can hold several
+  Stateless pieces of a dropdown filter: `trigger/1`, `panel/1`, `search/1` and
+  `checkbox_options/1`. Every element id derives from the filter's `id`, so a page can hold several
   filters. `OliWeb.Components.Filters.CheckboxFilter` composes them.
   """
 
   use Phoenix.Component
 
-  alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Icons
 
   attr :id, :string, required: true
@@ -104,6 +103,10 @@ defmodule OliWeb.Components.Filters.DropdownFilter do
   attr :checked, :list, default: [], doc: "Ids of the checked options."
   attr :visible, :list, default: nil, doc: "Ids of the options shown; `nil` shows them all."
 
+  attr :revision, :integer,
+    default: 0,
+    doc: "A new value renders every checkbox again, so the browser state returns to `checked`."
+
   @doc """
   One checkbox per option, sent as `selected[]`. Options outside `visible` are hidden, not
   removed, so a checked one keeps its value in the form.
@@ -143,6 +146,7 @@ defmodule OliWeb.Components.Filters.DropdownFilter do
             name="selected[]"
             value={to_string(option.id)}
             checked={row.checked}
+            data-revision={@revision}
             class="h-4 w-4 rounded border-Border-border-active"
           />
           <label for={"#{@id}-option-#{option.id}-input"} class="text-sm text-Text-text-high">
@@ -152,22 +156,6 @@ defmodule OliWeb.Components.Filters.DropdownFilter do
       </div>
       <p :if={@shown == 0} class="py-2 text-sm text-Text-text-low">No results found</p>
     </fieldset>
-    """
-  end
-
-  attr :id, :string, required: true
-  attr :cancel, :any, default: nil, doc: "`phx-click` of Cancel."
-  attr :target, :any, default: nil
-
-  @doc "Cancel (closes without applying) and Apply (submits the form)."
-  def actions(assigns) do
-    ~H"""
-    <div class="mt-3 flex items-center justify-end gap-4 border-t border-Border-border-subtle pt-3">
-      <Button.button id={"#{@id}-cancel"} variant={:text} phx-click={@cancel} phx-target={@target}>
-        Cancel
-      </Button.button>
-      <Button.button id={"#{@id}-apply"} variant={:primary} type="submit">Apply</Button.button>
-    </div>
     """
   end
 

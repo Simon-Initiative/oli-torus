@@ -25,6 +25,14 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :sticky_header_offset, :integer, default: 0
   attr :table_container_class, :string, default: "relative mx-4"
 
+  attr :top_info_class, :string,
+    default: "px-5 py-2",
+    doc: "Classes of the \"Showing all results\" line shown when every row fits on one page."
+
+  attr :paging_container_class, :string,
+    default: "mx-4",
+    doc: "Passed to `Paging` as its `container_class`; `\"\"` drops its side margins."
+
   attr :header_bg_class, :string,
     default: nil,
     doc: "Optional CSS class for header cell background. Passed through to StripedTable."
@@ -51,7 +59,7 @@ defmodule OliWeb.Common.StripedPagedTable do
       <% end %>
 
       <%= if @total_count > 0 do %>
-        <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
+        <div :if={@total_count <= @limit and @render_top_info} class={@top_info_class}>
           Showing all results ({@total_count} total)
         </div>
         <div class={@table_container_class}>
@@ -80,6 +88,7 @@ defmodule OliWeb.Common.StripedPagedTable do
           show_limit_change={@show_limit_change}
           should_add_empty_flex={false}
           is_page_size_right={true}
+          container_class={@paging_container_class}
         />
       <% else %>
         <div class="bg-white dark:bg-gray-800 dark:text-white px-10 py-5">

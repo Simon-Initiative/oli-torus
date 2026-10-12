@@ -41,6 +41,35 @@ defmodule OliWeb.Common.StripedPagedTableTest do
 
       assert Floki.find(doc, "th[phx-click]") == []
     end
+
+    test "keeps its side margins by default; a page can drop them to line its counts up with its own content" do
+      assert classes(top_info(render_table(total_count: 3))) == ["px-5", "py-2"]
+
+      default_paged = render_table([])
+      assert "mx-4" in (default_paged |> Floki.find("#footer_paging") |> hd() |> classes())
+      assert classes(paging_label(default_paged)) == ["ml-4"]
+
+      assert classes(top_info(render_table(total_count: 3, top_info_class: "py-2"))) == ["py-2"]
+
+      aligned_paged = render_table(paging_container_class: "")
+      refute "mx-4" in (aligned_paged |> Floki.find("#footer_paging") |> hd() |> classes())
+      assert classes(paging_label(aligned_paged)) == []
+    end
+
+    defp top_info(doc), do: own_text_node(doc, "div", ~r/^Showing all results/)
+    defp paging_label(doc), do: own_text_node(doc, "#footer_paging > div", ~r/^Showing result/)
+
+    defp own_text_node(doc, selector, text) do
+      node =
+        doc
+        |> Floki.find(selector)
+        |> Enum.find(&(Floki.text(&1, deep: false) |> String.trim() |> String.match?(text)))
+
+      assert node, "no #{selector} reads #{inspect(text)}"
+      node
+    end
+
+    defp classes(node), do: node |> Floki.attribute("class") |> Enum.flat_map(&String.split/1)
   end
 
   describe "handle_delegated/4" do

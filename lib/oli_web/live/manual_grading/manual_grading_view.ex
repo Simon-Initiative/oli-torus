@@ -24,6 +24,9 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   import OliWeb.DelegatedEvents
 
   @limit 10
+  # A notice that comes with a redirect travels in the session cookie, 4096 bytes in all.
+  @notice_bytes 1_000
+  @label_bytes 120
   @default_options %BrowseOptions{
     user_ids: [],
     activity_ids: [],
@@ -73,6 +76,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
            filter_options: %{users: [], activities: [], pages: []},
            table_model: table_model,
            options: @default_options,
+           purposes: [],
            offset: 0,
            limit: @limit
          )}
@@ -84,14 +88,14 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     in_play = ManualGrading.filter_options(socket.assigns.section)
     socket = assign(socket, filter_options: in_play)
 
-    case {legacy_selection(params), out_of_play_filter_values(params, in_play)} do
+    case {legacy_selection(params), filter_cleanup(socket.assigns.section, params, in_play)} do
       {{:ok, attempt_id}, _} ->
         {:noreply,
          redirect(socket,
            to: scoring_path(socket.assigns.section, attempt_id, table_params)
          )}
 
-      {:none, {:none, _options}} ->
+      {:none, :none} ->
         case load_table(socket, params, table_params) do
           {:ok, socket} ->
             {:noreply, socket}
@@ -100,7 +104,13 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
             table_model =
               table_model_from(socket, params)
 
-            url_params = url_params(table_model, last_offset, BrowseParams.browse_options(params))
+            url_params =
+              url_params(
+                table_model,
+                last_offset,
+                BrowseParams.browse_options(params),
+                BrowseParams.purposes(params)
+              )
 
             {:noreply,
              push_patch(socket,
@@ -109,16 +119,20 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
              )}
         end
 
-      {:none, {:removed, kept_options, removed}} ->
+      {:none, {:cleanup, kept_options, notice}} ->
         table_model = table_model_from(socket, params)
-        url_params = url_params(table_model, BrowseParams.offset(params), kept_options)
+
+        url_params =
+          url_params(
+            table_model,
+            BrowseParams.offset(params),
+            kept_options,
+            BrowseParams.purposes(params)
+          )
 
         {:noreply,
          socket
-         |> put_flash(
-           :info,
-           after_notice(socket, removed_values_notice(socket.assigns.section, removed))
-         )
+         |> put_flash(:info, after_notice(socket, notice))
          |> push_patch(
            to: Routes.live_path(socket, __MODULE__, socket.assigns.section.slug, url_params),
            replace: true
@@ -130,9 +144,11 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   # stays in front of the filter-removal notice instead of being replaced by it.
   defp after_notice(socket, notice) do
     case Phoenix.Flash.get(socket.assigns.flash, :info) do
-      nil -> notice
-      earlier when is_binary(earlier) -> earlier <> " " <> notice
-      _other -> notice
+      earlier when is_binary(earlier) ->
+        shorten(earlier, @notice_bytes - byte_size(notice) - 1) <> " " <> notice
+
+      _none ->
+        notice
     end
   end
 
@@ -145,6 +161,59 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   end
 
   defp legacy_selection(_params), do: :none
+
+  defp filter_cleanup(section, params, in_play) do
+    case {BrowseParams.over_limit(params), out_of_play_filter_values(params, in_play)} do
+      {[], {:none, _options}} ->
+        :none
+
+      {over_limit, {:none, options}} ->
+        {:cleanup, options, over_limit_notice(over_limit)}
+
+      {over_limit, {:removed, kept, removed}} ->
+        notices = [over_limit_notice(over_limit), removed_values_notice(section, removed)]
+        {:cleanup, kept, notices |> Enum.reject(&is_nil/1) |> Enum.join(" ")}
+    end
+  end
+
+  defp over_limit_notice([]), do: nil
+
+  defp over_limit_notice(options) do
+    {selections, verb} =
+      case Enum.map(options, &filter_label/1) do
+        [only] -> {"#{only} filter selection", "was"}
+        many -> {"#{sentence_list(many)} filter selections", "were"}
+      end
+
+    "The #{selections} #{verb} too large and #{verb} cleared. " <>
+      "You can select up to #{BrowseParams.max_ids()} options in a filter."
+  end
+
+  defp filter_label(:user_ids), do: "Student"
+  defp filter_label(:activity_ids), do: "Activity"
+  defp filter_label(:page_ids), do: "Page"
+
+  defp first_names(names) when length(names) > 3,
+    do: Enum.take(names, 3) ++ ["#{length(names) - 3} more"]
+
+  defp first_names(names), do: names
+
+  defp shorten(text, max_bytes) when byte_size(text) <= max_bytes, do: text
+
+  defp shorten(text, max_bytes) do
+    text
+    |> Stream.unfold(&String.next_grapheme/1)
+    |> Enum.reduce_while("", fn grapheme, kept ->
+      case byte_size(kept) + byte_size(grapheme) + byte_size("…") > max_bytes do
+        true -> {:halt, kept}
+        false -> {:cont, kept <> grapheme}
+      end
+    end)
+    |> Kernel.<>("…")
+  end
+
+  defp sentence_list([only]), do: only
+  defp sentence_list(many), do: Enum.join(Enum.drop(many, -1), ", ") <> " and " <> List.last(many)
 
   # A selected filter value with no pending submission in the section leaves the filter.
   # The dropdown options are exactly the ids with pending submissions, so no extra query is needed.
@@ -184,13 +253,15 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         Enum.map(removed.activity_ids, &Map.get(labels.activities, &1, "a selected activity")) ++
         Enum.map(removed.page_ids, &Map.get(labels.pages, &1, "a selected page"))
 
+    names = Enum.map(names, &shorten(&1, @label_bytes))
+
     {subject, verb, participle} =
       case names do
         [only] ->
           {only, "has", "was"}
 
         many ->
-          {Enum.join(Enum.drop(many, -1), ", ") <> " and " <> List.last(many), "have", "were"}
+          {sentence_list(first_names(many)), "have", "were"}
       end
 
     subject = String.replace_prefix(subject, "a selected", "A selected")
@@ -228,7 +299,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
          table_model: table_model,
          total_count: total_count,
          unfiltered_count: unfiltered_count(socket.assigns.section, options, total_count),
-         options: options
+         options: options,
+         purposes: BrowseParams.purposes(params)
        )}
     end
   end
@@ -294,6 +366,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
               selected_ids={@options.user_ids}
               searchable={true}
               on_apply={:user_ids}
+              max_selected={BrowseParams.max_ids()}
             />
             <.live_component
               module={CheckboxFilter}
@@ -303,6 +376,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
               selected_ids={@options.activity_ids}
               searchable={true}
               on_apply={:activity_ids}
+              max_selected={BrowseParams.max_ids()}
             />
             <.live_component
               module={CheckboxFilter}
@@ -312,17 +386,18 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
               selected_ids={@options.page_ids}
               searchable={true}
               on_apply={:page_ids}
+              max_selected={BrowseParams.max_ids()}
             />
             <.live_component
               module={CheckboxFilter}
               id="purpose-filter"
               label="Purpose"
               options={purpose_options()}
-              selected_ids={graded_ids(@options.graded)}
+              selected_ids={@purposes}
               on_apply={:graded}
             />
             <button
-              class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2 hover:text-Text-text-button"
+              class="ml-2 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2 hover:text-Text-text-button"
               phx-click="clear_all_filters"
             >
               <Icons.trash /> Clear All Filters
@@ -332,7 +407,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
         <div class="mb-3" />
 
-        <div :if={filtered?(@options)} class="px-5 py-2" role="status">
+        <div :if={filtered?(@options)} class="py-2" role="status">
           Showing {@total_count} of {@unfiltered_count} submissions
         </div>
 
@@ -346,6 +421,9 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
           show_limit_change={false}
           sort_button={true}
           table_id="manual-scoring-table"
+          table_container_class="relative"
+          top_info_class="py-2"
+          paging_container_class=""
           render_top_info={not filtered?(@options)}
           no_records_message={
             if filtered?(@options),
@@ -362,7 +440,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   def patch_with(socket, changes) do
     url_params =
       socket.assigns.table_model
-      |> url_params(socket.assigns.offset, socket.assigns.options)
+      |> url_params(socket.assigns.offset, socket.assigns.options, socket.assigns.purposes)
       |> Map.merge(changes)
 
     {:noreply,
@@ -372,7 +450,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
      )}
   end
 
-  defp url_params(table_model, offset, %BrowseOptions{} = options) do
+  defp url_params(table_model, offset, %BrowseOptions{} = options, purposes) do
     %{
       sort_by: table_model.sort_by_spec.name,
       sort_order: table_model.sort_order,
@@ -381,7 +459,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       selected_user_ids: Jason.encode!(options.user_ids),
       selected_activity_ids: Jason.encode!(options.activity_ids),
       selected_page_ids: Jason.encode!(options.page_ids),
-      graded: options.graded
+      graded: Jason.encode!(purposes)
     }
   end
 
@@ -391,7 +469,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       selected_user_ids: Jason.encode!([]),
       selected_activity_ids: Jason.encode!([]),
       selected_page_ids: Jason.encode!([]),
-      graded: nil,
+      graded: Jason.encode!([]),
       offset: 0
     })
   end
@@ -424,18 +502,16 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     ])
   end
 
-  def handle_info({:filter_applied, :graded, values}, socket) do
-    graded =
-      case values do
-        [value] -> value
-        _none_or_both -> nil
-      end
-
-    patch_with(socket, %{graded: graded, offset: 0})
+  def handle_info({:filter_applied, :graded, purposes}, socket) do
+    patch_with(socket, %{graded: Jason.encode!(Enum.sort(purposes)), offset: 0})
   end
 
   def handle_info({:filter_applied, key, ids}, socket) do
     patch_with(socket, %{list_param(key) => Jason.encode!(ids), offset: 0})
+  end
+
+  def handle_info({:filter_limit_reached, _key, max}, socket) do
+    {:noreply, put_flash(socket, :error, "You can select up to #{max} options in a filter.")}
   end
 
   defp list_param(:user_ids), do: :selected_user_ids
@@ -453,9 +529,6 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     |> Enum.map(&%{id: &1.id, label: &1.title})
     |> Enum.sort_by(&String.downcase(&1.label))
   end
-
-  defp graded_ids(nil), do: []
-  defp graded_ids(graded), do: [graded]
 
   defp purpose_options, do: [%{id: true, label: "Scored"}, %{id: false, label: "Practice"}]
 end

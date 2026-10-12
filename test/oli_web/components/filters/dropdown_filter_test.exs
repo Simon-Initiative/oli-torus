@@ -137,15 +137,4 @@ defmodule OliWeb.Components.Filters.DropdownFilterTest do
       assert Floki.text(Floki.find(none, ~s([aria-live="polite"]))) =~ "0 options"
     end
   end
-
-  describe "actions/1" do
-    test "Cancel does not submit the form; Apply does" do
-      actions = doc(&DropdownFilter.actions/1, id: "f")
-
-      assert Floki.attribute(actions, "button#f-cancel", "type") == ["button"]
-      assert Floki.text(Floki.find(actions, "button#f-cancel")) =~ "Cancel"
-      assert Floki.attribute(actions, "button#f-apply", "type") == ["submit"]
-      assert Floki.text(Floki.find(actions, "button#f-apply")) =~ "Apply"
-    end
-  end
 end

@@ -60,6 +60,13 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
     path |> URI.parse() |> Map.get(:query) |> Kernel.||("") |> Plug.Conn.Query.decode()
   end
 
+  defp side_spacing(node) do
+    node
+    |> Floki.attribute("class")
+    |> Enum.flat_map(&String.split/1)
+    |> Enum.filter(&Regex.match?(~r/^[mp][xl]-\d/, &1))
+  end
+
   defp header_texts(html) do
     html
     |> Floki.parse_document!()
@@ -109,6 +116,40 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       assert Floki.find(doc, ~s(select[name="limit"])) == []
     end
 
+    test "the table, its counts, its paging and Clear All drop their own side margins",
+         ctx do
+      {:ok, _view, html} = live(ctx.conn, ctx.route)
+      doc = Floki.parse_document!(html)
+
+      assert [_] = Floki.find(doc, "table#manual-scoring-table")
+
+      assert doc
+             |> Floki.find("div")
+             |> Enum.filter(&(Floki.find(&1, "table#manual-scoring-table") != []))
+             |> Enum.flat_map(&side_spacing/1) == []
+
+      assert [all_results] =
+               doc
+               |> Floki.find("div")
+               |> Enum.filter(&(Floki.text(&1, deep: false) =~ "Showing all results"))
+
+      assert side_spacing(all_results) == []
+      assert [paging] = Floki.find(doc, "#footer_paging")
+      assert side_spacing(paging) == []
+
+      assert [clear_all] = Floki.find(doc, ~s(button[phx-click="clear_all_filters"]))
+
+      assert clear_all
+             |> Floki.attribute("class")
+             |> Enum.flat_map(&String.split/1)
+             |> Enum.filter(&Regex.match?(~r/^m[rx]-\d/, &1)) == []
+
+      {:ok, _view, html} = live(ctx.conn, ctx.route <> "?selected_user_ids=[#{ctx.user_a.id}]")
+      assert [counter] = html |> Floki.parse_document!() |> Floki.find(~s(div[role="status"]))
+      assert Floki.text(counter) =~ "Showing 2 of 3 submissions"
+      assert side_spacing(counter) == []
+    end
+
     test "shows 'Showing N of M submissions' only while a filter or search is active", ctx do
       {:ok, _view, html} = live(ctx.conn, ctx.route)
       refute html =~ ~r/Showing \d+ of \d+ submissions/
@@ -143,7 +184,7 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
                "selected_user_ids" => "[]",
                "selected_activity_ids" => "[]",
                "selected_page_ids" => "[]",
-               "graded" => "",
+               "graded" => "[]",
                "sort_by" => "user",
                "sort_order" => "asc",
                "offset" => "0"
@@ -208,6 +249,31 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       end)
     end
 
+    defp open_all_filters(view) do
+      for filter <- ~w(student-filter activity-filter page-filter purpose-filter),
+          do: view |> element("##{filter}-trigger") |> render_click()
+
+      render(view)
+    end
+
+    defp check_filter(view, filter, values) do
+      case view |> element("##{filter}-trigger") |> render() =~ ~s(aria-expanded="true") do
+        true -> :already_open
+        false -> view |> element("##{filter}-trigger") |> render_click()
+      end
+
+      view
+      |> element("##{filter}-form")
+      |> render_change(%{"_target" => ["selected"], "selected" => values})
+    end
+
+    defp checked_values(html, filter) do
+      html
+      |> Floki.parse_document!()
+      |> Floki.find(~s(##{filter}-panel input[type="checkbox"][checked]))
+      |> Enum.flat_map(&Floki.attribute(&1, "value"))
+    end
+
     defp label_text(html, input_id) do
       html
       |> Floki.parse_document!()
@@ -216,13 +282,9 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       |> String.trim()
     end
 
-    defp apply_filter(view, filter, values) do
-      view |> element("##{filter}-trigger") |> render_click()
-      view |> element("##{filter}-form") |> render_submit(%{"selected" => values})
-    end
-
     test "each filter offers only the values with submissions awaiting scoring", ctx do
-      {:ok, _view, html} = live(ctx.conn, ctx.route)
+      {:ok, view, _html} = live(ctx.conn, ctx.route)
+      html = open_all_filters(view)
 
       assert filter_values(html, "student-filter") == [
                {"#{ctx.user_a.id}", Utils.name(ctx.user_a)},
@@ -259,7 +321,8 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
 
       enroll_user_to_section(later.user_d, ctx.section, :context_learner)
 
-      {:ok, _view, html} = live(ctx.conn, ctx.route)
+      {:ok, view, _html} = live(ctx.conn, ctx.route)
+      html = open_all_filters(view)
 
       assert html |> filter_values("student-filter") |> Enum.map(&elem(&1, 1)) == [
                Utils.name(later.user_d),
@@ -274,12 +337,17 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
              ]
     end
 
-    test "Apply puts the chosen values in the URL on the first page, keeping the sort and the search",
+    test "checking a box filters the table at once, on the first page, keeping the sort, the search and the open panel",
          ctx do
       {:ok, view, _html} =
         live(ctx.conn, ctx.route <> "?sort_by=user&sort_order=asc&text_search=a&offset=1")
 
-      apply_filter(view, "student-filter", ["#{ctx.user_a.id}"])
+      view |> element("#student-filter-trigger") |> render_click()
+
+      view
+      |> element("#student-filter-form")
+      |> render_change(%{"_target" => ["selected"], "selected" => ["#{ctx.user_a.id}"]})
+
       path = assert_patch(view)
 
       assert %{
@@ -292,12 +360,13 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
 
       assert Jason.decode!(selected) == [ctx.user_a.id]
       assert row_students(render(view)) == [Utils.name(ctx.user_a), Utils.name(ctx.user_a)]
+      assert view |> element("#student-filter-trigger") |> render() =~ ~s(aria-expanded="true")
     end
 
     test "Activity and Page apply their own lists", ctx do
       {:ok, view, _html} = live(ctx.conn, ctx.route)
 
-      apply_filter(view, "activity-filter", ["#{ctx.act_2.resource.id}"])
+      check_filter(view, "activity-filter", ["#{ctx.act_2.resource.id}"])
 
       assert Jason.decode!(query(assert_patch(view))["selected_activity_ids"]) == [
                ctx.act_2.resource.id
@@ -305,16 +374,17 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
 
       assert row_students(render(view)) == [Utils.name(ctx.user_a)]
 
-      apply_filter(view, "page-filter", ["#{ctx.page1.id}"])
+      check_filter(view, "page-filter", ["#{ctx.page1.id}"])
       assert Jason.decode!(query(assert_patch(view))["selected_page_ids"]) == [ctx.page1.id]
     end
 
-    test "Purpose: one value filters by it, on the first page; both or none is no filter", ctx do
+    test "Purpose: one value filters by it, on the first page; both or none is no filter, and both stay checked",
+         ctx do
       {:ok, view, _html} = live(ctx.conn, ctx.route <> "?sort_by=user&sort_order=asc&offset=1")
 
-      apply_filter(view, "purpose-filter", ["false"])
+      check_filter(view, "purpose-filter", ["false"])
       path = assert_patch(view)
-      assert %{"graded" => "false", "offset" => "0"} = query(path)
+      assert %{"graded" => "[false]", "offset" => "0"} = query(path)
 
       assert row_students(render(view)) == [
                Utils.name(ctx.user_a),
@@ -322,14 +392,35 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
                Utils.name(ctx.user_b)
              ]
 
-      apply_filter(view, "purpose-filter", ["true"])
-      assert query(assert_patch(view))["graded"] == "true"
+      check_filter(view, "purpose-filter", ["true"])
+      assert query(assert_patch(view))["graded"] == "[true]"
+      assert row_students(render(view)) == []
 
-      apply_filter(view, "purpose-filter", ["true", "false"])
-      assert query(assert_patch(view))["graded"] == ""
+      check_filter(view, "purpose-filter", ["true", "false"])
+      assert query(assert_patch(view))["graded"] == "[false,true]"
+      assert length(row_students(render(view))) == 3
+      assert checked_values(render(view), "purpose-filter") == ["true", "false"]
 
-      apply_filter(view, "purpose-filter", [])
-      assert query(assert_patch(view))["graded"] == ""
+      check_filter(view, "purpose-filter", [])
+      assert query(assert_patch(view))["graded"] == "[]"
+      assert length(row_students(render(view))) == 3
+      assert checked_values(render(view), "purpose-filter") == []
+    end
+
+    test "both purposes survive a sort click and reach the links to the scoring page", ctx do
+      {:ok, view, _html} = live(ctx.conn, ctx.route <> "?graded=[true,false]")
+
+      view |> element(~s(th button[phx-value-sort_by="user"])) |> render_click()
+      assert query(assert_patch(view))["graded"] == "[false,true]"
+
+      href =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.attribute("tbody tr td:first-child a", "href")
+        |> hd()
+
+      assert query(href)["graded"] == "[false,true]"
     end
 
     test "each filter shows the values the URL applies", ctx do
@@ -481,6 +572,96 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
     end
   end
 
+  describe "the limit of 200 options per filter" do
+    setup [:instructor_conn, :create_queue]
+
+    defp ids_past_the_limit(first_id),
+      do: Jason.encode!([first_id | Enum.to_list(900_000_001..900_000_200)])
+
+    test "a URL with more than 200 ids in a filter clears that filter, keeps the others and says so",
+         ctx do
+      {:error, {:live_redirect, %{to: to, flash: flash}}} =
+        live(
+          ctx.conn,
+          ctx.route <>
+            "?selected_user_ids=#{ids_past_the_limit(ctx.user_a.id)}" <>
+            "&selected_activity_ids=[#{ctx.act_1.resource.id}]&sort_by=user&sort_order=asc"
+        )
+
+      assert %{
+               "selected_user_ids" => "[]",
+               "selected_activity_ids" => activity_ids,
+               "sort_by" => "user"
+             } = query(to)
+
+      assert Jason.decode!(activity_ids) == [ctx.act_1.resource.id]
+
+      assert flash["info"] ==
+               "The Student filter selection was too large and was cleared. " <>
+                 "You can select up to 200 options in a filter."
+
+      {:ok, _view, html} = live(ctx.conn, to)
+      assert row_students(html) == [Utils.name(ctx.user_a), Utils.name(ctx.user_b)]
+    end
+
+    test "the notice names every filter past the limit, before any value removed for having no pending submissions",
+         ctx do
+      {:error, {:live_redirect, %{to: to, flash: flash}}} =
+        live(
+          ctx.conn,
+          ctx.route <>
+            "?selected_user_ids=#{ids_past_the_limit(ctx.user_a.id)}" <>
+            "&selected_page_ids=#{ids_past_the_limit(ctx.page1.id)}" <>
+            "&selected_activity_ids=[#{ctx.act_1.resource.id},999998]"
+        )
+
+      assert %{"selected_user_ids" => "[]", "selected_page_ids" => "[]"} = query(to)
+
+      assert flash["info"] ==
+               "The Student and Page filter selections were too large and were cleared. " <>
+                 "You can select up to 200 options in a filter. " <>
+                 "A selected activity has no more submissions awaiting scoring and was removed from the filter."
+    end
+
+    test "with 201 students awaiting scoring, checking the 201st applies nothing and says so; 200 apply",
+         ctx do
+      map =
+        Enum.reduce(1..199, ctx, fn n, map ->
+          user = String.to_atom("wide_user_#{n}")
+          ra = String.to_atom("wide_ra_#{n}")
+
+          map
+          |> Seeder.add_user(%{family_name: "Wide#{n}", given_name: "Student"}, user)
+          |> Seeder.create_resource_attempt(%{attempt_number: 1}, user, :page1, :revision1, ra)
+          |> add_attempt(ra, :act_1, String.to_atom("wide_attempt_#{n}"), :submitted)
+        end)
+
+      student_ids =
+        [
+          map.user_a.id,
+          map.user_b.id | Enum.map(1..199, &map[String.to_atom("wide_user_#{&1}")].id)
+        ]
+
+      {:ok, view, _html} = live(ctx.conn, ctx.route <> "?sort_by=user&sort_order=asc")
+
+      check_filter(view, "student-filter", Enum.map(student_ids, &to_string/1))
+
+      assert render(view) |> Floki.parse_document!() |> Floki.find("#flash") |> Floki.text() =~
+               ~r/Error!.*You can select up to 200 options in a filter\./s
+
+      assert_raise ArgumentError, ~r/to patch, but got none/, fn -> assert_patch(view, 100) end
+
+      check_filter(
+        view,
+        "student-filter",
+        student_ids |> Enum.take(200) |> Enum.map(&to_string/1)
+      )
+
+      path = assert_patch(view)
+      assert length(Jason.decode!(query(path)["selected_user_ids"])) == 200
+    end
+  end
+
   describe "filter values with no pending submissions" do
     setup [:instructor_conn, :create_queue]
 
@@ -521,6 +702,67 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
 
       assert flash["info"] ==
                "#{Utils.name(ctx.user_c)} and #{ctx.revision2.title} have no more submissions awaiting scoring and were removed from the filter."
+    end
+
+    test "a notice for many removed values stays short: it names three and counts the rest",
+         ctx do
+      stale_ids = [ctx.user_c.id | Enum.to_list(900_000_001..900_000_199)]
+
+      {:error, {:live_redirect, %{to: to, flash: flash}}} =
+        live(ctx.conn, ctx.route <> "?selected_user_ids=#{Jason.encode!(stale_ids)}")
+
+      assert query(to)["selected_user_ids"] == "[]"
+
+      assert flash["info"] ==
+               "#{Utils.name(ctx.user_c)}, a selected student, a selected student and 197 more " <>
+                 "have no more submissions awaiting scoring and were removed from the filter."
+    end
+
+    test "a removed value with a very long name is shortened, so its notice fits in the session cookie",
+         ctx do
+      long_title = String.duplicate("Ünïcode page title ", 300)
+      {:ok, _} = Oli.Resources.update_revision(ctx.revision2, %{title: long_title})
+
+      {:error, {:live_redirect, %{flash: flash}}} =
+        live(ctx.conn, ctx.route <> "?selected_page_ids=[#{ctx.page2.id}]")
+
+      assert String.starts_with?(flash["info"], String.duplicate("Ünïcode page title ", 5))
+
+      assert String.ends_with?(
+               flash["info"],
+               "… has no more submissions awaiting scoring and was removed from the filter."
+             )
+
+      assert byte_size(flash["info"]) <= 200
+    end
+
+    test "a notice that arrived with the redirect is kept whole when both fit in 1000 bytes, and shortened just enough when they do not",
+         ctx do
+      removal =
+        "#{Utils.name(ctx.user_c)} has no more submissions awaiting scoring and was removed from the filter."
+
+      notice_after = fn earlier ->
+        conn =
+          Plug.Test.init_test_session(ctx.conn, %{"phoenix_flash" => %{"info" => earlier}})
+
+        {:error, {:live_redirect, %{flash: flash}}} =
+          live(conn, ctx.route <> "?selected_user_ids=[#{ctx.user_c.id}]")
+
+        flash["info"]
+      end
+
+      text = String.duplicate("Earlier notice ", 300)
+      fits = binary_part(text, 0, 1_000 - byte_size(" " <> removal))
+
+      assert notice_after.(fits) == fits <> " " <> removal
+
+      for earlier <- [fits <> "E", text] do
+        info = notice_after.(earlier)
+
+        assert byte_size(info) == 1_000
+        assert String.ends_with?(info, "… " <> removal)
+        assert String.starts_with?(info, "Earlier notice Earlier notice")
+      end
     end
 
     test "while the table is open, a value that goes out of play is removed by a sort click, once",
