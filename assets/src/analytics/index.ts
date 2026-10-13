@@ -1,0 +1,114 @@
+type PageArea = 'delivery' | 'instructor' | 'authoring' | 'admin' | 'public';
+
+export type PageContext = {
+  page_path: string;
+  page_area: PageArea;
+  page_title: string;
+  traffic_type: 'internal' | 'external';
+};
+
+type AnalyticsConfig = {
+  container_id?: string;
+  auth?: string;
+  preview?: string;
+  context?: PageContext;
+};
+
+const titles: Record<PageArea, string> = {
+  delivery: 'Learning',
+  instructor: 'Instructor',
+  authoring: 'Authoring',
+  admin: 'Administration',
+  public: 'Torus',
+};
+
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+    TorusAnalytics?: { pagePath: string; pageView: (context: unknown) => void };
+  }
+}
+
+// Only accept the server's route-level contract. Extra fields (including titles and
+// URLs from future callers) are never copied into the data layer.
+function sanitizeContext(value: unknown): PageContext | null {
+  if (!value || typeof value !== 'object') return null;
+  const context = value as Partial<PageContext>;
+  if (
+    typeof context.page_path !== 'string' ||
+    !/^\/(?:[A-Za-z0-9_:/.*-]*)$/.test(context.page_path) ||
+    !context.page_area ||
+    !Object.prototype.hasOwnProperty.call(titles, context.page_area)
+  ) {
+    return null;
+  }
+
+  return {
+    page_path: context.page_path,
+    page_area: context.page_area,
+    page_title: titles[context.page_area],
+    traffic_type: context.traffic_type === 'internal' ? 'internal' : 'external',
+  };
+}
+
+/** Initializes consent and the initial page view before requesting the GTM container. */
+export function initializeAnalytics(config: AnalyticsConfig): void {
+  const initialContext = sanitizeContext(config.context);
+  if (
+    window.TorusAnalytics ||
+    !config.container_id ||
+    !/^GTM-[A-Z0-9]+$/.test(config.container_id) ||
+    !initialContext
+  ) {
+    return;
+  }
+
+  const dataLayer = (window.dataLayer = window.dataLayer || []);
+  // Google expects an Arguments object for the gtag command queue.
+  window.gtag = function () {
+    // eslint-disable-next-line prefer-rest-params
+    dataLayer.push(arguments);
+  };
+  window.gtag('consent', 'default', {
+    analytics_storage: 'denied',
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+  });
+
+  const analytics = {
+    pagePath: '',
+    pageView(value: unknown) {
+      const context = sanitizeContext(value);
+      if (!context || context.page_path === analytics.pagePath) return;
+      analytics.pagePath = context.page_path;
+      dataLayer.push({
+        event: 'torus_page_view',
+        ...context,
+        page_location: window.location.origin + context.page_path,
+        page_referrer: '',
+      });
+    },
+  };
+  window.TorusAnalytics = analytics;
+  analytics.pageView(initialContext);
+
+  window.addEventListener('phx:analytics:page_view', (event: Event) => {
+    analytics.pageView((event as CustomEvent<unknown>).detail);
+  });
+
+  dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+  const loader = document.createElement('script');
+  loader.async = true;
+  // The request itself must not carry a token-bearing Torus path or LMS referrer.
+  loader.referrerPolicy = 'no-referrer';
+  const params = new URLSearchParams({ id: config.container_id });
+  if (config.auth && config.preview) {
+    params.set('gtm_auth', config.auth);
+    params.set('gtm_preview', config.preview);
+    params.set('gtm_cookies_win', 'x');
+  }
+  loader.src = 'https://www.googletagmanager.com/gtm.js?' + params.toString();
+  document.head.appendChild(loader);
+}
