@@ -69,6 +69,42 @@ Render the public example before adapting it:
 kubectl kustomize docs/manifests/preview-seeding
 ```
 
+## Direct QA Login
+
+Before the first seed run, configure the optional `PREVIEW_DEMO_USER_PASSWORD` key in the
+GitOps-owned preview runtime Secret (`oli-torus-preview-runtime` in this example). The seed
+Job already imports that Secret through `envFrom`; no password belongs in scenario YAML,
+ConfigMaps, committed manifests, or command-line arguments. Use your deployment's existing
+secret-management process to supply the value. Keep it separate from `ADMIN_PASSWORD`.
+
+The password must meet the normal account policy: 12–72 characters and at most 72 UTF-8
+bytes. An invalid nonempty value fails seeding before scenario mutations. A missing or empty
+value preserves existing password-creation behavior. The setting takes effect only for
+`MIX_ENV=preview` seed execution; development, test, CI E2E, production, and normal account
+registration ignore it. It does not require `PREVIEW_QA_TOOLS_ENABLED`.
+
+Open the preview through its usual deployment authentication, then use these Torus logins:
+
+| Account | Email | Login path |
+| --- | --- | --- |
+| System administrator | Existing `ADMIN_EMAIL` (normally `admin@example.edu`) | `/authors/log_in` |
+| Author | `author1@example.edu` | `/authors/log_in` |
+| Instructor | `instructor1@example.edu` | `/instructors/log_in` |
+| Students | `student1@example.edu`, `student2@example.edu`, `student3@example.edu` | `/users/log_in` |
+
+The administrator continues using `ADMIN_PASSWORD`. All newly created demo accounts use
+`PREVIEW_DEMO_USER_PASSWORD` when configured, including `simulated_instructor_1@example.edu`
+and `simulated_learner_1@example.edu` through `simulated_learner_12@example.edu`. Newly seeded
+preview accounts have confirmed emails. The author is a collaborator on the demo project;
+the named instructor and students are enrolled in its section. Named students start without
+simulated progress; the existing generated cohort retains its progress and grades.
+
+Credentials are applied only on creation. Existing passwords, including passwordless reused
+accounts and the bootstrap administrator, are never changed by this setting. Changing the
+Secret does not rotate existing account passwords or replay a completed seed Job. Recreate
+or deliberately reset an ephemeral preview to seed it with the new configuration; do not rerun
+the one-shot scenario against existing data. Masquerade remains a separate QA workflow.
+
 ## Observation and Recovery
 
 Watch the one-time run with the namespace used by the preview:

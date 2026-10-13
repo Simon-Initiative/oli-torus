@@ -32,7 +32,7 @@ defmodule Oli.Scenarios.OliTorusGettingStartedCourseScenarioTest do
 
   test "bundles and executes the complete getting-started course workflow" do
     assert {:ok, metadata, scenario_path} = BundledScenarios.fetch(@scenario_id)
-    assert metadata["version"] == "1"
+    assert metadata["version"] == "2"
     assert :ok = Scenarios.validate_file(scenario_path)
 
     bootstrap =
@@ -56,7 +56,15 @@ defmodule Oli.Scenarios.OliTorusGettingStartedCourseScenarioTest do
     Application.put_env(:oli, :preview_qa_tools, default_admin_email: author.email)
     on_exit(fn -> Application.put_env(:oli, :preview_qa_tools, previous_config) end)
 
-    result = Scenarios.execute_file(scenario_path, author: author, ownership: true)
+    password = "preview-test-#{System.unique_integer([:positive])}"
+    defaults = Oli.Scenarios.DemoAccounts.build(true, password)
+
+    result =
+      Scenarios.execute_file(scenario_path,
+        author: author,
+        ownership: true,
+        preview_demo_account: defaults
+      )
 
     assert result.errors == []
     assert length(result.verifications) == 11
@@ -101,7 +109,29 @@ defmodule Oli.Scenarios.OliTorusGettingStartedCourseScenarioTest do
     assert Repo.aggregate(
              from(enrollment in Enrollment, where: enrollment.section_id == ^section.id),
              :count
-           ) == 13
+           ) == 17
+
+    assert Oli.Accounts.get_author_by_email_and_password("author1@example.edu", password)
+
+    assert Oli.Authoring.Collaborators.get_collaborator(
+             result.state.users["author1"].id,
+             project.project.id
+           )
+
+    assert Repo.reload!(author).password_hash == author.password_hash
+
+    for {reference, user} <- result.state.users,
+        match?(%Oli.Accounts.User{}, user) do
+      assert user.email_confirmed_at
+      assert user.email_verified
+
+      assert Oli.Accounts.get_independent_user_by_email_and_password(user.email, password),
+             reference
+    end
+
+    for name <- ~w(instructor1 student1 student2 student3) do
+      assert result.state.users[name].email == "#{name}@example.edu"
+    end
 
     assert_course_pages(project)
     assert_authoring_curriculum_loadable(project)

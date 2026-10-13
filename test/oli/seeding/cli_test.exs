@@ -473,7 +473,7 @@ defmodule Oli.Seeding.CLITest do
     assert {:ok, metadata, path} =
              BundledScenarios.fetch("oli_torus_getting_started_course")
 
-    assert metadata["version"] == "1"
+    assert metadata["version"] == "2"
     assert File.regular?(path)
     assert :ok = Oli.Scenarios.validate_file(path)
     assert {:error, :unknown_scenario} = BundledScenarios.fetch("missing")

@@ -117,6 +117,9 @@ defmodule Oli.Scenarios.Engine do
   @doc """
   Executes a list of directives sequentially, maintaining state throughout.
   Returns an ExecutionResult with final state and any verification results.
+
+  Seed execution may supply `:preview_demo_account`, a redacted account struct
+  containing creation-only defaults. Ordinary scenario callers omit this option.
   """
   def execute(directives, opts \\ []) when is_list(directives) do
     previous_time_override = Oli.DateTime.get_override()
@@ -257,6 +260,7 @@ defmodule Oli.Scenarios.Engine do
   defp apply_execution_opts(%ExecutionState{} = state, opts) do
     state
     |> maybe_put_current_dir(opts)
+    |> Map.put(:preview_demo_account, opts[:preview_demo_account] || state.preview_demo_account)
     |> Map.put(:seed_remaining_bytes, opts[:seed_remaining_bytes])
     |> Map.put(:seed_max_include_depth, opts[:seed_max_include_depth])
     |> Map.put(:params, opts[:params] || Map.get(state, :params, %{}))

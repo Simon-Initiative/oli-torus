@@ -19,11 +19,13 @@ defmodule Oli.Scenarios.SeedExecution do
     end
   end
 
+  @doc "Executes a seed with explicit ownership and creation-only preview account defaults."
   def execute(directives, path) when is_list(directives) and is_binary(path) do
     root_size = File.stat!(path).size
 
     Engine.execute(directives,
       ownership: true,
+      preview_demo_account: Oli.Scenarios.DemoAccounts.defaults(),
       current_dir: path |> Path.expand() |> Path.dirname(),
       seed_remaining_bytes: @max_scenario_bytes - root_size,
       seed_max_include_depth: @max_include_depth

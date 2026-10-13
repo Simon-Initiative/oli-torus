@@ -5,21 +5,23 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Repo
+  alias Oli.Scenarios.DemoAccounts
   alias Oli.Utils.DataGenerators.NameGenerator
 
   import Ecto.Query
 
   @insert_batch_size 500
 
-  @spec create_and_enroll(Oli.Delivery.Sections.Section.t(), map()) ::
+  @doc "Creates and enrolls synthetic accounts, preserving existing credentials on reuse."
+  @spec create_and_enroll(Oli.Delivery.Sections.Section.t(), map(), User.t() | nil) ::
           {:ok, %{String.t() => User.t()}, map()} | {:error, term()}
-  def create_and_enroll(section, directive) do
+  def create_and_enroll(section, directive, defaults \\ nil) do
     specs =
       user_specs(directive.prefix, :instructor, directive.instructors) ++
         user_specs(directive.prefix, :learner, directive.learners)
 
     with {:ok, existing, missing} <- partition_existing(specs),
-         :ok <- insert_missing(missing),
+         :ok <- insert_missing(missing, defaults),
          users_by_email <- fetch_users(specs),
          :ok <- enroll_by_role(specs, users_by_email, section) do
       users = Map.new(specs, &{&1.reference, Map.fetch!(users_by_email, &1.email)})
@@ -77,10 +79,10 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
     |> Map.new(&{&1.email, &1})
   end
 
-  defp insert_missing([]), do: :ok
+  defp insert_missing([], _defaults), do: :ok
 
-  defp insert_missing(specs) do
-    with {:ok, users} <- build_users(specs) do
+  defp insert_missing(specs, defaults) do
+    with {:ok, users} <- build_users(specs, defaults) do
       users
       |> Enum.map(&insert_attrs/1)
       |> Enum.chunk_every(@insert_batch_size)
@@ -97,7 +99,7 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
     exception -> {:error, {:user_insert_failed, exception.__struct__}}
   end
 
-  defp build_users(specs) do
+  defp build_users(specs, defaults) do
     specs
     |> Enum.with_index()
     |> Enum.reduce_while({:ok, []}, fn {spec, index}, {:ok, users} ->
@@ -111,7 +113,10 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
         sub: spec.sub
       }
 
-      changeset = User.noauth_changeset(%User{sub: spec.sub, guest: true}, attrs)
+      changeset =
+        %User{sub: spec.sub, guest: true}
+        |> User.noauth_changeset(attrs)
+        |> DemoAccounts.apply_defaults(defaults)
 
       case Ecto.Changeset.apply_action(changeset, :insert) do
         {:ok, user} -> {:cont, {:ok, [user | users]}}
@@ -134,6 +139,8 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
       family_name: user.family_name,
       email: user.email,
       email_verified: user.email_verified,
+      email_confirmed_at: user.email_confirmed_at,
+      password_hash: user.password_hash,
       guest: user.guest,
       independent_learner: user.independent_learner,
       inserted_at: now,

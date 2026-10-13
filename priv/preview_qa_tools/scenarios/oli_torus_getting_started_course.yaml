@@ -743,3 +743,69 @@
         count: 3
       - profile: "low_engagement"
         count: 2
+
+# Stable QA logins are added after simulation to preserve the generated cohort.
+
+- user:
+    name: "author1"
+    type: "author"
+    email: "author1@example.edu"
+    given_name: "Demo"
+    family_name: "Author1"
+    email_verified: true
+
+- collaborator:
+    user: "author1"
+    project: "oli_torus_getting_started_course"
+
+- user:
+    name: "instructor1"
+    type: "instructor"
+    email: "instructor1@example.edu"
+    given_name: "Demo"
+    family_name: "Instructor1"
+    email_verified: true
+
+- enroll:
+    user: "instructor1"
+    section: "oli_torus_getting_started_section"
+    role: "instructor"
+
+- user:
+    name: "student1"
+    type: "student"
+    email: "student1@example.edu"
+    given_name: "Demo"
+    family_name: "Student1"
+    email_verified: true
+
+- enroll:
+    user: "student1"
+    section: "oli_torus_getting_started_section"
+    role: "student"
+
+- user:
+    name: "student2"
+    type: "student"
+    email: "student2@example.edu"
+    given_name: "Demo"
+    family_name: "Student2"
+    email_verified: true
+
+- enroll:
+    user: "student2"
+    section: "oli_torus_getting_started_section"
+    role: "student"
+
+- user:
+    name: "student3"
+    type: "student"
+    email: "student3@example.edu"
+    given_name: "Demo"
+    family_name: "Student3"
+    email_verified: true
+
+- enroll:
+    user: "student3"
+    section: "oli_torus_getting_started_section"
+    role: "student"

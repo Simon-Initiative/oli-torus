@@ -550,6 +550,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               current_institution: nil,
               # Release execution requires ownership to be established by YAML
               ownership: false,
+              # Creation-only preview defaults; account struct redacts its password hash
+              preview_demo_account: nil,
               # Release-only cumulative include budget and nesting limit
               seed_remaining_bytes: nil,
               seed_max_include_depth: nil,
