@@ -217,7 +217,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
       {:ok, lcd, _html} = live_component_isolated(ctx.conn, ThresholdsTab, attrs)
 
       # There is a lock icon
-      assert has_element?(lcd, "svg[role=\"lock icon\"]")
+      assert has_element?(lcd, "svg[data-role=\"lock icon\"]")
 
       # There is a disabled fieldset
       assert has_element?(lcd, "fieldset[disabled]")

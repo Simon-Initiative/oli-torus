@@ -139,9 +139,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def account_label(assigns) do
     ~H"""
-    <div role="account label" class={["text-sm font-bold font-['Roboto'] p-[5px]", @class]}>
-      {@label}
-    </div>
+    <li>
+      <div data-role="account label" class={["text-sm font-bold font-['Roboto'] p-[5px]", @class]}>
+        {@label}
+      </div>
+    </li>
     """
   end
 

@@ -42,7 +42,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             <div class="grow shrink basis-0 self-stretch justify-start items-center gap-3 flex">
               <div
                 :if={@container_label not in [nil, ""]}
-                role="container label"
+                data-role="container label"
                 class="text-Text-text-high text-sm font-bold uppercase tracking-wider"
               >
                 {@container_label}
@@ -57,7 +57,7 @@ defmodule OliWeb.Delivery.Student.Utils do
               <div
                 :if={@page_context.page.graded}
                 class="justify-start items-center gap-1.5 flex"
-                role="scored page marker"
+                data-role="scored page marker"
               >
                 <Icons.flag />
                 <div class="text-Text-text-high text-sm font-bold uppercase tracking-wider opacity-75">
@@ -68,23 +68,26 @@ defmodule OliWeb.Delivery.Student.Utils do
             <div
               :if={@show_assignment_marker and @page_context.page.graded}
               class="px-2 py-1 bg-Specially-Tokens-Fill-fill-detail-pill rounded-xl shadow justify-start items-center gap-1 flex"
-              role="assignment marker"
+              data-role="assignment marker"
             >
               <div class="text-Text-text-high text-[10px] font-normal">
                 Assignment requirement
               </div>
             </div>
           </div>
-          <div role="page label" class="self-stretch justify-start items-baseline gap-2.5 inline-flex">
+          <div
+            data-role="page label"
+            class="self-stretch justify-start items-baseline gap-2.5 inline-flex"
+          >
             <div
               :if={@index}
-              role="page numbering index"
+              data-role="page numbering index"
               class="text-Text-text-low text-[32px] sm:text-[40px] leading-[44px] font-bold opacity-75"
             >
               {@index}.
             </div>
             <h1
-              role="page title"
+              data-role="page title"
               class="grow shrink basis-0 text-Text-text-high text-[32px] sm:text-[40px] leading-[44px] font-bold"
             >
               {@page_context.page.title}
@@ -96,7 +99,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             :if={@page_context.page.duration_minutes}
             class="ml-10 sm:ml-0 justify-start items-center gap-1.5 flex"
           >
-            <div role="page read time" class="justify-end items-center gap-1 flex">
+            <div data-role="page read time" class="justify-end items-center gap-1 flex">
               <div class="w-[18px] h-[18px] relative text-Text-text-low">
                 <Icons.time />
               </div>
@@ -112,7 +115,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
           <div
             :if={@show_schedule_dates and @page_context.effective_settings.start_date}
-            role="page start schedule"
+            data-role="page start schedule"
             class="justify-start items-start gap-1 flex"
           >
             <div class="text-Text-text-low text-xs font-semibold">
@@ -128,7 +131,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
           <div
             :if={@show_schedule_dates and @page_context.effective_settings.end_date}
-            role="page schedule"
+            data-role="page schedule"
             class="justify-start items-start gap-1 flex"
           >
             <div class="text-Text-text-high text-xs font-semibold">

@@ -24,7 +24,7 @@ defmodule OliWeb.Workspaces.StudentTest do
     test "does not see any label on user menu", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
-      refute has_element?(view, "div[role='account label']")
+      refute has_element?(view, "div[data-role='account label']")
     end
 
     test "can access student workspace when not enrolled to any section", %{conn: conn} do
@@ -81,11 +81,11 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       assert has_element?(view, "h3", "The best course ever!")
       assert has_element?(view, ~s{a[href="/sections/#{section.slug}?sidebar_expanded=true"]})
-      assert has_element?(view, "div[role='start_end_date']", "Jan 2025 - Jan 2026")
+      assert has_element?(view, "div[data-role='start_end_date']", "Jan 2025 - Jan 2026")
 
       assert has_element?(
                view,
-               "div[role='instructors']",
+               "div[data-role='instructors']",
                ~r/Instructors:\s*#{instructor_1.name},\s*#{instructor_2.name}/
              )
     end
