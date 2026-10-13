@@ -897,19 +897,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has an intro card with a video url provided, so there must be a play button
       assert has_element?(
                view,
-               ~s{div[role="unit_1"] div[role="slider"] div[role="resource youtube intro video"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_1"] div[role="slider"] div[data-intro-video="youtube"] div[role="play_unit_intro_video"]}
              )
 
       # unit 2 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_2"] div[role="slider"] div[role="resource youtube intro video"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_2"] div[role="slider"] div[data-intro-video="youtube"] div[role="play_unit_intro_video"]}
              )
 
       # unit 3 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_3"] div[role="slider"] div[role="resource youtube intro video"]}
+               ~s{div[role="unit_3"] div[role="slider"] div[data-intro-video="youtube"]}
              )
     end
 
@@ -1151,7 +1151,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       # page 1 and page 2 are shown with their estimated read time
@@ -1205,7 +1205,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand module
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(view, "span", "Page 1")
@@ -1224,7 +1224,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # module 1 has intro video
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert view
@@ -1238,7 +1238,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # module 2 has no intro video
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="2"]})
       |> render_click()
 
       refute has_element?(
@@ -1262,7 +1262,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       refute enrollment_state["viewed_intro_video_resource_ids"]
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(
@@ -1283,7 +1283,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert enrollment_state["viewed_intro_video_resource_ids"] == [module_1.resource_id]
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(
@@ -1297,7 +1297,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="2"]})
       |> render_click()
 
       assert has_element?(
@@ -1351,7 +1351,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="2"]})
       |> render_click()
 
       # graded page with title "Page 4" in the hierarchy has the correct icon
@@ -1385,7 +1385,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       # there are no learning objectives for this module
@@ -1400,7 +1400,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 2 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="2"]})
       |> render_click()
 
       assert has_element?(
@@ -1498,7 +1498,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(
@@ -1513,7 +1513,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 2/module 3 details
       view
-      |> element(~s{div[role="unit_2"] div[role="resource card 3"]})
+      |> element(~s{div[role="unit_2"] div[data-card-index="3"]})
       |> render_click()
 
       assert has_element?(
@@ -1544,7 +1544,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 2 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="2"]})
       |> render_click()
 
       assert has_element?(
@@ -1585,7 +1585,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(view, ~s{button[role="resource page 2 details"]})
@@ -1608,7 +1608,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       # click on page 1 to navigate to that page
@@ -1783,7 +1783,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # click on page 7 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="resource card 10"]})
+      |> element(~s{div[role="unit_3"] div[data-card-index="10"]})
       |> render_click()
 
       request_path =
@@ -1811,7 +1811,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # click on page 8 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="resource card 11"]})
+      |> element(~s{div[role="unit_3"] div[data-card-index="11"]})
       |> render_click()
 
       request_path =
@@ -1865,11 +1865,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='resource card 1']})
+             |> element(~s{div[role='unit_1'] div[data-card-index='1']})
              |> render =~ "style=\"background-image: url(&#39;module_1_custom_image_url&#39;)"
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='resource card 2']})
+             |> element(~s{div[role='unit_1'] div[data-card-index='2']})
              |> render =~ "style=\"background-image: url(&#39;/images/course_default.png&#39;)"
     end
 
@@ -1878,13 +1878,47 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='resource youtube intro video']})
+             |> element(~s{div[role='unit_1'] div[data-intro-video='youtube']})
              |> render =~
                "style=\"background-image: url(&#39;https://img.youtube.com/vi/123456789ab/hqdefault.jpg&#39;)"
 
       # S3 video
       assert view
-             |> has_element?(~s{div[role='unit_4'] div[role='resource intro video']})
+             |> has_element?(~s{div[role='unit_4'] div[data-intro-video='file']})
+    end
+
+    test "gallery cards expose valid ARIA roles and accessible names",
+         %{
+           conn: conn,
+           section: section,
+           unit_1: unit_1,
+           top_level_page: top_level_page
+         } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      module_card =
+        view |> element(~s{div[role='unit_1'] div[data-card-index='1']}) |> render()
+
+      assert module_card =~ ~s{role="button"}
+      assert module_card =~ ~s{aria-expanded="false"}
+      assert module_card =~ ~s{aria-controls="selected_module_in_unit_#{unit_1.resource_id}"}
+      assert module_card =~ ~r/aria-label="[^"]+: [^"]+"/
+
+      page_card =
+        view
+        |> element(~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']})
+        |> render()
+
+      assert page_card =~ ~s{role="link"}
+      assert page_card =~ ~s{aria-label="PAGE: Top Level Page"}
+      refute page_card =~ "aria-expanded"
+      refute page_card =~ "aria-controls"
+
+      intro_card =
+        view |> element(~s{div[role='unit_1'] div[data-intro-video='youtube']}) |> render()
+
+      assert intro_card =~ ~s{role="button"}
+      assert intro_card =~ ~s{aria-label="INTRO: Play unit intro video"}
     end
 
     test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
@@ -1914,7 +1948,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render() =~ "None"
 
       assert view
-             |> element(~s{div[id='page_#{top_level_page.resource_id}'][role='resource card 1']})
+             |> element(~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']})
              |> render() =~ "Top Level Page"
     end
 
@@ -2128,7 +2162,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[role="unit_5"] div[data-card-index="4"]})
       |> render_click()
 
       # page 11 and page 12 are displayed by default with their corresponding indentation
@@ -2243,7 +2277,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[role="unit_5"] div[data-card-index="4"]})
       |> render_click()
 
       group_by_read_by_date_div =
@@ -2285,7 +2319,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[role="unit_5"] div[data-card-index="4"]})
       |> render_click()
 
       group_by_due_date_div = element(view, ~s{div[role="pages_grouped_by_read_by_2023-11-10"]})
@@ -2311,7 +2345,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[role="unit_5"] div[data-card-index="4"]})
       |> render_click()
 
       assert render(view) =~ "Page 13"
