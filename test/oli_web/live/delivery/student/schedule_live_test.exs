@@ -679,7 +679,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       assert has_element?(view, "#timezone_info")
 
       # Verify that it contains the timezone world icon
-      assert has_element?(view, "[role='timezone world icon']")
+      assert has_element?(view, "[data-role='timezone world icon']")
 
       # Verify that it displays timezone text
       assert has_element?(view, "#timezone_info span")

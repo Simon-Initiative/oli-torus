@@ -1168,7 +1168,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       refute has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"]}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [data-role="lock icon"]}
              )
 
       assert has_element?(
@@ -1259,7 +1259,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"].text-Text-text-low-alpha}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [data-role="lock icon"].text-Text-text-low-alpha}
              )
 
       assert has_element?(

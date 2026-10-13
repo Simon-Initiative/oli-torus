@@ -48,7 +48,10 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
               <div role="schedule_title" class="dark:text-white text-lg font-bold tracking-tight">
                 {this_or_next_week(week_range)}
               </div>
-              <div role="schedule_date_range" class="dark:text-white text-sm font-bold tracking-tight">
+              <div
+                data-role="schedule_date_range"
+                class="dark:text-white text-sm font-bold tracking-tight"
+              >
                 {Phoenix.HTML.raw(week_range(week_range))}
               </div>
             </div>
@@ -388,6 +391,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         phx-click="expand_item"
         phx-value-item_id={@item_id}
         phx-target={@target}
+        aria-label={if @expanded, do: "Collapse scheduled pages", else: "Expand scheduled pages"}
         class="hover:cursor-pointer absolute top-3.5 left-3 z-10"
       >
         <div class={[

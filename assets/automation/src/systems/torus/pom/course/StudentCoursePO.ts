@@ -275,5 +275,9 @@ export class StudentCoursePO {
 }
 
 function isStudentLessonPath(pathname: string) {
-  return pathname.includes('/lesson/') || pathname.includes('/adaptive_lesson/');
+  return (
+    pathname.includes('/lesson/') ||
+    pathname.includes('/adaptive_lesson/') ||
+    pathname.includes('/prologue/')
+  );
 }

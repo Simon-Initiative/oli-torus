@@ -138,7 +138,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
       assert lcd |> element("#outline_item_12 div[role='title']") |> render() =~ "Lesson 2"
 
       # It is a practice page so it has no icon
-      assert lcd |> has_element?("#outline_item_12 div[role='no icon']")
+      assert lcd |> has_element?("#outline_item_12 div[data-role='no icon']")
 
       # Collapse item "1" to hide children again (now aria-expanded is true)
       lcd
