@@ -31,13 +31,13 @@ Retain independent section ownership, published-revision isolation, exact tool c
 - Goal: establish a reproducible baseline on the production branch before extending behavior.
 - Tasks:
   - [x] Inspect/integrate current `master` and resolve conflicts in editing, delivery creation, publication update and section copy paths; preserve the prototype behavior.
-  - [ ] Prepare worktree dependencies/configuration without sharing build outputs or resetting the running demo's database.
-  - [ ] Audit existing tests and scenario capabilities; turn the successful manual checks into committed domain/scenario regressions.
-  - [ ] Verify old/new publication capture, copied URL/custom and independent destination ownership; retain the long-field regression.
+  - [x] Prepare worktree dependencies/configuration without sharing build outputs or resetting the running demo's database.
+  - [x] Audit existing tests and scenario capabilities; turn the successful manual checks into committed domain/scenario regressions.
+  - [x] Verify old/new publication capture, copied URL/custom and independent destination ownership; retain the long-field regression.
 - Testing Tasks:
-  - [ ] Cover AC-002, AC-012, AC-013, AC-014, AC-025, AC-026, AC-027 and the direct-creation portion of AC-028.
-  - [ ] Validate and run a real `lti_authoring_deep_linking` scenario runner, adding only the minimum missing setup/assertion capabilities.
-  - [ ] Run the existing LTI API/controller/context targets and affected delivery targets before claiming a green baseline.
+  - [x] Add baseline evidence for AC-002, AC-012, AC-013, AC-014, AC-025, AC-026, AC-027 and direct creation in AC-028. AC-026's complete migration/rollback check remains assigned to Phase 6; later authoring/template/application phases complete their respective criteria.
+  - [x] Validate and run `test/scenarios/lti_external_tool/deep_linking_test.exs` with its lifecycle/setup/membership scenarios, adding only the minimum missing setup/assertion capabilities.
+  - [x] Run the existing LTI API/controller/context targets and affected delivery targets before claiming a green baseline.
   - Commands: `mix test test/oli/lti/platform_external_tools_test.exs test/oli_web/controllers/api/lti_controller_test.exs test/oli_web/controllers/api/lti_controller_integration_test.exs test/oli_web/controllers/lti_controller_test.exs test/oli/delivery_test.exs`; validate/run the newly authored scenario through its ExUnit runner.
 - Definition of Done:
   - Current base and prototype are integrated without dropping behavior; permanent tests demonstrate published selection inheritance and draft/section isolation.
@@ -180,6 +180,58 @@ This is a dependency-ordered plan, not authorization to spawn implementation age
 - Gate 5: independent template initialization/inheritance with no project fallback.
 - Gate 6: active backend/scenario/frontend proof, guidance, review and reconciled Harness artifacts; deferred tool-dependent verification reported without claiming complete cross-service proof.
 
+## Phase 1 Execution Record
+
+### Scope from plan.md
+
+Protect existing authoring selection persistence, published-snapshot inheritance and independent section launches before modifying feature behavior. The planning contract was committed as `98d255c3e8`, after base merge `971e4c861d`.
+
+### Implementation Blocks
+
+- [x] Add real scenario setup/lifecycle/membership flows under `test/scenarios/lti_external_tool/`.
+- [x] Use `Delivery.create_section/1` in feature hooks: the generic `section` directive directly creates resources and bypasses the prototype's initialization step.
+- [x] Save through `ActivityEditor` with the containing-page lock; check launch claims via the real API/authorization endpoints and verify Torus's token signature.
+- [x] Keep production code, shared scenario infrastructure and external tool services unchanged. Domain setup uses no factories, fixtures or mocks. The signed-response protocol test controls only tool JWKS HTTP retrieval with a public key derived from a test signing key.
+
+### Test Blocks
+
+- [x] Six targeted tests pass: old/new and unpublished publication isolation, section-local overrides, Regular selection/default behavior, signed return/save/publish/learner launch, long metadata, atomic failed creation and resource membership.
+- [x] Validate all three YAML scenarios; the runner rejects execution errors and failed verifications.
+- [x] Complete the affected existing LTI/delivery/copy regression run: **221 tests, 0 failures**, seed `824833`, including six new tests and the existing scenario registration hook test. ExUnit output contained normal progress/summary; OTP `os_mon` shutdown messages followed the summary.
+- [x] Complete formatting, review and final Harness validation.
+
+Commands used the test environment and an explicit local `DATABASE_URL` targeting the exclusive `oli_mer6018_test` database:
+
+```sh
+mix test test/scenarios/lti_external_tool/deep_linking_test.exs \
+  test/scenarios/lti_external_tool/hooks_test.exs \
+  test/oli/lti/platform_external_tools_test.exs \
+  test/oli_web/controllers/api/lti_controller_test.exs \
+  test/oli_web/controllers/api/lti_controller_integration_test.exs \
+  test/oli_web/controllers/lti_controller_test.exs \
+  test/oli/delivery_test.exs \
+  test/oli/delivery/section_creation_test.exs \
+  test/oli/delivery/sections/section_copy_test.exs
+mix format --check-formatted test/scenarios/lti_external_tool/deep_linking_hooks.ex \
+  test/scenarios/lti_external_tool/deep_linking_test.exs
+```
+
+All three YAML files passed `Oli.Scenarios.validate_file/1` and `DirectiveParser.load_file!/1`; Harness structure and nested FR/AC traceability checks passed. The development/demo database was not used. The full backend suite was not run: shared test support/configuration and production code were unchanged.
+
+### Work-Item Sync
+
+The concrete runner path replaces the provisional scenario name. Initial setup represents an already stored selection; the separate signed-response test covers callback/result retrieval and the existing editor-save boundary. Proof paths were added for the baseline criteria in `requirements.yml`, without promoting whole-feature AC statuses from partial evidence. These tests do not cover browser autosave orchestration, stale/replayed saves, template inheritance, publication application or complete widening-migration rollback; those remain assigned to later phases.
+
+### Review Loop
+
+Round 1 completed with separate security, performance and Elixir reviewers following `docs/CODEREVIEW.md`: **no findings** and no fixes required. Review was limited to Phase 1's new tests/hooks and execution documentation. Residual verification gaps are listed above; inherited prototype hardening remains future work.
+
+### Done Definition
+
+- [x] Phase tasks complete and baseline test coverage committed.
+- [x] Targeted and affected regression tests pass.
+- [x] Review findings resolved and validation passes.
+
 ## Decision Log
 
 ### 2026-10-13 - Defer tests requiring a running external tool
@@ -187,3 +239,9 @@ This is a dependency-ordered plan, not authorization to spawn implementation age
 - Reason: The owner explicitly requested retaining the other proposed tests while postponing tool-dependent automation because LTI Example Tool lacks Deep Linking support.
 - Evidence: `assets/automation/tests/torus/lti_external_tool/lti-external-tool.spec.ts` currently covers Regular; `test/scenarios/lti_external_tool/hooks.ex` disables Deep Linking. Signed-response backend coverage exists in `test/oli_web/controllers/lti_controller_test.exs`.
 - Impact: Phases 2, 3 and 6 progress without an external service. AC-029 uses frontend coverage without one; AC-022 external navigation and AC-030's full compatibility walkthrough remain pending. Product implementation scope and the other test layers are retained.
+
+### 2026-10-13 - Use the public section-creation boundary in baseline scenarios
+- Change: Add feature-local scenario hooks for explicit publication selection and `Delivery.create_section/1`; keep execution evidence in this plan.
+- Reason: The generic section directive bypasses the prototype initialization being protected; hooks exercise the wizard's public command without changing shared infrastructure.
+- Evidence: `lib/oli/scenarios/directives/section_handler.ex`, `lib/oli/delivery.ex`, and `test/scenarios/lti_external_tool/deep_linking_hooks.ex`.
+- Impact: Phase 1 adds permanent coverage without a running tool or production-code changes. Broader behavior hardening and migration rollback remain in their planned phases.

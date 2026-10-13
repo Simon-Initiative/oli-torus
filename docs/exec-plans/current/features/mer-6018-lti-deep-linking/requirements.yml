@@ -21,7 +21,8 @@ requirements:
       they use the integration default, and Regular does not replace the selection.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
   - id: AC-003
     title: Read-only or unauthorized authors cannot configure the activity, and disabled/deleted integrations,
       unsupported launch choices or disabled Deep Linking cannot bypass server-side controls.
@@ -83,7 +84,8 @@ requirements:
       preserves its other fields and synchronizes the editor with the saved model and revision.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
   - id: AC-011
     title: An intervening ordinary edit or selection change makes an older return stale, including edits
       under an already-held lock; comparison and selection/mapping updates are atomic and a successful
@@ -96,7 +98,8 @@ requirements:
       later draft changes cannot mutate the published activity revision.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
 - id: FR-005
   title: Retain transactional initialization for sections created directly from a project publication
   status: verified_plan
@@ -106,13 +109,15 @@ requirements:
       and only for resources included in that destination; absent or null selections create no placeholders.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
   - id: AC-014
     title: Creating a section from an older publication after an unpublished or newly published configuration
       change still uses that older publication, and initialization failure rolls back the entire creation.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
 - id: FR-006
   title: Initialize only missing selections while applying a publication to an existing section
   status: verified_plan
@@ -205,19 +210,22 @@ requirements:
       or truncation.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
   - id: AC-026
     title: URLs/titles/descriptions exceeding 255 characters round-trip, the widening migration retains
       explicit forward/backward behavior, and rollback refuses to shrink while oversized values exist.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
   - id: AC-027
     title: Unconfigured activities retain default regular launches, learner launches retain destination
       context and current user identity, and existing LTI resource-link identity formats remain unchanged.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
 - id: FR-011
   title: Supply permanent evidence and actionable author/instructor guidance
   status: verified_plan
@@ -228,7 +236,8 @@ requirements:
       publication and sibling-section isolation.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
   - id: AC-029
     title: Committed frontend state/component coverage exercises author save/cancel/failure orchestration
       and Torus-owned instructor modal/frame/message behavior using controlled responses without a running
