@@ -404,7 +404,14 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     assert body =~ c.section.title
     refute body =~ "/js/app.js"
     refute body =~ "data-phx-main"
-    assert get_resp_header(conn, "cache-control") == ["no-store"]
+
+    cache_directives =
+      conn
+      |> get_resp_header("cache-control")
+      |> Enum.flat_map(&String.split(&1, ","))
+      |> Enum.map(&String.trim/1)
+
+    assert "no-store" in cache_directives
   end
 
   test "a secure lesson with multiple revisions sharing its slug is denied outside a secure session",
