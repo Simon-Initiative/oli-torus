@@ -5,7 +5,9 @@ defmodule Oli.Scenarios.OliTorusGettingStartedCourseScenarioTest do
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Enrollment
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Publishing
   alias Oli.Resources.Revision
   alias Oli.Scenarios
@@ -139,9 +141,23 @@ defmodule Oli.Scenarios.OliTorusGettingStartedCourseScenarioTest do
              reference
     end
 
-    for name <- ~w(instructor1 student1 student2 student3) do
-      assert result.state.users[name].email == "#{name}@example.edu"
+    for {name, role} <- [
+          {"instructor1", :context_instructor},
+          {"student1", :context_learner},
+          {"student2", :context_learner},
+          {"student3", :context_learner}
+        ] do
+      user = result.state.users[name]
+      assert user.email == "#{name}@example.edu"
+
+      visible_sections =
+        Sections.get_open_and_free_active_sections_by_roles(user.id, [ContextRoles.get_role(role)])
+
+      assert Enum.any?(visible_sections, &(&1.id == section.id)),
+             "#{name} must see the demo section in their direct-login workspace"
     end
+
+    assert section.requires_enrollment
 
     assert_course_pages(project)
     assert_authoring_curriculum_loadable(project)

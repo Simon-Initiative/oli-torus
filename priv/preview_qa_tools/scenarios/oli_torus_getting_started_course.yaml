@@ -635,6 +635,8 @@
     name: "oli_torus_getting_started_section"
     title: "Getting Started with OLI Torus"
     from: "oli_torus_getting_started_course"
+    open_and_free: true
+    requires_enrollment: true
 
 - bulk_create_enroll_users:
     section: "oli_torus_getting_started_section"
