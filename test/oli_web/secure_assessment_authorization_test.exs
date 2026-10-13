@@ -105,6 +105,26 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     assert conn.status == 403
   end
 
+  test "a stale negative depot result cannot admit a newly protected page", c do
+    sr = Oli.Repo.update!(Ecto.Changeset.change(c.sr, secure_delivery: false))
+
+    Oli.Delivery.DepotCoordinator.clear_synchronously(
+      SectionResourceDepot.depot_desc(),
+      c.section.id
+    )
+
+    refute SectionResourceDepot.has_secure_graded_pages?(c.section.id)
+    Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
+    refute SectionResourceDepot.has_secure_graded_pages?(c.section.id)
+
+    conn =
+      c.conn
+      |> init_test_session(%{user_token: c.normal_token})
+      |> get("/sections/#{c.section.slug}/page/#{c.revision.slug}")
+
+    assert html_response(conn, 403) =~ "Assessment access restricted"
+  end
+
   test "disabled support skips ordinary checks but confines an existing scoped session", c do
     Application.put_env(:oli, :supports_secure_delivery, false)
     path = "/sections/#{c.section.slug}/page/#{c.revision.slug}"
