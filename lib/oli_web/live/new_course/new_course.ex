@@ -180,6 +180,7 @@ defmodule OliWeb.Delivery.NewCourse do
         source_title={@source_title}
         copy_scope={@copy_scope}
         copy_options={@copy_options}
+        loading={@loading}
       />
     </div>
     """
@@ -232,7 +233,13 @@ defmodule OliWeb.Delivery.NewCourse do
 
     ~H"""
     <.new_course_header>
-      <div class="flex flex-col gap-3 pr-9 pl-16 py-6">
+      <div
+        class={[
+          "flex flex-col gap-3 pr-9 pl-16 py-6",
+          if(@loading, do: "pointer-events-none opacity-60")
+        ]}
+        aria-busy={@loading}
+      >
         <.render_flash flash={@flash} />
         <.live_component
           id="select_source_step"
@@ -314,6 +321,7 @@ defmodule OliWeb.Delivery.NewCourse do
           # selection that's actually being decided in the modal on top of it.
           source: if(assigns.show_copy_modal?, do: nil, else: assigns[:source]),
           on_select: JS.push("source_selection", target: "##{@form_id}"),
+          loading: assigns.loading,
           actor: actor(assigns),
           current_user: assigns.current_user,
           section_spec: assigns.section_spec,
@@ -447,6 +455,14 @@ defmodule OliWeb.Delivery.NewCourse do
      )}
   end
 
+  # Guards against queuing multiple section creations: while a previous selection is still
+  # being created (`do_create_section/2` set `loading: true` and started its async task), the
+  # step-0 source grid stays mounted and fully clickable, so a fast instructor could otherwise
+  # re-trigger this same event (e.g. reopening the copy modal, or jumping to step 1) before the
+  # first creation's `{:section_created, ...}` redirect lands.
+  def handle_event("source_selection", _params, %{assigns: %{loading: true}} = socket),
+    do: {:noreply, socket}
+
   def handle_event("source_selection", %{"id" => source} = params, socket) do
     if section_source?(source) do
       :telemetry.execute(
@@ -518,6 +534,12 @@ defmodule OliWeb.Delivery.NewCourse do
   # days, dates, and scheduling time/timezone carry over verbatim — see
   # `attrs_from_source_section/1` for the exact field list), so the instructor never has to
   # re-enter details the copy is meant to already have.
+  # Same guard as `source_selection/3` above: a queued duplicate of this event (e.g. a second
+  # click processed from the mailbox before the first click's `loading: true` reaches the
+  # client) must not start a second `do_create_section/2` task.
+  def handle_event("confirm_copy_modal", _params, %{assigns: %{loading: true}} = socket),
+    do: {:noreply, socket}
+
   def handle_event("confirm_copy_modal", _params, socket) do
     copy_options =
       case socket.assigns.copy_scope do

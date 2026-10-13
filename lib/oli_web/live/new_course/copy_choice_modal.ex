@@ -15,6 +15,7 @@ defmodule OliWeb.Delivery.NewCourse.CopyChoiceModal do
   attr :source_title, :string, default: nil
   attr :copy_scope, :atom, required: true, values: [:entire_course, :choose_what_to_copy]
   attr :copy_options, :map, required: true
+  attr :loading, :boolean, default: false
 
   def render(assigns) do
     ~H"""
@@ -89,7 +90,12 @@ defmodule OliWeb.Delivery.NewCourse.CopyChoiceModal do
         <Button.button variant={:secondary} size={:sm} phx-click="cancel_copy_modal">
           Cancel
         </Button.button>
-        <Button.button variant={:primary} size={:sm} phx-click="confirm_copy_modal">
+        <Button.button
+          variant={:primary}
+          size={:sm}
+          disabled={@loading}
+          phx-click="confirm_copy_modal"
+        >
           Create Section
         </Button.button>
       </div>

@@ -67,7 +67,15 @@ defmodule Oli.Delivery.Sections.SectionResourceCopy do
     :hidden
   ]
 
-  @schedule_fields [:scheduling_type, :start_date, :end_date, :removed_from_schedule]
+  # `start_date`/`end_date` (the "Available date"/"Due date" instructors edit from the
+  # Assessment Settings tab) and the `scheduling_type` that labels them are the same columns
+  # the Course Schedule tool edits in bulk, so they follow *either* `:schedule` or
+  # `:assessment_settings` - see `schedule_values/2`. `removed_from_schedule` and
+  # `manually_scheduled` are the Course Schedule tool's own presentation/behaviour flags
+  # (whether a resource appears on the schedule page, whether its dates were hand-set vs.
+  # term-shifted) and stay exclusive to `:schedule`.
+  @date_fields [:scheduling_type, :start_date, :end_date]
+  @schedule_only_fields [:removed_from_schedule]
   @allowlist_only_schedule_fields [:manually_scheduled]
 
   @schedule_resets %{
@@ -213,12 +221,24 @@ defmodule Oli.Delivery.Sections.SectionResourceCopy do
   defp schedule_policy_fields(%CopyOptions{}), do: []
 
   defp schedule_values(source, %CopyOptions{} = options) do
-    fields = @schedule_fields ++ schedule_policy_fields(options)
+    source_map = Map.from_struct(source)
 
-    case CopyOptions.selected?(options, :schedule) do
-      true -> source |> Map.from_struct() |> Map.take(fields)
-      false -> Map.take(@schedule_resets, fields)
-    end
+    schedule_only_fields = @schedule_only_fields ++ schedule_policy_fields(options)
+
+    date_values =
+      case CopyOptions.selected?(options, :schedule) or
+             CopyOptions.selected?(options, :assessment_settings) do
+        true -> Map.take(source_map, @date_fields)
+        false -> Map.take(@schedule_resets, @date_fields)
+      end
+
+    schedule_only_values =
+      case CopyOptions.selected?(options, :schedule) do
+        true -> Map.take(source_map, schedule_only_fields)
+        false -> Map.take(@schedule_resets, schedule_only_fields)
+      end
+
+    Map.merge(date_values, schedule_only_values)
   end
 
   defp assessment_values(source, revision, %CopyOptions{} = options) do

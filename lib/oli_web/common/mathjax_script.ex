@@ -46,7 +46,12 @@ defmodule OliWeb.Common.MathJaxScript do
         },
         options: {
           ignoreHtmlClass: 'tex2jax_ignore',
-          processHtmlClass: 'tex2jax_process'
+          processHtmlClass: 'tex2jax_process',
+          menuOptions: {
+            settings: {
+              explorer: true
+            }
+          }
         },
         loader: {
           load: ['[tex]/noerrors']

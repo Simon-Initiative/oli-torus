@@ -268,8 +268,9 @@ Torus can either be configured to terminate SSL certificates using `SSL_CERT_PAT
 ```
 global
     # SSL options
-    ssl-default-bind-ciphers AES256+EECDH:AES256+EDH:!aNULL;
-    tune.ssl.default-dh-param 4096
+    ssl-default-bind-options ssl-min-ver TLSv1.2
+    ssl-default-bind-ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256
+    ssl-default-bind-ciphersuites TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256
 
 defaults
     mode http
@@ -293,8 +294,8 @@ frontend http
     use_backend letsencrypt if is_acme_challenge
 
 frontend https
-    bind *:443 ssl crt /etc/haproxy/certs/ no-sslv3 no-tls-tickets no-tlsv10 no-tlsv11
-    http-response set-header Strict-Transport-Security "max-age=16000000; includeSubDomains; preload;"
+    bind *:443 ssl crt /etc/haproxy/certs/ no-tls-tickets
+    http-after-response set-header Strict-Transport-Security "max-age=31536000"
 
     acl no_server nbsrv(www) lt 1
     use_backend maintenance if no_server
@@ -306,9 +307,19 @@ backend letsencrypt
 
 backend www
     server www 127.0.0.1:8080 check
-    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+    http-request set-header X-Forwarded-Proto https if { ssl_fc }
+
+backend maintenance
+    http-request return status 503 content-type text/plain string "Service temporarily unavailable"
 
 ```
+
+The TLS example requires a modern HAProxy/OpenSSL build with TLS 1.3 and
+`http-after-response` support. Validate it against your installed version before
+reloading. The HSTS default applies to this host only; `includeSubDomains` and
+`preload` require an explicit domain audit and are not safe self-hosting defaults.
+For production rollout, header ownership, LTI compatibility checks and rollback,
+see [Transport and response headers](../deployment/transport-and-headers.md).
 
 ## Firewall Configuration
 
