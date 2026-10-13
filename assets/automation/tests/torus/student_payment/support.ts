@@ -127,7 +127,8 @@ export async function postInBrowser(
   );
 }
 
-// Payment code redemption goes through the real form flow; the Playwright backend accepts an empty captcha response.
+// Payment code redemption uses the real form flow; the shared Playwright context
+// setup supplies the required captcha token.
 export async function submitPaymentCode(page: Page, code: string) {
   await page.locator('input[name="code[value]"]').fill(code);
 
