@@ -1921,6 +1921,71 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert intro_card =~ ~s{aria-label="INTRO: Play unit intro video"}
     end
 
+    test "gallery cards are keyboard focusable without a focus trap around the slider",
+         %{conn: conn, section: section, unit_1: unit_1, top_level_page: top_level_page} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert view
+             |> element(~s{div[role='unit_1'] div[data-card-index='1']})
+             |> render() =~ ~s{tabindex="0"}
+
+      assert view
+             |> element(~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']})
+             |> render() =~ ~s{tabindex="0"}
+
+      assert view
+             |> element(~s{div[role='unit_1'] div[data-intro-video='youtube']})
+             |> render() =~ ~s{tabindex="0"}
+
+      # the unit container is no longer a tab stop that must be "entered" with Enter
+      [unit_opening_tag | _] =
+        view
+        |> element(~s{div[id='unit_#{unit_1.resource_id}']})
+        |> render()
+        |> String.split(">", parts: 2)
+
+      refute unit_opening_tag =~ "tabindex"
+      refute unit_opening_tag =~ "phx-keydown"
+
+      refute has_element?(view, "#slider_focus_wrap_#{unit_1.resource_id}")
+      refute has_element?(view, "#slider_#{unit_1.resource_id} span[aria-hidden='true']")
+    end
+
+    test "module cards can be toggled with the Enter and Space keys",
+         %{conn: conn, section: section, page_1: page_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      page_1_button =
+        ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+
+      refute has_element?(view, page_1_button)
+
+      view
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+      |> render_keydown(%{"key" => " "})
+
+      assert has_element?(view, page_1_button)
+
+      view
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+      |> render_keydown(%{"key" => "Enter"})
+
+      refute has_element?(view, page_1_button)
+    end
+
+    test "other keys do not toggle a module card", %{conn: conn, section: section, page_1: page_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+      |> render_keydown(%{"key" => "a"})
+
+      refute has_element?(
+               view,
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+             )
+    end
+
     test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
          %{
            conn: conn,
