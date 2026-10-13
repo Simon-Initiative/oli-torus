@@ -188,3 +188,18 @@ lint passed with the previously confirmed existing scenario cache-action diagnos
 excluded. The earlier 28 focused tests and release smoke checks cover unchanged
 application behavior; Docker images were not rebuilt after removing the verifier.
 Security and performance review of the removal found no unintended issues.
+
+## Runner Cache Review Fix
+
+Moved final-stage `SHA`/`APP_VERSION` arguments and OCI labels below every runner
+setup `RUN`, immediately before copying the release. Source identity changes no
+longer invalidate package installation, Goose installation, locale generation or
+application-directory ownership setup.
+
+Verified with two actual Linux/amd64 builds of the Dockerfile's runner stage,
+omitting only the application release copy. Changed both SHA and version on the
+second build: all four setup `RUN` steps were cached, filesystem layers were
+identical, and both images carried their respective expected revision/version
+labels. The two disposable probe images were removed. This check isolates runner
+caching; it does not repeat the full application build or runtime smoke matrix.
+Security and performance follow-up reviews found no remaining issues.
