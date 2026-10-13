@@ -8,6 +8,8 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
   alias OliWeb.Common.Utils
 
   @notice "This submission is no longer awaiting scoring."
+  @apply_disabled_help "Apply Score and Feedback stays disabled until every manually graded input has both a score and feedback."
+  @naming_attributes ~w(aria-label aria-labelledby title alt role)
 
   defp add_attempt(map, resource_attempt_tag, activity_tag, tag, state, attrs) do
     map
@@ -38,9 +40,9 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
     map =
       Seeder.base_project_with_resource2()
       |> Seeder.create_section()
-      |> Seeder.add_user(%{family_name: "Alvarez", given_name: "Ana"}, :user_a)
-      |> Seeder.add_user(%{family_name: "Bermudez", given_name: "Bea"}, :user_b)
-      |> Seeder.add_user(%{family_name: "Castro", given_name: "Cara"}, :user_c)
+      |> Seeder.add_user(%{family_name: "Adams", given_name: "Amy"}, :user_a)
+      |> Seeder.add_user(%{family_name: "Baker", given_name: "Beth"}, :user_b)
+      |> Seeder.add_user(%{family_name: "Carter", given_name: "Cora"}, :user_c)
       |> Seeder.add_activity(
         %{title: "Essay one"},
         :publication,
@@ -63,19 +65,19 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user_c, :page2, :revision2, :ra_c)
       |> add_attempt(:ra_a, :act_1, :a_1, :submitted, %{
         date_submitted: ~U[2026-10-01 10:00:00Z],
-        response: "Ana wrote about essay one"
+        response: "Amy wrote about essay one"
       })
       |> add_attempt(:ra_a, :act_2, :a_2, :submitted, %{
         date_submitted: ~U[2026-10-02 10:00:00Z],
-        response: "Ana wrote about essay two"
+        response: "Amy wrote about essay two"
       })
       |> add_attempt(:ra_b, :act_1, :b_1, :submitted, %{
         date_submitted: ~U[2026-10-03 10:00:00Z],
-        response: "Bea wrote her essay"
+        response: "Beth wrote her essay"
       })
       |> add_attempt(:ra_c, :act_2, :c_scored, :evaluated, %{
         date_submitted: ~U[2026-10-04 10:00:00Z],
-        response: "Cara was already scored"
+        response: "Cora was already scored"
       })
 
     enroll_user_to_section(instructor, map.section, :context_instructor)
@@ -100,6 +102,46 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
   defp href(doc, selector),
     do: doc |> Floki.find(selector) |> Floki.attribute("href") |> List.first()
 
+  defp assert_exposed(doc, selector) do
+    assert [element] = Floki.find(doc, selector)
+
+    hidden =
+      Floki.find(doc, ~s([aria-hidden="true"], [hidden], [aria-hidden="true"] *, [hidden] *))
+
+    refute element in hidden
+  end
+
+  defp button_name(doc, guid) do
+    assert_exposed(doc, "button#select_#{guid}")
+
+    doc
+    |> Floki.attribute("button#select_#{guid}", "aria-labelledby")
+    |> Enum.flat_map(&String.split/1)
+    |> Enum.map_join(" ", fn id ->
+      assert [{"span", attrs, children}] = Floki.find(doc, "##{id}")
+      assert Enum.all?(children, &is_binary/1)
+      refute Enum.any?(attrs, fn {name, _} -> name in @naming_attributes end)
+      children |> Enum.join() |> String.split() |> Enum.join(" ")
+    end)
+  end
+
+  defp link_name(doc, selector) do
+    assert [{"a", attrs, children}] = Floki.find(doc, selector)
+    assert_exposed(doc, selector)
+    refute Enum.any?(attrs, fn {name, _} -> name in ~w(aria-label aria-labelledby title) end)
+
+    for {tag, attrs, _} <- Floki.find(children, "*") do
+      assert tag in ~w(span svg path)
+      refute Enum.any?(attrs, fn {name, _} -> name in @naming_attributes end)
+    end
+
+    children
+    |> Floki.filter_out(~s([hidden], [aria-hidden="true"]))
+    |> Floki.text()
+    |> String.split()
+    |> Enum.join(" ")
+  end
+
   # Like the browser: one change per edited input, which `_target` names.
   defp change_draft(view, fields) do
     Enum.reduce(fields, nil, fn {name, value}, _html ->
@@ -121,18 +163,22 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
   describe "opening a submission" do
     setup [:instructor_conn, :create_queue]
 
-    test "shows the student name as the heading, the activity, the submission date as the table shows it, and the position",
+    test "shows the student name as the heading, the activity, the submission date as the table shows it, the position, and names Back, Previous and Next by their text",
          ctx do
       {:ok, _view, html} = live(ctx.conn, ctx.scoring_route.(ctx.a_2.id))
       d = doc(html)
+
+      assert link_name(d, "a#back-to-table") == "Back to all manually scored activities"
+      assert link_name(d, "a#previous-link") == "Previous"
+      assert link_name(d, "a#next-link") == "Next"
 
       assert text(d, "h1#scoring-heading") == Utils.name(ctx.user_a)
       assert [_] = Floki.find(d, ~s(h1#scoring-heading[tabindex="-1"]))
       assert text(d, "#submission-meta") =~ "Essay two"
       assert text(d, "#submission-meta") =~ "Submitted " <> table_date_cell(ctx, ctx.a_2.id)
       assert text(d, "#submission-position") == "2 of 3"
-      assert html =~ "Ana wrote about essay two"
-      refute html =~ "Bea wrote her essay"
+      assert html =~ "Amy wrote about essay two"
+      refute html =~ "Beth wrote her essay"
     end
 
     test "Previous and Next walk the table's order, show the right student's answer, and are disabled at the ends",
@@ -153,8 +199,8 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert text(d, "h1#scoring-heading") == Utils.name(ctx.user_a)
       assert [_] = Floki.find(d, ~s|h1#scoring-heading[phx-hook="ScoringHeading"]|)
       assert text(d, "#submission-position") == "2 of 3"
-      assert render(view) =~ "Ana wrote about essay two"
-      refute render(view) =~ "Bea wrote her essay"
+      assert render(view) =~ "Amy wrote about essay two"
+      refute render(view) =~ "Beth wrote her essay"
 
       view |> element("a#next-link") |> render_click()
       assert_patch(view, ctx.scoring_route.(ctx.a_1.id))
@@ -225,7 +271,7 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
     test "Back and the breadcrumb return to the table with the same params; the breadcrumb ends with the student",
          ctx do
       params =
-        "?selected_user_ids=[#{ctx.user_a.id}]&sort_by=user&sort_order=asc&text_search=Alv&offset=0"
+        "?selected_user_ids=[#{ctx.user_a.id}]&sort_by=user&sort_order=asc&text_search=Ada&offset=0"
 
       {:ok, _view, html} = live(ctx.conn, ctx.scoring_route.(ctx.a_1.id) <> params)
       d = doc(html)
@@ -237,7 +283,7 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
                "selected_user_ids" => "[#{ctx.user_a.id}]",
                "sort_by" => "user",
                "sort_order" => "asc",
-               "text_search" => "Alv",
+               "text_search" => "Ada",
                "offset" => "0"
              }
 
@@ -366,7 +412,7 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       {:ok, view: view, html: html, g1: ctx.part_1.attempt_guid, g2: ctx.part_2.attempt_guid}
     end
 
-    test "renders one form with every manual part's inputs; only the selected part is visible",
+    test "renders one form holding every manual part's inputs and Apply; only the selected part is visible",
          ctx do
       d = doc(ctx.html)
 
@@ -386,18 +432,53 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert [_] = Floki.find(d, "#part_#{ctx.g1}:not([hidden])")
       assert [_] = Floki.find(d, "#part_#{ctx.g2}[hidden]")
       assert Floki.find(d, ~s|#scoring-form input[name^="out_of_"]|) == []
+      assert [_] = Floki.find(d, ~s|#scoring-form button#apply-button[type="submit"]|)
     end
 
-    test "two inputs of the same type carry the number of the submission they select", ctx do
+    test "two inputs of the same type carry their number in the badge and in the name of the button that selects them",
+         ctx do
       d = doc(ctx.html)
       heading = "#scoring-tabs-tabpanel-review .text-lg"
 
-      assert text(d, "button#select_#{ctx.g1}") == "Short Answer 1"
-      assert text(d, "button#select_#{ctx.g2}") == "Short Answer 2"
+      assert text(d, "#input_label_#{ctx.g1}") == "Short Answer 1"
+      assert text(d, "#input_label_#{ctx.g2}") == "Short Answer 2"
+      assert text(d, "button#select_#{ctx.g1}") == "Selected Input"
+      assert text(d, "button#select_#{ctx.g2}") == "Select Input"
+      assert button_name(d, ctx.g1) == "Selected Input Short Answer 1"
+      assert button_name(d, ctx.g2) == "Select Input Short Answer 2"
       assert text(d, heading) == "Part 1"
 
-      html = ctx.view |> element("button#select_#{ctx.g2}") |> render_click()
-      assert text(doc(html), heading) == "Part 2"
+      d = ctx.view |> element("button#select_#{ctx.g2}") |> render_click() |> doc()
+      assert button_name(d, ctx.g1) == "Select Input Short Answer 1"
+      assert button_name(d, ctx.g2) == "Selected Input Short Answer 2"
+      assert [_] = Floki.find(d, ~s|button#select_#{ctx.g1}[aria-pressed="false"]|)
+      assert [_] = Floki.find(d, ~s|button#select_#{ctx.g2}[aria-pressed="true"]|)
+      assert text(d, heading) == "Part 2"
+    end
+
+    test "an input's row says Scored, announced, once its draft has both a valid score and feedback",
+         ctx do
+      status = fn d, g -> text(d, ~s|[aria-live="polite"]#input_status_#{g}|) end
+      assert [_] = Floki.find(doc(ctx.html), ~s|[aria-live="polite"]#input_status_#{ctx.g1}|)
+
+      d =
+        doc(
+          change_draft(ctx.view, %{
+            "score_#{ctx.g1}" => "2",
+            "feedback_#{ctx.g1}" => "Clear argument",
+            "score_#{ctx.g2}" => "1"
+          })
+        )
+
+      assert status.(d, ctx.g1) == "Scored"
+      assert_exposed(d, "#input_status_#{ctx.g1} > span")
+      assert status.(d, ctx.g2) == ""
+
+      d = doc(change_draft(ctx.view, %{"score_#{ctx.g2}" => "abc", "feedback_#{ctx.g2}" => "Ok"}))
+      assert status.(d, ctx.g2) == ""
+
+      d = doc(change_draft(ctx.view, %{"feedback_#{ctx.g1}" => "   "}))
+      assert status.(d, ctx.g1) == ""
     end
 
     test "echoes the draft back into the inputs after each change, so unfocused inputs keep it",
@@ -411,8 +492,10 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert [_] = Floki.find(d, ~s|input[name="score_#{ctx.g1}"][data-initial=""]|)
     end
 
-    test "Apply stays disabled until every manual part has both a score and feedback", ctx do
+    test "Apply stays disabled, and says so, until every manual part has both a score and feedback",
+         ctx do
       assert [_] = Floki.find(doc(ctx.html), "button#apply-button[disabled]")
+      assert text(doc(ctx.html), "#scoring-form") =~ @apply_disabled_help
 
       # both scores present, one feedback blank: feedback alone must keep Apply disabled
       html =
@@ -445,6 +528,7 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
         })
 
       assert [_] = Floki.find(doc(html), "button#apply-button:not([disabled])")
+      refute text(doc(html), "#scoring-form") =~ @apply_disabled_help
     end
 
     test "a change takes only the input it names, so a late one cannot blank the rest of the draft",
@@ -595,25 +679,32 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
              ]
     end
 
-    test "labels are associated with the fields and the feedback-required message is announced",
+    test "labels are associated with the fields; the feedback-required message shows from the start while the feedback is blank",
          ctx do
+      message = "Add feedback for this input to enable Apply Score and Feedback."
+      error = "feedback_error_#{ctx.g1}"
+      textarea = ~s|textarea[name="feedback_#{ctx.g1}"]|
+
       d = doc(ctx.html)
       assert [_] = Floki.find(d, ~s|label[for="score_#{ctx.g1}"]|)
       assert [_] = Floki.find(d, ~s|label[for="feedback_#{ctx.g1}"]|)
-      assert Floki.find(d, "#feedback_error_#{ctx.g1}") == []
+      assert text(d, ~s|[aria-live="polite"] ##{error}|) == message
+      assert [_] = Floki.find(d, ~s|#{textarea}[aria-describedby~="#{error}"]|)
+      assert [_] = Floki.find(d, ~s|#{textarea}[aria-invalid="false"]|)
 
-      html =
-        change_draft(ctx.view, %{"score_#{ctx.g1}" => "2", "feedback_#{ctx.g1}" => "   "})
+      d = doc(change_draft(ctx.view, %{"score_#{ctx.g1}" => "2", "feedback_#{ctx.g1}" => "   "}))
+      assert text(d, ~s|[aria-live="polite"] ##{error}|) == message
 
-      d = doc(html)
+      assert [_] =
+               Floki.find(d, ~s|#{textarea}[aria-invalid="true"][aria-describedby~="#{error}"]|)
 
-      assert text(d, ~s|[aria-live="polite"] #feedback_error_#{ctx.g1}|) ==
-               "Add feedback for this input to enable Apply Score and Feedback."
+      d = doc(change_draft(ctx.view, %{"feedback_#{ctx.g1}" => "Good"}))
+      assert Floki.find(d, "##{error}") == []
 
       assert [_] =
                Floki.find(
                  d,
-                 ~s|textarea[name="feedback_#{ctx.g1}"][aria-invalid="true"][aria-describedby~="feedback_error_#{ctx.g1}"]|
+                 ~s|#{textarea}[aria-invalid="false"][aria-describedby="feedback_help_#{ctx.g1}"]|
                )
     end
   end
@@ -772,6 +863,16 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert html =~ "applied successfully"
     end
 
+    test "the row of an evaluated manual part says Scored from the start; a pending one does not",
+         ctx do
+      {:ok, _view, html} = live(ctx.conn, ctx.scoring_route.(ctx.partly.id))
+      d = doc(html)
+
+      assert text(d, "#input_status_#{ctx.partly_done.attempt_guid}") == "Scored"
+      assert_exposed(d, "#input_status_#{ctx.partly_done.attempt_guid} > span")
+      assert text(d, "#input_status_#{ctx.partly_pending.attempt_guid}") == ""
+    end
+
     test "an evaluated manual part without feedback says no feedback was provided", ctx do
       Oli.Repo.update!(Ecto.Changeset.change(ctx.partly_done, feedback: nil))
 
@@ -817,6 +918,8 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert Floki.find(d, ~s|input[name="score_#{auto}"]|) == []
       assert Floki.find(d, ~s|textarea[name="feedback_#{auto}"]|) == []
       assert [_] = Floki.find(d, "button#select_#{auto}")
+      assert [_] = Floki.find(d, ~s|[aria-live="polite"]#input_status_#{auto}|)
+      assert text(d, "#input_status_#{auto}") == ""
       assert text(d, "#part_#{auto}") =~ "Automatically Graded"
       assert text(d, "#part_#{auto}") =~ "Machine feedback for the auto part"
       refute text(d, "#part_#{auto}") =~ "automatically graded by the system"
@@ -983,6 +1086,44 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
 
       stored = Oli.Delivery.Attempts.Core.get_part_attempt_by(attempt_guid: ctx.g2)
       assert {stored.score, stored.out_of} == {2.0, 2.0}
+    end
+
+    test "each manual part shows its authored maximum as Out Of, and its shortcuts fill its own score with none, half or all of it",
+         ctx do
+      part = fn id, out_of ->
+        %{
+          "id" => id,
+          "responses" => [],
+          "hints" => [],
+          "gradingApproach" => "manual",
+          "outOf" => out_of
+        }
+      end
+
+      Oli.Repo.update!(
+        Ecto.Changeset.change(ctx.act_2.revision,
+          content: %{"authoring" => %{"parts" => [part.("1", 4), part.("2", 2)]}}
+        )
+      )
+
+      {:ok, _view, html} = live(ctx.conn, ctx.scoring_route.(ctx.two_parts.id))
+      d = doc(html)
+
+      number = fn [value] ->
+        assert {number, ""} = Float.parse(value)
+        number
+      end
+
+      for {guid, out_of} <- [{ctx.g1, 4.0}, {ctx.g2, 2.0}] do
+        assert number.(Floki.attribute(d, "input#out_of_#{guid}", "value")) == out_of
+
+        for {label, share} <- [{"0", 0.0}, {"50", 0.5}, {"100", 1.0}] do
+          assert [chip] = Floki.find(d, "button#chip_#{label}_#{guid}")
+          assert chip |> Floki.text() |> String.trim() == "#{label}%"
+          assert Floki.attribute(chip, "data-target") == ["score_#{guid}"]
+          assert number.(Floki.attribute(chip, "data-value")) == out_of * share
+        end
+      end
     end
 
     test "when someone else scored it meanwhile, Apply saves nothing, says so, and the draft stays visible read-only",

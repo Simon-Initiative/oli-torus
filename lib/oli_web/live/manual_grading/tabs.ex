@@ -19,7 +19,7 @@ defmodule OliWeb.ManualGrading.Tabs do
       role="tablist"
       aria-label="Submission views"
       phx-hook={@id && "ScoringTabs"}
-      class="flex gap-6 border-b border-Border-border-subtle"
+      class="flex"
     >
       <button
         :for={{key, label} <- @tabs}
@@ -32,10 +32,10 @@ defmodule OliWeb.ManualGrading.Tabs do
         phx-click={@changed}
         phx-value-tab={key}
         class={[
-          "-mb-px border-b-2 px-1 py-2 text-sm font-semibold",
+          "border-b-2 px-3 pb-3.5 pt-4 text-sm leading-4 text-Text-text-high",
           if(@active == key,
-            do: "border-Border-border-active text-Text-text-button",
-            else: "border-transparent text-Text-text-low hover:text-Text-text-high"
+            do: "border-Fill-Buttons-fill-primary font-semibold",
+            else: "border-transparent"
           )
         ]}
       >
