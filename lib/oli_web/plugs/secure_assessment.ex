@@ -1,29 +1,115 @@
 defmodule OliWeb.Plugs.SecureAssessment do
   @moduledoc """
-  Early browser boundary. Runs before delivery context, redirects and controller
-  work. Unclassified routes are denied for scoped credentials; service-only
-  authentication does not use this browser policy.
+  Scoped credentials are checked before route work. Ordinary section requests are
+  checked after the section is loaded, using its resource depot as a fast guard.
   """
   import Plug.Conn
 
   alias Oli.Delivery.SecureAssessments, as: Policy
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.{Section, SectionResourceDepot}
   alias Oli.Repo
 
   @doc false
   def init(opts), do: opts
 
   @doc false
-  def call(conn, _) do
-    route = Phoenix.Router.route_info(OliWeb.Router, conn.method, conn.request_path, conn.host)
+  def call(conn, :global) do
+    case {Policy.supported?(), scoped?(conn)} do
+      {false, false} ->
+        conn
 
-    {controller, action} =
-      case route do
-        %{phoenix_live_view: {view, action, _, _}} -> {view, action}
-        %{plug: controller, plug_opts: action} -> {controller, action}
-        _ -> {nil, nil}
+      {_, true} ->
+        check_route(conn)
+
+      {true, false} ->
+        case unscoped_global_target?(conn.request_path) do
+          true -> check_route(conn)
+          false -> conn
+        end
+    end
+  end
+
+  def call(conn, :section) do
+    case {Policy.supported?(), scoped?(conn)} do
+      {false, _} ->
+        conn
+
+      {true, true} ->
+        conn
+
+      {true, false} ->
+        {controller, action} = route_target(conn)
+
+        case classify(controller, action, conn.params) do
+          classification when classification in [:authentication, :unmapped] ->
+            conn
+
+          _ ->
+            case secure_pages_in_section?(conn) do
+              false -> conn
+              true -> check_route(conn, controller, action)
+            end
+        end
+    end
+  end
+
+  def call(conn, _), do: check_route(conn)
+
+  defp scoped?(conn), do: match?(%{scope: %{}}, conn.assigns[:user_session])
+
+  defp unscoped_global_target?(path) do
+    Enum.any?(
+      [
+        "/api/v1/blob/",
+        "/api/v1/page_lifecycle",
+        "/api/v1/activity/report/",
+        "/jcourse/superactivity/"
+      ],
+      &String.starts_with?(path, &1)
+    )
+  end
+
+  defp secure_pages_in_section?(conn) do
+    section_id =
+      case conn.assigns[:section] do
+        %Section{id: id} ->
+          id
+
+        _ ->
+          case conn.params["section_slug"] do
+            slug when is_binary(slug) ->
+              case Repo.get_by(Section, slug: slug) do
+                %Section{id: id} -> id
+                _ -> nil
+              end
+
+            _ ->
+              nil
+          end
       end
 
+    case section_id do
+      nil -> true
+      id -> SectionResourceDepot.has_secure_graded_pages?(id)
+    end
+  end
+
+  defp check_route(conn) do
+    {controller, action} = route_target(conn)
+    check_route(conn, controller, action)
+  end
+
+  defp route_target(conn) do
+    route = Phoenix.Router.route_info(OliWeb.Router, conn.method, conn.request_path, conn.host)
+
+    case route do
+      %{phoenix_live_view: {view, action, _, _}} -> {view, action}
+      %{plug: controller, plug_opts: action} -> {controller, action}
+      _ -> {nil, nil}
+    end
+  end
+
+  defp check_route(conn, controller, action) do
     case check(conn.assigns[:user_session], controller, action, conn.params) do
       :ok ->
         case classify(controller, action, conn.params) do
@@ -421,8 +507,8 @@ defmodule OliWeb.Plugs.SecureAssessment do
           end
 
         conn
-        |> Phoenix.Controller.put_root_layout(html: {OliWeb.LayoutView, :secure_restricted})
-        |> Phoenix.Controller.put_layout(html: false)
+        |> Phoenix.Controller.put_root_layout({OliWeb.LayoutView, :secure_restricted})
+        |> Phoenix.Controller.put_layout(false)
         |> Phoenix.Controller.put_view(html: OliWeb.SecureAssessmentHTML)
         |> Phoenix.Controller.render(:restricted,
           title: title,

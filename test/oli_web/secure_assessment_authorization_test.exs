@@ -1,12 +1,23 @@
 defmodule OliWeb.SecureAssessmentAuthorizationTest do
-  use OliWeb.ConnCase, async: true
+  use OliWeb.ConnCase, async: false
   import Oli.Factory
   alias Oli.Accounts
   alias Oli.Delivery.SecureAssessments, as: Policy
   alias Oli.Delivery.SecureAssessments.Scope
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias OliWeb.Plugs.SecureAssessment, as: Boundary
 
   setup do
+    previous_support = Application.fetch_env(:oli, :supports_secure_delivery)
+    Application.put_env(:oli, :supports_secure_delivery, true)
+
+    on_exit(fn ->
+      case previous_support do
+        {:ok, value} -> Application.put_env(:oli, :supports_secure_delivery, value)
+        :error -> Application.delete_env(:oli, :supports_secure_delivery)
+      end
+    end)
+
     user = insert(:user)
     section = insert(:section)
     revision = insert(:revision, graded: true)
@@ -17,6 +28,8 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
         resource_id: revision.resource_id,
         revision_id: revision.id,
         revision_slug: revision.slug,
+        graded: true,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         secure_delivery: true
       )
 
@@ -60,6 +73,56 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
                "section_slug" => c.section.slug,
                "attemptGuids" => [c.activity.attempt_guid]
              })
+  end
+
+  test "section depot detects secure graded pages without materializing all graded pages", c do
+    assert SectionResourceDepot.has_secure_graded_pages?(c.section.id)
+
+    Oli.Repo.update!(Ecto.Changeset.change(c.sr, secure_delivery: false))
+
+    Oli.Delivery.DepotCoordinator.clear_synchronously(
+      SectionResourceDepot.depot_desc(),
+      c.section.id
+    )
+
+    refute SectionResourceDepot.has_secure_graded_pages?(c.section.id)
+  end
+
+  test "section boundary resolves the section slug when no Section was assigned", c do
+    path = "/sections/#{c.section.slug}/page/#{c.revision.slug}"
+
+    conn =
+      c.conn
+      |> Map.put(:request_path, path)
+      |> Map.put(:params, %{
+        "_format" => "html",
+        "section_slug" => c.section.slug,
+        "revision_slug" => c.revision.slug
+      })
+      |> Plug.Conn.assign(:user_session, c.normal)
+      |> Boundary.call(:section)
+
+    assert conn.status == 403
+  end
+
+  test "disabled support skips ordinary checks but confines an existing scoped session", c do
+    Application.put_env(:oli, :supports_secure_delivery, false)
+    path = "/sections/#{c.section.slug}/page/#{c.revision.slug}"
+
+    ordinary =
+      c.conn
+      |> init_test_session(%{user_token: c.normal_token})
+      |> get(path)
+
+    refute ordinary.status == 403
+
+    scoped =
+      c.conn
+      |> recycle()
+      |> init_test_session(%{user_token: c.secure_token})
+      |> get("/authors/settings")
+
+    assert html_response(scoped, 403) =~ "Assessment access restricted"
   end
 
   test "parent-attempt model parameters do not unlock unfinished provider adapters", c do

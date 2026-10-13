@@ -15,7 +15,7 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_current_author)
     plug(:fetch_current_user)
-    plug(OliWeb.Plugs.SecureAssessment)
+    plug(OliWeb.Plugs.SecureAssessment, :global)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :default})
     plug(:put_layout, html: {OliWeb.LayoutView, :app})
@@ -33,7 +33,7 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_current_author)
     plug(:fetch_current_user)
-    plug(OliWeb.Plugs.SecureAssessment)
+    plug(OliWeb.Plugs.SecureAssessment, :global)
     plug(:fetch_live_flash)
     plug(:put_secure_browser_headers)
     plug(OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec)
@@ -45,7 +45,7 @@ defmodule OliWeb.Router do
     plug(:accepts, ["text/plain"])
     plug(:fetch_session)
     plug(:fetch_current_user)
-    plug(OliWeb.Plugs.SecureAssessment)
+    plug(OliWeb.Plugs.SecureAssessment, :global)
     plug(:put_secure_browser_headers)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
     plug(OliWeb.Plugs.SessionContext)
@@ -56,7 +56,7 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_current_author)
     plug(:fetch_current_user)
-    plug(OliWeb.Plugs.SecureAssessment)
+    plug(OliWeb.Plugs.SecureAssessment, :global)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :lti})
     plug(OliWeb.Plugs.SessionContext)
@@ -114,6 +114,7 @@ defmodule OliWeb.Router do
 
   pipeline :require_section do
     plug(Oli.Plugs.RequireSection)
+    plug(OliWeb.Plugs.SecureAssessment, :section)
     plug(OliWeb.Plugs.SetTemplatePreview)
   end
 
