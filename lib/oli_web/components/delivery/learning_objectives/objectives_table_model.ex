@@ -496,6 +496,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         id={"expanded-objective-#{@unique_id}"}
         unique_id={@unique_id}
         objective={@objective}
+        confidence_supported?={@model.data[:confidence_supported?] || false}
+        sub_objective_confidences={@model.data[:sub_objective_confidences] || %{}}
         section_id={@section_id}
         section_slug={@section_slug}
         section_title={@section_title}

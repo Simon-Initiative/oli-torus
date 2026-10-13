@@ -18,11 +18,13 @@ export type AutomationSetupResponse = {
   learner: { email: string; password: string };
   project: { slug: string; title: string };
   section: { slug: string };
+  additionalAuthors?: { email: string; password: string }[];
 };
 
 type AutomationOptions = {
   baseUrl: string;
   apiKey: string;
+  strictTeardown?: boolean;
   teardownTimeoutMs?: number;
 };
 
@@ -112,9 +114,10 @@ function isTransientNetworkError(error: unknown) {
 export async function teardownAutomationCourse(
   request: APIRequestContext,
   seeded: AutomationSetupResponse,
-  { baseUrl, apiKey, teardownTimeoutMs }: AutomationOptions,
+  { baseUrl, apiKey, strictTeardown = false, teardownTimeoutMs }: AutomationOptions,
 ) {
   const context = `project=${seeded.project.slug} section=${seeded.section.slug}`;
+  const additionalAuthors = seeded.additionalAuthors ?? [];
   let response;
 
   try {
@@ -131,6 +134,7 @@ export async function teardownAutomationCourse(
         learner_password: seeded.learner.password,
         section_slug: seeded.section.slug,
         project_slug: seeded.project.slug,
+        ...(additionalAuthors.length > 0 && { additional_authors: additionalAuthors }),
       },
       timeout: automationTeardownTimeoutMs(teardownTimeoutMs),
     });
@@ -138,14 +142,17 @@ export async function teardownAutomationCourse(
     // No response at all: connection refused, socket hang up, or the request
     // timeout. This runs in afterAll, where throwing would fail a test that
     // passed, so report it and let the run keep its result.
-    console.warn(`automation_teardown request failed (${context}): ${(error as Error).message}`);
+    const detail = error instanceof Error ? error.message : String(error);
+    const message = `automation_teardown request failed (${context}): ${detail}`;
+    if (strictTeardown) throw new Error(message);
+    console.warn(message);
     return;
   }
 
   if (!response.ok()) {
-    console.warn(
-      `automation_teardown failed (${response.status()}): ${await truncatedBody(response)}`,
-    );
+    const message = `automation_teardown failed (${response.status()}): ${await truncatedBody(response)}`;
+    if (strictTeardown) throw new Error(message);
+    console.warn(message);
     return;
   }
 
@@ -156,9 +163,9 @@ export async function teardownAutomationCourse(
     payload = null;
   }
   if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
-    console.warn(
-      `automation_teardown returned unreadable payload (${context}): ${await truncatedBody(response)}`,
-    );
+    const message = `automation_teardown returned unreadable payload (${context}): ${await truncatedBody(response)}`;
+    if (strictTeardown) throw new Error(message);
+    console.warn(message);
     return;
   }
 
@@ -179,9 +186,50 @@ export async function teardownAutomationCourse(
     return [`${entity}: ${typeof message === 'string' ? message : 'no message'}`];
   });
 
-  if (failures.length > 0) {
-    console.warn(`automation_teardown left records behind (${context}): ${failures.join('; ')}`);
+  if (additionalAuthors.length > 0) {
+    failures.push(
+      ...additionalAuthorFailures(
+        (payload as Record<string, unknown>).additional_authors_deleted,
+        additionalAuthors.map(({ email }) => email),
+      ),
+    );
   }
+
+  if (failures.length > 0) {
+    const message = `automation_teardown left records behind (${context}): ${failures.join('; ')}`;
+    if (strictTeardown) throw new Error(message);
+    console.warn(message);
+  }
+}
+
+function additionalAuthorFailures(results: unknown, emails: string[]): string[] {
+  if (!Array.isArray(results)) {
+    return ['additional_authors_deleted: missing or malformed result'];
+  }
+
+  const entries = results.filter(
+    (entry): entry is { email: string; success?: unknown; message?: unknown } =>
+      typeof entry === 'object' && entry !== null && typeof entry.email === 'string',
+  );
+  const structural = [
+    ...(entries.length < results.length ? ['additional_authors_deleted: malformed entry'] : []),
+    ...entries
+      .filter(({ email }) => !emails.includes(email))
+      .map(({ email }) => `additional_authors_deleted: unexpected result for ${email}`),
+  ];
+
+  return structural.concat(
+    emails.flatMap((email) => {
+      const matches = entries.filter((entry) => entry.email === email);
+
+      if (matches.length === 0) return [`additional_author ${email}: missing result`];
+      if (matches.length > 1) return [`additional_authors_deleted: duplicate result for ${email}`];
+      if (matches[0].success === true) return [];
+      return [
+        `additional_author ${email}: ${typeof matches[0].message === 'string' ? matches[0].message : 'no message'}`,
+      ];
+    }),
+  );
 }
 
 // dev-mode Phoenix errors are full HTML pages — keep reports readable

@@ -17,8 +17,7 @@ defmodule Oli.Delivery.ProficiencyIntegrationTest do
       learning_objective_id: objective.id,
       aoa: 0.7,
       attempt_count: 3,
-      unique_activity_part_count: 2,
-      confidence: 0.6
+      unique_activity_part_count: 2
     })
 
     assert {:ok, estimates} =
@@ -38,8 +37,7 @@ defmodule Oli.Delivery.ProficiencyIntegrationTest do
       learning_objective_id: objective.id,
       aoa: 0.7,
       attempt_count: 3,
-      unique_activity_part_count: 2,
-      confidence: 0.6
+      unique_activity_part_count: 2
     })
 
     assert {:ok, estimates} =

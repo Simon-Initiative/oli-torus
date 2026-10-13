@@ -5,6 +5,7 @@ on:
       - master
       - "hotfix-*"
       - "prerelease-*"
+      - "integ-*"
     types: [opened, edited, reopened]
 
 jobs:

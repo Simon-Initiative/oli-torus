@@ -5,6 +5,8 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
   Direct objectives require three attempts on that objective. Parent objectives
   instead derive from effective children and require three attempts in total;
   an individual child below three never suppresses an otherwise eligible parent.
+  Confidence is calculated from each persisted unique-part count using current
+  configuration before any parent or scope aggregation.
   Parent rows are deliberately ignored because derived state would become stale
   whenever any child changes.
   """
@@ -13,7 +15,7 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
 
   alias Oli.Delivery.Proficiency.{Aggregate, Estimate, ScopeMembership, Telemetry}
   alias Oli.Delivery.Sections.{Section, SectionResourceDepot}
-  alias Oli.LearningModel.LearningState
+  alias Oli.LearningModel.{Confidence, Config, LearningState}
   alias Oli.Repo
 
   @minimum_attempts 3
@@ -288,6 +290,8 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
   defp read_states(_section_id, _user_ids, []), do: %{}
 
   defp read_states(section_id, user_ids, objective_ids) do
+    config = Config.fetch!()
+
     from(state in LearningState,
       where:
         state.section_id == ^section_id and state.user_id in ^user_ids and
@@ -296,13 +300,15 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
         user_id: state.user_id,
         learning_objective_id: state.learning_objective_id,
         aoa: state.aoa,
-        confidence: state.confidence,
         attempt_count: state.attempt_count,
         unique_activity_part_count: state.unique_activity_part_count
       }
     )
     |> Repo.all()
-    |> Map.new(&{{&1.user_id, &1.learning_objective_id}, &1})
+    |> Map.new(fn state ->
+      confidence = Confidence.calculate(state.unique_activity_part_count, config)
+      {{state.user_id, state.learning_objective_id}, Map.put(state, :confidence, confidence)}
+    end)
   end
 
   defp build_estimate(section_id, user_id, objective_id, [objective_id], states) do

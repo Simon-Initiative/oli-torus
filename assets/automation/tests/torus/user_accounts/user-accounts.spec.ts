@@ -1,17 +1,41 @@
+import { resetRuntimeConfig, setRuntimeConfig } from '@core/runtimeConfig';
+import { AutomationSetupResponse, teardownAutomationCourse } from '@tasks/AutomationSetupTask';
 import { test } from '@fixture/my-fixture';
-import { setRuntimeConfig } from '@core/runtimeConfig';
 import { TYPE_USER } from '@pom/types/type-user';
+import { BrowserContext, expect, Page } from '@playwright/test';
+import { HomeTask } from '@tasks/HomeTask';
+import { isSignedOutUrl } from '@core/signedOut';
+import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 
 const runId = `-${Date.now()}`;
-const baseUrl = 'http://localhost';
+const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 const defaultPassword = 'changeme123456';
 const adminPassword = 'changeme123456';
 const scenarioPath = path.resolve(__dirname, './playwright_user_accounts.yaml');
+const accountLinkingScenarioPath = path.resolve(__dirname, './playwright_account_linking.yaml');
+const accountLinkingRunId = `-${Date.now()}-link`;
+const accountLinkingPassword = randomBytes(24).toString('hex');
+const projectName = `Account Linking Smoke${accountLinkingRunId}`;
+const sectionName = `account_linking_section${accountLinkingRunId}`;
+const linkingAuthorEmail = `link-author${accountLinkingRunId}@example.com`;
+const linkingInstructorEmail = `link-instructor${accountLinkingRunId}@example.com`;
+const linkingLearnerEmail = `link-learner${accountLinkingRunId}@example.com`;
+const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
+const adminRolesScenarioPath = path.resolve(__dirname, './playwright_admin_roles.yaml');
+const adminRolesRunId = `-${Date.now()}-roles`;
+const adminRolesPassword = randomBytes(24).toString('hex');
+const adminRolesProjectName = `Admin Roles Smoke${adminRolesRunId}`;
+const adminRolesSectionName = `admin_roles_section${adminRolesRunId}`;
+const grantorEmail = `roles-grantor${adminRolesRunId}@example.com`;
+const accountAdminEmail = `roles-account-admin${adminRolesRunId}@example.com`;
+const targetEmail = `roles-target${adminRolesRunId}@example.com`;
+
+let seededCourse: AutomationSetupResponse | undefined;
 
 setRuntimeConfig({
   baseUrl,
-  scenarioToken: 'my-token',
+  scenarioToken: process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token',
   loginData: {
     student: {
       type: TYPE_USER.student,
@@ -65,11 +89,11 @@ const loginData = {
   },
 };
 
-test.beforeAll(async ({ seedScenario }) => {
-  await seedScenario(scenarioPath, { RUN_ID: runId });
-});
-
 test.describe('User Accounts', () => {
+  test.beforeAll(async ({ seedScenario }) => {
+    await seedScenario(scenarioPath, { RUN_ID: runId });
+  });
+
   test('Sign into an authoring account with valid details', async ({ homeTask }) => {
     await homeTask.login('author');
   });
@@ -97,5 +121,225 @@ test.describe('User Accounts', () => {
     await homeTask.logout(true);
     await homeTask.login('student');
     await studentTask.verifyCanCreateSections('New course set up');
+  });
+});
+
+test.describe('Account linking @account-linking @nightly @smoke', () => {
+  test.skip(
+    !automationApiKey,
+    'Set PLAYWRIGHT_AUTOMATION_API_KEY to run the account-linking smoke test',
+  );
+
+  test.beforeAll(async ({ seedScenario }) => {
+    setRuntimeConfig({
+      baseUrl,
+      scenarioToken: process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token',
+      loginData: {
+        instructor: {
+          type: TYPE_USER.instructor,
+          pageTitle: 'OLI Torus',
+          role: 'Instructor',
+          welcomeText: 'Welcome to OLI Torus',
+          welcomeTitle: 'Instructor Dashboard',
+          email: linkingInstructorEmail,
+          pass: accountLinkingPassword,
+          header: 'Instructor Dashboard',
+        },
+      },
+    });
+
+    const result = await seedScenario(accountLinkingScenarioPath, {
+      ACCOUNT_LINKING_PASSWORD: accountLinkingPassword,
+      RUN_ID: accountLinkingRunId,
+    });
+    const projects = result.outputs?.projects as Record<string, string> | undefined;
+    const sections = result.outputs?.sections as Record<string, string> | undefined;
+
+    seededCourse = {
+      success: true,
+      author: { email: linkingAuthorEmail, password: accountLinkingPassword },
+      educator: { email: linkingInstructorEmail, password: accountLinkingPassword },
+      learner: { email: linkingLearnerEmail, password: accountLinkingPassword },
+      project: { slug: projects?.[projectName] ?? '', title: projectName },
+      section: { slug: sections?.[sectionName] ?? '' },
+    };
+
+    expect(seededCourse.project.slug).toBeTruthy();
+    expect(seededCourse.section.slug).toBeTruthy();
+  });
+
+  test.afterAll(async ({ request }, testInfo) => {
+    testInfo.setTimeout(180_000);
+
+    try {
+      if (!seededCourse) return;
+
+      await teardownAutomationCourse(request, seededCourse, {
+        apiKey: automationApiKey!,
+        baseUrl,
+        strictTeardown: true,
+        teardownTimeoutMs: 120_000,
+      });
+    } finally {
+      resetRuntimeConfig();
+    }
+  });
+
+  test('links a delivery account to an authoring account and preserves access', async ({
+    accountLinkingTask,
+    context,
+    homeTask,
+    page,
+    projectTask,
+  }) => {
+    await homeTask.login('instructor');
+    await accountLinkingTask.openFromAccountMenu();
+
+    await accountLinkingTask.link(linkingAuthorEmail, 'invalid-password');
+    await accountLinkingTask.verifyInvalidCredentials();
+
+    await accountLinkingTask.link(linkingAuthorEmail, accountLinkingPassword);
+    await accountLinkingTask.verifyLinkSucceeded();
+
+    await page.reload();
+    await accountLinkingTask.verifyLinkedAccountInMenu(linkingAuthorEmail);
+
+    await homeTask.logout();
+    await context.clearCookies();
+    await page.goto('/');
+    await homeTask.login('instructor');
+    await accountLinkingTask.verifyLinkedAccountInMenu(linkingAuthorEmail);
+
+    await accountLinkingTask.verifyDuplicateLinkPrevented(linkingAuthorEmail);
+
+    await page.goto('/workspaces/instructor');
+    await projectTask.verifyProjectAsOpen(projectName);
+  });
+});
+
+test.describe('Admin roles @admin-roles @nightly @smoke', () => {
+  test.skip(
+    !automationApiKey,
+    'Set PLAYWRIGHT_AUTOMATION_API_KEY to run the admin roles smoke test',
+  );
+
+  // Owned before seeding, so a seed that fails after creating authors still cleans them up.
+  const cleanup: AutomationSetupResponse = {
+    success: true,
+    author: { email: targetEmail, password: adminRolesPassword },
+    educator: {
+      email: `roles-instructor${adminRolesRunId}@example.com`,
+      password: adminRolesPassword,
+    },
+    learner: { email: `roles-learner${adminRolesRunId}@example.com`, password: adminRolesPassword },
+    project: { slug: '', title: adminRolesProjectName },
+    section: { slug: '' },
+    additionalAuthors: [
+      { email: grantorEmail, password: adminRolesPassword },
+      { email: accountAdminEmail, password: adminRolesPassword },
+    ],
+  };
+  let seeded = false;
+
+  const loginAs = async (homeTask: HomeTask, page: Page, email: string) => {
+    setRuntimeConfig({
+      loginData: {
+        author: {
+          type: TYPE_USER.author,
+          pageTitle: 'OLI Torus',
+          role: 'Course Author',
+          welcomeText: 'Welcome to OLI Torus',
+          welcomeTitle: 'Course Author',
+          email,
+          pass: adminRolesPassword,
+          header: 'Course Author',
+        },
+      },
+    });
+    await page.goto('/');
+    await homeTask.login('author');
+  };
+
+  const logout = async (homeTask: HomeTask, page: Page, context: BrowserContext) => {
+    await homeTask.logout();
+    // Navigating before sign-out lands aborts one of the two navigations.
+    await page.waitForURL(isSignedOutUrl, { timeout: 15_000 });
+    await context.clearCookies();
+  };
+
+  test.beforeAll(async ({ seedScenario }) => {
+    setRuntimeConfig({
+      baseUrl,
+      scenarioToken: process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token',
+    });
+
+    const result = await seedScenario(adminRolesScenarioPath, {
+      ADMIN_ROLES_PASSWORD: adminRolesPassword,
+      RUN_ID: adminRolesRunId,
+    });
+    const projects = result.outputs?.projects as Record<string, string> | undefined;
+    const sections = result.outputs?.sections as Record<string, string> | undefined;
+
+    cleanup.project.slug = projects?.[adminRolesProjectName] ?? '';
+    cleanup.section.slug = sections?.[adminRolesSectionName] ?? '';
+    seeded = true;
+
+    expect(cleanup.project.slug).toBeTruthy();
+    expect(cleanup.section.slug).toBeTruthy();
+  });
+
+  test.afterAll(async ({ request }, testInfo) => {
+    testInfo.setTimeout(180_000);
+
+    try {
+      await teardownAutomationCourse(request, cleanup, {
+        apiKey: automationApiKey!,
+        baseUrl,
+        strictTeardown: seeded,
+        teardownTimeoutMs: 120_000,
+      });
+    } finally {
+      resetRuntimeConfig();
+    }
+  });
+
+  test('grants and revokes system admin through the admin UI', async ({
+    administrationTask,
+    context,
+    homeTask,
+    page,
+  }) => {
+    test.setTimeout(240_000);
+
+    await loginAs(homeTask, page, targetEmail);
+    await administrationTask.verifyAdminPageDenied('/admin/authors');
+    await logout(homeTask, page, context);
+
+    await loginAs(homeTask, page, accountAdminEmail);
+    await administrationTask.openAuthor(targetEmail);
+    await administrationTask.verifySystemRoleLocked();
+    await logout(homeTask, page, context);
+
+    await loginAs(homeTask, page, grantorEmail);
+    await administrationTask.openAuthor(targetEmail);
+    await administrationTask.changeSystemRole('System Admin');
+    await logout(homeTask, page, context);
+
+    await loginAs(homeTask, page, accountAdminEmail);
+    await administrationTask.openAuthor(targetEmail);
+    await administrationTask.verifySystemRoleLocked();
+    await logout(homeTask, page, context);
+
+    await loginAs(homeTask, page, targetEmail);
+    await administrationTask.verifyAuditLogReachable();
+    await logout(homeTask, page, context);
+
+    await loginAs(homeTask, page, grantorEmail);
+    await administrationTask.openAuthor(targetEmail);
+    await administrationTask.changeSystemRole('Author');
+    await logout(homeTask, page, context);
+
+    await loginAs(homeTask, page, targetEmail);
+    await administrationTask.verifyAdminPageDenied('/admin/audit_log');
   });
 });

@@ -13,17 +13,19 @@ defmodule Oli.LearningModel.Config do
   @gamma_env "LKT_AOA_GAMMA"
   @rho_env "LKT_AOA_RHO"
   @recency_decay_env "LKT_AOA_RECENCY_DECAY"
-  @confidence_saturation_env "LKT_AOA_CONFIDENCE_SATURATION"
-  @defaults Application.compile_env!(:oli, :lkt_aoa)
+  @confidence_midpoint_env "PROFICIENCY_CONFIDENCE_MIDPOINT"
+  @confidence_steepness_env "PROFICIENCY_CONFIDENCE_STEEPNESS"
+  @defaults Application.compile_env!(:oli, :lkt_aoa_defaults)
 
-  @enforce_keys [:gamma, :rho, :recency_decay, :confidence_saturation]
-  defstruct [:gamma, :rho, :recency_decay, :confidence_saturation]
+  @enforce_keys [:gamma, :rho, :recency_decay, :confidence_midpoint, :confidence_steepness]
+  defstruct [:gamma, :rho, :recency_decay, :confidence_midpoint, :confidence_steepness]
 
   @type t :: %__MODULE__{
           gamma: float(),
           rho: float(),
           recency_decay: float(),
-          confidence_saturation: float()
+          confidence_midpoint: float(),
+          confidence_steepness: float()
         }
 
   @type source :: :default | :override
@@ -39,6 +41,7 @@ defmodule Oli.LearningModel.Config do
     load_from_env!(base, get_env)
   end
 
+  @doc "Loads validated environment overrides onto a base configuration and reports each value's source."
   @spec load_from_env!(map() | keyword() | t(), env_reader()) :: {t(), sources()}
   def load_from_env!(base, get_env) when is_function(get_env, 1) do
     base = base |> new!() |> Map.from_struct()
@@ -47,7 +50,8 @@ defmodule Oli.LearningModel.Config do
       {:gamma, @gamma_env},
       {:rho, @rho_env},
       {:recency_decay, @recency_decay_env},
-      {:confidence_saturation, @confidence_saturation_env}
+      {:confidence_midpoint, @confidence_midpoint_env},
+      {:confidence_steepness, @confidence_steepness_env}
     ]
 
     {values, sources} =
@@ -65,6 +69,7 @@ defmodule Oli.LearningModel.Config do
     {new!(values), sources}
   end
 
+  @doc "Builds a validated configuration; both confidence curve parameters must be finite and positive."
   @spec new!(map() | keyword() | t()) :: t()
   def new!(%__MODULE__{} = config), do: validate!(config)
 
@@ -75,7 +80,8 @@ defmodule Oli.LearningModel.Config do
       gamma: Map.fetch!(values, :gamma),
       rho: Map.fetch!(values, :rho),
       recency_decay: Map.fetch!(values, :recency_decay),
-      confidence_saturation: Map.fetch!(values, :confidence_saturation)
+      confidence_midpoint: Map.fetch!(values, :confidence_midpoint),
+      confidence_steepness: Map.fetch!(values, :confidence_steepness)
     }
     |> normalize!()
     |> validate!()
@@ -88,16 +94,19 @@ defmodule Oli.LearningModel.Config do
     |> new!()
   end
 
+  @doc "Serializes the model and confidence curve parameters for application configuration."
   @spec to_keyword(t()) :: keyword(float())
   def to_keyword(%__MODULE__{} = config) do
     [
       gamma: config.gamma,
       rho: config.rho,
       recency_decay: config.recency_decay,
-      confidence_saturation: config.confidence_saturation
+      confidence_midpoint: config.confidence_midpoint,
+      confidence_steepness: config.confidence_steepness
     ]
   end
 
+  @doc "Logs effective parameter values and whether each came from a default or override."
   @spec log_effective(t(), sources()) :: :ok
   def log_effective(%__MODULE__{} = config, sources) do
     Logger.info(
@@ -105,8 +114,10 @@ defmodule Oli.LearningModel.Config do
         "gamma=#{config.gamma} (#{Map.fetch!(sources, :gamma)}), " <>
         "rho=#{config.rho} (#{Map.fetch!(sources, :rho)}), " <>
         "recency_decay=#{config.recency_decay} (#{Map.fetch!(sources, :recency_decay)}), " <>
-        "confidence_saturation=#{config.confidence_saturation} " <>
-        "(#{Map.fetch!(sources, :confidence_saturation)})"
+        "confidence_midpoint=#{config.confidence_midpoint} " <>
+        "(#{Map.fetch!(sources, :confidence_midpoint)}), " <>
+        "confidence_steepness=#{config.confidence_steepness} " <>
+        "(#{Map.fetch!(sources, :confidence_steepness)})"
     )
   end
 
@@ -125,8 +136,8 @@ defmodule Oli.LearningModel.Config do
       gamma: normalize_number!(config.gamma, :gamma),
       rho: normalize_number!(config.rho, :rho),
       recency_decay: normalize_number!(config.recency_decay, :recency_decay),
-      confidence_saturation:
-        normalize_number!(config.confidence_saturation, :confidence_saturation)
+      confidence_midpoint: normalize_number!(config.confidence_midpoint, :confidence_midpoint),
+      confidence_steepness: normalize_number!(config.confidence_steepness, :confidence_steepness)
     }
   end
 
@@ -141,7 +152,8 @@ defmodule Oli.LearningModel.Config do
     validate_value!(:gamma, config.gamma, :gamma)
     validate_value!(:rho, config.rho, :rho)
     validate_value!(:recency_decay, config.recency_decay, :recency_decay)
-    validate_value!(:confidence_saturation, config.confidence_saturation, :confidence_saturation)
+    validate_value!(:confidence_midpoint, config.confidence_midpoint, :confidence_midpoint)
+    validate_value!(:confidence_steepness, config.confidence_steepness, :confidence_steepness)
     config
   end
 
@@ -157,7 +169,7 @@ defmodule Oli.LearningModel.Config do
       :recency_decay when value <= 0.0 or value > 1.0 ->
         raise ArgumentError, "#{name} must be greater than 0.0 and at most 1.0"
 
-      :confidence_saturation when value <= 0.0 ->
+      key when key in [:confidence_midpoint, :confidence_steepness] and value <= 0.0 ->
         raise ArgumentError, "#{name} must be greater than 0.0"
 
       _ ->

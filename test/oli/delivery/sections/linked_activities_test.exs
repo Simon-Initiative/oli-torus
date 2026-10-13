@@ -155,6 +155,31 @@ defmodule Oli.Delivery.Sections.LinkedActivitiesTest do
 
     assert row.title == "Multiple Choice:"
     assert row.question_stem == "No question stem available"
+    assert row.attempts == 0
+    assert is_nil(row.percent_correct)
+    assert is_nil(row.avg_score)
+  end
+
+  test "an attempted score of zero remains a measured value" do
+    revision = %{
+      resource_id: 7,
+      activity_type_id: 1,
+      title: "Multiple Choice:",
+      slug: "mc",
+      content: %{}
+    }
+
+    row =
+      LinkedActivities.normalize_activity_row(
+        revision,
+        %{attempts: 1, percent_correct: 0.0},
+        [],
+        []
+      )
+
+    assert row.attempts == 1
+    assert row.percent_correct == 0.0
+    assert row.avg_score == 0.0
   end
 
   test "telemetry metadata is allow-listed" do

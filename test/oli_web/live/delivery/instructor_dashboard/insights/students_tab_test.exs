@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   import Ecto.Query
 
   alias Lti_1p3.Roles.ContextRoles
-  alias Oli.Delivery.{Paywall, Sections}
+  alias Oli.Delivery.{Metrics, Paywall, Sections}
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.GrantedCertificates
   alias Oli.Delivery.Sections.Certificate
@@ -853,14 +853,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       set_progress(section.id, page_8.published_resource.resource_id, user_1.id, 1)
       set_progress(section.id, page_9.published_resource.resource_id, user_1.id, 1)
 
+      # Exactly 50% progress is not Low Progress. The course has 12 pages.
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 1)
+      set_progress(section.id, page_2.published_resource.resource_id, user_2.id, 1)
+      set_progress(section.id, page_3.published_resource.resource_id, user_2.id, 1)
+      set_progress(section.id, page_4.published_resource.resource_id, user_2.id, 1)
+      set_progress(section.id, page_5.published_resource.resource_id, user_2.id, 1)
+      set_progress(section.id, page_6.published_resource.resource_id, user_2.id, 1)
+      assert_in_delta Metrics.progress_for(section.id, user_2.id), 0.5, 0.0001
+
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
-      # Low Progress card it should have 3 students
-      assert element(view, "button[phx-value-selected='low_progress']") |> render() =~
-               "Low Progress"
+      # Low Progress uses an exclusive 50% threshold.
+      low_progress_card =
+        element(view, "button[phx-value-selected='low_progress']") |> render()
 
-      assert element(view, "button[phx-value-selected='low_progress']") |> render() =~ "3"
-      assert element(view, "button[phx-value-selected='low_progress']") |> render() =~ "Students"
+      assert low_progress_card =~ "Low Progress"
+      assert low_progress_card =~ "Students"
+
+      assert low_progress_card
+             |> Floki.parse_fragment!()
+             |> Floki.find("button > div:nth-child(2) > div:first-child")
+             |> Floki.text()
+             |> String.trim() == "2"
 
       # Low Proficiency card it should have 0 students
       assert element(view, "button[phx-value-selected='low_proficiency']") |> render() =~
@@ -884,7 +899,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       ## Filtering by Low Progress
       element(view, "button[phx-value-selected='low_progress']") |> render_click()
 
-      assert has_element?(view, "table tr td div a", user_2.family_name)
+      refute has_element?(view, "table tr td div a", user_2.family_name)
       assert has_element?(view, "table tr td div a", user_3.family_name)
       assert has_element?(view, "table tr td div a", user_4.family_name)
       refute has_element?(view, "table tr td div a", user_1.family_name)

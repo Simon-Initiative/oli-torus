@@ -1,9 +1,10 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
   import Oli.Factory
+  import Ecto.Query, only: [from: 2]
 
   alias Oli.Delivery.{Settings, Sections}
   alias Oli.Delivery
@@ -810,6 +811,184 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
   describe "settings tab" do
     setup [:user_conn, :create_project]
+
+    test "secure control stays unavailable until enforcement, including forged edits", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page,
+      page_2: other_page
+    } do
+      previous = Application.fetch_env(:oli, :supports_secure_delivery)
+
+      on_exit(fn ->
+        case previous do
+          {:ok, value} -> Application.put_env(:oli, :supports_secure_delivery, value)
+          :error -> Application.delete_env(:oli, :supports_secure_delivery)
+        end
+      end)
+
+      route = live_view_overview_route(section.slug, "settings", "all")
+
+      for support <- [false, true] do
+        Application.put_env(:oli, :supports_secure_delivery, support)
+        {:ok, view, _} = live(conn, route)
+        refute has_element?(view, "select[name^=secure_delivery]")
+
+        # A fabricated event must not activate policy merely because the control is hidden.
+        view
+        |> element(~s{form[for="settings_table"]})
+        |> render_change(%{
+          "_target" => ["secure_delivery-#{page.resource_id}"],
+          "secure_delivery-#{page.resource_id}" => "true"
+        })
+
+        assert render(view) =~ "Secure delivery setting could not be updated"
+        refute Sections.get_section_resource(section.id, page.resource_id).secure_delivery
+      end
+
+      # A policy established through the domain API is not copied by bulk apply.
+      assert {:ok, _} =
+               Settings.AssessmentSettings.update(section, user, page.resource_id, %{
+                 secure_delivery: true
+               })
+
+      {:ok, view, _} = live(conn, route)
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page.resource_id})
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      assert Sections.get_section_resource(section.id, page.resource_id).secure_delivery
+      refute Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
+
+      refute Repo.exists?(
+               from change in Settings.SettingsChanges,
+                 where:
+                   change.section_id == ^section.id and
+                     change.resource_id == ^other_page.resource_id and
+                     change.key == "secure_delivery"
+             )
+    end
+
+    test "secure column follows runtime capability and edits persist", %{
+      conn: conn,
+      section: section,
+      page_1: page,
+      page_2: other_page
+    } do
+      readiness = Application.fetch_env(:oli, :secure_delivery_enforcement_ready)
+      Application.put_env(:oli, :secure_delivery_enforcement_ready, true)
+
+      on_exit(fn ->
+        case readiness do
+          {:ok, value} -> Application.put_env(:oli, :secure_delivery_enforcement_ready, value)
+          :error -> Application.delete_env(:oli, :secure_delivery_enforcement_ready)
+        end
+      end)
+
+      previous = Application.fetch_env(:oli, :supports_secure_delivery)
+
+      on_exit(fn ->
+        case previous do
+          {:ok, value} -> Application.put_env(:oli, :supports_secure_delivery, value)
+          :error -> Application.delete_env(:oli, :supports_secure_delivery)
+        end
+      end)
+
+      other_page
+      |> Ecto.Changeset.change(
+        content: Map.put(other_page.content || %{}, "advancedDelivery", true)
+      )
+      |> Repo.update!()
+
+      route = live_view_overview_route(section.slug, "settings", "all")
+      Application.put_env(:oli, :supports_secure_delivery, false)
+      {:ok, hidden, _} = live(conn, route)
+      refute has_element?(hidden, "select[name^=secure_delivery]")
+      Application.put_env(:oli, :supports_secure_delivery, true)
+      {:ok, view, _} = live(conn, route)
+      assert has_element?(view, "select[name=secure_delivery-#{page.resource_id}]")
+
+      assert has_element?(
+               view,
+               "select[name=secure_delivery-#{other_page.resource_id}]:not([disabled])"
+             )
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["secure_delivery-#{page.resource_id}"],
+        "secure_delivery-#{page.resource_id}" => "true"
+      })
+
+      assert Sections.get_section_resource(section.id, page.resource_id).secure_delivery
+
+      assert has_element?(
+               view,
+               "select[name=secure_delivery-#{page.resource_id}] option[value=true][selected]"
+             )
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page.resource_id})
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      refute Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
+
+      refute Repo.exists?(
+               from change in Settings.SettingsChanges,
+                 where:
+                   change.section_id == ^section.id and
+                     change.resource_id == ^other_page.resource_id and
+                     change.key == "secure_delivery"
+             )
+
+      # Bulk apply redirects, so mount the destination before testing a stale control.
+      {:ok, view, _} = live(conn, route)
+      Application.put_env(:oli, :supports_secure_delivery, false)
+      # A previously rendered control cannot enable policy after instance disablement.
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["secure_delivery-#{page.resource_id}"],
+        "secure_delivery-#{page.resource_id}" => "true"
+      })
+
+      assert render(view) =~ "Secure delivery setting could not be updated"
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["secure_delivery-#{page.resource_id}"],
+        "secure_delivery-#{page.resource_id}" => "false"
+      })
+
+      refute Sections.get_section_resource(section.id, page.resource_id).secure_delivery
+
+      assert has_element?(
+               view,
+               "select[name=secure_delivery-#{page.resource_id}] option[value=false][selected]"
+             )
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page.resource_id})
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      # Bulk apply leaves secure delivery unchanged on other assessments.
+      refute Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
+    end
 
     test "gets a correct exception count", %{
       conn: conn,

@@ -31,8 +31,8 @@ requirements:
   title: Display a persistent accessible masquerade warning and stop control across
     authenticated application surfaces
 - id: FR-010
-  title: Give MIX_ENV=preview releases non-delivering email and an administrator-authenticated
-    mailbox for inspecting captured messages
+  title: Give MIX_ENV=preview releases non-delivering email and a proxy-protected
+    mailbox for inspecting captured messages without Torus login or application-role authorization
 acceptance_criteria:
 - id: AC-001
   requirement_id: FR-001
@@ -159,8 +159,8 @@ acceptance_criteria:
 - id: AC-021
   requirement_id: FR-008
   title: Normal authorization evaluates only the target user while the original administrator
-    remains separately available solely for auditing, stopping masquerade, and route-local
-    authorization of the preview mailbox
+    remains separately available solely for auditing and stopping masquerade; mailbox
+    access is independent of Torus identity and grants no actor privileges
   verification_method: automated
 - id: AC-022
   requirement_id: FR-008
@@ -188,10 +188,11 @@ acceptance_criteria:
 - id: AC-026
   requirement_id: FR-010
   title: MIX_ENV=preview releases expose Plug.Swoosh.MailboxPreview at /dev/mailbox
-    only while PREVIEW_QA_TOOLS_ENABLED is active and only to a current system administrator
-    or the original system-administrator actor of a valid active masquerade, without
-    granting actor privileges to any other route
-  verification_method: automated
+    only while PREVIEW_QA_TOOLS_ENABLED is active, without requiring Torus login or
+    application-role authorization; the deployment OAuth proxy authorizes preview access
+    for all mailbox subpaths and deployments expose no external path around that proxy;
+    mailbox access neither changes current_user nor grants actor privileges
+  verification_method: hybrid
 - id: AC-027
   requirement_id: FR-004
   title: simulate_progress requires exactly one fixed profile or complete count-based cohort

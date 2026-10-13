@@ -195,14 +195,16 @@ defmodule Oli.Delivery.SectionCreation do
   end
 
   @doc """
-  Products the actor may create a section from: active blueprints visible to the actor.
+  Products the actor may create a section from: active blueprints, visible to the actor,
+  whose base project is still active (not deleted).
   """
   def permitted_products_query(actor, institution) do
     from(product in Section,
       as: :product,
       join: project in assoc(product, :base_project),
       as: :project,
-      where: product.type == :blueprint and product.status == :active,
+      where:
+        product.type == :blueprint and product.status == :active and project.status == :active,
       preload: [base_project: project]
     )
     |> where(^product_visibility(actor, institution))

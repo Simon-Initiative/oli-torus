@@ -8,12 +8,15 @@ defmodule Oli.LearningModel.ConfigTest do
   test "loads documented defaults without environment overrides" do
     assert {config, sources} = Config.load_from_env!(fn _name -> nil end)
     assert config == Config.defaults()
+    assert config.confidence_midpoint == 5.0
+    assert config.confidence_steepness == 3.0
 
     assert sources == %{
              gamma: :default,
              rho: :default,
              recency_decay: :default,
-             confidence_saturation: :default
+             confidence_midpoint: :default,
+             confidence_steepness: :default
            }
   end
 
@@ -22,14 +25,16 @@ defmodule Oli.LearningModel.ConfigTest do
       "LKT_AOA_GAMMA" => " 0.25 ",
       "LKT_AOA_RHO" => "1.5",
       "LKT_AOA_RECENCY_DECAY" => "0.75",
-      "LKT_AOA_CONFIDENCE_SATURATION" => "4"
+      "PROFICIENCY_CONFIDENCE_MIDPOINT" => "4",
+      "PROFICIENCY_CONFIDENCE_STEEPNESS" => "2.5"
     }
 
     assert {%Config{
               gamma: 0.25,
               rho: 1.5,
               recency_decay: 0.75,
-              confidence_saturation: 4.0
+              confidence_midpoint: 4.0,
+              confidence_steepness: 2.5
             }, sources} = Config.load_from_env!(&Map.get(overrides, &1))
 
     assert Enum.all?(sources, fn {_key, source} -> source == :override end)
@@ -44,10 +49,21 @@ defmodule Oli.LearningModel.ConfigTest do
   end
 
   test "preserves application-owned base values when environment overrides are absent" do
-    base = [gamma: 0.3, rho: 1.4, recency_decay: 0.8, confidence_saturation: 5.0]
+    base = [
+      gamma: 0.3,
+      rho: 1.4,
+      recency_decay: 0.8,
+      confidence_midpoint: 5.0,
+      confidence_steepness: 3.0
+    ]
 
-    assert {%Config{gamma: 0.3, rho: 1.4, recency_decay: 0.8, confidence_saturation: 5.0},
-            sources} = Config.load_from_env!(base, fn _name -> nil end)
+    assert {%Config{
+              gamma: 0.3,
+              rho: 1.4,
+              recency_decay: 0.8,
+              confidence_midpoint: 5.0,
+              confidence_steepness: 3.0
+            }, sources} = Config.load_from_env!(base, fn _name -> nil end)
 
     assert Enum.all?(sources, fn {_key, source} -> source == :default end)
   end
@@ -73,7 +89,10 @@ defmodule Oli.LearningModel.ConfigTest do
       {"LKT_AOA_RHO", "-0.1"},
       {"LKT_AOA_RECENCY_DECAY", "0"},
       {"LKT_AOA_RECENCY_DECAY", "1.01"},
-      {"LKT_AOA_CONFIDENCE_SATURATION", "0"}
+      {"PROFICIENCY_CONFIDENCE_MIDPOINT", "0"},
+      {"PROFICIENCY_CONFIDENCE_MIDPOINT", "-1"},
+      {"PROFICIENCY_CONFIDENCE_STEEPNESS", "0"},
+      {"PROFICIENCY_CONFIDENCE_STEEPNESS", "-1"}
     ]
 
     for {invalid_name, invalid_value} <- invalid_values do
@@ -100,6 +119,21 @@ defmodule Oli.LearningModel.ConfigTest do
     assert rho == 0.0
   end
 
+  test "rejects malformed confidence overrides with the variable name" do
+    for name <- ["PROFICIENCY_CONFIDENCE_MIDPOINT", "PROFICIENCY_CONFIDENCE_STEEPNESS"],
+        invalid <- ["", "NaN", "Infinity", "abc", "3 trailing"] do
+      error =
+        assert_raise ArgumentError, fn ->
+          Config.load_from_env!(fn
+            ^name -> invalid
+            _ -> nil
+          end)
+        end
+
+      assert error.message =~ name
+    end
+  end
+
   test "fetches and validates the application-owned configuration" do
     original = Application.fetch_env(:oli, :lkt_aoa)
 
@@ -114,14 +148,16 @@ defmodule Oli.LearningModel.ConfigTest do
       gamma: 0.2,
       rho: 1.2,
       recency_decay: 0.8,
-      confidence_saturation: 4.0
+      confidence_midpoint: 4.0,
+      confidence_steepness: 2.5
     )
 
     assert Config.fetch!() == %Config{
              gamma: 0.2,
              rho: 1.2,
              recency_decay: 0.8,
-             confidence_saturation: 4.0
+             confidence_midpoint: 4.0,
+             confidence_steepness: 2.5
            }
   end
 
@@ -139,7 +175,8 @@ defmodule Oli.LearningModel.ConfigTest do
 
     assert log =~ "Loaded LKT-AOA configuration"
     assert log =~ "gamma=0.1 (default)"
-    assert log =~ "confidence_saturation=3.0 (default)"
+    assert log =~ "confidence_midpoint=5.0 (default)"
+    assert log =~ "confidence_steepness=3.0 (default)"
     refute log =~ "LKT_AOA_GAMMA"
   end
 
@@ -147,10 +184,20 @@ defmodule Oli.LearningModel.ConfigTest do
     assert {default_output, 0} = read_runtime_config()
     assert default_output =~ "gamma: 0.1"
     assert default_output =~ "recency_decay: 0.9"
+    assert default_output =~ "confidence_midpoint: 5.0"
+    assert default_output =~ "confidence_steepness: 3.0"
 
-    assert {override_output, 0} = read_runtime_config(%{"LKT_AOA_GAMMA" => "0.35"})
+    assert {override_output, 0} =
+             read_runtime_config(%{
+               "LKT_AOA_GAMMA" => "0.35",
+               "PROFICIENCY_CONFIDENCE_MIDPOINT" => "8.5",
+               "PROFICIENCY_CONFIDENCE_STEEPNESS" => "2"
+             })
+
     assert override_output =~ "gamma: 0.35"
     assert override_output =~ "rho: 1.0"
+    assert override_output =~ "confidence_midpoint: 8.5"
+    assert override_output =~ "confidence_steepness: 2.0"
   end
 
   test "runtime configuration rejects malformed environment overrides at startup" do
@@ -168,7 +215,22 @@ defmodule Oli.LearningModel.ConfigTest do
 
     script = ~S'''
     runtime_config = Config.Reader.read!(Path.expand("config/runtime.exs"), env: :test)
-    IO.inspect(get_in(runtime_config, [:oli, :lkt_aoa]), label: "LKT_AOA_RESULT")
+    effective_config = get_in(runtime_config, [:oli, :lkt_aoa])
+    Application.load(:oli)
+    Application.put_env(:oli, :lkt_aoa, effective_config)
+
+    {:ok, [{:application, :oli, properties}]} = :file.consult(:code.where_is_file(~c"oli.app"))
+
+    compile_env =
+      Keyword.get(properties, :compile_env, [])
+      |> Enum.filter(fn {app, path, _value} ->
+        app == :oli and hd(path) == :lkt_aoa
+      end)
+
+    case Config.Provider.validate_compile_env(compile_env) do
+      :ok -> IO.inspect(effective_config, label: "LKT_AOA_RESULT")
+      {:error, message} -> raise message
+    end
     '''
 
     cleared_environment =
@@ -177,7 +239,8 @@ defmodule Oli.LearningModel.ConfigTest do
           "LKT_AOA_GAMMA",
           "LKT_AOA_RHO",
           "LKT_AOA_RECENCY_DECAY",
-          "LKT_AOA_CONFIDENCE_SATURATION"
+          "PROFICIENCY_CONFIDENCE_MIDPOINT",
+          "PROFICIENCY_CONFIDENCE_STEEPNESS"
         ],
         &{&1, nil}
       )

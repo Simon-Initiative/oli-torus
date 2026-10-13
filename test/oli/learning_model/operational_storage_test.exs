@@ -24,7 +24,6 @@ defmodule Oli.LearningModel.OperationalStorageTest do
                :recency_logit,
                :aoa,
                :unique_activity_part_count,
-               :confidence,
                :inserted_at,
                :updated_at
              ]
@@ -83,7 +82,7 @@ defmodule Oli.LearningModel.OperationalStorageTest do
       assert state.recency_logit == 0.0
       assert state.aoa == 0.0
       assert state.unique_activity_part_count == 0
-      assert state.confidence == 0.0
+      refute Map.has_key?(state, :confidence)
     end
 
     test "learning state numeric checks reject invalid persisted values" do
@@ -151,6 +150,18 @@ defmodule Oli.LearningModel.OperationalStorageTest do
   end
 
   describe "database shape" do
+    test "learning states retain evidence counts but do not persist confidence" do
+      %{rows: rows} =
+        Repo.query!("""
+        SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'learning_states'
+        """)
+
+      columns = List.flatten(rows)
+      assert "unique_activity_part_count" in columns
+      refute "confidence" in columns
+    end
+
     test "attempt application table has no generated id or standard timestamps" do
       assert %{rows: rows} =
                Ecto.Adapters.SQL.query!(

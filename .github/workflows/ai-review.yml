@@ -9,7 +9,13 @@ permissions:
 
 jobs:
   changes:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    # Skips the final integ-* -> master PR: every change on a feature integration
+    # branch was already AI-reviewed in the PR that merged it there.
+    if: >-
+      ${{
+        (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
+        !(startsWith(github.head_ref, 'integ-') && github.base_ref == 'master')
+      }}
     name: detect/changes
     runs-on: ubuntu-latest
     permissions:

@@ -4,6 +4,8 @@ import {
   buildUploadDirectory,
   buildUploadLocation,
   isBundleResourceBase,
+  isEmbeddedActivityReviewMode,
+  isReviewInteractionSuppressed,
   suggestAssetName,
 } from 'components/activities/oli_embedded/utils';
 
@@ -64,5 +66,26 @@ describe('oli embedded bundle helpers', () => {
   it('normalizes suggested asset names', () => {
     expect(suggestAssetName('webcontent/custom-activity/layout.html')).toBe('layout');
     expect(suggestAssetName('webcontent/custom_activity/controls.v2.html')).toBe('controls_v2');
+  });
+});
+
+describe('oli embedded review behavior', () => {
+  it('allows review interaction unless it is explicitly suppressed', () => {
+    expect(isReviewInteractionSuppressed({})).toBe(false);
+    expect(isReviewInteractionSuppressed({ suppressReviewInteraction: false })).toBe(false);
+    expect(isReviewInteractionSuppressed({ suppressReviewInteraction: true })).toBe(true);
+  });
+
+  it('recognizes only complete review route segments', () => {
+    expect(isEmbeddedActivityReviewMode('review', '/sections/course/lesson/page')).toBe(true);
+    expect(
+      isEmbeddedActivityReviewMode(
+        'delivery',
+        '/sections/course/lesson/page/attempt/attempt-guid/review',
+      ),
+    ).toBe(true);
+    expect(isEmbeddedActivityReviewMode('delivery', '/sections/review-course/lesson/page')).toBe(
+      false,
+    );
   });
 });

@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
+  alias OliWeb.Components.Delivery.ThresholdValue
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
@@ -323,7 +324,12 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
 
     ~H"""
     <div class={if @avg_score < 0.40, do: "text-red-600 font-bold"}>
-      {format_value(@avg_score)}
+      <ThresholdValue.render
+        at_risk={is_number(@avg_score) and @avg_score < 0.40}
+        warning_label="Percent correct below threshold"
+      >
+        {format_value(@avg_score)}
+      </ThresholdValue.render>
     </div>
     """
   end

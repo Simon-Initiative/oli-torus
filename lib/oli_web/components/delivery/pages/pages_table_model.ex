@@ -3,6 +3,7 @@ defmodule OliWeb.Components.Delivery.Pages.PagesTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Components.Delivery.ThresholdValue
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
@@ -124,7 +125,12 @@ defmodule OliWeb.Components.Delivery.Pages.PagesTableModel do
 
     ~H"""
     <div class={"text-Text-text-high text-sm font-bold leading-none #{if @avg_score < 0.40, do: "text-Text-text-danger"}"}>
-      {format_value(@avg_score)}
+      <ThresholdValue.render
+        at_risk={is_number(@avg_score) and @avg_score < 0.40}
+        warning_label="Average score below threshold"
+      >
+        {format_value(@avg_score)}
+      </ThresholdValue.render>
     </div>
     """
   end
@@ -149,7 +155,12 @@ defmodule OliWeb.Components.Delivery.Pages.PagesTableModel do
     ~H"""
     <%= if @avg_score != nil do %>
       <div class={"text-Text-text-high text-sm font-bold leading-none #{if @students_completion < 0.40, do: "text-Text-text-danger"}"}>
-        {format_value(@students_completion)}
+        <ThresholdValue.render
+          at_risk={is_number(@students_completion) and @students_completion < 0.40}
+          warning_label="Student progress below threshold"
+        >
+          {format_value(@students_completion)}
+        </ThresholdValue.render>
       </div>
     <% else %>
       -

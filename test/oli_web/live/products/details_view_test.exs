@@ -382,6 +382,21 @@ defmodule OliWeb.Products.DetailsViewTest do
     end
   end
 
+  describe "product details page - cover image upload" do
+    setup [:setup_admin_conn, :create_product]
+
+    test "submitting the upload form with no staged file flashes an error instead of crashing",
+         %{conn: conn, product: product} do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      view
+      |> form("#img-upload-form")
+      |> render_submit()
+
+      assert render(view) =~ "update template image"
+    end
+  end
+
   describe "product details page - template preview" do
     setup [:setup_admin_conn, :create_product]
 

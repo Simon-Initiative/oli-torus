@@ -66,7 +66,8 @@ defmodule Oli.Scenarios.Features.LinkedActivitiesHooks do
 
     no_attempt = Enum.find(parent_rows, &(&1.resource_id == activity_ids["no_attempt"]))
     assert no_attempt.attempts == 0
-    assert no_attempt.percent_correct == 0.0
+    assert is_nil(no_attempt.percent_correct)
+    assert is_nil(no_attempt.avg_score)
 
     assert Enum.all?(lesson_activity_refs(section.id), &(&1 == [])),
            "scenario pages unexpectedly carry activity_refs; this assertion no longer isolates the observed path"

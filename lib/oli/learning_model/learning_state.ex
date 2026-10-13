@@ -25,7 +25,6 @@ defmodule Oli.LearningModel.LearningState do
     field(:recency_logit, :float, default: 0.0)
     field(:aoa, :float, default: 0.0)
     field(:unique_activity_part_count, :integer, default: 0)
-    field(:confidence, :float, default: 0.0)
 
     timestamps(type: :utc_datetime)
   end

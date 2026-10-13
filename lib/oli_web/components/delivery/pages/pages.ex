@@ -1385,7 +1385,7 @@ defmodule OliWeb.Components.Delivery.Pages do
           rs.resource_id,
           rs.num_attempts,
           fragment(
-            "CAST(? as float) / CAST(? as float)",
+            "CAST(? as float) / NULLIF(CAST(? as float), 0)",
             rs.num_correct,
             rs.num_attempts
           )
@@ -1400,7 +1400,9 @@ defmodule OliWeb.Components.Delivery.Pages do
       DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)
       |> Enum.reject(fn rev -> is_nil(rev) end)
       |> Enum.map(fn rev ->
-        {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
+        {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, nil})
+
+        avg_score = normalize_activity_score(total_attempts, avg_score)
 
         Map.merge(rev, %{
           total_attempts: total_attempts,
@@ -1411,6 +1413,17 @@ defmodule OliWeb.Components.Delivery.Pages do
 
     add_objective_mapper(activities, section.slug)
   end
+
+  @doc """
+  Preserves the distinction between an unmeasured activity and an attempted score of zero.
+
+  Activities without attempts have no average score. Once an attempt exists, the measured score,
+  including numeric zero, is retained.
+  """
+  def normalize_activity_score(total_attempts, _avg_score) when total_attempts in [nil, 0],
+    do: nil
+
+  def normalize_activity_score(_total_attempts, avg_score), do: avg_score
 
   defp get_unique_activities_from_responses(page_id, section_id) do
     from(rs in ResponseSummary,

@@ -3578,7 +3578,8 @@ defmodule Oli.Delivery.SectionsTest do
       assert activity.title == "Page 1 MCQ 1"
       assert activity.question_stem == "What is the capital of France?"
       assert activity.attempts == 0
-      assert activity.percent_correct == 0
+      assert is_nil(activity.percent_correct)
+      assert is_nil(activity.avg_score)
     end
 
     test "indexes only the objective's own activities by page", %{
@@ -3744,12 +3745,13 @@ defmodule Oli.Delivery.SectionsTest do
     } do
       result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
-      # All activities should have 0 attempts and 0% correct when no attempts exist
+      # All activities should have no measured score when no attempts exist
       assert length(result) > 0
 
       Enum.each(result, fn activity ->
         assert activity.attempts == 0
-        assert activity.percent_correct == 0.0
+        assert is_nil(activity.percent_correct)
+        assert is_nil(activity.avg_score)
       end)
     end
 
@@ -3776,9 +3778,10 @@ defmodule Oli.Delivery.SectionsTest do
       result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
       first_activity = List.first(result)
 
-      # Initially should have 0 attempts and 0% correct
+      # Initially there is no measured score
       assert first_activity.attempts == 0
-      assert first_activity.percent_correct == 0.0
+      assert is_nil(first_activity.percent_correct)
+      assert is_nil(first_activity.avg_score)
 
       # Create some attempts using the helper function
       # Student 1: 2 attempts, 1 correct (50%)

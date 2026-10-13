@@ -415,7 +415,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
   defp update_resource_access(resource_access_id, attrs, now) do
     attrs = Map.merge(attrs, %{updated_at: now})
 
-    Oli.Repo.get(ResourceAccess, resource_access_id)
+    lock_resource_access(resource_access_id)
     |> Oli.CertificationEligibility.update_resource_access_and_verify_qualification(attrs)
 
     :ok

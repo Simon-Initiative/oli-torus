@@ -5,8 +5,10 @@ defmodule OliWeb.Endpoint do
     store: :cookie,
     key: "_oli_key",
     signing_salt: "KydU49lB",
+    # LTI form_post launches and embedded delivery require this cross-site cookie.
     same_site: "None",
-    secure: true
+    secure: true,
+    http_only: true
   ]
 
   socket("/v1/api/state", OliWeb.UserSocket,
@@ -17,6 +19,19 @@ defmodule OliWeb.Endpoint do
   socket("/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [:user_agent, session: @session_options]]
   )
+
+  # Apply HTTPS/HSTS to static responses as well as dynamic routes. The SSL plug
+  # retains the internal health-check exception and respects FORCE_SSL.
+  unless Mix.env() == :test do
+    plug(Oli.Plugs.SSL,
+      rewrite_on: [:x_forwarded_proto],
+      hsts: true,
+      expires: 31_536_000,
+      subdomains: false,
+      preload: false,
+      log: false
+    )
+  end
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -52,7 +67,12 @@ defmodule OliWeb.Endpoint do
   plug(Plug.RequestId)
   plug(Plug.Telemetry, event_prefix: [:phoenix, :endpoint])
 
-  plug(Plug.Parsers,
+  # Static assets have already been served. Protect dynamic responses, including
+  # redirects and errors, before parsers and routing can send a response.
+  plug(Oli.Plugs.NoCache)
+  plug(OliWeb.Plugs.ContentSecurityPolicy)
+
+  plug(OliWeb.Plugs.RequestParsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
     # 512mb is the max body size our file-upload client code can generate.
@@ -63,14 +83,6 @@ defmodule OliWeb.Endpoint do
 
   plug(Plug.MethodOverride)
   plug(Plug.Head)
-
-  unless Mix.env() == :test do
-    plug(Oli.Plugs.SSL,
-      rewrite_on: [:x_forwarded_proto],
-      hsts: true,
-      log: false
-    )
-  end
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.

@@ -107,6 +107,7 @@ stacks.out
 .mnesia
 yarn-error.log
 /scripts/dev/ha-proxy/combined.pem
+/priv/ssl/moodle-local/
 /priv/superactivity/
 /assets/src/components/activities/oli_ctat2/
 /assets/storybook-static

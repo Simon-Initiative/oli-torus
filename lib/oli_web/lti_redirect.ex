@@ -6,6 +6,8 @@ defmodule OliWeb.LtiRedirect do
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Lti.LtiParams
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.{ResourceType, Revision}
 
   require Logger
   @telemetry_prefix [:oli, :lti]
@@ -35,6 +37,7 @@ defmodule OliWeb.LtiRedirect do
     end
   end
 
+  @doc "Resolves the current LTI launch to a section destination or a page in that section."
   def launch_destination(lti_params, opts \\ []) do
     allow_new_section_creation = Keyword.get(opts, :allow_new_section_creation, false)
     source = Keyword.get(opts, :source, :current_launch)
@@ -48,7 +51,12 @@ defmodule OliWeb.LtiRedirect do
         can_configure_section = LtiParams.can_configure_section?(roles)
         can_create_section = allow_new_section_creation and can_configure_section
 
-        section = Sections.get_section_from_lti_params(lti_params)
+        target =
+          Keyword.get_lazy(opts, :target, fn ->
+            resolve_target(lti_params, Sections.get_section_from_lti_params(lti_params))
+          end)
+
+        section = target.section
 
         case section do
           nil when can_create_section ->
@@ -73,29 +81,15 @@ defmodule OliWeb.LtiRedirect do
             observe_redirect_resolution(metadata)
             :course_not_configured
 
-          section when can_configure_section ->
-            metadata = %{
-              context_id: context_id,
-              outcome: :section_manage,
-              section_id: section.id,
-              source: source,
-              transport_method: transport_method
-            }
-
-            observe_redirect_resolution(metadata)
-            {:redirect, ~p"/sections/#{section.slug}/manage"}
-
           section ->
-            metadata = %{
-              context_id: context_id,
-              outcome: :section_home,
-              section_id: section.id,
-              source: source,
-              transport_method: transport_method
-            }
-
-            observe_redirect_resolution(metadata)
-            {:redirect, ~p"/sections/#{section.slug}"}
+            section_destination(
+              section,
+              can_configure_section,
+              context_id,
+              source,
+              transport_method,
+              target
+            )
         end
 
       _ ->
@@ -112,6 +106,84 @@ defmodule OliWeb.LtiRedirect do
         {:error, error_msg}
     end
   end
+
+  defp section_destination(
+         section,
+         can_configure_section,
+         context_id,
+         source,
+         transport_method,
+         target
+       ) do
+    case direct_page_path(target) do
+      {:ok, path} ->
+        observe_redirect_resolution(%{
+          context_id: context_id,
+          outcome: :direct_page,
+          section_id: section.id,
+          source: source,
+          transport_method: transport_method
+        })
+
+        {:redirect, path}
+
+      :fallback when can_configure_section ->
+        observe_redirect_resolution(%{
+          context_id: context_id,
+          outcome: :section_manage,
+          section_id: section.id,
+          source: source,
+          transport_method: transport_method
+        })
+
+        {:redirect, ~p"/sections/#{section.slug}/manage"}
+
+      :fallback ->
+        observe_redirect_resolution(%{
+          context_id: context_id,
+          outcome: :section_home,
+          section_id: section.id,
+          source: source,
+          transport_method: transport_method
+        })
+
+        {:redirect, ~p"/sections/#{section.slug}"}
+    end
+  end
+
+  @doc "Resolves an LMS revision slug to the revision pinned to the launched section."
+  @spec resolve_target(map(), %Sections.Section{} | nil) :: map()
+  def resolve_target(claims, section) do
+    resource = resolve_resource(claims, section)
+    %{section: section, resource: resource}
+  end
+
+  defp resolve_resource(
+         %{
+           "https://purl.imsglobal.org/spec/lti/claim/custom" => %{
+             "torus_resource_type" => "page",
+             "torus_resource_id" => revision_slug
+           }
+         },
+         %Sections.Section{} = section
+       )
+       when is_binary(revision_slug) and revision_slug != "" do
+    DeliveryResolver.from_revision_slug(section.slug, revision_slug)
+  end
+
+  defp resolve_resource(_, _), do: nil
+
+  # An unknown or mistyped LMS slug is an ordinary section launch.
+  defp direct_page_path(%{resource: nil}), do: :fallback
+
+  defp direct_page_path(%{section: section, resource: %Revision{} = revision}) do
+    case revision.resource_type_id == ResourceType.id_for_page() do
+      true -> {:ok, ~p"/sections/#{section.slug}/page/#{revision.slug}"}
+      false -> :fallback
+    end
+  end
+
+  defp direct_page_path(_), do: :fallback
 
   defp apply_destination(conn, {:redirect, path}, _opts), do: redirect(conn, to: path)
 

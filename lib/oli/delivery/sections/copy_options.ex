@@ -18,7 +18,13 @@ defmodule Oli.Delivery.Sections.CopyOptions do
       numbering, welcome copy, agenda, branding, certificate) and page-level
       collaboration space configuration.
     * `:assessment_settings` - section-resource assessment configuration.
-      Student-specific exceptions are never included.
+      Student-specific exceptions are never included. The Assessment Settings tab edits a
+      resource's available/due dates (`start_date`/`end_date`) and their `scheduling_type`
+      alongside its other assessment configuration, so this group carries those same three
+      fields even when `:schedule` is not also selected - see
+      `SectionResourceCopy.schedule_values/2`. Selecting `:schedule` either way still carries
+      them, plus the two fields unique to it: `removed_from_schedule` and
+      `manually_scheduled`.
     * `:ai_settings` - section-level assistant configuration and page-level
       `ai_enabled` overrides.
 

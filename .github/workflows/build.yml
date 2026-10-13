@@ -7,6 +7,15 @@ on:
       - hotfix-*
       - prerelease-*
       - nextgen-ux
+      - integ-*
+  # Each PR merged into a feature integration branch is verified again on the
+  # combined result, since PRs that pass independently can still break together.
+  push:
+    branches:
+      - integ-*
+
+permissions:
+  contents: read
 
 jobs:
   elixir-build-test:
@@ -112,6 +121,8 @@ jobs:
   check-simon-token:
     name: Check simon-bot access token
     runs-on: ubuntu-latest
+    # Only auto-format consumes this, and it runs on pull requests only.
+    if: github.event_name == 'pull_request'
     outputs:
       available: ${{ steps.check_token.outputs.available }}
     steps:
@@ -123,7 +134,8 @@ jobs:
     name: Auto format and lint
     runs-on: ubuntu-latest
     needs: check-simon-token
-    if: needs.check-simon-token.outputs.available == 'true'
+    # Commits formatting fixes back to the PR branch, so it never runs on pushes.
+    if: github.event_name == 'pull_request' && needs.check-simon-token.outputs.available == 'true'
 
     steps:
       - name: 🛎️ Checkout
@@ -180,8 +192,8 @@ jobs:
       - name: 🛎️ Checkout
         uses: actions/checkout@v3
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
 
       - name: 🔧 Configure
         uses: actions/setup-node@v4

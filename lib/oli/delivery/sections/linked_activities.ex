@@ -242,11 +242,23 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
     end
   end
 
-  @doc "Normalizes a published activity revision and aggregate metrics for shared consumers."
+  @doc """
+  Normalizes a published activity revision and aggregate metrics for shared consumers.
+
+  An activity with no attempts has no measured percent-correct or average-score value. Once an
+  attempt exists, a numeric zero remains a measured score.
+  """
   def normalize_activity_row(revision, metrics, page_contexts, lti_activity_type_ids) do
     question_stem = extract_question_stem(revision.content)
     attempts = Map.get(metrics, :attempts, Map.get(metrics, :total_attempts, 0))
-    percent_correct = Map.get(metrics, :percent_correct, 0.0)
+
+    percent_correct =
+      case attempts do
+        0 -> nil
+        _ -> Map.get(metrics, :percent_correct, 0.0)
+      end
+
+    avg_score = if is_number(percent_correct), do: percent_correct / 100
 
     %{
       resource_id: revision.resource_id,
@@ -258,7 +270,7 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
       attempts: attempts,
       percent_correct: percent_correct,
       total_attempts: attempts,
-      avg_score: percent_correct / 100,
+      avg_score: avg_score,
       page_contexts: page_contexts,
       has_lti_activity: revision.activity_type_id in lti_activity_type_ids
     }

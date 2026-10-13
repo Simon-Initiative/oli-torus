@@ -1,0 +1,50 @@
+# Disposable data for the account-linking smoke test.
+# Names match the existing automation teardown safeguards.
+
+- user:
+    name: 'account_linking_author'
+    type: 'author'
+    email: 'link-author${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Author'
+    password: '${ACCOUNT_LINKING_PASSWORD}'
+
+- user:
+    name: 'account_linking_instructor'
+    type: 'instructor'
+    email: 'link-instructor${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Educator'
+    password: '${ACCOUNT_LINKING_PASSWORD}'
+    can_create_sections: true
+
+- user:
+    name: 'account_linking_learner'
+    type: 'student'
+    email: 'link-learner${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Learner'
+    password: '${ACCOUNT_LINKING_PASSWORD}'
+
+- project:
+    name: 'Account Linking Smoke${RUN_ID}'
+    title: 'Account Linking Smoke${RUN_ID}'
+    visibility: authors
+    root:
+      children:
+        - page: 'Account Linking Page'
+
+- publish:
+    to: 'Account Linking Smoke${RUN_ID}'
+    description: 'Account linking smoke test publication'
+
+- section:
+    name: 'account_linking_section${RUN_ID}'
+    title: 'Automation test section'
+    from: 'Account Linking Smoke${RUN_ID}'
+    open_and_free: true
+
+- enroll:
+    user: 'account_linking_instructor'
+    section: 'account_linking_section${RUN_ID}'
+    role: instructor

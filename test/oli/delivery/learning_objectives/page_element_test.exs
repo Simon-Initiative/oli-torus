@@ -191,8 +191,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
         learning_objective_id: objective_id,
         aoa: 0.9,
         attempt_count: 5,
-        unique_activity_part_count: 5,
-        confidence: 0.9
+        unique_activity_part_count: 5
       })
 
       payload =

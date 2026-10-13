@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
+  alias OliWeb.Components.Delivery.ThresholdValue
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Header
   alias OliWeb.Common.SessionContext
@@ -217,7 +218,12 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
               average score
             </h4>
             <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:avg_score, @student.avg_score)}"}>
-              {format_student_score(@student.avg_score)}
+              <ThresholdValue.render
+                at_risk={is_number(@student.avg_score) and @student.avg_score < 0.5}
+                warning_label="Average score below threshold"
+              >
+                {format_student_score(@student.avg_score)}
+              </ThresholdValue.render>
             </span>
           </div>
           <div class="flex flex-col justify-between">
@@ -225,7 +231,12 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
               course completion
             </h4>
             <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:progress, @student.progress)}"}>
-              {format_percentage(@student.progress)}
+              <ThresholdValue.render
+                at_risk={is_number(@student.progress) and @student.progress < 0.5}
+                warning_label="Course completion below threshold"
+              >
+                {format_percentage(@student.progress)}
+              </ThresholdValue.render>
             </span>
           </div>
         </div>

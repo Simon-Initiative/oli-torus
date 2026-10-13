@@ -365,6 +365,7 @@ defmodule OliWeb.Api.LtiController do
     }
 
     conn
+    |> Oli.Plugs.NoCache.public_content()
     |> json(developer_key_config)
   end
 
@@ -377,6 +378,7 @@ defmodule OliWeb.Api.LtiController do
   """
   def jwks(conn, _params) do
     conn
+    |> Oli.Plugs.NoCache.public_content()
     |> json(Lti_1p3.get_all_public_keys())
   end
 

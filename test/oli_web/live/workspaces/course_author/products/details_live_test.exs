@@ -172,6 +172,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert cover_image_index < content_index
     end
 
+    test "submitting the upload form with no staged file flashes an error instead of crashing",
+         ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      live
+      |> form("#img-upload-form")
+      |> render_submit()
+
+      assert render(live) =~ "update template image"
+    end
+
     test "renders no preview gallery when no image is set", ctx do
       %{conn: conn, project: project, product: product} = ctx
 

@@ -14,9 +14,9 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
     user = insert(:user)
     [missing, low, medium, high] = Enum.map(1..4, fn _ -> insert(:resource) end)
 
-    insert_state(section, user, low, aoa: 0.0, attempt_count: 3, confidence: 0.4)
-    insert_state(section, user, medium, aoa: 0.4, attempt_count: 3, confidence: 0.5)
-    insert_state(section, user, high, aoa: 0.800_001, attempt_count: 3, confidence: 0.6)
+    insert_state(section, user, low, aoa: 0.0, attempt_count: 3)
+    insert_state(section, user, medium, aoa: 0.4, attempt_count: 3)
+    insert_state(section, user, high, aoa: 0.800_001, attempt_count: 3)
 
     assert {:ok, estimates} =
              LktAoa.estimates_for_objectives(
@@ -42,8 +42,7 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
     insert_state(section, user, objective,
       aoa: 0.9,
       attempt_count: 2,
-      unique_activity_part_count: 2,
-      confidence: 0.7
+      unique_activity_part_count: 2
     )
 
     assert {:ok, estimates} =
@@ -54,7 +53,49 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
     assert estimate.label == :not_enough_information
     assert estimate.attempt_count == 2
     assert estimate.unique_activity_part_count == 2
-    assert estimate.confidence == 0.7
+    assert_in_delta estimate.confidence, 8 / 133, 1.0e-12
+  end
+
+  test "existing learner confidence uses current configuration without rewriting state" do
+    section = insert(:section, learning_model_version: :lkt_aoa)
+    user = insert(:user)
+    objective = insert(:resource)
+
+    state =
+      insert_state(section, user, objective, attempt_count: 8, unique_activity_part_count: 5)
+
+    original_config = Application.fetch_env!(:oli, :lkt_aoa)
+    on_exit(fn -> Application.put_env(:oli, :lkt_aoa, original_config) end)
+
+    assert {:ok, before} =
+             LktAoa.estimates_for_objectives(section, [user.id], [objective.id], [])
+
+    assert_in_delta before[objective.id][user.id].confidence, 0.5, 1.0e-12
+
+    for {midpoint, steepness, expected} <- [{10.0, 3.0, 1 / 9}, {10.0, 2.0, 0.2}] do
+      Application.put_env(
+        :oli,
+        :lkt_aoa,
+        Keyword.merge(original_config,
+          confidence_midpoint: midpoint,
+          confidence_steepness: steepness
+        )
+      )
+
+      assert {:ok, after_change} =
+               LktAoa.estimates_for_objectives(section, [user.id], [objective.id], [])
+
+      assert_in_delta after_change[objective.id][user.id].confidence, expected, 1.0e-12
+
+      assert Map.delete(after_change[objective.id][user.id], :confidence) ==
+               Map.delete(before[objective.id][user.id], :confidence)
+    end
+
+    assert Oli.Repo.get_by!(LearningState,
+             section_id: section.id,
+             user_id: user.id,
+             learning_objective_id: objective.id
+           ) == state
   end
 
   test "parents weight children by total attempt count without a per-child minimum" do
@@ -73,15 +114,24 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
 
     objective_section_resource(section, project, parent, children: [child_a_sr.id, child_b_sr.id])
 
-    insert_state(section, user, child_a, aoa: 0.2, attempt_count: 1, confidence: 0.2)
-    insert_state(section, user, child_b, aoa: 0.8, attempt_count: 3, confidence: 0.8)
+    insert_state(section, user, child_a,
+      aoa: 0.2,
+      attempt_count: 1,
+      unique_activity_part_count: 1
+    )
+
+    insert_state(section, user, child_b,
+      aoa: 0.8,
+      attempt_count: 3,
+      unique_activity_part_count: 3
+    )
 
     assert {:ok, estimates} =
              LktAoa.estimates_for_objectives(section, [user.id], [parent.id], [])
 
     estimate = estimates[parent.id][user.id]
     assert_in_delta estimate.score, 0.65, 1.0e-12
-    assert_in_delta estimate.confidence, 0.65, 1.0e-12
+    assert_in_delta estimate.confidence, (1 / 126 + 3 * (27 / 152)) / 4, 1.0e-12
     assert estimate.attempt_count == 4
     assert estimate.label == :medium
   end
@@ -100,7 +150,7 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
     objective_section_resource(section, project, parent, children: [child_sr.id])
 
     insert_state(section, user, parent, aoa: 1.0, attempt_count: 10)
-    insert_state(section, user, child, aoa: 0.3, attempt_count: 2, confidence: 0.3)
+    insert_state(section, user, child, aoa: 0.3, attempt_count: 2, unique_activity_part_count: 2)
 
     assert {:ok, estimates} =
              LktAoa.estimates_for_objectives(section, [user.id], [parent.id], [])
@@ -250,7 +300,7 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
   end
 
   defp insert_state(section, user, objective, attrs) do
-    defaults = [aoa: 0.0, attempt_count: 0, unique_activity_part_count: 0, confidence: 0.0]
+    defaults = [aoa: 0.0, attempt_count: 0, unique_activity_part_count: 0]
 
     struct!(
       LearningState,

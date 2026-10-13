@@ -179,7 +179,7 @@ defmodule Oli.LearningModel.LktAoaFixtures do
     %{group | part_attempts: [part_attempt]}
   end
 
-  defp learning_objective_parameters(beta_lo) do
+  def learning_objective_parameters(beta_lo) do
     %Parameters{
       schema_version: 1,
       model: :lkt_aoa,

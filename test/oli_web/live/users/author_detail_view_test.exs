@@ -476,6 +476,106 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
     end
   end
 
+  describe "role change auditing" do
+    setup [:admin_conn]
+
+    test "records promotions, demotions, and removal with both identities", %{
+      conn: conn,
+      admin: admin
+    } do
+      author = insert(:author)
+      {:ok, view, _} = live(conn, authors_detail_view(author.id))
+
+      for {from, to} <- [
+            {:author, :content_admin},
+            {:content_admin, :author},
+            {:author, :system_admin},
+            {:system_admin, :account_admin},
+            {:account_admin, :author}
+          ] do
+        view |> element("button", "Edit") |> render_click()
+        role_id = SystemRole.role_id()[to]
+
+        view
+        |> element("form#edit_author")
+        |> render_submit(%{"author" => %{"system_role_id" => to_string(role_id)}})
+
+        assert Accounts.get_author!(author.id).system_role_id == role_id
+
+        [event] =
+          Auditing.list_events(event_type: :author_role_changed, order_by: [desc: :id], limit: 1)
+
+        assert event.author_id == admin.id
+        assert event.resource_id == author.id
+        assert event.details["actor_name"] == admin.name
+        assert event.details["actor_email"] == admin.email
+        assert event.details["author_name"] == author.name
+        assert event.details["author_email"] == author.email
+        assert event.details["previous_role"] == SystemRole.label(SystemRole.role_id()[from])
+        assert event.details["new_role"] == SystemRole.label(role_id)
+      end
+
+      assert length(Auditing.list_events(event_type: :author_role_changed)) == 5
+    end
+
+    test "unchanged roles and failed updates produce no role audit", %{admin: admin} do
+      author = insert(:author)
+      assert {:ok, _} = Accounts.admin_update_author(author, %{given_name: "Changed"}, admin)
+
+      assert {:error, _} =
+               Accounts.admin_update_author(author, %{email: "invalid", system_role_id: 2}, admin)
+
+      assert Accounts.get_author!(author.id).system_role_id == author.system_role_id
+      assert Auditing.list_events(event_type: :author_role_changed) == []
+    end
+
+    test "uses the persisted previous role when the editor has stale data", %{admin: admin} do
+      author = insert(:author)
+      assert {:ok, _} = Accounts.admin_update_author(author, %{system_role_id: 2}, admin)
+      assert {:ok, _} = Accounts.admin_update_author(author, %{system_role_id: 3}, admin)
+
+      [event] =
+        Auditing.list_events(event_type: :author_role_changed, order_by: [desc: :id], limit: 1)
+
+      assert event.details["previous_role"] == "System Admin"
+      assert event.details["new_role"] == "Account Admin"
+    end
+
+    test "audit page shows identities and transition after identity changes", %{
+      conn: conn,
+      admin: admin
+    } do
+      author = insert(:author)
+      assert {:ok, _} = Accounts.admin_update_author(author, %{system_role_id: 4}, admin)
+
+      assert {:ok, _} =
+               Accounts.admin_update_author(author, %{email: "changed@example.com"}, admin)
+
+      {:ok, view, _} = live(conn, ~p"/admin/audit_log?event_type=author_role_changed")
+      assert has_element?(view, ".audit-log-table", admin.name)
+      assert has_element?(view, ".audit-log-table", admin.email)
+      assert has_element?(view, ".audit-log-table", author.name)
+      assert has_element?(view, ".audit-log-table", author.email)
+      assert has_element?(view, ".audit-log-table", "Author → Content Admin")
+
+      view |> element("button", "View Details") |> render_click()
+      assert has_element?(view, "[role=dialog]", "previous_role")
+      assert has_element?(view, "[role=dialog]", "Content Admin")
+    end
+  end
+
+  describe "role change authorization" do
+    setup [:account_admin_conn]
+
+    test "ignores forged role changes", %{conn: conn} do
+      author = insert(:author)
+      {:ok, view, _} = live(conn, authors_detail_view(author.id))
+      render_submit(view, "submit", %{"author" => %{"system_role_id" => "2"}})
+      assert Accounts.get_author!(author.id).system_role_id == author.system_role_id
+      assert Auditing.list_events(event_type: :author_role_changed) == []
+    end
+  end
+
   defp create_project_for(author, :owner, attrs) do
     project = insert(:project, attrs)
 

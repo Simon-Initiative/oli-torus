@@ -12,11 +12,18 @@
 # General application configuration
 import Config
 
-config :oli, :lkt_aoa,
+lkt_aoa_defaults = [
   gamma: 0.1,
   rho: 1.0,
   recency_decay: 0.9,
-  confidence_saturation: 3.0
+  confidence_midpoint: 5.0,
+  confidence_steepness: 3.0
+]
+
+# Only the fallback defaults are compile-time configuration. The effective model
+# configuration is overridden by environment variables in runtime.exs.
+config :oli, :lkt_aoa_defaults, lkt_aoa_defaults
+config :oli, :lkt_aoa, lkt_aoa_defaults
 
 # Ensure caption files uploaded through the media library keep their WebVTT mime type.
 config :mime, :types, %{

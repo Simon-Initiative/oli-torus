@@ -21,7 +21,12 @@ The primary goal is to improve the quality of the branch's changes, not to perfo
      3. `assisted`
 
 2. State the base branch before doing cleanup work.
-   - Default to `master` unless the user says otherwise.
+   - Use the base the user provided, if any.
+   - Otherwise, use the base of the branch's open pull request when one exists
+     (`gh pr view --json baseRefName --jq .baseRefName`).
+   - Otherwise, pick the closest candidate among `origin/master` and any feature integration
+     branches (`origin/integ-*`): the one whose merge-base with `HEAD` has the fewest commits
+     between it and `HEAD`. If the candidates are equally close, ask the user.
    - Make the chosen base explicit so the user can correct it.
 
 3. Use the branch diff against the base branch as the primary cleanup boundary.
@@ -120,7 +125,7 @@ Evaluate the changed surface for the following:
 1. Determine the mode before starting the cleanup pass.
    - If the user already provided `self-driving`, `smart`, or `assisted`, confirm that mode and proceed without asking again.
    - Otherwise, in the first reply include:
-     - the explicit base branch, defaulting to `master` unless already provided
+     - the explicit base branch, detected as described in Scope Rules step 2 unless already provided
      - one short sentence explaining the cleanup frame
      - a numbered list:
        1. `self-driving`: fully automatic cleanup pass; research, decide, and implement without per-finding approval

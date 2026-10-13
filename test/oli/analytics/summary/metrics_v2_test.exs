@@ -77,18 +77,18 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert %{^page1_id => "Low", ^page2_id => "Medium"} = results
 
       contained_pages = [
+        %ContainedPage{container_id: nil, page_id: page1_id},
+        %ContainedPage{container_id: nil, page_id: page2_id},
         %ContainedPage{container_id: 3, page_id: page1_id},
         %ContainedPage{container_id: 3, page_id: page2_id},
         %ContainedPage{container_id: 2, page_id: page1_id}
       ]
 
       results = Metrics.proficiency_for_student_per_container(section, user1_id, contained_pages)
-      assert Map.keys(results) |> Enum.count() == 2
-      assert %{2 => "Low", 3 => "High"} = results
+      assert results == %{nil => "High", 2 => "Low", 3 => "High"}
 
       results = Metrics.proficiency_per_container(section, contained_pages)
-      assert Map.keys(results) |> Enum.count() == 2
-      assert %{2 => "Low", 3 => "Medium"} = results
+      assert results == %{nil => "Medium", 2 => "Low", 3 => "Medium"}
 
       results = Metrics.proficiency_per_student_across(section)
       assert Map.keys(results) |> Enum.count() == 2

@@ -35,6 +35,33 @@ defmodule Oli.AccountsTest do
       assert author.system_role_id == Accounts.SystemRole.role_id().system_admin
     end
 
+    test "admin_update_author/3 only lets a system admin change the system role" do
+      system_admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().system_admin})
+
+      account_admin =
+        author_fixture(%{system_role_id: Accounts.SystemRole.role_id().account_admin})
+
+      author = author_fixture()
+      admin_role = Accounts.SystemRole.role_id().system_admin
+
+      {:ok, refused} =
+        Accounts.admin_update_author(
+          author,
+          %{"system_role_id" => admin_role, "given_name" => "Renamed"},
+          account_admin
+        )
+
+      assert refused.given_name == "Renamed"
+      assert refused.system_role_id == Accounts.SystemRole.role_id().author
+      assert Oli.Auditing.list_events(event_type: :author_role_changed) == []
+
+      {:ok, granted} =
+        Accounts.admin_update_author(author, %{"system_role_id" => admin_role}, system_admin)
+
+      assert granted.system_role_id == admin_role
+      assert [_event] = Oli.Auditing.list_events(event_type: :author_role_changed)
+    end
+
     test "admin helper hierarchy matches the system role levels" do
       author = author_fixture()
 

@@ -20,8 +20,17 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
 
     user = insert(:user)
 
-    insert_state(section, user, objective_a, aoa: 0.2, attempt_count: 1)
-    insert_state(section, user, objective_b, aoa: 0.8, attempt_count: 2)
+    insert_state(section, user, objective_a,
+      aoa: 0.2,
+      attempt_count: 1,
+      unique_activity_part_count: 1
+    )
+
+    insert_state(section, user, objective_b,
+      aoa: 0.8,
+      attempt_count: 2,
+      unique_activity_part_count: 2
+    )
 
     assert {:ok, estimates} =
              LktAoa.estimates_for_scopes(section, [user.id], [{:page, page.resource_id}], [])
@@ -30,7 +39,8 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
     assert_in_delta estimate.score, 0.5, 1.0e-12
     assert estimate.label == :medium
     assert estimate.attempt_count == 3
-    assert estimate.unique_activity_part_count == 0
+    assert estimate.unique_activity_part_count == 3
+    assert_in_delta estimate.confidence, (1 / 126 + 8 / 133) / 2, 1.0e-12
   end
 
   test "fewer than three total attempts hides the scope score" do
@@ -127,6 +137,33 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
     refute Enum.any?(queries, &String.contains?(&1, ~s(FROM "resource_summaries")))
   end
 
+  test "container metrics treat persisted nil container IDs as the course scope" do
+    %{section: section, root: root, page: page, objectives: [objective | _]} = scope_fixture()
+    user = insert(:user)
+    insert_state(section, user, objective, aoa: 0.2, attempt_count: 3)
+
+    {:ok, _} = Oli.Delivery.Sections.rebuild_contained_pages(section)
+    contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+    assert [%ContainedPage{container_id: nil, page_id: page_id}] = contained_pages
+    assert page_id == page.resource_id
+
+    assert Metrics.proficiency_per_container(section, contained_pages) == %{nil => "Low"}
+
+    assert Metrics.proficiency_for_student_per_container(section, user.id, contained_pages) ==
+             %{nil => "Low"}
+
+    # Root and explicit container scopes can occur in the same request.
+    mixed_pages = [
+      %ContainedPage{container_id: root.resource_id, page_id: page_id} | contained_pages
+    ]
+
+    expected = %{nil => "Low", root.resource_id => "Low"}
+    assert Metrics.proficiency_per_container(section, mixed_pages) == expected
+
+    assert Metrics.proficiency_for_student_per_container(section, user.id, mixed_pages) ==
+             expected
+  end
+
   test "depot failure returns unavailable without querying state or falling back to naive" do
     section = insert(:section, learning_model_version: :lkt_aoa)
     user = insert(:user)
@@ -214,8 +251,7 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
           learning_objective_id: objective.resource_id,
           aoa: 0.0,
           attempt_count: 0,
-          unique_activity_part_count: 0,
-          confidence: 0.0
+          unique_activity_part_count: 0
         ],
         attrs
       )
