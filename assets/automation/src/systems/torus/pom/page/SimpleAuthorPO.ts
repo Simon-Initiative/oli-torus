@@ -1,4 +1,4 @@
-import { expect, Locator, Page, Request } from '@playwright/test';
+import { errors, expect, Locator, Page, Request } from '@playwright/test';
 import { BasicPracticePagePO } from '@pom/page/BasicPracticePagePO';
 
 export type SimpleAuthorScreenType =
@@ -42,7 +42,7 @@ const SAVE_QUIET_MS = 800;
  * Simple Author has no "All changes saved" indicator: screen edits are
  * debounced and persisted through `/api/v1/storage/...` and page edits
  * through `/api/v1/project/.../resource/...`. `waitForSaves` tracks those
- * requests so callers can reload only after every pending write settled.
+ * requests so callers can reload only after every pending write succeeded.
  *
  * Property-panel inputs carry generated ids such as
  * `component_part_<rand>_<partId>_custom_<field>`; the stable part is the
@@ -51,6 +51,7 @@ const SAVE_QUIET_MS = 800;
  */
 export class SimpleAuthorPO {
   private readonly pendingSaves = new Set<Request>();
+  private readonly failedSaves: string[] = [];
   private lastSaveActivity = 0;
 
   private readonly stage: Locator;
@@ -79,8 +80,23 @@ export class SimpleAuthorPO {
     const settle = (request: Request) => {
       if (this.pendingSaves.delete(request)) this.lastSaveActivity = Date.now();
     };
+    page.on('response', (response) => {
+      const request = response.request();
+      if (this.pendingSaves.has(request) && !response.ok()) {
+        this.failedSaves.push(
+          `${request.method()} ${request.url()}: HTTP ${response.status()} ${response.statusText()}`,
+        );
+      }
+    });
     page.on('requestfinished', settle);
-    page.on('requestfailed', settle);
+    page.on('requestfailed', (request) => {
+      if (this.pendingSaves.has(request)) {
+        this.failedSaves.push(
+          `${request.method()} ${request.url()}: ${request.failure()?.errorText ?? 'network failure'}`,
+        );
+      }
+      settle(request);
+    });
   }
 
   // ------------------------------------------------------------ persistence
@@ -89,20 +105,30 @@ export class SimpleAuthorPO {
    * Waits until no Simple Author write is in flight and none started for a quiet
    * window. The window is measured from the call too, so a write still inside
    * the editor's 500ms save debounce is not missed.
+   * Throws immediately when a tracked save has a network error or unsuccessful
+   * HTTP response. Failures remain recorded for subsequent calls too.
    */
   async waitForSaves(timeout = 30_000) {
     const calledAt = Date.now();
     const deadline = calledAt + timeout;
 
     while (Date.now() < deadline) {
+      this.assertSavesSucceeded();
       const quietFor = Date.now() - Math.max(this.lastSaveActivity, calledAt);
       if (this.pendingSaves.size === 0 && quietFor >= SAVE_QUIET_MS) return;
       await this.page.waitForTimeout(250);
     }
 
+    this.assertSavesSucceeded();
     throw new Error(
       `Simple Author saves did not settle within ${timeout}ms (${this.pendingSaves.size} pending)`,
     );
+  }
+
+  private assertSavesSucceeded() {
+    if (this.failedSaves.length > 0) {
+      throw new Error(`Simple Author save failed:\n${this.failedSaves.join('\n')}`);
+    }
   }
 
   /** Reloads the editor after pending writes settle and returns to the Screen Panel. */
@@ -154,13 +180,17 @@ export class SimpleAuthorPO {
    * becomes active.
    *
    * Creating the first screen after a load can re-render the editor and drop the
-   * dialog without creating anything. The dialog flow is retried only when no
-   * screen-creation request went out, so a creation in flight is never repeated.
+   * dialog without creating anything. Retry once when no screen-creation request
+   * is observed within 15 seconds; an observed request is never retried. Assert
+   * a unique screen before using it and again after the initial saves settle.
    */
   async addScreen(title: string, type: SimpleAuthorScreenType) {
     const modal = this.page.locator('.add-screen-modal');
+    let attempts = 0;
+    let creationObserved = false;
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
+      attempts += 1;
       await this.page.getByRole('button', { name: 'Add new screen' }).click();
       await expect(modal).toBeVisible();
       await modal.locator('input.title-input').fill(title);
@@ -175,22 +205,40 @@ export class SimpleAuthorPO {
           (request) =>
             request.method() === 'POST' &&
             /\/api\/v1\/project\/[^/]+\/activity\//.test(request.url()),
-          { timeout: 5_000 },
+          { timeout: 15_000 },
         )
-        .catch(() => null);
+        .catch((error) => {
+          if (error instanceof errors.TimeoutError) return null;
+          throw error;
+        });
       await modal.getByRole('button', { name: 'Next' }).click();
-      if (await creationRequest) break;
+      if (await creationRequest) {
+        creationObserved = true;
+        break;
+      }
 
       if (await modal.isVisible().catch(() => false)) await this.page.keyboard.press('Escape');
       await expect(modal).toBeHidden();
     }
 
+    this.assertSavesSucceeded();
+    if (!creationObserved) {
+      throw new Error(
+        `Simple Author screen "${title}": no creation POST observed after ${attempts} attempts (15s per attempt)`,
+      );
+    }
+
+    const uniqueScreenMessage = `Simple Author screen "${title}": expected exactly one screen after ${attempts} creation attempts`;
+    await expect(this.screenListItem(title), uniqueScreenMessage).toHaveCount(1, {
+      timeout: 30_000,
+    });
     await expect(this.screenListItem(title)).toBeVisible({ timeout: 30_000 });
     await expect(modal).toBeHidden({ timeout: 30_000 });
-    await this.expectActiveScreen(title);
     // The new screen's initial save must land before edits, or the two
     // concurrent writes can persist the template over the edit.
     await this.waitForSaves();
+    await expect(this.screenListItem(title), uniqueScreenMessage).toHaveCount(1);
+    await this.expectActiveScreen(title);
   }
 
   async selectScreen(title: string) {
@@ -436,7 +484,7 @@ export class SimpleAuthorPO {
 
   /** The paste button only exists while a part is on the clipboard. */
   pasteButton() {
-    return this.overviewButtons().nth(1);
+    return this.componentToolbar.getByRole('button', { name: 'Paste Component', exact: true });
   }
 
   async pasteWithToolbar() {
@@ -472,7 +520,7 @@ export class SimpleAuthorPO {
   // ------------------------------------------------------------ scoring overview
 
   scoringOverviewButton() {
-    return this.overviewButtons().first();
+    return this.componentToolbar.getByRole('button', { name: 'Scoring Overview', exact: true });
   }
 
   scoringOverview() {
@@ -482,13 +530,6 @@ export class SimpleAuthorPO {
   async closeScoringOverview() {
     await this.scoringOverview().getByRole('button', { name: 'Close' }).first().click();
     await expect(this.scoringOverview()).toBeHidden();
-  }
-
-  private overviewButtons() {
-    return this.componentToolbar
-      .locator('.toolbar-column')
-      .filter({ has: this.page.locator('label', { hasText: /^Overview$/ }) })
-      .locator('.toolbar-buttons > button.component-button');
   }
 
   // ------------------------------------------------------------ flowchart

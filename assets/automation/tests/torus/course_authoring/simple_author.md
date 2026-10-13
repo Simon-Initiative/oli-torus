@@ -48,6 +48,14 @@ cd assets/automation
 PLAYWRIGHT_BASE_URL=http://localhost:4000 PLAYWRIGHT_SCENARIO_TOKEN=my-token npm run test-simple-author
 ```
 
+The page object's save diagnostics have a separate `@pr` spec,
+`simple-author-persistence.spec.ts`, covering successful, HTTP-failed, aborted, and
+unfinished requests. It intercepts browser requests and needs no Torus server or seed data:
+
+```bash
+npx playwright test simple-author-persistence.spec.ts --reporter=line
+```
+
 ## CI placement
 
 Every describe is tagged `@pr`, so the suite runs in the PR Playwright Suite
@@ -62,12 +70,17 @@ nightly job targets a persistent deployment where `/test/scenario-yaml` is not a
   800ms quiet window, measured from the call, longer than the editor's 500ms save debounce. Every editing
   action waits for its write. Without this, quick successive edits, such as editing right
   after a screen is created, can persist an older state over a newer one.
+  Network failures and unsuccessful HTTP responses fail the wait immediately with the
+  request method, URL, and status or network-error reason; failures remain recorded.
 - A reopened lesson can load in read-only mode. `BasicPracticePagePO.disableAdaptiveReadOnly`
   switches it off. Once the editor header renders, the onboarding wizard is not showing, so the
   editor load does not wait for it.
 - Creating the first screen after a load can re-render the editor and drop the "Add new screen"
-  dialog without creating anything. `addScreen` retries only when no screen-creation request
-  went out, so a creation in flight is never repeated.
+  dialog without creating anything. `addScreen` retries once when no screen-creation request
+  is observed within 15 seconds. Observed requests are never retried. The bounded observation
+  window cannot rule out delayed dispatch, so the helper explicitly checks for exactly one
+  screen with the requested title before using it and again after saves settle. Failure
+  messages include the screen title and creation-attempt count.
 - Right after a screen is created, the toolbar can drop the first component click.
   `addComponent` retries only while no new part appeared, so a slow add is never doubled.
 - Adding a screen from the Screen Panel adds "Unknown Rule" paths. The editor also re-sorts

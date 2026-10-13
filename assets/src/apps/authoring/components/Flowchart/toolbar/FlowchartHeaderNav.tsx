@@ -356,7 +356,11 @@ export const FlowchartHeaderNav: React.FC = () => {
               </Tooltip>
             }
           >
-            <button onClick={handleScoringOverviewClick} className="component-button">
+            <button
+              aria-label="Scoring Overview"
+              onClick={handleScoringOverviewClick}
+              className="component-button"
+            >
               <ScoringIcon />
             </button>
           </OverlayTrigger>
@@ -383,6 +387,7 @@ export const FlowchartHeaderNav: React.FC = () => {
               }
             >
               <button
+                aria-label="Paste Component"
                 disabled={(!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
                 className="component-button"
                 onClick={handlePartPasteClick}
