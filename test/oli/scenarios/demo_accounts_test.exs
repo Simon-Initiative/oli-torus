@@ -228,6 +228,88 @@ defmodule Oli.Scenarios.DemoAccountsTest do
     end
   end
 
+  test "runtime password reads reject missing or invalid values with the same bounded error" do
+    defaults = DemoAccounts.build(true, @password)
+    expected = assert_raise ArgumentError, fn -> DemoAccounts.build(true, "too-short") end
+
+    for value <- [nil, "", "too-short", String.duplicate("x", 73), String.duplicate("é", 37)] do
+      restore_env(value)
+
+      log =
+        capture_log(fn ->
+          error = assert_raise ArgumentError, fn -> DemoAccounts.password(defaults) end
+          assert error.message == expected.message
+        end)
+
+      assert log == ""
+    end
+  end
+
+  test "runtime password reads use a valid replacement without retaining it in defaults" do
+    defaults = DemoAccounts.build(true, @password)
+    replacement = "replacement-preview-password"
+    System.put_env("PREVIEW_DEMO_USER_PASSWORD", replacement)
+
+    assert DemoAccounts.password(defaults) == replacement
+    refute inspect(defaults) =~ replacement
+    refute inspect(defaults) =~ @password
+  end
+
+  test "omitting defaults preserves inherited preview account behavior" do
+    result = execute(DemoAccounts.build(true, @password))
+    continued = continue_accounts(result.state, [])
+
+    assert continued.state.preview_account_defaults == result.state.preview_account_defaults
+
+    for name <- ~w(continued_instructor continued_learner_1) do
+      user = continued.state.users[name]
+      assert User.valid_password?(user, @password)
+      assert user.email_confirmed_at
+      assert user.email_verified
+      assert user.independent_learner
+    end
+  end
+
+  test "explicit nil clears inherited preview defaults for newly created accounts" do
+    result = execute(DemoAccounts.build(true, @password))
+    continued = continue_accounts(result.state, preview_account_defaults: nil)
+
+    assert continued.state.preview_account_defaults == nil
+    instructor = continued.state.users["continued_instructor"]
+    assert User.valid_password?(instructor, "temporarypassword123")
+    assert instructor.email_confirmed_at == nil
+    refute instructor.email_verified
+
+    learner = continued.state.users["continued_learner_1"]
+    assert learner.password_hash == nil
+    assert learner.email_confirmed_at == nil
+    refute learner.independent_learner
+  end
+
+  defp continue_accounts(state, opts) do
+    result =
+      Scenarios.execute_yaml(
+        """
+        - user:
+            name: continued_instructor
+            type: instructor
+            email: continued-instructor@example.edu
+            given_name: Continued
+            family_name: Instructor
+            email_verified: false
+        - bulk_create_enroll_users:
+            section: demo_section
+            prefix: continued
+            instructors: 0
+            learners: 1
+        """,
+        Keyword.put(opts, :state, state)
+      )
+
+    assert result.errors == []
+    result
+  end
+
   defp execute(defaults) do
     result = Scenarios.execute_yaml(@yaml, ownership: true, preview_account_defaults: defaults)
     assert result.errors == []

@@ -41,28 +41,20 @@ defmodule Oli.Scenarios.DemoAccounts do
         defaults
 
       password ->
-        validation =
-          %User{}
-          |> User.password_changeset(%{password: password}, hash_password: false)
-          |> Ecto.Changeset.validate_length(:password, max: 72, count: :bytes)
-
-        case validation.valid? do
-          true ->
-            %__MODULE__{defaults | password_configured?: true}
-
-          false ->
-            raise ArgumentError,
-                  "PREVIEW_DEMO_USER_PASSWORD must satisfy the account password policy (12-72 characters, at most 72 bytes)"
-        end
+        validate_password!(password)
+        %__MODULE__{defaults | password_configured?: true}
     end
   end
 
-  @doc "Reads the runtime password only for seed defaults that enabled direct login."
+  @doc """
+  Reads and validates the runtime password only for defaults that enabled direct login.
+  Raises a bounded `ArgumentError` if the configured password is now missing or invalid.
+  """
   @spec password(t() | nil, String.t() | nil) :: String.t() | nil
   def password(defaults, fallback \\ nil)
 
   def password(%__MODULE__{password_configured?: true}, _fallback),
-    do: System.fetch_env!(@password_env)
+    do: validate_password!(System.get_env(@password_env))
 
   def password(_defaults, fallback), do: fallback
 
@@ -86,6 +78,22 @@ defmodule Oli.Scenarios.DemoAccounts do
 
       _ ->
         changeset
+    end
+  end
+
+  defp validate_password!(password) do
+    validation =
+      %User{}
+      |> User.password_changeset(%{password: password}, hash_password: false)
+      |> Ecto.Changeset.validate_length(:password, max: 72, count: :bytes)
+
+    case validation.valid? do
+      true ->
+        password
+
+      false ->
+        raise ArgumentError,
+              "PREVIEW_DEMO_USER_PASSWORD must satisfy the account password policy (12-72 characters, at most 72 bytes)"
     end
   end
 end
