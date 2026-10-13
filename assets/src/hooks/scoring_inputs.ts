@@ -67,3 +67,18 @@ export const ScoringHeading = {
     this.handleEvent('scoring:focus_heading', () => (this.el as HTMLElement).focus());
   },
 };
+
+// Browsers do not scroll a control that gets focus while it already sits inside the window, even
+// under the sticky dashboard header: bring its top down to its scroll margin. Only on :focus-visible,
+// so a click on a reading region leaves the page where it is; text fields match it on a click too.
+export const ScoringRevealFocus = {
+  mounted(this: any) {
+    (this.el as HTMLElement).addEventListener('focusin', (e) => {
+      const target = e.target as HTMLElement;
+      const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+
+      if (target.getBoundingClientRect().top < margin && target.matches(':focus-visible'))
+        target.scrollIntoView({ block: 'start' });
+    });
+  },
+};

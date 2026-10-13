@@ -181,6 +181,13 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       refute html =~ "Beth wrote her essay"
     end
 
+    test "the page brings a control that gets focus out from under the sticky dashboard header",
+         ctx do
+      {:ok, _view, html} = live(ctx.conn, ctx.scoring_route.(ctx.a_2.id))
+
+      assert Floki.attribute(doc(html), "#scoring-page", "phx-hook") == ["ScoringRevealFocus"]
+    end
+
     test "Previous and Next walk the table's order, show the right student's answer, and are disabled at the ends",
          ctx do
       {:ok, view, html} = live(ctx.conn, ctx.scoring_route.(ctx.b_1.id))

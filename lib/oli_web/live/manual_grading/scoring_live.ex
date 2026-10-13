@@ -150,8 +150,12 @@ defmodule OliWeb.ManualGrading.ScoringLive do
     assigns = assign(assigns, :crumbs, crumbs(assigns))
 
     ~H"""
-    <%!-- scroll-mt: whatever gets focus or is scrolled to clears the sticky dashboard header (57px) --%>
-    <div class="container mx-auto my-4 space-y-4 [&_*]:scroll-mt-16" id="scoring-page">
+    <%!-- scroll-mt and ScoringRevealFocus: whatever gets focus or is scrolled to clears the sticky dashboard header (57px) --%>
+    <div
+      class="container mx-auto my-4 space-y-4 [&_*]:scroll-mt-16"
+      id="scoring-page"
+      phx-hook="ScoringRevealFocus"
+    >
       <%= for script <- @additional_scripts do %>
         <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/" <> script)}>
         </script>
