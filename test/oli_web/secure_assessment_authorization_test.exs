@@ -292,6 +292,20 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     assert {:ok, [_]} = Policy.resolve_attempts(:activity, [guid, guid])
   end
 
+  test "protected attempt existence checks each attempt kind", c do
+    part = insert(:part_attempt, activity_attempt: c.activity)
+
+    assert Policy.protected_attempts?(:resource, ["missing", c.attempt.attempt_guid])
+    assert Policy.protected_attempts?(:activity, ["missing", c.activity.attempt_guid])
+    assert Policy.protected_attempts?(:part, ["missing", part.attempt_guid])
+    refute Policy.protected_attempts?(:resource, ["missing"])
+
+    Oli.Repo.update!(Ecto.Changeset.change(c.sr, secure_delivery: false))
+    refute Policy.protected_attempts?(:resource, [c.attempt.attempt_guid])
+    refute Policy.protected_attempts?(:activity, [c.activity.attempt_guid])
+    refute Policy.protected_attempts?(:part, [part.attempt_guid])
+  end
+
   test "ordinary finalized review is independent of secure-session existence", c do
     assert {:ok, [target]} = Policy.resolve_attempts(:resource, [c.attempt.attempt_guid])
     assert {:error, :review_not_allowed} = Policy.authorize(nil, c.user.id, :review, target)

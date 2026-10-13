@@ -208,6 +208,7 @@ defmodule Oli.Delivery.SecureAssessments do
         as: :access,
         on: access.id == ra.resource_access_id,
         join: sr in SectionResource,
+        as: :section_resource,
         on: sr.section_id == access.section_id and sr.resource_id == access.resource_id,
         select: %Target{
           section_id: access.section_id,
@@ -255,8 +256,8 @@ defmodule Oli.Delivery.SecureAssessments do
       when kind in [:resource, :activity, :part] and is_list(guids) do
     kind
     |> attempt_query(Enum.uniq(guids))
-    |> Repo.all()
-    |> Enum.any?(& &1.secure_delivery)
+    |> where([section_resource: sr], sr.secure_delivery)
+    |> Repo.exists?()
   end
 
   @doc "Checks current-token confinement independently of the resource's current policy."
