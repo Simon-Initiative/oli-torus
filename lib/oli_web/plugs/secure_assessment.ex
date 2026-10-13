@@ -4,10 +4,9 @@ defmodule OliWeb.Plugs.SecureAssessment do
   checked after the section is loaded, using its resource depot as a fast guard.
   """
   import Plug.Conn
-  import Ecto.Query, only: [from: 2]
 
   alias Oli.Delivery.SecureAssessments, as: Policy
-  alias Oli.Delivery.Sections.{Section, SectionResource, SectionResourceDepot}
+  alias Oli.Delivery.Sections.{Section, SectionResourceDepot}
   alias Oli.Repo
 
   @doc false
@@ -94,15 +93,7 @@ defmodule OliWeb.Plugs.SecureAssessment do
         true
 
       id ->
-        case SectionResourceDepot.has_secure_graded_pages?(id) do
-          true ->
-            true
-
-          false ->
-            Repo.exists?(
-              from sr in SectionResource, where: sr.section_id == ^id and sr.secure_delivery
-            )
-        end
+        SectionResourceDepot.has_secure_graded_pages?(id)
     end
   end
 
