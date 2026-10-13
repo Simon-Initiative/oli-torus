@@ -250,7 +250,9 @@ jobs:
           mv diff.role.patch diff.patch
 
       - name: Install Codex CLI
-        run: npm i -g @openai/codex@0.148.0
+        run: |
+          npm install -g --include=optional @openai/codex@0.148.0 @openai/codex-linux-x64@0.148.0
+          node -e "require.resolve('@openai/codex-linux-x64/package.json')"
 
       - name: Run Codex reviewer (strictly diff-only)
         id: run
