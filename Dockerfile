@@ -118,11 +118,6 @@ FROM ${RUNNER_IMAGE}
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 
 ARG MIX_ENV
-ARG SHA
-ARG APP_VERSION
-LABEL org.opencontainers.image.source="https://github.com/simon-initiative/oli-torus" \
-      org.opencontainers.image.revision="${SHA}" \
-      org.opencontainers.image.version="${APP_VERSION}"
 
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses6 locales \
   ca-certificates curl \
@@ -143,6 +138,12 @@ RUN chown nobody /app
 
 # set runner ENV
 ENV MIX_ENV=${MIX_ENV}
+
+ARG SHA
+ARG APP_VERSION
+LABEL org.opencontainers.image.source="https://github.com/simon-initiative/oli-torus" \
+      org.opencontainers.image.revision="${SHA}" \
+      org.opencontainers.image.version="${APP_VERSION}"
 
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/oli ./
