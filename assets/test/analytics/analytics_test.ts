@@ -32,12 +32,66 @@ describe('analytics', () => {
   }
 
   test('disabled and malformed configuration creates no queue or Google script', () => {
-    initializeAnalytics({});
-    initializeAnalytics({ container_id: 'G-INVALID', context: initialContext });
-    initializeAnalytics({ container_id: 'GTM-QA123' });
+    for (const config of [
+      undefined,
+      null,
+      true,
+      42,
+      'GTM-QA123',
+      [],
+      {},
+      { container_id: 'G-INVALID', context: initialContext },
+      { container_id: ['GTM-QA123'], context: initialContext },
+      { container_id: 'GTM-QA123' },
+      { container_id: 'GTM-QA123', context: null },
+      { container_id: 'GTM-QA123', context: { ...initialContext, page_area: ['delivery'] } },
+      { container_id: 'GTM-QA123', context: initialContext, auth: 'auth' },
+      { container_id: 'GTM-QA123', context: initialContext, preview: 'env-2' },
+      { container_id: 'GTM-QA123', context: initialContext, auth: 123, preview: 'env-2' },
+      { container_id: 'GTM-QA123', context: initialContext, auth: 'auth', preview: true },
+    ]) {
+      expect(() => initializeAnalytics(config)).not.toThrow();
+    }
     expect(window.dataLayer).toBeUndefined();
     expect(window.gtag).toBeUndefined();
     expect(document.querySelectorAll('script')).toHaveLength(0);
+  });
+
+  test.each(['{', 'null', '42', '[]'])(
+    'invalid embedded JSON %s safely disables analytics',
+    (config) => {
+      const script = document.createElement('script');
+      script.dataset.config = config;
+      jest.spyOn(document, 'currentScript', 'get').mockReturnValue(script);
+
+      expect(() => {
+        jest.isolateModules(() => {
+          require('../../src/analytics/bootstrap');
+        });
+      }).not.toThrow();
+      expect(window.dataLayer).toBeUndefined();
+      expect(window.TorusAnalytics).toBeUndefined();
+      expect(document.querySelectorAll('script')).toHaveLength(0);
+    },
+  );
+
+  test('valid embedded configuration initializes analytics with nullable environment settings', () => {
+    const script = document.createElement('script');
+    script.dataset.config = JSON.stringify({
+      container_id: 'GTM-QA123',
+      auth: null,
+      preview: null,
+      context: initialContext,
+    });
+    jest.spyOn(document, 'currentScript', 'get').mockReturnValue(script);
+
+    jest.isolateModules(() => {
+      require('../../src/analytics/bootstrap');
+    });
+
+    expect(pageViews()).toHaveLength(1);
+    expect(window.TorusAnalytics!.pagePath).toBe(initialContext.page_path);
+    expect(document.querySelectorAll('script')).toHaveLength(1);
   });
 
   test('consent and one sanitized page view precede the async loader, which loads once', () => {

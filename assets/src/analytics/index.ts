@@ -8,10 +8,10 @@ export type PageContext = {
 };
 
 type AnalyticsConfig = {
-  container_id?: string;
+  container_id: string;
   auth?: string;
   preview?: string;
-  context?: PageContext;
+  context: PageContext;
 };
 
 const titles: Record<PageArea, string> = {
@@ -38,7 +38,7 @@ function sanitizeContext(value: unknown): PageContext | null {
   if (
     typeof context.page_path !== 'string' ||
     !/^\/(?:[A-Za-z0-9_:/.*-]*)$/.test(context.page_path) ||
-    !context.page_area ||
+    typeof context.page_area !== 'string' ||
     !Object.prototype.hasOwnProperty.call(titles, context.page_area)
   ) {
     return null;
@@ -52,15 +52,41 @@ function sanitizeContext(value: unknown): PageContext | null {
   };
 }
 
-/** Initializes consent and the initial page view before requesting the GTM container. */
-export function initializeAnalytics(config: AnalyticsConfig): void {
-  const initialContext = sanitizeContext(config.context);
+function sanitizeConfig(value: unknown): AnalyticsConfig | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const config = value as Record<string, unknown>;
+  const context = sanitizeContext(config.context);
   if (
-    window.TorusAnalytics ||
-    !config.container_id ||
+    typeof config.container_id !== 'string' ||
     !/^GTM-[A-Z0-9]+$/.test(config.container_id) ||
-    !initialContext
+    !context
   ) {
+    return null;
+  }
+
+  const { auth, preview } = config;
+  if (
+    (auth != null || preview != null) &&
+    (typeof auth !== 'string' ||
+      !/^[A-Za-z0-9_-]+$/.test(auth) ||
+      typeof preview !== 'string' ||
+      !/^env-[0-9]+$/.test(preview))
+  ) {
+    return null;
+  }
+
+  return {
+    container_id: config.container_id,
+    auth: typeof auth === 'string' ? auth : undefined,
+    preview: typeof preview === 'string' ? preview : undefined,
+    context,
+  };
+}
+
+/** Initializes consent and a sanitized page view; invalid configuration disables analytics. */
+export function initializeAnalytics(value: unknown): void {
+  const config = sanitizeConfig(value);
+  if (window.TorusAnalytics || !config) {
     return;
   }
 
@@ -92,7 +118,7 @@ export function initializeAnalytics(config: AnalyticsConfig): void {
     },
   };
   window.TorusAnalytics = analytics;
-  analytics.pageView(initialContext);
+  analytics.pageView(config.context);
 
   window.addEventListener('phx:analytics:page_view', (event: Event) => {
     analytics.pageView((event as CustomEvent<unknown>).detail);

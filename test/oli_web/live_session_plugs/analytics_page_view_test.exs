@@ -4,9 +4,16 @@ defmodule OliWeb.LiveSessionPlugs.AnalyticsPageViewTest do
   import Phoenix.LiveViewTest
 
   setup do
-    original = Application.get_env(:oli, :analytics)
+    original = Application.fetch_env(:oli, :analytics)
     Application.put_env(:oli, :analytics, gtm_container_id: "GTM-QA123")
-    on_exit(fn -> Application.put_env(:oli, :analytics, original) end)
+
+    on_exit(fn ->
+      case original do
+        :error -> Application.delete_env(:oli, :analytics)
+        {:ok, value} -> Application.put_env(:oli, :analytics, value)
+      end
+    end)
+
     :ok
   end
 
