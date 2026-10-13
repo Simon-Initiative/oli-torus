@@ -25,7 +25,7 @@ defmodule Oli.Scenarios.SeedExecution do
 
     Engine.execute(directives,
       ownership: true,
-      preview_demo_account: Oli.Scenarios.DemoAccounts.defaults(),
+      preview_account_defaults: Oli.Scenarios.DemoAccounts.defaults(),
       current_dir: path |> Path.expand() |> Path.dirname(),
       seed_remaining_bytes: @max_scenario_bytes - root_size,
       seed_max_include_depth: @max_include_depth

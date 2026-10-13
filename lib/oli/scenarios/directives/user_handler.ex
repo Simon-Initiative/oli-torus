@@ -37,7 +37,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
         case type do
           :author ->
             create_author(%{
-              preview_demo_account: state.preview_demo_account,
+              preview_account_defaults: state.preview_account_defaults,
               email: email,
               given_name: given_name,
               family_name: family_name,
@@ -48,7 +48,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
 
           :instructor ->
             create_user(%{
-              preview_demo_account: state.preview_demo_account,
+              preview_account_defaults: state.preview_account_defaults,
               email: email,
               given_name: given_name,
               family_name: family_name,
@@ -60,7 +60,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
 
           :student ->
             create_user(%{
-              preview_demo_account: state.preview_demo_account,
+              preview_account_defaults: state.preview_account_defaults,
               email: email,
               given_name: given_name,
               family_name: family_name,
@@ -92,7 +92,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
   end
 
   defp create_author(attrs) do
-    defaults = attrs[:preview_demo_account]
+    defaults = attrs[:preview_account_defaults]
     password = DemoAccounts.password(defaults, attrs[:password] || @default_password)
     system_role = attrs[:system_role] || :author
     email_verified = Map.get(attrs, :email_verified, true)
@@ -133,7 +133,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
 
   defp create_user(attrs) do
     password = attrs[:password] || @default_password
-    defaults = attrs[:preview_demo_account]
+    defaults = attrs[:preview_account_defaults]
     can_create_sections = attrs[:can_create_sections] || false
     email_verified = Map.get(attrs, :email_verified, true)
 
@@ -145,12 +145,12 @@ defmodule Oli.Scenarios.Directives.UserHandler do
       end
 
     credentials =
-      case DemoAccounts.password(defaults) do
-        nil ->
-          %User{} |> Ecto.Changeset.cast(%{password: password}, [:password]) |> hash_password()
+      case defaults do
+        %DemoAccounts{password_configured?: true} ->
+          Ecto.Changeset.change(%User{})
 
-        preview_password ->
-          User.password_changeset(%User{independent_learner: true}, %{password: preview_password})
+        _ ->
+          %User{} |> Ecto.Changeset.cast(%{password: password}, [:password]) |> hash_password()
       end
 
     {:ok, user} =

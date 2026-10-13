@@ -13,8 +13,12 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
   @insert_batch_size 500
 
   @doc "Creates and enrolls synthetic accounts, preserving existing credentials on reuse."
-  @spec create_and_enroll(Oli.Delivery.Sections.Section.t(), map(), User.t() | nil) ::
-          {:ok, %{String.t() => User.t()}, map()} | {:error, term()}
+  @spec create_and_enroll(
+          %Oli.Delivery.Sections.Section{},
+          %Oli.Scenarios.DirectiveTypes.BulkCreateEnrollUsersDirective{},
+          DemoAccounts.t() | nil
+        ) ::
+          {:ok, %{String.t() => %User{}}, map()} | {:error, term()}
   def create_and_enroll(section, directive, defaults \\ nil) do
     specs =
       user_specs(directive.prefix, :instructor, directive.instructors) ++
@@ -100,8 +104,6 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
   end
 
   defp build_users(specs, defaults) do
-    password = DemoAccounts.password(defaults)
-
     specs
     |> Enum.with_index()
     |> Enum.reduce_while({:ok, []}, fn {spec, index}, {:ok, users} ->
@@ -118,7 +120,6 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
       changeset =
         %User{sub: spec.sub, guest: true}
         |> User.noauth_changeset(attrs)
-        |> maybe_put_password(password)
         |> DemoAccounts.apply_defaults(defaults)
 
       case Ecto.Changeset.apply_action(changeset, :insert) do
@@ -131,11 +132,6 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
       error -> error
     end
   end
-
-  defp maybe_put_password(changeset, nil), do: changeset
-
-  defp maybe_put_password(changeset, password),
-    do: User.password_changeset(changeset, %{password: password})
 
   defp insert_attrs(user) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)

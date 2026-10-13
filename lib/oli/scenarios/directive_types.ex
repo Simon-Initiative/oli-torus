@@ -551,7 +551,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
               # Release execution requires ownership to be established by YAML
               ownership: false,
               # Creation-only preview confirmation and login flags; contains no credentials
-              preview_demo_account: nil,
+              preview_account_defaults: nil,
               # Release-only cumulative include budget and nesting limit
               seed_remaining_bytes: nil,
               seed_max_include_depth: nil,

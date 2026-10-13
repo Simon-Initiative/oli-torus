@@ -75,7 +75,7 @@ defmodule Oli.Scenarios.OliTorusGettingStartedCourseScenarioTest do
       Scenarios.execute_file(scenario_path,
         author: author,
         ownership: true,
-        preview_demo_account: defaults
+        preview_account_defaults: defaults
       )
 
     assert result.errors == []

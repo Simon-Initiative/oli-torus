@@ -93,16 +93,16 @@ defmodule Oli.Scenarios.DemoAccountsTest do
     assert length(hashes) == 4
     assert Enum.all?(hashes, &is_binary/1)
     assert length(Enum.uniq(hashes)) == length(hashes)
-    assert result.state.preview_demo_account.password == nil
-    assert result.state.preview_demo_account.password_hash == nil
+    refute Map.has_key?(result.state.preview_account_defaults, :password)
+    refute Map.has_key?(result.state.preview_account_defaults, :password_hash)
     refute inspect(result) =~ @password
   end
 
   test "absent preview password preserves legacy credentials and confirms generated emails" do
     for value <- [nil, ""] do
       defaults = DemoAccounts.build(true, value)
-      refute defaults.independent_learner
-      assert defaults.password_hash == nil
+      refute defaults.password_configured?
+      refute Map.has_key?(defaults, :password_hash)
       assert defaults.email_confirmed_at
     end
 
@@ -141,7 +141,7 @@ defmodule Oli.Scenarios.DemoAccountsTest do
     on_exit(fn -> File.rm(path) end)
     result = SeedExecution.execute_file(path)
     assert result.errors == []
-    assert result.state.preview_demo_account == nil
+    assert result.state.preview_account_defaults == nil
     assert result.state.users["credential_test_learner_1"].password_hash == nil
     assert result.state.users["credential_test_learner_1"].email_confirmed_at == nil
 
@@ -170,7 +170,7 @@ defmodule Oli.Scenarios.DemoAccountsTest do
             learners: 1
         """,
         state: result.state,
-        preview_demo_account: DemoAccounts.build(true, @password)
+        preview_account_defaults: DemoAccounts.build(true, @password)
       )
 
     assert repeated.errors == []
@@ -204,7 +204,7 @@ defmodule Oli.Scenarios.DemoAccountsTest do
                 family_name: Instructor
             """,
             state: result.state,
-            preview_demo_account: DemoAccounts.build(true, new_password)
+            preview_account_defaults: DemoAccounts.build(true, new_password)
           )
 
         assert [_] = collision.errors
@@ -229,7 +229,7 @@ defmodule Oli.Scenarios.DemoAccountsTest do
   end
 
   defp execute(defaults) do
-    result = Scenarios.execute_yaml(@yaml, ownership: true, preview_demo_account: defaults)
+    result = Scenarios.execute_yaml(@yaml, ownership: true, preview_account_defaults: defaults)
     assert result.errors == []
     assert Enum.all?(result.verifications, & &1.passed)
     result

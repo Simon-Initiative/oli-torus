@@ -9,7 +9,11 @@ defmodule Oli.Scenarios.Directives.BulkCreateEnrollUsersHandler do
   def handle(%BulkCreateEnrollUsersDirective{} = directive, state) do
     with section when not is_nil(section) <- Engine.get_section(state, directive.section),
          {:ok, users, result} <-
-           BulkCreateEnrollUsers.create_and_enroll(section, directive, state.preview_demo_account) do
+           BulkCreateEnrollUsers.create_and_enroll(
+             section,
+             directive,
+             state.preview_account_defaults
+           ) do
       {:ok,
        state
        |> Map.update!(:users, &Map.merge(&1, users))
