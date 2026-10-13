@@ -51,6 +51,13 @@ defmodule Oli.Scenarios.DemoAccountsTest do
       learners: 1
   """
 
+  setup do
+    previous = System.get_env("PREVIEW_DEMO_USER_PASSWORD")
+    System.put_env("PREVIEW_DEMO_USER_PASSWORD", @password)
+    on_exit(fn -> restore_env(previous) end)
+    :ok
+  end
+
   test "new author, instructor and bulk accounts can use the normal login endpoints" do
     result = execute(DemoAccounts.build(true, @password))
 
@@ -82,12 +89,19 @@ defmodule Oli.Scenarios.DemoAccountsTest do
       end
     end
 
+    hashes = Enum.map(result.state.users, fn {_, account} -> account.password_hash end)
+    assert length(hashes) == 4
+    assert Enum.all?(hashes, &is_binary/1)
+    assert length(Enum.uniq(hashes)) == length(hashes)
+    assert result.state.preview_demo_account.password == nil
+    assert result.state.preview_demo_account.password_hash == nil
     refute inspect(result) =~ @password
   end
 
   test "absent preview password preserves legacy credentials and confirms generated emails" do
     for value <- [nil, ""] do
       defaults = DemoAccounts.build(true, value)
+      refute defaults.independent_learner
       assert defaults.password_hash == nil
       assert defaults.email_confirmed_at
     end
@@ -100,6 +114,7 @@ defmodule Oli.Scenarios.DemoAccountsTest do
            )
 
     assert User.valid_password?(result.state.users["demo_instructor"], "temporarypassword123")
+    assert result.state.users["demo_instructor"].independent_learner
 
     for name <- ~w(credential_test_instructor_1 credential_test_learner_1) do
       user = result.state.users[name]
@@ -174,6 +189,7 @@ defmodule Oli.Scenarios.DemoAccountsTest do
     result = execute(DemoAccounts.build(true, @password))
     original = result.state.users["demo_instructor"]
     new_password = "another-preview-password"
+    System.put_env("PREVIEW_DEMO_USER_PASSWORD", new_password)
 
     log =
       capture_log(fn ->

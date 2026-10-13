@@ -118,8 +118,8 @@ defmodule Oli.Scenarios.Engine do
   Executes a list of directives sequentially, maintaining state throughout.
   Returns an ExecutionResult with final state and any verification results.
 
-  Seed execution may supply `:preview_demo_account`, a redacted account struct
-  containing creation-only defaults. Ordinary scenario callers omit this option.
+  Seed execution may supply `:preview_demo_account`, an account struct containing
+  creation-only confirmation and login flags without credentials. Ordinary scenario callers omit this option.
   """
   def execute(directives, opts \\ []) when is_list(directives) do
     previous_time_override = Oli.DateTime.get_override()

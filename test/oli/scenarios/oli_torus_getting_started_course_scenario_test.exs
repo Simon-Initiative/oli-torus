@@ -57,6 +57,16 @@ defmodule Oli.Scenarios.OliTorusGettingStartedCourseScenarioTest do
     on_exit(fn -> Application.put_env(:oli, :preview_qa_tools, previous_config) end)
 
     password = "preview-test-#{System.unique_integer([:positive])}"
+    previous_password = System.get_env("PREVIEW_DEMO_USER_PASSWORD")
+    System.put_env("PREVIEW_DEMO_USER_PASSWORD", password)
+
+    on_exit(fn ->
+      case previous_password do
+        nil -> System.delete_env("PREVIEW_DEMO_USER_PASSWORD")
+        value -> System.put_env("PREVIEW_DEMO_USER_PASSWORD", value)
+      end
+    end)
+
     defaults = Oli.Scenarios.DemoAccounts.build(true, password)
 
     result =

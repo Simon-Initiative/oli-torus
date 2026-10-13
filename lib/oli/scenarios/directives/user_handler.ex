@@ -92,8 +92,8 @@ defmodule Oli.Scenarios.Directives.UserHandler do
   end
 
   defp create_author(attrs) do
-    password = attrs[:password] || @default_password
     defaults = attrs[:preview_demo_account]
+    password = DemoAccounts.password(defaults, attrs[:password] || @default_password)
     system_role = attrs[:system_role] || :author
     email_verified = Map.get(attrs, :email_verified, true)
 
@@ -109,23 +109,15 @@ defmodule Oli.Scenarios.Directives.UserHandler do
       |> Map.get(system_role) ||
         raise("Invalid system_role #{inspect(system_role)} for author directive")
 
-    registration =
-      case defaults do
-        %User{password_hash: hash} when is_binary(hash) ->
-          Ecto.Changeset.change(%Author{})
-
-        _ ->
-          Author.registration_changeset(%Author{}, %{
-            email: attrs.email,
-            given_name: attrs.given_name,
-            family_name: attrs.family_name,
-            password: password,
-            password_confirmation: password
-          })
-      end
-
     {:ok, %Author{} = author} =
-      registration
+      %Author{}
+      |> Author.registration_changeset(%{
+        email: attrs.email,
+        given_name: attrs.given_name,
+        family_name: attrs.family_name,
+        password: password,
+        password_confirmation: password
+      })
       |> Author.noauth_changeset(%{
         email: attrs.email,
         given_name: attrs.given_name,
@@ -153,12 +145,12 @@ defmodule Oli.Scenarios.Directives.UserHandler do
       end
 
     credentials =
-      case defaults do
-        %User{password_hash: hash} when is_binary(hash) ->
-          Ecto.Changeset.change(%User{independent_learner: true})
-
-        _ ->
+      case DemoAccounts.password(defaults) do
+        nil ->
           %User{} |> Ecto.Changeset.cast(%{password: password}, [:password]) |> hash_password()
+
+        preview_password ->
+          User.password_changeset(%User{independent_learner: true}, %{password: preview_password})
       end
 
     {:ok, user} =
