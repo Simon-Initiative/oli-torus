@@ -750,8 +750,8 @@
     name: "author1"
     type: "author"
     email: "author1@example.edu"
-    given_name: "Demo"
-    family_name: "Author1"
+    given_name: "Author"
+    family_name: "One"
     email_verified: true
 
 - collaborator:
@@ -762,8 +762,8 @@
     name: "instructor1"
     type: "instructor"
     email: "instructor1@example.edu"
-    given_name: "Demo"
-    family_name: "Instructor1"
+    given_name: "Instructor"
+    family_name: "One"
     email_verified: true
 
 - enroll:
@@ -775,8 +775,8 @@
     name: "student1"
     type: "student"
     email: "student1@example.edu"
-    given_name: "Demo"
-    family_name: "Student1"
+    given_name: "Student"
+    family_name: "One"
     email_verified: true
 
 - enroll:
@@ -788,8 +788,8 @@
     name: "student2"
     type: "student"
     email: "student2@example.edu"
-    given_name: "Demo"
-    family_name: "Student2"
+    given_name: "Student"
+    family_name: "Two"
     email_verified: true
 
 - enroll:
@@ -801,8 +801,8 @@
     name: "student3"
     type: "student"
     email: "student3@example.edu"
-    given_name: "Demo"
-    family_name: "Student3"
+    given_name: "Student"
+    family_name: "Three"
     email_verified: true
 
 - enroll:
