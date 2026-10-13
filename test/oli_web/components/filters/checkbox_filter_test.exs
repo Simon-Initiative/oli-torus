@@ -51,9 +51,9 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
   end
 
   @options [
-    %{id: 1, label: "Alvarez, Ana"},
-    %{id: 2, label: "Bermudez, Bea"},
-    %{id: 3, label: "Cruz, Cata"}
+    %{id: 1, label: "Adams, Amy"},
+    %{id: 2, label: "Baker, Beth"},
+    %{id: 3, label: "Clark, Cleo"}
   ]
 
   defp mount_filter(conn, selected, searchable \\ true, max_selected \\ nil) do
@@ -162,14 +162,14 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
 
     render_change(form(view), %{
       "_target" => ["query"],
-      "query" => "bea",
+      "query" => "bet",
       "selected" => ["1", "2"]
     })
 
-    assert view |> element("#student-filter-search") |> render() =~ ~s(value="bea")
+    assert view |> element("#student-filter-search") |> render() =~ ~s(value="bet")
 
-    render_submit(form(view), %{"query" => "cru", "selected" => ["1", "3"]})
-    assert view |> element("#student-filter-search") |> render() =~ ~s(value="cru")
+    render_submit(form(view), %{"query" => "cla", "selected" => ["1", "3"]})
+    assert view |> element("#student-filter-search") |> render() =~ ~s(value="cla")
 
     assert open?(view)
     assert checked(view) == ["1"]
@@ -180,9 +180,9 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
        %{conn: conn} do
     view = mount_filter(conn, [])
     open(view)
-    render_change(form(view), %{"_target" => ["query"], "query" => "bea"})
+    render_change(form(view), %{"_target" => ["query"], "query" => "bet"})
     view |> element("#student-filter") |> render_keydown(%{"key" => "Escape"})
-    render_change(form(view), %{"_target" => ["query"], "query" => "cru"})
+    render_change(form(view), %{"_target" => ["query"], "query" => "cla"})
 
     open(view)
 
@@ -194,16 +194,16 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     view = mount_filter(conn, [2])
     open(view)
 
-    render_change(form(view), %{"_target" => ["query"], "query" => "ALV", "selected" => ["2"]})
+    render_change(form(view), %{"_target" => ["query"], "query" => "ADA", "selected" => ["2"]})
 
     assert view |> element("#student-filter-option-1") |> render() =~ ~r/^<div(?![^>]*hidden)/
     assert view |> element("#student-filter-option-2") |> render() =~ ~r/^<div[^>]*hidden/
     assert view |> element("#student-filter-option-3") |> render() =~ ~r/^<div[^>]*hidden/
     assert checked(view) == ["2"]
 
-    change(view, %{"query" => "ALV", "selected" => ["1", "2"]})
+    change(view, %{"query" => "ADA", "selected" => ["1", "2"]})
     assert_receive {:applied, :user_ids, [1, 2]}
-    assert view |> element("#student-filter-search") |> render() =~ ~s(value="ALV")
+    assert view |> element("#student-filter-search") |> render() =~ ~s(value="ADA")
   end
 
   test "the boxes show the parent's values, open or closed", %{conn: conn} do
@@ -243,7 +243,7 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     view = mount_filter(conn, [])
     open(view)
 
-    for forged <- [%{"x" => "y"}, ["Ana"]] do
+    for forged <- [%{"x" => "y"}, ["Amy"]] do
       render_change(form(view), %{"_target" => ["query"], "query" => forged})
 
       assert open?(view)
@@ -270,11 +270,11 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     {:noreply, recovered} =
       CheckboxFilter.handle_event(
         "recover",
-        %{"open" => "true", "query" => "bea", "selected" => ["2"]},
+        %{"open" => "true", "query" => "bet", "selected" => ["2"]},
         closed
       )
 
-    assert %{open: true, query: "bea", selected_ids: [1]} = recovered.assigns
+    assert %{open: true, query: "bet", selected_ids: [1]} = recovered.assigns
     refute_received {:filter_applied, _, _}
 
     {:noreply, still_closed} =
@@ -305,7 +305,7 @@ defmodule OliWeb.Components.Filters.CheckboxFilterTest do
     render_change(form(view), %{
       "_target" => ["query"],
       "open" => "true",
-      "query" => "bea",
+      "query" => "bet",
       "selected" => ["2"]
     })
 

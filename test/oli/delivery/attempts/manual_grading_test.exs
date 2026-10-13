@@ -402,8 +402,8 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       map =
         Seeder.base_project_with_resource2()
         |> Seeder.create_section()
-        |> Seeder.add_user(%{family_name: "Tied", given_name: "Ana"}, :user1)
-        |> Seeder.add_user(%{family_name: "Tied", given_name: "Bea"}, :user2)
+        |> Seeder.add_user(%{family_name: "Tied", given_name: "Amy"}, :user1)
+        |> Seeder.add_user(%{family_name: "Tied", given_name: "Beth"}, :user2)
         |> Seeder.add_activity(%{title: "Same activity"}, :publication, :project, :author, :act_a)
         |> Seeder.add_activity(%{title: "Same activity"}, :publication, :project, :author, :act_b)
         |> Seeder.create_section_resources()

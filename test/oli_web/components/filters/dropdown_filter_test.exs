@@ -6,9 +6,9 @@ defmodule OliWeb.Components.Filters.DropdownFilterTest do
   alias OliWeb.Components.Filters.DropdownFilter
 
   @options [
-    %{id: 1, label: "Alvarez, Ana"},
-    %{id: 2, label: "Bermudez, Bea"},
-    %{id: 3, label: "Cruz, Cata"}
+    %{id: 1, label: "Adams, Amy"},
+    %{id: 2, label: "Baker, Beth"},
+    %{id: 3, label: "Clark, Cleo"}
   ]
 
   defp doc(fun, assigns), do: fun |> render_component(assigns) |> Floki.parse_document!()
@@ -91,7 +91,7 @@ defmodule OliWeb.Components.Filters.DropdownFilterTest do
 
       assert Floki.attribute(list, ~s(input[value="2"]), "checked") != []
       assert Floki.attribute(list, ~s(input[value="1"]), "checked") == []
-      assert Floki.text(list) =~ "Alvarez, Ana"
+      assert Floki.text(list) =~ "Adams, Amy"
     end
 
     test "options outside the search are hidden, not removed, so a checked one stays in the form" do

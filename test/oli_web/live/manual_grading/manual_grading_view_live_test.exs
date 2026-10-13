@@ -34,9 +34,9 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
     map =
       Seeder.base_project_with_resource2()
       |> Seeder.create_section()
-      |> Seeder.add_user(%{family_name: "Alvarez", given_name: "Ana"}, :user_a)
-      |> Seeder.add_user(%{family_name: "Bermudez", given_name: "Bea"}, :user_b)
-      |> Seeder.add_user(%{family_name: "Castro", given_name: "Cara"}, :user_c)
+      |> Seeder.add_user(%{family_name: "Adams", given_name: "Amy"}, :user_a)
+      |> Seeder.add_user(%{family_name: "Baker", given_name: "Beth"}, :user_b)
+      |> Seeder.add_user(%{family_name: "Carter", given_name: "Cora"}, :user_c)
       |> Seeder.add_activity(%{title: "Essay one"}, :publication, :project, :author, :act_1)
       |> Seeder.add_activity(%{title: "Essay two"}, :publication, :project, :author, :act_2)
       |> Seeder.create_section_resources()
@@ -91,7 +91,7 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       {:ok, _fresh, fresh_html} = live(ctx.conn, ctx.route)
       default_order = row_students(fresh_html)
 
-      assert by_student == ["Alvarez, Ana", "Alvarez, Ana", "Bermudez, Bea"]
+      assert by_student == ["Adams, Amy", "Adams, Amy", "Baker, Beth"]
       refute default_order == by_student
 
       assert row_students(render_patch(view, ctx.route)) == default_order
@@ -157,7 +157,7 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       {:ok, _view, html} = live(ctx.conn, ctx.route <> "?selected_user_ids=[#{ctx.user_a.id}]")
       assert html =~ "Showing 2 of 3 submissions"
 
-      {:ok, _view, html} = live(ctx.conn, ctx.route <> "?text_search=Bermudez")
+      {:ok, _view, html} = live(ctx.conn, ctx.route <> "?text_search=Baker")
       assert html =~ "Showing 1 of 3 submissions"
     end
 
@@ -167,14 +167,14 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
         live(
           ctx.conn,
           ctx.route <>
-            "?text_search=Alvarez&selected_user_ids=[#{ctx.user_a.id}]" <>
+            "?text_search=Adams&selected_user_ids=[#{ctx.user_a.id}]" <>
             "&selected_activity_ids=[#{ctx.act_1.resource.id},#{ctx.act_2.resource.id}]" <>
             "&selected_page_ids=[#{ctx.page1.id}]&graded=false&sort_by=user&sort_order=asc&offset=1"
         )
 
-      # two of Ana's rows match; offset 1 shows the second one only
+      # two of Amy's rows match; offset 1 shows the second one only
       assert row_students(html) == [Utils.name(ctx.user_a)]
-      assert search_value(html) == ["Alvarez"]
+      assert search_value(html) == ["Adams"]
 
       view |> element("button", "Clear All Filters") |> render_click()
       path = assert_patch(view)
@@ -213,9 +213,9 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
     end
 
     test "the search input shows the applied search from the URL", ctx do
-      {:ok, _view, html} = live(ctx.conn, ctx.route <> "?text_search=Bermudez")
+      {:ok, _view, html} = live(ctx.conn, ctx.route <> "?text_search=Baker")
 
-      assert search_value(html) == ["Bermudez"]
+      assert search_value(html) == ["Baker"]
       assert row_students(html) == [Utils.name(ctx.user_b)]
     end
 
@@ -307,7 +307,7 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
     test "options are listed alphabetically, not in the order the values were created", ctx do
       later =
         ctx
-        |> Seeder.add_user(%{family_name: "Aguilar", given_name: "Al"}, :user_d)
+        |> Seeder.add_user(%{family_name: "Abbott", given_name: "Al"}, :user_d)
         |> Seeder.create_resource_attempt(
           %{attempt_number: 1},
           :user_d,
@@ -462,7 +462,7 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
 
     test "the student name is a full-navigation link to the scoring page, carrying the table params, with an accessible name",
          ctx do
-      params = "?selected_user_ids=[#{ctx.user_a.id}]&sort_by=user&sort_order=asc&text_search=Alv"
+      params = "?selected_user_ids=[#{ctx.user_a.id}]&sort_by=user&sort_order=asc&text_search=Ada"
       {:ok, _view, html} = live(ctx.conn, ctx.route <> params)
       d = Floki.parse_document!(html)
 
@@ -478,7 +478,7 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
                "selected_user_ids" => "[#{ctx.user_a.id}]",
                "sort_by" => "user",
                "sort_order" => "asc",
-               "text_search" => "Alv"
+               "text_search" => "Ada"
              }
 
       assert Floki.attribute(link, "aria-label") == [
@@ -500,7 +500,7 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
     end
 
     test "an offset past the end of the queue moves to the last page that exists", ctx do
-      # Ana's filtered queue has 13 rows (last page at 10); the whole section has 23 (it would be 20).
+      # Amy's filtered queue has 13 rows (last page at 10); the whole section has 23 (it would be 20).
       Enum.each(1..11, fn _ -> add_attempt(ctx, :ra_a, :act_1, :extra, :submitted) end)
       Enum.each(1..9, fn _ -> add_attempt(ctx, :ra_b, :act_1, :extra, :submitted) end)
 
