@@ -6,14 +6,23 @@ defmodule OliWeb.Components.AnalyticsTest do
   alias OliWeb.Components.Analytics
 
   setup do
-    original = Application.get_env(:oli, :analytics)
-    on_exit(fn -> Application.put_env(:oli, :analytics, original) end)
+    original = Application.fetch_env(:oli, :analytics)
+
+    on_exit(fn ->
+      case original do
+        :error -> Application.delete_env(:oli, :analytics)
+        {:ok, value} -> Application.put_env(:oli, :analytics, value)
+      end
+    end)
+
     conn = Phoenix.ConnTest.build_conn(:get, "/users/reset_password/private-token?secret=private")
     {:ok, conn: Plug.Conn.put_private(conn, :phoenix_endpoint, OliWeb.Endpoint)}
   end
 
   test "disabled renders no script", %{conn: conn} do
     Application.put_env(:oli, :analytics, gtm_container_id: nil)
+    # A disabled installation does not need a resolvable request path.
+    conn = %{conn | request_path: nil}
     assert render_component(&Analytics.gtm_head/1, conn: conn) |> String.trim() == ""
   end
 
