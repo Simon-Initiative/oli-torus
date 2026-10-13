@@ -99,28 +99,27 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
 - Dependencies: G1 and G2.
 - Parallelizable Work: Phase 4 runner configuration and Phase 5 static GitOps preparation; live provisioning verification waits for this release.
 
-## Phase 4: Nightly runner configuration, dependencies and diagnostics
+## Phase 4: Minimal nightly runner configuration
 
-- Goal: Execute tags directly with explicit integration configuration and useful, private reports.
+- Goal: Run the existing tagged tests directly with working dependencies and standard reports.
 - Coverage: FR-008, FR-009, FR-010 — AC-021, AC-022, AC-023, AC-024, AC-030, AC-031, AC-026, AC-027, AC-028.
+- Scope adjustment: The user requested the smallest changes necessary to run nightly automation. Resources and credentials are exercised by the tests themselves; no nightly flag, added configuration/target checks, asset preflight, parameter freezing, custom reporting or additional integration framework. Existing tests, including their pre-existing skip checks, remain unchanged.
 - Tasks:
-  - [ ] Declare `json-rules-engine` directly in automation and regenerate `package-lock.json` through npm. Recheck product `assets/yarn.lock` and align resolved versions (6.1.2 at discovery).
-  - [ ] Add `playwright.nightly.config.ts` extending shared settings with line plus HTML (`open: never`) reporters, Chrome, one worker, one retry and traces disabled, preserving Dot trace-off behavior. Disable any other attachments demonstrated to contain secrets.
-  - [ ] Audit the eight adaptive cases' tags once and retain current Canvas/Dot inclusion. Use source tags alone: no manifest, separate `--list` step, custom results validator or blanket skip-failure rule.
-  - [ ] Implement nightly required-configuration checks at the relevant runner/setup boundary. Require exact nightly origins, scenario and automation API credentials; validate authenticated access/formats for the eight archives and seven answer files documented in adaptive setup. Missing selected-test inputs fail setup, preserving optional local behavior.
-  - [ ] Require explicit Canvas account/API/instructor/tool/launch configuration and dedicated Torus admin credentials with matching Torus origin. Require Dot's protected parameter URL, validate its target and existing-fixture mode, freeze the document in restricted runner temporary storage and consume that same file without a second download.
-  - [ ] Delete secret parameter/private download files after use; upload only explicit diagnostic paths. Retain run-specific fixture identities and visible bounded cleanup warnings.
-  - [ ] Update `assets/automation/tests/resources/nightly-ci.md` and adaptive setup documentation with configuration ownership, tag selection, asset/answer-key maintenance together and unchanged during active runs, report access and cleanup policy.
+  - [x] Declare `json-rules-engine` directly, aligned with product resolution 6.1.2, and regenerate the npm lockfile.
+  - [x] Extend the shared Playwright config with line and HTML (`open: never`) reporting and disabled trace/screenshots/video. Inherit Chrome, one worker and one retry.
+  - [x] Preserve all source tags and existing test behavior, including missing-key skip checks.
+  - [x] Document invocation and integration configuration; retain existing loaders, requests and fixture cleanup.
 - Testing Tasks:
-  - [ ] From a clean temporary checkout without parent `assets/node_modules`, run `npm ci` and verify engine parity/import success through direct execution. Prove import errors, zero matches and missing required inputs fail; temporarily tag a fixture test to demonstrate selection without changing another inventory.
-  - [ ] Exercise wrong Canvas/Dot origin, missing asset/authentication and changed remote Dot configuration after freezing; ensure failure messages identify the consumer/key without secret content.
-  - [ ] Verify reports identify spec/title/project, failures/skips/retries and correct output directories; inspect representative files for tokens, captured emails and private content.
-  - Commands from `assets/automation/`: `npm ci`, `npx playwright install --with-deps chrome`, `npx playwright test --config playwright.nightly.config.ts --grep @nightly`. Use isolated fixtures for negative cases and the provisioned target for final full-suite evidence in Phase 7.
+  - [x] Verify dependency parity and import/selection from an isolated `npm ci` installation without parent product dependencies.
+  - [x] Exercise direct success/failure, existing missing-key skips, and zero matching tests; verify standard reports are generated.
+  - [x] Run targeted existing tests, formatting/lint checks, required review and work-item validation.
+  - Commands from `assets/automation/`: `npm ci`, `npx playwright install --with-deps chrome`, `npx playwright test --config playwright.nightly.config.ts --grep @nightly`. Full provisioned execution remains Phase 7 evidence.
 - Definition of Done:
-  - Direct invocation and setup failures are verified; dependency isolation, target rules, secret handling and standard reporting are covered without a second suite-membership source.
-- Gate: G4 — runner is ready to integrate; provisioned Canvas/Dot and full nightly execution remain launch gates.
-- Dependencies: G2 for shared captcha behavior; G3 for release-based asset/mailbox verification. Dependency/configuration development may start earlier.
-- Parallelizable Work: Runner dependencies/reporters can proceed alongside Phases 1–3; integrate captcha context setup with Phase 2.
+  - Direct tag execution, normal failure behavior, dependency isolation and standard reporting are verified. No separate suite inventory or resource validation layer.
+- Evidence: `docs/exec-plans/current/nightly-playwright-ci/phase-4-execution.md`.
+- Gate: G4 — minimal runner is ready for workflow integration; live integrations, report access/privacy inspection and full-suite execution remain launch gates.
+- Dependencies: G2 for shared captcha behavior; G3 for release-based asset/mailbox verification.
+- Parallelizable Work: Runner dependency/configuration work can proceed independently of target provisioning.
 
 ## Phase 5: GitOps update contract and target provisioning
 
@@ -205,7 +204,7 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
 | G1 | Probe/lifecycle tests and consumer inventory | PR readiness integration and release checks |
 | G2 | Shared environment, secure helpers and unchanged full PR coverage | Shared release packaging |
 | G3 | Real release fixture/mailbox smoke tests and production/cache isolation | Deployment activation and publication |
-| G4 | Clean dependency install, direct selection, configuration/privacy/report checks | Nightly execution integration |
+| G4 | Clean dependency install, direct selection, normal failure behavior and standard reports | Nightly execution integration |
 | G5 | Reviewed GitOps contract/manifests, live provisioning and permission checks | Accepted automated deployment updates |
 | G6 | Ordered workflow and negative/finalization tests | Manual end-to-end launch validation |
 | G7 | Manual and scheduled proof, operational failures/durability, reviews and runbook | Complete implementation and unattended operation |
