@@ -14,9 +14,11 @@ requirements:
     verification_method: hybrid
     proofs: []
   - id: AC-002
-    title: Each run resolves its source commit once, records the expected application version
-      and full commit SHA, and uses that same commit for image construction and Playwright
-      checkout even if master advances during the run.
+    title: Scheduled runs select current master once after acquiring the target lock; manual
+      runs use the exact commit selected by dispatch for the chosen branch, retaining that
+      commit on reruns. Each run records its source ref, expected application version and
+      full commit SHA, and uses that same commit for image construction, deployment and
+      Playwright checkout even if the selected branch advances during the run.
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -129,15 +131,15 @@ requirements:
     verification_method: hybrid
     proofs: []
 - id: FR-003
-  title: Publish an attributable immutable nightly image before changing deployment intent
+  title: Publish an attributable nightly image before changing deployment intent
   status: proposed
   acceptance_criteria:
   - id: AC-007
-    title: A successful build publishes an immutable image tagged
+    title: A successful build publishes an image tagged
       sha-<full SHA>-playwright-<run ID>-<attempt>, distinct from standard production images,
-      and records its registry digest, source version, and full commit SHA;
-      an existing tag causes publication to fail before GitOps is changed and is never overwritten
-      or reused for the run.
+      and records its registry digest, source version, and full commit SHA. Tags are unique
+      per run attempt; publication uses normal registry push behavior without an existing-tag
+      preflight check or enforced tag immutability.
     status: proposed
     verification_method: automated
     proofs: []

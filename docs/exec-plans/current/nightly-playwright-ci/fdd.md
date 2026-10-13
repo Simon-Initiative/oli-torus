@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-Extend `.github/workflows/nightly-playwright.yml` with a serialized build-to-test job for the durable target at `https://nightly-playwright.plasma.oli.cmu.edu`. Resolve one master commit, build a dedicated `MIX_ENV=playwright` release, publish a unique GHCR tag, update the reviewed GitOps deployment record, wait for the public application version/SHA, and execute Playwright from the same checkout. Argo CD remains the deployment actor. Migrate the PR workflow from `ci_e2e` to the same `playwright` Mix environment, preserving its triggers, source selection and test coverage. Preserve the independent backend scenario job.
+Extend `.github/workflows/nightly-playwright.yml` with a serialized build → Plasma deployment → browser test job chain for the durable target at `https://nightly-playwright.plasma.oli.cmu.edu`. Select one source commit (master for scheduled runs, the dispatch commit for manual runs), build a dedicated `MIX_ENV=playwright` release, publish a unique GHCR tag, update the reviewed GitOps deployment record, wait for the public application version/SHA, and execute Playwright from the same source SHA. Argo CD remains the deployment actor. Migrate the PR workflow from `ci_e2e` to the same `playwright` Mix environment, preserving its triggers, source selection and test coverage. Preserve the independent backend scenario job.
 
 Split probes by purpose: `/healthz` serves dependency-free startup/liveness, and `/readyz` checks application readiness and returns compiled `version`/`sha` only in Playwright builds. Include startup completion, draining and reviewed GitOps probe/lifecycle changes in this work. CI’s pre-test `/readyz` check observes the expected public source identity; it does not establish replica convergence or distinguish same-source rebuilds.
 
@@ -14,9 +14,9 @@ The GitOps update path uses validated bot PRs with automatic merge after require
 
 | Requirement | Acceptance criteria | Design responsibility |
 | --- | --- | --- |
-| FR-001 | AC-001, AC-002, AC-003 | Ordered stages, fixed master SHA, existing workflow isolation (§4, §13) |
+| FR-001 | AC-001, AC-002, AC-003 | Ordered stages, fixed selected source SHA, existing workflow isolation (§4, §13) |
 | FR-002 | AC-004, AC-005, AC-006, AC-032, AC-033, AC-034, AC-035, AC-036, AC-037, AC-038 | Shared PR/nightly compile environment, direct application settings, mailbox access, PR migration and runtime-only secrets (§4–6, §8, §12–14) |
-| FR-003 | AC-007, AC-008 | Unique immutable tag, digest provenance, publish-before-update (§4–5) |
+| FR-003 | AC-007, AC-008 | Unique tag per attempt, digest provenance, publish-before-update (§4–5) |
 | FR-004 | AC-009, AC-010, AC-011 | Narrow record change, validated branch acceptance, Argo CD ownership (§5, §7) |
 | FR-005 | AC-012, AC-013, AC-014, AC-039, AC-040, AC-041, AC-042 | Separate probes, startup/drain state, bounded database readiness, metadata and GitOps configuration (§4–5, §9–14) |
 | FR-006 | AC-015, AC-016, AC-017, AC-018 | Public HTTPS identity polling with bounded failures and precise claims (§5, §10–11) |
@@ -27,7 +27,7 @@ The GitOps update path uses validated bot PRs with automatic merge after require
 
 Assumptions and scope:
 
-- Keep the daily `17 5 * * *` schedule and manual dispatch. Both nightly entry points resolve `refs/heads/master` once after obtaining the target lock. Manual dispatch is restricted to the protected master workflow; arbitrary branch/SHA deployments are outside initial scope. Record the workflow SHA separately if it differs from the selected source SHA.
+- Keep the daily `17 5 * * *` schedule and manual dispatch. Scheduled runs resolve `refs/heads/master` once after obtaining the target lock. Manual runs check out `${{ github.sha }}` from the selected dispatch branch/ref, never its moving tip. Build, deployment and browser jobs reuse this fixed commit. A manual rerun retains the original dispatch SHA; a new dispatch selects the branch again. Record the workflow SHA separately if it differs from the selected source SHA.
 - Both PR and nightly use `MIX_ENV=playwright`; their shared configuration directly enables scenarios and mailbox access. Both select a token-authorized captcha verifier at compile time; captcha and scenario/mailbox access require separate runtime secrets. PR continues to test its existing pull-request checkout with disposable services.
 - Use the existing GHCR repository `ghcr.io/simon-initiative/oli-torus` with a distinct Playwright image tag namespace; the GitOps record only accepts an image tag, not a different repository or digest field.
 - Include all currently tagged nightly tests in initial delivery, including Canvas LTI and Dot. Missing Canvas/Dot configuration blocks unattended launch. Provision Canvas to launch into the nightly Torus deployment and Dot with a dedicated fixture on that deployment; supply external URLs and credentials during provisioning.
@@ -60,14 +60,15 @@ The separately inspected `oli-torus-gitops` checkout contains `deployments/night
 
 ### 4.1 Component Roles & Interactions
 
-Keep one `nightly-playwright` job so a job-level concurrency lock covers every mutation and test. Leave `nightly-scenarios` independent; do not place the whole workflow behind the target lock. Use group `nightly-playwright-plasma`, independent of branch, with `cancel-in-progress: false`. Use the default pending policy: a newer pending run may replace an older pending run; active runs are not automatically canceled. This intentionally favors a recent regression run over an unbounded backlog. GitHub documents this behavior in [Concurrency](https://docs.github.com/en/actions/concepts/workflows-and-actions/concurrency).
+Use separate `build-playwright`, `deploy-plasma` and `nightly-playwright` jobs linked by `needs`. Build outputs carry the source ref, fixed source SHA/version, image tag/reference and digest. Deployment consumes that identity and succeeds only after the GitOps update is accepted and public readiness observes the expected version/SHA; browser execution needs both build and deployment and checks out the build's SHA. Scope package publication permissions to build and GitOps credentials to deployment.
+
+Use workflow-level concurrency group `nightly-playwright-plasma`, independent of branch, with `cancel-in-progress: false`, so the lock spans the entire job chain without gaps. Do not repeat that lock on individual jobs. `nightly-scenarios` retains its existing implementation and no dependency on the build/deploy/test chain; it runs in parallel within a run, while overlapping workflow runs queue together. This replaces the earlier single-job design at the user's request. Use the default pending policy: a newer pending run may replace an older pending run; active runs are not automatically canceled. GitHub documents this behavior in [Concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).
 
 Proposed implementation boundaries:
 
 | File or area | Responsibility |
 | --- | --- |
 | `.github/workflows/nightly-playwright.yml` | Trusted entry points, target lock, permissions, stage ordering, deadlines, artifact publication |
-| `scripts/ci/nightly_playwright.py` (new) | Small Python CLI for run metadata, target/record preflight, bounded public readiness, and sanitized stage summary; keep command functions testable, with focused tests under `scripts/ci/tests/` |
 | `.github/workflows/pr-playwright.yml` | Switch to shared compile environment and explicit runtime inputs; retain existing PR triggers, checkout, suite and disposable lifecycle |
 | `config/playwright.exs` (new), `config/runtime.exs`, `mix.exs`, `Dockerfile`, `lib/oli_web/endpoint.ex` | Shared compile-time settings, Mix environment selection, release-style assets and runtime configuration; delete `config/ci_e2e.exs` with no compatibility alias or fallback |
 | `assets/automation/src/core/captcha.ts`, `assets/automation/src/core/fixture/my-fixture.ts` | Configure runner-only token submission and Google script blocking; page objects retain normal form actions |
@@ -79,13 +80,13 @@ Proposed implementation boundaries:
 | GitOps updater/record checks in `oli-torus-gitops` | Content-preserving allowlisted update and policy-conforming merge; separate repository ownership |
 | GitOps application deployment manifests in `oli-torus-gitops` | Reviewed startup/liveness/readiness probe and shutdown-drain configuration, independently of recurring image updates |
 
-Use existing page objects for normal form submission. Python handles CI orchestration; Playwright handles selection, execution and reporting. No separate suite orchestration or results-validation helper is required.
+Use existing page objects for normal form submission. GitHub Actions steps own CI orchestration and bounded readiness checks; Playwright handles selection, execution and reporting. No separate suite orchestration or results-validation helper is required.
 
 ### 4.2 State & Data Flow
 
-1. **Resolve/preflight:** after acquiring the lock, resolve master to a full 40-character commit, checkout that exact revision, and record `Mix.Project.config()[:version]`. Reject non-master dispatch, wrong target configuration, missing CI inputs, disabled/wrongly targeted GitOps records, and unresolved prior bot updates before publishing or changing intent.
-2. **Install dependencies:** run clean `npm ci` in `assets/automation`. Dependency installation failure stops the run.
-3. **Build/publish:** build the release at the fixed checkout with `MIX_ENV=playwright` and `SHA=<full SHA>`, using the shared application settings from section 5. Verify build metadata matches expected version/SHA, then publish the unique tag and capture its digest. No GitOps mutation on failure.
+1. **Resolve/preflight:** after acquiring the lock, select current master for a scheduled run or the dispatch SHA for a manual run, check out that revision, and record its full 40-character SHA and `Mix.Project.config()[:version]`. Record `refs/heads/master` as the scheduled source ref and `github.ref` as the manual source ref. Reject wrong target configuration, missing CI inputs, disabled/wrongly targeted GitOps records, and unresolved prior bot updates before publishing or changing intent.
+2. **Validate runner dependencies:** run clean `npm ci` in `assets/automation` at the fixed source SHA during preflight. Each later job needing those dependencies installs its own copy; runner files do not cross job boundaries. Dependency installation failure stops the affected job and its dependents.
+3. **Build/publish:** build the release at the fixed checkout with `MIX_ENV=playwright` and `SHA=<full SHA>`, using the shared application settings from section 5. Supply the fixed SHA and source version as build inputs, then publish the unique tag and capture its digest. Release configuration is covered by focused tests and release smoke checks; no custom verifier runs in the Dockerfile. No GitOps mutation on failure.
 4. **Advance intent:** validate a narrow image/source diff, submit through the agreed GitOps path, wait for accepted branch state, and record the accepted GitOps commit. Re-read the tracked branch to verify the actual record values.
 5. **Readiness:** poll public `/readyz` until expected version/SHA is observed or deadline expires. Do not start tests on failure.
 6. **Target setup gate:** validate private asset access and selected integration configuration against the ready target. Requests use existing application authentication. Fetch required archives/answer keys into restricted runner temporary storage, validate expected formats without logging bodies, and delete them after checking. Course import/setup failures remain clearly identified fixture failures.
@@ -112,7 +113,7 @@ This workflow is the sole routine deployment writer. Operators pause new runs an
 - **Importing `dev.exs` into the shared environment:** supplies convenient local defaults but also debug settings and development credentials. Declare the needed CI settings explicitly.
 - **Production image with runtime-only test flags:** cannot enable compiled-out routes. A standalone `playwright` compile environment keeps production exclusions intact.
 - **Argo/Kubernetes rollout polling:** offers different rollout evidence but adds infrastructure credentials and exceeds the chosen public-readiness contract.
-- **Split deployment and test jobs:** would require a lock spanning jobs. One job gives a clear protected interval without another lock service.
+- **Separate job-level deployment and test locks:** leave a gap between jobs in which another run could update the target. Use one workflow-level lock spanning the build, deployment and test jobs.
 - **Direct bot commits:** not selected. Bot PRs retain required validation and visible deployment history. Do not fall back to direct writes when PR checks fail.
 
 ## 5. Interfaces
@@ -173,9 +174,9 @@ Tests use run-unique recipients and retrieve only the messages they created. Mai
 
 ### Nightly image publication
 
-Use tag `sha-<full SHA>-playwright-<run ID>-<attempt>` in the existing GHCR repository. Include source/version OCI labels and retain the published digest in provenance. A pre-existing tag is a collision: fail publication before changing GitOps intent. Never overwrite or reuse it for this run. Never publish nightly output to production tag names or `latest`. Build from a clean context before materializing runtime configuration; exclude automation dependencies, reports, downloaded assets and local secret files from the Docker context. Scope cache keys by Mix environment, toolchain, lockfiles, compile configuration and workflow trust boundary.
+Use tag `sha-<full SHA>-playwright-<run ID>-<attempt>` in the existing GHCR repository. Include source/version OCI labels and retain the published digest in provenance. Tags are unique per run attempt. Push directly using normal registry behavior; do not preflight tag existence or enforce tag immutability. If the tag already exists, publication may update it to the new image; record the digest returned by that push. Never publish nightly output to production tag names or `latest`. Build from a clean context before materializing runtime configuration; exclude automation dependencies, reports, downloaded assets and local secret files from the Docker context. Scope cache keys by Mix environment, toolchain, lockfiles, compile configuration and workflow trust boundary. The `build-playwright` job in `.github/workflows/nightly-playwright.yml` uses the same build-info, Docker metadata, login and build/push pattern as `package.yml` and exposes source/image identity through job outputs. Phase 6 adds the dependent Plasma deployment/readiness job before browser execution. Build metadata and publication stay in workflow steps; no Python build or metadata wrapper is required. `BUILD_SCOPE` separates Docker layer lineages. Playwright image builds require the full `SHA`; the workflow supplies `APP_VERSION` from the selected source for OCI metadata. There is no custom assembled-release verification step; production remains the default environment.
 
-Required adaptive/scenario logic lives in `lib/`; do not add `test/support` or preview seeding modules to `playwright` `elixirc_paths`. Existing support asset endpoints resolve paths from the source tree, which a final release does not retain. During implementation, verify every selected case's support-asset needs; package any required public fixtures under release `priv/` and resolve them via application paths, with existing local behavior retained. Private course archives remain exclusively in object storage. Initial delivery uses the existing configured archives and answer keys without a new asset-versioning mechanism. QA/test owners maintain these together and do not change them during active runs. Rerunning the same application commit may use updated assets; revisit version pinning if reproducing historical runs becomes necessary. A release smoke check must catch missing runtime files/modules rather than assuming compilation proves functionality.
+Required adaptive/scenario logic lives in `lib/`; do not add `test/support` or preview seeding modules to `playwright` `elixirc_paths`. The release fixture audit and runtime inputs are recorded in this design and `docs/exec-plans/current/nightly-playwright-ci/phase-3-execution.md`. The three existing public support endpoint fixtures are packaged under `priv/playwright` and resolved with `Application.app_dir/2`; source-tree symlinks preserve local consumers. Selected tags currently do not request these public fixtures directly. No additional automation files are packaged. Local release verification exercised the public endpoint contract as well as authenticated scenario, private-object and mailbox behavior. Private course archives remain exclusively in object storage. Initial delivery uses the existing configured archives and answer keys without a new asset-versioning mechanism. QA/test owners maintain these together and do not change them during active runs. Rerunning the same application commit may use updated assets; revisit version pinning if reproducing historical runs becomes necessary. A release smoke check must catch missing runtime files/modules rather than assuming compilation proves functionality.
 
 ### Probe contracts
 
@@ -235,7 +236,7 @@ Run this identity check before tests; do not repeat it after execution. Summary 
 
 For local engineering work, if the `oli-torus-gitops` checkout location is unknown, prompt the human engineer for its path before accessing the repository. Treat the supplied checkout path as session-only information: do not persist it in documentation, configuration, notes or other saved state. All documented GitOps file references must remain relative to the GitOps repository root. This local setup instruction does not add an interactive prompt to CI.
 
-All paths in this paragraph are relative to `oli-torus-gitops`. Preflight requires an existing `deployments/nightly-playwright.yml` with `app: oli-torus`, expected slug, `enabled: true`, `overlay: staging`, public access and exact nightly hostname. Call the updater with only `--record`, `--image-tag`, `--source-ref refs/heads/master`, and `--commit-sha`; never pass create, enable/disable, overlay, host or access-policy flags.
+All paths in this paragraph are relative to `oli-torus-gitops`. Preflight requires an existing `deployments/nightly-playwright.yml` with `app: oli-torus`, expected slug, `enabled: true`, `overlay: staging`, public access and exact nightly hostname. Call the updater with only `--record`, `--image-tag`, `--source-ref <selected source ref>`, and `--commit-sha`; never pass create, enable/disable, overlay, host or access-policy flags.
 
 Allowed semantic changes are exactly `imageTag`, `metadata.sourceRef`, and `metadata.commitSha`. Preserve other values and unrelated textual content/comments. The current `yaml.safe_dump` writer needs a content-preserving adjustment verified by fixture tests before use under AC-009. Run `scripts/validate_deployments.py`, `scripts/validate_gitops_policy.py` and the repository's required static renders/checks. Revalidate on branch conflicts; do not force-push the tracked branch.
 
@@ -267,7 +268,7 @@ Missing selected integration configuration is a setup failure. Freeze the valida
 
 No database migration or application schema change. Nightly releases run applicable migrations via the GitOps init container; persistent Postgres, MinIO and integration registrations survive image updates. Nightly CI never resets the database, deletes a namespace, or recreates shared credentials. PR CI continues to create, migrate and seed a disposable database that is destroyed with its runner.
 
-Transient run data lives on the runner: provenance, sanitized stage diagnostics, HTML reports and permitted test diagnostics/screenshots/traces. Upload only explicit allowlisted artifacts to the GitHub Actions workflow run with 14-day retention; remove downloaded private assets and secret parameter files. GHCR stores immutable images, and Git records deployment intent/provenance. Private asset contents are not new source-controlled data. Captured email is transient Swoosh memory, not part of the persistent nightly database/object-storage contract; each nightly application deployment starts with a fresh mailbox.
+Transient run data lives on the runner: provenance, sanitized stage diagnostics, HTML reports and permitted test diagnostics/screenshots/traces. Upload only explicit allowlisted artifacts to the GitHub Actions workflow run with 14-day retention; remove downloaded private assets and secret parameter files. GHCR stores images identified by immutable digests under mutable tags, and Git records deployment intent/provenance. Private asset contents are not new source-controlled data. Captured email is transient Swoosh memory, not part of the persistent nightly database/object-storage contract; each nightly application deployment starts with a fresh mailbox.
 
 ## 7. Consistency & Transactions
 
@@ -283,7 +284,7 @@ Use existing dependency/build caches keyed by lockfiles, toolchain, Mix environm
 
 These are design guidelines, not performance acceptance criteria. No benchmarking, custom timing instrumentation, enforced performance budgets or scalability measurements are required for initial delivery. Investigate and measure only if runtime, reliability or resource usage becomes a practical concern.
 
-Keep the initial execution model simple: one runner, one Chrome worker and the existing retry count. Consider tuning caches, concurrency or execution cadence only when needed; standard GitHub Actions timing information is available for diagnosis.
+Keep the initial execution model simple: one browser runner, one Chrome worker and the existing retry count. Consider tuning caches, concurrency or execution cadence only when needed; standard GitHub Actions timing information is available for diagnosis.
 
 The bounded requests, polling and job timeouts specified elsewhere remain failure-handling safeguards. Probe behavior and the database timeout remain correctness requirements; this section adds no performance measurement or enforcement gates.
 
@@ -292,7 +293,7 @@ The bounded requests, polling and job timeouts specified elsewhere remain failur
 | Failure | Required behavior |
 | --- | --- |
 | Missing selected-test configuration, zero matches or collection/import error | Fail setup or the test invocation; preserve its failure status through finalization. |
-| Build/push/collision | Fail publication; leave GitOps record unchanged. |
+| Build/push failure | Fail publication; leave GitOps record unchanged. |
 | Disabled/wrong target record | Fail preflight with expected field names/values; never repair lifecycle automatically. |
 | Validation/check/merge failure or deadline | Fail GitOps acceptance; settle the run-owned pending PR; do not test a previous deployment. |
 | Old identity, redirect, invalid JSON or network failure | Retry bounded readiness; fail when deadline expires. |
@@ -304,7 +305,7 @@ The bounded requests, polling and job timeouts specified elsewhere remain failur
 | Cleanup fails | Preserve warning and affected synthetic fixture identifiers for Torus maintainers; no rollback/reset. |
 | Cancellation/runner loss | No validated success; next run settles stale bot PRs and rechecks intent/configuration. Artifacts and cleanup are best-effort on hard termination. |
 
-Do not automatically retry full deployments or rerun the whole suite indefinitely. A manual rerun selects current master anew and records that selection; exact-source replay is not promised by initial manual policy.
+Do not automatically retry full deployments or rerun the whole suite indefinitely. A rerun of a manual run retains its original dispatch SHA; use a new dispatch to test the branch's latest commit. Scheduled builds resolve current master each time the build job runs. Source identity is fixed across each build/deploy/test chain, while external fixtures and services can change between runs.
 
 ## 11. Observability
 
@@ -316,9 +317,9 @@ Torus maintainers own failure triage. GitHub Actions failures, run summaries and
 
 ## 12. Security & Privacy
 
-- Run privileged orchestration only from protected master and the configured `nightly-ui` environment. Do not expose publish/GitOps credentials to PR or fork execution. Configure environment rules to support the approved unattended schedule.
+- Run privileged orchestration through scheduled or authorized manual dispatch in the configured `nightly-ui` environment. Environment branch rules must allow master and the repository branches intended for manual testing; verify those rules during provisioning. Manual branch selection executes that branch's workflow and application code with the environment's access, so only trusted repository branches are eligible. Do not expose publish/GitOps credentials to PR or fork execution. Keep the GitOps destination branch protected regardless of the selected application source branch. Both entry points deploy to the same durable target under the workflow-level lock.
 - Grant `contents: read` and `packages: write` only to the publishing job as needed; use a separately scoped GitHub App credential for GitOps. Obtain that credential only for record/PR operations and clear it before browser execution. Persist no checkout credentials in test artifacts.
-- Validate refs/URLs/record paths before passing them as separate subprocess arguments; never interpolate user-controlled text into shell source. Pin any newly introduced actions to reviewed immutable revisions.
+- Validate refs/URLs/record paths before passing them as separate subprocess arguments; never interpolate user-controlled text into shell source. Reference GitHub Actions using explicit version tags (for example, `actions/checkout@v5`), following the repository workflow convention.
 - Public ingress is intentional; protected scenario, login, mailbox and private-asset operations retain their current authentication. Automation import/teardown retains its existing dedicated API key checks. Keep production compile-time route exclusions and test them in a separate production build.
 - Both Playwright builds compile a captcha verifier requiring a separate private runtime token; account authentication and token-protected test APIs remain enforced. Production compile selection cannot be overridden at runtime. Keep mailbox credentials, captured messages and account links out of artifacts.
 - Readiness publishes status in every build and compiled version/SHA only in Playwright builds; liveness publishes only status. Probe failures return generic public bodies, with no raw database errors or local process details. The lifecycle drain API is local to the release and has no public HTTP mutation endpoint. Runtime secrets are supplied by deployment secrets; the server alone holds storage credentials. Do not log parameter YAML, API headers, login bodies or raw readiness responses.
@@ -344,7 +345,7 @@ This documentation change runs only design/traceability checks. Operational veri
 | Dependency/selection | Clean temporary checkout with no parent dependencies: `npm ci`, direct execution with the nightly config and `--grep @nightly`, and engine-version parity. Verify initial adaptive tags; exercise import/collection errors, zero matches, missing API key/asset and incorrect integration target. Confirm a newly tagged test is selected during execution without updating another list or running a separate collection step. |
 | Reports | Verify standard Playwright reports show test identities, outcomes, skips and retries. Verify HTML/report output paths, GitHub Actions artifact names and 14-day retention, plus upload/summary execution after test failure. |
 | GitOps contract | Fixture tests for exact allowed keys, comments/unrelated content, disabled record, hostname/overlay/access mismatch, conflict, denied checks, timeout and late merge. Run record/policy validators and static Kustomize rendering with no cluster contact; ensure app/init container image parity and reviewed probe/drain settings. |
-| Workflow | YAML/action lint plus orchestration tests for fixed nightly checkout, stage dependencies, no production tags, bounded failures, job-scoped lock, preserved PR triggers/checkout/coverage, unchanged backend scenario job and preservation of Playwright failure status through artifact upload/summary steps. Exercise cancellation with a pending bot PR. |
+| Workflow | YAML/action lint plus orchestration tests for scheduled master checkout, manual dispatch-SHA checkout and rerun stability, stage dependencies, no production tags, bounded failures, workflow-scoped lock across the job chain, preserved PR triggers/checkout/coverage, unchanged backend scenario job and preservation of Playwright failure status through artifact upload/summary steps. Exercise cancellation with a pending bot PR. |
 | Provisioned target | One manual then one scheduled full run, all required cases, retained diagnostics, and reviewed artifacts. Observe old-revision polling and readiness timeout. Overlap dispatches to confirm serialization and pending policy; verify the operator procedure prevents manual updates during testing. Confirm durable fixtures/services survive image updates. |
 
 Run focused ExUnit and script/automation checks appropriate to implementation, then required review under `docs/CODEREVIEW.md`: security/performance plus backend/TypeScript lenses where changed; requirements review applies if PRD changes. A full `mix test` is mandatory if shared test support/configuration changes. No new domain scenario test is necessary for this orchestration design unless implementation crosses domain workflows.
@@ -410,3 +411,4 @@ Repository paths are relative to the named repository root.
 | 2026-10-06 | Release fixture and mailbox audit | Deferred to implementation, required before launch. Torus verifies runtime paths, packages demonstrated fixture needs and checks mailbox reset; GitOps verifies one replica. Requires an implemented release. |
 | 2026-10-07 | Readiness metadata visibility | Expose compiled version/SHA only in Playwright builds for CI identity checks. Other builds retain unauthenticated status-only readiness; runtime settings cannot enable metadata. |
 | 2026-10-07 | Readiness pool contention | Defer additional rate limiting, single-flight or caching until observed contention or exhaustion warrants it. The probe uses a lightweight `SELECT 1` with a one-second checkout/query budget and cancellation. This bounds each check, not aggregate concurrency; revisit if probe traffic affects application requests. |
+| 2026-10-13 | Manual branch execution | Allow manual dispatch of a selected repository branch at its exact dispatch SHA; schedules continue selecting master. Build, deployment and browser checkout share that identity and the same target lock. Manual reruns retain their SHA; environment branch permissions are verified during provisioning. |
