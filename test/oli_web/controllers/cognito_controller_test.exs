@@ -85,7 +85,7 @@ defmodule OliWeb.CognitoControllerTest do
 
       assert view
              |> element(
-               ~s(#workspace-user-menu-dropdown div[role="linked authoring account email"])
+               ~s(#workspace-user-menu-dropdown div[data-role="linked authoring account email"])
              )
              |> render() =~ author_email
 
@@ -121,7 +121,7 @@ defmodule OliWeb.CognitoControllerTest do
 
       assert view
              |> element(
-               ~s(#workspace-user-menu-dropdown div[role="linked authoring account email"])
+               ~s(#workspace-user-menu-dropdown div[data-role="linked authoring account email"])
              )
              |> render() =~ user.email
     end

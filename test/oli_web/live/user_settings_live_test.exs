@@ -870,7 +870,7 @@ defmodule OliWeb.UserSettingsLiveTest do
 
       assert has_element?(
                lv,
-               "a[href='/users/link_account'] [role='linked authoring account email']",
+               "a[href='/users/link_account'] [data-role='linked authoring account email']",
                author.email
              )
     end
