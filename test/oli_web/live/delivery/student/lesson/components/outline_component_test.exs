@@ -98,7 +98,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
 
       # Renders top level ancestor progress bar
       assert lcd
-             |> element("#outline_item_1 div[role='progress bar']")
+             |> element("#outline_item_1 div[data-role='progress bar']")
              |> render() =~ "0%"
 
       # Unit 2 (container - rendered as button)

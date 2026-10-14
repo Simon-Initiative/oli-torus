@@ -194,7 +194,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
               width="200px"
               on_going_colour="bg-[#0CAF61]"
               completed_colour="bg-[#0CAF61]"
-              role="progress bar"
+              role="progressbar"
+              data-role="progress bar"
+              aria_label={"#{@item["title"]} progress"}
             />
           </div>
         </div>
@@ -246,7 +248,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           width="200px"
           on_going_colour="bg-[#0CAF61]"
           completed_colour="bg-[#0CAF61]"
-          role="progress bar"
+          role="progressbar"
+          data-role="progress bar"
+          aria_label={"#{@item["title"]} progress"}
         />
       </button>
       <div
