@@ -88,6 +88,11 @@ defmodule OliWeb.Workspaces.StudentTest do
                "div[data-role='instructors']",
                ~r/Instructors:\s*#{instructor_1.name},\s*#{instructor_2.name}/
              )
+
+      assert has_element?(
+               view,
+               "[role='progressbar'][aria-label='Course progress'][aria-valuemin='0'][aria-valuemax='100']"
+             )
     end
 
     test "if no cover image is set, renders default image in enrollment page in the student workspace",

@@ -743,7 +743,7 @@ defmodule OliWeb.Components.Common do
     """
   end
 
-  attr(:role, :string)
+  attr(:data_role, :string)
   attr(:id, :string)
   attr(:button_class, :string)
   attr(:options, :list)
@@ -762,7 +762,7 @@ defmodule OliWeb.Components.Common do
           )
         }
         id={@id}
-        role={@role}
+        data-role={@data_role}
         class={[@button_class]}
       >
         {render_slot(@inner_block)}
@@ -780,7 +780,7 @@ defmodule OliWeb.Components.Common do
                 "flex items-center w-full gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50",
                 option[:class]
               ]}
-              role={"dropdown-item #{option.text}"}
+              data-role={"dropdown-item-#{option.text |> String.downcase() |> String.replace(" ", "-")}"}
             >
               <span class="text-[14px] leading-[20px] whitespace-nowrap">{option.text}</span>
               {Phoenix.HTML.raw(option[:icon])}

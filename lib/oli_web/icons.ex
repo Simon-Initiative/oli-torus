@@ -497,6 +497,7 @@ defmodule OliWeb.Icons do
       stroke-linejoin="round"
       class="icon icon-tabler icons-tabler-outline icon-tabler-clock w-4 h-4 sm:w-6 sm:h-6"
       data-role="clock icon"
+      aria-hidden="true"
     >
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
@@ -536,6 +537,7 @@ defmodule OliWeb.Icons do
       viewBox="0 0 16 16"
       fill="currentColor"
       data-role="star icon"
+      aria-hidden="true"
       class={"icon inline-block #{@color}"}
     >
       <path
@@ -775,6 +777,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="plus icon"
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -1107,6 +1110,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="active home icon"
+      aria-hidden="true"
       class="dark:fill-white dark:stroke-white fill-black/90 stroke-black/90"
       width="18"
       height="18"
@@ -1123,6 +1127,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="home icon"
+      aria-hidden="true"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="18"
       height="18"
@@ -1152,6 +1157,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="active learn icon"
+      aria-hidden="true"
       class="dark:fill-white dark:stroke-white fill-black/90 stroke-black/90"
       width="16"
       height="16"
@@ -1173,6 +1179,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="learn icon"
+      aria-hidden="true"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="16"
       height="16"
@@ -1196,6 +1203,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="active schedule icon"
+      aria-hidden="true"
       width="16"
       height="18"
       viewBox="0 0 16 18"
@@ -1223,6 +1231,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="schedule icon"
+      aria-hidden="true"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="16"
       height="18"
@@ -1247,6 +1256,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="active discussions icon"
+      aria-hidden="true"
       class={@class || "dark:fill-white fill-black/90"}
       width="18"
       height="17"
@@ -1267,6 +1277,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="discussions icon"
+      aria-hidden="true"
       class={@class || "dark:stroke-[#B8B4BF] stroke-black/70"}
       width="18"
       height="17"
@@ -1291,6 +1302,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="active explorations icon"
+      aria-hidden="true"
       class="dark:fill-white fill-black/90"
       width="18"
       height="16"
@@ -1313,6 +1325,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="explorations icon"
+      aria-hidden="true"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="18"
       height="18"
@@ -1351,6 +1364,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="active assignments icon"
+      aria-hidden="true"
       class={@class || "dark:fill-white fill-black/70 dark:stroke-white stroke-black/70"}
       width="20"
       height="20"
@@ -1371,6 +1385,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="assignments icon"
+      aria-hidden="true"
       class={@class || "dark:stroke-[#B8B4BF] stroke-black/70"}
       width="20"
       height="20"
@@ -1394,6 +1409,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="active practice icon"
+      aria-hidden="true"
       class="dark:stroke-white stroke-black/70"
       width="14"
       height="18"
@@ -1424,6 +1440,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="practice icon"
+      aria-hidden="true"
       width="14"
       height="18"
       viewBox="0 0 14 18"
@@ -1779,6 +1796,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="visible icon"
+      aria-hidden="true"
       width="19"
       height="18"
       viewBox="0 0 19 18"
@@ -1806,6 +1824,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="hidden icon"
+      aria-hidden="true"
       width="19"
       fill="none"
       stroke="currentColor"
@@ -2877,6 +2896,7 @@ defmodule OliWeb.Icons do
       class={@class}
       xmlns="http://www.w3.org/2000/svg"
       data-role="asterisk icon"
+      aria-hidden="true"
     >
       <path
         opacity="0.9"
