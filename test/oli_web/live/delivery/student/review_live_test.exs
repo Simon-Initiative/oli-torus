@@ -506,9 +506,10 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         )
 
       ensure_content_is_visible(view)
+      assert has_element?(view, ~s{section[data-role="page-content"][aria-label="Page content"]})
 
       view
-      |> element(~s{a[role="back_to_summary_link"]})
+      |> element(~s{a[data-role="back-to-summary-link"]})
       |> render_click
 
       assert_redirected(

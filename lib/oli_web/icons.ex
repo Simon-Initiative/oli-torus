@@ -849,6 +849,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="world icon"
+      aria-hidden="true"
       width="20"
       height="20"
       viewBox="0 0 20 20"
@@ -1613,6 +1614,8 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="no data proficiency icon"
+      role="img"
+      aria-label={@proficiency}
       width="24"
       height="24"
       viewBox="0 0 24 24"
@@ -1635,6 +1638,8 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="beginning proficiency icon"
+      role="img"
+      aria-label={@proficiency <> " proficiency"}
       width="19"
       height="20"
       viewBox="0 0 19 20"
@@ -1662,6 +1667,8 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="growing proficiency icon"
+      role="img"
+      aria-label={@proficiency <> " proficiency"}
       width="19"
       height="20"
       viewBox="0 0 19 20"
@@ -1689,6 +1696,8 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       data-role="establishing proficiency icon"
+      role="img"
+      aria-label={@proficiency <> " proficiency"}
       width="19"
       height="21"
       viewBox="0 0 19 21"

@@ -166,19 +166,19 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       ]}>
         <div class="grow p-2 justify-start items-start gap-5 flex">
           <div class="py-0.5 justify-start items-center gap-5 flex">
-            <div class="justify-start items-center flex" role="page icon">
+            <div class="justify-start items-center flex" data-role="page-icon">
               <div class="w-5 h-5 relative">
                 <.page_icon graded={@item["graded"]} purpose={@item["section_resource"].purpose} />
               </div>
             </div>
-            <div class="justify-start items-center flex" role="index">
+            <div class="justify-start items-center flex" data-role="index">
               <div class="grow shrink basis-0 text-right text-sm leading-none">
                 {page_index(@item)}
               </div>
             </div>
           </div>
           <div class="grow flex-col justify-start items-start gap-2 flex">
-            <div class="justify-start items-start gap-5 flex" role="title">
+            <div class="justify-start items-start gap-5 flex" data-role="title">
               <div class="grow justify-start items-center flex">
                 <div class={[
                   "grow text-base leading-normal",
@@ -295,7 +295,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
     ~H"""
     <button
       id="toggle_outline_button"
-      role="toggle outline button"
+      data-role="toggle-outline-button"
       data-view="desktop"
       aria-label="Toggle Course Content panel"
       aria-pressed={to_string(@is_active || false)}
@@ -409,7 +409,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             <Icons.flag />
           </div>
         <% true -> %>
-          <Icons.no_icon />
+          <div
+            data-role="no-icon"
+            aria-hidden="true"
+            class="flex justify-center items-center w-[22px] h-[22px] shrink-0"
+          >
+          </div>
       <% end %>
     </div>
     """
