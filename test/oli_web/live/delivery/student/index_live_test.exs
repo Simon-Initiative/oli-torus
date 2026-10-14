@@ -1577,10 +1577,10 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       refute has_element?(view, third_item <> ~s{div[data-role=container_label]})
       refute has_element?(view, fourth_item <> ~s{div[data-role=container_label]})
 
-      assert has_element?(view, first_item <> ~s{div[role=title]}, page_1.title)
-      assert has_element?(view, second_item <> ~s{div[role=title]}, page_2.title)
-      assert has_element?(view, third_item <> ~s{div[role=title]}, page_3.title)
-      assert has_element?(view, fourth_item <> ~s{div[role=title]}, page_4.title)
+      assert has_element?(view, first_item <> ~s{div[data-role=title]}, page_1.title)
+      assert has_element?(view, second_item <> ~s{div[data-role=title]}, page_2.title)
+      assert has_element?(view, third_item <> ~s{div[data-role=title]}, page_3.title)
+      assert has_element?(view, fourth_item <> ~s{div[data-role=title]}, page_4.title)
     end
   end
 
@@ -1628,7 +1628,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               first_assignment <> ~s{div[data-role=resource_type][aria-label=exploration]}
+               first_assignment <> ~s{div[data-role=resource_type]},
+               "Exploration"
              )
 
       # Second upcoming assignment
@@ -1651,7 +1652,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               second_assignment <> ~s{div[data-role=resource_type][aria-label=checkpoint]}
+               second_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
              )
 
       # Third upcoming assignment
@@ -1674,7 +1676,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               third_assignment <> ~s{div[data-role=resource_type][aria-label=checkpoint]}
+               third_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
              )
     end
 
@@ -1792,7 +1795,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               first_assignment <> ~s{div[data-role=resource_type][aria-label=exploration]}
+               first_assignment <> ~s{div[data-role=resource_type]},
+               "Exploration"
              )
 
       assert has_element?(view, first_assignment <> ~s{div[data-role=details]}, "2 days left")
@@ -1817,7 +1821,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               second_assignment <> ~s{div[data-role=resource_type][aria-label=checkpoint]}
+               second_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
              )
 
       assert has_element?(view, second_assignment <> ~s{div[data-role=details]}, "3 days left")
@@ -1842,7 +1847,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               third_assignment <> ~s{div[data-role=resource_type][aria-label=checkpoint]}
+               third_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
              )
 
       assert has_element?(view, third_assignment <> ~s{div[data-role=details]}, "4 days left")
@@ -1907,7 +1913,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               first_assignment <> ~s{div[data-role=resource_type][aria-label=exploration]}
+               first_assignment <> ~s{div[data-role=resource_type]},
+               "Exploration"
              )
 
       assert has_element?(
@@ -1948,7 +1955,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               second_assignment <> ~s{div[data-role=resource_type][aria-label=checkpoint]}
+               second_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
              )
 
       assert has_element?(
@@ -1977,7 +1985,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               third_assignment <> ~s{div[data-role=resource_type][aria-label=checkpoint]}
+               third_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
              )
 
       assert has_element?(view, third_assignment <> ~s{div[data-role=details]}, "Completed")
@@ -2069,7 +2078,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       # First latest assignment
       assert has_element?(
                view,
-               first_assignment <> ~s{div[data-role=resource_type][aria-label=exploration]}
+               first_assignment <> ~s{div[data-role=resource_type]},
+               "Exploration"
              )
 
       assert has_element?(
@@ -2087,7 +2097,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       # First latest assignment
       refute has_element?(
                view,
-               first_assignment <> ~s{div[data-role=resource_type][aria-label=exploration]}
+               first_assignment <> ~s{div[data-role=resource_type]},
+               "Exploration"
              )
 
       refute has_element?(

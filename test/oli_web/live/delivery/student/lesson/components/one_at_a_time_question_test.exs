@@ -333,6 +333,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       {:ok, lcd, _html} = live_component_isolated(conn, OneAtATimeQuestion, component_params)
 
       assert has_element?(lcd, "#the_component_id")
+      assert has_element?(lcd, ~s{div[data-role="one-at-a-time-question"]})
+
+      assert has_element?(
+               lcd,
+               ~s{nav[data-role="questions-footer"][aria-label="Question navigation"]}
+             )
     end
 
     test "can be navigated through the questions menu or the footer buttons", %{
@@ -401,7 +407,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       {:ok, lcd, _html} = live_component_isolated(conn, OneAtATimeQuestion, component_params)
 
       assert lcd
-             |> element("div[role='questions header']")
+             |> element("div[data-role='questions-header']")
              |> render() =~ "Question 1 / 3 • 1 point"
 
       lcd
@@ -409,7 +415,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       |> render_click()
 
       assert lcd
-             |> element("div[role='questions header']")
+             |> element("div[data-role='questions-header']")
              |> render() =~ "Question 2 / 3 • 1 point"
 
       lcd
@@ -417,7 +423,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       |> render_click()
 
       assert lcd
-             |> element("div[role='questions header']")
+             |> element("div[data-role='questions-header']")
              |> render() =~ "Question 3 / 3 • 6.0 points"
     end
 
@@ -455,7 +461,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       # 2.5 + 3.5 = 6.0
 
       assert lcd
-             |> element("div[role='questions header']")
+             |> element("div[data-role='questions-header']")
              |> render() =~ "Question 3 / 3 • 6.0 points"
     end
 
@@ -471,17 +477,17 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
         )
 
       # question 1, not yet submitted, is selected by default
-      refute has_element?(lcd, "div[role='question feedback']")
+      refute has_element?(lcd, "div[data-role='question-feedback']")
 
       lcd
       |> element("#question_3_button")
       |> render_click()
 
       assert lcd
-             |> element("div[role='question points feedback']")
+             |> element("div[data-role='question-points-feedback']")
              |> render() =~ "2.5 / 6.0"
 
-      assert has_element?(lcd, "div[role='question feedback']")
+      assert has_element?(lcd, "div[data-role='question-feedback']")
     end
 
     test "progress bar matches the amount of submitted questions", %{
@@ -498,7 +504,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       # 0.5% is the width of the progress bar when no question is submitted
       # (to match the Figma designs where a minimun width is set)
       assert lcd
-             |> element(~s{div[role="progress bar"] div[data-role="progress"]})
+             |> element(
+               ~s{div[role="progressbar"][data-role="progress bar"] div[data-role="progress"]}
+             )
              |> render()
              |> Floki.parse_fragment!()
              |> Floki.attribute("style") == ["width: 0.5%"]
@@ -512,7 +520,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
 
       # 1 out of 3 questions submitted => 33% of the progress bar
       assert lcd
-             |> element(~s{div[role="progress bar"] div[data-role="progress"]})
+             |> element(
+               ~s{div[role="progressbar"][data-role="progress bar"] div[data-role="progress"]}
+             )
              |> render()
              |> Floki.parse_fragment!()
              |> Floki.attribute("style") == ["width: 33.33333333333333%"]

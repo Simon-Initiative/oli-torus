@@ -67,7 +67,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         </:custom_footer>
       </Modal.modal>
       <div class="flex w-full flex-col items-center">
-        <div role="questions header" class="w-full max-w-[1170px] lg:pl-[189px]">
+        <div data-role="questions-header" class="w-full max-w-[1170px] lg:pl-[189px]">
           <div class="flex w-full justify-between items-center mb-1">
             <div class="text-[#757682] text-xs font-normal leading-[18px] dark:text-white/80">
               Question {selected_question.number} / {total_questions} • {parse_points(
@@ -91,7 +91,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           <div class="mb-3">
             <Common.progress_bar
               percent={get_progress(@questions)}
-              role="progress bar"
+              role="progressbar"
+              data-role="progress bar"
+              aria_label="Question progress"
               height="h-1"
               rounded="rounded-none"
               on_going_colour="bg-[#0062f2]"
@@ -102,7 +104,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           </div>
         </div>
         <div
-          role="questions main content"
+          data-role="questions-main-content"
           class="mx-auto grid w-full max-w-[1170px] grid-cols-1 gap-4 lg:grid-cols-[157px_minmax(0,981px)] lg:gap-8"
         >
           <.questions_menu
@@ -111,7 +113,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             batch_scoring={@effective_settings.batch_scoring}
           />
           <div
-            role="questions content"
+            data-role="questions-content"
             class="content min-h-[484px] w-full min-w-0 max-w-[981px]"
           >
             <div
@@ -127,7 +129,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                 <div
                   :for={question <- @questions}
                   id={"question_#{question.number}"}
-                  role="one at a time question"
+                  data-role="one-at-a-time-question"
                   class={[
                     "w-full min-w-0 overflow-visible px-3 py-5 sm:px-6 lg:px-10 lg:py-8",
                     if(!question.selected, do: "hidden")
@@ -164,7 +166,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                 :if={selected_question.submitted}
                 class="activity w-full min-w-0 p-2 sm:px-6 lg:px-10"
               >
-                <div role="question points feedback" class="flex justify-end mb-2.5">
+                <div data-role="question-points-feedback" class="flex justify-end mb-2.5">
                   <span class="text-[#8e8e8e] text-xs font-normal leading-[18px] dark:text-white/80">
                     Points:
                   </span>
@@ -172,7 +174,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                     {question_points(selected_question)} / {total_question_points(selected_question)}
                   </span>
                 </div>
-                <div role="question feedback" class="activity-content">
+                <div data-role="question-feedback" class="activity-content">
                   {OliWeb.Common.React.component(
                     @ctx,
                     "Components.Evaluation",
@@ -189,8 +191,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
         </div>
-        <div
-          role="questions footer"
+        <nav
+          data-role="questions-footer"
+          aria-label="Question navigation"
           class="fixed inset-x-0 bottom-0 z-40 flex w-full gap-2 bg-Surface-surface-background p-3 shadow-[0px_-2px_10px_rgba(0,50,99,0.1)] sm:gap-4 sm:p-4 lg:static lg:z-auto lg:mb-32 lg:w-full lg:max-w-[1170px] lg:gap-0 lg:bg-transparent lg:p-0 lg:pl-[189px] lg:py-8 lg:shadow-none lg:justify-between"
         >
           <button
@@ -231,7 +234,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           >
             Finish Attempt
           </button>
-        </div>
+        </nav>
       </div>
     </div>
     """
@@ -275,7 +278,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   defp select_question(js \\ %JS{}, question_number) do
     js
     |> JS.push("select_question", value: %{question_number: question_number})
-    |> JS.hide(to: "div[role='one at a time question']")
+    |> JS.hide(to: ~s{div[data-role="one-at-a-time-question"]})
     |> JS.show(to: "#question_#{question_number}")
   end
 

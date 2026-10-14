@@ -335,7 +335,12 @@ defmodule OliWeb.Workspaces.Student do
           <h4 class="text-sm md:text-[16px] md:leading-[32px] tracking-[1.28px] uppercase mr-9 whitespace-nowrap">
             Course Progress
           </h4>
-          <.progress_bar percent={@section.progress} show_percent={true} width="100px" />
+          <.progress_bar
+            percent={@section.progress}
+            show_percent={true}
+            width="100px"
+            aria_label="Course progress"
+          />
         </div>
       </div>
       <i class="fa-solid fa-arrow-right ml-auto text-2xl p-[7px] drop-shadow-md"></i>

@@ -98,7 +98,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
 
       # Renders top level ancestor progress bar
       assert lcd
-             |> element("#outline_item_1 div[role='progress bar']")
+             |> element("#outline_item_1 div[data-role='progress bar']")
              |> render() =~ "0%"
 
       # Unit 2 (container - rendered as button)
@@ -106,12 +106,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
       assert lcd |> element("#outline_item_2 button") |> render() =~ "Main Concepts"
 
       # Top Level Lesson (page - rendered as link)
-      assert lcd |> element("#outline_item_3 div[role='title']") |> render() =~ "Top Level Lesson"
+      assert lcd |> element("#outline_item_3 div[data-role='title']") |> render() =~
+               "Top Level Lesson"
 
-      assert lcd |> element("#outline_item_3 div[role='page icon']") |> render() =~
+      assert lcd |> element("#outline_item_3 div[data-role='page-icon']") |> render() =~
                "text-exploration"
 
-      assert lcd |> element("#outline_item_3 div[role='index']") |> render() =~ "3"
+      assert lcd |> element("#outline_item_3 div[data-role='index']") |> render() =~ "3"
     end
 
     test "expands and collapses an item to show or hide its children", %{
@@ -130,15 +131,15 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
       |> render_click()
 
       # Ensure children are visible after expanding (pages are rendered as links)
-      assert lcd |> element("#outline_item_11 div[role='title']") |> render() =~ "Lesson 1"
+      assert lcd |> element("#outline_item_11 div[data-role='title']") |> render() =~ "Lesson 1"
 
-      assert lcd |> element("#outline_item_11 div[role='page icon']") |> render() =~
+      assert lcd |> element("#outline_item_11 div[data-role='page-icon']") |> render() =~
                "text-checkpoint"
 
-      assert lcd |> element("#outline_item_12 div[role='title']") |> render() =~ "Lesson 2"
+      assert lcd |> element("#outline_item_12 div[data-role='title']") |> render() =~ "Lesson 2"
 
       # It is a practice page so it has no icon
-      assert lcd |> has_element?("#outline_item_12 div[data-role='no icon']")
+      assert lcd |> has_element?("#outline_item_12 div[data-role='no-icon']")
 
       # Collapse item "1" to hide children again (now aria-expanded is true)
       lcd
@@ -165,15 +166,17 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
       refute lcd |> element("#outline_item_1 button") |> render() =~ "Unit 1"
       refute lcd |> element("#outline_item_1 button") |> render() =~ "Unit:"
 
-      assert lcd |> element("#outline_item_3 div[role='title']") |> render() =~ "Top Level Lesson"
-      assert lcd |> element("#outline_item_3 div[role='index']") |> render() =~ "3"
+      assert lcd |> element("#outline_item_3 div[data-role='title']") |> render() =~
+               "Top Level Lesson"
+
+      assert lcd |> element("#outline_item_3 div[data-role='index']") |> render() =~ "3"
 
       lcd
       |> element("#outline_item_1 button[aria-expanded='false']")
       |> render_click()
 
-      assert lcd |> element("#outline_item_11 div[role='index']") |> render() =~ "1"
-      assert lcd |> element("#outline_item_12 div[role='index']") |> render() =~ "2"
+      assert lcd |> element("#outline_item_11 div[data-role='index']") |> render() =~ "1"
+      assert lcd |> element("#outline_item_12 div[data-role='index']") |> render() =~ "2"
     end
 
     test "prefers display_numbering over raw numbering when a top-level unit is suppressed", %{

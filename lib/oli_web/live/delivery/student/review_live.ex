@@ -204,14 +204,19 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             }
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
-          <div id="rawContent" class="content w-full mt-16" role="page_content">
+          <section
+            id="rawContent"
+            class="content w-full mt-16"
+            aria-label="Page content"
+            data-role="page-content"
+          >
             {raw(@html)}
-          </div>
+          </section>
           <.link
             href={
               Utils.lesson_live_path(@section.slug, @page_revision.slug, request_path: @request_path)
             }
-            role="back_to_summary_link"
+            data-role="back-to-summary-link"
           >
             <div class="h-10 px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded shadow justify-center items-center gap-2.5 inline-flex">
               <div class="text-white text-sm font-normal leading-tight">
