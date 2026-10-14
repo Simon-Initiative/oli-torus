@@ -285,7 +285,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
       </div>
       <div class="flex-col justify-start items-start gap-2 inline-flex p-8">
         <div
-          class="justify-center text-[#757682] text-xs font-bold uppercase leading-3"
+          class="justify-center text-Text-text-charcoal text-xs font-bold uppercase leading-3"
           role="start_end_date"
         >
           {FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}")} - {FormatDateTime.to_formatted_datetime(
@@ -302,7 +302,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           {@section.title}
         </h5>
         <div
-          class="justify-center text-[#757682] text-base font-bold leading-normal"
+          class="justify-center text-Text-text-charcoal text-base font-bold leading-normal"
           role="instructors"
         >
           <%= if length(Sections.get_instructors_for_section(@section.id)) == 1 do %>
@@ -324,9 +324,9 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         <div class="self-stretch justify-end items-start gap-4 inline-flex">
           <.link
             navigate={~p"/sections/#{@section.slug}/instructor_dashboard/insights/dashboard"}
-            class="px-5 py-3 bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF] hover:no-underline rounded-md justify-center items-center gap-2 flex text-white text-base font-normal leading-normal"
+            class="px-5 py-3 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white hover:text-Specially-Tokens-Text-text-button-primary-hover hover:no-underline rounded-md justify-center items-center gap-2 flex text-base font-normal leading-normal"
           >
-            <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
+            <div class="text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
               View Course
             </div>
           </.link>
