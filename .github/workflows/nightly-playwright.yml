@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "17 5 * * *"
   workflow_dispatch:
+    inputs:
+      publish_only:
+        description: Publish the Playwright image without running tests (for provisioning)
+        type: boolean
+        default: false
 
 # Hold the target lock across build, future Plasma deployment, and browser tests.
 concurrency:
@@ -107,6 +112,7 @@ jobs:
 
   nightly-playwright:
     # Phase 6 adds deploy-plasma to needs once GitOps and readiness are implemented.
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.publish_only }}
     needs: build-playwright
     name: Nightly LTI Playwright
     runs-on: ubuntu-latest
@@ -178,6 +184,7 @@ jobs:
           retention-days: 14
 
   nightly-scenarios:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.publish_only }}
     name: Nightly Scenario Tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
