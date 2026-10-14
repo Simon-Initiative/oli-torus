@@ -1,5 +1,6 @@
 defmodule OliWeb.Dialogue.WindowLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
+  on_mount OliWeb.LiveSessionPlugs.SecureAssessment
   use OliWeb, :verified_routes
   use Phoenix.HTML
 

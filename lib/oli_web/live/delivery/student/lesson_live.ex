@@ -1184,6 +1184,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           <div :if={@questions != []} class="relative min-h-[500px] w-full justify-center">
             <.live_component
               id="one_at_a_time_questions"
+              user_session={@user_session}
+              secure_route_params={@secure_route_params}
               module={OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion}
               questions={@questions}
               attempt_number={@attempt_number}
