@@ -1141,15 +1141,11 @@ defmodule Oli.Accounts do
   Since both operations are related, they are wrapped in a transaction.
   """
   def accept_user_invitation(user, enrollment, attrs \\ %{}) do
-    Repo.transaction(fn ->
-      user
-      |> User.accept_invitation_changeset(attrs)
-      |> Repo.update!()
-
-      enrollment
-      |> Enrollment.changeset(%{status: :enrolled})
-      |> Repo.update!()
-    end)
+    Multi.new()
+    |> Multi.update(:account, User.accept_invitation_changeset(user, attrs))
+    |> Multi.update(:enrollment, Enrollment.changeset(enrollment, %{status: :enrolled}))
+    |> Repo.transaction()
+    |> normalize_invitation_transaction(:enrollment)
   end
 
   @doc """
@@ -1716,15 +1712,32 @@ defmodule Oli.Accounts do
   Since both operations are related, they are wrapped in a transaction.
   """
   def accept_collaborator_invitation(author, author_project, attrs \\ %{}) do
-    Repo.transaction(fn ->
-      author
-      |> Author.accept_invitation_changeset(attrs)
-      |> Repo.update!()
+    Multi.new()
+    |> Multi.update(:account, Author.accept_invitation_changeset(author, attrs))
+    |> Multi.update(
+      :author_project,
+      AuthorProject.changeset(author_project, %{status: :accepted})
+    )
+    |> Repo.transaction()
+    |> normalize_invitation_transaction(:author_project)
+  end
 
-      author_project
-      |> AuthorProject.changeset(%{status: :accepted})
-      |> Repo.update!()
-    end)
+  defp normalize_invitation_transaction({:ok, changes}, membership) do
+    {:ok, Map.fetch!(changes, membership)}
+  end
+
+  defp normalize_invitation_transaction(
+         {:error, :account, %Ecto.Changeset{} = changeset, _changes},
+         _membership
+       ) do
+    {:error, changeset}
+  end
+
+  defp normalize_invitation_transaction(
+         {:error, operation, reason, _changes},
+         _membership
+       ) do
+    {:error, {operation, reason}}
   end
 
   @doc """
