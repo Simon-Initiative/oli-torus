@@ -3,12 +3,12 @@ defmodule OliWeb.Api.LtiController do
 
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints
-  alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
   alias Oli.Lti.PlatformInstances
+  alias Oli.Lti.SectionDeepLinkLaunch
   alias Oli.Lti.Tokens
 
   require Logger
@@ -41,7 +41,11 @@ defmodule OliWeb.Api.LtiController do
       current_author = conn.assigns[:current_author]
 
       can_configure_tool =
-        Sections.is_instructor?(user, section_slug) || Accounts.is_admin?(current_author)
+        SectionDeepLinkLaunch.can_configure?(
+          SectionDeepLinkLaunch.actor(user, current_author),
+          section,
+          deployment
+        )
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
@@ -164,24 +168,32 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
+  @doc "Returns configuration launch parameters only for an authorized active section integration."
   def deep_linking_launch_details(conn, %{
         "section_slug" => section_slug,
         "activity_id" => activity_id
       }) do
-    with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
-           DeliveryResolver.from_resource_id(section_slug, activity_id),
-         %LtiExternalToolActivityDeployment{platform_instance: platform_instance, status: status} =
-           deployment =
-           PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
-             activity_registration_id: activity_type_id
-           ) do
-      user = conn.assigns[:current_user]
+    actor =
+      SectionDeepLinkLaunch.actor(conn.assigns[:current_user], conn.assigns[:current_author])
+
+    with true <- same_origin?(conn),
+         {:ok,
+          %{
+            section: section,
+            deployment: deployment,
+            request_id: request_id,
+            request_token: request_token
+          }} <-
+           SectionDeepLinkLaunch.start_request(actor, section_slug, activity_id) do
+      platform_instance = deployment.platform_instance
 
       {:ok, %LoginHint{value: login_hint}} =
-        LoginHints.create_login_hint(user.id, %{
-          "section" => section_slug,
+        LoginHints.create_login_hint(actor.id, %{
+          "section_id" => section.id,
           "resource_id" => activity_id,
-          "configure_deep_linking" => "true"
+          "configure_deep_linking" => "true",
+          "actor_type" => SectionDeepLinkLaunch.actor_type(actor),
+          "request_id" => request_id
         })
 
       launch_params =
@@ -197,15 +209,55 @@ defmodule OliWeb.Api.LtiController do
       json(conn, %{
         name: platform_instance.name,
         launch_params: launch_params,
-        status: status
+        status: deployment.status,
+        request_id: request_id,
+        request_token: request_token
       })
     else
       _ ->
         conn
-        |> put_status(:not_found)
-        |> json(%{error: "Activity not found"})
+        |> put_status(:forbidden)
+        |> json(%{error: "Tool configuration is unavailable"})
         |> halt()
     end
+  end
+
+  @doc "Cancels a section configuration request without undoing a committed selection."
+  def cancel_deep_linking(conn, %{
+        "section_slug" => slug,
+        "activity_id" => id,
+        "request_token" => token
+      }) do
+    actor =
+      SectionDeepLinkLaunch.actor(conn.assigns[:current_user], conn.assigns[:current_author])
+
+    result =
+      case same_origin?(conn) do
+        true -> SectionDeepLinkLaunch.cancel_request(actor, slug, id, token)
+        false -> {:error, :configuration_unavailable}
+      end
+
+    case result do
+      {:ok, status} ->
+        json(conn, %{status: status})
+
+      _ ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "Tool configuration could not be cancelled"})
+    end
+  end
+
+  def cancel_deep_linking(conn, _params),
+    do:
+      conn
+      |> put_status(:forbidden)
+      |> json(%{error: "Tool configuration could not be cancelled"})
+
+  defp same_origin?(conn) do
+    uri = URI.parse(Oli.Utils.get_base_url())
+    origin = URI.to_string(%{uri | path: nil, query: nil, fragment: nil})
+    get_req_header(conn, "origin") == [origin]
   end
 
   defp get_section_by_slug(section_slug) do

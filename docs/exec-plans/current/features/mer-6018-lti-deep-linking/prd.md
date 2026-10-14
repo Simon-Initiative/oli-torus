@@ -8,7 +8,7 @@ Source: [MER-6018](https://eliterate.atlassian.net/browse/MER-6018). Intake and 
 
 ## 2. Background & Problem Statement
 
-The prototype already supports selecting a tool resource in project authoring and carrying it into a directly created section. Manual MyProse testing demonstrated Draft/Review reuse, publication isolation and different configurations in old/new sections. These workflows lack permanent regression coverage. Existing-section publication application and template inheritance are incomplete, and instructor reconfiguration currently opens an empty modal in the demonstrated embedded-tool flow.
+The prototype already supports selecting a tool resource in project authoring and carrying it into a directly created section. Manual MyProse testing demonstrated Draft/Review reuse, publication isolation and different configurations in old/new sections. These workflows lacked permanent regression coverage. Existing-section publication application and template inheritance are incomplete, and instructor reconfiguration initially opened an empty modal in the demonstrated embedded-tool flow. During Phase 2 the owner confirmed selector rendering, saved instructor replacement, the next learner launch using it and cancellation preserving the selection. The full compatibility walkthrough remains pending.
 
 ## 3. Goals & Non-Goals
 
@@ -39,6 +39,8 @@ The prototype already supports selecting a tool resource in project authoring an
 Use familiar authoring controls for role, launch type and explicit actions. Show current selection, busy/save progress and coherent completion, cancellation and failure states. Explain Regular reuse and distinguish selecting a resource from opening it. Use useful generic metadata fallback when the tool omits a title, without interpreting arbitrary custom parameters.
 
 The wrapper owns dialog size, layout, scroll, keyboard/focus behavior and status announcements. The tool owns its internal selection UI. No Figma source was supplied; use established components and Tailwind conventions. If a design source is later provided, route reconciliation through the repository's UI workflow.
+
+When reopening configuration, Torus sends the current project draft or section selection's string-valued `custom` parameters in the optional Deep Linking custom claim. This makes existing configuration available to compatible tools; whether the tool preselects its UI remains tool-owned. Opening configuration preserves the saved selection.
 
 ## 6. Functional Requirements
 
@@ -119,6 +121,12 @@ N/A — no new telemetry program is in scope. Current verification uses the acti
 - [ ] Repository review findings are resolved and Harness implementation traceability is validated.
 
 ## Decision Log
+
+### 2026-10-14 - Send existing selection parameters when reopening configuration
+- Change: Include standards-compatible string custom parameters from the current project draft or section-owned selection in Deep Linking requests.
+- Reason: The owner requested generic Torus support for tools that can initialize their selector from these parameters, independent of MyProse's current UI limitations.
+- Evidence: `lib/oli_web/controllers/lti_controller.ex`, `test/scenarios/lti_external_tool/section_configuration_test.exs` and LTI Deep Linking 2.0 section 4.4.11.
+- Impact: Optional tool hints use the existing selector endpoint and signed request correlation. Invalid legacy custom values are omitted from this optional claim without changing stored data or existing Regular launches. No MyProse changes or external-tool automated checks are required.
 
 ### 2026-10-13 - Defer verification requiring an external tool service
 - Change: Retain backend, real domain scenarios and frontend component tests; defer tool-dependent browser/E2E coverage and new compatibility walkthroughs.

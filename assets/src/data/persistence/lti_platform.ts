@@ -2,6 +2,7 @@ import { LTIDeepLinkSelection } from 'components/activities/lti_external_tool/sc
 
 export type LTIExternalToolDetails = {
   request_id?: string;
+  request_token?: string;
   name: string;
   launch_params: {
     iss: string;
@@ -44,13 +45,32 @@ export function getLtiExternalToolDeepLinkingDetails(
   activityId: string,
 ): Promise<LTIExternalToolDetails> {
   return fetch(`/api/v1/lti/sections/${slug}/deep_linking_launch_details/${activityId}`, {
-    method: 'GET',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
   }).then((response) => {
     if (!response.ok)
       return Promise.reject(new Error('Failed to fetch external tool deep linking details'));
 
     return response.json();
   });
+}
+
+/** Cancel a configuration request; completion means its selection was already committed. */
+export async function cancelLtiExternalToolDeepLinking(
+  slug: string,
+  activityId: string,
+  requestToken: string,
+): Promise<'cancelled' | 'completed'> {
+  const response = await fetch(`/api/v1/lti/sections/${slug}/cancel_deep_linking/${activityId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ request_token: requestToken }),
+  });
+  if (!response.ok) throw new Error('Could not close configuration. Please try Close again.');
+  const result = await response.json();
+  if (result.status !== 'cancelled' && result.status !== 'completed')
+    throw new Error('Could not close configuration. Please try Close again.');
+  return result.status;
 }
 
 export type PlatformInstance = {

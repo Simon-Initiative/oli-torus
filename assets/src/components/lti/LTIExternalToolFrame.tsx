@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { v4 as uuid } from 'uuid';
 
 const DEFAULT_FRAME_HEIGHT = 600;
 
@@ -12,6 +13,8 @@ type LTIExternalToolFrameProps = {
   height?: number;
   onEditHeight?: (height: number | undefined) => void;
   onDeepLinkingComplete?: () => void;
+  onDeepLinkingError?: (message: string) => void;
+  deepLinkRequestId?: string;
   onCloseModal?: () => void;
   onAuthoringDeepLinkComplete?: (result: {
     token?: string;
@@ -37,23 +40,27 @@ export const LTIExternalToolFrame = ({
   height,
   onEditHeight,
   onDeepLinkingComplete,
+  onDeepLinkingError,
+  deepLinkRequestId,
   onCloseModal,
   onAuthoringDeepLinkComplete,
 }: LTIExternalToolFrameProps) => {
-  const frameName = `tool-content-${resourceId}`;
+  // Browser form targets name a mounted window, not the LTI resource identity.
+  const [frameName] = useState(() => `tool-content-${resourceId}-${uuid()}`);
   const target = openInNewTab ? '_blank' : frameName;
 
   const [showFrame, setShowFrame] = useState(mode === 'delivery' && !openInNewTab);
 
   const frameRef = React.useRef<HTMLIFrameElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
+  const completed = React.useRef(false);
 
   const autoLaunch = mode === 'delivery' && !openInNewTab;
 
   const showLaunchButton = mode === 'authoring' || openInNewTab;
 
   // If the autoLaunch prop is true, we submit the form immediately after the component mounts.
-  // This is used in delvery mode to automatically open the tool when configured as a frame in the
+  // This is used in delivery mode to automatically open the tool when configured as a frame in the
   // page.
   useEffect(() => {
     if (autoLaunch) {
@@ -66,23 +73,39 @@ export const LTIExternalToolFrame = ({
   // Listen for postMessage events from the iframe for deep linking responses
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Verify the message is from the iframe
-      if (frameRef.current && event.source === frameRef.current.contentWindow) {
-        if (
-          event.origin === window.location.origin &&
-          event.data?.type === 'lti_authoring_deep_link_response'
-        ) {
+      // Only the Torus return page in this mounted frame can complete configuration.
+      if (
+        frameRef.current &&
+        event.source === frameRef.current.contentWindow &&
+        event.origin === window.location.origin &&
+        !completed.current
+      ) {
+        if (event.data?.type === 'lti_authoring_deep_link_response') {
           onAuthoringDeepLinkComplete?.(event.data);
           return;
         }
-        // Check if this is a deep linking completion message
-        if (event.data && event.data.type === 'lti_deep_linking_response') {
-          console.log('Deep linking response received:', event.data);
-          onDeepLinkingComplete?.();
-        }
-        // Check if this is a modal close request
-        else if (event.data && event.data.type === 'lti_close_modal') {
-          console.log('Modal close requested:', event.data);
+        if (event.data?.type === 'lti_deep_linking_response') {
+          if (
+            deepLinkRequestId &&
+            event.data.request_id &&
+            event.data.request_id !== deepLinkRequestId
+          ) {
+            return;
+          }
+          if (event.data.status === 'success') {
+            if (deepLinkRequestId && event.data.request_id !== deepLinkRequestId) return;
+            completed.current = true;
+            onDeepLinkingComplete?.();
+          } else if (event.data.status === 'error') {
+            completed.current = true;
+            onDeepLinkingError?.(
+              typeof event.data.error_description === 'string'
+                ? event.data.error_description
+                : 'The tool selection could not be saved. Close this window and try again.',
+            );
+          }
+        } else if (event.data?.type === 'lti_close_modal') {
+          completed.current = true;
           onCloseModal?.();
         }
       }
@@ -93,7 +116,13 @@ export const LTIExternalToolFrame = ({
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [onDeepLinkingComplete, onCloseModal, onAuthoringDeepLinkComplete]);
+  }, [
+    onDeepLinkingComplete,
+    onDeepLinkingError,
+    deepLinkRequestId,
+    onCloseModal,
+    onAuthoringDeepLinkComplete,
+  ]);
 
   // Reset the iframe any time the openInNewTab setting changes
   useEffect(() => {
@@ -116,13 +145,7 @@ export const LTIExternalToolFrame = ({
         {Object.keys(launchParams)
           .filter((param) => param != 'login_url')
           .map((param) => (
-            <input
-              key={param}
-              type="hidden"
-              name={param}
-              id={param}
-              value={launchParams[param]}
-            ></input>
+            <input key={param} type="hidden" name={param} value={launchParams[param]}></input>
           ))}
 
         {showLaunchButton && (

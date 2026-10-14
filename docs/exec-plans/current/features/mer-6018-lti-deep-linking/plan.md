@@ -53,15 +53,16 @@ Retain independent section ownership, published-revision isolation, exact tool c
 - Requirements: FR-009, FR-011.
 - Goal: correct and cover Torus-owned modal/frame behavior and section-local configuration persistence without requiring a tool service.
 - Tasks:
-  - [ ] Audit the observed empty modal's regular/configuration form targets and return routing; retain frame collision as a hypothesis until actual navigation can be verified.
-  - [ ] Add failing component regressions for colliding regular/configuration/multiple-activity targets and incorrectly associated messages, then give mounted instances distinct stable frame targets.
-  - [ ] Recheck section capability/permission enforcement at launch and callback and distinguish cancellation/error from successful selection updates.
-  - [ ] Use signed test responses and real section data to verify instructor changes and subsequent learner launch parameters without modifying project or sibling selections.
-  - [ ] Record actual selector navigation/return and a complete instructor walkthrough as deferred verification; do not claim that component evidence reproduces or resolves the runtime symptom.
+  - [x] Audit the observed empty modal's regular/configuration form targets and return routing; retain frame collision as a hypothesis until actual navigation can be verified.
+  - [x] Add failing component regressions for colliding regular/configuration/multiple-activity targets and incorrectly associated messages, then give mounted instances distinct stable frame targets.
+  - [x] Recheck section capability/permission enforcement at launch and callback and distinguish cancellation/error from successful selection updates.
+  - [x] Use signed test responses and real section data to verify instructor changes and subsequent learner launch parameters without modifying project or sibling selections.
+  - [x] Record actual selector navigation/return and a complete instructor walkthrough as deferred verification; do not claim that component evidence reproduces or resolves the runtime symptom.
+  - [x] Send standards-compatible custom hints from the current project draft or section selection when reopening Deep Linking, preserving saved data, selector target and signed correlation. The owner approved this generic extension on 2026-10-14; tool-side preselection remains optional.
 - Testing Tasks:
-  - [ ] Cover AC-023, AC-024, AC-029 and the Torus-owned portion of AC-022; retain AC-022's external-navigation confirmation as pending.
-  - [ ] Component-test embedded/new-window delivery, multiple instances, modal rendering and message source/association with controlled events and no external service.
-  - [ ] Run focused frame/delivery Jest tests and section callback/controller tests with signed responses and test keys.
+  - [x] Cover AC-023, AC-024, the instructor portion of AC-029 and the Torus-owned portion of AC-022; retain AC-022's external-navigation confirmation as pending.
+  - [x] Component-test embedded/new-window delivery, multiple instances, modal rendering and message source/association with controlled events and no external service.
+  - [x] Run focused frame/delivery Jest tests and section callback/controller tests with signed responses and test keys.
   - Commands: targeted `yarn test` and lint/type checks in `assets/`; targeted `mix test` for affected LTI controller/context tests. No tool-dependent Playwright run is required or authorized by this phase.
 - Definition of Done:
   - Torus-owned frame/message regressions pass, and instructor persistence/launch-parameter tests affect only the intended section. Actual tool navigation remains documented as deferred.
@@ -232,7 +233,87 @@ Round 1 completed with separate security, performance and Elixir reviewers follo
 - [x] Targeted and affected regression tests pass.
 - [x] Review findings resolved and validation passes.
 
+## Phase 2 Execution Record
+
+### Scope from plan.md
+
+Fix and cover the Torus-owned instructor modal/frame/message behavior and section-local configuration boundary. Phase 1 baseline coverage was committed as `0be517589c`. No external tool service was started or used by these automated checks.
+
+### Implementation Blocks
+
+- [x] Give every mounted frame a stable unique form target without changing the LTI resource-link identity. Associate responses with the mounted frame, Torus origin and expected request UUID; do not turn errors or close messages into success.
+- [x] Add `Oli.Lti.SectionDeepLinkLaunch` to authorize instructor/admin configuration, verify signed account/section/activity/deployment correlation and recheck current permission/capability before persistence. Learners cannot request configuration launch parameters.
+- [x] Use the existing nonce store for indexed latest-request state, cancellation and one successful save per request. Serialize these operations with the section row lock and preserve both selection and request on failed writes. No additional migration was introduced.
+- [x] Start configuration with a trusted-Origin POST and reject noncanonical resource IDs. Reuse the authorization helper's resolved context when constructing claims.
+- [x] Cancel through a signed initiating-account/route-bound POST, including after expiry or permission/capability loss. An already committed selection is reported as completion and reloaded. Older or cancelled requests cannot subsequently save.
+- [x] Intercept Bootstrap hiding before dismissal, wait for cancellation acknowledgement, show progress/failure with Close retry and invalidate terminal errors. Keep successful completion separate from cancellation.
+- [x] Escape tool return metadata in HTML data attributes; retain actionable validation/save errors, handle missing/malformed content-item claims and accept valid audience arrays without crashing on invalid ones.
+- [x] Include current string custom parameters in authoring/section Deep Linking requests. Omit unsupported legacy values only from this optional hint; preserve stored data and all existing Regular behavior.
+
+### Test Blocks
+
+- [x] Add 21 real scenario/controller tests for section configuration, authorization, signed association, callback validity/replay, cancellation/supersession, revoked access/capability, resource aliases, administrator identity and failed-write rollback/retry.
+- [x] Add 20 frame/modal component tests for unique/stable targets, embedded/new-window modes, source/origin/request association, separate terminal outcomes, pending preparation, cancellation acknowledgement/failure and the committed-return race.
+- [x] Complete the affected backend regression run: **242 tests, 0 failures**, seed `241148`, including Phase 1 coverage and existing LTI/delivery/creation/copy tests. ExUnit output contained normal progress/summary; the existing OTP `os_mon` shutdown messages followed the summary.
+- [x] Add three signed-request regressions for the owner-approved current-selection hint extension, bringing the section configuration suite to 24 tests. The same affected backend run passed with **245 tests, 0 failures**, seed `114676`; no new frontend changes required repeating its checks.
+- [x] Strengthen the no-project-fallback case after requirements review: remove a section's selection while retaining the configured project and sibling selections, then verify no hint or recreated row. The focused 24-test suite passed again, seed `378488`.
+- [x] Complete frontend regression coverage: **28 tests, 0 failures** across the new LTI component suites and existing modal suites. TypeScript, scoped ESLint and Prettier checks passed.
+- [x] Complete scoped `mix format --check-formatted`, test-environment `mix compile --warnings-as-errors`, all four scenario schema/parser validations and Harness structure/nested traceability checks.
+
+Backend commands loaded local `oli.env` and overrode only `DATABASE_URL` for test execution/compilation, targeting the exclusive `oli_mer6018_test` database. Tests did not use the development/demo database. Shared backend test support/configuration was unchanged; the full backend suite was not required. The optional shared `Modal.onRequestClose` behavior was checked alongside existing modal regressions.
+
+```sh
+mix test test/scenarios/lti_external_tool/deep_linking_test.exs \
+  test/scenarios/lti_external_tool/section_configuration_test.exs \
+  test/scenarios/lti_external_tool/hooks_test.exs \
+  test/oli/lti/platform_external_tools_test.exs \
+  test/oli_web/controllers/api/lti_controller_test.exs \
+  test/oli_web/controllers/api/lti_controller_integration_test.exs \
+  test/oli_web/controllers/lti_controller_test.exs \
+  test/oli/delivery_test.exs \
+  test/oli/delivery/section_creation_test.exs \
+  test/oli/delivery/sections/section_copy_test.exs
+```
+
+In `assets/`, run the LTI component and modal Jest suites with `--runInBand --coverage=false`, `tsc --noEmit --skipLibCheck`, and file-scoped ESLint/Prettier. Local verification used the repository's Node 24 runtime directly to avoid the installed Yarn wrapper selecting another Node version.
+
+### Work-Item Sync
+
+FDD interfaces and transaction rules now describe the implemented POST launch/cancel and indexed pending-state contract. Added proof paths for AC-022, AC-023, AC-024 and the instructor portion of AC-029; whole-feature statuses remain at `verified_plan`. Component evidence confirms the frame collision and message regressions but does not establish that they caused or fixed the observed empty MyProse modal. Actual selector navigation/return, Bootstrap event wiring/focus behavior and the complete compatibility walkthrough remain deferred with the cross-service portion of AC-022 and AC-030. Authoring orchestration remains Phase 3; template behavior remains Phase 5.
+
+On 2026-10-14 the owner manually confirmed that MyProse's selector renders inside the instructor modal, changed the selection and verified persistence after refresh, the next learner launch using the new configuration and cancellation retaining the saved selection. The practice-page launch uses the current section configuration without requiring Reset Answers. This supports the main instructor flow in AC-022–AC-024; browser keyboard/focus behavior, multiple-instance navigation and the complete AC-030 compatibility walkthrough remain pending. The owner also approved offering current custom parameters to compatible tools; AC-001 and AC-023 now capture this contract and link the signed-request tests. Existing non-string legacy values remain untouched in storage and Regular launches, and are excluded only from this standards-compatible optional hint.
+
+### Review Loop
+
+Separate security, performance, Elixir, UI and TypeScript reviews followed `docs/CODEREVIEW.md`. Findings were resolved with server cancellation/supersession, controlled Bootstrap dismissal, terminal-error invalidation, safe expired/revoked cancellation, trusted-Origin POST initiation, canonical resource identities, missing-claim validation, reuse of resolved authorization context and indexed pending-state queries. Final re-reviews reported **no remaining findings**. Section-lock contention was not benchmarked; external browser/tool behavior remains unverified.
+
+The current-selection hint extension received separate security, performance, Elixir and requirements reviews. A requirements coverage gap was resolved with the configured-project/missing-section regression above; final reviews reported no remaining findings. Formatting, warnings-as-errors compilation and Harness structure/nested traceability passed. The owner requested the name `SectionDeepLinkLaunch`; all code/test/document references were updated and the affected 69-test run passed, seed `674844`. The owner explicitly approved committing Phase 2 after these reviews and manual checks. Later implementation commits require a new explicit approval.
+
+### Done Definition
+
+- [x] Phase tasks complete; the owner verified the main instructor flow with MyProse. Remaining browser/compatibility checks are explicitly deferred.
+- [x] Targeted and affected regression tests and relevant format/compile/type/lint checks pass.
+- [x] Review findings resolved and work-item evidence reconciled.
+
 ## Decision Log
+
+### 2026-10-14 - Extend configuration requests with current selection hints
+- Change: Add the optional standard custom claim using string parameters from the current project draft or section/activity selection. Preserve empty strings and serialized JSON verbatim; omit non-string legacy values without modifying persisted data.
+- Reason: The owner requested Torus support for any compatible selector after confirming the instructor modal renders MyProse. The current MyProse selector does not initialize itself from those parameters.
+- Evidence: `test/scenarios/lti_external_tool/section_configuration_test.exs` covers section overrides, project-draft isolation, both authoring roles, missing selections, standards-compatible values and unchanged selector targets/storage.
+- Impact: Three additional backend regressions, no schema/frontend/tool changes, and no committed implementation until the owner's explicit approval. Actual tool UI preselection is not guaranteed.
+
+### 2026-10-14 - Complete section request cancellation and supersession
+- Change: Make configuration start a trusted-Origin POST, keep one indexed pending request per section/activity and acknowledge signed cancellation before modal dismissal. Safely cancel after expiry/revocation and reload a return that committed first.
+- Reason: Review exposed late writes after close/newer configuration, premature Bootstrap dismissal, terminal-error retry mismatch, permanent cancellation refusal, CSRF risk, identifier aliases and an unindexed delete.
+- Evidence: `lib/oli/lti/section_deep_link_launch.ex`, `test/scenarios/lti_external_tool/section_configuration_test.exs`, `assets/test/components/lti/external_tool_configuration_test.tsx`.
+- Impact: Phase 2 gate is satisfied for active automated scope with no new migration. External navigation/compatibility remains deferred; Phase 3 authoring hardening is next.
+
+### 2026-10-13 - Phase 2 instructor return authorization
+- Change: Implement the FDD's section correlation/current-permission boundary and one successful save per request, alongside unique mounted frames and distinct modal outcomes.
+- Reason: Failing component and backend tests demonstrated target collision, false success and insufficient configuration authorization; no external tool was run.
+- Evidence: `assets/test/components/lti/`, `test/scenarios/lti_external_tool/section_configuration.scenario.yaml`, `test/scenarios/lti_external_tool/section_configuration_test.exs`.
+- Impact: Complete scoped frontend/backend verification before closing Phase 2. Preserve the explicit external-navigation deferral and existing resource-link identity; use the existing nonce table without a migration.
 
 ### 2026-10-13 - Defer tests requiring a running external tool
 - Change: Remove tool setup/extension and tool-dependent browser runs from the active phases; keep ExUnit, real domain scenarios and frontend state/component checks.

@@ -12,10 +12,12 @@ requirements:
   - id: AC-001
     title: Developer plus Regular is the default; all four Developer/Instructor and Regular/Deep Link
       combinations emit the selected context role and message type when supported, while retaining the
-      author's identity and project context.
+      author's identity and project context. Deep Link also sends the current draft's string-valued custom
+      parameters as optional selector hints without changing the saved selection or selector endpoint.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/section_configuration_test.exs
   - id: AC-002
     title: Regular authoring launches reuse the saved URL and exact custom values; without a selection
       they use the integration default, and Regular does not replace the selection.
@@ -186,20 +188,26 @@ requirements:
       targets and correctly associated return handlers.
     status: verified_plan
     verification_method: hybrid
-    proofs: []
+    proofs:
+    - assets/test/components/lti/external_tool_frame_test.tsx
+    - assets/test/components/lti/external_tool_configuration_test.tsx
   - id: AC-023
     title: An authorized instructor's successful selection updates only that section's record and the
       next learner launch uses it; project, template and sibling selections stay unchanged, while learners/unauthorized
-      actors cannot configure the section.
+      actors cannot configure the section. Reopening configuration sends that section/activity's string-valued
+      custom parameters as optional hints, with no project fallback or requirement for tool UI preselection.
     status: verified_plan
     verification_method: hybrid
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/section_configuration_test.exs
   - id: AC-024
     title: Cancelling or failing instructor configuration preserves the current section selection and
       reports failure without falsely signaling successful reconfiguration.
     status: verified_plan
     verification_method: hybrid
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/section_configuration_test.exs
+    - assets/test/components/lti/external_tool_configuration_test.tsx
 - id: FR-010
   title: Preserve portable tool data and existing launch behavior
   status: verified_plan
@@ -245,7 +253,9 @@ requirements:
       dummy test is not treated as Deep Linking coverage.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - assets/test/components/lti/external_tool_frame_test.tsx
+    - assets/test/components/lti/external_tool_configuration_test.tsx
   - id: AC-030
     title: A documented MyProse walkthrough verifies supported role/type combinations, Draft/Review inheritance,
       publication application, template-based creation and instructor overrides, with observed tool-side

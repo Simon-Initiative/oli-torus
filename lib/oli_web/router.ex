@@ -1825,11 +1825,13 @@ defmodule OliWeb.Router do
       :launch_details
     )
 
-    get(
+    post(
       "/deep_linking_launch_details/:activity_id",
       Api.LtiController,
       :deep_linking_launch_details
     )
+
+    post("/cancel_deep_linking/:activity_id", Api.LtiController, :cancel_deep_linking)
   end
 
   ### Invitations (to sections or projects)

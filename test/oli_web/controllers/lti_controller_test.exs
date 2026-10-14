@@ -1111,7 +1111,13 @@ defmodule OliWeb.LtiControllerTest do
       # Verify error postMessage JavaScript is included
       assert resp =~ "window.parent.postMessage"
       assert resp =~ "lti_deep_linking_response"
-      assert resp =~ "status: 'error'"
+
+      [result] =
+        resp
+        |> Floki.parse_document!()
+        |> Floki.attribute("#section-deep-link-result", "data-result")
+
+      assert Jason.decode!(result)["status"] == "error"
     end
 
     defp generate_deep_linking_jwt(client_id, key, kid, claims \\ %{}) do
@@ -1156,7 +1162,9 @@ defmodule OliWeb.LtiControllerTest do
     test "successfully processes valid deep linking response", %{
       conn: conn,
       section: section,
-      activity_id: activity_id
+      activity_id: activity_id,
+      project: project,
+      student: instructor
     } do
       client_id = "test-client-id"
       key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
@@ -1170,11 +1178,26 @@ defmodule OliWeb.LtiControllerTest do
 
       keyset_url = "https://some-tool.example.edu/.well-known/jwks.json"
 
-      # Insert a platform instance
-      insert(:platform_instance, %{
-        client_id: client_id,
-        keyset_url: keyset_url
-      })
+      revision = Oli.Publishing.AuthoringResolver.from_resource_id(project.slug, activity_id)
+
+      deployment =
+        PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
+          activity_registration_id: revision.activity_type_id
+        )
+
+      {:ok, platform} =
+        Oli.Lti.PlatformInstances.update_platform_instance(deployment.platform_instance, %{
+          client_id: client_id,
+          keyset_url: keyset_url
+        })
+
+      {:ok, deployment} =
+        PlatformExternalTools.update_lti_external_tool_activity_deployment(deployment, %{
+          deep_linking_enabled: true
+        })
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       # Mock HTTP request to fetch the keyset
       MockHTTP
@@ -1186,7 +1209,15 @@ defmodule OliWeb.LtiControllerTest do
          }}
       end)
 
-      jwt = generate_deep_linking_jwt(client_id, key_pem, "test-kid")
+      {:ok, %{request_token: correlation}} =
+        Oli.Lti.SectionDeepLinkLaunch.start_request(instructor, section.slug, activity_id)
+
+      jwt =
+        generate_deep_linking_jwt(platform.client_id, key_pem, "test-kid", %{
+          "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
+          "https://purl.imsglobal.org/spec/lti-dl/claim/data" => correlation
+        })
 
       params = %{
         "JWT" => jwt
