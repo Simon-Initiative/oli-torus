@@ -1423,7 +1423,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </h6>
 
             <div class="flex justify-between items-center mt-2 mb-2 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2">
-              <div role="unit title" class="grow shrink basis-0">
+              <div data-role="unit-title" class="grow shrink basis-0">
                 {unit["title"]}
               </div>
               <div class="flex flex-row gap-x-2">
@@ -1437,7 +1437,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
             <div class="flex justify-between items-center mb-1 w-full">
               <div
-                role={"unit #{unit["resource_id"]} scheduling details"}
+                data-role={"unit-#{unit["resource_id"]}-scheduling-details"}
                 class="flex flex-col items-start gap-2 text-Text-text-low text-xs font-semibold leading-3"
               >
                 <span>
@@ -2052,7 +2052,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={@id}
-      role={"unit_#{@row["resource_id"]}_outline"}
+      data-role={"unit-#{@row["resource_id"]}-outline"}
       data-completed={"#{@progress == 100}"}
       phx-click={if @is_mobile, do: "show_unit_layer"}
       phx-value-id={@row["resource_id"]}
@@ -2076,7 +2076,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
               <div
-                role="unit title"
+                data-role="unit-title"
                 class="search-result grow shrink basis-0"
               >
                 {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
@@ -2091,7 +2091,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
             <div class="flex justify-between items-center mb-3 w-full">
               <div
-                role={"unit #{@row["resource_id"]} scheduling details"}
+                data-role={"unit-#{@row["resource_id"]}-scheduling-details"}
                 class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
@@ -2225,7 +2225,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
               <div
-                role="unit title"
+                data-role="page-title"
                 class="search-result grow shrink basis-0"
               >
                 {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
@@ -2240,7 +2240,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
             <div class="flex justify-between items-center mb-3 w-full">
               <div
-                role={"unit #{@row["resource_id"]} scheduling details"}
+                data-role={"page-#{@row["resource_id"]}-scheduling-details"}
                 class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
@@ -2307,7 +2307,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={@id}
-      role={"#{@type}_#{@row["resource_id"]}_outline"}
+      data-role={"#{@type}-#{@row["resource_id"]}-outline"}
       data-completed={"#{@row["completed"]}"}
       class="flex flex-col"
       phx-update="replace"
@@ -2365,7 +2365,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     <div
       id={@id}
-      role={"#{@type}_#{@row["resource_id"]}_outline"}
+      data-role={"#{@type}-#{@row["resource_id"]}-outline"}
       data-completed={"#{@row["completed"]}"}
       class="flex flex-col"
       phx-update="replace"
@@ -2390,7 +2390,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
               <div
-                role="module title"
+                data-role="module-title"
                 class="search-result grow shrink basis-0"
               >
                 {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
@@ -2398,7 +2398,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
             <div class="flex justify-between items-center mb-3 w-full">
               <div
-                role={"module #{@row["resource_id"]} scheduling details"}
+                data-role={"module-#{@row["resource_id"]}-scheduling-details"}
                 class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
@@ -2483,7 +2483,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
             <div class="card-body sm:pl-6 md:pl-20 pt-4 md:pt-8">
               <div
-                role="completed count"
+                data-role="completed-count"
                 class="flex gap-2.5 border-b-[1px] border-Border-border-default h-10"
               >
                 <div class="w-7 h-8 py-1 flex gap-2.5">
@@ -2511,7 +2511,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   :for={{grouped_scheduling_type, grouped_due_date} <- @page_due_dates}
                   class="flex flex-col w-full"
                   id={UUID.uuid4()}
-                  role={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
+                  data-role={"pages-grouped-by-#{grouped_scheduling_type}-#{grouped_due_date}"}
                   phx-update="replace"
                 >
                   <% grouped_pages =
@@ -2565,7 +2565,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               </div>
             </div>
             <div
-              role="collapse_bar"
+              data-role="collapse-bar"
               class="w-full px-2.5 justify-center items-center inline-flex mt-8"
             >
               <div class="grow shrink basis-0 h-px bg-white/20"></div>
@@ -2575,7 +2575,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     to: "#icon-#{@row["resource_id"]}"
                   )
                 }
-                role="collapse module button"
+                data-role="collapse-module-button"
                 class="pl-5 pr-4 rounded-[82px] border border-Border-border-default text-Text-text-low opacity-80 hover:opacity-100 hoverjustify-center items-center gap-3 flex text-sm font-medium"
               >
                 <div class="text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
