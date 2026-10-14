@@ -3,6 +3,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
   use Oban.Testing, repo: Oli.Repo
 
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.ManualGrading
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Activities.Model.{Part}
@@ -672,6 +673,13 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       assert Enum.map(options.users, & &1.id) == Enum.sort([ctx.u1.id, ctx.u2.id])
       refute ctx.u3.id in Enum.map(options.users, & &1.id)
 
+      first_user = hd(options.users)
+      assert %User{} = first_user
+      assert first_user.guest == ctx.u1.guest
+      assert first_user.name == ctx.u1.name
+      assert first_user.given_name == ctx.u1.given_name
+      assert first_user.family_name == ctx.u1.family_name
+
       assert options.activities == [
                %{id: ctx.act_a.resource.id, title: "New title"},
                %{id: ctx.act_b.resource.id, title: "Activity B"}
@@ -703,27 +711,26 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       |> add_submitted_activity(:ra_u1_p1, :act_a_new, :p1_older, %{
         date_submitted: ~U[2026-10-08 10:00:00Z]
       })
-      # Page two and Activity B: same date, so only the id decides.
       |> Seeder.create_resource_attempt(%{attempt_number: 1}, :u1, :page2, :revision2, :ra_p2_old)
       |> Seeder.create_resource_attempt(%{attempt_number: 1}, :u2, :page2, :page2_new, :ra_p2_new)
       |> add_submitted_activity(:ra_p2_old, :act_b, :tie_lower_id, %{
-        date_submitted: ~U[2026-10-07 10:00:00Z]
+        date_submitted: ~U[2026-10-11 10:00:00Z]
       })
       |> add_submitted_activity(:ra_p2_new, :act_b_new, :tie_higher_id, %{
-        date_submitted: ~U[2026-10-07 10:00:00Z]
+        date_submitted: ~U[2026-10-11 10:00:00Z]
       })
 
       options = ManualGrading.filter_options(ctx.section)
 
-      assert Map.new(options.pages, &{&1.id, &1.title}) == %{
-               ctx.page1.id => "Page one, latest",
-               ctx.page2.id => "Page two, higher id"
-             }
+      assert options.pages == [
+               %{id: ctx.page1.id, title: "Page one, latest"},
+               %{id: ctx.page2.id, title: "Page two, higher id"}
+             ]
 
-      assert Map.new(options.activities, &{&1.id, &1.title}) == %{
-               ctx.act_a.resource.id => "New title",
-               ctx.act_b.resource.id => "Activity B, higher id"
-             }
+      assert options.activities == [
+               %{id: ctx.act_a.resource.id, title: "New title"},
+               %{id: ctx.act_b.resource.id, title: "Activity B, higher id"}
+             ]
     end
 
     test "filter_value_labels/2 labels only ids that belong to the section", ctx do

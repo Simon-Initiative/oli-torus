@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Accounts.User
   alias Oli.Delivery.Sections.{Enrollment, Section}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Activities.AdaptiveParts
@@ -121,41 +122,48 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   titles come from the most recently submitted pending attempt of that resource.
   """
   def filter_options(%Section{id: section_id}) do
-    base = submitted_attempts_query(section_id, @unfiltered)
+    rows =
+      section_id
+      |> submitted_attempts_query(@unfiltered)
+      |> order_by([aa], desc_nulls_last: aa.date_submitted, desc: aa.id)
+      |> select([aa, _ra, resource_access, user, activity_revision, resource_revision], %{
+        user_id: user.id,
+        user_guest: user.guest,
+        user_name: user.name,
+        user_given_name: user.given_name,
+        user_family_name: user.family_name,
+        activity_resource_id: activity_revision.resource_id,
+        activity_title: activity_revision.title,
+        page_resource_id: resource_access.resource_id,
+        page_title: resource_revision.title
+      })
+      |> Repo.all()
 
     users =
-      base
-      |> distinct([_aa, _ra, _rac, user], user.id)
-      |> select([_aa, _ra, _rac, user], user)
-      |> Repo.all()
+      rows
+      |> Enum.uniq_by(& &1.user_id)
+      |> Enum.map(fn r ->
+        struct(User, %{
+          id: r.user_id,
+          guest: r.user_guest,
+          name: r.user_name,
+          given_name: r.user_given_name,
+          family_name: r.user_family_name
+        })
+      end)
+      |> Enum.sort_by(& &1.id)
 
     activities =
-      base
-      |> distinct([_aa, _ra, _rac, _u, activity_revision], activity_revision.resource_id)
-      |> order_by([aa, _ra, _rac, _u, activity_revision],
-        asc: activity_revision.resource_id,
-        desc_nulls_last: aa.date_submitted,
-        desc: aa.id
-      )
-      |> select([_aa, _ra, _rac, _u, activity_revision], %{
-        id: activity_revision.resource_id,
-        title: activity_revision.title
-      })
-      |> Repo.all()
+      rows
+      |> Enum.uniq_by(& &1.activity_resource_id)
+      |> Enum.map(&%{id: &1.activity_resource_id, title: &1.activity_title})
+      |> Enum.sort_by(& &1.id)
 
     pages =
-      base
-      |> distinct([_aa, _ra, resource_access], resource_access.resource_id)
-      |> order_by([aa, _ra, resource_access],
-        asc: resource_access.resource_id,
-        desc_nulls_last: aa.date_submitted,
-        desc: aa.id
-      )
-      |> select([_aa, _ra, resource_access, _u, _ar, resource_revision], %{
-        id: resource_access.resource_id,
-        title: resource_revision.title
-      })
-      |> Repo.all()
+      rows
+      |> Enum.uniq_by(& &1.page_resource_id)
+      |> Enum.map(&%{id: &1.page_resource_id, title: &1.page_title})
+      |> Enum.sort_by(& &1.id)
 
     %{users: users, activities: activities, pages: pages}
   end
