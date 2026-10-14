@@ -136,10 +136,8 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionTest do
     assert html =~ "Files"
     assert html =~ "No files uploaded"
     refute html =~ "text-2xl"
-  end
 
-  test "renders adaptive text input as prose instead of oversized value card" do
-    html =
+    adaptive_html =
       render_component(&SelectedSubmission.render/1, %{
         submission: %{
           title: "Screen Input 6",
@@ -157,11 +155,11 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionTest do
         }
       })
 
-    assert html =~ "How many?"
-    assert html =~ "some text"
-    assert html =~ "Prompt"
-    assert html =~ "enter"
-    refute html =~ "text-2xl"
+    assert adaptive_html =~ "How many?"
+    assert adaptive_html =~ "some text"
+    assert adaptive_html =~ "Prompt"
+    assert adaptive_html =~ "enter"
+    refute adaptive_html =~ "text-2xl"
   end
 
   test "shows each response exactly as written: no blank line or indentation around it" do

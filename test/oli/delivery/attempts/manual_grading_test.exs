@@ -419,30 +419,27 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       {:ok, section: map.section, tied_ids: tied_ids}
     end
 
-    test "rows tied on the sort key come out by attempt id, in the sort direction, for every key",
+    test "rows tied on the sort key come out by attempt id, and the ORDER BY clause carries the tie-breaker",
          %{section: section, tied_ids: tied_ids} do
+      handler = attach_query_telemetry()
+      on_exit(fn -> :telemetry.detach(handler) end)
+
       for field <- @sort_fields, direction <- [:asc, :desc] do
         ids =
           section
           |> browse_all(%Sorting{field: field, direction: direction})
           |> Enum.map(& &1.id)
 
-        assert ids == Enum.sort(tied_ids, direction), "sort by #{field} #{direction}"
-      end
-    end
+        assert ids == Enum.sort(tied_ids, direction),
+               "sort by #{field} #{direction}: result order"
 
-    test "the ORDER BY always ends with the attempt id in the sort direction, for every key",
-         %{section: section} do
-      handler = attach_query_telemetry()
-      on_exit(fn -> :telemetry.detach(handler) end)
-
-      for field <- @sort_fields, direction <- [:asc, :desc] do
-        browse_all(section, %Sorting{field: field, direction: direction})
         assert_receive {:query, sql}
 
         case direction do
           :asc ->
-            assert sql =~ ~r/ORDER BY [^,]+, a0\."id" LIMIT/, "sort by #{field} asc: #{sql}"
+            assert sql =~ ~r/ORDER BY [^,]+, a0\."id" LIMIT/,
+                   "sort by #{field} asc: #{sql}"
+
             refute sql =~ " DESC", "sort by #{field} asc: #{sql}"
 
           :desc ->
@@ -540,31 +537,35 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       {:ok, map}
     end
 
-    test "two chosen activities return the rows of both and no other; [] means no filter", ctx do
-      ids = browse_ids(ctx.section, activity_ids: [ctx.act_1.resource.id, ctx.act_2.resource.id])
+    test "each list filter selects its rows; [] means no filter", ctx do
+      activity_ids =
+        browse_ids(ctx.section, activity_ids: [ctx.act_1.resource.id, ctx.act_2.resource.id])
 
-      assert ids == ids_of(ctx, [:a_1_p1, :a_2_p1, :b_1_p1, :c_2_p2])
-      refute ctx.a_3_p2.id in ids
+      assert activity_ids == ids_of(ctx, [:a_1_p1, :a_2_p1, :b_1_p1, :c_2_p2]),
+             "activity filter: two chosen"
+
+      refute ctx.a_3_p2.id in activity_ids
 
       assert browse_ids(ctx.section, activity_ids: []) ==
-               ids_of(ctx, ~w(a_1_p1 a_2_p1 a_3_p2 b_1_p1 c_2_p2)a)
-    end
+               ids_of(ctx, ~w(a_1_p1 a_2_p1 a_3_p2 b_1_p1 c_2_p2)a),
+             "activity filter: empty list returns all"
 
-    test "two chosen students return the rows of both and no other", ctx do
-      ids = browse_ids(ctx.section, user_ids: [ctx.user_a.id, ctx.user_b.id])
+      student_ids = browse_ids(ctx.section, user_ids: [ctx.user_a.id, ctx.user_b.id])
 
-      assert ids == ids_of(ctx, [:a_1_p1, :a_2_p1, :a_3_p2, :b_1_p1])
-      refute ctx.c_2_p2.id in ids
-    end
+      assert student_ids == ids_of(ctx, [:a_1_p1, :a_2_p1, :a_3_p2, :b_1_p1]),
+             "student filter: two chosen"
 
-    test "two chosen pages return the rows of both; one page returns only its rows", ctx do
+      refute ctx.c_2_p2.id in student_ids
+
       page1 = ctx.page1.id
       page2 = ctx.page2.id
 
-      assert browse_ids(ctx.section, page_ids: [page2]) == ids_of(ctx, [:a_3_p2, :c_2_p2])
+      assert browse_ids(ctx.section, page_ids: [page2]) == ids_of(ctx, [:a_3_p2, :c_2_p2]),
+             "page filter: one page"
 
       assert browse_ids(ctx.section, page_ids: [page1, page2]) ==
-               ids_of(ctx, ~w(a_1_p1 a_2_p1 a_3_p2 b_1_p1 c_2_p2)a)
+               ids_of(ctx, ~w(a_1_p1 a_2_p1 a_3_p2 b_1_p1 c_2_p2)a),
+             "page filter: both pages"
     end
 
     test "list filters combine with each other (AND)", ctx do

@@ -90,38 +90,16 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       by_student = row_students(html)
       {:ok, _fresh, fresh_html} = live(ctx.conn, ctx.route)
       default_order = row_students(fresh_html)
+      doc = Floki.parse_document!(fresh_html)
 
       assert by_student == ["Adams, Amy", "Adams, Amy", "Baker, Beth"]
       refute default_order == by_student
 
       assert row_students(render_patch(view, ctx.route)) == default_order
-    end
-
-    test "names the two attempt columns Activity Attempt and Page Attempt", ctx do
-      {:ok, _view, html} = live(ctx.conn, ctx.route)
-
-      headers = header_texts(html)
-      assert "Activity Attempt" in headers
-      assert "Page Attempt" in headers
-      refute "Attempt" in headers
-    end
-
-    test "renders the design-system table with a fixed id, sort buttons and no page-size control",
-         ctx do
-      {:ok, _view, html} = live(ctx.conn, ctx.route)
-      doc = Floki.parse_document!(html)
 
       assert [_] = Floki.find(doc, "table#manual-scoring-table")
       assert [_] = Floki.find(doc, ~s(th button[phx-value-sort_by="user"]))
       assert Floki.find(doc, ~s(select[name="limit"])) == []
-    end
-
-    test "the table, its counts, its paging and Clear All drop their own side margins",
-         ctx do
-      {:ok, _view, html} = live(ctx.conn, ctx.route)
-      doc = Floki.parse_document!(html)
-
-      assert [_] = Floki.find(doc, "table#manual-scoring-table")
 
       assert doc
              |> Floki.find("div")
@@ -143,11 +121,15 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
              |> Floki.attribute("class")
              |> Enum.flat_map(&String.split/1)
              |> Enum.filter(&Regex.match?(~r/^m[rx]-\d/, &1)) == []
+    end
 
-      {:ok, _view, html} = live(ctx.conn, ctx.route <> "?selected_user_ids=[#{ctx.user_a.id}]")
-      assert [counter] = html |> Floki.parse_document!() |> Floki.find(~s(div[role="status"]))
-      assert Floki.text(counter) =~ "Showing 2 of 3 submissions"
-      assert side_spacing(counter) == []
+    test "names the two attempt columns Activity Attempt and Page Attempt", ctx do
+      {:ok, _view, html} = live(ctx.conn, ctx.route)
+
+      headers = header_texts(html)
+      assert "Activity Attempt" in headers
+      assert "Page Attempt" in headers
+      refute "Attempt" in headers
     end
 
     test "shows 'Showing N of M submissions' only while a filter or search is active", ctx do
@@ -155,10 +137,15 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       refute html =~ ~r/Showing \d+ of \d+ submissions/
 
       {:ok, _view, html} = live(ctx.conn, ctx.route <> "?selected_user_ids=[#{ctx.user_a.id}]")
-      assert html =~ "Showing 2 of 3 submissions"
+
+      assert [counter] = html |> Floki.parse_document!() |> Floki.find(~s(div[role="status"]))
+      assert Floki.text(counter) =~ "Showing 2 of 3 submissions"
+      assert side_spacing(counter) == []
 
       {:ok, _view, html} = live(ctx.conn, ctx.route <> "?text_search=Baker")
       assert html =~ "Showing 1 of 3 submissions"
+      assert search_value(html) == ["Baker"]
+      assert row_students(html) == [Utils.name(ctx.user_b)]
     end
 
     test "Clear All Filters empties the filters and the search, goes to the first page and keeps the sort",
@@ -210,13 +197,6 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       {:ok, _view, html} = live(conn, ctx.route <> "?text_search=nothing-matches")
       assert html =~ "No submissions match your filters."
       refute html =~ "No submissions awaiting scoring."
-    end
-
-    test "the search input shows the applied search from the URL", ctx do
-      {:ok, _view, html} = live(ctx.conn, ctx.route <> "?text_search=Baker")
-
-      assert search_value(html) == ["Baker"]
-      assert row_students(html) == [Utils.name(ctx.user_b)]
     end
 
     test "the sort params order the rows and a sort click patches them into the URL", ctx do
@@ -401,15 +381,6 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       assert length(row_students(render(view))) == 3
       assert checked_values(render(view), "purpose-filter") == ["true", "false"]
 
-      check_filter(view, "purpose-filter", [])
-      assert query(assert_patch(view))["graded"] == "[]"
-      assert length(row_students(render(view))) == 3
-      assert checked_values(render(view), "purpose-filter") == []
-    end
-
-    test "both purposes survive a sort click and reach the links to the scoring page", ctx do
-      {:ok, view, _html} = live(ctx.conn, ctx.route <> "?graded=[true,false]")
-
       view |> element(~s(th button[phx-value-sort_by="user"])) |> render_click()
       assert query(assert_patch(view))["graded"] == "[false,true]"
 
@@ -421,6 +392,11 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
         |> hd()
 
       assert query(href)["graded"] == "[false,true]"
+
+      check_filter(view, "purpose-filter", [])
+      assert query(assert_patch(view))["graded"] == "[]"
+      assert length(row_students(render(view))) == 3
+      assert checked_values(render(view), "purpose-filter") == []
     end
 
     test "each filter shows the values the URL applies", ctx do

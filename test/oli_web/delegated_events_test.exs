@@ -10,30 +10,18 @@ defmodule OliWeb.DelegatedEventsTest do
   describe "delegate_to/2" do
     test "returns {:noreply, socket} and logs a warning when no delegate handles the event" do
       socket = %Socket{view: OliWeb.DelegatedEventsTest.SomeView}
+      params = %{"email" => "private-student@example.test", "token" => "payload-secret"}
 
       log =
         capture_log(fn ->
           assert {:noreply, ^socket} =
                    delegate_to(
-                     {"unknown_event", %{"a" => 1}, socket, &patch_fn/2},
+                     {"unknown_event", params, socket, &patch_fn/2},
                      [&not_handled/4, &not_handled/4]
                    )
         end)
 
-      assert log =~ "unknown_event"
-      assert log =~ "OliWeb.DelegatedEventsTest.SomeView"
-    end
-
-    test "the warning names the view and the event, never the event's payload" do
-      socket = %Socket{view: OliWeb.DelegatedEventsTest.SomeView}
-      params = %{"email" => "private-student@example.test", "token" => "payload-secret"}
-
-      log =
-        capture_log(fn ->
-          delegate_to({"stale_event", params, socket, &patch_fn/2}, [&not_handled/4])
-        end)
-
-      assert log =~ ~s|Unhandled event in OliWeb.DelegatedEventsTest.SomeView: "stale_event"|
+      assert log =~ ~s|Unhandled event in OliWeb.DelegatedEventsTest.SomeView: "unknown_event"|
       refute log =~ "private-student@example.test"
       refute log =~ "payload-secret"
     end

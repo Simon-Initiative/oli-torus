@@ -179,13 +179,7 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert text(d, "#submission-position") == "2 of 3"
       assert html =~ "Amy wrote about essay two"
       refute html =~ "Beth wrote her essay"
-    end
-
-    test "the page brings a control that gets focus out from under the sticky dashboard header",
-         ctx do
-      {:ok, _view, html} = live(ctx.conn, ctx.scoring_route.(ctx.a_2.id))
-
-      assert Floki.attribute(doc(html), "#scoring-page", "phx-hook") == ["ScoringRevealFocus"]
+      assert Floki.attribute(d, "#scoring-page", "phx-hook") == ["ScoringRevealFocus"]
     end
 
     test "Previous and Next walk the table's order, show the right student's answer, and are disabled at the ends",
@@ -433,8 +427,16 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
         assert [_] = Floki.find(d, ~s|#scoring-form input[name="score_#{g}"][data-initial=""]|)
 
         assert [_] =
-                 Floki.find(d, ~s|#scoring-form textarea[name="feedback_#{g}"][data-initial=""]|)
+                 Floki.find(
+                   d,
+                   ~s|#scoring-form textarea[name="feedback_#{g}"][data-initial=""][maxlength="2000"]|
+                 )
       end
+
+      assert d
+             |> Floki.find("#scoring-form textarea")
+             |> Enum.map(&{Floki.attribute(&1, "name"), Floki.attribute(&1, "maxlength")}) ==
+               [{["feedback_#{ctx.g1}"], ["2000"]}, {["feedback_#{ctx.g2}"], ["2000"]}]
 
       assert [_] = Floki.find(d, "#part_#{ctx.g1}:not([hidden])")
       assert [_] = Floki.find(d, "#part_#{ctx.g2}[hidden]")
@@ -497,6 +499,29 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert [_] = Floki.find(d, ~s|input[name="score_#{ctx.g1}"][value="3"]|)
       assert text(d, ~s|textarea[name="feedback_#{ctx.g1}"]|) == "Good start"
       assert [_] = Floki.find(d, ~s|input[name="score_#{ctx.g1}"][data-initial=""]|)
+
+      change_draft(ctx.view, %{
+        "score_#{ctx.g1}" => "1",
+        "feedback_#{ctx.g1}" => "kept",
+        "score_#{ctx.g2}" => "2"
+      })
+
+      html =
+        ctx.view
+        |> form("#scoring-form", %{
+          "score_#{ctx.g1}" => "",
+          "feedback_#{ctx.g1}" => "",
+          "score_#{ctx.g2}" => "",
+          "feedback_#{ctx.g2}" => "late"
+        })
+        |> render_change(%{"_target" => ["feedback_#{ctx.g2}"]})
+
+      d = doc(html)
+      assert [_] = Floki.find(d, ~s|input[name="score_#{ctx.g1}"][value="1"]|)
+      assert text(d, ~s|textarea[name="feedback_#{ctx.g1}"]|) == "kept"
+      assert [_] = Floki.find(d, ~s|input[name="score_#{ctx.g2}"][value="2"]|)
+      assert text(d, ~s|textarea[name="feedback_#{ctx.g2}"]|) == "late"
+      assert [_] = Floki.find(d, "button#apply-button:not([disabled])")
     end
 
     test "Apply stays disabled, and says so, until every manual part has both a score and feedback",
@@ -536,45 +561,6 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
 
       assert [_] = Floki.find(doc(html), "button#apply-button:not([disabled])")
       refute text(doc(html), "#scoring-form") =~ @apply_disabled_help
-    end
-
-    test "a change takes only the input it names, so a late one cannot blank the rest of the draft",
-         ctx do
-      change_draft(ctx.view, %{
-        "score_#{ctx.g1}" => "1",
-        "feedback_#{ctx.g1}" => "kept",
-        "score_#{ctx.g2}" => "2"
-      })
-
-      # A debounced change sent from the blank page a reconnect renders, before its recovery lands.
-      html =
-        ctx.view
-        |> form("#scoring-form", %{
-          "score_#{ctx.g1}" => "",
-          "feedback_#{ctx.g1}" => "",
-          "score_#{ctx.g2}" => "",
-          "feedback_#{ctx.g2}" => "late"
-        })
-        |> render_change(%{"_target" => ["feedback_#{ctx.g2}"]})
-
-      d = doc(html)
-      assert [_] = Floki.find(d, ~s|input[name="score_#{ctx.g1}"][value="1"]|)
-      assert text(d, ~s|textarea[name="feedback_#{ctx.g1}"]|) == "kept"
-      assert [_] = Floki.find(d, ~s|input[name="score_#{ctx.g2}"][value="2"]|)
-      assert text(d, ~s|textarea[name="feedback_#{ctx.g2}"]|) == "late"
-      assert [_] = Floki.find(d, "button#apply-button:not([disabled])")
-    end
-
-    test "clearing an input clears it in the draft and disables Apply again", ctx do
-      html =
-        change_draft(ctx.view, %{
-          "score_#{ctx.g1}" => "1",
-          "feedback_#{ctx.g1}" => "Good",
-          "score_#{ctx.g2}" => "2",
-          "feedback_#{ctx.g2}" => "Fine"
-        })
-
-      assert [_] = Floki.find(doc(html), "button#apply-button:not([disabled])")
 
       d = doc(change_draft(ctx.view, %{"score_#{ctx.g1}" => ""}))
       assert [_] = Floki.find(d, ~s|input[name="score_#{ctx.g1}"][value=""]|)
@@ -671,19 +657,6 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert_push_event(ctx.view, "unsaved_changes:proceed", %{})
       assert Floki.find(doc(html), "#unsaved-modal") == []
       assert [_] = Floki.find(doc(html), ~s|input[name="score_#{ctx.g1}"][value=""]|)
-    end
-
-    test "every feedback field keeps the 2000-character limit", ctx do
-      limits =
-        ctx.html
-        |> doc()
-        |> Floki.find("#scoring-form textarea")
-        |> Enum.map(&{Floki.attribute(&1, "name"), Floki.attribute(&1, "maxlength")})
-
-      assert limits == [
-               {["feedback_#{ctx.g1}"], ["2000"]},
-               {["feedback_#{ctx.g2}"], ["2000"]}
-             ]
     end
 
     test "labels are associated with the fields; the feedback-required message shows from the start while the feedback is blank",
@@ -861,6 +834,9 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert text(d, "#part_#{done}") =~ "Scored earlier by hand"
       refute text(d, "#part_#{done}") =~ "No feedback provided"
       assert [_] = Floki.find(d, ~s|input[name="score_#{pending}"]|)
+      assert text(d, "#input_status_#{done}") == "Scored"
+      assert_exposed(d, "#input_status_#{done} > span")
+      assert text(d, "#input_status_#{pending}") == ""
 
       params = %{"score_#{pending}" => "1", "feedback_#{pending}" => "Now"}
       html = change_draft(view, params)
@@ -868,16 +844,6 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
 
       html = view |> form("#scoring-form", params) |> render_submit()
       assert html =~ "applied successfully"
-    end
-
-    test "the row of an evaluated manual part says Scored from the start; a pending one does not",
-         ctx do
-      {:ok, _view, html} = live(ctx.conn, ctx.scoring_route.(ctx.partly.id))
-      d = doc(html)
-
-      assert text(d, "#input_status_#{ctx.partly_done.attempt_guid}") == "Scored"
-      assert_exposed(d, "#input_status_#{ctx.partly_done.attempt_guid} > span")
-      assert text(d, "#input_status_#{ctx.partly_pending.attempt_guid}") == ""
     end
 
     test "an evaluated manual part without feedback says no feedback was provided", ctx do
@@ -989,7 +955,7 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
         "feedback_#{ctx.g2}" => "Half"
       }
 
-    test "saves the scores, says so, and stays on the submission read-only with the saved values",
+    test "saves the scores, says so, stays read-only, needs no modal to leave, and redirects on reload",
          ctx do
       html = ctx.view |> form("#scoring-form", valid(ctx)) |> render_submit()
       d = doc(html)
@@ -999,7 +965,6 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert {:evaluated, 1.0, _} = states[ctx.g1]
       assert {:evaluated, 0.5, _} = states[ctx.g2]
 
-      # the parts are now evaluated: they show their saved score and feedback, with no inputs
       assert Floki.find(d, "#scoring-form input, #scoring-form textarea") == []
       assert text(d, "#part_#{ctx.g1}") =~ "1.0 / 1.0"
       assert text(d, "#part_#{ctx.g1}") =~ "Well done"
@@ -1007,22 +972,12 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       assert Floki.find(d, "button#apply-button") == []
       assert Floki.find(d, "#submission-position") == []
       assert text(d, "h1#scoring-heading") == Utils.name(ctx.user_b)
-      # neighbours still come from the anchor captured when the submission was opened
       assert href(d, "a#previous-link") == ctx.scoring_route.(ctx.a_1.id)
       assert [_] = Floki.find(d, ~s|a#next-link[aria-disabled="true"]|)
-    end
-
-    test "after Apply nothing is left to lose: leaving goes on without asking", ctx do
-      ctx.view |> form("#scoring-form", valid(ctx)) |> render_submit()
 
       html = render_hook(ctx.view, "show_unsaved_changes_modal", %{})
-
       assert_push_event(ctx.view, "unsaved_changes:proceed", %{})
       assert Floki.find(doc(html), ~s|#unsaved-modal [role="dialog"]|) == []
-    end
-
-    test "a reload after Apply redirects to the table with the notice", ctx do
-      ctx.view |> form("#scoring-form", valid(ctx)) |> render_submit()
 
       assert {:error, {:redirect, %{flash: %{"info" => @notice}}}} =
                live(ctx.conn, ctx.scoring_route.(ctx.two_parts.id))

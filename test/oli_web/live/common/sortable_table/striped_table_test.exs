@@ -36,6 +36,7 @@ defmodule OliWeb.Common.SortableTable.StripedTableTest do
       assert [th] = Floki.find(doc, ~s(th[phx-click="sort_event"][phx-value-sort_by="name"]))
       assert Floki.find(th, "button") == []
       assert Floki.find(doc, ~s(th[phx-click])) |> length() == 2
+      assert Floki.find(doc, "th[aria-sort]") == []
     end
 
     test "with sort_button the click moves to a <button> inside the <th> that carries its own sort_by" do
@@ -61,10 +62,6 @@ defmodule OliWeb.Common.SortableTable.StripedTableTest do
 
       doc = render_table(sort_button: true, model: %{model() | sort_order: :desc})
       assert [_] = Floki.find(doc, ~s(th[phx-value-sort_by="name"][aria-sort="descending"]))
-    end
-
-    test "without sort_button no header exposes aria-sort" do
-      assert render_table() |> Floki.find("th[aria-sort]") == []
     end
   end
 
