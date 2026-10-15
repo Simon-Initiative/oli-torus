@@ -75,13 +75,10 @@ run was found; the latest scheduled run `38686900486` failed, while provisioning
 `38613155854` succeeded. No new hosted nightly execution is claimed. The exact branch allowances were added afterward as recorded below.
 
 The current Torus `master` still runs the older browser-only nightly workflow and has
-no target concurrency lock. Before feature-branch dispatch, pause that job through a
-reviewed temporary `if: ${{ github.event_name == 'workflow_dispatch' }}` condition
-on `nightly-playwright`, preserving the scenario job and manual trigger. The runbook's
-`build-playwright` condition applies after the integrated workflow reaches master.
-Allow the exact Phase 6 branch in both environments, retain `master`, and inspect
-active/pending runs before dispatch. A default-branch pause is needed to prevent the
-older workflow from running against the target during verification.
+no target concurrency lock. The operator rejected a temporary schedule pause as
+unnecessary. Keep the schedule unchanged, inspect active/pending runs before dispatch,
+and coordinate feature-branch verification around scheduled execution. Both environments
+now allow the exact Phase 6 branch as recorded below.
 
 Live lifecycle tests also need an explicitly authorized disposable Kubernetes context
 and target under the GitOps repository contract; that information was requested.
@@ -114,7 +111,8 @@ by these local checks alone.
   `d756b2c2c5`. Parsed-YAML equality proves only the scheduled browser condition
   changes; manual dispatch and scenarios remain unchanged. Security and performance
   reviewers found no issues; actionlint reports the existing cache-action warning.
-  This PR has not merged, so the scheduled browser job is not yet paused.
+  The operator rejected this pause as unnecessary. PR #6943 was closed unmerged;
+  the nightly schedule remains unchanged.
 - GitOps helper/updater/validation-workflow files are identical between inspected
   local revision `62854e6` and accepted `master` revision `1fa4fcd`.
 - Final-phase `verify_implementation` and `master_validate --stage implementation_complete`
@@ -123,6 +121,6 @@ by these local checks alone.
   criteria and zero entries with both verified status and proof. These results do
   not close G6 or waive any live acceptance check.
 
-Next gate: merge the reviewed pause through normal review, ensure no old runs/reruns
-remain active, then dispatch the allowed Phase 6 branch. Disposable lifecycle checks
+Next step: ensure no old runs/reruns remain active, then dispatch the allowed Phase 6
+branch without changing the schedule. Disposable lifecycle checks
 remain pending the requested explicit Kubernetes context and authorization.
