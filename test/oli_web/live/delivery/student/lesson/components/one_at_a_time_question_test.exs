@@ -427,27 +427,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
              |> render() =~ "Question 3 / 3 • 6.0 points"
     end
 
-    test "does not show the parts score summary for activities with more than 1 part", %{
-      conn: conn,
-      component_params: component_params
-    } do
-      {:ok, lcd, _html} = live_component_isolated(conn, OneAtATimeQuestion, component_params)
-
-      refute has_element?(lcd, "div[role='parts score summary']")
-
-      lcd
-      |> element("#question_2_button")
-      |> render_click()
-
-      refute has_element?(lcd, "div[role='parts score summary']")
-
-      lcd
-      |> element("#question_3_button")
-      |> render_click()
-
-      refute has_element?(lcd, "div[role='parts score summary']")
-    end
-
     test "the question-wide total points remain visible for multipart questions", %{
       conn: conn,
       component_params: component_params
@@ -500,6 +479,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
           OneAtATimeQuestion,
           component_params
         )
+
+      assert has_element?(
+               lcd,
+               ~s{div[role="progressbar"][data-role="progress bar"][aria-label="Question progress"]}
+             )
 
       # 0.5% is the width of the progress bar when no question is submitted
       # (to match the Figma designs where a minimun width is set)

@@ -1300,7 +1300,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   @selected_module["resource_id"]
                 )
               }
-              role="module_hero_progress"
+              data-role="module-hero-progress"
               show_percent={false}
               width="100%"
               height="h-[6px]"
@@ -1682,7 +1682,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       id={"top_level_page_#{@unit["resource_id"]}"}
       tabindex="0"
       data-completed={"#{@progress == 100}"}
-      role="resource top level"
+      data-role="resource-top-level"
     >
       <div
         class="mt-5 md:p-[25px] md:pl-[50px]"
@@ -1706,7 +1706,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   {@progress}%
                 </span>
               </div>
-              <div class="sm:ml-auto flex items-center gap-3" role="schedule_details">
+              <div class="sm:ml-auto flex items-center gap-3" data-role="schedule-details">
                 <div class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
@@ -1736,7 +1736,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 width="194px"
                 on_going_colour="bg-Fill-fill-progress"
                 completed_colour="bg-Fill-fill-progress"
-                role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                data-role={"unit-#{@unit["numbering"]["index"]}-progress"}
               />
             </div>
           </div>
@@ -1769,9 +1769,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-keydown={enter_unit(@unit["resource_id"])}
       phx-key="enter"
       data-completed={"#{@progress == 100}"}
-      role="resource top level"
+      data-role="resource-top-level"
     >
-      <div class="mt-5 md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
+      <div class="mt-5 md:p-[25px] md:pl-[50px]" data-role={"unit-#{@unit["numbering"]["index"]}"}>
         <div class="flex flex-col gap-2 sm:gap-0 px-4 sm:px-0 md:flex-row md:gap-[30px]">
           <% unit_label =
             container_label_and_numbering(
@@ -1795,7 +1795,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   {@progress}%
                 </span>
               </div>
-              <div class="flex items-center gap-3" role="schedule_details">
+              <div class="flex items-center gap-3" data-role="schedule-details">
                 <div class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
@@ -1830,7 +1830,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 width="194px"
                 on_going_colour="bg-Fill-fill-progress"
                 completed_colour="bg-Fill-fill-progress"
-                role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                data-role={"unit-#{@unit["numbering"]["index"]}-progress"}
               />
             </div>
           </div>
@@ -1910,7 +1910,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <.custom_focus_wrap
           :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
           class="px-3 md:px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] flex"
-          role="module_details"
+          data-role="module-details"
           id={"selected_module_in_unit_#{@unit["resource_id"]}"}
           data-animate={
             JS.show(
@@ -1932,7 +1932,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           phx-key="Escape"
         >
           <div
-            role="expanded module header"
+            data-role="expanded-module-header"
             class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
           >
             <% module_label =
@@ -1972,7 +1972,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <.lets_discuss_button :if={@assistant_enabled} />
 
           <div
-            role="module index"
+            data-role="module-index"
             class="flex flex-col max-w-[760px] pt-4 md:pt-[25px] pb-2.5 justify-start items-start gap-[23px] w-full"
           >
             <div class="w-full">
@@ -2005,7 +2005,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               />
             </div>
           </div>
-          <div role="collapse_bar" class="w-full px-2.5 justify-center items-center inline-flex">
+          <div data-role="collapse-bar" class="w-full px-2.5 justify-center items-center inline-flex">
             <div class="grow shrink basis-0 h-px bg-white/20"></div>
             <button
               phx-click={collapse_module(@unit["resource_id"])}
@@ -2706,7 +2706,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def module_content_header(assigns) do
     ~H"""
     <div class="w-full border-b dark:border-white/20 flex items-center justify-between pb-1.5">
-      <div role="completed count" class="flex gap-2.5">
+      <div data-role="completed-count" class="flex gap-2.5">
         <div class="w-7 h-8 py-1 flex gap-2.5">
           <Icons.check />
         </div>
@@ -2776,7 +2776,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div
         :for={{grouped_scheduling_type, grouped_due_date} <- @page_due_dates}
         class="flex flex-col w-full"
-        role={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
+        data-role={"pages-grouped-by-#{grouped_scheduling_type}-#{grouped_due_date}"}
       >
         <div :if={@has_scheduled_resources?} class="h-[19px] mb-5">
           <span class="text-Text-text-high text-sm font-bold leading-4">
@@ -2996,7 +2996,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def index_item(assigns) do
     ~H"""
     <button
-      role={"resource #{@type} #{@numbering_index} details"}
+      data-role={"resource-#{@type}-#{@numbering_index}-details"}
       class={[
         "w-full pl-[5px] pr-[7px] py-2.5 sm:rounded-lg justify-start items-start gap-5 flex sm:focus:bg-[#000000]/5 sm:hover:bg-[#000000]/5 sm:dark:focus:bg-[#FFFFFF]/5 sm:dark:hover:bg-[#FFFFFF]/5  border-b border-Border-border-default sm:border-b-0",
         if(@graded,
@@ -3370,7 +3370,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         xphx-mouseout={JS.hide(to: "#card_badge_details_#{@card["resource_id"]}")}
         class="rounded-xl absolute h-[170px] w-[294px] overflow-hidden cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]"
       >
-        <div class="mt-[166px]" role={"card #{@module_index} progress"}>
+        <div
+          class="mt-[166px]"
+          data-role={"card-#{@module_index}-progress-container"}
+        >
           <.progress_bar
             percent={
               parse_student_progress_for_resource(
@@ -3383,7 +3386,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             show_percent={false}
             on_going_colour="bg-Fill-fill-progress"
             completed_colour="bg-Fill-fill-progress"
-            role={"card_#{@module_index}_progress"}
+            data-role={"card-#{@module_index}-progress"}
           />
         </div>
       </div>
@@ -3450,7 +3453,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <% parsed_minutes = parse_card_badge_minutes(@duration_minutes, :page) %>
 
     <div
-      role="card badge"
+      data-role="card-badge"
       class="h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <Icons.check />
@@ -3471,7 +3474,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     <div
       :if={parsed_minutes}
-      role="card badge"
+      data-role="card-badge"
       class="h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <div class="text-Text-text-white text-xs font-semibold leading-3 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] pointer-events-none">
@@ -3497,7 +3500,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <% parsed_minutes = parse_card_badge_minutes(@page_metrics.total_duration_minutes, :module) %>
     <div
-      role="card badge"
+      data-role="card-badge"
       id={"in_progress_card_badge_#{@resource_id}"}
       class="ml-auto h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex"
     >
@@ -3523,7 +3526,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <% parsed_minutes = parse_card_badge_minutes(@page_metrics.total_duration_minutes, :module) %>
 
     <div
-      role="card badge"
+      data-role="card-badge"
       class="h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <Icons.check />
@@ -3693,7 +3696,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       :if={@streams.units.inserts == [] and @search_term not in ["", nil]}
       id="no-results-warning"
       class="p-3 sm:p-6"
-      role="no search results warning"
+      data-role="no-search-results-warning"
     >
       There are no results for the search term <span class="font-bold italic">{@search_term}</span>
     </div>

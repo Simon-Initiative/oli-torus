@@ -592,7 +592,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   def messages(assigns) do
     ~H"""
     <div
-      role="message container"
+      data-role="message-container"
       id="message-container"
       class="overflow-y-auto pt-5"
       phx-hook="KeepScrollAtBottom"

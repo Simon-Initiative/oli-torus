@@ -705,7 +705,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
               "px-4 py-3 flex items-center gap-4 hover:no-underline hover:bg-gray-100 dark:hover:bg-gray-800/60 sm:px-2" do %>
             <div
               class="flex-1 overflow-hidden text-ellipsis text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark"
-              role="linked authoring account email"
+              data-role="linked-authoring-account-email"
             >
               {linked_author_account_email}
             </div>

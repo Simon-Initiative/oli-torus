@@ -91,7 +91,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           <div class="mb-3">
             <Common.progress_bar
               percent={get_progress(@questions)}
-              role="progressbar"
               data-role="progress bar"
               aria_label="Question progress"
               height="h-1"
