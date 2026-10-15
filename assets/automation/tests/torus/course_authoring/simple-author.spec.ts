@@ -446,6 +446,10 @@ test.describe.serial('Simple Author lesson delivery @pr', () => {
     const slider = page.locator('janus-slider input[type="range"]');
     await advancePastFeedback(deck, slider);
 
+    // Each extra attempt costs maxScore / maxAttempt (10 / 4), so a correct
+    // answer on the second attempt scores 7.50.
+    await expect(deck.score()).toContainText('7.50');
+
     // The decimal advanced-feedback rule matches the learner's value.
     await slider.fill('2.5');
     await expect(slider).toHaveValue('2.5');
