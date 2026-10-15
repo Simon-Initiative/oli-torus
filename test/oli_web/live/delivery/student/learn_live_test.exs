@@ -1956,23 +1956,46 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert intro_card =~ ~s{aria-label="INTRO: Play unit intro video"}
     end
 
-    test "gallery cards are keyboard focusable without a focus trap around the slider",
+    test "the slider is the keyboard stop of a unit and its cards are only focusable once entered",
          %{conn: conn, section: section, unit_1: unit_1, top_level_page: top_level_page} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert view
-             |> element(~s{div[role='unit_1'] div[data-card-index='1']})
-             |> render() =~ ~s{tabindex="0"}
+      slider_id = "slider_#{unit_1.resource_id}"
+      hint_id = "slider_hint_#{unit_1.resource_id}"
 
-      assert view
-             |> element(~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']})
-             |> render() =~ ~s{tabindex="0"}
+      # the slider is focusable, described by a screen reader hint and entered with Enter
+      slider_html = view |> element("div##{slider_id}") |> render()
+      [slider_opening_tag | _] = String.split(slider_html, ">", parts: 2)
 
-      assert view
-             |> element(~s{div[role='unit_1'] div[data-intro-video='youtube']})
-             |> render() =~ ~s{tabindex="0"}
+      assert slider_opening_tag =~ ~s{tabindex="0"}
+      assert slider_opening_tag =~ ~s{aria-describedby="#{hint_id}"}
+      assert slider_opening_tag =~ ~s{phx-key="enter"}
 
-      # the unit container is no longer a tab stop that must be "entered" with Enter
+      assert view |> element("span##{hint_id}.sr-only") |> render() =~
+               "Press Enter to browse the cards, and Escape to leave."
+
+      # entering the slider makes the cards tab stops and wraps focus inside of it
+      assert slider_opening_tag =~ "#slider_focus_wrap_#{unit_1.resource_id} &gt; .slider-card"
+      assert slider_opening_tag =~ "slider_focus_wrap_#{unit_1.resource_id}-start"
+      assert slider_opening_tag =~ ~s{&quot;aria-hidden&quot;,&quot;false&quot;}
+
+      # cards are not tab stops until the slider is entered
+      for card <- [
+            element(view, ~s{div[role='unit_1'] div[data-card-index='1']}),
+            element(view, ~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']}),
+            element(view, ~s{div[role='unit_1'] div[data-intro-video='youtube']})
+          ] do
+        [card_opening_tag | _] = card |> render() |> String.split(">", parts: 2)
+        # (the data-*-event attributes mention tabindex inside their JS commands)
+        refute card_opening_tag =~ ~s{ tabindex="}
+      end
+
+      # the focus wrap sentinels start hidden and out of the tab order
+      start_html = view |> element("#slider_focus_wrap_#{unit_1.resource_id}-start") |> render()
+      assert start_html =~ ~s{tabindex="-1"}
+      assert start_html =~ ~s{aria-hidden="true"}
+
+      # the unit container itself is not a tab stop
       [unit_opening_tag | _] =
         view
         |> element(~s{div[id='unit_#{unit_1.resource_id}']})
@@ -1981,9 +2004,36 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute unit_opening_tag =~ "tabindex"
       refute unit_opening_tag =~ "phx-keydown"
+    end
 
-      refute has_element?(view, "#slider_focus_wrap_#{unit_1.resource_id}")
-      refute has_element?(view, "#slider_#{unit_1.resource_id} span[aria-hidden='true']")
+    test "leaving a slider with Escape moves focus back to the slider",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      for card <- [
+            element(view, ~s{div[role='unit_1'] div[data-card-index='1']}),
+            element(view, ~s{div[role='unit_1'] div[data-intro-video='youtube']})
+          ] do
+        card_html = render(card)
+        assert card_html =~ "#slider_#{unit_1.resource_id}"
+        assert card_html =~ ~s{&quot;aria-hidden&quot;,&quot;true&quot;}
+      end
+
+      view
+      |> element(~s{div[role='unit_1'] div[data-card-index='1']})
+      |> render_keydown(%{
+        "key" => "Escape",
+        "type" => "module",
+        "module_resource_id" => "123"
+      })
+
+      assert_push_event(view, "js-exec", %{to: "#module_123", attr: "data-leave-event"})
+
+      view
+      |> element(~s{div[role='unit_1'] div[data-intro-video='youtube']})
+      |> render_keydown(%{"key" => "Escape"})
+
+      assert_push_event(view, "js-exec", %{attr: "data-event"})
     end
 
     test "module cards can be toggled with the Enter and Space keys",
