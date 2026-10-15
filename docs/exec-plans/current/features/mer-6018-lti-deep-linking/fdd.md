@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-Keep the prototype's two storage boundaries: project configuration in the existing activity revision and delivery configuration in section-owned deep-link records. Harden editor saves and callback correlation, introduce missing-only transactional publication initialization, and copy template records into destination sections. Fix and component-test Torus-owned instructor configuration frame targeting; external-tool browser verification is deferred. The design builds on existing modules and does not introduce new authoring resource types or tool-specific production logic.
+Keep the prototype's two storage boundaries: project configuration in the existing activity revision and delivery configuration in section-owned deep-link records. Harden editor saves and callback correlation, introduce missing-only transactional publication initialization, and copy current template or previous-section records into destination sections. Fix and component-test Torus-owned instructor configuration frame targeting; external-tool browser verification is deferred. The design builds on existing modules and does not introduce new authoring resource types or tool-specific production logic.
 
 Requirements are canonical in `requirements.yml`; this document defines how each acceptance criterion will be satisfied. Planning traceability is not implementation proof.
 
@@ -13,7 +13,7 @@ Requirements are canonical in `requirements.yml`; this document defines how each
 - Trusted return validation: FR-003; AC-008, AC-009.
 - Revision persistence, freshness and publication isolation: FR-004; AC-010, AC-011, AC-012.
 - Direct creation and missing-only publication application: FR-005, FR-006; AC-013, AC-014, AC-015, AC-016, AC-017, AC-018.
-- Template initialization and inheritance: FR-007, FR-008; AC-019, AC-020, AC-021.
+- Template initialization and template/previous-section inheritance: FR-007, FR-008; AC-019, AC-020, AC-021.
 - Instructor configuration: FR-009; AC-022, AC-023, AC-024.
 - Portable data/compatibility and permanent evidence: FR-010, FR-011; AC-025, AC-026, AC-027, AC-028, AC-029, AC-030, AC-031.
 
@@ -26,7 +26,7 @@ Assume the project page editor owns configuration persistence; template authorin
 - `lib/oli/lti/authoring_launch.ex` verifies signed author/project/activity/deployment correlation and captured activity state, then delegates selection saves to the existing activity editor. See `design/authoring-save.md`.
 - `lib/oli_web/controllers/api/lti_controller.ex` and `lib/oli_web/controllers/lti_controller.ex` own launch details, LTI transport and callback/result handoff.
 - `lib/oli/authoring/editing/activity_editor.ex` retains ordinary revision policy. A signed selection save creates a fresh revision; ordinary single/bulk activity content edits preserve the stored selection.
-- `lib/oli/delivery.ex` calls `PlatformExternalTools.initialize_section_deep_links/2` inside direct creation. That helper currently inserts every selected candidate and is not a missing-only updater.
+- `lib/oli/delivery.ex` calls `PlatformExternalTools.initialize_section_deep_links/2` inside direct creation. That helper now performs validated, missing-only initialization with conflict-do-nothing batched inserts.
 - `lib/oli/delivery/sections/updates.ex` owns the active worker publication-application transaction, including final migration and cache invalidation. Inspect legacy update entry points before claiming complete coverage.
 - `lib/oli/delivery/sections/blueprint.ex` creates templates and delegates duplication to `SectionCopy`; the copy engine is shared with previous-section copying.
 - Prototype baseline: regular/configuration frames shared a name. Phase 2 uses instance-unique names and distinct outcomes; component regressions establish targeting/message behavior, without claiming that the collision caused the observed empty MyProse modal.
@@ -38,7 +38,7 @@ Assume the project page editor owns configuration persistence; template authorin
 
 Keep UI state in the authoring element and save orchestration in the page editor. Keep authorization, token verification, selection parsing and destination initialization in existing domain contexts. Controllers translate request/response contracts and do not implement publication or copy policy.
 
-Introduce narrow, documented domain helpers for guarded authoring selection saves, missing-only publication initialization and template selection copying. Reuse revision/edit and delivery creation transactions rather than creating parallel persistence paths.
+Introduce narrow, documented domain helpers for guarded authoring selection saves, missing-only publication initialization and source-section selection copying. Reuse revision/edit and delivery creation transactions rather than creating parallel persistence paths.
 
 ### 4.2 State & Data Flow
 
@@ -52,7 +52,7 @@ Display generic selection metadata in the priority order tool title, supported d
 
 The activity resource ID remains stable. Each project selection save participates in revision/publication change tracking. Section initialization copies published values into `(section_id, resource_id)` records. Applying a publication initializes only missing records; an existing row is authoritative even when the project selection changes or disappears.
 
-Project → template uses exact selected published revisions. Template → section copies the template's current records and preserves absent/cleared selections without project fallback. Instructor configuration updates the current section's record through the existing section callback after explicit authorization checks. Copying selections never copies learner data.
+Project → template uses exact selected published revisions. Template → section and previous section → section copy the source's current records, including instructor changes, and preserve absent/cleared selections without project fallback. This belongs to mandatory Content / curriculum, without a new checkbox. Destination rows are independent; existing base-project/blueprint provenance and publication pins follow the current copy policy. Instructor configuration updates the current section's record through the existing section callback after explicit authorization checks. Copying selections never copies learner data.
 
 ### 4.4 Alternatives Considered
 
@@ -60,7 +60,7 @@ Project → template uses exact selected published revisions. Template → secti
 - A revision ID alone misses ordinary in-place draft edits. Compare the captured revision and a deterministic server fingerprint of its editable fields, keeping ordinary revision policy unchanged.
 - Overwrite section records from new publications: simple but violates instructor ownership. Select insert-missing behavior protected by the composite uniqueness constraint.
 - Reinitialize sections created from templates from project content: loses template changes and restores cleared records. Copy template-owned records instead.
-- Add a global section-copy option now: expands ticket scope. Integrate inheritance with the existing template source policy only; keep general course-copy behavior explicit and covered.
+- Add a global section-copy option now: expands ticket scope. Include selections in the existing mandatory content group for both source kinds; preserve other copy groups and learner-data exclusions.
 
 ## 5. Interfaces
 
@@ -71,7 +71,7 @@ Proposed contracts refine existing interfaces; exact function placement is confi
 - Project POST endpoints start configuration and submit a signed result token. Save returns authoritative model/title/objectives/tags. The authoring component submits the returned token directly; the unused prototype result-retrieval endpoint is removed. Closing is local and does not issue a cancellation request.
 - `ActivityEditor.edit/5` accepts a sole `deep_link_result` token. Under its existing lock/transaction, validate that token against current activity state, derive a selection-only content merge and use existing clone/update/mapping/broadcast functions. Ordinary single/bulk content saves retain `deepLink` and reject non-map LTI models. Generic resource editing, copying/import and ordinary revision policy retain their baseline contracts.
 - `initialize_section_deep_links(section_id, publication_id)` is idempotent, missing-only and transaction-compatible. Exclude existing rows in the candidate query, validate portable fields and use the existing chunked insert utility with conflict-do-nothing. Return a created count or a bounded initialization error; no external tool calls occur inside this operation.
-- A template-copy helper accepts source/destination section identities and corresponding destination resources, preserving type/URL/custom/title/text and reporting insert failure. Honor any existing resource remap rather than assuming every copy retains resource IDs.
+- `copy_section_deep_links(source_section_id, destination_section_id)` performs one `INSERT … SELECT` for current source-owned type/URL/custom/title/text, scoped to both sections’ resource membership. It reports a copied count or bounded failure and participates in the existing source-locked copy transaction. The current shared copy engine preserves resource IDs while remapping section-resource IDs and, for project clones, project/publication IDs. Join by the stable resource ID without adding new remapping policy.
 - Frame identity is local presentation data, distinct from LTI `resource_link.id`. Give every mounted instance a stable unique frame name; delivery/configuration instances and multiple activities on one page must not share targets. Validate message source/origin and associate callbacks with the expected launch/frame.
 - Section configuration uses `Oli.Lti.SectionDeepLinkLaunch`: starting configuration is a POST that allows only an authorized instructor/admin and an active Deep Linking deployment, with an exact trusted-Origin check. Compact login hints carry section ID, account namespace and a request UUID; authorization rechecks them before emitting signed correlation in the LTI `data` claim. Return validation binds account/section/activity/deployment and rechecks current permission and capability. Launch details also include an actor/route-bound `request_token` for the POST cancellation endpoint. A successful return includes `request_id` so the mounted configuration frame can associate completion with its launch.
 - Author and instructor Deep Linking requests include the optional standard custom claim from the current draft or exact section/activity selection. Keep string values verbatim, including empty strings and serialized JSON; omit non-string legacy values without coercion or persistence changes. Omit the claim when no compliant values exist. A section without a stored selection has no project/publication fallback. Continue targeting the tool's configured selector endpoint and preserve signed `data`; tool-side UI preselection is optional and cannot be guaranteed by Torus. See [Deep Linking 2.0, section 4.4.11](https://developers.imsglobal.org/spec/lti-dl/v2p0) and [LTI 1.3, section 4.3](https://www.imsglobal.org/spec/lti/v1p3).
@@ -100,7 +100,7 @@ For direct creation, retain the existing placement after resources exist. For pu
 
 The worker delegates to `Oli.Delivery.Sections.Updates.apply_publication_update/2`; initialize after its final migration/post-processing, before its existing commit and cache/completion handling. The legacy `Sections.apply_publication_update/2` initializes at the end of both existing update transactions and emits completion only on success. Its existing curriculum-rebuild cache invalidation is unchanged. Unchanged diffs use the existing minor-update pipeline so repeated application can fill missing selections without bypassing normal resource processing, migration or post-processing. Retain the original project lookup, publication-read placement, locks and major/minor algorithms; changes to general publication performance require separate owner approval. The portable selection validator lives on `LtiSectionResourceDeepLink`; authoring delegates to it so initialization does not depend on the authoring launch context.
 
-For template creation, initialize within `Blueprint` creation after destination resources exist. For template-to-section duplication, copy selections after resource mapping is available within `SectionCopy`'s transaction and before success. Restrict this behavior to template source policy so previous-section copying is not silently expanded.
+For template creation, initialize within `Blueprint` creation after destination resources exist. For template-to-section and previous-section duplication, copy current source selections once destination resources exist, within `SectionCopy`'s existing source-locked transaction and before success. Do not initialize copies from project defaults. Keep all existing processing stages and the final AI-override write ordering; do not change source provenance, publication pins or unrelated copy groups.
 
 For instructor configuration, verify signed correlation and route association before taking a section row lock. Starting a request replaces the previous pending request for that section/activity under the same lock. Use a deterministic scoped key in the nonce table's indexed `value` column and the request UUID as its domain. Reject noncanonical resource identifiers before issuing state. Recheck current access, integration identity and tool claims within the return transaction; require that request to remain pending, consume its UUID and upsert only that section/resource's selection atomically. Remove pending state only with a successful save; failed writes roll back both selection and request consumption. Return correlation lifetime does not exceed nonce retention. No additional migration is needed. The return page stores JSON in an escaped HTML attribute and posts to its own origin; it does not embed tool metadata as executable script.
 
@@ -146,7 +146,7 @@ Check iframe message source and expected origin where Torus owns the return page
 - AC-008–AC-009: signed-tool controller/domain checks for invalid keys/claims/items, tampering/expiry, cross-association, removed access and lost locks.
 - AC-010–AC-012: editor domain tests and real authoring workflows for atomic selection revision changes, same-lock intervening edits, replay, stale autosaves, preserved unrelated content and publication isolation.
 - AC-013–AC-018: direct creation/application scenarios for exact older/newer revisions, new/missing/unconfigured activities, destination filtering, retained overrides, repeat/concurrent insertion and complete rollback. Unit tests can assert insert/query behavior and failure propagation separately.
-- AC-019–AC-021: project → template → section scenarios, current template changes, cleared/missing template selections, destination remaps/filtering, independent records and rollback without learner-data copying.
+- AC-019–AC-021: project → template → section and section → section scenarios, current template/instructor changes, content-only/all-group copies, cleared/missing source selections, destination filtering and project/publication remaps, independent records and rollback without learner-data copying.
 - AC-022–AC-024: frontend regressions for distinct regular/configuration frame targets, mounted modal state and return association using controlled messages; authorized/unauthorized controller checks, cancellation/failure and section-local override isolation. Actual tool navigation/selection in the modal remains deferred; component tests cannot fully verify AC-022.
 - AC-025–AC-027: arbitrary custom payload/long-field round trips, migration/rollback checks, absent selection and unchanged user/context/link identity.
 - AC-028–AC-031: committed real domain scenario/frontend coverage and durable author/instructor guidance. Preserve existing manual MyProse observations; AC-030's new complete walkthrough and cross-service browser evidence are deferred. Add hooks/directives only where existing real scenario capabilities cannot express a required workflow; use `build_scenario` and `extend_scenario` when implementing them.
@@ -157,13 +157,13 @@ Do not start or add a real/test tool service for the current verification scope.
 
 Retain default Developer + Regular, existing delivery URL/custom lookup, unconfigured activity behavior, stable internal resource IDs and existing LTI resource-link identity. Preserve existing section rows during publication changes. Ordinary non-LTI activity editing keeps its existing revision policy. Unsupported authoring hosts do not gain a nonfunctional configuration action.
 
-Template inheritance is additive to the template copy policy, not a new section-copy checkbox or automatic project fallback. Test project cloning/remapping where shared copy infrastructure is touched; broaden support only with a documented scope decision.
+Template and previous-section inheritance are part of mandatory content copying, without a new checkbox or automatic project fallback. Test project cloning/remapping where shared infrastructure is touched; retain existing project/blueprint provenance and publication-update behavior.
 
 ## 15. Risks & Mitigations
 
 - In-place edits or alternate save paths can bypass freshness: cover all relevant LTI edit entry points, preserve non-LTI behavior and add same-lock regressions.
 - Broad helper reuse can overwrite overrides: separate insert-missing publication policy from instructor upsert and template copy.
-- Copy-engine changes can leak into previous-section copying: gate by source policy and retain adjacent regression tests.
+- Copy-engine changes can affect other configuration groups: scope Deep Links to mandatory content, retain adjacent regressions and test source/destination independence for both source kinds.
 - A frame collision is not yet a reproduced root cause: cover distinct targets and handler association with failing component tests, and retain the pending runtime confirmation until tool-dependent verification resumes.
 - Tool payloads can be large or contain references to shared state: keep exact values, scoped queries and explicit compatibility documentation.
 - The prototype is behind `master`: integrate the current base before implementing and resolve/test changed creation, editing and copy entry points.
@@ -210,3 +210,10 @@ No product question blocks the current design. Reset/clear UI, wizard source lab
 - Reason: The owner requested removing the additional coordination infrastructure and using the existing save feedback.
 - Change: Reuse `ActivityEditor.edit/5`, its lock/transaction and the existing deferred persistence barrier. Retain signed handoff/current-access checks, a server-side captured-state comparison and selection-only merge. Use the page's `Saving...` / `All changes saved` indicator; no separate selection-saved toast/message.
 - Impact: Remove the authoring coordinator, persisted request generations/cancel endpoint, generic-resource changes and forced fresh ordinary revisions. Closing authoring configuration is local. General multi-tab coordination and acknowledged cancellation races are not introduced in authoring; committed section behavior remains Phase 2. No new migration.
+
+
+### 2026-10-15 - Copy current source selections with curriculum
+- Change: Use the shared source-locked copy transaction for template and previous-section Deep Linking records, bounded by destination resource membership.
+- Reason: The owner approved previous-section support under mandatory Content / curriculum, including current instructor overrides and no new checkbox.
+- Evidence: `lib/oli/delivery/sections/section_copy.ex` and `lib/oli/delivery/sections/copy_options.ex` preserve resource IDs and existing project/blueprint provenance; FR-008, AC-020 and AC-021 define the extended contract.
+- Impact: Add only selection inheritance to creation/copy boundaries. Preserve publication application, existing copy groups, missing/cleared source choices and final AI-override ordering; no new migration or external-tool tests.

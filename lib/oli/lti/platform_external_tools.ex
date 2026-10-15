@@ -493,6 +493,49 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
+  Copies current source-owned tool selections into a newly created destination.
+
+  Copies only resources present in both sections, preserving URL/custom/metadata
+  without consulting project defaults. Uses one INSERT … SELECT and participates
+  in the caller's source-locked copy transaction. The caller must authorize the
+  source and supply a destination created by that transaction. Returns the number
+  of rows copied or a bounded error so the owning creation can roll back.
+  """
+  @spec copy_section_deep_links(integer(), integer()) ::
+          {:ok, non_neg_integer()} | {:error, :lti_deep_link_copy_failed}
+  def copy_section_deep_links(source_section_id, destination_section_id) do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    query =
+      from(link in LtiSectionResourceDeepLink,
+        join: source in SectionResource,
+        on: source.section_id == link.section_id and source.resource_id == link.resource_id,
+        join: destination in SectionResource,
+        on: destination.resource_id == link.resource_id,
+        where:
+          link.section_id == ^source_section_id and
+            destination.section_id == ^destination_section_id,
+        select: %{
+          section_id: ^destination_section_id,
+          resource_id: destination.resource_id,
+          type: link.type,
+          url: link.url,
+          custom: link.custom,
+          title: link.title,
+          text: link.text,
+          inserted_at: ^now,
+          updated_at: ^now
+        }
+      )
+
+    {count, _} = Repo.insert_all(LtiSectionResourceDeepLink, query)
+    {:ok, count}
+  rescue
+    _error in [Ecto.ConstraintError, Postgrex.Error] ->
+      {:error, :lti_deep_link_copy_failed}
+  end
+
+  @doc """
   Creates a new LtiSectionResourceDeepLink record.
   This function is used to store deep link resources associated with a particular section resource.
   """

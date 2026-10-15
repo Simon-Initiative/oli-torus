@@ -15,7 +15,7 @@ The prototype already supports selecting a tool resource in project authoring an
 ### Goals
 
 - Deliver a reliable authoring selection/save experience using established Torus UI patterns.
-- Carry published selections through direct creation, publication application and template-based creation with independent destination ownership.
+- Carry published selections through direct creation, publication application, template-based creation and previous-section copying with independent destination ownership.
 - Preserve instructor overrides and verify that instructors can actually reconfigure their sections.
 - Turn the manual walkthrough into permanent, layered automated coverage.
 
@@ -29,7 +29,7 @@ The prototype already supports selecting a tool resource in project authoring an
 ## 4. Users & Use Cases
 
 - Authors select a task with the chosen LTI role, save it in the activity and reopen it with Regular.
-- Instructors create courses from publications or templates and receive initialized selections; they can subsequently change their own section's selection.
+- Instructors create courses from publications, templates or previous sections and receive inherited selections; they can subsequently change their own section's selection.
 - Instructors apply a publication that introduces/configures activities while retaining existing section selections.
 - Students launch the selected resource with their own identity and destination course context.
 - Administrators retain existing integration registration, status and Deep Linking capability controls.
@@ -85,7 +85,7 @@ N/A — no new telemetry program is in scope. Current verification uses the acti
 
 - Editor saves can update a revision in place while holding a lock: compare captured server state within the existing editor transaction; do not change the ordinary revision policy.
 - Publication application can remove or filter destination resources: initialize after destination membership is finalized and test both major/minor paths.
-- Template duplication shares a copy engine with course copying: scope selection inheritance to the template source policy and test adjacent copy behavior.
+- Template duplication shares a copy engine with course copying: include current Deep Linking selections in mandatory Content / curriculum for both sources, without changing other copy groups or learner-data policy.
 - Tool frames can collide: cover Torus-owned targets and handlers with frontend tests. Actual tool navigation and return delivery remain a documented verification gap until cross-service tests resume.
 - Tool-side shared references or regenerated IDs can undermine portability: preserve exact configuration and document observed compatibility, without inventing tool-side cloning.
 
@@ -99,7 +99,7 @@ N/A — no new telemetry program is in scope. Current verification uses the acti
 ### Assumptions
 
 - MER-6018's narrower scope takes precedence over the broader prototype overview.
-- Template inheritance copies current template records, including template-local changes, without fallback to a newer project configuration.
+- Template and previous-section inheritance copy current source-owned records, including instructor changes, without fallback to a newer project configuration. Deep Links are part of the existing mandatory Content / curriculum group; no new checkbox is added. Each destination owns independent rows and retains the existing project/template provenance and publication-update behavior.
 - The project page editor is the supported authoring configuration host. Other hosts retain ordinary editing/launch compatibility and must not offer an unsupported selection-save action.
 - Existing LTI resource-link identity formats remain unchanged in this ticket.
 
@@ -139,3 +139,10 @@ N/A — no new telemetry program is in scope. Current verification uses the acti
 - Change: Use the existing editor transaction, lock, deferred persistence and save indicator. Retain signed validation and captured-state selection merge; remove separate authoring request/cancellation persistence, coordinator and general multi-tab guarantees.
 - Reason: The owner requested reducing implementation complexity to the ticket's requirements and explicitly asked to reuse `Saving...` / `All changes saved`.
 - Impact: Authoring close/error is local and prevents further submissions from that modal; uncertain save outcomes require reload. The committed instructor/section implementation is unchanged. No new migration or external-tool dependency.
+
+
+### 2026-10-15 - Include Deep Links in previous-section curriculum copying
+- Change: Extend Phase 5 inheritance to previous-section copying as part of mandatory Content / curriculum, alongside template inheritance.
+- Reason: The owner confirmed that copying course content should carry its current tool configuration, including instructor changes, without another copy option.
+- Evidence: `lib/oli_web/live/new_course/copy_choice_modal.ex`, `lib/oli/delivery/sections/copy_options.ex`, `lib/oli/delivery/sections/section_copy.ex`; FR-008, AC-020 and AC-021.
+- Impact: Copy current source-owned selections to independent destination rows; preserve missing/cleared selections, existing publication pins and provenance. Do not copy learner data or redesign the wizard.

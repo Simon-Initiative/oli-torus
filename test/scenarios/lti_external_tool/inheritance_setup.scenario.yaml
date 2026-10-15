@@ -1,0 +1,24 @@
+- use:
+    file: deep_linking_setup.scenario.yaml
+
+- publish:
+    to: deep_linking_project
+    description: Published configuration for inheritance
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.capture_draft_publication/1
+
+- product:
+    name: template
+    from: deep_linking_project
+
+- section:
+    name: source_course
+    from: template
+
+- assert:
+    structure:
+      to: source_course
+      root:
+        children:
+          - page: Tool Lesson

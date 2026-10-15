@@ -8,7 +8,7 @@ Scope and reference artifacts:
 
 ## Scope
 
-Productionize the inherited prototype, repair instructor reconfiguration, add missing-only publication application and project → template → section inheritance, and supply permanent regression evidence. This plan does not start implementation or mark manual observations as automated proof.
+Productionize the inherited prototype, repair instructor reconfiguration, add missing-only publication application and project → template → section / previous-section inheritance, and supply permanent regression evidence. This plan does not start implementation or mark manual observations as automated proof.
 
 Retain independent section ownership, published-revision isolation, exact tool custom values and existing LTI resource-link identities. Preserve the prototype documents as historical references. Exclude template Deep Linking authoring UI, a reset action, general section-copy controls, creation-wizard redesign and MyProse changes unless scope is explicitly revised.
 
@@ -121,24 +121,24 @@ Retain independent section ownership, published-revision isolation, exact tool c
 - Parallelizable Work:
   - Scenario drafting and query/transaction investigation may proceed independently; helper and update-pipeline writes must share one agreed contract.
 
-## Phase 5: Complete project-to-template-to-section inheritance
+## Phase 5: Complete template and previous-section inheritance
 
 - Requirements: FR-007, FR-008, FR-010, FR-011.
-- Goal: initialize templates and copy their current selections into new sections.
+- Goal: initialize templates and copy current template or previous-section selections into independent new sections as part of Content / curriculum.
 - Tasks:
-  - [ ] Initialize template-owned records from the exact publication within blueprint creation after resources exist.
-  - [ ] Add selection copying to the template source policy in the shared copy engine, respecting corresponding destination resource mapping.
-  - [ ] Preserve template-local changes and missing/cleared selections without project fallback; keep records independent and rollback on copy failure.
-  - [ ] Cover adjacent blueprint duplication/project-remap behavior and prevent accidental expansion of ordinary previous-section-copy policy.
+  - [x] Initialize template-owned records from the exact publication within blueprint creation after resources exist.
+  - [x] Add selection copying to mandatory Content / curriculum for both template and previous-section sources in the shared copy transaction, restricted to corresponding destination resources and without a new checkbox.
+  - [x] Preserve template-local and instructor changes and missing/cleared selections without project fallback; create independent destination rows and roll back on copy failure.
+  - [x] Cover blueprint duplication/project-publication remaps and content-only/all-group section copies. Preserve existing base-project/blueprint provenance, publication pins and later publication-update behavior; do not change other copy groups or general update stages.
 - Testing Tasks:
-  - [ ] Cover AC-019, AC-020, AC-021 and repeat exact-payload/isolation checks from AC-025/AC-028.
-  - [ ] Run real project → template → section scenarios with edited/cleared template selections, destination exclusions/remaps and rollback.
-  - [ ] Run existing blueprint/copy scenarios and inspect that this feature copies no attempts, submissions or grades.
+  - [x] Cover AC-019, AC-020, AC-021 and repeat exact-payload/isolation checks from AC-025/AC-028.
+  - [x] Run real project → template → section and section → section scenarios with edited/cleared source selections, independent changes, content-only/all-group copying, destination exclusions/remaps and rollback.
+  - [x] Run existing blueprint/copy scenarios and inspect that this feature copies no attempts, submissions or grades.
   - Commands: `mix test test/oli/delivery/sections/blueprint_test.exs test/oli/delivery/sections/section_copy_test.exs` plus new scenario runners; validate every new scenario YAML.
 - Definition of Done:
-  - New sections inherit current template-owned selections independently, and unconfigured templates do not recover values from project content.
+  - New sections inherit current template/previous-section selections independently as mandatory content; missing/cleared source choices do not recover project defaults, and no learner data is copied by this feature.
 - Gate:
-  - Template inheritance, rollback and adjacent copy-policy regressions pass. No template Deep Linking authoring UI or general copy checkbox is introduced.
+  - Template/previous-section inheritance, rollback, provenance/pins and adjacent copy-policy regressions pass. No template Deep Linking authoring UI, new copy checkbox or general publication optimization is introduced.
 - Dependencies:
   - Phase 4's reusable initialization helper and Phase 1's copy baseline inventory.
 - Parallelizable Work:
@@ -328,6 +328,12 @@ The current-selection hint extension received separate security, performance, El
 - Impact: Phase 1 adds permanent coverage without a running tool or production-code changes. Broader behavior hardening and migration rollback remain in their planned phases.
 
 
+### 2026-10-15 - Extend Phase 5 to previous-section copying
+- Change: Include current source Deep Links in mandatory Content / curriculum for both template and previous-section copies, with independent destination rows and no new checkbox.
+- Reason: Explicit owner approval before Phase 5 implementation.
+- Evidence: FR-008 and AC-020/AC-021 in `requirements.yml`; shared copy policy in `lib/oli/delivery/sections/copy_options.ex`.
+- Impact: Extend Phase 5 implementation/tests to section → section, preserving existing provenance, publication pins, other groups and learner-data boundaries. Phase 4 was committed with owner approval as `2231ccf50e`; this does not authorize a Phase 5 commit.
+
 ## Phase 3 Execution Record
 
 ### Scope from plan.md
@@ -397,7 +403,7 @@ Initialize missing selections from the explicitly applied publication after fina
 
 ### Work-Item Sync
 
-Phase 3 is committed with explicit owner approval. Phase 4 remains uncommitted; template creation/copy policy remains Phase 5. Whole-feature requirements retain `verified_plan` pending final verification and deferred external evidence.
+Phase 3 is committed with explicit owner approval. Phase 4 was committed with owner approval as `2231ccf50e`; template/previous-section creation/copy policy remains Phase 5. Whole-feature requirements retain `verified_plan` pending final verification and deferred external evidence.
 
 ### Review Loop
 
@@ -421,3 +427,56 @@ Phase 3 is committed with explicit owner approval. Phase 4 remains uncommitted; 
 - The owner manually confirmed that applying a publication retained the original section choice and initialized the newly added tool from that publication. Phase 5 remains separate; no Phase 4 commit is authorized by this review request.
 - After scope reduction, the focused runner passed **18 tests, 0 failures**, seed `108480`; the expanded regression passed **321 tests, 0 failures**, seed `748235`. It covers LTI scenarios/context, direct creation, current/legacy major/minor updates, blueprints, section copy and LTI callback controller suites. ExUnit output is clean apart from normal progress and summary; existing setup/shutdown output stays outside it.
 - Security, performance, Elixir and requirements correction reviews report no remaining findings for the reduced scope. Scoped formatting, test-environment warnings-as-errors compilation, `git diff --check` and Harness structure/design/nested traceability passed. Requirements stay `verified_plan`; real-tool automation, parallel-session stress and production latency guarantees remain outside the completed evidence. Phase 4 remains uncommitted.
+
+
+## Phase 5 Execution Record
+
+### Scope from plan.md
+
+Initialize templates from exact published selections and copy current source-owned selections into independently owned destination records for both templates and previous sections. Deep Links belong to mandatory Content / curriculum. Preserve the existing copy/update pipeline and introduce no new copy checkbox or migration.
+
+### Implementation Blocks
+
+- [x] Initialize template selections inside blueprint creation.
+- [x] Copy current source selections inside the existing shared copy transaction, restricted to destination resources.
+- [x] Document mandatory content semantics and preserve existing processing/provenance/pins.
+
+### Test Blocks
+
+- [x] Add real scenario coverage for template and previous-section inheritance, missing/cleared values, isolation, remaps and rollback.
+- [x] Validate YAML and run focused/affected regressions with clean ExUnit output.
+- [x] Run format, compilation and Harness verification.
+
+### Work-Item Sync
+
+- [x] Update PRD, FDD, plan and AC-020/AC-021 with the approved previous-section scope.
+- [x] Link actual implementation proof without promoting deferred external-tool evidence.
+
+### Review Loop
+
+- [x] Run security, performance, Elixir and requirements review after verification.
+
+### Done Definition
+
+- [x] Phase tasks, tests, reviews and validation pass.
+- [x] No Phase 5 commit without separate owner approval.
+
+
+### Verification and Review Evidence
+
+- Phase 4 was committed with explicit owner approval as `2231ccf50e`. Phase 5 documents were extended and validated before coding. Phase 5 remains uncommitted.
+- `test/scenarios/lti_external_tool/inheritance_setup.scenario.yaml` passes schema/parser validation and is reached by the automatically discovered `inheritance_test.exs` runner. Setup uses `Oli.Scenarios.execute_file/2` and real domain APIs, with no fixtures, factories, mocks or external tool process; no shared test-support/configuration changes were made.
+- The focused runner passed **13 tests, 0 failures**, seed `239506`. It verifies published template capture versus draft edits, current template/instructor overrides, long URL/title/text and nested custom metadata, content-only/all-group copies, independent edits and subsequent publication application, missing/cleared choices without fallback, source/destination membership, actual project-clone remaps, rollback/retry and unchanged source learner access/attempt records.
+- Expanded LTI/delivery/publication/copy regression passed **335 tests, 0 failures**, seed `817841`. Adjacent project-clone, copy-options, certificate and new-course LiveView regressions reported **129 tests, 0 failures (13 excluded)**, seed `797828`. Successful ExUnit output contains only normal progress and summary after setup; existing OTP shutdown output follows the summary.
+- A rolled-back, isolated SQL diagnostic used 2,003 activities and five unrelated copies sharing resource IDs. The new copy operation inserted **501 choices in one INSERT … SELECT with five parameters**, using existing section-resource/deep-link composite indexes without a global scan of deep-link rows. Local warm-cache execution was 9.164 ms, including the insert; this is not a production SLA or a claim of heap-free reads. No index or migration was added.
+- Separate security, performance, Elixir and requirements reviews found no remaining issues. Corrected the Blueprint function's documented step order without changing execution. Existing lifecycle processing, final AI-override ordering, copy groups, publication pins and project/blueprint provenance remain intact.
+- Scoped formatting, test-environment compilation with warnings as errors, `git diff --check` and Harness structure/design/requirements validation pass. AC-019/AC-020/AC-021 and supporting payload/isolation criteria link the new runner; whole-feature statuses remain `verified_plan`. External-tool/browser proof remains deferred, and Phase 6 is not executed as part of this phase.
+
+
+### Phase 5 Formal Cleanup (2026-10-15)
+
+- Run `change-cleanup` in `self-driving` mode against `origin/master`, focused on outstanding Phase 5 changes since `2231ccf50e`. Review helper placement/reuse, public contracts, specs, stale state and added-file reachability. No changes outside this phase were needed.
+- Clarify that `copy_section_deep_links/2` requires an authorized source and a destination created within the caller's source-locked transaction. Keep the query, transaction boundaries and existing pipeline stages unchanged.
+- Remove duplicate SQL-shape assertions from the membership test; the dedicated multi-selection test still proves one INSERT … SELECT, while the membership test retains source/destination filtering assertions. Keep test helpers local instead of adding shared support for these two small, different capture contracts.
+- Trace `inheritance_test.exs` through ExUnit discovery to `inheritance_setup.scenario.yaml`, its composed setup and existing compiled hooks. Verify the production helper is called by `SectionCopy.copy/3`; no Phase 5 files or entrypoints are orphaned, and no stale assigns/props or unsupported types were introduced.
+- Post-cleanup focused validation passed **13 tests, 0 failures**, seed `840844`, with clean ExUnit output. The earlier 335-test regression and 129-test adjacent result remain applicable because cleanup changes only API documentation and a redundant test assertion. Scoped formatting, compilation with warnings as errors, Harness checks and `git diff --check` pass. The separate security/performance/Elixir/requirements reviews remain recorded above; Phase 5 remains uncommitted.

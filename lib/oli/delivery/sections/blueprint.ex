@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Delivery.Sections.BlueprintBrowseOptions
   alias Oli.Groups.CommunityVisibility
   alias Oli.Institutions.Institution
+  alias Oli.Lti.PlatformExternalTools
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
@@ -142,8 +143,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
   2. Creates a blueprint section record with the specified attributes
   3. Retrieves the latest published publication for the project
   4. Creates section resource records mirroring the project hierarchy
-  5. Applies post-processing to update section flags (discussions, explorations, etc.)
-  6. Migrates the section resources
+  5. Migrates the section resources
+  6. Initializes tool selections from that publication
+  7. Applies post-processing to update section flags (discussions, explorations, etc.)
 
   ## Parameters
   - `base_project_slug` - The slug of the base project to create the blueprint from
@@ -224,7 +226,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
              Oli.Publishing.get_latest_published_publication_by_slug(base_project_slug),
            {:ok, section} <-
              Sections.create_section_resources(blueprint, publication, hierarchy_definition),
-           {:ok, _} <- migrate_section_resources(section.id) do
+           {:ok, _} <- migrate_section_resources(section.id),
+           {:ok, _} <-
+             PlatformExternalTools.initialize_section_deep_links(section.id, publication.id) do
         PostProcessing.apply(section, :all)
       else
         {:error, e} -> Repo.rollback(e)

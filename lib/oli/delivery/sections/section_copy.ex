@@ -5,7 +5,9 @@ defmodule Oli.Delivery.Sections.SectionCopy do
   This is the engine behind both product duplication and course copy. It creates
   a new section row, duplicates the source's publication pins and section
   resources, rewires the copied hierarchy onto the new section-resource ids, and
-  copies instructor configuration selected by the given `CopyOptions`.
+  copies instructor configuration selected by the given `CopyOptions`. Current
+  source-owned LTI selections belong to mandatory content and receive new rows
+  in the destination, without falling back to project defaults.
 
   ## Authorization
 
@@ -68,6 +70,7 @@ defmodule Oli.Delivery.Sections.SectionCopy do
   alias Oli.Delivery.Sections.SectionResourceMigration
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Institutions.Institution
+  alias Oli.Lti.PlatformExternalTools
   alias Oli.Repo
 
   # Gate condition types that store absolute dates, and so follow the :schedule
@@ -214,6 +217,8 @@ defmodule Oli.Delivery.Sections.SectionCopy do
            {:ok, destination} <-
              maybe_rebuild_gating_index(source, destination, options, gate_count),
            {:ok, destination} <- PostProcessing.apply_result(destination, :all),
+           {:ok, _} <-
+             PlatformExternalTools.copy_section_deep_links(source.id, destination.id),
            # Must be the last write of the copy. Post-processing runs
            # `SectionResourceMigration.project_current/1`, which rewrites
            # `ai_enabled` from the pinned revision, so an overlay applied any
