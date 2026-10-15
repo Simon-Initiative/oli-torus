@@ -239,7 +239,7 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
               id={index === 0 ? 'feedback-content' : undefined}
               className="feedback-item feedback-ai-generated"
               tabIndex={index === 0 ? -1 : undefined}
-              role={index === 0 ? 'text' : undefined}
+              role="group"
               aria-label="AI-generated feedback"
             >
               <AIGeneratedBadge />
@@ -260,7 +260,6 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
               }}
               className="feedback-item"
               tabIndex={index === 0 ? -1 : undefined}
-              role={index === 0 ? 'text' : undefined}
             >
               <PartsLayoutRenderer
                 parts={feedback.partsLayout}

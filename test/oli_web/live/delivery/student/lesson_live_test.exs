@@ -1622,7 +1622,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       refute has_element?(view, ~s{div[data-role="container label"]})
       refute has_element?(view, ~s{div[data-role="container label"]}, "Module")
-      refute has_element?(view, ~s{div[role="page header divider"]})
       assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
     end
 
@@ -1640,7 +1639,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
 
-      refute has_element?(view, ~s{div[role="page read time"]})
+      refute has_element?(view, ~s{div[data-role="page read time"]})
     end
 
     test "can see proficiency explanation modal", %{
@@ -2109,7 +2108,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(view, ~s{div[data-role="next_page"]}, page_2.title)
 
-      refute has_element?(view, ~s{div[role="check icon"]})
+      refute has_element?(view, ~s{div[data-role="check icon"]})
       refute has_element?(view, ~s{svg[data-role="square checked icon"]})
       refute has_element?(view, ~s{svg[data-role="flag icon"]})
     end

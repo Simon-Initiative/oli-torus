@@ -1185,13 +1185,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # header is shown with title and due date
       assert has_element?(
                view,
-               ~s{div[role="expanded module header"] h2},
+               ~s{div[data-role="expanded-module-header"] h2},
                "How to use this course"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="expanded module header"] span},
+               ~s{div[data-role="expanded-module-header"] span},
                "Read by: Wed Nov 15, 2023"
              )
     end
@@ -1302,12 +1302,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[data-role="orange flag icon"]}
+               ~s{button[data-role="resource-page-4-details"] div[data-role="orange flag icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[role="due date and score"]},
+               ~s{button[data-role="resource-page-4-details"] div[role="due date and score"]},
                "Read by: Fri Nov 3, 2023"
              )
     end
@@ -1357,20 +1357,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # graded page with title "Page 4" in the hierarchy has the correct icon
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[data-role="square check icon"]}
+               ~s{button[data-role="resource-page-4-details"] div[data-role="square check icon"]}
              )
 
       # correct due date
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[role="due date and score"]},
+               ~s{button[data-role="resource-page-4-details"] div[role="due date and score"]},
                "Read by: Fri Nov 3, 2023"
              )
 
       # and correct score summary
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[role="due date and score"]},
+               ~s{button[data-role="resource-page-4-details"] div[role="due date and score"]},
                "1 / 2"
              )
     end
@@ -1471,9 +1471,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # when the slider buttons are enabled we know the student async metrics were loaded
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
-      wait_until(fn -> has_element?(view, ~s{div[role="unit_1_progress"]}, "Completed") end)
+      wait_until(fn ->
+        has_element?(view, ~s{div[data-role="unit-1-progress"]}, "Completed")
+      end)
 
-      assert has_element?(view, ~s{div[role="unit_1_progress"]}, "Completed")
+      assert has_element?(view, ~s{div[data-role="unit-1-progress"]}, "Completed")
     end
 
     test "can expand more than one module card", %{
@@ -1588,18 +1590,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
       |> render_click()
 
-      assert has_element?(view, ~s{button[role="resource page 2 details"]})
+      assert has_element?(view, ~s{button[data-role="resource-page-2-details"]})
 
       refute has_element?(
                view,
-               ~s{button[role="resource page 1 details"] svg[data-role="visited check icon"]}
+               ~s{button[data-role="resource-page-1-details"] svg[data-role="visited check icon"]}
              )
 
-      assert has_element?(view, ~s{button[role="resource page 2 details"]})
+      assert has_element?(view, ~s{button[data-role="resource-page-2-details"]})
 
       refute has_element?(
                view,
-               ~s{button[role="resource page 2 details"] svg[data-role="visited check icon"]}
+               ~s{button[data-role="resource-page-2-details"] svg[data-role="visited check icon"]}
              )
     end
 
@@ -1760,16 +1762,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       # unit 1 progress is 38% ((1 + 0.5 + 0.0 + 0.0) / 4)
-      assert has_element?(view, ~s{div[role="unit_1"] div[role="unit_1_progress"]}, "21%")
+      assert has_element?(
+               view,
+               ~s{div[role="unit_1"] div[data-role="unit-1-progress"]},
+               "21%"
+             )
 
       # module 1 progress is 75% ((1 + 0.5) / 2)
       assert view
-             |> element(~s{div[role="unit_1"] div[role="card_1_progress"]})
+             |> element(~s{div[role="unit_1"] div[data-role="card-1-progress"]})
              |> render() =~ "style=\"width: 75%\""
 
       # unit 3, practice page 1 card at module level has progress 100%
       assert view
-             |> element(~s{div[role="unit_3"] div[role="card_10_progress"]})
+             |> element(~s{div[role="unit_3"] div[data-role="card-10-progress"]})
              |> render() =~ "style=\"width: 100%\""
     end
 
@@ -1854,10 +1860,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       # Progress in module 1 (which has page 2)
-      assert has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
+      assert has_element?(view, ~s{div[role="unit_1"] div[data-role="card-1-progress"]})
 
       # Progress in page 7
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_10_progress"]})
+      assert has_element?(view, ~s{div[role="unit_3"] div[data-role="card-10-progress"]})
     end
 
     test "can see card background image if provided (if not the default one is shown)",
@@ -1972,7 +1978,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # module 3 must be expanded so we can see its details
       assert has_element?(
                view,
-               ~s{div[role="expanded module header"] h2},
+               ~s{div[data-role="expanded-module-header"] h2},
                "Installing Elixir, OTP and Phoenix"
              )
 
@@ -2247,12 +2253,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_click()
 
       group_by_read_by_date_div =
-        element(view, ~s{div[role="pages_grouped_by_read_by_2023-11-03"]})
+        element(view, ~s{div[data-role="pages-grouped-by-read_by-2023-11-03"]})
 
-      group_by_due_by_date_div = element(view, ~s{div[role="pages_grouped_by_due_by_2023-11-03"]})
+      group_by_due_by_date_div =
+        element(view, ~s{div[data-role="pages-grouped-by-due_by-2023-11-03"]})
 
       group_by_not_yet_scheduled_div =
-        element(view, ~s{div[role="pages_grouped_by__Not yet scheduled"]})
+        element(view, ~s{div[data-role="pages-grouped-by--Not yet scheduled"]})
 
       assert render(group_by_read_by_date_div) =~ "Read by: Fri Nov 3, 2023"
       assert render(group_by_read_by_date_div) =~ "Page 11"
@@ -2288,10 +2295,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
       |> render_click()
 
-      group_by_due_date_div = element(view, ~s{div[role="pages_grouped_by_read_by_2023-11-10"]})
+      group_by_due_date_div =
+        element(view, ~s{div[data-role="pages-grouped-by-read_by-2023-11-10"]})
 
       group_by_not_yet_scheduled_div =
-        element(view, ~s{div[role="pages_grouped_by__Not yet scheduled"]})
+        element(view, ~s{div[data-role="pages-grouped-by--Not yet scheduled"]})
 
       # page 13 is due on Nov 10, 2023 as defined in the student exception,
       # and it is only listed in the "Read by" group (not in the "Not yet scheduled" group)
@@ -3551,7 +3559,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # Should show empty state message
       assert view
              |> has_element?(
-               "div[role='no search results warning']",
+               "div[data-role='no-search-results-warning']",
                "There are no results for the search term"
              )
 
@@ -4186,7 +4194,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # Verify no results warning appears
       assert has_element?(
                view,
-               "div#mobile_outline_unit div[role='no search results warning']",
+               "div#mobile_outline_unit div[data-role='no-search-results-warning']",
                "There are no results for the search term"
              )
     end

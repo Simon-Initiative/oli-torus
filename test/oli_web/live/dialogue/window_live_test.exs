@@ -13,6 +13,33 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Sections
   alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig}
+  alias OliWeb.Dialogue.WindowLive
+  alias OliWeb.Sections.Assistant.StudentConversationsLive
+
+  describe "message containers" do
+    test "the student dialogue attaches the scroll hook to a data-role container" do
+      html =
+        render_component(&WindowLive.messages/1, %{
+          messages: [],
+          active_message: nil,
+          streaming: false,
+          user: nil
+        })
+
+      assert html =~ ~s(data-role="message-container")
+      assert html =~ ~s(phx-hook="KeepScrollAtBottom")
+    end
+
+    test "the instructor conversation view uses the message container data role" do
+      html =
+        render_component(&StudentConversationsLive.messages/1, %{
+          conversation_messages: [],
+          user: nil
+        })
+
+      assert html =~ ~s(data-role="message-container")
+    end
+  end
 
   defp create_project(_) do
     author = insert(:author)

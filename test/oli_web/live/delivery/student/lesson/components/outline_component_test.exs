@@ -101,6 +101,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
              |> element("#outline_item_1 div[data-role='progress bar']")
              |> render() =~ "0%"
 
+      assert has_element?(
+               lcd,
+               ~s{#outline_item_1 div[role="progressbar"][aria-label="Introduction progress"]}
+             )
+
       # Unit 2 (container - rendered as button)
       assert lcd |> element("#outline_item_2 button") |> render() =~ "Unit 2"
       assert lcd |> element("#outline_item_2 button") |> render() =~ "Main Concepts"
@@ -113,6 +118,23 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
                "text-exploration"
 
       assert lcd |> element("#outline_item_3 div[data-role='index']") |> render() =~ "3"
+    end
+
+    test "labels progress for a top-level page", %{
+      conn: conn,
+      component_params: component_params
+    } do
+      {:ok, lcd, _html} =
+        live_component_isolated(
+          conn,
+          OutlineComponent,
+          Map.put(component_params, :page_resource_id, 3)
+        )
+
+      assert has_element?(
+               lcd,
+               ~s{#outline_item_3 div[role="progressbar"][aria-label="Top Level Lesson progress"]}
+             )
     end
 
     test "expands and collapses an item to show or hide its children", %{
