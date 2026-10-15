@@ -78,8 +78,7 @@ skips. After all operational checks pass, merge normally and verify one schedule
 run from `master`. Remove temporary feature-branch environment allowances afterward.
 Local fixtures do not establish hosted or deployed operational proof.
 
-Provisioning and maintenance follow the
-[GitOps nightly runbook](https://github.com/Simon-Initiative/oli-torus-gitops/blob/master/docs/handbook/runbooks/nightly-playwright.md).
+Provisioning and maintenance follow the internal nightly deployment runbook.
 Recurring CI updates only the existing record's image and source metadata. The
 GitOps helper enforces the record-only diff and required merge path; there is no
 preflight, previous-run PR scan, force push, or direct-write fallback.
