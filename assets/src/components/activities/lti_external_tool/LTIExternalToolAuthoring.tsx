@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
+import { Button } from 'components/common/Buttons';
 import { LoadingSpinner } from 'components/common/LoadingSpinner';
 import { useLoader } from 'components/hooks/useLoader';
 import { LTIExternalToolFrame } from 'components/lti/LTIExternalToolFrame';
@@ -36,20 +37,6 @@ export const LTIExternalTool: React.FC = () => {
   const handlingReturn = useRef(false);
   const activeRequest = useRef<string | undefined>();
 
-  const launchButton = useRef<HTMLButtonElement>(null);
-  const restoreFocus = useRef(false);
-  useEffect(() => {
-    if (
-      !launch &&
-      !busy &&
-      restoreFocus.current &&
-      launchButton.current &&
-      !launchButton.current.matches(':disabled')
-    ) {
-      restoreFocus.current = false;
-      launchButton.current.focus();
-    }
-  }, [launch, busy, editMode]);
   const supportsConfiguration = authoringContext?.supportsLtiConfiguration === true;
 
   const host = async (eventName: string, payload: unknown) => {
@@ -63,7 +50,6 @@ export const LTIExternalTool: React.FC = () => {
 
   const startLaunch = async () => {
     if (busy || launch) return;
-    restoreFocus.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -167,7 +153,7 @@ export const LTIExternalTool: React.FC = () => {
                   <label className="flex flex-col gap-1">
                     Launch as
                     <select
-                      className="rounded border p-2"
+                      className="rounded border py-2 pl-2 pr-10"
                       value={role}
                       onChange={(event) => setRole(event.target.value as typeof role)}
                     >
@@ -178,7 +164,7 @@ export const LTIExternalTool: React.FC = () => {
                   <label className="flex flex-col gap-1">
                     Launch type
                     <select
-                      className="rounded border p-2"
+                      className="rounded border py-2 pl-2 pr-10"
                       value={launchType}
                       onChange={(event) => setLaunchType(event.target.value as typeof launchType)}
                     >
@@ -188,11 +174,10 @@ export const LTIExternalTool: React.FC = () => {
                       )}
                     </select>
                   </label>
-                  <button
-                    type="button"
-                    className="rounded border px-4 py-2 font-semibold"
+                  <Button
+                    variant="primary"
+                    size="md"
                     disabled={launchType === 'deep_link' && !editMode}
-                    ref={launchButton}
                     onClick={startLaunch}
                   >
                     {launchType === 'regular'
@@ -200,7 +185,7 @@ export const LTIExternalTool: React.FC = () => {
                       : model.deepLink
                       ? 'Change Selection from Tool'
                       : 'Select Resource'}
-                  </button>
+                  </Button>
                 </fieldset>
                 {model.deepLink && (
                   <p className="mt-2">

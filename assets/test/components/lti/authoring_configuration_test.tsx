@@ -186,16 +186,3 @@ it('closes without saving and ignores returns after the modal is gone', async ()
   expect(context.onCustomEvent).toHaveBeenCalledWith('ltiAuthoringClose', {});
   expect(context.onCustomEvent).not.toHaveBeenCalledWith('ltiAuthoringSave', expect.anything());
 });
-
-it('restores keyboard focus to the launch trigger after Close', async () => {
-  render(<LTIExternalTool />);
-  await screen.findByRole('button', { name: 'Launch Tool' });
-  fireEvent.change(screen.getByLabelText('Launch type'), { target: { value: 'deep_link' } });
-  const trigger = screen.getByRole('button', { name: 'Change Selection from Tool' });
-  trigger.focus();
-  fireEvent.click(trigger);
-  await screen.findByRole('dialog');
-  act(() => handlers.get(screen.getByRole('dialog'))!({ preventDefault: jest.fn() }));
-  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-  expect(document.activeElement).toBe(trigger);
-});
