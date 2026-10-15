@@ -73,30 +73,30 @@ Retain independent section ownership, published-revision isolation, exact tool c
 - Parallelizable Work:
   - Frontend regression preparation and backend authorization test inventory can be independent. Shared frame code and modal integration must be coordinated.
 
-## Phase 3: Harden authoring correlation, persistence and UI states
+## Phase 3: Harden authoring using existing editor mechanisms
 
 - Requirements: FR-001, FR-002, FR-003, FR-004.
-- Goal: prevent stale/replayed returns and lost selections/content while making save state clear.
+- Goal: reliable selection persistence, prepared autosaves and standard save feedback with minimal added infrastructure.
 - Tasks:
-  - [ ] Produce the focused authoring-save slice design for the FDD's signed-result/editor-save contract and identify all relevant ordinary/bulk LTI edit paths.
-  - [ ] Capture starting revision/edit-lock identity after pending-save preparation; bind request/result tokens to author/project/activity/deployment and validate them at retrieval/save.
-  - [ ] Implement atomic freshness checks, selection-only merge, fresh revision/mapping update and authoritative response synchronization through shared editing primitives.
-  - [ ] Make relevant ordinary LTI mutations advance freshness and preserve the authoritative selection against stale client payloads, while retaining non-LTI editing policy.
-  - [ ] Refine role/type/actions and configured-state fallback using established authoring components; implement accessible preparing/launching/saving/success/failure states and failed-save recovery.
-  - [ ] Prevent overlapping launches/edits and invalidate cancelled, terminally failed or obsolete request callbacks. Keep unsupported hosts from offering unusable configuration actions.
+  - [x] Reconcile `design/authoring-save.md` with owner-requested simplification.
+  - [x] Capture signed activity state after flushing page/target-activity persistence; preserve role/type and current access/capability checks.
+  - [x] Validate/merge the signed result inside existing `ActivityEditor.edit/5`; create a fresh selection revision, preserve ordinary single/bulk selection and ordinary revision policy.
+  - [x] Reuse existing `PersistenceStatus` and error banner; remove separate selection-saved confirmation.
+  - [x] Prevent overlap in the active editor, discard closed/old modal callbacks and keep unsupported hosts from offering configuration.
+  - [x] Remove authoring coordinator, persistent pending/cancel/supersession state, generic-resource changes and separate editor primitives.
 - Testing Tasks:
-  - [ ] Cover AC-001, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011 and strengthen AC-002/AC-012 against stale autosaves.
-  - [ ] Test four role/type combinations, invalid/expired/cross-associated signed returns, same-lock ordinary edits, lost locks, failed commits, replay and synchronization after a successful save.
-  - [ ] Run focused editor/LTI ExUnit tests, state/orchestration/component Jest tests and the Phase 1 lifecycle scenarios without running an external tool.
-  - Commands: targeted `mix test`, targeted `yarn test`, file-scoped lint/format and `yarn check-types` in `assets/`; `mix format --check-formatted` for changed Elixir files.
+  - [x] Cover AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011, AC-012 and AC-029 using real scenario/domain/API and frontend tests without an external tool.
+  - [x] Verify same-ID draft change refusal, ordinary revision compatibility, signed callback rejection, failed commit rollback/retry and publication isolation.
+  - [x] Mount the page editor to verify preparation and `Saving...` → `All changes saved`, with no false saved indication on failure.
+  - [x] Complete final format/types/lint, regression and correction-review gates.
 - Definition of Done:
-  - A selection cannot overwrite intervening edits or be applied twice; UI/model/persisted state agree after success, cancellation and failure.
+  - Verified selection saves preserve unrelated content through existing editing primitives; model/save feedback agree after success and failure.
 - Gate:
-  - Guard/failure regressions and supported-host component checks pass; no unbounded client timeout is treated as proof that persistence stopped. Cross-service authoring browser checks remain deferred.
+  - Focused backend/frontend checks and applicable reviews pass. Tool/browser interoperability remains deferred.
 - Dependencies:
-  - Phases 1–2 and a concrete authoring-save slice design. Reuse verified frame behavior.
+  - Phases 1–2. Scope change explicitly authorized by the owner; committed Phase 2 section behavior remains unchanged.
 - Parallelizable Work:
-  - UI wording/a11y and signed-protocol test preparation can proceed independently after the save contract is fixed; shared editor/domain persistence edits remain coordinated.
+  - Review lenses only; implementation remains one coordinated change.
 
 ## Phase 4: Initialize missing selections during publication application
 
@@ -213,7 +213,7 @@ mix test test/scenarios/lti_external_tool/deep_linking_test.exs \
   test/oli/delivery_test.exs \
   test/oli/delivery/section_creation_test.exs \
   test/oli/delivery/sections/section_copy_test.exs
-mix format --check-formatted test/scenarios/lti_external_tool/deep_linking_hooks.ex \
+mix format --check-formatted test/support/scenarios/lti_external_tool/deep_linking_hooks.ex \
   test/scenarios/lti_external_tool/deep_linking_test.exs
 ```
 
@@ -324,5 +324,53 @@ The current-selection hint extension received separate security, performance, El
 ### 2026-10-13 - Use the public section-creation boundary in baseline scenarios
 - Change: Add feature-local scenario hooks for explicit publication selection and `Delivery.create_section/1`; keep execution evidence in this plan.
 - Reason: The generic section directive bypasses the prototype initialization being protected; hooks exercise the wizard's public command without changing shared infrastructure.
-- Evidence: `lib/oli/scenarios/directives/section_handler.ex`, `lib/oli/delivery.ex`, and `test/scenarios/lti_external_tool/deep_linking_hooks.ex`.
+- Evidence: `lib/oli/scenarios/directives/section_handler.ex`, `lib/oli/delivery.ex`, and `test/support/scenarios/lti_external_tool/deep_linking_hooks.ex`.
 - Impact: Phase 1 adds permanent coverage without a running tool or production-code changes. Broader behavior hardening and migration rollback remain in their planned phases.
+
+
+## Phase 3 Execution Record
+
+### Scope from plan.md
+
+Productionize authoring through existing editor mechanisms. The owner rejected the initial overcomplicated uncommitted approach and requested reusing the page's save indicator. Phase 2 remains committed as `f8f4bd8b35`; Phase 3 remains uncommitted.
+
+### Implementation Blocks
+
+- [x] Remove the separate LTI coordinator, authoring nonce generations/cancel endpoint, generic-resource edit changes and new ordinary revision policy.
+- [x] Reuse existing deferred persistence to flush page and target activity; fix its in-flight/queued barrier and failure propagation rather than tracking a second set of save promises.
+- [x] Keep signed author/tool correlation and current permission/capability/lock checks. Compare captured revision plus deterministic server state so in-place ordinary edits are detected.
+- [x] Add a sole signed-result update to `ActivityEditor.edit/5`, deriving the selection-only merge under its existing transaction/lock and cloning only for the selection save. Ordinary single/bulk edits retain current selection and normal revision policy.
+- [x] Reuse existing `PersistenceStatus` and error banner, synchronize the authoritative activity model, and remove `Selection saved`. Close is local; callback itself never writes. An uncertain network result requests reload.
+- [x] Retain role/type choices, supported-host gating, portable metadata fallback, active-frame message filtering and trigger focus return.
+
+### Test Blocks
+
+- [x] Initial reduced editor/LTI/API run passed **166 tests, 0 failures**, including the real signed callback rejection workflow. A final compatibility rerun follows the small ordinary API cleanup.
+- [x] Five focused frontend suites passed **35 tests, 0 failures**: mounted page editor, deferred persistence, authoring configuration and existing frame/section modal suites.
+- [x] Final backend/API/editor run passed **167 tests, 0 failures**, seed `730519`. Broader affected frontend checks passed **216 tests across 30 suites**, including the five 35-test feature suites. TypeScript, ESLint/Prettier, scoped Mix formatting, compilation with warnings as errors and Harness structure/design/nested traceability checks passed.
+
+### Work-Item Sync
+
+PRD, FDD, design and requirements now describe the smaller authoring contract and standard feedback. AC-007 is scoped to the active editor; no persisted cross-tab newest-request-wins or acknowledged server cancellation policy is claimed for authoring. Whole-feature statuses remain `verified_plan`; external/browser proof remains deferred. Phase 4 publication application and Phase 5 inheritance remain untouched.
+
+### Review Loop
+
+- [x] Separate security/performance/Elixir/UI/TypeScript/requirements reviews completed. Fixed the lock-to-containing-page association and linked the mounted save-status test to AC-005. No remaining code findings; correction reviews did not restore removed infrastructure.
+
+### Done Definition
+
+- [x] Authoring behavior implemented through existing mechanisms.
+- [x] Final verification and correction reviews pass.
+- [x] No Phase 3 commit without separate owner approval.
+
+### 2026-10-15 Cleanup
+
+- Run `change-cleanup` in owner-selected `self-driving` mode against `origin/master`, focused on outstanding Phase 3 changes. Trace new tests to Jest/ExUnit discovery, scenario assets/hooks to their executing tests and the design to the active plan; no orphaned added files were found in this slice.
+- Remove the unused prototype result-retrieval endpoint, controller action, domain wrapper and frontend helper. The existing UI submits the signed token directly to the guarded save endpoint; update protocol tests and design/FDD to match that active flow.
+- Return only consumed model/title/objectives/tags fields, derive preparation feedback from existing state, rename the page handler to reflect all three events and document meaningful Elixir public input/output contracts. Keep existing persistence/authorization behavior and the reduced scope.
+- Keep shared scenario hooks in `test/support/scenarios/lti_external_tool/`, compiled by Mix without `Code.require_file`. The full suite run after that move completed with 9,644 tests and three failures outside Deep Linking: filesystem traversal timeout in preview-seed checks, connection failures in getting-started simulation and a payment billing-descriptor expectation. Its isolated 47-test Deep Linking run passed.
+- The cleanup regression run exposed a branch-local timestamp-sensitive assertion: an upsert can return a constructed `inserted_at` while PostgreSQL preserves the original value on conflict. Reload the two persisted baselines before asserting the complete row remains unchanged; production code is unaffected.
+- Final cleanup verification passed: **167 backend tests**, seed `601812`, with clean ExUnit progress/summary; **216 frontend tests across 30 suites**; TypeScript, scoped ESLint/Prettier/Mix formatting, warnings-as-errors compilation and Harness structure/design/traceability. Separate security, performance, Elixir, TypeScript, UI and requirements reviews reported no remaining findings. Corrected a misplaced return-value doc line during the review loop. Browser/tool interoperability remains deferred and all Phase 3 changes remain uncommitted.
+
+
+The simplified authoring scope preserves signed validation and meaningful stale-state detection, while removing the independent coordinator, persistent authoring request/cancel/supersession state, generic-resource edits and forced fresh ordinary revisions. Successful ExUnit output contained only progress/summary after its normal pre-test seed output; OTP shutdown messages follow the summary. No new external-tool/browser automation or migration was introduced. Owner manual review and explicit approval remain necessary before committing these changes.

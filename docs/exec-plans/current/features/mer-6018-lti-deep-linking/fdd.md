@@ -21,15 +21,15 @@ Assume the project page editor owns configuration persistence; template authorin
 
 ## 3. Repository Context Summary
 
-- `assets/src/components/activities/lti_external_tool/LTIExternalToolAuthoring.tsx` owns the current role/type choices, modal and result retrieval.
-- `assets/src/apps/page-editor/PageEditor.tsx` flushes deferred activity saves and bridges selection persistence through `ltiAuthoringSave`.
-- `lib/oli/lti/authoring_launch.ex` resolves author/project/activity/deployment and signs request correlation; its current tokens omit the starting revision and editing-lock resource.
+- `assets/src/components/activities/lti_external_tool/LTIExternalToolAuthoring.tsx` owns the current role/type choices, modal and signed-result submission.
+- `assets/src/apps/page-editor/PageEditor.tsx` uses its existing page/activity persistence strategies for prepare/save/close events. Deep Linking uses the existing `PersistenceStatus` indicator and error banner.
+- `lib/oli/lti/authoring_launch.ex` verifies signed author/project/activity/deployment correlation and captured activity state, then delegates selection saves to the existing activity editor. See `design/authoring-save.md`.
 - `lib/oli_web/controllers/api/lti_controller.ex` and `lib/oli_web/controllers/lti_controller.ex` own launch details, LTI transport and callback/result handoff.
-- `lib/oli/authoring/editing/activity_editor.ex` owns edit authorization, lock use, revision creation and publication mapping. Under an updated lock, ordinary edits may mutate the same draft revision ID.
+- `lib/oli/authoring/editing/activity_editor.ex` retains ordinary revision policy. A signed selection save creates a fresh revision; ordinary single/bulk activity content edits preserve the stored selection.
 - `lib/oli/delivery.ex` calls `PlatformExternalTools.initialize_section_deep_links/2` inside direct creation. That helper currently inserts every selected candidate and is not a missing-only updater.
 - `lib/oli/delivery/sections/updates.ex` owns the active worker publication-application transaction, including final migration and cache invalidation. Inspect legacy update entry points before claiming complete coverage.
 - `lib/oli/delivery/sections/blueprint.ex` creates templates and delegates duplication to `SectionCopy`; the copy engine is shared with previous-section copying.
-- `LTIExternalToolDelivery.tsx` passes the same frame identity to the regular frame and its configuration modal. Reproduce the observed blank modal before treating this collision as its confirmed runtime cause.
+- Prototype baseline: regular/configuration frames shared a name. Phase 2 uses instance-unique names and distinct outcomes; component regressions establish targeting/message behavior, without claiming that the collision caused the observed empty MyProse modal.
 - Existing tests cover legacy LTI transport and selection CRUD. The dummy browser tool scenario currently disables Deep Linking and covers a regular launch in a new window.
 
 ## 4. Proposed Design
@@ -42,7 +42,7 @@ Introduce narrow, documented domain helpers for guarded authoring selection save
 
 ### 4.2 State & Data Flow
 
-Authoring follows `idle → preparing → launching/awaiting return → validating/saving → success or recoverable failure`. Flush pending/in-flight saves before obtaining launch details. Disable configuration controls and activity edits during a pending request and track one active request. Cancel invalidates that request. Treat an error return as terminal for that launch so later messages cannot silently apply after cancellation/failure.
+Authoring flushes the existing page and target-activity persistence strategies before configuration. Prevent overlapping configuration in the active page editor and disable activity edits while its modal is active. Close/error discards that editor's active request and ignores subsequent messages; callbacks return a signed handoff and never persist by themselves. No authoring request registry or cancellation endpoint is introduced. General coordination between multiple tabs is outside this slice.
 
 Regular uses the current draft selection or the integration default. Deep Link sends the selected context role and existing configuration entry point. A validated callback returns a signed result token to the initiating frame. The page editor submits that token through its coordinated save path; the server derives the selection from the token and merges only `deepLink` into the current activity content. On success, return the authoritative saved model/revision and synchronize the editor before restoring editable controls. On persistence failure, restore the last successful selection while retaining independently saved edits; do not leave a failed selection looking saved.
 
@@ -57,7 +57,7 @@ Project → template uses exact selected published revisions. Template → secti
 ### 4.4 Alternatives Considered
 
 - Continue client-side model replacement after result retrieval: smallest prototype, but it leaves freshness and failed-save recovery dependent on browser state. Select a signed-result-aware server guard within the editor persistence boundary.
-- Compare only a revision ID with existing in-place editing: insufficient for intervening ordinary edits under a held lock. Advance revision identity for relevant LTI mutations and serialize mapping checks/updates.
+- A revision ID alone misses ordinary in-place draft edits. Compare the captured revision and a deterministic server fingerprint of its editable fields, keeping ordinary revision policy unchanged.
 - Overwrite section records from new publications: simple but violates instructor ownership. Select insert-missing behavior protected by the composite uniqueness constraint.
 - Reinitialize sections created from templates from project content: loses template changes and restores cleared records. Copy template-owned records instead.
 - Add a global section-copy option now: expands ticket scope. Integrate inheritance with the existing template source policy only; keep general course-copy behavior explicit and covered.
@@ -66,10 +66,10 @@ Project → template uses exact selected published revisions. Template → secti
 
 Proposed contracts refine existing interfaces; exact function placement is confirmed in the phase-level implementation design without changing these invariants.
 
-- Project launch-details accepts allowlisted `role` and `launch_type`. It returns the existing launch parameters, `request_id` and the captured starting revision identity after the editor flush. Carry compact IDs in the login hint to respect its 255-character limit.
-- Signed request correlation includes initiating author, project/activity, expected deployment, active request ID, starting revision and editing-lock resource. Callback/result tokens have dedicated salts and bounded lifetimes. Re-resolve association and access during launch, result retrieval and save.
-- Extend the existing activity save transport with optional signed selection-result metadata. This metadata is not stored in activity content. A guarded selection save returns the persisted activity model and new revision identity; stale saves produce a conflict-style outcome, invalid correlation/access a refusal, and persistence errors an explicit failure.
-- `ActivityEditor` shares its authorization/lock/revision/change-tracking primitives with the guarded save. Ordinary LTI edits preserve the authoritative `deepLink` rather than replacing it from a stale client model; explicit selection changes require a verified result. Trusted duplication/import paths continue copying content normally.
+- Project Regular launch-details remains a GET with an allowlisted role. Deep Linking starts with a trusted-Origin POST after host flush, including its lock resource. The signed `lti_message_hint` wrapper carries the original request token through OIDC; compact login hints respect the 255-character context limit. The tool echoes the opaque message hint. Refuse legacy Deep Link GETs.
+- Signed request correlation includes author, project/activity, deployment, request UUID, working publication, starting revision, server fingerprint and lock resource. Tokens retain dedicated salts and bounded lifetimes. Re-resolve accepted collaboration, capability, association and captured activity state at authorization/return/save.
+- Project POST endpoints start configuration and submit a signed result token. Save returns authoritative model/title/objectives/tags. The authoring component submits the returned token directly; the unused prototype result-retrieval endpoint is removed. Closing is local and does not issue a cancellation request.
+- `ActivityEditor.edit/5` accepts a sole `deep_link_result` token. Under its existing lock/transaction, validate that token against current activity state, derive a selection-only content merge and use existing clone/update/mapping/broadcast functions. Ordinary single/bulk content saves retain `deepLink` and reject non-map LTI models. Generic resource editing, copying/import and ordinary revision policy retain their baseline contracts.
 - `initialize_section_deep_links(section_id, publication_id)` becomes idempotent, missing-only and transaction-compatible. Return a created count or a structured error. No external tool calls occur inside this operation.
 - A template-copy helper accepts source/destination section identities and corresponding destination resources, preserving type/URL/custom/title/text and reporting insert failure. Honor any existing resource remap rather than assuming every copy retains resource IDs.
 - Frame identity is local presentation data, distinct from LTI `resource_link.id`. Give every mounted instance a stable unique frame name; delivery/configuration instances and multiple activities on one page must not share targets. Validate message source/origin and associate callbacks with the expected launch/frame.
@@ -86,9 +86,9 @@ Keep `priv/repo/migrations/20261005200125_widen_lti_deep_link_selection_fields.e
 
 ### Authoring freshness and replay
 
-Serialize the current activity publication mapping and the relevant editor-lock checks with the selection save. Compare the captured starting revision with the current mapping, merge the verified selection into current content, create a fresh revision and advance the mapping in one transaction. Apply existing dirty/change tracking and broadcast only the committed outcome.
+Use the existing activity-edit transaction and owned editing lock. Validate the signed result and captured revision/fingerprint within that transaction before cloning. Merge only the selection into current content, create a fresh revision and advance the mapping through the normal editor primitives. Broadcast only after commit.
 
-Relevant ordinary LTI activity edits must also advance revision identity so a same-lock edit invalidates an older return. Audit single/bulk editing paths rather than changing non-LTI revision policy globally. Preserve the current authoritative selection on ordinary writes so an old autosave cannot revert it. A replayed result carries the old starting revision and fails after the first successful save. Do not substitute client-only request IDs, content hashes or timestamps for this server guard.
+The server fingerprint detects changed content/title/objectives/tags/learning-model parameters even when an ordinary edit retains its revision ID. It is generated only on the server and carried in signed correlation, not supplied as an unsigned client assertion. Ordinary single/bulk writes preserve the selection. After a successful selection save, the new revision rejects replay. No nonce consumption, cross-tab supersession registry or new ordinary-edit revision policy is needed.
 
 ### Destination creation/application
 
@@ -112,7 +112,7 @@ Use existing authoring broadcasts and delivery cache/depot invalidation. Reload 
 
 Resolve candidates with scoped publication/destination joins and existing-selection exclusion. Validate in memory only the selected candidates and use bounded/batched database operations where practical. Avoid one revision/deployment lookup per destination activity and avoid external HTTP calls in creation/update/copy transactions. Verify SQL/query shape and index use during implementation review; no new numerical SLA is asserted.
 
-Fresh LTI revisions increase authoring write volume. Keep work scoped to relevant LTI mutations, preserve existing debounce and avoid revisions for no-op updates. Measure with representative serialized-task payloads and ensure no quadratic scanning of project content.
+Ordinary edits retain existing debounce/revision behavior. Only selection saves force a fresh revision. Fingerprinting uses the one resolved activity, not a project scan; no external HTTP occurs inside editing transactions.
 
 ## 10. Failure Modes & Resilience
 
@@ -202,3 +202,9 @@ No product question blocks the current design. Reset/clear UI, wizard source lab
 - Reason: The owner approved Torus-side support for tools that can prepopulate selection without a MyProse-specific contract.
 - Evidence: `lib/oli_web/controllers/lti_controller.ex` and `test/scenarios/lti_external_tool/section_configuration_test.exs`.
 - Impact: One indexed section/resource lookup at section authorization; authoring reuses the resolved draft revision. Preserve storage, Regular claims, selector target and correlation. Non-string legacy parameters stay stored unchanged and are omitted only from the optional configuration hint.
+
+
+### 2026-10-14 - Keep authoring production work proportional to the ticket
+- Reason: The owner requested removing the additional coordination infrastructure and using the existing save feedback.
+- Change: Reuse `ActivityEditor.edit/5`, its lock/transaction and the existing deferred persistence barrier. Retain signed handoff/current-access checks, a server-side captured-state comparison and selection-only merge. Use the page's `Saving...` / `All changes saved` indicator; no separate selection-saved toast/message.
+- Impact: Remove the authoring coordinator, persisted request generations/cancel endpoint, generic-resource changes and forced fresh ordinary revisions. Closing authoring configuration is local. General multi-tab coordination and acknowledged cancellation races are not introduced in authoring; committed section behavior remains Phase 2. No new migration.

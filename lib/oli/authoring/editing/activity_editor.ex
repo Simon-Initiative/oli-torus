@@ -535,14 +535,28 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   .`{:error, {:not_found}}` if the project, resource, activity, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this activity
   .`{:error, {:invalid_update_field}}` if the update contains an invalid field
+  .`{:error, :stale_selection}` if a signed tool selection no longer matches the editor state
   .`{:error, {:error}}` unknown error
+
+  A sole `deep_link_result` field supplies a server-signed selection token. It is
+  validated under the existing editing lock and merged into current content;
+  ordinary single/bulk content edits preserve the stored LTI selection.
+
   """
-  @spec edit(String.t(), String.t(), any(), String.t(), %{}) ::
+  @spec edit(
+          String.t(),
+          pos_integer() | String.t(),
+          pos_integer() | String.t(),
+          String.t(),
+          map()
+        ) ::
           {:ok, %Revision{}}
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:lock_not_acquired, any()}}
           | {:error, {:not_authorized}}
+          | {:error, {:invalid_update_field}}
+          | {:error, :stale_selection}
   def edit(project_slug, lock_id, activity_id, author_email, update) do
     result =
       with {:ok, {author, project, _publication}} <-
@@ -554,13 +568,37 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         project_page_targets = project_page_targets(project.id)
 
         Repo.transaction(fn ->
-          case Locks.update(project.slug, publication.id, resource.id, author.id) do
+          lock_result = Locks.update(project.slug, publication.id, resource.id, author.id)
+          selection_save? = Map.has_key?(update, "deep_link_result")
+
+          update =
+            case {lock_result, selection_save?} do
+              {{status}, true} when status in [:acquired, :updated] ->
+                with {:ok, request, selected} <-
+                       Oli.Lti.AuthoringLaunch.validate_result(
+                         author,
+                         project.slug,
+                         activity.id,
+                         update["deep_link_result"]
+                       ),
+                     true <- request["lock_id"] == resource.id do
+                  current = get_latest_revision(publication.id, activity.id)
+                  %{"content" => Map.put(current.content, "deepLink", selected)}
+                else
+                  _ -> Repo.rollback(:stale_selection)
+                end
+
+              _ ->
+                update
+            end
+
+          case lock_result do
             # If we acquired the lock, we must first create a new revision
             {:acquired} ->
               updated =
                 get_latest_revision(publication.id, activity.id)
                 |> create_new_revision(publication, activity, author.id)
-                |> update_revision(update, project.id, project_page_targets)
+                |> update_revision(update, project.id, project_page_targets, selection_save?)
 
               case updated do
                 {:ok, revision} ->
@@ -578,8 +616,23 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
             {:updated} ->
               updated =
                 get_latest_revision(publication.id, activity.id)
-                |> maybe_create_new_revision(publication, project, activity, author.id, update)
-                |> update_revision(update, project.id, project_page_targets)
+                |> then(fn revision ->
+                  case selection_save? do
+                    true ->
+                      create_new_revision(revision, publication, activity, author.id)
+
+                    false ->
+                      maybe_create_new_revision(
+                        revision,
+                        publication,
+                        project,
+                        activity,
+                        author.id,
+                        update
+                      )
+                  end
+                end)
+                |> update_revision(update, project.id, project_page_targets, selection_save?)
 
               case updated do
                 {:ok, revision} ->
@@ -668,7 +721,21 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   # Applies the update to the revision, converting any objective slugs back to ids
-  defp update_revision(revision, update, project_id, project_page_targets \\ nil) do
+  defp update_revision(
+         revision,
+         update,
+         project_id,
+         project_page_targets \\ nil,
+         selection_save? \\ false
+       ) do
+    revision = Repo.preload(revision, :activity_type)
+
+    update =
+      case selection_save? do
+        true -> update
+        false -> preserve_lti_selection(revision, update)
+      end
+
     explicit_learning_model_parameters? =
       Map.has_key?(update, "learning_model_parameters") or
         Map.has_key?(update, :learning_model_parameters)
@@ -794,6 +861,27 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp get_scoring_strategy_from_content(_), do: "total"
 
+  defp preserve_lti_selection(
+         %Revision{activity_type: %{authoring_element: "lti-external-tool-authoring"}} = revision,
+         %{"content" => content} = update
+       ) do
+    case is_map(content) do
+      true ->
+        content =
+          case Map.fetch(revision.content, "deepLink") do
+            {:ok, selection} -> Map.put(content, "deepLink", selection)
+            :error -> Map.delete(content, "deepLink")
+          end
+
+        Map.put(update, "content", content)
+
+      false ->
+        Repo.rollback({:invalid_update_field})
+    end
+  end
+
+  defp preserve_lti_selection(_, update), do: update
+
   # Check to see if this update is valid
   defp validate_request(update) when is_list(update) do
     all_valid? =
@@ -808,6 +896,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     case all_valid? do
       true -> {:ok, update}
       _ -> {:error, {:invalid_update_field}}
+    end
+  end
+
+  defp validate_request(%{"deep_link_result" => token} = update) do
+    case is_binary(token) and map_size(update) == 1 do
+      true -> {:ok, update}
+      false -> {:error, {:invalid_update_field}}
     end
   end
 
@@ -837,6 +932,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp adaptive_activity?(%Revision{activity_type_id: nil}), do: false
+
+  defp adaptive_activity?(%Revision{activity_type: %ActivityRegistration{slug: slug}}),
+    do: slug == "oli_adaptive"
 
   defp adaptive_activity?(%Revision{activity_type_id: activity_type_id}) do
     case Activities.get_registration(activity_type_id) do

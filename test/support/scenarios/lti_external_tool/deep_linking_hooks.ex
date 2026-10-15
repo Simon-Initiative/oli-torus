@@ -151,13 +151,45 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
                state.current_author.id
              )
 
-    ActivityEditor.edit(
-      project(state).slug,
-      page.resource_id,
-      activity(state, virtual_id).resource_id,
-      state.current_author.email,
-      %{"content" => content, "releaseLock" => true}
-    )
+    current = activity(state, virtual_id)
+    project = project(state).slug
+    selection = content["deepLink"]
+
+    with {:ok, revision} <-
+           ActivityEditor.edit(
+             project,
+             page.resource_id,
+             current.resource_id,
+             state.current_author.email,
+             %{"content" => content}
+           ) do
+      result =
+        case selection == current.content["deepLink"] do
+          true ->
+            {:ok, revision}
+
+          false ->
+            with {:ok, started} <-
+                   Oli.Lti.AuthoringLaunch.start_request(
+                     state.current_author,
+                     project,
+                     current.resource_id,
+                     page.resource_id
+                   ) do
+              token = Oli.Lti.AuthoringLaunch.result_token(started.request, selection)
+
+              Oli.Lti.AuthoringLaunch.save_result(
+                state.current_author,
+                project,
+                current.resource_id,
+                token
+              )
+            end
+        end
+
+      Locks.release(project, publication.id, page.resource_id, state.current_author.id)
+      result
+    end
   end
 
   @doc "Returns the project's persisted identity from the scenario."

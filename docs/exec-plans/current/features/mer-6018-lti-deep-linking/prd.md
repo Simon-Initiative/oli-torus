@@ -36,7 +36,7 @@ The prototype already supports selecting a tool resource in project authoring an
 
 ## 5. UX / UI Requirements
 
-Use familiar authoring controls for role, launch type and explicit actions. Show current selection, busy/save progress and coherent completion, cancellation and failure states. Explain Regular reuse and distinguish selecting a resource from opening it. Use useful generic metadata fallback when the tool omits a title, without interpreting arbitrary custom parameters.
+Use familiar authoring controls for role, launch type and explicit actions. Show current selection and use the existing page-editor `Saving...` / `All changes saved` indicator, with coherent local cancellation and failure feedback. Do not add a separate selection-saved confirmation. Explain Regular reuse and distinguish selecting a resource from opening it. Use useful generic metadata fallback when the tool omits a title, without interpreting arbitrary custom parameters.
 
 The wrapper owns dialog size, layout, scroll, keyboard/focus behavior and status announcements. The tool owns its internal selection UI. No Figma source was supplied; use established components and Tailwind conventions. If a design source is later provided, route reconciliation through the repository's UI workflow.
 
@@ -83,7 +83,7 @@ N/A — no new telemetry program is in scope. Current verification uses the acti
 
 ## 13. Risks & Mitigations
 
-- Editor saves can update a revision in place while holding a lock: cover intervening ordinary edits and atomic selection saves, rather than trusting a browser request ID alone.
+- Editor saves can update a revision in place while holding a lock: compare captured server state within the existing editor transaction; do not change the ordinary revision policy.
 - Publication application can remove or filter destination resources: initialize after destination membership is finalized and test both major/minor paths.
 - Template duplication shares a copy engine with course copying: scope selection inheritance to the template source policy and test adjacent copy behavior.
 - Tool frames can collide: cover Torus-owned targets and handlers with frontend tests. Actual tool navigation and return delivery remain a documented verification gap until cross-service tests resume.
@@ -133,3 +133,9 @@ N/A — no new telemetry program is in scope. Current verification uses the acti
 - Reason: The owner explicitly requested this scope after confirming that the locally available LTI Example Tool does not implement Deep Linking.
 - Evidence: The current browser fixture covers a Regular launch in `assets/automation/tests/torus/lti_external_tool/lti-external-tool.spec.ts`; `test/scenarios/lti_external_tool/hooks.ex` disables Deep Linking.
 - Impact: Product behavior remains in scope. AC-022 and AC-030 retain pending external verification; AC-029 specifies frontend coverage executable without a tool service. Deferred evidence prevents claiming complete cross-service verification.
+
+
+### 2026-10-14 - Simplify authoring hardening and reuse save feedback
+- Change: Use the existing editor transaction, lock, deferred persistence and save indicator. Retain signed validation and captured-state selection merge; remove separate authoring request/cancellation persistence, coordinator and general multi-tab guarantees.
+- Reason: The owner requested reducing implementation complexity to the ticket's requirements and explicitly asked to reuse `Saving...` / `All changes saved`.
+- Impact: Authoring close/error is local and prevents further submissions from that modal; uncertain save outcomes require reload. The committed instructor/section implementation is unchanged. No new migration or external-tool dependency.

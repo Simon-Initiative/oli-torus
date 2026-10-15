@@ -18,6 +18,8 @@ requirements:
     verification_method: automated
     proofs:
     - test/scenarios/lti_external_tool/section_configuration_test.exs
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/components/lti/authoring_configuration_test.tsx
   - id: AC-002
     title: Regular authoring launches reuse the saved URL and exact custom values; without a selection
       they use the integration default, and Regular does not replace the selection.
@@ -25,12 +27,15 @@ requirements:
     verification_method: automated
     proofs:
     - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
   - id: AC-003
     title: Read-only or unauthorized authors cannot configure the activity, and disabled/deleted integrations,
       unsupported launch choices or disabled Deep Linking cannot bypass server-side controls.
     status: verified_plan
     verification_method: hybrid
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/components/lti/authoring_configuration_test.tsx
 - id: FR-002
   title: Provide a coherent authoring selection and save experience
   status: verified_plan
@@ -41,25 +46,36 @@ requirements:
       absent.
     status: verified_plan
     verification_method: hybrid
-    proofs: []
+    proofs:
+    - assets/test/components/lti/authoring_configuration_test.tsx
   - id: AC-005
     title: Launching and saving have distinct accessible progress/error states, success is reported only
       after persistence succeeds, and a subsequent reload displays the persisted selection.
     status: verified_plan
     verification_method: hybrid
-    proofs: []
+    proofs:
+    - assets/test/components/lti/authoring_configuration_test.tsx
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - assets/test/page_editor/lti_save_test.tsx
   - id: AC-006
     title: Cancellation, launch/validation failure and save failure retain the previous selection and
       unrelated content in persisted data and recoverable editor state.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/page_editor/lti_save_test.tsx
+    - assets/test/components/lti/authoring_configuration_test.tsx
   - id: AC-007
-    title: Pending and in-flight edits are coordinated before configuration, overlapping launches are
-      prevented, and late messages from cancelled or older requests cannot replace the active selection.
+    title: Pending and in-flight page/activity edits are saved before configuration, overlapping launches
+      in the active editor are prevented, and that editor ignores late messages after close or from an older launch.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/page_editor/lti_save_test.tsx
+    - assets/test/data/persistence/deferred_persistence_test.ts
+    - assets/test/components/lti/authoring_configuration_test.tsx
 - id: FR-003
   title: Validate and bind authoring tool responses before accepting a selection
   status: verified_plan
@@ -69,32 +85,39 @@ requirements:
       unsupported or multiple content items and malformed selections are rejected without mutation.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/oli_web/controllers/lti_controller_test.exs
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
   - id: AC-009
     title: Tampered/expired Torus correlation or result tokens and wrong author/project/activity/deployment
       associations are rejected, with current project membership, permission, integration and editor-lock
       checks at save time.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
 - id: FR-004
   title: Persist selections through a guarded activity revision lifecycle
   status: verified_plan
   acceptance_criteria:
   - id: AC-010
     title: Selecting or replacing a resource updates content.deepLink on the existing activity resource,
-      preserves its other fields and synchronizes the editor with the saved model and revision.
+      preserves its other fields and synchronizes the existing editor context with the saved model.
     status: verified_plan
     verification_method: automated
     proofs:
     - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/page_editor/lti_save_test.tsx
   - id: AC-011
     title: An intervening ordinary edit or selection change makes an older return stale, including edits
-      under an already-held lock; comparison and selection/mapping updates are atomic and a successful
+      under an already-held lock and without forcing new ordinary revisions; comparison and selection/mapping updates are atomic and a successful
       selection result cannot be saved again.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
   - id: AC-012
     title: Subsequent autosaves and ordinary edits retain the selection, and publication freezes it so
       later draft changes cannot mutate the published activity revision.
@@ -102,6 +125,7 @@ requirements:
     verification_method: automated
     proofs:
     - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
 - id: FR-005
   title: Retain transactional initialization for sections created directly from a project publication
   status: verified_plan
@@ -256,6 +280,9 @@ requirements:
     proofs:
     - assets/test/components/lti/external_tool_frame_test.tsx
     - assets/test/components/lti/external_tool_configuration_test.tsx
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/page_editor/lti_save_test.tsx
+    - assets/test/components/lti/authoring_configuration_test.tsx
   - id: AC-030
     title: A documented MyProse walkthrough verifies supported role/type combinations, Draft/Review inheritance,
       publication application, template-based creation and instructor overrides, with observed tool-side

@@ -1807,7 +1807,13 @@ defmodule OliWeb.Router do
   scope "/api/v1/lti/projects/:project_slug", OliWeb, as: :api do
     pipe_through([:api, :authoring_protected])
 
-    post("/deep_link_result/:activity_id", Api.LtiController, :authoring_deep_link_result)
+    post("/deep_link_save/:activity_id", Api.LtiController, :authoring_deep_link_save)
+
+    post(
+      "/deep_linking_launch_details/:activity_id",
+      Api.LtiController,
+      :deep_linking_launch_details
+    )
 
     get(
       "/launch_details/:activity_id",

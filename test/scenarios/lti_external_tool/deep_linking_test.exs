@@ -1,5 +1,3 @@
-Code.require_file("deep_linking_hooks.ex", __DIR__)
-
 defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
   use OliWeb.ConnCase
 
@@ -112,7 +110,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     end
   end
 
-  test "a signed authoring return is retrieved, saved, published and used by a learner" do
+  test "a signed authoring return is saved, published and used by a learner" do
     state = execute_scenario("deep_linking_setup.scenario.yaml")
     revision = Hooks.activity(state)
     conn = build_conn() |> log_in_author(state.current_author)
@@ -148,26 +146,18 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     assert result["request_id"] == details["request_id"]
     assert Hooks.activity(state).content == revision.content
 
-    retrieved =
+    response =
       conn
-      |> put_req_header("accept", "application/json")
+      |> put_req_header("origin", Oli.Utils.get_base_url())
       |> post(
-        ~p"/api/v1/lti/projects/#{Hooks.project(state).slug}/deep_link_result/#{revision.resource_id}",
-        %{
-          "token" => result["token"]
-        }
+        ~p"/api/v1/lti/projects/#{Hooks.project(state).slug}/deep_link_save/#{revision.resource_id}",
+        %{token: result["token"]}
       )
       |> json_response(200)
 
-    assert retrieved["selection"] == selected
-    assert retrieved["request_id"] == details["request_id"]
-
-    assert {:ok, saved} =
-             Hooks.save_content(
-               state,
-               Map.put(revision.content, "deepLink", retrieved["selection"])
-             )
-
+    saved = Hooks.activity(state)
+    assert response["model"] == saved.content
+    assert saved.content["deepLink"] == selected
     assert saved.resource_id == revision.resource_id
     assert Map.delete(saved.content, "deepLink") == Map.delete(revision.content, "deepLink")
 
@@ -180,6 +170,69 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     {:ok, _} = Sections.enroll(learner.id, section.id, [ContextRoles.get_role(:context_learner)])
     assert_selection(section, revision.resource_id, selected)
     assert_launch(learner, section, revision.resource_id, selected)
+  end
+
+  test "author callback refuses invalid signed protocol/content returns without issuing a selection token" do
+    state = execute_scenario("deep_linking_setup.scenario.yaml")
+    revision = Hooks.activity(state)
+    conn = build_conn() |> log_in_author(state.current_author)
+
+    details =
+      project_details(conn, state, revision.resource_id, %{
+        "role" => "developer",
+        "launch_type" => "deep_link"
+      })
+
+    claims = authorize(conn, details["launch_params"])
+    data = claims[@settings_claim]["data"]
+    selected = revision.content["deepLink"]
+    items = "https://purl.imsglobal.org/spec/lti-dl/claim/content_items"
+
+    invalid_returns = [
+      %{items => :delete},
+      %{items => []},
+      %{items => [selected, selected]},
+      %{items => [%{"type" => "unsupported"}]},
+      %{items => [Map.put(selected, "url", "javascript:alert(1)")]},
+      %{items => [Map.put(selected, "custom", ["invalid"])]},
+      %{items => [Map.put(selected, "title", %{"html" => "invalid"})]},
+      %{"aud" => "https://wrong-platform.example"},
+      %{"exp" => 0},
+      %{"https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiResourceLinkRequest"},
+      %{"https://purl.imsglobal.org/spec/lti/claim/version" => "1.2"},
+      %{"https://purl.imsglobal.org/spec/lti/claim/deployment_id" => "other-deployment"}
+    ]
+
+    for override <- invalid_returns do
+      jwt = signed_tool_response(state, data, selected, override)
+      assert_authoring_error(jwt, state, revision)
+    end
+
+    jwt = signed_tool_response(state, data, selected)
+    [header, payload, signature] = String.split(jwt, ".")
+
+    replacement =
+      case String.first(signature) do
+        "A" -> "B"
+        _ -> "A"
+      end
+
+    invalid_signature = replacement <> String.slice(signature, 1..-1//1)
+    assert_authoring_error(Enum.join([header, payload, invalid_signature], "."), state, revision)
+  end
+
+  defp assert_authoring_error(jwt, state, revision) do
+    html =
+      build_conn() |> post(~p"/lti/authoring_deep_link", %{"JWT" => jwt}) |> html_response(200)
+
+    [result] =
+      html |> Floki.parse_document!() |> Floki.attribute("#authoring-result", "data-result")
+
+    result = Jason.decode!(result)
+    assert is_binary(result["error"])
+    refute Map.has_key?(result, "token")
+    assert Hooks.activity(state).id == revision.id
+    assert Hooks.activity(state).content == revision.content
   end
 
   test "long URL and descriptive metadata survive publication and section initialization" do
@@ -206,12 +259,11 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     revision = Hooks.activity(state, "unconfigured")
     invalid = Map.put(Hooks.activity(state).content["deepLink"], "type", "unsupported")
 
+    # Deliberately corrupt legacy storage; ordinary editor requests cannot create this state.
     assert {:ok, _} =
-             Hooks.save_content(
-               state,
-               Map.put(revision.content, "deepLink", invalid),
-               "unconfigured"
-             )
+             Oli.Resources.update_revision(revision, %{
+               content: Map.put(revision.content, "deepLink", invalid)
+             })
 
     {:ok, publication} =
       Publishing.publish_project(
@@ -264,15 +316,38 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
   end
 
   defp project_details(conn, state, resource_id, choices \\ %{}) do
-    conn
-    |> get(
-      ~p"/api/v1/lti/projects/#{Hooks.project(state).slug}/launch_details/#{resource_id}",
-      choices
-    )
-    |> json_response(200)
+    case choices["launch_type"] do
+      "deep_link" ->
+        project = Hooks.project(state).slug
+        page = state.projects["deep_linking_project"].rev_by_title["Tool Lesson"]
+
+        assert {:acquired} =
+                 Oli.Authoring.Locks.acquire(
+                   project,
+                   Publishing.project_working_publication(project).id,
+                   page.resource_id,
+                   state.current_author.id
+                 )
+
+        conn
+        |> put_req_header("origin", Oli.Utils.get_base_url())
+        |> post(
+          ~p"/api/v1/lti/projects/#{project}/deep_linking_launch_details/#{resource_id}",
+          Map.put(choices, "lock_id", page.resource_id)
+        )
+        |> json_response(200)
+
+      _ ->
+        conn
+        |> get(
+          ~p"/api/v1/lti/projects/#{Hooks.project(state).slug}/launch_details/#{resource_id}",
+          choices
+        )
+        |> json_response(200)
+    end
   end
 
-  defp signed_tool_response(state, correlation, selected) do
+  defp signed_tool_response(state, correlation, selected, overrides \\ %{}) do
     key = "test/support/fixtures/test_rsa_private.pem" |> File.read!() |> JOSE.JWK.from_pem()
     {_, public} = key |> JOSE.JWK.to_public() |> JOSE.JWK.to_map()
     public = Map.put(public, "kid", "deep-linking-test-key")
@@ -284,19 +359,25 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
 
     now = System.system_time(:second)
 
-    JOSE.JWT.sign(key, %{"alg" => "RS256", "kid" => "deep-linking-test-key"}, %{
-      "iss" => state.params.platform.client_id,
-      "aud" => Oli.Utils.get_base_url(),
-      "iat" => now,
-      "exp" => now + 300,
-      "jti" => Ecto.UUID.generate(),
-      "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiDeepLinkingResponse",
-      "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
-      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
-        state.params.deployment.deployment_id,
-      "https://purl.imsglobal.org/spec/lti-dl/claim/data" => correlation,
-      "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => [selected]
-    })
+    fields =
+      %{
+        "iss" => state.params.platform.client_id,
+        "aud" => Oli.Utils.get_base_url(),
+        "iat" => now,
+        "exp" => now + 300,
+        "jti" => Ecto.UUID.generate(),
+        "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiDeepLinkingResponse",
+        "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
+        "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
+          state.params.deployment.deployment_id,
+        "https://purl.imsglobal.org/spec/lti-dl/claim/data" => correlation,
+        "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => [selected]
+      }
+      |> Map.merge(overrides)
+      |> Enum.reject(fn {_key, value} -> value == :delete end)
+      |> Map.new()
+
+    JOSE.JWT.sign(key, %{"alg" => "RS256", "kid" => "deep-linking-test-key"}, fields)
     |> JOSE.JWS.compact()
     |> elem(1)
   end
@@ -377,6 +458,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
       |> get(~p"/lti/authorize_redirect", %{
         "client_id" => launch_params["client_id"],
         "login_hint" => launch_params["login_hint"],
+        "lti_message_hint" => launch_params["lti_message_hint"],
         "nonce" => Ecto.UUID.generate(),
         "state" => Ecto.UUID.generate(),
         "prompt" => "none",

@@ -16,6 +16,7 @@ import styles from './InlineActivityEditor.modules.scss';
 
 export interface ActivityEditorProps extends ActivityEditContext {
   editMode: boolean;
+  supportsLtiConfiguration?: boolean;
   optionalContentTypes: OptionalContentTypes;
   projectSlug: string;
   revisionHistoryLink: boolean;
@@ -103,7 +104,13 @@ export class InlineActivityEditor extends React.Component<
     this.customEventHandler = ((event: Event) => {
       const e = event as CustomEvent;
       // The page editor owns persistence; let this request reach its listener.
-      if (e.detail.payload?.eventName === 'ltiAuthoringSave') return;
+      if (
+        this.props.supportsLtiConfiguration &&
+        ['ltiAuthoringPrepare', 'ltiAuthoringSave', 'ltiAuthoringClose'].includes(
+          e.detail.payload?.eventName,
+        )
+      )
+        return;
       e.preventDefault();
       e.stopPropagation();
 
@@ -214,6 +221,7 @@ export class InlineActivityEditor extends React.Component<
       projectslug: this.props.projectSlug,
       authoringcontext: JSON.stringify({
         contentBreaksExist,
+        supportsLtiConfiguration: this.props.supportsLtiConfiguration === true,
         variables,
         optionalContentTypes: this.props.optionalContentTypes,
       }),

@@ -571,6 +571,9 @@ defmodule OliWeb.Api.ActivityController do
       {:ok, _} ->
         json(conn, %{"result" => "success"})
 
+      {:error, :stale_selection} ->
+        error(conn, 409, "The activity changed. Reload and configure the tool again.")
+
       {:error, {:invalid_update_field}} ->
         error(conn, 400, "invalid update field")
 

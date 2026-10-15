@@ -1,5 +1,3 @@
-Code.require_file("deep_linking_hooks.ex", __DIR__)
-
 defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
   use OliWeb.ConnCase
 
@@ -338,6 +336,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
                "custom" => custom
              })
 
+    saved = Repo.reload!(saved)
     conn = build_conn() |> log_in_user(state.users["instructor"])
     details = conn |> same_origin() |> post(details_path(section, id)) |> json_response(200)
     claims = authorize(conn, details["launch_params"])
@@ -371,6 +370,8 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
                "url" => "https://tool.example/legacy",
                "custom" => %{"nested" => %{"task" => "legacy"}}
              })
+
+    saved = Repo.reload!(saved)
 
     for resource_id <- [unconfigured_id, id] do
       conn = build_conn() |> log_in_user(state.users["instructor"])
@@ -407,14 +408,26 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     conn = build_conn() |> log_in_author(state.current_author)
     current = Hooks.activity(state)
 
+    page = state.projects["deep_linking_project"].rev_by_title["Tool Lesson"]
+    project = Hooks.project(state).slug
+
+    assert {:acquired} =
+             Oli.Authoring.Locks.acquire(
+               project,
+               Oli.Publishing.project_working_publication(project).id,
+               page.resource_id,
+               state.current_author.id
+             )
+
     for role <- ["developer", "instructor"], virtual_id <- ["configured", "unconfigured"] do
       activity = Hooks.activity(state, virtual_id)
 
       details =
         conn
-        |> get(
-          ~p"/api/v1/lti/projects/#{Hooks.project(state).slug}/launch_details/#{activity.resource_id}",
-          %{"role" => role, "launch_type" => "deep_link"}
+        |> put_req_header("origin", Oli.Utils.get_base_url())
+        |> post(
+          ~p"/api/v1/lti/projects/#{Hooks.project(state).slug}/deep_linking_launch_details/#{activity.resource_id}",
+          %{"role" => role, "lock_id" => page.resource_id}
         )
         |> json_response(200)
 
@@ -713,6 +726,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
       |> get(~p"/lti/authorize_redirect", %{
         "client_id" => launch_params["client_id"],
         "login_hint" => launch_params["login_hint"],
+        "lti_message_hint" => launch_params["lti_message_hint"],
         "nonce" => Ecto.UUID.generate(),
         "state" => Ecto.UUID.generate(),
         "prompt" => "none",

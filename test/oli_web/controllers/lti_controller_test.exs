@@ -904,7 +904,9 @@ defmodule OliWeb.LtiControllerTest do
       refute html_response(conn, 200) =~ "/js/app.js"
     end
 
-    test "authorize_redirect get successful for author from login hint", %{conn: conn} do
+    test "author login hint cannot authorize a launch without the initiating author session", %{
+      conn: conn
+    } do
       %{author: author, project: project} = Oli.Seeder.base_project_with_resource2()
 
       target_link_uri = "some-valid-url"
@@ -954,14 +956,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
 
-      assert html_response(conn, 200) =~ "You are being redirected..."
-
-      assert html_response(conn, 200) =~
-               "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
-
-      refute html_response(conn, 200) =~ "phx-"
-      refute html_response(conn, 200) =~ "/live"
-      refute html_response(conn, 200) =~ "/js/app.js"
+      assert response(conn, 403) == "Tool configuration is unavailable"
     end
 
     test "show_registration_form displays registration page with params from URL", %{

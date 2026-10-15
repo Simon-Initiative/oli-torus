@@ -1,4 +1,4 @@
-import { LTIDeepLinkSelection } from 'components/activities/lti_external_tool/schema';
+import { ActivityModelSchema } from 'components/activities/types';
 
 export type LTIExternalToolDetails = {
   request_id?: string;
@@ -97,17 +97,45 @@ export function listAvailableExternalTools(): Promise<AvailableExternalTools> {
   });
 }
 
-/** Retrieve a selection from a server-signed deep-link return, bound to this author/activity. */
-export async function getAuthoringDeepLinkResult(
+/** Start configuration only after the host has persisted its pending edits. */
+export async function startAuthoringDeepLink(
+  project: string,
+  activity: string,
+  lockId: number,
+  role: 'developer' | 'instructor',
+): Promise<LTIExternalToolDetails> {
+  const response = await fetch(
+    `/api/v1/lti/projects/${project}/deep_linking_launch_details/${activity}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lock_id: lockId, role }),
+    },
+  );
+  if (!response.ok)
+    throw new Error('Configuration requires an active editing lock. Reload and try again.');
+  return response.json();
+}
+
+export type AuthoringSelectionSaved = {
+  model: ActivityModelSchema;
+  title: string;
+  objectives: Record<string, number[]>;
+  tags: number[];
+};
+
+/** Submit the trusted result token; the server derives the selection and checks freshness. */
+export async function saveAuthoringDeepLink(
   project: string,
   activity: string,
   token: string,
-): Promise<{ selection: LTIDeepLinkSelection; request_id: string }> {
-  const response = await fetch(`/api/v1/lti/projects/${project}/deep_link_result/${activity}`, {
+): Promise<AuthoringSelectionSaved> {
+  const response = await fetch(`/api/v1/lti/projects/${project}/deep_link_save/${activity}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token }),
   });
-  if (!response.ok) throw new Error('The tool selection could not be retrieved. Please try again.');
+  if (!response.ok)
+    throw new Error('Could not confirm the selection save. Reload the page before trying again.');
   return response.json();
 }

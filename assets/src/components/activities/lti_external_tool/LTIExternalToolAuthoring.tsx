@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { LoadingSpinner } from 'components/common/LoadingSpinner';
@@ -6,11 +6,7 @@ import { useLoader } from 'components/hooks/useLoader';
 import { LTIExternalToolFrame } from 'components/lti/LTIExternalToolFrame';
 import { Alert } from 'components/misc/Alert';
 import { Modal, ModalSize } from 'components/modal/Modal';
-import {
-  LTIExternalToolDetails,
-  getAuthoringDeepLinkResult,
-  getLtiExternalToolDetails,
-} from 'data/persistence/lti_platform';
+import { LTIExternalToolDetails, getLtiExternalToolDetails } from 'data/persistence/lti_platform';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
@@ -20,7 +16,7 @@ import { LTIExternalToolSchema } from './schema';
 
 const store = configureStore();
 
-const LTIExternalTool: React.FC = () => {
+export const LTIExternalTool: React.FC = () => {
   const {
     model,
     editMode,
@@ -37,44 +33,47 @@ const LTIExternalTool: React.FC = () => {
   const [launch, setLaunch] = useState<LTIExternalToolDetails | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
   const handlingReturn = useRef(false);
   const activeRequest = useRef<string | undefined>();
 
-  const saveInEditor = async (selection?: LTIExternalToolSchema['deepLink']) => {
-    if (!onCustomEvent) throw new Error('Open this activity in the page editor to configure it.');
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-    try {
-      await Promise.race([
-        onCustomEvent('ltiAuthoringSave', { selection }).then((result) => {
-          if (result !== true)
-            throw new Error('Open this activity in the page editor to configure it.');
-        }),
-        new Promise((_, reject) => {
-          timeout = setTimeout(
-            () =>
-              reject(
-                new Error('The editor did not finish saving. Please reload before trying again.'),
-              ),
-            30000,
-          );
-        }),
-      ]);
-    } finally {
-      clearTimeout(timeout);
+  const launchButton = useRef<HTMLButtonElement>(null);
+  const restoreFocus = useRef(false);
+  useEffect(() => {
+    if (
+      !launch &&
+      !busy &&
+      restoreFocus.current &&
+      launchButton.current &&
+      !launchButton.current.matches(':disabled')
+    ) {
+      restoreFocus.current = false;
+      launchButton.current.focus();
     }
+  }, [launch, busy, editMode]);
+  const supportsConfiguration = authoringContext?.supportsLtiConfiguration === true;
+
+  const host = async (eventName: string, payload: unknown) => {
+    if (!supportsConfiguration || !onCustomEvent)
+      throw new Error('Open this activity in the page editor to configure it.');
+    const result = await onCustomEvent(eventName, payload);
+    if (result == null)
+      throw new Error('The editor could not complete this operation. Reload and try again.');
+    return result;
   };
 
   const startLaunch = async () => {
+    if (busy || launch) return;
+    restoreFocus.current = true;
     setBusy(true);
     setError(null);
-    setSaved(false);
     try {
-      await saveInEditor();
-      const details = await getLtiExternalToolDetails('projects', projectSlug, String(activityId), {
-        role,
-        launch_type: launchType,
-      });
+      const details =
+        launchType === 'deep_link'
+          ? await host('ltiAuthoringPrepare', { role })
+          : await getLtiExternalToolDetails('projects', projectSlug, String(activityId), {
+              role,
+              launch_type: 'regular',
+            });
       activeRequest.current = details.request_id;
       handlingReturn.current = false;
       setLaunch(details);
@@ -85,34 +84,40 @@ const LTIExternalTool: React.FC = () => {
     }
   };
 
+  const closeLaunch = () => {
+    if (handlingReturn.current) return;
+    if (launchType === 'deep_link' && activeRequest.current) {
+      void host('ltiAuthoringClose', {}).catch((error) => setError(error.message));
+    }
+    activeRequest.current = undefined;
+    setLaunch(null);
+  };
+
   const receiveSelection = async (result: {
     token?: string;
     request_id?: string;
     error?: string;
   }) => {
-    if (handlingReturn.current) return;
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-    if (!result.token || result.request_id !== activeRequest.current) return;
+    if (handlingReturn.current || !activeRequest.current || launchType !== 'deep_link') return;
+    if (!result.error && (!result.token || result.request_id !== activeRequest.current)) return;
     handlingReturn.current = true;
     setBusy(true);
     try {
-      const validated = await getAuthoringDeepLinkResult(
-        projectSlug,
-        String(activityId),
-        result.token,
-      );
-      if (validated.request_id !== activeRequest.current)
-        throw new Error('This selection belongs to an older launch.');
-      await saveInEditor(validated.selection);
+      if (result.error) throw new Error(result.error);
+      await host('ltiAuthoringSave', { token: result.token });
+      activeRequest.current = undefined;
       setLaunch(null);
-      setSaved(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to save the tool selection.');
-      handlingReturn.current = false;
+      const message = e instanceof Error ? e.message : 'Unable to save the tool selection.';
+      setError(message);
+      try {
+        await host('ltiAuthoringClose', {});
+        activeRequest.current = undefined;
+      } catch {
+        setError(message);
+      }
     } finally {
+      handlingReturn.current = false;
       setBusy(false);
     }
   };
@@ -156,7 +161,7 @@ const LTIExternalTool: React.FC = () => {
             ) : (
               <>
                 <fieldset
-                  disabled={!editMode || busy || launch !== null}
+                  disabled={busy || launch !== null}
                   className="flex flex-wrap items-end gap-4"
                 >
                   <label className="flex flex-col gap-1">
@@ -178,7 +183,7 @@ const LTIExternalTool: React.FC = () => {
                       onChange={(event) => setLaunchType(event.target.value as typeof launchType)}
                     >
                       <option value="regular">Regular</option>
-                      {ltiToolDetails.deep_linking_enabled && (
+                      {supportsConfiguration && ltiToolDetails.deep_linking_enabled && (
                         <option value="deep_link">Deep Link</option>
                       )}
                     </select>
@@ -186,6 +191,8 @@ const LTIExternalTool: React.FC = () => {
                   <button
                     type="button"
                     className="rounded border px-4 py-2 font-semibold"
+                    disabled={launchType === 'deep_link' && !editMode}
+                    ref={launchButton}
                     onClick={startLaunch}
                   >
                     {launchType === 'regular'
@@ -196,32 +203,35 @@ const LTIExternalTool: React.FC = () => {
                   </button>
                 </fieldset>
                 {model.deepLink && (
-                  <p className="mt-2">Selection: {model.deepLink.title || 'Selected resource'}</p>
-                )}
-                {saved && (
-                  <p role="status" className="mt-2">
-                    Selection saved.
+                  <p className="mt-2">
+                    Selection:{' '}
+                    {model.deepLink.title ||
+                      model.deepLink.text ||
+                      model.deepLink.url ||
+                      'Configured resource'}
                   </p>
                 )}
-                {error && <Alert variant="error">{error}</Alert>}
+                {busy && !launch && <p role="status">Preparing tool launch…</p>}
+                {error && (
+                  <div role="alert">
+                    <Alert variant="error">{error}</Alert>
+                  </div>
+                )}
                 {launch && (
                   <Modal
                     title={launchType === 'deep_link' ? 'Select Resource from Tool' : launch.name}
                     size={ModalSize.X_LARGE}
                     hideOkButton
                     cancelLabel="Close"
-                    keyboard={false}
-                    backdrop="static"
-                    hideDialogCloseButton={busy}
-                    onCancel={() => {
-                      if (!handlingReturn.current) {
-                        activeRequest.current = undefined;
-                        setLaunch(null);
-                      }
-                    }}
+                    keyboard
+                    onRequestClose={closeLaunch}
+                    onCancel={closeLaunch}
                   >
-                    {busy && <p role="status">Saving selection…</p>}
-                    {error && <Alert variant="error">{error}</Alert>}
+                    {error && (
+                      <div role="alert">
+                        <Alert variant="error">{error}</Alert>
+                      </div>
+                    )}
                     <LTIExternalToolFrame
                       key={launch.request_id}
                       mode="delivery"
@@ -236,6 +246,7 @@ const LTIExternalTool: React.FC = () => {
                           ? (height) => onEdit({ ...model, height })
                           : undefined
                       }
+                      onCloseModal={closeLaunch}
                       onAuthoringDeepLinkComplete={receiveSelection}
                     />
                   </Modal>

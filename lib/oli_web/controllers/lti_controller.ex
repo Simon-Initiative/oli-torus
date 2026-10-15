@@ -6,6 +6,7 @@ defmodule OliWeb.LtiController do
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
+  alias Oli.Lti.AuthoringLaunch
   alias Oli.Lti.KeysetCache
   alias Oli.Lti.LaunchErrors
   alias Oli.Lti.LaunchIdentity
@@ -309,7 +310,10 @@ defmodule OliWeb.LtiController do
         context =
           case context do
             %{"project_id" => project_id} ->
-              Map.put(context, "project", Oli.Authoring.Course.get_project!(project_id).slug)
+              case Oli.Repo.get(Oli.Authoring.Course.Project, project_id) do
+                %{slug: slug} -> Map.put(context, "project", slug)
+                _ -> context
+              end
 
             %{"section_id" => section_id} ->
               case Sections.get_section_by(id: section_id) do
@@ -322,11 +326,11 @@ defmodule OliWeb.LtiController do
           end
 
         with {:ok, configuration} <-
-               authorize_section_configuration(
+               authorize_configuration(
                  conn,
                  context,
                  session_user_id,
-                 params["client_id"]
+                 params
                ) do
           client_id = params["client_id"]
 
@@ -343,7 +347,7 @@ defmodule OliWeb.LtiController do
                   project_slug,
                   activity_resource_id,
                   session_user_id,
-                  context
+                  {context, configuration}
                 )
 
               %{
@@ -449,12 +453,14 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp authorize_section_configuration(
+  defp authorize_configuration(
          conn,
          %{"configure_deep_linking" => "true"} = context,
          user_id,
-         client_id
+         params
        ) do
+    client_id = params["client_id"]
+
     actor =
       SectionDeepLinkLaunch.actor(conn.assigns[:current_user], conn.assigns[:current_author])
 
@@ -470,25 +476,70 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp authorize_section_configuration(_conn, _context, _user_id, _client_id), do: {:ok, nil}
+  defp authorize_configuration(
+         conn,
+         %{"project" => project, "resource_id" => activity} = context,
+         author_id,
+         params
+       ) do
+    with %{id: ^author_id} = author <- conn.assigns[:current_author],
+         true <- Map.get(context, "role", "developer") in ["developer", "instructor"],
+         true <- Map.get(context, "launch_type", "regular") in ["regular", "deep_link"],
+         {:ok, revision, deployment} <- AuthoringLaunch.resolve(author, project, activity),
+         true <- deployment.platform_instance.client_id == params["client_id"],
+         {:ok, token} <-
+           authorize_authoring_request(author, project, activity, context, deployment, params) do
+      {:ok, {author, revision, deployment, token}}
+    else
+      _ -> {:error, :configuration_unavailable}
+    end
+  end
+
+  defp authorize_configuration(_conn, _context, _user_id, _params), do: {:ok, nil}
+
+  defp authorize_authoring_request(author, project, activity, context, deployment, params) do
+    case Map.get(context, "launch_type", "regular") do
+      "regular" ->
+        {:ok, nil}
+
+      "deep_link" ->
+        validate_authoring_request_hint(author, project, activity, context, deployment, params)
+    end
+  end
+
+  defp validate_authoring_request_hint(author, project, activity, context, deployment, params) do
+    with hint when is_binary(hint) <- params["lti_message_hint"],
+         {:ok, wrapper} <-
+           Phoenix.Token.verify(OliWeb.Endpoint, "lti_message_hint", hint, max_age: 1800),
+         true <-
+           wrapper["login_hint"] == params["login_hint"] and
+             wrapper["endpoint"] == "project_deep_linking_launch_details" and
+             wrapper["deployment_id"] == deployment.deployment_id and
+             to_string(wrapper["resource_id"]) == to_string(activity),
+         {:ok, request} <-
+           AuthoringLaunch.validate_request(
+             author,
+             project,
+             activity,
+             wrapper["authoring_request"]
+           ),
+         true <- request["request_id"] == context["request_id"] do
+      {:ok, wrapper["authoring_request"]}
+    else
+      _ -> {:error, :configuration_unavailable}
+    end
+  end
 
   defp build_authorization_for(
          :authoring,
-         conn,
+         _conn,
          platform_instance,
          project_slug,
          activity_resource_id,
-         author_id,
-         launch_context
+         _author_id,
+         {launch_context, {author, revision, deployment, request_token}}
        ) do
-    author = conn.assigns[:current_author] || Accounts.get_author(author_id)
-    true = author.id == author_id
     project = Oli.Authoring.Course.get_project_by_slug(project_slug)
-
-    {:ok, revision, deployment} =
-      Oli.Lti.AuthoringLaunch.resolve(author, project_slug, activity_resource_id)
-
-    true = deployment.platform_instance_id == platform_instance.id
 
     role =
       case Map.get(launch_context, "role", "developer") do
@@ -527,14 +578,7 @@ defmodule OliWeb.LtiController do
               ["iframe"],
               accept_multiple: false,
               auto_create: true,
-              data:
-                Oli.Lti.AuthoringLaunch.sign_request(
-                  author,
-                  project_slug,
-                  activity_resource_id,
-                  deployment,
-                  launch_context["request_id"]
-                )
+              data: request_token
             )
 
           {platform_instance.target_link_uri,
@@ -993,15 +1037,12 @@ defmodule OliWeb.LtiController do
   def authoring_deep_link(conn, %{"JWT" => jwt}) do
     result =
       with {:ok, claims} <- validate_deep_linking_jwt(jwt),
-           {:ok, request} <- Oli.Lti.AuthoringLaunch.validate_return(claims),
+           {:ok, request} <- AuthoringLaunch.validate_return(claims),
            [%{"type" => "ltiResourceLink"} = item] <-
              claims["https://purl.imsglobal.org/spec/lti-dl/claim/content_items"],
-           {:ok, selection} <- Oli.Lti.AuthoringLaunch.selection(item) do
+           {:ok, selection} <- AuthoringLaunch.selection(item) do
         token =
-          Phoenix.Token.sign(OliWeb.Endpoint, "lti-authoring-result", %{
-            "request" => request,
-            "selection" => selection
-          })
+          AuthoringLaunch.result_token(request, selection)
 
         %{token: token, request_id: request["request_id"]}
       else
