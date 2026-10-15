@@ -13,6 +13,23 @@ defmodule Oli.Content.Content.HtmlTest do
       %{author: author}
     end
 
+    test "shifts authored heading levels below the page title", %{author: author} do
+      content = %{
+        "type" => "content",
+        "id" => "heading-test",
+        "children" => [
+          %{"type" => "h1", "id" => "heading-one", "children" => [%{"text" => "Authored H1"}]},
+          %{"type" => "h2", "id" => "heading-two", "children" => [%{"text" => "Authored H2"}]}
+        ]
+      }
+
+      rendered_html = Content.render(%Context{user: author}, content, Content.Html)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~ ~s|<h2 class="h1">Authored H1</h2>|
+      assert rendered_html_string =~ ~s|<h3 class="h2">Authored H2</h3>|
+    end
+
     test "renders well-formed content properly", %{author: author} do
       {:ok, content} = read_json_file("./test/oli/rendering/content/example_content.json")
       context = %Context{user: author, section_slug: "some_section"}
