@@ -1839,8 +1839,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
          %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert has_element?(view, ~s{div[role="unit_1"] div[role="card 1 progress"]})
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card 11 progress"]})
+      assert has_element?(
+               view,
+               ~s{div[role="unit_1"] div[data-role="card-1-progress-container"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[role="unit_3"] div[data-role="card-11-progress-container"]}
+             )
     end
 
     test "can see card progress bar for modules at level 2 of hierarchy, and even for pages at level 2",

@@ -3370,7 +3370,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         xphx-mouseout={JS.hide(to: "#card_badge_details_#{@card["resource_id"]}")}
         class="rounded-xl absolute h-[170px] w-[294px] overflow-hidden cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]"
       >
-        <div class="mt-[166px]" role={"card #{@module_index} progress"}>
+        <div
+          class="mt-[166px]"
+          data-role={"card-#{@module_index}-progress-container"}
+        >
           <.progress_bar
             percent={
               parse_student_progress_for_resource(
