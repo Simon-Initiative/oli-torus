@@ -897,16 +897,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     |> JS.focus(to: "#module_#{module_resource_id}")
   end
 
+  # The focus wrap sentinels must not be aria-hidden while they are focusable.
   defp enable_focus_wrap_for(js, selector) do
-    js
-    |> JS.set_attribute({"tabindex", "0"}, to: "#{selector}-start")
-    |> JS.set_attribute({"tabindex", "0"}, to: "#{selector}-end")
+    Enum.reduce(["start", "end"], js, fn edge, js ->
+      js
+      |> JS.set_attribute({"tabindex", "0"}, to: "#{selector}-#{edge}")
+      |> JS.set_attribute({"aria-hidden", "false"}, to: "#{selector}-#{edge}")
+    end)
   end
 
   defp disable_focus_wrap_for(js, selector) do
-    js
-    |> JS.set_attribute({"tabindex", "-1"}, to: "#{selector}-start")
-    |> JS.set_attribute({"tabindex", "-1"}, to: "#{selector}-end")
+    Enum.reduce(["start", "end"], js, fn edge, js ->
+      js
+      |> JS.set_attribute({"tabindex", "-1"}, to: "#{selector}-#{edge}")
+      |> JS.set_attribute({"aria-hidden", "true"}, to: "#{selector}-#{edge}")
+    end)
   end
 
   ## Tab navigation end ##
@@ -1871,7 +1876,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <.custom_focus_wrap
           :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
           class="px-3 md:px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] flex"
-          role="module_details"
+          role="region"
+          aria-labelledby={"selected_module_title_in_unit_#{@unit["resource_id"]}"}
           id={"selected_module_in_unit_#{@unit["resource_id"]}"}
           data-animate={
             JS.show(
@@ -1907,7 +1913,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 {module_label}
               </div>
             </div>
-            <h2 class="self-stretch opacity-90 text-center text-xl md:text-[26px] font-normal md:leading-loose tracking-tight dark:text-white">
+            <h2
+              id={"selected_module_title_in_unit_#{@unit["resource_id"]}"}
+              class="self-stretch opacity-90 text-center text-xl md:text-[26px] font-normal md:leading-loose tracking-tight dark:text-white"
+            >
               {selected_module[
                 "title"
               ]}
