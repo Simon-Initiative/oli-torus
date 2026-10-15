@@ -202,7 +202,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           />
           <div
             :if={!is_independent_instructor?(@current_user)}
-            role="create section instructions"
+            data-role="create section instructions"
             class="dark:text-violet-100 text-base font-normal font-['Inter'] leading-normal"
           >
             To create course sections,
@@ -286,7 +286,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
       <div class="flex-col justify-start items-start gap-2 inline-flex p-8">
         <div
           class="justify-center text-[#757682] text-xs font-bold uppercase leading-3"
-          role="start_end_date"
+          data-role="start_end_date"
         >
           {FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}")} - {FormatDateTime.to_formatted_datetime(
             @section.end_date,
@@ -297,13 +297,13 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         <h5
           class="text-black text-base font-bold font-['Inter'] leading-normal overflow-hidden"
           style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;"
-          role="course title"
+          data-role="course title"
         >
           {@section.title}
         </h5>
         <div
           class="justify-center text-[#757682] text-base font-bold leading-normal"
-          role="instructors"
+          data-role="instructors"
         >
           <%= if length(Sections.get_instructors_for_section(@section.id)) == 1 do %>
             Instructor:
@@ -314,7 +314,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         </div>
         <div class="self-stretch min-w-0 text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
           <p
-            role="course description"
+            data-role="course description"
             class="break-words"
             style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;"
           >
