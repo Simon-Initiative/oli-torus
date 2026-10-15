@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
 
-# Hold the target lock across build, future Plasma deployment, and browser tests.
+# Hold the target lock across build, deployment, browser tests, and finalization.
 concurrency:
   group: nightly-playwright-plasma
   cancel-in-progress: false
@@ -39,6 +39,17 @@ jobs:
           # Manual dispatch stays on its selected commit, including reruns.
           ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || 'refs/heads/master' }}
           persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: assets/automation/package-lock.json
+
+      - name: Install automation dependencies
+        run: npm ci
+        working-directory: assets/automation
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -94,15 +105,20 @@ jobs:
           cache-from: type=gha,scope=nightly-playwright-${{ hashFiles('Dockerfile', 'mix.lock', 'assets/yarn.lock', 'gleam/manifest.toml', 'config/*.exs') }}
           cache-to: type=gha,mode=max,scope=nightly-playwright-${{ hashFiles('Dockerfile', 'mix.lock', 'assets/yarn.lock', 'gleam/manifest.toml', 'config/*.exs') }}
 
-      - name: Record published image
+      - name: Record build outcome
+        if: always()
         env:
           IMAGE: ${{ steps.info.outputs.image }}
           DIGEST: ${{ steps.build.outputs.digest }}
           SOURCE_REF: ${{ steps.info.outputs.source_ref }}
           SOURCE_SHA: ${{ steps.info.outputs.sha }}
           APP_VERSION: ${{ steps.info.outputs.app_version }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
         run: |
           {
+            echo "Build/push: $BUILD_OUTCOME"
+            echo "Workflow: $WORKFLOW_SHA"
             echo "Image: $IMAGE"
             echo "Digest: $DIGEST"
             echo "Source ref: $SOURCE_REF"
@@ -110,11 +126,260 @@ jobs:
             echo "Version: $APP_VERSION"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  nightly-playwright:
-    # Phase 6 adds deploy-plasma to needs once GitOps and readiness are implemented.
+  deploy-plasma:
     if: ${{ github.event_name != 'workflow_dispatch' || !inputs.publish_only }}
     needs: build-playwright
+    name: Deploy and verify Plasma
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment: nightly-deploy
+    permissions:
+      contents: read
+    outputs:
+      accepted-commit: ${{ steps.merge.outputs.accepted_commit }}
+      readiness: ${{ steps.ready.outcome }}
+    env:
+      GITOPS_REPO: Simon-Initiative/oli-torus-gitops
+      RUN_KEY: ${{ github.run_id }}-${{ github.run_attempt }}
+      BOT_LOGIN: ${{ vars.GITOPS_BOT_LOGIN }}
+      IMAGE_TAG: ${{ needs.build-playwright.outputs.image-tag }}
+      SOURCE_REF: ${{ needs.build-playwright.outputs.source-ref }}
+      SOURCE_SHA: ${{ needs.build-playwright.outputs.source-sha }}
+      APP_VERSION: ${{ needs.build-playwright.outputs.app-version }}
+
+    steps:
+      - name: Obtain deployment App token
+        id: app
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.GITOPS_APP_ID }}
+          private-key: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
+          owner: Simon-Initiative
+          repositories: oli-torus-gitops
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout reviewed GitOps branch
+        id: checkout
+        uses: actions/checkout@v5
+        with:
+          repository: Simon-Initiative/oli-torus-gitops
+          ref: master
+          token: ${{ steps.app.outputs.token }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install GitOps dependencies
+        run: python -m pip install pyyaml
+
+      - name: Set up kubectl for static renders
+        uses: azure/setup-kubectl@v4
+
+      - name: Prepare and validate deployment record
+        id: record
+        run: |
+          python3 scripts/update_deployment_record.py \
+            --record deployments/nightly-playwright.yml \
+            --image-tag "$IMAGE_TAG" --source-ref "$SOURCE_REF" --commit-sha "$SOURCE_SHA"
+          python3 scripts/validate_deployments.py
+          python3 scripts/validate_gitops_policy.py
+          python3 scripts/validate_followups.py
+          for target in clusters/initial/bootstrap clusters/aws-managed/bootstrap argocd/root argocd \
+            apps/oli-torus/overlays/{prod,staging,sandbox,preview}; do
+            kubectl kustomize "$target" > /dev/null
+          done
+          git diff --check
+          echo "base_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create signed run-owned deployment PR
+        id: pr
+        uses: actions/github-script@v7
+        env:
+          BASE_SHA: ${{ steps.record.outputs.base_sha }}
+        with:
+          github-token: ${{ steps.app.outputs.token }}
+          script: |
+            const fs = require('node:fs');
+            const [owner, repo] = process.env.GITOPS_REPO.split('/');
+            const branch = `nightly-playwright/${process.env.RUN_KEY}`;
+            const base = process.env.BASE_SHA;
+            const path = 'deployments/nightly-playwright.yml';
+            const options = {owner, repo, request: {timeout: 30000}};
+            await github.rest.git.createRef({...options, ref: `refs/heads/${branch}`, sha: base});
+            const result = await github.graphql(`mutation($input: CreateCommitOnBranchInput!) {
+              createCommitOnBranch(input: $input) { commit { oid } }
+            }`, {input: {
+              branch: {repositoryNameWithOwner: process.env.GITOPS_REPO, branchName: branch},
+              expectedHeadOid: base,
+              message: {headline: `Update nightly Playwright ${process.env.RUN_KEY}`},
+              fileChanges: {additions: [{path, contents: fs.readFileSync(path).toString('base64')}]}
+            }, request: {timeout: 30000}});
+            const commit = result.createCommitOnBranch.commit.oid;
+            const verification = await github.rest.git.getCommit({...options, commit_sha: commit});
+            if (!verification.data.verification.verified) {
+              throw new Error('Deployment commit signature was not verified');
+            }
+            let pr;
+            try {
+              ({data: pr} = await github.rest.pulls.create({...options,
+                base: 'master', head: branch,
+                title: `Update nightly Playwright ${process.env.RUN_KEY}`,
+                body: `Source: ${process.env.SOURCE_SHA}\nImage: ${process.env.IMAGE_TAG}\n` +
+                  `Run: ${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+              }));
+            } catch (error) {
+              // Creation may have succeeded despite a lost response. Recover only this run.
+              const {data: matches} = await github.rest.pulls.list({...options,
+                state: 'all', base: 'master', head: `${owner}:${branch}`});
+              if (matches.length !== 1) throw new Error('Could not recover this run\'s deployment PR');
+              [pr] = matches;
+            }
+            core.setOutput('number', pr.number);
+
+      - name: Wait for accepted GitOps intent
+        id: merge
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          python3 scripts/nightly_deployment_pr.py wait \
+            --base master --bot-login "$BOT_LOGIN" --run "$RUN_KEY" --pr "$PR_NUMBER" \
+            --image-tag "$IMAGE_TAG" --source-ref "$SOURCE_REF" --commit-sha "$SOURCE_SHA" \
+            --timeout 900 > "$RUNNER_TEMP/nightly-merge.json"
+          jq -r '"accepted_commit=" + .accepted_commit' "$RUNNER_TEMP/nightly-merge.json" >> "$GITHUB_OUTPUT"
+
+      - name: Observe expected public readiness
+        id: ready
+        run: |
+          node <<'JS'
+          const fs = require('node:fs');
+          const {performance} = require('node:perf_hooks');
+          const url = 'https://nightly-playwright.plasma.oli.cmu.edu/readyz';
+          const {APP_VERSION: version, SOURCE_SHA: sha} = process.env;
+          const versionPattern = /^[0-9]+\.[0-9]+\.[0-9]+([-+][a-zA-Z0-9.-]+)?$/;
+          if (!versionPattern.test(version || '') || !/^[0-9a-f]{40}$/.test(sha || '')) {
+            throw new Error('Invalid expected readiness identity');
+          }
+          const started = performance.now();
+          const deadline = started + 20 * 60 * 1000;
+          let observed = {category: 'no observation'};
+          let matched = false;
+          (async () => {
+            while (performance.now() < deadline) {
+              const remaining = deadline - performance.now();
+              if (remaining < 1) break;
+              const controller = new AbortController();
+              const timer = setTimeout(() => controller.abort(), Math.min(10000, remaining));
+              try {
+                const response = await fetch(url, {
+                  redirect: 'manual', credentials: 'omit', signal: controller.signal,
+                  headers: {'Cache-Control': 'no-cache', Pragma: 'no-cache'}
+                });
+                observed = {category: 'http', status: response.status};
+                if (response.status === 200) {
+                  // Bound input as well as diagnostics; never retain an arbitrary response body.
+                  const reader = response.body.getReader();
+                  let body = '';
+                  let size = 0;
+                  try {
+                    while (true) {
+                      const {done, value} = await reader.read();
+                      if (done) break;
+                      size += value.byteLength;
+                      if (size > 4096) throw new Error('Oversized response');
+                      body += Buffer.from(value).toString('utf8');
+                    }
+                    const data = JSON.parse(body);
+                    observed = {category: 'invalid identity', status: 200};
+                    if (data && typeof data === 'object' && !Array.isArray(data) &&
+                        typeof data.status === 'string' && typeof data.version === 'string' &&
+                        typeof data.sha === 'string' && versionPattern.test(data.version) &&
+                        /^[0-9a-f]{40}$/.test(data.sha)) {
+                      observed = {category: 'identity mismatch', status: 200,
+                        version: data.version.slice(0, 128), sha: data.sha};
+                      matched = data.status === 'ready' && data.version === version && data.sha === sha;
+                    }
+                  } finally {
+                    await reader.cancel();
+                  }
+                } else {
+                  await response.body?.cancel();
+                }
+              } catch {
+                observed = {category: 'network, timeout, or invalid JSON'};
+              } finally {
+                clearTimeout(timer);
+              }
+              // A response that arrived after the total budget cannot satisfy the gate.
+              if (matched && performance.now() < deadline) break;
+              matched = false;
+              const wait = Math.min(10000, deadline - performance.now());
+              if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+            }
+            const diagnostic = {expected: {version, sha}, observed, matched,
+              elapsed_seconds: Math.round((performance.now() - started) / 1000)};
+            fs.writeFileSync(`${process.env.RUNNER_TEMP}/nightly-readiness.json`, JSON.stringify(diagnostic));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+              `Readiness: ${JSON.stringify(diagnostic)}\n\n` +
+              (matched ? 'Observed expected version/commit at the public endpoint before testing.\n' :
+                'Readiness deadline expired; browser execution is skipped.\n'));
+            if (!matched) process.exitCode = 1;
+          })().catch(() => { console.error('Readiness check failed'); process.exitCode = 1; });
+          JS
+
+      - name: Settle this run's deployment PR
+        if: ${{ always() && steps.app.outcome == 'success' && steps.checkout.outcome == 'success' && steps.record.outcome == 'success' }}
+        timeout-minutes: 3
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          # Rediscover by exact unique branch even when creation never returned a PR number.
+          prs=$(timeout 30s gh pr list --repo "$GITOPS_REPO" --state all \
+            --head "nightly-playwright/$RUN_KEY" --base master --json number)
+          count=$(jq 'length' <<< "$prs")
+          if [ "$count" -eq 0 ]; then
+            echo "No deployment PR was created for this run." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$count" -eq 1 ]; then
+            pr=$(jq -r '.[0].number' <<< "$prs")
+            python3 scripts/nightly_deployment_pr.py settle \
+              --base master --bot-login "$BOT_LOGIN" --run "$RUN_KEY" --pr "$pr" \
+              --image-tag "$IMAGE_TAG" --source-ref "$SOURCE_REF" --commit-sha "$SOURCE_SHA" \
+              --timeout 60 > "$RUNNER_TEMP/nightly-settlement.json"
+            cat "$RUNNER_TEMP/nightly-settlement.json" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Unexpected run-owned PR count; operator cleanup required.' >&2
+            exit 1
+          fi
+
+      - name: Record deployment outcome
+        if: always()
+        env:
+          RECORD_OUTCOME: ${{ steps.record.outcome }}
+          PR_OUTCOME: ${{ steps.pr.outcome }}
+          MERGE_OUTCOME: ${{ steps.merge.outcome }}
+          READY_OUTCOME: ${{ steps.ready.outcome }}
+          ACCEPTED_COMMIT: ${{ steps.merge.outputs.accepted_commit }}
+        run: |
+          {
+            echo "Record validation: $RECORD_OUTCOME"
+            echo "PR creation: $PR_OUTCOME"
+            echo "Merge acceptance: $MERGE_OUTCOME"
+            echo "Accepted GitOps commit: $ACCEPTED_COMMIT"
+            echo "Public readiness: $READY_OUTCOME"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  nightly-playwright:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.publish_only }}
+    needs: [build-playwright, deploy-plasma]
     name: Nightly LTI Playwright
+    outputs:
+      tests: ${{ steps.tests.outcome }}
+      report-url: ${{ steps.report.outputs.artifact-url }}
+      results-url: ${{ steps.results.outputs.artifact-url }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     environment: nightly-ui
@@ -131,6 +396,13 @@ jobs:
       PLAYWRIGHT_AUTOMATION_API_KEY: ${{ secrets.PLAYWRIGHT_AUTOMATION_API_KEY }}
       PLAYWRIGHT_SCENARIO_TOKEN: ${{ secrets.PLAYWRIGHT_SCENARIO_TOKEN }}
       PLAYWRIGHT_CAPTCHA_TOKEN: ${{ secrets.PLAYWRIGHT_CAPTCHA_TOKEN }}
+      CANVAS_BASE_URL: ${{ vars.CANVAS_BASE_URL }}
+      CANVAS_ACCOUNT_ID: ${{ vars.CANVAS_ACCOUNT_ID }}
+      CANVAS_INSTRUCTOR_USER_ID: ${{ vars.CANVAS_INSTRUCTOR_USER_ID }}
+      CANVAS_LTI_TOOL_NAME: ${{ vars.CANVAS_LTI_TOOL_NAME }}
+      CANVAS_TOOL_LAUNCH_URL: ${{ vars.CANVAS_TOOL_LAUNCH_URL }}
+      CANVAS_API_TOKEN: ${{ secrets.CANVAS_API_TOKEN }}
+      MOODLE_BASE_URL: ${{ vars.MOODLE_BASE_URL }}
       CANVAS_UI_EMAIL: ${{ secrets.CANVAS_UI_EMAIL }}
       CANVAS_UI_PASSWORD: ${{ secrets.CANVAS_UI_PASSWORD }}
       MOODLE_INSTRUCTOR_EMAIL: ${{ secrets.MOODLE_INSTRUCTOR_EMAIL }}
@@ -165,9 +437,23 @@ jobs:
         run: npx playwright install --with-deps chrome
 
       - name: Run nightly Playwright tests
-        run: npx playwright test --grep @nightly --reporter=line
+        id: tests
+        run: npx playwright test --config playwright.nightly.config.ts --grep @nightly
+
+      - name: Record browser outcome
+        if: always()
+        working-directory: ${{ github.workspace }}
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          SOURCE_SHA: ${{ needs.build-playwright.outputs.source-sha }}
+        run: |
+          {
+            echo "Browser checkout: $SOURCE_SHA"
+            echo "Playwright step: $TEST_OUTCOME"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Playwright report
+        id: report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -176,12 +462,59 @@ jobs:
           retention-days: 14
 
       - name: Upload Playwright test results
+        id: results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results
           path: assets/automation/test-results/
           retention-days: 14
+
+  summarize-nightly:
+    name: Summarize nightly stages
+    if: always()
+    needs: [build-playwright, deploy-plasma, nightly-playwright, nightly-scenarios]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Record provenance and stage results
+        env:
+          BUILD_RESULT: ${{ needs.build-playwright.result }}
+          DEPLOY_RESULT: ${{ needs.deploy-plasma.result }}
+          BROWSER_RESULT: ${{ needs.nightly-playwright.result }}
+          TEST_RESULT: ${{ needs.nightly-playwright.outputs.tests || 'skipped' }}
+          SCENARIO_RESULT: ${{ needs.nightly-scenarios.result }}
+          SOURCE_REF: ${{ needs.build-playwright.outputs.source-ref }}
+          SOURCE_SHA: ${{ needs.build-playwright.outputs.source-sha }}
+          APP_VERSION: ${{ needs.build-playwright.outputs.app-version }}
+          IMAGE: ${{ needs.build-playwright.outputs.image }}
+          DIGEST: ${{ needs.build-playwright.outputs.digest }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          ACCEPTED_COMMIT: ${{ needs.deploy-plasma.outputs.accepted-commit }}
+          READINESS: ${{ needs.deploy-plasma.outputs.readiness || 'skipped' }}
+          REPORT_URL: ${{ needs.nightly-playwright.outputs.report-url }}
+          RESULTS_URL: ${{ needs.nightly-playwright.outputs.results-url }}
+        run: |
+          {
+            echo "Run: $GITHUB_RUN_ID / attempt $GITHUB_RUN_ATTEMPT"
+            echo "Workflow commit: $WORKFLOW_SHA"
+            echo "Source: $SOURCE_REF at $SOURCE_SHA (version $APP_VERSION)"
+            echo "Image: $IMAGE ($DIGEST)"
+            echo "Accepted GitOps commit: $ACCEPTED_COMMIT"
+            echo "Build: $BUILD_RESULT; deploy: $DEPLOY_RESULT; readiness: $READINESS"
+            echo "Browser job: $BROWSER_RESULT; Playwright step: $TEST_RESULT; scenarios: $SCENARIO_RESULT"
+            echo "Selector: @nightly; Mix environment: playwright"
+            if [ "$READINESS" = success ]; then
+              echo "Observed expected version/commit at the public endpoint before testing."
+            fi
+            if [ -n "$REPORT_URL" ]; then
+              echo "[Playwright report]($REPORT_URL)"
+            fi
+            if [ -n "$RESULTS_URL" ]; then
+              echo "[Playwright test results]($RESULTS_URL)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
   nightly-scenarios:
     if: ${{ github.event_name != 'workflow_dispatch' || !inputs.publish_only }}

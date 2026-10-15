@@ -66,13 +66,19 @@ The script templatises quota, limit range, and network policy manifests and appl
 
 ## Smoke Testing
 
-Use `devops/scripts/smoke-test-preview.sh` to validate a deployed preview:
+For preview images that include `/readyz`, pass that endpoint to the external
+`devops/scripts/smoke-test-preview.sh` readiness check:
 
 ```bash
-devops/scripts/smoke-test-preview.sh https://pr-123.plasma.oli.cmu.edu/healthz
+devops/scripts/smoke-test-preview.sh https://pr-123.plasma.oli.cmu.edu/readyz
 ```
 
-The script exits non-zero if any probe fails. Integrate it into CI if desired.
+The external script is not distributed in this repository. Before using it, verify
+that it checks HTTP 200 and JSON `status: ready` without expecting Playwright-only
+version/SHA fields in a preview build. It must exit nonzero on failure. Deploy an
+image with `/readyz` before changing an existing readiness consumer. `/healthz`
+checks startup/liveness only and no longer proves database availability. This
+documentation does not migrate other deployments' Kubernetes probes.
 
 ## Operational Notes
 

@@ -31,7 +31,7 @@ Assumptions and scope:
 - Both PR and nightly use `MIX_ENV=playwright`; their shared configuration directly enables scenarios and mailbox access. Both select a token-authorized captcha verifier at compile time; captcha and scenario/mailbox access require separate runtime secrets. PR continues to test its existing pull-request checkout with disposable services.
 - Use the existing GHCR repository `ghcr.io/simon-initiative/oli-torus` with a distinct Playwright image tag namespace; the GitOps record only accepts an image tag, not a different repository or digest field.
 - Include all currently tagged nightly tests in initial delivery, including Canvas and Moodle LTI and Dot. Missing integration configuration blocks unattended launch. Provision Canvas and Moodle to launch into the nightly Torus deployment and Dot with a dedicated fixture on that deployment; supply external URLs and credentials during provisioning.
-- The deployment is currently disabled in the inspected GitOps draft. Provisioning and enabling it are separate reviewed GitOps work. Recurring CI cannot change lifecycle, access policy, overlay, hostname, or infrastructure.
+- The deployment is enabled through the separately reviewed Phase 5 GitOps provisioning. Recurring CI cannot change lifecycle, access policy, overlay, hostname, or infrastructure.
 - No production UI or domain schema changes, new feature flags, or throughput SLA. Playwright preserves application captcha markup and hooks, blocks Google scripts in runner contexts, and requires a valid runtime credential for protected submissions. CI summaries provide telemetry; implementation retains required review and Jira traceability.
 
 ## 3. Repository Context Summary
@@ -42,7 +42,7 @@ packaging/build outputs, and nightly runner configuration. Phase 5 delivered the
 updater, PR lifecycle helper, nightly-only manifests, and live target/integration provisioning.
 G5 is complete under the operator-approved 2026-10-15 scope. Phase 6 connects those pieces
 and owns all remaining live verification plus the launch checklist formerly in Phase 7.
-The workflow still needs deployment/readiness dependencies and the nightly config invocation.
+The Phase 6 workflow now implements deployment/readiness dependencies and the nightly config invocation; hosted and operational verification remain pending.
 
 | Existing boundary | Observed behavior and design implication |
 | --- | --- |
