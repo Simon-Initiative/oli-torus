@@ -24,10 +24,9 @@ normal merge and scheduled launch. Preserve the independent scenario job.
 
 ## Work-Item Sync
 
-- Preflight work-item validation passed on 2026-10-15.
-- Feature branch: `MER-6038-phase-6-integrate-verify-and-launch-the-nightly-workflow`.
-- Starting Torus commit: `c229c5c593`; includes parameter-loader follow-up `58559905f8`.
-- Inspected GitOps checkout: `62854e631a2fe72c198bbc3aff23976d0a765b5c`.
+- Preflight work-item validation passed.
+- The implementation includes the private parameter-loader follow-up and uses the
+  existing GitOps updater and PR lifecycle contracts.
 - G1–G5 evidence remains in the preceding execution records; no prior proof is
   promoted to an unexecuted hosted or operational check.
 
@@ -38,6 +37,10 @@ normal merge and scheduled launch. Preserve the independent scenario job.
   after the performance reviewer identified the coverage gap.
 - Retained build-job `npm ci` because the approved plan requires dependency failures
   to stop publication. No new dependencies are carried between jobs.
+- Public-disclosure review found no literal credentials in the Phase 6 diff.
+  Operational identifiers and inspection history were removed from this record.
+  Failure-report privacy remains an open launch check; disabling visual recordings
+  does not sanitize page snapshots or error messages.
 
 ## Done Definition
 
@@ -66,23 +69,15 @@ G6 remains open until feature-branch, operational, and scheduled evidence is com
 
 ## Operational State and Remaining Gates
 
-Read-only GitHub inspection on 2026-10-15 found GitOps `master` at
-`1fa4fcd50f6eda51fdf7b873e632dbf79c0e2548`. The local inspected checkout has a later
-runbook commit; workflow helper signatures match the landed Phase 5 contract.
-`nightly-ui` allows `master` and the Phase 5 provisioning branch; `nightly-deploy`
-allows only `master`. Neither permitted the Phase 6 branch at initial inspection. No active nightly
-run was found; the latest scheduled run `38686900486` failed, while provisioning run
-`38613155854` succeeded. No new hosted nightly execution is claimed. The exact branch allowances were added afterward as recorded below.
+The implementation is available for review in
+[PR #6942](https://github.com/Simon-Initiative/oli-torus/pull/6942).
+Hosted feature-branch execution and operational verification remain pending.
+Keep the existing schedule unchanged, check active runs before dispatch, and
+coordinate verification around scheduled execution. Verify environment access
+through the private operational configuration before running deployment tests.
 
-The current Torus `master` still runs the older browser-only nightly workflow and has
-no target concurrency lock. The operator rejected a temporary schedule pause as
-unnecessary. Keep the schedule unchanged, inspect active/pending runs before dispatch,
-and coordinate feature-branch verification around scheduled execution. Both environments
-now allow the exact Phase 6 branch as recorded below.
-
-Live lifecycle tests also need an explicitly authorized disposable Kubernetes context
-and target under the GitOps repository contract; that information was requested.
-No live Kubernetes command has been executed.
+Live lifecycle tests require an explicitly authorized disposable context and target.
+No live lifecycle test has been executed for this phase.
 
 Readiness consumer reconciliation: the PR workflow uses `/readyz`; the nightly
 identity step uses public HTTPS `/readyz`; startup/liveness remains `/healthz`.
@@ -97,29 +92,13 @@ disposable lifecycle tests, serialization/rerun/failure exercises, normal Torus 
 and successful scheduled execution. No nested acceptance criterion is marked verified
 by these local checks alone.
 
-## Published Review State
+## Requirements Validation
 
-- Implementation commit `645474c61d` was pushed to the Phase 6 feature branch and
-  opened as [draft PR #6942](https://github.com/Simon-Initiative/oli-torus/pull/6942),
-  based on the Phase 5 branch so review isolates this phase.
-- Added only the exact Phase 6 branch to both environments, then read policies back:
-  `nightly-ui` policy `63171813`, `nightly-deploy` policy `63171815`. Existing master
-  access and the older provisioning-branch allowance were preserved. Remove temporary
-  feature-branch allowances after successful launch verification.
-- Prepared the one-line master pause as
-  [draft PR #6943](https://github.com/Simon-Initiative/oli-torus/pull/6943), commit
-  `d756b2c2c5`. Parsed-YAML equality proves only the scheduled browser condition
-  changes; manual dispatch and scenarios remain unchanged. Security and performance
-  reviewers found no issues; actionlint reports the existing cache-action warning.
-  The operator rejected this pause as unnecessary. PR #6943 was closed unmerged;
-  the nightly schedule remains unchanged.
-- GitOps helper/updater/validation-workflow files are identical between inspected
-  local revision `62854e6` and accepted `master` revision `1fa4fcd`.
-- Final-phase `verify_implementation` and `master_validate --stage implementation_complete`
-  commands both returned success. As documented in the plan, these scripts do not
-  traverse nested criteria: the supplemental check found 42 uniquely mapped nested
-  criteria and zero entries with both verified status and proof. These results do
-  not close G6 or waive any live acceptance check.
+Final-phase `verify_implementation` and `master_validate --stage implementation_complete`
+commands both returned success. As documented in the plan, these scripts do not
+traverse nested criteria: the supplemental check found 42 uniquely mapped nested
+criteria and zero entries with both verified status and proof. These results do
+not close G6 or waive any live acceptance check.
 
 Next step: ensure no old runs/reruns remain active, then dispatch the allowed Phase 6
 branch without changing the schedule. Disposable lifecycle checks
