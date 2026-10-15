@@ -86,6 +86,11 @@ preflight, previous-run PR scan, force push, or direct-write fallback.
 
 ### Pause, resume, and cancellation
 
+Phase 6 verification does not require a schedule pause. Keep the schedule unchanged,
+check for active runs before dispatch, and coordinate verification around scheduled
+execution. The optional maintenance procedure below is for an incident or deliberate
+maintenance pause.
+
 To pause scheduled target updates while retaining manual verification and scheduled
 scenario tests, make a reviewed temporary change on the default branch adding
 `if: ${{ github.event_name == 'workflow_dispatch' }}` to `build-playwright`.
