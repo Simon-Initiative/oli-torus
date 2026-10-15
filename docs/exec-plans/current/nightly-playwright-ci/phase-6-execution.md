@@ -18,7 +18,7 @@ normal merge and scheduled launch. Preserve the independent scenario job.
 
 ## Test Blocks
 
-- [x] Targeted workflow/readiness fixtures and action lint (existing cache-action warnings only).
+- [x] Local workflow/readiness checks and action lint (existing cache-action warnings only).
 - [ ] Full feature-branch workflow and operational checks.
 - [ ] Scheduled run after normal merge.
 
@@ -33,8 +33,8 @@ normal merge and scheduled launch. Preserve the independent scenario job.
 ## Review Loop
 
 - Harness-review round 1: dedicated security and performance reviewers found no
-  actionable findings. Added a real stalled response-stream abort/recovery fixture
-  after the performance reviewer identified the coverage gap.
+  actionable findings. Local verification included stalled response-stream abortion
+  and recovery after the performance reviewer identified the coverage gap.
 - Retained build-job `npm ci` because the approved plan requires dependency failures
   to stop publication. No new dependencies are carried between jobs.
 - Public-disclosure review found no literal credentials in the Phase 6 diff.
@@ -53,18 +53,18 @@ G6 remains open until feature-branch, operational, and scheduled evidence is com
 
 ## Local Verification
 
-- `node --test .github/scripts/nightly-playwright.test.cjs`: 10 tests pass. Exercises
-  the inline workflow code, including matching/old/malformed identity, HTTP/redirect/
-  network failures, deadline clamping, late success rejection, stalled stream abortion,
-  signature rejection, ambiguous PR recovery, dependency gates and artifact settings.
-- Prettier check for the new fixture passes; `git diff --check` passes.
+- Temporary checks during implementation passed for readiness identity, failure and
+  timeout handling, stalled responses, signature rejection, PR recovery, job dependencies,
+  and artifact settings. The standalone test script was removed at the operator's
+  request; no workflow fixture suite is retained in the repository.
+- `git diff --check` passes.
 - Actionlint on nightly and PR workflows reports only existing `actions/cache@v3`
   warnings in the unchanged scenario and PR jobs. No new action/shell errors.
 - Parsed YAML comparison confirms triggers, concurrency and the entire scenario job
   match the starting revision. The PR workflow is unchanged.
 - Preflight and postflight work-item validation pass. No backend/test-support code
   changed, so a full ExUnit rerun is unnecessary for these workflow-only changes.
-- Fixture tests prove local code paths and static connections; they do not reproduce
+- These local checks cover code paths and static connections; they do not reproduce
   GitHub cancellation, runner termination, required-check enforcement or live integration.
 
 ## Operational State and Remaining Gates
