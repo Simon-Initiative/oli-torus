@@ -70,9 +70,9 @@ Read-only GitHub inspection on 2026-10-15 found GitOps `master` at
 `1fa4fcd50f6eda51fdf7b873e632dbf79c0e2548`. The local inspected checkout has a later
 runbook commit; workflow helper signatures match the landed Phase 5 contract.
 `nightly-ui` allows `master` and the Phase 5 provisioning branch; `nightly-deploy`
-allows only `master`. Neither currently permits the Phase 6 branch. No active nightly
+allows only `master`. Neither permitted the Phase 6 branch at initial inspection. No active nightly
 run was found; the latest scheduled run `38686900486` failed, while provisioning run
-`38613155854` succeeded. No new hosted execution or remote policy change is claimed.
+`38613155854` succeeded. No new hosted nightly execution is claimed. The exact branch allowances were added afterward as recorded below.
 
 The current Torus `master` still runs the older browser-only nightly workflow and has
 no target concurrency lock. Before feature-branch dispatch, pause that job through a
@@ -99,3 +99,30 @@ full tagged integrations, artifact privacy/access, persistence/mailbox checks,
 disposable lifecycle tests, serialization/rerun/failure exercises, normal Torus merge,
 and successful scheduled execution. No nested acceptance criterion is marked verified
 by these local checks alone.
+
+## Published Review State
+
+- Implementation commit `645474c61d` was pushed to the Phase 6 feature branch and
+  opened as [draft PR #6942](https://github.com/Simon-Initiative/oli-torus/pull/6942),
+  based on the Phase 5 branch so review isolates this phase.
+- Added only the exact Phase 6 branch to both environments, then read policies back:
+  `nightly-ui` policy `63171813`, `nightly-deploy` policy `63171815`. Existing master
+  access and the older provisioning-branch allowance were preserved. Remove temporary
+  feature-branch allowances after successful launch verification.
+- Prepared the one-line master pause as
+  [draft PR #6943](https://github.com/Simon-Initiative/oli-torus/pull/6943), commit
+  `d756b2c2c5`. Parsed-YAML equality proves only the scheduled browser condition
+  changes; manual dispatch and scenarios remain unchanged. Security and performance
+  reviewers found no issues; actionlint reports the existing cache-action warning.
+  This PR has not merged, so the scheduled browser job is not yet paused.
+- GitOps helper/updater/validation-workflow files are identical between inspected
+  local revision `62854e6` and accepted `master` revision `1fa4fcd`.
+- Final-phase `verify_implementation` and `master_validate --stage implementation_complete`
+  commands both returned success. As documented in the plan, these scripts do not
+  traverse nested criteria: the supplemental check found 42 uniquely mapped nested
+  criteria and zero entries with both verified status and proof. These results do
+  not close G6 or waive any live acceptance check.
+
+Next gate: merge the reviewed pause through normal review, ensure no old runs/reruns
+remain active, then dispatch the allowed Phase 6 branch. Disposable lifecycle checks
+remain pending the requested explicit Kubernetes context and authorization.
