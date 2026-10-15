@@ -39,7 +39,8 @@ Assumptions and scope:
 The table below describes the starting point before implementation. Current execution
 records supersede those observations: Phases 1–4 implemented probes, shared configuration,
 packaging/build outputs, and nightly runner configuration. Phase 5 delivered the GitOps
-updater, PR lifecycle helper, nightly-only manifests, and live target/integration provisioning.
+updater, nightly-only manifests, and live target/integration provisioning. The initial
+PR lifecycle helper is superseded by the standard tooling described below.
 G5 is complete under the operator-approved 2026-10-15 scope. Phase 6 connects those pieces
 and owns all remaining live verification plus the launch checklist formerly in Phase 7.
 The Phase 6 workflow now implements deployment/readiness dependencies and the nightly config invocation; hosted and operational verification remain pending.
@@ -68,7 +69,7 @@ The GitOps record `deployments/nightly-playwright.yml` is enabled with the publi
 
 ### 4.1 Component Roles & Interactions
 
-Use separate `build-playwright`, `deploy-plasma` and `nightly-playwright` jobs linked by `needs`. Build outputs carry the source ref, fixed source SHA/version, image tag/reference and digest. Deployment consumes that identity and succeeds only after the GitOps update is accepted and public readiness observes the expected version/SHA; browser execution needs both build and deployment and checks out the build's SHA. Scope package publication permissions to build. After publication, deployment uses one App for its record-only PR and cleanup. No separate GitOps preflight or check for previous runs' PRs is required. Keep all GitOps credentials and App keys in deployment; build and browser jobs need no GitOps access.
+Use separate `build-playwright`, `deploy-plasma` and `nightly-playwright` jobs linked by `needs`. Build outputs carry the source ref, fixed source SHA/version, image tag/reference and digest. Deployment consumes that identity and succeeds only after the GitOps update is accepted and public readiness observes the expected version/SHA; browser execution needs both build and deployment and checks out the build's SHA. Scope package publication permissions to build. After publication, deployment uses one App for its record-only PR and immediate merge. No separate GitOps preflight or check for previous runs' PRs is required. Keep all GitOps credentials and App keys in deployment; build and browser jobs need no GitOps access.
 
 Use workflow-level concurrency group `nightly-playwright-plasma`, independent of branch, with `cancel-in-progress: false`, so the lock spans the entire job chain without gaps. Do not repeat that lock on individual jobs. `nightly-scenarios` retains its existing implementation and no dependency on the build/deploy/test chain; it runs in parallel within a run, while overlapping workflow runs queue together. This replaces the earlier single-job design at the user's request. Use the default pending policy: a newer pending run may replace an older pending run; active runs are not automatically canceled. GitHub documents this behavior in [Concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).
 
@@ -232,13 +233,16 @@ The startup probe gates normal liveness/readiness probing; remove redundant fixe
 
 Set an initial 60-second termination grace period. Bound the local drain RPC to 5 seconds and allow a 10-second endpoint-removal propagation wait in `preStop`, leaving the remaining grace period for normal shutdown; revisit these values only if shutdown behavior warrants it. Bound failures rather than letting the hook hang indefinitely, and retain `prep_stop/1` as the application-level transition for graceful exits outside Kubernetes. The wait aids propagation and does not prove all ingress connections have drained. Render/check the hook and probe settings for affected overlays; do not activate `/readyz` for images without the route. Recurring CI retains its image/source-only update contract and does not rewrite these manifests.
 
-### Readiness helper contract
+### Readiness workflow contract
 
-Inputs: fixed public HTTPS `/readyz` URL, expected version, expected full lowercase SHA, total deadline, request timeout, polling interval, diagnostic output path. Validate inputs before requests. Approved defaults: 20-minute readiness deadline after GitOps merge, 10-second maximum per request, 10-second interval; clamp request/sleep duration to remaining monotonic deadline. No redirects, TLS bypass, cookies or infrastructure auth header. Reject URLs with userinfo or a hostname other than the configured nightly target.
-
-Accept only HTTP 200 with JSON object containing string `status`, `version`, `sha`, `status == "ready"`, and exact version/SHA equality. Missing/malformed fields, login HTML, 3xx, other HTTP codes, network errors and old identities are failed observations and retried until deadline. Disable intermediary probe caching through deployment configuration and send no-cache request headers. Record only bounded status/category and allowlisted identity fields, not arbitrary response bodies. Exit nonzero on timeout/invalid input and write expected/last-observed identity with elapsed time.
-
-Run this identity check before tests; do not repeat it after execution. Summary wording: “Observed expected version/commit at the public endpoint before testing.”
+Use the fixed public HTTPS `/readyz` URL and version/full SHA from the build outputs.
+A `curl`/`jq` loop requires HTTP 200, `status: ready`, and exact string version/SHA
+matches. Disable redirects, TLS bypass, cookies, and infrastructure authentication.
+Send no-cache headers. Limit each response to 4096 bytes and each request to 10 seconds;
+retry every 10 seconds. GNU `timeout 20m` bounds the whole loop, including the final
+request or sleep, so no observation after the deadline can release browser tests.
+Log HTTP status and elapsed time, and the matched identity on success. Temporary
+response bodies are removed and are not printed or uploaded. Timeout exits nonzero.
 
 ### GitOps update contract
 
@@ -246,26 +250,34 @@ For local engineering work, if the `oli-torus-gitops` checkout location is unkno
 
 All paths in this paragraph are relative to `oli-torus-gitops`. The updater requires an existing `deployments/nightly-playwright.yml` with `app: oli-torus`, expected slug, `enabled: true`, `overlay: staging`, public access and exact nightly hostname. Call the updater with only `--record`, `--image-tag`, `--source-ref <selected source ref>`, and `--commit-sha`; never pass create, enable/disable, overlay, host or access-policy flags.
 
-Allowed semantic changes are exactly `imageTag`, `metadata.sourceRef`, and `metadata.commitSha`. Preserve other values and unrelated textual content/comments. The current `yaml.safe_dump` writer needs a content-preserving adjustment verified by fixture tests before use under AC-009. Run `scripts/validate_deployments.py`, `scripts/validate_gitops_policy.py` and the repository's required static renders/checks. Revalidate on branch conflicts; do not force-push the tracked branch.
+Allowed semantic changes are exactly `imageTag`, `metadata.sourceRef`, and `metadata.commitSha`. Preserve other values and unrelated textual content/comments. The updater preserves existing text and validates the record. The required GitOps `validate` check runs updater tests, repository validators, and static renders before merge; Torus need not repeat the render pass. Revalidate on branch conflicts; do not force-push the tracked branch.
 
-Use a repository-scoped GitHub App installation token to create a bot branch/PR and enable automatic merge after required checks pass and branch rules permit it. Target a configured protected branch; record the accepted commit and confirm the record at that branch before polling. Approved merge-wait deadline: 15 minutes by default, configurable. On timeout/cancellation, disable auto-merge and close any unmerged run-owned PR; if merge raced closure, reconcile and record the accepted state. Later runs do not scan for or reject prior runs' PRs. After hard runner termination, an operator handles any orphaned PR under the pause/wait procedure; otherwise it may merge during a later run. During implementation, verify the target branch, required checks and installation permissions support this lifecycle without per-run human approval before scheduling is enabled. Direct commits are not an alternative or fallback.
+Use the repository-scoped GitHub App installation token with the maintained
+`peter-evans/create-pull-request` action, pinned to a reviewed commit. Enable commit
+signing, use a unique run/attempt branch, and restrict `add-paths` to the deployment
+record. No separate bot-login setting or PR lifecycle helper is required.
+
+GitHub CLI calls the immediate squash-merge API with the action's exact PR head SHA.
+GitHub enforces required checks, signatures, and review rules. Retry requests every
+10 seconds within a 15-minute step timeout; do not queue auto-merge, bypass policy,
+or repair conflicting branches. After merge, read the protected branch at a fixed
+commit and compare the deployment record with the prepared file. Record that commit
+and proceed to readiness only on an exact match.
 
 Use a separate one-review ruleset with a pull-request-only bypass for the deployment
-App. The main ruleset retains mandatory PRs with zero approvals, signed commits, and
-required up-to-date checks, with no App bypass. This exception applies to any PR the
-App merges; the helper enforces the nightly record-only diff. No approval workflow is
-required. Verify the native merge path with an actual bot PR before launch.
+App. The main ruleset retains mandatory PRs, signed commits, and required up-to-date
+checks with no App bypass. The updater and PR action restrict the submitted change to
+the nightly record. Keep App credentials in `deploy-plasma`; build and browser jobs
+receive none. No additional App permissions are needed.
 
-Phase 5 local implementation in `oli-torus-gitops` provides
-`scripts/nightly_deployment_pr.py` for bounded merge waiting and run-owned settlement.
-After image publication, Phase 6 creates the signed record-only bot PR and calls
-wait/settle in `deploy-plasma` while holding the same workflow lock. Use the single
-App through `nightly-deploy`; build and browser jobs receive no GitOps credentials.
-Required `validate` checks and automatic squash merge are configured during provisioning
-and enforced by GitHub; the helper does not audit repository settings each run. Conflicts fail and
-require a newly validated PR; no force-push repair is attempted. Accepted squash commits
-are checked against their parent for the exact allowed text diff before the tracked branch
-is reread.
+Failed or canceled runs can leave an open PR, but no merge remains queued. Operators
+close stale PRs normally. Cancellation or a lost response during the immediate merge
+request can leave a completed merge; inspect the PR before manual maintenance. A failed
+run never starts tests. No prior-run scan or automated settlement is needed.
+
+Land the simplified Torus workflow and finish old runs before deleting the old GitOps
+helper. Verify signed PR creation, check enforcement, immediate merge, and cancellation
+with a full manual run before unattended launch.
 
 The nightly-only ApplicationSet patch retains `overlay: staging`, fixes one replica with
 `Recreate` strategy to avoid overlapping instance-local mailboxes, and leaves other
@@ -276,7 +288,7 @@ signature/review rules, and environment branch restrictions are installed. See
 Phase 6 explicitly allows the reviewed feature branch in both `nightly-ui` and
 `nightly-deploy`, then tests the complete workflow before merging Torus `master`.
 GitOps PRs still target protected GitOps `master`. App authentication, signed commits,
-unattended merge, required-check enforcement, and cleanup must be demonstrated by
+unattended merge, required-check enforcement, and cancellation behavior must be demonstrated by
 those runs; configured policy alone does not establish that proof.
 
 ### Tag-based suite selection
@@ -333,7 +345,7 @@ The bounded requests, polling and job timeouts specified elsewhere remain failur
 | Zero matches or collection/import error | Fail the test invocation; preserve its failure status through finalization. Missing configuration retains existing per-test behavior, including skips. |
 | Build/push failure | Fail publication; leave GitOps record unchanged. |
 | Disabled/wrong target record | The updater rejects the record with expected field names/values; never repair lifecycle automatically. |
-| Validation/check/merge failure or deadline | Fail GitOps acceptance; settle the run-owned pending PR; do not test a previous deployment. |
+| Validation/check/merge failure or deadline | Fail GitOps acceptance; leave the PR unqueued for operator closure; do not test a previous deployment. |
 | Old identity, redirect, invalid JSON or network failure | Retry bounded readiness; fail when deadline expires. |
 | Database outage after boot | `/readyz` returns 503; `/healthz` remains 200. Recover readiness when database access returns, without restarting solely for the outage. |
 | Incomplete startup / draining | Readiness stays 503; startup remains unsuccessful until initialization completes, and draining leaves liveness healthy while HTTP remains available. |
@@ -341,7 +353,7 @@ The bounded requests, polling and job timeouts specified elsewhere remain failur
 | Missing asset/authentication or wrong integration target | Preserve existing test setup outcomes, including missing-configuration skips. Resolve configuration/target problems during provisioning and before accepting launch evidence; diagnostics must omit secret values and asset contents. |
 | Playwright exits nonzero or the test step times out | Mark the test step failed; upload available diagnostics and preserve stage provenance. |
 | Cleanup fails | Preserve warning and affected synthetic fixture identifiers for Torus maintainers; no rollback/reset. |
-| Cancellation/runner loss | No validated success; cleanup attempts to settle the current run's PR. Later runs do not inspect orphaned PRs; operators handle them under the pause/wait procedure. Artifacts and cleanup are best-effort on hard termination. |
+| Cancellation/runner loss | No validated success or queued auto-merge. Operators inspect the PR if cancellation coincides with a merge request and close any stale open PR. Artifact upload is best-effort on hard termination. |
 
 Do not automatically retry full deployments or rerun the whole suite indefinitely. A rerun of a manual run retains its original dispatch SHA; use a new dispatch to test the branch's latest commit. Scheduled builds resolve current master each time the build job runs. Source identity is fixed across each build/deploy/test chain, while external fixtures and services can change between runs.
 
@@ -356,7 +368,7 @@ Torus maintainers own failure triage. GitHub Actions failures, run summaries and
 ## 12. Security & Privacy
 
 - Run privileged orchestration through scheduled or authorized manual dispatch. Build/browser jobs use `nightly-ui`; only `deploy-plasma` uses `nightly-deploy`. Environment branch rules must allow master and explicitly reviewed repository branches intended for manual testing; verify those rules during provisioning. Manual branch selection executes that branch's workflow and application code with the environment's access, so only trusted repository branches are eligible. Do not expose publish/GitOps credentials to PR or fork execution. Keep the GitOps destination branch protected regardless of the selected application source branch. Both entry points deploy to the same durable target under the workflow-level lock.
-- Keep package publishing permission in the build job. Obtain GitOps credentials only in `deploy-plasma` for record/PR operations and cleanup. Build and browser jobs receive no GitOps App key or token. Persist no checkout credentials in test artifacts.
+- Keep package publishing permission in the build job. Obtain GitOps credentials only in `deploy-plasma` for record/PR operations and immediate merge. Build and browser jobs receive no GitOps App key or token. Persist no checkout credentials in test artifacts.
 - Validate refs/URLs/record paths before passing them as separate subprocess arguments; never interpolate user-controlled text into shell source. Reference GitHub Actions using explicit version tags (for example, `actions/checkout@v5`), following the repository workflow convention.
 - Public ingress is intentional; protected scenario, login, mailbox and private-asset operations retain their current authentication. Automation import/teardown retains its existing dedicated API key checks. Keep production compile-time route exclusions and test them in a separate production build.
 - Both Playwright builds compile a captcha verifier requiring a separate private runtime token; account authentication and token-protected test APIs remain enforced. Production compile selection cannot be overridden at runtime. Keep mailbox credentials, captured messages and account links out of artifacts.
@@ -375,7 +387,7 @@ Phase 6 first requires a complete manual run from the reviewed feature branch wi
 | Probe HTTP contracts | AC-012–AC-014, AC-039, AC-042: update health controller tests and add readiness controller tests for status/body fields, Playwright-only compiled metadata, 200/503, unauthenticated pod HTTP without redirects, public HTTPS and no-store headers. Prove liveness performs no DB/external requests and readiness excludes optional dependencies. Keep runtime metadata-override checks in the normal controller tests. Verify Playwright metadata inclusion, production omission and immutable identity against actual compiled releases in the Phase 3 smoke tests; do not recompile source inside embedded test scripts. Preserve clean ExUnit logs. |
 | Lifecycle and bounded readiness | AC-013, AC-040: test startup before/after full initialization, restart reset, required local service absence/recovery, drain during a query and actual graceful shutdown before endpoint stop. Exercise database disconnection, exhausted pool, query failure and timeout; assert the total budget and no accumulating work. Verify DB failure leaves liveness healthy and NodeJS evaluator pool unavailability alone does not change probe status. Isolate lifecycle mutation so test state cannot leak. |
 | Probe deployment | AC-041: static render checks for all probe paths/timings, startup gating, drain hook bounds and termination grace. In an authorized disposable deployment, demonstrate slow boot, database outage/recovery and termination; readiness changes without dependency-triggered liveness restarts. |
-| Readiness helper | Local HTTP fixture/fake clock covers valid identity, wrong version/SHA, missing/non-string fields, malformed JSON, redirect/login HTML, non-200, connection errors, TLS verification policy, deadline bounds and pre-test identity mismatch. Prove downstream test command is not invoked on failure. |
+| Readiness loop | Temporary command fixtures cover valid identity, wrong version/SHA, missing/non-string fields, malformed JSON, redirect/login HTML, non-200, connection errors, TLS verification policy, deadline bounds and pre-test identity mismatch. Prove downstream test command is not invoked on failure. |
 | Release | Build `MIX_ENV=playwright` and `MIX_ENV=prod` separately; smoke boot the Playwright release against disposable services with runtime secrets, check both probe contracts and readiness/full SHA plus authenticated scenario/private-asset/mailbox behavior, and verify absent-token denial. Production build must retain gated-route exclusion and status-only readiness responses. Check required fixture files, metadata, image layers and default production settings. |
 | Shared compile environment | AC-032, AC-033, AC-036: build the shared configuration through both PR server startup and nightly release paths from clean/cached states; assert direct scenario/mailbox/reCAPTCHA and local mail adapter settings without extra capability flags, and that post-build env changes have no effect. Verify configuration changes invalidate relevant compile caches/layers and nightly cannot restore PR compile artifacts. Build production with runtime verifier overrides attempted and prove test routes remain absent and normal reCAPTCHA selected. Verify no dev import/debug defaults, that `config/ci_e2e.exs` is absent, and that no active workflow, script, configuration or documentation reference depends on `ci_e2e`. Verify no compatibility alias, wrapper or fallback remains. |
 | PR migration | AC-003, AC-035: run the full existing `@pr` suite, including registration/confirmation/password reset, using explicit local runtime inputs and complete assets. Verify no nightly credentials/private assets/publication access are needed and disposal retains isolation. |
@@ -405,7 +417,7 @@ Keep unattended runs gated on provisioning and the manual verification/artifact 
 | Risk | Mitigation / accepted limitation |
 | --- | --- |
 | Same-commit rebuild or mixed replicas | Keep digest provenance but state the public observation's limits. The pre-test identity check does not prove continuous or all-replica identity. |
-| Auto-merge proceeds after cancellation | Run-owned cleanup, branch ownership, and a cancellation/late-merge test. Hard runner loss can leave a PR able to merge later; recovery is manual. |
+| Cancellation during immediate merge | No auto-merge is queued. Inspect the PR to resolve an in-flight request whose response was lost; a failed run cannot start tests. |
 | GitOps updater rewrites comments | Add content-preserving updates and exact fixture/diff checks before adopting the existing writer. |
 | PR migration loses inherited settings or assets | Explicit runtime input table, release-style asset builds, existing account/email suite and disposable-database verification. |
 | Shared cache carries Playwright settings into production | Mix environment and configuration-sensitive keys, separate trusted/untrusted cache namespaces and fresh PR/nightly/production build checks. |
@@ -457,3 +469,7 @@ Repository paths are relative to the named repository root.
 | 2026-10-14 | Remove GitOps preflight | User requested no check for unsettled prior bot PRs. Remove the preflight command and its tests; retain current-record validation, GitHub merge enforcement, current-run verification and cleanup. Operators handle orphaned PRs after interrupted runs. |
 | 2026-10-14 | Separate review ruleset | User selected a pull-request-only App bypass on a review-only ruleset. Keep PR, signature, and validation requirements in the main ruleset without an App bypass. No auto-approval workflow; actual bot merge remains a provisioning gate. |
 | 2026-10-15 | Provisioning and feature-branch verification | Operator closed Phase 5 on completed setup and moved every remaining live test to Phase 6, superseding prior phase assignments. Phase 6 verifies the full workflow on an explicitly allowed feature branch before Torus merge, including actual bot operation, integrations, persistence/mailbox and lifecycle checks; scheduled proof follows merge. All acceptance criteria remain required. |
+
+The 2026-10-15 operator-approved simplification supersedes earlier wait/settle and
+auto-merge lifecycle decisions: retain protected signed PRs and exact revision gating,
+use a maintained PR action plus GitHub CLI, and remove custom lifecycle machinery.

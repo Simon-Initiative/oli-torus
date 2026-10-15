@@ -80,8 +80,8 @@ Local fixtures do not establish hosted or deployed operational proof.
 
 Provisioning and maintenance follow the internal nightly deployment runbook.
 Recurring CI updates only the existing record's image and source metadata. The
-GitOps helper enforces the record-only diff and required merge path; there is no
-preflight, previous-run PR scan, force push, or direct-write fallback.
+updater and PR action restrict changes to the deployment record. GitHub enforces
+merge rules. There is no preflight, previous-run PR scan, or direct-write fallback.
 
 ### Pause, resume, and cancellation
 
@@ -97,23 +97,25 @@ enabled for manual runs. Existing runs are not stopped by this change; wait for 
 runs and finalization to finish before maintenance, and inspect pending runs as well.
 Restore the `schedule` trigger through normal review to resume daily execution.
 
-Cancel through the run's Actions page when necessary. Finalization rediscovers the
-current run's PR by `nightly-playwright/<run-id>-<attempt>` even if PR creation lost
-its response. It invokes the GitOps `settle` helper to disable auto-merge and close an
-unmerged PR, or verify an accepted merge that raced cancellation. A failed or
-canceled operation does not start browser tests even if cleanup observes a merge.
-Hard runner loss can prevent cleanup; inspect that exact branch/PR before any later
-target update. Under the pause/wait procedure, use the GitOps runbook's settlement
-commands, verify CLOSED or accepted MERGED state, and reconcile the public target.
-Later runs do not discover or reject orphaned PRs automatically.
+Cancel through the run's Actions page when necessary. The workflow requests an
+immediate merge only; it never queues auto-merge. A failed or canceled run may leave
+an open PR on `nightly-playwright/<run-id>-<attempt>`, which an operator can close
+normally. If cancellation or a lost response coincides with the merge request, inspect
+the PR to determine whether deployment intent changed. The failed run does not start
+browser tests. Later runs do not scan earlier PRs.
+
+For PRs left by an older workflow revision, disable any queued auto-merge before
+closing them. Land the simplified Torus workflow and finish old runs before removing
+the old GitOps lifecycle helper. Use a new manual dispatch to verify the replacement.
 
 ### Triage and retained diagnostics
 
 Start with the run's stage summary: source/workflow SHAs, version, image tag/digest,
-accepted GitOps commit, readiness result, and browser-step outcome. The readiness
-summary retains only bounded categories and valid identity fields, never raw HTTP
-bodies. Matching public identity is an observation before testing; it does not prove
-all-replica convergence, continuous identity, or same-source image-digest identity.
+accepted GitOps commit, readiness result, and browser-step outcome. Readiness logs
+show HTTP status and elapsed time, followed by the matched version/SHA on success;
+raw HTTP bodies are not uploaded or printed. Matching public identity is an observation
+before testing; it does not prove all-replica convergence, continuous identity, or
+same-source image-digest identity.
 
 - Build/push or dependency failure: no GitOps update occurs. Correct the build or
   registry problem before retrying; a later deployment failure can leave an unused image.
@@ -123,7 +125,7 @@ all-replica convergence, continuous identity, or same-source image-digest identi
   and compare the expected source/version. CI has no Kubernetes credentials. Browser
   execution remains skipped until the public identity matches.
 - Browser failure or timeout: use the Playwright step outcome and available reports.
-  Summary/upload/cleanup success does not erase the failed step. Diagnose missing
+  Summary/upload success does not erase the failed step. Diagnose missing
   integration configuration even when existing tests report a skip.
 
 Download `playwright-report` and `playwright-test-results` from the run's Artifacts
