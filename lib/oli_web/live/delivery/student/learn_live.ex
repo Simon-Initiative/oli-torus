@@ -896,8 +896,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     {:noreply, socket}
   end
 
-  # Enters a unit's slider: its cards become tab stops, focus wraps inside the slider and the
-  # first card is focused. Left with Escape (see leave_unit/2).
+  @doc """
+  Returns the JS commands that enter a unit's slider: its cards become tab stops, focus wraps
+  inside the slider and the first card receives focus.
+  """
   def enter_unit(js \\ %JS{}, unit_id) do
     unit_cards_selector = "#slider_focus_wrap_#{unit_id} > .slider-card"
 
@@ -907,6 +909,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     |> JS.focus(to: unit_cards_selector <> ":first-of-type")
   end
 
+  @doc """
+  Returns the JS commands that leave a unit's slider: its cards stop being tab stops, the focus
+  wrap is disabled and focus goes back to the slider.
+  """
   def leave_unit(js \\ %JS{}, unit_id) do
     js
     |> JS.remove_attribute("tabindex", to: "#slider_focus_wrap_#{unit_id} > .slider-card")
@@ -3213,11 +3219,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       aria-label={intro_video_aria_label(@title)}
       data-intro-video="youtube"
       data-completed={"#{@intro_video_viewed}"}
-      data-event={leave_unit(@card_resource_id)}
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-card_resource_id={@card_resource_id}
       phx-value-section_id={@section.id}
+      data-event={leave_unit(@card_resource_id)}
       phx-click="play_video"
       phx-value-section_id={@section.id}
       phx-value-video_url={@video_url}
@@ -3284,11 +3290,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       aria-label={intro_video_aria_label(@title)}
       data-intro-video="file"
       data-completed={"#{@intro_video_viewed}"}
-      data-event={leave_unit(@card_resource_id)}
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-section_id={@section.id}
       phx-value-card_resource_id={@card_resource_id}
+      data-event={leave_unit(@card_resource_id)}
       phx-click="play_video"
       phx-value-section_id={@section.id}
       phx-value-video_url={@video_url}
