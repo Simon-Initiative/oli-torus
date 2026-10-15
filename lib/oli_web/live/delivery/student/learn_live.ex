@@ -838,7 +838,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      })}
   end
 
+  def handle_event("intro_card_keydown", %{"key" => "Escape"} = params, socket) do
+    {:noreply,
+     push_event(socket, "js-exec", %{
+       to: "#intro_card_#{params["card_resource_id"]}",
+       attr: "data-event"
+     })}
+  end
+
   def handle_event("intro_card_keydown", _params, socket), do: {:noreply, socket}
+
+  def handle_event("card_keydown", %{"key" => "Escape"} = params, socket) do
+    {:noreply,
+     push_event(socket, "js-exec", %{
+       to: "##{params["type"]}_#{params["module_resource_id"]}",
+       attr: "data-leave-event"
+     })}
+  end
 
   def handle_event("card_keydown", %{"key" => key, "type" => "module"} = params, socket)
       when key in ["Enter", " "] do
@@ -878,6 +894,24 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       })
 
     {:noreply, socket}
+  end
+
+  # Enters a unit's slider: its cards become tab stops, focus wraps inside the slider and the
+  # first card is focused. Left with Escape (see leave_unit/2).
+  def enter_unit(js \\ %JS{}, unit_id) do
+    unit_cards_selector = "#slider_focus_wrap_#{unit_id} > .slider-card"
+
+    js
+    |> JS.set_attribute({"tabindex", "0"}, to: unit_cards_selector)
+    |> enable_focus_wrap_for("#slider_focus_wrap_#{unit_id}")
+    |> JS.focus(to: unit_cards_selector <> ":first-of-type")
+  end
+
+  def leave_unit(js \\ %JS{}, unit_id) do
+    js
+    |> JS.remove_attribute("tabindex", to: "#slider_focus_wrap_#{unit_id} > .slider-card")
+    |> disable_focus_wrap_for("#slider_focus_wrap_#{unit_id}")
+    |> JS.focus(to: "#slider_#{unit_id}")
   end
 
   def enter_module(js \\ %JS{}, unit_id) do
@@ -1823,15 +1857,26 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <i class="fa-solid fa-chevron-right mr-3" aria-hidden="true"></i>
           </button>
+          <span id={"slider_hint_#{@unit["resource_id"]}"} class="sr-only">
+            Press Enter to browse the cards, and Escape to leave.
+          </span>
           <div
             id={"slider_#{@unit["resource_id"]}"}
             role="region"
             aria-label={slider_aria_label(@unit, @section)}
+            aria-describedby={"slider_hint_#{@unit["resource_id"]}"}
+            tabindex="0"
+            phx-keydown={enter_unit(@unit["resource_id"])}
+            phx-key="enter"
             phx-hook={if !@is_mobile, do: "SliderScroll"}
             data-resource_id={@unit["resource_id"]}
-            class="overflow-y-hidden h-[187px] pt-[5px] px-3 sm:px-[5px] scrollbar-hide"
+            class="overflow-y-hidden h-[187px] pt-[5px] px-3 sm:px-[5px] scrollbar-hide outline-gray-800 dark:outline-white focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-[-3px] rounded-xl"
           >
-            <div class="flex">
+            <.custom_focus_wrap
+              id={"slider_focus_wrap_#{@unit["resource_id"]}"}
+              initially_enabled={false}
+              class="flex"
+            >
               <.intro_video_card
                 :if={@unit["intro_video"]}
                 section={@section}
@@ -1857,7 +1902,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 }
                 page_metrics={get_module_page_metrics(@page_metrics_per_module_id, module)}
               />
-            </div>
+            </.custom_focus_wrap>
           </div>
         </div>
       </div>
@@ -3158,11 +3203,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       id={"intro_card_#{@card_resource_id}"}
       class={slider_card_class()}
-      tabindex="0"
       role="button"
       aria-label={intro_video_aria_label(@title)}
       data-intro-video="youtube"
       data-completed={"#{@intro_video_viewed}"}
+      data-event={leave_unit(@card_resource_id)}
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-card_resource_id={@card_resource_id}
@@ -3229,11 +3274,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       id={"intro_card_#{@card_resource_id}"}
       class={slider_card_class()}
-      tabindex="0"
       role="button"
       aria-label={intro_video_aria_label(@title)}
       data-intro-video="file"
       data-completed={"#{@intro_video_viewed}"}
+      data-event={leave_unit(@card_resource_id)}
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-section_id={@section.id}
@@ -3350,7 +3395,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         slider_card_class(),
         if(@selected, do: "outline outline-[3px]")
       ]}
-      tabindex="0"
       role={if @is_page, do: "link", else: "button"}
       aria-label={card_aria_label(@card_top_label, @card["title"])}
       aria-expanded={if !@is_page, do: Kernel.to_string(@selected)}
@@ -3358,6 +3402,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       data-card-index={@module_index}
       data-completed={"#{card_completed?(@card, @is_page, @page_metrics)}"}
       data-enter-event={enter_module(@unit_resource_id)}
+      data-leave-event={leave_unit(@unit_resource_id)}
     >
       <div
         xphx-mouseover={JS.show(to: "#card_badge_details_#{@card["resource_id"]}")}
