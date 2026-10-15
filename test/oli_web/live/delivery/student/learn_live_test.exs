@@ -2008,6 +2008,59 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       refute has_element?(view, page_1_button)
     end
 
+    test "expanded module is a named region and its focus sentinels are not hidden while focusable",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+      |> render_click()
+
+      module_id = "selected_module_in_unit_#{unit_1.resource_id}"
+      title_id = "selected_module_title_in_unit_#{unit_1.resource_id}"
+
+      module_html = view |> element("div##{module_id}") |> render()
+
+      assert module_html =~ ~s{role="region"}
+      assert module_html =~ ~s{aria-labelledby="#{title_id}"}
+      assert has_element?(view, "h2##{title_id}")
+
+      # focusable sentinel is exposed, the non focusable one stays hidden
+      start_html = view |> element("##{module_id}-start") |> render()
+      assert start_html =~ ~s{tabindex="0"}
+      assert start_html =~ ~s{aria-hidden="false"}
+
+      end_html = view |> element("##{module_id}-end") |> render()
+      assert end_html =~ ~s{tabindex="-1"}
+      assert end_html =~ ~s{aria-hidden="true"}
+    end
+
+    test "entering and leaving a module toggles aria-hidden together with tabindex on the sentinels",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # entering the module (data-enter-event on its card) makes the sentinels focusable and exposed
+      enter_event =
+        view
+        |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+        |> render()
+
+      assert enter_event =~ "selected_module_in_unit_#{unit_1.resource_id}-start"
+      assert enter_event =~ ~s{&quot;aria-hidden&quot;,&quot;false&quot;}
+
+      view
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+      |> render_click()
+
+      # leaving the module (Escape, phx-window-keydown) hides them again
+      leave_event =
+        view
+        |> element("#selected_module_in_unit_#{unit_1.resource_id}")
+        |> render()
+
+      assert leave_event =~ ~s{&quot;aria-hidden&quot;,&quot;true&quot;}
+    end
+
     test "other keys do not toggle a module card", %{conn: conn, section: section, page_1: page_1} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
