@@ -90,7 +90,7 @@ No application or Docker build behavior changed in this follow-up.
 ## Remaining Operational Gates
 
 - G2 hosted PR checks remain a prerequisite before landing the earlier migration.
-- Phase 5 must verify one replica, persistent services and working drain RPC/node naming in the actual GitOps deployment.
+- Phase 5 verified one replica and provisioned persistent services. Phase 6 verifies working drain RPC/node naming and persistence/mailbox behavior through actual deployment updates.
 - Real archives/answer keys and Canvas/Moodle/Dot fixtures require later target provisioning and full-suite launch evidence. Synthetic storage smoke proves packaged transport/authentication and persistence, not external course/integration correctness.
 - Task-created database/services/networks and temporary context/invalidation images were removed; `torus-playwright-smoke` and `torus-production-smoke` remain available locally for inspection.
 - No Jira, registry or GitOps writes, live deployment changes or live integration calls occurred.
@@ -165,7 +165,7 @@ runtime, never as build arguments.
 
 `Oli.Release.setup()` creates the database if absent and runs migrations and normal
 seeds; do not reset the durable database or object storage. Short local Docker
-hostnames required `RELEASE_DISTRIBUTION=sname` for RPC during smoke checks; Phase 5
+hostnames required `RELEASE_DISTRIBUTION=sname` for RPC during smoke checks; Phase 6
 must verify deployment node naming and drain RPC. The instance-local mailbox
 requires one application replica and starts empty after each restart. Durable
 fixtures remain in the database/object storage. No mailbox cleanup job or automatic
@@ -203,3 +203,9 @@ identical, and both images carried their respective expected revision/version
 labels. The two disposable probe images were removed. This check isolates runner
 caching; it does not repeat the full application build or runtime smoke matrix.
 Security and performance follow-up reviews found no remaining issues.
+
+## Decision Log
+
+- 2026-10-15: Move the remaining deployed drain/node-naming and persistence/mailbox
+  verification to Phase 6 under the operator-approved provisioning closeout. Preserve
+  all existing release smoke evidence and the final operational acceptance criteria.
