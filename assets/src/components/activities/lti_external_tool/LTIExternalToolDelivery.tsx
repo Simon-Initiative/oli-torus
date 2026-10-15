@@ -25,7 +25,7 @@ import { GradedPoints } from '../common/delivery/graded_points/GradedPoints';
 import * as ActivityTypes from '../types';
 import { LTIExternalToolSchema } from './schema';
 
-const LTIExternalTool: React.FC = () => {
+export const LTIExternalTool: React.FC = () => {
   const { model, state, context, mode } = useDeliveryElementContext<LTIExternalToolSchema>();
 
   const ltiToolDetailsLoader = useLoader(() => {
@@ -114,7 +114,10 @@ const LTIExternalTool: React.FC = () => {
                 {ltiToolDetails.deep_link && (
                   <div className="overflow-hidden text-ellipsis whitespace-nowrap">
                     <i className="fa-solid fa-check text-success mr-1"></i>Selection:{' '}
-                    {ltiToolDetails.deep_link.title}
+                    {ltiToolDetails.deep_link.title ||
+                      ltiToolDetails.deep_link.text ||
+                      ltiToolDetails.deep_link.url ||
+                      'Configured resource'}
                   </div>
                 )}
               </div>

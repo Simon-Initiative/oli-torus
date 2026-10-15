@@ -18,6 +18,7 @@ export type LTIExternalToolDetails = {
   deep_linking_enabled: boolean;
   deep_link?: {
     type: string;
+    url?: string | null;
     title: string;
     text: string;
   };
