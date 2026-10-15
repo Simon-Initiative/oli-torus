@@ -828,27 +828,25 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   ## Tab navigation start ##
 
-  def handle_event("intro_card_keydown", params, socket) do
-    case params["key"] do
-      "Enter" ->
-        {:noreply,
-         push_event(socket, "play_video", %{
-           "video_url" => params["video_url"],
-           "module_resource_id" => params["card_resource_id"],
-           "section_id" => params["section_id"]
-         })}
-
-      "Escape" ->
-        {:noreply,
-         push_event(socket, "js-exec", %{
-           to: "#intro_card_#{params["card_resource_id"]}",
-           attr: "data-event"
-         })}
-
-      _ ->
-        {:noreply, socket}
-    end
+  def handle_event("intro_card_keydown", %{"key" => key} = params, socket)
+      when key in ["Enter", " "] do
+    {:noreply,
+     push_event(socket, "play_video", %{
+       "video_url" => params["video_url"],
+       "module_resource_id" => params["card_resource_id"],
+       "section_id" => params["section_id"]
+     })}
   end
+
+  def handle_event("intro_card_keydown", %{"key" => "Escape"} = params, socket) do
+    {:noreply,
+     push_event(socket, "js-exec", %{
+       to: "#intro_card_#{params["card_resource_id"]}",
+       attr: "data-event"
+     })}
+  end
+
+  def handle_event("intro_card_keydown", _params, socket), do: {:noreply, socket}
 
   def handle_event("card_keydown", %{"key" => "Escape"} = params, socket) do
     {:noreply,
@@ -858,25 +856,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      })}
   end
 
-  def handle_event("card_keydown", %{"key" => "Enter"} = params, socket) do
-    case params["type"] do
-      "page" ->
-        navigate_to_resource(params, socket)
-
-      "module" ->
-        {
-          :noreply,
-          do_toggle_module(socket, params["unit_resource_id"], params["module_resource_id"])
-          |> push_event("js-exec", %{
-            to: "##{params["type"]}_#{params["module_resource_id"]}",
-            attr: "data-enter-event"
-          })
-        }
-
-      _ ->
-        {:noreply, socket}
-    end
+  def handle_event("card_keydown", %{"key" => key, "type" => "module"} = params, socket)
+      when key in ["Enter", " "] do
+    {
+      :noreply,
+      do_toggle_module(socket, params["unit_resource_id"], params["module_resource_id"])
+      |> push_event("js-exec", %{
+        to: "##{params["type"]}_#{params["module_resource_id"]}",
+        attr: "data-enter-event"
+      })
+    }
   end
+
+  def handle_event("card_keydown", %{"key" => "Enter", "type" => "page"} = params, socket),
+    do: navigate_to_resource(params, socket)
 
   def handle_event("card_keydown", _, socket), do: {:noreply, socket}
 
@@ -903,18 +896,28 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     {:noreply, socket}
   end
 
+  @doc """
+  Returns the JS commands that enter a unit's slider: its cards become tab stops, focus wraps
+  inside the slider and the first card receives focus.
+  """
   def enter_unit(js \\ %JS{}, unit_id) do
-    unit_cards_selector = "#slider_focus_wrap_#{unit_id} > div[role*=\"card\"]"
+    unit_cards_selector = "#slider_focus_wrap_#{unit_id} > .slider-card"
 
-    JS.set_attribute(js, {"tabindex", "0"}, to: unit_cards_selector)
+    js
+    |> JS.set_attribute({"tabindex", "0"}, to: unit_cards_selector)
     |> enable_focus_wrap_for("#slider_focus_wrap_#{unit_id}")
     |> JS.focus(to: unit_cards_selector <> ":first-of-type")
   end
 
+  @doc """
+  Returns the JS commands that leave a unit's slider: its cards stop being tab stops, the focus
+  wrap is disabled and focus goes back to the slider.
+  """
   def leave_unit(js \\ %JS{}, unit_id) do
-    JS.remove_attribute(js, "tabindex", to: "#slider_#{unit_id} > div[role*=\"card\"]")
+    js
+    |> JS.remove_attribute("tabindex", to: "#slider_focus_wrap_#{unit_id} > .slider-card")
     |> disable_focus_wrap_for("#slider_focus_wrap_#{unit_id}")
-    |> JS.focus(to: "#unit_#{unit_id}")
+    |> JS.focus(to: "#slider_#{unit_id}")
   end
 
   def enter_module(js \\ %JS{}, unit_id) do
@@ -934,16 +937,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     |> JS.focus(to: "#module_#{module_resource_id}")
   end
 
+  # The focus wrap sentinels must not be aria-hidden while they are focusable.
   defp enable_focus_wrap_for(js, selector) do
-    js
-    |> JS.set_attribute({"tabindex", "0"}, to: "#{selector}-start")
-    |> JS.set_attribute({"tabindex", "0"}, to: "#{selector}-end")
+    Enum.reduce(["start", "end"], js, fn edge, js ->
+      js
+      |> JS.set_attribute({"tabindex", "0"}, to: "#{selector}-#{edge}")
+      |> JS.set_attribute({"aria-hidden", "false"}, to: "#{selector}-#{edge}")
+    end)
   end
 
   defp disable_focus_wrap_for(js, selector) do
-    js
-    |> JS.set_attribute({"tabindex", "-1"}, to: "#{selector}-start")
-    |> JS.set_attribute({"tabindex", "-1"}, to: "#{selector}-end")
+    Enum.reduce(["start", "end"], js, fn edge, js ->
+      js
+      |> JS.set_attribute({"tabindex", "-1"}, to: "#{selector}-#{edge}")
+      |> JS.set_attribute({"aria-hidden", "true"}, to: "#{selector}-#{edge}")
+    end)
   end
 
   ## Tab navigation end ##
@@ -1765,9 +1773,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"unit_#{@unit["resource_id"]}"}
-      tabindex="0"
-      phx-keydown={enter_unit(@unit["resource_id"])}
-      phx-key="enter"
       data-completed={"#{@progress == 100}"}
       role="resource top level"
     >
@@ -1841,25 +1846,37 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"slider_left_button_#{@unit["resource_id"]}"}
             class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-[#F3F4F8] dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
+            type="button"
             aria-label="slide left"
+            aria-controls={"slider_#{@unit["resource_id"]}"}
           >
-            <i class="fa-solid fa-chevron-left ml-3"></i>
+            <i class="fa-solid fa-chevron-left ml-3" aria-hidden="true"></i>
           </button>
           <button
             :if={!@is_mobile}
             id={"slider_right_button_#{@unit["resource_id"]}"}
             class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-[#F3F4F8] dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
+            type="button"
             aria-label="slide right"
+            aria-controls={"slider_#{@unit["resource_id"]}"}
           >
-            <i class="fa-solid fa-chevron-right mr-3"></i>
+            <i class="fa-solid fa-chevron-right mr-3" aria-hidden="true"></i>
           </button>
+          <span id={"slider_hint_#{@unit["resource_id"]}"} class="sr-only">
+            Press Enter to browse the cards, and Escape to leave.
+          </span>
           <div
             id={"slider_#{@unit["resource_id"]}"}
-            role="slider"
+            role="region"
+            aria-label={slider_aria_label(@unit, @section)}
+            aria-describedby={"slider_hint_#{@unit["resource_id"]}"}
+            tabindex="0"
+            phx-keydown={enter_unit(@unit["resource_id"])}
+            phx-key="enter"
             phx-hook={if !@is_mobile, do: "SliderScroll"}
             data-resource_id={@unit["resource_id"]}
-            class="overflow-y-hidden h-[187px] pt-[5px] px-3 sm:px-[5px] scrollbar-hide"
+            class="overflow-y-hidden h-[187px] pt-[5px] px-3 sm:px-[5px] scrollbar-hide outline-gray-800 dark:outline-white focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-[-3px] rounded-xl"
           >
             <.custom_focus_wrap
               id={"slider_focus_wrap_#{@unit["resource_id"]}"}
@@ -1910,7 +1927,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <.custom_focus_wrap
           :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
           class="px-3 md:px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] flex"
-          role="module_details"
+          role="region"
+          aria-labelledby={"selected_module_title_in_unit_#{@unit["resource_id"]}"}
           id={"selected_module_in_unit_#{@unit["resource_id"]}"}
           data-animate={
             JS.show(
@@ -1946,7 +1964,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 {module_label}
               </div>
             </div>
-            <h2 class="self-stretch opacity-90 text-center text-xl md:text-[26px] font-normal md:leading-loose tracking-tight dark:text-white">
+            <h2
+              id={"selected_module_title_in_unit_#{@unit["resource_id"]}"}
+              class="self-stretch opacity-90 text-center text-xl md:text-[26px] font-normal md:leading-loose tracking-tight dark:text-white"
+            >
               {selected_module[
                 "title"
               ]}
@@ -3173,6 +3194,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
+  # outline classes: hover, plus a keyboard focus ring offset by 2px so it stays
+  # distinguishable from the selected state (the slider has 5px of padding to fit it)
+  defp slider_card_class do
+    "relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2"
+  end
+
+  defp intro_video_aria_label(title), do: "#{title}: Play unit intro video"
+
   attr :section, :any
   attr :title, :string, default: "INTRO"
   attr :video_url, :string
@@ -3185,8 +3214,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"intro_card_#{@card_resource_id}"}
-      class="relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white"
-      role="resource youtube intro video"
+      class={slider_card_class()}
+      role="button"
+      aria-label={intro_video_aria_label(@title)}
+      data-intro-video="youtube"
       data-completed={"#{@intro_video_viewed}"}
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
@@ -3254,8 +3285,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"intro_card_#{@card_resource_id}"}
-      class="relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white"
-      role="resource intro video"
+      class={slider_card_class()}
+      role="button"
+      aria-label={intro_video_aria_label(@title)}
+      data-intro-video="file"
       data-completed={"#{@intro_video_viewed}"}
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
@@ -3336,7 +3369,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :display_curriculum_item_numbering, :boolean, required: true
 
   def card(assigns) do
-    assigns = Map.put(assigns, :is_page, is_page(assigns.card))
+    is_page = is_page(assigns.card)
+
+    card_top_label =
+      if is_page,
+        do: "PAGE",
+        else:
+          container_label_and_numbering(
+            display_numbering_or_numbering(assigns.card),
+            assigns.section_customizations,
+            assigns.display_curriculum_item_numbering
+          )
+
+    assigns =
+      assigns
+      |> Map.put(:is_page, is_page)
+      |> Map.put(:card_top_label, card_top_label)
 
     ~H"""
     <div
@@ -3356,14 +3404,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-slug={@card["slug"]}
       phx-value-type={if @is_page, do: "page", else: "module"}
       class={[
-        "relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white",
+        slider_card_class(),
         if(@selected, do: "outline outline-[3px]")
       ]}
-      role={"resource card #{@module_index}"}
+      role={if @is_page, do: "link", else: "button"}
+      aria-label={card_aria_label(@card_top_label, @card["title"])}
+      aria-expanded={if !@is_page, do: Kernel.to_string(@selected)}
+      aria-controls={if !@is_page, do: "selected_module_in_unit_#{@unit_resource_id}"}
+      data-card-index={@module_index}
       data-completed={"#{card_completed?(@card, @is_page, @page_metrics)}"}
       data-enter-event={enter_module(@unit_resource_id)}
       data-leave-event={leave_unit(@unit_resource_id)}
-      aria-expanded={Kernel.to_string(@selected)}
     >
       <div
         xphx-mouseover={JS.show(to: "#card_badge_details_#{@card["resource_id"]}")}
@@ -3395,21 +3446,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ]}
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
-          <% card_top_label =
-            if @is_page,
-              do: "PAGE",
-              else:
-                container_label_and_numbering(
-                  display_numbering_or_numbering(@card),
-                  @section_customizations,
-                  @display_curriculum_item_numbering
-                ) %>
           <span
-            :if={card_top_label}
+            :if={@card_top_label}
             role="card top label"
             class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50"
           >
-            {card_top_label}
+            {@card_top_label}
           </span>
           <h5 class="pointer-events-none text-[18px] leading-[25px] font-bold text-white z-10">
             {@card["title"]}
@@ -3440,6 +3482,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     </div>
     """
   end
+
+  defp card_aria_label(nil, title), do: title
+  defp card_aria_label(top_label, title), do: "#{top_label}: #{title}"
 
   attr :resource_id, :string
   attr :duration_minutes, :integer
@@ -4458,6 +4503,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp parse_card_badge_minutes(_, _), do: nil
+
+  # Accessible name for a unit's slider, e.g. "UNIT 1: Introduction slider". The numbering label
+  # is omitted when numbering is hidden for the section.
+  defp slider_aria_label(unit, section) do
+    unit_label =
+      container_label_and_numbering(
+        display_numbering_or_numbering(unit),
+        section.customizations,
+        section.display_curriculum_item_numbering
+      )
+
+    [unit_label, "#{unit["title"]} slider"]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(": ")
+  end
 
   defp container_label_and_numbering(numbering, customizations, display_curriculum_item_numbering) do
     if display_curriculum_item_numbering do

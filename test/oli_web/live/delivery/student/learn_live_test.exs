@@ -897,19 +897,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has an intro card with a video url provided, so there must be a play button
       assert has_element?(
                view,
-               ~s{div[role="unit_1"] div[role="slider"] div[role="resource youtube intro video"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_1"] div[id^="slider_"] div[data-intro-video="youtube"] div[role="play_unit_intro_video"]}
              )
 
       # unit 2 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_2"] div[role="slider"] div[role="resource youtube intro video"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_2"] div[id^="slider_"] div[data-intro-video="youtube"] div[role="play_unit_intro_video"]}
              )
 
       # unit 3 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_3"] div[role="slider"] div[role="resource youtube intro video"]}
+               ~s{div[role="unit_3"] div[id^="slider_"] div[data-intro-video="youtube"]}
              )
     end
 
@@ -973,6 +973,41 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert card_html =~ "PAGE"
       refute card_html =~ ~r/PAGE\s+\d+/
+    end
+
+    test "each unit slider is a named region and its navigation buttons are labeled",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      slider_id = "slider_#{unit_1.resource_id}"
+
+      slider_html = view |> element("div##{slider_id}") |> render()
+
+      assert slider_html =~ ~s{role="region"}
+      assert slider_html =~ ~s{aria-label="UNIT 1: Introduction slider"}
+      refute slider_html =~ ~s{role="slider"}
+
+      for {side, label} <- [left: "slide left", right: "slide right"] do
+        button_html =
+          view |> element("button#slider_#{side}_button_#{unit_1.resource_id}") |> render()
+
+        assert button_html =~ ~s{aria-label="#{label}"}
+        assert button_html =~ ~s{aria-controls="#{slider_id}"}
+        assert button_html =~ ~s{type="button"}
+        assert button_html =~ ~s{aria-hidden="true"}
+      end
+    end
+
+    test "slider accessible name omits the unit numbering when it is hidden",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert view
+             |> element("div#slider_#{unit_1.resource_id}")
+             |> render() =~ ~s{aria-label="Introduction slider"}
     end
 
     test "can see not completed card badge for intro videos, practice pages and modules",
@@ -1151,7 +1186,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       # page 1 and page 2 are shown with their estimated read time
@@ -1205,7 +1240,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand module
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(view, "span", "Page 1")
@@ -1224,7 +1259,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # module 1 has intro video
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert view
@@ -1238,7 +1273,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # module 2 has no intro video
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="2"]})
       |> render_click()
 
       refute has_element?(
@@ -1262,7 +1297,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       refute enrollment_state["viewed_intro_video_resource_ids"]
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(
@@ -1283,7 +1318,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert enrollment_state["viewed_intro_video_resource_ids"] == [module_1.resource_id]
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(
@@ -1297,7 +1332,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="2"]})
       |> render_click()
 
       assert has_element?(
@@ -1351,7 +1386,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="2"]})
       |> render_click()
 
       # graded page with title "Page 4" in the hierarchy has the correct icon
@@ -1385,7 +1420,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       # there are no learning objectives for this module
@@ -1400,7 +1435,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 2 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="2"]})
       |> render_click()
 
       assert has_element?(
@@ -1498,7 +1533,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(
@@ -1513,7 +1548,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 2/module 3 details
       view
-      |> element(~s{div[role="unit_2"] div[role="resource card 3"]})
+      |> element(~s{div[role="unit_2"] div[data-card-index="3"]})
       |> render_click()
 
       assert has_element?(
@@ -1544,7 +1579,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 2 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="2"]})
       |> render_click()
 
       assert has_element?(
@@ -1585,7 +1620,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(view, ~s{button[role="resource page 2 details"]})
@@ -1608,7 +1643,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
       |> render_click()
 
       # click on page 1 to navigate to that page
@@ -1783,7 +1818,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # click on page 7 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="resource card 10"]})
+      |> element(~s{div[role="unit_3"] div[data-card-index="10"]})
       |> render_click()
 
       request_path =
@@ -1811,7 +1846,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # click on page 8 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="resource card 11"]})
+      |> element(~s{div[role="unit_3"] div[data-card-index="11"]})
       |> render_click()
 
       request_path =
@@ -1865,11 +1900,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='resource card 1']})
+             |> element(~s{div[role='unit_1'] div[data-card-index='1']})
              |> render =~ "style=\"background-image: url(&#39;module_1_custom_image_url&#39;)"
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='resource card 2']})
+             |> element(~s{div[role='unit_1'] div[data-card-index='2']})
              |> render =~ "style=\"background-image: url(&#39;/images/course_default.png&#39;)"
     end
 
@@ -1878,13 +1913,215 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='resource youtube intro video']})
+             |> element(~s{div[role='unit_1'] div[data-intro-video='youtube']})
              |> render =~
                "style=\"background-image: url(&#39;https://img.youtube.com/vi/123456789ab/hqdefault.jpg&#39;)"
 
       # S3 video
       assert view
-             |> has_element?(~s{div[role='unit_4'] div[role='resource intro video']})
+             |> has_element?(~s{div[role='unit_4'] div[data-intro-video='file']})
+    end
+
+    test "gallery cards expose valid ARIA roles and accessible names",
+         %{
+           conn: conn,
+           section: section,
+           unit_1: unit_1,
+           top_level_page: top_level_page
+         } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      module_card =
+        view |> element(~s{div[role='unit_1'] div[data-card-index='1']}) |> render()
+
+      assert module_card =~ ~s{role="button"}
+      assert module_card =~ ~s{aria-expanded="false"}
+      assert module_card =~ ~s{aria-controls="selected_module_in_unit_#{unit_1.resource_id}"}
+      assert module_card =~ ~r/aria-label="[^"]+: [^"]+"/
+
+      page_card =
+        view
+        |> element(~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']})
+        |> render()
+
+      assert page_card =~ ~s{role="link"}
+      assert page_card =~ ~s{aria-label="PAGE: Top Level Page"}
+      refute page_card =~ "aria-expanded"
+      refute page_card =~ "aria-controls"
+
+      intro_card =
+        view |> element(~s{div[role='unit_1'] div[data-intro-video='youtube']}) |> render()
+
+      assert intro_card =~ ~s{role="button"}
+      assert intro_card =~ ~s{aria-label="INTRO: Play unit intro video"}
+    end
+
+    test "the slider is the keyboard stop of a unit and its cards are only focusable once entered",
+         %{conn: conn, section: section, unit_1: unit_1, top_level_page: top_level_page} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      slider_id = "slider_#{unit_1.resource_id}"
+      hint_id = "slider_hint_#{unit_1.resource_id}"
+
+      # the slider is focusable, described by a screen reader hint and entered with Enter
+      slider_html = view |> element("div##{slider_id}") |> render()
+      [slider_opening_tag | _] = String.split(slider_html, ">", parts: 2)
+
+      assert slider_opening_tag =~ ~s{tabindex="0"}
+      assert slider_opening_tag =~ ~s{aria-describedby="#{hint_id}"}
+      assert slider_opening_tag =~ ~s{phx-key="enter"}
+
+      assert view |> element("span##{hint_id}.sr-only") |> render() =~
+               "Press Enter to browse the cards, and Escape to leave."
+
+      # entering the slider makes the cards tab stops and wraps focus inside of it
+      assert slider_opening_tag =~ "#slider_focus_wrap_#{unit_1.resource_id} &gt; .slider-card"
+      assert slider_opening_tag =~ "slider_focus_wrap_#{unit_1.resource_id}-start"
+      assert slider_opening_tag =~ ~s{&quot;aria-hidden&quot;,&quot;false&quot;}
+
+      # cards are not tab stops until the slider is entered
+      for card <- [
+            element(view, ~s{div[role='unit_1'] div[data-card-index='1']}),
+            element(view, ~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']}),
+            element(view, ~s{div[role='unit_1'] div[data-intro-video='youtube']})
+          ] do
+        [card_opening_tag | _] = card |> render() |> String.split(">", parts: 2)
+        # (the data-*-event attributes mention tabindex inside their JS commands)
+        refute card_opening_tag =~ ~s{ tabindex="}
+      end
+
+      # the focus wrap sentinels start hidden and out of the tab order
+      start_html = view |> element("#slider_focus_wrap_#{unit_1.resource_id}-start") |> render()
+      assert start_html =~ ~s{tabindex="-1"}
+      assert start_html =~ ~s{aria-hidden="true"}
+
+      # the unit container itself is not a tab stop
+      [unit_opening_tag | _] =
+        view
+        |> element(~s{div[id='unit_#{unit_1.resource_id}']})
+        |> render()
+        |> String.split(">", parts: 2)
+
+      refute unit_opening_tag =~ "tabindex"
+      refute unit_opening_tag =~ "phx-keydown"
+    end
+
+    test "leaving a slider with Escape moves focus back to the slider",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      for card <- [
+            element(view, ~s{div[role='unit_1'] div[data-card-index='1']}),
+            element(view, ~s{div[role='unit_1'] div[data-intro-video='youtube']})
+          ] do
+        card_html = render(card)
+        assert card_html =~ "#slider_#{unit_1.resource_id}"
+        assert card_html =~ ~s{&quot;aria-hidden&quot;,&quot;true&quot;}
+      end
+
+      view
+      |> element(~s{div[role='unit_1'] div[data-card-index='1']})
+      |> render_keydown(%{
+        "key" => "Escape",
+        "type" => "module",
+        "module_resource_id" => "123"
+      })
+
+      assert_push_event(view, "js-exec", %{to: "#module_123", attr: "data-leave-event"})
+
+      view
+      |> element(~s{div[role='unit_1'] div[data-intro-video='youtube']})
+      |> render_keydown(%{"key" => "Escape"})
+
+      assert_push_event(view, "js-exec", %{attr: "data-event"})
+    end
+
+    test "module cards can be toggled with the Enter and Space keys",
+         %{conn: conn, section: section, page_1: page_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      page_1_button =
+        ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+
+      refute has_element?(view, page_1_button)
+
+      view
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+      |> render_keydown(%{"key" => " "})
+
+      assert has_element?(view, page_1_button)
+
+      view
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+      |> render_keydown(%{"key" => "Enter"})
+
+      refute has_element?(view, page_1_button)
+    end
+
+    test "expanded module is a named region and its focus sentinels are not hidden while focusable",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+      |> render_click()
+
+      module_id = "selected_module_in_unit_#{unit_1.resource_id}"
+      title_id = "selected_module_title_in_unit_#{unit_1.resource_id}"
+
+      module_html = view |> element("div##{module_id}") |> render()
+
+      assert module_html =~ ~s{role="region"}
+      assert module_html =~ ~s{aria-labelledby="#{title_id}"}
+      assert has_element?(view, "h2##{title_id}")
+
+      # focusable sentinel is exposed, the non focusable one stays hidden
+      start_html = view |> element("##{module_id}-start") |> render()
+      assert start_html =~ ~s{tabindex="0"}
+      assert start_html =~ ~s{aria-hidden="false"}
+
+      end_html = view |> element("##{module_id}-end") |> render()
+      assert end_html =~ ~s{tabindex="-1"}
+      assert end_html =~ ~s{aria-hidden="true"}
+    end
+
+    test "entering and leaving a module toggles aria-hidden together with tabindex on the sentinels",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # entering the module (data-enter-event on its card) makes the sentinels focusable and exposed
+      enter_event =
+        view
+        |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+        |> render()
+
+      assert enter_event =~ "selected_module_in_unit_#{unit_1.resource_id}-start"
+      assert enter_event =~ ~s{&quot;aria-hidden&quot;,&quot;false&quot;}
+
+      view
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+      |> render_click()
+
+      # leaving the module (Escape, phx-window-keydown) hides them again
+      leave_event =
+        view
+        |> element("#selected_module_in_unit_#{unit_1.resource_id}")
+        |> render()
+
+      assert leave_event =~ ~s{&quot;aria-hidden&quot;,&quot;true&quot;}
+    end
+
+    test "other keys do not toggle a module card", %{conn: conn, section: section, page_1: page_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{div[role="unit_1"] div[data-card-index="1"]})
+      |> render_keydown(%{"key" => "a"})
+
+      refute has_element?(
+               view,
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+             )
     end
 
     test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
@@ -1914,7 +2151,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render() =~ "None"
 
       assert view
-             |> element(~s{div[id='page_#{top_level_page.resource_id}'][role='resource card 1']})
+             |> element(~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']})
              |> render() =~ "Top Level Page"
     end
 
@@ -2128,7 +2365,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[role="unit_5"] div[data-card-index="4"]})
       |> render_click()
 
       # page 11 and page 12 are displayed by default with their corresponding indentation
@@ -2243,7 +2480,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[role="unit_5"] div[data-card-index="4"]})
       |> render_click()
 
       group_by_read_by_date_div =
@@ -2285,7 +2522,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[role="unit_5"] div[data-card-index="4"]})
       |> render_click()
 
       group_by_due_date_div = element(view, ~s{div[role="pages_grouped_by_read_by_2023-11-10"]})
@@ -2311,7 +2548,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[role="unit_5"] div[data-card-index="4"]})
       |> render_click()
 
       assert render(view) =~ "Page 13"
