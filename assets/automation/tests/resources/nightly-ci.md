@@ -90,15 +90,12 @@ check for active runs before dispatch, and coordinate verification around schedu
 execution. The optional maintenance procedure below is for an incident or deliberate
 maintenance pause.
 
-To pause scheduled target updates while retaining manual verification and scheduled
-scenario tests, make a reviewed temporary change on the default branch adding
-`if: ${{ github.event_name == 'workflow_dispatch' }}` to `build-playwright`.
-Dependent deployment/browser jobs then skip on schedules. Keep the existing cron,
-manual trigger, and independent `nightly-scenarios` job unchanged. Wait for active
-runs and finalization to finish before maintenance; inspect pending runs as well.
-Revert that temporary condition through normal review to resume scheduled target
-updates after verification. Disabling the entire workflow also disables manual and
-scenario execution, so it does not implement this partial pause.
+To pause scheduled execution, comment out the `schedule` trigger in
+`.github/workflows/nightly-playwright.yml` on the default branch through normal review.
+This pauses all scheduled jobs, including scenario tests. Keep `workflow_dispatch`
+enabled for manual runs. Existing runs are not stopped by this change; wait for active
+runs and finalization to finish before maintenance, and inspect pending runs as well.
+Restore the `schedule` trigger through normal review to resume daily execution.
 
 Cancel through the run's Actions page when necessary. Finalization rediscovers the
 current run's PR by `nightly-playwright/<run-id>-<attempt>` even if PR creation lost
