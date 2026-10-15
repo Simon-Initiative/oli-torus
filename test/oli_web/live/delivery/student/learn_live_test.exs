@@ -897,19 +897,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has an intro card with a video url provided, so there must be a play button
       assert has_element?(
                view,
-               ~s{div[role="unit_1"] div[role="slider"] div[data-intro-video="youtube"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_1"] div[id^="slider_"] div[data-intro-video="youtube"] div[role="play_unit_intro_video"]}
              )
 
       # unit 2 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_2"] div[role="slider"] div[data-intro-video="youtube"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_2"] div[id^="slider_"] div[data-intro-video="youtube"] div[role="play_unit_intro_video"]}
              )
 
       # unit 3 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_3"] div[role="slider"] div[data-intro-video="youtube"]}
+               ~s{div[role="unit_3"] div[id^="slider_"] div[data-intro-video="youtube"]}
              )
     end
 
@@ -973,6 +973,41 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert card_html =~ "PAGE"
       refute card_html =~ ~r/PAGE\s+\d+/
+    end
+
+    test "each unit slider is a named region and its navigation buttons are labeled",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      slider_id = "slider_#{unit_1.resource_id}"
+
+      slider_html = view |> element("div##{slider_id}") |> render()
+
+      assert slider_html =~ ~s{role="region"}
+      assert slider_html =~ ~s{aria-label="UNIT 1: Introduction slider"}
+      refute slider_html =~ ~s{role="slider"}
+
+      for {side, label} <- [left: "slide left", right: "slide right"] do
+        button_html =
+          view |> element("button#slider_#{side}_button_#{unit_1.resource_id}") |> render()
+
+        assert button_html =~ ~s{aria-label="#{label}"}
+        assert button_html =~ ~s{aria-controls="#{slider_id}"}
+        assert button_html =~ ~s{type="button"}
+        assert button_html =~ ~s{aria-hidden="true"}
+      end
+    end
+
+    test "slider accessible name omits the unit numbering when it is hidden",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert view
+             |> element("div#slider_#{unit_1.resource_id}")
+             |> render() =~ ~s{aria-label="Introduction slider"}
     end
 
     test "can see not completed card badge for intro videos, practice pages and modules",
