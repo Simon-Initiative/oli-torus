@@ -36,7 +36,7 @@ The existing project typecheck reports unrelated `window.liveSocket` declaration
 - [x] FDD, Phase 4 plan and runbooks reflect the reduced scope.
 - Workflow wiring remains Phase 6. No deployment, Jira writes or live provider changes occurred.
 - Standard reports can contain page/assertion details. Access/privacy inspection and provisioned
-  integration execution remain Phase 7 launch evidence; no report sanitization is claimed.
+  integration execution remain Phase 6 launch evidence; no report sanitization is claimed.
 
 ## Review Loop
 

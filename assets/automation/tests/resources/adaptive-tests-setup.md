@@ -108,7 +108,7 @@ admin access to the repository — they are not set in the codebase.
 | `PLAYWRIGHT_CAPTCHA_TOKEN` | Secret | Same captcha token as the server (Step 2); keep separate from the scenario token. |
 | `PLAYWRIGHT_SCENARIO_TOKEN` | Secret | Same value as the server-side token (Step 2) |
 | `PLAYWRIGHT_AUTOMATION_API_KEY` | Secret | Key created in Step 3 |
-| `PLAYWRIGHT_PARAMETER_CONFIG_URL` | Secret | URL to the Dot chatbot YAML config (see `nightly-ci.md`) |
+| `PLAYWRIGHT_PARAMETER_CONFIG_URL` | Variable | URL to the private Dot chatbot YAML config (see `nightly-ci.md`); authentication uses the scenario token |
 | `CANVAS_UI_EMAIL` | Secret | Canvas test-account email (for LTI tests) |
 | `CANVAS_UI_PASSWORD` | Secret | Canvas test-account password (for LTI tests) |
 

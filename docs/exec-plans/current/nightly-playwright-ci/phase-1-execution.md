@@ -67,7 +67,7 @@ Run the installed harness validator before and after implementation with `--chec
 
 - Phase 2 migrates PR startup waiting; Phase 5 migrates GitOps readiness and the documented preview smoke URL only after capable images exist.
 - Phase 3 verifies the production and Playwright images. The local test release does not establish their packaging or production TLS behavior.
-- Phase 7 repeats graceful termination under real deployment probes/hooks and verifies public HTTPS/ingress behavior. No live deployment, GitOps record, Jira ticket or workflow was changed here.
+- Phase 5 verifies graceful termination under real deployment probes/hooks and public HTTPS/ingress behavior; Phase 6 reuses valid evidence at launch. No live deployment, GitOps record, Jira ticket or workflow was changed here.
 - Requirements remain proposed until the later acceptance-proof/operational closure; Phase 1 evidence does not establish AC-041 deployment configuration or AC-042 consumer migration.
 
 ## Review Loop
