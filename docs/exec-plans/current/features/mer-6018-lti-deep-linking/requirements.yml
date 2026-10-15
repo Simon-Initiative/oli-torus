@@ -136,6 +136,7 @@ requirements:
     status: verified_plan
     verification_method: automated
     proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
     - test/scenarios/lti_external_tool/deep_linking_test.exs
   - id: AC-014
     title: Creating a section from an older publication after an unpublished or newly published configuration
@@ -143,6 +144,7 @@ requirements:
     status: verified_plan
     verification_method: automated
     proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
     - test/scenarios/lti_external_tool/deep_linking_test.exs
 - id: FR-006
   title: Initialize only missing selections while applying a publication to an existing section
@@ -154,25 +156,29 @@ requirements:
       absent/null selections.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
   - id: AC-016
     title: Existing section selections, including instructor overrides, are not overwritten or cleared
       when project configuration changes or disappears in a new publication.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
   - id: AC-017
     title: Repeated or concurrent missing-selection initialization creates no duplicate section/resource
       records and never replaces a selection established by another successful write.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
   - id: AC-018
     title: Initialization failures roll back publication application and its section resource/publication
       changes; major and minor update paths cannot report partial success or create additional sections.
     status: verified_plan
     verification_method: automated
-    proofs: []
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
 - id: FR-007
   title: Initialize template selections from their selected project publication
   status: verified_plan
@@ -269,6 +275,7 @@ requirements:
     status: verified_plan
     verification_method: automated
     proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
     - test/scenarios/lti_external_tool/deep_linking_test.exs
   - id: AC-029
     title: Committed frontend state/component coverage exercises author save/cancel/failure orchestration

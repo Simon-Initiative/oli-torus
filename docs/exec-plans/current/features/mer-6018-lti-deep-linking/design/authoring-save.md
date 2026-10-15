@@ -55,7 +55,7 @@ Ordinary single/bulk saves retain stored selection and existing revision policy.
 - No global guarantee about which of two unchanged-state requests from different tabs wins; that additional policy was removed at owner request.
 - If a save commits but its response is lost, reload to obtain the authoritative selection. Local close is not an undo operation or server cancellation protocol.
 - A tool must echo the standard opaque hint/data. Actual browser navigation and interoperability remain deferred.
-- No blocking open questions for this reduced scope. Changes remain uncommitted pending owner approval.
+- No blocking open questions for this reduced scope. Phase 3 was committed as `3bc97a98be` after owner approval; later implementation commits require separate approval.
 
 ## 8. Definition of Done
 - [x] Requirements mapped to the reduced scope.

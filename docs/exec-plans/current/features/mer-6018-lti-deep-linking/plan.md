@@ -103,14 +103,14 @@ Retain independent section ownership, published-revision isolation, exact tool c
 - Requirements: FR-005, FR-006, FR-011.
 - Goal: extend publication application without replacing existing destination configuration.
 - Tasks:
-  - [ ] Refactor publication initialization into a scoped, validated missing-only helper using database conflict-do-nothing semantics.
-  - [ ] Reuse it in direct creation and invoke it after final destination resource/migration processing inside publication application's existing transaction.
-  - [ ] Audit worker, major/minor, blueprint-backed and legacy entry points; preserve cache/completion ordering and existing rows even when project selection changes or vanishes.
-  - [ ] Ensure empty selections and resources excluded from the actual destination are skipped; propagate failures to roll back the full update.
+  - [x] Refactor publication initialization into a scoped, validated missing-only helper using database conflict-do-nothing semantics.
+  - [x] Reuse it in direct creation and invoke it after final destination resource/migration processing inside publication application's existing transaction.
+  - [x] Audit worker, major/minor, blueprint-backed and legacy entry points; preserve cache/completion ordering and existing rows even when project selection changes or vanishes.
+  - [x] Ensure empty selections and resources excluded from the actual destination are skipped; propagate failures to roll back the full update.
 - Testing Tasks:
-  - [ ] Cover AC-015, AC-016, AC-017, AC-018 and the application portion of AC-028; rerun AC-013/AC-014 direct-creation regressions.
-  - [ ] Exercise new activities, previously missing selections, absent/null selections, instructor overrides, filtered/retained resources, remixed publications, repeated application, conflicting inserts and failure rollback.
-  - [ ] Validate/run real publication-application scenarios and focused initialization/update tests; inspect query shape for scoped joins and accidental per-resource lookups.
+  - [x] Cover AC-015, AC-016, AC-017, AC-018 and the application portion of AC-028; rerun AC-013/AC-014 direct-creation regressions.
+  - [x] Exercise new activities, previously missing selections, absent/null selections, instructor overrides, filtered/retained resources, remixed publications, repeated application, conflicting inserts and failure rollback.
+  - [x] Validate/run real publication-application scenarios and focused initialization/update tests; inspect query shape for scoped joins and accidental per-resource lookups.
   - Commands: targeted `mix test` for initialization, delivery/update and new scenario runners; scenario structure validation through `Oli.Scenarios.validate_file/1`.
 - Definition of Done:
   - Missing selections are populated from the applied published revisions and existing rows remain unchanged; creation/application cannot succeed partially.
@@ -332,7 +332,7 @@ The current-selection hint extension received separate security, performance, El
 
 ### Scope from plan.md
 
-Productionize authoring through existing editor mechanisms. The owner rejected the initial overcomplicated uncommitted approach and requested reusing the page's save indicator. Phase 2 remains committed as `f8f4bd8b35`; Phase 3 remains uncommitted.
+Productionize authoring through existing editor mechanisms. The owner rejected the initial overcomplicated approach and requested reusing the page's save indicator. Phase 2 is committed as `f8f4bd8b35`; the owner approved Phase 3 and its cleanup, committed as `3bc97a98be` on 2026-10-15.
 
 ### Implementation Blocks
 
@@ -373,4 +373,51 @@ PRD, FDD, design and requirements now describe the smaller authoring contract an
 - Final cleanup verification passed: **167 backend tests**, seed `601812`, with clean ExUnit progress/summary; **216 frontend tests across 30 suites**; TypeScript, scoped ESLint/Prettier/Mix formatting, warnings-as-errors compilation and Harness structure/design/traceability. Separate security, performance, Elixir, TypeScript, UI and requirements reviews reported no remaining findings. Corrected a misplaced return-value doc line during the review loop. Browser/tool interoperability remains deferred and all Phase 3 changes remain uncommitted.
 
 
-The simplified authoring scope preserves signed validation and meaningful stale-state detection, while removing the independent coordinator, persistent authoring request/cancel/supersession state, generic-resource edits and forced fresh ordinary revisions. Successful ExUnit output contained only progress/summary after its normal pre-test seed output; OTP shutdown messages follow the summary. No new external-tool/browser automation or migration was introduced. Owner manual review and explicit approval remain necessary before committing these changes.
+The simplified authoring scope preserves signed validation and meaningful stale-state detection, while removing the independent coordinator, persistent authoring request/cancel/supersession state, generic-resource edits and forced fresh ordinary revisions. Successful ExUnit output contained only progress/summary after its normal pre-test seed output; OTP shutdown messages follow the summary. No new external-tool/browser automation or migration was introduced. The owner's Phase 3 commit approval does not authorize commits for later phases.
+
+## Phase 4 Execution Record
+
+### Scope from plan.md
+
+Initialize missing selections from the explicitly applied publication after final destination processing, retaining all existing section choices. Reuse direct-creation initialization; cover current worker and legacy major/minor application routes without introducing a migration or a tool service.
+
+### Implementation Blocks
+
+- [x] Exclude existing section/resource rows before validating candidates; validate portable selections and batch conflict-do-nothing inserts through the existing database utility.
+- [x] Initialize after migration/post-processing inside the current update transaction; add the same transaction-bound behavior to both legacy update branches. Completion is emitted only on success.
+- [x] Route unchanged publication diffs through the existing minor-update pipeline so repeated application can initialize missing selections while retaining normal resource processing, migration and post-processing.
+- [x] Complete focused and affected backend tests, documentation and final verification checks.
+
+### Test Blocks
+
+- [x] Add schema/parser-validated scenario setup and a major-update workflow using real directives/domain APIs, with no factory, fixture, mock or external service for domain setup.
+- [x] Complete 13 exact snapshot, overrides, missing/cleared, conflict-at-insert, destination membership, worker, blueprint-backed/remixed and major/minor rollback/retry checks. The conflict case uses an actual database trigger to insert a winning row after discovery; it deterministically exercises conflict handling without parallel-session stress testing.
+- [x] Run affected delivery/LTI regressions: **270 tests, 0 failures**, seed `358347`. This includes the new runner, all LTI scenarios, existing platform context, delivery/creation, old/new major/minor, blueprint and section-copy suites. Successful ExUnit output contains only normal progress/summary after setup; the existing OTP shutdown messages follow the summary.
+- [x] Scoped `mix format --check-formatted`, test-environment `mix compile --warnings-as-errors`, `git diff --check` and Harness structure/design/requirements traceability passed. No shared test support or frontend code changed in this phase, so the prior full-suite and frontend results remain recorded without redundant reruns.
+
+### Work-Item Sync
+
+Phase 3 is committed with explicit owner approval. Phase 4 remains uncommitted; template creation/copy policy remains Phase 5. Whole-feature requirements retain `verified_plan` pending final verification and deferred external evidence.
+
+### Review Loop
+
+- [x] Initial security, performance, Elixir and requirements reviews completed. The owner requested a stricter SQL audit and cleanup; the correction pass and its evidence are recorded below. External-tool/browser checks and parallel-session stress remain deferred.
+
+### Done Definition
+
+- [x] Phase tasks and tests complete.
+- [x] Verification, reviews and documentation validation pass.
+- [x] No Phase 4 commit without separate owner approval.
+
+
+### Phase 4 Cleanup and SQL Audit (2026-10-15)
+
+- Continue `change-cleanup` in the owner-selected `self-driving` mode against `origin/master`, focused on outstanding Phase 4 changes. The new ExUnit runner is automatically discovered, executes both new YAML files through `Oli.Scenarios.execute_file/2`, and reaches existing hooks from compiled test support. No added slice files are orphaned.
+- Keep SQL optimizations confined to Deep Linking initialization: filter absent and JSON-null selections in SQL, use a correlated `NOT EXISTS` for existing choices, and reuse the parameter-bounded bulk insert utility. Retain the uniqueness constraint and conflict-do-nothing behavior, with no new index or migration.
+- Move the shared portable-selection validator into the existing deep-link schema, keeping the authoring delegate. This removes a dependency cycle without changing validation behavior. Correct new specs that referenced a nonexistent `Section.t()`.
+- Add initializer query-count/returned-row assertions. Test repeated application and unchanged-publication updates through the normal pipeline, preserving selection values and destination membership. These tests use real domain setup and writes, without fixtures or mocks.
+- SQL diagnostics use only the isolated test database and rolled-back scenario setup. In a 2,003-activity diagnostic (501 configured choices), filtering reduced transferred rows from 1,502 to zero when all choices existed and from 2,003 to 501 when missing. Initialization uses one discovery query plus parameter-bounded inserts, with no per-activity queries and no insert for an empty result. Comparing equivalent queries on the same fixture, `NOT EXISTS` produced a Hash Anti Join and reduced shared buffer hits from 15,257 to 482 (4.604 ms to 3.298 ms). These are local diagnostic measurements, not production latency guarantees.
+- An intermediate cleanup introduced a shortcut around normal publication processing. The owner rejected that broader optimization: remove it, its special concurrency handling and its test. Restore the original Project lookup and publication-read placement. Keep unchanged diffs in the existing minor pipeline; do not optimize general updates without separate approval. Earlier 36/50-to-6/7 statement comparisons applied only to intermediate implementations and do not describe the retained flow.
+- The owner manually confirmed that applying a publication retained the original section choice and initialized the newly added tool from that publication. Phase 5 remains separate; no Phase 4 commit is authorized by this review request.
+- After scope reduction, the focused runner passed **18 tests, 0 failures**, seed `108480`; the expanded regression passed **321 tests, 0 failures**, seed `748235`. It covers LTI scenarios/context, direct creation, current/legacy major/minor updates, blueprints, section copy and LTI callback controller suites. ExUnit output is clean apart from normal progress and summary; existing setup/shutdown output stays outside it.
+- Security, performance, Elixir and requirements correction reviews report no remaining findings for the reduced scope. Scoped formatting, test-environment warnings-as-errors compilation, `git diff --check` and Harness structure/design/nested traceability passed. Requirements stay `verified_plan`; real-tool automation, parallel-session stress and production latency guarantees remain outside the completed evidence. Phase 4 remains uncommitted.

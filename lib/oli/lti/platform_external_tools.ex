@@ -11,7 +11,13 @@ defmodule Oli.Lti.PlatformExternalTools do
   alias Oli.Activities
   alias Oli.Activities.ActivityRegistration
   alias Oli.Delivery.Sections.{Section, SectionResource}
-  alias Oli.Lti.PlatformExternalTools.{BrowseOptions, LtiExternalToolActivityDeployment}
+
+  alias Oli.Lti.PlatformExternalTools.{
+    BrowseOptions,
+    LtiExternalToolActivityDeployment,
+    LtiSectionResourceDeepLink
+  }
+
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Publishing.PublishedResource
@@ -413,11 +419,12 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
-  Initializes a newly created section's LTI selections from its chosen publication.
+  Initializes missing section LTI selections from an explicit publication.
 
   Only LTI activity revisions present in both the destination and that publication are
-  considered. Missing or cleared selections create no records. Inserts are transactional
-  and never replace existing section selections. Returns the number of records created.
+  considered. Absent or cleared selections create no records. Existing rows are excluded
+  before validation, and conflict-do-nothing inserts preserve a competing successful write.
+  Validation and batched inserts share the caller's transaction. Returns the number created.
   """
   @spec initialize_section_deep_links(integer(), integer()) ::
           {:ok, non_neg_integer()} | {:error, term()}
@@ -425,39 +432,64 @@ defmodule Oli.Lti.PlatformExternalTools do
     activity_type = ResourceType.id_for_activity()
 
     Repo.transaction(fn ->
+      now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
       # Section revision IDs are populated later in creation; use publication mappings here.
-      from(sr in SectionResource,
-        join: pr in PublishedResource,
-        on: pr.resource_id == sr.resource_id,
-        join: r in Revision,
-        on: r.id == pr.revision_id,
-        join: d in LtiExternalToolActivityDeployment,
-        on: d.activity_registration_id == r.activity_type_id,
-        where:
-          sr.section_id == ^section_id and pr.publication_id == ^publication_id and
-            r.resource_type_id == ^activity_type and r.deleted == false,
-        select: {sr.resource_id, fragment("?->'deepLink'", r.content)}
-      )
-      |> Repo.all()
-      |> Enum.reduce(0, fn
-        {_resource_id, nil}, count ->
-          count
+      rows =
+        from(sr in SectionResource,
+          as: :destination,
+          join: pr in PublishedResource,
+          on: pr.resource_id == sr.resource_id,
+          join: r in Revision,
+          on: r.id == pr.revision_id,
+          join: d in LtiExternalToolActivityDeployment,
+          on: d.activity_registration_id == r.activity_type_id,
+          where:
+            sr.section_id == ^section_id and pr.publication_id == ^publication_id and
+              r.resource_type_id == ^activity_type and r.deleted == false,
+          where:
+            not exists(
+              from(existing in LtiSectionResourceDeepLink,
+                where:
+                  existing.section_id == parent_as(:destination).section_id and
+                    existing.resource_id == parent_as(:destination).resource_id
+              )
+            ),
+          where: not is_nil(fragment("NULLIF(?->'deepLink', 'null'::jsonb)", r.content)),
+          select: {sr.resource_id, fragment("?->'deepLink'", r.content)}
+        )
+        |> Repo.all()
+        |> Enum.map(fn {resource_id, selection} ->
+          case LtiSectionResourceDeepLink.selection(selection) do
+            {:ok, selected} ->
+              %{
+                section_id: section_id,
+                resource_id: resource_id,
+                type: :ltiResourceLink,
+                url: selected["url"],
+                custom: Map.get(selected, "custom", %{}),
+                title: selected["title"],
+                text: selected["text"],
+                inserted_at: now,
+                updated_at: now
+              }
 
-        {resource_id, %{"type" => "ltiResourceLink"} = selection}, count ->
-          attrs =
-            selection
-            |> Map.take(["type", "url", "custom", "title", "text"])
-            |> Map.merge(%{"section_id" => section_id, "resource_id" => resource_id})
-
-          case create_section_resource_deep_link(attrs) do
-            {:ok, _} -> count + 1
-            {:error, reason} -> Repo.rollback(reason)
+            {:error, _} ->
+              Repo.rollback(:invalid_lti_deep_link_selection)
           end
+        end)
 
-        {_resource_id, _invalid_selection}, _count ->
-          Repo.rollback(:invalid_lti_deep_link_selection)
-      end)
+      {created, _} =
+        Oli.Utils.Database.batch_insert_all(LtiSectionResourceDeepLink, rows,
+          on_conflict: :nothing,
+          conflict_target: [:section_id, :resource_id]
+        )
+
+      created
     end)
+  rescue
+    _error in [Ecto.ConstraintError, Postgrex.Error] ->
+      {:error, :lti_deep_link_initialization_failed}
   end
 
   @doc """

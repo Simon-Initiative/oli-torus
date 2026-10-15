@@ -9,6 +9,7 @@ defmodule Oli.Lti.AuthoringLaunch do
   alias Oli.Authoring.Locks
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
+  alias Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.ResourceType
@@ -225,31 +226,6 @@ defmodule Oli.Lti.AuthoringLaunch do
   defp resource_id(_), do: {:error, :invalid_resource}
 
   @doc "Extracts portable resource-link fields and preserves custom metadata without reinterpretation."
-  def selection(%{"type" => "ltiResourceLink"} = item) do
-    url = item["url"]
-    custom = item["custom"]
-
-    valid_url =
-      case url do
-        nil ->
-          true
-
-        url when is_binary(url) ->
-          uri = URI.parse(url)
-          uri.scheme in ["https", "http"] and is_binary(uri.host) and uri.host != ""
-
-        _ ->
-          false
-      end
-
-    case valid_url and (is_nil(custom) or is_map(custom)) and
-           Enum.all?(["title", "text"], &(is_nil(item[&1]) or is_binary(item[&1]))) do
-      true -> {:ok, Map.take(item, ["type", "url", "custom", "title", "text"])}
-      false -> {:error, :invalid_selection}
-    end
-  rescue
-    ArgumentError -> {:error, :invalid_selection}
-  end
-
-  def selection(_), do: {:error, :invalid_selection}
+  @spec selection(term()) :: {:ok, map()} | {:error, :invalid_selection}
+  defdelegate selection(item), to: LtiSectionResourceDeepLink
 end
