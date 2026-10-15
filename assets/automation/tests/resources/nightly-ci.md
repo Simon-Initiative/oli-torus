@@ -16,8 +16,9 @@ Do not override reporters with `--reporter=line` in CI.
 Configure Canvas's account/API/instructor/tool inputs as described in
 `tests/torus/lti/canvas_playwright.md`, with `CANVAS_TOOL_LAUNCH_URL` and `TORUS_BASE_URL`
 pointing at `PLAYWRIGHT_BASE_URL`. Its fixture needs dedicated `TORUS_ADMIN_EMAIL` and
-`TORUS_ADMIN_PASSWORD`. Dot's parameter target must also use that origin; use its existing-fixture
-mode for nightly. Moodle's existing tagged tests require their dedicated fixtures and settings
+`TORUS_ADMIN_PASSWORD`. Dot's parameter target must also use that origin; use its scenario
+mode with service configuration `nightly-dot` so the test creates its own course and student.
+Moodle's existing tagged tests require their dedicated fixtures and settings
 from `tests/torus/lti_moodle/moodle_playwright.md`. Provision them to launch into nightly.
 
 Keep traces/screenshots/video disabled. Standard reports still contain failure details and may
@@ -39,6 +40,39 @@ For GitHub Actions, store them as environment secrets on the `nightly-ui` enviro
 Use dedicated test accounts with the permissions required by each integration fixture.
 
 Adaptive lesson tests that import private course archives also require the target Torus environment to have access to the Playwright assets bucket containing the referenced zip and answers JSON.
+
+## Workflow rollout and launch
+
+For initial provisioning, manually dispatch `Nightly Tests` on the reviewed source
+branch with `publish_only: true`. The branch must be allowed by `nightly-ui`.
+This publishes the image and records its tag, digest, source SHA, and version in the
+build job summary while skipping browser and scenario tests. It does not deploy the
+image or prove test readiness. The option defaults to false; scheduled runs and normal
+manual runs retain both test jobs. Once Phase 6 adds deployment, that job must also
+skip publish-only runs.
+
+The current workflow builds the Playwright image and checks out that source SHA for
+browser tests. Phase 6 still needs to connect GitOps deployment and public readiness,
+then use the nightly config command above instead of the current reporter override.
+The deployment job uses one App in `nightly-deploy` for PR operations and cleanup.
+There is no separate GitOps preflight or scan for prior runs' PRs. Build and browser
+jobs have no GitOps credentials. Operators handle orphaned PRs after interrupted runs;
+a blocked deployment may leave an unused image.
+Retain existing test setup and skip behavior; add no separate asset/configuration check.
+
+The Phase 6 launch checklist in Torus
+`docs/exec-plans/current/nightly-playwright-ci/plan.md` includes one full manual run,
+report access/privacy inspection, actual failure/cancellation/concurrency checks, and
+one successful scheduled run. Inspect standard reports to confirm intended integrations
+execute; missing-configuration skips do not prove launch readiness. Reuse earlier valid
+component evidence instead of repeating unchanged tests. Phase 6 now includes the launch
+work formerly assigned to Phase 7.
+
+Provisioning and manual deployment maintenance follow
+`docs/handbook/runbooks/nightly-playwright.md` in `oli-torus-gitops`. Keep unattended
+execution gated on provisioning and the manual/artifact checks; Phase 6 will document
+how to pause scheduled browser runs while retaining manual verification and the
+independent scenario job. No schedule or remote policy changes are made by this runbook.
 
 ## Parameterized Dot smoke test
 
@@ -75,6 +109,22 @@ tests:
 The loader downloads and parses this file at run time, selects `tests.dot_chatbot`, and expands
 `${RUN_ID}` before scenario seeding. Run only this smoke case with `npm run test-dot-smoke`.
 
+The nightly deployment stores this document privately in the `torus-playwright-assets` bucket
+under `dot_chatbot/config.yaml`, alongside the adaptive test assets. Set the GitHub `nightly-ui`
+environment variable `PLAYWRIGHT_PARAMETER_CONFIG_URL` to
+`https://nightly-playwright.plasma.oli.cmu.edu/test/assets/dot_chatbot/config.yaml`.
+This uses the existing Torus `/test/assets/*path` route to retrieve the single MinIO object;
+the same route already serves adaptive test assets.
+The document uses scenario mode and the `nightly-dot` service; the test creates its course and
+student when it runs. It contains the deployment scenario token and a dedicated test password,
+so keep its contents out of the repository and logs. Update the stored document when rotating
+the scenario token.
+
+For `/test/assets/` URLs on the runner's configured Torus origin (`PLAYWRIGHT_BASE_URL`, or a
+runtime override), the loader sends `x-playwright-scenario-token` using the runner's existing
+scenario token. Authenticated downloads reject redirects to prevent forwarding this credential.
+Other HTTP(S) configuration URLs continue to work without adding the scenario token.
+
 For deployments where the scenario bootstrap endpoint is unavailable, use an existing enrolled
 student and section instead. `target.scenario_token`, the project fields, section name/title, and
 service configuration are not required in this mode:
@@ -102,5 +152,7 @@ tests:
 ```
 
 The Dot suite disables Playwright tracing because traces can retain configuration downloads,
-scenario request bodies, and login credentials. Store the configuration URL and credentials in
-protected CI secrets and limit the configuration document to dedicated low-privilege smoke users.
+scenario request bodies, and login credentials. The nightly configuration URL contains no
+credentials and belongs in a CI environment variable; keep authentication tokens in CI secrets
+and the configuration document in private storage. Limit the document to dedicated low-privilege
+smoke users. Other deployments using URLs with embedded credentials must keep those URLs secret.
