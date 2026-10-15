@@ -1801,22 +1801,27 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"slider_left_button_#{@unit["resource_id"]}"}
             class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-[#F3F4F8] dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
+            type="button"
             aria-label="slide left"
+            aria-controls={"slider_#{@unit["resource_id"]}"}
           >
-            <i class="fa-solid fa-chevron-left ml-3"></i>
+            <i class="fa-solid fa-chevron-left ml-3" aria-hidden="true"></i>
           </button>
           <button
             :if={!@is_mobile}
             id={"slider_right_button_#{@unit["resource_id"]}"}
             class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-[#F3F4F8] dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
+            type="button"
             aria-label="slide right"
+            aria-controls={"slider_#{@unit["resource_id"]}"}
           >
-            <i class="fa-solid fa-chevron-right mr-3"></i>
+            <i class="fa-solid fa-chevron-right mr-3" aria-hidden="true"></i>
           </button>
           <div
             id={"slider_#{@unit["resource_id"]}"}
-            role="slider"
+            role="region"
+            aria-label={slider_aria_label(@unit, @section)}
             phx-hook={if !@is_mobile, do: "SliderScroll"}
             data-resource_id={@unit["resource_id"]}
             class="overflow-y-hidden h-[187px] pt-[5px] px-3 sm:px-[5px] scrollbar-hide"
@@ -4438,6 +4443,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp parse_card_badge_minutes(_, _), do: nil
+
+  # Accessible name for a unit's slider, e.g. "UNIT 1: Introduction slider". The numbering label
+  # is omitted when numbering is hidden for the section.
+  defp slider_aria_label(unit, section) do
+    unit_label =
+      container_label_and_numbering(
+        display_numbering_or_numbering(unit),
+        section.customizations,
+        section.display_curriculum_item_numbering
+      )
+
+    [unit_label, "#{unit["title"]} slider"]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(": ")
+  end
 
   defp container_label_and_numbering(numbering, customizations, display_curriculum_item_numbering) do
     if display_curriculum_item_numbering do
