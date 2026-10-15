@@ -38,9 +38,10 @@ Assumptions and scope:
 
 The table below describes the starting point before implementation. Current execution
 records supersede those observations: Phases 1–4 implemented probes, shared configuration,
-packaging/build outputs, and nightly runner configuration. Phase 5 implemented the local
-GitOps updater, PR lifecycle helper, and nightly-only manifests; live provisioning remains
-open. Phase 6 connects those pieces and owns the launch checklist formerly in Phase 7.
+packaging/build outputs, and nightly runner configuration. Phase 5 delivered the GitOps
+updater, PR lifecycle helper, nightly-only manifests, and live target/integration provisioning.
+G5 is complete under the operator-approved 2026-10-15 scope. Phase 6 connects those pieces
+and owns all remaining live verification plus the launch checklist formerly in Phase 7.
 The workflow still needs deployment/readiness dependencies and the nightly config invocation.
 
 | Existing boundary | Observed behavior and design implication |
@@ -61,7 +62,7 @@ The workflow still needs deployment/readiness dependencies and the nightly confi
 | `assets/automation/tests/torus/dot_chatbot/dot-chatbot.spec.ts` | Loads its own target/configuration URL; disables traces and supports existing-fixture or scenario mode. Scenario mode currently has no durable-data teardown. |
 | `docs/exec-plans/current/nightly-playwright-ci/dependency-discovery.md` | Captures the reverted direct `json-rules-engine` dependency fix and collection gate; historical tests are not current implementation proof. |
 
-The GitOps record `deployments/nightly-playwright.yml` remains disabled with a bootstrap image. Phase 5 now preserves comments in the updater and supplies a nightly-only ApplicationSet probe/drain patch. The shared base remains unchanged for other deployments. Local inspection and fixture tests do not establish registry access, unattended bot permissions, or live service readiness; those remain Phase 5 checks.
+The GitOps record `deployments/nightly-playwright.yml` is enabled with the published Playwright image. Phase 5 verified the applied nightly-only probe/drain manifests, live health/readiness identity, persistent services, private asset delivery, and installed policy/credentials; GitOps PRs #7–#9 are merged. Actual bot operation, automated integration execution, persistence/mailbox behavior through updates, and operational fault/drain checks remain Phase 6 requirements. The shared base remains unchanged for other deployments.
 
 ## 4. Proposed Design
 
@@ -268,12 +269,15 @@ is reread.
 
 The nightly-only ApplicationSet patch retains `overlay: staging`, fixes one replica with
 `Recreate` strategy to avoid overlapping instance-local mailboxes, and leaves other
-records' probes unchanged. It remains inactive while the record is disabled. The read-only
-2026-10-13 policy audit found auto-merge disabled, no required validation check, required
-signed commits/one approval, and no `nightly-ui` branch restrictions. These findings are
-provisioning gates, not evidence of launch readiness. See
-`docs/exec-plans/current/nightly-playwright-ci/phase-5-execution.md` for local verification
-and remaining operational requirements.
+records' probes unchanged. The enabled target now uses this patch. The 2026-10-13 policy
+gaps were addressed by the recorded provisioning: auto-merge, required validation,
+signature/review rules, and environment branch restrictions are installed. See
+`docs/exec-plans/current/nightly-playwright-ci/phase-5-execution.md` for evidence.
+Phase 6 explicitly allows the reviewed feature branch in both `nightly-ui` and
+`nightly-deploy`, then tests the complete workflow before merging Torus `master`.
+GitOps PRs still target protected GitOps `master`. App authentication, signed commits,
+unattended merge, required-check enforcement, and cleanup must be demonstrated by
+those runs; configured policy alone does not establish that proof.
 
 ### Tag-based suite selection
 
@@ -362,9 +366,9 @@ Torus maintainers own failure triage. GitHub Actions failures, run summaries and
 
 ## 13. Testing Strategy
 
-The table maps required evidence across the work item; it is not a requirement to repeat every check in the final phase. Execution records already contain local application, release, runner, and GitOps helper results. Phase 5 completes deployed-target provisioning, permissions, integrations, and lifecycle evidence. Phase 6 tests new workflow connections and completes its launch checklist. Reuse valid earlier proof; rerun checks when the affected behavior changes or the earlier evidence does not cover the deployed configuration. No performance measurements are required.
+The table maps required evidence across the work item; it is not a requirement to repeat every check in the final phase. Execution records already contain local application, release, runner, and GitOps helper results. Phase 5 closes on completed provisioning, installed policy/credentials, and initial readiness/private-asset evidence. Phase 6 owns all remaining operational tests: actual App permissions and PR lifecycle, authenticated integrations, deployed persistence/mailbox behavior, and slow-boot/outage/drain behavior, alongside workflow integration and launch. Reuse valid earlier proof; rerun checks when the affected behavior changes or the earlier evidence does not cover the deployed configuration. No performance measurements are required.
 
-Phase 6 launch still requires a full manual run, actual failure/cancellation/concurrency checks, report access/privacy review, and a successful scheduled run. Verify the intended integrations execute despite preserved per-test skip guards. Record source/image/GitOps identities and results; neither documentation validation nor a passing run with missing-configuration skips proves launch readiness.
+Phase 6 first requires a complete manual run from the reviewed feature branch with `publish_only: false`, actual failure/cancellation/concurrency and lifecycle checks, and report access/privacy review. Include the existing private Dot loader follow-up and wire the provisioned Canvas/Moodle inputs into the browser job; allow that exact branch in both GitHub environments. No Torus `master` merge is required to perform these checks. After the feature-branch checks pass, merge normally and verify a scheduled run from `master`. Verify the intended integrations execute despite preserved per-test skip guards. Record source/image/GitOps identities and results in the Phase 6 execution record; neither G5 closure, documentation validation, nor a passing run with missing-configuration skips proves launch readiness.
 
 | Layer | Verification |
 | --- | --- |
@@ -416,7 +420,7 @@ Keep unattended runs gated on provisioning and the manual verification/artifact 
 
 ## 16. Open Questions & Follow-ups
 
-No unresolved design questions remain. Remaining deployed-target checks belong to Phase 5, and integrated operational verification belongs to the Phase 6 launch checklist. Reuse the completed local release fixture/mailbox evidence, while verifying any untested deployed behavior before unattended launch. Responsibilities and verification scope are recorded in section 13 and the Decision Log.
+No unresolved design questions remain. Phase 5 provisioning is complete; all remaining deployed-target and integrated operational checks belong to Phase 6's feature-branch verification and launch checklists. Reuse completed local release fixture/mailbox evidence, while verifying untested deployed behavior before unattended launch. Responsibilities and verification scope are recorded in section 13 and the Decision Log.
 
 ## 17. References
 
@@ -452,3 +456,4 @@ Repository paths are relative to the named repository root.
 | 2026-10-14 | Use one GitOps App | Use one App in `nightly-deploy` and no GitOps credentials in build/browser jobs. The intermediate proposal to move preflight into deployment is superseded by the decision below. Workflow wiring remains Phase 6 work. |
 | 2026-10-14 | Remove GitOps preflight | User requested no check for unsettled prior bot PRs. Remove the preflight command and its tests; retain current-record validation, GitHub merge enforcement, current-run verification and cleanup. Operators handle orphaned PRs after interrupted runs. |
 | 2026-10-14 | Separate review ruleset | User selected a pull-request-only App bypass on a review-only ruleset. Keep PR, signature, and validation requirements in the main ruleset without an App bypass. No auto-approval workflow; actual bot merge remains a provisioning gate. |
+| 2026-10-15 | Provisioning and feature-branch verification | Operator closed Phase 5 on completed setup and moved every remaining live test to Phase 6, superseding prior phase assignments. Phase 6 verifies the full workflow on an explicitly allowed feature branch before Torus merge, including actual bot operation, integrations, persistence/mailbox and lifecycle checks; scheduled proof follows merge. All acceptance criteria remain required. |

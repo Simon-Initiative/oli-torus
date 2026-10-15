@@ -60,13 +60,21 @@ jobs have no GitOps credentials. Operators handle orphaned PRs after interrupted
 a blocked deployment may leave an unused image.
 Retain existing test setup and skip behavior; add no separate asset/configuration check.
 
-The Phase 6 launch checklist in Torus
-`docs/exec-plans/current/nightly-playwright-ci/plan.md` includes one full manual run,
-report access/privacy inspection, actual failure/cancellation/concurrency checks, and
-one successful scheduled run. Inspect standard reports to confirm intended integrations
-execute; missing-configuration skips do not prove launch readiness. Reuse earlier valid
-component evidence instead of repeating unchanged tests. Phase 6 now includes the launch
-work formerly assigned to Phase 7.
+Phase 5 provisioning is complete. Phase 6's implementation and ordered verification
+checklists are in `docs/exec-plans/current/nightly-playwright-ci/plan.md`. Implement the
+missing wiring above, include the private parameter-loader change, and push the reviewed
+feature branch. Explicitly allow that exact branch in both `nightly-ui` and `nightly-deploy`;
+the latter currently allows only `master`. Then dispatch on the feature branch with
+`publish_only: false`. A prior Torus `master` merge is unnecessary; the run's GitOps PR
+still merges through normal rules to GitOps `master` before deployment/readiness/testing.
+
+Phase 6 owns actual bot permissions/merge/cleanup, the full tagged integration run,
+persistence/mailbox and deployed lifecycle checks, failure/cancellation/concurrency checks,
+and report access/privacy inspection. Inspect standard reports to confirm intended
+integrations execute; missing-configuration skips do not prove launch readiness. Reuse
+earlier valid component evidence instead of repeating unchanged tests. After verification,
+merge Torus normally and record a successful scheduled run from `master` to close Phase 6.
+The phase includes the launch work formerly assigned to Phase 7.
 
 Provisioning and manual deployment maintenance follow
 `docs/handbook/runbooks/nightly-playwright.md` in `oli-torus-gitops`. Keep unattended

@@ -2,17 +2,21 @@
 
 Work item: `docs/exec-plans/current/nightly-playwright-ci`
 Phase: 5 — GitOps update contract and target provisioning
+Status: Complete on 2026-10-15 under the operator-approved provisioning scope.
 
 ## Scope from plan.md
 
-Implement the local GitOps update contract and prepare nightly deployment lifecycle
-configuration. Verify statically without cluster contact. G5 remains incomplete until
-live provisioning and branch/environment/App permissions are demonstrated.
+Implement and validate the GitOps update contract, provision the nightly target and
+integration inputs, and verify initial readiness/private asset access. The operator moved
+all remaining live App, integration, persistence/mailbox, and lifecycle verification to
+Phase 6 on 2026-10-15. G5 is complete; operational acceptance criteria remain unverified
+until their Phase 6 checks pass.
 
 All GitOps paths below are relative to `oli-torus-gitops`; no local checkout path is saved.
 
-The remaining steps, owners, and required evidence are listed in the **Phase 5 closeout
-procedure** in `docs/handbook/runbooks/nightly-playwright.md` in `oli-torus-gitops`.
+The completed provisioning procedure is in GitOps
+`docs/handbook/runbooks/nightly-playwright.md`. The remaining work is listed in
+`plan.md` under Phase 6's implementation, feature-branch verification, and launch checklists.
 
 ## Implementation Blocks
 
@@ -38,10 +42,18 @@ procedure** in `docs/handbook/runbooks/nightly-playwright.md` in `oli-torus-gito
   `docs/handbook/runbooks/nightly-playwright.md`: record helper usage, credential scope,
   provisioning inputs, pause/wait/manual-update ownership, stale-PR recovery, durable
   fixture preservation, and no automatic database rollback.
-- [ ] Protected branch/App/environment configured for unattended bot PR merges.
-- [ ] Target enabled with a capable published image, secrets, private assets, Canvas/Moodle/Dot
-  fixtures, HTTPS ingress, registry pull access, and verified durable services.
-- [ ] Operational slow-boot, outage/recovery, and graceful termination checks completed.
+- [x] GitOps implementation and follow-up merged through PRs #7–#9 with passing hosted validation.
+- [x] Protected branches, review/validation rulesets, App registration/installation,
+  deployment credentials, and environment branch policies configured. App authentication
+  and actual unattended merge remain unverified.
+- [x] Target enabled with the capable published image, runtime secrets, HTTPS ingress,
+  successful image pull, healthy Postgres/MinIO, bound claims, and verified probe/drain manifests.
+- [x] Private adaptive assets and Dot YAML uploaded and access verified. Canvas/Moodle
+  configuration and operator setup recorded; `nightly-dot` configured. Automated
+  integration execution remains pending; Dot creates its test data during execution.
+- [x] Torus loader/workflow follow-up `58559905f8` prepared and locally verified.
+  Phase 6 must include it in the pushed feature branch; a Torus `master` merge is not
+  a prerequisite for controlled verification.
 
 The initial-image enablement change has merged and the nightly target is running.
 The initial
@@ -69,7 +81,14 @@ Torus workflow remain Phase 6 work; the helper itself never pushes or creates a 
   That manifest test has been removed; this remains historical static evidence, not
   ongoing regression coverage or proof of ApplicationSet controller behavior.
 - [x] `git diff --check` in both repositories and work-item validation pass.
-- [ ] Live cluster, actual bot lifecycle, hosted checks, and integration verification.
+- [x] Initial live readiness/identity, private asset delivery, and manual Moodle
+  launch/grade-passback verification.
+
+Remaining verification is owned by Phase 6: actual App authentication/signed merge/check
+enforcement/cleanup; authenticated Canvas and automated Moodle/adaptive/Dot execution;
+durable data/object survival and mailbox reset; and controlled slow boot, database
+outage/recovery, and graceful termination. These checks have not passed yet. The full
+feature-branch workflow and controlled operational exercises will supply the evidence.
 
 The initial GitOps implementation changed no Elixir, shared test configuration, or browser
 behavior; its verification used the GitOps tests and validators. The later parameter-loader
@@ -78,15 +97,25 @@ change is covered by the focused Playwright tests recorded below. GitOps changes
 [GitOps PR #7](https://github.com/Simon-Initiative/oli-torus-gitops/pull/7) against
 `master`. PR #7 merged on 2026-10-14 as
 `0f6b9d0ac3751e5eb3564dae386005e6860c51a3` with a successful hosted `validate` check.
-The GitOps review-and-merge checkpoint is complete; provisioning gates remain open.
+The GitOps review-and-merge checkpoint is complete; Phase 6 live verification remains open.
 Disposable draft/render files are removed; retained regression tests protect the core
 update and lifecycle requirements.
 
+The preflight-removal/runbook follow-up was cherry-picked from `d81b311` to `b042a50`
+on a clean branch from GitOps `origin/master`. [PR #9](https://github.com/Simon-Initiative/oli-torus-gitops/pull/9)
+merged on 2026-10-15 at 14:38:15 UTC as `1fa4fcd50f6eda51fdf7b873e632dbf79c0e2548`.
+Its hosted [validate check](https://github.com/Simon-Initiative/oli-torus-gitops/actions/runs/38752861342/job/116483488142)
+passed. The Torus loader, environment-variable wiring, and documentation are committed
+as `58559905f8`; Phase 6 will push and test it with the workflow changes before merging Torus `master`.
+
 ## Work-Item Sync
 
-- [x] FDD and Phase 5 plan distinguish implemented local contracts from unresolved live
-  gates; no PRD change or acceptance criterion is marked operationally verified.
+- [x] PRD, FDD, plan, and GitOps runbook distinguish completed Phase 5 provisioning from
+  unresolved Phase 6 verification; no acceptance criterion is marked verified by this reorganization.
 - [x] Preflight work-item validation passed; postflight validation passed.
+
+The following notes record provisioning in execution order. Earlier pending observations
+are superseded by later evidence and the current checklists above.
 
 Read-only GitHub verification on 2026-10-14 after operator configuration:
 
@@ -414,8 +443,8 @@ this URL. Dot response verification remains part of the Playwright run.
 - After preflight removal, security, performance, and requirements reviews found no
   issues in the simplification. All 18 remaining tests, CLI argument checks, repository
   validators, required renders, and work-item/requirements validation pass. This
-  follow-up was committed as `d81b311` on 2026-10-15 and still needs to land on GitOps
-  `master`; the previously merged PR retains the original helper. Before committing,
+  follow-up was committed as `d81b311` on 2026-10-15 and landed through PR #9 as
+  `1fa4fcd`. Before committing,
   all 18 tests, three repository validators, and eight static renders passed again.
   The runbook's scenario-mode Dot setup also passed security and performance review.
 - Required harness-review security and performance reviewers inspected the GitOps diff.
@@ -429,16 +458,26 @@ this URL. Dot response verification remains part of the Playwright run.
 
 ## Done Definition
 
-- [ ] All Phase 5 tasks complete; G5 remains pending operational provisioning.
+- [x] All Phase 5 provisioning tasks complete; G5 closed under the approved scope.
 - [x] Local tests and static verification pass.
 - [x] Required review completed and findings resolved.
 - [x] Work-item validation passes.
 
-Phase 6 can integrate the local contract, but unattended deployment/testing must remain
-gated on actual provisioning, App/branch/environment policy, and live lifecycle evidence.
+Phase 6 integrates and verifies the complete workflow on an explicitly allowed feature
+branch. Unattended launch remains gated on its actual App, integration, lifecycle,
+persistence, failure-handling, and artifact checks, followed by a scheduled run after merge.
 
 ## Decision Log
 
+- 2026-10-15: Operator moved every remaining Phase 5 live check to Phase 6 and approved
+  closing G5 on completed provisioning. This supersedes the earlier same-day open-G5
+  decision below. The Torus loader follow-up is tested from the feature branch rather
+  than requiring a prior master merge. No missing proof is marked passed; Phase 6 owns
+  feature-branch, operational, and scheduled launch verification.
+- 2026-10-15: Split completed provisioning from unverified operation in the Phase 5
+  checklist. PR #9's merge/check evidence and the recorded target, asset, and integration
+  setup support the completed items; no live test or acceptance criterion is promoted
+  without proof. G5 remains open.
 - 2026-10-15: Retain the existing Torus `/test/assets/*path` route for the Dot YAML
   download, as accepted by the operator after clarifying that it retrieves the single
   MinIO object. Keep the configured URL and scenario-token authentication; direct
