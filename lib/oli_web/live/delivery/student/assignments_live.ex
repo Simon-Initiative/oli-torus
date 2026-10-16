@@ -111,7 +111,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   def top_hero_banner(assigns) do
     ~H"""
     <div
-      role="hero banner"
+      data-role="hero-banner"
       class="w-full bg-cover bg-center bg-no-repeat h-[160px] md:h-[247px]"
       style="background-image: url('/images/gradients/assignments-bg.png');"
     >
@@ -193,7 +193,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     ~H"""
     <div class="w-full px-2 bg-white dark:bg-[#1b191f]/50 rounded-xl border border-[#ced1d9] dark:border-[#2a282d] flex-col justify-start items-start inline-flex">
       <div
-        role="assignments header"
+        data-role="assignments-header"
         class="w-full flex-col pt-2 border-b border-[#ced1d9] dark:border-[#3a3740] justify-between items-center text-Text-text-low text-sm font-medium leading-none"
       >
         <ComponentsUtils.timezone_info timezone={
@@ -216,11 +216,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           </div>
           <DeliveryUtils.toggle_visibility_button
             :if={@assignments != []}
-            target_selector={~s{div[role="assignment detail"][data-completed="true"]}}
+            target_selector={~s{div[data-role="assignment-detail"][data-completed="true"]}}
           />
         </div>
       </div>
-      <div role="assignments details" class="mt-12 px-5 pb-5 flex flex-col gap-12 w-full">
+      <div data-role="assignments-details" class="mt-12 px-5 pb-5 flex flex-col gap-12 w-full">
         <.assignment
           :for={assignment <- @assignments}
           :if={@assignments != []}
@@ -281,12 +281,12 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     ~H"""
     <div
       :if={@filter == :all or (@filter == :required and @required)}
-      role="assignment detail"
+      data-role="assignment-detail"
       id={"assignment_#{@assignment.id}"}
       data-completed={"#{!is_nil(@assignment.raw_avg_score)}"}
       class="h-12 flex"
     >
-      <div role="page icon" class="w-6 h-6 flex justify-center items-center">
+      <div data-role="page-icon" class="w-6 h-6 flex justify-center items-center">
         <.page_icon
           purpose={@assignment.purpose}
           completed={!is_nil(@assignment.raw_avg_score)}
@@ -304,7 +304,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           {@assignment.title}
         </.link>
         <span
-          role="assignment schedule details"
+          data-role="assignment-schedule-details"
           class="text-Text-text-low dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate"
         >
           <span>

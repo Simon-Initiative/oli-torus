@@ -1045,7 +1045,6 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       refute has_element?(view, ~s{div[data-role="container label"]})
-      refute has_element?(view, ~s{div[role="page header divider"]})
       assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
       assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
     end

@@ -74,7 +74,12 @@
                 </div>
               <% end %>
 
-              <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
+              <div
+                id="eventIntercept"
+                class="content"
+                phx-update="ignore"
+                data-role="page-content"
+              >
                 {raw(@content_html)}
               </div>
 
