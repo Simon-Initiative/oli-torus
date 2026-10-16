@@ -418,6 +418,12 @@ requirements:
 
 # Decision 2026-10-14: AC-022 preserves existing test-owned setup and skip behavior,
 # matching the approved Phase 4 scope. AC-021/AC-023 name Moodle, already selected by
-# @nightly. Phase 6 owns final launch evidence; no statuses or proofs are promoted here.
+# @nightly. The 2026-10-16 decision below supersedes the former Phase 6 launch scope.
 # Decision 2026-10-14: AC-011 is enforced by the updater, not a standalone preflight.
 # No scan for prior runs' PRs is required; current-run cleanup remains in scope.
+# Decision 2026-10-16: Phase 6 closes on completed manual workflow orchestration and
+# correct failure/report handling; a green browser suite is Phase 7 work. First scheduled
+# execution remains launch follow-up under AC-029. Reuse earlier component/release,
+# rendered-manifest, policy, and local failure checks; no extra live fault-injection
+# campaign is required. Behavioral contracts remain unchanged. This scope decision
+# does not mark every nested criterion verified or claim unperformed live exercises.

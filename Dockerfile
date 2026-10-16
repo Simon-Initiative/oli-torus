@@ -138,6 +138,8 @@ RUN chown nobody /app
 
 # set runner ENV
 ENV MIX_ENV=${MIX_ENV}
+# Keep the Node bridge from reloading and retaining bundled modules on every call.
+ENV NODE_ENV=production
 
 ARG SHA
 ARG APP_VERSION

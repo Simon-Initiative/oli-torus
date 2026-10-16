@@ -35,7 +35,15 @@ Nightly Playwright CI expects these environment variables:
 - `PLAYWRIGHT_SCENARIO_TOKEN`
 - `PLAYWRIGHT_CAPTCHA_TOKEN` (a separate secret matching the Playwright server; required for protected forms)
 
-For GitHub Actions, store them as environment secrets on the `nightly-ui` environment, then reference that environment from `.github/workflows/nightly-playwright.yml`.
+For GitHub Actions, store credentials as `nightly-ui` environment secrets. Store public
+origins and integration identifiers as environment variables: `PLAYWRIGHT_BASE_URL`,
+`TORUS_BASE_URL`, `CANVAS_BASE_URL`, `CANVAS_ACCOUNT_ID`, `CANVAS_INSTRUCTOR_USER_ID`,
+`CANVAS_LTI_TOOL_NAME`, `CANVAS_TOOL_LAUNCH_URL`, `MOODLE_BASE_URL`,
+`MOODLE_LTI_TOOL_NAME`, and `PLAYWRIGHT_PARAMETER_CONFIG_URL`. The workflow also passes
+`CANVAS_API_TOKEN`, Canvas UI credentials, Moodle API/instructor/student credentials,
+and Torus admin credentials from secrets. Moodle login “email” secrets contain the
+usernames required by its existing helpers. Both Torus origins must be
+`https://nightly-playwright.plasma.oli.cmu.edu`.
 
 Use dedicated test accounts with the permissions required by each integration fixture.
 
@@ -43,44 +51,101 @@ Adaptive lesson tests that import private course archives also require the targe
 
 ## Workflow rollout and launch
 
-For initial provisioning, manually dispatch `Nightly Tests` on the reviewed source
-branch with `publish_only: true`. The branch must be allowed by `nightly-ui`.
-This publishes the image and records its tag, digest, source SHA, and version in the
-build job summary while skipping browser and scenario tests. It does not deploy the
-image or prove test readiness. The option defaults to false; scheduled runs and normal
-manual runs retain both test jobs. Once Phase 6 adds deployment, that job must also
-skip publish-only runs.
+`Nightly Tests` runs daily at 05:17 UTC and accepts manual dispatch. Normal execution
+builds and publishes one source revision, opens a signed record-only GitOps PR,
+waits for accepted intent and matching public `/readyz` identity, then runs the
+nightly config from that source SHA. Scheduled builds select current `master` after
+acquiring the workflow lock. Manual dispatch and its reruns retain the dispatch SHA;
+use a new dispatch to select a newer branch commit.
 
-The current workflow builds the Playwright image and checks out that source SHA for
-browser tests. Phase 6 still needs to connect GitOps deployment and public readiness,
-then use the nightly config command above instead of the current reporter override.
-The deployment job uses one App in `nightly-deploy` for PR operations and cleanup.
-There is no separate GitOps preflight or scan for prior runs' PRs. Build and browser
-jobs have no GitOps credentials. Operators handle orphaned PRs after interrupted runs;
-a blocked deployment may leave an unused image.
-Retain existing test setup and skip behavior; add no separate asset/configuration check.
+The workflow-level `nightly-playwright-plasma` lock covers build through finalization.
+An active run finishes; a newer pending run can replace an older pending run. The
+scenario job has no dependency on deployment or browser execution, but shares the
+workflow's scheduling lock. Do not manually update the target, fixtures, or secrets
+while a run is active.
 
-Phase 5 provisioning is complete. Phase 6's implementation and ordered verification
-checklists are in `docs/exec-plans/current/nightly-playwright-ci/plan.md`. Implement the
-missing wiring above, include the private parameter-loader change, and push the reviewed
-feature branch. Explicitly allow that exact branch in both `nightly-ui` and `nightly-deploy`;
-the latter currently allows only `master`. Then dispatch on the feature branch with
-`publish_only: false`. A prior Torus `master` merge is unnecessary; the run's GitOps PR
-still merges through normal rules to GitOps `master` before deployment/readiness/testing.
+For initial provisioning, dispatch with `publish_only: true` on a branch explicitly
+allowed by `nightly-ui`. This publishes an image while skipping deployment, browser,
+and scenario jobs. The default is false. Build and browser jobs use `nightly-ui`;
+only deployment uses the App credentials in `nightly-deploy`. Both environments
+must explicitly allow the reviewed feature branch for a full verification run.
+Retain `master` access and exclude PR/fork access.
 
-Phase 6 owns actual bot permissions/merge/cleanup, the full tagged integration run,
-persistence/mailbox and deployed lifecycle checks, failure/cancellation/concurrency checks,
-and report access/privacy inspection. Inspect standard reports to confirm intended
-integrations execute; missing-configuration skips do not prove launch readiness. Reuse
-earlier valid component evidence instead of repeating unchanged tests. After verification,
-merge Torus normally and record a successful scheduled run from `master` to close Phase 6.
-The phase includes the launch work formerly assigned to Phase 7.
+Phase 6's ordered feature-branch, operational, and launch checks are recorded in
+`docs/exec-plans/current/nightly-playwright-ci/plan.md`. A successful manual run
+must execute the intended integrations; inspect the standard report for configuration
+skips. After all operational checks pass, merge normally and verify one scheduled
+run from `master`. Remove temporary feature-branch environment allowances afterward.
+Local fixtures do not establish hosted or deployed operational proof.
 
-Provisioning and manual deployment maintenance follow
-`docs/handbook/runbooks/nightly-playwright.md` in `oli-torus-gitops`. Keep unattended
-execution gated on provisioning and the manual/artifact checks; Phase 6 will document
-how to pause scheduled browser runs while retaining manual verification and the
-independent scenario job. No schedule or remote policy changes are made by this runbook.
+Provisioning and maintenance follow the internal nightly deployment runbook.
+Recurring CI updates only the existing record's image and source metadata. The
+updater and PR action restrict changes to the deployment record. GitHub enforces
+merge rules. There is no preflight, previous-run PR scan, or direct-write fallback.
+
+### Pause, resume, and cancellation
+
+Phase 6 verification does not require a schedule pause. Keep the schedule unchanged,
+check for active runs before dispatch, and coordinate verification around scheduled
+execution. The optional maintenance procedure below is for an incident or deliberate
+maintenance pause.
+
+To pause scheduled execution, comment out the `schedule` trigger in
+`.github/workflows/nightly-playwright.yml` on the default branch through normal review.
+This pauses all scheduled jobs, including scenario tests. Keep `workflow_dispatch`
+enabled for manual runs. Existing runs are not stopped by this change; wait for active
+runs and finalization to finish before maintenance, and inspect pending runs as well.
+Restore the `schedule` trigger through normal review to resume daily execution.
+
+Cancel through the run's Actions page when necessary. The workflow requests an
+immediate merge only; it never queues auto-merge. A failed or canceled run may leave
+an open PR on `nightly-playwright/<run-id>-<attempt>`, which an operator can close
+normally. If cancellation or a lost response coincides with the merge request, inspect
+the PR to determine whether deployment intent changed. The failed run does not start
+browser tests. Later runs do not scan earlier PRs.
+
+For PRs left by an older workflow revision, disable any queued auto-merge before
+closing them. Land the simplified Torus workflow and finish old runs before removing
+the old GitOps lifecycle helper. Use a new manual dispatch to verify the replacement.
+
+### Triage and retained diagnostics
+
+Start with the run's stage summary: source/workflow SHAs, version, image tag/digest,
+accepted GitOps commit, readiness result, and browser-step outcome. Readiness logs
+show HTTP status and elapsed time, followed by the matched version/SHA on success;
+raw HTTP bodies are not uploaded or printed. Matching public identity is an observation
+before testing; it does not prove all-replica convergence, continuous identity, or
+same-source image-digest identity.
+
+- Build/push or dependency failure: no GitOps update occurs. Correct the build or
+  registry problem before retrying; a later deployment failure can leave an unused image.
+- Record/check/merge failure: inspect the GitOps PR and required checks. Resolve the
+  conflict on a fresh validated PR/run; do not force-push or weaken branch rules.
+- Readiness failure: inspect deployment/migration logs through normal operator access
+  and compare the expected source/version. CI has no Kubernetes credentials. Browser
+  execution remains skipped until the public identity matches.
+- Browser failure or timeout: use the Playwright step outcome and available reports.
+  Summary/upload success does not erase the failed step. Diagnose missing
+  integration configuration even when existing tests report a skip.
+
+Download `playwright-report` and `playwright-test-results` from the run's Artifacts
+section or summary links. Retention is 14 days; the HTML report is not a hosted site.
+Access follows repository Actions permissions. Verify those permissions and inspect
+representative failures before unattended launch; masking log secrets does not sanitize
+uploaded files. Keep traces/screenshots/video off and remove sensitive attachments if
+inspection finds tokens, account links, private course content, or configuration data.
+Uploads and summaries are best-effort after cancellation or runner loss.
+
+### Failed-run data cleanup
+
+Between runs, identify synthetic courses, users, sections, and LMS courses by their
+run-specific names and the failing test's report. Retain existing test-owned cleanup;
+Torus and QA maintainers remove only confirmed failed-run fixtures through supported
+application/LMS operations. Dot scenario mode currently leaves its generated course,
+student, and section for this operator cleanup. Preserve persistent integration
+registrations, Moodle template/grade-passback courses, and private MinIO assets.
+Never reset the nightly database or automatically reverse migrations. Each application
+restart clears the instance-local mailbox; do not restart it during active tests.
 
 ## Parameterized Dot smoke test
 
