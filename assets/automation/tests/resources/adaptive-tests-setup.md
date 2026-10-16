@@ -122,7 +122,7 @@ All tests tagged `@nightly` are included in the run. To run the nightly suite lo
 configured environment:
 
 ```sh
-npx playwright test --grep @nightly
+npx playwright test --config playwright.nightly.config.ts --grep @nightly
 ```
 
 ---
