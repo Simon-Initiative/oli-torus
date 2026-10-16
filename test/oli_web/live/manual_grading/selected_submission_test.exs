@@ -136,10 +136,8 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionTest do
     assert html =~ "Files"
     assert html =~ "No files uploaded"
     refute html =~ "text-2xl"
-  end
 
-  test "renders adaptive text input as prose instead of oversized value card" do
-    html =
+    adaptive_html =
       render_component(&SelectedSubmission.render/1, %{
         submission: %{
           title: "Screen Input 6",
@@ -157,11 +155,64 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionTest do
         }
       })
 
-    assert html =~ "How many?"
-    assert html =~ "some text"
-    assert html =~ "Prompt"
-    assert html =~ "enter"
-    refute html =~ "text-2xl"
+    assert adaptive_html =~ "How many?"
+    assert adaptive_html =~ "some text"
+    assert adaptive_html =~ "Prompt"
+    assert adaptive_html =~ "enter"
+    refute adaptive_html =~ "text-2xl"
+  end
+
+  test "shows each response exactly as written: no blank line or indentation around it" do
+    views = [
+      {%{
+         kind: :choice_list,
+         prompt: "Choose",
+         description: nil,
+         selected_summary: "Option 2",
+         choices: [%{label: "Option 2", selected: true}]
+       }, ["Option 2"]},
+      {%{
+         kind: :fill_blanks,
+         prompt: "Blanks",
+         description: nil,
+         blanks: [%{label: "blank1", value: "Mercury", meta: nil}]
+       }, ["Mercury"]},
+      {%{
+         kind: :value,
+         prompt: "Rate",
+         description: nil,
+         value: "4",
+         details: [%{label: "Range", value: "0 to 5"}]
+       }, ["0 to 5"]},
+      {%{
+         kind: :prose,
+         prompt: "Explain",
+         description: nil,
+         value: "Line one\nLine two",
+         details: [%{label: "Files", value: "No files uploaded"}]
+       }, ["Line one\nLine two", "No files uploaded"]},
+      {%{
+         kind: :details,
+         prompt: "Details",
+         description: nil,
+         details: [%{label: "Answer", value: "42"}]
+       }, ["42"]}
+    ]
+
+    for {view, expected} <- views do
+      html =
+        render_component(&SelectedSubmission.render/1, %{
+          submission: %{title: "T", subtitle: "S", score: "1", response_view: view}
+        })
+
+      texts =
+        html
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s|[class*="whitespace-pre-wrap"]|)
+        |> Enum.map(&Floki.text/1)
+
+      assert texts == expected, "#{view.kind}: #{inspect(texts)}"
+    end
   end
 
   test "renders uploaded files as downloadable links" do

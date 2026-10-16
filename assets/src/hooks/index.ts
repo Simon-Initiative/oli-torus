@@ -39,13 +39,13 @@ import { HomeMobileTabs } from './home_mobile_tabs';
 import { IframeLoadState } from './iframe_load_state';
 import { InputAutoSelect } from './input_auto_select';
 import { InstructorPreviewCustomization } from './instructor_preview_customization';
+import { KeepInViewport } from './keep_in_viewport';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
 import { ListNavigatorDropdown } from './list_navigator_dropdown';
 import { LiveModal } from './live_modal';
 import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ManualGradingMobileFocus } from './manual_grading_mobile_focus';
-import { ManualGradingScoreInput } from './manual_grading_score_input';
 import { MathPrototype } from './math_prototype';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
@@ -71,6 +71,13 @@ import {
   ScoreAsYouGoNavigationNotice,
   ScoreAsYouGoSavedWorkNotice,
 } from './score_as_you_go_saved_work_notice';
+import {
+  ScoringChip,
+  ScoringHeading,
+  ScoringRevealFocus,
+  ScoringScoreInput,
+  ScoringTabs,
+} from './scoring_inputs';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SectionCreatedUrlCleanup } from './section_created_url_cleanup';
@@ -139,9 +146,14 @@ export const Hooks = {
   HoverAway,
   BeforeUnloadListener,
   NavigationGuard,
+  KeepInViewport,
+  ScoringScoreInput,
+  ScoringChip,
+  ScoringTabs,
+  ScoringHeading,
+  ScoringRevealFocus,
   ThemeToggle,
   LtiConnectInstructions,
-  ManualGradingScoreInput,
   ManualGradingMobileFocus,
   MathPrototype,
   HierarchySelector,

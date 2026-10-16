@@ -19,11 +19,19 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :additional_row_class, :string, default: ""
   attr :render_top_info, :boolean, default: true
   attr :scrollable, :boolean, default: true
-  attr :show_limit_change, :boolean, default: false
+  attr :show_limit_change, :boolean, default: true
   attr :no_records_message, :string, default: "None exist"
   attr :overflow_class, :string, default: "inline"
   attr :sticky_header_offset, :integer, default: 0
   attr :table_container_class, :string, default: "relative mx-4"
+
+  attr :top_info_class, :string,
+    default: "px-5 py-2",
+    doc: "Classes of the \"Showing all results\" line shown when every row fits on one page."
+
+  attr :paging_container_class, :string,
+    default: "mx-4",
+    doc: "Passed to `Paging` as its `container_class`; `\"\"` drops its side margins."
 
   attr :header_bg_class, :string,
     default: nil,
@@ -34,6 +42,15 @@ defmodule OliWeb.Common.StripedPagedTable do
     doc:
       "Optional function to render custom expandable row content. Function receives (assigns, row) and returns rendered content."
 
+  attr :sort_button, :boolean,
+    default: false,
+    doc:
+      "Passed through to StripedTable: sortable headers render a <button> that carries the sort click; the sorted <th> exposes aria-sort."
+
+  attr :table_id, :string,
+    default: nil,
+    doc: "Passed through to StripedTable as the fixed id of the <table>."
+
   def render(assigns) do
     ~H"""
     <div class={if @scrollable, do: "overflow-x-auto #{@overflow_class}"}>
@@ -42,7 +59,7 @@ defmodule OliWeb.Common.StripedPagedTable do
       <% end %>
 
       <%= if @total_count > 0 do %>
-        <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
+        <div :if={@total_count <= @limit and @render_top_info} class={@top_info_class}>
           Showing all results ({@total_count} total)
         </div>
         <div class={@table_container_class}>
@@ -55,7 +72,9 @@ defmodule OliWeb.Common.StripedPagedTable do
             additional_row_class: @additional_row_class,
             details_render_fn: @details_render_fn,
             sticky_header_offset: @sticky_header_offset,
-            header_bg_class: @header_bg_class
+            header_bg_class: @header_bg_class,
+            sort_button: @sort_button,
+            table_id: @table_id
           })}
         </div>
         <Paging.render
@@ -66,9 +85,10 @@ defmodule OliWeb.Common.StripedPagedTable do
           click={@page_change}
           limit_change={@limit_change}
           has_shorter_label={false}
-          show_limit_change={true}
+          show_limit_change={@show_limit_change}
           should_add_empty_flex={false}
           is_page_size_right={true}
+          container_class={@paging_container_class}
         />
       <% else %>
         <div class="bg-white dark:bg-gray-800 dark:text-white px-10 py-5">
@@ -91,6 +111,8 @@ defmodule OliWeb.Common.StripedPagedTable do
         details_render_fn={@details_render_fn}
         sticky_header_offset={@sticky_header_offset}
         header_bg_class={@header_bg_class}
+        sort_button={@sort_button}
+        id={@table_id}
       />
       """
     else
@@ -103,6 +125,8 @@ defmodule OliWeb.Common.StripedPagedTable do
         details_render_fn={@details_render_fn}
         sticky_header_offset={@sticky_header_offset}
         header_bg_class={@header_bg_class}
+        sort_button={@sort_button}
+        id={@table_id}
       />
       """
     end
@@ -177,7 +201,7 @@ defmodule OliWeb.Common.StripedPagedTable do
     })
   end
 
-  def delegate_handle_event(_, _, _, _) do
+  def delegate_handle_event(_, _, _, _, _) do
     :not_handled
   end
 end
