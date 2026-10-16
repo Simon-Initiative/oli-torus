@@ -99,7 +99,7 @@ it('uses the existing Saving / All changes saved indicator and synchronizes the 
   act(() => {
     saving = event('ltiAuthoringSave', { token: 'signed-result' });
   });
-  expect(screen.getByText('Saving...')).toBeTruthy();
+  expect(screen.getByText('Saving...').closest('[role="status"]')).not.toBeNull();
   expect(screen.queryByText('All changes saved')).toBeNull();
   expect(screen.getByText('Draft')).toBeTruthy();
   await act(async () => {
@@ -111,7 +111,7 @@ it('uses the existing Saving / All changes saved indicator and synchronizes the 
     });
     await saving;
   });
-  expect(screen.getByText('All changes saved')).toBeTruthy();
+  expect(screen.getByText('All changes saved').closest('[role="status"]')).not.toBeNull();
   expect(screen.getByText('Review')).toBeTruthy();
   expect(screen.queryByText('Selection saved.')).toBeNull();
   expect(saveAuthoringDeepLink).toHaveBeenCalledWith('project', '42', 'signed-result');
