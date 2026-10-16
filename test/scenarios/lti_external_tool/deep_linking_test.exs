@@ -1,6 +1,8 @@
 defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
   use OliWeb.ConnCase
 
+  import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
+
   import Ecto.Query
   import Mox
 
@@ -12,10 +14,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
   alias Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
   alias Oli.Publishing
   alias Oli.Repo
-  alias Oli.Scenarios
   alias Oli.Scenarios.LtiExternalTool.DeepLinkingHooks, as: Hooks
-  alias Oli.Scenarios.RuntimeOpts
-  alias Oli.Test.MockHTTP
 
   @custom_claim "https://purl.imsglobal.org/spec/lti/claim/custom"
   @context_claim "https://purl.imsglobal.org/spec/lti/claim/context"
@@ -27,7 +26,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
   setup :verify_on_exit!
 
   test "published selections survive draft edits and remain independent across old and new sections" do
-    state = execute_scenario("deep_linking_lifecycle.scenario.yaml")
+    state = execute_scenario(Path.join(__DIR__, "deep_linking_lifecycle.scenario.yaml"))
     resource_id = Hooks.activity(state).resource_id
     draft = state.params.draft
     review = state.params.review
@@ -84,7 +83,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
   end
 
   test "Regular authoring reuses selection and defaults without changing persisted content" do
-    state = execute_scenario("deep_linking_setup.scenario.yaml")
+    state = execute_scenario(Path.join(__DIR__, "deep_linking_setup.scenario.yaml"))
 
     for virtual_id <- ["configured", "unconfigured", "cleared"] do
       revision = Hooks.activity(state, virtual_id)
@@ -111,7 +110,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
   end
 
   test "a signed authoring return is saved, published and used by a learner" do
-    state = execute_scenario("deep_linking_setup.scenario.yaml")
+    state = execute_scenario(Path.join(__DIR__, "deep_linking_setup.scenario.yaml"))
     revision = Hooks.activity(state)
     conn = build_conn() |> log_in_author(state.current_author)
 
@@ -126,11 +125,9 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     assert claims[@settings_claim]["accept_multiple"] == false
     refute Map.has_key?(claims, @resource_claim)
 
-    selected =
-      revision.content["deepLink"]
-      |> Map.put("url", "https://tool.example/selected-task")
-      |> Map.put("title", "Selected Task")
+    selected = rich_selection("selected-task")
 
+    stub_tool_keyset(state)
     jwt = signed_tool_response(state, claims[@settings_claim]["data"], selected)
 
     html =
@@ -173,7 +170,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
   end
 
   test "author callback refuses invalid signed protocol/content returns without issuing a selection token" do
-    state = execute_scenario("deep_linking_setup.scenario.yaml")
+    state = execute_scenario(Path.join(__DIR__, "deep_linking_setup.scenario.yaml"))
     revision = Hooks.activity(state)
     conn = build_conn() |> log_in_author(state.current_author)
 
@@ -188,8 +185,10 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     selected = revision.content["deepLink"]
     items = "https://purl.imsglobal.org/spec/lti-dl/claim/content_items"
 
+    stub_tool_keyset(state)
+
     invalid_returns = [
-      %{items => :delete},
+      %{items => :omit},
       %{items => []},
       %{items => [selected, selected]},
       %{items => [%{"type" => "unsupported"}]},
@@ -235,27 +234,8 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     assert Hooks.activity(state).content == revision.content
   end
 
-  test "long URL and descriptive metadata survive publication and section initialization" do
-    state = execute_scenario("deep_linking_setup.scenario.yaml")
-    revision = Hooks.activity(state)
-
-    selected =
-      revision.content["deepLink"]
-      |> Map.put("url", "https://tool.example/" <> String.duplicate("a", 300))
-      |> Map.put("title", String.duplicate("Task ", 70))
-      |> Map.put("text", String.duplicate("Description ", 40))
-
-    assert {:ok, _} = Hooks.save_content(state, Map.put(revision.content, "deepLink", selected))
-
-    {:ok, publication} =
-      Publishing.publish_project(Hooks.project(state), "Long metadata", state.current_author.id)
-
-    state = Hooks.create_section(state, "long_metadata_section", publication)
-    assert_selection(state.sections["long_metadata_section"], revision.resource_id, selected)
-  end
-
   test "invalid published selection rolls back the whole course creation" do
-    state = execute_scenario("deep_linking_setup.scenario.yaml")
+    state = execute_scenario(Path.join(__DIR__, "deep_linking_setup.scenario.yaml"))
     revision = Hooks.activity(state, "unconfigured")
     invalid = Map.put(Hooks.activity(state).content["deepLink"], "type", "unsupported")
 
@@ -280,7 +260,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
   end
 
   test "publication initialization does not leak selections into an unrelated destination" do
-    state = execute_scenario("deep_linking_membership.scenario.yaml")
+    state = execute_scenario(Path.join(__DIR__, "deep_linking_membership.scenario.yaml"))
     section = state.sections["unrelated_section"]
 
     assert {:ok, 0} =
@@ -347,53 +327,6 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     end
   end
 
-  defp signed_tool_response(state, correlation, selected, overrides \\ %{}) do
-    key = "test/support/fixtures/test_rsa_private.pem" |> File.read!() |> JOSE.JWK.from_pem()
-    {_, public} = key |> JOSE.JWK.to_public() |> JOSE.JWK.to_map()
-    public = Map.put(public, "kid", "deep-linking-test-key")
-
-    expect(MockHTTP, :get, fn url ->
-      assert url == state.params.platform.keyset_url
-      {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"keys" => [public]})}}
-    end)
-
-    now = System.system_time(:second)
-
-    fields =
-      %{
-        "iss" => state.params.platform.client_id,
-        "aud" => Oli.Utils.get_base_url(),
-        "iat" => now,
-        "exp" => now + 300,
-        "jti" => Ecto.UUID.generate(),
-        "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiDeepLinkingResponse",
-        "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
-        "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
-          state.params.deployment.deployment_id,
-        "https://purl.imsglobal.org/spec/lti-dl/claim/data" => correlation,
-        "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => [selected]
-      }
-      |> Map.merge(overrides)
-      |> Enum.reject(fn {_key, value} -> value == :delete end)
-      |> Map.new()
-
-    JOSE.JWT.sign(key, %{"alg" => "RS256", "kid" => "deep-linking-test-key"}, fields)
-    |> JOSE.JWS.compact()
-    |> elem(1)
-  end
-
-  defp execute_scenario(filename) do
-    path = Path.join(__DIR__, filename)
-    assert :ok = Scenarios.validate_file(path)
-    result = Scenarios.execute_file(path, RuntimeOpts.build())
-    assert result.errors == [], "Scenario errors: #{inspect(result.errors)}"
-    assert result.verifications != []
-
-    failed = Enum.reject(result.verifications, & &1.passed)
-    assert failed == [], "Scenario failures: #{inspect(failed)}"
-    result.state
-  end
-
   defp assert_selection(section, resource_id, expected) do
     selection =
       PlatformExternalTools.get_section_resource_deep_link_by(
@@ -450,32 +383,5 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
       |> json_response(200)
 
     authorize(conn, details["launch_params"])
-  end
-
-  defp authorize(conn, launch_params) do
-    html =
-      conn
-      |> get(~p"/lti/authorize_redirect", %{
-        "client_id" => launch_params["client_id"],
-        "login_hint" => launch_params["login_hint"],
-        "lti_message_hint" => launch_params["lti_message_hint"],
-        "nonce" => Ecto.UUID.generate(),
-        "state" => Ecto.UUID.generate(),
-        "prompt" => "none",
-        "redirect_uri" => "https://tool.example/launch",
-        "response_mode" => "form_post",
-        "response_type" => "id_token",
-        "scope" => "openid"
-      })
-      |> html_response(200)
-
-    assert [token] =
-             html |> Floki.parse_document!() |> Floki.attribute("input[name=id_token]", "value"),
-           "Authorization did not return a token: #{Floki.text(Floki.parse_document!(html))}"
-
-    {:ok, key} = Lti_1p3.get_active_jwk()
-    public_key = key.pem |> JOSE.JWK.from_pem() |> JOSE.JWK.to_public()
-    assert {true, %JOSE.JWT{fields: claims}, _} = JOSE.JWT.verify(public_key, token)
-    claims
   end
 end

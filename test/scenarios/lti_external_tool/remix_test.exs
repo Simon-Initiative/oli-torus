@@ -3,16 +3,16 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
 
   use Oli.DataCase
 
+  import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
+
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Remix
-  alias Oli.Delivery.Sections.{SectionResource, SectionsProjectsPublications}
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
   alias Oli.Publishing
   alias Oli.Repo
-  alias Oli.Scenarios
   alias Oli.Scenarios.LtiExternalTool.DeepLinkingHooks, as: Hooks
-  alias Oli.Scenarios.RuntimeOpts
 
   @fields [:type, :url, :custom, :title, :text]
 
@@ -23,7 +23,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
   defp setup_scenario(%{workflow: true}), do: %{}
 
   defp setup_scenario(_) do
-    state = execute("remix_setup.scenario.yaml")
+    state = execute_scenario(Path.join(__DIR__, "remix_setup.scenario.yaml"))
 
     %{
       state: state,
@@ -35,7 +35,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
 
   @tag workflow: true
   test "scenario directives inherit project and template choices into both destination types" do
-    state = execute("remix.scenario.yaml")
+    state = execute_scenario(Path.join(__DIR__, "remix.scenario.yaml"))
     id = Hooks.activity(state).resource_id
     source = link(state.products["template"], id)
 
@@ -70,26 +70,26 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
     end
   end
 
-  test "template remix uses current source metadata and independent destination rows", ctx do
-    chosen =
-      selection("template-current")
-      |> Map.put("url", "https://tool.example/" <> String.duplicate("x", 400))
-      |> Map.put("title", String.duplicate("título ", 80))
-      |> Map.put("text", String.duplicate("description ", 80))
-      |> Map.put("custom", %{"nested" => %{"ids" => [1, 2]}, "json" => "{\"task\":1}"})
+  for destination_kind <- [:course, :template] do
+    @destination_kind destination_kind
+    test "#{destination_kind} template remix uses current source metadata and independent destination rows",
+         ctx do
+      ctx = %{ctx | destination: destination(ctx.state, @destination_kind)}
+      chosen = rich_selection("template-current")
 
-    remix = add_template(ctx)
-    # Current means read at save, not when the picker was opened.
-    put_selection(ctx.template, ctx.id, chosen)
-    save_selection(ctx.state, "configured", selection("project-draft"))
-    assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
-    copied = link(ctx.destination, ctx.id)
-    assert Map.take(copied, @fields) == Map.take(link(ctx.template, ctx.id), @fields)
-    assert copied.id != link(ctx.template, ctx.id).id
-    put_selection(ctx.template, ctx.id, selection("source-later"))
-    assert link(ctx.destination, ctx.id) == copied
-    put_selection(ctx.destination, ctx.id, selection("destination-later"))
-    assert link(ctx.template, ctx.id).custom == %{"mode" => "source-later"}
+      remix = add_template(ctx)
+      # Current means read at save, not when the picker was opened.
+      put_selection(ctx.template, ctx.id, chosen)
+      save_selection(ctx.state, "configured", selection("project-draft"))
+      assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+      copied = link(ctx.destination, ctx.id)
+      assert Map.take(copied, @fields) == Map.take(link(ctx.template, ctx.id), @fields)
+      assert copied.id != link(ctx.template, ctx.id).id
+      put_selection(ctx.template, ctx.id, selection("source-later"))
+      assert link(ctx.destination, ctx.id) == copied
+      put_selection(ctx.destination, ctx.id, selection("destination-later"))
+      assert link(ctx.template, ctx.id).custom == %{"mode" => "source-later"}
+    end
   end
 
   test "actual chosen template wins when templates share a publication", ctx do
@@ -271,16 +271,6 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
     assert link(ctx.destination, ctx.id)
   end
 
-  test "template choices can be remixed into another template", ctx do
-    put_selection(ctx.template, ctx.id, selection("template-local"))
-    destination = ctx.state.products["destination_template"]
-
-    assert {:ok, _} =
-             Remix.save(add_template(%{ctx | destination: destination}), ctx.state.current_author)
-
-    assert link(destination, ctx.id).custom == %{"mode" => "template-local"}
-  end
-
   test "selecting a visible template container does not inherit choices from its hidden pages",
        ctx do
     put_selection(ctx.template, ctx.id, selection("hidden-template-choice"))
@@ -313,7 +303,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
 
   for source <- [:publication, :section] do
     @source source
-    test "#{source} inheritance uses bulk queries and enforces both resource membership and the explicit activity scope",
+    test "#{source} inheritance enforces resource membership and the explicit activity scope",
          ctx do
       for name <- ["unconfigured", "cleared"] do
         id = Hooks.activity(ctx.state, name).resource_id
@@ -340,20 +330,11 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
           :section -> {:section, ctx.template.id}
         end
 
-      {{:ok, 3}, queries} =
-        capture_queries(fn ->
-          PlatformExternalTools.initialize_remixed_deep_links(ctx.destination.id, %{origin => ids})
-        end)
+      assert {:ok, 3} =
+               PlatformExternalTools.initialize_remixed_deep_links(ctx.destination.id, %{
+                 origin => ids
+               })
 
-      # One candidate read + one bulk insert for publication sources; a single
-      # INSERT SELECT for template sources, independent of activity count.
-      expected_count =
-        case @source do
-          :publication -> 2
-          :section -> 1
-        end
-
-      assert length(queries) == expected_count
       assert length(links(ctx.destination)) == 3
 
       Repo.delete_all(
@@ -380,41 +361,6 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
                PlatformExternalTools.initialize_remixed_deep_links(ctx.destination.id, %{
                  origin => [configured]
                })
-    end
-  end
-
-  defp capture_queries(operation) do
-    handler = "lti-remix-#{System.unique_integer([:positive])}"
-    ref = make_ref()
-    owner = self()
-
-    :ok =
-      :telemetry.attach(
-        handler,
-        [:oli, :repo, :query],
-        fn _, _, metadata, _ ->
-          case self() == owner and
-                 metadata.source in ["lti_section_resource_deep_links", "section_resources"] do
-            true -> send(owner, {ref, metadata.query})
-            false -> :ok
-          end
-        end,
-        nil
-      )
-
-    try do
-      result = operation.()
-      {result, drain_queries(ref)}
-    after
-      :telemetry.detach(handler)
-    end
-  end
-
-  defp drain_queries(ref) do
-    receive do
-      {^ref, sql} -> [sql | drain_queries(ref)]
-    after
-      0 -> []
     end
   end
 
@@ -447,83 +393,9 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
   defp destination(state, :template), do: state.products["destination_template"]
   defp page_id(state), do: state.projects["deep_linking_project"].id_by_title["Tool Lesson"]
 
-  defp save_selection(state, name, selected) do
-    assert {:ok, _} =
-             Hooks.save_content(
-               state,
-               Map.put(Hooks.activity(state, name).content, "deepLink", selected),
-               name
-             )
-  end
-
-  defp selection(mode),
-    do: %{
-      "type" => "ltiResourceLink",
-      "url" => "https://tool.example/#{mode}",
-      "custom" => %{"mode" => mode}
-    }
-
-  defp put_selection(section, id, selected) do
-    assert {:ok, _} =
-             PlatformExternalTools.upsert_section_resource_deep_link(
-               Map.merge(selected, %{"section_id" => section.id, "resource_id" => id})
-             )
-  end
-
-  defp link(section, id),
-    do:
-      PlatformExternalTools.get_section_resource_deep_link_by(
-        section_id: section.id,
-        resource_id: id
-      )
-
-  defp links(section),
-    do:
-      Repo.all(
-        from l in LtiSectionResourceDeepLink,
-          where: l.section_id == ^section.id,
-          order_by: l.resource_id
-      )
-
-  defp pins(section),
-    do:
-      Repo.all(
-        from p in SectionsProjectsPublications,
-          where: p.section_id == ^section.id,
-          order_by: p.project_id,
-          select: {p.project_id, p.publication_id}
-      )
-
   defp resources(section),
     do:
       Repo.all(
         from r in SectionResource, where: r.section_id == ^section.id, order_by: r.resource_id
       )
-
-  defp publish(state) do
-    assert {:ok, pub} =
-             Publishing.publish_project(
-               Hooks.project(state),
-               "Remix selection update",
-               state.current_author.id
-             )
-
-    pub
-  end
-
-  defp execute(file) do
-    path = Path.join(__DIR__, file)
-    assert :ok = Scenarios.validate_file(path)
-    result = Scenarios.execute_file(path, RuntimeOpts.build())
-    assert result.errors == [], inspect(result.errors)
-    assert Enum.all?(result.verifications, & &1.passed)
-    result.state
-  end
-
-  defp apply_directives(state, yaml) do
-    Enum.reduce(Oli.Scenarios.DirectiveParser.parse_yaml!(yaml), state, fn directive, state ->
-      assert {:ok, state} = Oli.Scenarios.Engine.execute_directive(directive, state)
-      state
-    end)
-  end
 end

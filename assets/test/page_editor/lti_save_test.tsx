@@ -6,6 +6,7 @@ import * as ActivityPersistence from 'data/persistence/activity';
 import { acquireLock, releaseLock } from 'data/persistence/lock';
 import { saveAuthoringDeepLink, startAuthoringDeepLink } from 'data/persistence/lti_platform';
 import * as ResourcePersistence from 'data/persistence/resource';
+import { deferred } from '../components/lti/test_helpers';
 
 jest.mock('data/persistence/lock', () => ({ acquireLock: jest.fn(), releaseLock: jest.fn() }));
 jest.mock('data/persistence/lti_platform', () => ({
@@ -52,13 +53,6 @@ const props: any = {
   defaultEditor: 'slate',
   onLoadPreferences: jest.fn(),
 };
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  const promise = new Promise<T>((ok) => {
-    resolve = ok;
-  });
-  return { promise, resolve };
-}
 function event(name: string, payload: unknown = {}): Promise<unknown> {
   return new Promise((resolve, reject) => {
     window.dispatchEvent(
@@ -91,10 +85,15 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 
-it('uses the existing Saving / All changes saved indicator and synchronizes the saved model', async () => {
+async function renderEditablePage() {
   const page = React.createRef<PageEditor>();
   render(<PageEditor {...props} ref={page} />);
   await waitFor(() => expect(page.current?.state.editMode).toBe(true));
+  return page;
+}
+
+it('uses the existing Saving / All changes saved indicator and synchronizes the saved model', async () => {
+  await renderEditablePage();
   await act(async () => {
     await event('ltiAuthoringPrepare', { role: 'instructor' });
   });
@@ -123,9 +122,7 @@ it('uses the existing Saving / All changes saved indicator and synchronizes the 
 });
 
 it('retains the prior model and does not display All changes saved after a failed selection save', async () => {
-  const page = React.createRef<PageEditor>();
-  render(<PageEditor {...props} ref={page} />);
-  await waitFor(() => expect(page.current?.state.editMode).toBe(true));
+  await renderEditablePage();
   await act(async () => {
     await event('ltiAuthoringPrepare', { role: 'developer' });
   });
@@ -143,9 +140,7 @@ it('retains the prior model and does not display All changes saved after a faile
 it.each(['page', 'activity', 'new activity'])(
   'restores normal %s autosave feedback after configuration preparation fails',
   async (target) => {
-    const page = React.createRef<PageEditor>();
-    render(<PageEditor {...props} ref={page} />);
-    await waitFor(() => expect(page.current?.state.editMode).toBe(true));
+    const page = await renderEditablePage();
     if (target === 'new activity') {
       jest.spyOn(ResourcePersistence, 'edit').mockResolvedValue({
         type: 'success',
@@ -195,9 +190,7 @@ it.each(['page', 'activity', 'new activity'])(
 );
 
 it('flushes the existing page/activity autosaves before preparing and blocks launch when they fail', async () => {
-  const page = React.createRef<PageEditor>();
-  render(<PageEditor {...props} ref={page} />);
-  await waitFor(() => expect(page.current?.state.editMode).toBe(true));
+  const page = await renderEditablePage();
   const order: string[] = [];
   page.current!.persistence.save(() => {
     order.push('page');

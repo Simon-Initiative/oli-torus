@@ -1,6 +1,7 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { LTIExternalToolFrame } from 'components/lti/LTIExternalToolFrame';
+import { message } from './test_helpers';
 
 const props = {
   mode: 'delivery' as const,
@@ -15,14 +16,6 @@ beforeEach(() => {
 });
 
 afterEach(() => jest.restoreAllMocks());
-
-function message(frame: HTMLIFrameElement, data: unknown, origin = window.location.origin) {
-  act(() => {
-    window.dispatchEvent(
-      new MessageEvent('message', { source: frame.contentWindow, origin, data }),
-    );
-  });
-}
 
 it('keeps same-resource instances distinct and targets each mounted frame', () => {
   const { container, rerender } = render(
@@ -73,18 +66,6 @@ it('ignores messages from another instance or an external origin', () => {
   expect(onDone).not.toHaveBeenCalled();
   message(first, result);
   expect(onDone).toHaveBeenCalledTimes(1);
-});
-
-it('never treats a failed return as successful completion', () => {
-  const onDone = jest.fn();
-  const { container } = render(<LTIExternalToolFrame {...props} onDeepLinkingComplete={onDone} />);
-  const frame = container.querySelector('iframe') as HTMLIFrameElement;
-  message(frame, {
-    type: 'lti_deep_linking_response',
-    status: 'error',
-    error_description: 'Rejected',
-  });
-  expect(onDone).not.toHaveBeenCalled();
 });
 
 it('accepts a successful return only once and ignores the following close event', () => {

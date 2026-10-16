@@ -1,14 +1,6 @@
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
+import { deferred } from '../../components/lti/test_helpers';
 
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  let reject!: (error: Error) => void;
-  const promise = new Promise<T>((ok, fail) => {
-    resolve = ok;
-    reject = fail;
-  });
-  return { promise, resolve, reject };
-}
 function strategy() {
   const result = new DeferredPersistenceStrategy();
   result.successCallback = jest.fn();

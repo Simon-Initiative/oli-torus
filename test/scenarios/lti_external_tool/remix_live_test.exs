@@ -3,24 +3,19 @@ defmodule OliWeb.LtiExternalTool.RemixLiveTest do
 
   use OliWeb.ConnCase
 
+  import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
+
   import Phoenix.LiveViewTest
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Lti.PlatformExternalTools
-  alias Oli.Scenarios
   alias Oli.Scenarios.LtiExternalTool.DeepLinkingHooks, as: Hooks
-  alias Oli.Scenarios.RuntimeOpts
 
   test "template selection survives unchecking/rechecking in Add Materials and saving", %{
     conn: conn
   } do
-    path = Path.join(__DIR__, "remix_setup.scenario.yaml")
-    assert :ok = Scenarios.validate_file(path)
-    result = Scenarios.execute_file(path, RuntimeOpts.build())
-    assert result.errors == [], inspect(result.errors)
-    assert Enum.all?(result.verifications, & &1.passed)
-    state = result.state
+    state = execute_scenario(Path.join(__DIR__, "remix_setup.scenario.yaml"))
     source = state.products["template"]
     destination = state.sections["destination_course"]
     user = state.users["remix_instructor"]

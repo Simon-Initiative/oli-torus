@@ -1,6 +1,8 @@
 defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
   use OliWeb.ConnCase
 
+  import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
+
   alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Repo
@@ -9,17 +11,10 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
   alias Oli.Lti.AuthoringLaunch
   alias Oli.Publishing
   alias Oli.Resources
-  alias Oli.Scenarios
   alias Oli.Scenarios.LtiExternalTool.DeepLinkingHooks, as: Hooks
-  alias Oli.Scenarios.RuntimeOpts
 
   setup do
-    path = Path.join(__DIR__, "deep_linking_setup.scenario.yaml")
-    assert :ok = Scenarios.validate_file(path)
-    result = Scenarios.execute_file(path, RuntimeOpts.build())
-    assert result.errors == [], inspect(result.errors)
-    assert Enum.all?(result.verifications, & &1.passed)
-    state = result.state
+    state = execute_scenario(Path.join(__DIR__, "deep_linking_setup.scenario.yaml"))
     project = Hooks.project(state)
     page = state.projects["deep_linking_project"].rev_by_title["Tool Lesson"]
     publication = Publishing.project_working_publication(project.slug)
@@ -146,7 +141,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
     assert Hooks.activity(ctx.state).content == ctx.activity.content
   end
 
-  test "cross-associated and tampered result tokens cannot update an activity", ctx do
+  test "invalid, expired, or mismatched result tokens cannot update an activity", ctx do
     assert {:ok, started} = start(ctx)
     token = AuthoringLaunch.result_token(started.request, selection())
     other_id = Hooks.activity(ctx.state, "unconfigured").resource_id
@@ -161,6 +156,35 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
                ctx.activity.resource_id,
                token <> "tampered"
              )
+
+    token =
+      Phoenix.Token.sign(
+        OliWeb.Endpoint,
+        "lti-authoring-result",
+        %{"request" => started.request, "selection" => selection()},
+        signed_at: System.system_time(:second) - 700
+      )
+
+    assert {:error, _} =
+             AuthoringLaunch.save_result(
+               ctx.author,
+               ctx.project.slug,
+               ctx.activity.resource_id,
+               token
+             )
+
+    claims = %{
+      "iss" => started.deployment.platform_instance.client_id,
+      "exp" => System.system_time(:second) + 300,
+      "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
+      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
+        started.deployment.deployment_id,
+      "https://purl.imsglobal.org/spec/lti-dl/claim/data" => started.request_token
+    }
+
+    assert {:ok, _} = AuthoringLaunch.validate_return(claims)
+
+    assert {:error, _} = AuthoringLaunch.validate_return(Map.put(claims, "iss", "other-tool"))
 
     assert Hooks.activity(ctx.state).content == ctx.activity.content
   end
@@ -243,49 +267,6 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
                ctx.activity.resource_id,
                token
              )
-  end
-
-  test "expired result tokens and mismatched deployment/version/issuer returns are rejected",
-       ctx do
-    assert {:ok, started} = start(ctx)
-
-    token =
-      Phoenix.Token.sign(
-        OliWeb.Endpoint,
-        "lti-authoring-result",
-        %{"request" => started.request, "selection" => selection()},
-        signed_at: System.system_time(:second) - 700
-      )
-
-    assert {:error, _} =
-             AuthoringLaunch.save_result(
-               ctx.author,
-               ctx.project.slug,
-               ctx.activity.resource_id,
-               token
-             )
-
-    claims = %{
-      "iss" => started.deployment.platform_instance.client_id,
-      "exp" => System.system_time(:second) + 300,
-      "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
-      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
-        started.deployment.deployment_id,
-      "https://purl.imsglobal.org/spec/lti-dl/claim/data" => started.request_token
-    }
-
-    assert {:ok, _} = AuthoringLaunch.validate_return(claims)
-
-    for {key, value} <- [
-          {"iss", "other-tool"},
-          {"exp", 0},
-          {"https://purl.imsglobal.org/spec/lti/claim/version", "1.2"},
-          {"https://purl.imsglobal.org/spec/lti/claim/deployment_id", "other-deployment"}
-        ] do
-      assert {:error, _} = AuthoringLaunch.validate_return(Map.put(claims, key, value))
-    end
-
-    assert Hooks.activity(ctx.state).content == ctx.activity.content
   end
 
   test "a database constraint failure rolls back revision and mapping and allows retry",
@@ -421,31 +402,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
             |> json_response(200)
         end
 
-      params = details["launch_params"]
-
-      html =
-        conn
-        |> get(~p"/lti/authorize_redirect", %{
-          "client_id" => params["client_id"],
-          "login_hint" => params["login_hint"],
-          "lti_message_hint" => params["lti_message_hint"],
-          "nonce" => Ecto.UUID.generate(),
-          "state" => Ecto.UUID.generate(),
-          "prompt" => "none",
-          "redirect_uri" => "https://tool.example/launch",
-          "response_mode" => "form_post",
-          "response_type" => "id_token",
-          "scope" => "openid"
-        })
-        |> html_response(200)
-
-      [token] =
-        html |> Floki.parse_document!() |> Floki.attribute("input[name=id_token]", "value")
-
-      {:ok, jwk} = Lti_1p3.get_active_jwk()
-
-      assert {true, %JOSE.JWT{fields: claims}, _} =
-               JOSE.JWT.verify(JOSE.JWK.from_pem(jwk.pem), token)
+      claims = authorize(conn, details["launch_params"])
 
       expected_role =
         case role do

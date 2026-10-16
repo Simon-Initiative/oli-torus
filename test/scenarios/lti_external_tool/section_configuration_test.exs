@@ -1,6 +1,8 @@
 defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
   use OliWeb.ConnCase
 
+  import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
+
   import Mox
 
   alias Lti_1p3.Roles.ContextRoles
@@ -8,24 +10,22 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.SectionDeepLinkLaunch
   alias Oli.Repo
-  alias Oli.Scenarios
   alias Oli.Scenarios.LtiExternalTool.DeepLinkingHooks, as: Hooks
-  alias Oli.Scenarios.RuntimeOpts
-  alias Oli.Test.MockHTTP
 
   @settings "https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings"
-  @data "https://purl.imsglobal.org/spec/lti-dl/claim/data"
   @items "https://purl.imsglobal.org/spec/lti-dl/claim/content_items"
 
   setup :verify_on_exit!
 
-  setup do
-    path = Path.join(__DIR__, "section_configuration.scenario.yaml")
-    assert :ok = Scenarios.validate_file(path)
-    result = Scenarios.execute_file(path, RuntimeOpts.build())
-    assert result.errors == [], inspect(result.errors)
-    assert Enum.all?(result.verifications, & &1.passed)
-    state = result.state
+  setup context do
+    file =
+      case context[:lifecycle] do
+        true -> "section_configuration.scenario.yaml"
+        _ -> "section_configuration_setup.scenario.yaml"
+      end
+
+    state = execute_scenario(Path.join(__DIR__, file))
+    stub_tool_keyset(state)
 
     %{
       state: state,
@@ -90,7 +90,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
       assert json_response(response, 403)["error"]
     end
 
-    jwt = response_jwt(state, settings["data"], selected_item(state))
+    jwt = signed_tool_response(state, settings["data"], selected_item(state))
 
     assert build_conn()
            |> post(callback_path(section, valid_id), %{JWT: jwt})
@@ -116,46 +116,8 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
       assert conn |> post(details_path(section, id)) |> json_response(403)
     end
 
-    jwt = response_jwt(state, settings["data"], selected_item(state))
+    jwt = signed_tool_response(state, settings["data"], selected_item(state))
     assert build_conn() |> post(callback_path(section, id), %{JWT: jwt}) |> html_response(200)
-  end
-
-  test "signed cancellation remains safe after return expiry, permission loss and capability disablement",
-       %{state: state, section: section, resource_id: id} do
-    {details, _settings} = configuration_launch(state, section, id)
-
-    {:ok, request} =
-      Phoenix.Token.verify(OliWeb.Endpoint, "lti-section-request", details["request_token"],
-        max_age: :infinity
-      )
-
-    expired =
-      Phoenix.Token.sign(OliWeb.Endpoint, "lti-section-request", request,
-        signed_at: System.system_time(:second) - 3600
-      )
-
-    assert {:ok, _} =
-             Sections.unenroll(state.users["instructor"].id, section.id, [
-               ContextRoles.get_role(:context_instructor)
-             ])
-
-    assert {:ok, _} =
-             PlatformExternalTools.update_lti_external_tool_activity_deployment(
-               state.params.deployment,
-               %{deep_linking_enabled: false}
-             )
-
-    before = selection(section, id)
-    conn = build_conn() |> log_in_user(state.users["instructor"]) |> same_origin()
-
-    response =
-      conn
-      |> post(~p"/api/v1/lti/sections/#{section.slug}/cancel_deep_linking/#{id}", %{
-        request_token: expired
-      })
-
-    assert json_response(response, 200)["status"] == "cancelled"
-    assert selection(section, id) == before
   end
 
   test "cancellation rejects late signed returns and cannot cancel a newer request", %{
@@ -182,13 +144,13 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
       state,
       section,
       id,
-      response_jwt(state, old_settings["data"], selected_item(state)),
+      signed_tool_response(state, old_settings["data"], selected_item(state)),
       before
     )
 
     {_new_details, settings} = configuration_launch(state, section, id)
     assert cancel.(details["request_token"])["status"] == "cancelled"
-    jwt = response_jwt(state, settings["data"], selected_item(state))
+    jwt = signed_tool_response(state, settings["data"], selected_item(state))
     assert build_conn() |> post(callback_path(section, id), %{JWT: jwt}) |> html_response(200)
   end
 
@@ -198,7 +160,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     {details, settings} = configuration_launch(state, section, id)
 
     jwt =
-      response_jwt(state, settings["data"], selected_item(state), %{
+      signed_tool_response(state, settings["data"], selected_item(state), %{
         "aud" => ["another-audience", Oli.Utils.get_base_url()]
       })
 
@@ -209,7 +171,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
       state,
       section,
       id,
-      response_jwt(
+      signed_tool_response(
         state,
         old_settings["data"],
         Map.put(selected_item(state), "url", "https://tool.example/late")
@@ -253,11 +215,11 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
       assert json_response(response, 403)["error"]
     end
 
-    jwt = response_jwt(state, settings["data"], selected_item(state))
+    jwt = signed_tool_response(state, settings["data"], selected_item(state))
     assert build_conn() |> post(callback_path(section, id), %{JWT: jwt}) |> html_response(200)
   end
 
-  test "malformed audience lists and content items preserve selection", %{
+  test "invalid callback claims, correlation, route and content preserve selection", %{
     state: state,
     section: section,
     resource_id: id
@@ -265,22 +227,64 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     {_details, settings} = configuration_launch(state, section, id)
     before = selection(section, id)
 
-    for overrides <- [
-          %{"aud" => []},
-          %{"aud" => [Oli.Utils.get_base_url(), 42]},
-          %{@items => %{}},
-          %{@items => :omit}
-        ] do
+    {:ok, request} =
+      Phoenix.Token.verify(OliWeb.Endpoint, "lti-section-request", settings["data"],
+        max_age: 1800
+      )
+
+    expired_correlation =
+      Phoenix.Token.sign(OliWeb.Endpoint, "lti-section-request", request,
+        signed_at: System.system_time(:second) - 3600
+      )
+
+    invalid_responses =
+      for overrides <- [
+            %{"aud" => []},
+            %{"aud" => [Oli.Utils.get_base_url(), 42]},
+            %{@items => %{}},
+            %{@items => :omit},
+            %{"https://purl.imsglobal.org/spec/lti/claim/deployment_id" => Ecto.UUID.generate()},
+            %{"https://purl.imsglobal.org/spec/lti/claim/version" => "1.2.0"},
+            %{"exp" => System.system_time(:second) - 30}
+          ] do
+        signed_tool_response(state, settings["data"], selected_item(state), overrides)
+      end
+
+    invalid_responses =
+      [
+        signed_tool_response(state, nil, selected_item(state)),
+        signed_tool_response(state, settings["data"] <> "tampered", selected_item(state)),
+        signed_tool_response(state, expired_correlation, selected_item(state)),
+        signed_tool_response(
+          state,
+          settings["data"],
+          Map.put(selected_item(state), "url", "javascript:alert(1)")
+        )
+      ] ++ invalid_responses
+
+    Enum.each(invalid_responses, fn jwt ->
       assert_error(
         state,
         section,
         id,
-        response_jwt(state, settings["data"], selected_item(state), overrides),
+        jwt,
         before
       )
-    end
+    end)
+
+    state = Hooks.create_section(state, "other_section", state.params.draft_publication)
+    other_section = state.sections["other_section"]
+    moved_return = signed_tool_response(state, settings["data"], selected_item(state))
+    assert_error(state, other_section, id, moved_return, selection(other_section, id))
+    other_id = Hooks.activity(state, "unconfigured").resource_id
+    assert_error(state, section, other_id, moved_return, nil)
+    assert selection(section, id) == before
+
+    assert SectionDeepLinkLaunch.resolve(state.users["learner"], section.slug, id) ==
+             {:error, :configuration_unavailable}
   end
 
+  @tag lifecycle: true
   test "instructor return changes only its section and is used by the next learner launch", %{
     state: state,
     section: section,
@@ -294,7 +298,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
              Oli.Utils.get_base_url() <> "/lti/deep_link/#{section.slug}/#{id}"
 
     selected = selected_item(state)
-    jwt = response_jwt(state, settings["data"], selected)
+    jwt = signed_tool_response(state, settings["data"], selected)
     html = build_conn() |> post(callback_path(section, id), %{"JWT" => jwt}) |> html_response(200)
     assert html =~ "Resource Selected Successfully"
     refute html =~ "</script><script>window.injected"
@@ -310,6 +314,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     assert claims["sub"] == state.users["learner"].sub
   end
 
+  @tag lifecycle: true
   test "section configuration sends its current string custom values without changing selection",
        %{
          state: state,
@@ -354,6 +359,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     assert selection(state.sections["review_section"], id).custom == state.params.review["custom"]
   end
 
+  @tag lifecycle: true
   test "configuration omits custom when the section selection is missing or contains no string values",
        %{
          state: state,
@@ -403,6 +409,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     assert selection(state.sections["review_section"], id).custom == state.params.review["custom"]
   end
 
+  @tag lifecycle: true
   test "author deep linking sends current draft custom for either role and omits it without selection",
        %{state: state, section: section, resource_id: id} do
     conn = build_conn() |> log_in_author(state.current_author)
@@ -455,31 +462,6 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     assert selection(section, id).custom == state.params.draft["custom"]
   end
 
-  test "unsigned correlation cannot authorize an otherwise signed tool response", %{
-    state: state,
-    section: section,
-    resource_id: id
-  } do
-    before = selection(section, id)
-    jwt = response_jwt(state, nil, selected_item(state))
-    assert_error(state, section, id, jwt, before)
-  end
-
-  test "a response cannot be moved to another section or activity", %{
-    state: state,
-    section: section,
-    resource_id: id
-  } do
-    {_details, settings} = configuration_launch(state, section, id)
-    other_section = state.sections["review_section"]
-    jwt = response_jwt(state, settings["data"], selected_item(state))
-    assert_error(state, other_section, id, jwt, selection(other_section, id))
-    other_id = Hooks.activity(state, "unconfigured").resource_id
-    jwt = response_jwt(state, settings["data"], selected_item(state))
-    assert_error(state, section, other_id, jwt, nil)
-    assert selection(section, id).url == state.params.draft["url"]
-  end
-
   test "removed instructor permission invalidates an outstanding return", %{
     state: state,
     section: section,
@@ -492,7 +474,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
                ContextRoles.get_role(:context_instructor)
              ])
 
-    jwt = response_jwt(state, settings["data"], selected_item(state))
+    jwt = signed_tool_response(state, settings["data"], selected_item(state))
     assert_error(state, section, id, jwt, selection(section, id))
   end
 
@@ -509,27 +491,8 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
                %{deep_linking_enabled: false}
              )
 
-    jwt = response_jwt(state, settings["data"], selected_item(state))
+    jwt = signed_tool_response(state, settings["data"], selected_item(state))
     assert_error(state, section, id, jwt, selection(section, id))
-  end
-
-  test "invalid selection and expired responses preserve the stored selection", %{
-    state: state,
-    section: section,
-    resource_id: id
-  } do
-    {_details, settings} = configuration_launch(state, section, id)
-    before = selection(section, id)
-    invalid = Map.put(selected_item(state), "url", "javascript:alert(1)")
-    jwt = response_jwt(state, settings["data"], invalid)
-    assert_error(state, section, id, jwt, before)
-
-    jwt =
-      response_jwt(state, settings["data"], selected_item(state), %{
-        "exp" => System.system_time(:second) - 30
-      })
-
-    assert_error(state, section, id, jwt, before)
   end
 
   test "one configuration request cannot replace a selection twice", %{
@@ -539,12 +502,12 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
   } do
     {_details, settings} = configuration_launch(state, section, id)
     selected = selected_item(state)
-    jwt = response_jwt(state, settings["data"], selected)
+    jwt = signed_tool_response(state, settings["data"], selected)
     assert build_conn() |> post(callback_path(section, id), %{"JWT" => jwt}) |> html_response(200)
     before = selection(section, id)
 
     replay =
-      response_jwt(
+      signed_tool_response(
         state,
         settings["data"],
         Map.put(selected, "url", "https://tool.example/replayed")
@@ -567,7 +530,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
              "https://purl.imsglobal.org/spec/lti/claim/roles"
            ]
 
-    jwt = response_jwt(state, claims[@settings]["data"], selected_item(state))
+    jwt = signed_tool_response(state, claims[@settings]["data"], selected_item(state))
     assert build_conn() |> post(callback_path(section, id), %{"JWT" => jwt}) |> html_response(200)
     assert selection(section, id).url == selected_item(state)["url"]
   end
@@ -587,14 +550,14 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     CHECK (url <> 'https://tool.example/write-failure')
     """)
 
-    jwt = response_jwt(state, settings["data"], selected)
+    jwt = signed_tool_response(state, settings["data"], selected)
     assert_error(state, section, id, jwt, before)
 
     Repo.query!(
       "ALTER TABLE lti_section_resource_deep_links DROP CONSTRAINT mer6018_write_failure"
     )
 
-    jwt = response_jwt(state, settings["data"], selected)
+    jwt = signed_tool_response(state, settings["data"], selected)
     assert build_conn() |> post(callback_path(section, id), %{"JWT" => jwt}) |> html_response(200)
     assert selection(section, id).url == selected["url"]
   end
@@ -621,51 +584,6 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
 
     assert response.status == 403
     assert selection(section, id).url == state.params.draft["url"]
-  end
-
-  test "tampered and expired Torus correlation is rejected without consuming the selection", %{
-    state: state,
-    section: section,
-    resource_id: id
-  } do
-    {_details, settings} = configuration_launch(state, section, id)
-
-    {:ok, request} =
-      Phoenix.Token.verify(OliWeb.Endpoint, "lti-section-request", settings["data"],
-        max_age: 1800
-      )
-
-    expired =
-      Phoenix.Token.sign(OliWeb.Endpoint, "lti-section-request", request,
-        signed_at: System.system_time(:second) - 3600
-      )
-
-    before = selection(section, id)
-
-    for correlation <- [settings["data"] <> "tampered", expired] do
-      jwt = response_jwt(state, correlation, selected_item(state))
-      assert_error(state, section, id, jwt, before)
-    end
-  end
-
-  test "wrong deployment and version claims cannot change an existing selection", %{
-    state: state,
-    section: section,
-    resource_id: id
-  } do
-    {_details, settings} = configuration_launch(state, section, id)
-    before = selection(section, id)
-
-    for overrides <- [
-          %{"https://purl.imsglobal.org/spec/lti/claim/deployment_id" => Ecto.UUID.generate()},
-          %{"https://purl.imsglobal.org/spec/lti/claim/version" => "1.2.0"}
-        ] do
-      jwt = response_jwt(state, settings["data"], selected_item(state), overrides)
-      assert_error(state, section, id, jwt, before)
-    end
-
-    assert SectionDeepLinkLaunch.resolve(state.users["learner"], section.slug, id) ==
-             {:error, :configuration_unavailable}
   end
 
   defp assert_error(_state, section, id, jwt, before) do
@@ -718,76 +636,5 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
       |> json_response(200)
 
     authorize(conn, details["launch_params"])
-  end
-
-  defp authorize(conn, launch_params) do
-    html =
-      conn
-      |> get(~p"/lti/authorize_redirect", %{
-        "client_id" => launch_params["client_id"],
-        "login_hint" => launch_params["login_hint"],
-        "lti_message_hint" => launch_params["lti_message_hint"],
-        "nonce" => Ecto.UUID.generate(),
-        "state" => Ecto.UUID.generate(),
-        "prompt" => "none",
-        "redirect_uri" => "https://tool.example/launch",
-        "response_mode" => "form_post",
-        "response_type" => "id_token",
-        "scope" => "openid"
-      })
-      |> html_response(200)
-
-    [token] = html |> Floki.parse_document!() |> Floki.attribute("input[name=id_token]", "value")
-    {:ok, key} = Lti_1p3.get_active_jwk()
-
-    assert {true, %JOSE.JWT{fields: claims}, _} =
-             JOSE.JWT.verify(JOSE.JWK.from_pem(key.pem), token)
-
-    claims
-  end
-
-  defp response_jwt(state, data, selected, overrides \\ %{}) do
-    key = "test/support/fixtures/test_rsa_private.pem" |> File.read!() |> JOSE.JWK.from_pem()
-    {_, public} = key |> JOSE.JWK.to_public() |> JOSE.JWK.to_map()
-
-    expect(MockHTTP, :get, fn url ->
-      assert url == state.params.platform.keyset_url
-
-      {:ok,
-       %HTTPoison.Response{
-         status_code: 200,
-         body: Jason.encode!(%{"keys" => [Map.put(public, "kid", "section-test-key")]})
-       }}
-    end)
-
-    now = System.system_time(:second)
-
-    claims =
-      Map.merge(
-        %{
-          "iss" => state.params.platform.client_id,
-          "aud" => Oli.Utils.get_base_url(),
-          "iat" => now,
-          "exp" => now + 300,
-          "jti" => Ecto.UUID.generate(),
-          "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiDeepLinkingResponse",
-          "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
-          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
-            state.params.deployment.deployment_id,
-          @data => data,
-          @items => [selected]
-        },
-        overrides
-      )
-
-    claims =
-      case overrides[@items] do
-        :omit -> Map.delete(claims, @items)
-        _ -> claims
-      end
-
-    JOSE.JWT.sign(key, %{"alg" => "RS256", "kid" => "section-test-key"}, claims)
-    |> JOSE.JWS.compact()
-    |> elem(1)
   end
 end

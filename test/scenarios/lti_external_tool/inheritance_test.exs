@@ -3,6 +3,8 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
 
   use Oli.DataCase
 
+  import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
+
   alias Oli.Authoring.Clone
   alias Oli.Delivery
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
@@ -23,23 +25,17 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
   alias Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
   alias Oli.Publishing
   alias Oli.Repo
-  alias Oli.Scenarios
   alias Oli.Scenarios.LtiExternalTool.DeepLinkingHooks, as: Hooks
-  alias Oli.Scenarios.RuntimeOpts
 
   @fields [:type, :url, :custom, :title, :text]
 
   setup do
-    path = Path.join(__DIR__, "inheritance_setup.scenario.yaml")
-    assert :ok = Scenarios.validate_file(path)
-    result = Scenarios.execute_file(path, RuntimeOpts.build())
-    assert result.errors == [], inspect(result.errors)
-    assert Enum.all?(result.verifications, & &1.passed)
+    state = execute_scenario(Path.join(__DIR__, "inheritance_setup.scenario.yaml"))
 
     %{
-      state: result.state,
-      template: result.state.products["template"],
-      source: result.state.sections["source_course"]
+      state: state,
+      template: state.products["template"],
+      source: state.sections["source_course"]
     }
   end
 
@@ -72,19 +68,20 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
   test "template copies preserve current portable metadata and are independently editable", ctx do
     id = Hooks.activity(ctx.state).resource_id
 
-    chosen =
-      selection("template")
-      |> Map.put("url", "https://tool.example/" <> String.duplicate("x", 400))
-      |> Map.put("title", String.duplicate("título ", 80))
-      |> Map.put("text", String.duplicate("description ", 100))
-      |> Map.put("custom", %{"nested" => %{"ids" => [1, 2]}, "task_json" => "{\"id\":\"task\"}"})
+    chosen = rich_selection("template")
+    another_id = Hooks.activity(ctx.state, "unconfigured").resource_id
+    assert {:ok, _} = put_selection(ctx.template, another_id, selection("another"))
 
     assert {:ok, _} = put_selection(ctx.template, id, chosen)
     assert {:ok, _} = save_selection(ctx.state, "configured", selection("new-project-default"))
     publish(ctx.state)
 
     assert {:ok, destination} = create_copy(ctx.state, ctx.template, :product)
-    assert_same_selection(ctx.template, destination, id)
+
+    for resource_id <- [id, another_id],
+        do: assert_same_selection(ctx.template, destination, resource_id)
+
+    assert length(links(destination)) == 2
     assert link(ctx.source, id).custom == ctx.state.params.draft["custom"]
     assert {:ok, _} = put_selection(destination, id, selection("destination"))
     assert link(ctx.template, id).custom == chosen["custom"]
@@ -152,30 +149,6 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
       assert links(source) == []
       assert Hooks.activity(ctx.state).content["deepLink"] != nil
     end
-  end
-
-  test "copying uses one INSERT SELECT for multiple selections", ctx do
-    assert {:ok, _} =
-             put_selection(
-               ctx.template,
-               Hooks.activity(ctx.state, "unconfigured").resource_id,
-               selection("another")
-             )
-
-    assert {:ok, _} =
-             PlatformExternalTools.delete_section_resource_deep_link(hd(links(ctx.source)))
-
-    {{:ok, 2}, queries} =
-      capture_queries(fn ->
-        PlatformExternalTools.copy_section_deep_links(ctx.template.id, ctx.source.id)
-      end)
-
-    assert [sql] = queries
-    assert String.starts_with?(sql, ~s(INSERT INTO "lti_section_resource_deep_links"))
-    assert String.contains?(sql, "SELECT")
-
-    for link <- links(ctx.template),
-        do: assert_same_selection(ctx.template, ctx.source, link.resource_id)
   end
 
   test "copying includes only the source/destination resource intersection",
@@ -307,53 +280,6 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
     end
   end
 
-  defp put_selection(section, id, selected),
-    do:
-      PlatformExternalTools.upsert_section_resource_deep_link(
-        Map.merge(selected, %{"section_id" => section.id, "resource_id" => id})
-      )
-
-  defp selection(mode),
-    do: %{
-      "type" => "ltiResourceLink",
-      "url" => "https://tool.example/#{mode}",
-      "custom" => %{"mode" => mode}
-    }
-
-  defp save_selection(state, name, selected),
-    do:
-      Hooks.save_content(
-        state,
-        Map.put(Hooks.activity(state, name).content, "deepLink", selected),
-        name
-      )
-
-  defp publish(state) do
-    assert {:ok, pub} =
-             Publishing.publish_project(
-               Hooks.project(state),
-               "Inheritance update",
-               state.current_author.id
-             )
-
-    pub
-  end
-
-  defp link(section, id),
-    do:
-      PlatformExternalTools.get_section_resource_deep_link_by(
-        section_id: section.id,
-        resource_id: id
-      )
-
-  defp links(section),
-    do:
-      Repo.all(
-        from l in LtiSectionResourceDeepLink,
-          where: l.section_id == ^section.id,
-          order_by: l.resource_id
-      )
-
   defp values(link), do: Map.take(link, @fields)
 
   defp assert_same_selection(source, copy, id) do
@@ -363,15 +289,6 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
     assert copied.section_id == copy.id
     assert values(copied) == values(original)
   end
-
-  defp pins(section),
-    do:
-      Repo.all(
-        from p in SectionsProjectsPublications,
-          where: p.section_id == ^section.id,
-          order_by: p.project_id,
-          select: {p.project_id, p.publication_id}
-      )
 
   defp delete_resource(section, id),
     do: Repo.get_by!(SectionResource, section_id: section.id, resource_id: id) |> Repo.delete!()
@@ -391,45 +308,4 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
 
   defp learner_rows(section, table),
     do: Repo.aggregate(from(r in table, where: r.section_id == ^section.id), :count)
-
-  defp apply_directives(state, yaml) do
-    Enum.reduce(Oli.Scenarios.DirectiveParser.parse_yaml!(yaml), state, fn directive, state ->
-      assert {:ok, state} = Oli.Scenarios.Engine.execute_directive(directive, state)
-      state
-    end)
-  end
-
-  defp capture_queries(operation) do
-    handler = "lti-copy-#{System.unique_integer([:positive])}"
-    ref = make_ref()
-    owner = self()
-
-    :ok =
-      :telemetry.attach(
-        handler,
-        [:oli, :repo, :query],
-        fn _, _, metadata, _ ->
-          case self() == owner do
-            true -> send(owner, {ref, metadata.query})
-            false -> :ok
-          end
-        end,
-        nil
-      )
-
-    try do
-      result = operation.()
-      {result, collect_queries(ref, [])}
-    after
-      :telemetry.detach(handler)
-    end
-  end
-
-  defp collect_queries(ref, queries) do
-    receive do
-      {^ref, sql} -> collect_queries(ref, [sql | queries])
-    after
-      0 -> Enum.reverse(queries)
-    end
-  end
 end

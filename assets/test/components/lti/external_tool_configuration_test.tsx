@@ -6,6 +6,7 @@ import {
   cancelLtiExternalToolDeepLinking,
   getLtiExternalToolDeepLinkingDetails,
 } from 'data/persistence/lti_platform';
+import { deferred, message, mockBootstrapModal, waitForFrame } from './test_helpers';
 
 jest.mock('data/persistence/lti_platform', () => ({
   getLtiExternalToolDeepLinkingDetails: jest.fn(),
@@ -30,28 +31,10 @@ const modalProps = {
   onCancel: jest.fn(),
 };
 
-const bootstrapHandlers = new Map<Element, Record<string, (event: any) => void>>();
-beforeAll(() => {
-  const jq = (element: Element) => ({
-    modal: () => undefined,
-    on: (name: string, handler: (event: any) => void) => {
-      const handlers = bootstrapHandlers.get(element) || {};
-      handlers[name] = handler;
-      bootstrapHandlers.set(element, handlers);
-    },
-  });
-  (window as any).$ = jq;
-  (global as any).$ = jq;
-});
-
-afterAll(() => {
-  delete (window as any).$;
-  delete (global as any).$;
-});
+const dismissModal = mockBootstrapModal();
 
 beforeEach(() => {
   jest.clearAllMocks();
-  bootstrapHandlers.clear();
   jest.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => undefined);
   (getLtiExternalToolDeepLinkingDetails as jest.Mock).mockResolvedValue(details);
   (cancelLtiExternalToolDeepLinking as jest.Mock).mockResolvedValue('cancelled');
@@ -59,16 +42,9 @@ beforeEach(() => {
 
 afterEach(() => jest.restoreAllMocks());
 
-function message(frame: HTMLIFrameElement, data: unknown) {
-  act(() => {
-    window.dispatchEvent(
-      new MessageEvent('message', {
-        source: frame.contentWindow,
-        origin: window.location.origin,
-        data,
-      }),
-    );
-  });
+async function renderConfiguration() {
+  const rendered = render(<ConfigureDeepLinkingModal {...modalProps} />);
+  return { ...rendered, frame: await waitForFrame(rendered.container) };
 }
 
 it('mounts configuration in its own frame alongside an embedded regular launch', async () => {
@@ -93,9 +69,8 @@ it('mounts configuration in its own frame alongside an embedded regular launch',
 });
 
 it('shows a return error without reporting success or cancelling the modal', async () => {
-  const { container } = render(<ConfigureDeepLinkingModal {...modalProps} />);
-  await waitFor(() => expect(container.querySelector('iframe')).not.toBeNull());
-  message(container.querySelector('iframe') as HTMLIFrameElement, {
+  const { frame } = await renderConfiguration();
+  message(frame, {
     type: 'lti_deep_linking_response',
     status: 'error',
     error_description: 'Selection was rejected',
@@ -113,25 +88,21 @@ it('shows a return error without reporting success or cancelling the modal', asy
 });
 
 it('closes without claiming success when the user finishes manually', async () => {
-  const { container } = render(<ConfigureDeepLinkingModal {...modalProps} />);
-  await waitFor(() => expect(getLtiExternalToolDeepLinkingDetails).toHaveBeenCalled());
+  const { container } = await renderConfiguration();
   fireEvent.click(container.querySelector('.modal-footer button') as HTMLButtonElement);
   await waitFor(() => expect(modalProps.onCancel).toHaveBeenCalledTimes(1));
   expect(modalProps.onDone).not.toHaveBeenCalled();
 });
 
 it('treats a close request from the return frame as cancellation', async () => {
-  const { container } = render(<ConfigureDeepLinkingModal {...modalProps} />);
-  await waitFor(() => expect(container.querySelector('iframe')).not.toBeNull());
-  message(container.querySelector('iframe') as HTMLIFrameElement, { type: 'lti_close_modal' });
+  const { frame } = await renderConfiguration();
+  message(frame, { type: 'lti_close_modal' });
   await waitFor(() => expect(modalProps.onCancel).toHaveBeenCalledTimes(1));
   expect(modalProps.onDone).not.toHaveBeenCalled();
 });
 
 it('reports success once only for the active request', async () => {
-  const { container } = render(<ConfigureDeepLinkingModal {...modalProps} />);
-  await waitFor(() => expect(container.querySelector('iframe')).not.toBeNull());
-  const frame = container.querySelector('iframe') as HTMLIFrameElement;
+  const { frame } = await renderConfiguration();
   message(frame, {
     type: 'lti_deep_linking_response',
     status: 'success',
@@ -158,37 +129,26 @@ it('shows a details-fetch failure without reporting a saved selection', async ()
   expect(modalProps.onDone).not.toHaveBeenCalled();
 });
 
-it.each(['header close', 'Escape', 'backdrop'])(
-  'controls Bootstrap dismissal through %s until cancellation succeeds',
-  async () => {
-    let acknowledge!: (status: 'cancelled') => void;
-    (cancelLtiExternalToolDeepLinking as jest.Mock).mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          acknowledge = resolve;
-        }),
-    );
-    const { container } = render(<ConfigureDeepLinkingModal {...modalProps} />);
-    await waitFor(() => expect(container.querySelector('iframe')).not.toBeNull());
-    const dialog = container.querySelector('[role=dialog]')!;
-    const event = { preventDefault: jest.fn() };
-    act(() => bootstrapHandlers.get(dialog)!['hide.bs.modal'](event));
-    expect(event.preventDefault).toHaveBeenCalled();
-    await waitFor(() => expect(cancelLtiExternalToolDeepLinking).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole('status').textContent).toContain('Closing');
-    act(() => bootstrapHandlers.get(dialog)!['hide.bs.modal'](event));
-    expect(cancelLtiExternalToolDeepLinking).toHaveBeenCalledTimes(1);
-    expect(modalProps.onCancel).not.toHaveBeenCalled();
-    await act(async () => acknowledge('cancelled'));
-    expect(modalProps.onCancel).toHaveBeenCalledTimes(1);
-    expect(modalProps.onDone).not.toHaveBeenCalled();
-  },
-);
+it('controls Bootstrap dismissal until cancellation succeeds', async () => {
+  const acknowledgement = deferred<'cancelled'>();
+  (cancelLtiExternalToolDeepLinking as jest.Mock).mockReturnValue(acknowledgement.promise);
+  const { container } = await renderConfiguration();
+  const dialog = container.querySelector('[role=dialog]')!;
+  const event = dismissModal(dialog);
+  expect(event.preventDefault).toHaveBeenCalled();
+  await waitFor(() => expect(cancelLtiExternalToolDeepLinking).toHaveBeenCalledTimes(1));
+  expect(screen.getByRole('status').textContent).toContain('Closing');
+  dismissModal(dialog, event);
+  expect(cancelLtiExternalToolDeepLinking).toHaveBeenCalledTimes(1);
+  expect(modalProps.onCancel).not.toHaveBeenCalled();
+  await act(async () => acknowledgement.resolve('cancelled'));
+  expect(modalProps.onCancel).toHaveBeenCalledTimes(1);
+  expect(modalProps.onDone).not.toHaveBeenCalled();
+});
 
 it('keeps cancellation failures visible and allows Close to retry', async () => {
   (cancelLtiExternalToolDeepLinking as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
-  const { container } = render(<ConfigureDeepLinkingModal {...modalProps} />);
-  await waitFor(() => expect(container.querySelector('iframe')).not.toBeNull());
+  const { container } = await renderConfiguration();
   fireEvent.click(container.querySelector('.modal-footer button')!);
   await screen.findByText('Could not close configuration. Please try Close again.');
   expect(modalProps.onCancel).not.toHaveBeenCalled();
@@ -199,25 +159,19 @@ it('keeps cancellation failures visible and allows Close to retry', async () => 
 
 it('refreshes a selection committed before cancellation acknowledgement', async () => {
   (cancelLtiExternalToolDeepLinking as jest.Mock).mockResolvedValue('completed');
-  const { container } = render(<ConfigureDeepLinkingModal {...modalProps} />);
-  await waitFor(() => expect(container.querySelector('iframe')).not.toBeNull());
+  const { container } = await renderConfiguration();
   fireEvent.click(container.querySelector('.modal-footer button')!);
   await waitFor(() => expect(modalProps.onDone).toHaveBeenCalledTimes(1));
   expect(modalProps.onCancel).not.toHaveBeenCalled();
 });
 
 it('cancels after preparation resolves when Close is pressed during loading', async () => {
-  let prepare!: (value: typeof details) => void;
-  (getLtiExternalToolDeepLinkingDetails as jest.Mock).mockImplementation(
-    () =>
-      new Promise((resolve) => {
-        prepare = resolve;
-      }),
-  );
+  const prepare = deferred<typeof details>();
+  (getLtiExternalToolDeepLinkingDetails as jest.Mock).mockReturnValue(prepare.promise);
   const { container } = render(<ConfigureDeepLinkingModal {...modalProps} />);
   fireEvent.click(container.querySelector('.modal-footer button')!);
   expect(modalProps.onCancel).not.toHaveBeenCalled();
-  await act(async () => prepare(details));
+  await act(async () => prepare.resolve(details));
   await waitFor(() => expect(modalProps.onCancel).toHaveBeenCalledTimes(1));
   expect(cancelLtiExternalToolDeepLinking).toHaveBeenCalledWith(
     'course',

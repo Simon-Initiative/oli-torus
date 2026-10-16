@@ -1,5 +1,5 @@
 - use:
-    file: inheritance_setup.scenario.yaml
+    file: template_setup.scenario.yaml
 
 - project:
     name: remix_destination
