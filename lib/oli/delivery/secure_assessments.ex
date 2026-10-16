@@ -31,11 +31,9 @@ defmodule Oli.Delivery.SecureAssessments do
   @spec supported?() :: boolean()
   def supported?, do: Application.get_env(:oli, :supports_secure_delivery, false) == true
 
-  @doc "Requires both instance support and server-configured enforcement readiness for instructor controls."
+  @doc "Exposes instructor controls when this instance supports verified secure delivery."
   @spec settings_available?() :: boolean()
-  def settings_available? do
-    supported?() and Application.get_env(:oli, :secure_delivery_enforcement_ready, false) == true
-  end
+  def settings_available?, do: supported?()
 
   @doc """
   Rechecks verified entry against current policy and enrollment. Must run inside the

@@ -1,13 +1,15 @@
 defmodule OliWeb.LtiRedirect do
   use OliWeb, :verified_routes
 
+  import Ecto.Query
   import Phoenix.Controller
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.{SectionResource, SectionResourceMigration}
+  alias Oli.Repo
+  alias Oli.Resources.Revision
   alias Oli.Lti.LtiParams
-  alias Oli.Publishing.DeliveryResolver
-  alias Oli.Resources.{ResourceType, Revision}
 
   require Logger
   @telemetry_prefix [:oli, :lti]
@@ -151,7 +153,7 @@ defmodule OliWeb.LtiRedirect do
     end
   end
 
-  @doc "Resolves an LMS revision slug to the revision pinned to the launched section."
+  @doc "Resolves the current launch's direct page once, from authoritative section resources."
   @spec resolve_target(map(), %Sections.Section{} | nil) :: map()
   def resolve_target(claims, section) do
     resource = resolve_resource(claims, section)
@@ -168,22 +170,46 @@ defmodule OliWeb.LtiRedirect do
          %Sections.Section{} = section
        )
        when is_binary(revision_slug) and revision_slug != "" do
-    DeliveryResolver.from_revision_slug(section.slug, revision_slug)
+    # Only legacy projections need the migration's section-wide lock. Current
+    # launches serialize against their selected assessment row, not the course.
+    case section.section_resource_migration_version == SectionResourceMigration.current_version() do
+      true -> :ok
+      false -> {:ok, _} = SectionResourceMigration.ensure_current(section.id)
+    end
+
+    page_type = Oli.Resources.ResourceType.id_for_page()
+
+    # LMS links may name an older revision. Resolve its resource identity, then
+    # select and lock the current section projection rather than the old revision.
+    resource_ids =
+      from revision in Revision,
+        where: revision.slug == ^revision_slug and revision.resource_type_id == ^page_type,
+        select: revision.resource_id
+
+    query =
+      from sr in SectionResource,
+        where:
+          sr.section_id == ^section.id and sr.resource_id in subquery(resource_ids) and
+            sr.resource_type_id == ^page_type
+
+    query =
+      case Repo.in_transaction?() do
+        true -> from sr in query, lock: "FOR UPDATE"
+        false -> query
+      end
+
+    Repo.one(query)
   end
 
   defp resolve_resource(_, _), do: nil
 
-  # An unknown or mistyped LMS slug is an ordinary section launch.
-  defp direct_page_path(%{resource: nil}), do: :fallback
-
-  defp direct_page_path(%{section: section, resource: %Revision{} = revision}) do
-    case revision.resource_type_id == ResourceType.id_for_page() do
-      true -> {:ok, ~p"/sections/#{section.slug}/page/#{revision.slug}"}
-      false -> :fallback
-    end
-  end
+  defp direct_page_path(%{section: section, resource: %SectionResource{revision_slug: slug}}),
+    do: {:ok, ~p"/sections/#{section.slug}/page/#{slug}"}
 
   defp direct_page_path(_), do: :fallback
+
+  @doc "Applies a destination already resolved during successful launch admission."
+  def redirect_to_destination(conn, destination), do: apply_destination(conn, destination, [])
 
   defp apply_destination(conn, {:redirect, path}, _opts), do: redirect(conn, to: path)
 
