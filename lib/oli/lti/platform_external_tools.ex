@@ -425,10 +425,13 @@ defmodule Oli.Lti.PlatformExternalTools do
   considered. Absent or cleared selections create no records. Existing rows are excluded
   before validation, and conflict-do-nothing inserts preserve a competing successful write.
   Validation and batched inserts share the caller's transaction. Returns the number created.
+  An optional resource ID list restricts initialization to explicitly remixed activities.
   """
   @spec initialize_section_deep_links(integer(), integer()) ::
           {:ok, non_neg_integer()} | {:error, term()}
-  def initialize_section_deep_links(section_id, publication_id) do
+  @spec initialize_section_deep_links(integer(), integer(), :all | [integer()]) ::
+          {:ok, non_neg_integer()} | {:error, term()}
+  def initialize_section_deep_links(section_id, publication_id, resource_ids \\ :all) do
     activity_type = ResourceType.id_for_activity()
 
     Repo.transaction(fn ->
@@ -458,6 +461,7 @@ defmodule Oli.Lti.PlatformExternalTools do
           where: not is_nil(fragment("NULLIF(?->'deepLink', 'null'::jsonb)", r.content)),
           select: {sr.resource_id, fragment("?->'deepLink'", r.content)}
         )
+        |> restrict_deep_link_resources(resource_ids)
         |> Repo.all()
         |> Enum.map(fn {resource_id, selection} ->
           case LtiSectionResourceDeepLink.selection(selection) do
@@ -504,35 +508,96 @@ defmodule Oli.Lti.PlatformExternalTools do
   @spec copy_section_deep_links(integer(), integer()) ::
           {:ok, non_neg_integer()} | {:error, :lti_deep_link_copy_failed}
   def copy_section_deep_links(source_section_id, destination_section_id) do
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-
-    query =
-      from(link in LtiSectionResourceDeepLink,
-        join: source in SectionResource,
-        on: source.section_id == link.section_id and source.resource_id == link.resource_id,
-        join: destination in SectionResource,
-        on: destination.resource_id == link.resource_id,
-        where:
-          link.section_id == ^source_section_id and
-            destination.section_id == ^destination_section_id,
-        select: %{
-          section_id: ^destination_section_id,
-          resource_id: destination.resource_id,
-          type: link.type,
-          url: link.url,
-          custom: link.custom,
-          title: link.title,
-          text: link.text,
-          inserted_at: ^now,
-          updated_at: ^now
-        }
-      )
+    query = section_deep_links_query(source_section_id, destination_section_id)
 
     {count, _} = Repo.insert_all(LtiSectionResourceDeepLink, query)
     {:ok, count}
   rescue
     _error in [Ecto.ConstraintError, Postgrex.Error] ->
       {:error, :lti_deep_link_copy_failed}
+  end
+
+  @doc """
+  Initializes missing selections for explicitly remixed activities, grouped by source.
+
+  Sources map `{:publication, id}` or `{:section, id}` to activity resource IDs.
+  Callers must supply authorized sources and retained remixed activity IDs. Template
+  sources use only their current rows, without project fallback. Existing destination
+  choices win, including competing inserts. All groups share the remix transaction.
+  """
+  @spec initialize_remixed_deep_links(integer(), %{
+          optional({:publication | :section, integer()}) => [integer()]
+        }) :: {:ok, non_neg_integer()} | {:error, term()}
+  def initialize_remixed_deep_links(section_id, sources) do
+    Repo.transaction(fn ->
+      Enum.reduce(sources, 0, fn
+        {{_kind, _id}, []}, total ->
+          total
+
+        {{:publication, publication_id}, ids}, total ->
+          case initialize_section_deep_links(section_id, publication_id, ids) do
+            {:ok, count} -> total + count
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        {{:section, source_id}, ids}, total ->
+          query =
+            section_deep_links_query(source_id, section_id)
+            |> restrict_deep_link_resources(ids)
+            |> where(
+              [link],
+              not exists(
+                from(existing in LtiSectionResourceDeepLink,
+                  where:
+                    existing.section_id == ^section_id and
+                      existing.resource_id == parent_as(:source_link).resource_id
+                )
+              )
+            )
+
+          {count, _} =
+            Repo.insert_all(LtiSectionResourceDeepLink, query,
+              on_conflict: :nothing,
+              conflict_target: [:section_id, :resource_id]
+            )
+
+          total + count
+      end)
+    end)
+  rescue
+    _error in [Ecto.ConstraintError, Postgrex.Error] ->
+      {:error, :lti_deep_link_initialization_failed}
+  end
+
+  defp restrict_deep_link_resources(query, :all), do: query
+
+  defp restrict_deep_link_resources(query, ids),
+    do: where(query, [resource], resource.resource_id in ^ids)
+
+  defp section_deep_links_query(source_section_id, destination_section_id) do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    from(link in LtiSectionResourceDeepLink,
+      as: :source_link,
+      join: source in SectionResource,
+      on: source.section_id == link.section_id and source.resource_id == link.resource_id,
+      join: destination in SectionResource,
+      on: destination.resource_id == link.resource_id,
+      where:
+        link.section_id == ^source_section_id and
+          destination.section_id == ^destination_section_id,
+      select: %{
+        section_id: ^destination_section_id,
+        resource_id: destination.resource_id,
+        type: link.type,
+        url: link.url,
+        custom: link.custom,
+        title: link.title,
+        text: link.text,
+        inserted_at: ^now,
+        updated_at: ^now
+      }
+    )
   end
 
   @doc """

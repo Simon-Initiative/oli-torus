@@ -152,7 +152,9 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
                raise("Target container '#{to}' not found")).uuid
           )
 
-    {:ok, remix_state} = Remix.add_materials(remix_state, [selection])
+    {:ok, remix_state} =
+      Remix.add_materials_from_sources(remix_state, [selection], %{selection => source.key})
+
     {:ok, refreshed_section} = Remix.save(remix_state, state.current_author)
     {:ok, Engine.put_section(state, section_name, refreshed_section)}
   end

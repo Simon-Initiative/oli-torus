@@ -16,6 +16,7 @@ The prototype already supports selecting a tool resource in project authoring an
 
 - Deliver a reliable authoring selection/save experience using established Torus UI patterns.
 - Carry published selections through direct creation, publication application, template-based creation and previous-section copying with independent destination ownership.
+- Inherit Deep Links when remixing project or template content into a section/template, preserving existing destination selections (FR-012; AC-032–AC-034).
 - Preserve instructor overrides and verify that instructors can actually reconfigure their sections.
 - Turn the manual walkthrough into permanent, layered automated coverage.
 
@@ -146,3 +147,8 @@ N/A — no new telemetry program is in scope. Current verification uses the acti
 - Reason: The owner confirmed that copying course content should carry its current tool configuration, including instructor changes, without another copy option.
 - Evidence: `lib/oli_web/live/new_course/copy_choice_modal.ex`, `lib/oli/delivery/sections/copy_options.ex`, `lib/oli/delivery/sections/section_copy.ex`; FR-008, AC-020 and AC-021.
 - Impact: Copy current source-owned selections to independent destination rows; preserve missing/cleared selections, existing publication pins and provenance. Do not copy learner data or redesign the wizard.
+
+### 2026-10-15 - Include remix inheritance with Darren's approval
+
+- Decision: Include project/template sources in Add Materials for course sections and templates in this PR. Project sources use the chosen publication; template sources use current template-owned selections, including missing/cleared choices without project fallback.
+- Preserve existing destination selections and create independently owned rows only for activities referenced by retained remixed pages. Failure rolls back remix. No learner data, new UI controls, migration or external tool setup is introduced.

@@ -686,7 +686,7 @@ defmodule OliWeb.Delivery.RemixSection do
       hierarchy: nil,
       active: nil,
       selection: [],
-      selection_source_types: %{},
+      selection_source_keys: %{},
       preselected: preselected,
       publications: available_sources,
       selected_source: nil,
@@ -711,12 +711,20 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("AddMaterialsModal.add", _, socket) do
     %{
       remix_state: state,
-      modal_assigns: %{selection: selection, selection_source_types: selection_source_types}
+      modal_assigns: %{
+        selection: selection,
+        selection_source_keys: selection_source_keys
+      }
     } = socket.assigns
 
-    source_types = selection_source_types |> Map.values() |> Enum.uniq()
+    source_types =
+      selection_source_keys
+      |> Map.values()
+      |> Enum.uniq()
+      |> Enum.map(&Remix.source_by_key(state, &1).type)
+      |> Enum.uniq()
 
-    case Remix.add_materials(state, selection) do
+    case Remix.add_materials_from_sources(state, selection, selection_source_keys) do
       {:ok, state} ->
         RemixTelemetry.add_materials(length(selection), source_types, :ok)
 
@@ -1253,17 +1261,17 @@ defmodule OliWeb.Delivery.RemixSection do
   defp update_selection(socket, modal_assigns, selection, source, item) do
     case Remix.selection_tuple(source, item) do
       {:ok, tuple} ->
-        selection_source_types =
+        selection_source_keys =
           if tuple in selection do
-            Map.delete(modal_assigns.selection_source_types, tuple)
+            Map.delete(modal_assigns.selection_source_keys, tuple)
           else
-            Map.put(modal_assigns.selection_source_types, tuple, source.type)
+            Map.put(modal_assigns.selection_source_keys, tuple, source.key)
           end
 
         modal_assigns = %{
           modal_assigns
           | selection: xor(selection, tuple),
-            selection_source_types: selection_source_types,
+            selection_source_keys: selection_source_keys,
             error_message: nil
         }
 

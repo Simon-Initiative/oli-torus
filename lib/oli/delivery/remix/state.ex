@@ -28,6 +28,8 @@ defmodule Oli.Delivery.Remix.State do
             has_unsaved_changes: false,
             pinned_project_publications: %{},
             available_sources: [],
+            # Added node UUID => chosen project publication or template section.
+            material_sources: %{},
             # listing controls are UI-hints but kept here to keep transitions pure/deterministic
             pages: %{text_filter: "", limit: 5, offset: 0, sort_by: :title, sort_order: :asc},
             publications: %{
@@ -47,6 +49,7 @@ defmodule Oli.Delivery.Remix.State do
           has_unsaved_changes: boolean(),
           pinned_project_publications: %{optional(integer()) => Publication.t()},
           available_sources: [Source.t()],
+          material_sources: %{optional(String.t()) => {:publication | :section, integer()}},
           pages: map(),
           publications: map()
         }

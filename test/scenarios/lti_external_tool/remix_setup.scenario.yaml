@@ -1,0 +1,33 @@
+- use:
+    file: inheritance_setup.scenario.yaml
+
+- project:
+    name: remix_destination
+    title: Remix Destination
+    root:
+      children:
+        - page: Destination Lesson
+
+- product:
+    name: destination_template
+    from: remix_destination
+
+- section:
+    name: destination_course
+    from: destination_template
+
+- user:
+    name: remix_instructor
+    type: instructor
+
+- community:
+    name: Deep Linking Remix Sources
+    users: [remix_instructor]
+    products: [template]
+
+- assert:
+    structure:
+      to: destination_course
+      root:
+        children:
+          - page: Destination Lesson

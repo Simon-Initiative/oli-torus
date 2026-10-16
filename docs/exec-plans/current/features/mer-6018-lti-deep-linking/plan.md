@@ -144,6 +144,23 @@ Retain independent section ownership, published-revision isolation, exact tool c
 - Parallelizable Work:
   - Template-init and copy-policy test preparation can be independent; shared copy-engine changes must be coordinated with existing/remapped resources.
 
+## Phase 5a: Inherit selections with remixed content
+
+- Requirements: FR-012; AC-032, AC-033, AC-034; portable payload behavior from FR-010.
+- Goal: inherit project/template selections when adding materials to a section or template, as approved by Darren.
+- Tasks:
+  - [x] Preserve authorized source identity through Add Materials and ephemeral Remix state.
+  - [x] Initialize retained remixed activities from exact publications or current template rows, preserving existing destination rows and absent template choices.
+  - [x] Participate in the existing remix transaction without changing general rebuild/update/copy behavior; use source-grouped, scoped bulk queries.
+- Testing Tasks:
+  - [x] Add schema/parser-validated real scenarios and tests for both destinations, exact snapshot/template source, independent metadata, missing/cleared/existing choices, removals, membership, rollback and query count.
+  - [x] Run focused remix/LTI and adjacent publication/template/copy regressions, formatting and compilation.
+  - [x] Complete security, performance, Elixir and requirements reviews and targeted cleanup.
+- Definition of Done / Gate:
+  - Scoped tests/reviews and Harness checks pass; no external tool setup or commit without owner approval.
+- Dependencies:
+  - Phases 4–5. Phase 6 is temporarily stashed and will be reconciled after this extension.
+
 ## Phase 6: Complete verification, guidance and review
 
 - Requirements: FR-010, FR-011; final proof for all preceding requirements.
@@ -480,3 +497,46 @@ Initialize templates from exact published selections and copy current source-own
 - Remove duplicate SQL-shape assertions from the membership test; the dedicated multi-selection test still proves one INSERT … SELECT, while the membership test retains source/destination filtering assertions. Keep test helpers local instead of adding shared support for these two small, different capture contracts.
 - Trace `inheritance_test.exs` through ExUnit discovery to `inheritance_setup.scenario.yaml`, its composed setup and existing compiled hooks. Verify the production helper is called by `SectionCopy.copy/3`; no Phase 5 files or entrypoints are orphaned, and no stale assigns/props or unsupported types were introduced.
 - Post-cleanup focused validation passed **13 tests, 0 failures**, seed `840844`, with clean ExUnit output. The earlier 335-test regression and 129-test adjacent result remain applicable because cleanup changes only API documentation and a redundant test assertion. Scoped formatting, compilation with warnings as errors, Harness checks and `git diff --check` pass. The separate security/performance/Elixir/requirements reviews remain recorded above; Phase 5 remains uncommitted.
+
+## Phase 5a Execution Record
+
+### Scope from plan.md
+
+Darren-approved project/template remix inheritance, preserving destination ownership and existing curriculum behavior. Phase 6 remains in stash `c439c03b5bd7b7c35cf105bc8cceb6cb781e4ec7` while this extension is implemented.
+
+### Implementation Blocks
+
+- [x] Preserve source identity and scope inheritance to retained added material.
+- [x] Reuse transactional bulk initialization/copy behavior.
+
+### Test Blocks
+
+- [x] Add and validate realistic scenario coverage.
+- [x] Run focused and affected checks; record outcomes.
+
+### Work-Item Sync
+
+- [x] Add approved scope to PRD, FDD, plan and FR-012 / AC-032–AC-034 before coding.
+
+### Review Loop
+
+- [x] Complete applicable independent reviews and cleanup.
+
+### Done Definition
+
+- [x] Tests, reviews and documentation validation pass; no commit without owner approval.
+
+### Phase 5a Review and Cleanup (2026-10-15)
+
+- Use `change-cleanup` in the owner's selected `self-driving` mode against `origin/master`, restricted to the outstanding remix extension. Replace the modal's previous source-type map with the chosen-source-key map and derive telemetry types, avoiding parallel state. Reuse `Source.selection_identity/2`, one visibility set per template source, the existing portable-selection initializer and the section-copy query. Add precise public contracts and keep provenance in Remix state rather than the shared hierarchy struct.
+- Dedicated security, performance, Elixir and requirements reviews completed. Correct two review findings: skip non-page/empty content during activity extraction, and exclude hidden/removed template descendants from inheritance using the same visibility set. The latter leaves existing curriculum reconstruction behavior unchanged. Correction reviews report no remaining findings; no broader publication/update optimization was added.
+- Trace the new automatically discovered `remix_test.exs` and `remix_live_test.exs` runners to `remix.scenario.yaml` / `remix_setup.scenario.yaml` and the existing inheritance/setup/hooks. New workflow setup uses `Oli.Scenarios.execute_file/2` and real APIs without domain factories or mocks. The empty-root regression uses the production project-creation API because scenario-built roots supply model content and cannot express that prerequisite. No shared test support/configuration changed.
+- The 22 new remix-focused tests passed (seed `312691`), including actual LiveView picker check/uncheck/recheck/save, current source metadata and independent rows, exact publication retention, both destination types, cleared/missing choices, removed/unreferenced/hidden pages, moved container pages, empty-content roots, membership, rollback/retry, preserved destination choices and bounded query counts. The earlier affected regression passed 372 tests (seed `564452`) before the final two review regressions; final verification is recorded below.
+- Performance review confirms one candidate SELECT plus parameter-bounded bulk INSERTs per publication source and one INSERT … SELECT per template source; no per-activity queries or external tool calls. These are query-shape assertions/static review, not production latency or contention benchmarks.
+- Phase 6 remains in its original stash until this extension is reviewed by the owner. Its final guide/status reconciliation is deferred to restoration; no commit is authorized by this execution record.
+
+### Phase 5a Final Verification
+
+- Final affected regression passed **374 tests, 0 failures**, seed `816953`: all LTI feature scenarios/context tests; remix domain, scenario/product-source and LiveView suites; direct delivery creation; current/legacy major/minor publication updates; blueprint and shared section-copy regressions. Successful ExUnit output contains only normal progress and summary after standard setup; existing OTP shutdown messages follow the summary.
+- Scoped `mix format --check-formatted`, test-environment `mix compile --warnings-as-errors`, `git diff --check`, Harness work-item validation and planning traceability passed. Supplemental canonical nested validation confirms 12 FRs / 34 ACs, unique IDs, valid aggregate statuses and existing relative proof paths. FR-012 / AC-032–AC-034 retain `verified_plan`, consistently with the pre-final-verification contract; Phase 6's canonical final gate/external-tool deferrals remain separate.
+- Four independent review lenses and targeted cleanup are complete with no remaining findings. No production query-plan/large-scale contention benchmark or external tool/browser interoperability claim is made. No migration, shared test configuration/support change, commit or stash restoration was performed.
