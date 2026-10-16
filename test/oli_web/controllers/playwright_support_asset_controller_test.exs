@@ -22,6 +22,13 @@ defmodule OliWeb.PlaywrightSupportAssetControllerTest do
       assert response(conn, 200) =~ "name,value"
     end
 
+    test "serves the packaged image fixture", %{conn: conn} do
+      conn = get(conn, "/test/support/image_coding_sample.png")
+
+      assert response_content_type(conn, :png) =~ "image/png"
+      assert <<137, "PNG", 13, 10, 26, 10, _::binary>> = response(conn, 200)
+    end
+
     test "rejects unknown support assets", %{conn: conn} do
       conn = get(conn, "/test/support/does_not_exist.txt")
 
