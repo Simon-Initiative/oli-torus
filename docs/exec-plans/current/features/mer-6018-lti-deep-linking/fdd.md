@@ -4,7 +4,7 @@
 
 Keep the prototype's two storage boundaries: project configuration in the existing activity revision and delivery configuration in section-owned deep-link records. Harden editor saves and callback correlation, introduce missing-only transactional publication initialization, and copy current template or previous-section records into destination sections. Fix and component-test Torus-owned instructor configuration frame targeting; external-tool browser verification is deferred. The design builds on existing modules and does not introduce new authoring resource types or tool-specific production logic.
 
-Requirements are canonical in `requirements.yml`; this document defines how each acceptance criterion will be satisfied. Planning traceability is not implementation proof.
+Requirements are canonical in `requirements.yml`; this document records the implemented contracts. The Phase 6 execution record links completed scoped checks and explicit verification gaps; planning traceability alone is not implementation proof.
 
 ## 2. Requirements & Assumptions
 
@@ -28,7 +28,7 @@ Assume the project page editor owns configuration persistence; template authorin
 - `lib/oli_web/controllers/api/lti_controller.ex` and `lib/oli_web/controllers/lti_controller.ex` own launch details, LTI transport and callback/result handoff.
 - `lib/oli/authoring/editing/activity_editor.ex` retains ordinary revision policy. A signed selection save creates a fresh revision; ordinary single/bulk activity content edits preserve the stored selection.
 - `lib/oli/delivery.ex` calls `PlatformExternalTools.initialize_section_deep_links/2` inside direct creation. That helper now performs validated, missing-only initialization with conflict-do-nothing batched inserts.
-- `lib/oli/delivery/sections/updates.ex` owns the active worker publication-application transaction, including final migration and cache invalidation. Inspect legacy update entry points before claiming complete coverage.
+- `lib/oli/delivery/sections/updates.ex` owns the active worker publication-application transaction, including final migration and cache invalidation. Both active and legacy major/minor entry points are covered by the publication-application regressions.
 - `lib/oli/delivery/sections/blueprint.ex` creates templates and delegates duplication to `SectionCopy`; the copy engine is shared with previous-section copying.
 - Prototype baseline: regular/configuration frames shared a name. Phase 2 uses instance-unique names and distinct outcomes; component regressions establish targeting/message behavior, without claiming that the collision caused the observed empty MyProse modal.
 - Existing tests cover legacy LTI transport and selection CRUD. The dummy browser tool scenario currently disables Deep Linking and covers a regular launch in a new window.
@@ -47,7 +47,9 @@ Authoring flushes the existing page and target-activity persistence strategies b
 
 Regular uses the current draft selection or the integration default. Deep Link sends the selected context role and existing configuration entry point. A validated callback returns a signed result token to the initiating frame. The page editor submits that token through its coordinated save path; the server derives the selection from the token and merges only `deepLink` into the current activity content. On success, return the authoritative saved model/revision and synchronize the editor before restoring editable controls. On persistence failure, restore the last successful selection while retaining independently saved edits; do not leave a failed selection looking saved.
 
-Display generic selection metadata in the priority order tool title, supported descriptive metadata/URL, then a clear configured-state label. Do not parse MyProse custom keys to invent a generic activity name, and do not render tool-supplied HTML as trusted markup. Keep the Torus wrapper usable without altering the tool's internal UI.
+Display generic selection metadata in the priority order tool title, text, URL, then `Configured resource` in both authoring and instructor delivery. The section launch-details JSON exposes URL alongside title/text for this fallback. Do not parse MyProse custom keys to invent a generic activity name, and do not render tool-supplied HTML as trusted markup. Use the existing React Button with primary/md and select arrow padding. Keep the existing modal focus behavior without a custom trigger-focus restoration effect.
+
+A failed configuration suppresses a false saved indication while retaining the existing error banner. Subsequent ordinary page/activity autosaves still display progress; their existing success callback restores normal completion feedback. An ordinary failed save does not clear the configuration-failure state.
 
 ### 4.3 Lifecycle & Ownership
 
@@ -73,7 +75,7 @@ Do not alter general curriculum processing, publication pins, cache behavior or 
 
 ## 5. Interfaces
 
-Proposed contracts refine existing interfaces; exact function placement is confirmed in the phase-level implementation design without changing these invariants.
+Implemented contracts refine existing interfaces; the guarded authoring save design is recorded in `design/authoring-save.md`.
 
 - Project Regular launch-details remains a GET with an allowlisted role. Deep Linking starts with a trusted-Origin POST after host flush, including its lock resource. The signed `lti_message_hint` wrapper carries the original request token through OIDC; compact login hints respect the 255-character context limit. The tool echoes the opaque message hint. Refuse legacy Deep Link GETs.
 - Signed request correlation includes author, project/activity, deployment, request UUID, working publication, starting revision, server fingerprint and lock resource. Tokens retain dedicated salts and bounded lifetimes. Re-resolve accepted collaboration, capability, association and captured activity state at authorization/return/save.
@@ -91,6 +93,8 @@ Proposed contracts refine existing interfaces; exact function placement is confi
 Retain optional `content.deepLink` with `type: ltiResourceLink`, optional URL/custom/title/text and the existing section deep-link schema. Reuse the database uniqueness constraint for `(section_id, resource_id)`. Validate candidates before inserts and preserve valid tool-defined custom values exactly.
 
 Keep `priv/repo/migrations/20261005200125_widen_lti_deep_link_selection_fields.exs`. Its forward path widens URL/title/text to PostgreSQL `text`; rollback explicitly refuses data loss when values exceed the former limit. Existing activities without a selection need no content backfill. No additional table or migration is currently proposed.
+
+The actual Ecto migration was verified in a newly created disposable database: up/down/up, null/short-value preservation and independent oversized-field rollback refusal all passed. The one-off verification script was removed after execution; retain the detailed results in `docs/exec-plans/current/features/mer-6018-lti-deep-linking/plan.md` under Migration Verification Results.
 
 ## 7. Consistency & Transactions
 
@@ -176,11 +180,13 @@ Template and previous-section inheritance are part of mandatory content copying,
 - Copy-engine changes can affect other configuration groups: scope Deep Links to mandatory content, retain adjacent regressions and test source/destination independence for both source kinds.
 - A frame collision is not yet a reproduced root cause: cover distinct targets and handler association with failing component tests, and retain the pending runtime confirmation until tool-dependent verification resumes.
 - Tool payloads can be large or contain references to shared state: keep exact values, scoped queries and explicit compatibility documentation.
-- The prototype is behind `master`: integrate the current base before implementing and resolve/test changed creation, editing and copy entry points.
+- Base integration can affect shared lifecycle paths: the master base was integrated before implementation, and final regressions cover creation, editing, publication application and copy boundaries.
 
 ## 16. Open Questions & Follow-ups
 
-No product question blocks the current design. Reset/clear UI, wizard source labels, general section-copy controls, context-specific LTI identity and MyProse catalog fixes remain separate follow-ups. Confirm exact guarded-save helper placement and any scenario extension in slice design before coding. Revisit tool fixture choice only when external verification resumes; the current scope does not authorize extending that tool.
+No product question blocks the current design. Reset/clear UI, wizard source labels, general section-copy controls, context-specific LTI identity and MyProse catalog fixes remain separate follow-ups. Guarded selection saves use `AuthoringLaunch` and the existing `ActivityEditor.edit/5`; feature-local scenario hooks are compiled from `test/support/scenarios/lti_external_tool/`. Revisit tool fixture choice only when external verification resumes; the current scope does not authorize extending that tool.
+
+Approved remix / Add Materials inheritance is implemented under FR-012 / AC-032–AC-034. It initializes retained added activities from the chosen publication or actual template source inside the remix transaction, preserving existing destination selections. Whole-course copy and publication application retain their separate lifecycle boundaries.
 
 ## 17. References
 
@@ -231,3 +237,17 @@ No product question blocks the current design. Reset/clear UI, wizard source lab
 ### 2026-10-15 - Approved remix extension
 
 Darren approved inheritance when remixing project/template content into templates or course sections. Add FR-012 / AC-032–AC-034 and Phase 5a before final verification. Keep Phase 6 changes stashed during implementation, then reconcile their guide and traceability with this scope.
+
+### 2026-10-15 - Reconcile final presentation and verification boundaries
+- Change: Document the approved primary/md buttons, absence of custom focus restoration and title/text/URL/configured-state fallback, including URL in section details. Add durable guidance and an isolated rehearsal for the inherited migration.
+- Reason: Owner review and Phase 6 authorization; keep implementation and proof descriptions aligned.
+- Evidence: `assets/test/components/lti/delivery_selection_test.tsx`, `guides/lti/deep-linking.md` and the migration verification results in `docs/exec-plans/current/features/mer-6018-lti-deep-linking/plan.md`.
+- Impact: Preserve storage/query/publication/copy behavior and external-tool deferrals. Approved remix inheritance is implemented in Phase 5a and retained during final verification.
+
+
+### 2026-10-16 - Retain one-off migration verification results
+
+- Change: Replace the temporary migration script references with the recorded results in `docs/exec-plans/current/features/mer-6018-lti-deep-linking/plan.md` under Migration Verification Results.
+- Reason: Owner requested removing the script after successful execution.
+- Evidence: Successful up/down/up and data-preserving rollback refusal recorded in the plan; automated long-value scenario coverage remains.
+- Impact: AC-026 uses hybrid verification; no production migration or runtime behavior changes.

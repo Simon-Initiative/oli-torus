@@ -1,9 +1,11 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
+import { Editors } from 'components/resource/editors/Editors';
 import { PageEditor } from 'apps/page-editor/PageEditor';
 import * as ActivityPersistence from 'data/persistence/activity';
 import { acquireLock, releaseLock } from 'data/persistence/lock';
 import { saveAuthoringDeepLink, startAuthoringDeepLink } from 'data/persistence/lti_platform';
+import * as ResourcePersistence from 'data/persistence/resource';
 
 jest.mock('data/persistence/lock', () => ({ acquireLock: jest.fn(), releaseLock: jest.fn() }));
 jest.mock('data/persistence/lti_platform', () => ({
@@ -12,7 +14,9 @@ jest.mock('data/persistence/lti_platform', () => ({
 }));
 jest.mock('data/persistence/activity', () => ({ edit: jest.fn() }));
 jest.mock('components/resource/editors/Editors', () => ({
-  Editors: (props: any) => <div>{props.activityContexts.first()?.model.deepLink?.title}</div>,
+  Editors: jest.fn((props: any) => (
+    <div>{props.activityContexts.first()?.model.deepLink?.title}</div>
+  )),
 }));
 jest.mock('components/resource/editors/ContentOutline', () => ({ ContentOutline: () => null }));
 jest.mock('components/resource/objectives/ObjectivesSelection', () => ({
@@ -85,6 +89,7 @@ beforeEach(() => {
   (releaseLock as jest.Mock).mockResolvedValue({ type: 'acquired' });
   (startAuthoringDeepLink as jest.Mock).mockResolvedValue({ request_id: 'request' });
 });
+afterEach(() => jest.restoreAllMocks());
 
 it('uses the existing Saving / All changes saved indicator and synchronizes the saved model', async () => {
   const page = React.createRef<PageEditor>();
@@ -134,6 +139,60 @@ it('retains the prior model and does not display All changes saved after a faile
   expect(screen.queryByText('All changes saved')).toBeNull();
   expect(screen.getByText(/Your changes weren't saved/)).toBeTruthy();
 });
+
+it.each(['page', 'activity', 'new activity'])(
+  'restores normal %s autosave feedback after configuration preparation fails',
+  async (target) => {
+    const page = React.createRef<PageEditor>();
+    render(<PageEditor {...props} ref={page} />);
+    await waitFor(() => expect(page.current?.state.editMode).toBe(true));
+    if (target === 'new activity') {
+      jest.spyOn(ResourcePersistence, 'edit').mockResolvedValue({
+        type: 'success',
+        revisionSlug: 'page',
+        revision_slug: 'page',
+      });
+      const editorCalls = (Editors as jest.Mock).mock.calls;
+      const editorProps = editorCalls[editorCalls.length - 1][0];
+      act(() => {
+        editorProps.onAddItem(
+          { id: 'new-reference', type: 'activity-reference', activity_id: 43 },
+          [0],
+          { ...entry, activityId: 43, activitySlug: 'new-tool' },
+        );
+      });
+    }
+    (startAuthoringDeepLink as jest.Mock).mockRejectedValueOnce(new Error('Launch unavailable'));
+
+    await act(async () => {
+      await expect(event('ltiAuthoringPrepare', { role: 'developer' })).rejects.toThrow(
+        'Launch unavailable',
+      );
+    });
+    expect(screen.queryByText('All changes saved')).toBeNull();
+
+    const persistence =
+      target === 'page'
+        ? page.current!.persistence
+        : page.current!.activityPersistence[target === 'new activity' ? 'new-tool' : 'tool'];
+    const response = deferred<void>();
+    let saving!: Promise<void>;
+    act(() => {
+      persistence.save(() => response.promise);
+      saving = persistence.flushPendingChangesAsync!(false);
+    });
+    expect(screen.getByText('Saving...')).toBeTruthy();
+    expect(screen.queryByText('All changes saved')).toBeNull();
+
+    await act(async () => {
+      response.resolve();
+      await saving;
+    });
+    expect(screen.getByText('All changes saved')).toBeTruthy();
+    expect(screen.getByText(/Your changes weren't saved/)).toBeTruthy();
+    expect(screen.getByText('Draft')).toBeTruthy();
+  },
+);
 
 it('flushes the existing page/activity autosaves before preparing and blocks launch when they fail', async () => {
   const page = React.createRef<PageEditor>();

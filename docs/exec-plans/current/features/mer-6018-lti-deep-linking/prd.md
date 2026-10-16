@@ -27,6 +27,7 @@ The prototype already supports selecting a tool resource in project authoring an
 - A new authoring resource type, a separate selection resource, or a context-specific LTI resource-link identity migration.
 - Redesigning MyProse, changing its task catalog lifecycle, or guaranteeing portability of tool-side shared content.
 
+
 ## 4. Users & Use Cases
 
 - Authors select a task with the chosen LTI role, save it in the activity and reopen it with Regular.
@@ -38,6 +39,8 @@ The prototype already supports selecting a tool resource in project authoring an
 ## 5. UX / UI Requirements
 
 Use familiar authoring controls for role, launch type and explicit actions. Show current selection and use the existing page-editor `Saving...` / `All changes saved` indicator, with coherent local cancellation and failure feedback. Do not add a separate selection-saved confirmation. Explain Regular reuse and distinguish selecting a resource from opening it. Use useful generic metadata fallback when the tool omits a title, without interpreting arbitrary custom parameters.
+
+Use the existing React Button in its `primary` / `md` variant. Reserve space for select arrows and display selection metadata in title, text, URL, configured-state order in both authoring and instructor delivery. Retain the modal's existing focus behavior; do not add custom launch-trigger focus restoration.
 
 The wrapper owns dialog size, layout, scroll, keyboard/focus behavior and status announcements. The tool owns its internal selection UI. No Figma source was supplied; use established components and Tailwind conventions. If a design source is later provided, route reconciliation through the repository's UI workflow.
 
@@ -103,6 +106,7 @@ N/A — no new telemetry program is in scope. Current verification uses the acti
 - Template and previous-section inheritance copy current source-owned records, including instructor changes, without fallback to a newer project configuration. Deep Links are part of the existing mandatory Content / curriculum group; no new checkbox is added. Each destination owns independent rows and retains the existing project/template provenance and publication-update behavior.
 - The project page editor is the supported authoring configuration host. Other hosts retain ordinary editing/launch compatibility and must not offer an unsupported selection-save action.
 - Existing LTI resource-link identity formats remain unchanged in this ticket.
+- Author/instructor guidance lives in `guides/lti/deep-linking.md`. The one-off migration check passed against a newly created disposable database; its results are recorded in `docs/exec-plans/current/features/mer-6018-lti-deep-linking/plan.md` under Migration Verification Results. The temporary script is not retained.
 
 ## 15. QA Plan
 
@@ -115,11 +119,11 @@ N/A — no new telemetry program is in scope. Current verification uses the acti
 
 ## 16. Definition of Done
 
-- [ ] Active backend/frontend/scenario criteria have linked evidence; deferred cross-service checks are reported separately and never marked verified from component tests alone.
-- [ ] Torus-owned instructor modal behavior and section-local persistence are covered; confirmation with an actual tool remains explicitly pending.
-- [ ] Required backend/frontend/scenario checks and migration checks pass without an external tool service.
-- [ ] Manual compatibility observations and user guidance are recorded without committing local credentials or temporary notes.
-- [ ] Repository review findings are resolved and Harness implementation traceability is validated.
+- [x] Active backend/frontend/scenario criteria have linked evidence; deferred cross-service checks are reported separately and never marked verified from component tests alone.
+- [x] Torus-owned instructor modal behavior and section-local persistence are covered; the complete external-tool walkthrough remains explicitly pending.
+- [x] Focused backend/frontend/scenario checks and migration checks pass without an external tool service. The complete backend run is not green: its two known unrelated failures are recorded in the Phase 6 execution record.
+- [x] Manual compatibility observations and user guidance are recorded without committing local credentials or temporary notes.
+- [x] Repository review findings are resolved and nested FR/AC traceability is validated. AC-022 and AC-030 remain below verified; the canonical implementation_complete gate is not satisfied.
 
 ## Decision Log
 
@@ -152,3 +156,17 @@ N/A — no new telemetry program is in scope. Current verification uses the acti
 
 - Decision: Include project/template sources in Add Materials for course sections and templates in this PR. Project sources use the chosen publication; template sources use current template-owned selections, including missing/cleared choices without project fallback.
 - Preserve existing destination selections and create independently owned rows only for activities referenced by retained remixed pages. Failure rolls back remix. No learner data, new UI controls, migration or external tool setup is introduced.
+
+### 2026-10-15 - Reconcile final UI and verification scope
+- Change: Retain original React primary/md buttons, readable selects and matching selection metadata fallback in authoring and delivery. Remove custom focus restoration and document user workflows plus a disposable-database migration rehearsal.
+- Reason: Owner UI review and Phase 6 authorization. Approved remix inheritance was implemented in Phase 5a before restoring final verification.
+- Evidence: Commits `41461c2067` and `16505e69f8`, `guides/lti/deep-linking.md` and the migration verification results in `docs/exec-plans/current/features/mer-6018-lti-deep-linking/plan.md`.
+- Impact: The final review also corrected autosave feedback recovery after a configuration failure using existing persistence callbacks. This final verification adds no new migration or tool service; approved remix behavior is covered by Phase 5a. AC-022 external navigation and AC-030's complete walkthrough remain deferred.
+
+
+### 2026-10-16 - Retain one-off migration verification results
+
+- Change: Replace the temporary migration script references with the recorded results in `docs/exec-plans/current/features/mer-6018-lti-deep-linking/plan.md` under Migration Verification Results.
+- Reason: Owner requested removing the script after successful execution.
+- Evidence: Successful up/down/up and data-preserving rollback refusal recorded in the plan; automated long-value scenario coverage remains.
+- Impact: AC-026 uses hybrid verification; no production migration or runtime behavior changes.

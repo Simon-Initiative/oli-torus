@@ -8,7 +8,7 @@ Scope and reference artifacts:
 
 ## Scope
 
-Productionize the inherited prototype, repair instructor reconfiguration, add missing-only publication application and project → template → section / previous-section inheritance, and supply permanent regression evidence. This plan does not start implementation or mark manual observations as automated proof.
+Productionize the inherited prototype, repair instructor reconfiguration, add missing-only publication application and project → template → section / previous-section inheritance, and supply permanent regression evidence. Phases 1–5 and approved remix Phase 5a are implemented and committed; Phase 6 consolidates final evidence without treating manual observations as automated proof.
 
 Retain independent section ownership, published-revision isolation, exact tool custom values and existing LTI resource-link identities. Preserve the prototype documents as historical references. Exclude template Deep Linking authoring UI, a reset action, general section-copy controls, creation-wizard redesign and MyProse changes unless scope is explicitly revised.
 
@@ -16,7 +16,7 @@ Retain independent section ownership, published-revision isolation, exact tool c
 
 - Work on `MER-6018-productionize-lti-deep-linking`, based on prototype commit `db1e2b09bc9`, in the separate MER-6018 worktree.
 - Integrate the current `master` base before implementation; at intake, fetched `origin/master` was 29 commits ahead of the prototype's base. Decide merge/rebase from the actual divergence and branch publication state, preserving both prototype commits and all uncommitted work.
-- The owner manually verified Draft/Review authoring, direct section creation, unpublished isolation and old/new section behavior. Instructor configuration remains unverified due to the empty modal.
+- The owner manually verified Draft/Review authoring, direct section creation, unpublished isolation and old/new section behavior. At intake, instructor configuration was blocked by an empty modal; the owner subsequently confirmed selector rendering, saved replacement, learner launch and cancellation during Phase 2.
 - Frame-name collision is a strong code-level hypothesis, not yet an automated reproduced root cause.
 - Use targeted tests first, then broaden when shared lifecycle/copy changes or failures justify it. If shared test configuration/support changes, run the full `mix test` suite and verify clean ExUnit progress/summary.
 - Run Mix commands with escalated permissions from the worktree. Never reset the development/demo database as part of a test run; verify test environment/database configuration before invoking the repository's `mix test` alias.
@@ -166,15 +166,15 @@ Retain independent section ownership, published-revision isolation, exact tool c
 - Requirements: FR-010, FR-011; final proof for all preceding requirements.
 - Goal: produce a reviewable production change with permanent evidence for the active verification scope and an explicit account of deferred tool-dependent checks.
 - Tasks:
-  - [ ] Finish committed backend/scenario/frontend evidence and map actual proof paths to the supported ACs in `requirements.yml`; retain deferred cross-service criteria as pending.
-  - [ ] Document Regular/Deep Link semantics, section-local changes, publication/template inheritance and the Torus-wrapper/tool-UI boundary.
-  - [ ] Preserve existing MyProse observations and record the new complete walkthrough as deferred with AC-030. Do not start/configure a tool or add Deep Linking support to the example tool as part of this phase.
-  - [ ] Run applicable review through `docs/CODEREVIEW.md`: security/performance always, plus Elixir/UI/TypeScript/requirements for this scope; resolve concrete findings.
-  - [ ] Reconcile PRD/FDD/plan with final decisions and validate Harness implementation traceability. Keep excluded product ideas separate.
+  - [x] Finish committed backend/scenario/frontend evidence and map actual proof paths to the supported ACs in `requirements.yml`; retain deferred cross-service criteria as pending.
+  - [x] Document Regular/Deep Link semantics, section-local changes, publication/template inheritance and the Torus-wrapper/tool-UI boundary in `guides/lti/deep-linking.md`.
+  - [x] Preserve existing MyProse observations and record the new complete walkthrough as deferred with AC-030. Do not start/configure a tool or add Deep Linking support to the example tool as part of this phase.
+  - [x] Run applicable review through `docs/CODEREVIEW.md`: security/performance always, plus Elixir/UI/TypeScript/requirements for this scope; resolve concrete findings.
+  - [x] Reconcile PRD/FDD/plan with final decisions and validate Harness implementation traceability. Keep excluded product ideas separate.
 - Testing Tasks:
-  - [ ] Close AC-028, AC-029 and AC-031 with real evidence; report AC-030 and the cross-service portion of AC-022 as deferred, and identify any other runtime evidence still pending.
-  - [ ] Run affected backend/scenario/frontend suites and migration/rollback verification without an external tool. Broaden to the full backend suite if shared test support/configuration changed or unresolved regressions justify it.
-  - [ ] Verify clean ExUnit output, formatting, compile/type/lint checks appropriate to actual changed files and no temporary demo/credential artifacts in the diff.
+  - [x] Close AC-028, AC-029 and AC-031 with real evidence; report AC-030 and the cross-service portion of AC-022 as deferred, and identify any other runtime evidence still pending.
+  - [x] Run affected backend/scenario/frontend suites and migration/rollback verification without an external tool. Broaden to the full backend suite if shared test support/configuration changed or unresolved regressions justify it.
+  - [x] Verify clean ExUnit output, formatting, compile/type/lint checks appropriate to actual changed files and no temporary demo/credential artifacts in the diff.
   - Commands: appropriate `mix test` targets/full suite when required, `mix format --check-formatted`, `mix compile`, focused frontend gates, `git diff --check`, installed Harness requirements/validation scripts plus nested FR/AC coverage checks.
 - Definition of Done:
   - Active automated checks pass, guidance/existing compatibility notes are durable and review findings are resolved. Report remaining tool-dependent evidence explicitly; complete canonical verification remains pending until that evidence exists.
@@ -364,7 +364,7 @@ Productionize authoring through existing editor mechanisms. The owner rejected t
 - [x] Keep signed author/tool correlation and current permission/capability/lock checks. Compare captured revision plus deterministic server state so in-place ordinary edits are detected.
 - [x] Add a sole signed-result update to `ActivityEditor.edit/5`, deriving the selection-only merge under its existing transaction/lock and cloning only for the selection save. Ordinary single/bulk edits retain current selection and normal revision policy.
 - [x] Reuse existing `PersistenceStatus` and error banner, synchronize the authoritative activity model, and remove `Selection saved`. Close is local; callback itself never writes. An uncertain network result requests reload.
-- [x] Retain role/type choices, supported-host gating, portable metadata fallback, active-frame message filtering and trigger focus return.
+- [x] Retain role/type choices, supported-host gating, portable metadata fallback and active-frame message filtering. The custom trigger-focus restoration added in this phase was subsequently removed at the owner’s request in `41461c2067`.
 
 ### Test Blocks
 
@@ -393,7 +393,7 @@ PRD, FDD, design and requirements now describe the smaller authoring contract an
 - Return only consumed model/title/objectives/tags fields, derive preparation feedback from existing state, rename the page handler to reflect all three events and document meaningful Elixir public input/output contracts. Keep existing persistence/authorization behavior and the reduced scope.
 - Keep shared scenario hooks in `test/support/scenarios/lti_external_tool/`, compiled by Mix without `Code.require_file`. The full suite run after that move completed with 9,644 tests and three failures outside Deep Linking: filesystem traversal timeout in preview-seed checks, connection failures in getting-started simulation and a payment billing-descriptor expectation. Its isolated 47-test Deep Linking run passed.
 - The cleanup regression run exposed a branch-local timestamp-sensitive assertion: an upsert can return a constructed `inserted_at` while PostgreSQL preserves the original value on conflict. Reload the two persisted baselines before asserting the complete row remains unchanged; production code is unaffected.
-- Final cleanup verification passed: **167 backend tests**, seed `601812`, with clean ExUnit progress/summary; **216 frontend tests across 30 suites**; TypeScript, scoped ESLint/Prettier/Mix formatting, warnings-as-errors compilation and Harness structure/design/traceability. Separate security, performance, Elixir, TypeScript, UI and requirements reviews reported no remaining findings. Corrected a misplaced return-value doc line during the review loop. Browser/tool interoperability remains deferred and all Phase 3 changes remain uncommitted.
+- Final cleanup verification passed: **167 backend tests**, seed `601812`, with clean ExUnit progress/summary; **216 frontend tests across 30 suites**; TypeScript, scoped ESLint/Prettier/Mix formatting, warnings-as-errors compilation and Harness structure/design/traceability. Separate security, performance, Elixir, TypeScript, UI and requirements reviews reported no remaining findings. Corrected a misplaced return-value doc line during the review loop. Browser/tool interoperability remains deferred and Phase 3 was subsequently committed with owner approval as `3bc97a98be`.
 
 
 The simplified authoring scope preserves signed validation and meaningful stale-state detection, while removing the independent coordinator, persistent authoring request/cancel/supersession state, generic-resource edits and forced fresh ordinary revisions. Successful ExUnit output contained only progress/summary after its normal pre-test seed output; OTP shutdown messages follow the summary. No new external-tool/browser automation or migration was introduced. The owner's Phase 3 commit approval does not authorize commits for later phases.
@@ -420,7 +420,7 @@ Initialize missing selections from the explicitly applied publication after fina
 
 ### Work-Item Sync
 
-Phase 3 is committed with explicit owner approval. Phase 4 was committed with owner approval as `2231ccf50e`; template/previous-section creation/copy policy remains Phase 5. Whole-feature requirements retain `verified_plan` pending final verification and deferred external evidence.
+Phase 3 is committed with explicit owner approval. Phase 4 was committed with owner approval as `2231ccf50e`; template/previous-section creation/copy policy remains Phase 5. At Phase 4, whole-feature requirements retained `verified_plan`; final scoped verification/statuses are recorded in Phase 6.
 
 ### Review Loop
 
@@ -443,7 +443,7 @@ Phase 3 is committed with explicit owner approval. Phase 4 was committed with ow
 - An intermediate cleanup introduced a shortcut around normal publication processing. The owner rejected that broader optimization: remove it, its special concurrency handling and its test. Restore the original Project lookup and publication-read placement. Keep unchanged diffs in the existing minor pipeline; do not optimize general updates without separate approval. Earlier 36/50-to-6/7 statement comparisons applied only to intermediate implementations and do not describe the retained flow.
 - The owner manually confirmed that applying a publication retained the original section choice and initialized the newly added tool from that publication. Phase 5 remains separate; no Phase 4 commit is authorized by this review request.
 - After scope reduction, the focused runner passed **18 tests, 0 failures**, seed `108480`; the expanded regression passed **321 tests, 0 failures**, seed `748235`. It covers LTI scenarios/context, direct creation, current/legacy major/minor updates, blueprints, section copy and LTI callback controller suites. ExUnit output is clean apart from normal progress and summary; existing setup/shutdown output stays outside it.
-- Security, performance, Elixir and requirements correction reviews report no remaining findings for the reduced scope. Scoped formatting, test-environment warnings-as-errors compilation, `git diff --check` and Harness structure/design/nested traceability passed. Requirements stay `verified_plan`; real-tool automation, parallel-session stress and production latency guarantees remain outside the completed evidence. Phase 4 remains uncommitted.
+- Security, performance, Elixir and requirements correction reviews report no remaining findings for the reduced scope. Scoped formatting, test-environment warnings-as-errors compilation, `git diff --check` and Harness structure/design/nested traceability passed. Requirements stay `verified_plan`; real-tool automation, parallel-session stress and production latency guarantees remain outside the completed evidence. Phase 4 was subsequently committed with owner approval as `2231ccf50e`.
 
 
 ## Phase 5 Execution Record
@@ -481,13 +481,13 @@ Initialize templates from exact published selections and copy current source-own
 
 ### Verification and Review Evidence
 
-- Phase 4 was committed with explicit owner approval as `2231ccf50e`. Phase 5 documents were extended and validated before coding. Phase 5 remains uncommitted.
+- Phase 4 was committed with explicit owner approval as `2231ccf50e`. Phase 5 documents were extended and validated before coding. Phase 5 was subsequently committed with owner approval as `45c5072458`.
 - `test/scenarios/lti_external_tool/inheritance_setup.scenario.yaml` passes schema/parser validation and is reached by the automatically discovered `inheritance_test.exs` runner. Setup uses `Oli.Scenarios.execute_file/2` and real domain APIs, with no fixtures, factories, mocks or external tool process; no shared test-support/configuration changes were made.
 - The focused runner passed **13 tests, 0 failures**, seed `239506`. It verifies published template capture versus draft edits, current template/instructor overrides, long URL/title/text and nested custom metadata, content-only/all-group copies, independent edits and subsequent publication application, missing/cleared choices without fallback, source/destination membership, actual project-clone remaps, rollback/retry and unchanged source learner access/attempt records.
 - Expanded LTI/delivery/publication/copy regression passed **335 tests, 0 failures**, seed `817841`. Adjacent project-clone, copy-options, certificate and new-course LiveView regressions reported **129 tests, 0 failures (13 excluded)**, seed `797828`. Successful ExUnit output contains only normal progress and summary after setup; existing OTP shutdown output follows the summary.
 - A rolled-back, isolated SQL diagnostic used 2,003 activities and five unrelated copies sharing resource IDs. The new copy operation inserted **501 choices in one INSERT … SELECT with five parameters**, using existing section-resource/deep-link composite indexes without a global scan of deep-link rows. Local warm-cache execution was 9.164 ms, including the insert; this is not a production SLA or a claim of heap-free reads. No index or migration was added.
 - Separate security, performance, Elixir and requirements reviews found no remaining issues. Corrected the Blueprint function's documented step order without changing execution. Existing lifecycle processing, final AI-override ordering, copy groups, publication pins and project/blueprint provenance remain intact.
-- Scoped formatting, test-environment compilation with warnings as errors, `git diff --check` and Harness structure/design/requirements validation pass. AC-019/AC-020/AC-021 and supporting payload/isolation criteria link the new runner; whole-feature statuses remain `verified_plan`. External-tool/browser proof remains deferred, and Phase 6 is not executed as part of this phase.
+- Scoped formatting, test-environment compilation with warnings as errors, `git diff --check` and Harness structure/design/requirements validation pass. AC-019/AC-020/AC-021 and supporting payload/isolation criteria link the new runner; whole-feature statuses remained `verified_plan` at that phase; see Phase 6 for final scoped verification. External-tool/browser proof remains deferred, and Phase 6 is not executed as part of this phase.
 
 
 ### Phase 5 Formal Cleanup (2026-10-15)
@@ -496,7 +496,7 @@ Initialize templates from exact published selections and copy current source-own
 - Clarify that `copy_section_deep_links/2` requires an authorized source and a destination created within the caller's source-locked transaction. Keep the query, transaction boundaries and existing pipeline stages unchanged.
 - Remove duplicate SQL-shape assertions from the membership test; the dedicated multi-selection test still proves one INSERT … SELECT, while the membership test retains source/destination filtering assertions. Keep test helpers local instead of adding shared support for these two small, different capture contracts.
 - Trace `inheritance_test.exs` through ExUnit discovery to `inheritance_setup.scenario.yaml`, its composed setup and existing compiled hooks. Verify the production helper is called by `SectionCopy.copy/3`; no Phase 5 files or entrypoints are orphaned, and no stale assigns/props or unsupported types were introduced.
-- Post-cleanup focused validation passed **13 tests, 0 failures**, seed `840844`, with clean ExUnit output. The earlier 335-test regression and 129-test adjacent result remain applicable because cleanup changes only API documentation and a redundant test assertion. Scoped formatting, compilation with warnings as errors, Harness checks and `git diff --check` pass. The separate security/performance/Elixir/requirements reviews remain recorded above; Phase 5 remains uncommitted.
+- Post-cleanup focused validation passed **13 tests, 0 failures**, seed `840844`, with clean ExUnit output. The earlier 335-test regression and 129-test adjacent result remain applicable because cleanup changes only API documentation and a redundant test assertion. Scoped formatting, compilation with warnings as errors, Harness checks and `git diff --check` pass. The separate security/performance/Elixir/requirements reviews remain recorded above; Phase 5 was subsequently committed with owner approval as `45c5072458`.
 
 ## Phase 5a Execution Record
 
@@ -549,3 +549,98 @@ Darren-approved project/template remix inheritance, preserving destination owner
 - Focused frontend validation passes **64 tests, 0 failures (9 suites)**; the final typed-fixture rerun passes all nine nested-editor cases. Repository-style `tsc --noEmit --skipLibCheck`, scoped ESLint/Prettier, Harness structure/planning validation and `git diff --check` pass. An initial check without the repository's `--skipLibCheck` option also reported dependency declaration errors; the required repository-style check is clean. Targeted TypeScript/UI correction reviews report no remaining findings. Ordinary-save feedback recovery after an LTI error is the known pending Phase 6 fix and will be verified when restoring the stash, rather than duplicated here.
 - The existing full backend result remains **26 doctests, 9,707 tests, 2 failures, 75 excluded**, seed `150376`: unchanged author-list pagination (passes in isolation) and a preview-seed wildcard timeout over the local assets tree. The isolated pagination and remix-picker check passes **2 tests, 0 failures**, seed `150376`. This cleanup changes no backend production code, shared test support or test configuration; no full-suite green claim is made.
 - The owner authorized intermediate commits for this review/restoration execution. Restore the Phase 6 stash only after this cleanup commit, reconcile its guidance with approved/completed remix, and leave the final integrated Phase 6 changes uncommitted for owner review.
+
+
+## Phase 6 Execution Record
+
+### Scope from plan.md
+
+Complete verification, durable author/instructor guidance, final review and traceability for the approved scope. Phases 1–5 are committed through `45c5072458`; approved UI adjustments are `41461c2067` and `16505e69f8`. Approved remix / Add Materials inheritance was implemented in `f51c5261a3`; explanatory documentation followed in `e82d68db65`, and pre-restoration review fixes/cleanup in `6271901995`. Final verification includes FR-012 / AC-032–AC-034. External-tool automation and a new complete compatibility walkthrough remain deferred.
+
+### Implementation Blocks
+
+- [x] Add `guides/lti/deep-linking.md` and link it from the existing LTI configuration guide. Explain roles, Regular reuse, selection metadata, publication/copy semantics, instructor changes and wrapper/tool ownership.
+- [x] Execute a one-off check of the actual widening migration through Ecto, using only a newly created disposable database, and document its results. Cover up/down/up, short/null preservation and refusal to shrink each oversized field without data loss.
+- [x] Reconcile final UI decisions and commit references; preserve historical observations without claiming full external-tool proof.
+- [x] Resolve final-review feedback: configuration failure must not permanently hide subsequent ordinary page/activity autosave progress or completion.
+- [x] Finish proof/status reconciliation after final verification and review.
+
+### Test Blocks
+
+- [x] Run complete backend regression in the isolated test database and record any failures or output-hygiene gaps explicitly.
+- [x] Execute the migration rehearsal, affected frontend checks, scoped formatting/compilation and Harness/nested FR/AC validation.
+
+### Review Loop
+
+- [x] Run security, performance, Elixir, UI, TypeScript and requirements reviews over the complete branch against `origin/master` after verification; address concrete branch-local findings.
+
+### Done Definition
+
+- [x] Active verification and guidance complete, deferred evidence explicit, and review findings resolved.
+- [x] Work-item validation passes. Keep AC-022 and AC-030 pending while complete external evidence is absent; do not claim the canonical `implementation_complete` gate.
+- [x] No Phase 6 commit without separate owner approval.
+
+### 2026-10-15 - Begin final verification and retain proposed remix scope separately
+
+- Change: Reconcile final UI/docs, add user guidance and a disposable-database migration rehearsal, and run final verification/review.
+- Reason: Owner approved Phase 6 and requested including remix later in this PR only if Darren confirms it.
+- Evidence: `guides/lti/deep-linking.md`, the Migration Verification Results below, approved commits `41461c2067` / `16505e69f8`, and the existing feature scenario/frontend runners.
+- Impact: No change to publication stages, inheritance queries or current remix behavior. Preserve the no-tool-service verification boundary and separate commit approval.
+
+
+### Earlier Phase 6 Verification Evidence (Before Remix)
+
+These runs preceded the remix extension and stash restoration. The post-restoration record below supersedes their scope/counts; their diagnostics are retained as historical evidence.
+
+- Complete backend run: `mix test`, with `oli.env` loaded and only `DATABASE_URL` redirected to isolated `oli_mer6018_test`, finished with **26 doctests, 9,681 tests, 2 failures (75 excluded)**, seed `801322`. This is not a clean full-suite result. Both failures were already observed in the earlier complete run and concern unchanged files outside Deep Linking:
+  - `test/oli/seeding/preview_seed_manifest_examples_test.exs:76`: recursive filesystem wildcard exceeded the 60-second test timeout.
+  - `test/oli_web/controllers/payment_controller_test.exs:33`: expected the default `CARNEGIE MELLON UNI` billing descriptor while the loaded local environment supplies a custom descriptor. No payment/runtime configuration or test changes were made.
+- Isolated billing diagnosis: rerunning only `payment_controller_test.exs:33` with `VENDOR_PROPERTY_BILLING_DESCRIPTOR` unset for that command passed **1 test, 0 failures (11 excluded)**, seed `636728`. This confirms the local-environment cause without changing `oli.env`, the test or production configuration. The recorded complete run still had two failures; it was not rerun or relabeled green.
+- Focused final backend regression passed **403 tests, 0 failures (13 excluded)**, seed `149263`. Targets: `test/scenarios/lti_external_tool/`, `test/oli/lti/platform_external_tools_test.exs`, the LTI API/integration/callback controller suites, `test/oli/authoring/editing/activity_editor_test.exs`, `test/oli/delivery_test.exs`, current/legacy major/minor update suites, blueprint/copy/copy-options suites and `test/oli_web/live/new_course/`. The runners validate their YAML and fail on execution/assertion errors.
+- Successful focused ExUnit output contains only normal dots and summary after the normal seed/setup output; existing OTP shutdown output follows the summary. The full run emitted no additional log lines or compiler warnings after ExUnit started; its failure diagnostics are retained as failures, not suppressed.
+- The temporary Ecto migration check passed against a newly created disposable database. The actual migration loader verified varchar → text → varchar → text, short/null preservation and rollback refusal for oversized URL, title and text independently, including multibyte values. Refused rollback preserved data, column types and migration version. Cleanup removed only the database created by the rehearsal. The production migration was unchanged.
+- Final related frontend run passed **279 tests across 55 suites**, using Jest `--findRelatedTests` over branch-modified frontend source/tests, without an external service. A final six-test mounted-editor rerun passed after replacing a test-only `Array.at` call to match the repository's TypeScript target. TypeScript, all changed-file ESLint/Prettier checks, scoped Mix formatting, test-environment compilation with warnings as errors and `git diff --check` pass.
+- Work-item structure and installed Harness planning checks pass. The installed requirements helper expects flat top-level ACs, so a supplemental nested check validated the then-current canonical schema: **11 FRs / 31 ACs**, unique IDs, relative existing proof files, complete FDD/plan references and status aggregation. **29 ACs and 9 FRs were verified**; AC-022 remains partial and AC-030 deferred, so FR-009/FR-011 remain `verified_plan`. The canonical `implementation_complete` gate is intentionally not claimed.
+
+### Earlier Phase 6 Review and Cleanup (Before Remix)
+
+- Separate security, performance, Elixir, UI, TypeScript and requirements reviews covered the complete branch against `origin/master` and Phase 6 additions. The performance review specifically rechecked missing-only initialization and source/destination copy queries: one projected discovery query plus parameter-bounded inserts; one scoped INSERT … SELECT for copying; no new per-activity queries or global selection scan. Existing publication stages remain intact and no general publication optimization was added.
+- UI and TypeScript reviews identified one shared P2: a configuration error hid the persistence indicator for subsequent ordinary edits. Red/green mounted-editor regressions reproduce it for page saves, existing activities and newly added activities. Reuse all three existing persistence success callbacks to clear the failed status only after a successful ordinary save, allow pending/inflight feedback, and preserve the error banner and immediate no-false-success behavior. Correction reviews report no remaining findings.
+- Run `change-cleanup` in the previously selected self-driving mode against `origin/master`, focused on final changes and accumulated iteration residue. Consolidate the three autosave success sites into one callback; no new persistence infrastructure. Remove stale focus/commit descriptions, preserve historical prototype docs, and verify active roots for all added files: routes/templates/domain callers, Jest/ExUnit discovery, YAML runners and compiled hooks, linked Harness artifacts, linked user guide and recorded one-off migration results. No orphaned files, unused props/assigns or broad supporting refactors were found.
+- Remaining review limits are explicit: actual external navigation/full MyProse compatibility, production contention and very large payload/migration lock-duration benchmarks are not established by these checks. Existing ordinary launch authorization behavior outside this branch was not expanded into an unrelated fix.
+- Phase 6's authorized scope is complete with the recorded full-suite caveat and external evidence deferrals. Approved remix is implemented and included in this verification scope. Phase 6 changes are left uncommitted for owner review.
+
+
+### Post-Restoration Verification and Review (2026-10-16)
+
+- Commit the authorized review/cleanup changes as `6271901995`, then apply stash `c439c03b5bd7b7c35cf105bc8cceb6cb781e4ec7` without dropping it. Resolve all conflicts by retaining the current accessible save-status region and deferred-only editing path, adding the stashed autosave recovery, and preserving approved remix requirements/design/execution records.
+- Reconcile the new guide, intake, PRD, FDD, plan and canonical requirements with implemented project/template remix inheritance. The guide covers the exact chosen publication, actual template's current selection, no missing-choice fallback, independently owned destination rows, retained added-page references, preserved destination selections and transactional rollback.
+- The restored code adds only ordinary-autosave feedback recovery; no production backend code, query, publication/update stage or integration configuration changes. Reuse the existing page, existing-activity and newly-added-activity success callbacks. Keep error feedback and the immediate suppression of false success intact. The cleanup audit finds no orphaned guide/script, duplicate persistence infrastructure or remaining abandoned immediate-save path.
+- Fresh focused frontend run: **67 tests, 0 failures (9 suites)**. Fresh related-frontend run over all branch-modified source/tests: **288 tests, 0 failures (56 suites)**. This includes the nested capability regression, live-region assertions and all three ordinary-autosave recovery paths. `tsc --noEmit --skipLibCheck`, scoped ESLint/Prettier and `git diff --check` pass.
+- Fresh integrated backend regression: **266 tests, 0 failures**, seed `319055`, using only isolated `oli_mer6018_test`. Targets include all LTI feature scenarios (including remix picker/inheritance), external-tool context, remix domain/scenarios, delivery creation, current/legacy major and minor publication updates, blueprints and section copy. ExUnit output is normal dots and summary after setup; existing OTP shutdown messages follow the summary. No shared test configuration/support was changed.
+- The restored temporary migration check passed again with exit status zero: actual Ecto-loaded up/down/up, short/null and multibyte preservation, and independent oversized URL/title/text rollback refusals with data/types/version retained. It removes only its own newly created disposable database. Scoped Mix formatting and test-environment compilation with warnings as errors pass.
+- Reuse the completed full-branch security/performance/Elixir/UI/TypeScript/requirements reviews and run all six correction/restoration follow-ups. All report no remaining introduced findings. Performance review confirms there is no production-query change in restoration. These are static/code and automated-test results, not production contention or external-tool/browser proof.
+- Harness structure/design/planning validation and supplemental nested proof/status checks pass: **12 FRs / 34 ACs**, with **10 FRs / 32 ACs verified**. FR-012 / AC-032–AC-034 are verified against the already executed remix suites and fresh integrated regression. Only FR-009/FR-011 and AC-022/AC-030 remain `verified_plan`; the canonical `implementation_complete` gate remains pending.
+- The latest complete backend run remains **26 doctests, 9,707 tests, 2 failures, 75 excluded**, seed `150376`, as recorded before restoration: unchanged author-list pagination (passes isolated) and preview-seed recursive wildcard timeout. Restoration changes no backend production behavior or shared test setup, so no redundant full-suite rerun or green full-suite claim is made.
+- Leave every restored/reconciled Phase 6 change uncommitted and unstaged for owner review; retain the stash as a recovery copy. Proposed later commit, requiring owner approval: `[MER-6018] Complete Deep Linking verification and guidance`.
+
+
+### Migration Verification Results (2026-10-16)
+
+- Migration: `priv/repo/migrations/20261005200125_widen_lti_deep_link_selection_fields.exs`.
+- Environment: test connection with a newly created disposable `oli_mer6018_migration_check` database and a minimal pre-migration table. Ecto executed the actual migration; no application/development database was modified.
+- Result: **passed (exit status 0)**. Verified `varchar(255)` → `text` → `varchar(255)` → `text` for URL, title and description, preserving nulls and 255-character multibyte values throughout.
+- For each field independently, a 512-character multibyte value caused rollback to be rejected. Data, column types and the applied migration version remained unchanged. After restoring short values, rollback and reapplication succeeded.
+- Cleanup removed the disposable database. At the owner's request, remove the one-off verification script after execution and keep this record as migration evidence. It is not an automatically recurring rollback test. Existing Deep Linking scenario tests retain automated long-value round-trip coverage.
+
+### 2026-10-16 - Retain migration results without the temporary script
+
+- Change: Remove the executed one-off migration script, remove its run instructions and update AC-026 to reference recorded results alongside automated scenario coverage (`hybrid` verification).
+- Reason: Owner requested retaining results rather than a script used for a punctual migration check.
+- Evidence: Migration Verification Results above and `test/scenarios/lti_external_tool/deep_linking_test.exs`.
+- Impact: No migration, production behavior or normal test runner changes; Phase 6 remains uncommitted.
+
+### 2026-10-16 - Owner-approved Phase 6 commit
+
+- Owner approved committing the restored/reconciled Phase 6 after removal of the temporary migration script. Retain the migration results above, final guidance and autosave-feedback recovery.
+- Pre-commit focused frontend verification passes **50 tests, 0 failures (7 suites)**. Work-item/nested traceability validation and `git diff --check` pass. Earlier integrated verification and explicit full-suite/external-tool limitations remain recorded above.

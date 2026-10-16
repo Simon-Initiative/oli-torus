@@ -47,8 +47,8 @@ Ordinary single/bulk saves retain stored selection and existing revision policy.
 - Scenario/domain/API: role/type matrix, signed callback rejection, saved-model fields, ordinary single/bulk preservation with unchanged revision policy, same-revision changed-state refusal, replay, permission/capability/lost-lock refusal and publication isolation.
 - Real database constraint: complete revision/mapping rollback and retry.
 - Deferred persistence: immediate flush, in-flight/queued serialization, failure propagation and recovery.
-- Mounted page editor: preparation order/failure, existing Saving/saved indicator, authoritative model sync and failed-save feedback without a false saved state.
-- Activity component: supported host, roles, metadata fallback, local cancellation, old/duplicate message filtering and focus return. Reuse frame/modal coverage.
+- Mounted page editor: preparation order/failure, existing Saving/saved indicator, authoritative model sync and failed-save feedback without a false saved state. After a configuration error, ordinary page/activity autosaves recover progress/completion feedback through the existing persistence callbacks while preserving the error banner.
+- Activity component: supported host, roles, metadata fallback, local cancellation and old/duplicate message filtering. Reuse frame/modal coverage. Use the existing React Button with `primary` / `md`; no custom trigger-focus restoration is added.
 - No external tool/browser automation; owner manual review remains available.
 
 ## 7. Risks & Open Questions
@@ -62,3 +62,11 @@ Ordinary single/bulk saves retain stored selection and existing revision policy.
 - [x] Existing primitives own persistence and feedback.
 - [x] Test plan covers successful save and meaningful failures.
 - [x] Final validation and correction reviews pass.
+
+## Decision Log
+
+### 2026-10-15 - Retain existing buttons and remove custom focus restoration
+- Change: Use the original React Button in its primary/md variant, reserve dropdown arrow space and remove the custom launch-trigger focus effect/test.
+- Reason: Explicit owner requests during authoring UI review.
+- Evidence: Commits `41461c2067` and `16505e69f8`; authoring and delivery both display title/text/URL/configured-state metadata in that order.
+- Impact: Keep the existing modal/component behavior and role/type choices. No shared Button changes or additional focus behavior.

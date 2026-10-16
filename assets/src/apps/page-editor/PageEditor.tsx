@@ -226,8 +226,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       .initialize(
         () => acquireLock(projectSlug, this.currentResourceSlug),
         () => releaseLock(projectSlug, this.currentResourceSlug),
-        // eslint-disable-next-line
-        () => {},
+        this.onAutosaveSuccess,
         (failure) => this.publishErrorMessage(failure),
         (persistence) => this.setState({ persistence }),
       )
@@ -414,6 +413,12 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     return Promise.resolve();
   }
 
+  onAutosaveSuccess = () => {
+    if (this.state.ltiPersistence === 'failed') {
+      this.setState({ ltiPersistence: 'idle' });
+    }
+  };
+
   initActivityPersistence() {
     this.activityPersistence = Object.keys(this.state.activityContexts.toObject()).reduce(
       (map, key) => {
@@ -425,8 +430,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
         persistence.initialize(
           () => Promise.resolve({ type: 'acquired' }),
           () => Promise.resolve({ type: 'acquired' }),
-          // eslint-disable-next-line
-          () => {},
+          this.onAutosaveSuccess,
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
@@ -712,8 +716,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
         persistence.initialize(
           () => Promise.resolve({ type: 'acquired' }),
           () => Promise.resolve({ type: 'acquired' }),
-          // eslint-disable-next-line
-          () => {},
+          this.onAutosaveSuccess,
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
@@ -807,7 +810,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                   messages={this.state.messages}
                 />
                 <div role="status" className="d-flex justify-content-end align-items-center py-2">
-                  {state.ltiPersistence !== 'failed' && (
+                  {(state.ltiPersistence !== 'failed' || state.persistence !== 'idle') && (
                     <PersistenceStatus
                       persistence={
                         state.ltiPersistence === 'inflight' ? 'inflight' : state.persistence
