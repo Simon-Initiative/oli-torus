@@ -122,7 +122,10 @@ defmodule Oli.Lti.AuthoringLaunch do
 
   def validate_return(_), do: {:error, :invalid_return}
 
-  @doc "Signs the validated selection for the editor without persisting activity changes."
+  @doc """
+  Signs the validated selection (the resource configuration chosen in the external
+  tool, including URL/custom metadata) for the editor without persisting activity changes.
+  """
   def result_token(request, selection),
     do:
       Phoenix.Token.sign(OliWeb.Endpoint, "lti-authoring-result", %{
@@ -130,7 +133,11 @@ defmodule Oli.Lti.AuthoringLaunch do
         "selection" => selection
       })
 
-  @doc "Validates a result token and its current author/activity/editor association."
+  @doc """
+  Validates a signed result against the current author, activity and editor state.
+  Returns its initiating request and portable selection (the resource configuration
+  chosen in the external tool), or an error if the result is invalid or stale.
+  """
   def validate_result(author, project, activity, token) do
     with {:ok, %{"request" => request, "selection" => item}} <-
            verify_token("lti-authoring-result", token, 600),
@@ -143,7 +150,10 @@ defmodule Oli.Lti.AuthoringLaunch do
     end
   end
 
-  @doc "Submits a signed selection through the existing editor transaction, lock and revision lifecycle."
+  @doc """
+  Submits a signed selection (the resource configuration chosen in the external tool)
+  through the existing editor transaction, lock and revision lifecycle.
+  """
   @spec save_result(%Author{} | nil, String.t(), pos_integer() | String.t(), String.t()) ::
           {:ok, %Revision{}} | {:error, term()}
   def save_result(author, project, activity, token) do
@@ -156,6 +166,9 @@ defmodule Oli.Lti.AuthoringLaunch do
     _error in [Ecto.ConstraintError, Postgrex.Error] -> {:error, :save_failed}
   end
 
+  # Re-resolves access, deployment, working publication and the owned editing lock.
+  # Comparing both revision ID and persisted-field fingerprint rejects results
+  # opened before an intervening edit, including edits that reused the revision ID.
   defp current_context(author, request) do
     with {:ok, revision, %{deep_linking_enabled: true} = deployment} <-
            resolve(author, request["project"], request["activity"]),
@@ -176,6 +189,8 @@ defmodule Oli.Lti.AuthoringLaunch do
     end
   end
 
+  # Banked activities use their own resource lock; embedded activities require the
+  # lock of a page that currently references them in this project.
   defp valid_lock?(_project, %{resource_id: lock_id, scope: :banked}, lock_id), do: true
 
   defp valid_lock?(project, revision, lock_id) do
@@ -198,6 +213,8 @@ defmodule Oli.Lti.AuthoringLaunch do
     |> Base.encode64()
   end
 
+  # Binds signed correlation to this author and route so another activity or
+  # project cannot reuse a valid request token.
   defp associated?(%Author{id: id}, project, activity, request),
     do:
       request["author_id"] == id and request["project"] == project and
@@ -205,11 +222,14 @@ defmodule Oli.Lti.AuthoringLaunch do
 
   defp associated?(_, _, _, _), do: false
 
+  # Uses each token purpose's salt and lifetime, rejecting non-token inputs early.
   defp verify_token(salt, token, max_age) when is_binary(token),
     do: Phoenix.Token.verify(OliWeb.Endpoint, salt, token, max_age: max_age)
 
   defp verify_token(_, _, _), do: {:error, :invalid_token}
 
+  # Accepts positive database IDs or their canonical decimal representation,
+  # rejecting aliases such as leading zeroes before comparing signed identities.
   defp resource_id(id) when is_integer(id) and id > 0 and id <= 9_223_372_036_854_775_807,
     do: {:ok, id}
 
@@ -225,7 +245,10 @@ defmodule Oli.Lti.AuthoringLaunch do
 
   defp resource_id(_), do: {:error, :invalid_resource}
 
-  @doc "Extracts portable resource-link fields and preserves custom metadata without reinterpretation."
+  @doc """
+  Validates a selection (the resource configuration returned by the external tool)
+  and extracts portable resource-link fields, preserving custom metadata verbatim.
+  """
   @spec selection(term()) :: {:ok, map()} | {:error, :invalid_selection}
   defdelegate selection(item), to: LtiSectionResourceDeepLink
 end

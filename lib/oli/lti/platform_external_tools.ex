@@ -419,7 +419,8 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
-  Initializes missing section LTI selections from an explicit publication.
+  Initializes missing section LTI selections (resource configurations chosen in
+  external tools, including URL/custom metadata) from an explicit publication.
 
   Only LTI activity revisions present in both the destination and that publication are
   considered. Absent or cleared selections create no records. Existing rows are excluded
@@ -497,7 +498,8 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
-  Copies current source-owned tool selections into a newly created destination.
+  Copies current source-owned tool selections (resource configurations chosen in
+  external tools, including URL/custom metadata) into a newly created destination.
 
   Copies only resources present in both sections, preserving URL/custom/metadata
   without consulting project defaults. Uses one INSERT … SELECT and participates
@@ -518,7 +520,8 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
-  Initializes missing selections for explicitly remixed activities, grouped by source.
+  Initializes missing selections (resource configurations chosen in external tools)
+  for explicitly remixed activities, grouped by source.
 
   Sources map `{:publication, id}` or `{:section, id}` to activity resource IDs.
   Callers must supply authorized sources and retained remixed activity IDs. Template
@@ -569,11 +572,16 @@ defmodule Oli.Lti.PlatformExternalTools do
       {:error, :lti_deep_link_initialization_failed}
   end
 
+  # Restricts inheritance candidates to the activities referenced by remixed pages.
+  # Creation/publication callers retain their full destination scope with :all.
   defp restrict_deep_link_resources(query, :all), do: query
 
   defp restrict_deep_link_resources(query, ids),
     do: where(query, [resource], resource.resource_id in ^ids)
 
+  # Builds the shared INSERT SELECT source for whole-course copy and template remix.
+  # Only current source-owned configurations whose resources exist in both sections
+  # qualify; callers add any remix-specific activity and missing-row restrictions.
   defp section_deep_links_query(source_section_id, destination_section_id) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 

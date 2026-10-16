@@ -6,8 +6,9 @@ defmodule Oli.Delivery.Sections.SectionCopy do
   a new section row, duplicates the source's publication pins and section
   resources, rewires the copied hierarchy onto the new section-resource ids, and
   copies instructor configuration selected by the given `CopyOptions`. Current
-  source-owned LTI selections belong to mandatory content and receive new rows
-  in the destination, without falling back to project defaults.
+  source-owned LTI selections (resource configurations chosen in external tools)
+  belong to mandatory content and receive new rows in the destination, without
+  falling back to project defaults.
 
   ## Authorization
 
@@ -194,6 +195,10 @@ defmodule Oli.Delivery.Sections.SectionCopy do
   Course billing is resolved afresh from the retained product and destination
   institution, never from the source's discounted price or learner payments.
   The required survey stays pinned to the source's content snapshot.
+
+  Current LTI selections (resource configurations chosen in external tools) are
+  copied into independent destination rows as mandatory content. Missing source
+  configurations stay absent, without recovering defaults from the project.
 
   Returns `{:ok, section}` or `{:error, reason}`. Every step participates in one
   transaction, so a failure at any point leaves no partial section behind.

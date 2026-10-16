@@ -535,7 +535,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   .`{:error, {:not_found}}` if the project, resource, activity, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this activity
   .`{:error, {:invalid_update_field}}` if the update contains an invalid field
-  .`{:error, :stale_selection}` if a signed tool selection no longer matches the editor state
+  .`{:error, :stale_selection}` if a signed tool selection (the resource configuration
+  chosen in the external tool) no longer matches the editor state
   .`{:error, {:error}}` unknown error
 
   A sole `deep_link_result` field supplies a server-signed selection token. It is
@@ -720,7 +721,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
-  # Applies the update to the revision, converting any objective slugs back to ids
+  # Applies revision edits and converts objective slugs back to IDs. Ordinary edits
+  # retain the stored LTI selection (the external tool's chosen resource configuration);
+  # only a validated signed-result save may replace it.
   defp update_revision(
          revision,
          update,
@@ -861,6 +864,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp get_scoring_strategy_from_content(_), do: "total"
 
+  # Keeps ordinary autosaves from replacing or clearing the stored LTI selection
+  # (the external tool's chosen resource configuration), even from an older client model.
+  # Non-map LTI content is rejected rather than discarding the stored configuration.
   defp preserve_lti_selection(
          %Revision{activity_type: %{authoring_element: "lti-external-tool-authoring"}} = revision,
          %{"content" => content} = update
@@ -899,6 +905,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
+  # A signed-result save must contain only its token; its tool configuration is
+  # derived server-side instead of being mixed with client-supplied content changes.
   defp validate_request(%{"deep_link_result" => token} = update) do
     case is_binary(token) and map_size(update) == 1 do
       true -> {:ok, update}
@@ -933,6 +941,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp adaptive_activity?(%Revision{activity_type_id: nil}), do: false
 
+  # Reuses an already loaded registration when classifying the activity, avoiding
+  # another lookup after revision update preparation has preloaded it.
   defp adaptive_activity?(%Revision{activity_type: %ActivityRegistration{slug: slug}}),
     do: slug == "oli_adaptive"
 

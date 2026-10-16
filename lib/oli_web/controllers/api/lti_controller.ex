@@ -24,6 +24,11 @@ defmodule OliWeb.Api.LtiController do
 
   This endpoint is used by both the delivery and authoring contexts, depending on
   whether the request is made from a section or a project.
+
+  Includes any section-owned selection (the resource configuration chosen in the
+  external tool) and whether the current actor may reconfigure it. Project launches
+  support Regular with the chosen authoring role and reuse saved configuration;
+  starting Deep Linking uses the separate configuration endpoint.
   """
   def launch_details(conn, %{"section_slug" => section_slug, "activity_id" => activity_id}) do
     with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
@@ -140,7 +145,11 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
-  @doc "Persists only the signed tool selection and returns the authoritative activity model."
+  @doc """
+  Persists a signed tool selection (the resource configuration chosen in the external
+  tool) through the activity editor and returns its authoritative saved model.
+  Requires the trusted Torus origin and rejects stale or mismatched results.
+  """
   def authoring_deep_link_save(conn, %{
         "project_slug" => project,
         "activity_id" => activity,
@@ -173,7 +182,11 @@ defmodule OliWeb.Api.LtiController do
   def authoring_deep_link_save(conn, _),
     do: conn |> put_status(:bad_request) |> json(%{error: "A signed selection is required"})
 
-  @doc "Returns authorized configuration launch details; projects require an active editor lock."
+  @doc """
+  Starts Deep Linking and returns launch details bound to the initiating request.
+  Requires the trusted Torus origin; projects also require the owned editor lock,
+  while section configuration requires an authorized instructor or administrator.
+  """
   def deep_linking_launch_details(
         conn,
         %{"project_slug" => project, "activity_id" => activity, "lock_id" => lock_id} = params
@@ -275,7 +288,11 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
-  @doc "Cancels a section configuration request without undoing a committed selection."
+  @doc """
+  Cancels a section configuration request without undoing a committed selection
+  (the resource configuration chosen in the external tool). The returned status
+  tells the dialog whether cancellation or successful persistence completed first.
+  """
   def cancel_deep_linking(conn, %{
         "section_slug" => slug,
         "activity_id" => id,
@@ -307,6 +324,8 @@ defmodule OliWeb.Api.LtiController do
       |> put_status(:forbidden)
       |> json(%{error: "Tool configuration could not be cancelled"})
 
+  # Requires exactly the configured Torus origin for configuration-changing POSTs;
+  # absent or different Origin headers cannot initiate, save or cancel a request.
   defp same_origin?(conn) do
     uri = URI.parse(Oli.Utils.get_base_url())
     origin = URI.to_string(%{uri | path: nil, query: nil, fragment: nil})
@@ -323,6 +342,9 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
+  # Assembles OIDC login parameters shared by project and section launches.
+  # Optional request correlation travels in the signed message hint rather than
+  # expanding the size-limited login-hint context.
   defp build_launch_params(platform_instance, login_hint, deployment, opts) do
     deployment_id = deployment && deployment.deployment_id
     lti_message_type = Keyword.get(opts, :lti_message_type)
@@ -355,6 +377,8 @@ defmodule OliWeb.Api.LtiController do
     launch_params
   end
 
+  # Signs the launch route, deployment, activity and optional authoring request
+  # with the login hint, so echoed tool parameters can be checked at authorization.
   defp sign_lti_message_hint(login_hint, deployment_id, endpoint, opts) do
     payload =
       %{

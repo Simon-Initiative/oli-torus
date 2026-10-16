@@ -10,7 +10,8 @@ defmodule Oli.Delivery.Sections.CopyOptions do
 
     * `:content` - the structural snapshot: publication pins, section resources,
       the remixed hierarchy, required survey, activity exclusions, current LTI tool
-      selections and non-schedule gates. Mandatory:
+      selections (resource configurations chosen in external tools) and non-schedule
+      gates. Mandatory:
       a copy with no content source has no defined meaning, so `new/2` rejects a
       group set that omits it.
     * `:schedule` - section-resource scheduling state and schedule-shaped gates.

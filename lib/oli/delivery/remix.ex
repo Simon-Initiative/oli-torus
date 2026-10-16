@@ -330,8 +330,8 @@ defmodule Oli.Delivery.Remix do
   end
 
   @doc """
-  Converts an item selected from a source to the publication/resource tuple used
-  by the existing add and save paths.
+  Converts a material selection (a page or container chosen in Add Materials)
+  to the publication/resource tuple used by the existing add and save paths.
   """
   @spec selection_tuple(Source.t(), map()) ::
           {:ok, {pos_integer(), pos_integer()}} | {:error, :unavailable_publication}
@@ -355,8 +355,8 @@ defmodule Oli.Delivery.Remix do
   def selection_tuple(_source, _item), do: {:error, :unavailable_publication}
 
   @doc """
-  Resolves multiple product items with one visibility query, avoiding one query
-  per checked item in the Add Materials picker.
+  Resolves material selections (pages or containers chosen in Add Materials)
+  from a product with one visibility query, avoiding one query per checked item.
   """
   @spec selection_tuples(Source.t(), [map()]) ::
           {:ok, [{pos_integer(), pos_integer()}]} | {:error, :unavailable_publication}
@@ -639,7 +639,8 @@ defmodule Oli.Delivery.Remix do
   end
 
   @doc """
-  Add materials described by selection tuples to the active container.
+  Add material selections (pages or containers chosen in Add Materials) to the
+  active container.
   `selection` is a list of {publication_id, resource_id} tuples.
   `published_resources_by_resource_id_by_pub` is a map of pub_id => %{rid => %PublishedResource{}}.
   """
@@ -659,8 +660,8 @@ defmodule Oli.Delivery.Remix do
   end
 
   @doc """
-  Convenience: add materials with publication lookups and canonical ordering preserved
-  per original publication hierarchy.
+  Add material selections (pages or containers chosen in Add Materials) with
+  publication lookups and canonical ordering preserved per original publication hierarchy.
   """
   @spec add_materials(State.t(), list({pos_integer(), pos_integer()})) ::
           {:ok, State.t()} | {:error, term()}
@@ -669,7 +670,8 @@ defmodule Oli.Delivery.Remix do
   end
 
   @doc """
-  Adds materials while retaining each selection's authorized source key.
+  Adds material selections (pages or containers chosen in Add Materials) while
+  retaining each selection's authorized source key.
 
   `source_keys` maps publication/resource tuples to keys in `available_sources`.
   Omitted keys retain the project-publication behavior of `add_materials/2`.
@@ -712,6 +714,10 @@ defmodule Oli.Delivery.Remix do
     end
   end
 
+  # Resolves each chosen page/container to its authorized publication or template.
+  # Validates its identity and, for templates, visibility using one lookup per source.
+  # Returns the origin and visible resource set for each publication/resource tuple,
+  # so descendants hidden or removed in a template cannot inherit its configuration.
   defp material_origins(state, selection, source_keys, pub_by_id) do
     selection
     |> Enum.group_by(&Map.get(source_keys, &1))
@@ -762,6 +768,9 @@ defmodule Oli.Delivery.Remix do
     end)
   end
 
+  # Adds the validated pages/containers to the hierarchy and retains publication pins.
+  # Records each eligible added node's origin by UUID for Deep Link inheritance at save,
+  # preserving that origin when the node is subsequently moved within the hierarchy.
   defp add_validated_materials(
          %State{} = state,
          selection,
@@ -1012,8 +1021,10 @@ defmodule Oli.Delivery.Remix do
   @doc """
   Persist the current hierarchy and pinned publications for the section.
   Materializes any draft containers (negative resource_id) before rebuilding.
-  Inherits missing tool selections for retained added pages from their chosen sources,
-  in the same transaction as the curriculum and publication mappings.
+  Inherits missing tool selections (resource configurations chosen within external
+  tools, including their URL, custom parameters and optional title/description)
+  for retained added pages from their chosen sources, in the same transaction as
+  the curriculum and publication mappings.
   The author parameter identifies who is performing the save (used for revision authorship).
   Returns `{:ok, %Section{}}` or `{:error, reason}`.
   """
@@ -1055,6 +1066,10 @@ defmodule Oli.Delivery.Remix do
     end
   end
 
+  # Groups activity IDs referenced by retained added pages by their recorded origin.
+  # Uses the same first-occurrence hierarchy deduplication as curriculum rebuilding,
+  # ignoring removed nodes, existing pages and non-page content. Shared activities
+  # keep their first recorded origin so initialization can run in bulk per source.
   defp remixed_activity_sources(hierarchy, material_sources) do
     page_type = Oli.Resources.ResourceType.id_for_page()
 

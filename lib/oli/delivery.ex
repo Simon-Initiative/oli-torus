@@ -179,6 +179,9 @@ defmodule Oli.Delivery do
     options
   end
 
+  # Builds a course from this exact published snapshot and initializes its tool
+  # selections (resource configurations chosen in external tools) before enrollment
+  # and post-processing. Errors propagate to the owning creation transaction.
   defp create_from_publication(actor, publication, section_params) do
     with {:ok, section} <-
            Sections.create_section_from_source(section_params, publication.project),

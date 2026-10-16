@@ -144,7 +144,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
   3. Retrieves the latest published publication for the project
   4. Creates section resource records mirroring the project hierarchy
   5. Migrates the section resources
-  6. Initializes tool selections from that publication
+  6. Initializes tool selections (resource configurations chosen in external tools)
+     from that publication
   7. Applies post-processing to update section flags (discussions, explorations, etc.)
 
   ## Parameters
@@ -200,6 +201,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
     )
   end
 
+  # Creates and projects the blueprint inside one transaction, including tool
+  # configuration from the exact publication used to build its resources.
+  # Initialization failure rolls back the new template instead of leaving it partial.
   defp do_create_blueprint(
          base_project_slug,
          title,

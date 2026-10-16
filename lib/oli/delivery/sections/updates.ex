@@ -62,8 +62,9 @@ defmodule Oli.Delivery.Sections.Updates do
   could be extended to not just apply the changes to the first node found that contains the changed resource,
   but any/all nodes in the hierarchy which reference the changed resource.
 
-  Missing LTI selections are initialized from the applied publication after destination
-  resources and projections are finalized. Initialization failure rolls back the update.
+  Missing LTI selections (resource configurations chosen in external tools) are
+  initialized from the applied publication after destination resources and projections
+  are finalized. Initialization failure rolls back the update.
   """
   @spec apply_publication_update(%Section{}, integer()) :: {:ok, %Section{}} | {:error, term()}
   def apply_publication_update(
@@ -121,6 +122,8 @@ defmodule Oli.Delivery.Sections.Updates do
   # Implements the logic to determine *how* to apply the update to the course section,
   # taking into account the update type (minor / major) and the source of the section
   # (project / product)
+  # Unchanged publications follow normal minor processing, allowing missing tool
+  # configurations to initialize without bypassing existing update stages.
   defp do_update(section, project_id, current_publication, new_publication) do
     case Publishing.get_publication_diff(current_publication, new_publication) do
       %PublicationDiff{classification: classification} = diff

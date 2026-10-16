@@ -298,6 +298,11 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  @doc """
+  Completes the tool's OIDC authorization using the stored launch context.
+  Rechecks authoring/configuration access and signed request correlation before
+  issuing the appropriate resource-launch or Deep Linking claims to the tool.
+  """
   def authorize_redirect(conn, params) do
     case Lti_1p3.Platform.LoginHints.get_login_hint_by_value(params["login_hint"]) do
       nil ->
@@ -453,6 +458,8 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  # Rechecks the initiating account and deployment for section configuration and
+  # authoring. Ordinary delivery keeps its existing path without configuration context.
   defp authorize_configuration(
          conn,
          %{"configure_deep_linking" => "true"} = context,
@@ -497,6 +504,8 @@ defmodule OliWeb.LtiController do
 
   defp authorize_configuration(_conn, _context, _user_id, _params), do: {:ok, nil}
 
+  # Regular authoring needs no configuration request token. Deep Linking must
+  # recover and validate the request captured after the editor's pending saves.
   defp authorize_authoring_request(author, project, activity, context, deployment, params) do
     case Map.get(context, "launch_type", "regular") do
       "regular" ->
@@ -507,6 +516,8 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  # Verifies the echoed signed message hint belongs to this login/deployment/route,
+  # then checks its original authoring request against the current editor state.
   defp validate_authoring_request_hint(author, project, activity, context, deployment, params) do
     with hint when is_binary(hint) <- params["lti_message_hint"],
          {:ok, wrapper} <-
@@ -530,6 +541,9 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  # Builds authoring identity and claims using the chosen role and launch type.
+  # Regular reuses the selection (the external tool's chosen resource configuration);
+  # Deep Linking targets the selector and offers current custom values as optional hints.
   defp build_authorization_for(
          :authoring,
          _conn,
@@ -605,6 +619,9 @@ defmodule OliWeb.LtiController do
      }, target, activity_resource_id, roles, additional_claims, message_type}
   end
 
+  # Builds a learner/instructor resource launch from enrollment roles and this
+  # section's selection (the external tool's chosen resource configuration),
+  # including grading endpoints when a corresponding activity attempt exists.
   defp build_authorization_for(
          :delivery,
          conn,
@@ -689,6 +706,9 @@ defmodule OliWeb.LtiController do
      :resource_link_request}
   end
 
+  # Builds the section selector request for the authorized actor, binding the
+  # callback to its pending request. The current selection (the external tool's
+  # chosen resource configuration) supplies optional custom hints, without project fallback.
   defp build_authorization_for(
          :configure_deep_linking,
          conn,
@@ -742,6 +762,9 @@ defmodule OliWeb.LtiController do
      :deep_linking_request}
   end
 
+  # Produces the tool-facing identity and roles for either account namespace.
+  # Delivery users retain enrollment roles; admin authors use an author-prefixed
+  # subject and instructor/admin roles rather than impersonating a delivery user.
   defp configuration_identity(%Accounts.User{} = actor, section_slug) do
     user = Accounts.get_user!(actor.id, preload: [:platform_roles])
 
@@ -787,6 +810,8 @@ defmodule OliWeb.LtiController do
 
   defp deep_link_custom_claims(_), do: []
 
+  # Wraps saved custom configuration in the standard claim without coercing values;
+  # a missing configuration contributes no claim.
   defp maybe_add_custom_claims(nil), do: []
 
   defp maybe_add_custom_claims(custom),
@@ -974,6 +999,9 @@ defmodule OliWeb.LtiController do
   @doc """
   Handles the Deep Linking response from the LTI tool.
   This endpoint receives the JWT containing the content items selected by the user.
+  Persists the selection (the resource configuration chosen in the external tool)
+  only after signature, initiating-request and current-permission checks succeed,
+  then reports the request identity back to the configuration dialog.
   """
   def deep_link(
         conn,
@@ -1012,6 +1040,8 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  # Converts expected validation, replay and persistence failures into bounded
+  # dialog feedback without including the tool's JWT or configuration payload.
   defp section_return_error(:invalid_section_return),
     do: "The tool selection could not be validated. Close this window and try again."
 
@@ -1033,7 +1063,11 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  @doc "Validates a project deep-link return and hands a signed result back to the editor."
+  @doc """
+  Validates a project Deep Linking response and hands its selection (the resource
+  configuration chosen in the external tool) back to the editor as a signed result.
+  This callback does not write activity content; the editor must save the result.
+  """
   def authoring_deep_link(conn, %{"JWT" => jwt}) do
     result =
       with {:ok, claims} <- validate_deep_linking_jwt(jwt),
@@ -1057,6 +1091,9 @@ defmodule OliWeb.LtiController do
     |> render(:authoring_deep_link, result: result)
   end
 
+  # Resolves the tool's signing key from its issuer/key ID, verifies the signature,
+  # audience and message type, and normalizes malformed responses without logging
+  # raw tokens. Flow-specific correlation and expiry checks follow in the domain layer.
   defp validate_deep_linking_jwt(jwt) do
     with {:ok, %JOSE.JWT{fields: %{"iss" => client_id, "aud" => audience}}} <-
            Tokens.peek_jwt(jwt),
@@ -1080,6 +1117,8 @@ defmodule OliWeb.LtiController do
       {:error, :invalid_deep_linking_jwt}
   end
 
+  # Accepts the configured Torus issuer as a scalar audience or within an all-string
+  # audience list, regardless of its position in that list.
   defp validate_audience(audience) when is_list(audience) do
     case Enum.all?(audience, &is_binary/1) and Oli.Utils.get_base_url() in audience do
       true -> :ok
@@ -1107,6 +1146,8 @@ defmodule OliWeb.LtiController do
     {:error, :invalid_message_type}
   end
 
+  # Requires exactly one selection (the resource configuration returned by the
+  # external tool); missing, non-list or multiple content items cannot be persisted.
   defp require_single_content_item(%{
          "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => content_items
        }) do

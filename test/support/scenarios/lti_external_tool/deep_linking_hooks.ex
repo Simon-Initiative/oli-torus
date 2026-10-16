@@ -3,8 +3,9 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
   Runs Deep Linking lifecycle steps not expressed by the generic scenario directives.
 
   In particular, courses must use `Delivery.create_section/1`: the generic section
-  directive builds resources directly and bypasses publication-selection initialization.
-  No external tool process or HTTP request is needed for these persisted-selection tests.
+  directive builds resources directly and bypasses inheritance of tool selections
+  (resource configurations chosen in external tools, including URL/custom metadata).
+  No external tool process or HTTP request is needed for these persistence tests.
   """
 
   import ExUnit.Assertions
@@ -46,7 +47,10 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
     %{state | params: Map.merge(state.params, %{platform: platform, deployment: deployment})}
   end
 
-  @doc "Captures the chosen publication and exact stored Draft selection."
+  @doc """
+  Captures the chosen publication and its stored Draft selection (the resource
+  configuration chosen in the external tool) for later snapshot/isolation assertions.
+  """
   def capture_draft_publication(state) do
     publication = latest_publication(state)
     selection = activity(state).content["deepLink"]
@@ -57,15 +61,24 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
     }
   end
 
-  @doc "Creates the first section from the published Draft selection."
+  @doc """
+  Creates the first section from the published Draft selection (the external tool's
+  resource configuration) to establish the original inheritance baseline.
+  """
   def create_draft_section(state),
     do: create_section(state, "draft_section", state.params.draft_publication)
 
-  @doc "Creates a section while the author has an unpublished Review selection."
+  @doc """
+  Creates a section while the draft has a Review selection (the external tool's
+  resource configuration), allowing tests to verify unpublished changes stay isolated.
+  """
   def create_unpublished_section(state),
     do: create_section(state, "unpublished_section", latest_publication(state))
 
-  @doc "Creates a section from the newly published Review selection."
+  @doc """
+  Creates a section from the newly published Review selection (the external tool's
+  resource configuration) to compare new inheritance with the original section.
+  """
   def create_review_section(state),
     do: create_section(state, "review_section", latest_publication(state))
 
@@ -83,7 +96,10 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
     create_section(state, "unrelated_section", publication)
   end
 
-  @doc "Edits presentation through the page editor's activity-save boundary and preserves selection."
+  @doc """
+  Edits presentation through the activity editor and verifies that the selection
+  (the external tool's chosen resource configuration) survives ordinary content saves.
+  """
   def edit_presentation(state) do
     revision = activity(state)
     selection = revision.content["deepLink"]
@@ -94,7 +110,10 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
     state
   end
 
-  @doc "Replaces the persisted selection with Review through the real activity editor."
+  @doc """
+  Replaces the persisted selection (the external tool's chosen resource configuration)
+  with Review through the real activity editor, retaining unrelated presentation fields.
+  """
   def select_review(state) do
     revision = activity(state)
 
@@ -138,7 +157,11 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
     AuthoringResolver.from_resource_id(project(state).slug, original.resource_id)
   end
 
-  @doc "Saves through ActivityEditor using the containing page as the editing lock."
+  @doc """
+  Saves activity content through ActivityEditor using the containing page's lock.
+  If the selection (the external tool's chosen resource configuration) changes,
+  also submits it through the signed authoring-result path, without a running tool.
+  """
   def save_content(state, content, virtual_id \\ "configured") do
     page = state.projects[@project].rev_by_title["Tool Lesson"]
     publication = Publishing.project_working_publication(project(state).slug)

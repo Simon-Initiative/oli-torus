@@ -118,6 +118,10 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
     {:ok, updated_state}
   end
 
+  # Resolves the named template through the instructor's available sources, then
+  # adds its chosen page/container using the same domain path as the picker.
+  # Keeping the template key ensures Deep Links inherit current template settings
+  # rather than defaults from its underlying project publication.
   defp remix_from_product(state, product_name, user_name, resource_title, section_name, to) do
     section =
       Engine.get_section(state, section_name) || raise "Section '#{section_name}' not found"

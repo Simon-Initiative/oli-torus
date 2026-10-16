@@ -1,6 +1,7 @@
 defmodule Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink do
   @moduledoc """
-  Represents a section-owned LTI resource link and validates portable tool selections.
+  Represents a section-owned LTI resource link and validates portable tool selections
+  (resource configurations chosen in external tools, including URL/custom metadata).
   """
   use Ecto.Schema
   import Ecto.Changeset
@@ -28,7 +29,11 @@ defmodule Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink do
     |> validate_required([:type, :resource_id, :section_id])
   end
 
-  @doc "Extracts portable resource-link fields and preserves custom metadata without reinterpretation."
+  @doc """
+  Validates a selection (the resource configuration returned by the external tool)
+  and extracts supported type, URL, custom, title and description fields.
+  An optional URL must be HTTP(S); custom objects are preserved without reinterpretation.
+  """
   @spec selection(term()) :: {:ok, map()} | {:error, :invalid_selection}
   def selection(%{"type" => "ltiResourceLink"} = item) do
     url = item["url"]

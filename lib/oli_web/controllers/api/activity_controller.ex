@@ -531,6 +531,10 @@ defmodule OliWeb.Api.ActivityController do
 
   This operation must be performed in the context of an exclusive write lock to avoid concurrent updates. The identifier of the
   lock must be specificed via the `lock` query parameter.
+
+  Signed LTI selection saves (resource configurations chosen in external tools)
+  use the same editor boundary. A stale result returns HTTP 409 so the author
+  can reload and reopen configuration instead of overwriting intervening edits.
   """
   @doc parameters: [
          project: [

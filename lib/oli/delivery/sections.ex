@@ -4638,8 +4638,9 @@ defmodule Oli.Delivery.Sections do
   could be extended to not just apply the changes to the first node found that contains the changed resource,
   but any/all nodes in the hierarchy which reference the changed resource.
 
-  Missing LTI selections are initialized within the update transaction, preserving
-  existing section choices. Failed initialization never reports a completed update.
+  Missing LTI selections (resource configurations chosen in external tools) are
+  initialized within the update transaction, preserving existing section choices.
+  Failed initialization never reports a completed update.
   """
   @spec apply_publication_update(%Section{}, integer()) :: {:ok, {:ok}} | {:error, term()}
   def apply_publication_update(
@@ -4704,8 +4705,9 @@ defmodule Oli.Delivery.Sections do
     result
   end
 
-  # for minor update, all we need to do is update the spp record and
-  # rebuild the section curriculum based on the current hierarchy
+  # Applies a minor publication change using the current section hierarchy and new
+  # publication pin. Missing tool configurations are initialized in the same
+  # transaction, while existing instructor choices are preserved.
   defp perform_update(:minor, section, project_id, new_publication, current_hierarchy) do
     mark = Oli.Timing.mark()
 
@@ -4732,7 +4734,9 @@ defmodule Oli.Delivery.Sections do
     result
   end
 
-  # for major update, update the spp record and use the diff and the AIRRO approach
+  # Reconciles the major publication diff with the section's existing curriculum
+  # using the AIRRO steps below. Missing tool configurations are initialized only
+  # after the destination resources are finalized, within the same transaction.
   defp perform_update(:major, section, project_id, prev_publication, new_publication) do
     mark = Oli.Timing.mark()
 

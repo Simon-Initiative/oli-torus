@@ -4,8 +4,9 @@ defmodule Oli.Lti.SectionDeepLinkLaunch do
 
   The controller validates the tool JWT signature before calling `persist_return/4`.
   Torus correlation is verified separately; current access and deployment capability
-  are checked again before a selection is written. A successful request is consumed
-  atomically with the selection through the existing LTI nonce store.
+  are checked again before a selection (the resource configuration chosen in the
+  external tool, including URL/custom metadata) is written. A successful request is
+  consumed atomically with the selection through the existing LTI nonce store.
   """
 
   import Ecto.Query
@@ -90,7 +91,12 @@ defmodule Oli.Lti.SectionDeepLinkLaunch do
     end
   end
 
-  @doc "Invalidates an initiating actor's request; an already committed return remains saved."
+  @doc """
+  Invalidates the initiating actor's request without undoing an already committed return.
+  The signed actor/route binding permits cancellation after access is revoked or
+  the token expires; it cannot save tool configuration. Returns whether completion
+  or cancellation won.
+  """
   def cancel_request(actor, section_slug, resource_id, token) do
     with %Section{} = section <- Sections.get_section_by_slug(section_slug),
          {:ok, request} <-
@@ -132,7 +138,11 @@ defmodule Oli.Lti.SectionDeepLinkLaunch do
     })
   end
 
-  @doc "Writes one validated tool return to its intended section, preserving existing data on failure."
+  @doc """
+  Persists a selection (the resource configuration returned by the external tool)
+  only for its initiating section/activity after rechecking access and signed correlation.
+  Consumes the current pending request atomically with the write; failure rolls back both.
+  """
   def persist_return(claims, item, %Section{} = section, resource_id) do
     with {:ok, selection} <- AuthoringLaunch.selection(item),
          {:ok, request} <- verify_request(claims, section.id, to_string(resource_id)) do
@@ -161,6 +171,8 @@ defmodule Oli.Lti.SectionDeepLinkLaunch do
       {:error, :failed_to_create_deep_link}
   end
 
+  # Normalizes route IDs to canonical positive database IDs so alternate textual
+  # representations cannot create separate pending requests for one activity.
   defp parse_resource_id(id) when is_binary(id) and byte_size(id) <= 10 do
     with {value, ""} <- Integer.parse(id),
          true <- value > 0 and value <= 2_147_483_647 and Integer.to_string(value) == id do
@@ -175,26 +187,37 @@ defmodule Oli.Lti.SectionDeepLinkLaunch do
 
   defp parse_resource_id(_), do: {:error, :configuration_unavailable}
 
+  # Serializes request start, cancellation and return persistence with other
+  # section writes until the caller's transaction completes.
   defp lock_section(id), do: Repo.one(from(s in Section, where: s.id == ^id, lock: "FOR UPDATE"))
 
-  # Put the stable key in the leading column of the existing (value, domain) nonce index.
+  # Identifies the latest pending launch for one section/activity independently of
+  # its request UUID, using the leading column of the existing (value, domain) nonce index.
   defp pending_value(section_id, resource_id),
     do: "section_deep_linking_pending:#{section_id}:#{resource_id}"
 
+  # Confirms this return belongs to the latest request rather than one superseded
+  # by another configuration launch or invalidated by cancellation.
   defp pending?(section_id, resource_id, request_id) do
     value = pending_value(section_id, resource_id)
     Repo.exists?(from(n in Nonce, where: n.value == ^value and n.domain == ^request_id))
   end
 
+  # Removes only the matching request generation, leaving any newer one intact.
   defp delete_pending(section_id, resource_id, request_id) do
     value = pending_value(section_id, resource_id)
     Repo.delete_all(from(n in Nonce, where: n.value == ^value and n.domain == ^request_id))
   end
 
+  # Applies the account-specific configuration policy: admin authors or users
+  # enrolled as instructors in this section.
   defp allowed?(%Author{} = author, _section_slug), do: Accounts.is_admin?(author)
   defp allowed?(%User{} = user, section_slug), do: Sections.is_instructor?(user, section_slug)
   defp allowed?(_, _section_slug), do: false
 
+  # Verifies Torus's signed data claim separately from the tool JWT and binds it
+  # to this section/activity. Cancellation may override the age limit without
+  # weakening signature or route checks.
   defp verify_request(
          claims,
          section_id,
@@ -218,6 +241,8 @@ defmodule Oli.Lti.SectionDeepLinkLaunch do
     end
   end
 
+  # Reloads the initiating account and current permissions/deployment, then checks
+  # that the tool's issuer, deployment, version and expiry match that context.
   defp validate_return(claims, request, section, resource_id) do
     with actor <- load_actor(request),
          {:ok, _, _, deployment} <- resolve(actor, section.slug, resource_id),
@@ -235,6 +260,8 @@ defmodule Oli.Lti.SectionDeepLinkLaunch do
     end
   end
 
+  # Resolves the signed account namespace so equal author/user IDs cannot identify
+  # the wrong initiating account.
   defp load_actor(%{"actor_type" => "author", "actor_id" => id}) when is_integer(id),
     do: Accounts.get_author(id)
 
@@ -243,6 +270,8 @@ defmodule Oli.Lti.SectionDeepLinkLaunch do
 
   defp load_actor(_), do: nil
 
+  # Records successful use through the nonce store's uniqueness constraint.
+  # The caller's transaction makes this marker and the tool configuration atomic.
   defp consume_request(request_id) do
     case Lti_1p3.Nonces.create_nonce(request_id, "section_deep_linking") do
       {:ok, _} ->
