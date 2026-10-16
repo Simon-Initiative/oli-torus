@@ -1,145 +1,138 @@
 # Phase 6 Execution Record
 
 Work item: `docs/exec-plans/current/nightly-playwright-ci`
-Phase: 6 — Integrate, verify, and launch the nightly workflow
+Phase: 6 — Verify the nightly workflow end to end
+Status: Complete under the operator-approved 2026-10-16 scope.
 
 ## Scope from plan.md
 
-Connect publication, accepted GitOps intent, public readiness, and browser execution
-at one source SHA. Verify the feature branch and operational failure cases before
-normal merge and scheduled launch. Preserve the independent scenario job.
+Verify that the implemented workflow builds and publishes the selected source,
+accepts its GitOps deployment, checks public readiness and identity, executes the
+tagged browser tests, and retains reports with the correct outcome. Phase 7 owns
+repairs to the actual Playwright tests and course-import failures. A green test
+suite is not required to demonstrate that the workflow works.
 
 ## Implementation Blocks
 
-- [x] Workflow deployment, readiness, reporting, and input wiring.
-- [x] Signed protected PR updates and deployment-only credential boundaries.
-- [x] Operator instructions and readiness-consumer documentation; external preview script verification remains open.
-- Data/interface changes: existing build outputs and deployment record contract; no application changes.
+- [x] Build, deployment, readiness, reporting, and integration-input wiring.
+- [x] Signed protected PR updates using a pinned PR action and GitHub CLI; App
+  credentials are confined to deployment. No queued auto-merge or direct-push fallback.
+- [x] Accepted deployment-record comparison and bounded public `curl`/`jq` readiness
+  polling before browser execution from the selected build SHA.
+- [x] Standard nightly Playwright invocation, retained failure status, both artifact
+  uploads, and final stage/provenance summary.
+- [x] Operator instructions, including existing schedule/manual dispatch, cancellation,
+  stale PR recovery, and readiness-consumer documentation.
 
-## Test Blocks
+Runtime follow-ups needed for the hosted run aligned the nightly proxy/request
+import timeouts and set `NODE_ENV=production` in the release container. The latter
+prevents the Node bridge from reloading and retaining the bundled rules module on
+every evaluation. These fixes are already included in the verified revision.
 
-- [x] Local workflow/readiness checks and action lint (existing cache-action warnings only).
-- [ ] Full feature-branch workflow and operational checks.
-- [ ] Scheduled run after normal merge.
+## Minimal Feature-Branch Verification
 
-## Work-Item Sync
+Evidence: [run 38954795747](https://github.com/Simon-Initiative/oli-torus/actions/runs/38954795747),
+source commit `19a5ee09fae0194a38b11cfec1f2e13304ea7a2f`, on
+`MER-6038-phase-6-integrate-verify-and-launch-the-nightly-workflow`.
 
-- Preflight work-item validation passed.
-- The implementation includes the private parameter-loader follow-up and uses the
-  existing GitOps updater. The revised PR workflow is described below.
-- G1–G5 evidence remains in the preceding execution records; no prior proof is
-  promoted to an unexecuted hosted or operational check.
+| Check | Result |
+| --- | --- |
+| Build and publish selected source | Passed: Build Playwright image completed. |
+| Accept deployment and verify expected public identity | Passed: Deploy and verify Plasma completed before browser execution. |
+| Execute selected tests at the same source revision | Completed: Playwright ran all 15 selected cases; 7 passed, 8 failed, none skipped. Independent Elixir scenarios passed: 2 tests, 0 failures. |
+| Retain reports and actual outcome | Passed: both artifact uploads and final summary succeeded; browser job and workflow remained failed. |
 
-## Review Loop
+The [browser job](https://github.com/Simon-Initiative/oli-torus/actions/runs/38954795747/job/117163102433)
+completed normally after approximately 81 minutes of test execution. Its failed
+conclusion reflects test/setup failures, not a failure to run or report the suite.
 
-- Harness-review round 1: dedicated security and performance reviewers found no
-  actionable findings. Local verification included stalled response-stream abortion
-  and recovery after the performance reviewer identified the coverage gap.
-- Retained build-job `npm ci` because the approved plan requires dependency failures
-  to stop publication. No new dependencies are carried between jobs.
-- Public-disclosure review found no literal credentials in the Phase 6 diff.
-  Operational identifiers and inspection history were removed from this record.
-  The operator confirmed that the instance contains synthetic initialization/Playwright
-  data, so page content in public failure reports is acceptable. Credentials still
-  must remain protected.
+## Runtime Observations
+
+Resource samples cover 19:52–21:09 UTC on 2026-10-16, not the initial deployment
+startup. The app, PostgreSQL, and MinIO had no container restarts, and no sampled
+node memory, disk, or PID pressure. Minimum sampled host available memory was
+35.36 GiB. Sampled peaks were 3,089 MiB for the app, 2,270 MiB for PostgreSQL,
+and 114 MiB for MinIO.
+
+Both Node worker process IDs remained unchanged. Maximum sampled worker RSS was
+140.7 MiB, with no recurrence of the prior multi-gigabyte growth and worker crash.
+These are observations from this run, not proposed resource limits.
+
+Eight imports returned HTTP 200, including imports lasting 81.6, 82.9, and 89.1
+seconds, confirming that the old 60-second proxy cutoff no longer applies.
+Greenhouse Molecules returned HTTP 502 after approximately 300 seconds on each
+of its two attempts. That remaining import failure belongs to Phase 7; this run
+does not establish its root cause.
+
+## Phase 7 Handoff
+
+The eight failed tests are captured in the Phase 7 task list in `plan.md`:
+
+- Canvas launch and Moodle launch: shared course-creation helper expects the old UI.
+- Moodle grade passback: navigation waits for the Assignments link.
+- Designer Planet: onboarding/lesson navigation fails.
+- Plate Tectonics: manifest validation rejects a missing or empty scenario array.
+- Phases of the Moon: sorting interactions fail at screens 59/64.
+- Greenhouse Molecules: course ingestion returns HTTP 502 after approximately 300 seconds.
+- Account linking: typing exceeds the test timeout.
+
+These describe observed failures and initial findings, not completed diagnoses or fixes.
+
+## Prior Verification and Review
+
+Reuse the existing G1–G5 execution records and completed Phase 6 local checks:
+
+- Workflow/action lint, source propagation, dependencies, credential scope, unchanged
+  triggers/concurrency/scenario behavior, and nightly configuration/artifact settings.
+- Temporary local fixtures for readiness identity, malformed/network responses,
+  stalled streams, deadline handling, merge rejection, accepted-record mismatch,
+  and cancellation. The disposable scripts were removed; no new test framework remains.
+- GitOps updater tests, validators, and static manifest renders.
+- Dedicated security and performance review of the workflow and its simplification,
+  with no unresolved findings. Existing cache-action warnings were unrelated.
+- Node bridge regression verification showed bounded module memory with production
+  mode, and all 41 rules-engine tests passed before the runtime fix was committed.
+
+The operator confirmed that the instance contains synthetic initialization and
+Playwright data, so page content in public failure reports is acceptable. Credentials
+must remain protected; no private repository URL is included in this record.
 
 ## Done Definition
 
-- [ ] Phase tasks complete.
-- [ ] Tests and operational verification pass.
-- [x] Required local review complete; operational findings remain subject to review.
-- [ ] Work-item and final requirements validation pass with actual proofs.
+- [x] Workflow implementation complete.
+- [x] Four minimal end-to-end verification checks demonstrated by the hosted run.
+- [x] Failures assigned to Phase 7 without masking the failed workflow result.
+- [x] Plan, PRD, FDD, and requirements scope notes reconciled.
 
-G6 remains open until feature-branch, operational, and scheduled evidence is complete.
+G6 is closed. First scheduled-run confirmation after normal merge remains a launch
+follow-up, independent of this manual workflow proof. Keep the existing schedule;
+remove temporary feature-branch environment allowances after verification.
 
-## Local Verification
-
-- Temporary checks during implementation passed for readiness identity, failure and
-  timeout handling, stalled responses, signature rejection, PR recovery, job dependencies,
-  and artifact settings. The standalone test script was removed at the operator's
-  request; no workflow fixture suite is retained in the repository.
-- `git diff --check` passes.
-- Actionlint on nightly and PR workflows reports only existing `actions/cache@v3`
-  warnings in the unchanged scenario and PR jobs. No new action/shell errors.
-- Parsed YAML comparison confirms triggers, concurrency and the entire scenario job
-  match the starting revision. The PR workflow is unchanged.
-- Preflight and postflight work-item validation pass. No backend/test-support code
-  changed, so a full ExUnit rerun is unnecessary for these workflow-only changes.
-- These local checks cover code paths and static connections; they do not reproduce
-  GitHub cancellation, runner termination, required-check enforcement or live integration.
-
-## Operational State and Remaining Gates
-
-The implementation is available for review in
-[PR #6942](https://github.com/Simon-Initiative/oli-torus/pull/6942).
-The initial hosted feature-branch run built the image and passed the independent
-scenario tests, but failed on the old helper's bot-login representation comparison
-before deployment. That helper was corrected; the simplification below replaces it.
-A complete hosted run and operational verification remain pending.
-Keep the existing schedule unchanged, check active runs before dispatch, and
-coordinate verification around scheduled execution. Verify environment access
-through the private operational configuration before running deployment tests.
-
-Live lifecycle tests require an explicitly authorized disposable context and target.
-No live lifecycle test has been executed for this phase.
-
-Readiness consumer reconciliation: the PR workflow uses `/readyz`; the nightly
-identity step uses public HTTPS `/readyz`; startup/liveness remains `/healthz`.
-Nightly GitOps probes were provisioned in Phase 5. Other deployment probes are not
-changed here. `docs/preview-environments.md` now documents the HTTP-200/`ready`
-contract and capable-image ordering. Its external `devops/scripts/smoke-test-preview.sh`
-is absent from both inspected repositories, so that script's behavior remains unverified.
-
-G6 stays open for the complete feature-branch run, App/check/merge/cancellation proof,
-full tagged integrations, credential handling, persistence/mailbox checks,
-disposable lifecycle tests, serialization/rerun/failure exercises, normal Torus merge,
-and successful scheduled execution. No nested acceptance criterion is marked verified
-by these local checks alone.
+The former live fault-injection, cancellation, overlap, persistence/mailbox, and
+disposable lifecycle campaign is no longer a phase-closeout requirement. Reuse
+prior component/release, policy, rendered-manifest, and local failure evidence.
+Unperformed live exercises and the absent external preview smoke script remain
+unverified; they are not claimed as passing evidence or blockers to G6.
 
 ## Requirements Validation
 
-Final-phase `verify_implementation` and `master_validate --stage implementation_complete`
-commands both returned success. As documented in the plan, these scripts do not
-traverse nested criteria: the supplemental check found 42 uniquely mapped nested
-criteria and zero entries with both verified status and proof. These results do
-not close G6 or waive any live acceptance check.
+Work-item validation, plan traceability, `master_validate --stage plan_present`,
+and `git diff --check` passed for this documentation update. A supplemental check
+confirmed all 42 unique nested acceptance criteria are referenced in the plan and
+FDD, with no unknown IDs. Final implementation-wide verification belongs to work-item closeout after
+Phase 7 and scheduled confirmation. The installed traceability tool does not traverse
+nested acceptance criteria; inspect their actual proofs rather than treating script
+success as proof that all 42 criteria are verified.
 
-Next step: ensure no old runs/reruns remain active, then dispatch the allowed Phase 6
-branch without changing the schedule. Disposable lifecycle checks
-remain pending the requested explicit Kubernetes context and authorization.
+## Decision Log
 
-## Operator-approved simplification
+### 2026-10-16 — Close workflow verification; separate test repairs
 
-- Replace custom signed-commit/PR creation with a commit-pinned
-  `peter-evans/create-pull-request` action, using the existing App and one allowed file.
-- Request immediate squash merges through GitHub CLI with the exact PR head SHA.
-  GitHub enforces required checks, signatures, and review rules. The step retries
-  within 15 minutes and never queues auto-merge.
-- Compare the protected branch's accepted deployment record with the prepared file
-  before readiness. Keep the content-preserving updater and required GitOps CI checks;
-  remove duplicate renders from the Torus workflow.
-- Replace the custom readiness JavaScript with bounded `curl`/`jq` polling and retain
-  exact HTTP/status/version/SHA gating. Keep one final summary and both report uploads.
-- Remove the GitOps PR lifecycle helper, its dedicated tests, and the workflow's
-  bot-login setting. Open PRs left by failed runs can be closed normally. An immediate
-  merge already in flight may complete during cancellation; inspect the PR if needed.
-- Land the Torus workflow first and finish old runs before deleting the helper from
-  GitOps `master`. New manual runs can use the simplified workflow while the unused
-  helper still exists. No new PR or hosted deployment was started for this revision.
-
-Verification of the simplification:
-
-- Temporary command fixtures passed for pending/rejected merge requests, exact-head
-  submission, accepted-record mismatch, missing/unsigned PR rejection, cancellation,
-  readiness status/version/SHA/JSON/network failures, and the total deadline.
-- Parsed workflow checks confirm unchanged triggers, concurrency, and scenario job.
-- All seven remaining updater tests, all GitOps validators, and eight static Kustomize
-  renders passed. No live Kubernetes API was contacted.
-- Actionlint reports only the existing cache-action warnings in unchanged jobs.
-- Harness-review security and performance reviewers found no actionable findings
-  in the simplified workflow and GitOps deletions.
-- Work-item validation and whitespace checks pass. Temporary fixtures are removed;
-  no new test framework or script is retained.
-
-The initial local checks above are historical evidence for the replaced implementation.
-Hosted verification of the new PR action and immediate merge remains outstanding.
+- Change: Limit Phase 6 to the four completed workflow checks and move the eight
+  browser test/setup failures into Phase 7. Remove the excessive live verification campaign.
+- Reason: The operator accepted the completed run as proof of working orchestration
+  and requested minimal verification, with actual test repairs handled separately.
+- Evidence: Run 38954795747 and its retained browser results; existing local checks
+  and earlier phase execution records.
+- Impact: G6 is complete. G7 requires a passing full tagged suite; first scheduled-run
+  confirmation remains launch follow-up. No unperformed checks are promoted to verified.
