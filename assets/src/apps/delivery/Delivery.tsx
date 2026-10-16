@@ -25,6 +25,7 @@ import { loadInitialPageState } from './store/features/page/actions/loadInitialP
 import { selectScreenIdleExpirationTime } from './store/features/page/slice';
 
 export interface DeliveryProps {
+  restrictNavigation?: boolean;
   resourceId: number;
   sectionSlug: string;
   projectSlug: string;
@@ -238,6 +239,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   signoutUrl,
   activityTypes = [],
   previewMode = false,
+  restrictNavigation = false,
   isInstructor = false,
   enableHistory = false,
   graded = false,
@@ -387,7 +389,8 @@ const Delivery: React.FC<DeliveryProps> = ({
     content?.displayApplicationChrome,
   );
   const insightsStageOnlyPreview = !!content?.custom?.insightsStageOnlyPreview;
-  const adaptiveDialogueBridgeEnabled = !!content?.advancedDelivery && !previewMode && !reviewMode;
+  const adaptiveDialogueBridgeEnabled =
+    !!content?.advancedDelivery && !previewMode && !reviewMode && !restrictNavigation;
   const currentActivityAttemptGuid =
     currentActivityTreeAttemptState?.[currentActivityTreeAttemptState.length - 1]?.attemptGuid;
   const shouldReportAdaptiveIframeHeight = !!content?.displayApplicationChrome && !previewMode;
@@ -475,7 +478,11 @@ const Delivery: React.FC<DeliveryProps> = ({
             model={content?.model}
           />
         )}
-      <div className="mainView" role="main" style={{ width: windowWidth }}>
+      <div
+        className="mainView"
+        role={restrictNavigation ? undefined : 'main'}
+        style={{ width: windowWidth }}
+      >
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
       {showRestartDialog ? <RestartLessonDialog onRestart={setInitialPageState} /> : null}
