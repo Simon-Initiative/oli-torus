@@ -32,7 +32,7 @@ Phase: `1 — Application lifecycle and probe contracts`
 | Consumer | Current behavior | Migration owner/gate |
 | --- | --- | --- |
 | `.github/workflows/pr-playwright.yml` | Waits on `/`, not `/healthz` | Phase 2 switches startup waiting to `/readyz` with the shared environment migration. |
-| `docs/preview-environments.md` | Documents `devops/scripts/smoke-test-preview.sh` with a `/healthz` URL | Phase 5 updates the documented readiness smoke URL and verifies the external script contract after a capable preview image. |
+| `docs/preview-environments.md` | Documents `devops/scripts/smoke-test-preview.sh` with a `/healthz` URL | Phase 6 owns the remaining documentation/external-script contract check under AC-042; a readiness migration requires a capable preview image. |
 | GitOps `apps/oli-torus/base/deployment.yaml` (prior FDD inventory) | Uses `/healthz` for both liveness and readiness | Phase 5 inspects the supplied GitOps checkout and affected overlays; deploy capable images before activating `/readyz`. No checkout or infrastructure was changed in Phase 1. |
 | Nightly public identity polling | New consumer | Phase 6 uses `/readyz` after accepted deployment intent. |
 
@@ -65,9 +65,9 @@ Run the installed harness validator before and after implementation with `--chec
 
 ## Remaining Operational Gates
 
-- Phase 2 migrates PR startup waiting; Phase 5 migrates GitOps readiness and the documented preview smoke URL only after capable images exist.
+- Phase 2 migrates PR startup waiting; Phase 5 applied the nightly GitOps readiness settings. Phase 6 owns any remaining readiness-consumer/documentation checks under AC-042, including the preview smoke script contract; migrate consumers only after capable images exist.
 - Phase 3 verifies the production and Playwright images. The local test release does not establish their packaging or production TLS behavior.
-- Phase 7 repeats graceful termination under real deployment probes/hooks and verifies public HTTPS/ingress behavior. No live deployment, GitOps record, Jira ticket or workflow was changed here.
+- Phase 5 recorded initial public HTTPS/readiness and applied nightly probe/hook settings. Phase 6 now owns graceful termination under those deployed settings and any remaining operational checks. No live deployment, GitOps record, Jira ticket or workflow was changed in Phase 1.
 - Requirements remain proposed until the later acceptance-proof/operational closure; Phase 1 evidence does not establish AC-041 deployment configuration or AC-042 consumer migration.
 
 ## Review Loop
@@ -83,3 +83,9 @@ Run the installed harness validator before and after implementation with `--chec
 - [x] Tests and verification pass.
 - [x] Review completed when enabled.
 - [x] Validation passes.
+
+## Decision Log
+
+- 2026-10-15: Update the operational handoff to Phase 6 after the operator closed
+  Phase 5 on provisioning. Existing Phase 1 proof is unchanged; remaining live checks
+  stay required by the Phase 6 verification checklist.

@@ -173,7 +173,7 @@ requirements:
   - id: AC-011
     title: 'Argo CD remains the deployment actor: CI does not apply Kubernetes resources,
       invoke infrastructure deployment actions, or silently enable a disabled deployment.
-      A disabled or incorrectly targeted record fails preflight with an actionable reason.'
+      The updater rejects a disabled or incorrectly targeted record with an actionable reason.'
     status: proposed
     verification_method: hybrid
     proofs: []
@@ -312,26 +312,27 @@ requirements:
     title: The @nightly tags in test sources are the sole source of truth for nightly suite
       membership; no separately maintained test manifest or expected-test list is required.
       Verify during implementation that the eight audited adaptive cases are tagged. Document
-      initial Canvas/Dot targeting. Initial delivery includes all currently tagged nightly
-      tests, including Canvas LTI and Dot; subsequent membership changes use tags and normal
+      Canvas/Moodle/Dot targeting. Initial delivery includes all currently tagged nightly
+      tests, including Canvas LTI, Moodle LTI, and Dot; subsequent membership changes use tags and normal
       code review.
     status: proposed
     verification_method: hybrid
     proofs: []
   - id: AC-022
-    title: After a clean automation dependency installation, the test invocation executes
-      tests selected by @nightly. Collection/import errors or zero matching tests fail the run. Missing asset access,
-      scenario credentials, automation credentials, or other configuration required by selected
-      tests produces a setup failure rather than a skip or passing result. Use existing configured
-      archives and answer keys without a new asset-versioning mechanism for initial delivery;
+    title: After a clean automation dependency installation, execute tests selected by @nightly.
+      Collection/import errors and zero matching tests fail the run. Preserve existing per-test
+      handling of missing assets, credentials, or configuration, including skip checks. Do not
+      add a separate configuration/asset preflight or blanket skip-failure rule. Before unattended
+      launch, inspect standard reports and resolve missing configuration so intended integrations
+      execute. Use existing archives and answer keys without a new asset-versioning mechanism;
       QA/test owners maintain them together and keep them unchanged during active runs.
     status: proposed
     verification_method: hybrid
     proofs: []
   - id: AC-023
-    title: Adaptive tests target the nightly public hostname, Canvas launches into the nightly
-      Torus deployment, and Dot uses a dedicated fixture on that deployment. Specific external
-      URLs and credentials are supplied during provisioning; both integrations must be configured
+    title: Adaptive tests target the nightly public hostname, Canvas and Moodle launch into
+      the nightly Torus deployment, and Dot uses a dedicated fixture on that deployment. Specific
+      external URLs and credentials are supplied during provisioning; all tagged integrations must be configured
       before unattended launch. Existing Torus account, scenario, and automation API authentication
       is retained.
     status: proposed
@@ -414,3 +415,9 @@ requirements:
     status: proposed
     verification_method: hybrid
     proofs: []
+
+# Decision 2026-10-14: AC-022 preserves existing test-owned setup and skip behavior,
+# matching the approved Phase 4 scope. AC-021/AC-023 name Moodle, already selected by
+# @nightly. Phase 6 owns final launch evidence; no statuses or proofs are promoted here.
+# Decision 2026-10-14: AC-011 is enforced by the updater, not a standalone preflight.
+# No scan for prior runs' PRs is required; current-run cleanup remains in scope.
