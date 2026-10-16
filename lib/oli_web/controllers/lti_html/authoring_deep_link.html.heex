@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tool selection</title>
+  </head>
+  <body>
+    <p>{@result[:error] || "Selection received. Returning to the activity editor…"}</p>
+    <div id="authoring-result" data-result={Jason.encode!(@result)}></div>
+    <script>
+      const result = JSON.parse(document.getElementById('authoring-result').dataset.result);
+      window.parent.postMessage({type: 'lti_authoring_deep_link_response', ...result}, window.location.origin);
+    </script>
+  </body>
+</html>
