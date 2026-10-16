@@ -41,7 +41,7 @@ defmodule OliWeb.LaunchControllerTest do
       page_revision: page_revision
     } do
       insert(:enrollment, user: guest, section: section)
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       conn =
         post(
@@ -60,6 +60,8 @@ defmodule OliWeb.LaunchControllerTest do
       conn: conn,
       section: section
     } do
+      expect_recaptcha_failure()
+
       conn =
         post(
           conn,
@@ -87,7 +89,7 @@ defmodule OliWeb.LaunchControllerTest do
       assert html_response(conn, 302) =~
                "You are being <a href=\"/sections/#{section.slug}/enroll?auto_enroll_as_guest=true\">redirected"
 
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       conn =
         post(
@@ -141,7 +143,7 @@ defmodule OliWeb.LaunchControllerTest do
       page_revision: page_revision
     } do
       insert(:enrollment, user: user, section: section)
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       conn =
         post(
@@ -168,7 +170,7 @@ defmodule OliWeb.LaunchControllerTest do
       assert html_response(conn, 302) =~
                "You are being <a href=\"/sections/#{section.slug}/enroll?auto_enroll_as_guest=false\">redirected"
 
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
 
       conn =
         post(

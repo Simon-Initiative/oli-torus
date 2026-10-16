@@ -55,7 +55,7 @@ async function listMailboxEmails(
   const response = await request.get(url.toString(), { headers: authHeaders(options.token) });
 
   if (!response.ok()) {
-    throw new Error(`Mailbox list request failed (${response.status()}): ${await response.text()}`);
+    throw new Error(`Mailbox list request failed (${response.status()})`);
   }
 
   return ((await response.json()) as { emails: MailboxMessage[] }).emails;
@@ -70,9 +70,7 @@ async function getMailboxEmail(
   const response = await request.get(url.toString(), { headers: authHeaders(options.token) });
 
   if (!response.ok()) {
-    throw new Error(
-      `Mailbox detail request failed (${response.status()}): ${await response.text()}`,
-    );
+    throw new Error(`Mailbox detail request failed (${response.status()})`);
   }
 
   return ((await response.json()) as { email: MailboxMessageDetail }).email;

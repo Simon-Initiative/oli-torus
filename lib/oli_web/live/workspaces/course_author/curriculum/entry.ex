@@ -98,11 +98,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
   attr(:child, :map, required: true)
   attr(:sidebar_expanded, :boolean, required: true)
 
+  @doc "Renders an underlined edit link, using full navigation for adaptive pages."
   def edit_link(%{child: child} = assigns) do
     if ResourceType.is_adaptive_page(child) do
       ~H"""
       <.link
-        class="entry-title mx-3"
+        class="entry-title mx-3 text-Text-text-button hover:text-Text-text-button-hover underline hover:underline"
         href={
           ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@child.slug}/edit?sidebar_expanded=#{@sidebar_expanded}"
         }
@@ -113,7 +114,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
     else
       ~H"""
       <.link
-        class="entry-title mx-3"
+        class="entry-title mx-3 text-Text-text-button hover:text-Text-text-button-hover underline hover:underline"
         navigate={
           ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@child.slug}/edit?sidebar_expanded=#{@sidebar_expanded}"
         }

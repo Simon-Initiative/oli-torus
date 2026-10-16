@@ -1,4 +1,4 @@
-import { BrowserContext, expect, Page } from '@playwright/test';
+import { BrowserContext, Page, expect } from '@playwright/test';
 
 export type CredentialAccountType = 'author' | 'user';
 
@@ -43,7 +43,7 @@ export class CredentialAccountPO {
   }
 
   async confirm(url: string) {
-    await this.page.goto(url);
+    await this.openAccountLink(url);
     await this.waitForLiveViewReady();
     await this.acceptCookieConsentIfVisible();
     await Promise.all([
@@ -67,7 +67,7 @@ export class CredentialAccountPO {
   }
 
   async resetPassword(url: string, password: string) {
-    await this.page.goto(url);
+    await this.openAccountLink(url);
     await this.waitForLiveViewReady();
 
     const form = this.page.locator('#reset_password_form');
@@ -126,6 +126,15 @@ export class CredentialAccountPO {
 
   private resetRequestDestination() {
     return this.type === 'author' ? '/authors/log_in' : '/';
+  }
+
+  private async openAccountLink(url: string) {
+    // evaluate arguments are not included in API step titles. goto(url) exposes
+    // confirmation/reset credentials even when tracing and screenshots are off.
+    await Promise.all([
+      this.page.waitForEvent('load'),
+      this.page.evaluate((destination) => window.location.assign(destination), url),
+    ]);
   }
 
   private async waitForLiveViewReady() {
