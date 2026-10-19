@@ -120,6 +120,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBar do
   attr :name, :string, default: nil
   attr :value, :string, default: ""
   attr :placeholder, :string, default: ""
+  attr :autocomplete, :string, default: nil
   attr :aria_label, :string, required: true
   attr :class, :any, default: nil
   attr :input_class, :any, default: nil
@@ -166,6 +167,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBar do
         type={@type}
         value={@value}
         placeholder={@placeholder}
+        autocomplete={@autocomplete}
         aria-label={@aria_label}
         class={[
           "h-5 min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 font-open-sans text-sm font-normal leading-4 text-Text-text-high outline-none placeholder:text-Text-text-low-alpha focus:border-0 focus:outline-none focus:ring-0 focus:shadow-none [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none",
