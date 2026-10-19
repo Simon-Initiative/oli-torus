@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       emit_page_viewed_event: 1
     ]
 
+  alias OliWeb.Components.SecureAssessment
   alias Oli.Accounts
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -90,11 +91,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           is_instructor: is_instructor,
           active_sidebar_panel:
             if(
-              Accounts.get_user_preference(
-                current_user.id,
-                :page_outline_panel_active?,
-                false
-              ),
+              not SecureAssessment.restrict_navigation?(socket.assigns[:user_session]) and
+                Accounts.get_user_preference(
+                  current_user.id,
+                  :page_outline_panel_active?,
+                  false
+                ),
               do: :outline,
               else: nil
             ),
@@ -939,7 +941,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mt-3 mb-10">
         </div>
 
-        <Utils.blocking_gates_warning attempt_message={@attempt_message} />
+        <Utils.blocking_gates_warning
+          attempt_message={@attempt_message}
+          restrict_navigation?={SecureAssessment.restrict_navigation?(@user_session)}
+        />
       </div>
     </div>
     """
@@ -1007,7 +1012,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </:point_markers>
     </.page_content_with_sidebar_layout>
 
-    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
+    <div
+      :if={not SecureAssessment.restrict_navigation?(@user_session)}
+      id="sticky_panel"
+      class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full"
+    >
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
           "hidden sm:inline-flex absolute top-24",
@@ -1050,6 +1059,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             />
           <% :outline -> %>
             <.live_component
+              :if={not SecureAssessment.restrict_navigation?(@user_session)}
               module={OutlineComponent}
               id="outline_component"
               hierarchy={@hierarchy}
@@ -1109,7 +1119,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </div>
     </.page_content_with_sidebar_layout>
 
-    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
+    <div
+      :if={not SecureAssessment.restrict_navigation?(@user_session)}
+      id="sticky_panel"
+      class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full"
+    >
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
           "hidden sm:inline-flex absolute top-24",
@@ -1131,7 +1145,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
 
         <.live_component
-          :if={@active_sidebar_panel == :outline}
+          :if={
+            @active_sidebar_panel == :outline and
+              not SecureAssessment.restrict_navigation?(@user_session)
+          }
           module={OutlineComponent}
           id="outline_component"
           hierarchy={@hierarchy}
@@ -1268,12 +1285,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <script>
           window.userToken = "<%= @user_token %>";
         </script>
-        {OliWeb.Common.React.component(
-          %{is_liveview: true},
-          "Components.Delivery",
-          @app_params,
-          id: "adaptive_content"
-        )}
+        <%= if SecureAssessment.restrict_navigation?(@user_session) do %>
+          <OliWeb.Components.SecureAssessment.shell>
+            {OliWeb.Common.React.component(%{is_liveview: true}, "Components.Delivery", @app_params,
+              id: "adaptive_content"
+            )}
+          </OliWeb.Components.SecureAssessment.shell>
+        <% else %>
+          {OliWeb.Common.React.component(%{is_liveview: true}, "Components.Delivery", @app_params,
+            id: "adaptive_content"
+          )}
+        <% end %>
       </div>
 
       {OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets})}
@@ -1333,7 +1355,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         z-index: 1000 !important;
       }
     </style>
-    <div id="sticky_panel" class="absolute right-0 z-50 h-full">
+    <div
+      :if={not SecureAssessment.restrict_navigation?(@user_session)}
+      id="sticky_panel"
+      class="absolute right-0 z-50 h-full"
+    >
       <div class="sticky ml-auto top-20 right-0">
         <div class={[
           "absolute top-24",
@@ -1355,7 +1381,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
 
         <.live_component
-          :if={@active_sidebar_panel == :outline}
+          :if={
+            @active_sidebar_panel == :outline and
+              not SecureAssessment.restrict_navigation?(@user_session)
+          }
           module={OutlineComponent}
           id="outline_component"
           hierarchy={@hierarchy}
@@ -2280,7 +2309,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     assign(
       socket,
       assistant_available?:
-        section && page_context &&
+        not SecureAssessment.restrict_navigation?(socket.assigns[:user_session]) &&
+          section && page_context &&
           Sections.assistant_enabled_for_page?(section, page_context.page)
     )
   end

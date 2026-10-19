@@ -451,6 +451,59 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   describe "student" do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
+    for gated? <- [false, true] do
+      test "secure prologue confines navigation with gating #{gated?}", c do
+        page = c.page_3
+        Sections.enroll(c.user.id, c.section.id, [ContextRoles.get_role(:context_learner)])
+        Sections.mark_section_visited_for_student(c.section, c.user)
+        sr = Sections.get_section_resource(c.section.id, page.resource_id)
+        Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
+
+        case unquote(gated?) do
+          true ->
+            gating_condition_fixture(%{
+              section_id: c.section.id,
+              resource_id: page.resource_id,
+              data: %{end_datetime: yesterday()}
+            })
+
+            Oli.Delivery.Gating.update_resource_gating_index(c.section)
+
+          false ->
+            :ok
+        end
+
+        token =
+          Oli.Accounts.generate_user_session_token(c.user,
+            scope: %Oli.Delivery.SecureAssessments.Scope{
+              section_id: c.section.id,
+              resource_id: page.resource_id
+            }
+          )
+
+        conn = c.conn |> recycle() |> init_test_session(%{user_token: token})
+        {:ok, view, html} = live(conn, Utils.prologue_live_path(c.section.slug, page.slug))
+        document = Floki.parse_document!(html)
+        assert length(Floki.find(document, "#secure-assessment-content")) == 1
+        assert has_element?(view, "a[href='#secure-assessment-content']", "Skip to assessment")
+
+        assert has_element?(
+                 view,
+                 "form[action='/secure-assessment/exit'][method='post'] input[name='_csrf_token']"
+               )
+
+        refute has_element?(
+                 view,
+                 "[data-role='prev_page'], [data-role='next_page'], #dialogue-window"
+               )
+
+        refute has_element?(view, "a[href='/sections/#{c.section.slug}']")
+        assert has_element?(view, "#blocking_gates_warning") == unquote(gated?)
+        assert has_element?(view, "#begin_attempt_button") == not unquote(gated?)
+        refute has_element?(view, "#tech_support_lti_error")
+      end
+    end
+
     test "secure reconnect and begin_attempt revalidate only the current token", %{
       conn: conn,
       user: user,

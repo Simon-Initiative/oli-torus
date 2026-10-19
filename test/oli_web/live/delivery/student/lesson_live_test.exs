@@ -837,6 +837,117 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   describe "student" do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
+    test "secure adaptive with course chrome uses one native shell, not an iframe", c do
+      %{section: section, adaptive_page: page} = create_adaptive_with_chrome_section()
+      page = Oli.Repo.update!(Ecto.Changeset.change(page, graded: true))
+      Sections.enroll(c.user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, c.user)
+      sr = Sections.get_section_resource(section.id, page.resource_id)
+      Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
+      create_attempt(c.user, section, page, %{lifecycle_state: :active, content: page.content})
+
+      token =
+        Oli.Accounts.generate_user_session_token(c.user,
+          scope: %Oli.Delivery.SecureAssessments.Scope{
+            section_id: section.id,
+            resource_id: page.resource_id
+          }
+        )
+
+      conn = c.conn |> recycle() |> init_test_session(%{user_token: token})
+      {:ok, view, _} = live(conn, Utils.lesson_live_path(section.slug, page.slug))
+      ensure_content_is_visible(view)
+      html = render(view) |> Floki.parse_document!()
+      assert length(Floki.find(html, "#secure-assessment-content")) == 1
+      assert length(Floki.find(html, "form[action='/secure-assessment/exit']")) == 1
+      assert Floki.find(html, "#adaptive_content_iframe") == []
+      assert length(Floki.find(html, "#adaptive_content")) == 1
+    end
+
+    for page_key <- [:page_3, :one_at_a_time_question_page, :graded_adaptive_page_revision] do
+      test "secure #{page_key} shell preserves content and excludes course navigation", c do
+        page = Map.fetch!(c, unquote(page_key))
+        Sections.enroll(c.user.id, c.section.id, [ContextRoles.get_role(:context_learner)])
+        Sections.mark_section_visited_for_student(c.section, c.user)
+        sr = Sections.get_section_resource(c.section.id, page.resource_id)
+        Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
+
+        attempt =
+          create_attempt(c.user, c.section, page, %{
+            lifecycle_state: :active,
+            content: page.content
+          })
+
+        case unquote(page_key) do
+          :one_at_a_time_question_page ->
+            activity_attempt =
+              insert(:activity_attempt,
+                resource_attempt: attempt,
+                revision: c.mcq_activity_1,
+                resource: c.mcq_activity_1.resource,
+                lifecycle_state: :active
+              )
+
+            insert(:part_attempt, activity_attempt: activity_attempt, part_id: "1")
+
+          _ ->
+            :ok
+        end
+
+        token =
+          Oli.Accounts.generate_user_session_token(c.user,
+            scope: %Oli.Delivery.SecureAssessments.Scope{
+              section_id: c.section.id,
+              resource_id: page.resource_id
+            }
+          )
+
+        conn = c.conn |> recycle() |> init_test_session(%{user_token: token})
+
+        html =
+          case unquote(page_key) do
+            :graded_adaptive_page_revision ->
+              conn
+              |> get("/sections/#{c.section.slug}/adaptive_lesson/#{page.slug}")
+              |> html_response(200)
+
+            _ ->
+              {:ok, view, _} = live(conn, Utils.lesson_live_path(c.section.slug, page.slug))
+              ensure_content_is_visible(view)
+              render(view)
+          end
+
+        document = Floki.parse_document!(html)
+        assert length(Floki.find(document, "#secure-assessment-content")) == 1
+        assert length(Floki.find(document, "form[action='/secure-assessment/exit']")) == 1
+
+        assert Floki.find(
+                 document,
+                 "#bottom-bar-wrapper, #bottom_page_navigator, #sticky_panel, [data-role='prev_page'], [data-role='next_page']"
+               ) == []
+
+        if unquote(page_key) == :graded_adaptive_page_revision do
+          props =
+            html
+            |> Floki.parse_document!()
+            |> Floki.find("[data-react-class='Components.Delivery']")
+            |> Floki.attribute("data-react-props")
+            |> hd()
+            |> Jason.decode!()
+
+          assert props["restrictNavigation"]
+          assert props["overviewURL"] == Utils.prologue_live_path(c.section.slug, page.slug)
+          refute props["reviewMode"]
+          assert props["previousPageURL"] == nil
+          assert props["nextPageURL"] == nil
+        else
+          assert Floki.find(document, "#submit_answers") != []
+        end
+
+        assert Oli.Repo.reload!(attempt).lifecycle_state == :active
+      end
+    end
+
     test "can not access when not enrolled to course", %{
       conn: conn,
       section: section,
