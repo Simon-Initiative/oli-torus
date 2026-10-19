@@ -483,7 +483,12 @@ const Delivery: React.FC<DeliveryProps> = ({
         role={restrictNavigation ? undefined : 'main'}
         style={{ width: windowWidth }}
       >
-        <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
+        <LayoutView
+          pageTitle={pageTitle}
+          previewMode={previewMode}
+          pageContent={content}
+          restrictNavigation={restrictNavigation}
+        />
       </div>
       {showRestartDialog ? <RestartLessonDialog onRestart={setInitialPageState} /> : null}
       {isLessonEnded && !reviewMode ? (

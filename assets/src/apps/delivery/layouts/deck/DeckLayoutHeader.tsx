@@ -18,6 +18,7 @@ import ReviewModeNavigation from './components/ReviewModeNavigation';
 interface DeckLayoutHeaderProps {
   pageName?: string;
   backUrl?: string;
+  restrictNavigation?: boolean;
   activityName?: string;
   showScore?: boolean;
   themeId?: string;
@@ -64,6 +65,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   pageName,
   activityName,
   backUrl,
+  restrictNavigation = false,
   showScore = false,
   themeId,
   userName,
@@ -139,7 +141,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
   return (
     <div className="headerContainer">
-      {
+      {(showFullscreenToggle || showAuthorPreviewBackButton || !restrictNavigation) && (
         <div className="back-button">
           <style>
             {`
@@ -213,7 +215,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
             </a>
           )}
         </div>
-      }
+      )}
       {isReviewMode && <ReviewModeNavigation></ReviewModeNavigation>}
       <header id="delivery-header">
         <div className="defaultView">
