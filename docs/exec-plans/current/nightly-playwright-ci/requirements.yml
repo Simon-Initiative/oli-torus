@@ -422,8 +422,16 @@ requirements:
 # Decision 2026-10-14: AC-011 is enforced by the updater, not a standalone preflight.
 # No scan for prior runs' PRs is required; current-run cleanup remains in scope.
 # Decision 2026-10-16: Phase 6 closes on completed manual workflow orchestration and
-# correct failure/report handling; a green browser suite is Phase 7 work. First scheduled
+# correct failure/report handling; green-suite repairs are now separate bug work. First scheduled
 # execution remains launch follow-up under AC-029. Reuse earlier component/release,
 # rendered-manifest, policy, and local failure checks; no extra live fault-injection
 # campaign is required. Behavioral contracts remain unchanged. This scope decision
 # does not mark every nested criterion verified or claim unperformed live exercises.
+
+# Decision 2026-10-19: Phase 6 is the final infrastructure implementation phase.
+# Remove Phase 7 and track unrelated test, fixture, and application failures in a
+# separate MER bug. Preserve test membership, retries, and failure reporting.
+# The existing master schedule is active; scheduled proof of the integrated pipeline
+# remains post-merge follow-up. Greenhouse ingestion still needs diagnosis before
+# attributing its failure to application or infrastructure. No proof statuses are
+# promoted by this scope change.

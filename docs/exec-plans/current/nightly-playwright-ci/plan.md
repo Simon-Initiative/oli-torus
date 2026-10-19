@@ -7,7 +7,7 @@ Scope and reference artifacts:
 - Canonical requirements: `docs/exec-plans/current/nightly-playwright-ci/requirements.yml`
 - Historical context: `docs/exec-plans/current/nightly-playwright-ci/dependency-discovery.md`; its reverted experiment is not implementation evidence.
 - Repository contract: `AGENTS.md`, `ARCHITECTURE.md`, `harness.yml`, `docs/STACK.md`, `docs/TOOLING.md`, `docs/TESTING.md`, `docs/PRODUCT_SENSE.md`, `docs/FRONTEND.md`, `docs/BACKEND.md`, `docs/OPERATIONS.md`, `docs/CODEREVIEW.md`, `docs/ISSUE_TRACKING.md`.
-- Tracking reference: MER-5918. This plan requires no Jira mutation; any later ticket change follows the installed CLI and exact-draft approval rules.
+- Tracking reference: MER-5918. Create the separate test-failure bug using the installed Jira CLI after exact-draft approval; existing ticket changes require their own approval.
 
 ## Scope
 
@@ -27,7 +27,7 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
 - When Phase 5 needs a local GitOps checkout, request its location if unknown. Use it only for that session and never persist the local path. GitOps file paths below are relative to that repository root. Planning does not require accessing that checkout.
 - Supply actual external URLs, credentials and the protected GitOps destination branch during provisioning. For Phase 6 verification, explicitly allow the reviewed feature branch in both `nightly-ui` and `nightly-deploy`, retaining `master` access and excluding PR/fork access. Canvas must launch into nightly Torus; Dot uses its existing scenario setup to create its course and student there during the test run. No tagged integration may be silently excluded to unblock launch.
 - A public version/SHA observation does not prove all-replica convergence or distinguish same-source rebuilds. Retain the digest as provenance; no post-test identity check is required.
-- Checked tasks describe recorded evidence. Phase 6 closes on workflow execution and correct reporting; Phase 7 owns test repairs. Scheduled evidence remains a launch follow-up. Document validation does not prove unperformed checks.
+- Checked tasks describe recorded evidence. Phase 6 is the final implementation phase and closes on workflow execution and correct reporting; unrelated test repairs move to a separate bug. Scheduled evidence remains a launch follow-up. Document validation does not prove unperformed checks.
 
 ## Phase 1: Application lifecycle and probe contracts
 
@@ -113,7 +113,7 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
   - [x] Verify dependency parity and import/selection from an isolated `npm ci` installation without parent product dependencies.
   - [x] Exercise direct success/failure, existing missing-key skips, and zero matching tests; verify standard reports are generated.
   - [x] Run targeted existing tests, formatting/lint checks, required review and work-item validation.
-  - Commands from `assets/automation/`: `npm ci`, `npx playwright install --with-deps chrome`, `npx playwright test --config playwright.nightly.config.ts --grep @nightly`. Full provisioned execution is recorded in Phase 6; remaining test repairs belong to Phase 7.
+  - Commands from `assets/automation/`: `npm ci`, `npx playwright install --with-deps chrome`, `npx playwright test --config playwright.nightly.config.ts --grep @nightly`. Full provisioned execution is recorded in Phase 6; remaining test repairs belong to separate bug work.
 - Definition of Done:
   - Direct tag execution, normal failure behavior, dependency isolation and standard reporting are verified. No separate suite inventory or resource validation layer.
 - Evidence: `docs/exec-plans/current/nightly-playwright-ci/phase-4-execution.md`.
@@ -153,7 +153,7 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
 
 - Status: Complete under the operator-approved 2026-10-16 scope. [Run 38954795747](https://github.com/Simon-Initiative/oli-torus/actions/runs/38954795747) completed the workflow and reported the Playwright failures correctly.
 - Goal: Prove that the implemented workflow builds, deploys, verifies, and tests the selected source revision, then retains reports and the actual test outcome.
-- Scope: Workflow integration and its manual end-to-end verification. Passing every Playwright test is Phase 7 work. Reuse earlier component, release, GitOps policy, local failure-handling, and review evidence; no additional live fault-injection campaign is required for this phase.
+- Scope: Workflow integration and its manual end-to-end verification. A green browser suite is not an infrastructure closeout gate; unrelated test, fixture, and application repairs belong to a separate bug. Reuse earlier component, release, GitOps policy, local failure-handling, and review evidence; no additional live fault-injection campaign is required for this phase.
 - Coverage: Workflow integration evidence for AC-001, AC-002, AC-004, AC-007, AC-008, AC-009, AC-010, AC-015, AC-016, AC-017, AC-018, AC-019, AC-020, AC-021, AC-022, AC-023, AC-024, AC-027, AC-028, AC-031; manual-run portion of AC-029. This does not mark every clause of those criteria newly verified.
 - Tasks:
   - [x] Connect publication, accepted GitOps deployment, public readiness/identity, and browser execution at one source SHA.
@@ -169,46 +169,23 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
   - [x] Execute the selected `@nightly` tests from the same source revision and observe the independent scenario job.
   - [x] Retain Playwright reports/results and the stage summary; preserve the failed test outcome after successful uploads.
 - Definition of Done:
-  - The four checks above are demonstrated by a completed manual workflow. Test failures are visible and assigned to Phase 7; they do not invalidate successful workflow orchestration.
+  - The four checks above are demonstrated by a completed manual workflow. Test failures are visible and recorded for separate bug follow-up; they do not invalidate successful workflow orchestration.
 - Gate: G6 — complete. Workflow implementation and manual end-to-end integration are verified; this is not a claim that the browser suite is green or that a scheduled run has been observed.
 - Evidence: `docs/exec-plans/current/nightly-playwright-ci/phase-6-execution.md`.
 - Dependencies: Existing G1–G4 implementation evidence and completed G5 provisioning.
 - Parallelizable Work: None needed for closeout. Keep live workflow runs serialized by the existing lock.
 
-## Phase 7: Fix the failing nightly Playwright tests
+## Post-Merge Follow-up
 
-- Status: Pending. Baseline: run 38954795747 completed with 7 passed and 8 failed tests, without skips.
-- Goal: Resolve the failures exposed by the working workflow and obtain a passing full tagged suite.
-- Scope: Targeted test, fixture, and application/import fixes supported by diagnosis. Preserve intended coverage, normal retries, and failure reporting; do not remove tags, add blanket skips, or increase timeouts without evidence.
-- Coverage: Functional follow-through for AC-021, AC-022, AC-023, AC-024, AC-026, AC-031; retain shared account/mailbox/captcha contracts AC-034, AC-037, AC-038 when affected.
-- Tasks:
-  - [ ] Fix Canvas and Moodle launch helpers for the current course-creation UI (two failed tests).
-  - [ ] Diagnose Moodle grade passback navigation waiting for the Assignments link.
-  - [ ] Fix Designer Planet onboarding/lesson navigation based on its failure reports.
-  - [ ] Correct the Plate Tectonics manifest: validation currently rejects a missing or empty scenario array.
-  - [ ] Diagnose Phases of the Moon sorting interactions at screens 59/64.
-  - [ ] Diagnose Greenhouse Molecules course ingestion: both attempts returned HTTP 502 after approximately 300 seconds. Confirm the cause before changing application or proxy timeouts.
-  - [ ] Fix the account-linking flow that exceeds its test timeout while typing.
-- Testing Tasks:
-  - [ ] Reproduce each failure and verify the smallest justified fix with the affected test and relevant component tests.
-  - [ ] Rerun the full `@nightly` suite through the existing workflow after the fixes; inspect standard reports for passes, retries, and unexpected skips.
-  - [ ] Confirm course imports and adaptive evaluations finish without recurrence of the diagnosed timeout or Node memory failures. Reuse existing logs and metrics; add no monitoring framework.
-- Definition of Done:
-  - All eight baseline failures are resolved and the full tagged suite passes without suppressing intended coverage. Record fixes and run evidence in a Phase 7 execution record when implementation starts.
-- Gate: G7 — passing nightly test suite on the reviewed revision.
-- Dependencies: G6; QA/test owners provide corrected assets or integration fixtures when diagnosis requires them.
-- Parallelizable Work: Independent test/fixture repairs may proceed separately; serialize live runs and shared fixture changes.
-
-## Launch Follow-up
-
-- [ ] Merge the reviewed changes normally, retain the existing schedule, and confirm the first scheduled run from `master` builds/deploys/tests the expected revision and retains its results (remaining AC-029 evidence).
+- [x] Confirm scheduling is enabled: workflow active, daily `17 5 * * *` trigger present, and scheduled runs observed on 2026-10-17 through 2026-10-19. These runs use the pre-integration `master` workflow.
+- [ ] Merge the reviewed Phase 6 changes normally, retain the existing schedule, and confirm the first scheduled run from `master` builds/deploys/tests the expected revision and retains its results (remaining AC-029 evidence).
 - [ ] Remove temporary feature-branch environment allowances after verification and link the scheduled result in the execution record.
 
-The earlier exhaustive live-failure, cancellation, overlap, persistence/mailbox, and disposable lifecycle checklist is superseded by the operator-approved minimal verification. Reuse the existing component/release tests, rendered manifests, policy checks, and local failure fixtures for those contracts. Do not claim unperformed live exercises occurred or mark all nested acceptance criteria verified from the manual run alone. No additional operational campaign is a prerequisite for G6 or G7.
+The earlier exhaustive live-failure, cancellation, overlap, persistence/mailbox, and disposable lifecycle checklist is superseded by the operator-approved minimal verification. Reuse the existing component/release tests, rendered manifests, policy checks, and local failure fixtures for those contracts. Do not claim unperformed live exercises occurred or mark all nested acceptance criteria verified from the manual run alone. No additional operational campaign is a prerequisite for G6.
 
 ## Parallelization Notes
 
-- The critical path is G1 → G2 → G3 → G5 → G6 → G7, with G4 feeding G5/G6. Early independent work includes automation dependency/reporting changes, local readiness step checks and GitOps static preparation.
+- The critical path is G1 → G2 → G3 → G5 → G6, with G4 feeding G5/G6. Early independent work includes automation dependency/reporting changes, local readiness step checks and GitOps static preparation.
 - Configuration, captcha/server behavior and PR workflow migration form one landing unit. Coordinate shared router, runtime, release, fixtures and workflow files instead of merging partial contracts.
 - Separate Torus and GitOps review boundaries; use relative GitOps paths and record reviewed commits as evidence. Static preparation can overlap, but deploying new probes requires a capable image.
 - Serialize live runs and fixture changes on the durable target. Reuse existing component and local failure checks; no separate live verification campaign is required.
@@ -222,8 +199,7 @@ The earlier exhaustive live-failure, cancellation, overlap, persistence/mailbox,
 | G3 | Real release fixture/mailbox smoke tests and production/cache isolation | Deployment activation and publication |
 | G4 | Clean dependency install, direct selection, normal failure behavior and standard reports | Nightly execution integration |
 | G5 | Reviewed/landed GitOps tooling and manifests, configured policies/credentials, provisioned target/assets/integrations, initial health/access proof | Controlled feature-branch workflow verification |
-| G6 | Completed manual build → deployment → readiness → tests → reports, with correct failure status | Workflow verification complete; targeted test repairs |
-| G7 | Baseline failures resolved and full tagged suite passes | Reliable nightly test results |
+| G6 | Completed manual build → deployment → readiness → tests → reports, with correct failure status | Infrastructure implementation complete; post-merge scheduled confirmation |
 
 ## Plan Validation
 
@@ -238,7 +214,7 @@ git diff --check
 
 The installed traceability script reads top-level acceptance criteria, while this work item's criteria are nested under requirements. Supplement its checks by traversing every requirement's `acceptance_criteria`, verifying all 42 IDs are referenced in both FDD and plan, and checking for unknown/duplicate IDs. Inspect each numbered phase for goal, tasks, testing, definition of done, gate, dependencies and parallelization. These checks validate planning artifacts only.
 
-At final work-item closeout, after Phase 7 and scheduled-run confirmation, also run:
+At Phase 6 closeout, run the implementation traceability commands below. First scheduled-run confirmation remains post-merge evidence; do not mark it verified before it occurs:
 
 ```sh
 python3 "$HARNESS_SKILLS_ROOT/requirements/scripts/requirements_trace.py" docs/exec-plans/current/nightly-playwright-ci --action verify_implementation
@@ -253,7 +229,7 @@ The documentation reconciliation does not promote statuses or manufacture proof.
 
 | Date | Decision | Reason and evidence |
 | --- | --- | --- |
-| 2026-10-16 | Separate workflow verification from test repairs | Operator approved closing Phase 6 on the completed end-to-end workflow run, even when Playwright reports test failures. Phase 7 owns those test/import repairs. Reuse existing component, release, policy, and local failure checks; remove the additional live fault-injection campaign from closeout. Confirm the first scheduled run after normal merge as a separate launch follow-up. |
+| 2026-10-16 | Separate workflow verification from test repairs | Operator approved closing Phase 6 on the completed end-to-end workflow run, even when Playwright reports test failures. The proposed Phase 7 owned those test/import repairs; this assignment is superseded by the 2026-10-19 decision. Reuse existing component, release, policy, and local failure checks; remove the additional live fault-injection campaign from closeout. Confirm the first scheduled run after normal merge as a separate launch follow-up. |
 | 2026-10-15 | Simplify deployment orchestration using maintained GitHub tooling. | Keep build, protected signed PR, accepted-record and exact readiness checks, and Playwright. Replace custom PR lifecycle/identity handling with a pinned PR action and immediate GitHub merge requests; no queued auto-merge or automated settlement. Retain the updater and required GitOps validation, use curl/jq readiness, and one final summary. Land Torus first and finish old runs before deleting the GitOps helper. |
 | 2026-10-15 | Keep the nightly schedule unchanged during Phase 6 verification. | Inspect active runs and coordinate verification around scheduled execution; a schedule pause is not a prerequisite. |
 | 2026-10-15 | Close Phase 5 on completed provisioning; move all remaining live verification to Phase 6. | Operator explicitly requested this boundary. Phase 6 now owns the feature-branch full workflow, actual App and integration checks, persistence/mailbox and lifecycle tests, and failure/privacy verification before merge and scheduled launch. Include the Torus loader follow-up in the feature branch; no prior Torus master merge is required. Acceptance criteria and proof requirements are unchanged. |
@@ -263,3 +239,4 @@ The documentation reconciliation does not promote statuses or manufacture proof.
 | 2026-10-14 | Use one App in `nightly-deploy`; remove the second App/read-only credential requirement. | Build and browser jobs have no GitOps access. The intermediate deployment-preflight proposal is superseded below. Phase 6 owns workflow wiring. |
 | 2026-10-14 | Remove standalone GitOps preflight and checks for earlier bot PRs. | User requested simpler deployment orchestration. Retain current-record validation, GitHub merge enforcement, current-run acceptance verification and cleanup; orphaned PR recovery is manual. |
 | 2026-10-14 | Support manual publish-only provisioning. | Initial target needs a published Playwright image before browser tests can run. Add a default-off dispatch input that skips tests; Phase 6 must also skip deployment for that mode. Normal schedules and manual runs retain the full pipeline. |
+| 2026-10-19 | Close infrastructure scope at Phase 6 | Operator removed Phase 7 and moved unrelated test, fixture, and application failures to a separate MER bug. Keep the full tagged suite and honest failure reporting. Scheduling is already active at 05:17 UTC; first execution of the integrated pipeline from master remains post-merge evidence. Greenhouse import diagnosis remains open; no claim is made that its cause is unrelated to infrastructure. |
