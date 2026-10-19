@@ -35838,6 +35838,17 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   background-color: rgb(39 92 175 / var(--tw-bg-opacity));
 }
 
+.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
 .focus\:z-10:focus {
   z-index: 10;
 }
@@ -35940,6 +35951,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .focus\:bg-transparent:focus {
   background-color: transparent;
+}
+
+.focus\:p-3:focus {
+  padding: 0.75rem;
 }
 
 .focus\:font-bold:focus {
