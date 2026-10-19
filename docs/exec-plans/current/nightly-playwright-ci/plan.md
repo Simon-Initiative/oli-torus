@@ -179,7 +179,7 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
 
 - [x] Confirm scheduling is enabled: workflow active, daily `17 5 * * *` trigger present, and scheduled runs observed on 2026-10-17 through 2026-10-19. These runs use the pre-integration `master` workflow.
 - [ ] Merge the reviewed Phase 6 changes normally, retain the existing schedule, and confirm the first scheduled run from `master` builds/deploys/tests the expected revision and retains its results (remaining AC-029 evidence).
-- [ ] Remove temporary feature-branch environment allowances after verification and link the scheduled result in the execution record.
+- [x] Remove temporary feature-branch environment allowances: on 2026-10-19, read-back confirmed `nightly-ui` and `nightly-deploy` allow only `master`. Link the first integrated scheduled result when the post-merge check above completes.
 
 The earlier exhaustive live-failure, cancellation, overlap, persistence/mailbox, and disposable lifecycle checklist is superseded by the operator-approved minimal verification. Reuse the existing component/release tests, rendered manifests, policy checks, and local failure fixtures for those contracts. Do not claim unperformed live exercises occurred or mark all nested acceptance criteria verified from the manual run alone. No additional operational campaign is a prerequisite for G6.
 
