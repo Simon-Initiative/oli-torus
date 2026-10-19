@@ -106,8 +106,8 @@ must remain protected; no private repository URL is included in this record.
 - [x] Plan, PRD, FDD, and requirements scope notes reconciled.
 
 G6 is closed. First scheduled-run confirmation after normal merge remains a launch
-follow-up, independent of this manual workflow proof. Keep the existing schedule;
-remove temporary feature-branch environment allowances after verification.
+follow-up, independent of this manual workflow proof. Keep the existing schedule.
+Temporary feature-branch environment allowances were removed on 2026-10-19.
 
 The former live fault-injection, cancellation, overlap, persistence/mailbox, and
 disposable lifecycle campaign is no longer a phase-closeout requirement. Reuse
@@ -154,9 +154,19 @@ success as proof that all 42 criteria are verified.
   These use master's pre-integration workflow and do not establish scheduled
   build/deploy/readiness proof for the new pipeline.
 - Impact: G6 remains complete and is the final implementation gate. Keep normal
-  merge, first integrated scheduled-run confirmation, and temporary branch-policy
-  cleanup as post-merge follow-up. No schedule mutation was needed.
+  merge and first integrated scheduled-run confirmation as post-merge follow-up.
+  Temporary branch-policy cleanup is complete. No schedule mutation was needed.
 - PR scope: Draft course-selection and Designer Planet fixes were removed from
   the working diff and preserved outside the repository for the separate bug.
   Their lint, collection, and 22 core-test checks were successful, but their
   affected live tests were not run; they are not part of the Phase 6 evidence.
+
+### 2026-10-19 — Remove temporary environment access
+
+- Removed the Phase 5 (`MER-6036`) and Phase 6 (`MER-6038`) branch allowances from
+  `nightly-ui`, and the Phase 6 allowance from `nightly-deploy`, at the operator's request.
+- Read-back confirmed both environments retain custom branch restrictions with
+  `master` as their sole allowed branch. No active nightly run was observed before cleanup.
+- Future feature-branch deployment verification needs an explicit new allowance;
+  scheduled execution from `master` retains access. Secrets and other environment
+  protections were not changed.
