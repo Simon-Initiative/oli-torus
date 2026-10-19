@@ -41,7 +41,7 @@ records supersede those observations: Phases 1–4 implemented probes, shared co
 packaging/build outputs, and nightly runner configuration. Phase 5 delivered the GitOps
 updater, nightly-only manifests, and live target/integration provisioning. The initial
 PR lifecycle helper is superseded by the standard tooling described below.
-G5 is complete as provisioning. G6 is complete as workflow integration and minimal manual end-to-end verification. Phase 7 owns the observed Playwright test/import failures. First scheduled-run confirmation remains a launch follow-up; no additional live fault-injection campaign is required for phase closeout.
+G5 is complete as provisioning. G6 is complete as workflow integration and minimal manual end-to-end verification. The observed Playwright test/import failures are tracked separately from infrastructure delivery. First scheduled-run confirmation remains a launch follow-up; no additional live fault-injection campaign is required for phase closeout.
 
 | Existing boundary | Observed behavior and design implication |
 | --- | --- |
@@ -61,7 +61,7 @@ G5 is complete as provisioning. G6 is complete as workflow integration and minim
 | `assets/automation/tests/torus/dot_chatbot/dot-chatbot.spec.ts` | Loads its own target/configuration URL; disables traces and supports existing-fixture or scenario mode. Scenario mode currently has no durable-data teardown. |
 | `docs/exec-plans/current/nightly-playwright-ci/dependency-discovery.md` | Captures the reverted direct `json-rules-engine` dependency fix and collection gate; historical tests are not current implementation proof. |
 
-The GitOps record `deployments/nightly-playwright.yml` is enabled with the published Playwright image. Phase 5 verified the applied nightly-only probe/drain manifests, live health/readiness identity, persistent services, private asset delivery, and installed policy/credentials; GitOps PRs #7–#9 are merged. Actual bot operation, automated integration execution, persistence/mailbox behavior through updates, and operational fault/drain checks remain Phase 6 requirements. The shared base remains unchanged for other deployments.
+The GitOps record `deployments/nightly-playwright.yml` is enabled with the published Playwright image. Phase 5 verified the applied nightly-only probe/drain manifests, live health/readiness identity, persistent services, private asset delivery, and installed policy/credentials; GitOps PRs #7–#9 are merged. Phase 6 verified actual bot operation and tagged test execution. Earlier component and provisioning evidence covers the remaining contracts; additional live persistence/mailbox and fault/drain exercises are not closeout requirements. The shared base remains unchanged for other deployments.
 
 ## 4. Proposed Design
 
@@ -376,7 +376,7 @@ Torus maintainers own failure triage. GitHub Actions failures, run summaries and
 
 The table maps evidence across the work item, not a new final-phase test campaign. Reuse existing component, release, runner, rendered-manifest, policy, and local failure checks. Phase 6 is limited to four observations from a completed manual run: build/publish the selected source, accept deployment and matching readiness, execute the tagged tests, and retain reports with the correct outcome. Test failures do not block G6 when orchestration and reporting work correctly.
 
-Phase 7 diagnoses and repairs the eight failed tests from run 38954795747, then verifies a passing full tagged suite. Confirm the first scheduled run after normal merge as a separate launch follow-up. Additional live fault-injection, cancellation, overlapping-dispatch, persistence/mailbox, or disposable lifecycle exercises are not required for closeout. Record only actual evidence; this decision does not turn unperformed live checks into passing results.
+The eight failed tests from run 38954795747 move to separate bug work. Infrastructure closeout requires accurate execution and reporting, not a green suite. Greenhouse import remains undiagnosed; inspect application and proxy logs before deciding whether its fix belongs to infrastructure or application work. Confirm the first scheduled run after normal merge as a separate launch follow-up. Additional live fault-injection, cancellation, overlapping-dispatch, persistence/mailbox, or disposable lifecycle exercises are not required for closeout. Record only actual evidence; this decision does not turn unperformed live checks into passing results.
 
 | Layer | Verification |
 | --- | --- |
@@ -394,7 +394,7 @@ Phase 7 diagnoses and repairs the eight failed tests from run 38954795747, then 
 | Reports | Verify standard Playwright reports show test identities, outcomes, skips and retries. Verify HTML/report output paths, GitHub Actions artifact names and 14-day retention, plus upload/summary execution after test failure. |
 | GitOps contract | Fixture tests for exact allowed keys, comments/unrelated content, disabled record, hostname/overlay/access mismatch, conflict, denied checks, timeout and late merge. Run record/policy validators and static Kustomize rendering with no cluster contact; ensure app/init container image parity and reviewed probe/drain settings. |
 | Workflow | YAML/action lint plus orchestration tests for scheduled master checkout, manual dispatch-SHA checkout and rerun stability, stage dependencies, no production tags, bounded failures, workflow-scoped lock across the job chain, preserved PR triggers/checkout/coverage, unchanged backend scenario job and preservation of Playwright failure status through artifact upload/summary steps. Reuse the existing local cancellation checks. |
-| Provisioned target | Completed manual workflow and retained diagnostics for G6; passing tagged suite for G7; first scheduled-run confirmation after merge for AC-029. Reuse existing readiness, serialization, and persistence checks rather than adding live drills. |
+| Provisioned target | Completed manual workflow and retained diagnostics for G6; first scheduled-run confirmation after merge for AC-029. Test repairs are separate bug work. Reuse existing readiness, serialization, and persistence checks rather than adding live drills. |
 
 Run focused ExUnit and script/automation checks appropriate to implementation, then required review under `docs/CODEREVIEW.md`: security/performance plus backend/TypeScript lenses where changed; requirements review applies if PRD changes. A full `mix test` is mandatory if shared test support/configuration changes. No new domain scenario test is necessary for this orchestration design unless implementation crosses domain workflows.
 
@@ -406,7 +406,7 @@ The probe contract intentionally changes: deploy a capable image before switchin
 
 Land shared configuration, PR asset/runtime setup and deletion of `ci_e2e` together, with passing `@pr` verification. Preserve PR triggers, source selection, test coverage and disposable lifecycle, while retaining mailbox/account credential privacy in traces and attachments. Keep other shared browser-runner defaults and the independent backend scenario job unchanged. Nightly configuration supplies standard reporting and privacy settings. Existing tests own setup and missing-configuration behavior; it adds no target/configuration preflight or custom coverage validator.
 
-Phase 6 closes on manual workflow verification; Phase 7 owns test repairs. Confirm the first scheduled run after normal merge as launch follow-up. The existing schedule is retained, with its pause/resume procedure documented for rollout. Pause scheduling during incidents; any rollback uses reviewed GitOps changes and a database-compatibility assessment. Do not automatically reverse migrations. Historical notes may retain old names when clearly marked as superseded.
+Phase 6 is the final implementation phase and closes on manual workflow verification; unrelated test repairs are separate bug work. Confirm the first scheduled run after normal merge as launch follow-up. The existing schedule is retained, with its pause/resume procedure documented for rollout. Pause scheduling during incidents; any rollback uses reviewed GitOps changes and a database-compatibility assessment. Do not automatically reverse migrations. Historical notes may retain old names when clearly marked as superseded.
 
 ## 15. Risks & Mitigations
 
@@ -428,7 +428,7 @@ Phase 6 closes on manual workflow verification; Phase 7 owns test repairs. Confi
 
 ## 16. Open Questions & Follow-ups
 
-No unresolved design questions remain. Phase 6 workflow verification is complete; Phase 7 owns the test/import failures and first scheduled-run confirmation remains a launch follow-up. Reuse earlier evidence under the minimal verification scope in section 13; unperformed live exercises are not claimed as proof.
+No unresolved design questions remain. Phase 6 workflow verification is complete; test/import failures are tracked separately and first scheduled-run confirmation remains a launch follow-up. Reuse earlier evidence under the minimal verification scope in section 13; unperformed live exercises are not claimed as proof.
 
 ## 17. References
 
@@ -442,7 +442,7 @@ Repository paths are relative to the named repository root.
 - `assets/automation/playwright.config.ts`, `assets/automation/tests/resources/nightly-ci.md`, `assets/automation/tests/resources/adaptive-tests-setup.md`, `assets/automation/tests/torus/lti/launch.spec.ts`, `assets/automation/tests/torus/dot_chatbot/dot-chatbot.spec.ts`.
 - In `oli-torus-gitops`: `deployments/nightly-playwright.yml`, `scripts/update_deployment_record.py`, `scripts/validate_deployments.py`, `scripts/validate_gitops_policy.py`, `apps/oli-torus/base/deployment.yaml`.
 - [GitHub Actions concurrency](https://docs.github.com/en/actions/concepts/workflows-and-actions/concurrency) and [Playwright CLI](https://playwright.dev/docs/test-cli), checked during design.
-- [MER-5918](https://eliterate.atlassian.net/browse/MER-5918), tracking reference from the PRD; no Jira mutation is part of this task.
+- [MER-5918](https://eliterate.atlassian.net/browse/MER-5918), infrastructure tracking reference; test failures move to a separate MER bug after exact-draft approval.
 
 ## Decision Log
 
@@ -469,4 +469,5 @@ Repository paths are relative to the named repository root.
 The 2026-10-15 operator-approved simplification supersedes earlier wait/settle and
 auto-merge lifecycle decisions: retain protected signed PRs and exact revision gating,
 use a maintained PR action plus GitHub CLI, and remove custom lifecycle machinery.
-| 2026-10-16 | Separate workflow verification from test repairs | Operator approved closing Phase 6 on the completed end-to-end workflow run, even when Playwright reports test failures. Phase 7 owns those test/import repairs. Reuse existing component, release, policy, and local failure checks; remove the additional live fault-injection campaign from closeout. Confirm the first scheduled run after normal merge as a separate launch follow-up. |
+| 2026-10-16 | Separate workflow verification from test repairs | Operator approved closing Phase 6 on the completed end-to-end workflow run, even when Playwright reports test failures. The proposed Phase 7 owned those test/import repairs; this assignment is superseded by the 2026-10-19 decision. Reuse existing component, release, policy, and local failure checks; remove the additional live fault-injection campaign from closeout. Confirm the first scheduled run after normal merge as a separate launch follow-up. |
+| 2026-10-19 | Close infrastructure scope at Phase 6 | Operator removed Phase 7 and moved unrelated test, fixture, and application failures to a separate MER bug. Keep the full tagged suite and honest failure reporting. Scheduling is already active at 05:17 UTC; first execution of the integrated pipeline from master remains post-merge evidence. Greenhouse import diagnosis remains open; no claim is made that its cause is unrelated to infrastructure. |

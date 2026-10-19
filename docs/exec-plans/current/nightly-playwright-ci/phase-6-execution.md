@@ -8,8 +8,8 @@ Status: Complete under the operator-approved 2026-10-16 scope.
 
 Verify that the implemented workflow builds and publishes the selected source,
 accepts its GitOps deployment, checks public readiness and identity, executes the
-tagged browser tests, and retains reports with the correct outcome. Phase 7 owns
-repairs to the actual Playwright tests and course-import failures. A green test
+tagged browser tests, and retains reports with the correct outcome. Separate bug work owns
+repairs to unrelated Playwright tests, fixtures, and application failures. A green test
 suite is not required to demonstrate that the workflow works.
 
 ## Implementation Blocks
@@ -61,12 +61,13 @@ These are observations from this run, not proposed resource limits.
 Eight imports returned HTTP 200, including imports lasting 81.6, 82.9, and 89.1
 seconds, confirming that the old 60-second proxy cutoff no longer applies.
 Greenhouse Molecules returned HTTP 502 after approximately 300 seconds on each
-of its two attempts. That remaining import failure belongs to Phase 7; this run
-does not establish its root cause.
+of its two attempts. That import failure is captured for separate diagnosis; this run
+does not establish whether application ingestion or the server/proxy timeout is the cause.
 
-## Phase 7 Handoff
+## Test Failure Handoff
 
-The eight failed tests are captured in the Phase 7 task list in `plan.md`:
+The eight failed tests are deferred to a separate MER bug and do not create another
+infrastructure phase:
 
 - Canvas launch and Moodle launch: shared course-creation helper expects the old UI.
 - Moodle grade passback: navigation waits for the Assignments link.
@@ -101,7 +102,7 @@ must remain protected; no private repository URL is included in this record.
 
 - [x] Workflow implementation complete.
 - [x] Four minimal end-to-end verification checks demonstrated by the hosted run.
-- [x] Failures assigned to Phase 7 without masking the failed workflow result.
+- [x] Failures recorded for separate bug follow-up without masking the failed workflow result.
 - [x] Plan, PRD, FDD, and requirements scope notes reconciled.
 
 G6 is closed. First scheduled-run confirmation after normal merge remains a launch
@@ -117,16 +118,17 @@ unverified; they are not claimed as passing evidence or blockers to G6.
 ## Requirements Validation
 
 Work-item validation, plan traceability, `master_validate --stage plan_present`,
-and `git diff --check` passed for this documentation update. A supplemental check
+`verify_implementation`, `master_validate --stage implementation_complete`, and
+`git diff --check` passed for the 2026-10-19 documentation closeout. A supplemental check
 confirmed all 42 unique nested acceptance criteria are referenced in the plan and
-FDD, with no unknown IDs. Final implementation-wide verification belongs to work-item closeout after
-Phase 7 and scheduled confirmation. The installed traceability tool does not traverse
+FDD, with no unknown IDs. Implementation traceability is checked at Phase 6 closeout; scheduled confirmation
+remains post-merge evidence. The installed traceability tool does not traverse
 nested acceptance criteria; inspect their actual proofs rather than treating script
 success as proof that all 42 criteria are verified.
 
 ## Decision Log
 
-### 2026-10-16 — Close workflow verification; separate test repairs
+### 2026-10-16 — Close workflow verification; separate test repairs (phase assignment superseded)
 
 - Change: Limit Phase 6 to the four completed workflow checks and move the eight
   browser test/setup failures into Phase 7. Remove the excessive live verification campaign.
@@ -134,5 +136,27 @@ success as proof that all 42 criteria are verified.
   and requested minimal verification, with actual test repairs handled separately.
 - Evidence: Run 38954795747 and its retained browser results; existing local checks
   and earlier phase execution records.
-- Impact: G6 is complete. G7 requires a passing full tagged suite; first scheduled-run
+- Impact at the time: G6 was complete and a proposed G7 required a passing suite.
+  The 2026-10-19 decision removes that extra phase; first scheduled-run
   confirmation remains launch follow-up. No unperformed checks are promoted to verified.
+
+### 2026-10-19 — Final PR limited to Phase 6
+
+- Change: Remove Phase 7 from the infrastructure plan and capture unrelated test,
+  fixture, and application defects in a standalone MER bug. Preserve the eight
+  observed failures above; Greenhouse ingestion still needs root-cause diagnosis.
+- Reason: The requested deliverable is working CI and Playwright infrastructure.
+  Correctly reported browser failures do not prevent infrastructure closeout.
+- Evidence: Completed manual run 38954795747. On 2026-10-19, GitHub reports the
+  Nightly Tests workflow active, with the `17 5 * * *` schedule on master and this
+  branch. Scheduled runs occurred on October 17, 18, and 19, most recently
+  [run 39204782927](https://github.com/Simon-Initiative/oli-torus/actions/runs/39204782927).
+  These use master's pre-integration workflow and do not establish scheduled
+  build/deploy/readiness proof for the new pipeline.
+- Impact: G6 remains complete and is the final implementation gate. Keep normal
+  merge, first integrated scheduled-run confirmation, and temporary branch-policy
+  cleanup as post-merge follow-up. No schedule mutation was needed.
+- PR scope: Draft course-selection and Designer Planet fixes were removed from
+  the working diff and preserved outside the repository for the separate bug.
+  Their lint, collection, and 22 core-test checks were successful, but their
+  affected live tests were not run; they are not part of the Phase 6 evidence.

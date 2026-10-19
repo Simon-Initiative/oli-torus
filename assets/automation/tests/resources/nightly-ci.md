@@ -71,12 +71,13 @@ only deployment uses the App credentials in `nightly-deploy`. Both environments
 must explicitly allow the reviewed feature branch for a full verification run.
 Retain `master` access and exclude PR/fork access.
 
-Phase 6's ordered feature-branch, operational, and launch checks are recorded in
-`docs/exec-plans/current/nightly-playwright-ci/plan.md`. A successful manual run
-must execute the intended integrations; inspect the standard report for configuration
-skips. After all operational checks pass, merge normally and verify one scheduled
-run from `master`. Remove temporary feature-branch environment allowances afterward.
-Local fixtures do not establish hosted or deployed operational proof.
+Phase 6 is the final infrastructure phase. Its completed manual run verifies
+build/publication, accepted deployment/readiness, tagged test execution, and
+retained reports with the correct result. Unrelated test, fixture, and application
+defects are separate bug work; preserve their failures in normal reports. After
+normal merge, confirm the first scheduled run uses the integrated pipeline and
+expected source revision, then remove temporary feature-branch allowances.
+Existing scheduled runs on master before merge do not provide that proof.
 
 Provisioning and maintenance follow the internal nightly deployment runbook.
 Recurring CI updates only the existing record's image and source metadata. The
