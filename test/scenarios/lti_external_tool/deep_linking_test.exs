@@ -138,6 +138,13 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     [result_json] =
       html |> Floki.parse_document!() |> Floki.attribute("#authoring-result", "data-result")
 
+    document = Floki.parse_document!(html)
+    assert Floki.attribute(document, "html", "lang") == ["en"]
+    assert [script] = Floki.find(document, "script")
+    assert Floki.attribute([script], "src") == ["/js/lti_authoring_return.js"]
+    assert Floki.attribute([script], "defer") != []
+    assert Floki.text(script) == ""
+
     result = Jason.decode!(result_json)
     refute Map.has_key?(result, "error")
     assert result["request_id"] == details["request_id"]
@@ -229,6 +236,10 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
 
     result = Jason.decode!(result)
     assert is_binary(result["error"])
+
+    assert html |> Floki.parse_document!() |> Floki.attribute("script", "src") ==
+             ["/js/lti_authoring_return.js"]
+
     refute Map.has_key?(result, "token")
     assert Hooks.activity(state).id == revision.id
     assert Hooks.activity(state).content == revision.content

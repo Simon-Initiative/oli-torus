@@ -178,7 +178,7 @@ export const ConfigureDeepLinkingModal = ({
     const pending = getLtiExternalToolDeepLinkingDetails(sectionSlug, activityId);
     request.current = pending;
     return pending;
-  }, [activityId]);
+  }, [sectionSlug, activityId]);
 
   const finish = (saved: boolean) => {
     if (finished.current) return;

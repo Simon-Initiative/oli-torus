@@ -82,6 +82,7 @@ it('shows portable metadata fallback and an accessible preparation state', async
   render(<LTIExternalTool />);
   await selectDeep();
   expect(screen.getByText('Selection: Task description')).toBeTruthy();
+  expect(screen.getByRole('group', { name: 'Tool launch options' })).toBeTruthy();
   expect(screen.getByRole('status').textContent).toContain('Preparing');
   expect(
     screen.getByRole('button', { name: 'Change Selection from Tool' }).matches(':disabled'),
@@ -90,17 +91,33 @@ it('shows portable metadata fallback and an accessible preparation state', async
   expect(screen.getByRole('dialog')).toBeTruthy();
 });
 
-it.each(['developer', 'instructor'])(
-  'passes the selected %s role to host preparation',
-  async (role) => {
-    const { container } = render(<LTIExternalTool />);
-    await screen.findByLabelText('Launch as');
-    fireEvent.change(screen.getByLabelText('Launch as'), { target: { value: role } });
-    await selectDeep();
-    await waitForFrame(container);
+it.each(
+  ['developer', 'instructor'].flatMap((role) =>
+    ['regular', 'deep_link'].map((launchType) => ({ role, launchType })),
+  ),
+)('launches $launchType with the selected $role role', async ({ role, launchType }) => {
+  const { container } = render(<LTIExternalTool />);
+  await screen.findByLabelText('Launch as');
+  (getLtiExternalToolDetails as jest.Mock).mockClear();
+  fireEvent.change(screen.getByLabelText('Launch as'), { target: { value: role } });
+  fireEvent.change(screen.getByLabelText('Launch type'), { target: { value: launchType } });
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: launchType === 'regular' ? 'Launch Tool' : 'Change Selection from Tool',
+    }),
+  );
+  await waitForFrame(container);
+  if (launchType === 'regular') {
+    expect(getLtiExternalToolDetails).toHaveBeenCalledWith('projects', 'project', '42', {
+      role,
+      launch_type: 'regular',
+    });
+    expect(context.onCustomEvent).not.toHaveBeenCalled();
+  } else {
     expect(context.onCustomEvent).toHaveBeenCalledWith('ltiAuthoringPrepare', { role });
-  },
-);
+    expect(getLtiExternalToolDetails).not.toHaveBeenCalled();
+  }
+});
 
 it('submits the signed token once, ignores old returns and closes after host acknowledgement without a second save message', async () => {
   const { frame } = await renderConfiguration();

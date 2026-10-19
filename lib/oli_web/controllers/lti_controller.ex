@@ -392,9 +392,18 @@ defmodule OliWeb.LtiController do
           issuer = Oli.Utils.get_base_url()
 
           deployment =
-            Oli.Lti.PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
-              platform_instance_id: platform_instance.id
-            )
+            case configuration do
+              {_author, _revision, deployment, _request_token} ->
+                deployment
+
+              {_section, deployment} ->
+                deployment
+
+              nil ->
+                Oli.Lti.PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
+                  platform_instance_id: platform_instance.id
+                )
+            end
 
           # Use the message type determined by the context
           message_type_claim =

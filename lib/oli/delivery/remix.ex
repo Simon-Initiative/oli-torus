@@ -526,21 +526,22 @@ defmodule Oli.Delivery.Remix do
   end
 
   defp visible_product_resource_pairs(product_id) do
-    case Sections.get_section_by(id: product_id) do
-      %Section{} = product ->
-        product
-        |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
-        |> visible_hierarchy()
-        |> case do
-          %HierarchyNode{} = hierarchy ->
-            hierarchy
-            |> Hierarchy.flatten_hierarchy()
-            |> Enum.map(&{&1.project_id, &1.resource_id})
-            |> MapSet.new()
+    Sections.get_section_by(id: product_id)
+    |> visible_product_resource_pairs_for_section()
+  end
 
-          nil ->
-            MapSet.new()
-        end
+  defp visible_product_resource_pairs_for_section(nil), do: MapSet.new()
+
+  defp visible_product_resource_pairs_for_section(%Section{} = product) do
+    product
+    |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
+    |> visible_hierarchy()
+    |> case do
+      %HierarchyNode{} = hierarchy ->
+        hierarchy
+        |> Hierarchy.flatten_hierarchy()
+        |> Enum.map(&{&1.project_id, &1.resource_id})
+        |> MapSet.new()
 
       nil ->
         MapSet.new()
@@ -715,12 +716,28 @@ defmodule Oli.Delivery.Remix do
   end
 
   # Resolves each chosen page/container to its authorized publication or template.
-  # Validates its identity and, for templates, visibility using one lookup per source.
+  # Loads template sections together and validates visibility through the depot.
   # Returns the origin and visible resource set for each publication/resource tuple,
   # so descendants hidden or removed in a template cannot inherit its configuration.
   defp material_origins(state, selection, source_keys, pub_by_id) do
-    selection
-    |> Enum.group_by(&Map.get(source_keys, &1))
+    grouped = Enum.group_by(selection, &Map.get(source_keys, &1))
+
+    product_ids =
+      Enum.flat_map(grouped, fn {key, _tuples} ->
+        case source_by_key(state, key) do
+          %Source{type: :product, product_id: id} -> [id]
+          _ -> []
+        end
+      end)
+      |> Enum.uniq()
+
+    products_by_id =
+      case product_ids do
+        [] -> %{}
+        ids -> Repo.all(from(s in Section, where: s.id in ^ids)) |> Map.new(&{&1.id, &1})
+      end
+
+    grouped
     |> Enum.reduce_while({:ok, %{}}, fn {key, tuples}, {:ok, origins} ->
       case source_by_key(state, key) do
         %Source{} = source ->
@@ -731,8 +748,13 @@ defmodule Oli.Delivery.Remix do
 
           visible_resources =
             case source.type do
-              :project -> :all
-              :product -> visible_product_resource_pairs(source.product_id)
+              :project ->
+                :all
+
+              :product ->
+                products_by_id
+                |> Map.get(source.product_id)
+                |> visible_product_resource_pairs_for_section()
             end
 
           valid? =

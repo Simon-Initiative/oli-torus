@@ -47,6 +47,25 @@ async function renderConfiguration() {
   return { ...rendered, frame: await waitForFrame(rendered.container) };
 }
 
+it('loads the new section configuration when the activity ID stays the same', async () => {
+  const { container, rerender } = await renderConfiguration();
+  const nextDetails = { ...details, request_id: 'next-request', request_token: 'next-token' };
+  (getLtiExternalToolDeepLinkingDetails as jest.Mock).mockResolvedValue(nextDetails);
+
+  rerender(<ConfigureDeepLinkingModal {...modalProps} sectionSlug="next-course" />);
+  await waitForFrame(container);
+  expect(getLtiExternalToolDeepLinkingDetails).toHaveBeenLastCalledWith('next-course', '42');
+
+  fireEvent.click(container.querySelector('.modal-footer button')!);
+  await waitFor(() =>
+    expect(cancelLtiExternalToolDeepLinking).toHaveBeenCalledWith(
+      'next-course',
+      '42',
+      nextDetails.request_token,
+    ),
+  );
+});
+
 it('mounts configuration in its own frame alongside an embedded regular launch', async () => {
   const { container } = render(
     <>

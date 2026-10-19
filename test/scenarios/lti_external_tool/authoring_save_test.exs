@@ -404,6 +404,9 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
       claims = authorize(conn, details["launch_params"])
 
+      assert claims["https://purl.imsglobal.org/spec/lti/claim/deployment_id"] ==
+               ctx.state.params.deployment.deployment_id
+
       expected_role =
         case role do
           "developer" -> :context_content_developer

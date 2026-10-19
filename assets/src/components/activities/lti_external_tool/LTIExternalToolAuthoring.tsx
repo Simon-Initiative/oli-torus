@@ -150,6 +150,7 @@ export const LTIExternalTool: React.FC = () => {
                   disabled={busy || launch !== null}
                   className="flex flex-wrap items-end gap-4"
                 >
+                  <legend className="sr-only">Tool launch options</legend>
                   <label className="flex flex-col gap-1">
                     Launch as
                     <select

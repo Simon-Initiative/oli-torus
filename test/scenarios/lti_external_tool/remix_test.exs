@@ -50,6 +50,74 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
     end
   end
 
+  @tag workflow: true
+  test "multiple template sources share a section lookup and retain their material origins" do
+    state = execute_scenario(Path.join(__DIR__, "multiple_template_remix.scenario.yaml"))
+    destination = state.sections["destination_course"]
+    user = state.users["remix_instructor"] |> Repo.preload(:author)
+    assert {:ok, remix} = Remix.init(destination, user)
+
+    product_ids = Enum.map(["template", "additional_template"], &state.products[&1].id)
+
+    sources =
+      Enum.filter(
+        remix.available_sources,
+        &(&1.type == :product and &1.product_id in product_ids)
+      )
+
+    assert length(sources) == 2
+
+    # Warm the normal hierarchy cache before measuring the section lookup itself.
+    selections =
+      Map.new(sources, fn source ->
+        assert {:ok, _, hierarchy} = Remix.source_hierarchy(source.key, remix)
+        assert {:ok, tuple} = Remix.selection_tuple(source, hd(hierarchy.children))
+        {tuple, source.key}
+      end)
+
+    handler = "template-section-queries-#{System.unique_integer([:positive])}"
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:oli, :repo, :query],
+        &__MODULE__.capture_section_query/4,
+        self()
+      )
+
+    try do
+      assert {:ok, remix} =
+               Remix.add_materials_from_sources(remix, Map.keys(selections), selections)
+
+      assert_received :template_section_query
+      refute_received :template_section_query
+
+      assert MapSet.new(Map.values(remix.material_sources)) ==
+               MapSet.new(Enum.map(product_ids, &{:section, &1}))
+
+      assert {:ok, _} = Remix.save(remix, state.current_author)
+      assert link(destination, Hooks.activity(state).resource_id)
+
+      assert Enum.any?(
+               Hierarchy.flatten_hierarchy(remix.hierarchy),
+               &(&1.resource_id ==
+                   state.projects["additional_project"].id_by_title["Additional Lesson"])
+             )
+    after
+      :telemetry.detach(handler)
+    end
+  end
+
+  @doc false
+  def capture_section_query(_event, _measurements, %{source: "sections"}, pid) do
+    case self() == pid do
+      true -> send(pid, :template_section_query)
+      false -> :ok
+    end
+  end
+
+  def capture_section_query(_event, _measurements, _metadata, _pid), do: :ok
+
   for destination_kind <- [:course, :template] do
     @destination_kind destination_kind
     test "#{destination_kind} project remix retains the chosen publication over newer draft/publication",
