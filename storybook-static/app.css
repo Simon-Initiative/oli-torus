@@ -19496,10 +19496,6 @@ table.table-striped tbody tr:nth-child(even) {
   top: calc(100% + 5px);
 }
 
-.top-\[calc\(100\%\+8px\)\] {
-  top: calc(100% + 8px);
-}
-
 .top-full {
   top: 100%;
 }
@@ -24932,8 +24928,8 @@ table.table-striped tbody tr:nth-child(even) {
   background-image: linear-gradient(180deg,rgba(0,0,0,0.08) 0%,rgba(0,0,0,0.58) 100%),linear-gradient(90deg,rgba(0,0,0,0.45) 0%,rgba(0,0,0,0.18) 100%);
 }
 
-.bg-\[linear-gradient\(90deg\2c \#6D3C97_0\%\2c \#2D628E_46\%\2c \#0DBBD3_100\%\)\] {
-  background-image: linear-gradient(90deg,#6D3C97 0%,#2D628E 46%,#0DBBD3 100%);
+.bg-\[linear-gradient\(95\.67775419553948deg\2c \#BE60D1_10\.262\%\2c \#1EB3C7_40\.159\%\2c \#87D7E0_80\.021\%\)\] {
+  background-image: linear-gradient(95.67775419553948deg,#BE60D1 10.262%,#1EB3C7 40.159%,#87D7E0 80.021%);
 }
 
 .bg-\[url\(\'\/images\/assistant\/footer_dot_ai\.png\'\)\] {
@@ -36252,10 +36248,6 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   --tw-ring-color: rgb(59 118 211 / var(--tw-ring-opacity));
 }
 
-.focus-visible\:ring-white\/70:focus-visible {
-  --tw-ring-color: rgb(255 255 255 / 0.7);
-}
-
 .focus-visible\:ring-offset-1:focus-visible {
   --tw-ring-offset-width: 1px;
 }
@@ -37802,6 +37794,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .dark .dark\:bg-opacity-100 {
   --tw-bg-opacity: 1;
+}
+
+.dark .dark\:bg-\[linear-gradient\(95\.67775419553948deg\2c \#5F3A79_10\.262\%\2c \#236F8A_40\.159\%\2c \#00A8BF_80\.021\%\)\] {
+  background-image: linear-gradient(95.67775419553948deg,#5F3A79 10.262%,#236F8A 40.159%,#00A8BF 80.021%);
 }
 
 .dark .dark\:from-\[\#0D0C0F\] {
