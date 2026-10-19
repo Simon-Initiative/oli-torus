@@ -116,7 +116,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBar do
     """
   end
 
-  attr :id, :string, required: true
+  attr :id, :string, default: nil
   attr :name, :string, default: nil
   attr :value, :string, default: ""
   attr :placeholder, :string, default: ""
@@ -127,6 +127,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBar do
   attr :state, :atom, values: [:default, :hover, :focused], default: :default
   attr :interactive, :boolean, default: true
   attr :on_clear, :any, default: nil
+  attr :clear_id, :string, default: nil
   attr :clear_target, :any, default: nil
   attr :clear_value_id, :string, default: nil
   attr :rest, :global
@@ -185,7 +186,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBar do
 
       <button
         :if={@interactive and @filled? and not is_nil(@on_clear)}
-        id={@id <> "-clear"}
+        id={clear_id(@id, @clear_id)}
         type="button"
         aria-label="Clear search."
         phx-click={@on_clear}
@@ -200,6 +201,10 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBar do
   end
 
   defp filled?(value), do: value not in [nil, ""]
+
+  defp clear_id(_input_id, clear_id) when is_binary(clear_id), do: clear_id
+  defp clear_id(input_id, nil) when is_binary(input_id), do: input_id <> "-clear"
+  defp clear_id(nil, nil), do: nil
 
   defp state_classes(:default), do: nil
 

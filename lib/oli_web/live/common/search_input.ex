@@ -1,31 +1,34 @@
 defmodule OliWeb.Common.SearchInput do
+  @moduledoc """
+  Compatibility wrapper for design-system search fields driven by parent forms.
+  """
+
   use Phoenix.Component
+
+  alias OliWeb.Components.DesignTokens.Primitives.SearchBar
 
   attr :class, :string, default: nil
   attr :placeholder, :string, default: ""
   attr :text, :string, default: ""
   attr :id, :string, required: true
   attr :name, :string, required: true
-  attr :aria_label, :string, default: nil
+  attr :aria_label, :string, default: "Search"
 
+  @doc """
+  Renders a debounced search input using the shared Search Bar primitive.
+  """
   def render(assigns) do
     ~H"""
-    <div class={[
-      "w-56 h-[35px] inline-flex items-center gap-2 px-2 py-1 rounded-md outline outline-1 outline-[#ced1d9] bg-[#ffffff] dark:bg-[#2A282E] dark:outline-[#2A282E]",
-      @class
-    ]}>
-      <i class="fa-solid fa-magnifying-glass text-[#757682] w-4 h-4 dark:text-[#BAB8BF]"></i>
-      <input
-        id={"#{@id}-input"}
-        phx-debounce="300"
-        type="text"
-        class="w-full p-0 bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 text-[#353740] text-base font-normal placeholder:text-[#757682]"
-        placeholder={@placeholder}
-        value={@text}
-        name={@name}
-        aria-label={@aria_label}
-      />
-    </div>
+    <SearchBar.search_bar
+      id={"#{@id}-input"}
+      name={@name}
+      type="text"
+      value={@text}
+      placeholder={@placeholder}
+      aria_label={@aria_label}
+      class={@class}
+      phx-debounce="300"
+    />
     """
   end
 end

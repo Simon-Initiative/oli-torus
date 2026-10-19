@@ -37,13 +37,14 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBarTest do
           aria_label: "Search projects",
           value: "algebra",
           on_clear: "clear_search",
+          clear_id: "clear-project-search",
           clear_target: "#projects",
           clear_value_id: "project-search"
         }
         |> render_search_bar()
         |> Floki.parse_fragment!()
 
-      assert [button] = Floki.find(document, "button#project-search-clear")
+      assert [button] = Floki.find(document, "button#clear-project-search")
       assert Floki.attribute(button, "aria-label") == ["Clear search."]
       assert Floki.attribute(button, "phx-click") == ["clear_search"]
       assert Floki.attribute(button, "phx-target") == ["#projects"]
@@ -59,6 +60,19 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBarTest do
         })
 
       refute html =~ "read-only-clear-contract-clear"
+    end
+
+    test "does not require an id when a compatibility wrapper has no stable identifier" do
+      document =
+        %{aria_label: "Search lessons", value: "limits", on_clear: "clear_search"}
+        |> render_search_bar()
+        |> Floki.parse_fragment!()
+
+      assert [input] = Floki.find(document, "input")
+      assert Floki.attribute(input, "id") == []
+
+      assert [clear] = Floki.find(document, "button[aria-label='Clear search.']")
+      assert Floki.attribute(clear, "id") == []
     end
 
     test "forwards LiveView and input attributes to the input" do
