@@ -18,7 +18,7 @@ defmodule OliWeb.Common.Filter do
   attr :apply_icon, :boolean, default: false
   attr :show_reset, :boolean, default: true
   attr :placeholder, :string, default: "Search..."
-  attr :aria_label, :string, default: "Search"
+  attr :aria_label, :string, required: true
   attr :debounce, :string, default: nil
 
   # `apply_icon: true` is a self-contained, single-consumer live-search variant (currently only

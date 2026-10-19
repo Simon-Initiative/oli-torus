@@ -35,7 +35,11 @@ defmodule OliWeb.Components.Delivery.UtilsSearchBoxTest do
     end
 
     test "does not render a clear control for an empty search term" do
-      html = render_component(&Utils.search_box/1, id: "empty-delivery-search")
+      html =
+        render_component(&Utils.search_box/1,
+          id: "empty-delivery-search",
+          aria_label: "Search course outline"
+        )
 
       refute html =~ "Clear search."
     end

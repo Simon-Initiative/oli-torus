@@ -566,6 +566,7 @@ defmodule OliWeb.Components.Delivery.Students do
             <form for="search" phx-target={@myself} phx-change="search_student" class="w-56">
               <SearchInput.render
                 id="students_search_input"
+                aria_label="Search students"
                 name="student_name"
                 text={@params.text_search}
               />

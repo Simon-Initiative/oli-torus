@@ -61,7 +61,8 @@ defmodule OliWeb.Common.SearchComponentsTest do
           change: "change_search",
           apply: "apply_search",
           reset: "reset_search",
-          query: ""
+          query: "",
+          aria_label: "Search publishers"
         )
 
       refute html =~ "Clear search."
@@ -76,7 +77,8 @@ defmodule OliWeb.Common.SearchComponentsTest do
           reset: "reset_search",
           query: "biology",
           apply_icon: true,
-          debounce: "300"
+          debounce: "300",
+          aria_label: "Search course sources"
         )
         |> Floki.parse_fragment!()
 
@@ -121,7 +123,12 @@ defmodule OliWeb.Common.SearchComponentsTest do
     end
 
     test "does not render a clear control for empty text" do
-      html = render_component(&TextSearch.render/1, id: "empty-search", text: "")
+      html =
+        render_component(&TextSearch.render/1,
+          id: "empty-search",
+          text: "",
+          aria_label: "Search projects"
+        )
 
       refute html =~ "Clear search."
     end

@@ -12,7 +12,7 @@ defmodule OliWeb.Common.SearchInput do
   attr :text, :string, default: ""
   attr :id, :string, required: true
   attr :name, :string, required: true
-  attr :aria_label, :string, default: "Search"
+  attr :aria_label, :string, required: true
 
   @doc """
   Renders a debounced search input using the shared Search Bar primitive.

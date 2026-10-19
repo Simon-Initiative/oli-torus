@@ -15,7 +15,7 @@ defmodule OliWeb.Common.TextSearch do
   attr(:event_target, :any, required: false, default: :live_view)
   attr(:tooltip, :string, required: false, default: nil)
   attr(:class, :string, default: "")
-  attr(:aria_label, :string, default: "Search")
+  attr(:aria_label, :string, required: true)
 
   @doc """
   Renders a hook-driven text search and optional explanatory tooltip.

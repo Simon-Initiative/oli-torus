@@ -169,7 +169,7 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   attr :id, :string, default: nil
   attr :search_term, :string, default: ""
-  attr :aria_label, :string, default: "Search"
+  attr :aria_label, :string, required: true
   attr :on_search, :string, default: "search"
   attr :on_change, :string, default: "search"
   attr :on_clear_search, :string, default: "clear_search"
