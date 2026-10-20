@@ -82,6 +82,7 @@ defmodule Oli.Accounts.Author do
       :family_name,
       :picture
     ])
+    |> validate_confirmation(:password, message: "does not match password")
     |> validate_email(opts)
     |> validate_password(opts)
     |> validate_required([:given_name, :family_name])

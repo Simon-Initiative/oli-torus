@@ -22,7 +22,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
     test "does not see any label on user menu", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
-      refute has_element?(view, "div[role='account label']")
+      refute has_element?(view, "div[data-role='account label']")
     end
 
     test "can see product title, image and description in sections index with a link to it on instructor workspace",
@@ -175,7 +175,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       assert has_element?(
                view,
-               "div[role='create section instructions']",
+               "div[data-role='create-section-instructions']",
                "To create course sections,"
              )
 
@@ -328,13 +328,13 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       refute has_element?(
                view,
-               "div[role='create section instructions']",
+               "div[data-role='create-section-instructions']",
                "To create course sections,"
              )
 
       refute has_element?(
                view,
-               "div[role='create section instructions'] button[onclick='window.showHelpModal();']",
+               "div[data-role='create-section-instructions'] button[onclick='window.showHelpModal();']",
                "contact support."
              )
 
@@ -344,7 +344,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
     test "sees the instructor label on user menu", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
-      assert has_element?(view, "div[role='account label']", "Instructor")
+      assert has_element?(view, "div[data-role='account label']", "Instructor")
     end
 
     test "sees linked account email on user menu", %{conn: conn, instructor: instructor} do
@@ -355,7 +355,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       assert has_element?(
                view,
-               "div[id='workspace-user-menu-dropdown'] div[role='linked authoring account email']",
+               "div[id='workspace-user-menu-dropdown'] div[data-role='linked-authoring-account-email']",
                author.email
              )
     end
@@ -383,13 +383,13 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
-      assert has_element?(view, "h5", "The best course ever!")
-      assert has_element?(view, "p", "This is a description")
-      assert has_element?(view, "div[role='start_end_date']", "Jan 2025 - Jan 2026")
+      assert has_element?(view, "h5[data-role='course-title']", "The best course ever!")
+      assert has_element?(view, "p[data-role='course-description']", "This is a description")
+      assert has_element?(view, "div[data-role='start-end-date']", "Jan 2025 - Jan 2026")
 
       assert has_element?(
                view,
-               "div[role='instructors']",
+               "div[data-role='instructors']",
                ~r/Instructors:\s*#{instructor.name},\s*Lionel Messi,\s*Angel Di Maria/
              )
     end
@@ -407,7 +407,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       assert has_element?(
                view,
-               "div.self-stretch.min-w-0 > p[role='course description'].break-words",
+               "div.self-stretch.min-w-0 > p[data-role='course-description'].break-words",
                description
              )
     end

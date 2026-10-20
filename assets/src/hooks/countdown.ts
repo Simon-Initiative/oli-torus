@@ -2,7 +2,7 @@ export const Countdown = {
   /**
    * Countdown Module
    *
-   * This TypeScript module implements a countdown functionality for web elements with the `role="countdown"`
+   * This TypeScript module implements a countdown functionality for web elements with the `data-role="countdown"`
    * attribute. It updates each element's display in real-time, decrementing the time every second from a
    * specified starting point in "DD:HH:MM:SS" or "HH:MM:SS" format until it reaches zero.
    *
@@ -25,7 +25,7 @@ export const Countdown = {
 
   handleCountdown() {
     const countdownElements: NodeListOf<HTMLElement> =
-      document.querySelectorAll('[role="countdown"]');
+      document.querySelectorAll('[data-role="countdown"]');
     countdownElements.forEach((element) => {
       const totalTimeInSeconds = this.timeToSeconds(element.innerText);
       this.startCountdown(element, totalTimeInSeconds);

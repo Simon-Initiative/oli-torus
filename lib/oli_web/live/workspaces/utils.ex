@@ -128,7 +128,7 @@ defmodule OliWeb.Workspaces.Utils do
         }
         xphx-mouseover={
           !@sidebar_expanded &&
-            JS.hide(to: "div[role='expandable_submenu'") |> JS.show(to: "##{@item_id}_children")
+            JS.hide(to: "div[data-role='expandable_submenu']") |> JS.show(to: "##{@item_id}_children")
         }
         phx-click={
           @sidebar_expanded &&
@@ -150,7 +150,7 @@ defmodule OliWeb.Workspaces.Utils do
         />
       </.button>
       <div
-        role="expandable_submenu"
+        data-role="expandable_submenu"
         id={"#{@item_id}_children"}
         class={"pl-4 #{if @sidebar_expanded and active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-[52px] bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
         phx-click-away={!@sidebar_expanded && JS.hide(to: "##{@item_id}_children")}

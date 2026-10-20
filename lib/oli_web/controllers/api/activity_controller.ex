@@ -425,6 +425,19 @@ defmodule OliWeb.Api.ActivityController do
            {"Retrieval Response", "application/json",
             OliWeb.Api.ActivityController.DocumentAttributes}
        }
+  def retrieve_delivery(conn, %{"resource_attempt_guid" => guid, "resource" => id}) do
+    {:ok, _target, [attempt]} =
+      Oli.Delivery.SecureAssessments.resolve_models(guid, [String.to_integer(to_string(id))])
+
+    json(
+      conn,
+      document_to_delivery_result(false, %{
+        attempt.revision
+        | content: Oli.Delivery.Attempts.Core.select_model(attempt)
+      })
+    )
+  end
+
   def retrieve_delivery(conn, %{
         "section_slug" => section_slug,
         "resource" => activity_id
@@ -462,6 +475,22 @@ defmodule OliWeb.Api.ActivityController do
            {"Retrieval Response", "application/json",
             OliWeb.Api.ActivityController.BulkDocumentResponse}
        }
+  def bulk_retrieve_delivery(conn, %{"resource_attempt_guid" => guid, "resourceIds" => ids}) do
+    ids = Enum.map(ids, &String.to_integer(to_string(&1)))
+    {:ok, _target, attempts} = Oli.Delivery.SecureAssessments.resolve_models(guid, ids)
+
+    json(conn, %{
+      "result" => "success",
+      "results" =>
+        Enum.map(attempts, fn a ->
+          document_to_delivery_result(false, %{
+            a.revision
+            | content: Oli.Delivery.Attempts.Core.select_model(a)
+          })
+        end)
+    })
+  end
+
   def bulk_retrieve_delivery(conn, %{
         "section_slug" => section_slug,
         "resourceIds" => activity_ids

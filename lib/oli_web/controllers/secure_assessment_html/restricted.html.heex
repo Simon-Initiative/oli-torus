@@ -1,0 +1,38 @@
+<main class="min-h-screen bg-Background-bg-primary dark:bg-delivery-body-dark">
+  <header
+    id="header"
+    class="flex h-14 items-center border-b border-Border-border-subtle bg-delivery-header px-4 dark:bg-black"
+  >
+    <%= if @section do %>
+      <a href={~p"/sections/#{@section.slug}/learn"} class="flex h-full items-center">
+        <OliWeb.Components.Delivery.Layouts.logo_img section={@section} />
+      </a>
+      <span class="ml-6 text-base font-medium text-Text-text-high">{@section.title}</span>
+    <% else %>
+      <OliWeb.Components.Delivery.Layouts.logo_img />
+    <% end %>
+  </header>
+
+  <div class="mx-auto max-w-3xl px-4 py-12 sm:py-20">
+    <div class="rounded-lg border border-Border-border-subtle bg-Surface-surface-primary p-6 shadow-sm sm:p-10">
+      <h1 class="mb-4 text-2xl font-semibold text-Text-text-high">{@title}</h1>
+      <p class="text-Text-text-medium">{@message}</p>
+
+      <form
+        :if={@scoped?}
+        action={~p"/secure-assessment/exit"}
+        method="post"
+        target="_top"
+        class="mt-8"
+      >
+        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+        <button
+          type="submit"
+          class="rounded bg-Fill-Buttons-fill-primary px-4 py-2 font-semibold text-white"
+        >
+          Exit assessment
+        </button>
+      </form>
+    </div>
+  </div>
+</main>
