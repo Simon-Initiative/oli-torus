@@ -42,6 +42,11 @@ A secure token confines only its own browser session. Other tokens are not revok
 or confined. Secure entry clears this browser's remember-me cookie. Reload and
 reconnect use the same persisted scope and existing authentication expiry.
 
+Required research consent remains available during secure entry, with its return
+destination restricted to the scoped assessment. Course welcome onboarding and
+required course surveys are deferred in the matching scoped section; secure entry
+does not mark either requirement complete. Ordinary sessions retain those redirects.
+
 `POST /secure-assessment/exit` requires normal browser CSRF protection, revokes only
 the presented token, disconnects its LiveView/channel connections, and redirects
 to a minimal signed-out page. Exit never submits an unfinished attempt. A later
