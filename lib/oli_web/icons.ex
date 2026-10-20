@@ -11,7 +11,8 @@ defmodule OliWeb.Icons do
 
   def no_icon(assigns) do
     ~H"""
-    <div role="no icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0"></div>
+    <div data-role="no icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
+    </div>
     """
   end
 
@@ -79,7 +80,7 @@ defmodule OliWeb.Icons do
   def flag(assigns) do
     ~H"""
     <svg
-      role="flag icon"
+      data-role="flag icon"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -397,7 +398,7 @@ defmodule OliWeb.Icons do
   def square_checked(assigns) do
     ~H"""
     <svg
-      role="square checked icon"
+      data-role="square checked icon"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -463,11 +464,11 @@ defmodule OliWeb.Icons do
 
   def check(assigns) do
     ~H"""
-    <div role="check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
+    <div data-role="check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
       <svg
         :if={@progress == 1.0}
         xmlns="http://www.w3.org/2000/svg"
-        role={@role}
+        data-role={@role}
         width="24"
         height="24"
         viewBox="0 0 24 24"
@@ -495,7 +496,8 @@ defmodule OliWeb.Icons do
       stroke-linecap="round"
       stroke-linejoin="round"
       class="icon icon-tabler icons-tabler-outline icon-tabler-clock w-4 h-4 sm:w-6 sm:h-6"
-      role="clock icon"
+      data-role="clock icon"
+      aria-hidden="true"
     >
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
@@ -512,7 +514,7 @@ defmodule OliWeb.Icons do
       height="18"
       viewBox="0 0 18 18"
       fill="none"
-      role="time icon"
+      data-role="time icon"
     >
       <g opacity="0.8">
         <path
@@ -534,7 +536,8 @@ defmodule OliWeb.Icons do
       height="16"
       viewBox="0 0 16 16"
       fill="currentColor"
-      role="star icon"
+      data-role="star icon"
+      aria-hidden="true"
       class={"icon inline-block #{@color}"}
     >
       <path
@@ -773,7 +776,8 @@ defmodule OliWeb.Icons do
   def plus(assigns) do
     ~H"""
     <svg
-      role="plus icon"
+      data-role="plus icon"
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -847,7 +851,8 @@ defmodule OliWeb.Icons do
   def world(assigns) do
     ~H"""
     <svg
-      role="world icon"
+      data-role="world icon"
+      aria-hidden="true"
       width="20"
       height="20"
       viewBox="0 0 20 20"
@@ -974,6 +979,36 @@ defmodule OliWeb.Icons do
   attr :width, :string, default: "24"
   attr :height, :string, default: "24"
   attr :stroke_width, :string, default: "2"
+
+  @doc """
+  Renders a decorative unlink icon; the triggering control must provide its accessible name.
+  """
+  def unlink(assigns) do
+    ~H"""
+    <svg
+      width={@width}
+      height={@height}
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+      aria-hidden="true"
+    >
+      <path
+        d="M11.3333 14.6667V13.3333M6 10L10 6M7.33333 4L7.642 3.64267C8.2672 3.01755 9.11513 2.6664 9.99924 2.66646C10.8833 2.66653 11.7312 3.0178 12.3563 3.643C12.9814 4.2682 13.3326 5.11613 13.3325 6.00024C13.3325 6.88434 12.9812 7.73222 12.356 8.35733L12 8.66667M8.66668 12L8.40201 12.356C7.76951 12.9815 6.91587 13.3323 6.02635 13.3323C5.13682 13.3323 4.28318 12.9815 3.65068 12.356C3.33892 12.0477 3.09141 11.6807 2.92249 11.2761C2.75356 10.8715 2.66659 10.4374 2.66659 9.999C2.66659 9.56057 2.75356 9.12649 2.92249 8.7219C3.09141 8.31732 3.33892 7.95027 3.65068 7.642L4.00001 7.33333M13.3333 11.3333H14.6667M1.33333 4.66667H2.66667M4.66667 1.33333V2.66667"
+        stroke="currentColor"
+        stroke-width={@stroke_width}
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "stroke-black dark:stroke-white"
+  attr :width, :string, default: "24"
+  attr :height, :string, default: "24"
+  attr :stroke_width, :string, default: "2"
   attr :variant, :string, default: "default"
 
   def trash(assigns) do
@@ -1074,7 +1109,8 @@ defmodule OliWeb.Icons do
   def home(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active home icon"
+      data-role="active home icon"
+      aria-hidden="true"
       class="dark:fill-white dark:stroke-white fill-black/90 stroke-black/90"
       width="18"
       height="18"
@@ -1090,7 +1126,8 @@ defmodule OliWeb.Icons do
   def home(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="home icon"
+      data-role="home icon"
+      aria-hidden="true"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="18"
       height="18"
@@ -1119,7 +1156,8 @@ defmodule OliWeb.Icons do
   def learn(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active learn icon"
+      data-role="active learn icon"
+      aria-hidden="true"
       class="dark:fill-white dark:stroke-white fill-black/90 stroke-black/90"
       width="16"
       height="16"
@@ -1140,7 +1178,8 @@ defmodule OliWeb.Icons do
   def learn(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="learn icon"
+      data-role="learn icon"
+      aria-hidden="true"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="16"
       height="16"
@@ -1163,7 +1202,8 @@ defmodule OliWeb.Icons do
   def schedule(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active schedule icon"
+      data-role="active schedule icon"
+      aria-hidden="true"
       width="16"
       height="18"
       viewBox="0 0 16 18"
@@ -1190,7 +1230,8 @@ defmodule OliWeb.Icons do
   def schedule(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="schedule icon"
+      data-role="schedule icon"
+      aria-hidden="true"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="16"
       height="18"
@@ -1214,7 +1255,8 @@ defmodule OliWeb.Icons do
   def discussions(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active discussions icon"
+      data-role="active discussions icon"
+      aria-hidden="true"
       class={@class || "dark:fill-white fill-black/90"}
       width="18"
       height="17"
@@ -1234,7 +1276,8 @@ defmodule OliWeb.Icons do
   def discussions(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="discussions icon"
+      data-role="discussions icon"
+      aria-hidden="true"
       class={@class || "dark:stroke-[#B8B4BF] stroke-black/70"}
       width="18"
       height="17"
@@ -1258,7 +1301,8 @@ defmodule OliWeb.Icons do
   def explorations(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active explorations icon"
+      data-role="active explorations icon"
+      aria-hidden="true"
       class="dark:fill-white fill-black/90"
       width="18"
       height="16"
@@ -1280,7 +1324,8 @@ defmodule OliWeb.Icons do
   def explorations(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="explorations icon"
+      data-role="explorations icon"
+      aria-hidden="true"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="18"
       height="18"
@@ -1318,7 +1363,8 @@ defmodule OliWeb.Icons do
   def assignments(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active assignments icon"
+      data-role="active assignments icon"
+      aria-hidden="true"
       class={@class || "dark:fill-white fill-black/70 dark:stroke-white stroke-black/70"}
       width="20"
       height="20"
@@ -1338,7 +1384,8 @@ defmodule OliWeb.Icons do
   def assignments(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="assignments icon"
+      data-role="assignments icon"
+      aria-hidden="true"
       class={@class || "dark:stroke-[#B8B4BF] stroke-black/70"}
       width="20"
       height="20"
@@ -1361,7 +1408,8 @@ defmodule OliWeb.Icons do
   def practice(%{is_active: true} = assigns) do
     ~H"""
     <svg
-      role="active practice icon"
+      data-role="active practice icon"
+      aria-hidden="true"
       class="dark:stroke-white stroke-black/70"
       width="14"
       height="18"
@@ -1391,7 +1439,8 @@ defmodule OliWeb.Icons do
   def practice(%{is_active: false} = assigns) do
     ~H"""
     <svg
-      role="practice icon"
+      data-role="practice icon"
+      aria-hidden="true"
       width="14"
       height="18"
       viewBox="0 0 14 18"
@@ -1581,7 +1630,9 @@ defmodule OliWeb.Icons do
   def proficiency(%{proficiency: "Not enough data"} = assigns) do
     ~H"""
     <svg
-      role="no data proficiency icon"
+      data-role="no data proficiency icon"
+      role="img"
+      aria-label={@proficiency}
       width="24"
       height="24"
       viewBox="0 0 24 24"
@@ -1603,7 +1654,9 @@ defmodule OliWeb.Icons do
   def proficiency(%{proficiency: "Low"} = assigns) do
     ~H"""
     <svg
-      role="beginning proficiency icon"
+      data-role="beginning proficiency icon"
+      role="img"
+      aria-label={@proficiency <> " proficiency"}
       width="19"
       height="20"
       viewBox="0 0 19 20"
@@ -1630,7 +1683,9 @@ defmodule OliWeb.Icons do
   def proficiency(%{proficiency: "Medium"} = assigns) do
     ~H"""
     <svg
-      role="growing proficiency icon"
+      data-role="growing proficiency icon"
+      role="img"
+      aria-label={@proficiency <> " proficiency"}
       width="19"
       height="20"
       viewBox="0 0 19 20"
@@ -1657,7 +1712,9 @@ defmodule OliWeb.Icons do
   def proficiency(%{proficiency: "High"} = assigns) do
     ~H"""
     <svg
-      role="establishing proficiency icon"
+      data-role="establishing proficiency icon"
+      role="img"
+      aria-label={@proficiency <> " proficiency"}
       width="19"
       height="21"
       viewBox="0 0 19 21"
@@ -1738,7 +1795,8 @@ defmodule OliWeb.Icons do
   def visible(assigns) do
     ~H"""
     <svg
-      role="visible icon"
+      data-role="visible icon"
+      aria-hidden="true"
       width="19"
       height="18"
       viewBox="0 0 19 18"
@@ -1765,7 +1823,8 @@ defmodule OliWeb.Icons do
   def hidden(assigns) do
     ~H"""
     <svg
-      role="hidden icon"
+      data-role="hidden icon"
+      aria-hidden="true"
       width="19"
       fill="none"
       stroke="currentColor"
@@ -2257,7 +2316,8 @@ defmodule OliWeb.Icons do
   def timezone_world(assigns) do
     ~H"""
     <svg
-      role="timezone world icon"
+      data-role="timezone world icon"
+      aria-hidden="true"
       width="20"
       height="20"
       viewBox="0 0 20 20"
@@ -2813,7 +2873,7 @@ defmodule OliWeb.Icons do
       viewBox="0 0 20 20"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      role="lock icon"
+      data-role="lock icon"
       class={@class}
     >
       <path
@@ -2835,7 +2895,8 @@ defmodule OliWeb.Icons do
       fill="currentColor"
       class={@class}
       xmlns="http://www.w3.org/2000/svg"
-      role="asterisk icon"
+      data-role="asterisk icon"
+      aria-hidden="true"
     >
       <path
         opacity="0.9"

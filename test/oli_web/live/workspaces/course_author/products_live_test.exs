@@ -68,17 +68,17 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
         "/workspaces/course_author/#{project.slug}/products?sidebar_expanded=false"
 
       assert view
-             |> element(~s{button[role="toggle sidebar"]})
+             |> element(~s{button[data-role="toggle sidebar"]})
              |> render() =~ path_with_expanded_sidebar_false
 
       path_with_expanded_sidebar_true =
         "/workspaces/course_author/#{project.slug}/products?sidebar_expanded=true"
 
       # Click to toggle sidebar
-      view |> element(~s{button[role="toggle sidebar"]}) |> render_click()
+      view |> element(~s{button[data-role="toggle sidebar"]}) |> render_click()
 
       assert view
-             |> element(~s{button[role="toggle sidebar"]})
+             |> element(~s{button[data-role="toggle sidebar"]})
              |> render() =~ path_with_expanded_sidebar_true
     end
 

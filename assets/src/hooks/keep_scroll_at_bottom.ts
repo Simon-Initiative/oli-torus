@@ -1,8 +1,6 @@
 export const KeepScrollAtBottom = {
   updated() {
-    const messageContainer = document.querySelector('[role="message container"]');
-    if (messageContainer) {
-      messageContainer.scrollTop = messageContainer.scrollHeight;
-    }
+    const messageContainer = this.el as HTMLElement;
+    messageContainer.scrollTop = messageContainer.scrollHeight;
   },
 };

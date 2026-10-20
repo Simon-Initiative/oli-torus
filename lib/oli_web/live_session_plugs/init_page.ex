@@ -3,6 +3,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   import Phoenix.Component, only: [assign: 2, update: 3]
 
+  alias OliWeb.Components.SecureAssessment
   alias Oli.Delivery.{Gating, Metrics, PreviousNextIndex, Settings}
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Page.{PageContext, PrologueContext, PrologueState}
@@ -105,7 +106,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
             update(
               socket,
               :app_params,
-              &Map.merge(&1, %{previousPageURL: previous_url, nextPageURL: next_url})
+              &(Map.merge(&1, %{previousPageURL: previous_url, nextPageURL: next_url})
+                |> SecureAssessment.adaptive_params(assigns[:user_session]))
             )
 
           _ ->
@@ -165,7 +167,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
          params
        ) do
     view =
-      if Map.get(content, "displayApplicationChrome", false) do
+      if Map.get(content, "displayApplicationChrome", false) and
+           not SecureAssessment.restrict_navigation?(socket.assigns[:user_session]) do
         :adaptive_with_chrome
       else
         :adaptive_chromeless
@@ -225,7 +228,11 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     assign(socket, %{
       view: view,
       page_context: page_context,
-      app_params: app_params,
+      app_params:
+        SecureAssessment.adaptive_params(
+          app_params,
+          socket.assigns[:user_session]
+        ),
       activity_types: activity_types,
       part_scripts: Oli.PartComponents.get_part_component_scripts(:delivery_script),
       scripts: Oli.Activities.get_activity_scripts(:delivery_script),

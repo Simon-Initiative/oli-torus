@@ -19,6 +19,8 @@ name: PR Playwright Suite
 # The suite also runs on pushes to feature integration branches (integ-*), so
 # the combined result of every PR merged into one is verified again.
 on:
+  merge_group:
+    types: [checks_requested]
   pull_request:
     branches:
       - master

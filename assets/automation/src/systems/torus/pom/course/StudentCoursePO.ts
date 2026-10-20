@@ -1,5 +1,5 @@
 import { Verifier } from '@core/verify/Verifier';
-import { expect, Locator, Page } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 
 export class StudentCoursePO {
   private readonly courseHomeMarkers: Locator[];
@@ -50,7 +50,7 @@ export class StudentCoursePO {
     const groupedOutlineLink = this.page
       .locator('a')
       .filter({
-        has: this.page.locator('div[role="group_item"]').filter({
+        has: this.page.locator('div[data-role="group-item"]').filter({
           hasText: pageName,
         }),
       })
@@ -288,7 +288,11 @@ export class StudentCoursePO {
 }
 
 function isStudentLessonPath(pathname: string) {
-  return pathname.includes('/lesson/') || pathname.includes('/adaptive_lesson/');
+  return (
+    pathname.includes('/lesson/') ||
+    pathname.includes('/adaptive_lesson/') ||
+    pathname.includes('/prologue/')
+  );
 }
 
 function escapeRegExp(value: string) {

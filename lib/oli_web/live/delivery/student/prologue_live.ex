@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   import OliWeb.Delivery.Student.Utils,
     only: [page_header: 1, is_adaptive_page: 1]
 
+  alias OliWeb.Components.SecureAssessment
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Metrics
@@ -125,6 +126,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         <StudentUtils.blocking_gates_warning
           :if={@show_blocking_gates?}
           attempt_message={@attempt_message}
+          restrict_navigation?={SecureAssessment.restrict_navigation?(@user_session)}
         />
         <.assignment_terms
           :if={!@show_blocking_gates?}
@@ -151,7 +153,14 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         class="flex flex-col gap-6"
         id="password_attempt_form"
       >
-        <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
+        <input
+          id="password_attempt_input"
+          type="password"
+          name="password"
+          field={:password}
+          value=""
+          aria-label="Assessment password"
+        />
         <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
       </.form>
     </Modal.modal>

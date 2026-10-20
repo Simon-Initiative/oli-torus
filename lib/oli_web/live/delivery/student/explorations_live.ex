@@ -78,6 +78,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
       <img
         class="object-cover rounded-t-lg lg:rounded-tl-none w-full lg:w-[300px] lg:rounded-r-lg h-64 lg:h-full shrink-0"
         src={poster_image(@exploration)}
+        alt=""
       />
       <div class="flex-1 flex flex-col justify-between p-8 leading-normal">
         <h5 class="mb-3 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
