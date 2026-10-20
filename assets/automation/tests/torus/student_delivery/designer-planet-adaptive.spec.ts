@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '@fixture/my-fixture';
 import { setRuntimeConfig } from '@core/runtimeConfig';
+import { AdaptiveLessonTask } from '@tasks/AdaptiveLessonTask';
 import { HomeTask } from '@tasks/HomeTask';
 import {
   AUTOMATION_SETUP_HOOK_TIMEOUT_MS,
@@ -11,7 +12,6 @@ import {
 } from '@tasks/AutomationSetupTask';
 import { fetchTestArchiveToTempFile, fetchTestAsset } from '@tasks/AutomationAssetsTask';
 import fs from 'node:fs/promises';
-import { waitForOptionalMainLiveView } from './support';
 
 /**
  * MER-5671: BioBeyond Unit 7 Designer Planet adaptive lesson.
@@ -150,16 +150,29 @@ type DesignerPlanetAnswerKey = {
   runtime: DesignerPlanetRuntime;
 };
 
+type SavedPartInput = {
+  response?: Record<string, { id?: unknown; value?: unknown } | null>;
+} | null;
+
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 const archiveKey = 'bio_beyond-designer_planet/course.zip';
 const answersKey = 'bio_beyond-designer_planet/answers.json';
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 // TODO(MER-5671): tighten this once the full Designer Planet happy path is stable end-to-end.
 const designerPlanetTestTimeout = 12 * 60_000;
+const simulationOutputTimeout = 15_000;
+// These answers are graded against a value the screen's simulation computes after loading.
+const requiredSimulationOutputs: Record<string, string[]> = {
+  putting_your_plan_together_temperature: ['stage.currentTechTest.Temperature Projection'],
+  giving_110_temperature: ['stage.currentTechTest.Temperature Projection'],
+};
 
 let seededCourse: AutomationSetupResponse | null = null;
 let answerKey: DesignerPlanetAnswerKey | null = null;
 let archiveTempDir: string | null = null;
+const seenAttempts = new Set<string>();
+let attemptsBeforeAdvance = new Set<string>();
+const savedStageIds = new Map<string, Set<string>>();
 
 setRuntimeConfig({
   baseUrl,
@@ -224,9 +237,27 @@ test.describe.serial('BioBeyond Designer Planet adaptive lesson', () => {
 
     const answers = answerKey;
 
+    for (const stepId of Object.keys(requiredSimulationOutputs)) {
+      const index = answers.steps.findIndex((step) => step.id === stepId && step.type === 'text');
+
+      if (index === -1) {
+        throw new Error(`Answer key has no text step "${stepId}" to wait for simulation outputs`);
+      }
+
+      if (answers.steps[index - 1]?.type !== 'next') {
+        throw new Error(
+          `Text step "${stepId}" must follow a "next" step to tell its simulation outputs apart from the previous screen's`,
+        );
+      }
+    }
+
+    recordDeckSaves(page);
     await page.goto('/');
     await new HomeTask(page).login('student');
-    await openDesignerPlanetLesson(page, seededCourse.section.slug, answers.lesson.title);
+    await new AdaptiveLessonTask(page).openFromOutline(
+      seededCourse.section.slug,
+      answers.lesson.title,
+    );
     await expectAdaptiveLessonLoaded(page);
 
     for (const step of answers.steps) {
@@ -240,115 +271,6 @@ test.describe.serial('BioBeyond Designer Planet adaptive lesson', () => {
     await expectLessonCompletion(page, answers.lesson.completionPatterns);
   });
 });
-
-async function openDesignerPlanetLesson(page: Page, section: string, lessonTitle: string) {
-  await clickLessonFromLearn(page, section, lessonTitle);
-
-  if (await enterCourseIfNeeded(page)) {
-    await clickLessonFromLearn(page, section, lessonTitle);
-  }
-
-  await closeProfileMenuIfOpen(page);
-  await expect(page).toHaveURL(/\/(lesson|prologue)\//, { timeout: 15_000 });
-  await beginAttemptIfNeeded(page);
-}
-
-async function clickLessonFromLearn(page: Page, section: string, lessonTitle: string) {
-  const outlinePath = learnPath(section, lessonTitle);
-
-  await page.goto(outlinePath, { waitUntil: 'load' });
-  await acceptResearchConsentIfPresent(page);
-
-  if (!page.url().includes('/learn')) {
-    await page.goto(outlinePath, { waitUntil: 'load' });
-  }
-
-  await waitForOptionalMainLiveView(page, 3_000);
-
-  if (await enterCourseIfNeeded(page)) {
-    await page.goto(outlinePath, { waitUntil: 'load' });
-    await acceptResearchConsentIfPresent(page);
-    await waitForOptionalMainLiveView(page, 3_000);
-  }
-
-  await closeProfileMenuIfOpen(page);
-
-  const lessonButton = page
-    .locator('main div[role^="page_"] button[phx-click="navigate_to_resource"]')
-    .filter({ hasText: new RegExp(escapeRegExp(lessonTitle), 'i') })
-    .first();
-
-  await expect(lessonButton).toBeVisible({ timeout: 15_000 });
-  await lessonButton.click();
-  await acceptResearchConsentIfPresent(page);
-  await waitForOptionalMainLiveView(page);
-}
-
-async function acceptResearchConsentIfPresent(page: Page) {
-  const consentHeading = page.getByRole('heading', { name: /Online Consent Form/i });
-
-  if (!(await consentHeading.isVisible({ timeout: 1_500 }).catch(() => false))) {
-    return;
-  }
-
-  const agreeOption = page.getByRole('radio', { name: /I Agree/i });
-
-  if (await agreeOption.isVisible({ timeout: 1_000 }).catch(() => false)) {
-    await agreeOption.check();
-  }
-
-  await page.getByRole('button', { name: /^Submit$/i }).click();
-  await page.waitForLoadState('domcontentloaded').catch(() => undefined);
-  await page.waitForTimeout(1_500);
-}
-
-async function enterCourseIfNeeded(page: Page) {
-  const goToCourseButton = page.getByRole('button', { name: /^Go to course$/i });
-
-  if (await goToCourseButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    await goToCourseButton.click();
-    await expect(goToCourseButton).toBeHidden({ timeout: 10_000 });
-    await waitForOptionalMainLiveView(page);
-    return true;
-  }
-
-  return false;
-}
-
-async function beginAttemptIfNeeded(page: Page) {
-  if (!page.url().includes('/prologue/')) {
-    return;
-  }
-
-  const beginAttemptButton = page.locator('#begin_attempt_button');
-
-  await expect(beginAttemptButton).toBeVisible({ timeout: 15_000 });
-  await expect(beginAttemptButton).toBeEnabled({ timeout: 15_000 });
-  await beginAttemptButton.click();
-  await expect(page).toHaveURL(/\/(lesson|adaptive_lesson)\//, { timeout: 15_000 });
-  await waitForOptionalMainLiveView(page);
-}
-
-async function closeProfileMenuIfOpen(page: Page) {
-  const signOutButton = page.getByRole('button', { name: /^Sign Out$/i });
-
-  if (!(await signOutButton.isVisible({ timeout: 1_000 }).catch(() => false))) {
-    return;
-  }
-
-  await page.keyboard.press('Escape');
-
-  if (await signOutButton.isVisible({ timeout: 1_000 }).catch(() => false)) {
-    await page
-      .getByRole('button', { name: /profile avatar/i })
-      .click()
-      .catch(() => undefined);
-  }
-
-  await expect(signOutButton)
-    .toBeHidden({ timeout: 3_000 })
-    .catch(() => undefined);
-}
 
 async function performAction(
   page: Page,
@@ -376,6 +298,7 @@ async function performAction(
       break;
     case 'text':
       await waitBeforeAction(page, action);
+      await waitForSimulationOutputs(action.id);
       await fillAdaptiveText(
         page,
         action.value || key.sharedText[action.valueRef || ''],
@@ -403,6 +326,79 @@ async function performAction(
   if (action.waitForTextAfter) {
     await waitForAdaptiveText(page, action.waitForTextAfter);
   }
+}
+
+// Saves count only under attempts first seen after the last primary button click: this tells
+// a screen from the previous one, not edits or retries on the same screen.
+function recordDeckSaves(page: Page) {
+  seenAttempts.clear();
+  savedStageIds.clear();
+  attemptsBeforeAdvance = new Set();
+
+  page.on('request', (request) => {
+    const attempt = activityAttemptGuid(request.url());
+    if (attempt) seenAttempts.add(attempt);
+  });
+
+  page.on('requestfinished', async (request) => {
+    const attempt = activityAttemptGuid(request.url());
+    if (!attempt || request.method() !== 'PATCH' || !request.url().endsWith('/active')) return;
+    // A save that cannot be read is not counted, so the wait fails instead of passing.
+    const response = await request.response().catch(() => null);
+    if (!response?.ok()) return;
+
+    const ids = savedStageIds.get(attempt) ?? new Set<string>();
+    for (const id of stageIdsWithValues(request.postData())) ids.add(id);
+    savedStageIds.set(attempt, ids);
+  });
+}
+
+function activityAttemptGuid(url: string) {
+  return url.match(/\/activity_attempt\/([^/?]+)/)?.[1] ?? null;
+}
+
+function stageIdsWithValues(body: string | null): string[] {
+  let parsed: { partInputs?: unknown } | null;
+
+  try {
+    parsed = JSON.parse(body ?? '{}');
+  } catch {
+    return [];
+  }
+
+  const inputs = parsed?.partInputs;
+  if (!Array.isArray(inputs)) return [];
+
+  return inputs.flatMap((input: SavedPartInput) =>
+    Object.values(input?.response ?? {}).flatMap((entry) =>
+      typeof entry?.id === 'string' &&
+      entry.value !== null &&
+      entry.value !== undefined &&
+      entry.value !== ''
+        ? [entry.id]
+        : [],
+    ),
+  );
+}
+
+async function waitForSimulationOutputs(stepId: string) {
+  const required = requiredSimulationOutputs[stepId];
+  if (!required) return;
+
+  const missing = () =>
+    required.filter(
+      (id) =>
+        !Array.from(savedStageIds).some(
+          ([attempt, ids]) => !attemptsBeforeAdvance.has(attempt) && ids.has(id),
+        ),
+    );
+
+  await expect
+    .poll(missing, {
+      timeout: simulationOutputTimeout,
+      message: `${stepId}: simulation output not saved for the current screen before answering`,
+    })
+    .toEqual([]);
 }
 
 async function waitBeforeAction(page: Page, action: DesignerPlanetAction) {
@@ -561,6 +557,7 @@ async function clickPrimaryAdaptiveButton(
 
   if (primaryButton) {
     await expect(primaryButton.locator('.spricon-ajax-loader')).toHaveCount(0, { timeout: 15_000 });
+    attemptsBeforeAdvance = new Set(seenAttempts);
     await primaryButton.click();
     return;
   }
@@ -576,6 +573,7 @@ async function clickPrimaryAdaptiveButton(
       await expect(buttonContainer.locator('.spricon-ajax-loader')).toHaveCount(0, {
         timeout: 15_000,
       });
+      attemptsBeforeAdvance = new Set(seenAttempts);
       await buttonContainer.click({ force: true });
       return;
     }
@@ -1649,10 +1647,6 @@ function adaptiveScopes(page: Page): AdaptiveScope[] {
 
 function embeddedSimulationFrame(page: Page) {
   return page.locator('iframe[title="Embedded content"]').contentFrame();
-}
-
-function learnPath(section: string, searchTerm: string) {
-  return `/sections/${section}/learn?sidebar_expanded=true&selected_view=outline&search_term=${encodeURIComponent(searchTerm)}`;
 }
 
 function simulationCategoryName(category: string) {
