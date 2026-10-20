@@ -37,7 +37,8 @@ defmodule Oli.Delivery.SecureAssessments do
 
   @doc """
   Rechecks verified entry against current policy and enrollment. Must run inside the
-  issuance transaction: the selected resource row stays locked through token insert.
+  issuance transaction: a shared row lock protects policy through token insert while
+  allowing concurrent admissions. Policy edits wait until these transactions finish.
   Only the assessment row is locked; no learner or other-session lock is taken.
   """
   @spec admit(%Oli.Accounts.User{}, Admission.t()) :: {:ok, Scope.t()} | {:error, atom()}
@@ -61,7 +62,7 @@ defmodule Oli.Delivery.SecureAssessments do
       Repo.one(
         from sr in SectionResource,
           where: sr.section_id == ^section_id and sr.resource_id == ^resource_id,
-          lock: "FOR UPDATE"
+          lock: "FOR SHARE"
       )
 
     cond do

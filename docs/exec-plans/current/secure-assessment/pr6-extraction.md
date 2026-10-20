@@ -13,8 +13,9 @@ headers, and ordinary launch regression tests.
 - `lib/oli/lti/secure_launch.ex` validates Moodle's signed SEB assertion after
   ordinary LTI validation and binds it to the authenticated learner, registered
   deployment, section context, and resolved graded section resource.
-- `lib/oli_web/lti_redirect.ex` resolves authoritative section resources, locking
-  the selected row inside the launch transaction. Legacy projection migration is
+- `lib/oli_web/lti_redirect.ex` resolves authoritative section resources, holding
+  a shared lock on the selected row inside the launch transaction. Concurrent
+  admissions can proceed together; policy edits wait until admission commits. Legacy projection migration is
   retained. Older LMS revision slugs still resolve through resource identity to
   the section's currently published revision.
 - `lib/oli_web/controllers/lti_controller.ex` performs user/enrollment updates,
@@ -45,6 +46,15 @@ headers, and ordinary launch regression tests.
 - Formatting and whitespace checks pass. Security/performance review follows
   `.review/security.md` and `.review/performance.md`. Authoritative target lookup
   uses a bounded query; token insertion remains under the selected-resource lock.
+
+## Concurrent admission follow-up
+
+Target resolution and admission now use compatible `FOR SHARE` locks, allowing
+concurrent admissions while protecting the selected policy through token insertion.
+A regression test with separate PostgreSQL connections reproduced the exclusive
+lock contention before the fix and verifies concurrent admission and blocked policy
+edits after it. The admission, launch controller, and resolver suites pass: 65 tests,
+zero failures. The existing policy-edit-first rejection test also continues to pass.
 
 ## Rollout boundary
 

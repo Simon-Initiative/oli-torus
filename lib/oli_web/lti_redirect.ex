@@ -171,7 +171,7 @@ defmodule OliWeb.LtiRedirect do
        )
        when is_binary(revision_slug) and revision_slug != "" do
     # Only legacy projections need the migration's section-wide lock. Current
-    # launches serialize against their selected assessment row, not the course.
+    # launches share a read lock on the selected assessment until admission commits.
     case section.section_resource_migration_version == SectionResourceMigration.current_version() do
       true -> :ok
       false -> {:ok, _} = SectionResourceMigration.ensure_current(section.id)
@@ -194,7 +194,7 @@ defmodule OliWeb.LtiRedirect do
 
     query =
       case Repo.in_transaction?() do
-        true -> from sr in query, lock: "FOR UPDATE"
+        true -> from sr in query, lock: "FOR SHARE"
         false -> query
       end
 
