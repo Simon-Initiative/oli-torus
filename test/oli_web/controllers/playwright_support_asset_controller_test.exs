@@ -121,7 +121,7 @@ defmodule OliWeb.PlaywrightSupportAssetControllerTest do
 
       assert response(conn, 200) == ~s({"lesson": "data"})
       assert response_content_type(conn, :json) =~ "application/json"
-      assert get_resp_header(conn, "cache-control") == ["no-store"]
+      assert get_resp_header(conn, "cache-control") == ["private, no-store"]
     end
   end
 end

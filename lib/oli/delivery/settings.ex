@@ -204,7 +204,8 @@ defmodule Oli.Delivery.Settings do
         combine_field(:feedback_scheduled_date, section_resource, student_exception),
       collab_space_config: collab_space_config,
       explanation_strategy: explanation_strategy,
-      allow_hints: section_resource.allow_hints
+      allow_hints: section_resource.allow_hints,
+      secure_delivery: section_resource.secure_delivery
     }
     |> normalize_adaptive_settings(resolved_revision)
   end

@@ -2,6 +2,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
+  import Ecto.Query, warn: false
   import Phoenix.LiveViewTest
   import Oli.Factory
 
@@ -236,6 +237,37 @@ defmodule OliWeb.NewCourse.NewCourseTest do
       assert created.end_date == course.end_date
       assert created.preferred_scheduling_time == course.preferred_scheduling_time
       assert created.timezone == "US/Pacific"
+    end
+
+    test "re-selecting a source while the first section is still being created does not queue a second section (regression)",
+         %{conn: conn} do
+      %{project: project, publication: publication} = published_project_with_resource()
+      course = my_course_section(base_project: project, title: "Chem Copy")
+      {:ok, course} = Sections.create_section_resources(course, publication)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
+
+      select_my_course_section(view, course)
+
+      view
+      |> element("#copy-choice-modal button", "Create Section")
+      |> render_click()
+
+      refute has_element?(view, "#copy-choice-modal")
+
+      # The source grid stays mounted (current_step is still 0) during the async creation's
+      # `loading: true` window. Re-clicking the same, still-rendered card must not re-trigger
+      # the copy-choice modal or start a second creation while the first is in flight.
+      view
+      |> element("button[phx-value-id='section:#{course.id}']")
+      |> render_click()
+
+      refute has_element?(view, "#copy-choice-modal")
+
+      wait_for_completion()
+      assert_redirect(view)
+
+      assert [_one] = Repo.all(from(s in Section, where: s.title == "Chem Copy (copy)"))
     end
 
     test "switching to 'Choose what to copy' defaults to only Content checked, and switching back mutes all checkboxes",

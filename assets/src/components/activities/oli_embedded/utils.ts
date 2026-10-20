@@ -54,6 +54,16 @@ export function isBundleResourceBase(resourceBase: string): boolean {
   return resourceBase.includes('bundles/');
 }
 
+export function isReviewInteractionSuppressed(model: {
+  suppressReviewInteraction?: boolean;
+}): boolean {
+  return model.suppressReviewInteraction === true;
+}
+
+export function isEmbeddedActivityReviewMode(mode: string, pathname?: string): boolean {
+  return mode === 'review' || (pathname !== undefined && /(?:^|\/)review(?:\/|$)/.test(pathname));
+}
+
 export function buildUploadDirectory(resourceBase: string): string {
   const normalized = resourceBase.replace(/^\/+/, '');
 

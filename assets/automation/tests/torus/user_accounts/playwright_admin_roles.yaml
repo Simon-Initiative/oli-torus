@@ -1,0 +1,62 @@
+# Disposable data for the admin grant/revoke smoke test. Authors are named "Test Author"
+# (teardown safeguard) and come before the project so one of them owns it.
+
+- user:
+    name: 'admin_roles_grantor'
+    type: 'author'
+    system_role: 'system_admin'
+    email: 'roles-grantor${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Author'
+    password: '${ADMIN_ROLES_PASSWORD}'
+
+- user:
+    name: 'admin_roles_account_admin'
+    type: 'author'
+    system_role: 'account_admin'
+    email: 'roles-account-admin${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Author'
+    password: '${ADMIN_ROLES_PASSWORD}'
+
+- user:
+    name: 'admin_roles_target'
+    type: 'author'
+    email: 'roles-target${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Author'
+    password: '${ADMIN_ROLES_PASSWORD}'
+
+- user:
+    name: 'admin_roles_instructor'
+    type: 'instructor'
+    email: 'roles-instructor${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Educator'
+    password: '${ADMIN_ROLES_PASSWORD}'
+
+- user:
+    name: 'admin_roles_learner'
+    type: 'student'
+    email: 'roles-learner${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Learner'
+    password: '${ADMIN_ROLES_PASSWORD}'
+
+- project:
+    name: 'Admin Roles Smoke${RUN_ID}'
+    title: 'Admin Roles Smoke${RUN_ID}'
+    visibility: authors
+    root:
+      children:
+        - page: 'Admin Roles Page'
+
+- publish:
+    to: 'Admin Roles Smoke${RUN_ID}'
+    description: 'Admin roles smoke test publication'
+
+- section:
+    name: 'admin_roles_section${RUN_ID}'
+    title: 'Automation test section'
+    from: 'Admin Roles Smoke${RUN_ID}'
+    open_and_free: true

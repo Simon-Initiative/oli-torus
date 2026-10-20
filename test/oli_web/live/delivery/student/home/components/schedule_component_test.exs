@@ -333,55 +333,105 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
         })
 
       ## Displays current week
-      assert has_element?(lcd, ~s{#schedule_week_1 div[role="schedule_title"]}, "This Week")
+      assert has_element?(lcd, ~s{#schedule_week_1 div[data-role="schedule-title"]}, "This Week")
 
-      assert element(lcd, ~s{#schedule_week_1 div[role="schedule_date_range"]}) |> render() =~
+      assert element(lcd, ~s{#schedule_week_1 div[data-role="schedule_date_range"]}) |> render() =~
                "May 5<sup>th</sup> - May 11<sup>th</sup> 2024"
 
       # Displays Graded 1 in Unit 1
-      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="container_label"]}, "Unit 1")
-      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="resource_type"]}, "Assignment")
-      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="title"]}, "Graded 1")
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[data-role="container-label"]}, "Unit 1")
 
       assert has_element?(
                lcd,
-               ~s{#schedule_item_1_1 div[role="details"]},
+               ~s{#schedule_item_1_1 div[data-role="resource_type"]},
+               "Assignment"
+             )
+
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[data-role="title"]}, "Graded 1")
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_1_1 div[data-role="resource_type"]},
+               "Assignment"
+             )
+
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[data-role="title"]}, "Graded 1")
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_1_1 div[data-role="details"]},
                "Past suggested date by"
              )
 
       # Displays Lesson group in Unit 1 > Module 1 (contains Graded 2 and Practice 1)
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]}, "Unit 1")
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]}, "Module 1")
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="resource_type"]}, "Lesson")
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="title"]}, "Module 1")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[data-role="container-label"]}, "Unit 1")
 
       assert has_element?(
                lcd,
-               ~s{#schedule_item_1_2 div[role="group"] div[role="count"]},
+               ~s{#schedule_item_1_2 div[data-role="container-label"]},
+               "Module 1"
+             )
+
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[data-role="resource_type"]}, "Lesson")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[data-role="title"]}, "Module 1")
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_1_2 div[data-role="container-label"]},
+               "Module 1"
+             )
+
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[data-role="resource_type"]}, "Lesson")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[data-role="title"]}, "Module 1")
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_1_2 div[role="group"] div[data-role="count"]},
                "2 pages"
              )
 
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="details"]}, "Suggested for Today")
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_1_2 div[data-role="details"]},
+               "Suggested for Today"
+             )
 
       ## Displays next week
-      assert has_element?(lcd, ~s{#schedule_week_2 div[role="schedule_title"]}, "Next Week")
+      assert has_element?(lcd, ~s{#schedule_week_2 div[data-role="schedule-title"]}, "Next Week")
 
-      assert element(lcd, ~s{#schedule_week_2 div[role="schedule_date_range"]}) |> render() =~
+      assert element(lcd, ~s{#schedule_week_2 div[data-role="schedule_date_range"]}) |> render() =~
                "May 12<sup>th</sup> - May 18<sup>th</sup> 2024"
 
       # Displays Exploration 1 in Unit 1 > Module 2
-      assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="container_label"]}, "Unit 1")
-      assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="container_label"]}, "Module 2")
-      assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="resource_type"]}, "Exploration")
-      assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="title"]}, "Exploration 1")
-      assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="details"]}, "7 days left")
+      assert has_element?(lcd, ~s{#schedule_item_2_1 div[data-role="container-label"]}, "Unit 1")
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_2_1 div[data-role="container-label"]},
+               "Module 2"
+             )
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_2_1 div[data-role="resource_type"]},
+               "Exploration"
+             )
+
+      assert has_element?(lcd, ~s{#schedule_item_2_1 div[data-role="title"]}, "Exploration 1")
+      assert has_element?(lcd, ~s{#schedule_item_2_1 div[data-role="details"]}, "7 days left")
 
       # Displays Practice 2 in Unit 1 > Module 2
-      assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="container_label"]}, "Unit 1")
-      assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="container_label"]}, "Module 2")
-      assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="resource_type"]}, "Practice")
-      assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="title"]}, "Practice 2")
-      assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="details"]}, "10 days left")
+      assert has_element?(lcd, ~s{#schedule_item_2_2 div[data-role="container-label"]}, "Unit 1")
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_2_2 div[data-role="container-label"]},
+               "Module 2"
+             )
+
+      assert has_element?(lcd, ~s{#schedule_item_2_2 div[data-role="resource_type"]}, "Practice")
+      assert has_element?(lcd, ~s{#schedule_item_2_2 div[data-role="title"]}, "Practice 2")
+      assert has_element?(lcd, ~s{#schedule_item_2_2 div[data-role="details"]}, "10 days left")
     end
 
     test "renders schedule with completed items", %{
@@ -415,10 +465,10 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
         })
 
       # Practice 2 is completed
-      assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="details"]}, "Completed")
+      assert has_element?(lcd, ~s{#schedule_item_2_2 div[data-role="details"]}, "Completed")
 
       # Lesson group is completed
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="details"]}, "Completed")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[data-role="details"]}, "Completed")
     end
 
     test "omits curriculum prefixes when numbering is disabled", %{
@@ -441,12 +491,12 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           display_curriculum_item_numbering: false
         })
 
-      refute has_element?(lcd, ~s{#schedule_item_1_1 div[role="container_label"]})
-      refute has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]})
-      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="title"]}, "Graded 1")
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="title"]}, "Module 1")
+      refute has_element?(lcd, ~s{#schedule_item_1_1 div[data-role="container-label"]})
+      refute has_element?(lcd, ~s{#schedule_item_1_2 div[data-role="container-label"]})
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[data-role="title"]}, "Graded 1")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[data-role="title"]}, "Module 1")
 
-      title_html = element(lcd, ~s{#schedule_item_1_2 div[role="title"]}) |> render()
+      title_html = element(lcd, ~s{#schedule_item_1_2 div[data-role="title"]}) |> render()
       refute title_html =~ "Module 1:"
     end
 
@@ -479,13 +529,13 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
         })
 
       # Graded 1 is completed and displays attempts info
-      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="details"]}, "Attempt 1 of ∞")
-      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="details"]}, "Last Submitted")
-      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="details"]}, "Tue May 7, 2024")
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[data-role="details"]}, "Attempt 1 of ∞")
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[data-role="details"]}, "Last Submitted")
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[data-role="details"]}, "Tue May 7, 2024")
 
       # Exploration 1 is in progress and does not display remaining time (since the attempt does not have time limit)
-      assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="details"]}, "Attempt 1 of ∞")
-      refute has_element?(lcd, ~s{#schedule_item_2_1 div[role="details"]}, "Time Remaining")
+      assert has_element?(lcd, ~s{#schedule_item_2_1 div[data-role="details"]}, "Attempt 1 of ∞")
+      refute has_element?(lcd, ~s{#schedule_item_2_1 div[data-role="details"]}, "Time Remaining")
     end
 
     test "it expands a lesson group", %{
@@ -519,19 +569,19 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       # Now displays Practice 1 and completed status
       assert has_element?(
                lcd,
-               ~s{#schedule_item_1_2 div[role="group_item"]},
+               ~s{#schedule_item_1_2 div[data-role="group-item"]},
                "Practice 1"
              )
 
       assert has_element?(
                lcd,
-               ~s{#schedule_item_1_2 div[role="group_item"]:first-of-type div[role="check icon"]}
+               ~s{#schedule_item_1_2 div[data-role="group-item"]:first-of-type div[data-role="check icon"]}
              )
 
       # Now displays Graded 2
       assert has_element?(
                lcd,
-               ~s{#schedule_item_1_2 div[role="group_item"]},
+               ~s{#schedule_item_1_2 div[data-role="group-item"]},
                "Graded 2"
              )
     end
@@ -555,7 +605,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           display_curriculum_item_numbering: true
         })
 
-      assert has_element?(lcd, ~s{span[role="schedule details"]})
+      assert has_element?(lcd, ~s{span[data-role="schedule-details"]})
     end
   end
 
@@ -582,15 +632,26 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
         })
 
       ## Does not display current week (no schedule)
-      refute has_element?(lcd, ~s{#schedule_week_1 div[role="schedule_title"]}, "This Week")
+      refute has_element?(lcd, ~s{#schedule_week_1 div[data-role="schedule-title"]}, "This Week")
 
       # Displays first 6 containers (as ordered in the curriculum)
-      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="container_label"]}, "Unit 1")
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]}, "Module 1")
-      assert has_element?(lcd, ~s{#schedule_item_1_3 div[role="container_label"]}, "Module 2")
-      assert has_element?(lcd, ~s{#schedule_item_1_4 div[role="container_label"]}, "Unit 2")
-      assert has_element?(lcd, ~s{#schedule_item_1_5 div[role="container_label"]}, "Unit 3")
-      assert has_element?(lcd, ~s{#schedule_item_1_6 div[role="container_label"]}, "Unit 4")
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[data-role="container-label"]}, "Unit 1")
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_1_2 div[data-role="container-label"]},
+               "Module 1"
+             )
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_1_3 div[data-role="container-label"]},
+               "Module 2"
+             )
+
+      assert has_element?(lcd, ~s{#schedule_item_1_4 div[data-role="container-label"]}, "Unit 2")
+      assert has_element?(lcd, ~s{#schedule_item_1_5 div[data-role="container-label"]}, "Unit 3")
+      assert has_element?(lcd, ~s{#schedule_item_1_6 div[data-role="container-label"]}, "Unit 4")
 
       Enum.each(5..11, fn x ->
         refute render(lcd) =~ "Unit #{x}"
@@ -619,9 +680,9 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           display_curriculum_item_numbering: true
         })
 
-      refute has_element?(lcd, ~s{#schedule_item_1_1 div[role="container_label"]})
-      refute has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]})
-      refute has_element?(lcd, ~s{#schedule_item_1_3 div[role="container_label"]})
+      refute has_element?(lcd, ~s{#schedule_item_1_1 div[data-role="container-label"]})
+      refute has_element?(lcd, ~s{#schedule_item_1_2 div[data-role="container-label"]})
+      refute has_element?(lcd, ~s{#schedule_item_1_3 div[data-role="container-label"]})
     end
 
     test "does not render the schedule details ('Not yet scheduled' label)", %{
@@ -643,7 +704,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           display_curriculum_item_numbering: true
         })
 
-      refute has_element?(lcd, ~s{span[role="schedule details"]})
+      refute has_element?(lcd, ~s{span[data-role="schedule-details"]})
     end
   end
 end

@@ -26,6 +26,7 @@ defmodule Oli.Delivery.Sections.Updates do
                                     :scheduling_type,
                                     :manually_scheduled,
                                     :removed_from_schedule,
+                                    :secure_delivery,
                                     :start_date,
                                     :end_date,
                                     :collab_space_config,

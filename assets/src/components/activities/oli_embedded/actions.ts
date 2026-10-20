@@ -35,6 +35,16 @@ export class OliEmbeddedActions {
     };
   }
 
+  static setSuppressReviewInteraction(suppress: boolean) {
+    return (draftState: OliEmbeddedModelSchema, _post: PostUndoable) => {
+      if (suppress) {
+        draftState.suppressReviewInteraction = true;
+      } else {
+        delete draftState.suppressReviewInteraction;
+      }
+    };
+  }
+
   static addResourceURL(value: string) {
     return (draftState: OliEmbeddedModelSchema, _post: PostUndoable) => {
       OliEmbeddedActions.ensureResourceURLs(draftState);

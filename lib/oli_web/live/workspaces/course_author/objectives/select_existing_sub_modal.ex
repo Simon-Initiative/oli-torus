@@ -1,17 +1,21 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
   use OliWeb, :live_component
 
-  alias OliWeb.Common.TextSearch
+  alias OliWeb.Components.DesignTokens.Primitives.Button
 
   def update(assigns, socket) do
+    query = Map.get(socket.assigns, :query, "")
+
     {:ok,
-     assign(socket,
+     socket
+     |> assign(
        add: assigns.add,
-       filtered_sub_objectives: assigns.sub_objectives,
        id: assigns.id,
        parent_slug: assigns.parent_slug,
+       query: query,
        sub_objectives: assigns.sub_objectives
-     )}
+     )
+     |> assign_filtered_sub_objectives()}
   end
 
   attr(:add, :string, required: true)
@@ -29,43 +33,95 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
       style="display: block"
       tabindex="-1"
       role="dialog"
-      aria-labelledby="show-existing-sub-modal"
-      aria-hidden="true"
+      aria-modal="true"
+      aria-labelledby={"#{@id}-title"}
       phx-hook="ModalLaunch"
     >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Select existing Sub-Objective</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-            </button>
+      <div class="modal-dialog modal-dialog-centered !max-w-[860px]" role="document">
+        <div class="modal-content !rounded-2xl !border !border-solid !border-Border-border-default bg-Surface-surface-background shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]">
+          <div class="flex items-center pb-6 pl-8 pr-16 pt-8 sm:px-16 sm:pt-16">
+            <h2
+              id={"#{@id}-title"}
+              class="m-0 text-2xl font-bold leading-8 text-Text-text-high"
+            >
+              Select Existing Sub-Objective
+            </h2>
+            <Button.button
+              variant={:close}
+              class="absolute right-3 top-3 inline-flex !h-11 !w-11 items-center justify-center !opacity-100 text-Icon-icon-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              data-bs-dismiss="modal"
+              aria-label="Close Select Existing Sub-Objective dialog"
+            />
           </div>
-          <div class="modal-body">
-            <div class="container form-container">
-              <TextSearch.render
-                id="text-search"
-                text={@query}
-                event_target={@myself}
-                reset="text_search_reset"
-              />
-              <div class="d-flex flex-column mt-3">
-                <%= for sub_objective <- @filtered_sub_objectives do %>
-                  <div class="my-2 d-flex">
-                    <div class="p-1 mr-3 flex-grow-1 overflow-auto text-truncate">
-                      {sub_objective.title}
-                    </div>
-                    <button
-                      class="btn btn-outline-primary py-1"
-                      phx-value-slug={sub_objective.slug}
-                      phx-value-parent_slug={@parent_slug}
-                      phx-click={@add}
-                    >
-                      Add
-                    </button>
-                  </div>
-                <% end %>
-              </div>
-            </div>
+
+          <div class="px-8 pb-10 sm:pb-16 sm:pl-16 sm:pr-9">
+            <form
+              id={"#{@id}-filters"}
+              class="mb-2.5 flex flex-col gap-3 sm:flex-row sm:gap-6"
+              phx-change="filters_changed"
+              phx-submit="filters_changed"
+              phx-target={@myself}
+            >
+              <label class="relative min-w-0 sm:w-56 sm:flex-none" for={"#{@id}-search"}>
+                <span class="sr-only">Search sub-objectives</span>
+                <i
+                  class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-Icon-icon-default"
+                  aria-hidden="true"
+                >
+                </i>
+                <input
+                  id={"#{@id}-search"}
+                  name="query"
+                  type="search"
+                  value={@query}
+                  placeholder="Search..."
+                  phx-debounce="250"
+                  class="h-9 w-full rounded-md border border-Border-border-default bg-Background-bg-secondary pl-10 pr-3 text-sm text-Text-text-high placeholder:text-Text-text-low-alpha focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                />
+              </label>
+            </form>
+
+            <p
+              id={"#{@id}-results-status"}
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              class="sr-only"
+            >
+              {results_status(@filtered_sub_objectives)}
+            </p>
+
+            <p
+              :if={@filtered_sub_objectives == []}
+              id={"#{@id}-empty"}
+              class="m-0 rounded-md border border-Border-border-default px-4 py-6 text-center text-sm text-Text-text-low-alpha"
+            >
+              No sub-objectives match these filters.
+            </p>
+
+            <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
+              <li
+                :for={sub_objective <- @filtered_sub_objectives}
+                id={"existing-sub-objective-#{sub_objective.resource_id}"}
+                class="flex flex-col gap-1 rounded-md py-2 sm:flex-row sm:items-start"
+              >
+                <span class="min-w-0 flex-1 text-base leading-6 text-Text-text-high">
+                  {sub_objective.title}
+                </span>
+                <div class="flex shrink-0 gap-2">
+                  <Button.button
+                    variant={:secondary}
+                    size={:sm}
+                    phx-value-slug={sub_objective.slug}
+                    phx-value-parent_slug={@parent_slug}
+                    phx-click={@add}
+                    aria-label={"Add #{sub_objective.title} to this learning objective"}
+                  >
+                    Add
+                  </Button.button>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -73,26 +129,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectExistingSubModal do
     """
   end
 
-  def handle_event("text_search_change", %{"value" => query}, socket) do
-    query_str = String.downcase(query)
+  def handle_event("filters_changed", params, socket) do
+    {:noreply,
+     socket
+     |> assign(query: Map.get(params, "query", socket.assigns.query))
+     |> assign_filtered_sub_objectives()}
+  end
+
+  defp assign_filtered_sub_objectives(socket) do
+    query = String.downcase(String.trim(socket.assigns.query))
 
     filtered_sub_objectives =
-      Enum.filter(socket.assigns.sub_objectives, fn sub ->
-        String.contains?(String.downcase(sub.title), query_str)
+      socket.assigns.sub_objectives
+      |> Enum.filter(fn sub_objective ->
+        query == "" or String.contains?(String.downcase(sub_objective.title), query)
       end)
 
-    {:noreply,
-     assign(socket,
-       filtered_sub_objectives: filtered_sub_objectives,
-       query: query
-     )}
+    assign(socket, filtered_sub_objectives: filtered_sub_objectives)
   end
 
-  def handle_event("text_search_reset", _, socket) do
-    {:noreply,
-     assign(socket,
-       filtered_sub_objectives: socket.assigns.sub_objectives,
-       query: ""
-     )}
-  end
+  defp results_status([]), do: "No sub-objectives match these filters."
+  defp results_status([_]), do: "1 sub-objective available."
+  defp results_status(sub_objectives), do: "#{length(sub_objectives)} sub-objectives available."
 end

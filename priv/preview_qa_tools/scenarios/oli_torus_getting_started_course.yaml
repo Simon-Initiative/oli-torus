@@ -635,6 +635,8 @@
     name: "oli_torus_getting_started_section"
     title: "Getting Started with OLI Torus"
     from: "oli_torus_getting_started_course"
+    open_and_free: true
+    requires_enrollment: true
 
 - bulk_create_enroll_users:
     section: "oli_torus_getting_started_section"
@@ -743,3 +745,69 @@
         count: 3
       - profile: "low_engagement"
         count: 2
+
+# Stable QA logins are added after simulation to preserve the generated cohort.
+
+- user:
+    name: "author1"
+    type: "author"
+    email: "author1@example.edu"
+    given_name: "Author"
+    family_name: "One"
+    email_verified: true
+
+- collaborator:
+    user: "author1"
+    project: "oli_torus_getting_started_course"
+
+- user:
+    name: "instructor1"
+    type: "instructor"
+    email: "instructor1@example.edu"
+    given_name: "Instructor"
+    family_name: "One"
+    email_verified: true
+
+- enroll:
+    user: "instructor1"
+    section: "oli_torus_getting_started_section"
+    role: "instructor"
+
+- user:
+    name: "student1"
+    type: "student"
+    email: "student1@example.edu"
+    given_name: "Student"
+    family_name: "One"
+    email_verified: true
+
+- enroll:
+    user: "student1"
+    section: "oli_torus_getting_started_section"
+    role: "student"
+
+- user:
+    name: "student2"
+    type: "student"
+    email: "student2@example.edu"
+    given_name: "Student"
+    family_name: "Two"
+    email_verified: true
+
+- enroll:
+    user: "student2"
+    section: "oli_torus_getting_started_section"
+    role: "student"
+
+- user:
+    name: "student3"
+    type: "student"
+    email: "student3@example.edu"
+    given_name: "Student"
+    family_name: "Three"
+    email_verified: true
+
+- enroll:
+    user: "student3"
+    section: "oli_torus_getting_started_section"
+    role: "student"

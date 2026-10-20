@@ -478,7 +478,11 @@ defmodule Oli.AutomationSetup do
         # instead of leaving the user partially cleaned up.
         try do
           Repo.transaction(fn ->
-            Repo.delete_all(from(sr in StudentResponse, where: sr.user_id == ^user.id))
+            case user_type do
+              :user -> Repo.delete_all(from(sr in StudentResponse, where: sr.user_id == ^user.id))
+              :author -> :ok
+            end
+
             Repo.delete!(user)
           end)
 

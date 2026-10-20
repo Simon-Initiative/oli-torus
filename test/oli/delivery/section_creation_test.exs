@@ -178,6 +178,26 @@ defmodule Oli.Delivery.SectionCreationTest do
                )
     end
 
+    test "refuses a product whose base project has been deleted (MER-5832 regression)", %{
+      project: project,
+      publication: publication
+    } do
+      admin = admin_author()
+      product = product_from(project, publication)
+
+      assert {:ok, _} = SectionCreation.resolve_source(admin, {:product, product.id}, nil)
+      assert product.id in Enum.map(SectionCreation.permitted_products(admin, nil), & &1.id)
+
+      project |> Ecto.Changeset.change(status: :deleted) |> Repo.update!()
+
+      refute product.id in Enum.map(SectionCreation.permitted_products(admin, nil), & &1.id)
+
+      assert {:error, :unauthorized} =
+               Delivery.create_section(
+                 request!(admin, "product:#{product.id}", %{title: "Deleted Base Project Source"})
+               )
+    end
+
     test "T4 refuses a publication whose project has a paid product the actor cannot see", %{
       publication: free_publication
     } do

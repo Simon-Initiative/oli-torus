@@ -119,7 +119,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         )
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click()
 
       assert_redirect(view, preview_learn_path)
@@ -141,7 +141,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         )
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click()
 
       assert_redirect(view, request_path)
@@ -163,7 +163,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         )
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click()
 
       assert_redirect(
@@ -309,7 +309,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         )
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click()
 
       assert_redirect(view, request_path)

@@ -8,8 +8,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   alias Oli.Accounts.Author
   alias Oli.Delivery.DepotCoordinator
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.AssessmentSettings
+  alias Oli.Delivery.Settings
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Publishing.DeliveryResolver
@@ -665,6 +665,22 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     %{section: section, ctx: ctx, user: user, assessments: assessments} = socket.assigns
 
     case decode_target(params, ctx) do
+      {:secure_delivery, assessment_setting_id, new_value} ->
+        case Oli.Delivery.SecureAssessments.settings_available?() or new_value == false do
+          true ->
+            AssessmentSettings.update(
+              section,
+              user,
+              assessment_setting_id,
+              %{secure_delivery: new_value},
+              %{assessments: assessments, ctx: ctx}
+            )
+            |> process_updated_result(socket)
+
+          false ->
+            process_updated_result({:error, :secure_delivery_unsupported}, socket)
+        end
+
       {:feedback_mode, assessment_setting_id, :scheduled} ->
         assessment_for_scheduled =
           Sections.get_section_resource(section.id, assessment_setting_id)
@@ -835,6 +851,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   defp process_updated_result({:error, :settings_changes, _, _}, socket) do
     {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to insert the setting")}
+  end
+
+  defp process_updated_result({:error, reason}, socket)
+       when reason in [
+              :not_authorized,
+              :invalid_secure_delivery,
+              :secure_delivery_unsupported,
+              :invalid_secure_delivery_target
+            ] do
+    {:noreply, flash_to_liveview(socket, :error, "Secure delivery setting could not be updated")}
   end
 
   defp generate_setting_changes(assessment, values, section_id, user) do
@@ -1024,7 +1050,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         {key, value} when key in ~w(start_date end_date) ->
           FormatDateTime.datestring_to_utc_datetime(value, ctx)
 
-        {key, value} when key in ~w(allow_hints batch_scoring) ->
+        {key, value} when key in ~w(allow_hints batch_scoring secure_delivery) ->
           Utils.string_to_boolean(value)
 
         {_, value} ->
@@ -1064,7 +1090,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
             :review_submission,
             :exceptions_count,
             :scoring_strategy_id,
-            :allow_hints
+            :allow_hints,
+            :secure_delivery
           ],
           @default_params.sort_by
         ),

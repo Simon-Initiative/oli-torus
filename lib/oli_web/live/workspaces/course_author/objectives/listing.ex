@@ -1,8 +1,6 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   use OliWeb, :html
 
-  import OliWeb.Components.Common
-
   alias OliWeb.Icons
   alias OliWeb.Workspaces.CourseAuthor.Objectives.Actions
 
@@ -10,7 +8,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   attr(:revision_history_link, :boolean, required: true)
   attr(:rows, :list, required: true)
   attr(:expanded_slugs, :any, default: MapSet.new())
-  attr(:pending_delete_slugs, :any, default: MapSet.new())
+  attr(:pending_detaches, :any, default: MapSet.new())
+  attr(:pending_deletes, :any, default: MapSet.new())
+  attr(:objective_parents, :map, default: %{})
   attr(:offset, :integer, default: 0)
   attr(:query, :string, default: "")
 
@@ -87,12 +87,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
               </button>
 
               <button
+                id={"delete-objective-action-#{item.resource_id}"}
                 type="button"
                 class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                 phx-click="display_delete_modal"
                 phx-value-slug={item.slug}
-                aria-label={"Delete #{item.title}"}
-                title={"Delete #{item.title}"}
+                phx-hook="GlobalTooltip"
+                data-tooltip="Delete Learning Objective"
+                aria-label={"Delete Learning Objective: #{item.title}"}
               >
                 <Icons.trash
                   width="14"
@@ -263,11 +265,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                       :if={!is_nil(sub_objective)}
                       class={[
                         "group/item flex flex-wrap items-center gap-[10px] rounded-md border bg-Background-bg-secondary p-3",
-                        issue_border_class(sub_objective.any_issue),
-                        MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "opacity-50"
+                        issue_border_class(sub_objective.any_issue)
                       ]}
                     >
                       <% child_expanded? = MapSet.member?(@expanded_slugs, sub_objective.slug) %>
+                      <% detaching? =
+                        MapSet.member?(
+                          @pending_detaches,
+                          {sub_objective.slug, item.slug}
+                        ) %>
+                      <% deleting? = MapSet.member?(@pending_deletes, sub_objective.slug) %>
+                      <% shared? =
+                        length(Map.get(@objective_parents, sub_objective.resource_id, [])) > 1 %>
+                      <% action_label =
+                        if shared?, do: "Detach from learning objective", else: "Delete sub-objective" %>
                       <button
                         type="button"
                         class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary disabled:cursor-default"
@@ -295,10 +306,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                             ]}
                           />
                         </span>
-                        <span class={[
-                          "min-w-0 flex-1 text-sm font-normal leading-[19.25px] text-Text-text-high",
-                          MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "line-through"
-                        ]}>
+                        <span class="min-w-0 flex-1 text-sm font-normal leading-[19.25px] text-Text-text-high">
                           <.highlighted_title
                             title={sub_objective.title}
                             regex={@highlight_regex}
@@ -306,15 +314,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           />
                         </span>
                       </button>
-                      <.loader
-                        :if={MapSet.member?(@pending_delete_slugs, sub_objective.slug)}
-                        class="ml-2"
-                        icon_class="text-secondary"
-                      />
-                      <div
-                        :if={!MapSet.member?(@pending_delete_slugs, sub_objective.slug)}
-                        class="flex shrink-0 items-center gap-4"
-                      >
+                      <div class="flex shrink-0 items-center gap-4">
                         <div
                           id={"sub-objective-summary-#{item.slug}-#{sub_objective.resource_id}"}
                           class="flex shrink-0 items-center gap-1"
@@ -384,20 +384,45 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           </button>
                           <button
                             type="button"
-                            class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-                            phx-click="display_sub_objective_delete_modal"
+                            class={[
+                              "inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+                              !detaching? &&
+                                "hover:bg-Fill-Buttons-fill-primary hover:text-white active:text-Icon-icon-active",
+                              detaching? && "cursor-wait opacity-70"
+                            ]}
+                            id={"sub-objective-action-#{item.resource_id}-#{sub_objective.resource_id}"}
+                            phx-click={
+                              if shared?,
+                                do: "detach_sub_objective",
+                                else: "display_sub_objective_delete_modal"
+                            }
                             phx-value-slug={sub_objective.slug}
                             phx-value-parent_slug={item.slug}
-                            phx-value-title={sub_objective.title}
-                            aria-label={"Delete #{sub_objective.title}"}
-                            title={"Delete #{sub_objective.title}"}
+                            phx-hook="GlobalTooltip"
+                            data-tooltip={if detaching?, do: "Detaching…", else: action_label}
+                            disabled={detaching? or deleting?}
+                            aria-busy={to_string(detaching? or deleting?)}
+                            aria-label={"#{action_label}: #{sub_objective.title}"}
                           >
+                            <Icons.unlink
+                              :if={shared? and !detaching?}
+                              width="16"
+                              height="16"
+                              stroke_width="1.5"
+                              class="shrink-0 text-current"
+                            />
                             <Icons.trash
+                              :if={!shared? and !deleting?}
                               width="14"
                               height="15"
                               stroke_width="1.23853"
                               variant="objective"
                               class="shrink-0 text-current"
+                            />
+                            <.loader
+                              :if={detaching? or deleting?}
+                              class="flex items-center justify-center"
+                              icon_class="text-Icon-icon-default"
                             />
                           </button>
                         </div>

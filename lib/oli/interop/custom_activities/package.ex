@@ -120,6 +120,7 @@ defmodule Oli.Interop.CustomActivities.Package do
       "authoring" => Map.get(model, "authoring", %{"parts" => [], "previewText" => ""}),
       "bibrefs" => Map.get(model, "bibrefs", [])
     }
+    |> copy_review_interaction_setting(model)
   end
 
   defp build_imported_model(package_model, manifest_xml, resource_base, resource_urls) do
@@ -135,7 +136,13 @@ defmodule Oli.Interop.CustomActivities.Package do
       "resourceURLs" => resource_urls,
       "resourceVerification" => %{}
     }
+    |> copy_review_interaction_setting(package_model)
   end
+
+  defp copy_review_interaction_setting(target, %{"suppressReviewInteraction" => true}),
+    do: Map.put(target, "suppressReviewInteraction", true)
+
+  defp copy_review_interaction_setting(target, _source), do: target
 
   defp load_supporting_files(resource_base, referenced_files) do
     normalized_resource_base = normalize_media_directory(resource_base)

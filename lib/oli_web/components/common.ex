@@ -670,7 +670,9 @@ defmodule OliWeb.Components.Common do
     doc: "shows a blurry halo at the end of the progress bar"
   )
 
-  attr(:role, :string, default: "progress_bar")
+  attr(:role, :string, default: "progressbar")
+  attr(:aria_label, :string, default: "Progress")
+  attr(:rest, :global)
   attr(:height, :string, default: "h-1")
   attr(:rounded, :string, default: "rounded-[60px]")
 
@@ -691,11 +693,20 @@ defmodule OliWeb.Components.Common do
 
   def progress_bar(assigns) do
     ~H"""
-    <div class="flex flex-row items-center gap-3 mx-auto w-full" role={@role}>
+    <div
+      class="flex flex-row items-center gap-3 mx-auto w-full"
+      role={@role}
+      aria-label={@aria_label}
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow={@percent}
+      {@rest}
+    >
       <div class="flex justify-center w-full relative">
         <div class={"#{@rounded} #{@height} #{@not_completed_colour}"} style={"width: #{@width}"}>
           <div
-            role="progress"
+            data-role="progress"
+            aria-hidden="true"
             class={[
               "#{@rounded} #{@height}",
               if(@percent == 100, do: @completed_colour, else: @on_going_colour)
@@ -707,7 +718,7 @@ defmodule OliWeb.Components.Common do
 
         <div
           :if={@show_halo}
-          role="halo"
+          aria-hidden="true"
           class="absolute -top-[5px] z-50 w-6 h-3.5 bg-[#39e581]/40 rounded-[47px] blur-[8px]"
           style={"left: #{@percent}%; transform: translateX(-12px);"}
         >
@@ -732,7 +743,7 @@ defmodule OliWeb.Components.Common do
     """
   end
 
-  attr(:role, :string)
+  attr(:data_role, :string)
   attr(:id, :string)
   attr(:button_class, :string)
   attr(:options, :list)
@@ -751,7 +762,7 @@ defmodule OliWeb.Components.Common do
           )
         }
         id={@id}
-        role={@role}
+        data-role={@data_role}
         class={[@button_class]}
       >
         {render_slot(@inner_block)}
@@ -769,7 +780,7 @@ defmodule OliWeb.Components.Common do
                 "flex items-center w-full gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50",
                 option[:class]
               ]}
-              role={"dropdown-item #{option.text}"}
+              data-role={"dropdown-item-#{option.text |> String.downcase() |> String.replace(" ", "-")}"}
             >
               <span class="text-[14px] leading-[20px] whitespace-nowrap">{option.text}</span>
               {Phoenix.HTML.raw(option[:icon])}

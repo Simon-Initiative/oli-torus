@@ -10,6 +10,7 @@
     "test-oauth-logins": "npm run pw oauth-login.spec.ts",
     "test-useraccounts": "npm run pw user-accounts.spec",
     "test-account-linking-smoke": "npm run pw user-accounts.spec -- --grep @account-linking",
+    "test-admin-roles-smoke": "npm run pw user-accounts.spec -- --grep @admin-roles",
     "test-all": "npm run pw user-accounts.spec course-authoring.spec.ts",
     "show-report": "npx playwright show-report",
     "lint": "eslint .",
@@ -26,6 +27,7 @@
     "node": ">=24.0.0 <25"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@eslint/js": "^9.28.0",
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.0.0",

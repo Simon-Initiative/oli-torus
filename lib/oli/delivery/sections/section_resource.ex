@@ -104,6 +104,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :objectives, :map, default: %{}
     field :relates_to, {:array, :id}, default: []
     field :allow_hints, :boolean, default: false
+    field :secure_delivery, :boolean, default: false
 
     # See the module contract: readiness is tracked on Section, because [] is a
     # valid processed value and cannot distinguish an empty page from legacy data.
@@ -162,6 +163,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :objectives,
       :relates_to,
       :allow_hints,
+      :secure_delivery,
       :related_activities,
       :resource_type_id,
       :revision_id,
@@ -176,6 +178,28 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :section_id
     ])
     |> unique_constraint([:section_id, :resource_id])
+    |> validate_required([:secure_delivery])
+    |> validate_secure_delivery()
+  end
+
+  defp validate_secure_delivery(changeset) do
+    case get_change(changeset, :secure_delivery) do
+      true ->
+        case {Oli.Delivery.SecureAssessments.supported?(), get_field(changeset, :graded),
+              get_field(changeset, :resource_type_id)} do
+          {true, true, 1} ->
+            changeset
+
+          {false, _, _} ->
+            add_error(changeset, :secure_delivery, "is not supported on this instance")
+
+          _ ->
+            add_error(changeset, :secure_delivery, "requires a graded page")
+        end
+
+      _ ->
+        changeset
+    end
   end
 
   @initial_keys [
