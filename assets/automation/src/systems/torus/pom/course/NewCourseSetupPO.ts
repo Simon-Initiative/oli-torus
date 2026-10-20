@@ -7,7 +7,6 @@ export class NewCourseSetupPO {
   private readonly utils: Utils;
   private readonly stepperContent: Locator;
   private readonly searchInput: Locator;
-  private readonly searchButton: Locator;
   private readonly courseNameInput: Locator;
   private readonly sectionNumberInput: Locator;
   private readonly nextStepButton: Locator;
@@ -19,8 +18,7 @@ export class NewCourseSetupPO {
   constructor(private readonly page: Page) {
     this.utils = new Utils(page);
     this.stepperContent = page.locator('#stepper_content');
-    this.searchInput = page.getByRole('textbox', { name: 'Search...' });
-    this.searchButton = page.getByRole('button', { name: 'Search' });
+    this.searchInput = page.getByRole('textbox', { name: 'Search', exact: true });
     this.courseNameInput = page.locator('#section_title');
     this.sectionNumberInput = page.locator('#section_course_section_number');
     this.nextStepButton = page.getByRole('button', { name: 'Next step' });
@@ -34,7 +32,7 @@ export class NewCourseSetupPO {
     return {
       searchProject: async (name: string) => {
         await this.utils.writeWithDelay(this.searchInput, name);
-        await this.searchButton.click();
+        await this.searchInput.press('Enter');
       },
       clickOnCardProject: async (projectName: string) => {
         const projectLink = this.page.getByRole('heading', { name: projectName, exact: true });
