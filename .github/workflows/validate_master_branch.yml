@@ -1,0 +1,31 @@
+name: "Validate Master Branch Source"
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened, edited]
+
+permissions: {}
+
+jobs:
+  check-branch-name:
+    name: Validate master source branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate source branch name
+        env:
+          BRANCH: ${{ github.head_ref }}
+        shell: bash
+        run: |
+          shopt -s nocasematch
+
+          case "$BRANCH" in
+            integ-*|story/*|bug/*|task/*|dependabot/*)
+              printf "Branch '%s' is allowed to merge into master.\n" "$BRANCH"
+              ;;
+            *)
+              printf "::error::Branch '%s' must match integ-*, story/*, bug/*, task/*, or dependabot/* (case-insensitive) to merge into master.\n" "$BRANCH"
+              exit 1
+              ;;
+          esac
