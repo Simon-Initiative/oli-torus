@@ -1,91 +1,70 @@
-# Preview Environments on k3s
+# Pull Request Previews
 
-This document explains how pull request preview environments are built and operated after the migration to k3s and the adoption of Kustomize-based manifests.
+## Build and Deployment Records
 
-## URL Pattern
+`.github/workflows/build-preview-image.yml` builds and publishes preview images.
+Each PR keeps its own image tag, `preview-<PR number>-<head SHA, first 7 characters>`,
+and URL, `https://preview-<PR number>.plasma.oli.cmu.edu/`.
 
-Every PR is exposed at `https://pr-<number>.<domain>`, where `<domain>` defaults to `plasma.oli.cmu.edu`. Override the domain by setting the repository variable `PREVIEW_DOMAIN` (used by the deploy workflow when it composes the overlay literals).
+Both the automatic and manual jobs record deployments under the shared GitHub
+environment `plasma-previews`. Each deployment references its PR head SHA and
+supplies its own `environment_url`. Preview deployments already set
+`transient_environment: true`, which excludes them from GitHub's automatic
+inactivation of earlier deployments to the same environment.
+No per-PR GitHub environment is created by these recording steps.
 
-## GitHub Workflows
+The manual build retains `plasma.oli.cmu.edu` as its job-level environment and
+approval gate for reviewed fork code. The shared reporting environment does not
+replace that gate.
 
-- `.github/workflows/preview-deploy.yml` builds a PR image, pushes it to GHCR, applies namespace policies, and now runs `kustomize build devops/kustomize/overlays/preview | kubectl apply -f -` on PR open/sync events (after editing the overlay literals for the active PR number).
-- `.github/workflows/preview-teardown.yml` deletes the namespace when the PR closes (`kubectl delete namespace pr-<n>`). The preview manifests are idempotent, so re-running the deploy workflow reconciles existing previews without uninstall steps.
-- Both workflows also support manual runs via `workflow_dispatch`; supply the `ref`
-  (branch/tag) and `preview_id` (namespace/host slug) to deploy or clean up a
-  branch outside the PR flow.
+Argo CD in `oli-torus-gitops` owns Kubernetes deployment and namespace cleanup.
+A successful GitHub deployment status means the image was published; it does not
+confirm application readiness. See the
+[GitOps deployment guide](https://github.com/Simon-Initiative/oli-torus-gitops/blob/master/docs/handbook/deployments.md)
+for runtime configuration, preview access, seeding, and namespace lifecycle.
 
-### Required Secrets and Variables
+## GitHub Setup
 
-Set these in repository settings before enabling the workflows:
+1. No manual environment creation is required. GitHub creates **`plasma-previews`**
+   when the updated workflow first records a deployment. No secrets, variables,
+   reviewers, or branch restrictions are needed for this reporting environment.
+2. Keep **`plasma.oli.cmu.edu`** and its existing required reviewers for manual builds.
+3. Merge the workflow change into `master`. No new token, repository secret, DNS
+   entry, or cluster configuration is required.
+4. Build two PR previews using the updated workflow. Verify that each PR links to
+   its own URL under `plasma-previews` and both deployments remain active.
 
-- `SIMON_BOT_PERSONAL_ACCESS_TOKEN` – long-lived PAT with at least `read:packages` scope used to create per-namespace GHCR pull secrets. Replace with your own service user if desired.
-- Optional repository variable `PREVIEW_DOMAIN` if you need a host suffix other than `plasma.oli.cmu.edu`.
-- Image publishes use the ephemeral `GITHUB_TOKEN`, so no additional secrets are required.
+## Clean Up Legacy GitHub Environments
 
-## Kustomize Layout
+This change reuses a single environment; it does not add automatic retirement of
+old deployment records or delete existing environments. GitHub deployment history
+will continue accumulating under `plasma-previews`. Deployment statuses can be
+marked `inactive` separately when previews are retired. With transient deployments,
+GitHub displays that state as destroyed.
 
-The manifests live under `devops/kustomize/`:
+After verifying the updated workflow:
 
-- `base/` – generic resources for the app Deployment/Service (with an init container that runs `Oli.Release.setup`), Postgres & MinIO StatefulSets, Traefik ingress + middleware, and the MinIO bucket job. The base references the shared secret generated from `devops/default.env`.
-- `overlays/preview/` – sample overlay that merges PR-specific values (namespace, image tag, host literals, etc.). `params.env` feeds ingress host substitutions, and `app-overrides.env` overrides environment keys like `HOST`/`MEDIA_URL` inside the generated secret.
+1. Let old workflow runs finish or cancel them. Update existing PR branches with
+   `master` before their next preview build. Rerunning old workflow revisions may
+   recreate `preview-<number>` environments.
+2. Identify environments named exactly `preview-<digits>` and check each PR's
+   current state. Inspect each environment for custom secrets, variables, or
+   protection rules before deleting it.
+3. For closed or merged PRs, delete the old environment in **Settings → Environments**.
+   For open PRs, first publish through the new workflow and verify the shared
+   environment's PR link, then delete the old environment.
+4. Preserve `plasma-previews`, `plasma.oli.cmu.edu`, and all other environment names.
 
-To create an overlay for a PR at runtime:
-
-1. Copy `devops/kustomize/overlays/preview/` (or modify it in-place) and set the values in `params.env` **and** `app-overrides.env` to the target slug and domain (the deploy workflow rewrites both automatically).
-2. Run `kustomize build --load-restrictor LoadRestrictionsNone devops/kustomize/overlays/preview | kubectl apply -f -` with `KUBECONFIG` pointing at the k3s cluster.
-3. (Optional) After pods become ready, rerun the MinIO bucket job by deleting the corresponding Job resource and re-applying the overlay.
-
-`devops/default.env` seeds the application environment secret. `app-overrides.env` supplies the concrete `HOST`/`MEDIA_URL` overrides (and any additional key/value pairs you append).
-
-## Supporting Services
-
-Each preview release installs dedicated Postgres (pgvector) and MinIO instances alongside the application:
-
-- Persistent volumes are created via the k3s local-path provisioner (default 10 GiB for both services).
-- The application init container runs `Oli.Release.setup` before the Phoenix server starts, mirroring the Docker Compose initialisation step.
-- The MinIO bucket job provisions `torus-media`, `torus-xapi`, and `torus-blob-dev` and sets public policies. Both jobs use elevated resource limits defined in the manifests to avoid repeated OOMs.
-- Supporting workloads request generous CPU/memory while remaining under the namespace LimitRange cap (4 CPU / 16 GiB).
-
-MinIO assets are served from `https://pr-<PR>.plasma.oli.cmu.edu/buckets/<bucket>/...`, and the MinIO console is exposed at `https://pr-<PR>.plasma.oli.cmu.edu/minio`.
-
-## Cluster Preparation Checklist
-
-The DevOps engineer must apply the following once per cluster (see `devops/plan.md` Phase 3):
-
-```bash
-kubectl apply -f devops/k8s/rbac/pr-admin.yaml
-```
-
-For each new PR namespace the CI workflow runs:
-
-```bash
-devops/scripts/apply-preview-policies.sh pr-123
-```
-
-The script templatises quota, limit range, and network policy manifests and applies them to the namespace. Namespace pull secrets are refreshed automatically using `SIMON_BOT_PERSONAL_ACCESS_TOKEN`.
-
-## Smoke Testing
-
-Use `devops/scripts/smoke-test-preview.sh` to validate a deployed preview:
+To inspect candidates without making changes:
 
 ```bash
-devops/scripts/smoke-test-preview.sh https://pr-123.plasma.oli.cmu.edu/healthz
+gh api --paginate 'repos/Simon-Initiative/oli-torus/environments?per_page=100' \
+  --jq '.environments[].name | select(test("^preview-[0-9]+$"))'
+gh pr list --repo Simon-Initiative/oli-torus --state open --limit 1000 \
+  --json number,url
 ```
 
-The script exits non-zero if any probe fails. Integrate it into CI if desired.
-
-## Operational Notes
-
-- Preview namespaces enforce resource quotas and default limits aligned with `devops/k8s/policies/`.
-- Application pods (including the setup init container) and the bucket job all mount the `app-env` secret generated from `devops/default.env`; update the overlay literals when introducing new env keys.
-- Postgres and MinIO resources are namespace-scoped, so cleanup on failure should remove related PVCs (`kubectl delete pvc -n pr-<n> -l app.kubernetes.io/component=minio`).
-- Remember to trust the pod network on the k3s node (e.g., add `cni0`/`flannel.1` to the trusted zone and open Traefik NodePorts) so Traefik can reach preview pods.
-- Manual clean-up: run `kubectl delete namespace pr-<number>` if a workflow fails.
-- Record significant changes to infra assets in `devops/change-log.md`.
-
-## Seeded demo account login
-
-Preview seeding supports an optional `PREVIEW_DEMO_USER_PASSWORD` in the runtime Secret for
-new demo accounts. See [Direct QA Login](manifests/preview-seeding/README.md#direct-qa-login)
-for account emails, login paths, password requirements, and the one-time seeding boundary.
-The bootstrap administrator continues using its separate `ADMIN_PASSWORD`.
+An administrator can batch the same checks and deletions with `gh api`. Environment
+deletion requires repository administration privileges and removes associated
+secrets and protection rules. It does not remove Kubernetes workloads or images.
+See [GitHub's environment deletion documentation](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments#deleting-an-environment).
