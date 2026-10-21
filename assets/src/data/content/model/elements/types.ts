@@ -309,6 +309,8 @@ export interface Webpage extends SlateElement<VoidChildren> {
   height?: string | number;
   width?: string | number;
   alt?: string;
+  // Plain-text accessible name, rendered as the iframe's aria-label
+  title?: string;
   caption?: Caption;
   // Legacy, unused
   display?: string;
