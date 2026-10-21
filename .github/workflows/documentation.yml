@@ -12,8 +12,8 @@ permissions:
 jobs:
   docs:
     runs-on: ubuntu-latest
-    # only deploy docs if the workflow is running on the master branch
-    if: github.ref == 'refs/heads/master'
+    # Temporarily allow manual branch builds to validate the Pages artifact before merging.
+    if: github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: 🛎️ Checkout
@@ -73,6 +73,7 @@ jobs:
 
   deploy:
     needs: docs
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       pages: write
