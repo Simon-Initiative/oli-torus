@@ -37,7 +37,7 @@ Without coordinating deployment and readiness, nightly tests can run against an 
 
 ## 4. Users & Use Cases
 
-- Engineers receive scheduled regression results tied to the application source and test revision, and manually rerun the workflow for diagnosis.
+- Engineers receive scheduled regression results tied to the application source and test revision, and manually dispatch a selected branch for diagnosis, building and testing the same commit.
 - QA inspects failed tests, reports, and the stable nightly environment without rebuilding a local server.
 - GitOps maintainers provision the durable deployment, install runtime secrets, and maintain the GitOps deployment policy.
 - QA/test owners maintain private assets, answer keys, Canvas accounts/registration and Dot fixtures.
@@ -99,7 +99,7 @@ In `oli-torus-gitops`, the target is `deployments/nightly-playwright.yml`; the u
 
 No feature flags present in this work item
 
-Before enabling unattended runs, provision secrets/assets/integrations, verify bot permissions and branch rules allow automatic merge without per-run human approval, approve deployment configuration, and complete a manual run. Preserve the daily 05:17 UTC schedule and manual dispatch; both select protected master once. Per-master-push execution is future work.
+Before enabling unattended runs, provision secrets/assets/integrations, verify bot permissions and branch rules allow automatic merge without per-run human approval, approve deployment configuration, and complete a manual run. Preserve the daily 05:17 UTC schedule and manual dispatch. Scheduled runs select current master once after acquiring the target lock; manual runs use the exact commit selected by GitHub dispatch for the chosen branch. Build, Plasma deployment and browser tests all use that same source commit. A rerun of a manual run retains its original commit; a new dispatch selects the branch again. Both entry points share the durable Plasma target and the same concurrency lock. Configure `nightly-ui` environment branch rules to allow intended manual branches as well as unattended master runs. Per-master-push execution is future work.
 
 Land PR migration and removal of `ci_e2e` together. PR supplies disposable database/endpoint credentials and release-style assets without nightly secrets or deployment permissions. Deploy probe-capable images before activating `/readyz` in GitOps; migrate PR waiting and other readiness consumers.
 
@@ -166,3 +166,4 @@ After provisioning, demonstrate manual and scheduled runs, failed readiness prev
 | 2026-10-06 | Operational verification | Deferred to implementation, required before launch. Torus verifies application probes/draining and unattended nightly-ui permissions; GitOps verifies deployment configuration. No performance measurements required. |
 | 2026-10-06 | Release fixture and mailbox audit | Deferred to implementation, required before launch. Torus verifies runtime paths, packages demonstrated fixture needs and checks mailbox reset; GitOps verifies one replica. Requires an implemented release. |
 | 2026-10-07 | Readiness metadata visibility | Expose compiled version/SHA only in Playwright builds for CI identity checks. Other builds retain unauthenticated status-only readiness; runtime settings cannot enable metadata. |
+| 2026-10-13 | Manual branch execution | Allow manual dispatch of a selected repository branch at its exact dispatch SHA; schedules continue selecting master. Build, deployment and browser checkout share that identity and the same target lock. Manual reruns retain their SHA; environment branch permissions are verified during provisioning. |
