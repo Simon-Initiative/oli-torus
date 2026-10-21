@@ -201,7 +201,7 @@ const componentCases: ComponentCase[] = [
       await editor.selectPart(multilineId);
       await editor.fillField('custom_label', 'Describe your answer');
       await editor.fillField('custom_prompt', 'Type here...');
-      await editor.setCheckbox('custom_showCharacterCount', true);
+      await editor.setCheckbox('custom_showCharacterCount', false);
     },
     verifyPersisted: async (editor) => {
       const [multilineId] = await editor.partIds('janus-multi-line-text');
@@ -209,7 +209,7 @@ const componentCases: ComponentCase[] = [
       await editor.selectPart(multilineId);
       await expect(editor.field('custom_label')).toHaveValue('Describe your answer');
       await expect(editor.field('custom_prompt')).toHaveValue('Type here...');
-      await expect(editor.field('custom_showCharacterCount')).toBeChecked();
+      await expect(editor.field('custom_showCharacterCount')).not.toBeChecked();
     },
   },
 ];
@@ -368,7 +368,7 @@ test.describe.serial('Advanced Author lesson delivery @pr', () => {
 
     await homeTask.login('student');
     await openPublishedLesson(page, lessonTitle);
-    await answerMcqAndExpectTerminal(page, 'Option 1', correctText);
+    await answerMcqAndExpectTerminal(page, 'Option 1', correctText, true);
   });
 
   test('student answering incorrectly reaches the incorrect terminal', async ({
@@ -380,7 +380,7 @@ test.describe.serial('Advanced Author lesson delivery @pr', () => {
 
     await homeTask.login('student');
     await openPublishedLesson(page, lessonTitle);
-    await answerMcqAndExpectTerminal(page, 'Option 2', incorrectText);
+    await answerMcqAndExpectTerminal(page, 'Option 2', incorrectText, false);
   });
 });
 
@@ -433,9 +433,9 @@ test.describe.serial('Advanced Author known regressions @pr', () => {
    * subscreen-specific responsive mechanism — it's the same per-part
    * `responsiveLayoutWidth` behavior already covered by "responsive layout
    * arranges..." above, just verified on a part that lives on a subscreen
-   * nested under a Layer, including persistence and the resulting
-   * preview/delivery geometry (which that other test never checks — it only
-   * asserts the authoring-side CSS class).
+   * nested under a Layer, including persistence and the delivered layout
+   * classes (which that other test never checks — it only asserts the
+   * authoring-side CSS class).
    */
   test('author builds a responsive subscreen nested under a layer and publishes', async ({
     homeTask,
@@ -505,8 +505,19 @@ async function openPublishedLesson(page: Page, title: string) {
  * needs its feedback dismissed before navigation continues; `advance()`
  * handles that click-dismiss cycle generically (a correct answer, with only
  * the Navigate To action, just advances on the first click).
+ *
+ * The terminal text alone can't tell whether the authored rule fired: the
+ * default `next` reaches Correct Terminal from Welcome, and an extra click on a
+ * terminal follows its default `next` too. So it also checks the first Check's
+ * evaluation — its verdict, and that no navigation goes to the default `next`.
+ * It does not assert which screen the navigation targets.
  */
-async function answerMcqAndExpectTerminal(page: Page, optionName: string, terminalText: string) {
+async function answerMcqAndExpectTerminal(
+  page: Page,
+  optionName: string,
+  terminalText: string,
+  expectCorrect: boolean,
+) {
   const deck = new AdaptiveDeckPO(page);
   await deck.waitForDeckReady();
 
@@ -515,6 +526,22 @@ async function answerMcqAndExpectTerminal(page: Page, optionName: string, termin
   await mcq.getByText(optionName, { exact: true }).click();
   await expect(mcq.getByRole('radio', { name: optionName })).toBeChecked();
 
+  const evaluation = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' && /\/activity_attempt\/[^/]+$/.test(response.url()),
+  );
   await deck.advance();
+  const { actions } = await (await evaluation).json();
+  const destinations = actions.results.flatMap((result) =>
+    result.params.actions
+      .filter((action) => action.type === 'navigation')
+      .map((action) => action.params.target),
+  );
+
+  expect(actions.correct, 'The Check evaluation verdict').toBe(expectCorrect);
+  expect(
+    destinations,
+    'The authored Navigate To destination, not the default "next"',
+  ).not.toContain('next');
   await expect(page.getByText(terminalText, { exact: true })).toBeVisible({ timeout: 15_000 });
 }

@@ -15,17 +15,17 @@ delivery of a lesson built with it, including real Adaptivity trap-state rules.
 
 ## Coverage
 
-| Test                                                 | Asserts                                                                                                                                                                                     |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `<component> keeps its configuration ...`            | One parameterized row per Phase 1 component (static text, image, video, MCQ, number input, multiline text): author it on its own screen, reload, check the configuration.                   |
-| `copy/paste and undo/redo update the screen`         | Paste adds a part with a new id; the clipboard is single-use (a second paste, via keyboard, adds nothing); undo/redo; the result survives a reload.                                         |
-| `responsive layout arranges components side by side` | Enabling the lesson's "Enable Responsive Layout" setting lets two parts take `50% left`/`50% right` widths, reflected in `.responsive-item`'s classes, and the widths persist after reload. |
-| `author builds a branching lesson ...`               | A real Adaptivity rule pair (MCQ `correct` condition + `defaultWrong` fallback), each with a "Navigate To" action to a distinct terminal screen, persists after reload, then publishes.     |
-| `student answering correctly ...`                    | Selecting the correct MCQ option and checking navigates straight to the authored "Correct Terminal" screen's text.                                                                          |
-| `student answering incorrectly ...`                  | Selecting a wrong option shows the built-in "Incorrect, please try again." feedback, then (once dismissed) navigates to the authored "Incorrect Terminal" screen's text.                    |
-| `item bank renders its default items and layout ...` | Item Bank (`janus_item_bank`) renders its default columns (Item Bank + 2 categories) and items, in its default responsive layout, and that persists after reload.                           |
-| `author builds a responsive subscreen ...`           | A part placed on a subscreen (nested under a Layer, added via "Add Subscreen") takes a `50% left` width, persists after reload, then publishes.                                             |
-| `student sees the subscreen part ...`                | The published lesson's Layer auto-resolves to its one subscreen on the first "Next", and the delivered part carries the same `half-width`/`responsive-align-left` classes as authoring.     |
+| Test                                                 | Asserts                                                                                                                                                                                                  |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<component> keeps its configuration ...`            | One parameterized row per Phase 1 component (static text, image, video, MCQ, number input, multiline text): author it on its own screen, reload, check the configuration.                                |
+| `copy/paste and undo/redo update the screen`         | Paste adds a part with a new id; the clipboard is single-use (a second paste, via keyboard, adds nothing); undo/redo; the result survives a reload.                                                      |
+| `responsive layout arranges components side by side` | Enabling the lesson's "Enable Responsive Layout" setting lets two parts take `50% left`/`50% right` widths, reflected in `.responsive-item`'s classes, and the widths persist after reload.              |
+| `author builds a branching lesson ...`               | A real Adaptivity rule pair (MCQ `correct` condition + `defaultWrong` fallback), each with a "Navigate To" action to a distinct terminal screen, then publishes.                                         |
+| `student answering correctly ...`                    | The first Check on the correct MCQ option is evaluated correct, none of its navigation goes to the default `next`, and the "Correct Terminal" screen's text shows.                                       |
+| `student answering incorrectly ...`                  | The first Check on a wrong option is evaluated incorrect, none of its navigation goes to the default `next`, and (once the built-in feedback is dismissed) the "Incorrect Terminal" screen's text shows. |
+| `item bank renders its default items and layout ...` | Item Bank (`janus_item_bank`) renders its default columns (Item Bank + 2 categories) and items, in its default responsive layout, and that persists after reload.                                        |
+| `author builds a responsive subscreen ...`           | A part placed on a subscreen (nested under a Layer, added via "Add Subscreen") takes a `50% left` width, persists after reload, then publishes.                                                          |
+| `student sees the subscreen part ...`                | The published lesson's Layer auto-resolves to its one subscreen on the first "Next", and the delivered part carries the same `half-width`/`responsive-align-left` classes as authoring.                  |
 
 Deferred to later phases: component library, list sort, flashcards, z-order, advanced bank
 permutations, and one regression check named in the ticket (slider feedback — blocked on a real
@@ -67,10 +67,10 @@ PLAYWRIGHT_BASE_URL=http://localhost:4000 PLAYWRIGHT_SCENARIO_TOKEN=my-token npm
 Every describe is tagged `@pr`, so the suite runs in the PR Playwright Suite
 (`.github/workflows/pr-playwright.yml`, `npx playwright test --grep @pr`). It only depends on
 data it seeds and needs no third-party credentials. It is not tagged `@nightly`, because the
-nightly job targets a persistent deployment where `/test/scenario-yaml` is not available. No
-workflow changes were needed: MER-5988 (Simple Author) already added the Tailwind CSS build and
-the server-side rule-bundle build (`priv/node/rules.js`/`eval.js`) the PR job needs for any
-adaptive "Check" to work.
+nightly job targets a persistent deployment where `/test/scenario-yaml` is not available. The PR
+job needs the Tailwind CSS build and the server-side rule-bundle build
+(`priv/node/rules.js`/`eval.js`) for any adaptive "Check" to work. Those workflow steps come from
+MER-5988 (Simple Author); this branch carries them because its base doesn't have them yet.
 
 ## Editor behaviors the page object handles
 
@@ -134,9 +134,6 @@ button[title="Edit"]` (shared with Simple Author, rendered by `LayoutEditor`) op
 
 ## Open questions
 
-Carried over from `advanced_author_plan.md` (this doc's working predecessor) — see that file's §7
-and §7a for the full reasoning.
-
 ### Resolved
 
 - **CAPI/iframe sizing** — `tests/torus/capi/capi.spec.ts` already covers the only CAPI sizing
@@ -149,7 +146,7 @@ and §7a for the full reasoning.
 - **Responsive subscreens** — asked Raphael directly (Slack, 2026-10-12); confirmed there's no
   separate breakpoint behavior for subscreens — it's the same per-part `responsiveLayoutWidth`
   workflow already covered, just verified on a part placed inside a nested subscreen (under a Layer
-  or Question Bank), including persistence and the resulting preview/delivery geometry. Covered by
+  or Question Bank), including persistence and the delivered layout classes. Covered by
   `author builds a responsive subscreen ...` and `student sees the subscreen part ...` above (a
   Layer, not a Question Bank, to keep delivery navigation deterministic without touching
   `bankShowCount`/`bankEndTarget`).
@@ -164,8 +161,7 @@ and §7a for the full reasoning.
   backend after a reload (lost somewhere inside or after that shared save pipeline); removing an
   option is a second, separate failure where the recompute doesn't even trigger. Neither is a
   small, localized fix — `saveActivity` is shared by every part type in Advanced Author, so a wrong
-  guess there risks breaking saves broadly, not just this component. See plan file §7a for the full
-  trace. No test was added and no fix was attempted here: asserting the current (broken) behavior
-  would mislead whoever fixes it, and asserting the correct behavior would fail on every PR until
-  that happens. Recommend filing this as its own bug ticket (the trace in §7a is a starting point);
-  the test is fully specified there for whenever it's fixed.
+  guess there risks breaking saves broadly, not just this component. No test was added and no fix
+  was attempted here: asserting the current (broken) behavior would mislead whoever fixes it, and
+  asserting the correct behavior would fail on every PR until that happens. Recommend filing this
+  as its own bug ticket, with the intended test above as its acceptance check.

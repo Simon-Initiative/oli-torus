@@ -1,3 +1,4 @@
+import { escapeRegExp } from '@core/regexp';
 import { expect, Locator, Page, Request } from '@playwright/test';
 import { BasicPracticePagePO } from '@pom/page/BasicPracticePagePO';
 
@@ -58,8 +59,8 @@ const MORE_COMPONENTS_LABEL: Partial<Record<AdvancedAuthorComponent, string>> = 
  * Page object for the adaptive Advanced Author editor.
  *
  * Advanced Author shares its stage, save pipeline, and property-panel
- * field-id convention with Simple Author (`SimpleAuthorPO`) — both run the
- * same underlying authoring app (`apps/authoring`) — but its component
+ * field-id convention with Simple Author — both run the same underlying
+ * authoring app (`apps/authoring`) — but its component
  * toolbar is a different React component (`ExpertHeaderNav` /
  * `AddComponentToolbar`, vs. Simple Author's `FlowchartHeaderNav`) and its
  * screen tree is `SequenceEditor`, not Simple Author's flat `ScreenList`.
@@ -637,8 +638,4 @@ export class AdvancedAuthorPO {
   private isSaveRequest(request: Request) {
     return ['PUT', 'POST'].includes(request.method()) && SAVE_REQUEST.test(request.url());
   }
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

@@ -1,3 +1,4 @@
+import { escapeRegExp } from '@core/regexp';
 import { Verifier } from '@core/verify/Verifier';
 import { expect, Locator, Page } from '@playwright/test';
 
@@ -293,8 +294,4 @@ function isStudentLessonPath(pathname: string) {
     pathname.includes('/adaptive_lesson/') ||
     pathname.includes('/prologue/')
   );
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
