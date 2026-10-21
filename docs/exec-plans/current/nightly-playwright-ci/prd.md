@@ -8,11 +8,11 @@ This continues [MER-5918](https://eliterate.atlassian.net/browse/MER-5918). The 
 
 ## 2. Background & Problem Statement
 
-The original nightly workflow tested an externally configured server without building or deploying it. Implementation now includes the shared Playwright environment, separate health/readiness endpoints, release packaging, and a nightly image-build job. The browser job still uses the configured server without a GitOps deployment or readiness dependency. Its independent backend scenario job does not supply that server.
+The original nightly workflow tested an externally configured server without building or deploying it. The implemented workflow now builds and deploys the shared Playwright release, checks public readiness and source identity, and runs browser tests against that revision. Its independent backend scenario job does not supply that server.
 
-The durable target and integration inputs are provisioned. The remaining work connects deployment/readiness to browser execution and verifies the complete workflow from a reviewed feature branch. Without that connection, tests can run against an older revision. Verify the expected version/SHA before tests without Argo CD or Kubernetes credentials in CI.
+The durable target and integration inputs are provisioned. The completed manual workflow demonstrates deployment/readiness gating before browser execution, without Argo CD or Kubernetes credentials in CI. It also exposes test failures for targeted follow-up.
 
-Phase 5 is complete as provisioning. Phase 6 owns all remaining App, integration, persistence/mailbox, lifecycle, and workflow verification before merging the Torus feature branch, followed by scheduled proof after merge. Closing provisioning does not mark operational acceptance criteria verified or authorize unattended launch.
+Phase 5 is complete as provisioning. Phase 6 is complete as workflow integration and minimal manual end-to-end verification. Unrelated test, fixture, and application defects move to a separate bug; there is no Phase 7 in this infrastructure work item. First scheduled-run confirmation after normal merge remains a launch follow-up; Phase 6 closure does not claim a green suite or scheduled proof.
 
 ## 3. Goals & Non-Goals
 
@@ -29,7 +29,7 @@ Phase 5 is complete as provisioning. Phase 6 owns all remaining App, integration
 
 ### Non-Goals
 
-- Re-auditing or broadly rewriting the existing Playwright tests. Centralizing captcha credential submission in the browser runner is in scope.
+- Repairing Playwright tests, fixtures, or application defects unrelated to CI infrastructure. Track the observed failures separately; centralized captcha credential submission remains in scope.
 - Replacing the ephemeral PR suite or changing its trigger, source selection, or existing coverage; its compile environment and startup configuration migrate to `playwright`.
 - Changing the independent nightly backend scenario job.
 - Creating a fresh nightly namespace/database on each run, deploying production, or adding registry image-watching controllers. PR CI retains its disposable database.
@@ -82,7 +82,7 @@ Both workflows compile `Oli.Playwright.Recaptcha`, which accepts only the config
 
 Both builds use `Swoosh.Adapters.Local` and token-protected `/test/emails` endpoints. Use unique recipients and one nightly application replica. Each deployment starts a fresh instance-local mailbox; no scheduled mailbox cleanup service is required.
 
-Dependencies are GHCR, GitHub Actions, cross-repository credentials, Argo CD, persistent PostgreSQL/MinIO, private archives/answer keys, and test credentials. Coverage includes every current tagged case, including adaptive, Canvas and Moodle LTI, Dot, instructor, and account tests. Canvas and Moodle launch into nightly Torus; Dot uses a dedicated fixture there. Supply external URLs and credentials during provisioning; all tagged integrations must work before unattended launch.
+Dependencies are GHCR, GitHub Actions, cross-repository credentials, Argo CD, persistent PostgreSQL/MinIO, private archives/answer keys, and test credentials. Coverage includes every current tagged case, including adaptive, Canvas and Moodle LTI, Dot, instructor, and account tests. Canvas and Moodle launch into nightly Torus; Dot uses a dedicated fixture there. Supply external URLs and credentials during provisioning; all tagged integrations must be configured and selected for unattended execution; unrelated test failures are reported and tracked separately.
 
 Use existing archives and answer keys without new versioning infrastructure. QA/test owners maintain them together and avoid changes during active runs. Same-commit reruns may use updated assets; revisit pinning if historical reproduction becomes necessary.
 
@@ -95,13 +95,13 @@ In `oli-torus-gitops`, the target is `deployments/nightly-playwright.yml`; the u
 - Delete `config/ci_e2e.exs` and migrate active references. Retain no compatibility alias, wrapper or fallback; do not import `dev.exs`.
 - Keep credential injection centralized in the Playwright context setup, with no per-captcha branches or page-object helpers. Preserve application templates/hooks, block Google scripts in runner contexts, and verify real registration, enrollment and payment flows with the runtime token. Verify rejection without a valid credential and prevent token submission through GET URLs or external destinations. Production captcha interaction is unchanged.
 - GitOps scope: provision the target and review probe/drain manifests separately. Recurring bot PRs change only image/source metadata, merge automatically after required checks, and precede readiness polling. Argo CD deploys; there is no direct-commit fallback.
-- Apply `docs/CODEREVIEW.md` during implementation. Jira remains the tracking source; this work does not update the ticket.
+- Apply `docs/CODEREVIEW.md` during implementation. Jira remains the tracking source; create the separate test-failure bug only after approval of its exact draft.
 
 ## 11. Feature Flagging, Rollout & Migration
 
 No feature flags present in this work item.
 
-Phase 5 completes provisioning and initial readiness/access checks. Phase 6 integrates the workflow and owns all remaining live verification on the reviewed feature branch before Torus merge, then the scheduled launch checklist; there is no separate Phase 7. Reuse earlier evidence for unchanged behavior. Local integration checks do not replace a successful feature-branch run, operational checks, artifact review, and successful scheduled run. The schedule already exists in the workflow; document its controlled pause/resume during rollout rather than adding another scheduling mechanism.
+Phase 6 requires only a completed manual workflow showing build/publication, accepted deployment with matching readiness, tagged test execution, and retained reports with the correct outcome. A test failure does not invalidate that workflow proof. A passing browser suite is not an infrastructure closeout requirement; observed test/import failures are tracked separately. Reuse earlier component, release, policy, and local failure checks; no additional live fault-injection campaign is required. Confirm the first scheduled run after normal merge separately, retaining the existing schedule.
 
 Before enabling unattended runs, provision secrets/assets/integrations, verify bot permissions and branch rules allow automatic merge without per-run human approval, approve deployment configuration, and complete a manual run. Preserve the daily 05:17 UTC schedule and manual dispatch. Scheduled runs select current master once after acquiring the target lock; manual runs use the exact commit selected by GitHub dispatch for the chosen branch. Build, Plasma deployment and browser tests all use that same source commit. A rerun of a manual run retains its original commit; a new dispatch selects the branch again. Both entry points share the durable Plasma target and the same concurrency lock. Explicitly allow the reviewed feature branch in both `nightly-ui` and `nightly-deploy`, retaining unattended master access and excluding PR/fork access. Per-master-push execution is future work.
 
@@ -142,19 +142,16 @@ No unresolved design questions remain. Approved decisions and implementation def
 
 The FDD testing strategy maps implementation checks to canonical acceptance criteria. Required coverage includes shared configuration and PR migration, production exclusions, authorized Playwright captcha acceptance and rejection and mailbox/account privacy, probe lifecycle and bounded readiness, GitOps updates/concurrency, tag-based execution and failure/report handling.
 
-Existing execution records contain local application/release evidence. Before launch, complete the remaining deployed-target checks and reuse valid earlier results:
-
-- Torus maintainers verify probe/drain behavior, runtime fixtures, mailbox reset, and unattended `nightly-ui` permissions.
-- GitOps maintainers verify deployment/probe configuration and the single-replica setting.
-
-After provisioning, demonstrate manual and scheduled runs, failed readiness preventing tests, serialization, durable fixture preservation, and safe/useful artifacts. Performance measurements are not required. Document validation and static GitOps checks do not contact a cluster or count as implementation proof.
+Reuse the component, release, rendered-manifest, policy, and local failure evidence in earlier execution records. The minimal Phase 6 checklist verifies build/publication, accepted deployment/readiness, tagged execution, and reporting in one manual run. Separate bug work owns test repairs and their verification. First scheduled-run confirmation remains the launch follow-up. Additional live fault injection, overlapping dispatches, persistence/mailbox drills, and disposable lifecycle exercises are not closeout requirements. This scope reduction does not assert that those live exercises occurred. Performance measurements are not required.
 
 ## 16. Definition of Done
 
 - [x] PRD sections complete with explicit scope, approved decisions, limitations, and recorded implementation deferrals.
 - [x] requirements.yml captured with proposed, testable requirements and acceptance criteria.
 - [x] PRD and requirements validation pass.
-- [ ] Before implementation is considered complete, complete the deferred operational and release audits, verify the canonical acceptance criteria, and demonstrate manual and scheduled runs against the provisioned target.
+- [x] Phase 6 workflow integration and minimal manual verification complete; see `phase-6-execution.md`.
+- [x] Final implementation scope ends at Phase 6; unrelated test repairs are excluded.
+- [ ] First scheduled run confirmed after normal merge, with requirements evidence reconciled at work-item closeout.
 
 ## Decision Log
 
@@ -174,3 +171,5 @@ After provisioning, demonstrate manual and scheduled runs, failed readiness prev
 | 2026-10-14 | Reconcile remaining delivery | Phase 5 completes provisioning; Phase 6 integrates and launches, absorbing former Phase 7. Preserve existing per-test setup/skips while requiring intended integrations, including Moodle, to execute for launch proof. Reuse valid prior evidence; all operational acceptance criteria still apply. |
 | 2026-10-14 | Simplify GitOps orchestration | Use one deployment App with no standalone preflight or scan for prior bot PRs. Retain current-run validation, merge verification, and cleanup; operators handle orphaned PRs after interruptions. |
 | 2026-10-15 | Close provisioning; verify on the feature branch | Phase 5 closes on installed and initially checked provisioning. Phase 6 owns all remaining live checks and full feature-branch workflow verification before Torus merge, then scheduled proof afterward. This changes phase ownership, not acceptance criteria or the requirement to prove readiness before unattended launch. |
+| 2026-10-16 | Separate workflow verification from test repairs | Operator approved closing Phase 6 on the completed end-to-end workflow run, even when Playwright reports test failures. The proposed Phase 7 owned those test/import repairs; this assignment is superseded by the 2026-10-19 decision. Reuse existing component, release, policy, and local failure checks; remove the additional live fault-injection campaign from closeout. Confirm the first scheduled run after normal merge as a separate launch follow-up. |
+| 2026-10-19 | Close infrastructure scope at Phase 6 | Operator removed Phase 7 and moved unrelated test, fixture, and application failures to a separate MER bug. Keep the full tagged suite and honest failure reporting. Scheduling is already active at 05:17 UTC; first execution of the integrated pipeline from master remains post-merge evidence. Greenhouse import diagnosis remains open; no claim is made that its cause is unrelated to infrastructure. |
