@@ -12,8 +12,8 @@ permissions:
 jobs:
   docs:
     runs-on: ubuntu-latest
-    # Temporarily allow manual branch builds to validate the Pages artifact before merging.
-    if: github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
+    # Build and publish documentation only from master.
+    if: github.ref == 'refs/heads/master'
 
     steps:
       - name: 🛎️ Checkout
@@ -73,11 +73,7 @@ jobs:
 
   deploy:
     needs: docs
-    # Temporarily allow an end-to-end deployment test from the MER-6055 subtask branch.
-    if: >-
-      github.ref == 'refs/heads/master' ||
-      (github.event_name == 'workflow_dispatch' &&
-       github.ref == 'refs/heads/sub-task/MER-6055-implement-native-git-hub-pages-deployment-in-the-documentation-workflow')
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       pages: write
