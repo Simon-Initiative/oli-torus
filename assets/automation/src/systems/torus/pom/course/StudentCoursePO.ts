@@ -1,3 +1,4 @@
+import { escapeRegExp } from '@core/regexp';
 import { Verifier } from '@core/verify/Verifier';
 import { expect, Locator, Page } from '@playwright/test';
 
@@ -88,7 +89,7 @@ export class StudentCoursePO {
       }
     }
 
-    await Verifier.expectIsVisible(this.page.getByRole('heading', { name: pageName, exact: true }));
+    await Verifier.expectIsVisible(this.openedPageTitle(pageName));
   }
 
   async openFirstPage(pageName: string) {
@@ -105,13 +106,26 @@ export class StudentCoursePO {
         startCourse.click(),
       ]);
 
-      await Verifier.expectIsVisible(
-        this.page.getByRole('heading', { name: pageName, exact: true }),
-      );
+      await Verifier.expectIsVisible(this.openedPageTitle(pageName));
       return;
     }
 
     await this.openPage(pageName);
+  }
+
+  /**
+   * The title of an opened page. Basic pages render it as a heading. The adaptive
+   * lesson header renders it as plain text after a screen-reader "Title:" prefix.
+   */
+  private openedPageTitle(pageName: string) {
+    const adaptiveHeaderTitle = this.page
+      .locator('#delivery-header .lessonTitle')
+      .filter({ hasText: new RegExp(`(^|\\s)${escapeRegExp(pageName)}$`) });
+
+    return this.page
+      .getByRole('heading', { name: pageName, exact: true })
+      .or(adaptiveHeaderTitle)
+      .first();
   }
 
   private galleryTitle(pageName: string) {
