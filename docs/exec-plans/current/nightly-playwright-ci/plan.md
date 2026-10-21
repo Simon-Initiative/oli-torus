@@ -53,28 +53,30 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
 
 ## Phase 2: Shared Playwright configuration and atomic PR migration
 
-- Goal: Replace `ci_e2e` with a standalone shared environment while retaining the full PR suite and strengthening the captcha contract.
+- Goal: Replace `ci_e2e` with a standalone shared environment while retaining the full PR suite and simplifying captcha handling.
 - Coverage: FR-001, FR-002 — AC-003, AC-005, AC-006, AC-032, AC-033, AC-034, AC-035, AC-036, AC-037, AC-038; PR consumer portion of AC-042.
 - Tasks:
-  - [ ] Add `config/playwright.exs` with direct compile-time scenario/mailbox enablement, `Oli.Playwright.Recaptcha`, `Swoosh.Adapters.Local`, release assets and `env: :playwright`. Disable development debug/reload/watch settings without importing `dev.exs`; retain normal origin checks and exclude preview QA defaults.
-  - [ ] Extend release runtime/SSL branches, `mix.exs` permanence and endpoint static gzip handling for `:playwright`. Load scenario/mailbox and captcha tokens only at runtime; fail boot for absent/empty required tokens. Permit PR boot without private-assets configuration; asset-dependent operations still fail clearly when unavailable.
-  - [ ] Implement constant-time exact nonempty token verification with locally rejected invalid/malformed inputs and no Google fallback. Route remaining direct captcha calls through compile-selected `Oli.Recaptcha`; preserve production selection regardless of runtime test-token presence.
-  - [ ] Omit Google widgets/scripts only in Playwright while retaining submission fields. Add a Torus-origin-scoped shared helper under `assets/automation/src/core/` for standard and LiveView forms. Migrate registration in `CredentialAccountPO.ts`, enrollment in `StudentCoursePO.ts` and payment support; audit other exercised protected forms, including invitation/LTI flows.
-  - [ ] Redact captcha fields in request logs and prevent token-bearing traces/attachments in both CI paths. Avoid token values in helper step decorators, assertions and error messages; missing runner configuration fails before submission.
-  - [ ] Migrate `.github/workflows/pr-playwright.yml` with explicit disposable database, local HTTP, signing/encryption and storage boot inputs; generate separate job-scoped scenario and captcha secrets using at least 32 random bytes. Build frontend/server/Tailwind/digested assets through the release pipeline before `mix phx.server`, and wait on `/readyz`.
-  - [ ] Delete `config/ci_e2e.exs` and migrate active scripts/config/docs/cache references in the same landing change. Retain no alias, wrapper or fallback. Preserve PR triggers, checkout, `@pr`, create/migrate/seed and runner-owned teardown.
-  - [ ] Key compile caches by environment, configuration, toolchain and lockfiles; separate PR, trusted nightly and production namespaces. Prevent broad restore fallbacks from loading incompatible compile artifacts.
+  - [x] Add `config/playwright.exs` with direct compile-time scenario/mailbox enablement, `Oli.Playwright.Recaptcha`, `Swoosh.Adapters.Local`, release assets and `env: :playwright`. Disable development debug/reload/watch settings without importing `dev.exs`; retain normal origin checks and exclude preview QA defaults.
+  - [x] Extend release runtime/SSL branches, `mix.exs` permanence and endpoint static gzip handling for `:playwright`. Load separate scenario/mailbox and captcha tokens only at runtime; fail boot when either is absent/empty. Permit PR boot without private-assets configuration; asset-dependent operations still fail clearly when unavailable.
+  - [x] Require the configured nonempty captcha token with constant-time comparison; reject missing/empty/incorrect/malformed responses without Google requests. Route application verification through compile-selected `Oli.Recaptcha`; preserve production selection regardless of runtime configuration.
+  - [x] Preserve captcha templates and LiveView hooks; block Google scripts in runner contexts. Centralize token submission in context setup for native POST and LiveView FormData, with destination/method safeguards and no DOM fields, deployed client substitute or per-captcha branches. Audit manually created contexts and protected forms.
+  - [x] Redact captcha fields in request logs and prevent mailbox credentials/account links from entering traces or attachments in both CI paths.
+  - [x] Migrate `.github/workflows/pr-playwright.yml` with explicit disposable database, local HTTP, signing/encryption and storage boot inputs; generate a job-scoped scenario secret using at least 32 random bytes. Build frontend/server/Tailwind/digested assets through the release pipeline before `mix phx.server`, and wait on `/readyz`.
+  - [x] Delete `config/ci_e2e.exs` and migrate active scripts/config/docs/cache references in the same landing change. Retain no alias, wrapper or fallback. Preserve PR triggers, checkout, `@pr`, create/migrate/seed and runner-owned teardown.
+  - [x] Key compile caches by environment, configuration, toolchain and lockfiles; separate PR, trusted nightly and production namespaces. Prevent broad restore fallbacks from loading incompatible compile artifacts.
 - Testing Tasks:
-  - [ ] Test matching/wrong/missing/empty/non-string captcha responses, absent server token, rotation without rebuild, no Google calls, compile-time immutability and production behavior. Check standard/LiveView token submission, origin restrictions and missing-runner-token failure.
-  - [ ] Verify local mail retrieval by unique recipient/ID, optional subject filtering and missing/wrong-token rejection; confirm messages are never sent through SES/SMTP and diagnostics omit email/reset content.
-  - [ ] Run clean and cached PR builds, mutate compile configuration to verify invalidation, and run the complete existing `@pr` suite including registration/confirmation/reset plus affected enrollment/payment specs with their required fixtures.
-  - [ ] Audit active `ci_e2e` references and dev imports; historical migration notes may retain the retired name. Confirm PR requires no nightly secrets, private assets, publish or GitOps access.
+  - [x] Test correct-token acceptance, invalid-token rejection, missing-secret startup failure, no Google calls, immutable compile selection and normal production verification. Verify real standard/LiveView form success and rejection plus native GET, submitter override and external-frame safety.
+  - [x] Verify local mail retrieval by unique recipient/ID, optional subject filtering and missing/wrong-token rejection; confirm messages are never sent through SES/SMTP and diagnostics omit email/reset content.
+  - [x] Run clean and cached PR builds, mutate compile configuration to verify invalidation, and run the complete existing `@pr` suite including registration/confirmation/reset plus affected enrollment/payment specs with their required fixtures.
+  - [x] Audit active `ci_e2e` references and dev imports; historical migration notes may retain the retired name. Confirm PR requires no nightly secrets, private assets, publish or GitOps access.
   - Commands: affected ExUnit modules and formatting; frontend targeted `yarn test`/`yarn lint` from `assets/` as applicable; `npm ci`, `npx playwright install --with-deps chrome`, and `npx playwright test --grep @pr` from `assets/automation/` with explicit local runtime inputs. Run full `mix test` whenever shared test support/configuration changes and require clean ExUnit output.
 - Definition of Done:
-  - Shared compile selections, runtime secret boundaries, mailbox authorization and token helpers pass; the full PR suite works with its original isolation and source selection.
-- Gate: G2 — land configuration, captcha helpers, PR migration and environment deletion together only after G1 and PR verification pass.
+  - Shared compile selections, runtime secret boundaries, mailbox authorization and simplified captcha flows pass; the full PR suite works with its original isolation and source selection.
+- Verification status: review follow-up local verification passed (26 doctests, 9,617 backend tests, 0 failures; 32 browser tests passed). See `docs/exec-plans/current/nightly-playwright-ci/phase-2-execution.md`. G2 still requires hosted PR checks on the follow-up revision before landing.
+- Gate: G2 — land configuration, captcha behavior, PR migration and environment deletion together only after G1 and PR verification pass.
+- Evidence: `docs/exec-plans/current/nightly-playwright-ci/phase-2-execution.md` (local build/browser/backend verification; hosted CI and packaged images remain later validation).
 - Dependencies: G1 for PR startup waiting and integrated lifecycle verification.
-- Parallelizable Work: Server verifier and browser helper work can proceed against the same token contract, but merge and verify together. Phase 4 dependency work can proceed independently.
+- Parallelizable Work: Backend token verification and runner context setup can proceed independently, but merge and verify together. Phase 4 dependency work can proceed independently.
 
 ## Phase 3: Release packaging and build isolation
 
@@ -86,8 +88,8 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
   - [ ] Build source/version OCI metadata and define the unique `sha-<full SHA>-playwright-<run ID>-<attempt>` publication interface in the existing GHCR repository. Verify compiled identity before publication; collision checks and push failure handling integrate in Phase 6.
   - [ ] Supply runtime ExAws/bucket/service credentials through deployment inputs; retain release setup migrations and persistent services. Document mailbox reset on process restart and the one-replica requirement for Phase 5.
 - Testing Tasks:
-  - [ ] Build clean and cached Playwright and production images independently, including configuration/source invalidation. Boot Playwright against disposable services with runtime secrets; verify identity, authenticated scenarios/private assets/mailbox and required files/modules.
-  - [ ] Build production with no capability flags and boot with a runtime test token present: routes remain excluded, normal captcha remains selected and readiness returns only status. Inspect image history/layers and metadata for secret leakage and correct full SHA/version.
+  - [ ] Build clean and cached Playwright and production images independently, including configuration/source invalidation. Boot Playwright against disposable services with runtime secrets; verify identity, authenticated scenarios/private assets/mailbox and required files/modules. Check both readiness statuses against actual compiled Playwright/production releases: metadata appears only for Playwright and runtime build-setting changes cannot alter visibility or identity.
+  - [ ] Build production with no capability flags and boot with runtime verifier overrides attempted: routes remain excluded, normal captcha remains selected and readiness returns only status. Inspect image history/layers and metadata for secret leakage and correct full SHA/version.
   - [ ] Restart the release and verify a fresh instance-local mailbox while database/object storage and integration fixture data persist; reject absent tokens and unauthorized asset/mailbox requests.
   - Commands: `docker build --build-arg MIX_ENV=playwright --build-arg SHA="$SOURCE_SHA" -t torus-playwright-smoke .` and a separate `MIX_ENV=prod` image build; isolated release smoke harness added during implementation. Never provide runtime secrets as build arguments.
 - Definition of Done:
@@ -117,7 +119,7 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
   - Direct invocation and setup failures are verified; dependency isolation, target rules, secret handling and standard reporting are covered without a second suite-membership source.
 - Gate: G4 — runner is ready to integrate; provisioned Canvas/Dot and full nightly execution remain launch gates.
 - Dependencies: G2 for shared captcha behavior; G3 for release-based asset/mailbox verification. Dependency/configuration development may start earlier.
-- Parallelizable Work: Runner dependencies/reporters can proceed alongside Phases 1–3; integrate shared captcha fixture edits with Phase 2.
+- Parallelizable Work: Runner dependencies/reporters can proceed alongside Phases 1–3; integrate captcha context setup with Phase 2.
 
 ## Phase 5: GitOps update contract and target provisioning
 
@@ -191,7 +193,7 @@ Per `harness.yml`, telemetry is delivered through stage summaries, provenance an
 ## Parallelization Notes
 
 - The critical path is G1 → G2 → G3 → G5 → G6 → G7, with G4 feeding G5/G6. Early independent work includes automation dependency/reporting changes, local readiness helper tests and GitOps static preparation.
-- Configuration, captcha/server helpers and PR workflow migration form one landing unit. Coordinate shared router, runtime, release, fixtures and workflow files instead of merging partial contracts.
+- Configuration, captcha/server behavior and PR workflow migration form one landing unit. Coordinate shared router, runtime, release, fixtures and workflow files instead of merging partial contracts.
 - Separate Torus and GitOps review boundaries; use relative GitOps paths and record reviewed commits as evidence. Static preparation can overlap, but deploying new probes requires a capable image.
 - Serialize all mutations and tests on the durable target, including operational fault exercises. Independent disposable environments may be used for failure testing.
 

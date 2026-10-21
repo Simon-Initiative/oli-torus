@@ -18,7 +18,7 @@ Without coordinating deployment and readiness, nightly tests can run against an 
 
 - Give engineers a repeatable, attributable nightly result for a known source revision.
 - Share `config/playwright.exs` between PR and nightly CI, replacing the development-derived `ci_e2e` environment while preserving the PR suite and disposable service lifecycle.
-- Enable token-protected mailbox access, local email capture, and secret-protected deterministic reCAPTCHA in both workflows through application values set directly in `config/playwright.exs`. Supply the test verifier token at runtime.
+- Enable token-protected mailbox access, local email capture, and token-authorized Playwright reCAPTCHA verification in both workflows through application values set directly in `config/playwright.exs`. Production retains Google verification.
 - Automate image publication, GitOps reference updates, application readiness checks, and test execution in order.
 - Use `/healthz` for startup/liveness and `/readyz` for readiness and CI build identity. Include application lifecycle state and reviewed GitOps probe/drain configuration in this work.
 - Retain a stable public hostname and durable test integrations across application updates.
@@ -27,8 +27,8 @@ Without coordinating deployment and readiness, nightly tests can run against an 
 
 ### Non-Goals
 
-- Re-auditing or broadly rewriting the existing Playwright tests. Targeted captcha form-helper updates, including registration, enrollment and payment, are in scope.
-- Replacing the ephemeral PR suite or changing its trigger, source selection, or coverage; its compile environment and startup configuration migrate to `playwright`.
+- Re-auditing or broadly rewriting the existing Playwright tests. Centralizing captcha credential submission in the browser runner is in scope.
+- Replacing the ephemeral PR suite or changing its trigger, source selection, or existing coverage; its compile environment and startup configuration migrate to `playwright`.
 - Changing the independent nightly backend scenario job.
 - Creating a fresh nightly namespace/database on each run, deploying production, or adding registry image-watching controllers. PR CI retains its disposable database.
 - Introducing infrastructure OAuth login, Argo CD/Kubernetes credentials, or a machine-authentication path for readiness checks.
@@ -46,7 +46,7 @@ Without coordinating deployment and readiness, nightly tests can run against an 
 
 ## 5. UX / UI Requirements
 
-No production UI changes. In the Playwright environment, captcha-protected forms omit the external widget and Google script while preserving token submission.
+No production UI changes. Captcha markup and LiveView hooks stay unchanged. The compile-selected Playwright backend requires a private runtime token. The runner supplies it during form serialization and blocks Google scripts; no captcha fields or deployed replacement client are needed.
 
 GitHub Actions is the operator interface: named stages, a source/deployment summary, and report links. Public ingress bypasses infrastructure login; Torus account and test API authentication remain required.
 
@@ -63,7 +63,7 @@ Requirements are found in requirements.yml
 - Reliability: bound stages and stop downstream work after failure. Default to 15 minutes for GitOps merge, then 20 minutes for readiness, polling every 10 seconds with a maximum 10-second request timeout.
 - Consistency: serialize target updates and testing. The pre-test identity check observes version/SHA at the public URL; it does not prove all-replica convergence or image-digest identity. No post-test identity check is required.
 - Security/privacy: keep secrets outside images and committed configuration; exclude credentials and sensitive test data from public responses and diagnostics. Retain production test-route exclusions and restrict retained reports.
-- Compatibility: preserve PR triggers, source selection, `@pr` coverage, and disposable lifecycle. Token submission and trace/attachment protection change as required by the shared captcha contract.
+- Compatibility: preserve PR triggers, source selection, `@pr` coverage, and disposable lifecycle. Keep mailbox credentials and account links out of traces and attachments.
 - Performance: guidance is advisory. No benchmarks, custom timing instrumentation, throughput SLA or performance-budget enforcement are required until needed. Failure-handling timeouts and probe correctness remain requirements.
 - Accessibility/internationalization: use readable summaries in the existing CI interface.
 
@@ -76,7 +76,7 @@ Requirements are found in requirements.yml
 
 Both endpoints are unauthenticated, support pod HTTP without redirects and public HTTPS, and send `Cache-Control: private, no-store`. Readiness has a one-second total database checkout/query budget. Exclude the NodeJS evaluator pool, external integrations, queue depth, cluster membership and cache warming. Startup has a generous allowance; shutdown marks draining before services stop. The FDD defines lifecycle and probe timing details.
 
-Both workflows supply the same runtime `PLAYWRIGHT_RECAPTCHA_TOKEN` to their server and runner. Only an exact nonempty match succeeds; all other responses fail locally, with no Google verification or keys. PR generates a job-scoped token; nightly uses a dedicated secret. Production retains normal captcha behavior. Never embed the token in the image or publicly served configuration.
+Both workflows compile `Oli.Playwright.Recaptcha`, which accepts only the configured nonempty `PLAYWRIGHT_CAPTCHA_TOKEN` using constant-time comparison, without contacting Google. Missing, empty, incorrect and malformed responses fail. The server and runner receive this secret only at runtime; missing or empty server configuration prevents startup. No Google key, injected DOM field or deployed replacement client is required. Production keeps normal captcha verification regardless of runtime verifier settings. Account authentication and scenario/mailbox token authorization remain required.
 
 Both builds use `Swoosh.Adapters.Local` and token-protected `/test/emails` endpoints. Use unique recipients and one nightly application replica. Each deployment starts a fresh instance-local mailbox; no scheduled mailbox cleanup service is required.
 
@@ -91,7 +91,7 @@ In `oli-torus-gitops`, the target is `deployments/nightly-playwright.yml`; the u
 - Torus scope: nightly orchestration, PR migration, release/runtime configuration, lifecycle/probe endpoints, and targeted browser-helper changes. The FDD maps these to files.
 - Both workflows use standalone `config/playwright.exs`, with direct compile-time settings for scenarios, mailbox access, the captcha verifier and local mail adapter. Runtime secrets and service addresses remain required.
 - Delete `config/ci_e2e.exs` and migrate active references. Retain no compatibility alias, wrapper or fallback; do not import `dev.exs`.
-- Add runtime-token submission to registration, replace enrollment/payment placeholder tokens, and audit other tested captcha forms. Missing runner token configuration fails before submission. Production captcha interaction is unchanged.
+- Keep credential injection centralized in the Playwright context setup, with no per-captcha branches or page-object helpers. Preserve application templates/hooks, block Google scripts in runner contexts, and verify real registration, enrollment and payment flows with the runtime token. Verify rejection without a valid credential and prevent token submission through GET URLs or external destinations. Production captcha interaction is unchanged.
 - GitOps scope: provision the target and review probe/drain manifests separately. Recurring bot PRs change only image/source metadata, merge automatically after required checks, and precede readiness polling. Argo CD deploys; there is no direct-commit fallback.
 - Apply `docs/CODEREVIEW.md` during implementation. Jira remains the tracking source; this work does not update the ticket.
 
@@ -136,7 +136,7 @@ No unresolved design questions remain. Approved decisions and implementation def
 
 ## 15. QA Plan
 
-The FDD testing strategy maps implementation checks to canonical acceptance criteria. Required coverage includes shared configuration and PR migration, production exclusions, token submission/privacy, probe lifecycle and bounded readiness, GitOps updates/concurrency, tag-based execution and failure/report handling.
+The FDD testing strategy maps implementation checks to canonical acceptance criteria. Required coverage includes shared configuration and PR migration, production exclusions, authorized Playwright captcha acceptance and rejection and mailbox/account privacy, probe lifecycle and bounded readiness, GitOps updates/concurrency, tag-based execution and failure/report handling.
 
 Two audits are deferred to implementation and required before unattended launch:
 

@@ -68,6 +68,18 @@ defmodule OliWeb.PlaywrightMailboxControllerTest do
     assert response(conn, 401) == "unauthorized"
   end
 
+  test "rejects a wrong token for listing and detail", %{conn: conn} do
+    email = deliver("unique-recipient@example.test", "Private message", "private body")
+
+    for path <- [
+          "/test/emails?to=unique-recipient@example.test",
+          "/test/emails/#{message_id(email)}"
+        ] do
+      result = conn |> put_req_header("x-playwright-scenario-token", "wrong") |> get(path)
+      assert response(result, 401) == "unauthorized"
+    end
+  end
+
   test "requires a recipient when listing messages", %{conn: conn} do
     conn = conn |> authorized() |> get("/test/emails")
 
