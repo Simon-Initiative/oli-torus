@@ -51,10 +51,12 @@
     registration_open: true
     start_date: '2026-04-16T00:00:00Z'
 
-- discussion_config:
+- page_collab_config:
     section: 'student_dashboard_coverage_section'
     enabled: true
+    threaded: true
     auto_accept: true
+    show_full_history: true
     anonymous_posting: false
 
 - user:

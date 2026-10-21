@@ -416,6 +416,22 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:section, :enabled, :auto_accept, :anonymous_posting]
   end
 
+  defmodule PageCollabConfigDirective do
+    @moduledoc """
+    Enables or disables Notes collaboration spaces for every page in a section.
+    """
+    defstruct [
+      :section,
+      :enabled,
+      :threaded,
+      :auto_accept,
+      :show_full_history,
+      :anonymous_posting,
+      :participation_min_replies,
+      :participation_min_posts
+    ]
+  end
+
   defmodule DiscussionModerationDirective do
     @moduledoc """
     Applies instructor moderation to a named discussion post.
