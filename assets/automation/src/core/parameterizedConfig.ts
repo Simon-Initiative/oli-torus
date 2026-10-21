@@ -1,6 +1,8 @@
 import { type APIRequestContext } from '@playwright/test';
 import { load as parseYaml } from 'js-yaml';
 
+import { getBaseUrl, getScenarioToken } from './runtimeConfig';
+
 const DEFAULT_CONFIG_URL_ENV = 'PLAYWRIGHT_PARAMETER_CONFIG_URL';
 
 type SharedParameterConfig = {
@@ -14,6 +16,7 @@ export type ParameterizedTestConfig<T> = {
   parameters: T;
 };
 
+/** Downloads a test's YAML parameters, authenticating same-origin private Torus assets. */
 export async function loadParameterizedTestConfig<T>(
   request: APIRequestContext,
   testCaseName: string,
@@ -23,16 +26,40 @@ export async function loadParameterizedTestConfig<T>(
   const configUrl = requiredEnvironmentVariable(configUrlEnv);
   validateConfigUrl(configUrl, configUrlEnv);
 
-  const response = await request.get(configUrl);
+  const url = new URL(configUrl);
+  const privateAsset =
+    url.origin === new URL(getBaseUrl()).origin && url.pathname.startsWith('/test/assets/');
+  const response = await request
+    .get(
+      configUrl,
+      privateAsset
+        ? {
+            headers: { 'x-playwright-scenario-token': getScenarioToken() },
+            // Playwright forwards custom headers on redirects; keep this token on Torus.
+            maxRedirects: 0,
+          }
+        : undefined,
+    )
+    .catch(() => {
+      // Request errors can contain credentials from URLs or request headers.
+      throw new Error(`Unable to download Playwright parameter configuration from ${configUrlEnv}`);
+    });
 
   if (!response.ok()) {
     throw new Error(
       `Unable to download Playwright parameter configuration from ${configUrlEnv} ` +
-        `(${configUrl}): ${response.status()} ${response.statusText()}`,
+        `(${response.status()} ${response.statusText()})`,
     );
   }
 
-  const parsed = parseYaml(await response.text()) as SharedParameterConfig;
+  let parsed: SharedParameterConfig;
+  const body = await response.text();
+  try {
+    parsed = parseYaml(body) as SharedParameterConfig;
+  } catch {
+    // YAML parser errors include source snippets, which may contain credentials.
+    throw new Error(`Invalid YAML in Playwright parameter configuration from ${configUrlEnv}`);
+  }
   const config = requireRecord(parsed, 'configuration root');
   const target = requireRecord(config.target, 'target');
   const tests = requireRecord(config.tests, 'tests');

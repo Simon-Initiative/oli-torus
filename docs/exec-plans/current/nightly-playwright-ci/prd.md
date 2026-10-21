@@ -8,9 +8,11 @@ This continues [MER-5918](https://eliterate.atlassian.net/browse/MER-5918). The 
 
 ## 2. Background & Problem Statement
 
-The nightly workflow currently tests an externally configured server without building or deploying it. Its separate backend scenario job does not supply that server. PR CI builds a disposable `ci_e2e` server; nightly needs a durable target with persistent data and integrations.
+The original nightly workflow tested an externally configured server without building or deploying it. Implementation now includes the shared Playwright environment, separate health/readiness endpoints, release packaging, and a nightly image-build job. The browser job still uses the configured server without a GitOps deployment or readiness dependency. Its independent backend scenario job does not supply that server.
 
-Without coordinating deployment and readiness, nightly tests can run against an older revision. The current database-dependent `/healthz` serves both liveness and readiness but exposes no build identity. Split those responsibilities and verify the expected version/SHA before tests, without Argo CD or Kubernetes credentials.
+The durable target and integration inputs are provisioned. The remaining work connects deployment/readiness to browser execution and verifies the complete workflow from a reviewed feature branch. Without that connection, tests can run against an older revision. Verify the expected version/SHA before tests without Argo CD or Kubernetes credentials in CI.
+
+Phase 5 is complete as provisioning. Phase 6 owns all remaining App, integration, persistence/mailbox, lifecycle, and workflow verification before merging the Torus feature branch, followed by scheduled proof after merge. Closing provisioning does not mark operational acceptance criteria verified or authorize unattended launch.
 
 ## 3. Goals & Non-Goals
 
@@ -23,7 +25,7 @@ Without coordinating deployment and readiness, nightly tests can run against an 
 - Use `/healthz` for startup/liveness and `/readyz` for readiness and CI build identity. Include application lifecycle state and reviewed GitOps probe/drain configuration in this work.
 - Retain a stable public hostname and durable test integrations across application updates.
 - Make setup, readiness, and test failures distinguishable and actionable.
-- Use `@nightly` tags as the sole source of suite membership. Fail collection/import errors, zero matching tests, missing selected-test configuration; report which tests ran.
+- Use `@nightly` tags as the sole source of suite membership. Fail collection/import errors and zero matching tests; preserve existing per-test setup and skip behavior. Report which tests ran and resolve missing integration configuration before unattended launch.
 
 ### Non-Goals
 
@@ -40,7 +42,7 @@ Without coordinating deployment and readiness, nightly tests can run against an 
 - Engineers receive scheduled regression results tied to the application source and test revision, and manually dispatch a selected branch for diagnosis, building and testing the same commit.
 - QA inspects failed tests, reports, and the stable nightly environment without rebuilding a local server.
 - GitOps maintainers provision the durable deployment, install runtime secrets, and maintain the GitOps deployment policy.
-- QA/test owners maintain private assets, answer keys, Canvas accounts/registration and Dot fixtures.
+- QA/test owners maintain private assets, answer keys, Canvas/Moodle accounts and registrations, and Dot fixtures.
 - Torus maintainers own automation credentials and stale test-data/mailbox cleanup procedures. These responsibilities are role-based; named individuals are not required.
 - Maintainers diagnose which stage failed and can stop subsequent runs while repairing the target.
 
@@ -61,7 +63,7 @@ Requirements are found in requirements.yml
 ## 8. Non-Functional Requirements
 
 - Reliability: bound stages and stop downstream work after failure. Default to 15 minutes for GitOps merge, then 20 minutes for readiness, polling every 10 seconds with a maximum 10-second request timeout.
-- Consistency: serialize target updates and testing. The pre-test identity check observes version/SHA at the public URL; it does not prove all-replica convergence or image-digest identity. No post-test identity check is required.
+- Consistency: serialize active workflow runs through target updates and testing. Do not scan for PRs left by prior runs; operators handle orphaned PRs after interrupted runs. The pre-test identity check observes version/SHA at the public URL; it does not prove all-replica convergence or image-digest identity. No post-test identity check is required.
 - Security/privacy: keep secrets outside images and committed configuration; exclude credentials and sensitive test data from public responses and diagnostics. Retain production test-route exclusions and restrict retained reports.
 - Compatibility: preserve PR triggers, source selection, `@pr` coverage, and disposable lifecycle. Keep mailbox credentials and account links out of traces and attachments.
 - Performance: guidance is advisory. No benchmarks, custom timing instrumentation, throughput SLA or performance-budget enforcement are required until needed. Failure-handling timeouts and probe correctness remain requirements.
@@ -80,11 +82,11 @@ Both workflows compile `Oli.Playwright.Recaptcha`, which accepts only the config
 
 Both builds use `Swoosh.Adapters.Local` and token-protected `/test/emails` endpoints. Use unique recipients and one nightly application replica. Each deployment starts a fresh instance-local mailbox; no scheduled mailbox cleanup service is required.
 
-Dependencies are GHCR, GitHub Actions, cross-repository credentials, Argo CD, persistent PostgreSQL/MinIO, private archives/answer keys, and test credentials. Initial coverage includes all tagged cases: adaptive, Canvas LTI and Dot. Canvas launches into nightly Torus; Dot uses a dedicated fixture there. Supply external URLs and credentials during provisioning; both integrations must work before unattended launch.
+Dependencies are GHCR, GitHub Actions, cross-repository credentials, Argo CD, persistent PostgreSQL/MinIO, private archives/answer keys, and test credentials. Coverage includes every current tagged case, including adaptive, Canvas and Moodle LTI, Dot, instructor, and account tests. Canvas and Moodle launch into nightly Torus; Dot uses a dedicated fixture there. Supply external URLs and credentials during provisioning; all tagged integrations must work before unattended launch.
 
 Use existing archives and answer keys without new versioning infrastructure. QA/test owners maintain them together and avoid changes during active runs. Same-commit reruns may use updated assets; revisit pinning if historical reproduction becomes necessary.
 
-In `oli-torus-gitops`, the target is `deployments/nightly-playwright.yml`; the updater is `scripts/update_deployment_record.py`. These are repository-relative paths. If the local checkout location is unknown, prompt the engineer and use the supplied path only for the current session; never persist it. The inspected draft is disabled with a bootstrap image; provisioning remains required.
+In `oli-torus-gitops`, the target is `deployments/nightly-playwright.yml`; the updater is `scripts/update_deployment_record.py`. These are repository-relative paths. If the local checkout location is unknown, prompt the engineer and use the supplied path only for the current session; never persist it. The target is enabled with the published Playwright image; the Phase 5 execution record contains its provisioning evidence.
 
 ## 10. Repository & Platform Considerations
 
@@ -97,9 +99,11 @@ In `oli-torus-gitops`, the target is `deployments/nightly-playwright.yml`; the u
 
 ## 11. Feature Flagging, Rollout & Migration
 
-No feature flags present in this work item
+No feature flags present in this work item.
 
-Before enabling unattended runs, provision secrets/assets/integrations, verify bot permissions and branch rules allow automatic merge without per-run human approval, approve deployment configuration, and complete a manual run. Preserve the daily 05:17 UTC schedule and manual dispatch. Scheduled runs select current master once after acquiring the target lock; manual runs use the exact commit selected by GitHub dispatch for the chosen branch. Build, Plasma deployment and browser tests all use that same source commit. A rerun of a manual run retains its original commit; a new dispatch selects the branch again. Both entry points share the durable Plasma target and the same concurrency lock. Configure `nightly-ui` environment branch rules to allow intended manual branches as well as unattended master runs. Per-master-push execution is future work.
+Phase 5 completes provisioning and initial readiness/access checks. Phase 6 integrates the workflow and owns all remaining live verification on the reviewed feature branch before Torus merge, then the scheduled launch checklist; there is no separate Phase 7. Reuse earlier evidence for unchanged behavior. Local integration checks do not replace a successful feature-branch run, operational checks, artifact review, and successful scheduled run. The schedule already exists in the workflow; document its controlled pause/resume during rollout rather than adding another scheduling mechanism.
+
+Before enabling unattended runs, provision secrets/assets/integrations, verify bot permissions and branch rules allow automatic merge without per-run human approval, approve deployment configuration, and complete a manual run. Preserve the daily 05:17 UTC schedule and manual dispatch. Scheduled runs select current master once after acquiring the target lock; manual runs use the exact commit selected by GitHub dispatch for the chosen branch. Build, Plasma deployment and browser tests all use that same source commit. A rerun of a manual run retains its original commit; a new dispatch selects the branch again. Both entry points share the durable Plasma target and the same concurrency lock. Explicitly allow the reviewed feature branch in both `nightly-ui` and `nightly-deploy`, retaining unattended master access and excluding PR/fork access. Per-master-push execution is future work.
 
 Land PR migration and removal of `ci_e2e` together. PR supplies disposable database/endpoint credentials and release-style assets without nightly secrets or deployment permissions. Deploy probe-capable images before activating `/readyz` in GitOps; migrate PR waiting and other readiness consumers.
 
@@ -122,7 +126,7 @@ Launch success requires one manual and one scheduled run reaching the expected r
 - Test endpoints and reports can expose privileged operations or secrets: enforce existing authentication, dedicated credentials, production exclusions and artifact privacy controls.
 - Shared caches can carry incompatible configuration: isolate by Mix environment and workflow trust boundary; invalidate for configuration changes.
 - Persistent data can accumulate or interfere: retain fixture isolation and the cleanup policy in section 11.
-- Incorrect GitOps permissions or integration targets can block execution: verify provisioning and policy before launch; fail setup rather than bypass checks.
+- Incorrect GitOps permissions or integration targets can block execution: verify provisioning and policy before launch; resolve missing configuration rather than accepting skipped integrations as launch proof.
 
 ## 14. Open Questions & Assumptions
 
@@ -138,7 +142,7 @@ No unresolved design questions remain. Approved decisions and implementation def
 
 The FDD testing strategy maps implementation checks to canonical acceptance criteria. Required coverage includes shared configuration and PR migration, production exclusions, authorized Playwright captcha acceptance and rejection and mailbox/account privacy, probe lifecycle and bounded readiness, GitOps updates/concurrency, tag-based execution and failure/report handling.
 
-Two audits are deferred to implementation and required before unattended launch:
+Existing execution records contain local application/release evidence. Before launch, complete the remaining deployed-target checks and reuse valid earlier results:
 
 - Torus maintainers verify probe/drain behavior, runtime fixtures, mailbox reset, and unattended `nightly-ui` permissions.
 - GitOps maintainers verify deployment/probe configuration and the single-replica setting.
@@ -167,3 +171,6 @@ After provisioning, demonstrate manual and scheduled runs, failed readiness prev
 | 2026-10-06 | Release fixture and mailbox audit | Deferred to implementation, required before launch. Torus verifies runtime paths, packages demonstrated fixture needs and checks mailbox reset; GitOps verifies one replica. Requires an implemented release. |
 | 2026-10-07 | Readiness metadata visibility | Expose compiled version/SHA only in Playwright builds for CI identity checks. Other builds retain unauthenticated status-only readiness; runtime settings cannot enable metadata. |
 | 2026-10-13 | Manual branch execution | Allow manual dispatch of a selected repository branch at its exact dispatch SHA; schedules continue selecting master. Build, deployment and browser checkout share that identity and the same target lock. Manual reruns retain their SHA; environment branch permissions are verified during provisioning. |
+| 2026-10-14 | Reconcile remaining delivery | Phase 5 completes provisioning; Phase 6 integrates and launches, absorbing former Phase 7. Preserve existing per-test setup/skips while requiring intended integrations, including Moodle, to execute for launch proof. Reuse valid prior evidence; all operational acceptance criteria still apply. |
+| 2026-10-14 | Simplify GitOps orchestration | Use one deployment App with no standalone preflight or scan for prior bot PRs. Retain current-run validation, merge verification, and cleanup; operators handle orphaned PRs after interruptions. |
+| 2026-10-15 | Close provisioning; verify on the feature branch | Phase 5 closes on installed and initially checked provisioning. Phase 6 owns all remaining live checks and full feature-branch workflow verification before Torus merge, then scheduled proof afterward. This changes phase ownership, not acceptance criteria or the requirement to prove readiness before unattended launch. |
