@@ -51,6 +51,12 @@
     registration_open: true
     start_date: '2026-04-16T00:00:00Z'
 
+- discussion_config:
+    section: 'student_dashboard_coverage_section'
+    enabled: true
+    auto_accept: true
+    anonymous_posting: false
+
 - user:
     name: 'student_dashboard_coverage_student'
     type: 'student'
@@ -66,6 +72,10 @@
     given_name: 'Coverage'
     family_name: 'Author'
     password: 'changeme123456'
+
+- collaborator:
+    user: 'student_dashboard_coverage_author'
+    project: 'student_dashboard_coverage_project'
 
 - user:
     name: 'student_dashboard_coverage_instructor'

@@ -47,5 +47,17 @@ export async function expectKeyboardFocus(page: Page, selector: string) {
   await target.focus();
   await expect(target).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(page.locator(':focus-visible')).toHaveCount(1);
+
+  const focused = page.locator(':focus-visible');
+  await expect(focused).toHaveCount(1);
+  await expect(focused).toBeVisible();
+
+  const hasVisibleFocusIndicator = await focused.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return (
+      (style.outlineStyle !== 'none' && style.outlineWidth !== '0px') || style.boxShadow !== 'none'
+    );
+  });
+
+  expect(hasVisibleFocusIndicator).toBe(true);
 }
