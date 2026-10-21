@@ -1,3 +1,30 @@
+# Nightly Playwright
+
+From `assets/automation/`:
+
+```sh
+npm ci
+npx playwright install --with-deps chrome
+npx playwright test --config playwright.nightly.config.ts --grep @nightly
+```
+
+Tags are the only suite inventory. Existing test behavior, including missing-key skips, is preserved.
+No separate environment or asset preflight is needed. The config retains Chrome, one worker and
+one retry, and generates standard line/HTML reports without opening a browser report window.
+Do not override reporters with `--reporter=line` in CI.
+
+Configure Canvas's account/API/instructor/tool inputs as described in
+`tests/torus/lti/canvas_playwright.md`, with `CANVAS_TOOL_LAUNCH_URL` and `TORUS_BASE_URL`
+pointing at `PLAYWRIGHT_BASE_URL`. Its fixture needs dedicated `TORUS_ADMIN_EMAIL` and
+`TORUS_ADMIN_PASSWORD`. Dot's parameter target must also use that origin; use its existing-fixture
+mode for nightly. Moodle's existing tagged tests require their dedicated fixtures and settings
+from `tests/torus/lti_moodle/moodle_playwright.md`. Provision them to launch into nightly.
+
+Keep traces/screenshots/video disabled. Standard reports still contain failure details and may
+include page content; restrict report access and inspect artifacts before unattended launch.
+Keep private asset/configuration downloads outside artifact upload paths. Retain existing fixture
+cleanup, and maintain archives/answer keys together without changing them during active runs.
+
 Nightly Playwright CI expects these environment variables:
 
 - `CANVAS_UI_EMAIL`
@@ -9,7 +36,7 @@ Nightly Playwright CI expects these environment variables:
 
 For GitHub Actions, store them as environment secrets on the `nightly-ui` environment, then reference that environment from `.github/workflows/nightly-playwright.yml`.
 
-Keep these credentials scoped to dedicated low-privilege test accounts.
+Use dedicated test accounts with the permissions required by each integration fixture.
 
 Adaptive lesson tests that import private course archives also require the target Torus environment to have access to the Playwright assets bucket containing the referenced zip and answers JSON.
 
