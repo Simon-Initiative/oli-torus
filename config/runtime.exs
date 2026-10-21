@@ -2,6 +2,8 @@
 # from environment variables at runtime
 import Config
 
+config :oli, :analytics, Oli.Analytics.Config.load_from_env!()
+
 get_env_as_string = fn key, default ->
   System.get_env(key, default)
   |> String.trim()
