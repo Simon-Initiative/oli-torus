@@ -1393,6 +1393,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           class="text-Text-text-low text-sm font-medium hover:text-black dark:hover:text-white"
         />
         <DeliveryUtils.search_box
+          aria_label="Search course outline"
           search_term={@params["search_term"]}
           on_search="search"
           on_change="search"
@@ -1526,6 +1527,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         />
         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:px-3">
           <DeliveryUtils.search_box
+            aria_label="Search course outline"
             search_term={@params["search_term"]}
             on_search="search"
             on_change="search"

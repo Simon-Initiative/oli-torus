@@ -231,6 +231,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           <.form for={%{}} phx-change="search_section" class="w-full max-w-[400px]">
             <SearchInput.render
               id="section_search_input"
+              aria_label="Search my courses"
               name="text_search"
               placeholder="Search my courses..."
               text={@params.text_search}
