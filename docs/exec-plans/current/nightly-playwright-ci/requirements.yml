@@ -1,0 +1,416 @@
+version: 1
+feature: Nightly Playwright CI
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Orchestrate nightly and manual runs against one source revision
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: Scheduled and manual entry points execute image build/publication, accepted GitOps
+      update, public readiness, and Playwright in that order; a failed prerequisite prevents
+      test execution.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-002
+    title: Each run resolves its source commit once, records the expected application version
+      and full commit SHA, and uses that same commit for image construction and Playwright
+      checkout even if master advances during the run.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-003
+    title: The PR Playwright workflow migrates to MIX_ENV=playwright while retaining its pull-request
+      triggers, tested revision, @pr selection, and isolated setup/teardown and account-test
+      behavior. The independent nightly backend scenario job retains its triggers and test
+      behavior.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+- id: FR-002
+  title: Consolidate PR and nightly browser testing on one shared Playwright compile
+    environment
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: The nightly image is built with the shared MIX_ENV=playwright configuration, starts
+      as a release against provisioned durable services, and exposes the selected suite’s
+      scenario, asset, and token-protected mailbox capabilities.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-005
+    title: A standard production build continues to exclude its existing compile-time-gated
+      Playwright routes and selects normal reCAPTCHA verification, even when the runtime
+      test token is present. Runtime changes cannot enable
+      capabilities absent from the compiled artifact.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-006
+    title: Scenario tokens, storage credentials, and other runtime secrets are supplied at
+      process startup or deployment time and are absent from committed configuration and image
+      build inputs/layers. PR CI uses job-scoped test credentials; nightly uses dedicated
+      deployment credentials.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-032
+    title: 'Both PR and nightly workflows use one standalone config/playwright.exs with MIX_ENV=playwright
+      and env: :playwright, without importing dev.exs. Delete config/ci_e2e.exs in the same
+      change and migrate all active workflow, script, configuration and documentation references
+      to playwright. No ci_e2e compatibility alias, wrapper or fallback remains; MIX_ENV=ci_e2e
+      is no longer supported. Both builds disable development reloaders,
+      watchers, debug errors, and development credential defaults.'
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-033
+    title: Selecting MIX_ENV=playwright loads config/playwright.exs, which directly sets
+      enable_playwright_scenarios and enable_e2e_mailbox to true, recaptcha_module to
+      Oli.Playwright.Recaptcha, and the Oli.Mailer adapter to Swoosh.Adapters.Local at compile
+      time for both workflows. Runtime configuration is still required, including the same
+      PLAYWRIGHT_RECAPTCHA_TOKEN value supplied to the Torus server and Playwright runner.
+      Secrets are never passed as Docker build arguments. Runtime configuration and
+      post-compilation process environment changes cannot override these compiled selections.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-034
+    title: PR and nightly Playwright builds capture outgoing email with Swoosh.Adapters.Local
+      and expose /test/emails and /test/emails/:id only with the existing scenario-token authorization.
+      Verify authorized retrieval and rejection of missing/invalid tokens on both builds.
+      Email tests use run-unique recipients; document instance-local, in-memory storage and
+      loss on restart. Each nightly application deployment starts with a fresh mailbox; no
+      scheduled mailbox cleanup service is required initially.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-035
+    title: The migrated PR workflow explicitly configures its disposable database, local HTTP
+      endpoint, signing/encryption values and runtime scenario token; builds the required
+      frontend, server-side and digested assets; and passes the existing @pr suite including
+      registration, confirmation and password-reset flows. It requires no nightly credentials,
+      private assets, registry publication, or GitOps access.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-036
+    title: Compile caches and image build layers account for Mix environment, compile
+      configuration, lockfiles and toolchain, with source changes invalidating application
+      compilation. Separate PR and trusted nightly cache namespaces prevent nightly from
+      restoring PR compile artifacts. Verify clean and cached Playwright and production
+      builds independently, including configuration-change invalidation, and prove that
+      Playwright test capabilities cannot carry into production.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-037
+    title: Both PR and nightly compile a reCAPTCHA verifier that accepts a nonempty exact
+      match to the runtime-only PLAYWRIGHT_RECAPTCHA_TOKEN using constant-time comparison
+      without contacting Google. Incorrect, missing, empty or malformed responses fail locally;
+      no Playwright verification path calls Google or falls back to normal verification.
+      Missing server test-token configuration fails startup. PR generates a job-scoped token;
+      nightly uses a dedicated secret. Neither requires Google reCAPTCHA keys or human widget
+      support; production retains normal reCAPTCHA verification.
+      Application captcha call sites use the shared verifier, and token-bearing fields are
+      excluded from logs and artifacts.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-038
+    title: Add a shared Playwright form helper that reads PLAYWRIGHT_RECAPTCHA_TOKEN at runtime
+      and submits it through g-recaptcha-response for standard and LiveView forms. Update
+      CredentialAccountPO.register to supply it and replace the hardcoded playwright-test-token
+      in StudentCoursePO enrollment and student_payment/support.ts. Audit other captcha-protected
+      test submissions and migrate missing support. Required CI flows fail before submission
+      when the token is missing, with no hardcoded or empty fallback. Verify registration,
+      enrollment and payment submissions carry the configured token and complete without Google
+      verification or widget interaction. Omit the external widget and Google script dependency
+      in the Playwright environment while preserving form submission behavior. Production
+      retains the normal widget.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+- id: FR-003
+  title: Publish an attributable immutable nightly image before changing deployment intent
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: A successful build publishes an immutable image tagged
+      sha-<full SHA>-playwright-<run ID>-<attempt>, distinct from standard production images,
+      and records its registry digest, source version, and full commit SHA;
+      an existing tag causes publication to fail before GitOps is changed and is never overwritten
+      or reused for the run.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-008
+    title: An image build or publication failure leaves the GitOps deployment reference unchanged
+      and marks the run failed before readiness or browser tests start.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Advance only the reviewed nightly deployment image through GitOps
+  status: proposed
+  acceptance_criteria:
+  - id: AC-009
+    title: The automated update changes only imageTag and metadata.sourceRef/commitSha in
+      deployments/nightly-playwright.yml, preserving enabled, overlay, hostname, accessPolicy,
+      and unrelated content in the GitOps repository.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-010
+    title: The update passes required record/policy checks and reaches the tracked GitOps
+      branch through a bot PR with automatic merge permitted by branch rules, without per-run
+      human approval. Readiness polling begins only after merge is confirmed; failure or
+      timeout stops the run, with a default merge-wait deadline of 15 minutes. Verify branch
+      rules and bot permissions before unattended launch.
+      Do not fall back to direct commits.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-011
+    title: 'Argo CD remains the deployment actor: CI does not apply Kubernetes resources,
+      invoke infrastructure deployment actions, or silently enable a disabled deployment.
+      A disabled or incorrectly targeted record fails preflight with an actionable reason.'
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+- id: FR-005
+  title: Separate startup/liveness from application readiness and expose readiness build metadata
+  status: proposed
+  acceptance_criteria:
+  - id: AC-012
+    title: An unauthenticated GET /readyz returns HTTP 200 with JSON string fields status,
+      version and sha when application startup is complete, the instance is not draining,
+      critical local request-serving services are available, and SELECT 1 succeeds through
+      Oli.Repo. Status is ready; version/sha equal the running application’s compiled metadata.
+      The endpoint does not compare against a CI-expected revision.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-013
+    title: GET /readyz returns HTTP 503 when startup is incomplete, the instance is draining,
+      a required local service is unavailable, or database connection checkout/query fails
+      or times out. The database check has a one-second total budget including checkout, and
+      timed-out work does not accumulate. Failure responses expose only status=not_ready and
+      compiled version/sha, with no exception or dependency details.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-014
+    title: Probe responses contain only the specified status and, for /readyz, compiled version/SHA.
+      Neither probe queries Git, a registry, Kubernetes or other integrations; /readyz only
+      checks node-local state/services and Oli.Repo. Probes perform no migrations, external
+      integration checks or cache warming and expose no run identifier, credentials, account
+      data or environment dump.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-039
+    title: An unauthenticated GET /healthz uses only local startup state and the functioning
+      HTTP stack. It returns HTTP 503 with status=starting before application initialization
+      completes and HTTP 200 with status=ok afterward while the application can respond, including
+      during draining or a database/external-service outage. It performs no database or external-service
+      request.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-040
+    title: Startup completion is recorded only after successful initialization of the server
+      application, not merely when its endpoint first accepts connections, and is reset on
+      application restart. Graceful shutdown enters draining before request-serving services
+      stop; /readyz becomes 503 while /healthz remains 200 until the HTTP stack stops. Availability
+      checks use a documented narrow set of critical local services rather than all workers
+      or warm caches. Exclude the local NodeJS evaluator pool from all probe checks, regardless
+      of evaluator configuration; its unavailability alone does not change probe status.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-041
+    title: Reviewed GitOps configuration uses /healthz for startup and liveness probes and
+      /readyz for readiness, with explicit timeouts/thresholds, a generous startup allowance,
+      and a bounded drain interval within the termination grace period. Validate rendered
+      manifests and startup, database-outage and shutdown behavior. These infrastructure changes
+      are reviewed separately from recurring CI updates, which remain limited to image/source
+      fields.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-042
+    title: Both probe endpoints are available without application authentication over pod-local
+      HTTP without HTTPS redirection and through the public HTTPS endpoint. They send no-store
+      responses; infrastructure probes consume status codes and CI consumes /readyz metadata.
+      PR startup waiting uses /readyz, and readiness consumers are migrated from the former
+      database-dependent /healthz contract.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+- id: FR-006
+  title: Gate browser execution on public application version and hash
+  status: proposed
+  acceptance_criteria:
+  - id: AC-015
+    title: After the accepted GitOps image update, CI polls the configured public HTTPS /readyz
+      URL without an infrastructure authentication header, OAuth login, Argo CD token, or
+      Kubernetes credential. This identity check gates test startup; no post-test identity
+      check is required.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-016
+    title: CI readiness succeeds only for an HTTP 200 JSON response with status=ready whose
+      string version and full sha exactly match the run’s expected build metadata. A wrong
+      hash/version, absent or malformed fields, redirect/login page, non-200 response, or
+      connection error cannot satisfy the CI gate.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-017
+    title: Readiness polling defaults to a 20-minute total deadline after GitOps merge,
+      a maximum 10-second request timeout, and a 10-second polling interval. Bound each request
+      and wait by the remaining total deadline. If the expected response is never observed,
+      the run fails at readiness and Playwright does not start. These timeouts are failure-handling
+      safeguards rather than performance targets.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-018
+    title: The run summary describes the check as observing the expected version/commit at
+      the public endpoint, and does not claim all-replica rollout completion or digest-level
+      verification of same-commit rebuilds.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: Keep the durable target stable across deployment and testing
+  status: proposed
+  acceptance_criteria:
+  - id: AC-019
+    title: Two scheduled/manual runs targeting the nightly deployment cannot overlap their
+      GitOps update, readiness, test, and finalization interval; a new run does not
+      automatically cancel an active test run.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-020
+    title: The target's update ownership and pending-run policy are documented. Operators
+      pause new runs and wait for the active run to finish before manually changing the
+      deployment; the workflow is the sole routine deployment writer.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+- id: FR-008
+  title: Execute tests selected by @nightly with their required configuration
+  status: proposed
+  acceptance_criteria:
+  - id: AC-021
+    title: The @nightly tags in test sources are the sole source of truth for nightly suite
+      membership; no separately maintained test manifest or expected-test list is required.
+      Verify during implementation that the eight audited adaptive cases are tagged. Document
+      initial Canvas/Dot targeting. Initial delivery includes all currently tagged nightly
+      tests, including Canvas LTI and Dot; subsequent membership changes use tags and normal
+      code review.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-022
+    title: After a clean automation dependency installation, the test invocation executes
+      tests selected by @nightly. Collection/import errors or zero matching tests fail the run. Missing asset access,
+      scenario credentials, automation credentials, or other configuration required by selected
+      tests produces a setup failure rather than a skip or passing result. Use existing configured
+      archives and answer keys without a new asset-versioning mechanism for initial delivery;
+      QA/test owners maintain them together and keep them unchanged during active runs.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-023
+    title: Adaptive tests target the nightly public hostname, Canvas launches into the nightly
+      Torus deployment, and Dot uses a dedicated fixture on that deployment. Specific external
+      URLs and credentials are supplied during provisioning; both integrations must be configured
+      before unattended launch. Existing Torus account, scenario, and automation API authentication
+      is retained.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-030
+    title: The automation package declares json-rules-engine directly and its npm lockfile
+      resolves the same version as the product Yarn lockfile (6.1.2 at discovery). A clean
+      npm ci in assets/automation can load the adaptive predicate tests without an installed
+      parent assets/node_modules tree; future engine upgrades keep the two resolved versions
+      aligned.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-031
+    title: The nightly test step directly runs Playwright with its nightly configuration and
+      --grep @nightly after installing automation dependencies and the browser. Test selection
+      occurs during this invocation without a separate listing or collection step. Preserve
+      the invocation failure status through artifact upload and summary generation; zero matching
+      tests must not be allowed to pass.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-024
+    title: The browser step uses Playwright's exit status under the configured retry policy
+      and has a finite timeout. Standard reports show failures, skips and retry outcomes.
+      No custom results validator or blanket skip-failure rule is required; successful
+      artifact upload or summary generation cannot mask a failed test step.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+- id: FR-009
+  title: Preserve durable test services and fixture isolation
+  status: proposed
+  acceptance_criteria:
+  - id: AC-025
+    title: Advancing the application image retains the nightly database, object storage, and
+      provisioned integration configuration; the recurring workflow does not reset the database,
+      delete the namespace, or replace production/shared credentials.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-026
+    title: Tests retain their isolated setup/cleanup behavior, cleanup failures remain visible
+      for Torus maintainers to address by cleaning stale failed-run data between runs as needed,
+      preserving durable integration fixtures. No new scheduled cleanup service or database reset
+      is required initially, and browser or deployment failure does not automatically reverse
+      database migrations.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+- id: FR-010
+  title: Publish actionable run provenance and diagnostics
+  status: proposed
+  acceptance_criteria:
+  - id: AC-027
+    title: Every run reports completed/failed/skipped stages, source version/SHA,
+      image reference/digest when published, accepted GitOps revision when available, and
+      expected/observed readiness identity without exposing credentials. Browser-stage reports
+      identify which tests ran by spec/title/project and their individual outcomes, including
+      skips and retries. Torus maintainers own failure triage through GitHub Actions failures,
+      run summaries and reports; no new Slack integration, custom email alerts or dedicated
+      on-call rotation is required.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-028
+    title: After test-stage completion or failure, always attempt to upload available
+      assets/automation/playwright-report/ and assets/automation/test-results/ as GitHub
+      Actions artifacts named playwright-report and playwright-test-results attached to
+      the workflow run, each with 14-day retention, and write the run summary. Pre-test
+      failures produce stage-specific diagnostics and do not claim that browser tests ran.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-029
+    title: Validation demonstrates one manual and one scheduled run through the configured
+      target, including the required cases; setup/readiness negative cases show that tests
+      cannot start against an unintended revision.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
