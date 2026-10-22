@@ -52,7 +52,7 @@ defmodule Oli.Content.Content.HtmlTest do
                "<pre><code class=\"torus-code language-python\" data-point-marker=\"4076323894\">import fresh-pots</code></pre>"
 
       assert rendered_html_string =~
-               ~r/<iframe class=".*"  allowfullscreen src="https:\/\/www.wikipedia.org" data-point-marker="1713634991"><\/iframe>/
+               ~r/<iframe aria-label="Embedded webpage that contains additional learning content" class=".*"  allowfullscreen src="https:\/\/www.wikipedia.org" data-point-marker="1713634991"><\/iframe>/
 
       assert rendered_html_string =~ "<span class=\"callout-block\">a richtext callout</span>"
 
@@ -290,6 +290,50 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~ ~r/data-live-react-class="Components\.WebpageEmbed"/
       assert rendered_html_string =~ ~r/&quot;targetId&quot;:&quot;demo_target&quot;/
       assert rendered_html_string =~ ~r/id="iframe-test-attempt-123-src-/
+    end
+
+    test "renders iframe title as aria-label", %{author: author} do
+      iframe_content = %{
+        "type" => "iframe",
+        "src" => "https://phet.colorado.edu/sims/ph-scale",
+        "title" => "  PhET simulation: pH scale <macro> & micro  ",
+        "alt" => "pH scale simulation",
+        "children" => [%{"text" => ""}]
+      }
+
+      rendered_html_string =
+        %Context{user: author, section_slug: "test_section"}
+        |> Content.render(iframe_content, Content.Html)
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~
+               ~s(<iframe aria-label="PhET simulation: pH scale &lt;macro&gt; &amp; micro" class=")
+
+      refute rendered_html_string =~ "alt="
+    end
+
+    test "renders default aria-label for iframe with missing or blank title", %{author: author} do
+      context = %Context{user: author, section_slug: "test_section"}
+
+      for title <- [nil, "", "   "] do
+        iframe_content =
+          %{
+            "type" => "iframe",
+            "src" => "https://h5p.org/embed/123",
+            "children" => [%{"text" => ""}]
+          }
+          |> then(fn content -> if title, do: Map.put(content, "title", title), else: content end)
+
+        rendered_html_string =
+          context
+          |> Content.render(iframe_content, Content.Html)
+          |> Phoenix.HTML.raw()
+          |> Phoenix.HTML.safe_to_string()
+
+        assert rendered_html_string =~
+                 ~s(<iframe aria-label="Embedded webpage that contains additional learning content" class=")
+      end
     end
 
     test "renders uploaded video with list src format", %{author: author} do
