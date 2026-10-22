@@ -7,12 +7,13 @@ interface Props {
   'aria-hidden'?: boolean;
 }
 
-const VisualIndicator = ({ className, checked }: Props & { checked: boolean }) => (
+const VisualIndicator = ({ className, disabled, checked }: Props & { checked: boolean }) => (
   <span
     aria-hidden="true"
     className={classNames(
       'oli-checkbox inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border border-current',
       checked && 'bg-current',
+      disabled && 'opacity-50',
       className,
     )}
   >
@@ -22,7 +23,7 @@ const VisualIndicator = ({ className, checked }: Props & { checked: boolean }) =
 
 const Checked = ({ className, disabled, 'aria-hidden': ariaHidden }: Props) =>
   ariaHidden ? (
-    <VisualIndicator className={className} checked />
+    <VisualIndicator className={className} disabled={disabled} checked />
   ) : (
     <input
       className={`oli-checkbox flex-shrink-0 ${className || ''}`}
@@ -36,7 +37,7 @@ const Checked = ({ className, disabled, 'aria-hidden': ariaHidden }: Props) =>
 
 const Unchecked = ({ className, disabled, 'aria-hidden': ariaHidden }: Props) =>
   ariaHidden ? (
-    <VisualIndicator className={className} checked={false} />
+    <VisualIndicator className={className} disabled={disabled} checked={false} />
   ) : (
     <input
       className={`oli-checkbox flex-shrink-0 ${className || ''}`}

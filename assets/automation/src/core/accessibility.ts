@@ -53,31 +53,44 @@ export async function expectKeyboardFocus(page: Page, selector: string) {
   await expect(focused).toBeVisible();
 
   const hasVisibleFocusIndicator = await focused.evaluate((element) => {
-    const style = window.getComputedStyle(element);
+    const properties = [
+      'outlineStyle',
+      'outlineWidth',
+      'outlineColor',
+      'outlineOffset',
+      'boxShadow',
+      'borderTopColor',
+      'borderRightColor',
+      'borderBottomColor',
+      'borderLeftColor',
+      'borderTopWidth',
+      'borderRightWidth',
+      'borderBottomWidth',
+      'borderLeftWidth',
+      'backgroundColor',
+      'color',
+      'textDecorationLine',
+      'textDecorationStyle',
+      'textDecorationColor',
+      'textDecorationThickness',
+      'textUnderlineOffset',
+      'opacity',
+      'transform',
+    ] as const;
 
-    const hasVisibleColor = (value: string) => {
-      if (!value || value.toLowerCase() === 'transparent') return false;
-
-      const alpha = value.match(/rgba?\((?:[^,]+,){3}\s*([^,)]+)/i)?.[1];
-      return alpha === undefined || Number.parseFloat(alpha) > 0;
+    const readStyles = () => {
+      const computed = window.getComputedStyle(element);
+      return properties.map((property) => computed[property]);
     };
 
-    const hasVisibleOutline =
-      style.outlineStyle !== 'none' &&
-      Number.parseFloat(style.outlineWidth) > 0 &&
-      hasVisibleColor(style.outlineColor);
+    const focusedStyles = readStyles();
+    const wasFocused = document.activeElement === element;
 
-    const hasVisibleShadow = style.boxShadow.split(/,(?![^()]*\))/).some((shadow) => {
-      if (!hasVisibleColor(shadow)) return false;
+    if (wasFocused) element.blur();
+    const unfocusedStyles = readStyles();
+    if (wasFocused) element.focus({ preventScroll: true });
 
-      const dimensions = shadow
-        .replace(/rgba?\([^)]*\)|hsla?\([^)]*\)|#[0-9a-f]+|\b[a-z]+\b/gi, '')
-        .match(/-?(?:\d+\.?\d*|\.\d+)/g);
-
-      return dimensions?.some((dimension) => Number.parseFloat(dimension) !== 0) ?? false;
-    });
-
-    return hasVisibleOutline || hasVisibleShadow;
+    return focusedStyles.some((value, index) => value !== unfocusedStyles[index]);
   });
 
   expect(hasVisibleFocusIndicator).toBe(true);

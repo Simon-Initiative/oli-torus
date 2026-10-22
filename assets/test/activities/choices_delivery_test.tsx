@@ -85,6 +85,24 @@ describe('ChoicesDelivery', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  it('preserves disabled checkbox appearance when the icon is decorative', () => {
+    const { container } = render(
+      <ChoicesDelivery
+        choices={[makeChoice('Choice A', 'choice-a')]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={jest.fn()}
+        isEvaluated={false}
+        unselectedIcon={<Checkbox.Unchecked />}
+        selectedIcon={<Checkbox.Checked />}
+        multiSelect
+        disabled
+      />,
+    );
+
+    expect(container.querySelector('span[aria-hidden="true"]')).toHaveClass('opacity-50');
+  });
+
   it('preserves disabled state from caller-provided icons', () => {
     const { container } = render(
       <ChoicesDelivery
