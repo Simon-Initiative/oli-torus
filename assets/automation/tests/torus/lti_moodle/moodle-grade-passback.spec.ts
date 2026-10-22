@@ -17,7 +17,11 @@ import {
   launchTokamakFromMoodle,
   loginToMoodle,
 } from './support/moodle';
-import { acceptCookiesIfVisible, waitForLiveView } from '../lti/support/torusLtiFixture';
+import {
+  acceptCookiesIfVisible,
+  submitResearchConsentIfShown,
+  waitForLiveView,
+} from '../lti/support/torusLtiFixture';
 import { getMoodleCourseByShortname } from '../../../src/systems/moodle/api/MoodleApi';
 import { requireEnv } from '../../support/testConfig';
 
@@ -68,6 +72,8 @@ const openGradedPage = async (
   const { toolPage, toolFrame } = await followMoodleToolLaunch(page, popup);
   const scope = toolPage ?? toolFrame!;
 
+  await submitResearchConsentIfShown(scope);
+
   // Torus shows a one-time "Welcome to <section>" tour the first time a given user opens a
   // given section; dismiss it if present rather than assuming it will never appear.
   const goToCourseButton = scope.getByRole('button', { name: 'Go to course' });
@@ -81,13 +87,13 @@ const openGradedPage = async (
     await goToCourseButton.click();
 
     // The click can land before the LiveView finishes mounting its handler and get dropped;
-    // if the tour is still showing, retry once.
-    const tourStillVisible = await goToCourseButton
-      .waitFor({ state: 'visible', timeout: 3_000 })
+    // if the tour does not go away, retry once.
+    const tourDismissed = await goToCourseButton
+      .waitFor({ state: 'hidden', timeout: 10_000 })
       .then(() => true)
       .catch(() => false);
 
-    if (tourStillVisible) {
+    if (!tourDismissed) {
       await goToCourseButton.click();
     }
   }

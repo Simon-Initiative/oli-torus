@@ -4,7 +4,7 @@
  * and driving the "New course set up" wizard that appears when an LTI launch lands in Torus
  * for the first time (search/select a source, create a section, delete it).
  */
-import { Browser, expect, Locator, Page } from '@playwright/test';
+import { Browser, expect, FrameLocator, Locator, Page } from '@playwright/test';
 import { LoginPO } from '@pom/home/LoginPO';
 
 export type TorusProject = {
@@ -375,6 +375,28 @@ export async function acceptCookiesIfVisible(scope: Pick<RoleScope, 'locator'>, 
       body.style.removeProperty('padding-right');
     });
   }
+}
+
+// Torus sends a user who has never answered its research consent form to that form before any
+// course page when their institution requires consent. Waits until either the form or a LiveView
+// page is showing, and submits the preselected "I Agree" answer only when it is the form.
+export async function submitResearchConsentIfShown(scope: Page | FrameLocator, timeout = 15_000) {
+  const consentHeading = scope.getByRole('heading', { name: /Online Consent Form/i });
+
+  const formShown = await consentHeading
+    .or(scope.locator('[data-phx-main]'))
+    .first()
+    .waitFor({ state: 'visible', timeout })
+    .then(() => consentHeading.isVisible())
+    .catch(() => false);
+
+  if (!formShown) {
+    return;
+  }
+
+  await scope.getByRole('radio', { name: /I Agree/i }).check();
+  await scope.getByRole('button', { name: /^Submit$/i }).click();
+  await expect(consentHeading).toBeHidden({ timeout });
 }
 
 export async function createTorusSectionFromLaunch(
