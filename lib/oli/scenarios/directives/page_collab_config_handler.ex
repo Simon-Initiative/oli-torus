@@ -34,19 +34,33 @@ defmodule Oli.Scenarios.Directives.PageCollabConfigHandler do
   end
 
   defp build_config(directive) do
-    {:ok,
-     %CollabSpaceConfig{
-       status: if(directive.enabled == false, do: :disabled, else: :enabled),
-       threaded: directive.threaded != false,
-       auto_accept: directive.auto_accept != false,
-       show_full_history: directive.show_full_history != false,
-       anonymous_posting: directive.anonymous_posting == true,
-       participation_min_replies: integer_or_default(directive.participation_min_replies),
-       participation_min_posts: integer_or_default(directive.participation_min_posts)
-     }}
+    with {:ok, participation_min_replies} <-
+           integer_or_default(directive.participation_min_replies, "participation_min_replies"),
+         {:ok, participation_min_posts} <-
+           integer_or_default(directive.participation_min_posts, "participation_min_posts") do
+      {:ok,
+       %CollabSpaceConfig{
+         status: if(directive.enabled == false, do: :disabled, else: :enabled),
+         threaded: directive.threaded != false,
+         auto_accept: directive.auto_accept != false,
+         show_full_history: directive.show_full_history != false,
+         anonymous_posting: directive.anonymous_posting == true,
+         participation_min_replies: participation_min_replies,
+         participation_min_posts: participation_min_posts
+       }}
+    end
   end
 
-  defp integer_or_default(nil), do: 0
-  defp integer_or_default(value) when is_integer(value), do: value
-  defp integer_or_default(value) when is_binary(value), do: String.to_integer(value)
+  defp integer_or_default(nil, _field), do: {:ok, 0}
+  defp integer_or_default(value, _field) when is_integer(value), do: {:ok, value}
+
+  defp integer_or_default(value, field) when is_binary(value) do
+    case Integer.parse(value) do
+      {integer, ""} -> {:ok, integer}
+      _ -> {:error, "#{field} must be an integer, got: #{inspect(value)}"}
+    end
+  end
+
+  defp integer_or_default(value, field),
+    do: {:error, "#{field} must be an integer, got: #{inspect(value)}"}
 end

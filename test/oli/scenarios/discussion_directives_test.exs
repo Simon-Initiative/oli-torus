@@ -438,4 +438,41 @@ defmodule Oli.Scenarios.DiscussionDirectivesTest do
       assert error =~ "not authorized to delete"
     end
   end
+
+  describe "page_collab_config" do
+    test "returns an execution error for malformed participation limits" do
+      for {field, value} <- [
+            {"participation_min_replies", "abc"},
+            {"participation_min_posts", "12abc"}
+          ] do
+        yaml = """
+        - project:
+            name: "page_collab_invalid_#{field}"
+            title: "Page Collaboration Invalid #{field}"
+            root:
+              children:
+                - page: "Welcome"
+
+        - publish:
+            to: "page_collab_invalid_#{field}"
+
+        - section:
+            name: "page_collab_invalid_#{field}_section"
+            title: "Page Collaboration Invalid #{field} Section"
+            from: "page_collab_invalid_#{field}"
+
+        - page_collab_config:
+            section: "page_collab_invalid_#{field}_section"
+            enabled: true
+            #{field}: "#{value}"
+        """
+
+        result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+        assert [{_, error}] = result.errors
+        assert error =~ "#{field} must be an integer"
+        assert error =~ value
+      end
+    end
+  end
 end
