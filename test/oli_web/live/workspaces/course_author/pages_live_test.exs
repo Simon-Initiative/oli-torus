@@ -444,7 +444,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
 
       view
       |> element(
-        ~s{button[role="show_options_modal"][phx-value-slug="#{nested_page_revision.slug}"]},
+        ~s{button[data-role="show_options_modal"][phx-value-slug="#{nested_page_revision.slug}"]},
         "Settings"
       )
       |> render_click()
@@ -497,7 +497,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
 
       assert view
              |> has_element?(
-               "button[role='duplicate_page'][phx-value-id='#{adaptive_page_revision.id}']"
+               "button[data-role='duplicate_page'][phx-value-id='#{adaptive_page_revision.id}']"
              )
     end
 
@@ -540,7 +540,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
 
       view
       |> element(
-        ~s{button[role="show_options_modal"][phx-value-slug="#{nested_page_revision.slug}"]},
+        ~s{button[data-role="show_options_modal"][phx-value-slug="#{nested_page_revision.slug}"]},
         "Settings"
       )
       |> render_click()

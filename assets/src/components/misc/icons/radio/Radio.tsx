@@ -4,11 +4,12 @@ import { classNames } from 'utils/classNames';
 interface Props {
   className?: string;
   disabled?: boolean;
+  ariaHidden?: boolean;
 }
 
-const Checked = ({ className, disabled }: Props) => (
+const Checked = ({ className, disabled, ariaHidden }: Props) => (
   <input
-    aria-hidden="true"
+    aria-hidden={ariaHidden}
     className={classNames(className, 'oli-radio', 'flex-shrink-0')}
     type="radio"
     checked
@@ -18,9 +19,9 @@ const Checked = ({ className, disabled }: Props) => (
   />
 );
 
-const Unchecked = ({ className, disabled }: Props) => (
+const Unchecked = ({ className, disabled, ariaHidden }: Props) => (
   <input
-    aria-hidden="true"
+    aria-hidden={ariaHidden}
     className={`oli-radio flex-shrink-0 ${className || ''}`}
     type="radio"
     disabled={disabled || false}

@@ -43,8 +43,11 @@ export const ChoicesDelivery: React.FC<Props> = ({
   const choiceRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isSelected = (choiceId: ChoiceId) => !!selected.find((s) => s === choiceId);
   const renderIcon = (icon: React.ReactNode) =>
-    React.isValidElement<{ disabled?: boolean }>(icon)
-      ? React.cloneElement(icon, { disabled: disabled || icon.props.disabled })
+    React.isValidElement<{ disabled?: boolean; ariaHidden?: boolean }>(icon)
+      ? React.cloneElement(icon, {
+          disabled: disabled || icon.props.disabled,
+          ariaHidden: true,
+        })
       : icon;
 
   // Track which choice is currently focusable (roving tabindex)
