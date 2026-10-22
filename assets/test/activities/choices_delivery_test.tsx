@@ -73,14 +73,14 @@ describe('ChoicesDelivery', () => {
       />,
     );
 
-    const radioIcon = container.querySelector('input[type="radio"]') as HTMLInputElement;
+    const radioIcon = container.querySelector('span[aria-hidden="true"]');
     const choice = container.querySelector('[role="radio"]') as HTMLElement;
 
-    expect(radioIcon).toBeDisabled();
+    expect(radioIcon).toBeInTheDocument();
+    expect(container.querySelector('input[type="radio"]')).not.toBeInTheDocument();
 
     fireEvent.click(choice);
 
-    expect(radioIcon).not.toBeChecked();
     expect(onSelect).not.toHaveBeenCalled();
   });
 
@@ -97,6 +97,7 @@ describe('ChoicesDelivery', () => {
       />,
     );
 
-    expect(container.querySelector('input[type="radio"]')).toBeDisabled();
+    expect(container.querySelector('span[aria-hidden="true"]')).toBeInTheDocument();
+    expect(container.querySelector('input[type="radio"]')).not.toBeInTheDocument();
   });
 });
