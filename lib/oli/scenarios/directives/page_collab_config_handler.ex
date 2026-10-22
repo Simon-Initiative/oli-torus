@@ -52,15 +52,22 @@ defmodule Oli.Scenarios.Directives.PageCollabConfigHandler do
   end
 
   defp integer_or_default(nil, _field), do: {:ok, 0}
-  defp integer_or_default(value, _field) when is_integer(value), do: {:ok, value}
+
+  defp integer_or_default(value, field) when is_integer(value),
+    do: validate_non_negative_integer(value, field)
 
   defp integer_or_default(value, field) when is_binary(value) do
     case Integer.parse(value) do
-      {integer, ""} -> {:ok, integer}
+      {integer, ""} -> validate_non_negative_integer(integer, field)
       _ -> {:error, "#{field} must be an integer, got: #{inspect(value)}"}
     end
   end
 
   defp integer_or_default(value, field),
     do: {:error, "#{field} must be an integer, got: #{inspect(value)}"}
+
+  defp validate_non_negative_integer(value, _field) when value >= 0, do: {:ok, value}
+
+  defp validate_non_negative_integer(value, field),
+    do: {:error, "#{field} must be greater than or equal to zero, got: #{inspect(value)}"}
 end

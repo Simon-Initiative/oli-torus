@@ -43,10 +43,10 @@ export const ChoicesDelivery: React.FC<Props> = ({
   const choiceRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isSelected = (choiceId: ChoiceId) => !!selected.find((s) => s === choiceId);
   const renderIcon = (icon: React.ReactNode) =>
-    React.isValidElement<{ disabled?: boolean; ariaHidden?: boolean }>(icon)
+    React.isValidElement<{ disabled?: boolean; 'aria-hidden'?: boolean }>(icon)
       ? React.cloneElement(icon, {
           disabled: disabled || icon.props.disabled,
-          ariaHidden: true,
+          'aria-hidden': true,
         })
       : icon;
 

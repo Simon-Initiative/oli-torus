@@ -4,15 +4,16 @@ import { classNames } from 'utils/classNames';
 interface Props {
   className?: string;
   disabled?: boolean;
-  ariaHidden?: boolean;
+  'aria-hidden'?: boolean;
 }
 
-const VisualIndicator = ({ className, checked }: Props & { checked: boolean }) => (
+const VisualIndicator = ({ className, disabled, checked }: Props & { checked: boolean }) => (
   <span
     aria-hidden="true"
     className={classNames(
       'oli-radio inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border border-current',
       checked && 'bg-current',
+      disabled && 'opacity-50',
       className,
     )}
   >
@@ -20,9 +21,9 @@ const VisualIndicator = ({ className, checked }: Props & { checked: boolean }) =
   </span>
 );
 
-const Checked = ({ className, disabled, ariaHidden }: Props) =>
+const Checked = ({ className, disabled, 'aria-hidden': ariaHidden }: Props) =>
   ariaHidden ? (
-    <VisualIndicator className={className} checked />
+    <VisualIndicator className={className} disabled={disabled} checked />
   ) : (
     <input
       className={classNames(className, 'oli-radio', 'flex-shrink-0')}
@@ -34,9 +35,9 @@ const Checked = ({ className, disabled, ariaHidden }: Props) =>
     />
   );
 
-const Unchecked = ({ className, disabled, ariaHidden }: Props) =>
+const Unchecked = ({ className, disabled, 'aria-hidden': ariaHidden }: Props) =>
   ariaHidden ? (
-    <VisualIndicator className={className} checked={false} />
+    <VisualIndicator className={className} disabled={disabled} checked={false} />
   ) : (
     <input
       className={`oli-radio flex-shrink-0 ${className || ''}`}

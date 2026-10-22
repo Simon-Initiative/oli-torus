@@ -77,6 +77,7 @@ describe('ChoicesDelivery', () => {
     const choice = container.querySelector('[role="radio"]') as HTMLElement;
 
     expect(radioIcon).toBeInTheDocument();
+    expect(radioIcon).toHaveClass('opacity-50');
     expect(container.querySelector('input[type="radio"]')).not.toBeInTheDocument();
 
     fireEvent.click(choice);
