@@ -36,6 +36,7 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Lti.LaunchIdentity
+  alias Oli.Lti.PlatformExternalTools
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
@@ -4636,7 +4637,12 @@ defmodule Oli.Delivery.Sections do
   This makes it simpler to apply changes to the existing curriculum but if necessary, this implementation
   could be extended to not just apply the changes to the first node found that contains the changed resource,
   but any/all nodes in the hierarchy which reference the changed resource.
+
+  Missing LTI selections (resource configurations chosen in external tools) are
+  initialized within the update transaction, preserving existing section choices.
+  Failed initialization never reports a completed update.
   """
+  @spec apply_publication_update(%Section{}, integer()) :: {:ok, {:ok}} | {:error, term()}
   def apply_publication_update(
         %Section{id: section_id} = section,
         publication_id
@@ -4652,7 +4658,8 @@ defmodule Oli.Delivery.Sections do
 
     result =
       case diff do
-        %PublicationDiff{classification: :minor} ->
+        %PublicationDiff{classification: classification}
+        when classification in [:minor, :no_changes] ->
           current_hierarchy = MinimalHierarchy.full_hierarchy(section.slug)
           perform_update(:minor, section, project_id, new_publication, current_hierarchy)
 
@@ -4690,13 +4697,17 @@ defmodule Oli.Delivery.Sections do
           end
       end
 
-    Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
+    case result do
+      {:ok, _} -> Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
+      _ -> Broadcaster.broadcast_update_progress(section.id, new_publication.id, 0)
+    end
 
     result
   end
 
-  # for minor update, all we need to do is update the spp record and
-  # rebuild the section curriculum based on the current hierarchy
+  # Applies a minor publication change using the current section hierarchy and new
+  # publication pin. Missing tool configurations are initialized in the same
+  # transaction, while existing instructor choices are preserved.
   defp perform_update(:minor, section, project_id, new_publication, current_hierarchy) do
     mark = Oli.Timing.mark()
 
@@ -4710,7 +4721,10 @@ defmodule Oli.Delivery.Sections do
         project_publications = get_pinned_project_publications(section.id)
         rebuild_section_curriculum(section, current_hierarchy, project_publications)
 
-        {:ok}
+        case PlatformExternalTools.initialize_section_deep_links(section.id, new_publication.id) do
+          {:ok, _} -> {:ok}
+          {:error, reason} -> Repo.rollback(reason)
+        end
       end)
 
     Logger.info(
@@ -4720,7 +4734,9 @@ defmodule Oli.Delivery.Sections do
     result
   end
 
-  # for major update, update the spp record and use the diff and the AIRRO approach
+  # Reconciles the major publication diff with the section's existing curriculum
+  # using the AIRRO steps below. Missing tool configurations are initialized only
+  # after the destination resources are finalized, within the same transaction.
   defp perform_update(:major, section, project_id, prev_publication, new_publication) do
     mark = Oli.Timing.mark()
 
@@ -4948,7 +4964,10 @@ defmodule Oli.Delivery.Sections do
         Oli.Delivery.maybe_update_section_contains_explorations(section)
         Oli.Delivery.maybe_update_section_contains_deliberate_practice(section)
 
-        {:ok}
+        case PlatformExternalTools.initialize_section_deep_links(section.id, new_publication.id) do
+          {:ok, _} -> {:ok}
+          {:error, reason} -> Repo.rollback(reason)
+        end
       end)
 
     Logger.info(
