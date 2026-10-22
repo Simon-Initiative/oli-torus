@@ -1,5 +1,7 @@
 # MER-5959 GitHub CI/CD Support for Feature Integration Branches
 
+Current development workflow: `guides/process/development.md`. The deployment guide references below describe the original documentation location.
+
 Jira: <https://eliterate.atlassian.net/browse/MER-5959>
 
 ## Purpose
