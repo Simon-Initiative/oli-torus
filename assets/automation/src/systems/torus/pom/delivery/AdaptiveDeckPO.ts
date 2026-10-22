@@ -52,10 +52,26 @@ export type ScreenScan = {
 };
 
 const FOOTER_BUTTON = '.checkBtn:not([disabled]), .closeFeedbackBtn:not([disabled])';
+const BUSY_FOOTER_BUTTON =
+  '.buttonContainer .checkBtn[disabled], .buttonContainer .closeFeedbackBtn[disabled]';
 const CANVAS_NAV_BUTTON = 'button[data-janus-type="janus-navigation-button"]:not([disabled])';
+const EVALUATION_WAIT = 30_000;
 export const ACTION_TIMEOUT = { timeout: 8_000 };
 
+type Role = 'ack' | 'check' | 'nav';
+type Outcome = 'changed' | 'settled' | 'evaluating' | 'timeout';
+type DeckSnapshot = { evaluated: boolean; busy: boolean; enabledClass: string | null };
+
+const roleOf = (snapshot: DeckSnapshot): Role | null =>
+  snapshot.enabledClass === null
+    ? null
+    : snapshot.enabledClass.includes('closeFeedbackBtn')
+      ? 'ack'
+      : 'check';
+
 export class AdaptiveDeckPO {
+  private lastEvaluation: { screen: string; at: number } | null = null;
+
   constructor(private readonly page: Page) {}
 
   // ------------------------------------------------------------ lifecycle
@@ -90,20 +106,6 @@ export class AdaptiveDeckPO {
       .catch(() => false);
   }
 
-  /**
-   * Whether the feedback popup is open. The deck swaps the footer button's
-   * class to closeFeedbackBtn exactly while feedback shows, so the control's
-   * presence is the signal — matching on "feedback" in any class name instead
-   * catches persistent chrome that is always present.
-   */
-  async feedbackVisible(): Promise<boolean> {
-    return this.page
-      .locator('.closeFeedbackBtn')
-      .first()
-      .isVisible()
-      .catch(() => false);
-  }
-
   async feedbackText(): Promise<string> {
     return this.page
       .locator('.feedbackContainer, [class*="feedback"]')
@@ -115,46 +117,61 @@ export class AdaptiveDeckPO {
   // ------------------------------------------------------------ navigation
 
   /**
-   * COMPATIBILITY-path navigation, deliberately unchanged from the merged
-   * MER-5672/5673 behaviour those specs were validated against: click the
-   * primary control (footer button, else canvas nav button) up to maxClicks
-   * times until the screen changes, acknowledging feedback along the way.
-   * This can re-submit through the deck's own ack-recheck semantics; the
-   * strict walk never uses it — it has submitCheck()/acknowledgeFeedback(),
-   * exactly one click each, driven by the evaluation response.
+   * Clicks the screen's primary control (footer button, else canvas navigation
+   * button) until the screen changes or the lesson ends, at most maxClicks
+   * times; false when it gives up on the same screen. The strict walk uses
+   * submitCheck()/acknowledgeFeedback() instead.
+   *
+   * A click is sent only on an idle deck, and a check or navigation click only
+   * once `timeout` has passed since the last evaluation this page object saw on
+   * the screen, in this call or an earlier one: after an evaluation without
+   * feedback the deck re-enables its footer and may still navigate a moment
+   * later, and a click in that gap is evaluated on the next screen. Feedback is
+   * the outcome of an acknowledgement only after an evaluation that followed
+   * it; an acknowledgement with no observable outcome throws instead of
+   * clicking again when more clicks are allowed.
+   *
+   * Each iteration waits at most 30 s for a control it may click; the outcome
+   * wait lasts at least `timeout` after the click and, while the deck
+   * evaluates, up to 30 s + `timeout` from the start of the iteration.
    */
   async advance(maxClicks = 6, timeout = 12_000): Promise<boolean> {
     const previous = await this.screenId();
+    let outcome: Outcome | null = null;
 
     for (let i = 0; i < maxClicks; i += 1) {
-      const footer = this.page.locator(FOOTER_BUTTON).first();
-      const nav = this.page.locator(CANVAS_NAV_BUTTON).first();
+      const giveUpAt = Date.now() + EVALUATION_WAIT;
+      const budget = giveUpAt + timeout;
 
-      if (
-        !(await footer.isVisible({ timeout: 500 }).catch(() => false)) &&
-        !(await nav.isVisible({ timeout: 500 }).catch(() => false))
-      ) {
-        // evaluation in progress: wait for an enabled control or a change
-        const deadline = Date.now() + 30_000;
-        while (Date.now() < deadline) {
-          if ((await this.screenId()) !== previous) return true;
-          if (await footer.isVisible({ timeout: 300 }).catch(() => false)) break;
-          if (await nav.isVisible({ timeout: 300 }).catch(() => false)) break;
-          await this.page.waitForTimeout(500);
+      let role: Role | 'changed' | null;
+      for (;;) {
+        role = await this.awaitControl(previous, timeout, giveUpAt, outcome === 'evaluating');
+        if (role === 'changed' || role === null) break;
+        const armed = await this.deckSnapshot(true);
+        if (armed && !armed.busy && roleOf(armed) === (role === 'nav' ? null : role)) break;
+        if (armed?.busy) this.sawEvaluation(previous);
+        if (Date.now() > giveUpAt) {
+          role = null;
+          break;
         }
       }
+      if (role === 'changed') return true;
+      if (role === null) return this.moved(previous);
 
-      if (await footer.isVisible({ timeout: 1_500 }).catch(() => false)) {
-        await footer.click(ACTION_TIMEOUT).catch(() => undefined);
-      } else if (await nav.isVisible({ timeout: 1_500 }).catch(() => false)) {
-        await nav.click(ACTION_TIMEOUT).catch(() => undefined);
-      } else {
-        break;
+      if (await this.moved(previous)) return true;
+      await this.page
+        .locator(role === 'nav' ? CANVAS_NAV_BUTTON : FOOTER_BUTTON)
+        .first()
+        .click(ACTION_TIMEOUT)
+        .catch(() => undefined);
+
+      outcome = await this.waitForOutcome(previous, timeout, budget, role);
+      if (outcome === 'changed') return true;
+      if (outcome === 'timeout' && role === 'ack' && maxClicks > 1) {
+        throw new Error(
+          `advance: acknowledging feedback produced no observable outcome within ${timeout}ms; refusing to click again`,
+        );
       }
-
-      const outcome = await this.waitForSignatureChange(previous, timeout);
-      if (outcome === 'changed') return true; // callers wait for readiness themselves
-      // 'settled' (feedback showing) falls through to the next click immediately
     }
 
     return false;
@@ -370,42 +387,144 @@ export class AdaptiveDeckPO {
   }
 
   /**
-   * 'changed' — navigated to another screen.
-   * 'settled' — the evaluation finished (button went disabled->enabled) but
-   *             stayed on the same screen: feedback is showing; the caller
-   *             decides whether acknowledging it is legal.
-   * 'timeout' — nothing observable happened.
+   * One in-page read: whether a footer button went disabled since the last
+   * arm, whether one is disabled now, and the class of the first FOOTER_BUTTON
+   * match when it is visible (a non-empty box and not visibility:hidden).
+   * Arming resets that record in the same task, right before a click, and
+   * installs the document's observer on first use; a full reload drops it.
+   * null when the read fails.
    */
-  private async waitForSignatureChange(
+  private deckSnapshot(arm = false): Promise<DeckSnapshot | null> {
+    return this.page
+      .evaluate(
+        ({ enabled, busy, arm }) => {
+          const w = window as unknown as {
+            __deckEvaluated?: boolean;
+            __deckRecorder?: MutationObserver;
+          };
+          if (arm) {
+            w.__deckEvaluated = false;
+            if (!w.__deckRecorder) {
+              w.__deckRecorder = new MutationObserver((records) => {
+                for (const r of records) {
+                  const el = r.target as Element;
+                  if (
+                    r.attributeName === 'disabled' &&
+                    el.closest('.buttonContainer') &&
+                    (el.hasAttribute('disabled') || r.oldValue === null)
+                  ) {
+                    w.__deckEvaluated = true;
+                  }
+                }
+              });
+              w.__deckRecorder.observe(document.documentElement, {
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['disabled'],
+                attributeOldValue: true,
+              });
+            }
+          }
+          const button = document.querySelector(enabled);
+          const box = button?.getBoundingClientRect();
+          const visible =
+            !!button &&
+            !!box &&
+            box.width > 0 &&
+            box.height > 0 &&
+            getComputedStyle(button).visibility !== 'hidden';
+          return {
+            evaluated: !!w.__deckEvaluated,
+            busy: document.querySelector(busy) !== null,
+            enabledClass: visible ? button!.className : null,
+          };
+        },
+        { enabled: FOOTER_BUTTON, busy: BUSY_FOOTER_BUTTON, arm },
+      )
+      .catch(() => null);
+  }
+
+  private async moved(previous: string): Promise<boolean> {
+    return (await this.screenId()) !== previous || (await this.lessonEnded());
+  }
+
+  private sawEvaluation(screen: string) {
+    this.lastEvaluation = { screen, at: Date.now() };
+  }
+
+  private quietFor(screen: string): number {
+    return this.lastEvaluation?.screen === screen ? Date.now() - this.lastEvaluation.at : Infinity;
+  }
+
+  /**
+   * The role of a control advance() may click now, 'changed' once the screen
+   * moves, or null after giveUpAt — at once when the deck is still evaluating
+   * right after an 'evaluating' outcome, whose wait already covered it.
+   */
+  private async awaitControl(
     previous: string,
     timeout: number,
-  ): Promise<'changed' | 'settled' | 'timeout'> {
-    const deadline = Date.now() + timeout;
-    let sawEvaluating = false;
+    giveUpAt: number,
+    afterEvaluating: boolean,
+  ): Promise<Role | 'changed' | null> {
+    const nav = this.page.locator(CANVAS_NAV_BUTTON).first();
 
-    while (Date.now() < deadline) {
-      if ((await this.screenId()) !== previous) return 'changed';
-      if (await this.lessonEnded()) return 'changed';
+    for (;;) {
+      if (await this.moved(previous)) return 'changed';
 
-      // feedback open == the check finished and we are still on this screen
-      if (await this.feedbackVisible()) return 'settled';
-
-      const buttonEnabled = await this.page
-        .locator(FOOTER_BUTTON)
-        .first()
-        .isVisible({ timeout: 100 })
-        .catch(() => false);
-      if (!buttonEnabled) {
-        sawEvaluating = true; // spinner/disabled phase while the check evaluates
-      } else if (sawEvaluating) {
-        await this.page.waitForTimeout(300);
-        return 'settled';
+      const snapshot = await this.deckSnapshot();
+      if (snapshot?.busy) {
+        this.sawEvaluation(previous);
+        if (afterEvaluating) return null;
+      } else if (snapshot) {
+        const role =
+          roleOf(snapshot) ?? ((await nav.isVisible().catch(() => false)) ? 'nav' : null);
+        if (role === 'ack') return role;
+        if (role !== null && this.quietFor(previous) >= timeout) return role;
       }
 
+      if (Date.now() > giveUpAt) return null;
+      await this.page.waitForTimeout(200);
+    }
+  }
+
+  /**
+   * 'changed' once the screen moves; 'settled' on feedback the click produced
+   * (for an acknowledgement, only after an evaluation). Otherwise waits at
+   * least `timeout`, longer while the deck evaluates, up to `budget`, then
+   * reports 'evaluating' if it saw an evaluation, else 'timeout'.
+   */
+  private async waitForOutcome(
+    previous: string,
+    timeout: number,
+    budget: number,
+    role: Role,
+  ): Promise<Outcome> {
+    let deadline = Date.now() + timeout;
+    let sawEvaluating = false;
+
+    for (;;) {
+      if (await this.moved(previous)) return 'changed';
+
+      const snapshot = await this.deckSnapshot();
+      if (snapshot) {
+        if (snapshot.busy || (snapshot.evaluated && !sawEvaluating)) this.sawEvaluation(previous);
+        if (snapshot.evaluated || snapshot.busy) sawEvaluating = true;
+        if (snapshot.busy) deadline = Math.max(deadline, Math.min(budget, Date.now() + timeout));
+        if (
+          snapshot.enabledClass?.includes('closeFeedbackBtn') &&
+          (role !== 'ack' || sawEvaluating)
+        ) {
+          return 'settled';
+        }
+      }
+
+      if (Date.now() >= deadline) break;
       await this.page.waitForTimeout(200);
     }
 
-    return 'timeout';
+    if (await this.moved(previous)) return 'changed';
+    return sawEvaluating ? 'evaluating' : 'timeout';
   }
 
   // ------------------------------------------------------------ inspection
