@@ -438,4 +438,81 @@ defmodule Oli.Scenarios.DiscussionDirectivesTest do
       assert error =~ "not authorized to delete"
     end
   end
+
+  describe "page_collab_config" do
+    test "returns an execution error for malformed participation limits" do
+      for {field, value} <- [
+            {"participation_min_replies", "abc"},
+            {"participation_min_posts", "12abc"}
+          ] do
+        yaml = """
+        - project:
+            name: "page_collab_invalid_#{field}"
+            title: "Page Collaboration Invalid #{field}"
+            root:
+              children:
+                - page: "Welcome"
+
+        - publish:
+            to: "page_collab_invalid_#{field}"
+
+        - section:
+            name: "page_collab_invalid_#{field}_section"
+            title: "Page Collaboration Invalid #{field} Section"
+            from: "page_collab_invalid_#{field}"
+
+        - page_collab_config:
+            section: "page_collab_invalid_#{field}_section"
+            enabled: true
+            #{field}: "#{value}"
+        """
+
+        result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+        assert [{_, error}] = result.errors
+        assert error =~ "#{field} must be an integer"
+        assert error =~ value
+      end
+    end
+
+    test "rejects negative participation limits" do
+      for {field, value} <- [
+            {"participation_min_replies", -1},
+            {"participation_min_posts", "-2"}
+          ] do
+        value_yaml =
+          case value do
+            value when is_binary(value) -> "\"#{value}\""
+            value -> to_string(value)
+          end
+
+        yaml = """
+        - project:
+            name: "page_collab_negative_#{field}"
+            title: "Page Collaboration Negative #{field}"
+            root:
+              children:
+                - page: "Welcome"
+
+        - publish:
+            to: "page_collab_negative_#{field}"
+
+        - section:
+            name: "page_collab_negative_#{field}_section"
+            title: "Page Collaboration Negative #{field} Section"
+            from: "page_collab_negative_#{field}"
+
+        - page_collab_config:
+            section: "page_collab_negative_#{field}_section"
+            enabled: true
+            #{field}: #{value_yaml}
+        """
+
+        result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+        assert [{_, error}] = result.errors
+        assert error =~ "#{field} must be greater than or equal to zero"
+      end
+    end
+  end
 end

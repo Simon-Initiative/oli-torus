@@ -86,13 +86,12 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await studentCourse.openPage('Coverage Page');
     await scanPageAccessibility(page, 'coverage page');
 
-    // Notes are only available when collaboration spaces are enabled for the section.
     const notesToggle = page.getByRole('button', { name: 'Toggle Notes panel' });
-    if (await notesToggle.isVisible().catch(() => false)) {
-      await notesToggle.click();
-      await expect(page.getByRole('complementary', { name: 'Notes Panel' })).toBeVisible();
-      await scanPageAccessibility(page, 'notes');
-    }
+    await expect(notesToggle).toBeVisible();
+    await notesToggle.click();
+    await expect(page.getByRole('complementary', { name: 'Notes Panel' })).toBeVisible();
+    await scanPageAccessibility(page, 'notes');
+    await expectKeyboardFocus(page, 'a, button, input');
   });
 
   test('scored activity has no automated accessibility violations', async ({
@@ -108,6 +107,13 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await expect(page.locator('#student_learn')).toBeVisible();
     await expect(page.locator('[id^="outline_rows-"] button').first()).toBeVisible();
     await studentCourse.openPage('Scored Activity');
+
+    const beginAttemptButton = page.locator('#begin_attempt_button');
+    await expect(beginAttemptButton).toBeVisible();
+    await beginAttemptButton.click();
+    await expect(page.locator('oli-multiple-choice-delivery')).toBeVisible();
+    await expect(page.getByText('Which option is correct?', { exact: true })).toBeVisible();
+
     await scanPageAccessibility(page, 'scored activity');
     await expectKeyboardFocus(page, 'a, button, input');
   });
@@ -136,6 +142,13 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await page.goto(`/workspaces/course_author/${projectSlug}/curriculum`, {
       waitUntil: 'domcontentloaded',
     });
+    await expect(page).toHaveURL(
+      new RegExp(`/workspaces/course_author/${projectSlug}/curriculum(?:\\?|$)`),
+    );
+    await expect(page.locator('#curriculum-container')).toBeVisible();
+    await expect(
+      page.getByText('Create and arrange your learning materials below.', { exact: true }),
+    ).toBeVisible();
     await scanPageAccessibility(page, 'authoring curriculum');
     await expectKeyboardFocus(page, 'a, button, input');
   });

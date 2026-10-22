@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, Page } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 
 type AccessibilityScanOptions = {
   /** The cookie consent component has a known contrast issue outside this test's scope. */
@@ -47,5 +47,51 @@ export async function expectKeyboardFocus(page: Page, selector: string) {
   await target.focus();
   await expect(target).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(page.locator(':focus-visible')).toHaveCount(1);
+
+  const focused = page.locator(':focus-visible');
+  await expect(focused).toHaveCount(1);
+  await expect(focused).toBeVisible();
+
+  const hasVisibleFocusIndicator = await focused.evaluate((element) => {
+    const properties = [
+      'outlineStyle',
+      'outlineWidth',
+      'outlineColor',
+      'outlineOffset',
+      'boxShadow',
+      'borderTopColor',
+      'borderRightColor',
+      'borderBottomColor',
+      'borderLeftColor',
+      'borderTopWidth',
+      'borderRightWidth',
+      'borderBottomWidth',
+      'borderLeftWidth',
+      'backgroundColor',
+      'color',
+      'textDecorationLine',
+      'textDecorationStyle',
+      'textDecorationColor',
+      'textDecorationThickness',
+      'textUnderlineOffset',
+      'opacity',
+      'transform',
+    ] as const;
+
+    const readStyles = () => {
+      const computed = window.getComputedStyle(element);
+      return properties.map((property) => computed[property]);
+    };
+
+    const focusedStyles = readStyles();
+    const wasFocused = document.activeElement === element;
+
+    if (wasFocused) element.blur();
+    const unfocusedStyles = readStyles();
+    if (wasFocused) element.focus({ preventScroll: true });
+
+    return focusedStyles.some((value, index) => value !== unfocusedStyles[index]);
+  });
+
+  expect(hasVisibleFocusIndicator).toBe(true);
 }

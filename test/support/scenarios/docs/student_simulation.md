@@ -398,6 +398,21 @@ Configures course discussions on a section or product blueprint by updating the 
     auto_accept: false
 ```
 
+## page_collab_config
+
+Enables or disables Notes collaboration spaces for every page in a section.
+
+### Example
+```yaml
+- page_collab_config:
+    section: "my_section"
+    enabled: true
+    threaded: true
+    auto_accept: true
+    show_full_history: true
+    anonymous_posting: false
+```
+
 ---
 
 ## discussion_moderation

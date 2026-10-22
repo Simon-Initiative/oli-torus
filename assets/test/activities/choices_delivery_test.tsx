@@ -73,15 +73,34 @@ describe('ChoicesDelivery', () => {
       />,
     );
 
-    const radioIcon = container.querySelector('input[type="radio"]') as HTMLInputElement;
+    const radioIcon = container.querySelector('span[aria-hidden="true"]');
     const choice = container.querySelector('[role="radio"]') as HTMLElement;
 
-    expect(radioIcon).toBeDisabled();
+    expect(radioIcon).toBeInTheDocument();
+    expect(radioIcon).toHaveClass('opacity-50');
+    expect(container.querySelector('input[type="radio"]')).not.toBeInTheDocument();
 
     fireEvent.click(choice);
 
-    expect(radioIcon).not.toBeChecked();
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('preserves disabled checkbox appearance when the icon is decorative', () => {
+    const { container } = render(
+      <ChoicesDelivery
+        choices={[makeChoice('Choice A', 'choice-a')]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={jest.fn()}
+        isEvaluated={false}
+        unselectedIcon={<Checkbox.Unchecked />}
+        selectedIcon={<Checkbox.Checked />}
+        multiSelect
+        disabled
+      />,
+    );
+
+    expect(container.querySelector('span[aria-hidden="true"]')).toHaveClass('opacity-50');
   });
 
   it('preserves disabled state from caller-provided icons', () => {
@@ -97,6 +116,7 @@ describe('ChoicesDelivery', () => {
       />,
     );
 
-    expect(container.querySelector('input[type="radio"]')).toBeDisabled();
+    expect(container.querySelector('span[aria-hidden="true"]')).toBeInTheDocument();
+    expect(container.querySelector('input[type="radio"]')).not.toBeInTheDocument();
   });
 });
