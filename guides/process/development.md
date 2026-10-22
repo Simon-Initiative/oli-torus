@@ -141,12 +141,12 @@ After the sync PR merges, obtain any renewed QA approval and passing checks on t
 
 All integration branches require PRs, developer code review approvals, and passing status checks, including `Elixir build and test` and `TypeScript build and test`. Direct pushes and force pushes are blocked; deletion remains restricted until the integration PR has merged. Configure the additional prefixes before relying on these protections. These requirements apply to both implementation and sync PRs.
 
-The existing CI configuration below still uses `integ-*` for integration branch triggers. Accepting `story/*`, `bug/*`, and `task/*` as sources for `master` does not automatically enable checks when those branches are used as PR targets.
+Build, Playwright, and PR-title workflows run for PRs targeting `master`, `integ-*`, `story/*`, `bug/*`, and `task/*`. Build and Playwright also run on pushes to those integration branches. These workflow filters use lowercase prefixes, even though the master source-name validator accepts case variants. The PR checks no longer target `hotfix-*`, `prerelease-*`, or `nextgen-ux`.
 
 | Event | What runs |
 | --- | --- |
-| PR into `integ-*` | Build and tests, PR Playwright suite, PR title validation, Danger, AI review, and a preview environment |
-| Push to `integ-*` (every merge into it) | Build and tests and the PR Playwright suite, to verify the combined result of the merged PRs |
+| PR into `integ-*`, `story/*`, `bug/*`, or `task/*` | Build and tests, PR Playwright suite, PR title validation, Danger, AI review, and a preview environment |
+| Push to `integ-*`, `story/*`, `bug/*`, or `task/*` (every merge into it) | Build and tests and the PR Playwright suite, to verify the combined result of the merged PRs |
 | Completed integration PR from `integ-*` into `master` | Build and tests, PR Playwright suite, PR title validation, source branch validation, and a preview environment. Danger and AI review are skipped because every change on the branch already went through them in its own PR |
 
 PRs from the new prefixes into `master` receive the normal master PR checks, including **Validate master source branch**. The existing Danger and AI review skip conditions apply only to `integ-*` sources.
@@ -158,7 +158,7 @@ Every required check for `master` must also report on the merge queue's `merge_g
 The workflow file alone does not configure GitHub rulesets or personal Jira preferences. Complete the following rollout work tracked in [MER-6050](https://eliterate.atlassian.net/browse/MER-6050):
 
 1. Extend the integration branch ruleset targets to cover `integ-*`, `story/*`, `bug/*`, and `task/*`, including case variants. Require PRs, developer code review approvals, and status checks, and block direct pushes, including bypass pushes. Retain force-push and deletion restrictions. Require merge commits for all PRs into integration branches, including implementation and sync PRs; enable this method in repository settings and do not require linear history on integration branches. See `guides/process/pull-request-approvals.md` for targeting details.
-2. Before using the new prefixes as integration PR targets, update the branch filters in `.github/workflows/build.yml`, `.github/workflows/pr-playwright.yml`, and `.github/workflows/validate_pr_title.yml` to cover them, including case variants. Verify PR checks and post-merge checks on those branches.
+2. Deploy the updated branch filters in `.github/workflows/build.yml`, `.github/workflows/pr-playwright.yml`, and `.github/workflows/validate_pr_title.yml`. Verify PR checks and post-merge checks on integration branches. Add workflow filter coverage for case variants before relying on mixed-case prefixes.
 3. Make all required master checks report on `merge_group`, including **Validate master source branch**, and verify a queued integration PR can complete. The validator must still enforce allowed source names on PRs and handle queue events separately. After verification, require QA approval, this check, and the merge queue in the ruleset targeting only `master`. Remove any required check that refers to the deleted integration-name validator.
 4. Notify the team that Story, Bug, and Task implementation work uses child Sub-task PRs into protected integration branches, followed by a completed integration PR through the master merge queue. Sync PRs reference the parent ticket directly. Explain the sync PR process and Jira preference steps above. The preference is per user and changes only the suggested Git command; the **Create branch in GitHub** dialog still needs its branch name corrected manually.
 
