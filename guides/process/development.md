@@ -27,7 +27,42 @@ Every Jira Story, Bug, and Task has its own protected integration branch: `story
 
 Implementation work is tracked in child Sub-tasks of the corresponding parent ticket. Syncs from `master`, including conflict resolution, use the parent ticket directly and require no separate child Sub-task. Each implementation branch starts from the parent's integration branch, and its PR targets that integration branch. This applies even to a small bug fix, chore, or ticket with only one implementation PR. An Epic may contain multiple parent tickets; it does not receive one shared integration branch.
 
-Integration branch protections must require PRs, developer code review approvals, and status checks. Block direct pushes, including maintainer pushes that bypass review. Complete the entire parent ticket and its acceptance testing before opening the integration PR to `master`.
+Integration branch protections must require PRs, developer code review approvals, and status checks. Block direct pushes, including maintainer pushes that bypass review. Once implementation is complete, open the integration PR to `master` for acceptance testing, or mark an existing draft PR ready for review. Acceptance testing and QA approval must pass before the PR enters the merge queue.
+
+### Process Diagram
+
+An integration PR may be opened as a draft during development when a preview deployment of the combined work is useful. Otherwise, open it when implementation is complete. Keep it open throughout acceptance testing and any fixes.
+
+```mermaid
+flowchart TD
+    A[Create protected integration branch from master]
+    B[Open Sub-task implementation PR into integration branch]
+    C[Developer reviews PR]
+    D{Developer approval and checks pass?}
+    E[Address review feedback or failed checks]
+    F[Merge PR into integration branch with a merge commit]
+    G{Implementation complete?}
+    H[Open integration PR to master or mark draft ready]
+    I[Verify integration PR preview runs the current head revision]
+    J[QA performs acceptance testing]
+    K{Acceptance passed?}
+    L[Open Sub-task fix PR into integration branch]
+    M[QA approves integration PR and required checks pass]
+    N[Submit integration PR to master merge queue]
+    O{Queue checks pass?}
+    P[Queue merges integration PR into master]
+    Q[Open reviewed sync PR for conflicts or Sub-task PR for fixes]
+
+    A --> B --> C --> D
+    D -->|No| E --> C
+    D -->|Yes| F --> G
+    G -->|No| B
+    G -->|Yes| H --> I --> J --> K
+    K -->|No| L --> C
+    K -->|Yes| M --> N --> O
+    O -->|Yes| P
+    O -->|No| Q --> C
+```
 
 ### Naming
 
@@ -67,7 +102,7 @@ git switch -c story/MER-1000-student-dashboard origin/master
 git push -u origin story/MER-1000-student-dashboard
 ```
 
-The same steps apply to `bug/*` and `task/*`. Open the PR to `master` once the parent ticket's work is complete. Implementation PRs provide preview environments during development; the final integration PR provides a preview of the completed work.
+The same steps apply to `bug/*` and `task/*`. Implementation PRs provide previews of their own head branches. If a preview deployment of the integration branch is desired while development is ongoing, open a **draft PR to `master`** from that branch. Once implementation is complete, open the integration PR or mark the existing draft ready for review, then follow [QA Acceptance Testing](#qa-acceptance-testing).
 
 ### Using the Integration Branch Workflow Skill
 
@@ -135,7 +170,7 @@ If the sync branch has diverged from the integration branch, inspect the outstan
 
 Obtain developer code review approval for the sync PR and run the same required status checks as other PRs targeting the integration branch. Merge it using **Create a merge commit**, preserving the merge from `master`. Squashing or rebasing the sync PR discards that ancestry and can make later syncs repeat conflicts. All PRs into integration branches use merge commits. Repository settings and integration branch rules must permit this method and non-linear history.
 
-After the sync PR merges, obtain any renewed QA approval and passing checks on the integration PR, then submit it to the `master` merge queue again. Never push the resolved changes directly to the integration branch or `master`.
+After the sync PR merges, repeat acceptance testing on the updated integration preview if QA testing has already begun. Obtain renewed QA approval and passing checks before submitting the integration PR to the `master` merge queue. Never push the resolved changes directly to the integration branch or `master`.
 
 ### CI for Integration Branches
 
@@ -162,15 +197,24 @@ The workflow file alone does not configure GitHub rulesets or personal Jira pref
 3. Make all required master checks report on `merge_group`, including **Validate master source branch**, and verify a queued integration PR can complete. The validator must still enforce allowed source names on PRs and handle queue events separately. After verification, require QA approval, this check, and the merge queue in the ruleset targeting only `master`. Remove any required check that refers to the deleted integration-name validator.
 4. Notify the team that Story, Bug, and Task implementation work uses child Sub-task PRs into protected integration branches, followed by a completed integration PR through the master merge queue. Sync PRs reference the parent ticket directly. Explain the sync PR process and Jira preference steps above. The preference is per user and changes only the suggested Git command; the **Create branch in GitHub** dialog still needs its branch name corrected manually.
 
+### QA Acceptance Testing
+
+Once all implementation Sub-tasks have merged, open the integration PR against `master` or mark an existing draft ready for review. Keep it open while QA tests the complete parent Story, Bug, or Task. Even work with only one implementation PR follows this process.
+
+1. In the QA handoff, identify the parent ticket and acceptance criteria, integration PR, integration branch, current head commit SHA, and Plasma preview URL: `https://preview-<integration-pr-number>.plasma.oli.cmu.edu/`. Use the integration PR's preview to test the combined work. A Sub-task PR's preview runs that Sub-task branch; Tokamak runs `master`.
+2. Wait for the preview build and deployment of that revision. Confirm the running preview image matches the integration PR's head SHA before testing; its image tag is `preview-<integration-pr-number>-<short-head-sha>`. The **Build Preview Image** workflow records the source SHA and preview URL, but its successful deployment status means the image was published; Argo CD still needs to deploy it. Ask the deployment operator to verify the running image if needed.
+3. QA tests the parent ticket's acceptance criteria and records the tested revision and results. If changes are needed, open fix PRs from child Sub-task branches into the integration branch. Each fix receives developer review and passing checks, then merges with **Create a merge commit**.
+4. After fixes or syncs change the integration branch, wait for its updated preview, verify the new revision, and repeat acceptance testing. QA approves the integration PR only after the current revision passes. Changes after acceptance require testing and renewed QA approval before merging.
+
 ### Merging an Integration Branch to `master`
 
-Once all child Sub-tasks have merged and the parent Story, Bug, or Task passes acceptance testing, open the integration PR against `master`, using the parent ticket in the title and description:
+When implementation is complete, open the integration PR against `master` for acceptance testing, using the parent ticket in the title and description. If a draft PR already provides the integration preview, mark that PR ready for review instead of creating another:
 
 ```
 gh pr create --base master --head story/MER-1000-student-dashboard --title "[FEATURE] [MER-1000] Student dashboard"
 ```
 
-After QA approval and the required status checks pass, use GitHub to add the PR to the `master` merge queue. The queue tests the combined result against current `master` and preceding queued PRs, then merges it using the configured queue merge method. This replaces the local maintainer merge-and-push process. If conflicts prevent merging, complete a sync PR into the integration branch and requeue the integration PR. Fix any other implementation failures through child Sub-task PRs as well.
+After acceptance testing, QA approval, and the required status checks pass, use GitHub to add the PR to the `master` merge queue. The queue tests the combined result against current `master` and preceding queued PRs, then merges it using the configured queue merge method. This replaces the local maintainer merge-and-push process. If conflicts prevent merging, complete a sync PR into the integration branch. Fix any other implementation failures through child Sub-task PRs. Repeat acceptance testing on the updated preview and obtain renewed QA approval and passing checks before requeuing.
 
 After the queue merges the PR, delete the integration branch through the repository's permitted cleanup process.
 

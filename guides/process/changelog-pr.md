@@ -2,15 +2,9 @@
 
 ## Story, Bug, and Task development
 
-1. Create one integration branch from `master` for the parent Jira Story, Bug, or Task, using `story/*`, `bug/*`, or `task/*` respectively. Existing `integ-*` branches follow the same process. Enable integration branch protections: require a PR, developer code review approvals, and status checks; block direct pushes. See [Integration Branches](development.md#integration-branches).
-2. Track implementation work in child Sub-tasks of that parent ticket, including work for a small bug fix or chore. Create each `sub-task/*` implementation branch from the integration branch and open its PR against that integration branch. Developers do not commit directly to integration branches or open implementation PRs against `master`.
-3. Obtain developer code review for each implementation PR, resolve requested changes, and wait for developer approval and all required status checks. Use **Create a merge commit** for the approved PR into the integration branch. Prefix the merge commit message with the change type, Sub-task ticket reference, and description, for example `[BUG FIX] [MER-1001] Fix dashboard loading`.
-4. Once all Sub-tasks have merged and the parent ticket's acceptance criteria pass, open a PR from the integration branch to `master`, referencing the parent Jira ticket. Obtain QA approval and passing required status checks, then submit the PR to the `master` merge queue.
-5. The queue tests the proposed merge against the latest `master` and earlier queued changes. If conflicts prevent merging, create or reuse a `sync/<parent-issue-key>-<summary>` branch with the same ticket key and summary as the integration branch, merge `master` into it, and resolve the conflicts there. Use the parent ticket key in both the reusable branch name and the sync PR against the integration branch. Syncs, including conflict resolution, require no separate child Sub-task. After developer approval and required status checks pass, merge the sync PR with a **merge commit**, then submit the integration PR to the `master` merge queue again. Retain the sync branch for later updates while the parent ticket remains active. See [Syncing an integration branch](development.md#keeping-an-integration-branch-in-sync-with-master).
+Follow the [Development Process](development.md) for branch setup, PR destinations, reviews, acceptance testing, syncs, and merging.
 
-The **Validate master source branch** check allows only `integ-*`, `story/*`, `bug/*`, `task/*`, and `dependabot/*`, case-insensitively. `sub-task/*` and `sync/*` branches target their integration branch and cannot merge directly into `master`. Dependabot remains an automated dependency-update exception to the developer Sub-task workflow.
-
-Configure your [Jira branch-name preference](development.md#jira-branch-name-preference) to suggest `Issue type / Issue key - Issue summary` in the Git command. The **Create branch in GitHub** dialog does not use that preference; add the prefix manually or paste the branch name from the suggestion. Before using a new integration prefix, confirm the [ruleset and CI rollout requirements](development.md#rollout-requirements) are complete.
+Prefix PR titles and merge commit messages with the change type, ticket reference, and description, for example `[BUG FIX] [MER-1001] Fix dashboard loading`. Use the child Sub-task ticket for implementation PRs and the parent ticket for integration and sync PRs.
 
 ### Valid Change Types
 

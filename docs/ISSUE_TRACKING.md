@@ -15,6 +15,6 @@ Use the internal MER project board for normal engineering planning, backlog mana
 
 Use the TRIAGE board when non-authenticated or guest users need a public-facing path to report bugs.
 
-Each parent Story, Bug, or Task has a protected integration branch (`story/*`, `bug/*`, or `task/*`). Track implementation work in child Sub-tasks and open implementation PRs against that integration branch. Once the parent ticket's work and acceptance testing are complete, open its integration PR against `master` and use the merge queue. Use the parent integration ticket directly for syncs from `master`, including conflict resolution; no child Sub-task is required. Use that parent key in `sync/<parent-issue-key>-<summary>` and in the reviewed sync PR back into the integration branch. Copy the summary from the parent integration branch and reuse the same sync branch across syncs. See `guides/process/changelog-pr.md` and `guides/process/development.md` for the full process.
+Follow the [Development Process](../guides/process/development.md) for branch setup, implementation and sync PRs, acceptance testing, and merging. See [PR conventions](../guides/process/changelog-pr.md) for change types and ticket references.
 
 When work is being executed through Harness Engineering, the Jira issue description, comments, and linked design context form the informal input that feeds PRDs, plans, and implementation work.
