@@ -59,7 +59,7 @@ defmodule OliWeb.Common.CardListing do
       "shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]",
       if(Map.get(@item, :selected),
         do: "!border-none !bg-delivery-primary-100 shadow-inner",
-        else: "border-Border-border-default bg-Surface-surface-primary"
+        else: "border-Border-border-default bg-Specially-Tokens-Background-course-cards"
       ),
       if(@preview_mode, do: "!aspect-auto !h-[23em] !w-[16.8em] select-none")
     ]}>
