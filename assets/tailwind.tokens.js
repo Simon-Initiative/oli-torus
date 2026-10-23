@@ -315,6 +315,10 @@ module.exports = {
     light: '#757682',
     dark: '#EEEBF5BF',
   },
+  'Text-text-disabled': {
+    light: '#BAB8BF',
+    dark: '#BAB8BF',
+  },
   'Text-text-button': {
     light: '#006CD9',
     dark: '#4CA6FF',

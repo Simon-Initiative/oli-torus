@@ -5,6 +5,7 @@ defmodule OliWeb.AdminLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
   import OliWeb.Common.Properties.Utils
+  import ExUnit.CaptureLog
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
@@ -493,11 +494,15 @@ defmodule OliWeb.AdminLiveTest do
   describe "users index" do
     setup [:admin_conn]
 
-    test "loads correctly when there are no users in the system", %{
-      conn: conn
-    } do
+    test "loads correctly when there are no users in the system", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_users_route)
 
+      assert has_element?(view, "p", "None exist")
+
+      log = capture_log(fn -> render_hook(view, "unknown_event", %{"a" => 1}) end)
+
+      assert log =~ "unknown_event"
+      assert log =~ "OliWeb.Users.UsersView"
       assert has_element?(view, "p", "None exist")
     end
 

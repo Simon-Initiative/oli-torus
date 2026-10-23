@@ -34,6 +34,40 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
     end
   end
 
+  @doc """
+  Pairs each part attempt with the label of its selector button: the input's type, followed by
+  its position in `part_attempts` when another part has the same type, so two text inputs read
+  "Text 1" and "Text 2", the same numbers their submission headings carry. When a numbered label
+  would still match another button's label, every button carries its position. Labels are
+  compared as they are displayed: whitespace collapsed, and a type with no visible name reads
+  "Input".
+  """
+  def input_labels(attempt, part_attempts, activity_types_map) do
+    types =
+      Enum.map(part_attempts, fn part_attempt ->
+        case attempt |> input_type_label(part_attempt, activity_types_map) |> String.split() do
+          [] -> "Input"
+          words -> Enum.join(words, " ")
+        end
+      end)
+
+    numbered = Enum.with_index(types, fn type, index -> "#{type} #{index + 1}" end)
+    repeated = types -- Enum.uniq(types)
+
+    labels =
+      Enum.zip_with(types, numbered, fn type, numbered_type ->
+        case type in repeated do
+          true -> numbered_type
+          false -> type
+        end
+      end)
+
+    case Enum.uniq(labels) == labels do
+      true -> Enum.zip(part_attempts, labels)
+      false -> Enum.zip(part_attempts, numbered)
+    end
+  end
+
   def input_type_label(nil, _part_attempt, _activity_types_map), do: "Input"
   def input_type_label(_attempt, nil, _activity_types_map), do: "Input"
 

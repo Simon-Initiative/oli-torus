@@ -148,7 +148,7 @@ defmodule OliWeb.Common.InstructorDashboardPagedTable do
     })
   end
 
-  def delegate_handle_event(_, _, _, _) do
+  def delegate_handle_event(_, _, _, _, _) do
     :not_handled
   end
 end
