@@ -103,36 +103,151 @@ defmodule OliWeb.LearningProficiencyTest do
     assert has_element?(view, "#confirm-framework-upgrade[disabled]")
   end
 
-  test "learn more explains both frameworks and confidence with authorized access", s do
+  test "both learn more links open accessible documentation in a new tab", s do
     conn = log_in_author(s.conn, s.author)
     {:ok, view, _} = live(conn, path(s.project))
     docs = "/workspaces/course_author/#{s.project.slug}/learning_proficiency"
-    assert has_element?(view, "a[href='#{docs}']", "Learn more")
-    {:ok, docs_view, _} = live(conn, docs)
-    assert has_element?(docs_view, "article", "percentage correct on first attempts")
-    assert has_element?(docs_view, "article", "At least three first attempts are required")
 
     assert has_element?(
-             docs_view,
-             "article",
-             "logistic regression trained on historical learner responses"
+             view,
+             "#learning-proficiency-settings a[href='#{docs}'][target='_blank'][rel='noopener noreferrer']",
+             "about learning proficiency (opens in a new tab)"
+           )
+
+    view |> element("#upgrade-learning-framework") |> render_click()
+
+    assert has_element?(
+             view,
+             "#framework-upgrade-modal a[href='#{docs}'][target='_blank'][rel='noopener noreferrer']",
+             "(opens in a new tab)"
+           )
+  end
+
+  test "both models remain available while the current framework follows the project", s do
+    conn = log_in_author(s.conn, s.author)
+    docs = "/workspaces/course_author/#{s.project.slug}/learning_proficiency"
+
+    for {model, current_id, other_id, version} <- [
+          {:naive, "legacy-framework", "lkt-aoa-framework", "v0.1.0"},
+          {:lkt_aoa, "lkt-aoa-framework", "legacy-framework", "v0.2.0"}
+        ] do
+      case model do
+        :naive -> :ok
+        :lkt_aoa -> assert {:ok, _} = Course.upgrade_learning_model(s.project, s.author)
+      end
+
+      {:ok, view, _} = live(conn, docs)
+      assert has_element?(view, "article", version)
+      assert has_element?(view, "#legacy-framework h2", "Legacy framework (v1)")
+      assert has_element?(view, "#lkt-aoa-framework h2", "LKT-AOA framework (v2)")
+      assert has_element?(view, "#lkt-aoa-framework h2", "Understanding confidence")
+
+      assert has_element?(
+               view,
+               "##{current_id} [data-current-framework]",
+               "Current framework"
+             )
+
+      refute has_element?(view, "##{other_id} [data-current-framework]")
+      html = view |> render() |> Floki.parse_document!()
+      assert length(Floki.find(html, "[data-current-framework]")) == 1
+      assert has_element?(view, "a[href='#{path(s.project)}']", "Project Overview")
+    end
+  end
+
+  test "both models offer calculation, insufficient evidence, repeat, and parent examples", s do
+    docs = "/workspaces/course_author/#{s.project.slug}/learning_proficiency"
+    {:ok, view, _} = live(log_in_author(s.conn, s.author), docs)
+
+    for {id, calculation} <- [
+          {"legacy-proficiency-example", "(1 + 1 + 1 + 0.2) / 4 = 80%"},
+          {"legacy-insufficient-example", "(1 + 1 + 0.2) / 3 = approximately 73.3%"},
+          {"legacy-repeat-example", "(1 + 1 + 1 + 0.2) / 4 = 80%"},
+          {"legacy-parent-example", "(1 + 1 + 0.2) / 3 = approximately 73.3%"},
+          {"lkt-aoa-proficiency-example", "(0.4 + 0.6 + 0.8) / 3 = 60%"},
+          {"lkt-aoa-insufficient-example", "(0.8 + 0.9 + 0.7) / 3 = 80%"},
+          {"lkt-aoa-repeat-example", "(0.4 + 0.6 + 0.8 + 0.8) / 4 = 65%"},
+          {"lkt-aoa-parent-example", "(0.8 × 4 + 0.4 × 1) / 5 = 72%"}
+        ] do
+      assert has_element?(view, "details##{id}:not([open]) summary", "View Example:")
+      assert has_element?(view, "##{id}", calculation)
+    end
+
+    assert has_element?(
+             view,
+             "#legacy-insufficient-example",
+             "Not enough data. Fewer than three first attempts have been made."
            )
 
     assert has_element?(
-             docs_view,
-             "article",
-             "Proficiency is the average of these predictions across all attempts"
+             view,
+             "#lkt-aoa-insufficient-example",
+             "Not enough data. Fewer than three attempts have been made."
            )
 
     assert has_element?(
-             docs_view,
-             "article",
+             view,
+             "#legacy-insufficient-example",
+             "Repeating either part does not add another first attempt. The count remains two"
+           )
+
+    assert has_element?(
+             view,
+             "#legacy-insufficient-example",
+             "A first attempt on a third distinct part is required to reach the minimum."
+           )
+
+    assert has_element?(
+             view,
+             "#lkt-aoa-insufficient-example",
+             "This repetition counts toward the minimum of three attempts."
+           )
+
+    assert has_element?(
+             view,
+             "#lkt-aoa-insufficient-example",
+             "Confidence does not increase because the learner has not attempted another distinct part."
+           )
+
+    assert has_element?(
+             view,
+             "#understanding-confidence #lkt-aoa-repeat-example summary",
+             "Repeated attempts and confidence"
+           )
+
+    assert has_element?(
+             view,
+             "#understanding-confidence #lkt-aoa-repeat-example",
+             "Increases, because this new part adds distinct-part evidence."
+           )
+
+    assert has_element?(
+             view,
+             "#legacy-proficiency-example",
+             "(1 + 0.2 + 0.2 + 0.2) / 4 = 40%"
+           )
+
+    assert has_element?(
+             view,
+             "#lkt-aoa-proficiency-example",
+             "At exactly 40%, this framework reports Medium"
+           )
+
+    assert has_element?(view, "#legacy-framework", "each incorrect first attempt contributes 0.2")
+
+    assert has_element?(
+             view,
+             "#lkt-aoa-framework",
              "Repeating the same part contributes to proficiency but does not increase confidence."
            )
+  end
 
-    refute render(docs_view) =~ "Full documentation is being prepared"
-    assert has_element?(docs_view, "a[href='#{path(s.project)}']", "Project Overview")
+  test "documentation is restricted to authorized authors and content administrators", s do
+    docs = "/workspaces/course_author/#{s.project.slug}/learning_proficiency"
+    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().content_admin})
+    assert {:ok, _, _} = live(log_in_author(s.conn, admin), docs)
     assert {:error, {:redirect, _}} = live(log_in_author(s.conn, author_fixture()), docs)
+    assert {:error, {:redirect, _}} = live(log_in_user(s.conn, user_fixture()), docs)
     assert get(s.conn, docs).status == 302
   end
 
