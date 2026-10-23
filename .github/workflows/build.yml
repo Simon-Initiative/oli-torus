@@ -1,18 +1,23 @@
 name: Build & Test PR
 
 on:
+  merge_group:
+    types: [checks_requested]
   pull_request:
     branches:
       - master
-      - hotfix-*
-      - prerelease-*
-      - nextgen-ux
       - integ-*
+      - story/*
+      - bug/*
+      - task/*
   # Each PR merged into a feature integration branch is verified again on the
   # combined result, since PRs that pass independently can still break together.
   push:
     branches:
       - integ-*
+      - story/*
+      - bug/*
+      - task/*
 
 permissions:
   contents: read

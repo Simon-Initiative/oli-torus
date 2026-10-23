@@ -1,4 +1,4 @@
-import { expect, Locator, Page } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 
 export class MenuDropdownCO {
   private readonly menuButton: Locator;
@@ -34,7 +34,7 @@ export class MenuDropdownCO {
 
   async expectLinkedAuthoringAccount(email: string) {
     const menu = await this.waitForWorkspaceMenu();
-    const linkedAccount = menu.locator('[role="linked authoring account email"]');
+    const linkedAccount = menu.locator('[data-role="linked-authoring-account-email"]');
     await expect(linkedAccount).toHaveText(email);
   }
 

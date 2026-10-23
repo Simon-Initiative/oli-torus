@@ -184,6 +184,7 @@ defmodule OliWeb.Workspaces.Utils do
   attr :active_view, :atom, default: nil
   attr :additional_classes, :string, default: ""
 
+  @doc "Renders the label, icon, and badge of a workspace sidebar link."
   def nav_link_content(assigns) do
     item_id = assigns.sub_menu_item.text |> String.downcase() |> String.replace(" ", "_")
     assigns = assign(assigns, :item_id, item_id)
@@ -198,7 +199,7 @@ defmodule OliWeb.Workspaces.Utils do
         {apply(Icons, String.to_existing_atom(@sub_menu_item.icon), [assigns])}
       </div>
       <div class={[
-        "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
+        "text-Text-text-low text-sm font-medium tracking-tight flex flex-row justify-between",
         if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
       ]}>
         <div

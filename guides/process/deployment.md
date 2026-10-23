@@ -1,24 +1,24 @@
-# CI/CD and Deployment Process
+# Deployment Process
 
 ## Overview
 
-Torus uses Github Actions for its CI/CD pipelines. When a PR is opened, a build is automatically started and several checks are run including unit tests and lint checks which must all pass before a PR can be merged. Once a branch is merged into master, the resulting commit is packaged and deployed to the test server ([tokamak.oli.cmu.edu](https://tokamak.oli.cmu.edu)). The test server will always represent the latest from master unless a manual deployment is made. When a release is made (tagged vX.Y.Z), a deployment is kicked off to the production server ([proton.oli.cmu.edu](proton.oli.cmu.edu)). A production deployment will always use a prebuilt artifact identified by the version and commit SHA to ensure that the release tested is the same as the release deployed.
+Torus uses GitHub Actions to package and deploy releases. Merging into `master` packages the resulting commit and deploys it to the test server, which normally runs the latest `master` unless a manual deployment is made. Production uses the same prebuilt artifact deployed to the test and QA environments which is identified by its version and commit SHA so the verified artifact is identical to the one deployed to production.
 
-**Test Server:** [tokamak.oli.cmu.edu](tokamak.oli.cmu.edu)
+For pull requests, integration branches, CI checks, and the merge queue, see the [Development Process](development.md).
 
-**Production Server:** [proton.oli.cmu.edu](proton.oli.cmu.edu)
+**Test Server:** [tokamak.oli.cmu.edu](https://tokamak.oli.cmu.edu)
 
-## Pull Requests
+**QA Server:** [stellarator.oli.cmu.edu](https://stellarator.oli.cmu.edu)
 
-Every pull request is required to pass a set of status checks in both Elixir and Typescript including a successful build, all unit tests passing, and successful lint with no errors (TypeScript). These checks are automatically started when a pull request is created. Other automated checks include Coveralls for unit test coverage and GitGuardian for identifying accidentally leaked secrets, however these checks are only informative and discretion is left to the developer and code reviewer to decide if issues found are blocking.
+**Production Server:** [proton.oli.cmu.edu](https://proton.oli.cmu.edu)
 
 ## Deployments to Test
 
-Deployments to the test server are automatically initiated when a pull request is landed to master. This means the test server will usually be up-to-date with the latest changes from the master branch. There are some situations however, when someone may want to manually push a deployment to the test server which can be accomplished with the following:
+Deployments to the test server are automatically initiated when a pull request is landed to master. This means the test server will usually be up-to-date with the latest changes from the master branch.
 
 ### Release Candidates
 
-If a release candidate is created with a tag formatted as `vX.Y.Z-rcN` where X.Y.Z represents a version number and N is the release candidate number, a deployment of the tag's targeted ref will be deployed to the test server.
+A release candidate can be created with a tag formatted as `vX.Y.Z-rcN` where X.Y.Z represents a version number and N is the release candidate number. Because the release candidate is created from a commit on the master branch, it will have a deployable package artifact which can be deployed to any supported QA environment. To create a release candidate, follow these steps:
 
 1. Go to https://github.com/Simon-Initiative/oli-torus/releases and click "Draft a new release"
 1. Enter your vX.Y.X-rcN for **Tag version** and **Release Title**
@@ -26,120 +26,8 @@ If a release candidate is created with a tag formatted as `vX.Y.Z-rcN` where X.Y
 1. Check "This is a pre-release"
 1. Click "Publish release"
 
-### `deploy-test` Tag
-
-A deployment can be initiated by tagging any git ref with the `deploy-test` tag and pushing to remote. For example:
-
-```
-git tag --delete deploy-test   # if the tag previously existed locally
-git tag deploy-test
-git push origin deploy-test --force
-```
-
 ## Deployments to Production
 
-Deployments to the production server will be initiated when a release is created with the tag formatted as `vX.Y.Z` where X.Y.Z represents a version number.
+Deployments to the production server can be initiated by manually invoking the 'Deploy' workflow from the GitHub Actions tab. The workflow will prompt for the version to deploy, which must be a tag that exists on the `master`. The deployment requires an approval from authorized personnel before it can proceed. The workflow will then deploy the tagged package release to the production server.
 
-> **Note:** Production deployments assume a previous build has been packaged, and therefore any commit tagged as a release must exist on the `master` branch, a `hotfix|prerelease-*` branch or be packaged by tagging the commit with the `package` tag first.
-
-## Hotfixes
-
-A hotfix branch can be created using the release tag you wish to branch from. For example:
-
-```
-git checkout -b hotfix-X.Y.[Z+1] vX.Y.Z
-git push origin hotfix-X.Y.[Z+1]
-```
-
-Once the hotfix branch is created, it will essentially act as the master branch to land all bug fixes and enhancements that are intended to be included in the hotfix.
-
-When a hotfix branch is ready to be deployed, it can be tagged using the **Release Candidate** and **Deployment Process** outlined above. Hotfix branches that follow the convention `hotfix-` will automatically be packaged when pushed to remote, just like master. Make sure to wait for the package step to complete before creating a release, or else the deployment will fail.
-
-> **Note:** Because hotfix branches are automatically packaged based on the branch name convention, there is no need to manually tag with `package` before deploying.
-
-Finally, make sure the hotfix branch is eventually merged back to master to be included in downstream development. To do this easily, create a new branch from the hotfix branch called `integrate-X.Y.Z` (the name here is not necessarily important, but just serves as an example). Then pull `master` into this integration branch. Once any/all merge conflicts are resolved, open a PR against master.
-
-## Feature Integration Branches
-
-Every feature is developed on a long-lived, feature-specific integration branch named `integ-<feature-name>`. A feature is represented by one standalone, deployable Jira Story. If that Story is broken into smaller pieces, create child Tasks; each Task's implementation PR targets the Story's integration branch. The integration branch is merged to `master` only after the complete feature passes acceptance testing.
-
-An integration branch supports exactly one feature. An Epic may contain multiple Stories, so it does not receive one shared integration branch: each Story has its own. This process applies even when a feature has only one implementation PR. Bug fixes and operational or configuration changes are outside this feature workflow until their process is defined separately.
-
-### Naming
-
-Integration branch names must follow `integ-<name>`, where `<name>` is lowercase letters and digits separated by single hyphens, for example `integ-student-dashboard` or `integ-genai-authoring`. CI for integration branches is configured through the `integ-*` branch pattern, so a differently named branch silently misses it. The **Validate Integration Branch Name** workflow fails for branches (and PRs based on branches) whose name starts with `integ` but does not follow the convention. Branches starting with `integrate-` belong to the hotfix back-merge process above and are not checked.
-
-### Creating an Integration Branch
-
-Create the branch from `master` and immediately open a draft PR from it against `master`, titled with the feature Story's ticket. GitHub cannot open a PR between identical branches, so the branch starts with an empty commit:
-
-```
-git fetch origin
-git switch -c integ-student-dashboard origin/master
-git commit --allow-empty -m "Start integ-student-dashboard"
-git push -u origin integ-student-dashboard
-gh pr create --draft --base master --head integ-student-dashboard --title "[FEATURE] [MER-XXXX] Student dashboard"
-```
-
-Keep this PR in draft until the feature is complete. Every PR gets a preview environment at `https://preview-<PR number>.plasma.oli.cmu.edu/`, so this draft PR provides a preview of the integration branch that is rebuilt on every merge into it. It also runs the PR checks against the integration branch merged with `master`, which surfaces incompatibilities with `master` early.
-
-### Working on the Feature
-
-Each child Task is implemented as a normal PR whose base is the feature's integration branch, following the usual title conventions:
-
-```
-git fetch origin
-git switch -c MER-1001-dashboard-skeleton origin/integ-student-dashboard
-# ...commit and push...
-gh pr create --base integ-student-dashboard --title "[FEATURE] [MER-1001] Dashboard skeleton"
-```
-
-PRs into an integration branch are reviewed and **squashed and merged**, exactly like PRs into `master`, and each one gets its own preview environment.
-
-When a PR depends on another PR that has not merged yet, branch from that PR's branch but still open the PR against the integration branch (its diff includes the other PR's commits until that one merges). Once the first PR is squashed and merged, rebase the dependent branch onto the integration branch:
-
-```
-git fetch origin
-git rebase --onto origin/integ-student-dashboard MER-1001-dashboard-skeleton
-git push --force-with-lease
-```
-
-### Keeping an Integration Branch in Sync with `master`
-
-Merge `master` into the integration branch regularly so conflicts are resolved in small steps rather than at the end:
-
-```
-git fetch origin
-git switch integ-student-dashboard
-git pull
-git merge origin/master
-git push origin integ-student-dashboard
-```
-
-This must be a real merge commit. Squashing a sync PR loses the merge base, so every later sync repeats the same conflicts. Because integration branches only accept changes through PRs, this push is done by a maintainer allowed to bypass the branch protection.
-
-### CI for Integration Branches
-
-Integration branches are protected like hotfix branches: changes arrive through PRs that must pass the `Elixir build and test` and `TypeScript build and test` checks, and force pushes and deletion are blocked.
-
-| Event | What runs |
-| --- | --- |
-| PR into `integ-*` | Everything a PR into `master` runs: build and tests, PR Playwright suite, PR title validation, Danger, AI review, and a preview environment |
-| Push to `integ-*` (every merge into it) | Build and tests and the PR Playwright suite, to verify the combined result of the merged PRs |
-| PR from `integ-*` into `master` (the draft PR) | Build and tests, PR Playwright suite, PR title validation, and a preview environment. Danger and AI review are skipped because every change on the branch already went through them in its own PR |
-
-### Merging an Integration Branch to `master`
-
-When the feature is complete, mark the draft PR as ready for review and bring the branch up to date with `master`. Once it is approved and its checks pass, a maintainer allowed to bypass branch protection merges it locally with a merge commit and pushes it. GitHub then marks the PR as merged:
-
-```
-git fetch origin
-git switch master
-git pull
-git merge --no-ff origin/integ-student-dashboard
-git push origin master
-```
-
-This preserves each squashed PR from the integration branch as its own commit and ticket reference on `master`, keeping history, `git blame`, and `git bisect` granular. The feature can still be reverted with `git revert -m 1 <merge commit>`. This path bypasses the merge button and the repository's squash-only setting, so it requires a maintainer with bypass permissions and makes `master` history non-linear.
-
-After the merge, delete the integration branch.
+> **Note:** Production deployments assume a previous build has been packaged, and therefore any commit tagged as a release must exist on the `master` branch, a `prerelease-*` branch or be packaged by manually invoking the 'Package' workflow first.

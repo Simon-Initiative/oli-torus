@@ -325,7 +325,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
         socket,
         list_students:
           Sections.get_students_for_section_with_enrollment_date(selected_target_section.id),
-        params: update_params(socket.assigns.params, %{sort_by: :name}),
+        params: update_params(socket.assigns.params, %{sort_by: :name, offset: 0}),
         selected_section_to_transfer: selected_target_section,
         selected_student_to_transfer: nil
       )
@@ -357,7 +357,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       assign(
         socket,
         :params,
-        update_params(socket.assigns.params, %{text_search: item_name})
+        update_params(socket.assigns.params, %{text_search: item_name, offset: 0})
       )
     )
   end
@@ -388,7 +388,10 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       assign(
         socket,
         :params,
-        update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
+        update_params(socket.assigns.params, %{
+          sort_by: String.to_existing_atom(sort_by),
+          offset: 0
+        })
       )
     )
   end

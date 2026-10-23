@@ -1,5 +1,5 @@
 import { Verifier } from '@core/verify/Verifier';
-import { expect, Locator, Page } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 
 export class StudentCoursePO {
   private readonly courseHomeMarkers: Locator[];
@@ -50,7 +50,7 @@ export class StudentCoursePO {
     const groupedOutlineLink = this.page
       .locator('a')
       .filter({
-        has: this.page.locator('div[role="group_item"]').filter({
+        has: this.page.locator('div[data-role="group-item"]').filter({
           hasText: pageName,
         }),
       })
@@ -88,7 +88,7 @@ export class StudentCoursePO {
       }
     }
 
-    await Verifier.expectIsVisible(this.page.getByRole('heading', { name: pageName, exact: true }));
+    await Verifier.expectIsVisible(this.openedPageTitle(pageName));
   }
 
   async openFirstPage(pageName: string) {
@@ -105,13 +105,26 @@ export class StudentCoursePO {
         startCourse.click(),
       ]);
 
-      await Verifier.expectIsVisible(
-        this.page.getByRole('heading', { name: pageName, exact: true }),
-      );
+      await Verifier.expectIsVisible(this.openedPageTitle(pageName));
       return;
     }
 
     await this.openPage(pageName);
+  }
+
+  /**
+   * The title of an opened page. Basic pages render it as a heading. The adaptive
+   * lesson header renders it as plain text after a screen-reader "Title:" prefix.
+   */
+  private openedPageTitle(pageName: string) {
+    const adaptiveHeaderTitle = this.page
+      .locator('#delivery-header .lessonTitle')
+      .filter({ hasText: new RegExp(`(^|\\s)${escapeRegExp(pageName)}$`) });
+
+    return this.page
+      .getByRole('heading', { name: pageName, exact: true })
+      .or(adaptiveHeaderTitle)
+      .first();
   }
 
   private galleryTitle(pageName: string) {
@@ -280,4 +293,8 @@ function isStudentLessonPath(pathname: string) {
     pathname.includes('/adaptive_lesson/') ||
     pathname.includes('/prologue/')
   );
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

@@ -361,7 +361,7 @@ defmodule OliWeb.Components.Delivery.Student do
             >
               <.link
                 href={~p"/sections/#{@section_slug}/lesson/#{@page_revision_slug}"}
-                role="review_attempt_link"
+                data-role="review-attempt-link"
               >
                 <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
                   Continue
@@ -385,13 +385,13 @@ defmodule OliWeb.Components.Delivery.Student do
           </div>
           <div class="w-4 h-4 relative"><Icons.star /></div>
 
-          <div role="attempt score" class="tracking-tight">
+          <div data-role="attempt-score" class="tracking-tight">
             {Float.round(@attempt.score, 2)}
           </div>
           <div class="text-emerald-600">
             /
           </div>
-          <div role="attempt out of" class="tracking-tight">
+          <div data-role="attempt-out-of" class="tracking-tight">
             {Float.round(@attempt.out_of, 2)}
           </div>
         </div>
@@ -417,7 +417,7 @@ defmodule OliWeb.Components.Delivery.Student do
                 request_path: Utils.schedule_live_path(@section_slug)
               )
             }
-            role="review_attempt_link"
+            data-role="review-attempt-link"
           >
             <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
               Review
@@ -504,7 +504,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :exploration} = assigns) do
     ~H"""
-    <div data-role="resource_type" aria-label="exploration" class="justify-start items-start flex">
+    <div data-role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-purple bg-Fill-Accent-fill-accent-purple rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -516,6 +516,7 @@ defmodule OliWeb.Components.Delivery.Student do
             Exploration
           </div>
         </div>
+        <span :if={!@long} class="sr-only">Exploration</span>
       </div>
     </div>
     """
@@ -523,7 +524,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :checkpoint} = assigns) do
     ~H"""
-    <div data-role="resource_type" aria-label="checkpoint" class="justify-start items-start flex">
+    <div data-role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-orange bg-Fill-Accent-fill-accent-orange rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -535,6 +536,7 @@ defmodule OliWeb.Components.Delivery.Student do
             Assignment
           </div>
         </div>
+        <span :if={!@long} class="sr-only">Assignment</span>
       </div>
     </div>
     """
@@ -542,7 +544,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :practice} = assigns) do
     ~H"""
-    <div data-role="resource_type" aria-label="practice" class="justify-start items-start flex">
+    <div data-role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-blue bg-Fill-Accent-fill-accent-blue rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -554,6 +556,7 @@ defmodule OliWeb.Components.Delivery.Student do
             Practice
           </div>
         </div>
+        <span :if={!@long} class="sr-only">Practice</span>
       </div>
     </div>
     """
@@ -561,7 +564,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :lesson} = assigns) do
     ~H"""
-    <div data-role="resource_type" aria-label="reading" class="justify-start items-start flex">
+    <div data-role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-teal bg-Fill-Accent-fill-accent-teal rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -573,6 +576,7 @@ defmodule OliWeb.Components.Delivery.Student do
             Lesson
           </div>
         </div>
+        <span :if={!@long} class="sr-only">Lesson</span>
       </div>
     </div>
     """

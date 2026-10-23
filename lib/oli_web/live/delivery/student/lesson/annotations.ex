@@ -248,7 +248,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     ~H"""
     <button
       id="toggle_notes_button"
-      role="toggle notes button"
+      data-role="toggle-notes-button"
       data-view="desktop"
       aria-label="Toggle Notes panel"
       aria-pressed={to_string(@is_active || false)}
