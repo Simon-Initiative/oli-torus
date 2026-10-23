@@ -149,7 +149,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBar do
     ~H"""
     <div
       class={[
-        "group flex h-9 w-56 items-center gap-3 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input p-2 font-open-sans transition-[background-color,border-color,box-shadow] hover:border-Specially-Tokens-Border-border-input-focused hover:bg-Specially-Tokens-Fill-fill-input-focused hover:shadow-[0px_2px_6px_0px_rgba(0,52,99,0.15)] focus-within:border-Specially-Tokens-Border-border-input-focused focus-within:bg-Specially-Tokens-Fill-fill-input focus-within:shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hover:focus-within:bg-Specially-Tokens-Fill-fill-input hover:focus-within:shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]",
+        "group flex h-9 w-56 items-center gap-3 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input p-2 font-sans transition-[background-color,border-color,box-shadow] hover:border-Specially-Tokens-Border-border-input-focused hover:bg-Specially-Tokens-Fill-fill-input-focused hover:shadow-[0px_2px_6px_0px_rgba(0,52,99,0.15)] focus-within:border-Specially-Tokens-Border-border-input-focused focus-within:bg-Specially-Tokens-Fill-fill-input focus-within:shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hover:focus-within:bg-Specially-Tokens-Fill-fill-input hover:focus-within:shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]",
         state_classes(@state),
         @class
       ]}
@@ -170,7 +170,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBar do
         autocomplete={@autocomplete}
         aria-label={@aria_label}
         class={[
-          "h-5 min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 font-open-sans text-sm font-normal leading-4 text-Text-text-high outline-none placeholder:text-Text-text-low-alpha focus:border-0 focus:outline-none focus:ring-0 focus:shadow-none [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none",
+          "h-5 min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 font-sans text-sm font-normal leading-4 text-Text-text-high outline-none placeholder:text-Text-text-low-alpha focus:border-0 focus:outline-none focus:ring-0 focus:shadow-none [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none",
           @input_class
         ]}
         {@rest}
@@ -179,7 +179,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBar do
       <span
         :if={not @interactive}
         class={[
-          "h-5 min-w-0 flex-1 truncate font-open-sans text-sm font-normal leading-4",
+          "h-5 min-w-0 flex-1 truncate font-sans text-sm font-normal leading-4",
           if(@filled?, do: "text-Text-text-high", else: "text-Text-text-low-alpha")
         ]}
       >
