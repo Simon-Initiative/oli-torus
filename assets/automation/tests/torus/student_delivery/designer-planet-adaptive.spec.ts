@@ -2,6 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '@fixture/my-fixture';
 import { setRuntimeConfig } from '@core/runtimeConfig';
 import { AdaptiveLessonTask } from '@tasks/AdaptiveLessonTask';
+import { ExternalContentLog, recordExternalContent } from '@tasks/ExternalContentLog';
 import { HomeTask } from '@tasks/HomeTask';
 import {
   AUTOMATION_SETUP_HOOK_TIMEOUT_MS,
@@ -173,6 +174,7 @@ let archiveTempDir: string | null = null;
 const seenAttempts = new Set<string>();
 let attemptsBeforeAdvance = new Set<string>();
 const savedStageIds = new Map<string, Set<string>>();
+let externalContentLog: ExternalContentLog | undefined;
 
 setRuntimeConfig({
   baseUrl,
@@ -252,6 +254,7 @@ test.describe.serial('BioBeyond Designer Planet adaptive lesson', () => {
     }
 
     recordDeckSaves(page);
+    externalContentLog = recordExternalContent(page, baseUrl);
     await page.goto('/');
     await new HomeTask(page).login('student');
     await new AdaptiveLessonTask(page).openFromOutline(
@@ -1206,7 +1209,7 @@ async function isEmbeddedSimulationVisible(page: Page, timeout = 500) {
 }
 
 async function waitForEmbeddedSimulationVisible(page: Page, timeout = 12_000) {
-  return expect
+  const visible = await expect
     .poll(async () => isEmbeddedSimulationVisible(page), {
       message: 'Expected embedded simulation to be visible',
       timeout,
@@ -1214,6 +1217,15 @@ async function waitForEmbeddedSimulationVisible(page: Page, timeout = 12_000) {
     .toBe(true)
     .then(() => true)
     .catch(() => false);
+
+  if (!visible) {
+    await test.info().attach('external content before the embedded simulation wait gave up', {
+      body: externalContentLog?.dump() ?? 'nothing recorded',
+      contentType: 'text/plain',
+    });
+  }
+
+  return visible;
 }
 
 async function setEmbeddedEffortLevel(scope: AdaptiveScope, effortLevel: EffortLevel) {
