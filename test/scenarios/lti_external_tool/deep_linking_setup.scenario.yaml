@@ -1,0 +1,92 @@
+# Establish persisted selections through real authoring APIs. No tool service is contacted.
+- user:
+    name: author
+    type: author
+    system_role: system_admin
+    email: deep-linking-author@example.com
+    given_name: Deep Linking
+    family_name: Author
+
+- project:
+    name: deep_linking_project
+    title: Deep Linking Project
+    root:
+      children:
+        - page: Tool Lesson
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.register_tool/1
+
+- create_activity:
+    project: deep_linking_project
+    title: Configured Tool
+    virtual_id: configured
+    type: deep_linking_test_tool
+    content_format: json
+    content:
+      openInNewTab: false
+      height: 500
+      authoring:
+        parts: []
+      deepLink:
+        type: ltiResourceLink
+        url: https://tool.example/draft
+        title: Draft Task
+        text: Draft description
+        custom:
+          mode: draft
+          configuration:
+            task: cover-letter
+            options: [planning, revision]
+          task_json: '{"id":"cover-letter","access":"Public"}'
+
+- create_activity:
+    project: deep_linking_project
+    title: Unconfigured Tool
+    virtual_id: unconfigured
+    type: deep_linking_test_tool
+    content_format: json
+    content:
+      openInNewTab: false
+      authoring:
+        parts: []
+
+- create_activity:
+    project: deep_linking_project
+    title: Cleared Tool
+    virtual_id: cleared
+    type: deep_linking_test_tool
+    content_format: json
+    content:
+      openInNewTab: false
+      authoring:
+        parts: []
+      deepLink: null
+
+- edit_page:
+    project: deep_linking_project
+    page: Tool Lesson
+    content: |
+      title: Tool Lesson
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: configured
+        - type: activity_reference
+          virtual_id: unconfigured
+        - type: activity_reference
+          virtual_id: cleared
+
+- user:
+    name: learner
+    type: student
+    email: deep-linking-learner@example.com
+    given_name: Deep Linking
+    family_name: Learner
+
+- assert:
+    structure:
+      to: deep_linking_project
+      root:
+        children:
+          - page: Tool Lesson

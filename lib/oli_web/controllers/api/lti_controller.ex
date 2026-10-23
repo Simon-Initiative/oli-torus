@@ -3,12 +3,13 @@ defmodule OliWeb.Api.LtiController do
 
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints
-  alias Oli.Accounts
   alias Oli.Delivery.Sections
-  alias Oli.Publishing.{DeliveryResolver, AuthoringResolver}
+  alias Oli.Lti.AuthoringLaunch
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
   alias Oli.Lti.PlatformInstances
+  alias Oli.Lti.SectionDeepLinkLaunch
   alias Oli.Lti.Tokens
 
   require Logger
@@ -23,6 +24,11 @@ defmodule OliWeb.Api.LtiController do
 
   This endpoint is used by both the delivery and authoring contexts, depending on
   whether the request is made from a section or a project.
+
+  Includes any section-owned selection (the resource configuration chosen in the
+  external tool) and whether the current actor may reconfigure it. Project launches
+  support Regular with the chosen authoring role and reuse saved configuration;
+  starting Deep Linking uses the separate configuration endpoint.
   """
   def launch_details(conn, %{"section_slug" => section_slug, "activity_id" => activity_id}) do
     with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
@@ -41,7 +47,11 @@ defmodule OliWeb.Api.LtiController do
       current_author = conn.assigns[:current_author]
 
       can_configure_tool =
-        Sections.is_instructor?(user, section_slug) || Accounts.is_admin?(current_author)
+        SectionDeepLinkLaunch.can_configure?(
+          SectionDeepLinkLaunch.actor(user, current_author),
+          section,
+          deployment
+        )
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
@@ -81,69 +91,175 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
-  def launch_details(conn, %{"project_slug" => project_slug, "activity_id" => activity_id}) do
-    with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
-           AuthoringResolver.from_resource_id(project_slug, activity_id),
-         %LtiExternalToolActivityDeployment{
-           platform_instance: platform_instance,
-           status: status,
-           deep_linking_enabled: deep_linking_enabled
-         } =
-           deployment =
-           PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
-             activity_registration_id: activity_type_id
-           ) do
-      author = conn.assigns[:current_author]
+  def launch_details(
+        conn,
+        %{"project_slug" => project_slug, "activity_id" => activity_id} = params
+      ) do
+    author = conn.assigns[:current_author]
+    role = Map.get(params, "role", "developer")
+    launch_type = Map.get(params, "launch_type", "regular")
+
+    with true <- role in ["developer", "instructor"] and launch_type == "regular",
+         {:ok, revision, deployment} <-
+           AuthoringLaunch.resolve(author, project_slug, activity_id) do
+      request_id = Ecto.UUID.generate()
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(author.id, %{
-          "project" => project_slug,
-          "resource_id" => activity_id
+          "project_id" => Oli.Authoring.Course.get_project_by_slug(project_slug).id,
+          "resource_id" => activity_id,
+          "role" => role,
+          "launch_type" => launch_type,
+          "request_id" => request_id
         })
 
+      platform = deployment.platform_instance
+      selected_url = get_in(revision.content, ["deepLink", "url"])
+
+      target =
+        case selected_url do
+          url when is_binary(url) -> url
+          _ -> platform.target_link_uri
+        end
+
       launch_params =
-        build_launch_params(
-          platform_instance,
-          login_hint,
-          deployment,
+        build_launch_params(platform, login_hint, deployment,
           endpoint: :project_launch_details,
           resource_id: activity_id
         )
+        |> Map.put(:target_link_uri, target)
 
       json(conn, %{
-        name: platform_instance.name,
+        name: platform.name,
         launch_params: launch_params,
-        status: status,
-        deep_linking_enabled: deep_linking_enabled,
-        can_configure_tool: false
+        status: deployment.status,
+        deep_linking_enabled: deployment.deep_linking_enabled,
+        can_configure_tool: deployment.deep_linking_enabled,
+        request_id: request_id
       })
     else
       _ ->
         conn
-        |> put_status(:not_found)
-        |> json(%{error: "Activity not found"})
-        |> halt()
+        |> put_status(:forbidden)
+        |> json(%{error: "Launch unavailable for this author, activity, or launch choice"})
     end
   end
+
+  @doc """
+  Persists a signed tool selection (the resource configuration chosen in the external
+  tool) through the activity editor and returns its authoritative saved model.
+  Requires the trusted Torus origin and rejects stale or mismatched results.
+  """
+  def authoring_deep_link_save(conn, %{
+        "project_slug" => project,
+        "activity_id" => activity,
+        "token" => token
+      }) do
+    with true <- same_origin?(conn),
+         {:ok, revision} <-
+           AuthoringLaunch.save_result(conn.assigns[:current_author], project, activity, token) do
+      json(conn, %{
+        model: revision.content,
+        title: revision.title,
+        objectives: revision.objectives,
+        tags: revision.tags
+      })
+    else
+      {:error, :save_failed} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "The selection could not be saved. Try again."})
+
+      _ ->
+        conn
+        |> put_status(:conflict)
+        |> json(%{
+          error: "Selection expired or the editor changed. Close and launch the tool again."
+        })
+    end
+  end
+
+  def authoring_deep_link_save(conn, _),
+    do: conn |> put_status(:bad_request) |> json(%{error: "A signed selection is required"})
+
+  @doc """
+  Starts Deep Linking and returns launch details bound to the initiating request.
+  Requires the trusted Torus origin; projects also require the owned editor lock,
+  while section configuration requires an authorized instructor or administrator.
+  """
+  def deep_linking_launch_details(
+        conn,
+        %{"project_slug" => project, "activity_id" => activity, "lock_id" => lock_id} = params
+      ) do
+    author = conn.assigns[:current_author]
+    role = Map.get(params, "role", "developer")
+
+    with true <- same_origin?(conn) and role in ["developer", "instructor"],
+         {:ok, details} <- AuthoringLaunch.start_request(author, project, activity, lock_id),
+         {:ok, %LoginHint{value: login_hint}} <-
+           LoginHints.create_login_hint(author.id, %{
+             "project_id" => Oli.Authoring.Course.get_project_by_slug(project).id,
+             "resource_id" => to_string(activity),
+             "role" => role,
+             "launch_type" => "deep_link",
+             "request_id" => details.request_id
+           }) do
+      deployment = details.deployment
+      platform = deployment.platform_instance
+
+      launch_params =
+        build_launch_params(platform, login_hint, deployment,
+          endpoint: :project_deep_linking_launch_details,
+          resource_id: activity,
+          lti_message_type: "LtiDeepLinkingRequest",
+          authoring_request: details.request_token
+        )
+
+      json(conn, %{
+        name: platform.name,
+        launch_params: launch_params,
+        status: deployment.status,
+        deep_linking_enabled: true,
+        can_configure_tool: true,
+        request_id: details.request_id,
+        request_token: details.request_token
+      })
+    else
+      _ ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "Tool configuration requires an active editing lock"})
+    end
+  end
+
+  def deep_linking_launch_details(conn, %{"project_slug" => _}),
+    do: conn |> put_status(:bad_request) |> json(%{error: "The editing lock is required"})
 
   def deep_linking_launch_details(conn, %{
         "section_slug" => section_slug,
         "activity_id" => activity_id
       }) do
-    with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
-           DeliveryResolver.from_resource_id(section_slug, activity_id),
-         %LtiExternalToolActivityDeployment{platform_instance: platform_instance, status: status} =
-           deployment =
-           PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
-             activity_registration_id: activity_type_id
-           ) do
-      user = conn.assigns[:current_user]
+    actor =
+      SectionDeepLinkLaunch.actor(conn.assigns[:current_user], conn.assigns[:current_author])
+
+    with true <- same_origin?(conn),
+         {:ok,
+          %{
+            section: section,
+            deployment: deployment,
+            request_id: request_id,
+            request_token: request_token
+          }} <-
+           SectionDeepLinkLaunch.start_request(actor, section_slug, activity_id) do
+      platform_instance = deployment.platform_instance
 
       {:ok, %LoginHint{value: login_hint}} =
-        LoginHints.create_login_hint(user.id, %{
-          "section" => section_slug,
+        LoginHints.create_login_hint(actor.id, %{
+          "section_id" => section.id,
           "resource_id" => activity_id,
-          "configure_deep_linking" => "true"
+          "configure_deep_linking" => "true",
+          "actor_type" => SectionDeepLinkLaunch.actor_type(actor),
+          "request_id" => request_id
         })
 
       launch_params =
@@ -159,15 +275,61 @@ defmodule OliWeb.Api.LtiController do
       json(conn, %{
         name: platform_instance.name,
         launch_params: launch_params,
-        status: status
+        status: deployment.status,
+        request_id: request_id,
+        request_token: request_token
       })
     else
       _ ->
         conn
-        |> put_status(:not_found)
-        |> json(%{error: "Activity not found"})
+        |> put_status(:forbidden)
+        |> json(%{error: "Tool configuration is unavailable"})
         |> halt()
     end
+  end
+
+  @doc """
+  Cancels a section configuration request without undoing a committed selection
+  (the resource configuration chosen in the external tool). The returned status
+  tells the dialog whether cancellation or successful persistence completed first.
+  """
+  def cancel_deep_linking(conn, %{
+        "section_slug" => slug,
+        "activity_id" => id,
+        "request_token" => token
+      }) do
+    actor =
+      SectionDeepLinkLaunch.actor(conn.assigns[:current_user], conn.assigns[:current_author])
+
+    result =
+      case same_origin?(conn) do
+        true -> SectionDeepLinkLaunch.cancel_request(actor, slug, id, token)
+        false -> {:error, :configuration_unavailable}
+      end
+
+    case result do
+      {:ok, status} ->
+        json(conn, %{status: status})
+
+      _ ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "Tool configuration could not be cancelled"})
+    end
+  end
+
+  def cancel_deep_linking(conn, _params),
+    do:
+      conn
+      |> put_status(:forbidden)
+      |> json(%{error: "Tool configuration could not be cancelled"})
+
+  # Requires exactly the configured Torus origin for configuration-changing POSTs;
+  # absent or different Origin headers cannot initiate, save or cancel a request.
+  defp same_origin?(conn) do
+    uri = URI.parse(Oli.Utils.get_base_url())
+    origin = URI.to_string(%{uri | path: nil, query: nil, fragment: nil})
+    get_req_header(conn, "origin") == [origin]
   end
 
   defp get_section_by_slug(section_slug) do
@@ -180,6 +342,9 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
+  # Assembles OIDC login parameters shared by project and section launches.
+  # Optional request correlation travels in the signed message hint rather than
+  # expanding the size-limited login-hint context.
   defp build_launch_params(platform_instance, login_hint, deployment, opts) do
     deployment_id = deployment && deployment.deployment_id
     lti_message_type = Keyword.get(opts, :lti_message_type)
@@ -199,7 +364,8 @@ defmodule OliWeb.Api.LtiController do
             deployment_id,
             endpoint,
             resource_id: Keyword.get(opts, :resource_id),
-            lti_message_type: lti_message_type
+            lti_message_type: lti_message_type,
+            authoring_request: Keyword.get(opts, :authoring_request)
           ),
         lti_message_type: lti_message_type
       }
@@ -211,6 +377,8 @@ defmodule OliWeb.Api.LtiController do
     launch_params
   end
 
+  # Signs the launch route, deployment, activity and optional authoring request
+  # with the login hint, so echoed tool parameters can be checked at authorization.
   defp sign_lti_message_hint(login_hint, deployment_id, endpoint, opts) do
     payload =
       %{
@@ -218,7 +386,8 @@ defmodule OliWeb.Api.LtiController do
         "deployment_id" => deployment_id,
         "endpoint" => to_string(endpoint),
         "resource_id" => Keyword.get(opts, :resource_id),
-        "lti_message_type" => Keyword.get(opts, :lti_message_type)
+        "lti_message_type" => Keyword.get(opts, :lti_message_type),
+        "authoring_request" => Keyword.get(opts, :authoring_request)
       }
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()

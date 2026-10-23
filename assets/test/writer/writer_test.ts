@@ -22,6 +22,22 @@ const parse = (content: any, context = defaultWriterContext()) =>
   new ContentWriter().render(context, content, new HtmlParser());
 
 describe('parser', () => {
+  it('shifts authored heading levels below the page title', () => {
+    render(
+      parse({
+        type: 'content',
+        id: 'heading-test',
+        children: [
+          { type: 'h1', id: 'heading-one', children: [{ text: 'Authored H1' }] },
+          { type: 'h2', id: 'heading-two', children: [{ text: 'Authored H2' }] },
+        ],
+      }),
+    );
+
+    expect(screen.getByRole('heading', { name: 'Authored H1', level: 2 })).toHaveClass('h1');
+    expect(screen.getByRole('heading', { name: 'Authored H2', level: 3 })).toHaveClass('h2');
+  });
+
   it('renders well-formed content properly', () => {
     render(parse(exampleContent));
 

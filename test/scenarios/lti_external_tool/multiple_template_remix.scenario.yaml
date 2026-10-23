@@ -1,0 +1,25 @@
+- use:
+    file: remix_setup.scenario.yaml
+
+- project:
+    name: additional_project
+    title: Additional Remix Source
+    root:
+      children:
+        - page: Additional Lesson
+
+- product:
+    name: additional_template
+    from: additional_project
+
+- community:
+    name: Multiple Remix Sources
+    users: [remix_instructor]
+    products: [template, additional_template]
+
+- assert:
+    structure:
+      to: additional_template
+      root:
+        children:
+          - page: Additional Lesson
