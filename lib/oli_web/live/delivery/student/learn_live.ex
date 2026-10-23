@@ -1082,7 +1082,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     # 3. The user expands another module.
     # This event will ensure that the content of the expanded module is visible and not hidden.
     |> push_event("js-exec", %{
-      to: ~s{[role="resource module content"]},
+      to: ~s{[data-role="resource-module-content"]},
       attr: "data-show"
     })
   end
@@ -1920,7 +1920,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           selected_module_metrics[:total_pages_count] %>
       <div
         class="overflow-hidden"
-        role="resource module content"
+        data-role="resource-module-content"
         data-completed={if is_nil(selected_module), do: "false", else: "#{module_completed?}"}
         data-show={JS.remove_class(%JS{}, "hidden")}
       >
@@ -1981,7 +1981,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div
             :if={selected_module["intro_content"]["children"]}
             id={"module_#{selected_module["resource_id"]}_intro_content"}
-            role="module intro content"
+            data-role="module-intro-content"
             class="max-w-[760px] w-full pt-4 md:pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
           >
             <.intro_content
@@ -3243,7 +3243,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             show_percent={false}
             on_going_colour="bg-Fill-fill-progress"
             completed_colour="bg-Fill-fill-progress"
-            role="intro video card progress"
+            data-role="intro-video-card-progress"
           />
         </div>
       </div>
@@ -3252,7 +3252,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         style={"background-image: url('#{CommonUtils.convert_to_youtube_image_url(@video_url)}');"}
       >
         <span
-          role="card top label"
+          data-role="card-top-label"
           class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50 self-start"
         >
           {@title}
@@ -3270,7 +3270,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <div
-            role="play_unit_intro_video"
+            data-role="play-unit-intro-video"
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
           >
             <Icons.play class="scale-110 ml-[6px] mt-[9px] fill-white" />
@@ -3314,7 +3314,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             show_percent={false}
             on_going_colour="bg-Fill-fill-progress"
             completed_colour="bg-Fill-fill-progress"
-            role="intro video card progress"
+            data-role="intro-video-card-progress"
           />
         </div>
       </div>
@@ -3327,7 +3327,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <source src={"#{@video_url}#t=0.5"} /> Your browser does not support the video tag.
         </video>
         <span
-          role="card top label"
+          data-role="card-top-label"
           class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50 self-start"
         >
           {@title}
@@ -3345,7 +3345,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <div
-            role="play_unit_intro_video"
+            data-role="play-unit-intro-video"
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
           >
             <Icons.play class="scale-110 ml-[6px] mt-[9px] fill-white" />
@@ -3448,7 +3448,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <span
             :if={@card_top_label}
-            role="card top label"
+            data-role="card-top-label"
             class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50"
           >
             {@card_top_label}

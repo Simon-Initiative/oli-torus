@@ -897,13 +897,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has an intro card with a video url provided, so there must be a play button
       assert has_element?(
                view,
-               ~s{div[role="unit_1"] div[id^="slider_"] div[data-intro-video="youtube"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_1"] div[id^="slider_"] div[data-intro-video="youtube"] div[data-role="play-unit-intro-video"]}
              )
 
       # unit 2 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_2"] div[id^="slider_"] div[data-intro-video="youtube"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_2"] div[id^="slider_"] div[data-intro-video="youtube"] div[data-role="play-unit-intro-video"]}
              )
 
       # unit 3 has no video intro card
@@ -925,25 +925,25 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="intro_card_#{unit_1.resource_id}"] span[role="card top label"]},
+               ~s{div[id="intro_card_#{unit_1.resource_id}"] span[data-role="card-top-label"]},
                "INTRO"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page_#{practice_page.resource_id}"] span[role="card top label"]},
+               ~s{div[id="page_#{practice_page.resource_id}"] span[data-role="card-top-label"]},
                "PAGE"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page_#{graded_page.resource_id}"] span[role="card top label"]},
+               ~s{div[id="page_#{graded_page.resource_id}"] span[data-role="card-top-label"]},
                "PAGE"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="module_#{module_1.resource_id}"] span[role="card top label"]},
+               ~s{div[id="module_#{module_1.resource_id}"] span[data-role="card-top-label"]},
                "MODULE 1"
              )
     end
@@ -962,13 +962,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{div[id="module_#{module_1.resource_id}"] span[role="card top label"]},
+               ~s{div[id="module_#{module_1.resource_id}"] span[data-role="card-top-label"]},
                "MODULE"
              )
 
       card_html =
         view
-        |> element(~s{div[id="page_#{practice_page.resource_id}"] span[role="card top label"]})
+        |> element(
+          ~s{div[id="page_#{practice_page.resource_id}"] span[data-role="card-top-label"]}
+        )
         |> render()
 
       assert card_html =~ "PAGE"
@@ -1954,6 +1956,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert intro_card =~ ~s{role="button"}
       assert intro_card =~ ~s{aria-label="INTRO: Play unit intro video"}
+
+      # the intro progress keeps its progressbar semantics, selectors use data-role
+      assert has_element?(
+               view,
+               ~s{div[role='unit_1'] div[data-intro-video='youtube'] div[role='progressbar'][data-role='intro-video-card-progress']}
+             )
+
+      for invalid_role <- ["card top label", "intro video card progress", "play_unit_intro_video"] do
+        refute intro_card =~ ~s{role="#{invalid_role}"}
+      end
+
+      refute module_card =~ ~s{role="card top label"}
     end
 
     test "the slider is the keyboard stop of a unit and its cards are only focusable once entered",
@@ -2074,6 +2088,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert module_html =~ ~s{role="region"}
       assert module_html =~ ~s{aria-labelledby="#{title_id}"}
       assert has_element?(view, "h2##{title_id}")
+
+      # the expanded module wrapper is selected by data-role instead of an invalid role
+      assert has_element?(view, ~s{div[data-role="resource-module-content"] div##{module_id}})
+      refute render(view) =~ ~s{role="resource module content"}
 
       # focusable sentinel is exposed, the non focusable one stays hidden
       start_html = view |> element("##{module_id}-start") |> render()
