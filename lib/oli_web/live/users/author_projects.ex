@@ -59,6 +59,7 @@ defmodule OliWeb.Users.AuthorProjects do
         >
           <SearchInput.render
             id="projects_search_input"
+            aria_label="Search projects"
             name="project_title"
             text={@params.text_search}
           />
