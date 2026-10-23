@@ -20,6 +20,33 @@ defmodule OliWeb.Components.DesignTokens.Primitives.SearchBarTest do
       assert Floki.find(document, "button") == []
     end
 
+    test "uses the configured Open Sans utility in interactive and presentation modes" do
+      interactive =
+        %{id: "interactive-search", aria_label: "Search courses"}
+        |> render_search_bar()
+        |> Floki.parse_fragment!()
+
+      assert [container] = Floki.find(interactive, "[data-search-bar-state='default']")
+      assert "font-sans" in class_list(container)
+
+      assert [input] = Floki.find(interactive, "input")
+      assert "font-sans" in class_list(input)
+
+      presentation =
+        %{
+          id: "presentation-search",
+          aria_label: "Search preview",
+          interactive: false
+        }
+        |> render_search_bar()
+        |> Floki.parse_fragment!()
+
+      assert [text] =
+               Floki.find(presentation, "[data-search-bar-state='default'] > span:last-child")
+
+      assert "font-sans" in class_list(text)
+    end
+
     test "renders the clear control only for a non-empty value and clear action" do
       empty_html =
         render_search_bar(%{
