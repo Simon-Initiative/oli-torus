@@ -159,6 +159,14 @@ defmodule OliWeb.LearningProficiencyTest do
     docs = "/workspaces/course_author/#{s.project.slug}/learning_proficiency"
     {:ok, view, _} = live(log_in_author(s.conn, s.author), docs)
 
+    for id <- ["legacy-proficiency-example", "lkt-aoa-proficiency-example"] do
+      assert has_element?(
+               view,
+               "##{id} p",
+               "What counts as a question: Each question is counted separately. In activities with multiple answer fields, each independently evaluated field counts separately."
+             )
+    end
+
     for {id, calculation} <- [
           {"legacy-proficiency-example", "(1 + 1 + 1 + 0.2) / 4 = 80%"},
           {"legacy-insufficient-example", "(1 + 1 + 0.2) / 3 = approximately 73.3%"},
@@ -188,13 +196,13 @@ defmodule OliWeb.LearningProficiencyTest do
     assert has_element?(
              view,
              "#legacy-insufficient-example",
-             "Repeating either part does not add another first attempt. The count remains two"
+             "Answering either question again does not add another first attempt. The count remains two"
            )
 
     assert has_element?(
              view,
              "#legacy-insufficient-example",
-             "A first attempt on a third distinct part is required to reach the minimum."
+             "A first attempt on a third different question is required to reach the minimum."
            )
 
     assert has_element?(
@@ -206,7 +214,7 @@ defmodule OliWeb.LearningProficiencyTest do
     assert has_element?(
              view,
              "#lkt-aoa-insufficient-example",
-             "Confidence does not increase because the learner has not attempted another distinct part."
+             "Confidence does not increase because the learner has not attempted a different question or answer field."
            )
 
     assert has_element?(
@@ -218,7 +226,7 @@ defmodule OliWeb.LearningProficiencyTest do
     assert has_element?(
              view,
              "#understanding-confidence #lkt-aoa-repeat-example",
-             "Increases, because this new part adds distinct-part evidence."
+             "Increases, because the learner has now attempted a different question linked to the same sub-objective."
            )
 
     assert has_element?(
@@ -238,7 +246,7 @@ defmodule OliWeb.LearningProficiencyTest do
     assert has_element?(
              view,
              "#lkt-aoa-framework",
-             "Repeating the same part contributes to proficiency but does not increase confidence."
+             "Answering the same question or answer field again contributes to proficiency but does not increase confidence."
            )
   end
 

@@ -52,8 +52,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
         </p>
         <.calculation_example id="legacy-proficiency-example" title="Calculating proficiency levels">
           <.example_entry label="Scenario">
-            A learner makes a first attempt on each of <strong>four single-part activities</strong>
+            A learner makes a first attempt on each of <strong>four different questions</strong>
             tagged to the sub-objective <strong>"Calculate the mean of a dataset."</strong>
+          </.example_entry>
+          <.example_entry label="What counts as a question">
+            Each question is counted separately. In activities with multiple answer fields, each independently evaluated field counts separately.
           </.example_entry>
           <.example_group title="One correct and three incorrect">
             <.example_entry label="Calculation">(1 + 0.2 + 0.2 + 0.2) / 4 = 40%</.example_entry>
@@ -71,22 +74,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
         <.calculation_example id="legacy-insufficient-example" title="Not enough data">
           <.example_group title="After two first attempts">
             <.example_entry label="Attempts">
-              <strong>Two different activity parts</strong>, both correct on their first attempts.
+              <strong>Two different questions</strong>, both correct on their first attempts.
             </.example_entry>
             <.example_entry label="Calculation">(1 + 1) / 2 = 100%</.example_entry>
             <.example_entry label="Result">
               <strong>Not enough data</strong>. Fewer than three first attempts have been made.
             </.example_entry>
           </.example_group>
-          <.example_group title="After repeating either part">
+          <.example_group title="After answering either question again">
             <.example_entry label="Attempts">
-              Repeating either part does not add another first attempt. The count remains <strong>two</strong>.
+              Answering either question again does not add another first attempt. The count remains <strong>two</strong>.
             </.example_entry>
             <.example_entry label="Result">
-              Still <strong>Not enough data</strong>. A first attempt on a third distinct part is required to reach the minimum.
+              Still <strong>Not enough data</strong>. A first attempt on a third different question is required to reach the minimum.
             </.example_entry>
           </.example_group>
-          <.example_group title="After a first attempt on a third distinct part">
+          <.example_group title="After a first attempt on a third different question">
             <.example_entry label="Attempts">
               <strong>Three first attempts</strong>: two correct and the third incorrect.
             </.example_entry>
@@ -96,15 +99,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
             <.example_entry label="Result"><strong>Medium</strong> proficiency.</.example_entry>
           </.example_group>
         </.calculation_example>
-        <.calculation_example id="legacy-repeat-example" title="Repeating an activity part">
+        <.calculation_example id="legacy-repeat-example" title="Answering the same question again">
           <.example_entry label="First attempts">
             <strong>Three correct</strong> and <strong>one incorrect</strong>.
           </.example_entry>
           <.example_entry label="Calculation">(1 + 1 + 1 + 0.2) / 4 = 80%</.example_entry>
           <.example_entry label="Result"><strong>Medium</strong> proficiency.</.example_entry>
-          <.example_group title="After repeating the incorrect part">
+          <.example_group title="After answering the incorrect question again">
             <.example_entry label="New response">
-              The learner answers the previously incorrect part <strong>correctly on a second attempt</strong>.
+              The learner answers the previously incorrect question <strong>correctly on a second attempt</strong>.
             </.example_entry>
             <.example_entry label="Calculation">(1 + 1 + 1 + 0.2) / 4 = 80%</.example_entry>
             <.example_entry label="Result">
@@ -137,7 +140,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
       >
         <p>
           LKT-AOA uses logistic regression trained on historical learner responses to estimate the probability of answering correctly.
-          It combines learned difficulty parameters for each LO and activity part with the learner's amount of practice and recent performance.
+          It combines learned difficulty parameters for each LO and question or answer field with the learner's amount of practice and recent performance.
           Recent successes and failures carry more weight than older ones when predicting the next response.
         </p>
         <p>
@@ -149,8 +152,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
           title="Averaging predicted probabilities"
         >
           <.example_entry label="Scenario">
-            A learner makes <strong>three attempts on different activity parts</strong>
+            A learner makes <strong>three attempts on different questions</strong>
             tagged to the sub-objective <strong>"Calculate the mean of a dataset."</strong>
+          </.example_entry>
+          <.example_entry label="What counts as a question">
+            Each question is counted separately. In activities with multiple answer fields, each independently evaluated field counts separately.
           </.example_entry>
           <.example_entry label="Predictions">
             <strong>40%, 60%, and 80%</strong>
@@ -164,7 +170,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
             At exactly 40%, this framework reports Medium; below 40% is Low, and above 80% is High.
           </.example_entry>
           <.example_entry label="Note">
-            These predictions are illustrative; actual values depend on the activity parts and the learner's history.
+            These predictions are illustrative; actual values depend on the questions or answer fields and the learner's history.
           </.example_entry>
         </.calculation_example>
         <.calculation_example id="lkt-aoa-insufficient-example" title="Not enough data">
@@ -175,7 +181,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
               <strong>Not enough data</strong>. Fewer than three attempts have been made.
             </.example_entry>
           </.example_group>
-          <.example_group title="After repeating a previously attempted part">
+          <.example_group title="After answering a previously attempted question again">
             <.example_entry label="Attempts">
               <strong>Three evaluated attempts</strong>. This repetition counts toward the minimum of three attempts.
             </.example_entry>
@@ -185,7 +191,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
             <.example_entry label="Calculation">(0.8 + 0.9 + 0.7) / 3 = 80%</.example_entry>
             <.example_entry label="Result"><strong>Medium</strong> proficiency.</.example_entry>
             <.example_entry label="Confidence">
-              Confidence does not increase because the learner has not attempted another distinct part.
+              Confidence does not increase because the learner has not attempted a different question or answer field.
             </.example_entry>
           </.example_group>
           <.example_entry label="Note">
@@ -222,15 +228,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
         >
           <h2 id="confidence-title" class="text-xl font-semibold">Understanding confidence</h2>
           <p>
-            LKT-AOA also calculates confidence separately from proficiency. Confidence describes how much breadth of evidence supports an LO's estimate, based on the number of distinct activity parts the learner has attempted.
-            Confidence increases as the learner attempts more distinct parts, following a configurable curve.
-            Repeating the same part contributes to proficiency but does not increase confidence.
+            LKT-AOA also calculates confidence separately from proficiency. Confidence describes how much breadth of evidence supports an LO's estimate, based on the number of different questions or answer fields the learner has attempted.
+            Confidence increases as the learner attempts more different questions or answer fields, following a configurable curve.
+            Answering the same question or answer field again contributes to proficiency but does not increase confidence.
             High confidence can support either a low or a high proficiency estimate; it does not mean the learner has mastered the objective.
           </p>
           <.calculation_example id="lkt-aoa-repeat-example" title="Repeated attempts and confidence">
             <.example_group title="Initially">
               <.example_entry label="Attempts">
-                <strong>Three attempts on three distinct parts</strong>.
+                <strong>Three attempts on three different questions</strong>.
               </.example_entry>
               <.example_entry label="Predictions">
                 <strong>40%, 60%, and 80%</strong>, for illustration.
@@ -238,9 +244,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
               <.example_entry label="Calculation">(0.4 + 0.6 + 0.8) / 3 = 60%</.example_entry>
               <.example_entry label="Result"><strong>Medium</strong> proficiency.</.example_entry>
             </.example_group>
-            <.example_group title="After repeating a part">
+            <.example_group title="After answering the same question again">
               <.example_entry label="Attempts">
-                <strong>Four attempts</strong>, still on <strong>three distinct parts</strong>.
+                <strong>Four attempts</strong>, still on <strong>three different questions</strong>.
               </.example_entry>
               <.example_entry label="New prediction">
                 <strong>80%</strong> before the fourth attempt, for illustration.
@@ -248,15 +254,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
               <.example_entry label="Calculation">(0.4 + 0.6 + 0.8 + 0.8) / 4 = 65%</.example_entry>
               <.example_entry label="Proficiency"><strong>65%, still Medium</strong>.</.example_entry>
               <.example_entry label="Confidence">
-                <strong>Unchanged</strong>, because the repeated part adds no new distinct-part evidence.
+                <strong>Unchanged</strong>, because the learner has not attempted a different question or answer field.
               </.example_entry>
             </.example_group>
-            <.example_group title="After attempting a new distinct part">
+            <.example_group title="After attempting a different question">
               <.example_entry label="Attempts">
-                <strong>Five attempts across four distinct parts</strong>, all tagged to the same sub-objective.
+                <strong>Five attempts across four different questions</strong>, all tagged to the same sub-objective.
               </.example_entry>
               <.example_entry label="Confidence">
-                <strong>Increases</strong>, because this new part adds distinct-part evidence.
+                <strong>Increases</strong>, because the learner has now attempted a different question linked to the same sub-objective.
               </.example_entry>
             </.example_group>
           </.calculation_example>
