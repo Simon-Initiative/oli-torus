@@ -306,7 +306,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
                     id="button-new-project"
                     phx-click="show_create_project_modal"
                     class={[
-                      "h-12 px-5 py-3 hover:no-underline rounded-md justify-center items-center gap-2 inline-flex bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF]"
+                      "h-12 px-5 py-3 hover:no-underline rounded-md justify-center items-center gap-2 inline-flex bg-Fill-Buttons-fill-primary-bold hover:brightness-90"
                     ]}
                   >
                     <div class="w-3 h-5 relative">

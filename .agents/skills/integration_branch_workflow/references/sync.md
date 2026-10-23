@@ -1,0 +1,67 @@
+# Sync an integration branch
+
+Merge the latest `origin/master` into a separate `sync/*` branch, then open or reuse a PR targeting the parent integration branch. The integration branch changes only when the reviewed PR is merged; this workflow stops after preparing that PR.
+
+Read [Keeping an Integration Branch in Sync with master](guides/process/development.md#keeping-an-integration-branch-in-sync-with-master), resolving the path from the repository root. Preserve merge ancestry: use merge commits for both the downmerge and the eventual sync PR merge. Never squash or rebase the sync branch, or push changes directly to the integration branch or `master`.
+
+Apply [Jira CLI availability](../SKILL.md#jira-cli-availability) from the main skill to every Jira step below. Missing CLI access skips Jira automation; it does not block an otherwise identified integration branch from being synced.
+
+## Resolve the integration branch
+
+1. Verify the current checkout/worktree belongs to `github.com/Simon-Initiative/oli-torus` using `git rev-parse --show-toplevel` and `git remote -v`. Read applicable `AGENTS.md` instructions. Outside that repository, stop without querying Jira or changing Git state.
+2. Resolve the parent MER Story, Bug, or Task from the request or URL. For a request without a key, use the current integration or sync branch's parent ticket key, or the current implementation branch's verified Jira parent or existing PR target. When Jira CLI access is available, use `jira issue view <KEY> --plain` to confirm ticket relationships; otherwise use the engineer's supplied details and established Git/PR context, and report the unverified Jira relationship. If the parent or integration branch is ambiguous, ask; do not infer from an unrelated current branch.
+3. Identify the existing `story/*`, `bug/*`, `task/*`, or verified legacy `integ-*` integration branch. Inspect remotes, local branches, worktrees, and existing sync PRs. A sync request must not create a replacement integration branch. If it is missing or unpublished, explain that prerequisite before proceeding.
+4. Inspect the worktree and any merge/rebase in progress. Require a clean worktree before starting a new merge. Preserve unrelated edits and operations; do not automatically stash, reset, clean, abort, or commit them. A paused merge belonging to this sync workflow is resumed using the conflict procedure below.
+5. Fetch `origin` and any separate integration/source remote needed. Record the fetched master and integration commits; never substitute local `master` or stale refs after a failed fetch. If `git merge-base --is-ancestor <master-commit> <integration-commit>` succeeds, report that no sync is needed, link any relevant existing PR, and stop without creating a ticket, branch, commit, or empty PR. Distinguish a failed ancestry check from a Git error.
+
+## Choose the reusable sync branch
+
+Name the reusable branch `sync/<PARENT-KEY>-<summary>`, copying the summary exactly from the parent integration branch. For example, `story/MER-1234-student-dashboard` uses `sync/MER-1234-student-dashboard`. Replace the integration branch type prefix with `sync/`; do not generate a separate summary such as `sync-master` or derive a new one from an updated Jira title. Use the same parent integration ticket in the sync PR title and first Jira link. Reuse this branch for later syncs of that integration branch with `master`.
+
+Syncs, including conflict resolution, require no separate child Sub-task. Do not look up or create a sync child ticket, request manual child-ticket creation, or change Jira statuses as part of this workflow. Jira CLI reads are optional for confirming the parent or resolving an ambiguous relationship; unavailable Jira access does not block a sync when the integration target and parent key are already known.
+
+Validate the resulting name with `git check-ref-format --branch`. For a legacy `integ-*` parent, use its established parent ticket key and matching summary; clarify the mapping if ambiguous. Inspect existing local and remote `sync/*` branches and PRs for this parent integration ticket and target, including older names with different summaries. If an existing candidate does not match the expected name, report the mismatch and clarify which branch to use; do not rename it or create a duplicate automatically. Do not reuse an unrelated branch just because its name is similar. If several candidates are valid, ask which to resume.
+
+Create a new sync branch from the fetched integration tip only when no appropriate branch exists. Reuse a local branch without recreating or resetting it; if it exists only remotely, create a local tracking branch at its existing tip. Respect other worktrees. A remote-only branch is not a new branch to initialize from the integration tip.
+
+For an existing sync branch, inspect its commits and PR state before changing it. Reuse an open sync PR to the same integration target. A merged or closed PR does not prevent branch reuse: retain the branch and all its commits, incorporate the current integration tip, and create a new PR for this sync when there is no open PR. If a previous PR was closed without merging, inspect its remaining changes and establish whether they still belong in the new sync before publishing them. Resolve unrelated branch changes with the engineer rather than silently including them.
+
+If the local sync branch is behind its remote, a fast-forward update is allowed; if it is ahead, preserve its commits. Stop on divergent local/remote histories rather than force-pushing or resetting. These sync operations may append merge commits to an existing branch; they do not overwrite its history. Do not delete the reusable sync branch after a PR merges. If it was already deleted remotely, retain and reuse the verified local branch; if it no longer exists anywhere, create it from the current integration tip.
+
+## Merge and handle conflicts
+
+Check out the sync branch. If it does not contain the fetched integration tip, incorporate that tip first. When the sync tip is an ancestor of the integration tip (as after the previous sync PR merged), use `git merge --ff-only <integration-commit>`. Otherwise merge with `git merge --no-ff --no-commit <integration-commit>` to preserve existing sync work and handle conflicts with the current PR target. Complete that merge before starting the master merge. Use the same conflict and verification procedure for both merges.
+
+Merge the recorded master commit with `git merge --no-ff --no-commit <master-commit>`. Do not use `git pull` with an implicit merge/rebase policy. Inspect the result: exit failure alone does not mean there are content conflicts. Check unmerged paths with `git diff --name-only --diff-filter=U` and verify whether `MERGE_HEAD` exists. Report other Git errors without treating them as a request for conflict resolution. An already-up-to-date merge needs no new commit; an existing unmerged sync PR may still need to be published or returned.
+
+When there are conflicts, list the affected files and present this exact selection menu:
+
+1. (a)utomatic
+2. (m)anual
+
+Accept `1`, `a`, `automatic`, or `automatically` for automatic resolution, and `2`, `m`, `manual`, or `manually` for manual resolution, ignoring case and surrounding whitespace. Do not choose a default, treat silence as consent, or interpret a different answer as approval. Remember an explicit choice for this sync attempt unless the engineer changes it.
+
+- **Automatic:** Inspect both sides, their common ancestor, and the intended behavior. Resolve the conflicting files while preserving relevant changes from both branches. Do not blanket-select ours/theirs or discard changes to make Git succeed. If a conflict requires an unknown product decision or cannot be resolved confidently, explain the specific conflict and ask for that decision. Stage only the reviewed resolutions and inspect the entire merge diff, including files Git merged automatically.
+- **Manual:** Leave the sync branch checked out and the merge in progress. Tell the engineer the worktree path and conflicted files, and ask them to resolve and stage the conflicts, then reply when ready. End the turn without changing, staging, committing, pushing, or opening a PR while they work. They may also complete the merge themselves. Elapsed time is not a signal to resume.
+
+On explicit resume, re-read the actual branch, worktree, index, `MERGE_HEAD`, and history. If unmerged entries remain, report them and stay paused. If they already committed, verify that commit and its merge ancestry rather than attempting a second merge commit. If they aborted the merge or switched branches, clarify how to continue instead of restarting or aborting anything automatically.
+
+## Verify and finish the merge
+
+Before committing, inspect the staged merge result, check for unresolved index entries and accidental conflict markers, and run the repository-required tests appropriate to the merged changes. Follow `AGENTS.md` for test commands and permissions. Fix demonstrated integration failures within this sync's scope; do not suppress failures or claim unrun tests passed. Respect any instruction not to commit: leave the prepared result for the engineer and report that committing is required before publishing the PR.
+
+Once checks pass, complete each pending merge with a descriptive message identifying the parent integration ticket and merged source. Stage only intended merge content; avoid `git add .` or `git add -A` in a worktree that might contain unrelated changes. Use `git merge-base --is-ancestor` to confirm the final sync tip contains both recorded master and integration commits, and verify a merge commit preserves ancestry when a merge was needed. Do not create an empty commit merely to obtain a PR.
+
+Before publication, refresh the integration, master, and sync remote refs. If master or the integration branch advanced, merge the new tips through the same procedure and rerun checks affected by the new changes. If another writer advanced the sync branch, reconcile its history without a force push; do not race or discard their work. If the refs keep moving, report the exact tested commits and the remaining update rather than retrying indefinitely.
+
+## Publish the sync PR
+
+Use `gh` for GitHub operations. Inspect the repository PR template and the actual commits/diff from the integration target to the sync branch. Check again for an existing open PR with this source and integration target before creating one. A sync request includes preparing its merge commits, pushing the sync branch, and creating the sync PR, subject to applicable approval requirements and any explicit instruction to pause or not commit. Complete the merge, verification, and exact PR draft before requesting an approval required by those instructions; explain its source and reuse approval already covering the exact action.
+
+Use title `[CHORE] [<PARENT-KEY>] Sync master into <integration-description>`. Start the body with the parent integration ticket's Jira link, then briefly describe the integration target, merged master commit, any conflict resolutions, and actual verification results. State that this PR must use **Create a merge commit**, not squash or rebase. Do not imply that the parent ticket is complete or ready to merge into `master`. If parent details were supplied or inferred from established branch/PR context without Jira access, report that they were not verified through Jira; no child-ticket follow-up is needed.
+
+Push only the sync branch with an ordinary non-forcing push. If rejected, inspect remote changes rather than force-pushing. Write the exact PR body to a temporary UTF-8 file outside the repository and use `gh pr create --repo Simon-Initiative/oli-torus --base <integration-branch> --head <sync-branch> --title <title> --body-file <file>` (use an owner-qualified head for a fork). Never use `master` as this PR's target. Reuse the existing PR when one exists; review its description for material changes and update it as required within the authorized sync work.
+
+Read the PR back with `gh pr view <url> --json url,title,body,baseRefName,headRefName,state` and verify the correct source, target, content, and open state. After an ambiguous push or PR creation error, inspect remote state before retrying to avoid duplicates. Remove only temporary files created by this workflow.
+
+Report the parent integration ticket, any unverified Jira details, sync branch, integration target, merged master commit, conflict handling, verification results, and verified PR URL. The PR awaits review and a merge commit; do not merge it, push to the integration branch, or requeue the parent's integration PR as part of this request.

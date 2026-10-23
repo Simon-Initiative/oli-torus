@@ -33,6 +33,7 @@ interface PurposeGroupEditorProps extends EditorProps {
 export const PurposeGroupEditor = ({
   resourceContext,
   editMode,
+  supportsLtiConfiguration,
   projectSlug,
   resourceSlug,
   contentItem,
@@ -72,6 +73,7 @@ export const PurposeGroupEditor = ({
       <GroupEditor
         resourceContext={resourceContext}
         editMode={editMode}
+        supportsLtiConfiguration={supportsLtiConfiguration}
         projectSlug={projectSlug}
         resourceSlug={resourceSlug}
         contentItem={contentItem}

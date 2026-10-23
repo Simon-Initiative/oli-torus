@@ -144,7 +144,12 @@ export const buildReviewCompositeActivity = (activityTree: any[], attemptTree: a
   ];
 };
 
-const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
+const DeckLayoutView: React.FC<LayoutProps> = ({
+  pageTitle,
+  pageContent,
+  previewMode,
+  restrictNavigation,
+}) => {
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
   const contentRef = React.useRef<HTMLDivElement>(null);
@@ -1048,6 +1053,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             <DeckLayoutHeader
               pageName={pageTitle}
               backUrl={pageContent?.backUrl}
+              restrictNavigation={restrictNavigation}
               userName={currentUserName}
               activityName=""
               showScore={true}
