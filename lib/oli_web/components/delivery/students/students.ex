@@ -1029,7 +1029,8 @@ defmodule OliWeb.Components.Delivery.Students do
            socket.assigns.view,
            socket.assigns.tab_name,
            update_params(socket.assigns.params, %{
-             selected_proficiency_ids: Jason.encode!(selected_proficiency_ids)
+             selected_proficiency_ids: Jason.encode!(selected_proficiency_ids),
+             offset: 0
            })
          )
      )}
@@ -1057,7 +1058,7 @@ defmodule OliWeb.Components.Delivery.Students do
            socket.assigns.section_slug,
            socket.assigns.view,
            socket.assigns.tab_name,
-           update_params(socket.assigns.params, new_params)
+           update_params(socket.assigns.params, Map.put(new_params, :offset, 0))
          )
      )}
   end
@@ -1306,7 +1307,10 @@ defmodule OliWeb.Components.Delivery.Students do
            socket.assigns.section_slug,
            socket.assigns.view,
            socket.assigns.tab_name,
-           update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
+           update_params(socket.assigns.params, %{
+             sort_by: String.to_existing_atom(sort_by),
+             offset: 0
+           })
          )
      )}
   end
@@ -1417,7 +1421,10 @@ defmodule OliWeb.Components.Delivery.Students do
            socket.assigns.section_slug,
            socket.assigns.view,
            socket.assigns.tab_name,
-           update_params(socket.assigns.params, %{filter_by: String.to_existing_atom(filter)})
+           update_params(socket.assigns.params, %{
+             filter_by: String.to_existing_atom(filter),
+             offset: 0
+           })
          )
      )}
   end

@@ -164,21 +164,7 @@ export class BasicPracticePagePO {
 
   async ensureSimpleAuthorReady() {
     await this.completeSimpleAuthorOnboardingIfPresent();
-
-    const hasToggle = (await this.adaptiveReadOnlyInput.count().catch(() => 0)) > 0;
-    if (hasToggle && (await this.adaptiveReadOnlyInput.isChecked().catch(() => false))) {
-      await expect(this.adaptiveReadOnlyInput).toBeEnabled({ timeout: 30000 });
-
-      await this.page.evaluate(() => {
-        const input = document.querySelector<HTMLInputElement>('input[name="adaptive_read_only"]');
-
-        if (input?.checked) {
-          input.click();
-        }
-      });
-
-      await expect(this.adaptiveReadOnlyInput).not.toBeChecked({ timeout: 10000 });
-    }
+    await this.disableAdaptiveReadOnly();
 
     await this.adaptiveAuthorToolbar.first().waitFor({ state: 'visible', timeout: 30000 });
     await expect(
@@ -190,6 +176,26 @@ export class BasicPracticePagePO {
     await this.page.waitForFunction(() => customElements.get('janus-mcq') != null, undefined, {
       timeout: 30000,
     });
+  }
+
+  /** Switches a reopened adaptive lesson out of read-only mode when it loads locked. */
+  async disableAdaptiveReadOnly() {
+    const hasToggle = (await this.adaptiveReadOnlyInput.count().catch(() => 0)) > 0;
+    if (!hasToggle) return;
+
+    // The toggle reflects the lock state only once it is enabled.
+    await expect(this.adaptiveReadOnlyInput).toBeEnabled({ timeout: 30000 });
+    if (!(await this.adaptiveReadOnlyInput.isChecked().catch(() => false))) return;
+
+    await this.page.evaluate(() => {
+      const input = document.querySelector<HTMLInputElement>('input[name="adaptive_read_only"]');
+
+      if (input?.checked) {
+        input.click();
+      }
+    });
+
+    await expect(this.adaptiveReadOnlyInput).not.toBeChecked({ timeout: 10000 });
   }
 
   private async assertAdvancedAuthorEditable() {

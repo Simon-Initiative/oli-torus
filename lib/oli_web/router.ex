@@ -1053,6 +1053,7 @@ defmodule OliWeb.Router do
     post("/auth/token", Api.LtiController, :auth_token)
 
     post("/deep_link/:section_slug/:resource_id", LtiController, :deep_link)
+    post("/authoring_deep_link", LtiController, :authoring_deep_link)
   end
 
   # LTI routes WITHOUT CSRF protection (entry points from external LMS)
@@ -1852,6 +1853,14 @@ defmodule OliWeb.Router do
   scope "/api/v1/lti/projects/:project_slug", OliWeb, as: :api do
     pipe_through([:api, :authoring_protected])
 
+    post("/deep_link_save/:activity_id", Api.LtiController, :authoring_deep_link_save)
+
+    post(
+      "/deep_linking_launch_details/:activity_id",
+      Api.LtiController,
+      :deep_linking_launch_details
+    )
+
     get(
       "/launch_details/:activity_id",
       Api.LtiController,
@@ -1868,11 +1877,13 @@ defmodule OliWeb.Router do
       :launch_details
     )
 
-    get(
+    post(
       "/deep_linking_launch_details/:activity_id",
       Api.LtiController,
       :deep_linking_launch_details
     )
+
+    post("/cancel_deep_linking/:activity_id", Api.LtiController, :cancel_deep_linking)
   end
 
   ### Invitations (to sections or projects)

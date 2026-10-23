@@ -560,6 +560,10 @@ defmodule OliWeb.Api.ActivityController do
 
   This operation must be performed in the context of an exclusive write lock to avoid concurrent updates. The identifier of the
   lock must be specificed via the `lock` query parameter.
+
+  Signed LTI selection saves (resource configurations chosen in external tools)
+  use the same editor boundary. A stale result returns HTTP 409 so the author
+  can reload and reopen configuration instead of overwriting intervening edits.
   """
   @doc parameters: [
          project: [
@@ -599,6 +603,9 @@ defmodule OliWeb.Api.ActivityController do
     case ActivityEditor.edit(project_slug, lock_id, activity_id, author.email, update) do
       {:ok, _} ->
         json(conn, %{"result" => "success"})
+
+      {:error, :stale_selection} ->
+        error(conn, 409, "The activity changed. Reload and configure the tool again.")
 
       {:error, {:invalid_update_field}} ->
         error(conn, 400, "invalid update field")

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import '@testing-library/jest-dom';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import DeckLayoutView, {
   buildReviewCompositeActivity,
 } from 'apps/delivery/layouts/deck/DeckLayoutView';
@@ -36,7 +36,22 @@ jest.mock(
       return <div>activity</div>;
     },
 );
-jest.mock('apps/delivery/layouts/deck/DeckLayoutHeader', () => () => null);
+jest.mock('apps/delivery/layouts/deck/DeckLayoutHeader', () => ({
+  __esModule: true,
+  default: ({
+    backUrl,
+    restrictNavigation,
+  }: {
+    backUrl?: string;
+    restrictNavigation?: boolean;
+  }) => (
+    <div
+      data-testid="deck-header"
+      data-back-url={backUrl}
+      data-restrict-navigation={restrictNavigation}
+    />
+  ),
+}));
 jest.mock('apps/delivery/layouts/deck/DeckLayoutFooter', () => () => null);
 
 describe('DeckLayoutView', () => {
@@ -101,6 +116,23 @@ describe('DeckLayoutView', () => {
     expect(container.querySelector('#stage-stage')).toBeInTheDocument();
     expect(container.querySelector('.stage-content-wrapper')).toBeInTheDocument();
     expect(container).toHaveTextContent('loading...');
+  });
+
+  it('passes the navigation restriction and Back URL to the mounted deck header', () => {
+    render(
+      <DeckLayoutView
+        pageTitle="Adaptive Assessment"
+        previewMode={false}
+        restrictNavigation={true}
+        pageContent={{ backUrl: '/sections/demo-section/learn', custom: {} }}
+      />,
+    );
+
+    expect(screen.getByTestId('deck-header')).toHaveAttribute('data-restrict-navigation', 'true');
+    expect(screen.getByTestId('deck-header')).toHaveAttribute(
+      'data-back-url',
+      '/sections/demo-section/learn',
+    );
   });
 
   it('builds a single composed activity for layered adaptive review screens', () => {

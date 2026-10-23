@@ -473,7 +473,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             @instructor_preview_return
           )
         )
-        |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
+        |> JS.dispatch("click", to: "button[data-role='update-sidebar-state-on-react']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px]"
@@ -499,7 +499,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       phx-click={
         JS.patch(toggled_workspace_path(@sidebar_expanded, @uri))
         |> JS.hide(to: "div[data-role='expandable_submenu']")
-        |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
+        |> JS.dispatch("click", to: "button[data-role='update-sidebar-state-on-react']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px]"
@@ -1493,7 +1493,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def spinner(assigns) do
     ~H"""
     <svg
-      role="spinner"
+      data-role="spinner"
       aria-hidden="true"
       class={[
         "w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600",
