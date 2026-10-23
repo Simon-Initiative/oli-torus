@@ -140,7 +140,35 @@ defmodule OliWeb.LearningProficiencyTest do
       assert has_element?(view, "article", version)
       assert has_element?(view, "#legacy-framework h2", "Legacy framework (v1)")
       assert has_element?(view, "#lkt-aoa-framework h2", "LKT-AOA framework (v2)")
-      assert has_element?(view, "#lkt-aoa-framework h2", "Understanding confidence")
+
+      assert has_element?(
+               view,
+               "#understanding-confidence h3#confidence-title",
+               "Understanding confidence"
+             )
+
+      assert has_element?(
+               view,
+               "#legacy-proficiency-example h3",
+               "One correct and three incorrect"
+             )
+
+      assert has_element?(
+               view,
+               "#lkt-aoa-insufficient-example h3",
+               "After two evaluated attempts"
+             )
+
+      for title <- [
+            "Initially",
+            "After answering the same question again",
+            "After attempting a different question"
+          ] do
+        assert has_element?(view, "#lkt-aoa-repeat-example h4", title)
+      end
+
+      refute has_element?(view, "#understanding-confidence h2")
+      refute has_element?(view, "#lkt-aoa-repeat-example h3")
 
       assert has_element?(
                view,

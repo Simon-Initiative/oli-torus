@@ -226,7 +226,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
           aria-labelledby="confidence-title"
           class="space-y-2 pt-4"
         >
-          <h2 id="confidence-title" class="text-xl font-semibold">Understanding confidence</h2>
+          <h3 id="confidence-title" class="text-lg font-semibold">Understanding confidence</h3>
           <p>
             LKT-AOA also calculates confidence separately from proficiency. Confidence describes how much breadth of evidence supports an LO's estimate, based on the number of different questions or answer fields the learner has attempted.
             Confidence increases as the learner attempts more different questions or answer fields, following a configurable curve.
@@ -234,7 +234,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
             High confidence can support either a low or a high proficiency estimate; it does not mean the learner has mastered the objective.
           </p>
           <.calculation_example id="lkt-aoa-repeat-example" title="Repeated attempts and confidence">
-            <.example_group title="Initially">
+            <.example_group title="Initially" heading_level={4}>
               <.example_entry label="Attempts">
                 <strong>Three attempts on three different questions</strong>.
               </.example_entry>
@@ -244,7 +244,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
               <.example_entry label="Calculation">(0.4 + 0.6 + 0.8) / 3 = 60%</.example_entry>
               <.example_entry label="Result"><strong>Medium</strong> proficiency.</.example_entry>
             </.example_group>
-            <.example_group title="After answering the same question again">
+            <.example_group title="After answering the same question again" heading_level={4}>
               <.example_entry label="Attempts">
                 <strong>Four attempts</strong>, still on <strong>three different questions</strong>.
               </.example_entry>
@@ -257,7 +257,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
                 <strong>Unchanged</strong>, because the learner has not attempted a different question or answer field.
               </.example_entry>
             </.example_group>
-            <.example_group title="After attempting a different question">
+            <.example_group title="After attempting a different question" heading_level={4}>
               <.example_entry label="Attempts">
                 <strong>Five attempts across four different questions</strong>, all tagged to the same sub-objective.
               </.example_entry>
@@ -329,12 +329,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
   end
 
   attr :title, :string, required: true
+  attr :heading_level, :integer, default: 3, values: [3, 4]
   slot :inner_block, required: true
 
   defp example_group(assigns) do
     ~H"""
     <div class="space-y-3">
-      <h3 class="text-base font-bold text-Text-text-button">{@title}</h3>
+      <.dynamic_tag
+        tag_name={"h#{@heading_level}"}
+        class="text-base font-bold text-Text-text-button"
+      >
+        {@title}
+      </.dynamic_tag>
       <div class="space-y-2 pl-4">
         {render_slot(@inner_block)}
       </div>
