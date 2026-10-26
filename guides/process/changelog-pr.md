@@ -11,7 +11,8 @@ Prefix PR titles and merge commit messages with the change type, ticket referenc
 - `[FEATURE]`: New feature for the user
 - `[ENHANCEMENT]`: Small improvements to existing features
 - `[BUG FIX]`: Bug fix for an existing feature
-- `[CHORE]`: Updating of build infrastructure, deployment automation, branch merging, docs, etc.
+- `[CHORE]`: Updating build infrastructure, deployment automation, docs, and other maintenance
+- `[SYNC]`: Synchronizing branches, including merging `master` into an integration branch
 - `[PERFORMANCE]`: Changes that target a performance improvement
 
 ### Valid ticket references
