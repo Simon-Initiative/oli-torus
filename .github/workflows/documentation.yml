@@ -3,18 +3,21 @@ on:
   push:
     branches:
       - master
-  # manually trigger a package build from the Actions tab
+  # manually trigger a documentation build from the Actions tab
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   docs:
     runs-on: ubuntu-latest
-    # only deploy docs if the workflow is running on the master branch
+    # Build and publish documentation only from master.
     if: github.ref == 'refs/heads/master'
 
     steps:
       - name: 🛎️ Checkout
-        uses: actions/checkout@v2 # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -63,9 +66,22 @@ jobs:
       - name: 🔨📖 Build client-side storybook docs
         run: yarn --cwd assets run storybook:build
 
-      - name: 🚀 Deploy Docs
-        uses: JamesIves/github-pages-deploy-action@releases/v3
+      - name: 📦 Upload Docs
+        uses: actions/upload-pages-artifact@v4
         with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: doc # The folder the action should deploy.
+          path: doc/
+
+  deploy:
+    needs: docs
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 🚀 Deploy Docs
+        id: deployment
+        uses: actions/deploy-pages@v4
