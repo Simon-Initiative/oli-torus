@@ -596,6 +596,9 @@
         "alt": {
           "type": "string"
         },
+        "title": {
+          "type": "string"
+        },
         "caption": {
           "type": ["string", "array"]
         },

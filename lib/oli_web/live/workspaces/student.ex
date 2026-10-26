@@ -182,6 +182,7 @@ defmodule OliWeb.Workspaces.Student do
           <.form for={%{}} phx-change="search_section" class="w-full max-w-[400px]">
             <SearchInput.render
               id="section_search_input"
+              aria_label="Search courses by course or instructor name"
               name="text_search"
               placeholder="Search by course or instructor name"
               text={@params.text_search}

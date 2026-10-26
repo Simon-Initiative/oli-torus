@@ -4,7 +4,7 @@ defmodule OliWeb.Dev.DesignTokensLiveTest do
   import Phoenix.LiveViewTest
 
   describe "design tokens catalog" do
-    test "autodiscovers the Badge primitive alongside Button, with a correct copy snippet", %{
+    test "autodiscovers shared primitives with correct copy snippets", %{
       conn: conn
     } do
       {:ok, view, html} = live(conn, ~p"/dev/design_tokens")
@@ -14,9 +14,10 @@ defmodule OliWeb.Dev.DesignTokensLiveTest do
 
       rendered = render(view)
 
-      # Both primitives are discovered and shown.
+      # Shared primitives are discovered and shown.
       assert rendered =~ "Badge"
       assert rendered =~ "Button"
+      assert rendered =~ "Search-Bar/States"
 
       # The Badge preview actually renders its variants, not a placeholder.
       assert rendered =~ "My Section"
@@ -27,6 +28,8 @@ defmodule OliWeb.Dev.DesignTokensLiveTest do
       # the `<`/`>` inside the rendered <pre><code> and data-copy-text attribute.
       assert rendered =~ "&lt;Badge.badge"
       refute rendered =~ "&lt;Button.button variant={:my_section}"
+
+      assert rendered =~ "&lt;SearchBar.search_bar"
 
       # Badge has no meaningful "disabled" state, so it must not show one.
       refute has_element?(view, "[id^='copy-disabled-badge']")
