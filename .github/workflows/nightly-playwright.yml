@@ -148,7 +148,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install GitOps dependencies
         run: python -m pip install pyyaml
@@ -320,7 +320,8 @@ jobs:
   summarize-nightly:
     name: Summarize nightly stages
     if: always()
-    needs: [build-playwright, deploy-plasma, nightly-playwright, nightly-scenarios]
+    needs:
+      [build-playwright, deploy-plasma, nightly-playwright, nightly-scenarios]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
