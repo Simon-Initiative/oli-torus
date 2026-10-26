@@ -34,17 +34,26 @@
       </div>
       <p>This window will close automatically...</p>
     </div>
+    <div
+      id="section-deep-link-result"
+      data-result={
+        Jason.encode!(%{
+          type: "lti_deep_linking_response",
+          status: "success",
+          request_id: @request_id,
+          content_item: @content_item
+        })
+      }
+    >
+    </div>
     <script>
       if (window.parent !== window) {
-        window.parent.postMessage({
-          type: 'lti_deep_linking_response',
-          status: 'success',
-          content_item: <%= raw Jason.encode!(@content_item) %>
-        }, '*');
+        const result = JSON.parse(document.getElementById('section-deep-link-result').dataset.result);
+        window.parent.postMessage(result, window.location.origin);
 
         window.parent.postMessage({
           type: 'lti_close_modal'
-        }, '*');
+        }, window.location.origin);
 
         setTimeout(() => {
           window.close();

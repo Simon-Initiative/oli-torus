@@ -148,7 +148,7 @@
   </head>
   <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
     <input type="hidden" id="layout-id" data-layout-id="delivery" />
-    <%= unless match?(%{scope: %{}}, @conn.assigns[:user_session]) do %>
+    <%= unless OliWeb.Components.SecureAssessment.restrict_navigation?(@conn.assigns[:user_session]) do %>
       {live_render(@conn, OliWeb.SystemMessageLive.ShowView)}
     <% end %>
 
@@ -156,7 +156,7 @@
 
     {react_component("Components.ModalDisplay")}
 
-    <%= unless match?(%{scope: %{}}, @conn.assigns[:user_session]) do %>
+    <%= unless OliWeb.Components.SecureAssessment.restrict_navigation?(@conn.assigns[:user_session]) do %>
       {live_render(@conn, OliWeb.TechSupportLive,
         session: OliWeb.CollectHelpRequestInfo.collect(@conn)
       )}

@@ -843,14 +843,7 @@ defmodule OliWeb.LtiControllerTest do
     end
 
     test "authorize_redirect get successful for author", %{conn: conn} do
-      author = author_fixture()
-      project = insert(:project)
-
-      {:ok, %LoginHint{value: login_hint}} =
-        LoginHints.create_login_hint(author.id, %{
-          "project" => project.slug,
-          "resource_id" => "some_resource_id"
-        })
+      %{author: author, project: project} = Oli.Seeder.base_project_with_resource2()
 
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"
@@ -858,7 +851,7 @@ defmodule OliWeb.LtiControllerTest do
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, {_, _, _}} =
+      {:ok, {_, activity_registration, _}} =
         PlatformExternalTools.register_lti_external_tool_activity(%{
           "name" => "some-platform",
           "description" => "some-description",
@@ -867,6 +860,21 @@ defmodule OliWeb.LtiControllerTest do
           "login_url" => "some-login-url",
           "keyset_url" => "some-keyset-url",
           "redirect_uris" => "some-valid-url"
+        })
+
+      {:ok, {activity, _}} =
+        ActivityEditor.create(
+          project.slug,
+          activity_registration.slug,
+          author,
+          %{"openInNewTab" => true, "authoring" => %{"parts" => []}},
+          []
+        )
+
+      {:ok, %LoginHint{value: login_hint}} =
+        LoginHints.create_login_hint(author.id, %{
+          "project" => project.slug,
+          "resource_id" => to_string(activity.resource_id)
         })
 
       params = %{
@@ -896,15 +904,10 @@ defmodule OliWeb.LtiControllerTest do
       refute html_response(conn, 200) =~ "/js/app.js"
     end
 
-    test "authorize_redirect get successful for author from login hint", %{conn: conn} do
-      author = author_fixture()
-      project = insert(:project)
-
-      {:ok, %LoginHint{value: login_hint}} =
-        LoginHints.create_login_hint(author.id, %{
-          "project" => project.slug,
-          "resource_id" => "some_resource_id"
-        })
+    test "author login hint cannot authorize a launch without the initiating author session", %{
+      conn: conn
+    } do
+      %{author: author, project: project} = Oli.Seeder.base_project_with_resource2()
 
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"
@@ -912,7 +915,7 @@ defmodule OliWeb.LtiControllerTest do
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, {_, _, _}} =
+      {:ok, {_, activity_registration, _}} =
         PlatformExternalTools.register_lti_external_tool_activity(%{
           "name" => "some-platform",
           "description" => "some-description",
@@ -921,6 +924,21 @@ defmodule OliWeb.LtiControllerTest do
           "login_url" => "some-login-url",
           "keyset_url" => "some-keyset-url",
           "redirect_uris" => "some-valid-url"
+        })
+
+      {:ok, {activity, _}} =
+        ActivityEditor.create(
+          project.slug,
+          activity_registration.slug,
+          author,
+          %{"openInNewTab" => true, "authoring" => %{"parts" => []}},
+          []
+        )
+
+      {:ok, %LoginHint{value: login_hint}} =
+        LoginHints.create_login_hint(author.id, %{
+          "project" => project.slug,
+          "resource_id" => to_string(activity.resource_id)
         })
 
       params = %{
@@ -938,14 +956,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
 
-      assert html_response(conn, 200) =~ "You are being redirected..."
-
-      assert html_response(conn, 200) =~
-               "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
-
-      refute html_response(conn, 200) =~ "phx-"
-      refute html_response(conn, 200) =~ "/live"
-      refute html_response(conn, 200) =~ "/js/app.js"
+      assert response(conn, 403) == "Tool configuration is unavailable"
     end
 
     test "show_registration_form displays registration page with params from URL", %{
@@ -1104,7 +1115,13 @@ defmodule OliWeb.LtiControllerTest do
       # Verify error postMessage JavaScript is included
       assert resp =~ "window.parent.postMessage"
       assert resp =~ "lti_deep_linking_response"
-      assert resp =~ "status: 'error'"
+
+      [result] =
+        resp
+        |> Floki.parse_document!()
+        |> Floki.attribute("#section-deep-link-result", "data-result")
+
+      assert Jason.decode!(result)["status"] == "error"
     end
 
     defp generate_deep_linking_jwt(client_id, key, kid, claims \\ %{}) do
@@ -1149,7 +1166,9 @@ defmodule OliWeb.LtiControllerTest do
     test "successfully processes valid deep linking response", %{
       conn: conn,
       section: section,
-      activity_id: activity_id
+      activity_id: activity_id,
+      project: project,
+      student: instructor
     } do
       client_id = "test-client-id"
       key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
@@ -1163,11 +1182,26 @@ defmodule OliWeb.LtiControllerTest do
 
       keyset_url = "https://some-tool.example.edu/.well-known/jwks.json"
 
-      # Insert a platform instance
-      insert(:platform_instance, %{
-        client_id: client_id,
-        keyset_url: keyset_url
-      })
+      revision = Oli.Publishing.AuthoringResolver.from_resource_id(project.slug, activity_id)
+
+      deployment =
+        PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
+          activity_registration_id: revision.activity_type_id
+        )
+
+      {:ok, platform} =
+        Oli.Lti.PlatformInstances.update_platform_instance(deployment.platform_instance, %{
+          client_id: client_id,
+          keyset_url: keyset_url
+        })
+
+      {:ok, deployment} =
+        PlatformExternalTools.update_lti_external_tool_activity_deployment(deployment, %{
+          deep_linking_enabled: true
+        })
+
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       # Mock HTTP request to fetch the keyset
       MockHTTP
@@ -1179,7 +1213,15 @@ defmodule OliWeb.LtiControllerTest do
          }}
       end)
 
-      jwt = generate_deep_linking_jwt(client_id, key_pem, "test-kid")
+      {:ok, %{request_token: correlation}} =
+        Oli.Lti.SectionDeepLinkLaunch.start_request(instructor, section.slug, activity_id)
+
+      jwt =
+        generate_deep_linking_jwt(platform.client_id, key_pem, "test-kid", %{
+          "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
+          "https://purl.imsglobal.org/spec/lti-dl/claim/data" => correlation
+        })
 
       params = %{
         "JWT" => jwt
