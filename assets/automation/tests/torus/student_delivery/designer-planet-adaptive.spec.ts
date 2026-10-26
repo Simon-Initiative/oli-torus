@@ -3,6 +3,7 @@ import { test } from '@fixture/my-fixture';
 import { setRuntimeConfig } from '@core/runtimeConfig';
 import { HomeTask } from '@tasks/HomeTask';
 import {
+  AUTOMATION_SETUP_HOOK_TIMEOUT_MS,
   AutomationSetupResponse,
   buildAutomationLoginData,
   importArchiveAndCreateSection,
@@ -173,7 +174,7 @@ test.skip(
 
 test.describe.serial('BioBeyond Designer Planet adaptive lesson', () => {
   test.beforeAll(async ({ request }) => {
-    test.setTimeout(240_000);
+    test.setTimeout(AUTOMATION_SETUP_HOOK_TIMEOUT_MS);
 
     const answersPromise = fetchTestAsset(request, answersKey, baseUrl);
     const archivePromise = fetchTestArchiveToTempFile(archiveKey, baseUrl);

@@ -2,12 +2,242 @@ name: Nightly Tests
 
 on:
   schedule:
-    - cron: '17 5 * * *'
+    - cron: "17 5 * * *"
   workflow_dispatch:
+    inputs:
+      publish_only:
+        description: Publish the Playwright image without running tests (for provisioning)
+        type: boolean
+        default: false
+
+# Hold the target lock across build, deployment, and browser tests.
+concurrency:
+  group: nightly-playwright-plasma
+  cancel-in-progress: false
 
 jobs:
+  build-playwright:
+    name: Build Playwright image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: nightly-ui
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      source-ref: ${{ steps.info.outputs.source_ref }}
+      source-sha: ${{ steps.info.outputs.sha }}
+      app-version: ${{ steps.info.outputs.app_version }}
+      image-tag: ${{ steps.info.outputs.tag }}
+      image: ${{ steps.info.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+        with:
+          # Manual dispatch stays on its selected commit, including reruns.
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || 'refs/heads/master' }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: assets/automation/package-lock.json
+
+      - name: Install automation dependencies
+        run: npm ci
+        working-directory: assets/automation
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build info
+        id: info
+        env:
+          SOURCE_REF: ${{ github.event_name == 'workflow_dispatch' && github.ref || 'refs/heads/master' }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          app_version=$(sed -n 's/^[[:space:]]*version: "\([^"]*\)",$/\1/p' mix.exs)
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][a-zA-Z0-9.-]+)?$ ]]
+          tag="sha-${sha}-playwright-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "source_ref=$SOURCE_REF" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "app_version=$app_version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/simon-initiative/oli-torus:$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/simon-initiative/oli-torus
+          flavor: latest=false
+          tags: type=raw,value=${{ steps.info.outputs.tag }}
+          labels: |
+            org.opencontainers.image.revision=${{ steps.info.outputs.sha }}
+            org.opencontainers.image.version=${{ steps.info.outputs.app_version }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            MIX_ENV=playwright
+            BUILD_SCOPE=nightly-playwright
+            APP_VERSION=${{ steps.info.outputs.app_version }}
+            SHA=${{ steps.info.outputs.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=nightly-playwright-${{ hashFiles('Dockerfile', 'mix.lock', 'assets/yarn.lock', 'gleam/manifest.toml', 'config/*.exs') }}
+          cache-to: type=gha,mode=max,scope=nightly-playwright-${{ hashFiles('Dockerfile', 'mix.lock', 'assets/yarn.lock', 'gleam/manifest.toml', 'config/*.exs') }}
+
+  deploy-plasma:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.publish_only }}
+    needs: build-playwright
+    name: Deploy and verify Plasma
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment: nightly-deploy
+    permissions:
+      contents: read
+    outputs:
+      accepted-commit: ${{ steps.merge.outputs.accepted_commit }}
+      readiness: ${{ steps.ready.outcome }}
+    env:
+      GITOPS_REPO: Simon-Initiative/oli-torus-gitops
+      RUN_KEY: ${{ github.run_id }}-${{ github.run_attempt }}
+      IMAGE_TAG: ${{ needs.build-playwright.outputs.image-tag }}
+      SOURCE_REF: ${{ needs.build-playwright.outputs.source-ref }}
+      SOURCE_SHA: ${{ needs.build-playwright.outputs.source-sha }}
+      APP_VERSION: ${{ needs.build-playwright.outputs.app-version }}
+
+    steps:
+      - name: Obtain deployment App token
+        id: app
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.GITOPS_APP_ID }}
+          private-key: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
+          owner: Simon-Initiative
+          repositories: oli-torus-gitops
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout reviewed GitOps branch
+        uses: actions/checkout@v5
+        with:
+          repository: Simon-Initiative/oli-torus-gitops
+          ref: master
+          token: ${{ steps.app.outputs.token }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install GitOps dependencies
+        run: python -m pip install pyyaml
+
+      - name: Prepare deployment record
+        run: |
+          python3 scripts/update_deployment_record.py \
+            --record deployments/nightly-playwright.yml \
+            --image-tag "$IMAGE_TAG" --source-ref "$SOURCE_REF" --commit-sha "$SOURCE_SHA"
+          git diff --check
+          cp deployments/nightly-playwright.yml "$RUNNER_TEMP/nightly-expected.yml"
+
+      - name: Create signed deployment PR
+        id: pr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+        with:
+          token: ${{ steps.app.outputs.token }}
+          sign-commits: true
+          branch: nightly-playwright/${{ env.RUN_KEY }}
+          base: master
+          add-paths: deployments/nightly-playwright.yml
+          commit-message: Update nightly Playwright ${{ env.RUN_KEY }}
+          title: Update nightly Playwright ${{ env.RUN_KEY }}
+          body: |
+            Source: ${{ env.SOURCE_SHA }}
+            Image: ${{ env.IMAGE_TAG }}
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Merge deployment PR after required checks
+        id: merge
+        timeout-minutes: 15
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+          PR_HEAD: ${{ steps.pr.outputs.pull-request-head-sha }}
+          SIGNED: ${{ steps.pr.outputs.pull-request-commits-verified }}
+        run: |
+          test -n "$PR_NUMBER"
+          test -n "$PR_HEAD"
+          test "$SIGNED" = true
+          # GitHub enforces required checks, signatures, and review rules on each request.
+          # Request an immediate merge: never queue auto-merge after this job stops.
+          while true; do
+            if timeout 30s gh api --method PUT "repos/$GITOPS_REPO/pulls/$PR_NUMBER/merge" \
+              -f merge_method=squash -f sha="$PR_HEAD" > "$RUNNER_TEMP/nightly-merge.json" &&
+              jq -e '.merged == true' "$RUNNER_TEMP/nightly-merge.json" > /dev/null; then
+              break
+            fi
+            echo 'Merge not accepted yet; retrying in 10 seconds (15-minute limit).'
+            sleep 10
+          done
+          accepted=$(timeout 30s gh api "repos/$GITOPS_REPO/commits/master" --jq .sha)
+          timeout 30s gh api "repos/$GITOPS_REPO/contents/deployments/nightly-playwright.yml?ref=$accepted" \
+            -H 'Accept: application/vnd.github.raw+json' > "$RUNNER_TEMP/nightly-accepted.yml"
+          cmp "$RUNNER_TEMP/nightly-expected.yml" "$RUNNER_TEMP/nightly-accepted.yml"
+          echo "accepted_commit=$accepted" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for the deployed version
+        id: ready
+        timeout-minutes: 21
+        run: |
+          # timeout bounds the whole loop, including its final request or sleep.
+          timeout 20m bash <<'SH'
+          set -euo pipefail
+          response="$RUNNER_TEMP/nightly-readiness.json"
+          trap 'rm -f "$response"' EXIT
+          while true; do
+            status=$(curl --silent --show-error --proto '=https' --max-time 10 --max-filesize 4096 \
+              -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
+              --output "$response" --write-out '%{http_code}' \
+              https://nightly-playwright.plasma.oli.cmu.edu/readyz) || status=000
+            if [ "$status" = 200 ] && jq -e --arg version "$APP_VERSION" --arg sha "$SOURCE_SHA" \
+              '.status == "ready" and .version == $version and .sha == $sha' "$response" > /dev/null 2>&1; then
+              echo "Observed ready version $APP_VERSION at source $SOURCE_SHA after ${SECONDS}s."
+              exit 0
+            fi
+            echo "Readiness not matched (HTTP $status, ${SECONDS}s elapsed); retrying in 10 seconds."
+            sleep 10
+          done
+          SH
+
   nightly-playwright:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.publish_only }}
+    needs: [build-playwright, deploy-plasma]
     name: Nightly LTI Playwright
+    outputs:
+      tests: ${{ steps.tests.outcome }}
+      report-url: ${{ steps.report.outputs.artifact-url }}
+      results-url: ${{ steps.results.outputs.artifact-url }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     environment: nightly-ui
@@ -23,6 +253,14 @@ jobs:
       PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL || vars.TORUS_BASE_URL || secrets.PLAYWRIGHT_BASE_URL }}
       PLAYWRIGHT_AUTOMATION_API_KEY: ${{ secrets.PLAYWRIGHT_AUTOMATION_API_KEY }}
       PLAYWRIGHT_SCENARIO_TOKEN: ${{ secrets.PLAYWRIGHT_SCENARIO_TOKEN }}
+      PLAYWRIGHT_CAPTCHA_TOKEN: ${{ secrets.PLAYWRIGHT_CAPTCHA_TOKEN }}
+      CANVAS_BASE_URL: ${{ vars.CANVAS_BASE_URL }}
+      CANVAS_ACCOUNT_ID: ${{ vars.CANVAS_ACCOUNT_ID }}
+      CANVAS_INSTRUCTOR_USER_ID: ${{ vars.CANVAS_INSTRUCTOR_USER_ID }}
+      CANVAS_LTI_TOOL_NAME: ${{ vars.CANVAS_LTI_TOOL_NAME }}
+      CANVAS_TOOL_LAUNCH_URL: ${{ vars.CANVAS_TOOL_LAUNCH_URL }}
+      CANVAS_API_TOKEN: ${{ secrets.CANVAS_API_TOKEN }}
+      MOODLE_BASE_URL: ${{ vars.MOODLE_BASE_URL }}
       CANVAS_UI_EMAIL: ${{ secrets.CANVAS_UI_EMAIL }}
       CANVAS_UI_PASSWORD: ${{ secrets.CANVAS_UI_PASSWORD }}
       MOODLE_INSTRUCTOR_EMAIL: ${{ secrets.MOODLE_INSTRUCTOR_EMAIL }}
@@ -34,11 +272,14 @@ jobs:
       TORUS_BASE_URL: ${{ vars.TORUS_BASE_URL }}
       TORUS_ADMIN_EMAIL: ${{ secrets.TORUS_ADMIN_EMAIL }}
       TORUS_ADMIN_PASSWORD: ${{ secrets.TORUS_ADMIN_PASSWORD }}
-      PLAYWRIGHT_PARAMETER_CONFIG_URL: ${{ secrets.PLAYWRIGHT_PARAMETER_CONFIG_URL }}
+      PLAYWRIGHT_PARAMETER_CONFIG_URL: ${{ vars.PLAYWRIGHT_PARAMETER_CONFIG_URL }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build-playwright.outputs.source-sha }}
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -54,9 +295,11 @@ jobs:
         run: npx playwright install --with-deps chrome
 
       - name: Run nightly Playwright tests
-        run: npx playwright test --grep @nightly --reporter=line
+        id: tests
+        run: npx playwright test --config playwright.nightly.config.ts --grep @nightly
 
       - name: Upload Playwright report
+        id: report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -65,6 +308,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Playwright test results
+        id: results
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -72,7 +316,54 @@ jobs:
           path: assets/automation/test-results/
           retention-days: 14
 
+  summarize-nightly:
+    name: Summarize nightly stages
+    if: always()
+    needs: [build-playwright, deploy-plasma, nightly-playwright, nightly-scenarios]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Record provenance and stage results
+        env:
+          BUILD_RESULT: ${{ needs.build-playwright.result }}
+          DEPLOY_RESULT: ${{ needs.deploy-plasma.result }}
+          BROWSER_RESULT: ${{ needs.nightly-playwright.result }}
+          TEST_RESULT: ${{ needs.nightly-playwright.outputs.tests || 'skipped' }}
+          SCENARIO_RESULT: ${{ needs.nightly-scenarios.result }}
+          SOURCE_REF: ${{ needs.build-playwright.outputs.source-ref }}
+          SOURCE_SHA: ${{ needs.build-playwright.outputs.source-sha }}
+          APP_VERSION: ${{ needs.build-playwright.outputs.app-version }}
+          IMAGE: ${{ needs.build-playwright.outputs.image }}
+          DIGEST: ${{ needs.build-playwright.outputs.digest }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          ACCEPTED_COMMIT: ${{ needs.deploy-plasma.outputs.accepted-commit }}
+          READINESS: ${{ needs.deploy-plasma.outputs.readiness || 'skipped' }}
+          REPORT_URL: ${{ needs.nightly-playwright.outputs.report-url }}
+          RESULTS_URL: ${{ needs.nightly-playwright.outputs.results-url }}
+        run: |
+          {
+            echo "Run: $GITHUB_RUN_ID / attempt $GITHUB_RUN_ATTEMPT"
+            echo "Workflow commit: $WORKFLOW_SHA"
+            echo "Source: $SOURCE_REF at $SOURCE_SHA (version $APP_VERSION)"
+            echo "Image: $IMAGE ($DIGEST)"
+            echo "Accepted GitOps commit: $ACCEPTED_COMMIT"
+            echo "Build: $BUILD_RESULT; deploy: $DEPLOY_RESULT; readiness: $READINESS"
+            echo "Browser job: $BROWSER_RESULT; Playwright step: $TEST_RESULT; scenarios: $SCENARIO_RESULT"
+            echo "Selector: @nightly; Mix environment: playwright"
+            if [ "$READINESS" = success ]; then
+              echo "Observed expected version/commit at the public endpoint before testing."
+            fi
+            if [ -n "$REPORT_URL" ]; then
+              echo "[Playwright report]($REPORT_URL)"
+            fi
+            if [ -n "$RESULTS_URL" ]; then
+              echo "[Playwright test results]($RESULTS_URL)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   nightly-scenarios:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.publish_only }}
     name: Nightly Scenario Tests
     runs-on: ubuntu-latest
     timeout-minutes: 60

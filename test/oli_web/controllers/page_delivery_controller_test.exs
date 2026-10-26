@@ -1475,20 +1475,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     setup [:setup_tags, :setup_independent_learner_section]
 
     test "handles new independent learner user access", %{conn: conn, section: section} do
-      Oli.Test.MockHTTP
-      |> expect(:post, fn "https://www.google.com/recaptcha/api/siteverify",
-                          _body,
-                          _headers,
-                          _opts ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true
-             })
-         }}
-      end)
+      expect(Oli.Test.RecaptchaMock, :verify, fn _ -> {:success, true} end)
 
       stub_current_time(~U[2023-11-04 20:00:00Z])
 
