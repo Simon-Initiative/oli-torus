@@ -4,7 +4,7 @@
  * and driving the "New course set up" wizard that appears when an LTI launch lands in Torus
  * for the first time (search/select a source, create a section, delete it).
  */
-import { Browser, expect, Locator, Page } from '@playwright/test';
+import { Browser, expect, FrameLocator, Locator, Page } from '@playwright/test';
 import { LoginPO } from '@pom/home/LoginPO';
 
 export type TorusProject = {
@@ -14,7 +14,6 @@ export type TorusProject = {
 
 export type RoleScope = {
   getByRole(role: 'button', options: { name: string | RegExp }): Locator;
-  getByPlaceholder(text: string | RegExp): Locator;
   getByText(text: string | RegExp, options?: { exact?: boolean }): Locator;
   locator(selector: string): Locator;
 };
@@ -378,31 +377,26 @@ export async function acceptCookiesIfVisible(scope: Pick<RoleScope, 'locator'>, 
   }
 }
 
-// Waits for Phoenix LiveView's `phx-blur-loading` class (added to an element while its
-// `phx-blur` binding's server round trip is in flight, removed once the response patches the
-// DOM) to clear. Verified live that this transition can complete in well under 200ms, so
-// polling for the class from outside the browser risks missing it entirely; observing and
-// triggering blur in the same browser-side call closes that race.
-async function waitForPhxBlurRoundTrip(input: Locator) {
-  await input.evaluate((element: HTMLElement) => {
-    return new Promise<void>((resolve) => {
-      let appeared = false;
-      const observer = new MutationObserver(() => {
-        const loading = element.classList.contains('phx-blur-loading');
-        if (loading) appeared = true;
-        if (appeared && !loading) {
-          observer.disconnect();
-          resolve();
-        }
-      });
-      observer.observe(element, { attributes: true, attributeFilter: ['class'] });
-      (element as HTMLInputElement).blur();
-      setTimeout(() => {
-        observer.disconnect();
-        resolve();
-      }, 5_000);
-    });
-  });
+// Torus sends a user who has never answered its research consent form to that form before any
+// course page when their institution requires consent. Waits until either the form or a LiveView
+// page is showing, and submits the preselected "I Agree" answer only when it is the form.
+export async function submitResearchConsentIfShown(scope: Page | FrameLocator, timeout = 15_000) {
+  const consentHeading = scope.getByRole('heading', { name: /Online Consent Form/i });
+
+  const formShown = await consentHeading
+    .or(scope.locator('[data-phx-main]'))
+    .first()
+    .waitFor({ state: 'visible', timeout })
+    .then(() => consentHeading.isVisible())
+    .catch(() => false);
+
+  if (!formShown) {
+    return;
+  }
+
+  await scope.getByRole('radio', { name: /I Agree/i }).check();
+  await scope.getByRole('button', { name: /^Submit$/i }).click();
+  await expect(consentHeading).toBeHidden({ timeout });
 }
 
 export async function createTorusSectionFromLaunch(
@@ -415,18 +409,14 @@ export async function createTorusSectionFromLaunch(
 ) {
   // A real institution's source list can hold hundreds of results (this loaded 325 against
   // Tokamak), so the initial render is slower than the default assertion timeout.
-  await expect(scope.getByText('Select source')).toBeVisible({ timeout: 30_000 });
-  const searchInput = scope.getByPlaceholder('Search...');
+  const stepperContent = scope.locator('#stepper_content');
+  await expect(stepperContent.getByRole('heading', { name: 'Select Curriculum' })).toBeVisible({
+    timeout: 30_000,
+  });
+  const searchInput = stepperContent.getByRole('textbox', { name: 'Search', exact: true });
   await searchInput.fill('');
   await searchInput.pressSequentially(sourceTitle, { delay: 20 });
-
-  // The "Search" button reads a server-side LiveView assign (`params.query`) that is only
-  // updated by the input's own `phx-blur` event, not the DOM value at click time. Clicking
-  // immediately after typing can race that event's round trip to the server, applying a stale
-  // (effectively empty) query and silently resetting the input once the server's unfiltered
-  // state re-renders it. Triggering blur and waiting for its round trip to finish avoids that.
-  await waitForPhxBlurRoundTrip(searchInput);
-  await scope.getByRole('button', { name: 'Search' }).click();
+  await searchInput.press('Enter');
   await expect(scope.getByText(`Results filtered on "${sourceTitle}"`)).toBeVisible();
 
   const sourceCard = scope
@@ -436,9 +426,6 @@ export async function createTorusSectionFromLaunch(
 
   await expect(sourceCard).toBeVisible();
   await sourceCard.click();
-  const nextStepButton = scope.getByRole('button', { name: 'Next step' });
-  await expect(nextStepButton).toBeEnabled();
-  await nextStepButton.click();
 
   await expect(
     scope.locator('#stepper_content').getByRole('heading', { name: 'Name your course' }),
@@ -446,6 +433,7 @@ export async function createTorusSectionFromLaunch(
   await scope.locator('#section_title').fill(sectionTitle);
   await scope.locator('#section_course_section_number').fill(sectionNumber);
   await scope.getByText("Never, it's a self paced course", { exact: true }).click();
+  const nextStepButton = scope.getByRole('button', { name: 'Next step' });
   await expect(nextStepButton).toBeEnabled();
   await nextStepButton.click();
 
