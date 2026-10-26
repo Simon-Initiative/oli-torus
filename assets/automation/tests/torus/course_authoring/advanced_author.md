@@ -27,10 +27,12 @@ delivery of a lesson built with it, including real Adaptivity trap-state rules.
 | `author builds a responsive subscreen ...`           | A part placed on a subscreen (nested under a Layer, added via "Add Subscreen") takes a `50% left` width, persists after reload, then publishes.                                                          |
 | `student sees the subscreen part ...`                | The published lesson's Layer auto-resolves to its one subscreen on the first "Next", and the delivered part carries the same `half-width`/`responsive-align-left` classes as authoring.                  |
 
-Deferred to later phases: component library, list sort, flashcards, z-order, advanced bank
-permutations, and one regression check named in the ticket (slider feedback — blocked on a real
-bug, see "Open questions"). CAPI sizing, item-bank layout, and responsive subscreens are resolved
-and covered, see below. Broad exploratory and subjective visual review stays manual.
+Deferred to later phases: component library, list sort, flashcards, z-order, and advanced bank
+permutations. The slider regression check named in the ticket is written and moves with its bug to
+TRIAGE-2556, to land with the fix (see "Open questions"). Item-bank layout and responsive subscreens
+are resolved and covered; CAPI sizing has assertions in `capi.spec.ts`, but no CI job runs that spec
+and it currently fails at login locally, see below. Broad exploratory and subjective visual review
+stays manual.
 
 ## Setup and teardown
 
@@ -138,7 +140,10 @@ button[title="Edit"]` (shared with Simple Author, rendered by `LayoutEditor`) op
 
 - **CAPI/iframe sizing** — `tests/torus/capi/capi.spec.ts` already covers the only CAPI sizing
   mechanism that exists (the `RESIZE_PARENT_CONTAINER_REQUEST`/`RESPONSE` postMessage protocol);
-  there is no distinct authoring-side sizing control to add here.
+  there is no distinct authoring-side sizing control to add here. Its sizing test
+  (`capi.spec.ts:281`) doesn't run today: the spec has no `@pr`/`@nightly` tag, so no CI job
+  selects it, and locally all its tests fail at the student login (`capi.spec.ts:41`), on this
+  branch and on its base.
 - **Item-bank layout** — refers to the `janus_item_bank` stage component (via "More Components"),
   not the Sequence Editor's "Question Bank" node (which has no rendering surface of its own and so
   can't have a layout regression). Covered by `item bank renders its default items and layout ...`
@@ -151,17 +156,15 @@ button[title="Edit"]` (shared with Simple Author, rendered by `LayoutEditor`) op
   Layer, not a Question Bank, to keep delivery navigation deterministic without touching
   `bankShowCount`/`bankEndTarget`).
 
-### Confirmed bug, not testable yet
+### Confirmed bug, test lands with the fix
 
-- **Slider regression** — Raphael's Jira comment clarified the intended test (change the Slider's
-  option-label count, save, confirm the new max persists and is enforced in delivery). Running that
-  flow locally shows it's genuinely broken, confirmed by instrumenting the browser's own
-  `saveconfigure`/`modelUpdated` DOM events live: adding an option computes the correct new
-  `maximum` and it reaches `dispatch(saveActivity(...))` correctly, but still isn't what's in the
-  backend after a reload (lost somewhere inside or after that shared save pipeline); removing an
-  option is a second, separate failure where the recompute doesn't even trigger. Neither is a
-  small, localized fix — `saveActivity` is shared by every part type in Advanced Author, so a wrong
-  guess there risks breaking saves broadly, not just this component. No test was added and no fix
-  was attempted here: asserting the current (broken) behavior would mislead whoever fixes it, and
-  asserting the correct behavior would fail on every PR until that happens. Recommend filing this
-  as its own bug ticket, with the intended test above as its acceptance check.
+- **Slider regression** — Raphael's Jira comment clarified the intended test: change the Slider's
+  maximum count away from its default 3, save, and confirm the value is retained and enforced in
+  delivery. That is Slider (Text) (`janus_text_slider`, created with `maximum: 3`), whose read-only
+  Max is recomputed as the number of option labels minus one. The test that does exactly that is
+  written and lives in TRIAGE-2556, to land with the fix: after two labels are added, the editor
+  reloads with five labels and Max 3 instead of 4. In the saved requests, each "+ Add Option" click
+  sends two writes; on the second click the first carries `maximum: 4` and the next one, about a
+  second later, `maximum: 3`, so the old value lands last. The delivered slider follows the label
+  count (`max="4"` with five labels). Removing a label was reported earlier as a separate failure
+  (the recompute doesn't trigger); no test covers that path.
