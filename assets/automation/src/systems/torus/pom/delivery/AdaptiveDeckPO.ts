@@ -106,6 +106,20 @@ export class AdaptiveDeckPO {
       .catch(() => false);
   }
 
+  /**
+   * Whether the feedback popup is open. The deck swaps the footer button's
+   * class to closeFeedbackBtn exactly while feedback shows, so the control's
+   * presence is the signal — matching on "feedback" in any class name instead
+   * catches persistent chrome that is always present.
+   */
+  async feedbackVisible(): Promise<boolean> {
+    return this.page
+      .locator('.closeFeedbackBtn')
+      .first()
+      .isVisible()
+      .catch(() => false);
+  }
+
   async feedbackText(): Promise<string> {
     return this.page
       .locator('.feedbackContainer, [class*="feedback"]')
