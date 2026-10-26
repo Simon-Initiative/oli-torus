@@ -1,0 +1,49 @@
+# Scenario: Seed a course whose Learn > Gallery View has one unit slider with
+# three module cards, so keyboard focus wrapping can be exercised both in the
+# slider and in an expanded module.
+
+- project:
+    name: 'gallery_focus_wrap_project'
+    title: 'Gallery Focus Wrap Course ${RUN_ID}'
+    root:
+      children:
+        - container: 'Focus Unit'
+          children:
+            - container: 'First Module'
+              children:
+                - page: 'First Module Page A'
+                - page: 'First Module Page B'
+            - container: 'Second Module'
+              children:
+                - page: 'Second Module Page'
+            - container: 'Third Module'
+              children:
+                - page: 'Third Module Page'
+
+- publish:
+    to: 'gallery_focus_wrap_project'
+    description: 'Initial gallery focus wrap course'
+
+- section:
+    name: 'gallery_focus_wrap_section'
+    title: 'Gallery Focus Wrap Section ${RUN_ID}'
+    from: 'gallery_focus_wrap_project'
+    type: 'enrollable'
+    registration_open: true
+    start_date: '2026-04-16T00:00:00Z'
+
+- user:
+    name: 'gallery_focus_student'
+    type: 'student'
+    email: 'gallery-focus-student${RUN_ID}@example.com'
+    given_name: 'Gallery'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'gallery_focus_student'
+    section: 'gallery_focus_wrap_section'
+    role: 'student'
+
+- hook:
+    function: 'Oli.Scenarios.Hooks.mark_sections_visited/1'
