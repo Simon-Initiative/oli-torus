@@ -253,9 +253,19 @@ defmodule Oli.Predefined do
     ]
   end
 
+  @doc """
+  Reads the packaged university directory and returns names, country codes, and
+  the first institution URL for each entry. Returns an empty list when the file
+  cannot be read.
+  """
+  @spec world_universities_and_domains() :: [
+          %{name: String.t(), country_code: String.t(), institution_url: String.t() | nil}
+        ]
   def world_universities_and_domains do
-    Application.get_env(:oli, :world_universities_and_domains_json)
-    |> Jason.decode!()
+    case File.read(Application.app_dir(:oli, "priv/data/world_universities_and_domains.json")) do
+      {:ok, json} -> Jason.decode!(json)
+      {:error, _reason} -> []
+    end
     |> Enum.map(fn el ->
       %{
         name: el["name"],
