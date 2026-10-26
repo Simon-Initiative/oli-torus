@@ -4,7 +4,7 @@
 
 Follow the [Development Process](development.md) for branch setup, PR destinations, reviews, acceptance testing, syncs, and merging.
 
-Prefix PR titles and merge commit messages with the change type, ticket reference, and description, for example `[BUG FIX] [MER-1001] Fix dashboard loading`. Use the child Sub-task ticket for implementation PRs and the parent ticket for integration and sync PRs.
+Prefix PR titles and merge commit messages with the change type, ticket reference, and description, for example `[BUG FIX] [MER-1001] Fix dashboard loading`. Use the main ticket for implementation PRs unless the work is tracked in a chosen child Sub-task, in which case use that child ticket. Integration and sync PRs always reference the main ticket.
 
 ### Valid Change Types
 
