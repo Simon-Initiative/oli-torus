@@ -19,8 +19,11 @@ defmodule OliWeb.PlaywrightSupportAssetController do
   alias OliWeb.PlaywrightAuth
 
   @allowed_files %{
-    "image_coding_sample.png" => "image/png",
-    "image_coding_table.csv" => "text/csv"
+    "image-test-01.png" => {"image_coding_sample.png", "image/png"},
+    "table-test-01.csv" => {"image_coding_table.csv", "text/csv"},
+    "video-test-01.mp4" => {"video-test-01.mp4", "video/mp4"},
+    "image_coding_sample.png" => {"image_coding_sample.png", "image/png"},
+    "image_coding_table.csv" => {"image_coding_table.csv", "text/csv"}
   }
 
   # private_asset serves S3-controlled content: never trust its content-type
@@ -38,10 +41,10 @@ defmodule OliWeb.PlaywrightSupportAssetController do
   @doc "Serves only the allowlisted public automation fixtures."
   def support_asset(conn, %{"filename" => filename}) do
     case Map.fetch(@allowed_files, filename) do
-      {:ok, mime} ->
+      {:ok, {asset_filename, mime}} ->
         conn
         |> put_resp_content_type(mime)
-        |> send_file(200, asset_path(filename))
+        |> send_file(200, asset_path(asset_filename))
 
       :error ->
         send_resp(conn, 404, "Not found")

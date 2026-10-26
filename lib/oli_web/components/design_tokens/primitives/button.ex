@@ -609,7 +609,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
       "bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted hover:bg-Fill-Buttons-fill-primary-muted-hover hover:text-Text-text-white"
 
   defp variant_classes(:primary, _muted, true),
-    do: "bg-Fill-Buttons-fill-primary-muted text-Text-text-white"
+    do: "bg-Fill-Buttons-fill-primary-disabled text-Text-text-low"
 
   defp variant_classes(:secondary, _muted, true),
     do:

@@ -1,0 +1,55 @@
+- use:
+    file: deep_linking_setup.scenario.yaml
+
+- publish:
+    to: deep_linking_project
+    description: Published Draft selection
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.capture_draft_publication/1
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.create_draft_section/1
+
+- assert:
+    structure:
+      to: draft_section
+      root:
+        children:
+          - page: Tool Lesson
+
+- enroll:
+    user: learner
+    section: draft_section
+    role: student
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.edit_presentation/1
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.select_review/1
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.create_unpublished_section/1
+
+- publish:
+    to: deep_linking_project
+    description: Published Review selection
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.create_review_section/1
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.create_historical_section/1
+
+- assert:
+    structure:
+      to: review_section
+      root:
+        children:
+          - page: Tool Lesson
+
+- enroll:
+    user: learner
+    section: review_section
+    role: student

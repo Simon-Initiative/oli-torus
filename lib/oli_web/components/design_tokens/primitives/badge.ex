@@ -106,5 +106,5 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Badge do
     do: "bg-Fill-Accent-fill-accent-orange text-Text-text-accent-orange"
 
   defp variant_classes(:cost),
-    do: "bg-Fill-Chip-Green text-Text-text-accent-green"
+    do: "bg-Fill-Chip-Green text-Text-Chip-Green"
 end

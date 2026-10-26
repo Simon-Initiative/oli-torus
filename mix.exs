@@ -86,6 +86,7 @@ defmodule Oli.MixProject do
       "guides/process/pr-template.md",
       "guides/process/changelog-pr.md",
       "guides/process/claude-code.md",
+      "guides/process/development.md",
       "guides/process/deployment.md",
       "guides/process/building.md",
       "guides/process/testing.md",

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import AxeBuilder from '@axe-core/playwright';
 import { expect } from '@playwright/test';
 import { test } from '@fixture/my-fixture';
 import {
@@ -63,10 +64,37 @@ test.beforeAll(async ({ seedScenario }) => {
 });
 
 test.describe('accessibility regression coverage @pr @accessibility', () => {
+  test('loading indicator has valid ARIA while visible', async ({ page, homeTask }) => {
+    await homeTask.login('student');
+    try {
+      await page.evaluate(() => window.dispatchEvent(new Event('phx:page-loading-start')));
+      await expect(page.locator('#nprogress .bar')).toBeVisible();
+      const results = await new AxeBuilder({ page })
+        .include('#nprogress')
+        .withRules(['aria-roles'])
+        .analyze();
+      expect(results.violations).toEqual([]);
+    } finally {
+      await page.evaluate(() => window.dispatchEvent(new Event('phx:page-loading-stop')));
+      await expect(page.locator('#nprogress')).toHaveCount(0);
+    }
+  });
+
   test('student home has no automated accessibility violations', async ({ page, homeTask }) => {
     await homeTask.login('student');
     await scanPageAccessibility(page, 'student home');
     await expectKeyboardFocus(page, 'a, button, input');
+  });
+
+  test('rejects accessibility scans when Tailwind CSS is missing', async ({ page, homeTask }) => {
+    await homeTask.login('student');
+    await page.route('**/css/app.css', (route) =>
+      route.fulfill({ status: 404, contentType: 'text/css', body: '' }),
+    );
+    await page.goto('/users/settings', { waitUntil: 'load' });
+    await expect(scanPageAccessibility(page, 'account settings without Tailwind')).rejects.toThrow(
+      'Tailwind CSS must be loaded before scanning accessibility',
+    );
   });
 
   test('course outline and notes have no automated accessibility violations', async ({
@@ -132,15 +160,17 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await expectKeyboardFocus(page, 'a, button, input');
   });
 
-  test('authoring curriculum has no automated accessibility violations', async ({
+  test('authoring dashboard and curriculum have no automated accessibility violations', async ({
     page,
     homeTask,
   }) => {
     await homeTask.login('author');
-    await page.goto(`/workspaces/course_author/${projectSlug}/curriculum`, {
+    await scanPageAccessibility(page, 'authoring dashboard');
+    const curriculumPath = `/workspaces/course_author/${projectSlug}/curriculum`;
+    await page.goto(curriculumPath, {
       waitUntil: 'domcontentloaded',
     });
-    await expect(page).toHaveURL(new RegExp(`/course_author/${projectSlug}/curriculum$`));
+    await expect(page).toHaveURL(new URL(curriculumPath, page.url()).toString());
     await expect(page.getByRole('heading', { name: 'Curriculum', exact: true })).toBeVisible();
     await expect(page.getByText('Coverage Page', { exact: true })).toBeVisible();
     await scanPageAccessibility(page, 'authoring curriculum');

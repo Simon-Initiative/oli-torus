@@ -15,7 +15,7 @@ name: PR Playwright Suite
 # third-party credentials (Canvas, Google, LTI tools, etc.) - this instance
 # has none of that.
 #
-# The suite also runs on pushes to feature integration branches (integ-*), so
+# The suite also runs on pushes to integration branches, so
 # the combined result of every PR merged into one is verified again.
 on:
   merge_group:
@@ -23,13 +23,16 @@ on:
   pull_request:
     branches:
       - master
-      - hotfix-*
-      - prerelease-*
-      - nextgen-ux
       - integ-*
+      - story/*
+      - bug/*
+      - task/*
   push:
     branches:
       - integ-*
+      - story/*
+      - bug/*
+      - task/*
 
 jobs:
   pr-playwright:
@@ -200,9 +203,11 @@ jobs:
           cat /tmp/torus-server.log
           exit 1
 
+      # Spec files run in parallel across workers; tests within a file stay
+      # serial because playwright.config.ts keeps fullyParallel off.
       - name: Run @pr-tagged Playwright tests
         working-directory: assets/automation
-        run: npx playwright test --grep @pr --reporter=line,html
+        run: npx playwright test --grep @pr --reporter=line,html --workers=2
 
       - name: Upload Playwright report
         if: failure()
