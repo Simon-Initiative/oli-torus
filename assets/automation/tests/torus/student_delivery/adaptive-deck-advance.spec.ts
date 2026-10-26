@@ -162,7 +162,7 @@ const ACK_THEN_NAVIGATE: Plan = {
 };
 const EVALUATING: Step = { cls: 'checkBtn', label: '', disabled: true };
 
-test.describe('deck advance — a click is licensed only by its own outcome @pr', () => {
+test.describe('deck advance — a click is licensed only by its own outcome @nightly', () => {
   test('acknowledging feedback is not repeated while the deck navigates away', async ({ page }) => {
     const deck = await deckOn(
       page,
