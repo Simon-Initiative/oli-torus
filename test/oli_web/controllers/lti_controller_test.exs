@@ -1261,6 +1261,15 @@ defmodule OliWeb.LtiControllerTest do
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
       assert html_response(conn, 200) =~ "value=\"test-deployment-id\""
+
+      [_, university_json] =
+        Regex.run(~r/var world_universities_and_domains = (\[.*\]);/, html_response(conn, 200))
+
+      assert %{
+               "name" => "Marywood University",
+               "country_code" => "US",
+               "institution_url" => "http://www.marywood.edu"
+             } in Jason.decode!(university_json)
     end
 
     test "show_registration_form handles missing URL params gracefully", %{conn: conn} do
