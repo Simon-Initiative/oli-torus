@@ -26,6 +26,7 @@ export type EditorProps = {
   parents: ResourceContent[];
   activities: Immutable.Map<string, ActivityEditContext>;
   editMode: boolean;
+  supportsLtiConfiguration?: boolean;
   canRemove: boolean;
   resourceSlug: string;
   projectSlug: string;

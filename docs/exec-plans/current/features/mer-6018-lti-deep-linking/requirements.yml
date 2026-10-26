@@ -1,0 +1,349 @@
+version: 1
+feature: MER-6018 LTI authoring Deep Linking
+generated_from: prd.md
+# Owner decision 2026-10-13: tests requiring a running real/test tool are deferred.
+# AC-022 external navigation and AC-030's full walkthrough remain pending.
+# Component/domain evidence must not be presented as cross-service proof.
+requirements:
+- id: FR-001
+  title: Preserve independent authoring role and launch-type choices with correct regular-launch reuse
+  status: verified
+  acceptance_criteria:
+  - id: AC-001
+    title: Developer plus Regular is the default; all four Developer/Instructor and Regular/Deep Link
+      combinations emit the selected context role and message type when supported, while retaining the
+      author's identity and project context. Deep Link also sends the current draft's string-valued custom
+      parameters as optional selector hints without changing the saved selection or selector endpoint.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/section_configuration_test.exs
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/components/lti/authoring_configuration_test.tsx
+    - assets/test/page_editor/nested_lti_configuration_test.tsx
+  - id: AC-002
+    title: Regular authoring launches reuse the saved URL and exact custom values; without a selection
+      they use the integration default, and Regular does not replace the selection.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+  - id: AC-003
+    title: Read-only or unauthorized authors cannot configure the activity, and disabled/deleted integrations,
+      unsupported launch choices or disabled Deep Linking cannot bypass server-side controls.
+    status: verified
+    verification_method: hybrid
+    proofs:
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/components/lti/authoring_configuration_test.tsx
+- id: FR-002
+  title: Provide a coherent authoring selection and save experience
+  status: verified
+  acceptance_criteria:
+  - id: AC-004
+    title: Role/type controls and launch/select/change-selection actions use established authoring patterns,
+      remain keyboard accessible, and make the current selection understandable when title metadata is
+      absent.
+    status: verified
+    verification_method: hybrid
+    proofs:
+    - assets/test/components/lti/authoring_configuration_test.tsx
+  - id: AC-005
+    title: Launching and saving have distinct accessible progress/error states, success is reported only
+      after persistence succeeds, and a subsequent reload displays the persisted selection.
+    status: verified
+    verification_method: hybrid
+    proofs:
+    - assets/test/components/lti/authoring_configuration_test.tsx
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - assets/test/page_editor/lti_save_test.tsx
+  - id: AC-006
+    title: Cancellation, launch/validation failure and save failure retain the previous selection and
+      unrelated content in persisted data and recoverable editor state.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/page_editor/lti_save_test.tsx
+    - assets/test/components/lti/authoring_configuration_test.tsx
+  - id: AC-007
+    title: Pending and in-flight page/activity edits are saved before configuration, overlapping launches
+      in the active editor are prevented, and that editor ignores late messages after close or from an older launch.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/page_editor/lti_save_test.tsx
+    - assets/test/data/persistence/deferred_persistence_test.ts
+    - assets/test/components/lti/authoring_configuration_test.tsx
+- id: FR-003
+  title: Validate and bind authoring tool responses before accepting a selection
+  status: verified
+  acceptance_criteria:
+  - id: AC-008
+    title: Invalid signatures, issuer/audience, required message/version/deployment claims, expired responses,
+      unsupported or multiple content items and malformed selections are rejected without mutation.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/oli_web/controllers/lti_controller_test.exs
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+  - id: AC-009
+    title: Tampered/expired Torus correlation or result tokens and wrong author/project/activity/deployment
+      associations are rejected, with current project membership, permission, integration and editor-lock
+      checks at save time.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+- id: FR-004
+  title: Persist selections through a guarded activity revision lifecycle
+  status: verified
+  acceptance_criteria:
+  - id: AC-010
+    title: Selecting or replacing a resource updates content.deepLink on the existing activity resource,
+      preserves its other fields and synchronizes the existing editor context with the saved model.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/page_editor/lti_save_test.tsx
+  - id: AC-011
+    title: An intervening ordinary edit or selection change makes an older return stale, including edits
+      under an already-held lock and without forcing new ordinary revisions; comparison and selection/mapping updates are atomic and a successful
+      selection result cannot be saved again.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+  - id: AC-012
+    title: Subsequent autosaves and ordinary edits retain the selection, and publication freezes it so
+      later draft changes cannot mutate the published activity revision.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+- id: FR-005
+  title: Retain transactional initialization for sections created directly from a project publication
+  status: verified
+  acceptance_criteria:
+  - id: AC-013
+    title: A new section initializes selections only from exact activity revisions in its selected publication
+      and only for resources included in that destination; absent or null selections create no placeholders.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+  - id: AC-014
+    title: Creating a section from an older publication after an unpublished or newly published configuration
+      change still uses that older publication, and initialization failure rolls back the entire creation.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+- id: FR-006
+  title: Initialize only missing selections while applying a publication to an existing section
+  status: verified
+  acceptance_criteria:
+  - id: AC-015
+    title: Publication application initializes newly introduced activities and previously uninitialized
+      activities from the applied published revisions, scoped to final destination resources and skipping
+      absent/null selections.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
+  - id: AC-016
+    title: Existing section selections, including instructor overrides, are not overwritten or cleared
+      when project configuration changes or disappears in a new publication.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
+  - id: AC-017
+    title: Repeated or concurrent missing-selection initialization creates no duplicate section/resource
+      records and never replaces a selection established by another successful write.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
+  - id: AC-018
+    title: Initialization failures roll back publication application and its section resource/publication
+      changes; major and minor update paths cannot report partial success or create additional sections.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
+- id: FR-007
+  title: Initialize template selections from their selected project publication
+  status: verified
+  acceptance_criteria:
+  - id: AC-019
+    title: Project-to-template creation creates template-owned selection records from exact published
+      activity revisions included in the template, skipping missing selections and rolling back template
+      creation on initialization failure.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/inheritance_test.exs
+- id: FR-008
+  title: Copy template or previous-section selections as curriculum without project fallback
+  status: verified
+  acceptance_criteria:
+  - id: AC-020
+    title: Template-to-section and previous-section copying include current source-owned selection
+      URL/custom/metadata in mandatory Content / curriculum, without a new checkbox. Copy template-local
+      or instructor changes into independent destination records only for corresponding destination
+      resources, preserving existing project/template provenance and publication pins.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/inheritance_test.exs
+  - id: AC-021
+    title: A missing or cleared template or previous-section selection produces no destination record
+      even when the project has a selection; copy failure rolls back creation and no learner attempts,
+      submissions or grades are copied by this feature.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/inheritance_test.exs
+- id: FR-009
+  title: Preserve and verify instructor reconfiguration in a course section
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-022
+    title: Change Selection from Tool displays the tool's selector inside its configuration modal while
+      the regular activity remains embedded; multiple LTI instances and the modal have distinct frame
+      targets and correctly associated return handlers.
+    status: verified_plan
+    verification_method: hybrid
+    proofs:
+    - assets/test/components/lti/external_tool_frame_test.tsx
+    - assets/test/components/lti/external_tool_configuration_test.tsx
+  - id: AC-023
+    title: An authorized instructor's successful selection updates only that section's record and the
+      next learner launch uses it; project, template and sibling selections stay unchanged, while learners/unauthorized
+      actors cannot configure the section. Reopening configuration sends that section/activity's string-valued
+      custom parameters as optional hints, with no project fallback or requirement for tool UI preselection.
+    status: verified
+    verification_method: hybrid
+    proofs:
+    - test/scenarios/lti_external_tool/section_configuration_test.exs
+    - assets/test/components/lti/delivery_selection_test.tsx
+
+  - id: AC-024
+    title: Cancelling or failing instructor configuration preserves the current section selection and
+      reports failure without falsely signaling successful reconfiguration.
+    status: verified
+    verification_method: hybrid
+    proofs:
+    - test/scenarios/lti_external_tool/section_configuration_test.exs
+    - assets/test/components/lti/external_tool_configuration_test.tsx
+- id: FR-010
+  title: Preserve portable tool data and existing launch behavior
+  status: verified
+  acceptance_criteria:
+  - id: AC-025
+    title: Tool-defined custom objects, including nested values and serialized task JSON, and supported
+      URL/type/title/text fields survive authoring, publication and inheritance without reinterpretation
+      or truncation.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - test/scenarios/lti_external_tool/inheritance_test.exs
+  - id: AC-026
+    title: URLs/titles/descriptions exceeding 255 characters round-trip, the widening migration retains
+      explicit forward/backward behavior, and rollback refuses to shrink while oversized values exist.
+    status: verified
+    verification_method: hybrid
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - docs/exec-plans/current/features/mer-6018-lti-deep-linking/plan.md
+
+  - id: AC-027
+    title: Unconfigured activities retain default regular launches, learner launches retain destination
+      context and current user identity, and existing LTI resource-link identity formats remain unchanged.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+- id: FR-011
+  title: Supply permanent evidence and actionable author/instructor guidance
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-028
+    title: Committed backend/scenario coverage verifies author configuration through publication, direct
+      creation or application, and delivery launch with expected URL/custom parameters, including old/new
+      publication and sibling-section isolation.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/publication_update_test.exs
+    - test/scenarios/lti_external_tool/deep_linking_test.exs
+    - test/scenarios/lti_external_tool/inheritance_test.exs
+  - id: AC-029
+    title: Committed frontend state/component coverage exercises author save/cancel/failure orchestration
+      and Torus-owned instructor modal/frame/message behavior using controlled responses without a running
+      external tool; actual cross-service Deep Linking coverage is deferred, and the existing regular-launch
+      dummy test is not treated as Deep Linking coverage.
+    status: verified
+    verification_method: automated
+    proofs:
+    - assets/test/components/lti/external_tool_frame_test.tsx
+    - assets/test/components/lti/external_tool_configuration_test.tsx
+    - test/scenarios/lti_external_tool/authoring_save_test.exs
+    - assets/test/page_editor/lti_save_test.tsx
+    - assets/test/components/lti/authoring_configuration_test.tsx
+  - id: AC-030
+    title: A documented MyProse walkthrough verifies supported role/type combinations, Draft/Review inheritance,
+      publication application, template-based creation and instructor overrides, with observed tool-side
+      compatibility separated from assumptions and no local credentials committed.
+    status: verified_plan
+    verification_method: hybrid
+    proofs:
+    - docs/exec-plans/current/features/mer-6018-lti-deep-linking/informal.md
+  - id: AC-031
+    title: Author/instructor guidance explains Regular versus Deep Link, independent section configuration
+      and the Torus-wrapper/tool-UI boundary; temporary notes and local demo artifacts remain excluded
+      from the PR.
+    status: verified
+    verification_method: hybrid
+    proofs:
+    - guides/lti/deep-linking.md
+
+- id: FR-012
+  title: Inherit Deep Links with remixed project or template content
+  status: verified
+  acceptance_criteria:
+  - id: AC-032
+    title: Remix into a course section or template inherits project selections from the chosen publication,
+      not newer drafts/publications, and template selections from the actual chosen template's current
+      records without project fallback for missing/cleared choices.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/remix_test.exs
+    - test/scenarios/lti_external_tool/remix_live_test.exs
+  - id: AC-033
+    title: Remix creates independently owned portable selection records only for activities referenced
+      by retained added pages and present in the destination, preserving existing destination selections
+      and unrelated missing selections. Removing added material before saving creates no selection for it.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/remix_test.exs
+  - id: AC-034
+    title: Selection inheritance participates in the existing remix transaction so failure rolls back
+      curriculum and publication-pin changes. Queries are scoped and grouped by source with no per-activity
+      lookups; existing curriculum processing, copy groups and learner data remain unchanged.
+    status: verified
+    verification_method: automated
+    proofs:
+    - test/scenarios/lti_external_tool/remix_test.exs

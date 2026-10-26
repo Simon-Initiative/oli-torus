@@ -1,0 +1,32 @@
+- use:
+    file: remix_setup.scenario.yaml
+
+- remix:
+    from: deep_linking_project
+    resource: Tool Lesson
+    section: destination_template
+    to: root
+
+- remix:
+    from: deep_linking_project
+    from_product: template
+    user: remix_instructor
+    resource: Tool Lesson
+    section: destination_course
+    to: root
+
+- assert:
+    structure:
+      to: destination_template
+      root:
+        children:
+          - page: Destination Lesson
+          - page: Tool Lesson
+
+- assert:
+    structure:
+      to: destination_course
+      root:
+        children:
+          - page: Destination Lesson
+          - page: Tool Lesson

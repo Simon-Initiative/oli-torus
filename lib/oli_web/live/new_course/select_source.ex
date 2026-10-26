@@ -154,6 +154,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <div class="w-[224px] shrink-0">
           <Filter.render
+            aria_label="Search course sources"
             query={@params[:query]}
             apply={JS.push("change_search", target: @myself)}
             change={JS.push("change_search", target: @myself)}

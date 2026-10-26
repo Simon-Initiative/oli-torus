@@ -837,6 +837,117 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   describe "student" do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
+    test "secure adaptive with course chrome uses one native shell, not an iframe", c do
+      %{section: section, adaptive_page: page} = create_adaptive_with_chrome_section()
+      page = Oli.Repo.update!(Ecto.Changeset.change(page, graded: true))
+      Sections.enroll(c.user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, c.user)
+      sr = Sections.get_section_resource(section.id, page.resource_id)
+      Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
+      create_attempt(c.user, section, page, %{lifecycle_state: :active, content: page.content})
+
+      token =
+        Oli.Accounts.generate_user_session_token(c.user,
+          scope: %Oli.Delivery.SecureAssessments.Scope{
+            section_id: section.id,
+            resource_id: page.resource_id
+          }
+        )
+
+      conn = c.conn |> recycle() |> init_test_session(%{user_token: token})
+      {:ok, view, _} = live(conn, Utils.lesson_live_path(section.slug, page.slug))
+      ensure_content_is_visible(view)
+      html = render(view) |> Floki.parse_document!()
+      assert length(Floki.find(html, "#secure-assessment-content")) == 1
+      assert length(Floki.find(html, "form[action='/secure-assessment/exit']")) == 1
+      assert Floki.find(html, "#adaptive_content_iframe") == []
+      assert length(Floki.find(html, "#adaptive_content")) == 1
+    end
+
+    for page_key <- [:page_3, :one_at_a_time_question_page, :graded_adaptive_page_revision] do
+      test "secure #{page_key} shell preserves content and excludes course navigation", c do
+        page = Map.fetch!(c, unquote(page_key))
+        Sections.enroll(c.user.id, c.section.id, [ContextRoles.get_role(:context_learner)])
+        Sections.mark_section_visited_for_student(c.section, c.user)
+        sr = Sections.get_section_resource(c.section.id, page.resource_id)
+        Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
+
+        attempt =
+          create_attempt(c.user, c.section, page, %{
+            lifecycle_state: :active,
+            content: page.content
+          })
+
+        case unquote(page_key) do
+          :one_at_a_time_question_page ->
+            activity_attempt =
+              insert(:activity_attempt,
+                resource_attempt: attempt,
+                revision: c.mcq_activity_1,
+                resource: c.mcq_activity_1.resource,
+                lifecycle_state: :active
+              )
+
+            insert(:part_attempt, activity_attempt: activity_attempt, part_id: "1")
+
+          _ ->
+            :ok
+        end
+
+        token =
+          Oli.Accounts.generate_user_session_token(c.user,
+            scope: %Oli.Delivery.SecureAssessments.Scope{
+              section_id: c.section.id,
+              resource_id: page.resource_id
+            }
+          )
+
+        conn = c.conn |> recycle() |> init_test_session(%{user_token: token})
+
+        html =
+          case unquote(page_key) do
+            :graded_adaptive_page_revision ->
+              conn
+              |> get("/sections/#{c.section.slug}/adaptive_lesson/#{page.slug}")
+              |> html_response(200)
+
+            _ ->
+              {:ok, view, _} = live(conn, Utils.lesson_live_path(c.section.slug, page.slug))
+              ensure_content_is_visible(view)
+              render(view)
+          end
+
+        document = Floki.parse_document!(html)
+        assert length(Floki.find(document, "#secure-assessment-content")) == 1
+        assert length(Floki.find(document, "form[action='/secure-assessment/exit']")) == 1
+
+        assert Floki.find(
+                 document,
+                 "#bottom-bar-wrapper, #bottom_page_navigator, #sticky_panel, [data-role='prev_page'], [data-role='next_page']"
+               ) == []
+
+        if unquote(page_key) == :graded_adaptive_page_revision do
+          props =
+            html
+            |> Floki.parse_document!()
+            |> Floki.find("[data-react-class='Components.Delivery']")
+            |> Floki.attribute("data-react-props")
+            |> hd()
+            |> Jason.decode!()
+
+          assert props["restrictNavigation"]
+          assert props["overviewURL"] == Utils.prologue_live_path(c.section.slug, page.slug)
+          refute props["reviewMode"]
+          assert props["previousPageURL"] == nil
+          assert props["nextPageURL"] == nil
+        else
+          assert Floki.find(document, "#submit_answers") != []
+        end
+
+        assert Oli.Repo.reload!(attempt).lifecycle_state == :active
+      end
+    end
+
     test "can not access when not enrolled to course", %{
       conn: conn,
       section: section,
@@ -1622,7 +1733,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       refute has_element?(view, ~s{div[data-role="container label"]})
       refute has_element?(view, ~s{div[data-role="container label"]}, "Module")
-      refute has_element?(view, ~s{div[role="page header divider"]})
       assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
     end
 
@@ -1640,7 +1750,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
 
-      refute has_element?(view, ~s{div[role="page read time"]})
+      refute has_element?(view, ~s{div[data-role="page read time"]})
     end
 
     test "can see proficiency explanation modal", %{
@@ -2109,7 +2219,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(view, ~s{div[data-role="next_page"]}, page_2.title)
 
-      refute has_element?(view, ~s{div[role="check icon"]})
+      refute has_element?(view, ~s{div[data-role="check icon"]})
       refute has_element?(view, ~s{svg[data-role="square checked icon"]})
       refute has_element?(view, ~s{svg[data-role="flag icon"]})
     end
@@ -2321,7 +2431,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert not has_element?(
                view,
-               "button[role='toggle notes button'][data-view='desktop']"
+               "button[data-role='toggle-notes-button'][data-view='desktop']"
              )
     end
 
@@ -2340,7 +2450,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "button[role='toggle notes button'][data-view='desktop']"
+               "button[data-role='toggle-notes-button'][data-view='desktop']"
              )
     end
 
@@ -2375,7 +2485,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
+      |> element(~s{button[data-role='toggle-notes-button'][data-view='desktop']})
       |> render_click
 
       assert has_element?(
@@ -2397,7 +2507,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
+      |> element(~s{button[data-role='toggle-notes-button'][data-view='desktop']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -2426,7 +2536,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
+      |> element(~s{button[data-role='toggle-notes-button'][data-view='desktop']})
       |> render_click
 
       view
@@ -2473,7 +2583,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
+      |> element(~s{button[data-role='toggle-notes-button'][data-view='desktop']})
       |> render_click
 
       view
@@ -2508,7 +2618,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       # change the selected tab to class notes -> search should be retriggered
@@ -2557,7 +2667,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       # change the selected tab to class notes -> search should be retriggered
@@ -2608,7 +2718,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
+      |> element(~s{button[data-role='toggle-notes-button'][data-view='desktop']})
       |> render_click
 
       assert_push_event(view, "request_point_markers", %{})
@@ -2698,7 +2808,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
+      |> element(~s{button[data-role='toggle-notes-button'][data-view='desktop']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -2871,7 +2981,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       refute has_element?(
                view,
-               ~s{button[role='toggle notes button'][data-view='desktop']}
+               ~s{button[data-role='toggle-notes-button'][data-view='desktop']}
              )
     end
 
@@ -2891,7 +3001,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute Oli.Accounts.get_user_preference(user.id, :page_outline_panel_active?)
 
       view
-      |> element(~s{button[role='toggle outline button'][data-view='desktop']})
+      |> element(~s{button[data-role='toggle-outline-button'][data-view='desktop']})
       |> render_click
 
       assert has_element?(
@@ -2920,7 +3030,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[role='toggle outline button'][data-view='desktop']})
+      |> element(~s{button[data-role='toggle-outline-button'][data-view='desktop']})
       |> render_click()
 
       assert has_element?(view, "#outline_panel")
@@ -2998,7 +3108,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[role='toggle outline button'][data-view='desktop']})
+      |> element(~s{button[data-role='toggle-outline-button'][data-view='desktop']})
       |> render_click()
 
       assert has_element?(view, "#outline_panel")
@@ -3209,7 +3319,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
   defp open_class_notes(view) do
     view
-    |> element("button[role='toggle notes button'][data-view='desktop']")
+    |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
     |> render_click()
 
     view
@@ -3336,7 +3446,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -3360,7 +3470,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -3381,7 +3491,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -3402,7 +3512,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -3622,7 +3732,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Open annotations panel
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -3647,7 +3757,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -3676,7 +3786,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -3700,7 +3810,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -3723,7 +3833,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element("button[data-role='toggle-notes-button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -3944,6 +4054,85 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
   describe "one at a time question selection" do
     setup [:user_conn, :create_elixir_project]
+
+    test "secure score notifications and exit affect only their connected assessment session",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           one_at_a_time_question_page: page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      sr =
+        Oli.Repo.get_by!(Oli.Delivery.Sections.SectionResource,
+          section_id: section.id,
+          resource_id: page.resource_id
+        )
+
+      Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
+
+      attempt =
+        create_attempt(user, section, page, %{lifecycle_state: :active, content: page.content})
+
+      activity = insert(:activity_attempt, resource_attempt: attempt)
+
+      token =
+        Oli.Accounts.generate_user_session_token(user,
+          scope: %Oli.Delivery.SecureAssessments.Scope{
+            section_id: section.id,
+            resource_id: page.resource_id
+          }
+        )
+
+      conn =
+        conn
+        |> recycle()
+        |> init_test_session(%{})
+        |> OliWeb.UserAuth.install_session(user, token)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page.slug))
+      ensure_content_is_visible(view)
+
+      send(
+        view.pid,
+        {:question_answered,
+         %{score: 5.0, out_of: 10.0, activity_attempt_guid: activity.attempt_guid}}
+      )
+
+      assert render(view) =~ page.title
+
+      other_token =
+        Oli.Accounts.generate_user_session_token(user,
+          scope: %Oli.Delivery.SecureAssessments.Scope{
+            section_id: section.id,
+            resource_id: page.resource_id
+          }
+        )
+
+      other_conn =
+        conn
+        |> recycle()
+        |> init_test_session(%{})
+        |> OliWeb.UserAuth.install_session(user, other_token)
+
+      {:ok, other_view, _html} = live(other_conn, Utils.lesson_live_path(section.slug, page.slug))
+      ensure_content_is_visible(other_view)
+      # LiveViewTest mounts a channel without a real WebSocket transport. Check
+      # the token-derived disconnect topic, then exercise revoked callback access.
+      transport = %Phoenix.Socket{private: %{connect_info: %{session: get_session(conn)}}}
+      topic = Phoenix.LiveView.Socket.id(transport)
+      assert topic == "users_sessions:#{Base.url_encode64(token)}"
+      OliWeb.Endpoint.subscribe(topic)
+      response = conn |> post("/secure-assessment/exit")
+      assert redirected_to(response) == "/secure-assessment/signed-out"
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "disconnect"}
+      send(view.pid, :gc)
+      assert_redirect(view, "/secure-assessment/restricted")
+      assert render(other_view) =~ page.title
+      assert {:ok, _} = Oli.Accounts.get_user_session(other_token)
+    end
 
     test "can select questions in one at a time mode", %{
       conn: conn,

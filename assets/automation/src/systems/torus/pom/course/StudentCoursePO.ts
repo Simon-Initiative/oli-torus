@@ -1,6 +1,5 @@
-import { escapeRegExp } from '@core/regexp';
 import { Verifier } from '@core/verify/Verifier';
-import { expect, Locator, Page } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 
 export class StudentCoursePO {
   private readonly courseHomeMarkers: Locator[];
@@ -51,7 +50,7 @@ export class StudentCoursePO {
     const groupedOutlineLink = this.page
       .locator('a')
       .filter({
-        has: this.page.locator('div[role="group_item"]').filter({
+        has: this.page.locator('div[data-role="group-item"]').filter({
           hasText: pageName,
         }),
       })
@@ -294,4 +293,8 @@ function isStudentLessonPath(pathname: string) {
     pathname.includes('/adaptive_lesson/') ||
     pathname.includes('/prologue/')
   );
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

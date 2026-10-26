@@ -783,7 +783,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
       |> render_click
 
-      assert has_element?(view, "button[role=\"new discussion\"]", "New Discussion")
+      assert has_element?(view, "button[data-role=\"new-discussion\"]", "New Discussion")
 
       {:ok, _root_container_sr} =
         Oli.Delivery.Sections.update_section_resource(root_container_sr, %{
@@ -791,7 +791,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
         })
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
-      refute has_element?(view, "button[role=\"new discussion\"]", "New Discussion")
+      refute has_element?(view, "button[data-role=\"new-discussion\"]", "New Discussion")
     end
   end
 end

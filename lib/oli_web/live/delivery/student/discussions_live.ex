@@ -742,7 +742,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
       <%= case @posts_search_results do %>
         <% nil -> %>
-          <div role="posts list" class="w-full">
+          <div data-role="posts-list" class="w-full">
             <%= for post <- @posts do %>
               <div class="mb-3">
                 <Annotations.post
@@ -771,7 +771,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             Searching...
           </div>
         <% results -> %>
-          <div role="search-results list" class="w-full">
+          <div data-role="search-results-list" class="w-full">
             <Annotations.search_results search_results={results} current_user={@current_user} />
           </div>
       <% end %>
@@ -795,7 +795,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
       <%= case @notes_search_results do %>
         <% nil -> %>
-          <div role="notes list" class="w-full">
+          <div data-role="notes-list" class="w-full">
             <%= for post <- @notes do %>
               <div class="mb-3">
                 <Annotations.post
@@ -824,7 +824,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             Searching...
           </div>
         <% results -> %>
-          <div role="search-results list" class="w-full">
+          <div data-role="search-results-list" class="w-full">
             <Annotations.search_results
               section_slug={@section_slug}
               search_results={results}
@@ -843,9 +843,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   defp posts_actions(assigns) do
     ~H"""
-    <div role="posts actions" class="w-full flex">
+    <div data-role="posts-actions" class="w-full flex">
       <div class="flex flex-1 gap-6">
         <Utils.search_box
+          aria_label="Search discussion posts"
           class="flex-1 max-w-[600px]"
           search_term={@posts_search_term}
           on_search="search_posts"
@@ -855,7 +856,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
         <.dropdown
           id="sort-posts-dropdown"
-          role="sort"
+          data_role="sort"
           class="inline-flex"
           button_class="rounded-[3px] py-[10px] px-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
           options={[
@@ -897,7 +898,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
         <button
           :if={@course_collab_space_config && @course_collab_space_config.status == :enabled}
-          role="new discussion"
+          data-role="new-discussion"
           phx-click={Modal.show_modal("new-discussion-modal")}
           class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
         >
@@ -913,9 +914,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   defp notes_actions(assigns) do
     ~H"""
-    <div role="notes actions" class="w-full flex">
+    <div data-role="notes-actions" class="w-full flex">
       <div class="flex flex-1 gap-6">
         <Utils.search_box
+          aria_label="Search notes"
           class="flex-1 max-w-[600px]"
           search_term={@notes_search_term}
           on_search="search_notes"
@@ -925,7 +927,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
         <.dropdown
           id="sort-notes-dropdown"
-          role="sort"
+          data_role="sort"
           class="inline-flex"
           button_class="rounded-[3px] py-[10px] px-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
           options={[

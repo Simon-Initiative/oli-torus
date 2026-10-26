@@ -828,27 +828,25 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   ## Tab navigation start ##
 
-  def handle_event("intro_card_keydown", params, socket) do
-    case params["key"] do
-      "Enter" ->
-        {:noreply,
-         push_event(socket, "play_video", %{
-           "video_url" => params["video_url"],
-           "module_resource_id" => params["card_resource_id"],
-           "section_id" => params["section_id"]
-         })}
-
-      "Escape" ->
-        {:noreply,
-         push_event(socket, "js-exec", %{
-           to: "#intro_card_#{params["card_resource_id"]}",
-           attr: "data-event"
-         })}
-
-      _ ->
-        {:noreply, socket}
-    end
+  def handle_event("intro_card_keydown", %{"key" => key} = params, socket)
+      when key in ["Enter", " "] do
+    {:noreply,
+     push_event(socket, "play_video", %{
+       "video_url" => params["video_url"],
+       "module_resource_id" => params["card_resource_id"],
+       "section_id" => params["section_id"]
+     })}
   end
+
+  def handle_event("intro_card_keydown", %{"key" => "Escape"} = params, socket) do
+    {:noreply,
+     push_event(socket, "js-exec", %{
+       to: "#intro_card_#{params["card_resource_id"]}",
+       attr: "data-event"
+     })}
+  end
+
+  def handle_event("intro_card_keydown", _params, socket), do: {:noreply, socket}
 
   def handle_event("card_keydown", %{"key" => "Escape"} = params, socket) do
     {:noreply,
@@ -858,25 +856,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      })}
   end
 
-  def handle_event("card_keydown", %{"key" => "Enter"} = params, socket) do
-    case params["type"] do
-      "page" ->
-        navigate_to_resource(params, socket)
-
-      "module" ->
-        {
-          :noreply,
-          do_toggle_module(socket, params["unit_resource_id"], params["module_resource_id"])
-          |> push_event("js-exec", %{
-            to: "##{params["type"]}_#{params["module_resource_id"]}",
-            attr: "data-enter-event"
-          })
-        }
-
-      _ ->
-        {:noreply, socket}
-    end
+  def handle_event("card_keydown", %{"key" => key, "type" => "module"} = params, socket)
+      when key in ["Enter", " "] do
+    {
+      :noreply,
+      do_toggle_module(socket, params["unit_resource_id"], params["module_resource_id"])
+      |> push_event("js-exec", %{
+        to: "##{params["type"]}_#{params["module_resource_id"]}",
+        attr: "data-enter-event"
+      })
+    }
   end
+
+  def handle_event("card_keydown", %{"key" => "Enter", "type" => "page"} = params, socket),
+    do: navigate_to_resource(params, socket)
 
   def handle_event("card_keydown", _, socket), do: {:noreply, socket}
 
@@ -903,18 +896,28 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     {:noreply, socket}
   end
 
+  @doc """
+  Returns the JS commands that enter a unit's slider: its cards become tab stops, focus wraps
+  inside the slider and the first card receives focus.
+  """
   def enter_unit(js \\ %JS{}, unit_id) do
-    unit_cards_selector = "#slider_focus_wrap_#{unit_id} > div[role*=\"card\"]"
+    unit_cards_selector = "#slider_focus_wrap_#{unit_id} > .slider-card"
 
-    JS.set_attribute(js, {"tabindex", "0"}, to: unit_cards_selector)
+    js
+    |> JS.set_attribute({"tabindex", "0"}, to: unit_cards_selector)
     |> enable_focus_wrap_for("#slider_focus_wrap_#{unit_id}")
     |> JS.focus(to: unit_cards_selector <> ":first-of-type")
   end
 
+  @doc """
+  Returns the JS commands that leave a unit's slider: its cards stop being tab stops, the focus
+  wrap is disabled and focus goes back to the slider.
+  """
   def leave_unit(js \\ %JS{}, unit_id) do
-    JS.remove_attribute(js, "tabindex", to: "#slider_#{unit_id} > div[role*=\"card\"]")
+    js
+    |> JS.remove_attribute("tabindex", to: "#slider_focus_wrap_#{unit_id} > .slider-card")
     |> disable_focus_wrap_for("#slider_focus_wrap_#{unit_id}")
-    |> JS.focus(to: "#unit_#{unit_id}")
+    |> JS.focus(to: "#slider_#{unit_id}")
   end
 
   def enter_module(js \\ %JS{}, unit_id) do
@@ -934,16 +937,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     |> JS.focus(to: "#module_#{module_resource_id}")
   end
 
+  # The focus wrap sentinels must not be aria-hidden while they are focusable.
   defp enable_focus_wrap_for(js, selector) do
-    js
-    |> JS.set_attribute({"tabindex", "0"}, to: "#{selector}-start")
-    |> JS.set_attribute({"tabindex", "0"}, to: "#{selector}-end")
+    Enum.reduce(["start", "end"], js, fn edge, js ->
+      js
+      |> JS.set_attribute({"tabindex", "0"}, to: "#{selector}-#{edge}")
+      |> JS.set_attribute({"aria-hidden", "false"}, to: "#{selector}-#{edge}")
+    end)
   end
 
   defp disable_focus_wrap_for(js, selector) do
-    js
-    |> JS.set_attribute({"tabindex", "-1"}, to: "#{selector}-start")
-    |> JS.set_attribute({"tabindex", "-1"}, to: "#{selector}-end")
+    Enum.reduce(["start", "end"], js, fn edge, js ->
+      js
+      |> JS.set_attribute({"tabindex", "-1"}, to: "#{selector}-#{edge}")
+      |> JS.set_attribute({"aria-hidden", "true"}, to: "#{selector}-#{edge}")
+    end)
   end
 
   ## Tab navigation end ##
@@ -1074,7 +1082,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     # 3. The user expands another module.
     # This event will ensure that the content of the expanded module is visible and not hidden.
     |> push_event("js-exec", %{
-      to: ~s{[role="resource module content"]},
+      to: ~s{[data-role="resource-module-content"]},
       attr: "data-show"
     })
   end
@@ -1300,7 +1308,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   @selected_module["resource_id"]
                 )
               }
-              role="module_hero_progress"
+              data-role="module-hero-progress"
               show_percent={false}
               width="100%"
               height="h-[6px]"
@@ -1393,6 +1401,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           class="text-Text-text-low text-sm font-medium hover:text-black dark:hover:text-white"
         />
         <DeliveryUtils.search_box
+          aria_label="Search course outline"
           search_term={@params["search_term"]}
           on_search="search"
           on_change="search"
@@ -1423,7 +1432,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </h6>
 
             <div class="flex justify-between items-center mt-2 mb-2 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2">
-              <div role="unit title" class="grow shrink basis-0">
+              <div data-role="unit-title" class="grow shrink basis-0">
                 {unit["title"]}
               </div>
               <div class="flex flex-row gap-x-2">
@@ -1437,7 +1446,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
             <div class="flex justify-between items-center mb-1 w-full">
               <div
-                role={"unit #{unit["resource_id"]} scheduling details"}
+                data-role={"unit-#{unit["resource_id"]}-scheduling-details"}
                 class="flex flex-col items-start gap-2 text-Text-text-low text-xs font-semibold leading-3"
               >
                 <span>
@@ -1526,6 +1535,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         />
         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:px-3">
           <DeliveryUtils.search_box
+            aria_label="Search course outline"
             search_term={@params["search_term"]}
             on_search="search"
             on_change="search"
@@ -1682,7 +1692,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       id={"top_level_page_#{@unit["resource_id"]}"}
       tabindex="0"
       data-completed={"#{@progress == 100}"}
-      role="resource top level"
+      data-role="resource-top-level"
     >
       <div
         class="mt-5 md:p-[25px] md:pl-[50px]"
@@ -1706,7 +1716,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   {@progress}%
                 </span>
               </div>
-              <div class="sm:ml-auto flex items-center gap-3" role="schedule_details">
+              <div class="sm:ml-auto flex items-center gap-3" data-role="schedule-details">
                 <div class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
@@ -1736,7 +1746,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 width="194px"
                 on_going_colour="bg-Fill-fill-progress"
                 completed_colour="bg-Fill-fill-progress"
-                role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                data-role={"unit-#{@unit["numbering"]["index"]}-progress"}
               />
             </div>
           </div>
@@ -1765,13 +1775,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"unit_#{@unit["resource_id"]}"}
-      tabindex="0"
-      phx-keydown={enter_unit(@unit["resource_id"])}
-      phx-key="enter"
       data-completed={"#{@progress == 100}"}
-      role="resource top level"
+      data-role="resource-top-level"
     >
-      <div class="mt-5 md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
+      <div class="mt-5 md:p-[25px] md:pl-[50px]" data-role={"unit-#{@unit["numbering"]["index"]}"}>
         <div class="flex flex-col gap-2 sm:gap-0 px-4 sm:px-0 md:flex-row md:gap-[30px]">
           <% unit_label =
             container_label_and_numbering(
@@ -1795,7 +1802,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   {@progress}%
                 </span>
               </div>
-              <div class="flex items-center gap-3" role="schedule_details">
+              <div class="flex items-center gap-3" data-role="schedule-details">
                 <div class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
@@ -1830,7 +1837,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 width="194px"
                 on_going_colour="bg-Fill-fill-progress"
                 completed_colour="bg-Fill-fill-progress"
-                role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                data-role={"unit-#{@unit["numbering"]["index"]}-progress"}
               />
             </div>
           </div>
@@ -1841,25 +1848,37 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"slider_left_button_#{@unit["resource_id"]}"}
             class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-[#F3F4F8] dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
+            type="button"
             aria-label="slide left"
+            aria-controls={"slider_#{@unit["resource_id"]}"}
           >
-            <i class="fa-solid fa-chevron-left ml-3"></i>
+            <i class="fa-solid fa-chevron-left ml-3" aria-hidden="true"></i>
           </button>
           <button
             :if={!@is_mobile}
             id={"slider_right_button_#{@unit["resource_id"]}"}
             class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-[#F3F4F8] dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
+            type="button"
             aria-label="slide right"
+            aria-controls={"slider_#{@unit["resource_id"]}"}
           >
-            <i class="fa-solid fa-chevron-right mr-3"></i>
+            <i class="fa-solid fa-chevron-right mr-3" aria-hidden="true"></i>
           </button>
+          <span id={"slider_hint_#{@unit["resource_id"]}"} class="sr-only">
+            Press Enter to browse the cards, and Escape to leave.
+          </span>
           <div
             id={"slider_#{@unit["resource_id"]}"}
-            role="slider"
+            role="region"
+            aria-label={slider_aria_label(@unit, @section)}
+            aria-describedby={"slider_hint_#{@unit["resource_id"]}"}
+            tabindex="0"
+            phx-keydown={enter_unit(@unit["resource_id"])}
+            phx-key="enter"
             phx-hook={if !@is_mobile, do: "SliderScroll"}
             data-resource_id={@unit["resource_id"]}
-            class="overflow-y-hidden h-[187px] pt-[5px] px-3 sm:px-[5px] scrollbar-hide"
+            class="overflow-y-hidden h-[187px] pt-[5px] px-3 sm:px-[5px] scrollbar-hide outline-gray-800 dark:outline-white focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-[-3px] rounded-xl"
           >
             <.custom_focus_wrap
               id={"slider_focus_wrap_#{@unit["resource_id"]}"}
@@ -1903,14 +1922,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           selected_module_metrics[:total_pages_count] %>
       <div
         class="overflow-hidden"
-        role="resource module content"
+        data-role="resource-module-content"
         data-completed={if is_nil(selected_module), do: "false", else: "#{module_completed?}"}
         data-show={JS.remove_class(%JS{}, "hidden")}
       >
         <.custom_focus_wrap
           :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
           class="px-3 md:px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] flex"
-          role="module_details"
+          role="region"
+          aria-labelledby={"selected_module_title_in_unit_#{@unit["resource_id"]}"}
+          data-role="module-details"
           id={"selected_module_in_unit_#{@unit["resource_id"]}"}
           data-animate={
             JS.show(
@@ -1932,7 +1953,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           phx-key="Escape"
         >
           <div
-            role="expanded module header"
+            data-role="expanded-module-header"
             class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
           >
             <% module_label =
@@ -1946,7 +1967,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 {module_label}
               </div>
             </div>
-            <h2 class="self-stretch opacity-90 text-center text-xl md:text-[26px] font-normal md:leading-loose tracking-tight dark:text-white">
+            <h2
+              id={"selected_module_title_in_unit_#{@unit["resource_id"]}"}
+              class="self-stretch opacity-90 text-center text-xl md:text-[26px] font-normal md:leading-loose tracking-tight dark:text-white"
+            >
               {selected_module[
                 "title"
               ]}
@@ -1960,7 +1984,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div
             :if={selected_module["intro_content"]["children"]}
             id={"module_#{selected_module["resource_id"]}_intro_content"}
-            role="module intro content"
+            data-role="module-intro-content"
             class="max-w-[760px] w-full pt-4 md:pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
           >
             <.intro_content
@@ -1972,7 +1996,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <.lets_discuss_button :if={@assistant_enabled} />
 
           <div
-            role="module index"
+            data-role="module-index"
             class="flex flex-col max-w-[760px] pt-4 md:pt-[25px] pb-2.5 justify-start items-start gap-[23px] w-full"
           >
             <div class="w-full">
@@ -2005,7 +2029,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               />
             </div>
           </div>
-          <div role="collapse_bar" class="w-full px-2.5 justify-center items-center inline-flex">
+          <div data-role="collapse-bar" class="w-full px-2.5 justify-center items-center inline-flex">
             <div class="grow shrink basis-0 h-px bg-white/20"></div>
             <button
               phx-click={collapse_module(@unit["resource_id"])}
@@ -2052,7 +2076,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={@id}
-      role={"unit_#{@row["resource_id"]}_outline"}
+      data-role={"unit-#{@row["resource_id"]}-outline"}
       data-completed={"#{@progress == 100}"}
       phx-click={if @is_mobile, do: "show_unit_layer"}
       phx-value-id={@row["resource_id"]}
@@ -2076,7 +2100,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
               <div
-                role="unit title"
+                data-role="unit-title"
                 class="search-result grow shrink basis-0"
               >
                 {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
@@ -2091,7 +2115,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
             <div class="flex justify-between items-center mb-3 w-full">
               <div
-                role={"unit #{@row["resource_id"]} scheduling details"}
+                data-role={"unit-#{@row["resource_id"]}-scheduling-details"}
                 class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
@@ -2225,7 +2249,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
               <div
-                role="unit title"
+                data-role="page-title"
                 class="search-result grow shrink basis-0"
               >
                 {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
@@ -2240,7 +2264,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
             <div class="flex justify-between items-center mb-3 w-full">
               <div
-                role={"unit #{@row["resource_id"]} scheduling details"}
+                data-role={"page-#{@row["resource_id"]}-scheduling-details"}
                 class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
@@ -2307,7 +2331,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={@id}
-      role={"#{@type}_#{@row["resource_id"]}_outline"}
+      data-role={"#{@type}-#{@row["resource_id"]}-outline"}
       data-completed={"#{@row["completed"]}"}
       class="flex flex-col"
       phx-update="replace"
@@ -2365,7 +2389,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     <div
       id={@id}
-      role={"#{@type}_#{@row["resource_id"]}_outline"}
+      data-role={"#{@type}-#{@row["resource_id"]}-outline"}
       data-completed={"#{@row["completed"]}"}
       class="flex flex-col"
       phx-update="replace"
@@ -2390,7 +2414,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
               <div
-                role="module title"
+                data-role="module-title"
                 class="search-result grow shrink basis-0"
               >
                 {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
@@ -2398,7 +2422,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
             <div class="flex justify-between items-center mb-3 w-full">
               <div
-                role={"module #{@row["resource_id"]} scheduling details"}
+                data-role={"module-#{@row["resource_id"]}-scheduling-details"}
                 class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
@@ -2483,7 +2507,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
             <div class="card-body sm:pl-6 md:pl-20 pt-4 md:pt-8">
               <div
-                role="completed count"
+                data-role="completed-count"
                 class="flex gap-2.5 border-b-[1px] border-Border-border-default h-10"
               >
                 <div class="w-7 h-8 py-1 flex gap-2.5">
@@ -2511,7 +2535,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   :for={{grouped_scheduling_type, grouped_due_date} <- @page_due_dates}
                   class="flex flex-col w-full"
                   id={UUID.uuid4()}
-                  role={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
+                  data-role={"pages-grouped-by-#{grouped_scheduling_type}-#{grouped_due_date}"}
                   phx-update="replace"
                 >
                   <% grouped_pages =
@@ -2565,7 +2589,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               </div>
             </div>
             <div
-              role="collapse_bar"
+              data-role="collapse-bar"
               class="w-full px-2.5 justify-center items-center inline-flex mt-8"
             >
               <div class="grow shrink basis-0 h-px bg-white/20"></div>
@@ -2575,7 +2599,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     to: "#icon-#{@row["resource_id"]}"
                   )
                 }
-                role="collapse module button"
+                data-role="collapse-module-button"
                 class="pl-5 pr-4 rounded-[82px] border border-Border-border-default text-Text-text-low opacity-80 hover:opacity-100 hoverjustify-center items-center gap-3 flex text-sm font-medium"
               >
                 <div class="text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
@@ -2706,7 +2730,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def module_content_header(assigns) do
     ~H"""
     <div class="w-full border-b dark:border-white/20 flex items-center justify-between pb-1.5">
-      <div role="completed count" class="flex gap-2.5">
+      <div data-role="completed-count" class="flex gap-2.5">
         <div class="w-7 h-8 py-1 flex gap-2.5">
           <Icons.check />
         </div>
@@ -2776,7 +2800,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div
         :for={{grouped_scheduling_type, grouped_due_date} <- @page_due_dates}
         class="flex flex-col w-full"
-        role={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
+        data-role={"pages-grouped-by-#{grouped_scheduling_type}-#{grouped_due_date}"}
       >
         <div :if={@has_scheduled_resources?} class="h-[19px] mb-5">
           <span class="text-Text-text-high text-sm font-bold leading-4">
@@ -2996,7 +3020,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def index_item(assigns) do
     ~H"""
     <button
-      role={"resource #{@type} #{@numbering_index} details"}
+      data-role={"resource-#{@type}-#{@numbering_index}-details"}
       class={[
         "w-full pl-[5px] pr-[7px] py-2.5 sm:rounded-lg justify-start items-start gap-5 flex sm:focus:bg-[#000000]/5 sm:hover:bg-[#000000]/5 sm:dark:focus:bg-[#FFFFFF]/5 sm:dark:hover:bg-[#FFFFFF]/5  border-b border-Border-border-default sm:border-b-0",
         if(@graded,
@@ -3173,6 +3197,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
+  # outline classes: hover, plus a keyboard focus ring offset by 2px so it stays
+  # distinguishable from the selected state (the slider has 5px of padding to fit it)
+  defp slider_card_class do
+    "relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2"
+  end
+
+  defp intro_video_aria_label(title), do: "#{title}: Play unit intro video"
+
   attr :section, :any
   attr :title, :string, default: "INTRO"
   attr :video_url, :string
@@ -3185,8 +3217,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"intro_card_#{@card_resource_id}"}
-      class="relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white"
-      role="resource youtube intro video"
+      class={slider_card_class()}
+      role="button"
+      aria-label={intro_video_aria_label(@title)}
+      data-intro-video="youtube"
       data-completed={"#{@intro_video_viewed}"}
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
@@ -3212,7 +3246,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             show_percent={false}
             on_going_colour="bg-Fill-fill-progress"
             completed_colour="bg-Fill-fill-progress"
-            role="intro video card progress"
+            data-role="intro-video-card-progress"
           />
         </div>
       </div>
@@ -3221,7 +3255,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         style={"background-image: url('#{CommonUtils.convert_to_youtube_image_url(@video_url)}');"}
       >
         <span
-          role="card top label"
+          data-role="card-top-label"
           class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50 self-start"
         >
           {@title}
@@ -3239,7 +3273,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <div
-            role="play_unit_intro_video"
+            data-role="play-unit-intro-video"
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
           >
             <Icons.play class="scale-110 ml-[6px] mt-[9px] fill-white" />
@@ -3254,8 +3288,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"intro_card_#{@card_resource_id}"}
-      class="relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white"
-      role="resource intro video"
+      class={slider_card_class()}
+      role="button"
+      aria-label={intro_video_aria_label(@title)}
+      data-intro-video="file"
       data-completed={"#{@intro_video_viewed}"}
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
@@ -3281,7 +3317,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             show_percent={false}
             on_going_colour="bg-Fill-fill-progress"
             completed_colour="bg-Fill-fill-progress"
-            role="intro video card progress"
+            data-role="intro-video-card-progress"
           />
         </div>
       </div>
@@ -3294,7 +3330,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <source src={"#{@video_url}#t=0.5"} /> Your browser does not support the video tag.
         </video>
         <span
-          role="card top label"
+          data-role="card-top-label"
           class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50 self-start"
         >
           {@title}
@@ -3312,7 +3348,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <div
-            role="play_unit_intro_video"
+            data-role="play-unit-intro-video"
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
           >
             <Icons.play class="scale-110 ml-[6px] mt-[9px] fill-white" />
@@ -3336,7 +3372,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :display_curriculum_item_numbering, :boolean, required: true
 
   def card(assigns) do
-    assigns = Map.put(assigns, :is_page, is_page(assigns.card))
+    is_page = is_page(assigns.card)
+
+    card_top_label =
+      if is_page,
+        do: "PAGE",
+        else:
+          container_label_and_numbering(
+            display_numbering_or_numbering(assigns.card),
+            assigns.section_customizations,
+            assigns.display_curriculum_item_numbering
+          )
+
+    assigns =
+      assigns
+      |> Map.put(:is_page, is_page)
+      |> Map.put(:card_top_label, card_top_label)
 
     ~H"""
     <div
@@ -3356,21 +3407,27 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-slug={@card["slug"]}
       phx-value-type={if @is_page, do: "page", else: "module"}
       class={[
-        "relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white",
+        slider_card_class(),
         if(@selected, do: "outline outline-[3px]")
       ]}
-      role={"resource card #{@module_index}"}
+      role={if @is_page, do: "link", else: "button"}
+      aria-label={card_aria_label(@card_top_label, @card["title"])}
+      aria-expanded={if !@is_page, do: Kernel.to_string(@selected)}
+      aria-controls={if !@is_page, do: "selected_module_in_unit_#{@unit_resource_id}"}
+      data-card-index={@module_index}
       data-completed={"#{card_completed?(@card, @is_page, @page_metrics)}"}
       data-enter-event={enter_module(@unit_resource_id)}
       data-leave-event={leave_unit(@unit_resource_id)}
-      aria-expanded={Kernel.to_string(@selected)}
     >
       <div
         xphx-mouseover={JS.show(to: "#card_badge_details_#{@card["resource_id"]}")}
         xphx-mouseout={JS.hide(to: "#card_badge_details_#{@card["resource_id"]}")}
         class="rounded-xl absolute h-[170px] w-[294px] overflow-hidden cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]"
       >
-        <div class="mt-[166px]" role={"card #{@module_index} progress"}>
+        <div
+          class="mt-[166px]"
+          data-role={"card-#{@module_index}-progress-container"}
+        >
           <.progress_bar
             percent={
               parse_student_progress_for_resource(
@@ -3383,7 +3440,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             show_percent={false}
             on_going_colour="bg-Fill-fill-progress"
             completed_colour="bg-Fill-fill-progress"
-            role={"card_#{@module_index}_progress"}
+            data-role={"card-#{@module_index}-progress"}
           />
         </div>
       </div>
@@ -3395,21 +3452,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ]}
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
-          <% card_top_label =
-            if @is_page,
-              do: "PAGE",
-              else:
-                container_label_and_numbering(
-                  display_numbering_or_numbering(@card),
-                  @section_customizations,
-                  @display_curriculum_item_numbering
-                ) %>
           <span
-            :if={card_top_label}
-            role="card top label"
+            :if={@card_top_label}
+            data-role="card-top-label"
             class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50"
           >
-            {card_top_label}
+            {@card_top_label}
           </span>
           <h5 class="pointer-events-none text-[18px] leading-[25px] font-bold text-white z-10">
             {@card["title"]}
@@ -3441,6 +3489,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
+  defp card_aria_label(nil, title), do: title
+  defp card_aria_label(top_label, title), do: "#{top_label}: #{title}"
+
   attr :resource_id, :string
   attr :duration_minutes, :integer
   attr :completed, :boolean
@@ -3450,7 +3501,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <% parsed_minutes = parse_card_badge_minutes(@duration_minutes, :page) %>
 
     <div
-      role="card badge"
+      data-role="card-badge"
       class="h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <Icons.check />
@@ -3471,7 +3522,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     <div
       :if={parsed_minutes}
-      role="card badge"
+      data-role="card-badge"
       class="h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <div class="text-Text-text-white text-xs font-semibold leading-3 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] pointer-events-none">
@@ -3497,7 +3548,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <% parsed_minutes = parse_card_badge_minutes(@page_metrics.total_duration_minutes, :module) %>
     <div
-      role="card badge"
+      data-role="card-badge"
       id={"in_progress_card_badge_#{@resource_id}"}
       class="ml-auto h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex"
     >
@@ -3523,7 +3574,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <% parsed_minutes = parse_card_badge_minutes(@page_metrics.total_duration_minutes, :module) %>
 
     <div
-      role="card badge"
+      data-role="card-badge"
       class="h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <Icons.check />
@@ -3693,7 +3744,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       :if={@streams.units.inserts == [] and @search_term not in ["", nil]}
       id="no-results-warning"
       class="p-3 sm:p-6"
-      role="no search results warning"
+      data-role="no-search-results-warning"
     >
       There are no results for the search term <span class="font-bold italic">{@search_term}</span>
     </div>
@@ -4458,6 +4509,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp parse_card_badge_minutes(_, _), do: nil
+
+  # Accessible name for a unit's slider, e.g. "UNIT 1: Introduction slider". The numbering label
+  # is omitted when numbering is hidden for the section.
+  defp slider_aria_label(unit, section) do
+    unit_label =
+      container_label_and_numbering(
+        display_numbering_or_numbering(unit),
+        section.customizations,
+        section.display_curriculum_item_numbering
+      )
+
+    [unit_label, "#{unit["title"]} slider"]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(": ")
+  end
 
   defp container_label_and_numbering(numbering, customizations, display_curriculum_item_numbering) do
     if display_curriculum_item_numbering do

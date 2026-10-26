@@ -399,7 +399,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
       {:error, {:live_redirect, %{kind: :push, to: path}}} =
         view
         |> element(
-          "div[role='assignment detail'][id='assignment_#{page_1.resource_id}'] a",
+          "div[data-role='assignment-detail'][id='assignment_#{page_1.resource_id}'] a",
           "Start here"
         )
         |> render_click()
@@ -421,7 +421,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
       {:error, {:live_redirect, %{kind: :push, to: path}}} =
         view
         |> element(
-          "div[role='assignment detail'][id='assignment_#{page_1.resource_id}'] a",
+          "div[data-role='assignment-detail'][id='assignment_#{page_1.resource_id}'] a",
           "Start here"
         )
         |> render_click()
@@ -457,39 +457,39 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
       assert element(
                view,
-               "div[role='assignment detail'][id='assignment_#{page_1.resource_id}'] div[role='page icon'] svg"
+               "div[data-role='assignment-detail'][id='assignment_#{page_1.resource_id}'] div[data-role='page-icon'] svg"
              )
              |> render() =~ "asterisk icon"
 
       # page 2 is completed, so we see it's checked icon
       assert element(
                view,
-               "div[role='assignment detail'][id='assignment_#{page_2.resource_id}'] div[role='page icon'] svg"
+               "div[data-role='assignment-detail'][id='assignment_#{page_2.resource_id}'] div[data-role='page-icon'] svg"
              )
              |> render() =~ "square checked icon"
 
       # and can see it's attempt summary
       assert has_element?(
                view,
-               "div[role='assignment detail'][id='assignment_#{page_2.resource_id}'] span",
+               "div[data-role='assignment-detail'][id='assignment_#{page_2.resource_id}'] span",
                "Attempt 1 of ∞"
              )
 
       assert has_element?(
                view,
-               "div[role='assignment detail'][id='assignment_#{page_2.resource_id}'] span",
+               "div[data-role='assignment-detail'][id='assignment_#{page_2.resource_id}'] span",
                "5 / 10"
              )
 
       assert element(
                view,
-               "div[role='assignment detail'][id='assignment_#{page_3.resource_id}'] div[role='page icon'] svg"
+               "div[data-role='assignment-detail'][id='assignment_#{page_3.resource_id}'] div[data-role='page-icon'] svg"
              )
              |> render() =~ "flag icon"
 
       assert element(
                view,
-               "div[role='assignment detail'][id='assignment_#{page_4.resource_id}'] div[role='page icon'] svg"
+               "div[data-role='assignment-detail'][id='assignment_#{page_4.resource_id}'] div[data-role='page-icon'] svg"
              )
              |> render() =~ "world icon"
     end
@@ -561,7 +561,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
       for page <- [page_1, page_2, page_3, page_4] do
         assert has_element?(
                  view,
-                 "div[role='assignment detail'][id='assignment_#{page.resource_id}']"
+                 "div[data-role='assignment-detail'][id='assignment_#{page.resource_id}']"
                )
       end
 
@@ -579,14 +579,14 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
       for page <- [page_2, page_3, page_4] do
         refute has_element?(
                  view,
-                 "div[role='assignment detail'][id='assignment_#{page.resource_id}']"
+                 "div[data-role='assignment-detail'][id='assignment_#{page.resource_id}']"
                )
       end
 
       # required page 1 is still displayed
       assert has_element?(
                view,
-               "div[role='assignment detail'][id='assignment_#{page_1.resource_id}']"
+               "div[data-role='assignment-detail'][id='assignment_#{page_1.resource_id}']"
              )
     end
 
@@ -602,7 +602,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
       assert view
              |> element(
-               ~s{div[role="assignment detail"][id="assignment_#{page_1.resource_id}"] span[role="assignment schedule details"]}
+               ~s{div[data-role="assignment-detail"][id="assignment_#{page_1.resource_id}"] span[data-role="assignment-schedule-details"]}
              )
              |> render()
              |> Floki.parse_fragment!()
@@ -613,7 +613,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
       assert view
              |> element(
-               ~s{div[role="assignment detail"][id="assignment_#{page_2.resource_id}"] span[role="assignment schedule details"]}
+               ~s{div[data-role="assignment-detail"][id="assignment_#{page_2.resource_id}"] span[data-role="assignment-schedule-details"]}
              )
              |> render()
              |> Floki.parse_fragment!()
@@ -624,7 +624,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
       assert view
              |> element(
-               ~s{div[role="assignment detail"][id="assignment_#{page_3.resource_id}"] span[role="assignment schedule details"]}
+               ~s{div[data-role="assignment-detail"][id="assignment_#{page_3.resource_id}"] span[data-role="assignment-schedule-details"]}
              )
              |> render()
              |> Floki.parse_fragment!()
@@ -635,7 +635,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
       assert view
              |> element(
-               ~s{div[role="assignment detail"][id="assignment_#{page_4.resource_id}"] span[role="assignment schedule details"]}
+               ~s{div[data-role="assignment-detail"][id="assignment_#{page_4.resource_id}"] span[data-role="assignment-schedule-details"]}
              )
              |> render()
              |> Floki.parse_fragment!()
@@ -665,7 +665,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
       Enum.each([page_1, page_2, page_3, page_4], fn page ->
         assert has_element?(
                  view,
-                 ~s{div[role="assignment detail"][id="assignment_#{page.resource_id}"] span[role="assignment schedule details"]}
+                 ~s{div[data-role="assignment-detail"][id="assignment_#{page.resource_id}"] span[data-role="assignment-schedule-details"]}
                )
       end)
     end

@@ -230,6 +230,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
 
         <div role="search">
           <Utils.search_box
+            aria_label="Search activities and tools"
             class="w-56 h-9"
             search_term={@search_term}
             on_search={JS.push("search", target: @myself)}

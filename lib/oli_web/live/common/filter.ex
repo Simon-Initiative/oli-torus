@@ -1,8 +1,16 @@
 defmodule OliWeb.Common.Filter do
+  @moduledoc """
+  Search filtering controls backed by the shared design-system Search Bar.
+
+  The default variant keeps its explicit Search action. The `apply_icon`
+  variant remains a live-search form for its existing consumer.
+  """
+
   use Phoenix.Component
 
-  alias OliWeb.Icons
+  alias OliWeb.Components.DesignTokens.Primitives.SearchBar
 
+  attr :id, :string, default: "search_filter"
   attr :change, :any, required: true
   attr :apply, :any, required: true
   attr :reset, :any, required: true
@@ -10,6 +18,7 @@ defmodule OliWeb.Common.Filter do
   attr :apply_icon, :boolean, default: false
   attr :show_reset, :boolean, default: true
   attr :placeholder, :string, default: "Search..."
+  attr :aria_label, :string, required: true
   attr :debounce, :string, default: nil
 
   # `apply_icon: true` is a self-contained, single-consumer live-search variant (currently only
@@ -17,35 +26,29 @@ defmodule OliWeb.Common.Filter do
   # `phx-change` only fires on every keystroke (rather than only on blur/submit) when bound to a
   # `<form>` — the same convention already used elsewhere in this codebase for live-as-you-type
   # search (e.g. `hierarchy_picker.ex`), not when bound directly to a bare `<input>`.
+  @doc """
+  Renders either the default filter/search composition or its live-search variant.
+  """
   def render(%{apply_icon: true} = assigns) do
     ~H"""
     <form
-      id="search_filter_form"
+      id={@id <> "_form"}
       phx-change={@change}
       phx-submit={@change}
-      class="relative flex h-9 w-full items-center gap-3 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input py-1 pl-2.5 pr-2 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2"
+      class="w-full"
     >
-      <Icons.search class="size-5 shrink-0 text-Icon-icon-default" />
-
-      <input
+      <SearchBar.search_bar
+        id={@id <> "-input"}
         type="text"
         name="value"
-        class="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-Text-text-high outline-none focus:outline-none focus:ring-0 focus:shadow-none placeholder:text-Text-text-low-alpha"
-        placeholder={@placeholder}
-        aria-label="Search"
-        phx-debounce={@debounce}
         value={@query}
+        placeholder={@placeholder}
+        aria_label={@aria_label}
+        class="w-full"
+        on_clear={if @show_reset, do: @reset}
+        clear_id="reset_search"
+        phx-debounce={@debounce}
       />
-      <button
-        :if={@show_reset and @query not in [nil, ""]}
-        id="reset_search"
-        phx-click={@reset}
-        type="button"
-        aria-label="Clear search"
-        class="flex size-6 shrink-0 items-center justify-center rounded-full text-Text-text-low-alpha hover:bg-Surface-surface-secondary-hover hover:text-Text-text-high"
-      >
-        <i class="fa-solid fa-xmark" />
-      </button>
     </form>
     """
   end
@@ -53,27 +56,19 @@ defmodule OliWeb.Common.Filter do
   def render(assigns) do
     ~H"""
     <div class="input-group search-input flex gap-2">
-      <div class="relative flex flex-1 items-center">
-        <input
-          type="text"
-          class="form-control h-full pr-6"
-          placeholder={@placeholder}
-          aria-label="Search"
-          phx-change={@change}
-          phx-blur={@change}
-          phx-debounce={@debounce}
-          value={@query}
-        />
-        <button
-          :if={@show_reset}
-          id="reset_search"
-          phx-click={@reset}
-          phx-type="button"
-          class="absolute my-auto right-2 h-6 w-6 rounded-full hover:bg-delivery-primary-100 hover:text-white"
-        >
-          <i class="fa-solid fa-xmark" />
-        </button>
-      </div>
+      <SearchBar.search_bar
+        id={@id <> "-input"}
+        type="text"
+        value={@query}
+        placeholder={@placeholder}
+        aria_label={@aria_label}
+        class="min-w-0 flex-1"
+        on_clear={if @show_reset, do: @reset}
+        clear_id="reset_search"
+        phx-change={@change}
+        phx-blur={@change}
+        phx-debounce={@debounce}
+      />
       <button
         class="btn btn-outline-secondary border-none text-white bg-delivery-primary hover:bg-delivery-primary-400 active:bg-delivery-primary-600"
         phx-click={@apply}
