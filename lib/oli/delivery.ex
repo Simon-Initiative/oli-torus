@@ -306,6 +306,16 @@ defmodule Oli.Delivery do
   defp research_consent_required?(:oli_form), do: true
   defp research_consent_required?(_), do: false
 
+  @doc """
+  Returns true when a user must answer the research consent form before accessing
+  section content. Either explicit answer completes the form; nil remains pending.
+  """
+  def user_research_consent_pending?(%User{research_opt_out: nil} = user, %Section{} = section) do
+    user_research_consent_required?(user, section)
+  end
+
+  def user_research_consent_pending?(_user, _section), do: false
+
   # ------------------------------------------------------------
   # Delivery Settings
 

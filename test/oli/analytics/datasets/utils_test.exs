@@ -62,12 +62,17 @@ defmodule Oli.Analytics.Datasets.UtilsTest do
       student_id =
         enroll(section, %{research_opt_out: false}, [ContextRoles.get_role(:context_learner)])
 
+      pending_student_id =
+        enroll(section, %{research_opt_out: nil}, [ContextRoles.get_role(:context_learner)])
+
       # Verify that only the instructor and opt-out student are ignored
       results = Utils.determine_ignored_student_ids([section.id])
       assert Enum.count(results) == 2
       assert Enum.any?(results, fn id -> id == instructor_id end)
       assert Enum.any?(results, fn id -> id == opt_out_student_id end)
       refute Enum.any?(results, fn id -> id == student_id end)
+      refute pending_student_id in results
+      assert Repo.get!(User, pending_student_id).research_opt_out == nil
     end
 
     test "with students that have both learner and member roles assigned", %{section: section} do
@@ -89,12 +94,19 @@ defmodule Oli.Analytics.Datasets.UtilsTest do
           ContextRoles.get_role(:context_member)
         ])
 
+      pending_student_id =
+        enroll(section, %{research_opt_out: nil}, [
+          ContextRoles.get_role(:context_learner),
+          ContextRoles.get_role(:context_member)
+        ])
+
       # Verify that only the instructor and opt-out student are ignored
       results = Utils.determine_ignored_student_ids([section.id])
       assert Enum.count(results) == 2
       assert Enum.any?(results, fn id -> id == instructor_id end)
       assert Enum.any?(results, fn id -> id == opt_out_student_id end)
       refute Enum.any?(results, fn id -> id == student_id end)
+      refute pending_student_id in results
     end
   end
 end
