@@ -8,6 +8,7 @@ defmodule OliWeb.UserSettingsLive do
   alias Oli.AssentAuth.UserAssentAuth
   alias OliWeb.Icons
 
+  @doc "Renders the account profile, email, and password settings form."
   def render(assigns) do
     ~H"""
     <div class="bg-Background-bg-primary flex flex-col gap-4 items-center py-2 w-full">

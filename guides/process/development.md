@@ -162,7 +162,7 @@ git switch -c sync/MER-1000-student-dashboard origin/story/MER-1000-student-dash
 git merge --no-ff origin/master
 # Resolve conflicts, stage the resolved files, and complete the merge commit.
 git push -u origin sync/MER-1000-student-dashboard
-gh pr create --base story/MER-1000-student-dashboard --head sync/MER-1000-student-dashboard --title "[CHORE] [MER-1000] Sync master into student dashboard"
+gh pr create --base story/MER-1000-student-dashboard --head sync/MER-1000-student-dashboard --title "[SYNC] [MER-1000] Sync master into student dashboard"
 ```
 
 For later syncs, reuse the same branch without resetting or overwriting its history. If it exists only remotely, create a local tracking branch. Incorporate the latest integration tip before merging `master`; after the previous sync PR has merged, this normally fast-forwards:
@@ -176,7 +176,7 @@ git merge --no-ff origin/master
 git push origin sync/MER-1000-student-dashboard
 ```
 
-If the sync branch has diverged from the integration branch, inspect the outstanding work and merge the integration tip into the sync branch with `--no-ff` instead of resetting or force-pushing. Reconcile any remote sync branch updates before pushing. Update an existing open sync PR, or create a new PR against the integration branch if the previous one was merged or closed. Inspect any unmerged work from a closed PR before carrying it forward. Keep the sync branch for later updates while the parent ticket remains active. Every sync PR references that same parent ticket.
+If the sync branch has diverged from the integration branch, inspect the outstanding work and merge the integration tip into the sync branch with `--no-ff` instead of resetting or force-pushing. Reconcile any remote sync branch updates before pushing. Update an existing open sync PR, or create a new PR against the integration branch if the previous one was merged or closed. Inspect any unmerged work from a closed PR before carrying it forward. Keep the sync branch for later updates while the parent ticket remains active. Every sync PR references that same parent ticket and uses the `[SYNC]` change type.
 
 Obtain developer code review approval for the sync PR and run the same required status checks as other PRs targeting the integration branch. Merge it using **Create a merge commit**, preserving the merge from `master`. Squashing or rebasing the sync PR discards that ancestry and can make later syncs repeat conflicts. All PRs into integration branches use merge commits. Repository settings and integration branch rules must permit this method and non-linear history.
 

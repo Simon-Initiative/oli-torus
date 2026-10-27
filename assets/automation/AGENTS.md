@@ -22,6 +22,7 @@ This guide is for AI agents contributing to the Playwright-based automation that
 
 ## Fixtures, Data, And Utilities
 - **Fixture (`my-fixture.ts`):** Extends `@playwright/test` to auto-navigate to the configured base URL before each test, instantiate all tasks (`HomeTask`, `ProjectTask`, etc.), and optionally close the browser (controlled via runtime config defaults). Import `{ test }` from `@fixture/my-fixture` inside every spec to gain access to these fixtures.
+- **Captcha:** The compile-selected Playwright backend requires `PLAYWRIGHT_CAPTCHA_TOKEN`, supplied to both server and runner at runtime. The shared fixture calls `configureCaptcha` to block Google scripts and add the credential during form serialization without changing captcha markup. Call this setup before opening pages in manually created contexts that submit protected forms. Do not add per-captcha branches, DOM inputs or deployed client scripts. Application templates/hooks and production verification stay unchanged.
 - **Scenario seeding:** The fixture exposes `seedScenario(relativePath, params)` which reads a YAML file next to the current spec, templates `${PARAM}` placeholders, and `POST`s it to `/test/scenario-yaml` using the Playwright project base URL and a runtime-configured token (defaults to `my-token`). Specs are responsible for setting runtime config to keep credentials aligned with their scenario YAML.
 - **Runtime data:** Specs define their own runtime user credentials (with run-specific IDs) and seed scenario YAMLs directly in `beforeAll`. Media uploads pull files from `tests/resources/media_files/` through `FileManager.mediaPath`.
 - **Utilities:**
@@ -48,8 +49,7 @@ This guide is for AI agents contributing to the Playwright-based automation that
    - `npm run pw <pattern>` – pass any spec glob/pattern to the raw Playwright runner.
 4. **Debugging aids:**
    - HTML reports open automatically on completion due to the `['html', { open: 'always' }]` reporter config; rerun via `npm run show-report`.
-   - Screenshots and traces are captured on every failure (see `use.trace = 'on'` and `use.screenshot = 'on'`).
-   - Capture traces/screenshots are on by default; adjust in `playwright.config.ts` if you need lighter runs locally.
+   - Traces/screenshots are disabled in CI and when `PLAYWRIGHT_SCENARIO_TOKEN` or `PLAYWRIGHT_CAPTCHA_TOKEN` is set, to protect tokens and captured email links. Local runs without either token keep the existing capture defaults.
 
 ## Adding Or Updating Coverage
 - Favor expanding existing tasks before touching specs; tests should read like business workflows (`homeTask.login('author')`, `curriculumTask.uploadMediaFile(...)`). If a flow is unique, add a new task alongside the others and expose it via the fixture.
