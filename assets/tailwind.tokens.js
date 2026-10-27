@@ -98,6 +98,10 @@ module.exports = {
     light: '#CADFFC',
     dark: '#063A85',
   },
+  'Fill-Buttons-fill-primary-disabled': {
+    light: '#B0B4BF',
+    dark: '#3B3740',
+  },
   'Fill-Buttons-fill-secondary': {
     light: '#FFFFFF1A',
     dark: '#FFFFFF1A',
@@ -328,7 +332,7 @@ module.exports = {
     dark: '#99CCFF',
   },
   'Text-text-danger': {
-    light: '#CE2C31',
+    light: '#B60202',
     dark: '#FF8787',
   },
   'Text-text-danger-hover': {
@@ -461,6 +465,10 @@ module.exports = {
   'Specially-Tokens-Background-lesson-page': {
     light: '#E6E9F2',
     dark: '#1B191F',
+  },
+  'Specially-Tokens-Background-course-cards': {
+    light: '#FFFFFF',
+    dark: '#3B3740',
   },
   // Specially Tokens/Fill
   'Specially-Tokens-Fill-fill-avatar': {

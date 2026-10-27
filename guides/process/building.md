@@ -4,7 +4,7 @@ Torus uses five Mix environments with explicit scenario-seeding boundaries:
 
 - `dev` supports local development and the token-protected Playwright scenario interface.
 - `test` runs automated tests, includes test-support modules, and compiles `seeding/lib` solely to verify seeding and preview release tooling. Pull-request test workflows build in this environment; it is not a deployable release boundary.
-- `ci_e2e` supports ephemeral CI browser testing through the token-protected Playwright scenario interface.
+- `playwright` is the standalone shared browser-test environment for disposable PR servers and the durable nightly deployment. It enables token-protected scenario/mailbox access and local email capture; it requires separate runtime `PLAYWRIGHT_SCENARIO_TOKEN` and `PLAYWRIGHT_CAPTCHA_TOKEN` secrets. Its compile-selected captcha verifier accepts only the configured captcha token, supplied by the browser runner during form serialization; production retains normal Google verification. Missing or empty automation secrets prevent Playwright startup.
 - `preview` builds production-shaped QA releases for preview instances and exposes the privileged release scenario CLI without another runtime flag. `.github/workflows/build-preview-image.yml` explicitly selects it.
 - `prod` builds deployable production releases. It exposes neither the Playwright scenario routes nor preview release tooling and remains the default for the Dockerfile and production package workflow.
 

@@ -2,6 +2,7 @@ defmodule OliWeb.Products.ImagePreview do
   use Phoenix.Component
 
   alias Oli.Branding
+  alias OliWeb.Components.DesignTokens.Primitives.SearchBar
   alias OliWeb.Components.Modal
   alias OliWeb.Common.CardListing
   alias OliWeb.Delivery.NewCourse.TableModel
@@ -217,22 +218,12 @@ defmodule OliWeb.Products.ImagePreview do
               Courses available
             </h2>
             <div class="ml-auto flex items-center w-full justify-end gap-3">
-              <div class="input-group search-input flex gap-2 w-full max-w-[400px]">
-                <div class="relative flex flex-1 items-center">
-                  <input
-                    type="text"
-                    class="form-control h-full pr-6 dark:!bg-[#111827] dark:!text-white dark:!border-gray-600"
-                    placeholder="Search by course or instructor name"
-                  />
-                  <button
-                    type="button"
-                    class="absolute my-auto right-2 h-6 w-6 rounded-full"
-                    tabindex="-1"
-                  >
-                    <i class="fa-solid fa-xmark" />
-                  </button>
-                </div>
-              </div>
+              <SearchBar.search_bar
+                interactive={false}
+                aria_label="Search courses by course or instructor name"
+                placeholder="Search by course or instructor name"
+                class="!w-full max-w-[400px]"
+              />
             </div>
           </div>
           <div class="flex w-full">
@@ -266,123 +257,126 @@ defmodule OliWeb.Products.ImagePreview do
       data-preview-mode="true"
     >
       <.preview_top_bar user_name={preview_user_name(@ctx)} section={@section} />
-      <div class="relative h-[calc(100%-56px)] w-full">
-        <div class="absolute inset-0 flex">
-          <div class="h-full w-2/5 bg-blue-700 dark:bg-black" />
-          <div class="h-full w-3/5 bg-[#f8fafc] dark:bg-[#111827]" />
+      <div class="flex h-[calc(100%-56px)] w-full">
+        <div class="w-[300px] shrink-0 bg-blue-700 px-8 py-14 dark:bg-black">
+          <div class="flex flex-col gap-8">
+            <.preview_step_item
+              index={1}
+              title="Select your source materials"
+              description="Select the source of materials to base your course curriculum on."
+              active={true}
+            />
+            <.preview_step_item
+              index={2}
+              title="Name your course"
+              description="Give your course section a name, a number, and tell us how you meet."
+              active={false}
+            />
+            <.preview_step_item
+              index={3}
+              title="Course details"
+              description="If you meet as a group, let us know what days of the week your class meets. Tell us your course's start and end dates."
+              active={false}
+            />
+          </div>
         </div>
 
-        <div class="absolute inset-0 flex px-10 py-6">
-          <div class="z-20 my-auto w-[34%]">
-            <div class="flex flex-col gap-[34px] -mr-[34px]">
-              <.preview_step_item
-                index={1}
-                title="Select your source materials"
-                description="Select the source of materials to base your course curriculum on."
-                active={true}
-              />
-              <.preview_step_item
-                index={2}
-                title="Name your course"
-                description="Give your course section a name, a number, and tell us how you meet."
-                active={false}
-              />
-              <.preview_step_item
-                index={3}
-                title="Course details"
-                description="Set meeting days plus the start and end dates for your course."
-                active={false}
-              />
-            </div>
+        <div class="flex min-w-0 flex-1 flex-col bg-[#f8fafc] dark:bg-[#111827]">
+          <div class="border-b border-gray-200 bg-[#f8fafc] px-6 py-3 text-xs font-semibold dark:border-gray-700 dark:bg-[#0B0C11]">
+            New course set up
           </div>
+          <div class="min-h-0 flex-1 overflow-hidden bg-[#f8fafc] px-7 py-4 dark:bg-[#0B0C11]">
+            <h2 class="pb-1 text-[28px] font-semibold leading-9">Select Curriculum</h2>
+            <p class="mb-3 text-sm">
+              Select a curriculum source to create your course section.
+            </p>
 
-          <div class="mb-12 mt-2 flex w-[66%] flex-col overflow-hidden bg-white shadow-xl dark:bg-[#0B0C11] dark:shadow-none">
-            <div class="border-b border-gray-200 px-9 py-4 text-sm font-semibold dark:border-gray-700">
-              New Course Setup
+            <p class="mb-2 text-sm font-semibold text-Text-text-low-alpha">Filter by:</p>
+            <div
+              class="mb-3 flex items-center gap-4"
+              data-preview-course-picker-control="filter-tabs"
+            >
+              <.preview_filter_tab label="All Sources" active={true} />
+              <.preview_filter_tab label="Templates" active={false} />
+              <.preview_filter_tab label="My Course Sections" active={false} />
             </div>
-            <div class="flex-1 overflow-hidden">
-              <div class="flex h-full flex-col overflow-hidden">
-                <div class="-mt-60 flex flex-col items-center gap-3 py-6 pl-16 pr-9">
-                  <h2>Select source</h2>
-                  <div class="w-full">
-                    <div class="mb-3 w-full">
-                      <h3 class="pb-2 text-[28px] font-semibold">Select Curriculum</h3>
-                      <div>
-                        <p class="mb-4 mt-1">
-                          Select a curriculum source to create your course section.
-                        </p>
-                        <div class="filter-opts flex flex-wrap items-center gap-2">
-                          <div class="w-full">
-                            <div class="input-group search-input flex gap-2">
-                              <div class="relative flex flex-1 items-center">
-                                <input
-                                  type="text"
-                                  class="form-control h-full pr-6 dark:!bg-[#111827] dark:!text-white dark:!border-gray-600"
-                                  placeholder="Search..."
-                                />
-                                <button
-                                  type="button"
-                                  class="absolute right-2 my-auto h-6 w-6 rounded-full"
-                                  tabindex="-1"
-                                >
-                                  <i class="fa-solid fa-xmark" />
-                                </button>
-                              </div>
-                              <button
-                                class="btn btn-outline-secondary border-none bg-delivery-primary text-white"
-                                type="button"
-                              >
-                                Search
-                              </button>
-                            </div>
-                          </div>
-                          <div class="flex w-full items-center gap-3">
-                            <div class="flex min-w-0 flex-1 items-center gap-2">
-                              <div class="flex h-10 min-w-0 flex-1 items-center rounded border border-gray-300 bg-white px-3 text-sm text-gray-700 shadow-sm dark:border-gray-600 dark:bg-[#111827] dark:text-white">
-                                Title
-                              </div>
-                              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-gray-300 bg-white text-gray-700 shadow-sm dark:border-gray-600 dark:bg-[#111827] dark:text-white">
-                                <i class="fa fa-sort-amount-down" />
-                              </div>
-                            </div>
-                            <div class="flex shrink-0 items-center overflow-hidden rounded border border-gray-300 shadow-sm dark:border-gray-600">
-                              <div class="flex h-10 w-10 items-center justify-center bg-white text-gray-600 dark:bg-[#111827] dark:text-white">
-                                <i class="fa fa-list" />
-                              </div>
-                              <div class="flex h-10 w-10 items-center justify-center bg-delivery-primary-100 text-delivery-primary dark:bg-gray-700 dark:text-white">
-                                <i class="fa fa-th" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="pb-5">
-                      <div>Showing all results (1 total)</div>
-                      <br />
-                      <%= if @course_picker_model do %>
-                        <CardListing.render
-                          model={@course_picker_model}
-                          selected="source_selection"
-                          ctx={@ctx}
-                          preview_mode={true}
-                        />
-                      <% end %>
-                    </div>
-                  </div>
+
+            <div
+              class="mb-3 flex items-center gap-4"
+              data-preview-course-picker-control="search-sort-view"
+            >
+              <SearchBar.search_bar
+                interactive={false}
+                aria_label="Search course sources"
+                placeholder=""
+                class="!w-[224px]"
+              />
+              <div class="relative flex h-[35px] min-w-[100px] items-center rounded-[3px] border border-Border-border-default bg-Background-bg-primary py-2 pl-2.5 pr-8 text-base font-semibold leading-none text-Text-text-high">
+                Cost
+                <Icons.chevron_down
+                  width="16"
+                  height="16"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-Text-text-high"
+                />
+              </div>
+              <div class="flex h-[35px] w-[35px] items-center justify-center rounded-[3px] text-Icon-icon-default">
+                <i class="fa fa-sort-amount-down" />
+              </div>
+              <div class="h-8 border-l border-Border-border-default" />
+              <div class="flex shrink-0" data-preview-course-picker-control="view-toggle">
+                <div class="flex h-8 w-10 items-center justify-center rounded-l-[2px] border border-Border-border-default bg-Fill-fill-selection-active text-Icon-icon-white">
+                  <Icons.grid_view />
+                </div>
+                <div class="flex h-8 w-10 items-center justify-center rounded-r-[2px] border border-l-0 border-Border-border-default text-Icon-icon-default">
+                  <i class="fa fa-list" />
                 </div>
               </div>
             </div>
-            <div class="flex items-center justify-between bg-gray-100/50 p-3 dark:bg-black/40">
-              <button class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center dark:!text-white dark:!bg-black dark:hover:!bg-gray-900">
-                Cancel
-              </button>
-              <button
-                class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center"
-                disabled
+
+            <div class="mb-2 flex items-center justify-between text-sm">
+              <div>Showing result 21 - 38 of 38 total</div>
+              <div
+                class="flex items-center gap-1 text-Text-text-high"
+                data-preview-course-picker-control="pagination"
               >
-                Next step
-              </button>
+                <span class="flex h-7 w-7 items-center justify-center">
+                  <i class="fas fa-angle-double-left" />
+                </span>
+                <span class="flex h-7 w-7 items-center justify-center">
+                  <i class="fas fa-angle-left" />
+                </span>
+                <span class="flex h-7 w-7 items-center justify-center">1</span>
+                <span class="flex h-7 w-7 items-center justify-center rounded-[2px] bg-delivery-primary text-white">
+                  2
+                </span>
+                <span class="flex h-7 w-7 items-center justify-center">
+                  <i class="fas fa-angle-right" />
+                </span>
+                <span class="flex h-7 w-7 items-center justify-center">
+                  <i class="fas fa-angle-double-right" />
+                </span>
+              </div>
+            </div>
+
+            <%= if @course_picker_model do %>
+              <div class="h-[234px] w-[245px] overflow-hidden">
+                <div class="w-[310px] origin-top-left scale-[0.79]">
+                  <CardListing.render
+                    model={@course_picker_model}
+                    selected="source_selection"
+                    ctx={@ctx}
+                    preview_mode={true}
+                  />
+                </div>
+              </div>
+            <% end %>
+          </div>
+          <div class="flex items-center justify-between border-t border-gray-200 bg-white px-7 py-2 dark:border-gray-700 dark:bg-[#0B0C11]">
+            <div class="torus-button secondary !rounded-[3px] !px-5 !py-2 !text-sm dark:!bg-black dark:!text-white">
+              Cancel
+            </div>
+            <div class="torus-button primary !rounded-[3px] !px-5 !py-2 !text-sm">
+              Next Step
             </div>
           </div>
         </div>
@@ -478,20 +472,37 @@ defmodule OliWeb.Products.ImagePreview do
 
   defp preview_step_item(assigns) do
     ~H"""
-    <div class="flex items-center justify-between gap-6 shrink-0">
-      <div class={["flex flex-col text-white", if(!@active, do: "opacity-50")]}>
-        <h4 class="mb-[9px] text-[20px] font-bold leading-5 tracking-[0.02px]">{@title}</h4>
-        <p class="text-[16px] font-normal leading-[24px] tracking-[0.02px]">{@description}</p>
-      </div>
+    <div class="flex shrink-0 items-start gap-3">
       <div class={[
-        "flex h-[60px] w-[60px] shrink-0 self-start items-center justify-center rounded-full text-xl font-extrabold shadow-sm",
+        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold shadow-sm",
         if(@active,
           do: "bg-primary text-white",
-          else: "border border-gray-300 bg-white text-gray-400 dark:border-gray-600 dark:bg-black"
+          else: "bg-white text-blue-700 dark:bg-gray-200 dark:text-black"
         )
       ]}>
         {@index}
       </div>
+      <div class={["flex flex-col text-white", if(!@active, do: "opacity-90")]}>
+        <h4 class="mb-1 text-sm font-bold leading-5">{@title}</h4>
+        <p class="text-xs font-normal leading-4">{@description}</p>
+      </div>
+    </div>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :active, :boolean, required: true
+
+  defp preview_filter_tab(assigns) do
+    ~H"""
+    <div class={[
+      "flex h-[35px] items-center justify-center rounded-[3px] border bg-Background-bg-primary px-2.5 text-base font-semibold",
+      if(@active,
+        do: "border-Text-text-button text-Text-text-button",
+        else: "border-Border-border-default text-Text-text-high"
+      )
+    ]}>
+      {@label}
     </div>
     """
   end

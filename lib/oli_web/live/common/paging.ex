@@ -48,7 +48,7 @@ defmodule OliWeb.Common.Paging do
         phx-change={@limit_change}
       >
         <div :if={@show_limit_change} class="inline-flex flex-col gap-1 mr-2">
-          <small class="torus-small uppercase">
+          <small class="text-xs font-normal uppercase text-Text-text-low">
             Page size
           </small>
           <select class="torus-select" name="limit">
@@ -130,7 +130,7 @@ defmodule OliWeb.Common.Paging do
         phx-change={@limit_change}
       >
         <div :if={@show_limit_change} class="inline-flex flex-col gap-1">
-          <small class="torus-small uppercase">
+          <small class="text-xs font-normal uppercase text-Text-text-low">
             Page size
           </small>
           <select class="torus-select" name="limit">

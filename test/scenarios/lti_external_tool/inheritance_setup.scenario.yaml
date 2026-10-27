@@ -1,0 +1,13 @@
+- use:
+    file: template_setup.scenario.yaml
+
+- section:
+    name: source_course
+    from: template
+
+- assert:
+    structure:
+      to: source_course
+      root:
+        children:
+          - page: Tool Lesson

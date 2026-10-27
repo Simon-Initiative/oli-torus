@@ -19,6 +19,7 @@ import { EditorErrorBoundary } from './editor_error_boundary';
 export type EditorsProps = {
   className?: ClassName;
   editMode: boolean;
+  supportsLtiConfiguration?: boolean;
   content: PageEditorContent;
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   graded: boolean;
@@ -96,6 +97,7 @@ export const Editors = (props: EditorsProps) => {
       parents: [],
       activities: activityContexts,
       editMode,
+      supportsLtiConfiguration: props.supportsLtiConfiguration,
       resourceSlug,
       projectSlug,
       graded,

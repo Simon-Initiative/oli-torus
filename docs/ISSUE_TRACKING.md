@@ -15,4 +15,6 @@ Use the internal MER project board for normal engineering planning, backlog mana
 
 Use the TRIAGE board when non-authenticated or guest users need a public-facing path to report bugs.
 
+Follow the [Development Process](../guides/process/development.md) for branch setup, implementation and sync PRs, acceptance testing, and merging. See [PR conventions](../guides/process/changelog-pr.md) for change types and ticket references.
+
 When work is being executed through Harness Engineering, the Jira issue description, comments, and linked design context form the informal input that feeds PRDs, plans, and implementation work.

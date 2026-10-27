@@ -356,7 +356,11 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     <div class="container mx-auto">
       <Group.render>
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <TextSearch.render id="text-search" text={@options.text_search} />
+          <TextSearch.render
+            id="text-search"
+            text={@options.text_search}
+            aria_label="Search activities"
+          />
           <div class="flex flex-wrap items-center gap-2">
             <.live_component
               module={CheckboxFilter}

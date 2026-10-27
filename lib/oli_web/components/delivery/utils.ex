@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.Utils do
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts
   alias Oli.Accounts.{User, Author, SystemRole}
+  alias OliWeb.Components.DesignTokens.Primitives.SearchBar
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
   alias Lti_1p3.Roles.ContextRoles
@@ -166,36 +167,34 @@ defmodule OliWeb.Components.Delivery.Utils do
     """
   end
 
+  attr :id, :string, default: nil
   attr :search_term, :string, default: ""
+  attr :aria_label, :string, required: true
   attr :on_search, :string, default: "search"
   attr :on_change, :string, default: "search"
   attr :on_clear_search, :string, default: "clear_search"
   attr :rest, :global, include: ~w(class placeholder)
 
+  @doc """
+  Renders a live-search form using the shared design-system Search Bar.
+
+  The surrounding form retains the delivery search event contract while the
+  shared primitive owns the field appearance and accessible clear control.
+  """
   def search_box(assigns) do
     ~H"""
     <form class={["flex flex-row", @rest[:class]]} phx-submit={@on_search} phx-change={@on_change}>
-      <div class="flex-1 relative">
-        <i class="fa-solid fa-search absolute left-2.5 sm:left-4 top-2.5 sm:top-4 text-gray-400 pointer-events-none text-lg">
-        </i>
-        <input
-          type="text"
-          name="search_term"
-          value={@search_term}
-          placeholder={@rest[:placeholder]}
-          class="h-9 sm:h-auto w-full border bg-Specially-Tokens-Fill-fill-input border-Specially-Tokens-Border-border-input rounded-lg px-12 py-3"
-          phx-debounce="500"
-          aria-label="search"
-        />
-        <button
-          :if={@search_term not in ["", nil]}
-          type="button"
-          class="absolute right-0 top-0 bottom-0 sm:py-3 sm:px-4 py-2 px-2.5"
-          phx-click={@on_clear_search}
-        >
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
+      <SearchBar.search_bar
+        id={@id}
+        name="search_term"
+        type="text"
+        value={@search_term}
+        placeholder={@rest[:placeholder]}
+        aria_label={@aria_label}
+        class="w-full"
+        on_clear={@on_clear_search}
+        phx-debounce="500"
+      />
     </form>
     """
   end
