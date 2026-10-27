@@ -245,6 +245,8 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       view
       |> element("##{filter}-form")
       |> render_change(%{"_target" => ["selected"], "selected" => values})
+
+      render(view)
     end
 
     defp checked_values(html, filter) do
@@ -322,11 +324,7 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       {:ok, view, _html} =
         live(ctx.conn, ctx.route <> "?sort_by=user&sort_order=asc&text_search=a&offset=1")
 
-      view |> element("#student-filter-trigger") |> render_click()
-
-      view
-      |> element("#student-filter-form")
-      |> render_change(%{"_target" => ["selected"], "selected" => ["#{ctx.user_a.id}"]})
+      check_filter(view, "student-filter", ["#{ctx.user_a.id}"])
 
       path = assert_patch(view)
 
