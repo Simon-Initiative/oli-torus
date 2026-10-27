@@ -115,6 +115,58 @@ defmodule Oli.ConsentTest do
     end
   end
 
+  describe "persist_preferences/3" do
+    test "metadata-free writes remain compatible before sequencing metadata exists" do
+      user = user_fixture()
+      expiration = DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
+
+      for analytics <- [true, false] do
+        cookies = [
+          %{
+            name: "_cky_opt_choices",
+            value: Jason.encode!(%{version: 2, analytics: analytics}),
+            expiration: expiration
+          }
+        ]
+
+        assert Consent.persist_preferences(cookies, user.id) == {:ok, :persisted}
+        assert Consent.preferences_for_user(user.id)["analytics"] == analytics
+      end
+    end
+
+    test "invalid stored ordering metadata does not block a metadata-free decision" do
+      user = user_fixture()
+      expiration = DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
+
+      cookies = [
+        %{
+          name: "_cky_opt_choices",
+          value: Jason.encode!(%{version: 2, analytics: false}),
+          expiration: expiration
+        }
+      ]
+
+      for {group, sequence} <- [
+            {String.duplicate("a", 32), 0},
+            {String.duplicate("a", 32), 9_007_199_254_740_992},
+            {String.duplicate("a", 32), "1"},
+            {String.duplicate("A", 32), 1},
+            {String.duplicate("a", 31), 1},
+            {nil, 1}
+          ] do
+        store(user.id, %{
+          "version" => 2,
+          "analytics" => true,
+          "_decision_group" => group,
+          "_decision_sequence" => sequence
+        })
+
+        assert Consent.persist_preferences(cookies, user.id) == {:ok, :persisted}
+        refute Consent.preferences_for_user(user.id)["analytics"]
+      end
+    end
+  end
+
   test "upserts refresh the consent audit timestamp" do
     user = user_fixture()
     cookie = store(user.id, %{"version" => 2, "analytics" => false})

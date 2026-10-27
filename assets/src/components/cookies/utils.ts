@@ -14,9 +14,7 @@ export const retrieveCookies = async (url: string, props: CookiePreferencesProps
   const privacyPoliciesUrl =
     typeof props.privacyPoliciesUrl === 'string' ? props.privacyPoliciesUrl.trim() : '';
   if (props.preferences !== undefined) {
-    initializeConsent(props.preferences, {
-      measurementAvailable: Boolean(privacyPoliciesUrl),
-    });
+    initializeConsent(props.preferences);
   } else if (!window.TorusConsentState?.initialized) {
     try {
       const response = await fetch(url, {

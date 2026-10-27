@@ -26,7 +26,9 @@ const accepted = {
 
 beforeEach(() => {
   delete window.TorusConsentState;
-  delete (window as unknown as Record<string, unknown>)['ga-disable-G-ABC123'];
+  Object.keys(window)
+    .filter((key) => key.startsWith('ga-disable-G-'))
+    .forEach((key) => delete (window as unknown as Record<string, unknown>)[key]);
   document.cookie.split(';').forEach((cookie) => {
     document.cookie = `${cookie.split('=')[0].trim()}=;max-age=0;path=/;Secure`;
     document.cookie = `${cookie.split('=')[0].trim()}=;max-age=0;path=/;domain=example.test;Secure`;
@@ -111,13 +113,21 @@ test.each([true, false])(
   },
 );
 
-test('withdrawal removes host and ancestor GA cookies and disables GA until re-acceptance', async () => {
-  document.cookie = '_ga=client;path=/;Secure';
-  document.cookie = '_ga_ABC123=session;domain=example.test;path=/;Secure';
+test('withdrawal removes Torus-host GA cookies, preserves parent-domain cookies and disables GA', async () => {
+  document.cookie = '_ga=parent-client;domain=example.test;path=/;Secure';
+  document.cookie = '_ga_other=parent-session;domain=example.test;path=/;Secure';
+  document.cookie = '_ga=host-client;path=/;Secure';
+  document.cookie = '_ga_ABC123=host-session;domain=torus.example.test;path=/;Secure';
   document.cookie = 'unrelated=keep;path=/;Secure';
   await saveConsent({ functionality: true, analytics: false });
-  expect(readCookie('_ga')).toBe('');
+  expect(
+    document.cookie
+      .split(';')
+      .map((cookie) => cookie.trim())
+      .filter((cookie) => cookie.startsWith('_ga=')),
+  ).toEqual(['_ga=parent-client']);
   expect(readCookie('_ga_ABC123')).toBe('');
+  expect(readCookie('_ga_other')).toBe('parent-session');
   expect(readCookie('unrelated')).toBe('keep');
   expect((window as unknown as Record<string, unknown>)['ga-disable-G-ABC123']).toBe(true);
   await saveConsent({ functionality: true, analytics: true });
@@ -242,6 +252,23 @@ test('blank policy availability keeps Google denied even for an explicitly store
     expect.objectContaining({ analytics_storage: 'denied' }),
   );
   expect(readCookie('_ga_ABC123')).toBe('');
+  expect((window as unknown as Record<string, unknown>)['ga-disable-G-ABC123']).toBe(true);
+});
+
+test('a valid privacy URL cannot enable measurement disabled by analytics configuration', async () => {
+  initializeConsent(accepted, { measurementAvailable: false, measurementIds: ['G-ABC123'] });
+  await retrieveCookies('/consent/cookie', {
+    privacyPoliciesUrl: '/privacy',
+    preferences: accepted,
+  });
+  await saveConsent({ functionality: true, analytics: true });
+
+  expect(window.TorusConsentState?.measurementAvailable).toBe(false);
+  expect(window.gtag).toHaveBeenCalledWith(
+    'consent',
+    'update',
+    expect.objectContaining({ analytics_storage: 'denied' }),
+  );
   expect((window as unknown as Record<string, unknown>)['ga-disable-G-ABC123']).toBe(true);
 });
 

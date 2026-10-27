@@ -114,6 +114,8 @@ defmodule Oli.Consent do
 
   Optional decision metadata is stored only in the database choices value. Locking the
   user also serializes concurrent first writes, before a consent cookie row exists.
+  Metadata-free writes remain compatible until valid sequencing metadata is stored;
+  after that, they are ignored so they cannot overwrite a sequenced decision.
   """
   @spec persist_preferences(
           [map()],
@@ -218,6 +220,18 @@ defmodule Oli.Consent do
       {:ok, %{"_decision_group" => ^group, "_decision_sequence" => stored_sequence}}
       when is_integer(stored_sequence) and sequence <= stored_sequence ->
         true
+
+      _ ->
+        false
+    end
+  end
+
+  defp superseded_decision?(%CookiesConsent{value: value}, nil) do
+    case decode_preferences(value) do
+      {:ok, %{"_decision_group" => group, "_decision_sequence" => sequence}}
+      when is_binary(group) and is_integer(sequence) and sequence > 0 and
+             sequence <= 9_007_199_254_740_991 ->
+        Regex.match?(~r/\A[a-f0-9]{32}\z/, group)
 
       _ ->
         false
