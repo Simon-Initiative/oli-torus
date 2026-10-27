@@ -211,6 +211,7 @@ defmodule OliWeb.Resources.PagesView do
         >
           <TextSearch.render
             id="text-search"
+            aria_label="Search pages"
             text={@options.text_search}
             event_target="#text-search-input"
           />

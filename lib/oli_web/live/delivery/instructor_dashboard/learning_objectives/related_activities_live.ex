@@ -268,6 +268,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
                 <label for="activity_search_input-input" class="sr-only">Search activities</label>
                 <SearchInput.render
                   id="activity_search_input"
+                  aria_label="Search related activities"
                   name="activity_name"
                   text={@params.text_search}
                 />

@@ -421,6 +421,7 @@ defmodule OliWeb.Components.Delivery.Pages do
               >
                 <SearchInput.render
                   id="scored_activities_search_input"
+                  aria_label="Search scored activities"
                   name={if @current_page == nil, do: "page_name", else: "page_name"}
                   text={@params.text_search}
                 />

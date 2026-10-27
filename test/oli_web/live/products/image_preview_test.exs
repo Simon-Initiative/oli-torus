@@ -34,6 +34,12 @@ defmodule OliWeb.Products.ImagePreviewTest do
       assert html =~ "Course Progress"
       assert html =~ "data-preview-mode=\"true\""
       refute html =~ ~s(href="/sections/)
+
+      document = Floki.parse_fragment!(html)
+      assert [search] = Floki.find(document, "[data-search-bar-state='default']")
+      assert Floki.attribute(search, "aria-hidden") == ["true"]
+      assert search |> Floki.text() |> String.trim() == "Search by course or instructor name"
+      assert Floki.find(search, "input, button") == []
     end
 
     test "course picker preview reuses card listing without selection behavior" do
@@ -58,6 +64,12 @@ defmodule OliWeb.Products.ImagePreviewTest do
       assert html =~ "/images/course_default.png"
       assert html =~ "data-preview-mode=\"true\""
       refute html =~ "phx-click="
+
+      document = Floki.parse_fragment!(html)
+      assert [search] = Floki.find(document, "[data-search-bar-state='default']")
+      assert Floki.attribute(search, "aria-hidden") == ["true"]
+      assert search |> Floki.text() |> String.trim() == "Search..."
+      assert Floki.find(search, "input, button") == []
     end
 
     test "student welcome preview reflects actual onboarding options" do

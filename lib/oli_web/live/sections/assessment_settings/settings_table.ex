@@ -155,6 +155,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         >
           <SearchInput.render
             id="assessments_search_input"
+            aria_label="Search assessments"
             name="assessment_name"
             text={@params.text_search}
           />
