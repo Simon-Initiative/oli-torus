@@ -75,18 +75,22 @@ never replayed. LiveView navigation checks consent before adding a behavioral ev
 
 On withdrawal the application immediately denies consent, blocks its event writer,
 sets Google's `ga-disable-G-<measurement-id>` flag for configured IDs and IDs discovered
-from GA4 cookies, and deletes
-`_ga` / `_ga_*` cookies at the host and ancestor domains (including legacy `auto`
-cookies). Reacceptance clears those disable flags. Keep GA4's standard cookie names
-and host domain configuration, and list every measurement ID in deployment configuration. Additional
-consent checks remain mandatory on every tag to prevent subsequent denied pings.
+from GA4 cookies, and deletes host-only and current-host `_ga` / `_ga_*` cookies.
+Parent-domain cookies are preserved because they may belong to sibling applications.
+Removing legacy `cookie_domain: auto` cookies requires establishing Torus ownership
+and a separately reviewed, validated domain allowlist; automatic ancestor-domain
+cleanup is not supported. Reacceptance clears those disable flags. Keep GA4's standard
+cookie names and host domain configuration, and list every measurement ID in deployment
+configuration. Additional consent checks remain mandatory on every tag to prevent
+subsequent denied pings.
 
 The head bootstrap covers lessons without footers. An old or malformed decision
 requires re-consent while retaining functional preferences. A banner close dismisses
 only the current browser session and grants nothing. Signed-in database decisions
 win over browser cookies. Concurrent saves carry a transient page request group and
 sequence so an older acceptance cannot overwrite a later rejection; this metadata
-stays in consent storage and never enters analytics. At login a current browser
+stays in consent storage and never enters analytics. Metadata-free writes are also
+ignored once a sequenced decision exists. At login a current browser
 decision replaces an outdated
 stored decision, and the database wins between two current decisions. Author-only
 accounts continue using browser storage.
@@ -131,8 +135,9 @@ accounts continue using browser storage.
    private course/page titles and LMS referrers. None may appear in any GA payload.
    Verify the QA measurement ID and that no request targets the production property.
 6. Withdraw in both desktop and mobile preferences: verify immediate consent denial,
-   GA disable flags, cookie deletion, and no further `collect` requests even after
-   navigation, idle engagement and tab visibility changes. Reaccept and verify one
+   GA disable flags, host-cookie deletion, and no further `collect` requests even after
+   navigation, idle engagement and tab visibility changes. Confirm parent-domain
+   cookies remain intact. Reaccept and verify one
    current-page event. Sign in from a new browser and verify the database choice.
    Check keyboard focus, 200% zoom, mobile and Chrome/Safari LMS iframe behavior.
    Verify system-admin traffic and Developer traffic filters before production enablement.

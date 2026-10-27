@@ -133,14 +133,13 @@ function updateGoogleDisabled(analytics: boolean) {
   }
 }
 
-/** Deletes GA4 cookies at the host and ancestor domains, including legacy auto-domain cookies. */
+/** Deletes host-only and current-host GA4 cookies without altering shared parent domains. */
 export function deleteAnalyticsCookies(): void {
   const names = document.cookie
     .split(';')
     .map((cookie) => cookie.trim().split('=')[0])
     .filter((name) => name === '_ga' || name.startsWith('_ga_'));
-  const hostParts = window.location.hostname.split('.');
-  const domains = ['', ...hostParts.map((_, index) => hostParts.slice(index).join('.'))];
+  const domains = ['', window.location.hostname];
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   const paths = [
     '/',

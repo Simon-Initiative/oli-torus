@@ -1,6 +1,8 @@
 defmodule OliWeb.CookieConsentControllerTest do
   use OliWeb.ConnCase, async: true
 
+  import Ecto.Query
+
   alias Oli.Consent
   alias Oli.Consent.CookiesConsent
   alias Oli.Repo
@@ -110,6 +112,42 @@ defmodule OliWeb.CookieConsentControllerTest do
         assert json_response(post(conn, ~p"/consent/cookie", params), 200)
         assert Consent.preferences_for_user(user.id)["analytics"] == analytics
       end
+    end
+
+    test "metadata-free writes cannot replace a sequenced rejection or alter its batch", %{
+      conn: conn
+    } do
+      user = user_fixture()
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+      rejected = choices_cookie(false)
+      opted_in = %{rejected | "name" => "_cky_opt_in", "value" => "true"}
+
+      assert json_response(
+               post(conn, ~p"/consent/cookie", %{
+                 cookies: [rejected, opted_in],
+                 decision: %{group: String.duplicate("a", 32), sequence: 2}
+               }),
+               200
+             )
+
+      old_timestamp = DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second)
+
+      Repo.update_all(from(cookie in CookiesConsent, where: cookie.user_id == ^user.id),
+        set: [updated_at: old_timestamp]
+      )
+
+      original_cookies = Map.new(Consent.retrieve_cookies(user.id), &{&1.name, &1})
+      expiry = DateTime.utc_now() |> DateTime.add(1, :day) |> DateTime.to_iso8601()
+      accepted = %{choices_cookie(true) | "expiresIso" => expiry}
+      opted_out = %{opted_in | "value" => "false", "expiresIso" => expiry}
+
+      assert json_response(
+               post(conn, ~p"/consent/cookie", %{cookies: [accepted, opted_out]}),
+               200
+             )
+
+      assert Map.new(Consent.retrieve_cookies(user.id), &{&1.name, &1}) == original_cookies
+      refute Consent.preferences_for_user(user.id)["analytics"]
     end
 
     test "malformed supplied decision metadata is rejected before writing", %{conn: conn} do

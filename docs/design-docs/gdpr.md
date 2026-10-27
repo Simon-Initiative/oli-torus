@@ -35,7 +35,9 @@ and personalization are always denied. Deployment and container requirements are
   decision replaces an outdated database decision; between current decisions the
   database wins. Author-only accounts use browser storage.
 - Withdrawal blocks behavioral events immediately, disables configured GA4 measurement
-  IDs and removes `_ga` / `_ga_*` cookies. Necessary cookies remain enabled; no targeting
-  choice or advertising use is offered.
+  IDs and removes host-only and current-host `_ga` / `_ga_*` cookies. Parent-domain
+  cookies remain intact because they may belong to sibling applications; legacy
+  parent-domain cleanup requires an explicit, reviewed ownership allowlist. Necessary
+  cookies remain enabled; no targeting choice or advertising use is offered.
 - A blank `PRIVACY_POLICIES_URL` keeps measurement disabled. The default notice is
   the CMU Privacy Notice; deployments must review its applicability before rollout.
