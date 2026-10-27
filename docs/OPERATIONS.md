@@ -54,7 +54,8 @@ the down migration reconstructs confidence using the active Hill parameters.
 
 ## Canonical References
 
-- deployment process: `guides/process/deployment.md`
+- Deployment process: `guides/process/deployment.md`
+- Development and integration branch process: `guides/process/development.md`
 - Development and QA PR approvals: `guides/process/pull-request-approvals.md`
 - feature rollout and scoped flags: `docs/design-docs/scoped_feature_flags.md`
 - experiment reward-handoff monitoring: `docs/runbooks/appsignal/experiment-reward-handoff.md`

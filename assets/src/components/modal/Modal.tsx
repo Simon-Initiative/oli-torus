@@ -31,6 +31,8 @@ export interface ModalProps {
   hideCancelButton?: boolean;
   onOk?: () => void;
   onCancel?: () => void;
+  /** Optional controlled dismissal: prevent Bootstrap hiding until the owner unmounts the dialog. */
+  onRequestClose?: () => void;
   size?: ModalSize;
   footer?: any;
   contentClassName?: string;
@@ -48,6 +50,8 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
   const modal = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
   const modalId = useRef(`modal-${Math.random().toString(36).substr(2, 9)}`);
+  const requestClose = useRef(props.onRequestClose);
+  requestClose.current = props.onRequestClose;
 
   const okLabel = props.okLabel !== undefined ? props.okLabel : 'Ok';
   const cancelLabel = props.cancelLabel !== undefined ? props.cancelLabel : 'Cancel';
@@ -99,6 +103,7 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
   useEffect(() => {
     if (modal.current) {
       const currentModal = modal.current;
+      let unmounting = false;
 
       // Save the currently focused element to restore later
       previousActiveElement.current = document.activeElement as HTMLElement;
@@ -123,7 +128,12 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
       // blur any focused descendant so focus is not trapped inside an aria-hidden subtree
       // (avoids the "Blocked aria-hidden ... descendant retained focus" warning). Focus is
       // restored to the trigger below on hidden.bs.modal.
-      $(currentModal).on('hide.bs.modal', () => {
+      $(currentModal).on('hide.bs.modal', (event) => {
+        if (!unmounting && requestClose.current) {
+          event.preventDefault();
+          requestClose.current();
+          return;
+        }
         const active = document.activeElement;
         if (active instanceof HTMLElement && currentModal.contains(active)) {
           active.blur();
@@ -142,6 +152,7 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
       document.addEventListener('keydown', handleKeyDown);
 
       return () => {
+        unmounting = true;
         document.removeEventListener('keydown', handleKeyDown);
         (window as any).$(currentModal).modal('hide');
       };

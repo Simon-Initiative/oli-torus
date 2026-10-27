@@ -18,6 +18,7 @@ interface SurveyEditorProps extends EditorProps {
 export const SurveyEditor = ({
   resourceContext,
   editMode,
+  supportsLtiConfiguration,
   projectSlug,
   resourceSlug,
   contentItem,
@@ -83,6 +84,7 @@ export const SurveyEditor = ({
               parents: [...parents, contentItem],
               activities,
               editMode,
+              supportsLtiConfiguration,
               resourceSlug,
               projectSlug,
               graded,

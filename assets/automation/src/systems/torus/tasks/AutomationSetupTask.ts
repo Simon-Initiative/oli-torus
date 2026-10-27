@@ -28,6 +28,11 @@ type AutomationOptions = {
   teardownTimeoutMs?: number;
 };
 
+// Torus allows 300s idle time; nightly HAProxy allows 310s for the response.
+const AUTOMATION_SETUP_REQUEST_TIMEOUT_MS = 330_000;
+// Two request attempts plus two minutes for archive download and retry overhead.
+export const AUTOMATION_SETUP_HOOK_TIMEOUT_MS = 2 * AUTOMATION_SETUP_REQUEST_TIMEOUT_MS + 120_000;
+
 const DEFAULT_TEARDOWN_TIMEOUT_MS = 10_000;
 
 export async function importArchiveAndCreateSection(
@@ -101,7 +106,7 @@ function postAutomationSetup(
         buffer: archiveBuffer,
       },
     },
-    timeout: 180_000, // full course archives take a while to ingest
+    timeout: AUTOMATION_SETUP_REQUEST_TIMEOUT_MS,
   });
 }
 
