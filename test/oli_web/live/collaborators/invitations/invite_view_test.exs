@@ -182,6 +182,49 @@ defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
       assert updated_author_project.status == :accepted
     end
 
+    for {description, password, confirmation, error_message} <- [
+          {"a short password", "too-short", "too-short", "should be at least 12 character(s)"},
+          {"a mismatched password confirmation", "a valid password", "a different password",
+           "does not match password"}
+        ] do
+      test "keeps the registration form open for #{description}", %{conn: conn, project: project} do
+        author = non_existing_author()
+
+        %{encode64_token: token, author_project: author_project} =
+          insert_invitation_token_and_author_project(
+            author,
+            project,
+            "invalid_registration_#{unquote(description)}"
+          )
+
+        {:ok, view, _html} = live(conn, collaborators_invite_url(token))
+        view |> element("button", "Accept") |> render_click()
+        stub_recaptcha()
+
+        params = %{
+          "author" => %{
+            "family_name" => "Author",
+            "given_name" => "Invited",
+            "password" => unquote(password),
+            "password_confirmation" => unquote(confirmation)
+          }
+        }
+
+        change_html = view |> element("#registration_form") |> render_change(params)
+        assert change_html =~ unquote(error_message)
+
+        html = view |> element("#registration_form") |> render_submit()
+        assert html =~ unquote(error_message)
+        assert has_element?(view, "#registration_form")
+        assert Accounts.get_author!(author.id).invitation_accepted_at == nil
+
+        assert Course.get_author_project(project.slug, author.id, filter_by_status: false).status ==
+                 :pending_confirmation
+
+        assert author_project.status == :pending_confirmation
+      end
+    end
+
     test "an existing author can accept an invitation", %{conn: conn, project: project} do
       existing_author = author_fixture()
 

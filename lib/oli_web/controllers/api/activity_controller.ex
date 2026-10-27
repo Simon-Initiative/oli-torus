@@ -425,6 +425,19 @@ defmodule OliWeb.Api.ActivityController do
            {"Retrieval Response", "application/json",
             OliWeb.Api.ActivityController.DocumentAttributes}
        }
+  def retrieve_delivery(conn, %{"resource_attempt_guid" => guid, "resource" => id}) do
+    {:ok, _target, [attempt]} =
+      Oli.Delivery.SecureAssessments.resolve_models(guid, [String.to_integer(to_string(id))])
+
+    json(
+      conn,
+      document_to_delivery_result(false, %{
+        attempt.revision
+        | content: Oli.Delivery.Attempts.Core.select_model(attempt)
+      })
+    )
+  end
+
   def retrieve_delivery(conn, %{
         "section_slug" => section_slug,
         "resource" => activity_id
@@ -462,6 +475,22 @@ defmodule OliWeb.Api.ActivityController do
            {"Retrieval Response", "application/json",
             OliWeb.Api.ActivityController.BulkDocumentResponse}
        }
+  def bulk_retrieve_delivery(conn, %{"resource_attempt_guid" => guid, "resourceIds" => ids}) do
+    ids = Enum.map(ids, &String.to_integer(to_string(&1)))
+    {:ok, _target, attempts} = Oli.Delivery.SecureAssessments.resolve_models(guid, ids)
+
+    json(conn, %{
+      "result" => "success",
+      "results" =>
+        Enum.map(attempts, fn a ->
+          document_to_delivery_result(false, %{
+            a.revision
+            | content: Oli.Delivery.Attempts.Core.select_model(a)
+          })
+        end)
+    })
+  end
+
   def bulk_retrieve_delivery(conn, %{
         "section_slug" => section_slug,
         "resourceIds" => activity_ids
@@ -531,6 +560,10 @@ defmodule OliWeb.Api.ActivityController do
 
   This operation must be performed in the context of an exclusive write lock to avoid concurrent updates. The identifier of the
   lock must be specificed via the `lock` query parameter.
+
+  Signed LTI selection saves (resource configurations chosen in external tools)
+  use the same editor boundary. A stale result returns HTTP 409 so the author
+  can reload and reopen configuration instead of overwriting intervening edits.
   """
   @doc parameters: [
          project: [
@@ -570,6 +603,9 @@ defmodule OliWeb.Api.ActivityController do
     case ActivityEditor.edit(project_slug, lock_id, activity_id, author.email, update) do
       {:ok, _} ->
         json(conn, %{"result" => "success"})
+
+      {:error, :stale_selection} ->
+        error(conn, 409, "The activity changed. Reload and configure the tool again.")
 
       {:error, {:invalid_update_field}} ->
         error(conn, 400, "invalid update field")

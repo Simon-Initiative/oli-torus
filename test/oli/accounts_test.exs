@@ -35,6 +35,33 @@ defmodule Oli.AccountsTest do
       assert author.system_role_id == Accounts.SystemRole.role_id().system_admin
     end
 
+    test "admin_update_author/3 only lets a system admin change the system role" do
+      system_admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().system_admin})
+
+      account_admin =
+        author_fixture(%{system_role_id: Accounts.SystemRole.role_id().account_admin})
+
+      author = author_fixture()
+      admin_role = Accounts.SystemRole.role_id().system_admin
+
+      {:ok, refused} =
+        Accounts.admin_update_author(
+          author,
+          %{"system_role_id" => admin_role, "given_name" => "Renamed"},
+          account_admin
+        )
+
+      assert refused.given_name == "Renamed"
+      assert refused.system_role_id == Accounts.SystemRole.role_id().author
+      assert Oli.Auditing.list_events(event_type: :author_role_changed) == []
+
+      {:ok, granted} =
+        Accounts.admin_update_author(author, %{"system_role_id" => admin_role}, system_admin)
+
+      assert granted.system_role_id == admin_role
+      assert [_event] = Oli.Auditing.list_events(event_type: :author_role_changed)
+    end
+
     test "admin helper hierarchy matches the system role levels" do
       author = author_fixture()
 
@@ -1298,6 +1325,70 @@ defmodule Oli.AccountsTest do
   describe "inspect/2 for the User module" do
     test "does not include password" do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
+    end
+  end
+
+  describe "accept_user_invitation/3" do
+    for {description, password, confirmation, expected_error} <- [
+          {"short passwords", "too-short", "too-short", :password},
+          {"mismatched password confirmation", "a valid password", "a different password",
+           :password_confirmation}
+        ] do
+      test "returns a changeset and preserves the pending invitation for #{description}" do
+        user = insert(:user, password: nil, password_hash: nil, invitation_accepted_at: nil)
+        enrollment = insert(:enrollment, user: user, status: :pending_confirmation)
+
+        assert {:error, %Ecto.Changeset{} = changeset} =
+                 Accounts.accept_user_invitation(user, enrollment, %{
+                   given_name: "Invited",
+                   family_name: "User",
+                   password: unquote(password),
+                   password_confirmation: unquote(confirmation)
+                 })
+
+        assert Map.has_key?(errors_on(changeset), unquote(expected_error))
+
+        unchanged_user = Repo.get!(User, user.id)
+        assert is_nil(unchanged_user.password_hash)
+        assert is_nil(unchanged_user.invitation_accepted_at)
+
+        assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status ==
+                 :pending_confirmation
+      end
+    end
+  end
+
+  describe "accept_collaborator_invitation/3" do
+    for {description, password, confirmation, expected_error} <- [
+          {"short passwords", "too-short", "too-short", :password},
+          {"mismatched password confirmation", "a valid password", "a different password",
+           :password_confirmation}
+        ] do
+      test "returns a changeset and preserves the pending invitation for #{description}" do
+        author = insert(:author, password: nil, password_hash: nil, invitation_accepted_at: nil)
+
+        author_project =
+          insert(:author_project, author_id: author.id, status: :pending_confirmation)
+
+        assert {:error, %Ecto.Changeset{} = changeset} =
+                 Accounts.accept_collaborator_invitation(author, author_project, %{
+                   given_name: "Invited",
+                   family_name: "Author",
+                   password: unquote(password),
+                   password_confirmation: unquote(confirmation)
+                 })
+
+        assert Map.has_key?(errors_on(changeset), unquote(expected_error))
+
+        unchanged_author = Repo.get!(Author, author.id)
+        assert is_nil(unchanged_author.password_hash)
+        assert is_nil(unchanged_author.invitation_accepted_at)
+
+        assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject,
+                 author_id: author_project.author_id,
+                 project_id: author_project.project_id
+               ).status == :pending_confirmation
+      end
     end
   end
 

@@ -10,8 +10,9 @@ export class NavbarCO {
   constructor(page: Page) {
     this.logoLinkNavbar = page.locator('nav  a.navbar-brand');
     this.logoLinkHeader = page.locator('#header_logo_button');
-    this.instructorsLink = page.getByRole('link', { name: 'For Instructors' });
-    this.authorsLink = page.getByRole('link', { name: 'For Course Authors' });
+    const navigation = page.getByRole('navigation');
+    this.instructorsLink = navigation.getByRole('link', { name: 'For Instructors' });
+    this.authorsLink = navigation.getByRole('link', { name: 'For Course Authors' });
     this.supportLink = page.locator('#tech_support_navbar_sign_in');
   }
 

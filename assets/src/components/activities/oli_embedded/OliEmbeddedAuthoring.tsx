@@ -10,6 +10,7 @@ import {
   buildUploadDirectory,
   buildUploadLocation,
   isBundleResourceBase,
+  isReviewInteractionSuppressed,
   lastPart,
   suggestAssetName,
 } from 'components/activities/oli_embedded/utils';
@@ -299,6 +300,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   const modelXml = typeof model.modelXml === 'string' ? model.modelXml : '';
   const iframeBase = typeof model.base === 'string' ? model.base : '';
   const iframeSource = typeof model.src === 'string' ? model.src : '';
+  const suppressReviewInteraction = isReviewInteractionSuppressed(model);
   const resourceURLs = Array.isArray(model.resourceURLs) ? model.resourceURLs : [];
   const authoringParts = Array.isArray(model.authoring?.parts) ? model.authoring.parts : [];
 
@@ -602,6 +604,38 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       <label className="sr-only" htmlFor={packageImportId}>
         Import embedded activity package
       </label>
+
+      <div className="card mt-3">
+        <div className="card-body">
+          <h3 className="card-title h5 mb-1">Review Mode</h3>
+          <div className={`${mutedTextClass} small mb-3`}>
+            By default, embedded activities remain interactive during review so students and
+            instructors can navigate safely through saved work. Torus ignores review-mode requests
+            that would change saved state, scores, or attempts. Prevent interaction only for
+            activities that cannot be safely navigated in review mode.
+          </div>
+          <div className="form-check">
+            <input
+              id={`oli-embedded-suppress-review-interaction-${activityId ?? 'new'}`}
+              className="form-check-input"
+              type="checkbox"
+              checked={suppressReviewInteraction}
+              disabled={!editMode}
+              onChange={(event) =>
+                dispatch(
+                  OliEmbeddedActions.setSuppressReviewInteraction(event.currentTarget.checked),
+                )
+              }
+            />
+            <label
+              className="form-check-label"
+              htmlFor={`oli-embedded-suppress-review-interaction-${activityId ?? 'new'}`}
+            >
+              Prevent interaction during review
+            </label>
+          </div>
+        </div>
+      </div>
 
       <div className="card mt-3">
         <div className="card-body">

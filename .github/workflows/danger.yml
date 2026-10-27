@@ -11,6 +11,14 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
+    # Skips the final integ-* -> master PR: every change on a feature integration
+    # branch was already checked by Danger in the PR that merged it there. Fork
+    # branches never skip, since their names are chosen by the contributor.
+    if: >-
+      ${{
+        !(github.event.pull_request.head.repo.full_name == github.repository &&
+          startsWith(github.head_ref, 'integ-') && github.base_ref == 'master')
+      }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

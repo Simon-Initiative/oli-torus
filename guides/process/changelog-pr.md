@@ -1,11 +1,10 @@
 # PR processes
 
-## Feature development / bug fixing
+## Story, Bug, and Task development
 
-1. Developer performs feature work or bug fix on a branch off of `master`.
-2. Developer opens a pull request against `master` once the work is completed.
-3. Reviewer reviews the PR and either requests changes or approves.
-4. After approval, the reviewer **squashes and merges** to master, updating the commit message to summarize the entirety of the work item. This aggregate commit message must be prefixed with the change type, a ticket reference and a description. For example, `[BUG FIX] [MER-1234] A description` or `[FEATURE] [NG23-29] Another description`.
+Follow the [Development Process](development.md) for branch setup, PR destinations, reviews, acceptance testing, syncs, and merging.
+
+Prefix PR titles and merge commit messages with the change type, ticket reference, and description, for example `[BUG FIX] [MER-1001] Fix dashboard loading`. Use the main ticket for implementation PRs unless the work is tracked in a chosen child Sub-task, in which case use that child ticket. Integration and sync PRs always reference the main ticket.
 
 ### Valid Change Types
 

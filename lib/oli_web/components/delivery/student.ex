@@ -62,7 +62,11 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def score_summary(assigns) do
     ~H"""
-    <div :if={@raw_avg_score[:score]} role="score summary" class="flex items-center gap-[6px] ml-auto">
+    <div
+      :if={@raw_avg_score[:score]}
+      data-role="score summary"
+      class="flex items-center gap-[6px] ml-auto"
+    >
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path
           d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
@@ -80,7 +84,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def score_as_you_go_summary(assigns) do
     ~H"""
-    <div role="score summary" class="flex gap-[6px] ml-auto">
+    <div data-role="score summary" class="flex gap-[6px] ml-auto">
       <Icons.score_as_you_go color="text-Text-text-accent-green" />
       <span class="text-[12px] leading-[16px] tracking-[0.02px] text-Text-text-accent-green font-semibold whitespace-nowrap">
         {Utils.format_score(@raw_avg_score[:score])} / {Utils.format_score(@raw_avg_score[:out_of])}
@@ -229,7 +233,10 @@ defmodule OliWeb.Components.Delivery.Student do
         <div class="text-sm uppercase">
           Score Information
         </div>
-        <button phx-click={hide_attempts_dropdown("#page-#{@page_revision_slug}-attempts-dropdown")}>
+        <button
+          aria-label="Close score information"
+          phx-click={hide_attempts_dropdown("#page-#{@page_revision_slug}-attempts-dropdown")}
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -280,7 +287,10 @@ defmodule OliWeb.Components.Delivery.Student do
         <div class="text-sm uppercase">
           Score Information
         </div>
-        <button phx-click={hide_attempts_dropdown("#page-#{@page_revision_slug}-attempts-dropdown")}>
+        <button
+          aria-label="Close score information"
+          phx-click={hide_attempts_dropdown("#page-#{@page_revision_slug}-attempts-dropdown")}
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -351,7 +361,7 @@ defmodule OliWeb.Components.Delivery.Student do
             >
               <.link
                 href={~p"/sections/#{@section_slug}/lesson/#{@page_revision_slug}"}
-                role="review_attempt_link"
+                data-role="review-attempt-link"
               >
                 <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
                   Continue
@@ -375,13 +385,13 @@ defmodule OliWeb.Components.Delivery.Student do
           </div>
           <div class="w-4 h-4 relative"><Icons.star /></div>
 
-          <div role="attempt score" class="tracking-tight">
+          <div data-role="attempt-score" class="tracking-tight">
             {Float.round(@attempt.score, 2)}
           </div>
           <div class="text-emerald-600">
             /
           </div>
-          <div role="attempt out of" class="tracking-tight">
+          <div data-role="attempt-out-of" class="tracking-tight">
             {Float.round(@attempt.out_of, 2)}
           </div>
         </div>
@@ -407,7 +417,7 @@ defmodule OliWeb.Components.Delivery.Student do
                 request_path: Utils.schedule_live_path(@section_slug)
               )
             }
-            role="review_attempt_link"
+            data-role="review-attempt-link"
           >
             <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
               Review
@@ -453,7 +463,7 @@ defmodule OliWeb.Components.Delivery.Student do
       <span class="text-xs text-Text-text-low mr-1">
         Time Remaining:
       </span>
-      <div role="countdown">
+      <div data-role="countdown">
         {Utils.format_time_remaining(@end_date)}
       </div>
     </div>
@@ -475,7 +485,7 @@ defmodule OliWeb.Components.Delivery.Student do
         <Icons.clock />
       </div>
       <div class="text-right text-Text-text-low whitespace-nowrap">
-        <span class="text-sm font-semibold" role="duration in minutes">
+        <span class="text-sm font-semibold" data-role="duration in minutes">
           {@duration_minutes}
           <span class="w-[25px] self-stretch text-[13px] font-semibold">
             min
@@ -494,7 +504,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :exploration} = assigns) do
     ~H"""
-    <div role="resource_type" aria-label="exploration" class="justify-start items-start flex">
+    <div data-role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-purple bg-Fill-Accent-fill-accent-purple rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -506,6 +516,7 @@ defmodule OliWeb.Components.Delivery.Student do
             Exploration
           </div>
         </div>
+        <span :if={!@long} class="sr-only">Exploration</span>
       </div>
     </div>
     """
@@ -513,7 +524,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :checkpoint} = assigns) do
     ~H"""
-    <div role="resource_type" aria-label="checkpoint" class="justify-start items-start flex">
+    <div data-role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-orange bg-Fill-Accent-fill-accent-orange rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -525,6 +536,7 @@ defmodule OliWeb.Components.Delivery.Student do
             Assignment
           </div>
         </div>
+        <span :if={!@long} class="sr-only">Assignment</span>
       </div>
     </div>
     """
@@ -532,7 +544,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :practice} = assigns) do
     ~H"""
-    <div role="resource_type" aria-label="practice" class="justify-start items-start flex">
+    <div data-role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-blue bg-Fill-Accent-fill-accent-blue rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -544,6 +556,7 @@ defmodule OliWeb.Components.Delivery.Student do
             Practice
           </div>
         </div>
+        <span :if={!@long} class="sr-only">Practice</span>
       </div>
     </div>
     """
@@ -551,7 +564,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :lesson} = assigns) do
     ~H"""
-    <div role="resource_type" aria-label="reading" class="justify-start items-start flex">
+    <div data-role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 text-Text-text-accent-teal bg-Fill-Accent-fill-accent-teal rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative">
           <div class="w-3 h-3.5 absolute">
@@ -563,6 +576,7 @@ defmodule OliWeb.Components.Delivery.Student do
             Lesson
           </div>
         </div>
+        <span :if={!@long} class="sr-only">Lesson</span>
       </div>
     </div>
     """

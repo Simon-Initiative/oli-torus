@@ -243,6 +243,9 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
         {:ok, _} ->
           {:noreply, socket |> assign(trigger_submit: true)}
 
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+
         _ ->
           {:noreply,
            socket

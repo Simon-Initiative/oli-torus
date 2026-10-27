@@ -101,6 +101,8 @@ defmodule OliWeb.ResourceAttemptStateControllerTest do
         open_and_free: false
       })
 
+    {:ok, section} = Sections.create_section_resources(section, map.publication)
+
     Oli.Lti.TestHelpers.all_default_claims()
     |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
     |> cache_lti_params(user.id)

@@ -167,6 +167,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
           External tools in this course inherit the page type (scored or practice). To pass learner roles, names, scores, and activity insights, you need to configure these tools for your course section.
         </div>
         <DeliveryUtils.search_box
+          aria_label="Search external tools"
           search_term={@params["search_term"]}
           on_search="search"
           on_change="search"

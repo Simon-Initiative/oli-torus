@@ -1,7 +1,7 @@
 import { Table } from '@core/Table';
 import { Utils } from '@core/Utils';
 import { Verifier } from '@core/verify/Verifier';
-import { Locator, Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 
 export class AdminDashboardPO {
   private readonly utils: Utils;
@@ -58,5 +58,42 @@ export class AdminDashboardPO {
   async clickInCheckbox(labelText: string) {
     const l = this.page.getByRole('checkbox', { name: labelText, exact: true });
     await l.check();
+  }
+
+  async openResultWithText(rowText: string, name: string) {
+    const row = this.page.getByRole('row').filter({ hasText: rowText });
+    await row.getByRole('link', { name, exact: true }).click();
+    await expect(this.page).toHaveURL(/\/admin\/authors\/\d+$/);
+  }
+
+  // A click before LiveView connects is dropped, so retry until the form unlocks.
+  async startEdit() {
+    const edit = this.page.getByRole('button', { name: 'Edit', exact: true });
+
+    await expect(async () => {
+      if (await edit.isVisible()) await edit.click({ timeout: 1_000 }).catch(() => undefined);
+      await expect(this.page.locator('#given_name')).toBeEnabled({ timeout: 1_000 });
+    }).toPass({ timeout: 15_000 });
+  }
+
+  async selectSystemRole(label: string) {
+    await this.systemRoleSelect.selectOption({ label });
+  }
+
+  async expectSystemRole(label: string) {
+    await expect(this.systemRoleSelect.locator('option:checked')).toHaveText(label);
+  }
+
+  async expectSystemRoleLocked() {
+    await expect(this.page.locator('#given_name')).toBeEnabled();
+    await expect(this.systemRoleSelect).toBeDisabled();
+  }
+
+  async expectFlash(message: string) {
+    await expect(this.page.getByText(message, { exact: true })).toBeVisible();
+  }
+
+  private get systemRoleSelect() {
+    return this.page.locator('select[name="author[system_role_id]"]');
   }
 }

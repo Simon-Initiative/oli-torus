@@ -243,7 +243,11 @@ defmodule OliWeb.Resources.ActivitiesView do
         show_sort={false}
         show_more_opts={false}
       >
-        <TextSearch.render id="text-search" text={@options.text_search} />
+        <TextSearch.render
+          id="text-search"
+          text={@options.text_search}
+          aria_label="Search activities"
+        />
       </FilterBox.render>
 
       <div class="mb-3" />

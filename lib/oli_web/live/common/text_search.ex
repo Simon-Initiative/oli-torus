@@ -1,7 +1,13 @@
 defmodule OliWeb.Common.TextSearch do
+  @moduledoc """
+  Hook-driven text search built on the shared design-system Search Bar.
+  """
+
   use OliWeb, :live_component
 
-  attr(:id, :string)
+  alias OliWeb.Components.DesignTokens.Primitives.SearchBar
+
+  attr(:id, :string, required: true)
   attr(:reset, :string, default: "text_search_reset")
   attr(:change, :string, default: "text_search_change")
   attr(:placeholder, :string, default: "Search...")
@@ -9,40 +15,31 @@ defmodule OliWeb.Common.TextSearch do
   attr(:event_target, :any, required: false, default: :live_view)
   attr(:tooltip, :string, required: false, default: nil)
   attr(:class, :string, default: "")
+  attr(:aria_label, :string, required: true)
 
+  @doc """
+  Renders a hook-driven text search and optional explanatory tooltip.
+  """
   def render(assigns) do
     assigns = assign(assigns, :phx_target, normalize_target(assigns.event_target))
 
     ~H"""
     <div class={"flex items-center max-w-[350px] #{@class}"}>
-      <div class="relative flex-1">
-        <i
-          id={"#{@id}-icon"}
-          class="absolute fa-solid fa-magnifying-glass text-gray-500 left-3 top-1/2 -translate-y-1/2 h-4 w-4"
-        >
-        </i>
-        <input
-          id={"#{@id}-input"}
-          type="text"
-          class="h-10 w-full border rounded-l rounded-r-none pl-9 pr-3 focus:ring-1 focus:ring-delivery-primary animate-none focus:outline-2 dark:bg-[#0F0D0F] dark:text-violet-100 text-base font-normal font-['Roboto']"
-          placeholder={@placeholder}
-          value={@text}
-          phx-hook="TextInputListener"
-          phx-hook-target={@event_target}
-          phx-target={@phx_target}
-          phx-value-change={@change}
-        />
-      </div>
-      <%= if @text not in [nil, ""] do %>
-        <button
-          class="h-10 px-4 border border-l-0 rounded-r bg-white dark:bg-[#0F0D0F] hover:bg-gray-100 flex items-center justify-center"
-          phx-click={@reset}
-          phx-target={@phx_target}
-          phx-value-id={@id}
-        >
-          <i class="fas fa-times text-gray-600"></i>
-        </button>
-      <% end %>
+      <SearchBar.search_bar
+        id={@id <> "-input"}
+        type="text"
+        value={@text}
+        placeholder={@placeholder}
+        aria_label={@aria_label}
+        class="min-w-0 flex-1"
+        on_clear={@reset}
+        clear_target={@phx_target}
+        clear_value_id={@id}
+        phx-hook="TextInputListener"
+        phx-hook-target={@event_target}
+        phx-target={@phx_target}
+        phx-value-change={@change}
+      />
       <div :if={@tooltip} class="m-2 opacity-50 hover:cursor-help">
         <span
           id={@id <> "_tooltip"}

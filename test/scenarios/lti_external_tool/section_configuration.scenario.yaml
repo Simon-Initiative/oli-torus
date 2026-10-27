@@ -1,0 +1,21 @@
+- use:
+    file: deep_linking_lifecycle.scenario.yaml
+
+- user:
+    name: instructor
+    type: instructor
+    email: deep-linking-instructor@example.com
+    given_name: Deep Linking
+    family_name: Instructor
+
+- enroll:
+    user: instructor
+    section: draft_section
+    role: instructor
+
+- assert:
+    structure:
+      to: draft_section
+      root:
+        children:
+          - page: Tool Lesson

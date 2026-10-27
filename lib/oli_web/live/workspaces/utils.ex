@@ -128,7 +128,7 @@ defmodule OliWeb.Workspaces.Utils do
         }
         xphx-mouseover={
           !@sidebar_expanded &&
-            JS.hide(to: "div[role='expandable_submenu'") |> JS.show(to: "##{@item_id}_children")
+            JS.hide(to: "div[data-role='expandable_submenu']") |> JS.show(to: "##{@item_id}_children")
         }
         phx-click={
           @sidebar_expanded &&
@@ -150,7 +150,7 @@ defmodule OliWeb.Workspaces.Utils do
         />
       </.button>
       <div
-        role="expandable_submenu"
+        data-role="expandable_submenu"
         id={"#{@item_id}_children"}
         class={"pl-4 #{if @sidebar_expanded and active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-[52px] bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
         phx-click-away={!@sidebar_expanded && JS.hide(to: "##{@item_id}_children")}
@@ -184,6 +184,7 @@ defmodule OliWeb.Workspaces.Utils do
   attr :active_view, :atom, default: nil
   attr :additional_classes, :string, default: ""
 
+  @doc "Renders the label, icon, and badge of a workspace sidebar link."
   def nav_link_content(assigns) do
     item_id = assigns.sub_menu_item.text |> String.downcase() |> String.replace(" ", "_")
     assigns = assign(assigns, :item_id, item_id)
@@ -198,7 +199,7 @@ defmodule OliWeb.Workspaces.Utils do
         {apply(Icons, String.to_existing_atom(@sub_menu_item.icon), [assigns])}
       </div>
       <div class={[
-        "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
+        "text-Text-text-low text-sm font-medium tracking-tight flex flex-row justify-between",
         if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
       ]}>
         <div

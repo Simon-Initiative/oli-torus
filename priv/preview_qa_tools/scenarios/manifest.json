@@ -2,7 +2,7 @@
   {
     "id": "oli_torus_getting_started_course",
     "description": "Creates the Getting Started with OLI Torus course, cohort, progress, and grades",
-    "version": "1",
-    "digest": "sha256:b258564cf7f00b53709809004fae52f8c4270b943ccd02efade0be3396edec7a"
+    "version": "2",
+    "digest": "sha256:2983dcf330e2270e00e47cf2e0db5e32ffc98c6389234660af5a6320d330542e"
   }
 ]

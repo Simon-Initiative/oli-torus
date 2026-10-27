@@ -462,7 +462,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def sidebar_toggler(assigns) do
     ~H"""
     <button
-      role="toggle sidebar"
+      data-role="toggle sidebar"
       phx-click={
         JS.patch(
           path_for(
@@ -473,7 +473,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             @instructor_preview_return
           )
         )
-        |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
+        |> JS.dispatch("click", to: "button[data-role='update-sidebar-state-on-react']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px]"
@@ -495,11 +495,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def workspace_sidebar_toggler(assigns) do
     ~H"""
     <button
-      role="toggle sidebar"
+      data-role="toggle sidebar"
       phx-click={
         JS.patch(toggled_workspace_path(@sidebar_expanded, @uri))
-        |> JS.hide(to: "div[role='expandable_submenu']")
-        |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
+        |> JS.hide(to: "div[data-role='expandable_submenu']")
+        |> JS.dispatch("click", to: "button[data-role='update-sidebar-state-on-react']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px]"
@@ -1272,7 +1272,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <div
             :if={!is_nil(@previous_page)}
             class="hidden lg:flex grow shrink basis-0 min-w-0 h-10 justify-start items-center z-10"
-            role="prev_page"
+            data-role="prev_page"
           >
             <div
               class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex"
@@ -1309,7 +1309,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <div
             :if={!is_nil(@next_page)}
             class="hidden lg:flex grow shrink basis-0 min-w-0 h-10 justify-end items-center z-10"
-            role="next_page"
+            data-role="next_page"
           >
             <div class="px-2 lg:px-6 py-2 rounded flex items-center justify-end gap-6 min-w-0">
               <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center min-w-0 text-right dark:text-white text-xs font-normal overflow-hidden whitespace-nowrap">
@@ -1436,7 +1436,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         "flex items-center absolute top-2 left-2 p-4 z-50",
         if(!@show_sidebar, do: "2xl:top-12 2xl:left-8")
       ]}
-      role="back_link"
+      data-role="back_link"
     >
       <.link
         :if={@view == :adaptive_chromeless}
@@ -1493,7 +1493,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def spinner(assigns) do
     ~H"""
     <svg
-      role="spinner"
+      data-role="spinner"
       aria-hidden="true"
       class={[
         "w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600",

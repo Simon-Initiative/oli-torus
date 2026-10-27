@@ -102,7 +102,7 @@ export class CredentialAccountPO {
   }
 
   async expectAccountLabel(label: string) {
-    await expect(this.page.locator('[role="account label"]')).toHaveText(label);
+    await expect(this.page.locator('[data-role="account label"]')).toHaveText(label);
   }
 
   // Clears only the session cookie so a confirmation/reset link is followed

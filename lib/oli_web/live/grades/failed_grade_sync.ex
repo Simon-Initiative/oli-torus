@@ -75,6 +75,7 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
     <div class="container mx-auto">
       <div class="d-flex p-3 justify-content-between">
         <Filter.render
+          aria_label="Search failed grade sync records"
           change="change_search"
           reset="reset_search"
           apply="apply_search"

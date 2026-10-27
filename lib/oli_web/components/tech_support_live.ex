@@ -44,6 +44,7 @@ defmodule OliWeb.TechSupportLive do
     <button
       id="trigger-tech-support-modal"
       class="hidden"
+      aria-label="Open tech support"
       phx-click={Modal.show_modal(@modal_id)}
       data-hide_modal={Modal.hide_modal(@modal_id)}
     />
@@ -74,6 +75,8 @@ defmodule OliWeb.TechSupportLive do
           value="true"
           checked={@requires_sender_data}
           class="hidden"
+          label="Include sender details"
+          label_class="sr-only"
         />
         <.input
           :if={@requires_sender_data}
@@ -143,7 +146,15 @@ defmodule OliWeb.TechSupportLive do
             <div class="value">
               {entry.progress}%
             </div>
-            <div class="bar">
+            <div
+              data-role="upload progress bar"
+              class="bar"
+              role="progressbar"
+              aria-label="Screenshot upload progress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow={entry.progress}
+            >
               <span style={"width: #{entry.progress}%"}></span>
             </div>
             <.error :for={err <- upload_errors(@uploads.attached_screenshots, entry)}>

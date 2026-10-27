@@ -95,6 +95,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
             text={assigns.pages_table_model_params[:text_search]}
             name="text_search"
             id="text_search"
+            aria_label="Search pages"
             placeholder="Search pages"
           />
         </form>
@@ -153,6 +154,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
             text={assigns.publications_table_model_params[:text_search]}
             name="text_search"
             id="text_search"
+            aria_label="Search content sources"
             placeholder="Search Content Sources"
           />
         </form>

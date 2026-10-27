@@ -10,11 +10,14 @@ defmodule OliWeb.Plugs.SetToken do
   def init(_opts), do: nil
 
   def call(conn, _opts) do
-    case conn.assigns[:current_user] do
-      nil ->
+    case {conn.assigns[:current_user], conn.assigns[:user_session]} do
+      {nil, _} ->
         conn
 
-      user ->
+      {_, %{scope: scope}} when not is_nil(scope) ->
+        assign(conn, :user_token, nil)
+
+      {user, _} ->
         token = Phoenix.Token.sign(conn, "user socket", user.sub)
         assign(conn, :user_token, token)
     end

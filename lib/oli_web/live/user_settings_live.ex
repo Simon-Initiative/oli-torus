@@ -75,7 +75,10 @@ defmodule OliWeb.UserSettingsLive do
             <input type="hidden" name="settings_return_to" value={@back_path} />
 
             <div :if={@has_password} class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low">
+              <label
+                for="current_password_for_password"
+                class="font-semibold text-sm leading-4 text-Text-text-low"
+              >
                 Current Password*
               </label>
               <div
@@ -95,7 +98,10 @@ defmodule OliWeb.UserSettingsLive do
             </div>
 
             <div class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low">
+              <label
+                for="email"
+                class="font-semibold text-sm leading-4 text-Text-text-low"
+              >
                 E-mail
               </label>
               <div class="border border-Border-border-default flex flex-col h-14 items-start justify-center px-4 py-2 rounded-md w-full bg-Background-bg-primary">
@@ -112,7 +118,10 @@ defmodule OliWeb.UserSettingsLive do
             </div>
 
             <div class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low">
+              <label
+                for="given_name"
+                class="font-semibold text-sm leading-4 text-Text-text-low"
+              >
                 First Name
               </label>
               <div class="border border-Border-border-default flex flex-col h-14 items-start justify-center px-4 py-2 rounded-md w-full bg-Background-bg-primary">
@@ -135,7 +144,10 @@ defmodule OliWeb.UserSettingsLive do
             </div>
 
             <div class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low">
+              <label
+                for="family_name"
+                class="font-semibold text-sm leading-4 text-Text-text-low"
+              >
                 Last Name
               </label>
               <div class="border border-Border-border-default flex flex-col h-14 items-start justify-center px-4 py-2 rounded-md w-full bg-Background-bg-primary">
@@ -158,7 +170,10 @@ defmodule OliWeb.UserSettingsLive do
             </div>
 
             <div class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low">
+              <label
+                for="password"
+                class="font-semibold text-sm leading-4 text-Text-text-low"
+              >
                 New Password
               </label>
               <div class="border border-Border-border-default flex flex-col h-14 items-start justify-center px-4 py-2 rounded-md w-full bg-Background-bg-primary">
@@ -185,7 +200,10 @@ defmodule OliWeb.UserSettingsLive do
             </div>
 
             <div class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low">
+              <label
+                for="password_confirmation"
+                class="font-semibold text-sm leading-4 text-Text-text-low"
+              >
                 Confirm New Password
               </label>
               <div class="border border-Border-border-default flex flex-col h-14 items-start justify-center px-4 py-2 rounded-md w-full bg-Background-bg-primary">
@@ -219,7 +237,7 @@ defmodule OliWeb.UserSettingsLive do
               <!-- Update Button -->
               <button
                 type="submit"
-                class="bg-Fill-Buttons-fill-primary flex gap-0 items-center justify-center px-6 py-3 rounded-md w-full"
+                class="bg-Fill-Buttons-fill-primary-bold flex gap-0 items-center justify-center px-6 py-3 rounded-md w-full"
                 phx-disable-with="Updating..."
               >
                 <div class="font-semibold text-sm leading-4 text-white">

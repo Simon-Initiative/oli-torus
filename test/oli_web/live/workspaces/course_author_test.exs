@@ -261,7 +261,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
         {:ok, view, _html} = live(conn, workspace)
 
         assert has_element?(view, "button[id=workspace-user-menu]", "HS")
-        assert has_element?(view, "div[role='account label']", "Admin")
+        assert has_element?(view, "div[data-role='account label']", "Admin")
       end)
     end
   end

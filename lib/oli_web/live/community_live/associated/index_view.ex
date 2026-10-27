@@ -54,7 +54,13 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   def render(assigns) do
     ~H"""
     <div class="d-flex p-3 justify-content-between">
-      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
+      <Filter.render
+        change="change_search"
+        reset="reset_search"
+        apply="apply_search"
+        query={@query}
+        aria_label="Search associated communities"
+      />
 
       <.link class="btn btn-primary" href={Routes.live_path(OliWeb.Endpoint, NewView, @community_id)}>
         Add new +

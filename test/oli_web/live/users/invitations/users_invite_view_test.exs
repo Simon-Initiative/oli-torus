@@ -180,6 +180,49 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
       assert updated_enrollment.status == :enrolled
     end
 
+    for {description, password, confirmation, error_message} <- [
+          {"a short password", "too-short", "too-short", "should be at least 12 character(s)"},
+          {"a mismatched password confirmation", "a valid password", "a different password",
+           "does not match password"}
+        ] do
+      test "keeps the registration form open for #{description}", %{conn: conn, section: section} do
+        user = non_existing_user()
+
+        %{encode64_token: token, enrollment: enrollment} =
+          insert_invitation_token_and_enrollment(
+            user,
+            section,
+            "invalid_registration_#{unquote(description)}",
+            "student"
+          )
+
+        {:ok, view, _html} = live(conn, users_invite_url(token))
+        view |> element("button", "Accept") |> render_click()
+        stub_recaptcha()
+
+        params = %{
+          "user" => %{
+            "family_name" => "User",
+            "given_name" => "Invited",
+            "password" => unquote(password),
+            "password_confirmation" => unquote(confirmation)
+          }
+        }
+
+        view |> element("#registration_form") |> render_change(params)
+        html = view |> element("#registration_form") |> render_submit()
+
+        assert html =~ unquote(error_message)
+        assert has_element?(view, "#registration_form")
+        assert Accounts.get_user!(user.id).invitation_accepted_at == nil
+
+        assert Oli.Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status ==
+                 :pending_confirmation
+
+        assert enrollment.status == :pending_confirmation
+      end
+    end
+
     test "a social login student can accept an invitation", %{conn: conn, section: section} do
       social_student = social_login_user()
 

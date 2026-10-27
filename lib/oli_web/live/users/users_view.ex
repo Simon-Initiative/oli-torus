@@ -111,7 +111,7 @@ defmodule OliWeb.Users.UsersView do
 
       <div class="mb-3" />
 
-      <TextSearch.render id="text-search" text={@options.text_search} />
+      <TextSearch.render id="text-search" text={@options.text_search} aria_label="Search users" />
 
       <div class="mb-3" />
 

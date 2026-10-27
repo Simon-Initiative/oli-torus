@@ -100,6 +100,23 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     |> Enum.sort_by(&{&1.numbering_index, &1.title})
   end
 
+  @doc "Returns whether a section has any graded page configured for secure delivery."
+  @spec has_secure_graded_pages?(integer()) :: boolean()
+  def has_secure_graded_pages?(section_id) when is_integer(section_id) do
+    case depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__) do
+      {:ok, _} ->
+        Depot.exists?(@depot_desc, section_id,
+          graded: true,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          secure_delivery: true
+        )
+
+      _ ->
+        # A failed cache load must not disable the authorization boundary.
+        true
+    end
+  end
+
   @doc """
   Returns a list of SectionResource records for all containers.
   An optional keyword list can be passed to extend the filtering conditions.

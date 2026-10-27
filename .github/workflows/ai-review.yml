@@ -9,7 +9,13 @@ permissions:
 
 jobs:
   changes:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    # Skips the final integ-* -> master PR: every change on a feature integration
+    # branch was already AI-reviewed in the PR that merged it there.
+    if: >-
+      ${{
+        (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
+        !(startsWith(github.head_ref, 'integ-') && github.base_ref == 'master')
+      }}
     name: detect/changes
     runs-on: ubuntu-latest
     permissions:
@@ -244,7 +250,11 @@ jobs:
           mv diff.role.patch diff.patch
 
       - name: Install Codex CLI
-        run: npm i -g @openai/codex@0.148.0
+        run: |
+          npm install -g --include=optional \
+            @openai/codex@0.148.0 \
+            '@openai/codex-linux-x64@npm:@openai/codex@0.148.0-linux-x64'
+          test -f "$(npm root -g)/@openai/codex-linux-x64/package.json"
 
       - name: Run Codex reviewer (strictly diff-only)
         id: run
