@@ -9,6 +9,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   alias Oli.Accounts
   alias Oli.Accounts.{Author, SystemRole}
   alias Oli.Auditing
+  alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Repo
   alias OliWeb.Users.DetailViewHelpers
 
@@ -71,6 +72,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author_roles: SystemRole.role_id(),
            credentials_has_google: has_google,
            credentials_label: DetailViewHelpers.credentials_label(author, has_google),
+           pending_invitations: pending_invitations(author.id),
            password_reset_link: "",
            author_name: author.name,
            author_header_name: DetailViewHelpers.formatted_header_name(author),
@@ -249,14 +251,26 @@ defmodule OliWeb.Users.AuthorsDetailView do
           </div>
           <div class="flex flex-col">
             <h4>Actions</h4>
-            <div class="text-Text-text-low-alpha">Actions that can be taken for this user</div>
-            <div class="mt-4 w-full max-w-[535px]">
+            <div class="text-Text-text-low-alpha">Actions that can be taken for this author</div>
+            <div class="mt-4 w-full max-w-[644px]">
               <%= if @author.id != @current_author.id and @author.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
                 <Actions.render
                   user_id={@author.id}
                   account_locked={!is_nil(@author.locked_at)}
                   email_confirmation_pending={Accounts.author_confirmation_pending?(@author)}
                   password_reset_link={@password_reset_link}
+                >
+                  <:pending_invitations>
+                    <OliWeb.Users.PendingInvitations.render
+                      invitations={@pending_invitations}
+                      id="author_pending_invitations"
+                    />
+                  </:pending_invitations>
+                </Actions.render>
+              <% else %>
+                <OliWeb.Users.PendingInvitations.render
+                  invitations={@pending_invitations}
+                  id="author_pending_invitations"
                 />
               <% end %>
             </div>
@@ -277,6 +291,38 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     socket = assign(socket, password_reset_link: password_reset_link)
     {:noreply, socket}
+  end
+
+  def handle_event("accept_invitation", %{"id" => id}, socket) do
+    author_project = author_project_from_id(socket.assigns.author.id, id)
+
+    case author_project &&
+           Accounts.admin_accept_author_invitation(socket.assigns.author, author_project) do
+      {:ok, _author_project} ->
+        {:noreply,
+         socket
+         |> assign(pending_invitations: pending_invitations(socket.assigns.author.id))
+         |> put_flash(:info, "Invitation accepted.")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Invitation could not be accepted.")}
+    end
+  end
+
+  def handle_event("decline_invitation", %{"id" => id}, socket) do
+    author_project = author_project_from_id(socket.assigns.author.id, id)
+
+    case author_project &&
+           Accounts.admin_decline_author_invitation(socket.assigns.author, author_project) do
+      {:ok, _author_project} ->
+        {:noreply,
+         socket
+         |> assign(pending_invitations: pending_invitations(socket.assigns.author.id))
+         |> put_flash(:info, "Invitation declined.")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Invitation could not be declined.")}
+    end
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do
@@ -525,6 +571,24 @@ defmodule OliWeb.Users.AuthorsDetailView do
     # that don't need handling (like dropdown toggles)
     Logger.warning("Unhandled event in AuthorDetailView: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
+  end
+
+  defp author_project_from_id(author_id, id) do
+    case Integer.parse(id) do
+      {project_id, ""} -> Repo.get_by(AuthorProject, author_id: author_id, project_id: project_id)
+      _ -> nil
+    end
+  end
+
+  defp pending_invitations(author_id) do
+    Accounts.list_pending_author_invitations(author_id)
+    |> Enum.map(fn invitation ->
+      Map.put(
+        invitation,
+        :path,
+        ~p"/workspaces/course_author/#{invitation.project_slug}/overview"
+      )
+    end)
   end
 
   defp maybe_audit_internal_toggle(admin, :author, %Author{} = previous, %Author{} = updated) do

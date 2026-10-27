@@ -51,7 +51,73 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       assert html =~ "Projects that the Author has either created or is a collaborator within"
       assert html =~ "User details"
-      assert html =~ "Actions that can be taken for this user"
+      assert html =~ "Actions that can be taken for this author"
+    end
+
+    test "admins can accept a pending project invitation", %{conn: conn} do
+      author = insert(:author)
+      project = insert(:project, title: "Pending Project")
+
+      insert(:author_project,
+        author_id: author.id,
+        project_id: project.id,
+        status: :pending_confirmation
+      )
+
+      insert(:author_token,
+        author: author,
+        context: "collaborator_invitation:#{project.slug}",
+        non_hashed_token: "pending-project-invitation"
+      )
+
+      {:ok, view, _html} = live(conn, authors_detail_view(author.id))
+
+      assert has_element?(view, "#author_pending_invitations", "Pending Project")
+
+      assert has_element?(
+               view,
+               "#author_pending_invitations a[href='/workspaces/course_author/#{project.slug}/overview']",
+               "Pending Project"
+             )
+
+      view
+      |> element("#author_pending_invitations button", "Accept")
+      |> render_click()
+
+      assert Oli.Repo.get_by!(Oli.Authoring.Authors.AuthorProject,
+               author_id: author.id,
+               project_id: project.id
+             ).status == :accepted
+
+      refute has_element?(view, "#author_pending_invitations")
+    end
+
+    test "admins can decline a pending project invitation", %{conn: conn} do
+      author = insert(:author)
+      project = insert(:project, title: "Pending Project")
+
+      insert(:author_project,
+        author_id: author.id,
+        project_id: project.id,
+        status: :pending_confirmation
+      )
+
+      insert(:author_token,
+        author: author,
+        context: "collaborator_invitation:#{project.slug}",
+        non_hashed_token: "pending-project-invitation-to-decline"
+      )
+
+      {:ok, view, _html} = live(conn, authors_detail_view(author.id))
+
+      view
+      |> element("#author_pending_invitations button", "Decline")
+      |> render_click()
+
+      assert Oli.Repo.get_by!(Oli.Authoring.Authors.AuthorProject,
+               author_id: author.id,
+               project_id: project.id
+             ).status == :rejected
     end
   end
 

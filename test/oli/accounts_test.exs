@@ -1392,6 +1392,129 @@ defmodule Oli.AccountsTest do
     end
   end
 
+  describe "admin invitation actions" do
+    test "accepts a user invitation and keeps its token linked to the redeemed enrollment" do
+      project = insert(:project, title: "Admin Course")
+      section = insert(:section, base_project: project)
+      user = insert(:user, invitation_accepted_at: nil, email_confirmed_at: nil)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      insert(:user_token,
+        user: user,
+        context: "enrollment_invitation:#{section.slug}",
+        non_hashed_token: "user-invitation"
+      )
+
+      assert [%{id: enrollment_id, title: "Admin Course"}] =
+               Accounts.list_pending_user_invitations(user.id)
+
+      assert enrollment_id == enrollment.id
+      assert {:ok, _} = Accounts.admin_accept_user_invitation(user, enrollment)
+
+      accepted_user = Repo.get!(User, user.id)
+      accepted_enrollment = Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id)
+
+      assert accepted_enrollment.status == :enrolled
+      assert accepted_user.email_confirmed_at
+      assert accepted_user.invitation_accepted_at
+      assert Accounts.list_pending_user_invitations(user.id) == []
+
+      assert Accounts.get_user_token_by_enrollment_invitation_token(
+               Base.url_encode64("user-invitation", padding: false)
+             )
+    end
+
+    test "declines a user invitation and keeps its token linked to the rejected enrollment" do
+      project = insert(:project)
+      section = insert(:section, base_project: project)
+      user = insert(:user)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      insert(:user_token,
+        user: user,
+        context: "enrollment_invitation:#{section.slug}",
+        non_hashed_token: "rejected-user-invitation"
+      )
+
+      assert {:ok, _} = Accounts.admin_decline_user_invitation(user, enrollment)
+      assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status == :rejected
+      assert Accounts.list_pending_user_invitations(user.id) == []
+
+      assert Accounts.get_user_token_by_enrollment_invitation_token(
+               Base.url_encode64("rejected-user-invitation", padding: false)
+             )
+    end
+
+    test "accepts an author invitation and keeps its token linked to the redeemed project" do
+      author = insert(:author, invitation_accepted_at: nil, email_confirmed_at: nil)
+      project = insert(:project, title: "Admin Project")
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      insert(:author_token,
+        author: author,
+        context: "collaborator_invitation:#{project.slug}",
+        non_hashed_token: "author-invitation"
+      )
+
+      assert [%{id: project_id, title: "Admin Project"}] =
+               Accounts.list_pending_author_invitations(author.id)
+
+      assert project_id == project.id
+      assert {:ok, _} = Accounts.admin_accept_author_invitation(author, author_project)
+
+      accepted_author = Repo.get!(Author, author.id)
+      accepted_project = Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id)
+
+      assert accepted_project.status == :accepted
+      assert accepted_author.email_confirmed_at
+      assert accepted_author.invitation_accepted_at
+      assert Accounts.list_pending_author_invitations(author.id) == []
+
+      assert Accounts.get_author_token_by_collaboration_invitation_token(
+               Base.url_encode64("author-invitation", padding: false)
+             )
+    end
+
+    test "declines an author invitation and keeps its token linked to the rejected project" do
+      author = insert(:author)
+      project = insert(:project)
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      insert(:author_token,
+        author: author,
+        context: "collaborator_invitation:#{project.slug}",
+        non_hashed_token: "rejected-author-invitation"
+      )
+
+      assert {:ok, _} = Accounts.admin_decline_author_invitation(author, author_project)
+
+      assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id).status ==
+               :rejected
+
+      assert Accounts.list_pending_author_invitations(author.id) == []
+
+      assert Accounts.get_author_token_by_collaboration_invitation_token(
+               Base.url_encode64("rejected-author-invitation", padding: false)
+             )
+    end
+  end
+
   describe "delete_enrollment_invitation_tokens/2" do
     test "deletes all invitation tokens for a list of emails in the provided section" do
       user_1 = insert(:user)

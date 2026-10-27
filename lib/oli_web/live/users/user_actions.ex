@@ -8,19 +8,20 @@ defmodule OliWeb.Users.Actions do
   attr(:account_locked, :boolean, required: true)
   attr(:email_confirmation_pending, :boolean, required: true)
   attr(:password_reset_link, :string, default: "")
+  slot(:pending_invitations)
 
   def render(assigns) do
     ~H"""
     <div>
       <div class="form-group !mb-2">
         <.button
-          variant={:primary}
-          size={:sm}
-          class="inline-flex items-center justify-center !bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
+          variant={:link}
+          size={nil}
+          class="group inline-flex items-center gap-1 p-0 text-sm font-semibold leading-4"
           phx-click="generate_reset_password_link"
           phx-value-id={@user_id}
         >
-          Generate Reset Password Link
+          <i class="fa-solid fa-key text-xs"></i> Generate Reset Password Link
         </.button>
 
         <div class="mt-2">
@@ -30,16 +31,21 @@ defmodule OliWeb.Users.Actions do
             value={@password_reset_link}
             class="!mb-0"
             copy_style={:abutted}
-            input_class="!bg-Surface-surface-primary !border-Border-border-default"
-            button_class="!border-Border-border-default"
+            input_class="!h-[26px] !bg-Surface-surface-primary !border-Border-border-default !py-0"
+            button_class="!h-[26px] !border-Border-border-default !py-0 !px-2"
           />
         </div>
+      </div>
+
+      <div :if={@pending_invitations != []} class="mt-2">
+        {render_slot(@pending_invitations)}
       </div>
 
       <%= if @email_confirmation_pending do %>
         <.button
           variant={:primary}
-          class="mt-1"
+          size={:xs}
+          class="mt-4 mr-1"
           phx-click="resend_confirmation_link"
           phx-value-id={@user_id}
         >
@@ -47,14 +53,14 @@ defmodule OliWeb.Users.Actions do
         </.button>
         <.button
           variant={:primary}
-          class=""
+          size={:xs}
           phx-click="show_confirm_email_modal"
           phx-value-id={@user_id}
         >
           Confirm email
         </.button>
 
-        <div class="h-12"></div>
+        <div class="h-2"></div>
       <% else %>
         <div class="mt-0.5">
           <.button
@@ -75,12 +81,12 @@ defmodule OliWeb.Users.Actions do
         <div class="h-12"></div>
       <% end %>
 
-      <div class="flex flex-col items-start gap-3">
+      <div class="flex flex-col items-start gap-2">
         <%= if @account_locked do %>
           <.button
             variant={:outline}
-            size={:sm}
-            class="w-[160px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+            size={:xs}
+            class="w-[113px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
             phx-click="show_unlock_account_modal"
             phx-value-id={@user_id}
           >
@@ -89,8 +95,8 @@ defmodule OliWeb.Users.Actions do
         <% else %>
           <.button
             variant={:outline}
-            size={:sm}
-            class="w-[160px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+            size={:xs}
+            class="w-[113px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
             phx-click="show_lock_account_modal"
             phx-value-id={@user_id}
           >
@@ -100,8 +106,8 @@ defmodule OliWeb.Users.Actions do
 
         <.button
           variant={:outline}
-          size={:sm}
-          class="w-[160px] !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+          size={:xs}
+          class="w-[113px] !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
           phx-click="show_delete_account_modal"
           phx-value-id={@user_id}
         >

@@ -9,8 +9,10 @@ defmodule OliWeb.Users.UsersDetailView do
   alias Oli.Accounts.User
   alias Oli.Auditing
   alias Oli.Delivery.{Metrics, Paywall, Sections}
+  alias Oli.Delivery.Sections.Enrollment
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
+  alias Oli.Repo
   alias OliWeb.Users.DetailViewHelpers
 
   alias OliWeb.Accounts.Modals.{
@@ -74,6 +76,7 @@ defmodule OliWeb.Users.UsersDetailView do
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
+           pending_invitations: pending_invitations(user.id),
            institution: institution,
            credentials_has_google: has_google,
            credentials_label: DetailViewHelpers.credentials_label(user, has_google),
@@ -297,6 +300,12 @@ defmodule OliWeb.Users.UsersDetailView do
           <h4>Actions</h4>
           <div class="text-Text-text-low-alpha">Actions that can be taken for this user</div>
           <div class="mt-4 w-full max-w-[535px]">
+            <div :if={@pending_invitations != []} class="mb-4">
+              <OliWeb.Users.PendingInvitations.render
+                invitations={@pending_invitations}
+                id="user_pending_invitations"
+              />
+            </div>
             <%= if @user.independent_learner do %>
               <Actions.render
                 user_id={@user.id}
@@ -335,6 +344,36 @@ defmodule OliWeb.Users.UsersDetailView do
     socket = assign(socket, password_reset_link: password_reset_link)
 
     {:noreply, socket}
+  end
+
+  def handle_event("accept_invitation", %{"id" => id}, socket) do
+    enrollment = enrollment_from_id(id)
+
+    case enrollment && Accounts.admin_accept_user_invitation(socket.assigns.user, enrollment) do
+      {:ok, _enrollment} ->
+        {:noreply,
+         socket
+         |> assign(pending_invitations: pending_invitations(socket.assigns.user.id))
+         |> put_flash(:info, "Invitation accepted.")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Invitation could not be accepted.")}
+    end
+  end
+
+  def handle_event("decline_invitation", %{"id" => id}, socket) do
+    enrollment = enrollment_from_id(id)
+
+    case enrollment && Accounts.admin_decline_user_invitation(socket.assigns.user, enrollment) do
+      {:ok, _enrollment} ->
+        {:noreply,
+         socket
+         |> assign(pending_invitations: pending_invitations(socket.assigns.user.id))
+         |> put_flash(:info, "Invitation declined.")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Invitation could not be declined.")}
+    end
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do
@@ -599,6 +638,30 @@ defmodule OliWeb.Users.UsersDetailView do
 
   defp user_with_preloaded_fields(id) do
     Accounts.get_user(id, preload: [:platform_roles, :user_identities])
+  end
+
+  defp enrollment_from_id(id) do
+    case Integer.parse(id) do
+      {enrollment_id, ""} -> Repo.get(Enrollment, enrollment_id)
+      _ -> nil
+    end
+  end
+
+  defp pending_invitations(user_id) do
+    Accounts.list_pending_user_invitations(user_id)
+    |> Enum.map(fn invitation ->
+      Map.put(
+        invitation,
+        :path,
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+          invitation.section_slug,
+          user_id,
+          :content
+        )
+      )
+    end)
   end
 
   defp user_form(user, attrs \\ %{}) do

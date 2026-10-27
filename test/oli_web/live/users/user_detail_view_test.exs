@@ -49,6 +49,46 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert html =~ "#{independent_student.family_name}, #{independent_student.given_name}"
     end
 
+    test "admins can accept a pending section invitation", %{
+      conn: conn,
+      admin: admin,
+      independent_student: user
+    } do
+      project = insert(:project, title: "Pending Course")
+      section = insert(:section, base_project: project)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      insert(:user_token,
+        user: user,
+        context: "enrollment_invitation:#{section.slug}",
+        non_hashed_token: "pending-course-invitation"
+      )
+
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, user.id))
+
+      {:ok, view, _html} = live(conn)
+
+      assert has_element?(view, "#user_pending_invitations", "Pending Course")
+
+      assert has_element?(
+               view,
+               "#user_pending_invitations a[href='/sections/#{section.slug}/student_dashboard/#{user.id}/content']",
+               "Pending Course"
+             )
+
+      view
+      |> element("#user_pending_invitations button", "Accept")
+      |> render_click()
+
+      assert Oli.Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status == :enrolled
+      refute has_element?(view, "#user_pending_invitations")
+    end
+
     test "system admin toggles internal flag and records audit event", %{
       conn: conn,
       admin: admin,
