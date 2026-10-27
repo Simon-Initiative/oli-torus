@@ -583,7 +583,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
 
   defp variant_classes(:primary, false, false),
     do:
-      "bg-Fill-Buttons-fill-primary text-Text-text-white hover:bg-Fill-Buttons-fill-primary-hover"
+      "bg-Fill-Buttons-fill-primary text-Text-text-white hover:bg-Fill-Buttons-fill-primary-hover hover:text-Specially-Tokens-Text-text-button-primary-hover"
 
   defp variant_classes(:primary, true, false),
     do:
