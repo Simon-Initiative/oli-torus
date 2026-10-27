@@ -525,14 +525,13 @@ defmodule OliWeb.Components.Delivery.Students do
             </button>
             <%= if @show_progress_csv_download do %>
               <a
-                class="flex flex-row items-center gap-x-1 text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
+                class="flex flex-row items-center gap-x-1 text-Text-text-link text-sm font-bold leading-none"
                 href={
                   ~p(/sections/#{@section_slug}/instructor_dashboard/downloads/progress/#{@params.container_id || ""}/#{@title})
                 }
                 download="progress.csv"
               >
-                Download Student Progress CSV
-                <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
+                Download Student Progress CSV <Icons.download stroke_class="stroke-Text-text-link" />
               </a>
             <% else %>
               <a
@@ -540,9 +539,9 @@ defmodule OliWeb.Components.Delivery.Students do
                   Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)
                 }
                 download={"#{@section_slug}_students.csv"}
-                class="flex flex-row items-center gap-x-1 text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
+                class="flex flex-row items-center gap-x-1 text-Text-text-link text-sm font-bold leading-none"
               >
-                Download <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
+                Download <Icons.download stroke_class="stroke-Text-text-link" />
               </a>
             <% end %>
           </div>
@@ -566,6 +565,7 @@ defmodule OliWeb.Components.Delivery.Students do
             <form for="search" phx-target={@myself} phx-change="search_student" class="w-56">
               <SearchInput.render
                 id="students_search_input"
+                aria_label="Search students"
                 name="student_name"
                 text={@params.text_search}
               />
@@ -1029,7 +1029,8 @@ defmodule OliWeb.Components.Delivery.Students do
            socket.assigns.view,
            socket.assigns.tab_name,
            update_params(socket.assigns.params, %{
-             selected_proficiency_ids: Jason.encode!(selected_proficiency_ids)
+             selected_proficiency_ids: Jason.encode!(selected_proficiency_ids),
+             offset: 0
            })
          )
      )}
@@ -1057,7 +1058,7 @@ defmodule OliWeb.Components.Delivery.Students do
            socket.assigns.section_slug,
            socket.assigns.view,
            socket.assigns.tab_name,
-           update_params(socket.assigns.params, new_params)
+           update_params(socket.assigns.params, Map.put(new_params, :offset, 0))
          )
      )}
   end
@@ -1306,7 +1307,10 @@ defmodule OliWeb.Components.Delivery.Students do
            socket.assigns.section_slug,
            socket.assigns.view,
            socket.assigns.tab_name,
-           update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
+           update_params(socket.assigns.params, %{
+             sort_by: String.to_existing_atom(sort_by),
+             offset: 0
+           })
          )
      )}
   end
@@ -1417,7 +1421,10 @@ defmodule OliWeb.Components.Delivery.Students do
            socket.assigns.section_slug,
            socket.assigns.view,
            socket.assigns.tab_name,
-           update_params(socket.assigns.params, %{filter_by: String.to_existing_atom(filter)})
+           update_params(socket.assigns.params, %{
+             filter_by: String.to_existing_atom(filter),
+             offset: 0
+           })
          )
      )}
   end

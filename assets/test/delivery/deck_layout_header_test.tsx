@@ -83,4 +83,45 @@ describe('DeckLayoutHeader', () => {
     expect(screen.getByLabelText('Maximize')).toBeInTheDocument();
     expect(screen.queryByTitle('Exit Preview')).not.toBeInTheDocument();
   });
+
+  it.each([undefined, '/sections/demo-project/learn'])(
+    'hides the course Back link in restricted delivery with backUrl %s',
+    (backUrl) => {
+      configureSelectors({
+        previewMode: false,
+        isInstructor: false,
+        displayApplicationChrome: false,
+      });
+
+      render(
+        <DeckLayoutHeader
+          pageName="Adaptive Assessment"
+          backUrl={backUrl}
+          restrictNavigation={true}
+        />,
+      );
+
+      expect(screen.queryByTitle('Go back to previous screen')).not.toBeInTheDocument();
+      expect(screen.queryByTitle('Back to Overview')).not.toBeInTheDocument();
+      expect(screen.getByText('Adaptive Assessment')).toBeInTheDocument();
+    },
+  );
+
+  it.each([undefined, '/sections/demo-project/learn'])(
+    'keeps the course Back link in ordinary delivery with backUrl %s',
+    (backUrl) => {
+      configureSelectors({
+        previewMode: false,
+        isInstructor: false,
+        displayApplicationChrome: false,
+      });
+
+      render(<DeckLayoutHeader pageName="Adaptive Assessment" backUrl={backUrl} />);
+
+      expect(screen.getByTitle('Go back to previous screen')).toHaveAttribute(
+        'href',
+        backUrl ?? window.location.href,
+      );
+    },
+  );
 });

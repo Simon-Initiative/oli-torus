@@ -44,6 +44,7 @@ defmodule OliWeb.ObjectivesLive.SelectExistingSubModal do
             <div class="container form-container">
               <TextSearch.render
                 id="text-search"
+                aria_label="Search learning objectives"
                 text={@query}
                 event_target={@myself}
                 reset="text_search_reset"

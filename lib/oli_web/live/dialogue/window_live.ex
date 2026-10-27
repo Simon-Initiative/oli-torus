@@ -1,5 +1,6 @@
 defmodule OliWeb.Dialogue.WindowLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
+  on_mount OliWeb.LiveSessionPlugs.SecureAssessment
   use OliWeb, :verified_routes
   use Phoenix.HTML
 
@@ -592,7 +593,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   def messages(assigns) do
     ~H"""
     <div
-      role="message container"
+      data-role="message-container"
       id="message-container"
       class="overflow-y-auto pt-5"
       phx-hook="KeepScrollAtBottom"

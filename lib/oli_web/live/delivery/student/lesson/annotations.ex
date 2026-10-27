@@ -56,7 +56,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
                 <.users_icon class="mr-2" /> Class Notes
               </.tab>
             </.tab_group>
-            <Utils.search_box class="sm:mt-2" search_term={@search_term} />
+            <Utils.search_box
+              class="sm:mt-2"
+              search_term={@search_term}
+              aria_label="Search lesson notes"
+            />
             <hr class="my-3 sm:m-6 border-b border-Border-border-subtle" />
             <%= case @search_results do %>
               <% nil -> %>
@@ -248,7 +252,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     ~H"""
     <button
       id="toggle_notes_button"
-      role="toggle notes button"
+      data-role="toggle-notes-button"
       data-view="desktop"
       aria-label="Toggle Notes panel"
       aria-pressed={to_string(@is_active || false)}

@@ -1328,6 +1328,70 @@ defmodule Oli.AccountsTest do
     end
   end
 
+  describe "accept_user_invitation/3" do
+    for {description, password, confirmation, expected_error} <- [
+          {"short passwords", "too-short", "too-short", :password},
+          {"mismatched password confirmation", "a valid password", "a different password",
+           :password_confirmation}
+        ] do
+      test "returns a changeset and preserves the pending invitation for #{description}" do
+        user = insert(:user, password: nil, password_hash: nil, invitation_accepted_at: nil)
+        enrollment = insert(:enrollment, user: user, status: :pending_confirmation)
+
+        assert {:error, %Ecto.Changeset{} = changeset} =
+                 Accounts.accept_user_invitation(user, enrollment, %{
+                   given_name: "Invited",
+                   family_name: "User",
+                   password: unquote(password),
+                   password_confirmation: unquote(confirmation)
+                 })
+
+        assert Map.has_key?(errors_on(changeset), unquote(expected_error))
+
+        unchanged_user = Repo.get!(User, user.id)
+        assert is_nil(unchanged_user.password_hash)
+        assert is_nil(unchanged_user.invitation_accepted_at)
+
+        assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status ==
+                 :pending_confirmation
+      end
+    end
+  end
+
+  describe "accept_collaborator_invitation/3" do
+    for {description, password, confirmation, expected_error} <- [
+          {"short passwords", "too-short", "too-short", :password},
+          {"mismatched password confirmation", "a valid password", "a different password",
+           :password_confirmation}
+        ] do
+      test "returns a changeset and preserves the pending invitation for #{description}" do
+        author = insert(:author, password: nil, password_hash: nil, invitation_accepted_at: nil)
+
+        author_project =
+          insert(:author_project, author_id: author.id, status: :pending_confirmation)
+
+        assert {:error, %Ecto.Changeset{} = changeset} =
+                 Accounts.accept_collaborator_invitation(author, author_project, %{
+                   given_name: "Invited",
+                   family_name: "Author",
+                   password: unquote(password),
+                   password_confirmation: unquote(confirmation)
+                 })
+
+        assert Map.has_key?(errors_on(changeset), unquote(expected_error))
+
+        unchanged_author = Repo.get!(Author, author.id)
+        assert is_nil(unchanged_author.password_hash)
+        assert is_nil(unchanged_author.invitation_accepted_at)
+
+        assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject,
+                 author_id: author_project.author_id,
+                 project_id: author_project.project_id
+               ).status == :pending_confirmation
+      end
+    end
+  end
+
   describe "delete_enrollment_invitation_tokens/2" do
     test "deletes all invitation tokens for a list of emails in the provided section" do
       user_1 = insert(:user)

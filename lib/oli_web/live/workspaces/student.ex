@@ -182,6 +182,7 @@ defmodule OliWeb.Workspaces.Student do
           <.form for={%{}} phx-change="search_section" class="w-full max-w-[400px]">
             <SearchInput.render
               id="section_search_input"
+              aria_label="Search courses by course or instructor name"
               name="text_search"
               placeholder="Search by course or instructor name"
               text={@params.text_search}
@@ -335,7 +336,12 @@ defmodule OliWeb.Workspaces.Student do
           <h4 class="text-sm md:text-[16px] md:leading-[32px] tracking-[1.28px] uppercase mr-9 whitespace-nowrap">
             Course Progress
           </h4>
-          <.progress_bar percent={@section.progress} show_percent={true} width="100px" />
+          <.progress_bar
+            percent={@section.progress}
+            show_percent={true}
+            width="100px"
+            aria_label="Course progress"
+          />
         </div>
       </div>
       <i class="fa-solid fa-arrow-right ml-auto text-2xl p-[7px] drop-shadow-md"></i>

@@ -37,8 +37,22 @@ describe('FeedbackRenderer', () => {
       />,
     );
 
-    expect(screen.getByLabelText('AI-generated feedback')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByRole('group', { name: 'AI-generated feedback' })).toHaveAttribute(
+      'tabindex',
+      '-1',
+    );
     expect(screen.getByText('Try comparing the slope between the two lines.')).toBeInTheDocument();
+  });
+
+  it('renders ordinary feedback without inventing an ARIA role', () => {
+    const { container } = render(
+      <FeedbackRenderer feedbacks={[{ id: 'feedback-1', partsLayout: [] }]} snapshot={{}} />,
+    );
+
+    const feedback = container.querySelector('#feedback-content');
+
+    expect(feedback).toHaveAttribute('tabindex', '-1');
+    expect(feedback).not.toHaveAttribute('role');
   });
 
   it('renders an inline retry message when feedback loading fails', () => {

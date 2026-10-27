@@ -202,7 +202,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           />
           <div
             :if={!is_independent_instructor?(@current_user)}
-            role="create section instructions"
+            data-role="create-section-instructions"
             class="dark:text-violet-100 text-base font-normal font-['Inter'] leading-normal"
           >
             To create course sections,
@@ -231,6 +231,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           <.form for={%{}} phx-change="search_section" class="w-full max-w-[400px]">
             <SearchInput.render
               id="section_search_input"
+              aria_label="Search my courses"
               name="text_search"
               placeholder="Search my courses..."
               text={@params.text_search}
@@ -285,8 +286,8 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
       </div>
       <div class="flex-col justify-start items-start gap-2 inline-flex p-8">
         <div
-          class="justify-center text-[#757682] text-xs font-bold uppercase leading-3"
-          role="start_end_date"
+          class="justify-center text-Text-text-charcoal text-xs font-bold uppercase leading-3"
+          data-role="start-end-date"
         >
           {FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}")} - {FormatDateTime.to_formatted_datetime(
             @section.end_date,
@@ -297,13 +298,13 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         <h5
           class="text-black text-base font-bold font-['Inter'] leading-normal overflow-hidden"
           style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;"
-          role="course title"
+          data-role="course-title"
         >
           {@section.title}
         </h5>
         <div
-          class="justify-center text-[#757682] text-base font-bold leading-normal"
-          role="instructors"
+          class="justify-center text-Text-text-charcoal text-base font-bold leading-normal"
+          data-role="instructors"
         >
           <%= if length(Sections.get_instructors_for_section(@section.id)) == 1 do %>
             Instructor:
@@ -314,7 +315,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         </div>
         <div class="self-stretch min-w-0 text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
           <p
-            role="course description"
+            data-role="course-description"
             class="break-words"
             style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;"
           >
@@ -324,9 +325,9 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         <div class="self-stretch justify-end items-start gap-4 inline-flex">
           <.link
             navigate={~p"/sections/#{@section.slug}/instructor_dashboard/insights/dashboard"}
-            class="px-5 py-3 bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF] hover:no-underline rounded-md justify-center items-center gap-2 flex text-white text-base font-normal leading-normal"
+            class="px-5 py-3 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white hover:text-Specially-Tokens-Text-text-button-primary-hover hover:no-underline rounded-md justify-center items-center gap-2 flex text-base font-normal leading-normal"
           >
-            <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
+            <div class="text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
               View Course
             </div>
           </.link>

@@ -147,7 +147,12 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
 
               <div class="flex flex-col">
                 <form for="search" phx-change="search" class="pb-6 lg:ml-auto lg:pt-7">
-                  <SearchInput.render id="search_input" name="text_search" text={@params.text_search} />
+                  <SearchInput.render
+                    id="search_input"
+                    name="text_search"
+                    text={@params.text_search}
+                    aria_label="Search student conversations"
+                  />
                 </form>
                 <div></div>
               </div>
@@ -199,7 +204,11 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
 
   def messages(assigns) do
     ~H"""
-    <div role="message container" id="message-container" class="max-h-screen overflow-y-auto pt-5">
+    <div
+      data-role="message-container"
+      id="message-container"
+      class="max-h-screen overflow-y-auto pt-5"
+    >
       <div class="flex flex-col justify-end items-center px-6 py-6 gap-1.5 min-h-full">
         <%= for {message, index} <- Enum.with_index(@conversation_messages, 1), message.role in [:user, :assistant, :function] do %>
           <%= case message.role do %>

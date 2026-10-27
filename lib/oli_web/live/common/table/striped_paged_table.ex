@@ -173,7 +173,8 @@ defmodule OliWeb.Common.StripedPagedTable do
 
     patch_fn.(socket, %{
       sort_by: sort_by,
-      sort_order: sort_order
+      sort_order: sort_order,
+      offset: 0
     })
   end
 

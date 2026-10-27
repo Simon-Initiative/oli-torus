@@ -897,19 +897,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has an intro card with a video url provided, so there must be a play button
       assert has_element?(
                view,
-               ~s{div[role="unit_1"] div[role="slider"] div[role="resource youtube intro video"] div[role="play_unit_intro_video"]}
+               ~s{div[data-role="unit-1"] div[id^="slider_"] div[data-intro-video="youtube"] div[data-role="play-unit-intro-video"]}
              )
 
       # unit 2 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_2"] div[role="slider"] div[role="resource youtube intro video"] div[role="play_unit_intro_video"]}
+               ~s{div[data-role="unit-2"] div[id^="slider_"] div[data-intro-video="youtube"] div[data-role="play-unit-intro-video"]}
              )
 
       # unit 3 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_3"] div[role="slider"] div[role="resource youtube intro video"]}
+               ~s{div[data-role="unit-3"] div[id^="slider_"] div[data-intro-video="youtube"]}
              )
     end
 
@@ -925,25 +925,25 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="intro_card_#{unit_1.resource_id}"] span[role="card top label"]},
+               ~s{div[id="intro_card_#{unit_1.resource_id}"] span[data-role="card-top-label"]},
                "INTRO"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page_#{practice_page.resource_id}"] span[role="card top label"]},
+               ~s{div[id="page_#{practice_page.resource_id}"] span[data-role="card-top-label"]},
                "PAGE"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page_#{graded_page.resource_id}"] span[role="card top label"]},
+               ~s{div[id="page_#{graded_page.resource_id}"] span[data-role="card-top-label"]},
                "PAGE"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="module_#{module_1.resource_id}"] span[role="card top label"]},
+               ~s{div[id="module_#{module_1.resource_id}"] span[data-role="card-top-label"]},
                "MODULE 1"
              )
     end
@@ -962,17 +962,54 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{div[id="module_#{module_1.resource_id}"] span[role="card top label"]},
+               ~s{div[id="module_#{module_1.resource_id}"] span[data-role="card-top-label"]},
                "MODULE"
              )
 
       card_html =
         view
-        |> element(~s{div[id="page_#{practice_page.resource_id}"] span[role="card top label"]})
+        |> element(
+          ~s{div[id="page_#{practice_page.resource_id}"] span[data-role="card-top-label"]}
+        )
         |> render()
 
       assert card_html =~ "PAGE"
       refute card_html =~ ~r/PAGE\s+\d+/
+    end
+
+    test "each unit slider is a named region and its navigation buttons are labeled",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      slider_id = "slider_#{unit_1.resource_id}"
+
+      slider_html = view |> element("div##{slider_id}") |> render()
+
+      assert slider_html =~ ~s{role="region"}
+      assert slider_html =~ ~s{aria-label="UNIT 1: Introduction slider"}
+      refute slider_html =~ ~s{role="slider"}
+
+      for {side, label} <- [left: "slide left", right: "slide right"] do
+        button_html =
+          view |> element("button#slider_#{side}_button_#{unit_1.resource_id}") |> render()
+
+        assert button_html =~ ~s{aria-label="#{label}"}
+        assert button_html =~ ~s{aria-controls="#{slider_id}"}
+        assert button_html =~ ~s{type="button"}
+        assert button_html =~ ~s{aria-hidden="true"}
+      end
+    end
+
+    test "slider accessible name omits the unit numbering when it is hidden",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert view
+             |> element("div#slider_#{unit_1.resource_id}")
+             |> render() =~ ~s{aria-label="Introduction slider"}
     end
 
     test "can see not completed card badge for intro videos, practice pages and modules",
@@ -988,25 +1025,25 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="intro_card_#{unit_1.resource_id}"] div[role="card badge"]},
+               ~s{div[id="intro_card_#{unit_1.resource_id}"] div[data-role="card-badge"]},
                "23 min"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page_#{practice_page.resource_id}"] div[role="card badge"]},
+               ~s{div[id="page_#{practice_page.resource_id}"] div[data-role="card-badge"]},
                "12 min"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"]},
+               ~s{div[id="page_#{graded_page.resource_id}"] div[data-role="card-badge"]},
                "10 min"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"]},
+               ~s{div[id="module_#{module_1.resource_id}"] div[data-role="card-badge"]},
                "2 pages · 25m"
              )
     end
@@ -1026,13 +1063,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"]},
+               ~s{div[id="module_#{module_1.resource_id}"] div[data-role="card-badge"]},
                "2 pages · 25m"
              )
 
       refute has_element?(
                view,
-               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"]},
+               ~s{div[id="module_#{module_1.resource_id}"] div[data-role="card-badge"]},
                "0 pages"
              )
     end
@@ -1047,13 +1084,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="module_#{module_4.resource_id}"] div[role="card badge"]},
+               ~s{div[id="module_#{module_4.resource_id}"] div[data-role="card-badge"]},
                "5 pages"
              )
 
       refute has_element?(
                view,
-               ~s{div[id="module_#{module_4.resource_id}"] div[role="card badge"]},
+               ~s{div[id="module_#{module_4.resource_id}"] div[data-role="card-badge"]},
                "0 pages"
              )
     end
@@ -1068,7 +1105,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{div[id="page_#{page_9.resource_id}"] div[role="card badge"]}
+               ~s{div[id="page_#{page_9.resource_id}"] div[data-role="card-badge"]}
              )
     end
 
@@ -1116,23 +1153,23 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="intro_card_#{unit_1.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
+               ~s{div[id="intro_card_#{unit_1.resource_id}"] div[data-role="card-badge"] div[data-role="check icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page_#{practice_page.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
+               ~s{div[id="page_#{practice_page.resource_id}"] div[data-role="card-badge"] div[data-role="check icon"]}
              )
 
       # this page is not yet completed, so we do not expect to see the check icon
       refute has_element?(
                view,
-               ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
+               ~s{div[id="page_#{graded_page.resource_id}"] div[data-role="card-badge"] div[data-role="check icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"] div[data-role="check icon"]}
+               ~s{div[id="module_#{module_1.resource_id}"] div[data-role="card-badge"] div[data-role="check icon"]}
              )
     end
 
@@ -1151,7 +1188,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
       |> render_click()
 
       # page 1 and page 2 are shown with their estimated read time
@@ -1185,13 +1222,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # header is shown with title and due date
       assert has_element?(
                view,
-               ~s{div[role="expanded module header"] h2},
+               ~s{div[data-role="expanded-module-header"] h2},
                "How to use this course"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="expanded module header"] span},
+               ~s{div[data-role="expanded-module-header"] span},
                "Read by: Wed Nov 15, 2023"
              )
     end
@@ -1205,7 +1242,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand module
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(view, "span", "Page 1")
@@ -1224,7 +1261,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # module 1 has intro video
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
       |> render_click()
 
       assert view
@@ -1238,7 +1275,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # module 2 has no intro video
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="2"]})
       |> render_click()
 
       refute has_element?(
@@ -1262,7 +1299,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       refute enrollment_state["viewed_intro_video_resource_ids"]
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(
@@ -1283,7 +1320,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert enrollment_state["viewed_intro_video_resource_ids"] == [module_1.resource_id]
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(
@@ -1297,17 +1334,17 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="2"]})
       |> render_click()
 
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[data-role="orange flag icon"]}
+               ~s{button[data-role="resource-page-4-details"] div[data-role="orange flag icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[role="due date and score"]},
+               ~s{button[data-role="resource-page-4-details"] div[role="due date and score"]},
                "Read by: Fri Nov 3, 2023"
              )
     end
@@ -1351,26 +1388,26 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="2"]})
       |> render_click()
 
       # graded page with title "Page 4" in the hierarchy has the correct icon
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[data-role="square check icon"]}
+               ~s{button[data-role="resource-page-4-details"] div[data-role="square check icon"]}
              )
 
       # correct due date
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[role="due date and score"]},
+               ~s{button[data-role="resource-page-4-details"] div[role="due date and score"]},
                "Read by: Fri Nov 3, 2023"
              )
 
       # and correct score summary
       assert has_element?(
                view,
-               ~s{button[role="resource page 4 details"] div[role="due date and score"]},
+               ~s{button[data-role="resource-page-4-details"] div[role="due date and score"]},
                "1 / 2"
              )
     end
@@ -1385,7 +1422,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
       |> render_click()
 
       # there are no learning objectives for this module
@@ -1400,7 +1437,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 2 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="2"]})
       |> render_click()
 
       assert has_element?(
@@ -1471,9 +1508,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # when the slider buttons are enabled we know the student async metrics were loaded
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
-      wait_until(fn -> has_element?(view, ~s{div[role="unit_1_progress"]}, "Completed") end)
+      wait_until(fn ->
+        has_element?(view, ~s{div[data-role="unit-1-progress"]}, "Completed")
+      end)
 
-      assert has_element?(view, ~s{div[role="unit_1_progress"]}, "Completed")
+      assert has_element?(view, ~s{div[data-role="unit-1-progress"]}, "Completed")
     end
 
     test "can expand more than one module card", %{
@@ -1498,7 +1537,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
       |> render_click()
 
       assert has_element?(
@@ -1513,7 +1552,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 2/module 3 details
       view
-      |> element(~s{div[role="unit_2"] div[role="resource card 3"]})
+      |> element(~s{div[data-role="unit-2"] div[data-card-index="3"]})
       |> render_click()
 
       assert has_element?(
@@ -1544,7 +1583,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 2 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 2"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="2"]})
       |> render_click()
 
       assert has_element?(
@@ -1585,21 +1624,21 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
       |> render_click()
 
-      assert has_element?(view, ~s{button[role="resource page 2 details"]})
+      assert has_element?(view, ~s{button[data-role="resource-page-2-details"]})
 
       refute has_element?(
                view,
-               ~s{button[role="resource page 1 details"] svg[data-role="visited check icon"]}
+               ~s{button[data-role="resource-page-1-details"] svg[data-role="visited check icon"]}
              )
 
-      assert has_element?(view, ~s{button[role="resource page 2 details"]})
+      assert has_element?(view, ~s{button[data-role="resource-page-2-details"]})
 
       refute has_element?(
                view,
-               ~s{button[role="resource page 2 details"] svg[data-role="visited check icon"]}
+               ~s{button[data-role="resource-page-2-details"] svg[data-role="visited check icon"]}
              )
     end
 
@@ -1608,7 +1647,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 1/module 1 details
       view
-      |> element(~s{div[role="unit_1"] div[role="resource card 1"]})
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
       |> render_click()
 
       # click on page 1 to navigate to that page
@@ -1709,18 +1748,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # unit 1 has been scheduled by instructor, so there must be schedule details data
       assert view
-             |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
+             |> element(~s{div[data-role="unit-1"] div[data-role="schedule-details"]})
              |> render() =~
                "Read by:"
 
       assert view
-             |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
+             |> element(~s{div[data-role="unit-1"] div[data-role="schedule-details"]})
              |> render() =~
                "Sun, Dec 31, 2023 (8:00pm)"
 
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
       assert view
-             |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
+             |> element(~s{div[data-role="unit-2"] div[data-role="schedule-details"]})
              |> render() =~
                "Due by:\n                </span><span class=\"whitespace-nowrap\">\n                  None\n"
     end
@@ -1737,9 +1776,17 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section_without_schedule.slug))
 
-      assert has_element?(view, ~s{div[role="unit_1"] div[role="schedule_details"]}, "None")
+      assert has_element?(
+               view,
+               ~s{div[data-role="unit-1"] div[data-role="schedule-details"]},
+               "None"
+             )
 
-      assert has_element?(view, ~s{div[role="unit_2"] div[role="schedule_details"]}, "None")
+      assert has_element?(
+               view,
+               ~s{div[data-role="unit-2"] div[data-role="schedule-details"]},
+               "None"
+             )
     end
 
     @tag :flaky
@@ -1760,16 +1807,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       # unit 1 progress is 38% ((1 + 0.5 + 0.0 + 0.0) / 4)
-      assert has_element?(view, ~s{div[role="unit_1"] div[role="unit_1_progress"]}, "21%")
+      assert has_element?(
+               view,
+               ~s{div[data-role="unit-1"] div[data-role="unit-1-progress"]},
+               "21%"
+             )
 
       # module 1 progress is 75% ((1 + 0.5) / 2)
       assert view
-             |> element(~s{div[role="unit_1"] div[role="card_1_progress"]})
+             |> element(~s{div[data-role="unit-1"] div[data-role="card-1-progress"]})
              |> render() =~ "style=\"width: 75%\""
 
       # unit 3, practice page 1 card at module level has progress 100%
       assert view
-             |> element(~s{div[role="unit_3"] div[role="card_10_progress"]})
+             |> element(~s{div[data-role="unit-3"] div[data-role="card-10-progress"]})
              |> render() =~ "style=\"width: 100%\""
     end
 
@@ -1783,7 +1834,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # click on page 7 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="resource card 10"]})
+      |> element(~s{div[data-role="unit-3"] div[data-card-index="10"]})
       |> render_click()
 
       request_path =
@@ -1811,7 +1862,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # click on page 8 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="resource card 11"]})
+      |> element(~s{div[data-role="unit-3"] div[data-card-index="11"]})
       |> render_click()
 
       request_path =
@@ -1833,8 +1884,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
          %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert has_element?(view, ~s{div[role="unit_1"] div[role="card 1 progress"]})
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card 11 progress"]})
+      assert has_element?(
+               view,
+               ~s{div[data-role="unit-1"] div[data-role="card-1-progress-container"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[data-role="unit-3"] div[data-role="card-11-progress-container"]}
+             )
     end
 
     test "can see card progress bar for modules at level 2 of hierarchy, and even for pages at level 2",
@@ -1854,10 +1912,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       # Progress in module 1 (which has page 2)
-      assert has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
+      assert has_element?(view, ~s{div[data-role="unit-1"] div[data-role="card-1-progress"]})
 
       # Progress in page 7
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_10_progress"]})
+      assert has_element?(view, ~s{div[data-role="unit-3"] div[data-role="card-10-progress"]})
     end
 
     test "can see card background image if provided (if not the default one is shown)",
@@ -1865,11 +1923,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='resource card 1']})
+             |> element(~s{div[data-role='unit-1'] div[data-card-index='1']})
              |> render =~ "style=\"background-image: url(&#39;module_1_custom_image_url&#39;)"
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='resource card 2']})
+             |> element(~s{div[data-role='unit-1'] div[data-card-index='2']})
              |> render =~ "style=\"background-image: url(&#39;/images/course_default.png&#39;)"
     end
 
@@ -1878,13 +1936,231 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='resource youtube intro video']})
+             |> element(~s{div[data-role='unit-1'] div[data-intro-video='youtube']})
              |> render =~
                "style=\"background-image: url(&#39;https://img.youtube.com/vi/123456789ab/hqdefault.jpg&#39;)"
 
       # S3 video
       assert view
-             |> has_element?(~s{div[role='unit_4'] div[role='resource intro video']})
+             |> has_element?(~s{div[data-role='unit-4'] div[data-intro-video='file']})
+    end
+
+    test "gallery cards expose valid ARIA roles and accessible names",
+         %{
+           conn: conn,
+           section: section,
+           unit_1: unit_1,
+           top_level_page: top_level_page
+         } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      module_card =
+        view |> element(~s{div[data-role='unit-1'] div[data-card-index='1']}) |> render()
+
+      assert module_card =~ ~s{role="button"}
+      assert module_card =~ ~s{aria-expanded="false"}
+      assert module_card =~ ~s{aria-controls="selected_module_in_unit_#{unit_1.resource_id}"}
+      assert module_card =~ ~r/aria-label="[^"]+: [^"]+"/
+
+      page_card =
+        view
+        |> element(~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']})
+        |> render()
+
+      assert page_card =~ ~s{role="link"}
+      assert page_card =~ ~s{aria-label="PAGE: Top Level Page"}
+      refute page_card =~ "aria-expanded"
+      refute page_card =~ "aria-controls"
+
+      intro_card =
+        view |> element(~s{div[data-role='unit-1'] div[data-intro-video='youtube']}) |> render()
+
+      assert intro_card =~ ~s{role="button"}
+      assert intro_card =~ ~s{aria-label="INTRO: Play unit intro video"}
+
+      # the intro progress keeps its progressbar semantics, selectors use data-role
+      assert has_element?(
+               view,
+               ~s{div[data-role='unit-1'] div[data-intro-video='youtube'] div[role='progressbar'][data-role='intro-video-card-progress']}
+             )
+
+      for invalid_role <- ["card top label", "intro video card progress", "play_unit_intro_video"] do
+        refute intro_card =~ ~s{role="#{invalid_role}"}
+      end
+
+      refute module_card =~ ~s{role="card top label"}
+    end
+
+    test "the slider is the keyboard stop of a unit and its cards are only focusable once entered",
+         %{conn: conn, section: section, unit_1: unit_1, top_level_page: top_level_page} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      slider_id = "slider_#{unit_1.resource_id}"
+      hint_id = "slider_hint_#{unit_1.resource_id}"
+
+      # the slider is focusable, described by a screen reader hint and entered with Enter
+      slider_html = view |> element("div##{slider_id}") |> render()
+      [slider_opening_tag | _] = String.split(slider_html, ">", parts: 2)
+
+      assert slider_opening_tag =~ ~s{tabindex="0"}
+      assert slider_opening_tag =~ ~s{aria-describedby="#{hint_id}"}
+      assert slider_opening_tag =~ ~s{phx-key="enter"}
+
+      assert view |> element("span##{hint_id}.sr-only") |> render() =~
+               "Press Enter to browse the cards, and Escape to leave."
+
+      # entering the slider makes the cards tab stops and wraps focus inside of it
+      assert slider_opening_tag =~ "#slider_focus_wrap_#{unit_1.resource_id} &gt; .slider-card"
+      assert slider_opening_tag =~ "slider_focus_wrap_#{unit_1.resource_id}-start"
+      assert slider_opening_tag =~ ~s{&quot;aria-hidden&quot;,&quot;false&quot;}
+
+      # cards are not tab stops until the slider is entered
+      for card <- [
+            element(view, ~s{div[data-role='unit-1'] div[data-card-index='1']}),
+            element(view, ~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']}),
+            element(view, ~s{div[data-role='unit-1'] div[data-intro-video='youtube']})
+          ] do
+        [card_opening_tag | _] = card |> render() |> String.split(">", parts: 2)
+        # (the data-*-event attributes mention tabindex inside their JS commands)
+        refute card_opening_tag =~ ~s{ tabindex="}
+      end
+
+      # the focus wrap sentinels start hidden and out of the tab order
+      start_html = view |> element("#slider_focus_wrap_#{unit_1.resource_id}-start") |> render()
+      assert start_html =~ ~s{tabindex="-1"}
+      assert start_html =~ ~s{aria-hidden="true"}
+
+      # the unit container itself is not a tab stop
+      [unit_opening_tag | _] =
+        view
+        |> element(~s{div[id='unit_#{unit_1.resource_id}']})
+        |> render()
+        |> String.split(">", parts: 2)
+
+      refute unit_opening_tag =~ "tabindex"
+      refute unit_opening_tag =~ "phx-keydown"
+    end
+
+    test "leaving a slider with Escape moves focus back to the slider",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      for card <- [
+            element(view, ~s{div[data-role='unit-1'] div[data-card-index='1']}),
+            element(view, ~s{div[data-role='unit-1'] div[data-intro-video='youtube']})
+          ] do
+        card_html = render(card)
+        assert card_html =~ "#slider_#{unit_1.resource_id}"
+        assert card_html =~ ~s{&quot;aria-hidden&quot;,&quot;true&quot;}
+      end
+
+      view
+      |> element(~s{div[data-role='unit-1'] div[data-card-index='1']})
+      |> render_keydown(%{
+        "key" => "Escape",
+        "type" => "module",
+        "module_resource_id" => "123"
+      })
+
+      assert_push_event(view, "js-exec", %{to: "#module_123", attr: "data-leave-event"})
+
+      view
+      |> element(~s{div[data-role='unit-1'] div[data-intro-video='youtube']})
+      |> render_keydown(%{"key" => "Escape"})
+
+      assert_push_event(view, "js-exec", %{attr: "data-event"})
+    end
+
+    test "module cards can be toggled with the Enter and Space keys",
+         %{conn: conn, section: section, page_1: page_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      page_1_button =
+        ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+
+      refute has_element?(view, page_1_button)
+
+      view
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
+      |> render_keydown(%{"key" => " "})
+
+      assert has_element?(view, page_1_button)
+
+      view
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
+      |> render_keydown(%{"key" => "Enter"})
+
+      refute has_element?(view, page_1_button)
+    end
+
+    test "expanded module is a named region and its focus sentinels are not hidden while focusable",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
+      |> render_click()
+
+      module_id = "selected_module_in_unit_#{unit_1.resource_id}"
+      title_id = "selected_module_title_in_unit_#{unit_1.resource_id}"
+
+      module_html = view |> element("div##{module_id}") |> render()
+
+      assert module_html =~ ~s{role="region"}
+      assert module_html =~ ~s{aria-labelledby="#{title_id}"}
+      assert has_element?(view, "h2##{title_id}")
+
+      # the expanded module wrapper is selected by data-role instead of an invalid role
+      assert has_element?(view, ~s{div[data-role="resource-module-content"] div##{module_id}})
+      refute render(view) =~ ~s{role="resource module content"}
+
+      # focusable sentinel is exposed, the non focusable one stays hidden
+      start_html = view |> element("##{module_id}-start") |> render()
+      assert start_html =~ ~s{tabindex="0"}
+      assert start_html =~ ~s{aria-hidden="false"}
+
+      end_html = view |> element("##{module_id}-end") |> render()
+      assert end_html =~ ~s{tabindex="-1"}
+      assert end_html =~ ~s{aria-hidden="true"}
+    end
+
+    test "entering and leaving a module toggles aria-hidden together with tabindex on the sentinels",
+         %{conn: conn, section: section, unit_1: unit_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # entering the module (data-enter-event on its card) makes the sentinels focusable and exposed
+      enter_event =
+        view
+        |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
+        |> render()
+
+      assert enter_event =~ "selected_module_in_unit_#{unit_1.resource_id}-start"
+      assert enter_event =~ ~s{&quot;aria-hidden&quot;,&quot;false&quot;}
+
+      view
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
+      |> render_click()
+
+      # leaving the module (Escape, phx-window-keydown) hides them again
+      leave_event =
+        view
+        |> element("#selected_module_in_unit_#{unit_1.resource_id}")
+        |> render()
+
+      assert leave_event =~ ~s{&quot;aria-hidden&quot;,&quot;true&quot;}
+    end
+
+    test "other keys do not toggle a module card", %{conn: conn, section: section, page_1: page_1} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{div[data-role="unit-1"] div[data-card-index="1"]})
+      |> render_keydown(%{"key" => "a"})
+
+      refute has_element?(
+               view,
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+             )
     end
 
     test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
@@ -1909,12 +2185,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(
-               ~s{div[id='top_level_page_#{top_level_page.resource_id}'] div[role='schedule_details']}
+               ~s{div[id='top_level_page_#{top_level_page.resource_id}'] div[data-role='schedule-details']}
              )
              |> render() =~ "None"
 
       assert view
-             |> element(~s{div[id='page_#{top_level_page.resource_id}'][role='resource card 1']})
+             |> element(~s{div[id='page_#{top_level_page.resource_id}'][data-card-index='1']})
              |> render() =~ "Top Level Page"
     end
 
@@ -1972,7 +2248,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # module 3 must be expanded so we can see its details
       assert has_element?(
                view,
-               ~s{div[role="expanded module header"] h2},
+               ~s{div[data-role="expanded-module-header"] h2},
                "Installing Elixir, OTP and Phoenix"
              )
 
@@ -2128,7 +2404,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[data-role="unit-5"] div[data-card-index="4"]})
       |> render_click()
 
       # page 11 and page 12 are displayed by default with their corresponding indentation
@@ -2243,16 +2519,17 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[data-role="unit-5"] div[data-card-index="4"]})
       |> render_click()
 
       group_by_read_by_date_div =
-        element(view, ~s{div[role="pages_grouped_by_read_by_2023-11-03"]})
+        element(view, ~s{div[data-role="pages-grouped-by-read_by-2023-11-03"]})
 
-      group_by_due_by_date_div = element(view, ~s{div[role="pages_grouped_by_due_by_2023-11-03"]})
+      group_by_due_by_date_div =
+        element(view, ~s{div[data-role="pages-grouped-by-due_by-2023-11-03"]})
 
       group_by_not_yet_scheduled_div =
-        element(view, ~s{div[role="pages_grouped_by__Not yet scheduled"]})
+        element(view, ~s{div[data-role="pages-grouped-by--Not yet scheduled"]})
 
       assert render(group_by_read_by_date_div) =~ "Read by: Fri Nov 3, 2023"
       assert render(group_by_read_by_date_div) =~ "Page 11"
@@ -2285,13 +2562,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[data-role="unit-5"] div[data-card-index="4"]})
       |> render_click()
 
-      group_by_due_date_div = element(view, ~s{div[role="pages_grouped_by_read_by_2023-11-10"]})
+      group_by_due_date_div =
+        element(view, ~s{div[data-role="pages-grouped-by-read_by-2023-11-10"]})
 
       group_by_not_yet_scheduled_div =
-        element(view, ~s{div[role="pages_grouped_by__Not yet scheduled"]})
+        element(view, ~s{div[data-role="pages-grouped-by--Not yet scheduled"]})
 
       # page 13 is due on Nov 10, 2023 as defined in the student exception,
       # and it is only listed in the "Read by" group (not in the "Not yet scheduled" group)
@@ -2311,7 +2589,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
+      |> element(~s{div[data-role="unit-5"] div[data-card-index="4"]})
       |> render_click()
 
       assert render(view) =~ "Page 13"
@@ -2353,14 +2631,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # assert that module 3 contains 2 pages (page 5 and page 6)
       assert has_element?(
                view,
-               ~s{div[id="module_#{module_3.resource_id}"] div[role="card badge"]},
+               ~s{div[id="module_#{module_3.resource_id}"] div[data-role="card-badge"]},
                "2 pages"
              )
 
       # assert that module 3 does not show duration minutes (since it is 0)
       refute has_element?(
                view,
-               ~s{div[id="module_#{module_3.resource_id}"] div[role="card badge"]},
+               ~s{div[id="module_#{module_3.resource_id}"] div[data-role="card-badge"]},
                "0 minutes"
              )
     end
@@ -2449,7 +2727,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{div[role="unit_#{unit_1.resource_id}_outline"] h6},
+               ~s{div[data-role="unit-#{unit_1.resource_id}-outline"] h6},
                "UNIT"
              )
 
@@ -2476,13 +2754,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{div[role="unit_#{unit_2.resource_id}_outline"] h6},
+               ~s{div[data-role="unit-#{unit_2.resource_id}-outline"] h6},
                "UNIT"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="unit_#{unit_3.resource_id}_outline"] h6},
+               ~s{div[data-role="unit-#{unit_3.resource_id}-outline"] h6},
                "UNIT 2"
              )
     end
@@ -2837,13 +3115,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section_1_element =
         element(
           view,
-          "div[role=section_#{section_1.resource_id}_outline]"
+          "div[data-role=section-#{section_1.resource_id}-outline]"
         )
 
       subsection_1_element =
         element(
           view,
-          "div[role=section_#{subsection_1.resource_id}_outline]"
+          "div[data-role=section-#{subsection_1.resource_id}-outline]"
         )
 
       assert render(section_1_element) =~ "Why Elixir?"
@@ -2862,15 +3140,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
       assert view
-             |> element(~s{div[role="unit #{unit_1.resource_id} scheduling details"]})
+             |> element(~s{div[data-role="unit-#{unit_1.resource_id}-scheduling-details"]})
              |> render() =~ "Sun, Dec 31, 2023 (8:00pm)"
 
       assert view
-             |> element(~s{div[role="unit #{unit_2.resource_id} scheduling details"]})
+             |> element(~s{div[data-role="unit-#{unit_2.resource_id}-scheduling-details"]})
              |> render() =~ "None"
 
       assert view
-             |> element(~s{div[role="module #{module_1.resource_id} scheduling details"]})
+             |> element(~s{div[data-role="module-#{module_1.resource_id}-scheduling-details"]})
              |> render() =~ "Wed, Nov 15, 2023 (8:00pm)"
 
       assert view
@@ -2894,13 +3172,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section_without_schedule.slug, selected_view: :outline))
 
       assert view
-             |> has_element?(~s{div[role="unit #{unit_1.resource_id} scheduling details"]})
+             |> has_element?(~s{div[data-role="unit-#{unit_1.resource_id}-scheduling-details"]})
 
       assert view
-             |> has_element?(~s{div[role="unit #{unit_2.resource_id} scheduling details"]})
+             |> has_element?(~s{div[data-role="unit-#{unit_2.resource_id}-scheduling-details"]})
 
       assert view
-             |> has_element?(~s{div[role="module #{module_1.resource_id} scheduling details"]})
+             |> has_element?(
+               ~s{div[data-role="module-#{module_1.resource_id}-scheduling-details"]}
+             )
 
       assert view
              |> has_element?(
@@ -3460,7 +3740,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       ]
 
       Enum.each(all_units_titles, fn title ->
-        assert has_element?(view, "div[role='unit title']", title)
+        assert has_element?(view, "div[data-role='unit-title']", title)
       end)
 
       Enum.each(all_page_titles, fn title ->
@@ -3478,12 +3758,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # Should only show the matching page and its parent structure
-      assert view |> has_element?("div[role='unit title']", "Introduction")
-      assert view |> has_element?("div[role='module title']", "How to use this course")
+      assert view |> has_element?("div[data-role='unit-title']", "Introduction")
+      assert view |> has_element?("div[data-role='module-title']", "How to use this course")
       assert view |> has_element?("span[data-role='page title']", "Page 1")
 
-      refute view |> has_element?("div[role='unit title']", "Building a Phoenix app")
-      refute view |> has_element?("div[role='module title']", "Configure your setup")
+      refute view |> has_element?("div[data-role='unit-title']", "Building a Phoenix app")
+      refute view |> has_element?("div[data-role='module-title']", "Configure your setup")
       refute view |> has_element?("span[data-role='page title']", "Page 2")
       refute view |> has_element?("span[data-role='page title']", "Page 3")
       refute view |> has_element?("span[data-role='page title']", "Page 4")
@@ -3499,15 +3779,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # Should show the Introduction unit and its children
-      assert view |> has_element?("div[role='unit title']", "Introduction")
+      assert view |> has_element?("div[data-role='unit-title']", "Introduction")
       assert view |> has_element?("span[data-role='page title']", "Page 2")
       assert view |> has_element?("span[data-role='page title']", "Page 3")
 
       # Should not show unrelated content
-      refute view |> has_element?("div[role='unit title']", "OTP")
+      refute view |> has_element?("div[data-role='unit-title']", "OTP")
 
       refute view
-             |> has_element?("div[role='module title']", "Installing Elixir, OTP and Phoenix")
+             |> has_element?(
+               "div[data-role='module-title']",
+               "Installing Elixir, OTP and Phoenix"
+             )
     end
 
     test "handles case-insensitive search", %{conn: conn, section: section} do
@@ -3520,15 +3803,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # Should show the same results as case-sensitive search
-      assert view |> has_element?("div[role='unit title']", "Introduction")
+      assert view |> has_element?("div[data-role='unit-title']", "Introduction")
       assert view |> has_element?("span[data-role='page title']", "Page 2")
       assert view |> has_element?("span[data-role='page title']", "Page 3")
 
       # Should not show unrelated content
-      refute view |> has_element?("div[role='unit title']", "OTP")
+      refute view |> has_element?("div[data-role='unit-title']", "OTP")
 
       refute view
-             |> has_element?("div[role='module title']", "Installing Elixir, OTP and Phoenix")
+             |> has_element?(
+               "div[data-role='module-title']",
+               "Installing Elixir, OTP and Phoenix"
+             )
     end
 
     test "shows empty state when no results match", %{conn: conn, section: section} do
@@ -3543,13 +3829,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # Should show empty state message
       assert view
              |> has_element?(
-               "div[role='no search results warning']",
+               "div[data-role='no-search-results-warning']",
                "There are no results for the search term"
              )
 
       # Should not show any content
-      refute view |> has_element?("div[role='unit title']", "Introduction")
-      refute view |> has_element?("div[role='unit title']", "OTP")
+      refute view |> has_element?("div[data-role='unit-title']", "Introduction")
+      refute view |> has_element?("div[data-role='unit-title']", "OTP")
     end
 
     test "updates results when search term changes", %{conn: conn, section: section} do
@@ -3595,7 +3881,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Initial state shows all units
       Enum.each(all_units_titles, fn title ->
-        assert view |> has_element?("div[role='unit title']", title)
+        assert view |> has_element?("div[data-role='unit-title']", title)
       end)
 
       # and all pages
@@ -3611,11 +3897,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_change(%{"search_term" => new_search_term})
 
       # Should now only show matching content
-      assert view |> has_element?("div[role='unit title']", "Introduction")
+      assert view |> has_element?("div[data-role='unit-title']", "Introduction")
       assert view |> has_element?("span[data-role='page title']", "Page 1")
 
       # Learning Macros unit contains a page called "Page 10" that partially matches the search term
-      assert view |> has_element?("div[role='unit title']", "Learning Macros")
+      assert view |> has_element?("div[data-role='unit-title']", "Learning Macros")
       assert view |> has_element?("span[data-role='page title']", "Page 10")
 
       Enum.each(
@@ -3626,7 +3912,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
           "What did you learn?"
         ],
         fn unit_title ->
-          refute view |> has_element?("div[role='unit title']", unit_title)
+          refute view |> has_element?("div[data-role='unit-title']", unit_title)
         end
       )
 
@@ -3660,7 +3946,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_change(%{"search_term" => ""})
 
       # Verify all content is shown again after clearing search
-      assert has_element?(view, "div[role='unit title']", "Introduction")
+      assert has_element?(view, "div[data-role='unit-title']", "Introduction")
       assert has_element?(view, "span[data-role='page title']", "Page 2")
     end
   end
@@ -3752,7 +4038,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Find the unit row - verify it has phx-click attribute for mobile
       # This confirms is_mobile is true (phx-click is only added when is_mobile is true)
-      unit_element = "div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']"
+      unit_element =
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
 
       assert has_element?(view, unit_element)
 
@@ -3764,7 +4051,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # Verify selected_unit_resource_id is set and unit layer is rendered
       assert has_element?(view, "div#mobile_outline_unit")
       assert has_element?(view, "button[aria-label='Back to outline']")
-      assert has_element?(view, "div[role='unit title']", "Introduction")
+      assert has_element?(view, "div[data-role='unit-title']", "Introduction")
 
       # Verify only the selected unit is shown
       assert has_element?(view, "h6", "UNIT 1")
@@ -3783,7 +4070,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Click on the unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown
@@ -3823,7 +4112,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Verify unit layer is shown with selected_unit_resource_id set
       assert has_element?(view, "div#mobile_outline_unit")
-      assert has_element?(view, "div[role='unit title']", "Introduction")
+      assert has_element?(view, "div[data-role='unit-title']", "Introduction")
 
       # Verify the page is accessible in the unit layer
       assert has_element?(view, "span[data-role='page title']", "Page 1")
@@ -3846,12 +4135,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               "div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']"
+               "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
              )
 
       # Click on unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown
@@ -3895,7 +4186,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Click on the unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown
@@ -3923,7 +4216,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Click on the unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown
@@ -3966,7 +4261,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Click on the unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown
@@ -3991,7 +4288,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Click on the unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown and contains the page
@@ -4026,7 +4325,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Click on the unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown
@@ -4057,7 +4358,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Click on the unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown
@@ -4081,7 +4384,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Click on the unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown
@@ -4121,7 +4426,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # This is indicated by the class "bg-yellow-100 dark:bg-yellow-800 rounded-full scale-110 p-2"
       # on the icon element when is_mobile is true and child_matches_search_term is true
       unit_chevron_icon =
-        "div[role='unit_#{unit_1.resource_id}_outline'] #icon-#{unit_1.resource_id}"
+        "div[data-role='unit-#{unit_1.resource_id}-outline'] #icon-#{unit_1.resource_id}"
 
       # The yellow background styling is applied conditionally, so we verify the structure exists
       # The actual styling depends on the data attribute child_matches_search_term being set
@@ -4143,7 +4448,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Click on the unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown
@@ -4157,7 +4464,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # Verify no results warning appears
       assert has_element?(
                view,
-               "div#mobile_outline_unit div[role='no search results warning']",
+               "div#mobile_outline_unit div[data-role='no-search-results-warning']",
                "There are no results for the search term"
              )
     end
@@ -4177,7 +4484,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # Click on the unit to show unit layer
       view
-      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> element(
+        "div[data-role='unit-#{unit_1.resource_id}-outline'][phx-click='show_unit_layer']"
+      )
       |> render_click()
 
       # Verify unit layer is shown

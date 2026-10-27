@@ -1145,7 +1145,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     params =
       Map.merge(socket.assigns.params, %{
         "selected_card_value" => value,
-        "container_id" => container_id
+        "container_id" => container_id,
+        "offset" => 0
       })
 
     {:noreply,
@@ -1161,7 +1162,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       ) do
     params =
       Map.merge(socket.assigns.params, %{
-        "selected_card_value" => value
+        "selected_card_value" => value,
+        "offset" => 0
       })
 
     {:noreply,
