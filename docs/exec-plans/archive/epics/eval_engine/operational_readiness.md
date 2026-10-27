@@ -2,9 +2,11 @@
 
 This note captures the expected bounded deployment posture for the Phase 1 `vm2`-based eval Lambda.
 
+For build, packaging, deployment, provider configuration, verification, and rollback commands, use the [variable-substitution Lambda runbook](../../../../runbooks/variable-substitution-lambda.md). Adaptive rules have a [separate deployment runbook](../../../../runbooks/adaptive-rules-lambda.md). These notes record the original implementation posture; they do not establish that a live rollout has been verified.
+
 ## Function Configuration
 
-- Artifact: `priv/node/eval.js`
+- Package: `priv/node/eval.js` plus the matching `vm2` runtime files `bridge.js` and `setup-sandbox.js`, as detailed in the runbook
 - Handler: `eval.handler`
 - Runtime: current supported AWS Lambda Node.js runtime used by Torus for node-based Lambdas
 - Function name source: `VARIABLE_SUBSTITUTION_LAMBDA_FN_NAME`
