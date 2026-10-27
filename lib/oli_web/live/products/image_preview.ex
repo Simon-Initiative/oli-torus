@@ -2,6 +2,7 @@ defmodule OliWeb.Products.ImagePreview do
   use Phoenix.Component
 
   alias Oli.Branding
+  alias OliWeb.Components.DesignTokens.Primitives.SearchBar
   alias OliWeb.Components.Modal
   alias OliWeb.Common.CardListing
   alias OliWeb.Delivery.NewCourse.TableModel
@@ -217,22 +218,12 @@ defmodule OliWeb.Products.ImagePreview do
               Courses available
             </h2>
             <div class="ml-auto flex items-center w-full justify-end gap-3">
-              <div class="input-group search-input flex gap-2 w-full max-w-[400px]">
-                <div class="relative flex flex-1 items-center">
-                  <input
-                    type="text"
-                    class="form-control h-full pr-6 dark:!bg-[#111827] dark:!text-white dark:!border-gray-600"
-                    placeholder="Search by course or instructor name"
-                  />
-                  <button
-                    type="button"
-                    class="absolute my-auto right-2 h-6 w-6 rounded-full"
-                    tabindex="-1"
-                  >
-                    <i class="fa-solid fa-xmark" />
-                  </button>
-                </div>
-              </div>
+              <SearchBar.search_bar
+                interactive={false}
+                aria_label="Search courses by course or instructor name"
+                placeholder="Search by course or instructor name"
+                class="!w-full max-w-[400px]"
+              />
             </div>
           </div>
           <div class="flex w-full">
@@ -313,28 +304,12 @@ defmodule OliWeb.Products.ImagePreview do
                         </p>
                         <div class="filter-opts flex flex-wrap items-center gap-2">
                           <div class="w-full">
-                            <div class="input-group search-input flex gap-2">
-                              <div class="relative flex flex-1 items-center">
-                                <input
-                                  type="text"
-                                  class="form-control h-full pr-6 dark:!bg-[#111827] dark:!text-white dark:!border-gray-600"
-                                  placeholder="Search..."
-                                />
-                                <button
-                                  type="button"
-                                  class="absolute right-2 my-auto h-6 w-6 rounded-full"
-                                  tabindex="-1"
-                                >
-                                  <i class="fa-solid fa-xmark" />
-                                </button>
-                              </div>
-                              <button
-                                class="btn btn-outline-secondary border-none bg-delivery-primary text-white"
-                                type="button"
-                              >
-                                Search
-                              </button>
-                            </div>
+                            <SearchBar.search_bar
+                              interactive={false}
+                              aria_label="Search course sources"
+                              placeholder="Search..."
+                              class="!w-full"
+                            />
                           </div>
                           <div class="flex w-full items-center gap-3">
                             <div class="flex min-w-0 flex-1 items-center gap-2">

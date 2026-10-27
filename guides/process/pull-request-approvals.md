@@ -24,8 +24,9 @@ Both rulesets must require:
 - Pull requests for all changes, including syncs from `master`; direct pushes blocked.
 - Existing required status checks, including Elixir and TypeScript build and test.
 
-Every Story, Bug, and Task uses child Sub-task implementation PRs targeting its
-integration branch. The completed integration branch opens a PR to `master` and
+Every Story, Bug, and Task uses implementation PRs targeting its integration
+branch, referencing the main ticket or optional child Sub-tasks. The completed
+integration branch opens a PR to `master` and
 enters its merge queue after QA approval and required checks pass. Conflict
 resolution uses a `sync/*` branch based on the integration branch and a reviewed PR back into it.
 All PRs into integration branches, including implementation and sync PRs, must use

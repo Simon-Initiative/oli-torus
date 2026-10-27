@@ -38,7 +38,11 @@ defmodule OliWeb.Admin.RegistrationsViewTest do
       {:ok, view, html} = live(conn, @route)
 
       assert html =~ "LTI 1.3 Registrations"
-      assert has_element?(view, "input[phx-hook='TextInputListener']")
+
+      assert has_element?(
+               view,
+               "input[phx-hook='TextInputListener'][aria-label='Search registrations']"
+             )
 
       assert has_element?(
                view,

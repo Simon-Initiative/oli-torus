@@ -525,14 +525,13 @@ defmodule OliWeb.Components.Delivery.Students do
             </button>
             <%= if @show_progress_csv_download do %>
               <a
-                class="flex flex-row items-center gap-x-1 text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
+                class="flex flex-row items-center gap-x-1 text-Text-text-link text-sm font-bold leading-none"
                 href={
                   ~p(/sections/#{@section_slug}/instructor_dashboard/downloads/progress/#{@params.container_id || ""}/#{@title})
                 }
                 download="progress.csv"
               >
-                Download Student Progress CSV
-                <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
+                Download Student Progress CSV <Icons.download stroke_class="stroke-Text-text-link" />
               </a>
             <% else %>
               <a
@@ -540,9 +539,9 @@ defmodule OliWeb.Components.Delivery.Students do
                   Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)
                 }
                 download={"#{@section_slug}_students.csv"}
-                class="flex flex-row items-center gap-x-1 text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
+                class="flex flex-row items-center gap-x-1 text-Text-text-link text-sm font-bold leading-none"
               >
-                Download <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
+                Download <Icons.download stroke_class="stroke-Text-text-link" />
               </a>
             <% end %>
           </div>
@@ -566,6 +565,7 @@ defmodule OliWeb.Components.Delivery.Students do
             <form for="search" phx-target={@myself} phx-change="search_student" class="w-56">
               <SearchInput.render
                 id="students_search_input"
+                aria_label="Search students"
                 name="student_name"
                 text={@params.text_search}
               />
