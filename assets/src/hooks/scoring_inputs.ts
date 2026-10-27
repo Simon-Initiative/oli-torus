@@ -1,4 +1,4 @@
-// Hooks of the manual scoring page: score input, score chips and the submission tabs.
+// Hooks of the manual scoring page: the form's Enter guard, score input, score chips and the submission tabs.
 
 const clamp = (el: HTMLInputElement, raw: string): string => {
   const trimmed = raw.trim();
@@ -13,12 +13,18 @@ const clamp = (el: HTMLInputElement, raw: string): string => {
   return `${c}`;
 };
 
+// Enter in an input never submits the scoring form: only activating Apply applies the score.
+export const ScoringEnterGuard = {
+  mounted(this: any) {
+    (this.el as HTMLFormElement).addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && e.target instanceof HTMLInputElement) e.preventDefault();
+    });
+  },
+};
+
 export const ScoringScoreInput = {
   mounted(this: any) {
     const el = this.el as HTMLInputElement;
-    el.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Enter') e.preventDefault();
-    });
     el.addEventListener('blur', () => {
       const clamped = clamp(el, el.value);
       if (clamped !== el.value) {

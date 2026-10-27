@@ -733,6 +733,50 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
              ]
     end
 
+    test "options load one database row per student, activity and page, not one per pending submission",
+         ctx do
+      ctx =
+        Enum.reduce(1..5, ctx, fn n, acc ->
+          add_submitted_activity(acc, :ra_u1_p1, :act_a, :"a_extra_#{n}")
+        end)
+
+      handler = {__MODULE__, make_ref()}
+      parent = self()
+
+      :ok =
+        :telemetry.attach(
+          handler,
+          [:oli, :repo, :query],
+          fn _, _, metadata, _ ->
+            case {self() == parent, metadata.result} do
+              {true, {:ok, %{num_rows: rows}}} -> send(parent, {handler, rows})
+              _ -> :ok
+            end
+          end,
+          nil
+        )
+
+      on_exit(fn -> :telemetry.detach(handler) end)
+
+      options = ManualGrading.filter_options(ctx.section)
+
+      rows_loaded =
+        Stream.repeatedly(fn ->
+          receive do
+            {^handler, rows} -> rows
+          after
+            0 -> nil
+          end
+        end)
+        |> Enum.take_while(& &1)
+        |> Enum.sum()
+
+      assert {length(options.users), length(options.activities), length(options.pages)} ==
+               {2, 2, 1}
+
+      assert rows_loaded == 5
+    end
+
     test "filter_value_labels/2 labels only ids that belong to the section", ctx do
       Oli.Delivery.Sections.enroll(ctx.u1.id, ctx.section.id, [
         Lti_1p3.Roles.ContextRoles.get_role(:context_learner)

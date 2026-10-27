@@ -7,7 +7,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Accounts.User
   alias Oli.Delivery.Sections.{Enrollment, Section}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Activities.AdaptiveParts
@@ -118,52 +117,42 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   @doc """
   Returns the values the table filters can offer: one entry per student, activity resource and
-  page resource with at least one attempt awaiting scoring in the section. Activity and page
-  titles come from the most recently submitted pending attempt of that resource.
+  page resource with at least one attempt awaiting scoring in the section, each list sorted by
+  id. Activity and page titles come from the most recently submitted pending attempt of that
+  resource. The database returns one row per value, not one per pending attempt.
   """
   def filter_options(%Section{id: section_id}) do
-    rows =
+    latest_first =
       section_id
       |> submitted_attempts_query(@unfiltered)
       |> order_by([aa], desc_nulls_last: aa.date_submitted, desc: aa.id)
-      |> select([aa, _ra, resource_access, user, activity_revision, resource_revision], %{
-        user_id: user.id,
-        user_guest: user.guest,
-        user_name: user.name,
-        user_given_name: user.given_name,
-        user_family_name: user.family_name,
-        activity_resource_id: activity_revision.resource_id,
-        activity_title: activity_revision.title,
-        page_resource_id: resource_access.resource_id,
-        page_title: resource_revision.title
+
+    users =
+      latest_first
+      |> distinct([_aa, _ra, _rac, user], asc: user.id)
+      |> select(
+        [_aa, _ra, _rac, user],
+        struct(user, [:id, :guest, :name, :given_name, :family_name])
+      )
+      |> Repo.all()
+
+    activities =
+      latest_first
+      |> distinct([_aa, _ra, _rac, _u, activity_revision], asc: activity_revision.resource_id)
+      |> select([_aa, _ra, _rac, _u, activity_revision], %{
+        id: activity_revision.resource_id,
+        title: activity_revision.title
       })
       |> Repo.all()
 
-    users =
-      rows
-      |> Enum.uniq_by(& &1.user_id)
-      |> Enum.map(fn r ->
-        struct(User, %{
-          id: r.user_id,
-          guest: r.user_guest,
-          name: r.user_name,
-          given_name: r.user_given_name,
-          family_name: r.user_family_name
-        })
-      end)
-      |> Enum.sort_by(& &1.id)
-
-    activities =
-      rows
-      |> Enum.uniq_by(& &1.activity_resource_id)
-      |> Enum.map(&%{id: &1.activity_resource_id, title: &1.activity_title})
-      |> Enum.sort_by(& &1.id)
-
     pages =
-      rows
-      |> Enum.uniq_by(& &1.page_resource_id)
-      |> Enum.map(&%{id: &1.page_resource_id, title: &1.page_title})
-      |> Enum.sort_by(& &1.id)
+      latest_first
+      |> distinct([_aa, _ra, resource_access], asc: resource_access.resource_id)
+      |> select([_aa, _ra, resource_access, _u, _ar, resource_revision], %{
+        id: resource_access.resource_id,
+        title: resource_revision.title
+      })
+      |> Repo.all()
 
     %{users: users, activities: activities, pages: pages}
   end
@@ -571,10 +560,14 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     |> Enum.filter(fn client_eval -> client_eval != nil end)
   end
 
-  defp filter_part_attempts_for_manual_grading(
-         part_attempts,
-         %{activity_type_id: activity_type_id, revision: revision}
-       ) do
+  @doc """
+  Keeps the part attempts manual scoring works on: an adaptive activity keeps only the parts
+  `AdaptiveParts.manual_gradeable_part_ids/1` allows; any other activity keeps every part.
+  """
+  def filter_part_attempts_for_manual_grading(
+        part_attempts,
+        %{activity_type_id: activity_type_id, revision: revision}
+      ) do
     if AdaptiveParts.adaptive_activity?(%{activity_type_id: activity_type_id}) do
       allowed_part_ids = AdaptiveParts.manual_gradeable_part_ids(revision.content)
       Enum.filter(part_attempts, &MapSet.member?(allowed_part_ids, &1.part_id))

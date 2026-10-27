@@ -92,7 +92,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       {{:ok, attempt_id}, _} ->
         {:noreply,
          redirect(socket,
-           to: scoring_path(socket.assigns.section, attempt_id, table_params)
+           to: BrowseParams.scoring_path(socket.assigns.section.slug, attempt_id, table_params)
          )}
 
       {:none, :none} ->
@@ -345,12 +345,6 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       not is_nil(options.graded) or options.text_search not in [nil, ""]
   end
 
-  defp scoring_path(section, attempt_id, table_params) when table_params == %{},
-    do: ~p"/sections/#{section.slug}/scoring/#{attempt_id}"
-
-  defp scoring_path(section, attempt_id, table_params),
-    do: ~p"/sections/#{section.slug}/scoring/#{attempt_id}?#{table_params}"
-
   def render(assigns) do
     ~H"""
     <div class="container mx-auto">
@@ -486,8 +480,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         {:noreply,
          redirect(socket,
            to:
-             scoring_path(
-               socket.assigns.section,
+             BrowseParams.scoring_path(
+               socket.assigns.section.slug,
                attempt_id,
                socket.assigns.table_model.data.table_params
              )

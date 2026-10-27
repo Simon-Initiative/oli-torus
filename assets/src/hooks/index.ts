@@ -73,6 +73,7 @@ import {
 } from './score_as_you_go_saved_work_notice';
 import {
   ScoringChip,
+  ScoringEnterGuard,
   ScoringHeading,
   ScoringRevealFocus,
   ScoringScoreInput,
@@ -147,6 +148,7 @@ export const Hooks = {
   BeforeUnloadListener,
   NavigationGuard,
   KeepInViewport,
+  ScoringEnterGuard,
   ScoringScoreInput,
   ScoringChip,
   ScoringTabs,

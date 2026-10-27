@@ -687,6 +687,55 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
                  ~s|#{textarea}[aria-invalid="false"][aria-describedby="feedback_help_#{ctx.g1}"]|
                )
     end
+
+    test "Enter in an input does not apply the score: the form carries the guard that keeps it from submitting",
+         ctx do
+      assert [_] =
+               Floki.find(
+                 doc(ctx.html),
+                 ~s|form#scoring-form[phx-submit="apply"][phx-hook="ScoringEnterGuard"]|
+               )
+    end
+
+    test "the header card, the panel and the fields use the design's background and border tokens",
+         ctx do
+      d = doc(ctx.html)
+
+      colours = fn selector ->
+        d
+        |> Floki.attribute(selector, "class")
+        |> Enum.flat_map(&String.split/1)
+        |> Enum.filter(&(&1 =~ ~r/^!?bg-/ or &1 =~ ~r/^border-[A-Z]/))
+        |> Enum.sort()
+      end
+
+      card = ["bg-Background-bg-secondary", "border-Border-border-default"]
+
+      field = [
+        "bg-Specially-Tokens-Fill-fill-input",
+        "border-Specially-Tokens-Border-border-input"
+      ]
+
+      assert colours.("#scoring-header") == card
+      assert colours.("#scoring-panel") == card
+      assert colours.("#feedback_#{ctx.g1}") == field
+
+      # input.css gives every number input a dark background and text colour that outrank a plain
+      # utility class.
+      assert colours.("#score_#{ctx.g1}") ==
+               [
+                 "!bg-Specially-Tokens-Fill-fill-input",
+                 "border-Specially-Tokens-Border-border-input"
+               ]
+
+      score_classes =
+        d |> Floki.attribute("#score_#{ctx.g1}", "class") |> Enum.flat_map(&String.split/1)
+
+      assert "!text-Text-text-high" in score_classes
+
+      assert colours.("#out_of_#{ctx.g1}") ==
+               ["bg-Specially-Tokens-Fill-fill-input-focused", "border-Border-border-subtle"]
+    end
   end
 
   defp add_mixed_submission(ctx) do
@@ -995,6 +1044,22 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
                Floki.find(doc(html), ~s|input[name="score_#{ctx.g1}"][value="1"]:not([readonly])|)
 
       assert [_] = Floki.find(doc(html), "button#apply-button[disabled]")
+    end
+
+    test "the server refuses feedback longer than the 2000 characters the field allows: nothing is scored",
+         ctx do
+      too_long = Map.put(valid(ctx), "feedback_#{ctx.g2}", String.duplicate("a", 2001))
+      html = ctx.view |> form("#scoring-form", too_long) |> render_submit()
+
+      refute html =~ "applied successfully"
+      assert {:submitted, nil, nil} = part_states(ctx)[ctx.g1]
+      assert {:submitted, nil, nil} = part_states(ctx)[ctx.g2]
+
+      at_limit = Map.put(valid(ctx), "feedback_#{ctx.g2}", String.duplicate("a", 2000))
+      html = ctx.view |> form("#scoring-form", at_limit) |> render_submit()
+
+      assert html =~ "Score and feedback applied successfully."
+      assert {:evaluated, 0.5, _} = part_states(ctx)[ctx.g2]
     end
 
     test "a score that is not a number is not a score: Apply stays disabled and a submit scores nothing",

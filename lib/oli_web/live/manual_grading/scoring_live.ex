@@ -23,6 +23,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
   alias OliWeb.Sections.Mount
 
   @not_awaiting_notice "This submission is no longer awaiting scoring."
+  @feedback_max_length 2000
 
   def mount(%{"section_slug" => section_slug}, _session, socket) do
     case Mount.for(section_slug, socket) do
@@ -125,12 +126,6 @@ defmodule OliWeb.ManualGrading.ScoringLive do
   defp table_path(section, table_params),
     do: ~p"/sections/#{section.slug}/scoring?#{table_params}"
 
-  defp scoring_path(section, id, table_params) when table_params == %{},
-    do: ~p"/sections/#{section.slug}/scoring/#{id}"
-
-  defp scoring_path(section, id, table_params),
-    do: ~p"/sections/#{section.slug}/scoring/#{id}?#{table_params}"
-
   defp crumbs(assigns) do
     assigns.role_breadcrumbs ++
       [
@@ -201,7 +196,10 @@ defmodule OliWeb.ManualGrading.ScoringLive do
 
       <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_305px] xl:items-start xl:gap-3">
         <div>
-          <div class="rounded-2xl border border-Border-border-default bg-Surface-surface-primary p-4 shadow-[0px_8px_30px_0px_rgba(0,50,99,0.10)] xl:rounded-b-none">
+          <div
+            id="scoring-header"
+            class="rounded-2xl border border-Border-border-default bg-Background-bg-secondary p-4 shadow-[0px_8px_30px_0px_rgba(0,50,99,0.10)] xl:rounded-b-none"
+          >
             <div class="border-Border-border-default py-1.5 xl:border-b">
               <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <h1
@@ -263,7 +261,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
 
         <div
           id="scoring-panel"
-          class="rounded-2xl border border-Border-border-default bg-Surface-surface-primary shadow-[0px_8px_30px_0px_rgba(0,50,99,0.10)] xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto"
+          class="rounded-2xl border border-Border-border-default bg-Background-bg-secondary shadow-[0px_8px_30px_0px_rgba(0,50,99,0.10)] xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto"
         >
           <div class="px-4 pt-4">
             <div class="border-b border-Border-border-default pb-[13px] pt-3">
@@ -363,6 +361,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
             phx-change="draft_changed"
             phx-submit="apply"
             phx-auto-recover="recover_draft"
+            phx-hook="ScoringEnterGuard"
             novalidate
           >
             <div class="space-y-4 px-4 pb-4 pt-3">
@@ -412,7 +411,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
                       phx-debounce="300"
                       phx-hook="ScoringScoreInput"
                       readonly={@readonly}
-                      class="block w-full rounded-lg border border-Border-border-default px-3 py-2 text-sm text-Text-text-high"
+                      class="block w-full rounded-lg border border-Specially-Tokens-Border-border-input !bg-Specially-Tokens-Fill-fill-input px-3 py-2 text-sm !text-Text-text-high"
                     />
                   </div>
                   <div class="max-w-[14rem]">
@@ -428,7 +427,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
                       readonly
                       aria-readonly="true"
                       value={AttemptState.out_of(pa, @parts_map)}
-                      class="block w-full rounded-lg border border-Border-border-subtle bg-Surface-surface-secondary-muted px-3 py-2 text-sm text-Text-text-high"
+                      class="block w-full rounded-lg border border-Border-border-subtle bg-Specially-Tokens-Fill-fill-input-focused px-3 py-2 text-sm text-Text-text-high"
                     />
                   </div>
                   <div
@@ -466,13 +465,13 @@ defmodule OliWeb.ManualGrading.ScoringLive do
                       data-scoring-edit
                       phx-debounce="300"
                       readonly={@readonly}
-                      maxlength="2000"
+                      maxlength={feedback_max_length()}
                       rows="5"
                       placeholder="Enter feedback for the student..."
                       aria-required="true"
                       aria-invalid={to_string(feedback_invalid?(pa, @form_params))}
                       aria-describedby={describedby(pa, @form_params)}
-                      class="block w-full rounded-lg border border-Border-border-default bg-Surface-surface-primary px-3 py-3 text-sm text-Text-text-high min-h-[160px] shadow-[0px_0px_0px_1px_rgba(59,118,211,0.5)] placeholder:text-Text-text-high"
+                      class="block w-full rounded-lg border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-3 py-3 text-sm text-Text-text-high min-h-[160px] shadow-[0px_0px_0px_1px_rgba(59,118,211,0.5)] placeholder:text-Text-text-high"
                     >{Map.get(@form_params, "feedback_" <> pa.attempt_guid, "")}</textarea>
                     <p
                       id={"feedback_help_" <> pa.attempt_guid}
@@ -568,7 +567,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
     <%= if @target_id do %>
       <.link
         id={@id}
-        patch={scoring_path(@section, @target_id, @table_params)}
+        patch={BrowseParams.scoring_path(@section.slug, @target_id, @table_params)}
         replace
         data-scoring-nav
         class={[
@@ -645,6 +644,8 @@ defmodule OliWeb.ManualGrading.ScoringLive do
 
   defp not_awaiting_notice, do: @not_awaiting_notice
 
+  defp feedback_max_length, do: @feedback_max_length
+
   defp manual_parts(part_attempts),
     do: Enum.filter(part_attempts, &(&1.grading_approach == :manual))
 
@@ -660,7 +661,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
   defp part_ready?(pa, params),
     do:
       present_score?(params["score_" <> pa.attempt_guid]) and
-        present?(params["feedback_" <> pa.attempt_guid])
+        present_feedback?(params["feedback_" <> pa.attempt_guid])
 
   defp scored?(%{grading_approach: :manual, lifecycle_state: :evaluated}, _params), do: true
   defp scored?(pa, params), do: editable?(pa) and part_ready?(pa, params)
@@ -675,6 +676,10 @@ defmodule OliWeb.ManualGrading.ScoringLive do
 
   defp present?(v) when is_binary(v), do: String.trim(v) != ""
   defp present?(_), do: false
+
+  # String.length/1 counts a submitted CRLF as one character, as the textarea's maxlength does.
+  defp present_feedback?(v),
+    do: present?(v) and String.length(v) <= @feedback_max_length
 
   defp present_score?(v), do: parse_score(v) != nil
 

@@ -1,9 +1,9 @@
 defmodule OliWeb.ManualGrading.TableModel do
   use Phoenix.Component
-  use OliWeb, :verified_routes
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
+  alias OliWeb.ManualGrading.BrowseParams
   alias Phoenix.LiveView.JS
 
   @doc """
@@ -73,7 +73,7 @@ defmodule OliWeb.ManualGrading.TableModel do
     assigns =
       Map.merge(assigns, %{
         name: name,
-        href: scoring_path(section_slug, row.id, table_params),
+        href: BrowseParams.scoring_path(section_slug, row.id, table_params),
         label: "Score submission: #{name}, #{row.activity_title}, attempt #{row.attempt_number}"
       })
 
@@ -100,10 +100,4 @@ defmodule OliWeb.ManualGrading.TableModel do
   def render_activity_type(%{activity_types_map: activity_types_map}, row, _) do
     Map.get(activity_types_map, row.activity_type_id).title
   end
-
-  defp scoring_path(section_slug, id, table_params) when table_params == %{},
-    do: ~p"/sections/#{section_slug}/scoring/#{id}"
-
-  defp scoring_path(section_slug, id, table_params),
-    do: ~p"/sections/#{section_slug}/scoring/#{id}?#{table_params}"
 end

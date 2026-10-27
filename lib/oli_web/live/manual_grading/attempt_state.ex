@@ -8,6 +8,7 @@ defmodule OliWeb.ManualGrading.AttemptState do
   alias Oli.Activities.Model
   alias Oli.Activities.Model.Part
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.ManualGrading
 
   @doc """
   Latest part attempts of the activity attempt, in authored order (`AdaptiveParts.ordered_part_ids/1`;
@@ -17,15 +18,11 @@ defmodule OliWeb.ManualGrading.AttemptState do
   (the scorable ones, plus persisted parts graded manually); any other activity keeps every part,
   automatic and already evaluated ones included. Callers pick the parts they score.
   """
-  def part_attempts(%{attempt_guid: guid, activity_type_id: activity_type_id, revision: revision}) do
-    part_attempts = guid |> Core.get_latest_part_attempts() |> in_authored_order(revision)
-
-    if AdaptiveParts.adaptive_activity?(%{activity_type_id: activity_type_id}) do
-      allowed_part_ids = AdaptiveParts.manual_gradeable_part_ids(revision.content)
-      Enum.filter(part_attempts, &MapSet.member?(allowed_part_ids, &1.part_id))
-    else
-      part_attempts
-    end
+  def part_attempts(%{attempt_guid: guid, activity_type_id: _, revision: revision} = attempt) do
+    guid
+    |> Core.get_latest_part_attempts()
+    |> in_authored_order(revision)
+    |> ManualGrading.filter_part_attempts_for_manual_grading(attempt)
   end
 
   defp in_authored_order(part_attempts, %{content: content}) do

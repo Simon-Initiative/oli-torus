@@ -1,8 +1,11 @@
 defmodule OliWeb.ManualGrading.BrowseParams do
   @moduledoc """
   Total parser for the manual scoring URL params: it never raises, and any value whose shape is
-  not the expected one becomes the unfiltered default.
+  not the expected one becomes the unfiltered default. Also builds the scoring page path that
+  carries them.
   """
+
+  use OliWeb, :verified_routes
 
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias OliWeb.Common.Params
@@ -84,6 +87,16 @@ defmodule OliWeb.ManualGrading.BrowseParams do
       end
     end)
   end
+
+  @doc """
+  The scoring page of attempt `id`, carrying the table params so its Previous/Next queue is the
+  table's current filtered and sorted result.
+  """
+  def scoring_path(section_slug, id, table_params) when table_params == %{},
+    do: ~p"/sections/#{section_slug}/scoring/#{id}"
+
+  def scoring_path(section_slug, id, table_params),
+    do: ~p"/sections/#{section_slug}/scoring/#{id}?#{table_params}"
 
   @doc "Reads `text_search` as a string; any other shape is `\"\"`."
   def text_search(params) do
