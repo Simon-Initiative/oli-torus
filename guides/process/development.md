@@ -80,6 +80,24 @@ Prefix matching is case-insensitive, so `Story/MER-1000-student-dashboard` also 
 
 For implementation using the main ticket, `MER-1000-student-dashboard` is a suggested working-branch name. When using a child Sub-task, retain the `sub-task/MER-1001-dashboard-skeleton` convention. Working-branch names are not enforced; keep the working and integration branch refs distinct. Use `sync/<parent-issue-key>-<summary>` for downmerging `master` and resolving conflicts. All implementation and sync PRs target the integration branch and cannot merge directly into `master`. The sync branch copies the parent integration branch's ticket key and summary, replacing only the type prefix with `sync/`, and is reused across syncs. Reference the same parent ticket in the sync PR; no child Sub-task is required for a sync. Dependabot branches remain an automated dependency-update exception to the developer implementation workflow.
 
+### PR Titles and Labels
+
+Use these conventions for both draft and ready PRs, including legacy `integ-*` integration branches:
+
+- Integration branch → `master`: `[INTEGRATION] [<PARENT-KEY>] <description>` and the exact `Integration Branch` label.
+- Sync branch → parent integration branch: `[SYNC] [<PARENT-KEY>] Sync master into <integration-description>` and the exact `Sync Branch` label.
+
+Both routes use the parent integration ticket in the title and first Jira link in the description, even if implementation used Sub-tasks. Implementation PRs retain the appropriate change type and main or selected child ticket. The title validator accepts `[SYNC]` alongside `[INTEGRATION]` and the existing change types; it does not enforce PR labels or routes.
+
+Before publishing, verify the required label exists in `Simon-Initiative/oli-torus` using `gh label list --repo Simon-Initiative/oli-torus --search <required-label> --json name` and check for an exact name match. If it is missing or cannot be verified, report the prerequisite instead of creating or substituting a label. Check for an open PR with the exact head/base and reuse it. Always pass explicit `--head` and `--base` when creating a PR, and add `--draft` when a draft is requested. On reuse, set the required title and add the label without removing other labels:
+
+```sh
+gh pr edit <url> --repo Simon-Initiative/oli-torus --title <title> --add-label <required-label>
+gh pr view <url> --repo Simon-Initiative/oli-torus --json url,title,body,labels,baseRefName,headRefName,isDraft,state
+```
+
+After creation or reuse, verify the exact title, required label, source, target, description, expected draft/ready state, and open state. Preserve a reused PR's draft/ready state unless a change is intended; use `gh pr ready <url> --repo Simon-Initiative/oli-torus` to mark an existing integration draft ready for acceptance testing. Inspect remote state before retrying an ambiguous publication result to avoid duplicate PRs.
+
 ### Jira Branch-name Preference
 
 Each teammate can configure the branch name in Jira's suggested Git command from a ticket's **Development → Create branch** dropdown:
@@ -102,7 +120,13 @@ git switch -c story/MER-1000-student-dashboard origin/master
 git push -u origin story/MER-1000-student-dashboard
 ```
 
-The same steps apply to `bug/*` and `task/*`. Implementation PRs provide previews of their own head branches. If a preview deployment of the integration branch is desired while development is ongoing, open a **draft PR to `master`** from that branch. Once implementation is complete, open the integration PR or mark the existing draft ready for review, then follow [QA Acceptance Testing](#qa-acceptance-testing).
+The same steps apply to `bug/*` and `task/*`. Implementation PRs provide previews of their own head branches. If a preview deployment of the integration branch is desired while development is ongoing, open a **draft PR to `master`** from that branch using the same [integration title and label](#pr-titles-and-labels):
+
+```sh
+gh pr create --base master --head story/MER-1000-student-dashboard --title "[INTEGRATION] [MER-1000] Student dashboard" --label "Integration Branch" --draft
+```
+
+Once implementation is complete, open the integration PR or mark the existing draft ready for review, then follow [QA Acceptance Testing](#qa-acceptance-testing).
 
 ### Using the Integration Branch Workflow Skill
 
@@ -124,7 +148,9 @@ For syncing, the skill creates or reuses `sync/<parent-issue-key>-<summary>` wit
 
 Reply with `1` or `a` for automatic resolution, or `2` or `m` to pause while you resolve and stage the conflicts. Reply when ready to resume. The skill verifies the result before publishing the sync PR, which requires developer review, status checks, and a merge commit.
 
-Git is required for branch operations, and authenticated GitHub access through `gh` is needed for sync PRs. An installed, authenticated `jira` CLI enables ticket lookups and approved Jira changes. When it is unavailable, the skill skips those steps, explains any manual Jira actions, and continues with the ticket details available. You may need to supply a ticket type, summary, or child key before the corresponding branch can be created.
+Git is required for branch operations, and authenticated GitHub access through `gh` is needed for PRs. Jira lookups and approved changes can use either an authenticated Atlassian MCP connection or an installed, configured `jira` CLI. With MCP only, use supported MCP operations; with CLI only, use CLI. When both are available, prefer MCP for each supported operation and use CLI when necessary, keeping the same Jira site/project. Neither provider requires installing or configuring the other. CLI commands in the skill are conditional examples, not requirements for MCP users.
+
+When neither provider is available, or neither supports the needed operation, the skill skips the affected Jira step, explains the missing information or manual actions, and continues independent Git/GitHub work. You may need to supply a ticket type, summary, or child key before the corresponding branch can be created. Both providers follow the same approval requirements, complete relationship and sub-task lookup including pagination, and read-back verification after writes. After an ambiguous write, inspect Jira before retrying through either provider to avoid duplicate tickets or repeated transitions; if the result cannot be established, defer that write and report the uncertainty.
 
 ### Implementation with or without Sub-tasks
 
@@ -134,7 +160,7 @@ Each implementation branch starts from the integration branch. Without a Sub-tas
 git fetch origin
 git switch -c MER-1000-student-dashboard origin/story/MER-1000-student-dashboard
 # ...commit and push...
-gh pr create --base story/MER-1000-student-dashboard --title "[FEATURE] [MER-1000] Student dashboard"
+gh pr create --base story/MER-1000-student-dashboard --head MER-1000-student-dashboard --title "[FEATURE] [MER-1000] Student dashboard"
 ```
 
 When developers choose Sub-tasks, implement each child on a separate branch from the same integration branch and reference that child in its PR:
@@ -143,7 +169,7 @@ When developers choose Sub-tasks, implement each child on a separate branch from
 git fetch origin
 git switch -c sub-task/MER-1001-dashboard-skeleton origin/story/MER-1000-student-dashboard
 # ...commit and push...
-gh pr create --base story/MER-1000-student-dashboard --title "[FEATURE] [MER-1001] Dashboard skeleton"
+gh pr create --base story/MER-1000-student-dashboard --head sub-task/MER-1001-dashboard-skeleton --title "[FEATURE] [MER-1001] Dashboard skeleton"
 ```
 
 Implementation PRs into an integration branch receive developer code review and use **Create a merge commit** after developer approval and required status checks pass. Each PR gets its own preview environment. This same merge method applies to sync PRs.
@@ -154,7 +180,7 @@ When a PR depends on another PR that has not merged yet, branch from that PR's b
 
 The `master` merge queue validates completed integration PRs against the latest `master` and any earlier queued changes. It does not continually update the integration branch itself. To update an integration branch with the latest `master`, create or reuse its `sync/<parent-issue-key>-<summary>` branch and merge `master` into that sync branch. Create a new sync branch from the integration branch only when it does not already exist locally or remotely. If the integration branch already contains the latest `master`, no sync PR is needed.
 
-In this example, `MER-1000` is the parent integration ticket used in both the reusable branch name and the sync PR title. The summary `student-dashboard` matches the parent branch `story/MER-1000-student-dashboard`. Start the PR description with a link to that parent ticket. For the first sync, when the branch does not yet exist:
+In this example, `MER-1000` is the parent integration ticket used in both the reusable branch name and the sync PR title. The summary `student-dashboard` matches the parent branch `story/MER-1000-student-dashboard`. Use the `[SYNC]` title and `Sync Branch` label for both draft and ready PRs as described in [PR Titles and Labels](#pr-titles-and-labels). Start the PR description with a link to that parent ticket. For the first sync, when the branch does not yet exist:
 
 ```
 git fetch origin
@@ -162,7 +188,7 @@ git switch -c sync/MER-1000-student-dashboard origin/story/MER-1000-student-dash
 git merge --no-ff origin/master
 # Resolve conflicts, stage the resolved files, and complete the merge commit.
 git push -u origin sync/MER-1000-student-dashboard
-gh pr create --base story/MER-1000-student-dashboard --head sync/MER-1000-student-dashboard --title "[CHORE] [MER-1000] Sync master into student dashboard"
+gh pr create --base story/MER-1000-student-dashboard --head sync/MER-1000-student-dashboard --title "[SYNC] [MER-1000] Sync master into student dashboard" --label "Sync Branch"
 ```
 
 For later syncs, reuse the same branch without resetting or overwriting its history. If it exists only remotely, create a local tracking branch. Incorporate the latest integration tip before merging `master`; after the previous sync PR has merged, this normally fast-forwards:
@@ -176,7 +202,7 @@ git merge --no-ff origin/master
 git push origin sync/MER-1000-student-dashboard
 ```
 
-If the sync branch has diverged from the integration branch, inspect the outstanding work and merge the integration tip into the sync branch with `--no-ff` instead of resetting or force-pushing. Reconcile any remote sync branch updates before pushing. Update an existing open sync PR, or create a new PR against the integration branch if the previous one was merged or closed. Inspect any unmerged work from a closed PR before carrying it forward. Keep the sync branch for later updates while the parent ticket remains active. Every sync PR references that same parent ticket.
+If the sync branch has diverged from the integration branch, inspect the outstanding work and merge the integration tip into the sync branch with `--no-ff` instead of resetting or force-pushing. Reconcile any remote sync branch updates before pushing. Update an existing open sync PR, or create a new PR against the integration branch if the previous one was merged or closed. Apply and verify the `[SYNC]` title and `Sync Branch` label on reused PRs as well. Inspect any unmerged work from a closed PR before carrying it forward. Keep the sync branch for later updates while the parent ticket remains active. Every sync PR references that same parent ticket.
 
 Obtain developer code review approval for the sync PR and run the same required status checks as other PRs targeting the integration branch. Merge it using **Create a merge commit**, preserving the merge from `master`. Squashing or rebasing the sync PR discards that ancestry and can make later syncs repeat conflicts. All PRs into integration branches use merge commits. Repository settings and integration branch rules must permit this method and non-linear history.
 
@@ -218,10 +244,10 @@ Once all implementation PRs have merged, open the integration PR against `master
 
 ### Merging an Integration Branch to `master`
 
-When implementation is complete, open the integration PR against `master` for acceptance testing, using the parent ticket in the title and description. If a draft PR already provides the integration preview, mark that PR ready for review instead of creating another:
+When implementation is complete, open the integration PR against `master` for acceptance testing, using the parent ticket in the `[INTEGRATION]` title and description and the exact `Integration Branch` label. If a draft PR already provides the integration preview, apply and verify that title and label, then mark that PR ready for review instead of creating another:
 
 ```
-gh pr create --base master --head story/MER-1000-student-dashboard --title "[FEATURE] [MER-1000] Student dashboard"
+gh pr create --base master --head story/MER-1000-student-dashboard --title "[INTEGRATION] [MER-1000] Student dashboard" --label "Integration Branch"
 ```
 
 After acceptance testing, QA approval, and the required status checks pass, use GitHub to add the PR to the `master` merge queue. The queue tests the combined result against current `master` and preceding queued PRs, then merges it using the configured queue merge method. This replaces the local maintainer merge-and-push process. If conflicts prevent merging, complete a sync PR into the integration branch. Fix any other implementation failures through implementation PRs using the main ticket or a chosen child Sub-task. Repeat acceptance testing on the updated preview and obtain renewed QA approval and passing checks before requeuing.
