@@ -79,8 +79,8 @@ module.exports = {
   },
   // Fill/Buttons
   'Fill-Buttons-fill-primary': {
-    light: '#0080FF',
-    dark: '#0080FF',
+    light: '#0073E5',
+    dark: '#0062F2',
   },
   'Fill-Buttons-fill-primary-bold': {
     light: '#0062F2',
