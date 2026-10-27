@@ -136,6 +136,10 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await expect(page.locator('#student_learn')).toBeVisible();
     await expect(page.locator('[id^="outline_rows-"] button').first()).toBeVisible();
     await studentCourse.openPage('Scored Activity');
+    await expect(page.getByRole('button', { name: 'Begin 1st Attempt' })).toBeVisible();
+    // Scan the navigation at full opacity, after its entrance transition finishes.
+    await page.locator('#bottom-bar-wrapper').hover();
+    await expect(page.locator('#bottom-bar')).toHaveCSS('opacity', '1');
     await scanPageAccessibility(page, 'scored activity');
     await expectKeyboardFocus(page, 'a, button, input');
   });
@@ -168,6 +172,7 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     });
     await expect(page).toHaveURL(new URL(curriculumPath, page.url()).toString());
     await expect(page.getByRole('heading', { name: 'Curriculum', exact: true })).toBeVisible();
+    await expect(page.getByText('Coverage Page', { exact: true })).toBeVisible();
     await scanPageAccessibility(page, 'authoring curriculum');
     await expectKeyboardFocus(page, 'a, button, input');
   });

@@ -54,6 +54,9 @@ end
 
 config :oli, Oli.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
+  # Concurrent learner tasks share one sandbox connection. Allow their queries
+  # to queue instead of shedding valid work at DBConnection's 50 ms default.
+  queue_target: 1_000,
   timeout: 600_000,
   pool_size: 30,
   ownership_timeout: 600_000

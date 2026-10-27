@@ -21,7 +21,7 @@ defmodule Oli.MixProject do
       ],
       erlc_include_path: "#{@gleam_erlang_build_root}/#{@gleam_app}/include",
       prune_code_paths: false,
-      start_permanent: Mix.env() in [:prod, :preview],
+      start_permanent: Mix.env() in [:prod, :preview, :playwright],
       aliases: aliases(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
@@ -159,6 +159,8 @@ defmodule Oli.MixProject do
       {:broadway, "~> 1.0.7"},
       {:broadway_dashboard, "~> 0.4.0"},
       {:cachex, "~> 3.5"},
+      # Minimum CA bundle with the eMudhra distrust update.
+      {:castore, "~> 1.0.22"},
       {:cloak_ecto, "~> 1.2.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0.5"},
