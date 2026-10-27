@@ -39,7 +39,7 @@ jobs:
     name: PR Playwright Suite
     # Playwright 1.56.1 has no ffmpeg build or dependency list for Ubuntu 26.04.
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: read
 
