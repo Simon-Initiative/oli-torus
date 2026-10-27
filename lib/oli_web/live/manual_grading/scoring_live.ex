@@ -585,7 +585,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
         id={@id}
         role="link"
         aria-disabled="true"
-        class={[nav_link_classes(), @width, "border-Border-border-muted text-Text-text-disabled"]}
+        class={[nav_link_classes(), @width, "border-Border-border-muted text-Text-text-low"]}
       >
         {nav_link_content(assigns)}
       </a>
