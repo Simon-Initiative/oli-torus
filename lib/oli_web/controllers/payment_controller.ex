@@ -216,6 +216,6 @@ defmodule OliWeb.PaymentController do
   end
 
   defp recaptcha_verified?(g_recaptcha_response) do
-    Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
+    Oli.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 end

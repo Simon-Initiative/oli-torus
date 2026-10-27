@@ -98,7 +98,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
   attr(:child, :map, required: true)
   attr(:sidebar_expanded, :boolean, required: true)
 
-  @doc "Renders the edit link for a basic or adaptive curriculum page."
+  @doc "Renders an underlined edit link, using full navigation for adaptive pages."
   def edit_link(%{child: child} = assigns) do
     if ResourceType.is_adaptive_page(child) do
       ~H"""
