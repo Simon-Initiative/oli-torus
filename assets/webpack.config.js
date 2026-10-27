@@ -32,6 +32,7 @@ const populateEntries = () => {
     cashnetclient: ['./src/payment/cashnet/client.ts'],
     timezone: ['./src/phoenix/timezone.ts'],
     dark: ['./src/phoenix/dark.ts'],
+    lti_authoring_return: ['./src/phoenix/lti_authoring_return.ts'],
     delivery_adaptive_themes_default_light: ['./styles/adaptive/light.scss'],
     delivery_adaptive_themes_flowchart: ['./styles/adaptive/flowchart.scss'],
   };

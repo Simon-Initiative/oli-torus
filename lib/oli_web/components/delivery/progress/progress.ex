@@ -94,6 +94,7 @@ defmodule OliWeb.Components.Delivery.Progress do
             <.form for={%{}} phx-target={@myself} phx-change="search_progress" class="w-auto">
               <SearchInput.render
                 id="progress_search_input"
+                aria_label="Search course content"
                 name="resource_title"
                 text={@params.text_search}
               />

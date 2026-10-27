@@ -289,6 +289,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             <.form for={%{}} phx-target={@myself} phx-change="search_objective" class="w-56">
               <SearchInput.render
                 id="objective_search_input"
+                aria_label="Search learning objectives"
                 name="objective_name"
                 text={@params.text_search}
               />

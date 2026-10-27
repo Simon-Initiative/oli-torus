@@ -32,15 +32,6 @@ config :mime, :types, %{
 
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
-world_universities_and_domains_json =
-  case File.read("./priv/data/world_universities_and_domains.json") do
-    {:ok, body} ->
-      body
-
-    _ ->
-      "[]"
-  end
-
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 git_sha = fn ->
@@ -114,7 +105,6 @@ config :oli,
   email_errors_to_address: System.get_env("EMAIL_ERRORS_TO_ADDRESS"),
   email_return_path_address: System.get_env("EMAIL_RETURN_PATH_ADDRESS"),
   cashnet_email_fallback: System.get_env("CASHNET_EMAIL_FALLBACK"),
-  world_universities_and_domains_json: world_universities_and_domains_json,
   branding: [
     name: System.get_env("BRANDING_NAME", "OLI Torus"),
     logo: System.get_env("BRANDING_LOGO", "/branding/prod/oli_torus_logo.png"),

@@ -812,7 +812,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
   describe "settings tab" do
     setup [:user_conn, :create_project]
 
-    test "secure control stays unavailable until enforcement, including forged edits", %{
+    test "secure control stays unavailable on unsupported instances, including forged edits", %{
       conn: conn,
       user: user,
       section: section,
@@ -830,23 +830,22 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       route = live_view_overview_route(section.slug, "settings", "all")
 
-      for support <- [false, true] do
-        Application.put_env(:oli, :supports_secure_delivery, support)
-        {:ok, view, _} = live(conn, route)
-        refute has_element?(view, "select[name^=secure_delivery]")
+      Application.put_env(:oli, :supports_secure_delivery, false)
+      {:ok, view, _} = live(conn, route)
+      refute has_element?(view, "select[name^=secure_delivery]")
 
-        # A fabricated event must not activate policy merely because the control is hidden.
-        view
-        |> element(~s{form[for="settings_table"]})
-        |> render_change(%{
-          "_target" => ["secure_delivery-#{page.resource_id}"],
-          "secure_delivery-#{page.resource_id}" => "true"
-        })
+      # A fabricated event must not activate policy merely because the control is hidden.
+      view
+      |> element(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["secure_delivery-#{page.resource_id}"],
+        "secure_delivery-#{page.resource_id}" => "true"
+      })
 
-        assert render(view) =~ "Secure delivery setting could not be updated"
-        refute Sections.get_section_resource(section.id, page.resource_id).secure_delivery
-      end
+      assert render(view) =~ "Secure delivery setting could not be updated"
+      refute Sections.get_section_resource(section.id, page.resource_id).secure_delivery
 
+      Application.put_env(:oli, :supports_secure_delivery, true)
       # A policy established through the domain API is not copied by bulk apply.
       assert {:ok, _} =
                Settings.AssessmentSettings.update(section, user, page.resource_id, %{
@@ -881,16 +880,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       page_1: page,
       page_2: other_page
     } do
-      readiness = Application.fetch_env(:oli, :secure_delivery_enforcement_ready)
-      Application.put_env(:oli, :secure_delivery_enforcement_ready, true)
-
-      on_exit(fn ->
-        case readiness do
-          {:ok, value} -> Application.put_env(:oli, :secure_delivery_enforcement_ready, value)
-          :error -> Application.delete_env(:oli, :secure_delivery_enforcement_ready)
-        end
-      end)
-
       previous = Application.fetch_env(:oli, :supports_secure_delivery)
 
       on_exit(fn ->

@@ -452,10 +452,18 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
     for gated? <- [false, true] do
+      @tag isolation: "serializable"
       test "secure prologue confines navigation with gating #{gated?}", c do
         page = c.page_3
         Sections.enroll(c.user.id, c.section.id, [ContextRoles.get_role(:context_learner)])
-        Sections.mark_section_visited_for_student(c.section, c.user)
+        refute Sections.has_visited_section(c.section, c.user)
+
+        # A secure launch must reach the assessment even on a learner's first
+        # visit, with course onboarding and a required survey still unfinished.
+        Oli.Repo.update!(
+          Ecto.Changeset.change(c.section, required_survey_resource_id: c.page_1.resource_id)
+        )
+
         sr = Sections.get_section_resource(c.section.id, page.resource_id)
         Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
 
@@ -501,6 +509,23 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         assert has_element?(view, "#blocking_gates_warning") == unquote(gated?)
         assert has_element?(view, "#begin_attempt_button") == not unquote(gated?)
         refute has_element?(view, "#tech_support_lti_error")
+
+        case unquote(gated?) do
+          false ->
+            view |> element("#begin_attempt_button") |> render_click()
+            {path, _flash} = assert_redirect(view)
+
+            lesson_conn =
+              conn
+              |> recycle()
+              |> init_test_session(%{user_token: token, current_user_id: c.user.id})
+
+            {:ok, lesson, _html} = live(lesson_conn, path)
+            assert has_element?(lesson, "#secure-assessment-content")
+
+          true ->
+            :ok
+        end
       end
     end
 

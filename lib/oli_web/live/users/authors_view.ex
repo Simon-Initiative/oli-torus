@@ -106,7 +106,7 @@ defmodule OliWeb.Users.AuthorsView do
   def render(assigns) do
     ~H"""
     <div>
-      <TextSearch.render id="text-search" text={@options.text_search} />
+      <TextSearch.render id="text-search" text={@options.text_search} aria_label="Search authors" />
 
       <div class="mb-3" />
 
