@@ -1,6 +1,6 @@
-import { expect, type Page, type Route } from '@playwright/test';
-import { type SeedScenarioResponse } from '@core/seedScenario';
 import { getBaseUrl, getScenarioToken } from '@core/runtimeConfig';
+import { type SeedScenarioResponse } from '@core/seedScenario';
+import { type Page, type Route, expect } from '@playwright/test';
 
 export type StudentPaymentScenarioOutputs = {
   params?: Record<string, string>;
@@ -127,26 +127,10 @@ export async function postInBrowser(
   );
 }
 
-// Payment code redemption still goes through the real form flow, including the recaptcha field.
+// Payment code redemption uses the real form flow; the shared Playwright context
+// setup supplies the required captcha token.
 export async function submitPaymentCode(page: Page, code: string) {
   await page.locator('input[name="code[value]"]').fill(code);
-
-  await page.evaluate(() => {
-    const form = document.querySelector<HTMLFormElement>('form[action*="/payment/code"]');
-    if (form == null) return;
-
-    document
-      .querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[name="g-recaptcha-response"]')
-      .forEach((response) => {
-        response.value = 'playwright-test-token';
-      });
-
-    const response = document.createElement('input');
-    response.type = 'hidden';
-    response.name = 'g-recaptcha-response';
-    response.value = 'playwright-test-token';
-    form.appendChild(response);
-  });
 
   await page.getByRole('button', { name: 'Submit' }).click();
 }

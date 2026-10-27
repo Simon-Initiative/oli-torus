@@ -50,20 +50,21 @@ const ARIA = {
     }
   },
 
-  focusFirst(el: HTMLElement) {
+  // `skip` holds elements that must never receive focus, such as the wrap sentinels themselves.
+  focusFirst(el: HTMLElement, skip: Element[] = []) {
     let child = el.firstElementChild;
     while (child) {
-      if (this.attemptFocus(child) || this.focusFirst(child)) {
+      if (!skip.includes(child) && (this.attemptFocus(child) || this.focusFirst(child, skip))) {
         return true;
       }
       child = child.nextElementSibling;
     }
   },
 
-  focusLast(el: HTMLElement) {
+  focusLast(el: HTMLElement, skip: Element[] = []) {
     let child = el.lastElementChild;
     while (child) {
-      if (this.attemptFocus(child) || this.focusLast(child)) {
+      if (!skip.includes(child) && (this.attemptFocus(child) || this.focusLast(child, skip))) {
         return true;
       }
       child = child.previousElementSibling;
@@ -75,7 +76,10 @@ export const CustomFocusWrap = {
   mounted() {
     this.focusStart = this.el.firstElementChild;
     this.focusEnd = this.el.lastElementChild;
-    this.focusStart.addEventListener('focus', () => ARIA.focusLast(this.el));
-    this.focusEnd.addEventListener('focus', () => ARIA.focusFirst(this.el));
+    // The sentinels are focusable (and not aria-hidden) while the wrap is enabled, so the
+    // searches must skip them or each sentinel would keep bouncing focus to the other one.
+    const sentinels = [this.focusStart, this.focusEnd];
+    this.focusStart.addEventListener('focus', () => ARIA.focusLast(this.el, sentinels));
+    this.focusEnd.addEventListener('focus', () => ARIA.focusFirst(this.el, sentinels));
   },
 };

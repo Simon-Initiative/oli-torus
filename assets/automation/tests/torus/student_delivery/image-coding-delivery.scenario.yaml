@@ -85,10 +85,10 @@
             children:
               - text: 'Load the image resource and submit the expected rendered result.'
       isExample: false
-      starterCode: 'image = new SimpleImage("image_coding_sample.png"); print(image)'
-      solutionCode: 'image = new SimpleImage("image_coding_sample.png"); print(image)'
+      starterCode: 'image = new SimpleImage("image-test-01.png"); print(image)'
+      solutionCode: 'image = new SimpleImage("image-test-01.png"); print(image)'
       resourceURLs:
-        - '/test/support/image_coding_sample.png'
+        - '/test/support/image-test-01.png'
       tolerance: 0.1
       regex: ''
       feedback:
@@ -147,10 +147,10 @@
             children:
               - text: 'Load the table resource and submit the expected value.'
       isExample: false
-      starterCode: 'var table = new SimpleTable("image_coding_table.csv"); print(table.getRow(0).getField("name"))'
-      solutionCode: 'var table = new SimpleTable("image_coding_table.csv"); print(table.getRow(1).getField("value"))'
+      starterCode: 'var table = new SimpleTable("table-test-01.csv"); print(table.getRow(0).getField("name"))'
+      solutionCode: 'var table = new SimpleTable("table-test-01.csv"); print(table.getRow(1).getField("value"))'
       resourceURLs:
-        - '/test/support/image_coding_table.csv'
+        - '/test/support/table-test-01.csv'
       tolerance: 1.0
       regex: '7'
       feedback:

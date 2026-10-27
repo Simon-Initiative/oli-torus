@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { configureCaptcha } from '@core/captcha';
 import { test as base } from '@playwright/test';
 import { Utils } from '@core/Utils';
 import { Verifier } from '@core/verify/Verifier';
@@ -10,6 +11,7 @@ import { AccountLinkingTask } from '@tasks/AccountLinkingTask';
 import { CurriculumTask } from '@tasks/CurriculumTask';
 import { HomeTask } from '@tasks/HomeTask';
 import { ProjectTask } from '@tasks/ProjectTask';
+import { SimpleAuthorTask } from '@tasks/SimpleAuthorTask';
 import { StudentTask } from '@tasks/StudentTask';
 import {
   getBaseUrl,
@@ -27,6 +29,7 @@ type MyFixtures = {
   curriculumTask: CurriculumTask;
   homeTask: HomeTask;
   projectTask: ProjectTask;
+  simpleAuthorTask: SimpleAuthorTask;
   studentTask: StudentTask;
   seedScenario: (
     relativePath: string,
@@ -36,6 +39,13 @@ type MyFixtures = {
 };
 
 export const test = base.extend<MyFixtures>({
+  context: async ({ context }, use, testInfo) => {
+    const baseUrl = hasRuntimeBaseUrl()
+      ? getBaseUrl()
+      : ((testInfo.project.use.baseURL as string) ?? getBaseUrl());
+    await configureCaptcha(context, baseUrl);
+    await use(context);
+  },
   forEachTest: [
     async ({ homeTask }, use, testInfo) => {
       const baseUrl = hasRuntimeBaseUrl()
@@ -87,6 +97,12 @@ export const test = base.extend<MyFixtures>({
       await use(new ProjectTask(page));
     },
     { title: '📂 Project Task' },
+  ],
+  simpleAuthorTask: [
+    async ({ page }, use) => {
+      await use(new SimpleAuthorTask(page));
+    },
+    { title: '🧩 Simple Author Task' },
   ],
   studentTask: [
     async ({ page }, use) => {

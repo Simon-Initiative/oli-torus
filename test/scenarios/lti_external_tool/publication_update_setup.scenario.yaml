@@ -1,0 +1,19 @@
+- use:
+    file: deep_linking_setup.scenario.yaml
+
+- publish:
+    to: deep_linking_project
+    description: Initial tool selection
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.capture_draft_publication/1
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.create_draft_section/1
+
+- assert:
+    structure:
+      to: draft_section
+      root:
+        children:
+          - page: Tool Lesson
