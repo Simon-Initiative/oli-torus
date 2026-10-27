@@ -1,4 +1,11 @@
 import { PageContext, initializeAnalytics } from '../../src/analytics';
+import { saveConsent } from '../../src/components/cookies/consent';
+
+const accepted = {
+  measurement_ids: ['G-QA123'],
+  consent_available: true,
+  consent: { necessary: true, functionality: true, analytics: true, targeting: false, version: 2 },
+};
 
 const initialContext: PageContext = {
   page_path: '/sections/:section_slug/lesson/:revision_slug',
@@ -12,6 +19,7 @@ describe('analytics', () => {
 
   beforeEach(() => {
     delete window.TorusAnalytics;
+    delete window.TorusConsentState;
     delete window.dataLayer;
     delete window.gtag;
     document.head.innerHTML = '';
@@ -43,12 +51,30 @@ describe('analytics', () => {
       { container_id: 'G-INVALID', context: initialContext },
       { container_id: ['GTM-QA123'], context: initialContext },
       { container_id: 'GTM-QA123' },
-      { container_id: 'GTM-QA123', context: null },
-      { container_id: 'GTM-QA123', context: { ...initialContext, page_area: ['delivery'] } },
-      { container_id: 'GTM-QA123', context: initialContext, auth: 'auth' },
-      { container_id: 'GTM-QA123', context: initialContext, preview: 'env-2' },
-      { container_id: 'GTM-QA123', context: initialContext, auth: 123, preview: 'env-2' },
-      { container_id: 'GTM-QA123', context: initialContext, auth: 'auth', preview: true },
+      { container_id: 'GTM-QA123', ...accepted, context: null },
+      { container_id: 'GTM-QA123', ...accepted, context: initialContext, measurement_ids: [] },
+      { container_id: 'GTM-QA123', ...accepted, context: initialContext, measurement_ids: ['bad'] },
+      {
+        container_id: 'GTM-QA123',
+        ...accepted,
+        context: { ...initialContext, page_area: ['delivery'] },
+      },
+      { container_id: 'GTM-QA123', ...accepted, context: initialContext, auth: 'auth' },
+      { container_id: 'GTM-QA123', ...accepted, context: initialContext, preview: 'env-2' },
+      {
+        container_id: 'GTM-QA123',
+        ...accepted,
+        context: initialContext,
+        auth: 123,
+        preview: 'env-2',
+      },
+      {
+        container_id: 'GTM-QA123',
+        ...accepted,
+        context: initialContext,
+        auth: 'auth',
+        preview: true,
+      },
     ]) {
       expect(() => initializeAnalytics(config)).not.toThrow();
     }
@@ -79,6 +105,7 @@ describe('analytics', () => {
     const script = document.createElement('script');
     script.dataset.config = JSON.stringify({
       container_id: 'GTM-QA123',
+      ...accepted,
       auth: null,
       preview: null,
       context: initialContext,
@@ -94,7 +121,7 @@ describe('analytics', () => {
     expect(document.querySelectorAll('script')).toHaveLength(1);
   });
 
-  test('consent and one sanitized page view precede the async loader, which loads once', () => {
+  test('stored consent and one sanitized page view precede the async loader, which loads once', () => {
     const append = jest.spyOn(document.head, 'appendChild');
     append.mockImplementation((node) => {
       const commands = window.dataLayer!;
@@ -102,7 +129,7 @@ describe('analytics', () => {
         'consent',
         'default',
         {
-          analytics_storage: 'denied',
+          analytics_storage: 'granted',
           ad_storage: 'denied',
           ad_user_data: 'denied',
           ad_personalization: 'denied',
@@ -112,8 +139,8 @@ describe('analytics', () => {
       return node;
     });
 
-    initializeAnalytics({ container_id: 'GTM-QA123', context: initialContext });
-    initializeAnalytics({ container_id: 'GTM-QA123', context: initialContext });
+    initializeAnalytics({ container_id: 'GTM-QA123', ...accepted, context: initialContext });
+    initializeAnalytics({ container_id: 'GTM-QA123', ...accepted, context: initialContext });
     expect(append).toHaveBeenCalledTimes(1);
     const loader = append.mock.calls[0][0] as HTMLScriptElement;
     expect(loader.src).toBe('https://www.googletagmanager.com/gtm.js?id=GTM-QA123');
@@ -131,7 +158,7 @@ describe('analytics', () => {
   });
 
   test('new LiveView routes count once; duplicate mounts and patch/history events do not count', () => {
-    initializeAnalytics({ container_id: 'GTM-QA123', context: initialContext });
+    initializeAnalytics({ container_id: 'GTM-QA123', ...accepted, context: initialContext });
     const nextContext = { ...initialContext, page_path: '/sections/:section_slug' };
     window.dispatchEvent(new CustomEvent('phx:analytics:page_view', { detail: initialContext }));
     window.dispatchEvent(new CustomEvent('phx:navigate', { detail: { patch: true } }));
@@ -150,7 +177,7 @@ describe('analytics', () => {
     const title = jest.spyOn(document, 'title', 'get').mockImplementation(() => {
       throw new Error('document.title must never be read');
     });
-    initializeAnalytics({ container_id: 'GTM-QA123', context: initialContext });
+    initializeAnalytics({ container_id: 'GTM-QA123', ...accepted, context: initialContext });
     for (const page_path of ['https://private.example/path', '/path?secret=token', '/path#token']) {
       window.TorusAnalytics!.pageView({ ...initialContext, page_path });
     }
@@ -180,6 +207,7 @@ describe('analytics', () => {
   test('QA environment settings are encoded on the container request', () => {
     initializeAnalytics({
       container_id: 'GTM-QA123',
+      ...accepted,
       auth: 'qa_auth-123',
       preview: 'env-2',
       context: initialContext,
@@ -190,5 +218,63 @@ describe('analytics', () => {
     expect(url.searchParams.get('gtm_preview')).toBe('env-2');
     expect(url.searchParams.get('gtm_cookies_win')).toBe('x');
     expect(document.querySelector('noscript, iframe')).toBeNull();
+  });
+  test.each([
+    undefined,
+    { analytics: true },
+    { analytics: true, version: 1 },
+    { analytics: false, version: 2 },
+    { analytics: 'true', version: 2 },
+  ])('no current acceptance (%j) blocks Google and behavioral events', (consent) => {
+    initializeAnalytics({
+      container_id: 'GTM-QA123',
+      context: initialContext,
+      consent_available: true,
+      consent,
+      measurement_ids: ['G-QA123'],
+    });
+    window.TorusAnalytics!.pageView({ ...initialContext, page_path: '/users/log_in' });
+    expect(pageViews()).toHaveLength(0);
+    expect(document.querySelector('script')).toBeNull();
+    expect(Array.from(window.dataLayer![0] as IArguments)[2]).toMatchObject({
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+    });
+  });
+
+  test('accept loads once with only the current page; withdrawal blocks subsequent events', async () => {
+    initializeAnalytics({
+      container_id: 'GTM-QA123',
+      context: initialContext,
+      consent_available: true,
+      measurement_ids: ['G-QA123'],
+    });
+    const current = { ...initialContext, page_path: '/users/log_in' };
+    window.TorusAnalytics!.pageView(current);
+    await saveConsent({ ...accepted.consent, analytics: true }, { persist: false });
+    expect(pageViews()).toHaveLength(1);
+    expect(pageViews()[0]).toMatchObject({ page_path: current.page_path });
+    expect(document.querySelectorAll('script')).toHaveLength(1);
+    await saveConsent({ ...accepted.consent, analytics: false }, { persist: false });
+    window.TorusAnalytics!.pageView(initialContext);
+    expect(pageViews()).toHaveLength(1);
+    await saveConsent({ ...accepted.consent, analytics: true }, { persist: false });
+    expect(pageViews()).toHaveLength(2);
+    expect(pageViews()[1]).toMatchObject({ page_path: initialContext.page_path });
+    expect(document.querySelectorAll('script')).toHaveLength(1);
+  });
+
+  test('a blank privacy policy prevents measurement even with a stored acceptance', async () => {
+    initializeAnalytics({
+      container_id: 'GTM-QA123',
+      context: initialContext,
+      ...accepted,
+      consent_available: false,
+    });
+    await saveConsent(accepted.consent, { persist: false });
+    expect(pageViews()).toHaveLength(0);
+    expect(document.querySelector('script')).toBeNull();
   });
 });

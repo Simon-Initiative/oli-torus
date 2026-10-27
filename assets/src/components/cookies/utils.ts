@@ -1,126 +1,41 @@
 import { selectCookieConsent } from 'components/cookies/CookieConsent';
 import { CookiePreferencesProps } from 'components/cookies/CookiePreferences';
+import {
+  consentOptions,
+  hasCurrentDecision,
+  initializeConsent,
+  isConsentDismissed,
+} from 'components/cookies/consent';
 
-export type CookieDetails = {
-  name: string;
-  value: string;
-  duration?: number;
-  durationUtc?: string;
-  expiresIso?: string;
-  expiration?: string;
-};
+export { consentOptions } from 'components/cookies/consent';
 
-export const setCookies = (cookies: CookieDetails[]) => {
-  cookies.forEach((cookie) => {
-    const d = new Date();
-    if (cookie.duration) d.setTime(d.getTime() + cookie.duration);
-
-    cookie.durationUtc = d.toUTCString();
-    cookie.expiresIso = d.toISOString();
-
-    setCookie(cookie.name, cookie.value, cookie.durationUtc);
-  });
-  persistCookie(cookies);
-};
-
-export const consentOptions = () => {
-  const optSetCookie = getCookie('_cky_opt_choices');
-  let userOptions = {
-    necessary: true,
-    functionality: true,
-    analytics: true,
-    targeting: false,
-  };
-  if (optSetCookie !== '') {
-    userOptions = JSON.parse(optSetCookie);
-  }
-  return userOptions;
-};
-
-const setCookie = (cname: string, cvalue: string, duration: string) => {
-  const expires = 'expires=' + duration;
-  document.cookie = cname + '=' + cvalue + ';' + expires + ';path=/;SameSite=None; Secure';
-};
-
-const getCookie = (cname: string) => {
-  const name = cname + '=';
-  const decodedCookie = decodeURIComponent(document.cookie);
-  const ca = decodedCookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') {
-      c = c.substring(1);
-    }
-    if (c.indexOf(name) === 0) {
-      return c.substring(name.length, c.length);
-    }
-  }
-  return '';
-};
-
-const processConsent = (cookiePreferences: CookiePreferencesProps) => {
-  let optInCookie = getCookie('_cky_opt_in');
-  const dismissOptIn = getCookie('_cky_opt_in_dismiss');
-  if (optInCookie === '') {
-    const days = 365 * 24 * 60 * 60 * 1000;
-    setCookies([{ name: '_cky_opt_in', value: 'false', duration: days }]);
-    optInCookie = 'false';
-  }
-
-  if (optInCookie === 'false' && dismissOptIn === '') {
-    const minutes = 60 * 60 * 1000;
-    setCookies([{ name: '_cky_opt_in_dismiss', value: 'true', duration: minutes }]);
-    selectCookieConsent(cookiePreferences);
-  }
-};
-
-const persistCookie = (cookies: CookieDetails[]) => {
-  fetch('/consent/cookie', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ cookies: cookies }),
-  })
-    .then((response) => response.json())
-    .then((json) => {
-      return json;
-    })
-    .catch((error) => {
-      return error;
+/** Initializes consent from the page's server decision and offers a nonblocking choice when needed. */
+export const retrieveCookies = async (url: string, props: CookiePreferencesProps) => {
+  const privacyPoliciesUrl =
+    typeof props.privacyPoliciesUrl === 'string' ? props.privacyPoliciesUrl.trim() : '';
+  if (props.preferences !== undefined) {
+    initializeConsent(props.preferences, {
+      measurementAvailable: Boolean(privacyPoliciesUrl),
     });
-};
-
-export const retrieveCookies = (url: string, cookiePreferences: CookiePreferencesProps) => {
-  const optInCookie = getCookie('_cky_opt_in');
-  if (optInCookie === '') {
-    fetch(url, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-    })
-      .then((response) => response.json())
-      .then((json) => {
-        if (!json.result) {
-          const dateNow = new Date();
-          json.forEach((c: CookieDetails) => {
-            if (c.expiration) {
-              const expiration = new Date(c.expiration);
-              if (expiration > dateNow) {
-                c.durationUtc = expiration.toUTCString();
-                setCookie(c.name, c.value, c.durationUtc);
-              }
-            }
-          });
-        }
-        processConsent(cookiePreferences);
-        return json;
-      })
-      .catch((error) => {
-        return error;
+  } else if (!window.TorusConsentState?.initialized) {
+    try {
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
       });
+      const cookies = await response.json();
+      if (Array.isArray(cookies)) {
+        const choice = cookies.find(
+          (cookie) =>
+            cookie.name === '_cky_opt_choices' && new Date(cookie.expiration) > new Date(),
+        );
+        initializeConsent(choice?.value ?? consentOptions());
+      }
+    } catch {
+      // Browser choices remain usable when the server cannot be reached.
+    }
+  }
+  if (privacyPoliciesUrl && !hasCurrentDecision() && !isConsentDismissed()) {
+    selectCookieConsent({ ...props, privacyPoliciesUrl });
   }
 };
