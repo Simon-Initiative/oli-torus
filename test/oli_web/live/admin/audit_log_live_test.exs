@@ -3,6 +3,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
+  import ExUnit.CaptureLog
 
   alias Oli.Auditing
 
@@ -38,8 +39,13 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       assert html =~ "Event Type"
       assert html =~ "Actor Type"
 
-      # Check that the view is properly initialized
       assert view.module == OliWeb.Admin.AuditLogLive
+
+      log = capture_log(fn -> render_hook(view, "unknown_event", %{"a" => 1}) end)
+
+      assert log =~ "unknown_event"
+      assert log =~ "OliWeb.Admin.AuditLogLive"
+      assert render(view) =~ "Audit Log"
     end
   end
 

@@ -1,10 +1,10 @@
-import { expect, type FrameLocator, type Page } from '@playwright/test';
+import { expect, type FrameLocator, type Locator, type Page } from '@playwright/test';
 import { test } from '@fixture/my-fixture';
-import { getBaseUrl, getScenarioToken } from '@core/runtimeConfig';
 import { ManualScoringPO } from '@pom/dashboard/ManualScoringPO';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
 import path from 'node:path';
 import { waitForMainLiveView } from '../student_delivery/support';
+import { logInAs } from './support/session';
 import {
   CapiType,
   countOf,
@@ -30,6 +30,8 @@ const adaptiveFeedback = 'Adaptive response is complete.';
 const manualScore = '1';
 // Matches outOf on the seeded activity.
 const activityOutOf = '1';
+// Every adaptive page the scenario seeds is authored 1000px wide (edit_adaptive_page directive).
+const adaptiveScreenWidth = 1000;
 // Tables render students as "family, given".
 const studentRowLabel = 'Student, Manual';
 // Second student's attempt is seeded straight into the queue and never scored, so it is
@@ -125,27 +127,27 @@ test.describe('manual scoring delivery workflows', () => {
     const manualScoring = new ManualScoringPO(page);
 
     await manualScoring.open(sections.basic);
-    await manualScoring.selectAttempt({
+    const scoring = await manualScoring.openAttempt({
       pageTitle: basicPageTitle,
       student: secondStudentRowLabel,
     });
 
     await test.step('a score above the available points is clamped on blur', async () => {
-      await manualScoring.enterScore('5');
-      await manualScoring.blurScore();
+      await scoring.enterScore('5');
+      await scoring.blurScore();
 
-      await manualScoring.expectScore('1');
+      await scoring.expectScore('1');
     });
 
     await test.step('the shortcut buttons set 0, half and full credit', async () => {
-      await manualScoring.clickScoreShortcut('0%');
-      await manualScoring.expectScore('0');
+      await scoring.clickScoreShortcut('0%');
+      await scoring.expectScore('0');
 
-      await manualScoring.clickScoreShortcut('50%');
-      await manualScoring.expectScore('0.5');
+      await scoring.clickScoreShortcut('50%');
+      await scoring.expectScore('0.5');
 
-      await manualScoring.clickScoreShortcut('100%');
-      await manualScoring.expectScore('1');
+      await scoring.clickScoreShortcut('100%');
+      await scoring.expectScore('1');
     });
   });
 
@@ -174,6 +176,43 @@ test.describe('manual scoring delivery workflows', () => {
       await waitForCount(frame, CapiType.CHECK_COMPLETE_RESPONSE);
     });
 
+    await test.step('the scoring page shows the whole adaptive screen', async () => {
+      await loginAs(page, 'instructor');
+
+      const manualScoring = new ManualScoringPO(page);
+
+      await manualScoring.open(sections.adaptive);
+      await manualScoring.openAttempt({ pageTitle: adaptivePageTitle, student: studentRowLabel });
+      await page.getByRole('tab', { name: 'Activity Details' }).click();
+
+      const preview = page.getByRole('tabpanel', { name: 'Activity Details' });
+      const screen = preview.locator('iframe').first();
+
+      await expect(screen).toBeVisible();
+
+      // Desktop width: the screen keeps its authored size (1000px + padding) and fits whole.
+      const wide = await screenReach(preview);
+
+      expect(wide.screenWidth).toBeGreaterThanOrEqual(adaptiveScreenWidth);
+      expect(wide.overflowing).toEqual([]);
+      expect(wide.clipping).toEqual([]);
+
+      // Narrowest two-column width: the column is narrower than the screen, which then scrolls
+      // sideways (never cut off) until its right edge is in view.
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await expect
+        .poll(async () => (await screenReach(preview)).overflowing.length)
+        .toBeGreaterThan(0);
+
+      const narrow = await screenReach(preview, { scrollToEnd: true });
+
+      expect(narrow.screenWidth).toBeGreaterThan(narrow.panelWidth);
+      expect(narrow.clipping).toEqual([]);
+      expect(narrow.screenRight).toBeLessThanOrEqual(narrow.panelRight + 1);
+
+      await page.setViewportSize({ width: 1920, height: 1080 });
+    });
+
     await test.step('instructor applies score and feedback', async () => {
       await loginAs(page, 'instructor');
       await scoreQueuedAttempt(page, {
@@ -196,25 +235,10 @@ test.describe('manual scoring delivery workflows', () => {
   });
 });
 
-/**
- * Signs in as a role through the test-only session endpoint, which creates the session
- * server side for that email. No login form, so switching users cannot land on the
- * previous one, and no page is loaded: every caller navigates somewhere right after.
- */
+/** Signs in as one of the users the scenario seeds. */
 async function loginAs(page: Page, role: 'student' | 'instructor') {
   await test.step(`sign in as ${role}`, async () => {
-    const loginUrl = new URL('/test/log_in_user', getBaseUrl());
-
-    loginUrl.searchParams.set('email', emails[role]);
-
-    // page.request shares the context cookie jar, so the browser ends up logged in without
-    // rendering anything: every caller navigates somewhere specific right after this.
-    const response = await page.request.get(loginUrl.toString(), {
-      headers: { 'x-playwright-scenario-token': getScenarioToken() },
-      maxRedirects: 0,
-    });
-
-    expect(response.status(), `log_in_user for ${role}`).toBeLessThan(400);
+    await logInAs(page, emails[role]);
   });
 }
 
@@ -330,16 +354,61 @@ async function scoreQueuedAttempt(
   const manualScoring = new ManualScoringPO(page);
 
   await manualScoring.open(options.sectionSlug);
-  await manualScoring.selectAttempt({ pageTitle: options.pageTitle, student: options.student });
+  const scoring = await manualScoring.openAttempt({
+    pageTitle: options.pageTitle,
+    student: options.student,
+  });
 
-  await manualScoring.enterScore(options.score);
-  await manualScoring.expectFeedbackRequired();
+  await scoring.enterScore(options.score);
+  await scoring.expectFeedbackRequired();
 
   // Entering the feedback also blurs the score input, which is when its hook clamps the value.
-  await manualScoring.enterFeedback(options.feedback);
-  await manualScoring.expectScore(options.score);
+  await scoring.enterFeedback(options.feedback);
+  await scoring.expectScore(options.score);
 
-  await manualScoring.apply();
+  await scoring.apply();
+}
+
+/**
+ * How much of the adaptive screen iframe the Activity Details panel can show. `overflowing` lists the
+ * elements between the two that are narrower than their content, and `clipping` the elements, on
+ * either axis, that are smaller than their content and cannot be scrolled by a user. With
+ * `scrollToEnd`, the screen's right edge is first scrolled into view the way a user would.
+ */
+async function screenReach(preview: Locator, options: { scrollToEnd?: boolean } = {}) {
+  return preview.evaluate((panel, scrollToEnd) => {
+    const screen = panel.querySelector('iframe') as HTMLIFrameElement;
+    const overflowing: HTMLElement[] = [];
+    const clipping: HTMLElement[] = [];
+    const scrollable = (overflow: string) => ['auto', 'scroll'].includes(overflow);
+
+    for (let el = screen.parentElement; el && el !== panel.parentElement; el = el.parentElement) {
+      const { overflowX, overflowY } = getComputedStyle(el);
+      const wider = el.scrollWidth > el.clientWidth;
+      const taller = el.scrollHeight > el.clientHeight;
+
+      if (wider) overflowing.push(el);
+      if ((wider && !scrollable(overflowX)) || (taller && !scrollable(overflowY)))
+        clipping.push(el);
+    }
+
+    if (scrollToEnd) {
+      for (const el of overflowing) el.scrollLeft = el.scrollWidth;
+    }
+
+    const panelBox = panel.getBoundingClientRect();
+    const screenBox = screen.getBoundingClientRect();
+    const describe = (el: HTMLElement) => `${el.tagName.toLowerCase()}.${el.className}`;
+
+    return {
+      overflowing: overflowing.map(describe),
+      clipping: clipping.map(describe),
+      panelWidth: panel.clientWidth,
+      panelRight: panelBox.right,
+      screenWidth: screenBox.width,
+      screenRight: screenBox.right,
+    };
+  }, options.scrollToEnd === true);
 }
 
 function waitForCount(frame: FrameLocator, type: CapiType) {
