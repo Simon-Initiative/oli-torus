@@ -137,6 +137,62 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
   end
 
   describe "stage_performance_details/3 for adaptive screens" do
+    test "eventual correctness combines learner-part counts independently of submission frequency" do
+      parts =
+        for id <- ["one", "two"] do
+          %{
+            "id" => id,
+            "type" => "janus-mcq",
+            "gradingApproach" => "automatic",
+            "custom" => %{
+              "correctAnswer" => [true, false],
+              "mcqItems" => [
+                %{"nodes" => [%{"text" => "Correct"}]},
+                %{"nodes" => [%{"text" => "Incorrect"}]}
+              ]
+            }
+          }
+        end
+
+      activities = [
+        %{
+          resource_id: 50,
+          revision: %{activity_type_id: 99, content: %{"partsLayout" => parts}},
+          resource_summaries: [
+            %{
+              part_id: "one",
+              num_first_attempts_correct: 1,
+              num_first_attempts: 1,
+              num_correct: 1,
+              num_attempts: 10,
+              num_eventually_correct: 1,
+              num_eventually_attempted: 1
+            },
+            %{
+              part_id: "two",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 3,
+              num_correct: 0,
+              num_attempts: 100,
+              num_eventually_correct: 0,
+              num_eventually_attempted: 3
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      [activity] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{99 => %{slug: "oli_adaptive", title: "Adaptive"}},
+          []
+        )
+
+      assert activity.all_attempt_pct == 0.25
+      assert Enum.map(activity.adaptive_input_summaries, & &1.all_attempt_pct) == [1.0, 0.0]
+    end
+
     test "adds typed aggregate summaries for adaptive parts" do
       adaptive_id = 99
 

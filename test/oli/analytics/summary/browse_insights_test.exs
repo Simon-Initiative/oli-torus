@@ -428,6 +428,22 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
         ]
       ])
 
+      # Historical learner summaries are needed to distinguish learner success
+      # from submission accuracy. Two of four learner-part outcomes succeeded.
+      users = [Oli.Factory.insert(:user), Oli.Factory.insert(:user)]
+
+      for {user, correct} <- Enum.zip(users, [1, 0]), part <- ["progress", "question"] do
+        Repo.insert!(%Oli.Analytics.Summary.ResourceSummary{
+          section_id: section.id,
+          user_id: user.id,
+          resource_id: adaptive_activity.resource.id,
+          resource_type_id: adaptive_activity.revision.resource_type_id,
+          part_id: part,
+          num_correct: correct,
+          num_attempts: 3
+        })
+      end
+
       Map.put(map, :adaptive_activity, adaptive_activity)
     end
 

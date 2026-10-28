@@ -3,6 +3,7 @@ defmodule Oli.Analytics.Summary do
 
   alias Oli.Analytics.Summary.{
     AttemptGroup,
+    EventualCorrectness,
     ResponseLabel,
     ResourceSummary,
     ResponseSummary,
@@ -764,6 +765,9 @@ defmodule Oli.Analytics.Summary do
   @doc """
   Retrieves the resource summaries for the activities present on a specified page in a
   specified section, filtered by the provided activity IDs.
+
+  Includes eventual-correct learner counts per part, derived from historical
+  student summaries independently of the submission counters.
   """
   def summarize_activities_for_page(section_id, page_id, only_for_activity_ids) do
     activity_constraint = dynamic([rs, _], rs.activity_id in ^only_for_activity_ids)
@@ -773,13 +777,21 @@ defmodule Oli.Analytics.Summary do
     from(rs in ResponseSummary,
       join: s in ResourceSummary,
       on: rs.activity_id == s.resource_id and rs.section_id == s.section_id,
+      left_join: ec in subquery(EventualCorrectness.counts_query(nil, [section_id])),
+      on:
+        ec.resource_id == s.resource_id and ec.resource_type_id == s.resource_type_id and
+          ec.section_id == s.section_id and ec.part_id == s.part_id,
       where:
         rs.project_id == -1 and rs.section_id == ^section_id and
           rs.page_id == ^page_id,
       where: s.user_id == -1 and s.project_id == -1,
       where: ^activity_constraint,
       distinct: [s.resource_id, s.part_id],
-      select: s
+      select: %{
+        s
+        | num_eventually_correct: fragment("COALESCE(?, 0)", ec.num_correct),
+          num_eventually_attempted: fragment("COALESCE(?, 0)", ec.num_attempted)
+      }
     )
     |> Repo.all()
   end

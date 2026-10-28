@@ -19,6 +19,10 @@ defmodule Oli.Analytics.Summary.ResourceSummary do
     field(:num_hints, :integer, default: 0)
     field(:num_first_attempts, :integer, default: 0)
     field(:num_first_attempts_correct, :integer, default: 0)
+
+    # Derived at read time from per-student submission counters.
+    field(:num_eventually_correct, :integer, virtual: true)
+    field(:num_eventually_attempted, :integer, virtual: true)
   end
 
   @doc false

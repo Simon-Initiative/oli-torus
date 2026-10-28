@@ -83,6 +83,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   `graded` and the question ordinal belong to a single page, so both come from the first revision
   given; the analytics inputs are gathered across all of them before any grouping.
+
+  Eventually Correct counts each learner once per section and question part,
+  using whether they have ever submitted a correct answer.
   """
   def summarize_activities_across_pages(
         %Section{} = section,
@@ -213,7 +216,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       {correct, total} =
         Map.get(grouped_by_activity_id, activity_id, [])
         |> Enum.reduce({0, 0}, fn rs, {correct, total} ->
-          {correct + rs.num_correct, total + rs.num_attempts}
+          {correct + (rs.num_eventually_correct || 0), total + (rs.num_eventually_attempted || 0)}
         end)
 
       all_attempt_pct = if total > 0, do: correct / total, else: 0
@@ -356,6 +359,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     mapping
   end
 
+  @doc """
+  Adds response visualizations and adaptive input metrics to activity summaries.
+
+  When learner summary counts are available, Eventually Correct uses one
+  outcome per learner and part independently of response-frequency charts.
+  """
   def stage_performance_details(
         activities,
         activity_types_map,
@@ -1966,6 +1975,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             grading_mode,
             part_analytics
           )
+          |> with_eventual_correctness(resource_summary)
 
         visualization =
           build_adaptive_visualization(
@@ -2004,6 +2014,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           attempt_count: adaptive_attempt_count(resource_summary, grading_mode, part_analytics),
           first_attempt_pct: correctness_metrics.first_attempt_pct,
           all_attempt_pct: correctness_metrics.all_attempt_pct,
+          num_eventually_correct: Map.get(correctness_metrics, :num_eventually_correct),
+          num_eventually_attempted: Map.get(correctness_metrics, :num_eventually_attempted),
           first_attempt_total_count: correctness_metrics.first_attempt_total_count,
           first_attempt_correct_count: correctness_metrics.first_attempt_correct_count,
           attempt_total_count: correctness_metrics.attempt_total_count,
@@ -2056,6 +2068,18 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     if denominator > 0, do: numerator / denominator, else: 0
   end
+
+  defp with_eventual_correctness(metrics, %{num_eventually_attempted: attempted} = summary)
+       when is_integer(attempted) do
+    correct = summary.num_eventually_correct || 0
+
+    metrics
+    |> Map.put(:all_attempt_pct, ratio(correct, attempted))
+    |> Map.put(:num_eventually_correct, correct)
+    |> Map.put(:num_eventually_attempted, attempted)
+  end
+
+  defp with_eventual_correctness(metrics, _summary), do: metrics
 
   defp coverage_response_label(:manual), do: "First Input Responses"
   defp coverage_response_label(_), do: "Responses"
@@ -4177,8 +4201,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 acc.first_attempt_total + Map.get(summary, :first_attempt_total_count, 0),
               first_attempt_correct:
                 acc.first_attempt_correct + Map.get(summary, :first_attempt_correct_count, 0),
-              attempts: acc.attempts + Map.get(summary, :attempt_total_count, 0),
-              correct: acc.correct + Map.get(summary, :correct_count, 0)
+              attempts:
+                acc.attempts +
+                  (Map.get(summary, :num_eventually_attempted) ||
+                     Map.get(summary, :attempt_total_count, 0)),
+              correct:
+                acc.correct +
+                  (Map.get(summary, :num_eventually_correct) ||
+                     Map.get(summary, :correct_count, 0))
             }
           end
         end

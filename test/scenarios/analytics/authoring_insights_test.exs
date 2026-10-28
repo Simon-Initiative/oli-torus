@@ -18,6 +18,6 @@ defmodule Oli.Scenarios.Analytics.AuthoringInsightsTest do
     assert failed_verifications == [],
            Enum.map_join(failed_verifications, "\n", & &1.message)
 
-    assert length(result.verifications) == 8
+    assert length(result.verifications) == 12
   end
 end

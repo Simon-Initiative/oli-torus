@@ -10,6 +10,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
   alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.Analytics.Summary.BrowseInsightsOptions
+  alias Oli.Analytics.Summary.EventualCorrectness
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Resources.{ResourceType, Revision}
   alias Oli.Repo.{Paging, Sorting}
@@ -31,6 +32,10 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     end
   end
 
+  @doc """
+  Retrieves descriptive insights, deriving eventual correctness from learner
+  summaries while retaining submission-based counts and relative difficulty.
+  """
   def browse_insights(
         %Paging{} = paging,
         %Sorting{} = sorting,
@@ -54,6 +59,22 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       |> join(:left, [s, pub, pr], rev in Revision, on: rev.id == pr.revision_id)
       |> where(^where_by)
       |> where(^text_search_condition)
+      |> join(
+        :left,
+        [s],
+        ec in subquery(
+          EventualCorrectness.counts_query(
+            project_id,
+            options.section_ids,
+            options.resource_type_id
+          )
+        ),
+        as: :eventual_correctness,
+        on:
+          ec.resource_id == s.resource_id and ec.resource_type_id == s.resource_type_id and
+            ec.section_id == s.section_id and
+            fragment("? IS NOT DISTINCT FROM ?", ec.part_id, s.part_id)
+      )
 
     case activity_resource_type?(options.resource_type_id) do
       true ->
@@ -180,7 +201,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
   end
 
   defp add_activity_row_select(query, adaptive_activity_type_id) do
-    select(query, [s, pub, pr, rev], %{
+    select(query, [s, pub, pr, rev, eventual_correctness: ec], %{
       title: rev.title,
       resource_id: s.resource_id,
       slug: rev.slug,
@@ -193,7 +214,9 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       num_attempts: s.num_attempts,
       num_hints: s.num_hints,
       num_first_attempts: s.num_first_attempts,
-      num_first_attempts_correct: s.num_first_attempts_correct
+      num_first_attempts_correct: s.num_first_attempts_correct,
+      num_eventually_correct: ec.num_correct,
+      num_eventually_attempted: ec.num_attempted
     })
   end
 
@@ -225,7 +248,8 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
         num_hints: sum(row.num_hints),
         num_first_attempts: sum(row.num_first_attempts),
         num_first_attempts_correct: sum(row.num_first_attempts_correct),
-        eventually_correct: safe_div_fragment(sum(row.num_correct), sum(row.num_attempts)),
+        eventually_correct:
+          safe_div_fragment(sum(row.num_eventually_correct), sum(row.num_eventually_attempted)),
         first_attempt_correct:
           safe_div_fragment(sum(row.num_first_attempts_correct), sum(row.num_first_attempts)),
         relative_difficulty:
@@ -313,7 +337,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     case section_ids do
       [] ->
         query
-        |> select([s, pub, pr, rev], %{
+        |> select([s, pub, pr, rev, eventual_correctness: ec], %{
           id: s.id,
           total_count: fragment("?::int", ^total_count),
           title: rev.title,
@@ -330,7 +354,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           num_hints: s.num_hints,
           num_first_attempts: s.num_first_attempts,
           num_first_attempts_correct: s.num_first_attempts_correct,
-          eventually_correct: safe_div_fragment(s.num_correct, s.num_attempts),
+          eventually_correct: safe_div_fragment(ec.num_correct, ec.num_attempted),
           first_attempt_correct:
             safe_div_fragment(s.num_first_attempts_correct, s.num_first_attempts),
           relative_difficulty:
@@ -355,7 +379,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           rev.slug,
           rev.activity_type_id
         ])
-        |> select([s, _, _, rev], %{
+        |> select([s, _, _, rev, eventual_correctness: ec], %{
           id: fragment("gen_random_uuid()::text"),
           total_count: fragment("?::int", ^total_count),
           resource_id: s.resource_id,
@@ -369,7 +393,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           num_hints: sum(s.num_hints),
           num_first_attempts: sum(s.num_first_attempts),
           num_first_attempts_correct: sum(s.num_first_attempts_correct),
-          eventually_correct: safe_div_fragment(sum(s.num_correct), sum(s.num_attempts)),
+          eventually_correct: safe_div_fragment(sum(ec.num_correct), sum(ec.num_attempted)),
           first_attempt_correct:
             safe_div_fragment(sum(s.num_first_attempts_correct), sum(s.num_first_attempts)),
           relative_difficulty:
@@ -410,8 +434,8 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
         :eventually_correct ->
           order_by(
             query,
-            [s],
-            {^direction, safe_div_fragment(s.num_correct, s.num_attempts)}
+            [eventual_correctness: ec],
+            {^direction, safe_div_fragment(ec.num_correct, ec.num_attempted)}
           )
 
         :first_attempt_correct ->
@@ -469,8 +493,8 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
         :eventually_correct ->
           order_by(
             query,
-            [s],
-            {^direction, safe_div_fragment(sum(s.num_correct), sum(s.num_attempts))}
+            [eventual_correctness: ec],
+            {^direction, safe_div_fragment(sum(ec.num_correct), sum(ec.num_attempted))}
           )
 
         :first_attempt_correct ->
