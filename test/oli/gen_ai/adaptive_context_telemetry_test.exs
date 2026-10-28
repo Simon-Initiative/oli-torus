@@ -89,11 +89,16 @@ defmodule Oli.GenAI.AdaptiveContextTelemetryTest do
         handler_id,
         events,
         fn event_name, measurements, metadata, _config ->
-          send(parent, {:telemetry_event, event_name, measurements, metadata})
+          # These helpers emit synchronously; ignore unrelated concurrent dialogue events.
+          case self() == parent do
+            true -> send(parent, {:telemetry_event, event_name, measurements, metadata})
+            false -> :ok
+          end
         end,
         nil
       )
 
+    on_exit(fn -> :telemetry.detach(handler_id) end)
     handler_id
   end
 end

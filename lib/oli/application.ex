@@ -124,8 +124,7 @@ defmodule Oli.Application do
             # GenAI hackney connection pool
             Oli.GenAI.HackneyPool,
 
-            # GenAI routing and breaker infrastructure
-            Oli.GenAI.AdmissionControl,
+            # GenAI telemetry
             Oli.GenAI.Telemetry,
             Oli.GenAI.AdaptiveContextTelemetry,
             Oli.InstructorDashboard.Email.Telemetry,
@@ -133,8 +132,6 @@ defmodule Oli.Application do
             Oli.Dashboard.OracleTelemetry,
             Oli.Delivery.Experiments.Telemetry,
             {Oli.Dashboard.RevisitCache, name: Oli.Dashboard.RevisitCache},
-            {Registry, keys: :unique, name: Oli.GenAI.BreakerRegistry},
-            Oli.GenAI.BreakerSupervisor,
 
             # MCP (Model Context Protocol) server for AI agents
             Anubis.Server.Registry,
@@ -144,7 +141,7 @@ defmodule Oli.Application do
             Oli.GenAI.Agent.ToolBroker,
             Oli.GenAI.Agent.RunSupervisor,
             {Oli.MCP.Server, transport: :streamable_http}
-          ] ++ maybe_node_js_config()
+          ] ++ genai_runtime_children() ++ maybe_node_js_config()
       end
 
     if role == :server and log_incomplete_requests?() do
@@ -207,6 +204,16 @@ defmodule Oli.Application do
 
   # Returns the Oban configuration for the application.
   # It makes sure that only one node in the cluster has the part_mapping_refresh queue configured.
+  # Sandbox tests explicitly start runtime instances with owned configuration
+  # sources. Production starts monitors without permitting sandbox polling or
+  # external requests from unrelated tests.
+  defp genai_runtime_children do
+    case Application.get_env(:oli, :env) do
+      :test -> []
+      _ -> [Oli.GenAI.RuntimeSupervisor]
+    end
+  end
+
   defp oban_config do
     Oban.Telemetry.attach_default_logger()
 

@@ -1,3 +1,4 @@
+# Acceptance coverage: AC-016.
 defmodule Oli.GenAI.Dialogue.ServerTest do
   use ExUnit.Case, async: true
 
@@ -67,6 +68,34 @@ defmodule Oli.GenAI.Dialogue.ServerTest do
     assert log =~ "event=execution_failed"
     assert log =~ "service_config_id=42"
     refute log =~ "secret response body"
+  end
+
+  @tag capture_log: true
+  test "a final interrupted execution discards partial dialogue and tool state" do
+    config = %Configuration{
+      service_config: %ServiceConfig{id: 1, primary_model: %{id: 1}},
+      functions: [],
+      reply_to_pid: self(),
+      messages: [],
+      execution_fn: fn _, _, _, _, handler, _ ->
+        handler.({:tokens_received, "partial"})
+        handler.({:function_call, %{"name" => "lookup", "arguments" => "{", "id" => "1"}})
+        {:error, :interrupted_stream}
+      end
+    }
+
+    {:ok, server} = Server.new(config)
+    on_exit(fn -> if Process.alive?(server), do: GenServer.stop(server) end)
+    Server.engage(server, Message.new(:user, "hello"))
+    assert_receive {:dialogue_server, {:tokens_received, "partial"}}, 1000
+
+    assert_receive {:dialogue_server, {:error, "An error occurred while processing the request"}},
+                   1000
+
+    state = :sys.get_state(server)
+    refute Enum.any?(state.messages, &(&1.role == :assistant))
+    assert state.function_name == nil and state.function_args == nil and state.function_id == nil
+    refute_receive {:dialogue_server, {:error, _}}
   end
 
   test "ignores a stale task reply after replacing an engagement" do

@@ -8,16 +8,44 @@ defmodule Oli.GenAI.Completions do
   `generate` and `stream` functions.
   """
 
-  alias Oli.GenAI.Completions.RegisteredModel
+  alias Oli.GenAI.Completions.{ManagedOpenAI, RegisteredModel}
 
+  @doc "Generates a completion, using explicit selected transport context when supplied."
   def generate(messages, functions, %RegisteredModel{} = registered_model, opts \\ []) do
-    get_provider(registered_model)
-    |> apply(:generate, [messages, functions, registered_model, opts])
+    case Keyword.get(opts, :transport_context) do
+      %{provider: provider} = plan when not is_nil(provider) ->
+        ManagedOpenAI.request(:generate, messages, functions, plan, nil, opts)
+
+      _ ->
+        apply(get_provider(registered_model), :generate, [
+          messages,
+          functions,
+          registered_model,
+          opts
+        ])
+    end
   end
 
-  def stream(messages, functions, %RegisteredModel{} = registered_model, response_handler_fn) do
-    get_provider(registered_model)
-    |> apply(:stream, [messages, functions, registered_model, response_handler_fn])
+  @doc "Streams a completion through explicit transport context, retaining legacy adapter dispatch otherwise."
+  def stream(
+        messages,
+        functions,
+        %RegisteredModel{} = registered_model,
+        response_handler_fn,
+        opts \\ []
+      ) do
+    case Keyword.get(opts, :transport_context) do
+      %{provider: provider} = plan when not is_nil(provider) ->
+        ManagedOpenAI.request(:stream, messages, functions, plan, response_handler_fn, opts)
+
+      _ ->
+        apply(get_provider(registered_model), :stream, [
+          messages,
+          functions,
+          registered_model,
+          response_handler_fn
+        ])
+    end
   end
 
   def validate_registered_model(%RegisteredModel{provider: :null}), do: :ok

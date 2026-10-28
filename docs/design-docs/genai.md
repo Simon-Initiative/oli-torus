@@ -1,109 +1,141 @@
-# GenAI Infrastructure: Design and Implementation
+# Generative AI configuration and execution
 
-This document describes the design and operation of the GenAI infrastructure within Torus. This infrastructure provides flexible, runtime-configurable support for integrating multiple GenAI models from various providers, enabling features to leverage different models depending on system-level or course-section-level configurations.
+Torus resolves a feature's section override, falling back to its global
+`FeatureConfig`, to one `ServiceConfig`. Features include student dialogue,
+instructor recommendations and instructor email. Sharing a ServiceConfig
+intentionally shares its production transport pools on each application node.
 
-## Key Capabilities
+## Configuration and administration
 
-The GenAI infrastructure is designed with several core capabilities:
+- **Provider** owns the configured adapter, endpoint template, encrypted API and
+  organization credentials, administrative enablement and independent probe policy.
+  It is a connection/availability boundary, not a vendor enum.
+- **RegisteredModel** selects a Provider and model identifier, capabilities, a
+  health-check candidate flag, connection timeout and response inactivity timeout.
+- **ServiceConfig** selects distinct primary/secondary models on the same Provider
+  and an optional backup on a different Provider, required capabilities, and one
+  persisted pool capacity for each tier.
 
-- **Dynamic Model Integration**: Runtime support for registering and utilizing models from multiple providers, including OpenAI, Claude, or any provider with an OpenAI-compliant API.
-- **Feature-Specific Model Usage**: Different GenAI features within Torus can independently use different registered models.
-- **Course-Section-Level Customization**: The ability to override default models at the individual course section level.
-- **Backpressure-Aware Routing**: Admission control and circuit breakers select primary/secondary/backup models proactively and shed load when needed.
-- **Fallback Mechanism**: Backup model is reserved for provider-level outages (primary + secondary breaker open).
-- **Reusable Dialogue Implementation**: A clean, modular GenServer-based dialogue component suitable for use across multiple features.
-- **Operational Telemetry**: Routing decisions and provider outcomes are observable via telemetry and AppSignal metrics.
+Authorized administrators use `/admin/gen_ai/providers`,
+`/admin/gen_ai/registered_models`, and `/admin/gen_ai/service_configs`. Socket mounts
+recheck authorization. Editing must be enabled before writes. Provider credentials
+are write-only: blank retains a stored credential; explicit organization-key clearing
+is separate. Errors never show raw provider responses or credentials. Model and
+ServiceConfig forms replace the former shared-pool and breaker controls.
 
-## Architectural Components
+Provider administration displays administrative and observed state separately, the
+selected probe model, last check/success, next check and safe diagnostics. Missing
+configuration, disabled checks, unknown/stale health and actual unavailability are
+distinct. ServiceConfig diagnostics display actual node-local checked-out occupancy,
+configured capacity, queued checkouts and retiring pool generations. Runtime failure
+is displayed as unavailable diagnostic information, never invented healthy state.
 
-### Completions Service and Provider Behavior
+## Independent availability
 
-The core interface for interacting with GenAI models is the `Oli.GenAI.Completions` service. This module dynamically dispatches completion requests through its `generate/3` and `stream/4` functions to specific provider implementations based on configuration.
+Only tiny synthetic inference probes update observed Provider availability.
+Ordinary duration, errors, cancellation, checkout contention and administrative tests
+never change health. Lowest-ID flagged model is selected; if no model is flagged,
+the lowest-ID model is automatically flagged transactionally. Multiple flags are
+allowed. No-model and incomplete-credential states are explicit configuration errors.
 
-Three provider implementations currently exist:
+Default policy is one probe every 180,000 ms (including recovery), 30,000 ms after a
+first suspected failure, a 10,000 ms probe deadline, three consecutive failures to
+mark unavailable, and two consecutive successes to recover. Schedules are jittered,
+start immediately, run from completion and permit one in-flight probe per Provider,
+with four concurrent probes per node. Probes have separate transport capacity.
+Structurally valid unknown health is initially eligible. Previously available health
+is stale after two regular intervals plus deadline and locally ineligible until
+fresh evidence; staleness does not fabricate a synthetic outage.
 
-- `Oli.GenAI.Completions.OpenAICompliantProvider`
-- `Oli.GenAI.Completions.ClaudeProvider`
-- `Oli.GenAI.Completions.NullProvider` (a placeholder used for development and testing)
+`GENAI_HEALTH_CHECKS_ENABLED=false` disables probes and observed-health gating on that
+node. Administrative disablement and all production capacity limits still apply.
+Restart after environment changes; re-enabling starts unknown and probes immediately.
+See `docs/OPERATIONS.md` for environment overrides, rollout and rollback.
 
-### Registered Models
+## Pool capacity and best-effort routing
 
-Models from GenAI providers are represented within the system using the `RegisteredModel` schema. This schema captures essential details such as provider type, model name, and the API endpoint (`url_template`). Administrators will be able to dynamically register new models via an upcoming administrative interface.
+Actual transport pools are the sole capacity authority, keyed by
+`(service_config_id, tier)` on each node. Different ServiceConfigs have independent
+pools even for the same RegisteredModel. Primary, secondary and backup are isolated.
+No application request counters, admission leases or atomic reservations are used.
 
-Example registrations:
+When main is eligible, inspect primary checked-out occupancy. If it appears full,
+inspect secondary; when both appear full or secondary is absent, return busy.
+Observed main unavailability or administrative disablement may select eligible backup
+if its pool appears available. Backup is not capacity overflow.
 
-```elixir
-%RegisteredModel{provider: :openai, model: "gpt-4-1106-preview", url_template: "https://api.openai.com"}
-%RegisteredModel{provider: :openai, model: "gpt-4.5-preview-2025-02-27", url_template: "https://api.openai.com"}
-%RegisteredModel{provider: :claude, model: "claude-3-haiku-20240307", url_template: "https://api.anthropic.com"}
-%RegisteredModel{provider: :openai, model: "my-fine-tuned-gemini", url_template: "https://server.undermydesk.com"}
-```
+Observation and checkout are deliberately non-atomic: simultaneous requests can both
+select primary, secondary can be selected just as primary frees, and busy can race a
+newly available connection. The transport enforces its actual limit. Checkout waiting
+is bounded at 1,000 ms; expiry is local busy without health mutation, secondary
+reselection or backup failover. Model connection timeout (default 8,000 ms), response
+inactivity timeout (default 60,000 ms), and a total 300,000 ms inference deadline are
+separate budgets. Both attempts share the original total deadline.
 
-The infrastructure supports integration of official foundation models and self-hosted or fine-tuned solutions seamlessly.
+For verified Hackney 1.25.0 HTTP/1.1, capacity means **Maximum checked-out
+connections**, with an inference retaining its checkout during stream consumption.
+A connection count does not bound requests on multiplexed transports. Such adapters
+need equivalent request/stream capacity and verification before support is claimed.
+Claude's Anthropix/Req/Finch implementation remains unchanged and unverified. Its
+legacy primary dispatch does not promise tier capacity or Provider-health failover;
+managed administrative tests and backup do not silently use unverified transport.
 
-### Service Configuration (`ServiceConfig`)
-Each GenAI-driven feature in Torus is configured through a `ServiceConfig`. A service configuration defines a primary registered model to use for a feature and can optionally specify a secondary model (capacity/health overflow) and a backup model (outage-only). This ensures graceful degradation of service if the primary provider becomes unavailable or is at capacity.
+Every node reconciles configuration on committed invalidations and periodic reload.
+Routing reads protected configuration snapshots without database queries or waiting
+behind reloads; it reads actual pool occupancy rather than caching a counter.
+Credential/model/endpoint changes invalidate stale selections. Resize uses an
+immediate new generation, with old started/queued work finishing under its existing
+budgets. Temporary combined occupancy above the new capacity is intentional. Old
+generations stay visible until their actual checkouts, queues and startups clear;
+restart adopts surviving generations. In-place Hackney shrinking is not used.
 
-ServiceConfig only controls Primary/Secondary/Backup selection. Breaker thresholds and provider timeouts are configured per RegisteredModel so a single model has consistent behavior across all ServiceConfigs that reference it.
+## Execution, streaming and administrative calls
 
-### Feature-Level Configuration (`GenAIFeatureConfig`)
-The GenAIFeatureConfig schema associates GenAI-powered features (like student dialogue or instructor dashboard recommendations) with specific ServiceConfig instances. It allows setting a global default for each feature, with the option for individual course sections to override this default.
+`Router` creates a selection plan, `Execution` owns request deadline and retry
+boundaries, and `Completions` passes exact context to `ManagedOpenAI`. The adapter
+uses Provider credentials and the chosen real pool in sync and streaming modes.
+At most one distinct eligible backup attempt is allowed for connection failures,
+pre-output inactivity, and HTTP 500/502/503/504. Generic 429, invalid input/protocol,
+application errors, cancellation and local contention do not trigger retry.
+Once any content/tool fragment is exposed, failure is an interrupted stream.
 
-The schema is straightforward:
+SSE requires terminal completion, handles errors/truncation, bounds incomplete and
+complete events, ignores null role content, and retains content arriving with finish.
+Normal/error exits close connections. Owner monitoring and an independent deadline
+guardian reclaim transport even on cancellation, `:kill`, or a blocked callback;
+caller callbacks must themselves return for control to return to that caller.
+Dialogue discards partial assistant/tool state on a final returned error and tags
+engagements to ignore stale replies.
 
-```
-schema "gen_ai_feature_configs" do
-  field(:feature, Ecto.Enum, values: [:student_dialogue, :instructor_dashboard_recommendation])
-  belongs_to :service_config, Oli.GenAI.Completions.ServiceConfig
-  belongs_to :section, Oli.Delivery.Sections.Section
+`Administrative.generate/4` uses normal production selection when a ServiceConfig
+is supplied. Without one, it uses explicit administrative transport capacity of four
+per Provider/resolved origin/node. It shares bounded Execution ownership/deadlines
+but never retries an administrative attempt as production backup. UI test calls run
+asynchronously with a 10,000 ms total budget and render a safe success/category only.
 
-  timestamps(type: :utc_datetime)
-end
-```
+## Observability and compatibility
 
-For instance, the system might define a global default where the student dialogue feature (`:student_dialogue`) uses OpenAI's GPT-4 by default, with a Claude model as a fallback. A specific course section (e.g., REAL CHEM) could then override this to use a fine-tuned Gemini model, specifying OpenAI as the backup.
+AppSignal receives independent probe outcomes/transitions, reconciliation duration,
+request outcomes/duration/first output/interruption/cancellation/backup, routing
+selections/busy rejection, actual occupancy/capacity/queue depth, checkout causes and
+pool lifecycle/cleanup events. Raw identifier-bearing telemetry preserves tier/node
+context; metric tags use bounded categories. No prompts, URLs, credentials or raw
+provider error bodies are emitted by these signals.
 
-When a feature initializes (such as the DOT component), it retrieves both the global default and any section-specific configuration. It prioritizes the section-specific configuration, falling back to the global default as necessary.
+Hackney's public connect operation combines checkout and TCP/TLS establishment.
+`pool.startup_ms` is explicitly combined timing, not pure queue wait. Native checkout
+timeouts separately report an elapsed upper bound through checkout timeout; causes
+distinguish timeout, owner cancellation, startup deadline and transport failure.
+Pure successful per-request checkout wait is not exposed by this installed API.
 
-### Dialogue Management via GenServer (`Oli.GenAI.Dialogue.Server`)
-The multi-turn dialogue implementation previously embedded within UI components has been extracted into a standalone GenServer (Oli.GenAI.Dialogue.Server). This GenServer manages the lifecycle of GenAI dialogues—processing messages, handling streaming responses from GenAI providers, and dispatching tokens back to UI processes (typically Phoenix LiveView components). This modular design allows easy reuse and maintains a clear separation of concerns.
+Legacy admission/breaker services are no longer supervised and old control/metric
+wiring is retired. Compatibility modules and legacy model columns remain for rollback
+and direct legacy adapter calls; they have no authority over managed production
+requests. The primary-only override is removed. See the operational runbook before
+cutover: the additive single-Provider migration cannot automatically represent
+heterogeneous legacy endpoints or repair same-Provider backup relationships.
 
-Dialogue streaming calls are routed through the execution layer described below, ensuring counters and breakers are applied consistently.
-
-### Backpressure-Aware Routing and Execution
-GenAI requests are routed dynamically at runtime based on ServiceConfig model selection, local backpressure signals, and breaker state. The main components are:
-
-- `Oli.GenAI.Router`: Computes a `RoutingPlan` (selected model, tier, pool, reason) from request context, ServiceConfig selection, and live signals.
-- `Oli.GenAI.AdmissionControl`: ETS-backed counters for per-model and per-pool inflight counts (capacity).
-- `Oli.GenAI.Breaker`: Per-RegisteredModel GenServer tracking rolling error/429/latency signals and breaker state (closed/open/half_open).
-- `Oli.GenAI.Execution`: Wraps provider calls, applies routing plans, releases admissions, emits telemetry, and reports outcomes to breakers.
-
-Breaker state and counters are per-node in the initial implementation; there is no cross-node coordination. Rollout is controlled via ServiceConfig model selection updates (no new feature flag).
-
-#### Admission Control
-Admission control is enforced at the RegisteredModel and pool level:
-
-- **RegisteredModel / Pool capacity (global protection)**  
-  - Enforced via per-model and per-pool inflight caps.  
-  - Prevents slow models (e.g., GPT‑5) from monopolizing capacity and protects hackney pools.
-
-### Telemetry and Observability
-Routing and provider outcomes emit telemetry events used to populate AppSignal metrics. The primary events are:
-
-- `[:oli, :genai, :router, :decision]` (decision reason and duration)
-- `[:oli, :genai, :router, :admission]` (admitted vs rejected)
-- `[:oli, :genai, :provider, :stop]` (provider latency and outcome)
-- `[:oli, :genai, :breaker, :state_change]` (breaker transitions)
-
-These events are mapped to AppSignal counters and distributions for operational dashboards.
-
-### Database Initialization and Environment Variables
-When setting up or resetting the database (mix ecto.reset), migrations automatically detect environment variables for API keys (OpenAI and Anthropic). If these keys are present, appropriate RegisteredModel and ServiceConfig records are created. If absent, the system defaults to using the NullProvider, which provides basic responses for development purposes.
-
-This design ensures that in production environments (such as Proton or Stellarator), real provider configurations will automatically be established, whereas in local or development setups, the system gracefully defaults to a no-operation provider.
-
-### Planned Enhancements
-
-The present design deliberately maintains backward compatibility. Deploying this infrastructure will not affect previous GenAI functionality, as default configurations replicate existing behavior, with new capabilities becoming available incrementally as administrators and course authors configure them through the forthcoming UI.
-
-Future features (instructor facing DOT, authoring agent) will add new entries into the `Ecto.Enum` of `:features` in the `GenAIFeatureConfig` schema and default `ServiceConfig` references.
+Implementation and dependency evidence:
+`docs/exec-plans/current/features/genai-redesign/plan.md`,
+`docs/exec-plans/current/features/genai-redesign/design/transport-evidence.md`, and
+`docs/exec-plans/current/features/genai-redesign/design/phase-3-execution.md`.

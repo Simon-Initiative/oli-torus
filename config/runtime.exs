@@ -773,3 +773,29 @@ if runtime_env in [:prod, :preview] do
       default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!(cloak_vault_key)}
     ]
 end
+
+# Independent Provider probes determine availability; request outcomes never mutate it.
+genai_positive_env = fn name, default ->
+  case Integer.parse(System.get_env(name, default)) do
+    {value, ""} when value > 0 -> value
+    _ -> raise "#{name} must be a positive integer"
+  end
+end
+
+genai_health_enabled =
+  case System.get_env("GENAI_HEALTH_CHECKS_ENABLED", "true")
+       |> String.trim()
+       |> String.downcase() do
+    value when value in ["false", "0", "off", "no"] -> false
+    value when value in ["true", "1", "on", "yes"] -> true
+    _ -> raise "GENAI_HEALTH_CHECKS_ENABLED must be a boolean"
+  end
+
+config :oli, :genai_health,
+  enabled: genai_health_enabled,
+  probe_interval_ms: genai_positive_env.("GENAI_PROBE_INTERVAL_MS", "180000"),
+  probe_failure_interval_ms: genai_positive_env.("GENAI_PROBE_FAILURE_INTERVAL_MS", "30000"),
+  probe_deadline_ms: genai_positive_env.("GENAI_PROBE_DEADLINE_MS", "10000"),
+  failure_threshold: genai_positive_env.("GENAI_PROBE_FAILURE_THRESHOLD", "3"),
+  recovery_threshold: genai_positive_env.("GENAI_PROBE_RECOVERY_THRESHOLD", "2"),
+  max_probes: genai_positive_env.("GENAI_MAX_CONCURRENT_PROBES", "4")

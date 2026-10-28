@@ -1,0 +1,435 @@
+version: 1
+feature: genai-redesign
+generated_from: prd.md
+work_item: genai-redesign
+requirements:
+- id: FR-001
+  title: Provider configuration
+  status: verified
+  acceptance_criteria:
+  - id: AC-001
+    title: Administrators can manage Providers with encrypted connection credentials and models reference
+      a Provider; rotation revalidates connectivity and invalidates obsolete probe results.
+    status: verified
+    verification_method: automated
+    proofs: &id001
+    - test/oli/gen_ai/provider_configuration_test.exs
+    - test/oli_web/live/gen_ai/providers_view_test.exs
+- id: FR-002
+  title: ServiceConfig validation
+  status: verified
+  acceptance_criteria:
+  - id: AC-002
+    title: Primary and secondary are distinct models on the same Provider, backup uses a different Provider,
+      and selected capabilities are validated for the feature.
+    status: verified
+    verification_method: automated
+    proofs: &id002
+    - test/oli/gen_ai/provider_configuration_test.exs
+- id: FR-003
+  title: Probe model selection
+  status: verified
+  acceptance_criteria:
+  - id: AC-003
+    title: Each Provider selects its lowest-ID flagged model; if none is flagged, it safely persists the
+      flag on its lowest-ID model, reconciles edits and membership changes, and exposes missing-model
+      configuration.
+    status: verified
+    verification_method: automated
+    proofs: &id003
+    - test/oli/gen_ai/provider_designation_concurrency_test.exs
+    - test/oli/gen_ai/provider_configuration_test.exs
+- id: FR-004
+  title: Independent health monitoring
+  status: verified
+  acceptance_criteria:
+  - id: AC-004
+    title: Only independent synthetic inference probes determine observed Provider availability; ordinary
+      request duration, cancellation, errors, and pool contention never change it.
+    status: verified
+    verification_method: automated
+    proofs: &id004
+    - test/oli/gen_ai/health_monitor_test.exs
+    - test/oli/gen_ai/router_test.exs
+- id: FR-005
+  title: Probe scheduling and recovery
+  status: verified
+  acceptance_criteria:
+  - id: AC-005
+    title: Per-node probes use the configured Provider and selected model, separate capacity, deadlines
+      and at most one in-flight probe per Provider; consecutive results drive configured failure and recovery
+      thresholds without user traffic.
+    status: verified
+    verification_method: automated
+    proofs: &id005
+    - test/oli/gen_ai/health_monitor_test.exs
+    - test/oli/gen_ai/health_probe_test.exs
+    - test/oli/gen_ai/router_test.exs
+- id: FR-006
+  title: Probe lifecycle
+  status: verified
+  acceptance_criteria:
+  - id: AC-006
+    title: Task death, timeout, monitor restart, and configuration changes are handled without overlapping
+      probes or allowing stale probe results to overwrite current health.
+    status: verified
+    verification_method: automated
+    proofs: &id006
+    - test/oli/gen_ai/health_monitor_test.exs
+- id: FR-007
+  title: Health override
+  status: verified
+  acceptance_criteria:
+  - id: AC-007
+    title: With GENAI_HEALTH_CHECKS_ENABLED=false no probes run and observed health does not gate routing,
+      while administrative disablement, pool limits and primary-to-secondary selection remain effective;
+      re-enabling starts with unknown health and an immediate probe.
+    status: verified
+    verification_method: automated
+    proofs: &id007
+    - test/oli/gen_ai/health_monitor_test.exs
+    - test/oli/gen_ai/router_test.exs
+- id: FR-008
+  title: Pool ownership
+  status: verified
+  acceptance_criteria:
+  - id: AC-008
+    title: Each configured ServiceConfig tier has one persisted capacity and isolated production transport
+      pool per node keyed by ServiceConfig and tier; distinct ServiceConfigs and backup remain isolated,
+      while features and sections resolving to the same ServiceConfig share pools.
+    status: verified
+    verification_method: automated
+    proofs: &id008
+    - test/oli/gen_ai/pool_manager_test.exs
+    - test/oli/gen_ai/runtime_test.exs
+    - test/oli/gen_ai/router_test.exs
+- id: FR-009
+  title: Best-effort capacity routing
+  status: verified
+  acceptance_criteria:
+  - id: AC-009
+    title: When the main Provider is eligible, primary is selected if its pool appears to have space;
+      otherwise an apparently available secondary is selected, or busy is returned if neither is available.
+    status: verified
+    verification_method: automated
+    proofs: &id009
+    - test/oli/gen_ai/router_test.exs
+- id: FR-010
+  title: Backup routing
+  status: verified
+  acceptance_criteria:
+  - id: AC-010
+    title: When the main Provider is unavailable, an eligible backup is selected only when its own pool
+      appears to have capacity; backup absence, unavailability or saturation produces a bounded failure.
+    status: verified
+    verification_method: automated
+    proofs: &id010
+    - test/oli/gen_ai/router_test.exs
+- id: FR-011
+  title: Bounded checkout
+  status: verified
+  acceptance_criteria:
+  - id: AC-011
+    title: A finite checkout timeout bounds races after selection and returns local busy on timeout, without
+      changing Provider health, trying secondary again, or triggering backup due to contention.
+    status: verified
+    verification_method: automated
+    proofs: &id011
+    - test/oli/gen_ai/router_test.exs
+    - test/oli/gen_ai/transport_pool_semantics_test.exs
+- id: FR-012
+  title: Request-level fallback
+  status: verified
+  acceptance_criteria:
+  - id: AC-012
+    title: At most one eligible backup attempt occurs before any response or tool-call output, subject
+      to backup eligibility, capacity and total attempt budget; no retry occurs after output, cancellation,
+      invalid requests or application failures.
+    status: verified
+    verification_method: automated
+    proofs: &id012
+    - test/oli/gen_ai/router_test.exs
+    - test/oli/gen_ai/execution_test.exs
+- id: FR-013
+  title: Pool lifecycle
+  status: verified
+  acceptance_criteria:
+  - id: AC-013
+    title: Pool settings propagate to every node; creation, restart, resizing, retirement, endpoint and
+      model changes preserve active connection accounting and cleanup, and capacity changes immediately
+      select a new pool while old work drains; combined occupancy may temporarily exceed the new capacity.
+    status: verified
+    verification_method: automated
+    proofs: &id013
+    - test/oli/gen_ai/pool_manager_test.exs
+    - test/oli/gen_ai/runtime_test.exs
+    - test/oli/gen_ai/router_test.exs
+- id: FR-014
+  title: Transport verification
+  status: verified
+  acceptance_criteria:
+  - id: AC-014
+    title: Before pool-only routing is enabled, verify installed Hackney occupancy statistics, active
+      checkout limits, saturation behavior, timeout and cancellation removal, streaming ownership, resizing
+      and cleanup on process death including kill.
+    status: verified
+    verification_method: hybrid
+    proofs: &id014
+    - test/oli/gen_ai/transport_pool_semantics_test.exs
+    - docs/exec-plans/current/features/genai-redesign/design/transport-evidence.md
+- id: FR-015
+  title: Adapter isolation and semantics
+  status: verified
+  acceptance_criteria:
+  - id: AC-015
+    title: The in-scope OpenAI adapter uses its designated isolated transport and satisfies verified HTTP/1.1
+      connection capacity semantics. Claude/Anthropic transport implementation and runtime verification
+      are deferred with an explicit isolation limitation; future multiplexed transport support must bound
+      requests or streams equivalently or document different semantics.
+    status: verified
+    verification_method: hybrid
+    proofs: &id015
+    - test/oli/gen_ai/transport_pool_semantics_test.exs
+    - docs/design-docs/genai.md
+- id: FR-016
+  title: Stream correctness
+  status: verified
+  acceptance_criteria:
+  - id: AC-016
+    title: Completed, cancelled, errored and killed OpenAI streams eventually reclaim capacity, and its
+      adapter detects in-stream errors, truncation and inactivity without reporting incomplete streams
+      as success. Claude/Anthropic adapter changes and runtime verification are deferred.
+    status: verified
+    verification_method: automated
+    proofs: &id016
+    - test/oli/gen_ai/router_test.exs
+    - test/oli/gen_ai/transport_pool_semantics_test.exs
+    - test/oli/gen_ai/dialogue/server_test.exs
+- id: FR-017
+  title: Administrative tests
+  status: verified
+  acceptance_criteria:
+  - id: AC-017
+    title: Administrative test calls use the appropriate ServiceConfig production pool when a configuration
+      is supplied and an explicit administrative transport pool otherwise.
+    status: verified
+    verification_method: automated
+    proofs: &id017
+    - test/oli/gen_ai/router_test.exs
+- id: FR-018
+  title: Health administration
+  status: verified
+  acceptance_criteria:
+  - id: AC-018
+    title: Authorized administrators can edit the health-check flag and see administrative and observed
+      Provider state, selected model, scheduling, results and safe failure categories without exposing
+      credentials or raw payloads.
+    status: verified
+    verification_method: hybrid
+    proofs: &id018
+    - test/oli_web/live/gen_ai/providers_view_test.exs
+    - test/oli_web/live/gen_ai/registered_models_view_test.exs
+    - test/oli_web/live/gen_ai/service_configs_view_test.exs
+- id: FR-019
+  title: Observability
+  status: verified
+  acceptance_criteria:
+  - id: AC-019
+    title: Telemetry records per-tier checked-out occupancy and configured capacity, checkout wait and
+      timeouts, available queue depth, routing decisions, busy rejections, cleanup and pool lifecycle
+      errors, probes and request outcomes without sensitive content.
+    status: verified
+    verification_method: automated
+    proofs: &id019
+    - test/oli/gen_ai/provider_telemetry_test.exs
+    - test/oli/gen_ai/router_test.exs
+    - test/oli/gen_ai/operations_test.exs
+- id: FR-020
+  title: Initial migration
+  status: verified
+  acceptance_criteria:
+  - id: AC-020
+    title: The migration creates one OpenAI production Provider, copies keys from the lowest-ID RegisteredModel
+      with keys, links every existing model to it, preserves credential secrecy, and supplies explicit
+      rollback behavior.
+    status: verified
+    verification_method: hybrid
+    proofs: &id020
+    - test/oli/repo/migrations/genai_provider_migration_test.exs
+    - test/oli/gen_ai/operations_test.exs
+    - docs/OPERATIONS.md
+- id: FR-021
+  title: Controlled transition
+  status: verified
+  acceptance_criteria:
+  - id: AC-021
+    title: Before routing is enabled, audit existing ServiceConfigs and allocations, verify transport
+      behavior and stream reporting, observe probes, and deliberately retire obsolete breaker and counter
+      state and the primary-only override.
+    status: verified
+    verification_method: hybrid
+    proofs: &id021
+    - test/oli/gen_ai/router_test.exs
+    - test/oli/gen_ai/operations_test.exs
+    - docs/OPERATIONS.md
+acceptance_criteria:
+- id: AC-001
+  title: Administrators can manage Providers with encrypted connection credentials and models reference
+    a Provider; rotation revalidates connectivity and invalidates obsolete probe results.
+  status: verified
+  verification_method: automated
+  proofs: *id001
+  requirement_id: FR-001
+- id: AC-002
+  title: Primary and secondary are distinct models on the same Provider, backup uses a different Provider,
+    and selected capabilities are validated for the feature.
+  status: verified
+  verification_method: automated
+  proofs: *id002
+  requirement_id: FR-002
+- id: AC-003
+  title: Each Provider selects its lowest-ID flagged model; if none is flagged, it safely persists the
+    flag on its lowest-ID model, reconciles edits and membership changes, and exposes missing-model configuration.
+  status: verified
+  verification_method: automated
+  proofs: *id003
+  requirement_id: FR-003
+- id: AC-004
+  title: Only independent synthetic inference probes determine observed Provider availability; ordinary
+    request duration, cancellation, errors, and pool contention never change it.
+  status: verified
+  verification_method: automated
+  proofs: *id004
+  requirement_id: FR-004
+- id: AC-005
+  title: Per-node probes use the configured Provider and selected model, separate capacity, deadlines
+    and at most one in-flight probe per Provider; consecutive results drive configured failure and recovery
+    thresholds without user traffic.
+  status: verified
+  verification_method: automated
+  proofs: *id005
+  requirement_id: FR-005
+- id: AC-006
+  title: Task death, timeout, monitor restart, and configuration changes are handled without overlapping
+    probes or allowing stale probe results to overwrite current health.
+  status: verified
+  verification_method: automated
+  proofs: *id006
+  requirement_id: FR-006
+- id: AC-007
+  title: With GENAI_HEALTH_CHECKS_ENABLED=false no probes run and observed health does not gate routing,
+    while administrative disablement, pool limits and primary-to-secondary selection remain effective;
+    re-enabling starts with unknown health and an immediate probe.
+  status: verified
+  verification_method: automated
+  proofs: *id007
+  requirement_id: FR-007
+- id: AC-008
+  title: Each configured ServiceConfig tier has one persisted capacity and isolated production transport
+    pool per node keyed by ServiceConfig and tier; distinct ServiceConfigs and backup remain isolated,
+    while features and sections resolving to the same ServiceConfig share pools.
+  status: verified
+  verification_method: automated
+  proofs: *id008
+  requirement_id: FR-008
+- id: AC-009
+  title: When the main Provider is eligible, primary is selected if its pool appears to have space; otherwise
+    an apparently available secondary is selected, or busy is returned if neither is available.
+  status: verified
+  verification_method: automated
+  proofs: *id009
+  requirement_id: FR-009
+- id: AC-010
+  title: When the main Provider is unavailable, an eligible backup is selected only when its own pool
+    appears to have capacity; backup absence, unavailability or saturation produces a bounded failure.
+  status: verified
+  verification_method: automated
+  proofs: *id010
+  requirement_id: FR-010
+- id: AC-011
+  title: A finite checkout timeout bounds races after selection and returns local busy on timeout, without
+    changing Provider health, trying secondary again, or triggering backup due to contention.
+  status: verified
+  verification_method: automated
+  proofs: *id011
+  requirement_id: FR-011
+- id: AC-012
+  title: At most one eligible backup attempt occurs before any response or tool-call output, subject to
+    backup eligibility, capacity and total attempt budget; no retry occurs after output, cancellation,
+    invalid requests or application failures.
+  status: verified
+  verification_method: automated
+  proofs: *id012
+  requirement_id: FR-012
+- id: AC-013
+  title: Pool settings propagate to every node; creation, restart, resizing, retirement, endpoint and
+    model changes preserve active connection accounting and cleanup, and capacity changes immediately
+    select a new pool while old work drains; combined occupancy may temporarily exceed the new capacity.
+  status: verified
+  verification_method: automated
+  proofs: *id013
+  requirement_id: FR-013
+- id: AC-014
+  title: Before pool-only routing is enabled, verify installed Hackney occupancy statistics, active checkout
+    limits, saturation behavior, timeout and cancellation removal, streaming ownership, resizing and cleanup
+    on process death including kill.
+  status: verified
+  verification_method: hybrid
+  proofs: *id014
+  requirement_id: FR-014
+- id: AC-015
+  title: The in-scope OpenAI adapter uses its designated isolated transport and satisfies verified HTTP/1.1
+    connection capacity semantics. Claude/Anthropic transport implementation and runtime verification
+    are deferred with an explicit isolation limitation; future multiplexed transport support must bound
+    requests or streams equivalently or document different semantics.
+  status: verified
+  verification_method: hybrid
+  proofs: *id015
+  requirement_id: FR-015
+- id: AC-016
+  title: Completed, cancelled, errored and killed OpenAI streams eventually reclaim capacity, and its
+    adapter detects in-stream errors, truncation and inactivity without reporting incomplete streams as
+    success. Claude/Anthropic adapter changes and runtime verification are deferred.
+  status: verified
+  verification_method: automated
+  proofs: *id016
+  requirement_id: FR-016
+- id: AC-017
+  title: Administrative test calls use the appropriate ServiceConfig production pool when a configuration
+    is supplied and an explicit administrative transport pool otherwise.
+  status: verified
+  verification_method: automated
+  proofs: *id017
+  requirement_id: FR-017
+- id: AC-018
+  title: Authorized administrators can edit the health-check flag and see administrative and observed
+    Provider state, selected model, scheduling, results and safe failure categories without exposing credentials
+    or raw payloads.
+  status: verified
+  verification_method: hybrid
+  proofs: *id018
+  requirement_id: FR-018
+- id: AC-019
+  title: Telemetry records per-tier checked-out occupancy and configured capacity, checkout wait and timeouts,
+    available queue depth, routing decisions, busy rejections, cleanup and pool lifecycle errors, probes
+    and request outcomes without sensitive content.
+  status: verified
+  verification_method: automated
+  proofs: *id019
+  requirement_id: FR-019
+- id: AC-020
+  title: The migration creates one OpenAI production Provider, copies keys from the lowest-ID RegisteredModel
+    with keys, links every existing model to it, preserves credential secrecy, and supplies explicit rollback
+    behavior.
+  status: verified
+  verification_method: hybrid
+  proofs: *id020
+  requirement_id: FR-020
+- id: AC-021
+  title: Before routing is enabled, audit existing ServiceConfigs and allocations, verify transport behavior
+    and stream reporting, observe probes, and deliberately retire obsolete breaker and counter state and
+    the primary-only override.
+  status: verified
+  verification_method: hybrid
+  proofs: *id021
+  requirement_id: FR-021

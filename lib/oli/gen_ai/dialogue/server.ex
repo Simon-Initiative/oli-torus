@@ -213,9 +213,10 @@ defmodule Oli.GenAI.Dialogue.Server do
       {:error, error} ->
         log_dialogue_failure(state, :execution_failed, error)
 
-        notify_client_fn.(
-          {:dialogue_server, {:error, "An error occurred while processing the request"}}
-        )
+        # Execution withholds attempt errors until fallback has been decided.
+        # Deliver only the final error through the tagged server path to discard
+        # partial output and avoid retaining an interrupted response in history.
+        notify_server_fn.({:stream_chunk, {:error}})
 
         {:noreply, state}
     end
@@ -243,7 +244,15 @@ defmodule Oli.GenAI.Dialogue.Server do
   def handle_info({:stream_chunk, {:error}}, state) do
     notify_error(state)
 
-    {:noreply, %{state | messages: discard_last_assistant_message(state.messages)}}
+    {:noreply,
+     %{
+       state
+       | messages: discard_last_assistant_message(state.messages),
+         function_name: nil,
+         function_args: nil,
+         function_id: nil,
+         function_message: nil
+     }}
   end
 
   def handle_info({:stream_chunk, {:tokens_received, content}}, state) do

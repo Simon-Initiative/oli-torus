@@ -1,11 +1,12 @@
 defmodule OliWeb.GenAI.ServiceConfigsView do
   use OliWeb, :live_view
+  on_mount OliWeb.GenAI.AdminMount
 
   require Logger
 
   alias Oli.GenAI
   alias Oli.GenAI.Completions.{ServiceConfig}
-  alias Oli.GenAI.AdmissionControl
+  alias Oli.GenAI.{Administrative, Diagnostics}
   alias OliWeb.Common.Breadcrumb
 
   @form_control_classes "block w-full p-2.5
@@ -18,14 +19,14 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
   def mount(_, _session, socket) do
     all = all()
-    selected = Enum.at(all, 0)
-    changeset = ServiceConfig.changeset(selected, %{})
+    selected = Enum.at(all, 0) || %ServiceConfig{}
+    changeset = Ecto.Changeset.change(selected)
 
     registered_models = all_registered_models()
 
     socket =
       socket
-      |> assign(editing: false)
+      |> assign(editing: false, testing: false, test_results: "")
       |> assign(selected: selected)
       |> assign(service_configs: all)
       |> assign(registered_models: registered_models)
@@ -48,6 +49,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col">
+      <h1 class="text-xl font-semibold">Completions Service Configurations</h1>
       <div class="flex justify-end">
         <div class="flex py-2 mb-2">
           <div>Enable Editing</div>
@@ -60,8 +62,24 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           />
         </div>
       </div>
-      <div class="flex">
-        <div class="flex flex-col basis-1/2">
+      <div class="flex gap-3">
+        <.link navigate={~p"/admin/gen_ai/providers"}>Providers and health</.link>
+        <.link navigate={~p"/admin/gen_ai/registered_models"}>Registered models</.link>
+        <button
+          type="button"
+          phx-click="test"
+          disabled={@testing or is_nil(@selected.id)}
+          class="rounded border px-3 py-2"
+        >
+          Test Service Config
+        </button>
+        <p role="status" aria-live="polite">{@test_results}</p>
+      </div>
+      <div class="flex flex-col gap-4 lg:flex-row">
+        <div class="flex w-full flex-col lg:w-1/2">
+          <p :if={@service_configs == []}>
+            No service configurations yet. Configure a Provider and model, then create a service configuration.
+          </p>
           <ul role="list" class="divide-y divide-gray-100">
             <%= for service_config <- @service_configs do %>
               <.service_config service_config={service_config} selected={@selected} />
@@ -79,6 +97,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           selected={@selected}
           form={@form}
           health={@health}
+          issues={@issues}
           editing={@editing}
         />
       </div>
@@ -91,74 +110,81 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
   def service_config(assigns) do
     ~H"""
-    <li
-      phx-click="select"
-      phx-value-id={@service_config.id}
-      aria-selected={@selected.id == @service_config.id}
-      class={
-        [
-          # base
-          "flex justify-between gap-x-6 py-1 px-2 rounded-md cursor-pointer transition-colors bg-white dark:bg-gray-900 dark:text-gray-100",
+    <li>
+      <button
+        type="button"
+        phx-click="select"
+        phx-value-id={@service_config.id}
+        aria-pressed={to_string(@selected.id == @service_config.id)}
+        class={
+          [
+            # base
+            "flex justify-between gap-x-6 py-1 px-2 rounded-md cursor-pointer transition-colors bg-white dark:bg-gray-900 dark:text-gray-100",
 
-          # selected (non-hover)
-          @selected.id == @service_config.id && "bg-indigo-50 dark:bg-gray-700 ",
+            # selected (non-hover)
+            @selected.id == @service_config.id && "bg-indigo-50 dark:bg-gray-700 ",
 
-          # hover (overrides both unselected and selected)
-          "hover:bg-indigo-100 dark:hover:bg-gray-600"
-        ]
-      }
-    >
-      <div class="flex flex-col min-w-0 gap-x-4">
-        <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-          {@service_config.name}
-        </h3>
-        <div class="flex">
-          <div class="mr-5">
-            <span class="text-gray-800 text-xs py-0.5">Primary: </span>
-            <span class="text-gray-800 text-xs font-mono py-0.5 ">
-              {@service_config.primary_model.name}
-            </span>
-          </div>
-          <div class="mr-5">
-            <span class="text-gray-800 text-xs py-0.5">Secondary: </span>
-            <span class="text-gray-800 text-xs font-mono py-0.5">
-              {if is_nil(@service_config.secondary_model) do
-                "None"
-              else
-                @service_config.secondary_model.name
-              end}
-            </span>
-          </div>
-          <div>
-            <span class="text-gray-800 text-xs py-0.5">Backup: </span>
-            <span class="text-gray-800 text-xs font-mono py-0.5">
-              {if is_nil(@service_config.backup_model) do
-                "None"
-              else
-                @service_config.backup_model.name
-              end}
-            </span>
+            # hover (overrides both unselected and selected)
+            "hover:bg-indigo-100 dark:hover:bg-gray-600"
+          ]
+        }
+      >
+        <div class="flex flex-col min-w-0 gap-x-4">
+          <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
+            {@service_config.name}
+          </h3>
+          <div class="flex">
+            <div class="mr-5">
+              <span class="text-gray-800 text-xs py-0.5">Primary: </span>
+              <span class="text-gray-800 text-xs font-mono py-0.5 ">
+                {case @service_config.primary_model do
+                  nil -> "Missing model"
+                  model -> model.name
+                end}
+              </span>
+            </div>
+            <div class="mr-5">
+              <span class="text-gray-800 text-xs py-0.5">Secondary: </span>
+              <span class="text-gray-800 text-xs font-mono py-0.5">
+                {if is_nil(@service_config.secondary_model) do
+                  "None"
+                else
+                  @service_config.secondary_model.name
+                end}
+              </span>
+            </div>
+            <div>
+              <span class="text-gray-800 text-xs py-0.5">Backup: </span>
+              <span class="text-gray-800 text-xs font-mono py-0.5">
+                {if is_nil(@service_config.backup_model) do
+                  "None"
+                else
+                  @service_config.backup_model.name
+                end}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
-        <%= if @service_config.usage_count > 0 do %>
-          <p class="mt-0 text-xs text-gray-500">
-            Used by <strong>{@service_config.usage_count}</strong> feature config(s)
-          </p>
-        <% else %>
-          <p class="mt-0 text-xs text-red-500">
-            No usages
-          </p>
-        <% end %>
-      </div>
+        <div class="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
+          <%= if @service_config.usage_count > 0 do %>
+            <p class="mt-0 text-xs text-gray-500">
+              Used by <strong>{@service_config.usage_count}</strong> feature config(s)
+            </p>
+          <% else %>
+            <p class="mt-0 text-xs text-red-500">
+              No usages
+            </p>
+          <% end %>
+        </div>
+      </button>
     </li>
     """
   end
 
   attr(:selected, ServiceConfig)
   attr :form, :any
-  attr :health, :map, default: nil
+  attr :health, :list, default: []
+  attr :issues, :list, default: []
   attr :editing, :boolean, default: false
   attr :registered_models, :list, required: true
 
@@ -168,7 +194,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
       |> assign_new(:form_control_classes, fn -> @form_control_classes end)
 
     ~H"""
-    <div class="basis-1/2 p-4">
+    <div class="w-full p-4 lg:w-1/2">
       <.form for={@form} id="service-config-form" phx-submit="save">
         <.input
           field={@form[:name]}
@@ -201,73 +227,44 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           label="Backup Registered Model"
         />
 
-        <%= if @health do %>
-          <div class="mt-6 border-t border-gray-200 pt-4">
-            <h3 class="text-sm font-semibold text-gray-900">Routing Health</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 text-sm text-gray-700">
-              <div>
-                <div class="text-xs uppercase text-gray-500">Primary Breaker</div>
-                <div>{@health.primary.state}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Secondary Breaker</div>
-                <div>{@health.secondary.state}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Backup Breaker</div>
-                <div>{@health.backup.state}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Error Rate</div>
-                <div>{format_rate(@health.primary.error_rate)}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Secondary Error Rate</div>
-                <div>{format_rate(@health.secondary.error_rate)}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">429 Rate</div>
-                <div>{format_rate(@health.primary.rate_limit_rate)}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Secondary 429 Rate</div>
-                <div>{format_rate(@health.secondary.rate_limit_rate)}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Latency p95 (ms)</div>
-                <div>{@health.primary.latency_p95_ms}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Secondary Latency p95 (ms)</div>
-                <div>{@health.secondary.latency_p95_ms}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Last Reason</div>
-                <div>{@health.primary.last_reason}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Secondary Last Reason</div>
-                <div>{@health.secondary.last_reason}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Backup Error Rate</div>
-                <div>{format_rate(@health.backup.error_rate)}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Backup 429 Rate</div>
-                <div>{format_rate(@health.backup.rate_limit_rate)}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Backup Latency p95 (ms)</div>
-                <div>{@health.backup.latency_p95_ms}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Backup Last Reason</div>
-                <div>{@health.backup.last_reason}</div>
-              </div>
-            </div>
+        <.input
+          :for={
+            {field, label} <- [
+              primary_pool_capacity: "Primary pool capacity — Maximum checked-out connections",
+              secondary_pool_capacity: "Secondary pool capacity — Maximum checked-out connections",
+              backup_pool_capacity: "Backup pool capacity — Maximum checked-out connections"
+            ]
+          }
+          field={@form[field]}
+          type="number"
+          min="1"
+          label={label}
+          disabled={!@editing}
+        />
+        <p class="text-sm">
+          Capacity is per node. HTTP/1.1 streams retain one connection. Capacity changes immediately use a new pool; old work finishes with temporary capacity overlap. Claude transport capacity remains deferred.
+        </p>
+        <section class="mt-4 rounded border p-3" aria-label="Routing Health">
+          <h2 class="font-semibold">Routing Health</h2>
+          <p :for={{field, {message, _}} <- @issues} role="alert">
+            Configuration issue: {field} {message}
+          </p>
+          <p>
+            Observed Provider availability comes only from probes. Pool contention does not change health.
+          </p>
+          <div :for={row <- @health} class="mt-3" id={"tier-#{row.tier}"}>
+            <h3 class="font-semibold">{row.tier}: {row.model}</h3>
+            <p>{row.status} · {row.transport}</p>
+            <%= case row.occupancy do %>
+              <% %{checked_out: occupied, capacity: capacity, queue_depth: queue} -> %>
+                <p>
+                  Checked-out connections: {occupied} / {capacity}; queued: {queue}; retiring pools: {row.retiring}
+                </p>
+              <% _ -> %>
+                <p>Pool occupancy unavailable</p>
+            <% end %>
           </div>
-        <% end %>
+        </section>
 
         <div class="flex justify-between">
           <.button disabled={!@editing} class="mt-3 btn btn-primary" phx-disable-with="Saving…">
@@ -289,6 +286,34 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
     """
   end
 
+  def handle_event(event, _, %{assigns: %{editing: false}} = socket)
+      when event in ["save", "delete", "new"],
+      do: {:noreply, put_flash(socket, :error, "Enable editing first")}
+
+  def handle_event("test", _, %{assigns: %{testing: true}} = socket), do: {:noreply, socket}
+
+  def handle_event("test", _, socket) do
+    config = socket.assigns.selected
+
+    {:noreply,
+     socket
+     |> assign(testing: true, test_results: "Testing…")
+     |> start_async(:config_test, fn ->
+       Administrative.generate(
+         [%Oli.GenAI.Completions.Message{role: :user, content: "Reply with OK."}],
+         [],
+         config.primary_model,
+         service_config: config,
+         total_timeout_ms: 10_000,
+         provider_opts: [max_tokens: 8]
+       )
+     end)}
+  end
+
+  def handle_event(event, _, %{assigns: %{testing: true}} = socket)
+      when event in ["select", "save", "delete", "new"],
+      do: {:noreply, put_flash(socket, :error, "Wait for the current test to finish")}
+
   def handle_event("select", %{"id" => id}, socket) do
     id = String.to_integer(id)
     selected = Enum.find(socket.assigns.service_configs, &(&1.id == id))
@@ -296,7 +321,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
     {:noreply,
      socket
      |> assign(selected: selected)
-     |> assign_form(ServiceConfig.changeset(selected, %{}))
+     |> assign_form(Ecto.Changeset.change(selected))
      |> assign_health(selected)}
   end
 
@@ -322,17 +347,17 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         case GenAI.delete_service_config(item) do
           {:ok, _} ->
             all = all()
-            selected = Enum.at(all, 0)
+            selected = Enum.at(all, 0) || %ServiceConfig{}
 
             {:noreply,
              socket
              |> assign(editing: false, service_configs: all, selected: selected)
-             |> assign_form(ServiceConfig.changeset(selected, %{}))
+             |> assign_form(Ecto.Changeset.change(selected))
              |> assign_health(selected)}
 
-          {:error, reason} ->
+          {:error, _reason} ->
             socket =
-              put_flash(socket, :error, "Couldn't delete service config: #{inspect(reason)}")
+              put_flash(socket, :error, "Couldn't delete referenced service config")
 
             {:noreply,
              socket
@@ -343,6 +368,12 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   end
 
   def handle_event("save", %{"service_config" => params}, socket) do
+    params =
+      Map.take(
+        params,
+        ~w(name primary_model_id secondary_model_id backup_model_id primary_pool_capacity secondary_pool_capacity backup_pool_capacity)
+      )
+
     socket = clear_flash(socket)
 
     # refetch the selected model to ensure we have the latest state
@@ -364,7 +395,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
             {:noreply,
              socket
              |> assign(service_configs: all, selected: selected, editing: false)
-             |> assign_form(ServiceConfig.changeset(selected, %{}))
+             |> assign_form(Ecto.Changeset.change(selected))
              |> assign_health(selected)}
 
           {:error, %Ecto.Changeset{} = changeset} ->
@@ -377,13 +408,17 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   def handle_event("new", _, socket) do
     case GenAI.create_service_config(%{
            name: "New Service Config",
-           primary_model_id: socket.assigns.registered_models |> List.first() |> elem(1),
+           primary_model_id:
+             case Enum.find(GenAI.registered_models(), &(not is_nil(&1.provider_id))) do
+               nil -> nil
+               model -> model.id
+             end,
            backup_model_id: nil
          }) do
       {:ok, service_config} ->
         all = all()
         selected = Enum.find(all, &(&1.id == service_config.id))
-        changeset = ServiceConfig.changeset(selected, %{})
+        changeset = Ecto.Changeset.change(selected)
 
         {:noreply,
          socket
@@ -391,18 +426,24 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
          |> assign_form(changeset)
          |> assign_health(selected)}
 
-      {:error, changeset} ->
+      {:error, _changeset} ->
         # Handle error (e.g., show a flash message)
-        Logger.error("Failed to create new service config: #{inspect(changeset)}")
+        Logger.warning("Failed to create service config")
 
         socket =
           socket
           |> put_flash(:error, "Failed to create new service config. Please try again.")
-          |> assign(selected: nil)
+          |> assign(selected: %ServiceConfig{})
 
         {:noreply, socket}
     end
   end
+
+  def handle_async(:config_test, {:ok, result}, socket),
+    do: {:noreply, assign(socket, testing: false, test_results: Diagnostics.test_result(result))}
+
+  def handle_async(:config_test, {:exit, _}, socket),
+    do: {:noreply, assign(socket, testing: false, test_results: "Test failed: request_error")}
 
   def breadcrumb(),
     do: [
@@ -420,7 +461,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   def all_registered_models() do
     GenAI.registered_models()
     |> Enum.map(fn model ->
-      {model.name, model.id}
+      {"#{model.name} (Provider ##{model.provider_id || "unassigned"})", model.id}
     end)
   end
 
@@ -428,51 +469,18 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
     assign(socket, form: to_form(changeset, as: :service_config))
   end
 
+  defp assign_health(socket, %ServiceConfig{id: nil}), do: assign(socket, health: [], issues: [])
+
   defp assign_health(socket, %ServiceConfig{} = selected) do
-    assign(socket, health: health_for(selected))
+    assign(socket,
+      health: health_for(selected),
+      issues: Oli.GenAI.Configuration.audit_service_config(selected).errors
+    )
   end
 
-  defp assign_health(socket, _), do: assign(socket, health: nil)
+  defp assign_health(socket, _), do: assign(socket, health: [], issues: [])
 
-  defp health_for(%ServiceConfig{} = service_config) do
-    default_snapshot = %{
-      state: :closed,
-      error_rate: 0.0,
-      rate_limit_rate: 0.0,
-      latency_p95_ms: 0,
-      last_reason: :none
-    }
-
-    primary =
-      if service_config.primary_model do
-        default_snapshot
-        |> Map.merge(AdmissionControl.get_breaker_snapshot(service_config.primary_model.id))
-      else
-        %{default_snapshot | state: :unknown}
-      end
-
-    secondary =
-      if service_config.secondary_model do
-        default_snapshot
-        |> Map.merge(AdmissionControl.get_breaker_snapshot(service_config.secondary_model.id))
-      else
-        %{default_snapshot | state: :none}
-      end
-
-    backup =
-      if service_config.backup_model do
-        default_snapshot
-        |> Map.merge(AdmissionControl.get_breaker_snapshot(service_config.backup_model.id))
-      else
-        %{default_snapshot | state: :none}
-      end
-
-    %{
-      primary: primary,
-      secondary: secondary,
-      backup: backup
-    }
-  end
+  defp health_for(config), do: Diagnostics.tiers(config, Diagnostics.snapshot())
 
   defp schedule_health_refresh(socket) do
     if connected?(socket) do
@@ -490,7 +498,4 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
     {:noreply, socket}
   end
-
-  defp format_rate(rate) when is_float(rate), do: "#{Float.round(rate * 100, 1)}%"
-  defp format_rate(_), do: "0%"
 end

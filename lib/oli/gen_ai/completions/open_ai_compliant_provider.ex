@@ -493,7 +493,9 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       end,
       fn
         %{id: id} ->
+          # Stopping async delivery alone retains the checkout on early stream exit.
           :hackney.stop_async(id)
+          :hackney.close(id)
 
           :ok
 

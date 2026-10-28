@@ -104,6 +104,89 @@ defmodule Oli.GenAI.Telemetry do
     end
   end
 
+  def handle_event([:oli, :genai, :pool, event], measurements, metadata, _config) do
+    tags = %{
+      outcome: normalize(metadata[:outcome]),
+      event: normalize(metadata[:event]),
+      cause: normalize(metadata[:cause])
+    }
+
+    case event do
+      :occupancy ->
+        Enum.each([:checked_out, :capacity, :queue_depth], fn key ->
+          Appsignal.add_distribution_value("oli.genai.pool.#{key}", measurements[key] || 0, tags)
+        end)
+
+      :checkout ->
+        Appsignal.add_distribution_value(
+          "oli.genai.pool.startup_ms",
+          measurements[:startup_duration_ms] || 0,
+          tags
+        )
+
+        Appsignal.increment_counter("oli.genai.pool.checkout", 1, tags)
+
+        case measurements[:checkout_timeout_wait_ms] do
+          nil ->
+            :ok
+
+          duration ->
+            Appsignal.add_distribution_value(
+              "oli.genai.pool.checkout_timeout_wait_ms",
+              duration,
+              tags
+            )
+        end
+
+      _ ->
+        Appsignal.increment_counter("oli.genai.pool.#{event}", 1, tags)
+    end
+  end
+
+  def handle_event([:oli, :genai, :request, :backup], _, _, _),
+    do: Appsignal.increment_counter("oli.genai.request.backup", 1)
+
+  def handle_event([:oli, :genai, :request, event], measurements, metadata, _)
+      when event in [:stop, :first_output, :cancelled] do
+    tags = %{
+      outcome: normalize(metadata[:outcome]),
+      error_category: normalize(metadata[:error_category])
+    }
+
+    Appsignal.increment_counter("oli.genai.request.#{event}", 1, tags)
+
+    case measurements[:duration_ms] do
+      nil ->
+        :ok
+
+      duration ->
+        Appsignal.add_distribution_value("oli.genai.request.#{event}_ms", duration, tags)
+    end
+  end
+
+  def handle_event([:oli, :genai, :health, event], measurements, metadata, _config) do
+    tags = %{
+      outcome: normalize(metadata[:outcome]),
+      category: normalize(metadata[:category]),
+      state: normalize(metadata[:state])
+    }
+
+    Appsignal.increment_counter("oli.genai.health.#{event}", 1, tags)
+
+    case measurements[:duration_ms] do
+      nil -> :ok
+      duration -> Appsignal.add_distribution_value("oli.genai.health.probe_ms", duration, tags)
+    end
+  end
+
+  def handle_event([:oli, :genai, :configuration, :reconciled], measurements, metadata, _) do
+    Appsignal.add_distribution_value(
+      "oli.genai.configuration.reconcile_ms",
+      measurements[:duration_ms] || 0,
+      %{outcome: normalize(metadata[:outcome])}
+    )
+  end
+
   def handle_event(_, _, _, _), do: :ok
 
   defp attach_appsignal_handler do
@@ -112,10 +195,20 @@ defmodule Oli.GenAI.Telemetry do
     case :telemetry.attach_many(
            handler_id,
            [
+             [:oli, :genai, :pool, :occupancy],
+             [:oli, :genai, :pool, :checkout],
+             [:oli, :genai, :pool, :lifecycle],
+             [:oli, :genai, :pool, :cleanup_error],
+             [:oli, :genai, :request, :backup],
+             [:oli, :genai, :request, :stop],
+             [:oli, :genai, :request, :first_output],
+             [:oli, :genai, :request, :cancelled],
              @router_decision_event,
-             @router_admission_event,
              @provider_stop_event,
-             @breaker_state_change_event
+             [:oli, :genai, :health, :probe],
+             [:oli, :genai, :health, :state_change],
+             [:oli, :genai, :health, :monitor_error],
+             [:oli, :genai, :configuration, :reconciled]
            ],
            &__MODULE__.handle_event/4,
            %{}
@@ -132,6 +225,11 @@ defmodule Oli.GenAI.Telemetry do
 
   defp rejection_reason?(reason) do
     reason in [
+      :busy,
+      :pool_unavailable,
+      :provider_ineligible,
+      :backup_unavailable,
+      :configuration_unavailable,
       :over_capacity,
       :primary_over_capacity,
       :secondary_over_capacity,

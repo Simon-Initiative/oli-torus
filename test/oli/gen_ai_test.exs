@@ -89,7 +89,10 @@ defmodule Oli.GenAITest do
       updated_model = Oli.Repo.get(Oli.GenAI.Completions.RegisteredModel, updated_model.id)
       assert updated_model.name == "Updated Model"
 
-      {:ok, _} = GenAI.delete_registered_model(updated_model)
+      assert {:ok, %Oli.GenAI.Completions.RegisteredModel{id: deleted_id}} =
+               GenAI.delete_registered_model(updated_model)
+
+      assert deleted_id == updated_model.id
       assert Oli.Repo.get(Oli.GenAI.Completions.RegisteredModel, updated_model.id) == nil
     end
   end

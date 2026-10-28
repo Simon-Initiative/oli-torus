@@ -16,14 +16,14 @@ investigation.
 
 - Primary and secondary models must belong to the same configured Provider.
 - Primary is generally more capable and slower; secondary is cheaper and faster.
-- Prefer primary whenever its bounded capacity is available.
-- Select secondary only when primary capacity is exhausted.
+- Prefer primary whenever its pool appears to have capacity.
+- Select secondary when primary appears full and secondary appears to have capacity.
 - If both are full, reject promptly as busy instead of waiting indefinitely or using
   backup as another overflow tier.
 - Backup belongs to a different Provider and serves main-provider unavailability.
 - Backup has its own bounded capacity and provider-health check.
-- Each configured ServiceConfig tier owns its concurrency limit and isolated
-  production transport pool per application node. Capacity is not shared across
+- Each configured ServiceConfig tier owns one persisted pool capacity setting and one
+  isolated production transport pool per application node. Capacity is not shared across
   different ServiceConfigs, even when they select the same RegisteredModel.
 - Long, healthy responses must not cause provider failover merely because they take
   time to complete.
@@ -80,7 +80,9 @@ Older in-flight requests can also be interpreted as recovery probes.
 Dialogue cancellation in `lib/oli/gen_ai/dialogue/server.ex` kills the streaming
 task with `Process.exit(pid, :kill)`. Execution releases admission counters in that
 task's `try/after`, which cannot run after an untrappable kill. Repeated cancellations
-can leave model and pool capacity permanently occupied until state is reset.
+can leave application model and shared-pool counters permanently occupied until
+state is reset. This counter leak does not establish whether the actual transport
+connection is reclaimed; that behavior requires separate verification.
 
 ### Health controls and capacity controls are coupled
 
@@ -96,9 +98,10 @@ All models share one of two global Hackney pools, fast or slow. Primary and seco
 cannot overflow on pool exhaustion if they share the exhausted pool. Backup can also
 be blocked by outstanding main-provider requests when it shares their pool.
 
-The Claude adapter uses Anthropix rather than the Hackney transport used by the
-OpenAI-compatible adapter. Application admission therefore needs an explicit meaning
-independent of a particular HTTP client's connection counts.
+The Claude adapter uses Anthropix/Req/Finch rather than the Hackney transport used by
+the OpenAI-compatible adapter. Pool isolation and capacity semantics must therefore
+be established for each adapter's actual transport; creating a Hackney pool alone
+does not isolate Claude requests.
 
 ### Current execution does not retry on backup
 
@@ -179,7 +182,7 @@ Add `health_check`, a boolean attribute defaulting to `false`. It is an editable
 field in the RegisteredModel UI and controls selection for its Provider's health
 probes. It does not change the model's eligibility for ordinary ServiceConfig use.
 
-Concurrency limits and production pool ownership belong to the ServiceConfig tier
+Pool capacity settings and production pool ownership belong to the ServiceConfig tier
 that selects the model. A RegisteredModel can serve different roles and receive
 different capacity allocations in different ServiceConfigs.
 
@@ -209,35 +212,39 @@ does not override an administrator's newer selection. A Provider without any
 RegisteredModels has no model to designate and cannot perform an inference probe;
 surface that configuration state without fabricating a successful health check.
 
-### ServiceConfig: routing preferences and reserved capacity
+### ServiceConfig: routing preferences and pool capacity
 
 ServiceConfig continues selecting primary, secondary, and backup models. Preserve
 existing feature resolution and section overrides.
 
-Each configured primary, secondary, or backup selection owns one maximum concurrent
-request setting and one isolated production transport pool per application node.
-Pool and admission identity is `(service_config_id, tier)`. A ServiceConfig has up to
-three production pools; an unconfigured tier needs none. Pool identity follows the
+Each configured primary, secondary, or backup selection owns one persisted capacity
+setting that configures one isolated production transport pool per application node.
+Pool identity is `(service_config_id, tier)`. A ServiceConfig has up to three
+production pools; an unconfigured tier needs none. Pool identity follows the
 ServiceConfig tier rather than the model's name or RegisteredModel ID.
 
-For example, the same GPT-5 RegisteredModel can be DOT's primary with a limit of 100
-and instructor recommendations' secondary with a limit of 200:
+For example, the same GPT-5 RegisteredModel can be DOT's primary with a pool capacity
+of 100 and instructor recommendations' secondary with a pool capacity of 200:
 
-| ServiceConfig | Tier | Model | Concurrent-request limit per node |
+| ServiceConfig | Tier | Model | Pool capacity per node |
 |---|---|---|---:|
 | DOT | Primary | GPT-5 | 100 |
 | DOT | Secondary | Faster model | 1,000 |
 | Instructor recommendations | Primary | More powerful model | 50 |
 | Instructor recommendations | Secondary | GPT-5 | 200 |
 
-DOT exhausting its primary allocation overflows to DOT's secondary without consuming
-the GPT-5 allocation reserved for instructor recommendations. Limits are illustrative,
-not verified sizing recommendations.
+DOT's primary appearing full selects DOT's secondary without consuming the GPT-5
+pool allocated to instructor recommendations. Values are illustrative, not verified
+sizing recommendations.
 
-Use the admin label "Maximum concurrent requests" rather than "Maximum concurrent
-connections": HTTP/2 can multiplex requests over a connection. One configured value
-drives application admission and the adapter's corresponding transport sizing; do not
-expose independently configurable model and pool limits.
+For Hackney's connection-based implementation, use the admin label "Maximum
+checked-out connections" or "Pool capacity." This is not a transport-independent
+maximum concurrent inference request limit. For HTTP/1.1 streaming, verify that one
+active inference occupies one checked-out connection throughout stream consumption.
+For multiplexed transports, connection count alone does not bound concurrent
+requests; the transport must support equivalent request or stream capacity, or the
+design must explicitly acknowledge different semantics. Do not expose separate
+application admission or model capacity settings.
 
 Validate:
 
@@ -254,12 +261,11 @@ Validate:
 Add `GENAI_HEALTH_CHECKS_ENABLED`, defaulting to `true`. Setting it to `false`
 disables all GenAI Provider health checks on the application node, including initial,
 recurring, and recovery probes. Apply the variable to every node to disable checks
-deployment-wide. Accept `false`, `0`, `no`, and `off` as disabling values,
-case-insensitively and after trimming whitespace.
+deployment-wide.
 
 While disabled, bypass observed Provider-health gating so stale or previously
 unavailable health state cannot block normal routing. Continue respecting Provider
-administrative disablement, ServiceConfig-tier concurrency limits, pool isolation,
+administrative disablement, ServiceConfig-tier pool capacities, pool isolation,
 and request-level error/fallback policy. This override must not recreate the old
 primary-only bypass: primary-to-secondary capacity overflow remains active.
 
@@ -284,15 +290,16 @@ with the configured endpoint and credentials.
 - Use the same Provider endpoint, credentials, and adapter as ordinary traffic.
 - Use a fixed tiny prompt and bounded output; no user content is needed.
 - Verify successful protocol completion, not an exact generated sentence.
-- Exercise streaming when streaming availability is the behavior being protected.
 - Use a dedicated deadline suitable for the chosen health-check model.
-- Reserve probe capacity independently from ordinary model admission and saturated
-  user-request transport pools.
 - Do not route probes through normal fallback. A backup success must not mark the
   original Provider healthy.
 - Have at most one probe in flight per Provider per monitoring node.
 - Run network work in a monitored task; keep the coordinating process responsive.
 - Handle task exit, deadline expiry, and cleanup explicitly.
+- Handle all vendor specific error messages, capturing that information in a way
+  that surfaces up eventually to a UI so that Admins can see things like
+  "OpenAI provider is failing because we have run out of money" or
+  "Anthropic is failing due to service unavailability"
 - Ensure stale results from replaced credentials/configuration or older probes cannot
   overwrite current health state.
 
@@ -319,7 +326,7 @@ health monitoring and recovery, and a more aggressive schedule during determinat
 
 - Probe every 3 minutes.  The 3 minutes is a default value but is overridable via runtime environment variable.  This is the regular heath monitoring and also the recovery schedule.
 - After a first failed probe, probe every 30 seconds.  The 30 seconds is default value but overridable via runtime environment variable. This is the schedule for determiniation of unavailability.
-- Mark unavailable after 4 consecutive failed probes.  The 4 is a default value but overridable via runtime environment variable.
+- Mark unavailable after 3 consecutive failed probes.  The 3 is a default value but overridable via runtime environment variable.
 - After marked unavailable, go back to the regular, recovery schedule and probe every 3 minutes.
 - Restore availability after 2 consecutive successful probes. The 2 value is a default but overridable via runtime environment variable.
 
@@ -338,8 +345,8 @@ staleness cutoff and routing policy remain open.
 
 ### Scope and deployment
 
-Start with per-application-node monitors and health state, matching current local
-admission state. This tests connectivity from the node making requests and avoids
+Start with per-application-node monitors and health state, matching node-local
+transport pools. This tests connectivity from the node making requests and avoids
 introducing cluster leadership or consensus.
 
 Consequences:
@@ -347,8 +354,8 @@ Consequences:
 - Probe volume and cost multiply by active node count and Provider count.
 - Nodes may legitimately disagree due to local connectivity failures.
 - Add scheduling jitter and cap concurrent probes.
-- Account for node count when sizing model capacity; per-node limits are not global
-  account quota enforcement.
+- Account for node count when sizing pool capacity; per-node limits do not enforce
+  global upstream request or token quotas.
 
 Only introduce shared/leader-based probing if operational scale warrants it and the
 loss of node-local connectivity evidence is addressed.
@@ -379,13 +386,13 @@ is inadequate.
 
 | Main Provider | Capacity | Decision |
 |---|---|---|
-| Available | Primary available | Primary |
-| Available | Primary full; secondary available | Secondary |
-| Available | Primary and secondary full | Busy rejection |
-| Available | Primary full; no secondary | Busy rejection |
-| Unavailable | Backup Provider available; backup has capacity | Backup |
+| Available | Primary appears to have capacity | Primary |
+| Available | Primary appears full; secondary appears to have capacity | Secondary |
+| Available | Primary and secondary appear full | Busy rejection |
+| Available | Primary appears full; no secondary | Busy rejection |
+| Unavailable | Backup Provider eligible; backup appears to have capacity | Backup |
 | Unavailable | Backup absent, unavailable, or full | Unavailable/busy rejection |
-| Unknown at startup | Within capacity | Proposed: allow normal routing while immediate probe runs |
+| Unknown at startup | Pool appears to have capacity | Proposed: allow normal routing while immediate probe runs |
 
 No latency-based demotion to secondary and no backup overflow for ordinary capacity
 exhaustion. Monitor backup using exactly the same Provider-health mechanism as the
@@ -395,7 +402,8 @@ Request-level fallback is a separate policy from provider availability:
 
 - Recommended: at most one backup attempt after an eligible availability failure,
   even before scheduled health checks have detected an outage.
-- Require backup health and capacity to permit the attempt.
+- Require backup Provider eligibility and the same best-effort pool occupancy check
+  to permit the attempt; bound its checkout waiting too.
 - Retry only before any response output or tool-call fragments have been exposed.
 - After output begins, return an interrupted-stream error; do not silently combine
   answers from different models or duplicate tool effects.
@@ -407,43 +415,72 @@ Request-level fallback is a separate policy from provider availability:
 
 ## Capacity and lifecycle correctness
 
-Application-level concurrency limits should be authoritative and independent of
-HTTP-client implementation or health-monitor configuration. Scope each capacity
-budget to `(service_config_id, tier)` and use its single configured limit to size the
-dedicated transport pool. Remove RegisteredModel-level `max_concurrent`, `pool_class`,
-the shared fast/slow pools, and the separate shared-pool admission budget from the
-target design.
+Each tier's actual transport pool is its sole capacity authority. Persist one pool
+capacity setting for `(service_config_id, tier)` and use checked-out occupancy as a
+routing hint. Do not maintain application request counters, admission budgets,
+admission leases, or bounded request-task registries as a second representation of
+occupied capacity. Remove RegisteredModel-level `max_concurrent`, `pool_class`, and
+the shared fast/slow pools from the target design.
 
 ### Admission and transport
 
-Transport pool exhaustion alone cannot implement immediate overflow. The installed
-Hackney implementation queues checkout requests when full, and observing occupancy
-before sending does not atomically reserve a slot. Keep an atomic application
-reservation against the ServiceConfig-tier budget:
+Capacity-based routing is explicitly best effort:
 
-1. Try to reserve primary capacity before issuing a provider request.
-2. If full, immediately attempt that ServiceConfig's secondary reservation.
-3. If admitted, execute through the selected tier's dedicated transport pool.
-4. Release the reservation on completion or owner process death.
+1. When the main Provider is eligible, inspect primary's checked-out occupancy
+   against its configured pool capacity.
+2. If primary appears to have capacity, execute through primary's pool.
+3. If primary appears full, inspect secondary and execute through its pool if
+   capacity appears available.
+4. If both appear full, or primary is full and secondary is absent, return busy.
+5. When the main Provider is unavailable, apply the equivalent capacity check to
+   backup, subject to backup Provider eligibility.
 
-Provider unavailability selects that ServiceConfig's backup and reserves its capacity
-instead. Healthy primary/secondary saturation still returns busy and does not use
-backup as another overflow tier.
+The occupancy check and subsequent checkout are deliberately not atomic. Concurrent
+requests may both observe an available primary slot and select primary; one may
+then queue briefly. Secondary may be selected just before primary frees capacity,
+and busy may be returned just as capacity becomes available. The transport pool
+enforces its actual connection limit; the router observes occupancy for selection.
 
-One limit and one admission budget per tier are sufficient. Transport pooling remains
-responsible for connection reuse and transport protection. Adapter-specific handling
-must preserve the same maximum active-request semantics: the OpenAI-compatible
-adapter currently uses Hackney, whereas Claude uses Anthropix/Req/Finch. Creating a
-Hackney pool for Claude alone would not isolate its actual transport. Configure a
-dedicated transport pool through each adapter, or standardize transports during
-implementation. Do not equate HTTP/2 socket count with concurrent request count.
+Specify a finite transport-pool checkout timeout, with its exact value left to
+implementation. It is separate from connection establishment, response inactivity,
+and total inference deadlines. If checkout cannot complete within that timeout,
+return a local busy/capacity error. Do not change Provider health, use backup for
+local contention, or make another secondary attempt after checkout timeout in the
+initial design. Secondary selection happens only during the initial occupancy
+check. A zero-duration checkout timeout must not be described as an atomic "try
+checkout" operation.
+
+Keep dedicated production pools for primary, secondary, and backup. A Hackney pool
+isolates only calls that actually use it. For Claude's Anthropix/Req/Finch path,
+implementation must explicitly choose equivalent isolated transport capacity and
+occupancy-based routing where supported, or standardize the transport so all
+supported adapters satisfy the design. If neither is practical, record an unresolved
+limitation; do not claim Hackney pool creation isolates Claude traffic.
+
+### Installed transport verification gate
+
+The pool-only design is conditional on verifying the installed Hackney version,
+not assumptions drawn from another release. Confirm:
+
+- Which statistic represents checked-out occupancy.
+- Whether the configured limit bounds checked-out connections rather than only
+  retained idle connections.
+- What happens when the pool reaches that limit.
+- How checkout timeout and cancellation remove pending checkout requests.
+- Whether streaming retains its checkout until stream completion.
+- Whether task termination, including `:kill`, reliably releases or closes the
+  associated connection and reclaims pool capacity.
+
+Verify each other adapter's actual transport against its documented capacity and
+cleanup semantics as well. If these guarantees cannot be established, resolve the
+transport limitation before treating the pool-only design as implementable.
 
 ### Fairness boundary and limitations
 
-ServiceConfig ID is the fairness and reservation boundary. Different ServiceConfigs
+ServiceConfig ID is the pool isolation boundary. Different ServiceConfigs
 have independent production capacity even when they select the same model. Features
-or sections referencing the same ServiceConfig intentionally share its tier budgets;
-independent reservations require distinct ServiceConfigs. Section overrides use the
+or sections referencing the same ServiceConfig intentionally share its tier pools;
+independent pools require distinct ServiceConfigs. Section overrides use the
 resolved ServiceConfig's pools.
 
 This provides local capacity isolation, not guaranteed fairness at the upstream
@@ -454,34 +491,36 @@ capacity. Initial sizing must account for total allocations and node count. Add
 provider-wide rate control only if needed; it is not an initial additional concurrency
 setting.
 
-Fixed reservations intentionally do not borrow unused capacity from other
+Fixed pool allocations intentionally do not borrow unused capacity from other
 ServiceConfigs. This trades some utilization for predictable isolation. Do not add
 automatic borrowing in the initial design.
 
 ### Lifecycle and configuration
 
-- Use admission leases tied to the executing process.
-- Monitor owners and reclaim reservations on process death, including `:kill`.
-- Make release idempotent so completion and death notifications cannot double-release.
-- Enforce capacity even when provider-health checks are disabled or administratively
-  overridden.
-- Reserve backup capacity separately from main-provider requests, which can remain
-  in flight after failover.
-- Reserve probe capacity separately so saturation cannot manufacture an outage.
-- Align transport capacity with application admission to avoid hidden pool queues.
-- Persist limits with the ServiceConfig tier and propagate configuration changes to
-  every application node. Current admin pool resizing affects only the handling node.
-- When lowering a limit below current occupancy, let existing work finish and deny
-  new admissions until occupancy falls below the new limit.
-- Reconcile pool creation, restart, model reassignment, and removal safely. A change
-  of selected model must not reuse connections to an obsolete endpoint or lose the
-  accounting for requests still in flight.
-- Route ordinary model calls, including admin test actions, through the relevant
-  capacity reservation. Define an explicit administrative test budget when no
-  ServiceConfig context exists, rather than bypassing admission silently.
+- Ensure reliable stream and connection cleanup on completion, cancellation, errors,
+  and process death, including `:kill`; verify eventual capacity reclamation.
+- Enforce transport pool limits even when Provider-health checks are disabled or
+  administratively overridden.
+- Keep backup transport capacity separate from main-provider requests, which can
+  remain in flight after failover.
+- Keep probe transport capacity separate so production saturation cannot block
+  probes or manufacture an outage.
+- Persist pool settings with the ServiceConfig tier and propagate changes to every
+  application node. Current admin pool resizing affects only the handling node.
+- On a capacity change, create a new pool with the desired capacity and immediately
+  route new selections to it. Let old checked-out work and already-pending checkouts
+  finish or time out. Total occupancy can temporarily exceed the new setting while
+  old pools drain; the new pool enforces its own capacity. Keep old generations
+  visible and retire them safely after all work and stale selections are resolved.
+- Safely reconcile pool creation, resizing, restart, retirement, model reassignment,
+  and endpoint/configuration changes. Do not reuse connections to an obsolete
+  endpoint or lose accounting for checked-out connections still in flight; drain
+  retiring pools safely while keeping their occupancy visible.
+- Route administrative test calls through the appropriate production pool when a
+  ServiceConfig is supplied, or an explicit administrative transport pool otherwise.
 
-Provider health probes retain a separate small reserved transport budget per Provider
-and monitoring node. They do not consume any ServiceConfig production allocation or
+Provider health probes retain separate small transport capacity per Provider and
+monitoring node. They do not consume any ServiceConfig production allocation or
 depend on its pools. This is the explicit infrastructure exception to production
 pool ownership by ServiceConfig tier.
 
@@ -502,8 +541,10 @@ Keep separate telemetry for:
 
 - Probe results, duration, state changes, and monitor failures.
 - Router selection reason and busy/unavailable rejection.
-- Per-ServiceConfig-tier in-flight capacity, reclaimed leases, and saturation,
-  with selected-model identity for diagnosis.
+- Checked-out occupancy and configured capacity per ServiceConfig tier, with
+  selected-model identity for diagnosis.
+- Checkout wait duration, checkout timeouts, and queue depth where available.
+- Connection cleanup failures and pool lifecycle errors.
 - Real-request outcomes, time to first token, inter-chunk stalls, total duration,
   cancellations, and interrupted streams.
 - Backup attempts and whether any output had already been exposed.
@@ -520,7 +561,7 @@ protection; do not carry forward the current coupling by accident.
 
 ### Initial Provider data migration
 
-Build a migration that creates exactly one Provider named "OpenAI" initially. Find
+Build a migration that creates exactly one Provider named "OpenAI production" initially. Find
 the first RegisteredModel with API keys, ordered by RegisteredModel ID, and migrate
 its API keys to that Provider. Link **every existing RegisteredModel** to this same
 Provider, including models that have no API keys. Do not create a Provider per model
@@ -536,13 +577,15 @@ failure domains and satisfy the backup routing requirements.
   persist automatic designation when none of its models is flagged.
 - Audit ServiceConfigs against same-Provider primary/secondary and independent backup
   requirements.
-- Assign concurrency limits to each configured ServiceConfig tier and replace shared
+- Assign pool capacities to each configured ServiceConfig tier and replace shared
   fast/slow transport pools with tier-owned pools. Existing per-model limits cannot
   simply be copied into every ServiceConfig without reviewing the resulting combined
   provider allocations.
 - Replace model concurrency and shared pool-size admin controls with persisted
-  ServiceConfig-tier limits and ensure all nodes reconcile updates.
-- Correct stream outcome reporting and admission cleanup before enabling routing.
+  ServiceConfig-tier pool settings and ensure all nodes reconcile updates.
+- Verify installed transport bounds, occupancy, checkout timeout/cancellation, resize,
+  and stream cleanup behavior before enabling pool-only routing. Resolve each
+  adapter's isolation strategy and correct stream outcome reporting.
 - Observe probes without using them to divert production requests initially, then
   enable provider-health routing in a controlled rollout.
 - Reset or replace obsolete breaker/counter state deliberately during deployment.
@@ -563,17 +606,25 @@ and `down/0` functions.
 - One in-flight probe per Provider; deadlines, task crashes, monitor restart, stale
   results, and configuration changes are handled deterministically.
 - A full user pool cannot prevent probing or occupy reserved backup capacity.
-- Primary saturation selects secondary; both full rejects; main outage selects backup.
-- Saturating one ServiceConfig does not consume another's tier reservations, including
+- Primary appearing full selects secondary; both appearing full returns busy; main
+  outage selects eligible backup subject to its pool capacity.
+- Concurrent selection races may queue, but checkout waiting is bounded; checkout
+  timeout returns local busy without another secondary attempt or Provider failover.
+- Pool contention never changes Provider health or triggers backup fallback.
+- Saturating one ServiceConfig does not consume another's tier pools, including
   when the same RegisteredModel is primary in one and secondary in the other.
-- Features and sections resolving to the same ServiceConfig share its tier budget.
-- Dedicated pools use the correct transport for both adapters, without hidden queues
-  defeating immediate overflow or HTTP/2 multiplexing bypassing admission limits.
+- Features and sections resolving to the same ServiceConfig share its tier pools.
+- Separate ServiceConfigs and backup retain transport isolation. Each adapter
+  actually uses its designated pools and satisfies its documented connection,
+  request, or stream capacity semantics, including under multiplexing.
+- All installed Hackney verification-gate questions above have evidence from the
+  installed dependency, including pending-checkout removal and streaming ownership.
 - Limit changes reach every node; reductions drain existing work, and model changes
   or pool removal preserve cleanup for requests in flight.
 - Backup unavailability and saturation have explicit, bounded failure behavior.
-- Cancellation and abrupt process death reclaim all admission leases exactly once.
-- Health overrides do not disable concurrency limits.
+- Completed, cancelled, errored, and killed streams eventually reclaim pool capacity,
+  including abrupt task termination with `:kill`.
+- Health overrides do not disable pool limits.
 - With `GENAI_HEALTH_CHECKS_ENABLED=false`, no Provider probes run, stale observed
   health does not gate routing, primary-to-secondary overflow and capacity protection
   remain active, and administratively disabled Providers remain disabled. Re-enabling
@@ -601,11 +652,11 @@ and `down/0` functions.
    or persist `true` on the first model when none is flagged, ordered by model ID.
 
 4. Classification and routing consequences of invalid credentials, invalid probe
-   configuration, and probe-specific/model-specific throttling.
-5. Detailed adapter-specific pool lifecycle and transport sizing, plus the budget for
-   administrative tests without a ServiceConfig. Production capacity keys and pool
-   ownership are decided: `(service_config_id, tier)`, with one configured concurrency
-   limit and an isolated transport pool per configured tier per node.
+   configuration, and probe-specific/model-specific throttling.  Punt, do nothing.
+5. Detailed adapter-specific pool lifecycle and transport sizing, plus the transport pool for
+   administrative tests without a ServiceConfig and finite checkout timeout value.
+   Production capacity keys and pool ownership are decided: `(service_config_id, tier)`, with one persisted pool capacity
+   setting and an isolated transport pool per configured tier per node.
 6. Eligible request-level fallback errors and total deadline/retry budget.
 7. Administrative overrides, rollout gates, and retirement of the primary-only switch. Yes, delete the primary-only override switch.
 8. Whether real-request failures should eventually accelerate probes. NO.
