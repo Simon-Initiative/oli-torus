@@ -64,8 +64,8 @@ test.describe('CATA delivery', () => {
   }) => {
     await openStudentDeliveryPractice(homeTask, page, sections.positive, activityTitle);
     const activity = page.locator('.activity.cata-activity');
-    const choiceOne = page.getByRole('checkbox', { name: 'choice 1', exact: true });
-    const choiceTwo = page.getByRole('checkbox', { name: 'choice 2', exact: true });
+    const choiceOne = page.getByRole('checkbox', { name: 'Correct 1', exact: true });
+    const choiceTwo = page.getByRole('checkbox', { name: 'Correct 2', exact: true });
     const submitButton = page.getByRole('button', { name: 'submit', exact: true });
 
     await expect(activity).toBeVisible();

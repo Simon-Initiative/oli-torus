@@ -5,12 +5,14 @@ defmodule Oli.Scenarios.Directives.UserHandler do
 
   alias Oli.Scenarios.DirectiveTypes.UserDirective
   alias Oli.Scenarios.Engine
+  alias Oli.Scenarios.DemoAccounts
   alias Oli.Accounts.{User, Author, SystemRole}
   alias Oli.Repo
   require Bcrypt
 
   @default_password "temporarypassword123"
 
+  @doc "Creates a scenario account, applying preview seed defaults only to the new record."
   def handle(
         %UserDirective{
           name: name,
@@ -35,6 +37,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
         case type do
           :author ->
             create_author(%{
+              preview_account_defaults: state.preview_account_defaults,
               email: email,
               given_name: given_name,
               family_name: family_name,
@@ -45,6 +48,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
 
           :instructor ->
             create_user(%{
+              preview_account_defaults: state.preview_account_defaults,
               email: email,
               given_name: given_name,
               family_name: family_name,
@@ -56,6 +60,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
 
           :student ->
             create_user(%{
+              preview_account_defaults: state.preview_account_defaults,
               email: email,
               given_name: given_name,
               family_name: family_name,
@@ -87,7 +92,8 @@ defmodule Oli.Scenarios.Directives.UserHandler do
   end
 
   defp create_author(attrs) do
-    password = attrs[:password] || @default_password
+    defaults = attrs[:preview_account_defaults]
+    password = DemoAccounts.password(defaults, attrs[:password] || @default_password)
     system_role = attrs[:system_role] || :author
     email_verified = Map.get(attrs, :email_verified, true)
 
@@ -119,6 +125,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
         system_role_id: system_role_id,
         email_confirmed_at: email_confirmed_at
       })
+      |> DemoAccounts.apply_defaults(defaults)
       |> Repo.insert()
 
     %Author{author | email_verified: email_verified}
@@ -126,6 +133,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
 
   defp create_user(attrs) do
     password = attrs[:password] || @default_password
+    defaults = attrs[:preview_account_defaults]
     can_create_sections = attrs[:can_create_sections] || false
     email_verified = Map.get(attrs, :email_verified, true)
 
@@ -136,10 +144,17 @@ defmodule Oli.Scenarios.Directives.UserHandler do
         nil
       end
 
+    credentials =
+      case defaults do
+        %DemoAccounts{password_configured?: true} ->
+          Ecto.Changeset.change(%User{})
+
+        _ ->
+          %User{} |> Ecto.Changeset.cast(%{password: password}, [:password]) |> hash_password()
+      end
+
     {:ok, user} =
-      %User{}
-      |> Ecto.Changeset.cast(%{password: password}, [:password])
-      |> hash_password()
+      credentials
       |> User.noauth_changeset(%{
         email: attrs.email,
         given_name: attrs.given_name,
@@ -151,6 +166,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
         is_instructor: attrs[:is_instructor] || false,
         can_create_sections: can_create_sections
       })
+      |> DemoAccounts.apply_defaults(defaults)
       |> Repo.insert()
 
     user

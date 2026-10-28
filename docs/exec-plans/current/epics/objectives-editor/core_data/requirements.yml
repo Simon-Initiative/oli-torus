@@ -1,0 +1,108 @@
+work_item: core_data
+requirements:
+- id: FR-001
+  title: Provide a focused authoring coverage data source
+  description: Provide a plain application-level Elixir module that accepts a project
+    scope and returns a reusable, read-only Learning Objective coverage model for
+    the workspace editor and downstream epic features.
+  status: proposed
+- id: FR-002
+  title: Load one compact working-publication projection
+  description: Read the revisions referenced by the project's current unpublished
+    working publication with one targeted projection scoped to the project, selecting
+    only attributes needed for objectives, pages, activities, and curriculum containers.
+  status: proposed
+- id: FR-003
+  title: Build normalized hierarchy and attachment indexes
+  description: Partition projection rows and build objective parent/child relationships,
+    direct page/activity attachments, page-to-embedded-activity relationships, curriculum
+    descendants/paths, and stable lookup maps in memory.
+  status: proposed
+- id: FR-004
+  title: Calculate coverage summaries with correct hierarchy semantics
+  description: Calculate page and formative/summative activity coverage for Sub-Objectives
+    from direct attachments and for parent Learning Objectives from direct plus associated
+    Sub-Objective attachments, deduplicated by resource identity.
+  status: proposed
+- id: FR-005
+  title: Provide detail and search projections for consumers
+  description: Provide page-first detail groups and normalized in-memory searchable
+    text covering objective, Sub-Objective, page, and embedded activity titles, including
+    enough metadata for later filtering and navigation.
+  status: proposed
+- id: FR-006
+  title: Keep initial activity scope embedded-only and read-only
+  description: Count only static embedded activities referenced through activity_refs,
+    exclude bank selections from initial coverage, and ensure model construction never
+    mutates course content or associations.
+  status: proposed
+- id: FR-007
+  title: Enforce deterministic, scoped, and safe behavior
+  description: Scope results to the requested project and working publication, exclude
+    deleted revisions, tolerate optional data safely, and produce stable relationship
+    ordering suitable for rendering and testing.
+  status: proposed
+acceptance_criteria:
+- id: AC-001
+  requirement_id: FR-001
+  title: The workspace editor can obtain a coverage model through the application
+    module without embedding coverage data shaping or repeated content queries in
+    the LiveView.
+  status: proposed
+  verification_method: automated
+- id: AC-002
+  requirement_id: FR-002
+  title: Query tests prove that the model reads only the requested project's current
+    unpublished publication mappings, selects the required compact attributes, and
+    does not select page or activity content.
+  status: proposed
+  verification_method: automated
+- id: AC-003
+  requirement_id: FR-003
+  title: Given objective, page, activity, and container projection rows, tests verify
+    objective maps, parent/child links, direct attachment maps, page-to-embedded-activity
+    links from activity_refs, and curriculum descendant/path maps are built correctly.
+  status: proposed
+  verification_method: automated
+- id: AC-004
+  requirement_id: FR-004
+  title: Tests verify that Sub-Objective counts include only direct attachments, parent
+    counts include direct and child attachments, and duplicate page/activity ids count
+    once per objective and formative/summative bucket.
+  status: proposed
+  verification_method: automated
+- id: AC-005
+  requirement_id: FR-004
+  title: Tests verify page classification from graded, embedded activity classification
+    inherited from the containing page, and page-first detail grouping including pages
+    with no activities in a selected bucket.
+  status: proposed
+  verification_method: automated
+- id: AC-006
+  requirement_id: FR-005
+  title: Search tests verify case-insensitive, trimmed, whitespace-normalized partial
+    matching across objective, Sub-Objective, page, and activity titles while preserving
+    original display metadata and match hierarchy information.
+  status: proposed
+  verification_method: automated
+- id: AC-007
+  requirement_id: FR-006
+  title: Tests verify static embedded activities are included once as specified, bank
+    selections and standalone banked activities are excluded, and model construction
+    performs no writes to content or associations.
+  status: proposed
+  verification_method: automated
+- id: AC-008
+  requirement_id: FR-007
+  title: Tests verify deleted revisions and out-of-project rows are excluded, optional
+    or malformed attributes do not crash model construction, and repeated construction
+    from the same projection yields stable sorted output.
+  status: proposed
+  verification_method: automated
+- id: AC-009
+  requirement_id: FR-007
+  title: Targeted mix test and mix format checks pass, and performance review confirms
+    the initial coverage path has one scoped projection rather than N+1 objective/page/activity
+    queries.
+  status: proposed
+  verification_method: hybrid

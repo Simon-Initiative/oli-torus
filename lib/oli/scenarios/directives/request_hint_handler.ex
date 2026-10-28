@@ -3,9 +3,9 @@ defmodule Oli.Scenarios.Directives.RequestHintHandler do
   Handles request_hint directives through the learner activity lifecycle.
   """
 
-  alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Scenarios.Directives.ActivityAttemptSupport
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, RequestHintDirective}
+  alias Oli.Scenarios.LearnerActions
 
   @doc """
   Requests the next hint for the directive's active activity part attempt.
@@ -29,10 +29,7 @@ defmodule Oli.Scenarios.Directives.RequestHintHandler do
          {:ok, part_attempt} <-
            ActivityAttemptSupport.find_part_attempt(activity_attempt_info, directive.part_id),
          {:ok, _hint_result} <-
-           ActivityLifecycle.request_hint(
-             activity_attempt_info.attempt_guid,
-             part_attempt.attempt_guid
-           ) do
+           LearnerActions.request_hint(activity_attempt_info.activity_attempt, part_attempt) do
       {:ok, state}
     else
       {:error, reason} -> {:error, "Failed to request hint: #{format_reason(reason)}"}

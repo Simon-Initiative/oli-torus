@@ -1,23 +1,18 @@
 defmodule OliWeb.LtiRedirect do
   use OliWeb, :verified_routes
 
+  import Ecto.Query
   import Phoenix.Controller
 
-  alias Lti_1p3.Roles.{ContextRoles, PlatformRoles}
   alias Oli.Accounts
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.{SectionResource, SectionResourceMigration}
+  alias Oli.Repo
+  alias Oli.Resources.Revision
   alias Oli.Lti.LtiParams
 
   require Logger
   @telemetry_prefix [:oli, :lti]
-
-  @allow_configure_section_roles [
-    PlatformRoles.get_role(:system_administrator),
-    PlatformRoles.get_role(:institution_administrator),
-    ContextRoles.get_role(:context_administrator),
-    ContextRoles.get_role(:context_instructor)
-  ]
-  @allow_configure_section_roles_set MapSet.new(@allow_configure_section_roles)
 
   def redirect_authenticated_user(conn, opts \\ []) do
     allow_new_section_creation = Keyword.get(opts, :allow_new_section_creation, false)
@@ -44,6 +39,7 @@ defmodule OliWeb.LtiRedirect do
     end
   end
 
+  @doc "Resolves the current LTI launch to a section destination or a page in that section."
   def launch_destination(lti_params, opts \\ []) do
     allow_new_section_creation = Keyword.get(opts, :allow_new_section_creation, false)
     source = Keyword.get(opts, :source, :current_launch)
@@ -51,11 +47,18 @@ defmodule OliWeb.LtiRedirect do
 
     case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
       %{"id" => context_id} ->
-        roles = launch_roles(lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"])
-        can_configure_section = can_configure_section?(roles)
+        roles =
+          LtiParams.launch_roles(lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"])
+
+        can_configure_section = LtiParams.can_configure_section?(roles)
         can_create_section = allow_new_section_creation and can_configure_section
 
-        section = Sections.get_section_from_lti_params(lti_params)
+        target =
+          Keyword.get_lazy(opts, :target, fn ->
+            resolve_target(lti_params, Sections.get_section_from_lti_params(lti_params))
+          end)
+
+        section = target.section
 
         case section do
           nil when can_create_section ->
@@ -80,29 +83,15 @@ defmodule OliWeb.LtiRedirect do
             observe_redirect_resolution(metadata)
             :course_not_configured
 
-          section when can_configure_section ->
-            metadata = %{
-              context_id: context_id,
-              outcome: :section_manage,
-              section_id: section.id,
-              source: source,
-              transport_method: transport_method
-            }
-
-            observe_redirect_resolution(metadata)
-            {:redirect, ~p"/sections/#{section.slug}/manage"}
-
           section ->
-            metadata = %{
-              context_id: context_id,
-              outcome: :section_home,
-              section_id: section.id,
-              source: source,
-              transport_method: transport_method
-            }
-
-            observe_redirect_resolution(metadata)
-            {:redirect, ~p"/sections/#{section.slug}"}
+            section_destination(
+              section,
+              can_configure_section,
+              context_id,
+              source,
+              transport_method,
+              target
+            )
         end
 
       _ ->
@@ -120,17 +109,107 @@ defmodule OliWeb.LtiRedirect do
     end
   end
 
-  defp launch_roles(roles) when is_list(roles) do
-    context_roles = ContextRoles.get_roles_by_uris(roles)
-    platform_roles = PlatformRoles.get_roles_by_uris(roles)
-    MapSet.new(context_roles ++ platform_roles)
+  defp section_destination(
+         section,
+         can_configure_section,
+         context_id,
+         source,
+         transport_method,
+         target
+       ) do
+    case direct_page_path(target) do
+      {:ok, path} ->
+        observe_redirect_resolution(%{
+          context_id: context_id,
+          outcome: :direct_page,
+          section_id: section.id,
+          source: source,
+          transport_method: transport_method
+        })
+
+        {:redirect, path}
+
+      :fallback when can_configure_section ->
+        observe_redirect_resolution(%{
+          context_id: context_id,
+          outcome: :section_manage,
+          section_id: section.id,
+          source: source,
+          transport_method: transport_method
+        })
+
+        {:redirect, ~p"/sections/#{section.slug}/manage"}
+
+      :fallback ->
+        observe_redirect_resolution(%{
+          context_id: context_id,
+          outcome: :section_home,
+          section_id: section.id,
+          source: source,
+          transport_method: transport_method
+        })
+
+        {:redirect, ~p"/sections/#{section.slug}"}
+    end
   end
 
-  defp launch_roles(_roles), do: MapSet.new()
-
-  defp can_configure_section?(roles) do
-    MapSet.intersection(roles, @allow_configure_section_roles_set) |> MapSet.size() > 0
+  @doc "Resolves the current launch's direct page once, from authoritative section resources."
+  @spec resolve_target(map(), %Sections.Section{} | nil) :: map()
+  def resolve_target(claims, section) do
+    resource = resolve_resource(claims, section)
+    %{section: section, resource: resource}
   end
+
+  defp resolve_resource(
+         %{
+           "https://purl.imsglobal.org/spec/lti/claim/custom" => %{
+             "torus_resource_type" => "page",
+             "torus_resource_id" => revision_slug
+           }
+         },
+         %Sections.Section{} = section
+       )
+       when is_binary(revision_slug) and revision_slug != "" do
+    # Only legacy projections need the migration's section-wide lock. Current
+    # launches share a read lock on the selected assessment until admission commits.
+    case section.section_resource_migration_version == SectionResourceMigration.current_version() do
+      true -> :ok
+      false -> {:ok, _} = SectionResourceMigration.ensure_current(section.id)
+    end
+
+    page_type = Oli.Resources.ResourceType.id_for_page()
+
+    # LMS links may name an older revision. Resolve its resource identity, then
+    # select and lock the current section projection rather than the old revision.
+    resource_ids =
+      from revision in Revision,
+        where: revision.slug == ^revision_slug and revision.resource_type_id == ^page_type,
+        select: revision.resource_id
+
+    query =
+      from sr in SectionResource,
+        where:
+          sr.section_id == ^section.id and sr.resource_id in subquery(resource_ids) and
+            sr.resource_type_id == ^page_type
+
+    query =
+      case Repo.in_transaction?() do
+        true -> from sr in query, lock: "FOR SHARE"
+        false -> query
+      end
+
+    Repo.one(query)
+  end
+
+  defp resolve_resource(_, _), do: nil
+
+  defp direct_page_path(%{section: section, resource: %SectionResource{revision_slug: slug}}),
+    do: {:ok, ~p"/sections/#{section.slug}/page/#{slug}"}
+
+  defp direct_page_path(_), do: :fallback
+
+  @doc "Applies a destination already resolved during successful launch admission."
+  def redirect_to_destination(conn, destination), do: apply_destination(conn, destination, [])
 
   defp apply_destination(conn, {:redirect, path}, _opts), do: redirect(conn, to: path)
 

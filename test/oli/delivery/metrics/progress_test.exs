@@ -9,6 +9,15 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Lti_1p3.Roles.ContextRoles
 
+  describe "progress_range/1" do
+    test "uses exclusive upper bounds for the low and medium ranges" do
+      assert Metrics.progress_range(0.499) == "Low"
+      assert Metrics.progress_range(0.5) == "Medium"
+      assert Metrics.progress_range(0.799) == "Medium"
+      assert Metrics.progress_range(0.8) == "High"
+    end
+  end
+
   defp set_progress(section_id, resource_id, user_id, progress, revision) do
     {:ok, resource_access} =
       Core.track_access(resource_id, section_id, user_id)

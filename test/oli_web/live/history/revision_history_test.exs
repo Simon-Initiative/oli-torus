@@ -5,6 +5,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
+  alias Oli.LearningModel.LktAoaFixtures
   alias Oli.Resources.ResourceType
 
   defp revision_history_route(project_slug, revision_slug) do
@@ -26,6 +27,14 @@ defmodule OliWeb.History.RevisionHistoryTest do
       insert(:revision,
         resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 2"
+      )
+
+    objective_with_lkt_params_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Objective with LKT params",
+        author_id: author.id,
+        learning_model_parameters: LktAoaFixtures.learning_objective_parameters(1.5)
       )
 
     page_1_revision =
@@ -82,6 +91,11 @@ defmodule OliWeb.History.RevisionHistoryTest do
 
     insert(:project_resource, %{
       project_id: project.id,
+      resource_id: objective_with_lkt_params_revision.resource_id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
       resource_id: page_1_revision.resource_id
     })
 
@@ -129,6 +143,13 @@ defmodule OliWeb.History.RevisionHistoryTest do
 
     insert(:published_resource, %{
       publication: publication,
+      resource: objective_with_lkt_params_revision.resource,
+      revision: objective_with_lkt_params_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
       resource: page_1_revision.resource,
       revision: page_1_revision,
       author: author
@@ -171,7 +192,8 @@ defmodule OliWeb.History.RevisionHistoryTest do
       container_revision: container_revision,
       author: author,
       objective_1_revision: objective_1_revision,
-      objective_2_revision: objective_2_revision
+      objective_2_revision: objective_2_revision,
+      objective_with_lkt_params_revision: objective_with_lkt_params_revision
     }
   end
 
@@ -407,6 +429,21 @@ defmodule OliWeb.History.RevisionHistoryTest do
       # and we see the value updated in the table
       assert element(view, "#revision-table-objectives-attr td:nth-of-type(2)")
              |> render() =~ "[]"
+    end
+
+    test "revision details table: renders learning_model_parameters without crashing (MER-5982)",
+         %{
+           conn: conn,
+           project: project,
+           objective_with_lkt_params_revision: objective_with_lkt_params_revision
+         } do
+      {:ok, view, _html} =
+        live(conn, revision_history_route(project.slug, objective_with_lkt_params_revision.slug))
+
+      assert has_element?(view, "#revision-table-learning_model_parameters-attr")
+
+      assert element(view, "#revision-table-learning_model_parameters-attr td:nth-of-type(2)")
+             |> render() =~ "1.5"
     end
 
     test "revision details table: an error message is shown when edit fails", %{

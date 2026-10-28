@@ -15,6 +15,8 @@ defmodule OliWeb.Common.Listing do
   attr :cards_view, :boolean, default: false
   attr :selected, :any
   attr :with_body, :boolean, default: false
+  attr :empty_state_text, :string, default: "None exist"
+  attr :paging_container_class, :string, default: "mx-4"
   slot :inner_block
 
   def render(assigns) do
@@ -31,6 +33,7 @@ defmodule OliWeb.Common.Listing do
           offset={@offset}
           limit={@limit}
           click={@page_change}
+          container_class={@paging_container_class}
         /> {render_table(assigns)}
         <%= if @show_bottom_paging do %>
           <Paging.render
@@ -39,6 +42,7 @@ defmodule OliWeb.Common.Listing do
             offset={@offset}
             limit={@limit}
             click={@page_change}
+            container_class={@paging_container_class}
           />
         <% end %>
       <% else %>
@@ -46,7 +50,7 @@ defmodule OliWeb.Common.Listing do
           <div>{"Showing all results (#{@total_count} total)"}</div>
           <br /> {render_table(assigns)}
         <% else %>
-          <p>None exist</p>
+          <p>{@empty_state_text}</p>
         <% end %>
       <% end %>
     </div>

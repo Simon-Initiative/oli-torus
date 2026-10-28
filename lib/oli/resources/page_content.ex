@@ -118,6 +118,40 @@ defmodule Oli.Resources.PageContent do
   end
 
   @doc """
+  Returns whether page content contains an embedded activity reference or activity-bank selection.
+
+  The traversal stops at the first matching node, making this suitable for delivery fast paths that
+  only need to distinguish content-only pages from pages that can realize activities.
+  """
+  def contains_activity_opportunity?(%{"model" => model}) when is_list(model) do
+    Enum.any?(model, &contains_activity_opportunity_node?/1)
+  end
+
+  def contains_activity_opportunity?(_content), do: false
+
+  defp contains_activity_opportunity_node?(%{"type" => type})
+       when type in ["activity-reference", "selection"],
+       do: true
+
+  defp contains_activity_opportunity_node?(item) when is_map(item) do
+    ["children", "caption", "pronunciation", "translations", "content", "meanings"]
+    |> Enum.any?(fn property ->
+      case Map.get(item, property) do
+        children when is_list(children) ->
+          Enum.any?(children, &contains_activity_opportunity_node?/1)
+
+        child when is_map(child) ->
+          contains_activity_opportunity_node?(child)
+
+        _ ->
+          false
+      end
+    end)
+  end
+
+  defp contains_activity_opportunity_node?(_item), do: false
+
+  @doc """
   Finds supported Alternatives placements in content order.
 
   Placements may occur at any depth inside ordinary containers. Traversal stops at each

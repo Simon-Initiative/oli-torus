@@ -679,7 +679,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       assert has_element?(view, "#timezone_info")
 
       # Verify that it contains the timezone world icon
-      assert has_element?(view, "[role='timezone world icon']")
+      assert has_element?(view, "[data-role='timezone world icon']")
 
       # Verify that it displays timezone text
       assert has_element?(view, "#timezone_info span")
@@ -752,13 +752,13 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] div[role="attempt score"]},
+               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] div[data-role="attempt-score"]},
                "0.0"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] div[role="attempt out of"]},
+               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] div[data-role="attempt-out-of"]},
                "1.0"
              )
 
@@ -770,7 +770,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] a[role='review_attempt_link']},
+               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] a[data-role='review-attempt-link']},
                "Review"
              )
     end
@@ -829,13 +829,13 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] div[role="attempt score"]},
+               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] div[data-role="attempt-score"]},
                "0.0"
              )
 
       assert has_element?(
                view,
-               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] div[role="attempt out of"]},
+               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] div[data-role="attempt-out-of"]},
                "1.0"
              )
 
@@ -848,7 +848,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       # but there is no review link (as the setting is disabled)
       refute has_element?(
                view,
-               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] a[role='review_attempt_link']},
+               ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] a[data-role='review-attempt-link']},
                "Review"
              )
     end

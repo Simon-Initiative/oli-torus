@@ -56,6 +56,7 @@ export interface ActivityBankProps {
   appsignalKey: string | null;
   revisionHistoryLink: boolean;
   allowTriggers: boolean;
+  loWellFormed?: boolean;
 }
 
 type ActivityBankState = {
@@ -561,6 +562,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             revisionHistoryLink={this.props.revisionHistoryLink}
             editMode={editMode}
             allObjectives={this.state.allObjectives.toArray()}
+            loWellFormed={this.props.loWellFormed}
             allTags={this.state.allTags.toArray()}
             onPostUndoable={this.onPostUndoable.bind(this, key)}
             onEdit={this.onActivityEdit.bind(this, key)}

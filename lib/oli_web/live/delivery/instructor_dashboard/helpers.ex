@@ -11,20 +11,38 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
 
   def get_instructor_enrollment(_section, _current_user), do: nil
 
+  @doc """
+  Returns the section's units, modules, or pages with progress and proficiency metrics.
+
+  Pass `student_id: id` to calculate metrics for one student. Otherwise metrics are aggregated
+  across the section. Container proficiency can be skipped with `async: true`.
+  """
   def get_containers(section, opts \\ [async: true]) do
+    student_id = opts[:student_id]
+    async? = Keyword.get(opts, :async, true)
+
     case Sections.get_units_and_modules_containers(section) do
       {0, pages} ->
         page_ids = Enum.map(pages, & &1.id)
-        student_ids = Sections.progress_user_ids(section.id)
 
         student_progress =
-          Metrics.progress_across_for_pages(
-            section.id,
-            page_ids,
-            student_ids
-          )
+          case student_id do
+            nil ->
+              Metrics.progress_across_for_pages(
+                section.id,
+                page_ids,
+                Sections.progress_user_ids(section.id)
+              )
 
-        proficiency_per_page = Metrics.proficiency_per_page(section, page_ids)
+            student_id ->
+              Metrics.progress_across_for_pages(section.id, page_ids, student_id)
+          end
+
+        proficiency_per_page =
+          case student_id do
+            nil -> Metrics.proficiency_per_page(section, page_ids)
+            student_id -> Metrics.proficiency_for_student_per_page(section, student_id)
+          end
 
         pages_with_metrics =
           Enum.map(pages, fn page ->
@@ -37,25 +55,37 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
-        %{
-          excluded_user_ids: excluded_user_ids,
-          included_user_count: included_user_count
-        } = Sections.progress_aggregation_inputs(section.id)
-
         student_progress =
-          Metrics.progress_across(
-            section.id,
-            Enum.map(containers, & &1.id),
-            excluded_user_ids,
-            included_user_count
-          )
+          case student_id do
+            nil ->
+              %{
+                excluded_user_ids: excluded_user_ids,
+                included_user_count: included_user_count
+              } = Sections.progress_aggregation_inputs(section.id)
+
+              Metrics.progress_across(
+                section.id,
+                Enum.map(containers, & &1.id),
+                excluded_user_ids,
+                included_user_count
+              )
+
+            student_id ->
+              Metrics.progress_across(section.id, Enum.map(containers, & &1.id), student_id)
+          end
 
         proficiency_per_container =
-          if opts[:async] do
-            %{}
-          else
-            contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
-            Metrics.proficiency_per_container(section, contained_pages)
+          case {async?, student_id} do
+            {true, _student_id} ->
+              %{}
+
+            {false, nil} ->
+              contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+              Metrics.proficiency_per_container(section, contained_pages)
+
+            {false, student_id} ->
+              contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+              Metrics.proficiency_for_student_per_container(section, student_id, contained_pages)
           end
 
         containers_with_metrics =

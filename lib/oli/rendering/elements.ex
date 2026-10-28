@@ -31,39 +31,43 @@ defmodule Oli.Rendering.Elements do
     Enum.reduce(elements, {[], 0}, fn element, {output, br_count} ->
       case element do
         %{"type" => "content"} ->
-          {output ++ writer.content(context, element), br_count}
+          {[writer.content(context, element) | output], br_count}
 
         # Activity bank selections only are rendered during an instructor preview, otherwise
         # they have already been realized into specific activity-references
         %{"type" => "selection"} ->
-          {output ++ writer.content(context, element), br_count}
+          {[writer.content(context, element) | output], br_count}
+
+        %{"type" => "learning_objectives"} ->
+          {[writer.content(context, element) | output], br_count}
 
         %{"type" => "activity-reference"} ->
-          {output ++ writer.activity(context, element), br_count}
+          {[writer.activity(context, element) | output], br_count}
 
         %{"type" => "group"} ->
-          {output ++ writer.group(context, element), br_count}
+          {[writer.group(context, element) | output], br_count}
 
         %{"type" => "survey"} ->
-          {output ++ writer.survey(context, element), br_count}
+          {[writer.survey(context, element) | output], br_count}
 
         %{"type" => "report"} ->
-          {output ++ writer.report(context, element), br_count}
+          {[writer.report(context, element) | output], br_count}
 
         %{"type" => "alternatives"} ->
-          {output ++ writer.alternatives(context, element), br_count}
+          {[writer.alternatives(context, element) | output], br_count}
 
         %{"type" => "break"} ->
-          {output ++ writer.break(context, element), br_count + 1}
+          {[writer.break(context, element) | output], br_count + 1}
 
         _ ->
           {error_id, error_msg} =
             log_error("Element type '#{element["type"]}' is not supported", element)
 
-          {output ++
-             writer.error(context, element, {:unsupported, error_id, error_msg}), br_count}
+          {[writer.error(context, element, {:unsupported, error_id, error_msg}) | output],
+           br_count}
       end
     end)
+    |> then(fn {output, br_count} -> {:lists.append(Enum.reverse(output)), br_count} end)
     |> then(fn rendered -> writer.paginate(context, rendered) end)
   end
 

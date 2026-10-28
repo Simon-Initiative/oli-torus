@@ -37,6 +37,33 @@ defmodule Oli.Analytics.Summary do
   def execute_analytics_pipeline(snapshot_attempt_summary, project_id, host_name) do
     Pipeline.init("SummaryAnalyticsPipeline")
     |> AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
+    |> execute_prebuilt_analytics_pipeline()
+  end
+
+  @doc """
+  Executes the summary upsert pipeline for an already assembled AttemptGroup.
+
+  Snapshot processing now builds the AttemptGroup once so both learning-model
+  application and existing summary/xAPI emission operate from the same evaluated
+  attempt set. The three-argument API above remains for existing callers that
+  still start from the raw attempt-summary query result.
+  """
+  def execute_analytics_pipeline(%AttemptGroup{} = attempt_group) do
+    Pipeline.init("SummaryAnalyticsPipeline")
+    |> Map.put(:data, attempt_group)
+    |> Pipeline.step_done(:query)
+    |> execute_prebuilt_analytics_pipeline()
+  end
+
+  def execute_analytics_pipeline(nil) do
+    Pipeline.init("SummaryAnalyticsPipeline")
+    |> Map.put(:data, nil)
+    |> Pipeline.step_done(:query)
+    |> execute_prebuilt_analytics_pipeline()
+  end
+
+  defp execute_prebuilt_analytics_pipeline(%Pipeline{} = pipeline) do
+    pipeline
     |> upsert_resource_summaries()
     |> upsert_response_summaries()
     |> Pipeline.all_done()
@@ -787,6 +814,18 @@ defmodule Oli.Analytics.Summary do
           activity_resource_ids :: [integer()]
         ) :: [map()]
   def get_response_summary_for(page_resource_id, section_id, only_for_activity_ids) do
+    get_response_summary_for_pages([page_resource_id], section_id, only_for_activity_ids)
+  end
+
+  @doc """
+  Returns the response summaries for every page an activity may appear on, in one query.
+  """
+  @spec get_response_summary_for_pages(
+          page_resource_ids :: [integer()],
+          section_id :: integer(),
+          activity_resource_ids :: [integer()]
+        ) :: [map()]
+  def get_response_summary_for_pages(page_resource_ids, section_id, only_for_activity_ids) do
     activity_constraint = dynamic([s, _], s.activity_id in ^only_for_activity_ids)
 
     from(rs in ResponseSummary,
@@ -798,7 +837,7 @@ defmodule Oli.Analytics.Summary do
           rs.page_id == sr.page_id and
           rs.resource_part_response_id == sr.resource_part_response_id,
       where:
-        rs.section_id == ^section_id and rs.page_id == ^page_resource_id and
+        rs.section_id == ^section_id and rs.page_id in ^page_resource_ids and
           rs.project_id == -1,
       where: ^activity_constraint,
       group_by: [rs.id, rpp.part_id, rpp.response, rs.count, rs.activity_id],

@@ -68,7 +68,8 @@ defmodule Oli.GenAI.Dev.LocalCodex do
   defp normalize_feature(feature)
        when feature in [
               :student_dialogue,
-              :instructor_dashboard_recommendation
+              :instructor_dashboard_recommendation,
+              :instructor_email
             ],
        do: feature
 
@@ -76,6 +77,8 @@ defmodule Oli.GenAI.Dev.LocalCodex do
 
   defp normalize_feature("instructor_dashboard_recommendation"),
     do: :instructor_dashboard_recommendation
+
+  defp normalize_feature("instructor_email"), do: :instructor_email
 
   defp normalize_feature(other),
     do: raise(ArgumentError, "unsupported feature: #{inspect(other)}")

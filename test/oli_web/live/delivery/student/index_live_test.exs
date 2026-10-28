@@ -1019,6 +1019,29 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
             id: "2748906063",
             type: "p",
             children: [%{text: "Welcome to "}, %{text: "the best course ever!", strong: true}]
+          },
+          %{
+            id: "home-welcome-list",
+            type: "ol",
+            children: [
+              %{
+                id: "home-welcome-list-item",
+                type: "li",
+                children: [
+                  %{
+                    id: "home-welcome-list-paragraph",
+                    type: "p",
+                    children: [%{text: "Review the course goals"}]
+                  }
+                ]
+              }
+            ]
+          },
+          %{
+            id: "home-welcome-video",
+            type: "youtube",
+            src: "RpnEyBIkdMc",
+            children: [%{text: ""}]
           }
         ]
       }
@@ -1036,8 +1059,19 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Hi, #{user.given_name} !")
 
       # Shows welcome title respecting the strong tag
-      assert has_element?(view, "h2", "Welcome to")
+      assert has_element?(view, ~s(div[role="heading"][aria-level="2"]), "Welcome to")
       assert has_element?(view, "strong", "the best course ever!")
+
+      assert has_element?(
+               view,
+               ~s(div[role="heading"][aria-level="2"][class*="text-base"][class*="first-child]:text-3xl"][class*="[&_ol]:!pl-6"] ol.list-decimal li),
+               "Review the course goals"
+             )
+
+      assert has_element?(
+               view,
+               ~s(#student-home-youtube--home-welcome-video[phx-hook="LiveReact"])
+             )
 
       # Shows encouraging subtitle
       assert has_element?(view, "div", encouraging_subtitle)
@@ -1085,7 +1119,11 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Hi, #{user.given_name} !")
 
       # Shows welcome title respecting the strong tag
-      assert has_element?(view, "h2", "Welcome to the Course")
+      assert has_element?(
+               view,
+               ~s(div[role="heading"][aria-level="2"]),
+               "Welcome to the Course"
+             )
 
       # Shows encouraging subtitle
       assert has_element?(view, "div", "Dive Into Discovery. Begin Your Learning Adventure Now!")
@@ -1493,11 +1531,17 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      first_assignment = ~s{div[data-role=assignments] a:nth-child(1) }
 
-      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
-      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, first_assignment <> ~s{div[data-role=container_label]}, "Unit 1")
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[data-role=container_label]},
+               "Module 2"
+             )
+
+      assert has_element?(view, first_assignment <> ~s{div[data-role=title]}, page_3.title)
 
       # Set page 3 as hidden
       section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
@@ -1505,7 +1549,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      refute has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+      refute has_element?(view, first_assignment <> ~s{div[data-role=title]}, page_3.title)
     end
 
     test "omits curriculum prefixes in my agenda when numbering is disabled", %{
@@ -1528,15 +1572,15 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       third_item = ~s{#home-agenda #schedule_item_1_3 }
       fourth_item = ~s{#home-agenda #schedule_item_1_4 }
 
-      refute has_element?(view, first_item <> ~s{div[role=container_label]})
-      refute has_element?(view, second_item <> ~s{div[role=container_label]})
-      refute has_element?(view, third_item <> ~s{div[role=container_label]})
-      refute has_element?(view, fourth_item <> ~s{div[role=container_label]})
+      refute has_element?(view, first_item <> ~s{div[data-role=container_label]})
+      refute has_element?(view, second_item <> ~s{div[data-role=container_label]})
+      refute has_element?(view, third_item <> ~s{div[data-role=container_label]})
+      refute has_element?(view, fourth_item <> ~s{div[data-role=container_label]})
 
-      assert has_element?(view, first_item <> ~s{div[role=title]}, page_1.title)
-      assert has_element?(view, second_item <> ~s{div[role=title]}, page_2.title)
-      assert has_element?(view, third_item <> ~s{div[role=title]}, page_3.title)
-      assert has_element?(view, fourth_item <> ~s{div[role=title]}, page_4.title)
+      assert has_element?(view, first_item <> ~s{div[data-role=title]}, page_1.title)
+      assert has_element?(view, second_item <> ~s{div[data-role=title]}, page_2.title)
+      assert has_element?(view, third_item <> ~s{div[data-role=title]}, page_3.title)
+      assert has_element?(view, fourth_item <> ~s{div[data-role=title]}, page_4.title)
     end
   end
 
@@ -1560,9 +1604,9 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
-      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
-      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+      first_assignment = ~s{div[data-role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[data-role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[data-role=assignments] a:nth-child(3) }
 
       # First upcoming assignment
       assert element(
@@ -1572,13 +1616,20 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              |> render() =~
                ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_3.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
-      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
-      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, first_assignment <> ~s{div[data-role=container_label]}, "Unit 1")
 
       assert has_element?(
                view,
-               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+               first_assignment <> ~s{div[data-role=container_label]},
+               "Module 2"
+             )
+
+      assert has_element?(view, first_assignment <> ~s{div[data-role=title]}, page_3.title)
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[data-role=resource_type]},
+               "Exploration"
              )
 
       # Second upcoming assignment
@@ -1589,13 +1640,20 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              |> render() =~
                ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_4.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
-      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 2")
-      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+      assert has_element?(view, second_assignment <> ~s{div[data-role=container_label]}, "Unit 1")
 
       assert has_element?(
                view,
-               second_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+               second_assignment <> ~s{div[data-role=container_label]},
+               "Module 2"
+             )
+
+      assert has_element?(view, second_assignment <> ~s{div[data-role=title]}, page_4.title)
+
+      assert has_element?(
+               view,
+               second_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
              )
 
       # Third upcoming assignment
@@ -1606,13 +1664,20 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              |> render() =~
                ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_5.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 2")
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 3")
-      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
+      assert has_element?(view, third_assignment <> ~s{div[data-role=container_label]}, "Unit 2")
 
       assert has_element?(
                view,
-               third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+               third_assignment <> ~s{div[data-role=container_label]},
+               "Module 3"
+             )
+
+      assert has_element?(view, third_assignment <> ~s{div[data-role=title]}, page_5.title)
+
+      assert has_element?(
+               view,
+               third_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
              )
     end
 
@@ -1631,19 +1696,24 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
-      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
-      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+      first_assignment = ~s{div[data-role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[data-role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[data-role=assignments] a:nth-child(3) }
 
-      refute has_element?(view, first_assignment <> ~s{div[role=container_label]})
-      refute has_element?(view, second_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, first_assignment <> ~s{div[data-role=container_label]})
+      refute has_element?(view, second_assignment <> ~s{div[data-role=container_label]})
 
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 1")
+      assert has_element?(view, third_assignment <> ~s{div[data-role=container_label]}, "Unit 1")
 
-      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
-      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
-      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
+      assert has_element?(
+               view,
+               third_assignment <> ~s{div[data-role=container_label]},
+               "Module 1"
+             )
+
+      assert has_element?(view, first_assignment <> ~s{div[data-role=title]}, page_3.title)
+      assert has_element?(view, second_assignment <> ~s{div[data-role=title]}, page_4.title)
+      assert has_element?(view, third_assignment <> ~s{div[data-role=title]}, page_5.title)
     end
   end
 
@@ -1666,7 +1736,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="message"]},
+               ~s{div[data-role="message"]},
                "Great job, you completed all the assignments! There are no upcoming assignments."
              )
     end
@@ -1685,7 +1755,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="message"]},
+               ~s{div[data-role="message"]},
                "It looks like you need to start your attempt. Begin with the upcoming assignments!"
              )
     end
@@ -1701,9 +1771,9 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
-      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
-      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+      first_assignment = ~s{div[data-role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[data-role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[data-role=assignments] a:nth-child(3) }
 
       # First upcoming assignment
       assert element(
@@ -1713,16 +1783,23 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              |> render() =~
                ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_3.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
-      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
-      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, first_assignment <> ~s{div[data-role=container_label]}, "Unit 1")
 
       assert has_element?(
                view,
-               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+               first_assignment <> ~s{div[data-role=container_label]},
+               "Module 2"
              )
 
-      assert has_element?(view, first_assignment <> ~s{div[role=details]}, "2 days left")
+      assert has_element?(view, first_assignment <> ~s{div[data-role=title]}, page_3.title)
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[data-role=resource_type]},
+               "Exploration"
+             )
+
+      assert has_element?(view, first_assignment <> ~s{div[data-role=details]}, "2 days left")
 
       # Second upcoming assignment
       assert element(
@@ -1732,16 +1809,23 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              |> render() =~
                ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_4.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
-      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 2")
-      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+      assert has_element?(view, second_assignment <> ~s{div[data-role=container_label]}, "Unit 1")
 
       assert has_element?(
                view,
-               second_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+               second_assignment <> ~s{div[data-role=container_label]},
+               "Module 2"
              )
 
-      assert has_element?(view, second_assignment <> ~s{div[role=details]}, "3 days left")
+      assert has_element?(view, second_assignment <> ~s{div[data-role=title]}, page_4.title)
+
+      assert has_element?(
+               view,
+               second_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
+             )
+
+      assert has_element?(view, second_assignment <> ~s{div[data-role=details]}, "3 days left")
 
       # Third upcoming assignment
       assert element(
@@ -1751,16 +1835,23 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              |> render() =~
                ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_5.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 2")
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 3")
-      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
+      assert has_element?(view, third_assignment <> ~s{div[data-role=container_label]}, "Unit 2")
 
       assert has_element?(
                view,
-               third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+               third_assignment <> ~s{div[data-role=container_label]},
+               "Module 3"
              )
 
-      assert has_element?(view, third_assignment <> ~s{div[role=details]}, "4 days left")
+      assert has_element?(view, third_assignment <> ~s{div[data-role=title]}, page_5.title)
+
+      assert has_element?(
+               view,
+               third_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
+             )
+
+      assert has_element?(view, third_assignment <> ~s{div[data-role=details]}, "4 days left")
     end
 
     test "displays three latest assignments", %{
@@ -1798,9 +1889,9 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       |> element("#latest_tab")
       |> render_click()
 
-      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
-      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
-      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+      first_assignment = ~s{div[data-role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[data-role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[data-role=assignments] a:nth-child(3) }
 
       # First latest assignment
       assert element(
@@ -1810,23 +1901,39 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              |> render() =~
                ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_3.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
-      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
-      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, first_assignment <> ~s{div[data-role=container_label]}, "Unit 1")
 
       assert has_element?(
                view,
-               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+               first_assignment <> ~s{div[data-role=container_label]},
+               "Module 2"
+             )
+
+      assert has_element?(view, first_assignment <> ~s{div[data-role=title]}, page_3.title)
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[data-role=resource_type]},
+               "Exploration"
              )
 
       assert has_element?(
                view,
-               first_assignment <> ~s{div[role=details] div[role=count]},
+               first_assignment <> ~s{div[data-role=details] div[data-role=count]},
                "Attempt 1/∞"
              )
 
-      assert has_element?(view, first_assignment <> ~s{div[role=details] div[role=score]}, "5")
-      assert has_element?(view, first_assignment <> ~s{div[role=details] div[role=out_of]}, "10")
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[data-role=details] div[data-role=score]},
+               "5"
+             )
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[data-role=details] div[data-role=out_of]},
+               "10"
+             )
 
       # Second latest assignment
       assert element(
@@ -1836,18 +1943,25 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              |> render() =~
                ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_4.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
-      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 2")
-      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+      assert has_element?(view, second_assignment <> ~s{div[data-role=container_label]}, "Unit 1")
 
       assert has_element?(
                view,
-               second_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+               second_assignment <> ~s{div[data-role=container_label]},
+               "Module 2"
+             )
+
+      assert has_element?(view, second_assignment <> ~s{div[data-role=title]}, page_4.title)
+
+      assert has_element?(
+               view,
+               second_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
              )
 
       assert has_element?(
                view,
-               second_assignment <> ~s{div[role=details] div[role=countdown]},
+               second_assignment <> ~s{div[data-role=details] div[data-role=countdown]},
                "01:15:00"
              )
 
@@ -1859,16 +1973,23 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              |> render() =~
                ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_5.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 2")
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 3")
-      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
+      assert has_element?(view, third_assignment <> ~s{div[data-role=container_label]}, "Unit 2")
 
       assert has_element?(
                view,
-               third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+               third_assignment <> ~s{div[data-role=container_label]},
+               "Module 3"
              )
 
-      assert has_element?(view, third_assignment <> ~s{div[role=details]}, "Completed")
+      assert has_element?(view, third_assignment <> ~s{div[data-role=title]}, page_5.title)
+
+      assert has_element?(
+               view,
+               third_assignment <> ~s{div[data-role=resource_type]},
+               "Assignment"
+             )
+
+      assert has_element?(view, third_assignment <> ~s{div[data-role=details]}, "Completed")
     end
 
     test "omits curriculum prefixes in my assignments when numbering is disabled", %{
@@ -1885,17 +2006,17 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
-      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
-      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+      first_assignment = ~s{div[data-role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[data-role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[data-role=assignments] a:nth-child(3) }
 
-      refute has_element?(view, first_assignment <> ~s{div[role=container_label]})
-      refute has_element?(view, second_assignment <> ~s{div[role=container_label]})
-      refute has_element?(view, third_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, first_assignment <> ~s{div[data-role=container_label]})
+      refute has_element?(view, second_assignment <> ~s{div[data-role=container_label]})
+      refute has_element?(view, third_assignment <> ~s{div[data-role=container_label]})
 
-      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
-      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
-      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
+      assert has_element?(view, first_assignment <> ~s{div[data-role=title]}, page_3.title)
+      assert has_element?(view, second_assignment <> ~s{div[data-role=title]}, page_4.title)
+      assert has_element?(view, third_assignment <> ~s{div[data-role=title]}, page_5.title)
     end
 
     test "omits curriculum prefixes for assignments in unnumbered unit subtrees", %{
@@ -1913,19 +2034,24 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
-      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
-      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+      first_assignment = ~s{div[data-role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[data-role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[data-role=assignments] a:nth-child(3) }
 
-      refute has_element?(view, first_assignment <> ~s{div[role=container_label]})
-      refute has_element?(view, second_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, first_assignment <> ~s{div[data-role=container_label]})
+      refute has_element?(view, second_assignment <> ~s{div[data-role=container_label]})
 
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 1")
+      assert has_element?(view, third_assignment <> ~s{div[data-role=container_label]}, "Unit 1")
 
-      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
-      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
-      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
+      assert has_element?(
+               view,
+               third_assignment <> ~s{div[data-role=container_label]},
+               "Module 1"
+             )
+
+      assert has_element?(view, first_assignment <> ~s{div[data-role=title]}, page_3.title)
+      assert has_element?(view, second_assignment <> ~s{div[data-role=title]}, page_4.title)
+      assert has_element?(view, third_assignment <> ~s{div[data-role=title]}, page_5.title)
     end
 
     test "do not show hidden pages in latest assignments", %{
@@ -1947,17 +2073,18 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       |> element("#latest_tab")
       |> render_click()
 
-      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      first_assignment = ~s{div[data-role=assignments] a:nth-child(1) }
 
       # First latest assignment
       assert has_element?(
                view,
-               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+               first_assignment <> ~s{div[data-role=resource_type]},
+               "Exploration"
              )
 
       assert has_element?(
                view,
-               first_assignment <> ~s{div[role=details] div[role=count]},
+               first_assignment <> ~s{div[data-role=details] div[data-role=count]},
                "Attempt 1/∞"
              )
 
@@ -1970,12 +2097,13 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       # First latest assignment
       refute has_element?(
                view,
-               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+               first_assignment <> ~s{div[data-role=resource_type]},
+               "Exploration"
              )
 
       refute has_element?(
                view,
-               first_assignment <> ~s{div[role=details] div[role=count]},
+               first_assignment <> ~s{div[data-role=details] div[data-role=count]},
                "Attempt 1/∞"
              )
     end
@@ -1989,7 +2117,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      first_assignment = ~s{div[data-role=assignments] a:nth-child(1) }
 
       # First upcoming assignment
       assert element(

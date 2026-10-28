@@ -70,6 +70,7 @@ export interface AppState {
   partComponentTypes: PartComponentRegistration[];
   activityTypes: ActivityRegistration[];
   allObjectives: Objective[];
+  loWellFormed: boolean;
   copiedPart: any | null;
   copiedPartActivityId: any | null;
   allowTriggers: boolean;
@@ -100,6 +101,7 @@ const initialState: AppState = {
   partComponentTypes: [],
   activityTypes: [],
   allObjectives: [],
+  loWellFormed: false,
   copiedPart: null,
   copiedPartActivityId: null,
   allowTriggers: false,
@@ -120,6 +122,7 @@ export interface AppConfig {
   partComponentTypes?: any[];
   activityTypes?: any[];
   allObjectives?: Objective[];
+  loWellFormed?: boolean;
   copiedPart?: any;
   copiedPartActivityId?: any;
   allowTriggers?: boolean;
@@ -148,6 +151,7 @@ const slice: Slice<AppState> = createSlice({
       state.partComponentTypes =
         action.payload.partComponentTypes || initialState.partComponentTypes;
       state.allObjectives = action.payload.allObjectives || initialState.allObjectives;
+      state.loWellFormed = action.payload.loWellFormed === true;
 
       state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
       state.copiedPart = action.payload.copiedPart || initialState.copiedPart;
@@ -289,6 +293,10 @@ export const selectRevisionSlug = createSelector(
 export const selectAllObjectives = createSelector(
   selectState,
   (state: AppState) => state.allObjectives,
+);
+export const selectLoWellFormed = createSelector(
+  selectState,
+  (state: AppState) => state.loWellFormed,
 );
 
 // Returns the allObjectives as a map of id to Objective

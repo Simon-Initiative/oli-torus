@@ -91,6 +91,9 @@ defmodule Oli.MajorUpdatesTest do
       # Step 6: Apply the remix by rebuilding the section curriculum
       Sections.rebuild_section_curriculum(section, updated_hierarchy, updated_pinned_publications)
 
+      assert Repo.reload(section).section_resource_migration_version ==
+               Oli.Delivery.Sections.SectionResourceMigration.current_version()
+
       # Verify the remix worked - should now have dest pages + source container with source pages
       updated_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
       # 2 dest pages + 1 source container

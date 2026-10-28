@@ -125,6 +125,12 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
                "div",
                "#{page_revision.title}"
              )
+
+      assert has_element?(
+               view,
+               ~s{a[href="#{Routes.delivery_path(OliWeb.Endpoint, :download_quiz_scores, section.slug, student_id: student.id)}"]},
+               "Download CSV"
+             )
     end
   end
 

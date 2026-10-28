@@ -8,10 +8,10 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
   and evaluate the student's response.
   """
 
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Scenarios.Directives.{ActivityAttemptSupport, AttemptSupport}
   alias Oli.Scenarios.DirectiveTypes.{AnswerQuestionDirective, ExecutionState}
+  alias Oli.Scenarios.LearnerActions
 
   @doc """
   Handles an answer_question directive by submitting and evaluating a student's response.
@@ -19,6 +19,8 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
   Returns {:ok, updated_state} on success, {:error, reason} on failure.
   """
   def handle(%AnswerQuestionDirective{} = directive, %ExecutionState{} = state) do
+    datashop_session_id = Oli.Scenarios.LearnerSession.transient_id()
+
     with {:ok, attempt_state} <-
            ActivityAttemptSupport.get_attempt_state(
              state,
@@ -42,7 +44,8 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
              section,
              activity_attempt_info,
              formatted_response,
-             activity_revision
+             activity_revision,
+             datashop_session_id
            ) do
       # Store the evaluation result
       key = {directive.student, directive.section, directive.page, directive.activity_virtual_id}
@@ -70,10 +73,13 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
   end
 
   # Submit the answer using evaluate_activity
-  defp submit_answer(section, activity_attempt_info, formatted_response, activity_revision) do
-    # Generate a unique datashop session ID
-    datashop_session_id = "session_#{System.unique_integer([:positive])}"
-
+  defp submit_answer(
+         section,
+         activity_attempt_info,
+         formatted_response,
+         activity_revision,
+         datashop_session_id
+       ) do
     part_attempts =
       case activity_attempt_info.activity_attempt do
         %{part_attempts: part_attempts} when is_list(part_attempts) ->
@@ -89,9 +95,9 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
       part_inputs = build_part_inputs(part_attempts, formatted_response, activity_revision)
 
       # Call evaluate_activity
-      case Evaluate.evaluate_activity(
-             section.slug,
-             activity_attempt_info.attempt_guid,
+      case LearnerActions.submit_activity(
+             section,
+             activity_attempt_info.activity_attempt,
              part_inputs,
              datashop_session_id
            ) do

@@ -66,13 +66,19 @@ The script templatises quota, limit range, and network policy manifests and appl
 
 ## Smoke Testing
 
-Use `devops/scripts/smoke-test-preview.sh` to validate a deployed preview:
+For preview images that include `/readyz`, pass that endpoint to the external
+`devops/scripts/smoke-test-preview.sh` readiness check:
 
 ```bash
-devops/scripts/smoke-test-preview.sh https://pr-123.plasma.oli.cmu.edu/healthz
+devops/scripts/smoke-test-preview.sh https://pr-123.plasma.oli.cmu.edu/readyz
 ```
 
-The script exits non-zero if any probe fails. Integrate it into CI if desired.
+The external script is not distributed in this repository. Before using it, verify
+that it checks HTTP 200 and JSON `status: ready` without expecting Playwright-only
+version/SHA fields in a preview build. It must exit nonzero on failure. Deploy an
+image with `/readyz` before changing an existing readiness consumer. `/healthz`
+checks startup/liveness only and no longer proves database availability. This
+documentation does not migrate other deployments' Kubernetes probes.
 
 ## Operational Notes
 
@@ -82,3 +88,10 @@ The script exits non-zero if any probe fails. Integrate it into CI if desired.
 - Remember to trust the pod network on the k3s node (e.g., add `cni0`/`flannel.1` to the trusted zone and open Traefik NodePorts) so Traefik can reach preview pods.
 - Manual clean-up: run `kubectl delete namespace pr-<number>` if a workflow fails.
 - Record significant changes to infra assets in `devops/change-log.md`.
+
+## Seeded demo account login
+
+Preview seeding supports an optional `PREVIEW_DEMO_USER_PASSWORD` in the runtime Secret for
+new demo accounts. See [Direct QA Login](manifests/preview-seeding/README.md#direct-qa-login)
+for account emails, login paths, password requirements, and the one-time seeding boundary.
+The bootstrap administrator continues using its separate `ADMIN_PASSWORD`.

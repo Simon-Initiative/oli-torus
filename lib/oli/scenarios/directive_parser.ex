@@ -17,7 +17,10 @@ defmodule Oli.Scenarios.DirectiveParser do
     AssertDirective,
     UserDirective,
     EnrollDirective,
+    BulkCreateEnrollUsersDirective,
+    SimulateProgressDirective,
     InstitutionDirective,
+    OwnershipDirective,
     InstitutionDiscountDirective,
     CommunityDirective,
     AssertSourcesDirective,
@@ -44,6 +47,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     DiscussionModerationDirective,
     DiscussionDeleteDirective,
     ClassNoteDirective,
+    PostReactionDirective,
     CompleteScoredPageDirective,
     FinalizeAttemptDirective,
     StudentExceptionDirective,
@@ -71,7 +75,10 @@ defmodule Oli.Scenarios.DirectiveParser do
     "verify",
     "user",
     "enroll",
+    "bulk_create_enroll_users",
+    "simulate_progress",
     "institution",
+    "ownership",
     "institution_discount",
     "community",
     "assert_sources",
@@ -100,6 +107,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     "discussion_moderation",
     "discussion_delete",
     "class_note",
+    "post_reaction",
     "complete_scored_page",
     "certificate_action",
     "use",
@@ -178,7 +186,16 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Parse individual directive based on its type
   defp parse_directive(%{"project" => project_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "title", "root", "objectives", "tags", "slug", "visibility"]
+    allowed_attrs = [
+      "name",
+      "title",
+      "root",
+      "objectives",
+      "tags",
+      "slug",
+      "visibility",
+      "learning_model_version"
+    ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, project_data, "project") do
       :ok ->
@@ -189,7 +206,24 @@ defmodule Oli.Scenarios.DirectiveParser do
           objectives: parse_objectives(project_data["objectives"]),
           tags: parse_tags(project_data["tags"]),
           slug: project_data["slug"],
-          visibility: parse_visibility(project_data["visibility"])
+          visibility: parse_visibility(project_data["visibility"]),
+          learning_model_version:
+            parse_learning_model_version(project_data["learning_model_version"])
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"ownership" => ownership_data}) do
+    allowed_attrs = ["author", "institution"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, ownership_data, "ownership") do
+      :ok ->
+        %OwnershipDirective{
+          author: ownership_data["author"],
+          institution: ownership_data["institution"]
         }
 
       {:error, msg} ->
@@ -226,6 +260,8 @@ defmodule Oli.Scenarios.DirectiveParser do
       "slug",
       "open_and_free",
       "requires_enrollment",
+      "assistant_enabled",
+      "assistant_service_config",
       "requires_payment",
       "payment_options",
       "pay_by_institution",
@@ -250,6 +286,13 @@ defmodule Oli.Scenarios.DirectiveParser do
           open_and_free: parse_boolean(section_data["open_and_free"], false, "open_and_free"),
           requires_enrollment:
             parse_boolean(section_data["requires_enrollment"], false, "requires_enrollment"),
+          assistant_enabled:
+            parse_optional_boolean(section_data["assistant_enabled"], "assistant_enabled"),
+          assistant_service_config:
+            parse_optional_non_empty_string(
+              section_data["assistant_service_config"],
+              "assistant_service_config"
+            ),
           requires_payment:
             parse_optional_boolean(section_data["requires_payment"], "requires_payment"),
           payment_options: parse_optional_payment_options(section_data["payment_options"]),
@@ -548,6 +591,67 @@ defmodule Oli.Scenarios.DirectiveParser do
 
       {:error, msg} ->
         raise msg
+    end
+  end
+
+  defp parse_directive(%{"bulk_create_enroll_users" => data}) do
+    allowed_attrs = ["section", "prefix", "instructors", "learners"]
+
+    with :ok <-
+           DirectiveValidator.validate_attributes(allowed_attrs, data, "bulk_create_enroll_users") do
+      section = required_non_empty_string(data["section"], "bulk_create_enroll_users.section")
+      prefix = bounded_optional_string(data["prefix"], "bulk", "prefix", 40)
+      instructors = bounded_non_negative_integer(data["instructors"], 0, "instructors", 1_000)
+      learners = bounded_non_negative_integer(data["learners"], 0, "learners", 10_000)
+
+      if instructors + learners == 0 do
+        raise "bulk_create_enroll_users must create at least one instructor or learner"
+      end
+
+      %BulkCreateEnrollUsersDirective{
+        section: section,
+        prefix: prefix,
+        instructors: instructors,
+        learners: learners
+      }
+    else
+      {:error, msg} -> raise msg
+    end
+  end
+
+  defp parse_directive(%{"simulate_progress" => data}) do
+    allowed_attrs = [
+      "section",
+      "users",
+      "seed",
+      "profile",
+      "cohorts",
+      "timing",
+      "pct_correct",
+      "assessment_attempts"
+    ]
+
+    with :ok <- DirectiveValidator.validate_attributes(allowed_attrs, data, "simulate_progress") do
+      reject_removed_progress_options!(data)
+      users = parse_progress_users(data["users"], "simulate_progress.users")
+      {profile, cohorts} = parse_progress_selection(data)
+
+      timing =
+        case Oli.Scenarios.ProgressSimulation.Profiles.normalize_mode(data["timing"]) do
+          {:ok, mode} -> mode
+          {:error, message} -> raise message
+        end
+
+      %SimulateProgressDirective{
+        section: required_non_empty_string(data["section"], "simulate_progress.section"),
+        users: users,
+        seed: bounded_non_negative_integer(data["seed"], 0, "seed", 2_147_483_647),
+        profile: profile,
+        cohorts: cohorts,
+        timing: timing
+      }
+    else
+      {:error, msg} -> raise msg
     end
   end
 
@@ -954,15 +1058,39 @@ defmodule Oli.Scenarios.DirectiveParser do
   end
 
   defp parse_directive(%{"class_note" => class_note_data}) do
-    allowed_attrs = ["student", "section", "page", "body"]
+    allowed_attrs = ["name", "student", "section", "page", "body", "reply_to", "block_id"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, class_note_data, "class_note") do
       :ok ->
         %ClassNoteDirective{
+          name: class_note_data["name"],
           student: class_note_data["student"],
           section: class_note_data["section"],
           page: class_note_data["page"],
-          body: class_note_data["body"]
+          body: class_note_data["body"],
+          reply_to: class_note_data["reply_to"],
+          block_id: class_note_data["block_id"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"post_reaction" => reaction_data}) do
+    allowed_attrs = ["post", "student", "reaction", "action"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           reaction_data,
+           "post_reaction"
+         ) do
+      :ok ->
+        %PostReactionDirective{
+          post: reaction_data["post"],
+          student: reaction_data["student"],
+          reaction: parse_post_reaction(reaction_data["reaction"]),
+          action: parse_post_reaction_action(reaction_data["action"])
         }
 
       {:error, msg} ->
@@ -1156,6 +1284,96 @@ defmodule Oli.Scenarios.DirectiveParser do
     end)
   end
 
+  defp reject_removed_progress_options!(data) do
+    removed = Enum.filter(["pct_correct", "assessment_attempts"], &Map.has_key?(data, &1))
+
+    case removed do
+      [] ->
+        :ok
+
+      _ ->
+        raise "simulate_progress no longer accepts #{Enum.join(removed, " or ")}; use a fixed profile, or lower-level learner directives for exact attempts"
+    end
+  end
+
+  defp parse_progress_selection(%{"profile" => profile} = data) do
+    case Map.has_key?(data, "cohorts") do
+      true -> raise "simulate_progress requires exactly one of profile or cohorts"
+      false -> :ok
+    end
+
+    validate_progress_profile!(profile, "simulate_progress")
+    {profile, nil}
+  end
+
+  defp parse_progress_selection(%{"cohorts" => cohorts}) do
+    {nil, parse_progress_cohorts(cohorts)}
+  end
+
+  defp parse_progress_selection(_data),
+    do: raise("simulate_progress requires exactly one of profile or cohorts")
+
+  defp parse_progress_cohorts(cohorts)
+       when is_list(cohorts) and cohorts != [] and length(cohorts) <= 100 do
+    cohorts
+    |> Enum.with_index()
+    |> Enum.map(fn {cohort, index} -> parse_progress_cohort(cohort, index) end)
+  end
+
+  defp parse_progress_cohorts(_cohorts),
+    do: raise("simulate_progress.cohorts must contain between 1 and 100 cohorts")
+
+  defp parse_progress_cohort(cohort, index) when is_map(cohort) do
+    case DirectiveValidator.validate_attributes(
+           ["profile", "count"],
+           cohort,
+           "simulate_progress.cohorts[#{index}]"
+         ) do
+      :ok -> :ok
+      {:error, message} -> raise message
+    end
+
+    profile =
+      required_non_empty_string(
+        cohort["profile"],
+        "simulate_progress.cohorts[#{index}].profile"
+      )
+
+    validate_progress_profile!(profile, "simulate_progress.cohorts[#{index}]")
+
+    count =
+      case Map.fetch(cohort, "count") do
+        {:ok, value} -> bounded_positive_integer(value, nil, "cohorts[#{index}].count", 100)
+        :error -> raise "simulate_progress.cohorts[#{index}].count is required"
+      end
+
+    %{profile: profile, count: count}
+  end
+
+  defp parse_progress_cohort(_cohort, index),
+    do: raise("simulate_progress.cohorts[#{index}] must be a map")
+
+  defp parse_progress_users(nil, _path), do: nil
+
+  defp parse_progress_users(users, _path)
+       when is_list(users) and users != [] and length(users) <= 100 do
+    case Enum.all?(users, &(is_binary(&1) and &1 != "")) and
+           length(Enum.uniq(users)) == length(users) do
+      true -> users
+      false -> raise "simulate_progress.users must contain unique, non-empty references"
+    end
+  end
+
+  defp parse_progress_users(_users, path),
+    do: raise("#{path} must be a non-empty list of unique scenario user references")
+
+  defp validate_progress_profile!(profile, path) do
+    case Oli.Scenarios.ProgressSimulation.Profiles.resolve(profile) do
+      {:ok, _resolved} -> :ok
+      {:error, message} -> raise "#{path}: #{message}"
+    end
+  end
+
   defp valid_directives, do: @valid_directives
 
   defp unrecognized_directive_message(key) do
@@ -1177,8 +1395,10 @@ defmodule Oli.Scenarios.DirectiveParser do
       "activity_customization",
       "page_objectives",
       "activity_objectives",
+      "learning_objectives",
       "insights",
       "discussion",
+      "annotation",
       "instructor_dashboard_summary",
       "instructor_dashboard_progress",
       "instructor_dashboard_student_support",
@@ -1205,8 +1425,11 @@ defmodule Oli.Scenarios.DirectiveParser do
       page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
       activity_objectives:
         parse_activity_objectives_assertion(assert_data["activity_objectives"]),
+      learning_objectives:
+        parse_learning_objectives_assertion(assert_data["learning_objectives"]),
       insights: parse_insights_assertion(assert_data["insights"]),
       discussion: parse_discussion_assertion(assert_data["discussion"]),
+      annotation: parse_annotation_assertion(assert_data["annotation"]),
       instructor_dashboard_summary:
         parse_instructor_dashboard_assertion(
           :instructor_dashboard_summary,
@@ -1454,9 +1677,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           objective: data["objective"],
           bucket: data["bucket"],
           value: if(data["value"], do: parse_float(data["value"]), else: nil),
-          student: data["student"],
-          page: data["page"],
-          container: data["container"]
+          student: data["student"]
         }
 
       {:error, msg} ->
@@ -1515,11 +1736,40 @@ defmodule Oli.Scenarios.DirectiveParser do
           student: data["student"],
           visible: parse_optional_boolean(data["visible"], "visible"),
           status: parse_optional_post_status(data["status"]),
+          reaction: parse_optional_post_reaction(data["reaction"]),
+          reaction_count: parse_optional_integer(data["reaction_count"]),
+          reacted_by: data["reacted_by"],
           contains_discussions:
             parse_optional_boolean(data["contains_discussions"], "contains_discussions"),
           auto_accept: parse_optional_boolean(data["auto_accept"], "auto_accept"),
           anonymous_posting:
             parse_optional_boolean(data["anonymous_posting"], "anonymous_posting")
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_annotation_assertion(nil), do: nil
+
+  defp parse_annotation_assertion(data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(:annotation, data) do
+      :ok ->
+        %{
+          post: data["post"],
+          section: data["section"],
+          page: data["page"],
+          body: data["body"],
+          author: data["author"],
+          status: parse_optional_post_status(data["status"]),
+          visibility: parse_optional_post_visibility(data["visibility"]),
+          annotation_type: parse_optional_annotation_type(data["annotation_type"]),
+          block_id: data["block_id"],
+          reply_to: data["reply_to"],
+          reaction: parse_optional_post_reaction(data["reaction"]),
+          reaction_count: parse_optional_integer(data["reaction_count"]),
+          reacted_by: data["reacted_by"]
         }
 
       {:error, msg} ->
@@ -1697,6 +1947,31 @@ defmodule Oli.Scenarios.DirectiveParser do
 
       {:error, msg} ->
         raise msg
+    end
+  end
+
+  defp parse_learning_objectives_assertion(nil), do: nil
+
+  defp parse_learning_objectives_assertion(data) when is_map(data) do
+    with :ok <-
+           DirectiveValidator.validate_assertion_attributes(:learning_objectives, data),
+         :ok <- require_learning_objective_expectation(data) do
+      %{
+        section: data["section"],
+        container: data["container"] || "course",
+        includes: data["includes"] || [],
+        excludes: data["excludes"] || []
+      }
+    else
+      {:error, msg} -> raise msg
+    end
+  end
+
+  defp require_learning_objective_expectation(data) do
+    if Enum.any?(["includes", "excludes"], &(is_list(data[&1]) and data[&1] != [])) do
+      :ok
+    else
+      {:error, "learning_objectives assertion requires a non-empty includes or excludes list"}
     end
   end
 
@@ -2051,6 +2326,13 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_section_type("open_and_free"), do: :open_and_free
   defp parse_section_type(type) when is_atom(type), do: type
 
+  defp parse_learning_model_version(nil), do: :naive
+  defp parse_learning_model_version("naive"), do: :naive
+  defp parse_learning_model_version("lkt_aoa"), do: :lkt_aoa
+
+  defp parse_learning_model_version(value),
+    do: raise("Invalid learning_model_version: #{inspect(value)}")
+
   defp parse_optional_payment_options(nil), do: nil
 
   defp parse_optional_payment_options(value) when is_atom(value) do
@@ -2312,6 +2594,39 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp required_non_empty_string(value, _field) when is_binary(value) and value != "", do: value
+  defp required_non_empty_string(_value, field), do: raise("#{field} must be a non-empty string")
+
+  defp bounded_optional_string(nil, default, _field, _max), do: default
+
+  defp bounded_optional_string(value, _default, _field, max)
+       when is_binary(value) and value != "" do
+    if String.length(value) <= max,
+      do: value,
+      else: raise("prefix must be a non-empty string of at most #{max} characters")
+  end
+
+  defp bounded_optional_string(_value, _default, field, max),
+    do: raise("#{field} must be a non-empty string of at most #{max} characters")
+
+  defp bounded_non_negative_integer(nil, default, _field, _max), do: default
+
+  defp bounded_non_negative_integer(value, _default, _field, max)
+       when is_integer(value) and value >= 0 and value <= max,
+       do: value
+
+  defp bounded_non_negative_integer(_value, _default, field, max),
+    do: raise("#{field} must be an integer between 0 and #{max}")
+
+  defp bounded_positive_integer(nil, default, _field, _max), do: default
+
+  defp bounded_positive_integer(value, _default, _field, max)
+       when is_integer(value) and value > 0 and value <= max,
+       do: value
+
+  defp bounded_positive_integer(_value, _default, field, max),
+    do: raise("#{field} must be an integer between 1 and #{max}")
+
   defp parse_optional_float(nil), do: nil
   defp parse_optional_float(value), do: parse_float(value)
 
@@ -2405,6 +2720,18 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_optional_string_or_atom(value) when is_binary(value), do: value
   defp parse_optional_string_or_atom(value) when is_atom(value), do: Atom.to_string(value)
 
+  defp parse_optional_non_empty_string(nil, _field), do: nil
+
+  defp parse_optional_non_empty_string(value, field) when is_binary(value) do
+    case String.trim(value) do
+      "" -> raise "Invalid non-empty string for #{field}: #{inspect(value)}"
+      normalized -> normalized
+    end
+  end
+
+  defp parse_optional_non_empty_string(value, field),
+    do: raise("Invalid non-empty string for #{field}: #{inspect(value)}")
+
   defp parse_optional_string_or_integer(nil), do: nil
   defp parse_optional_string_or_integer(value) when is_integer(value), do: value
   defp parse_optional_string_or_integer(value) when is_binary(value), do: value
@@ -2495,6 +2822,49 @@ defmodule Oli.Scenarios.DirectiveParser do
       "deleted" -> :deleted
       "archived" -> :archived
       other -> raise "Invalid discussion post status '#{other}'"
+    end
+  end
+
+  defp parse_optional_post_visibility(nil), do: nil
+
+  defp parse_optional_post_visibility(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "private" -> :private
+      "public" -> :public
+      other -> raise "Invalid annotation visibility '#{other}'. Expected private or public"
+    end
+  end
+
+  defp parse_optional_annotation_type(nil), do: nil
+
+  defp parse_optional_annotation_type(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "none" -> :none
+      "point" -> :point
+      "range" -> :range
+      other -> raise "Invalid annotation type '#{other}'. Expected none, point, or range"
+    end
+  end
+
+  defp parse_post_reaction(nil), do: raise("post_reaction requires a reaction")
+
+  defp parse_post_reaction(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "like" -> :like
+      other -> raise "Invalid post reaction '#{other}'. Expected like"
+    end
+  end
+
+  defp parse_optional_post_reaction(nil), do: nil
+  defp parse_optional_post_reaction(value), do: parse_post_reaction(value)
+
+  defp parse_post_reaction_action(nil), do: raise("post_reaction requires an action")
+
+  defp parse_post_reaction_action(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "add" -> :add
+      "remove" -> :remove
+      other -> raise "Invalid post_reaction action '#{other}'. Expected add or remove"
     end
   end
 

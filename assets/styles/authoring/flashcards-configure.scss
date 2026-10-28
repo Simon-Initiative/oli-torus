@@ -1,0 +1,663 @@
+// Flashcards configure modal — loaded in the main authoring CSS bundle
+// (portal content lives outside the part Shadow DOM, same pattern as Matching / Item Bank).
+
+.modal-dialog.config-modal.flashcards-config-modal {
+  max-width: 96% !important;
+  width: 96%;
+  height: 90vh;
+  margin: 5vh auto;
+
+  .modal-content {
+    min-height: min(560px, calc(100vh - 3.5rem));
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+}
+
+.flashcards-configure {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  background: #f8fafc;
+  font-family: inherit;
+  color: #111827;
+
+  .fc-config-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+    min-height: 48px;
+  }
+
+  .fc-config-header-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .fc-config-header-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f3f4f6;
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+
+  .fc-config-body {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr) 320px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    align-items: stretch;
+  }
+
+  .fc-config-list,
+  .fc-config-editor,
+  .fc-config-preview-pane {
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .fc-config-list {
+    gap: 14px;
+    padding: 16px;
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+  }
+
+  .fc-config-add-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px dashed #94a3b8;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+
+    &:hover {
+      background: #eff6ff;
+      border-color: #2563eb;
+      color: #1d4ed8;
+    }
+  }
+
+  .fc-config-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .fc-config-card-item {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
+
+    &:hover {
+      border-color: #cbd5e1;
+
+      .fc-config-card-delete {
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+
+    &:focus-within {
+      .fc-config-card-delete {
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+
+    &.is-active {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px #2563eb;
+      background: #eff6ff;
+    }
+  }
+
+  .fc-config-card-strip {
+    flex-shrink: 0;
+    width: 4px;
+    border-radius: 999px;
+    align-self: stretch;
+    min-height: 36px;
+  }
+
+  .fc-config-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .fc-config-card-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .fc-config-card-item-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .fc-config-card-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s, color 0.12s, background 0.12s;
+
+    &:hover {
+      color: #dc2626;
+      background: #fef2f2;
+      text-decoration: none;
+    }
+  }
+
+  .fc-config-card-preview {
+    font-size: 13px;
+    color: #111827;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fc-config-list-tip {
+    display: none;
+  }
+
+  .fc-config-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .fc-config-editor-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .fc-config-editor-title-block {
+    min-width: 180px;
+    flex: 1 1 200px;
+  }
+
+  .fc-config-editor-heading {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .fc-config-editor-sub {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  .fc-theme-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    &.is-compact {
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      flex: 0 1 auto;
+      max-width: 100%;
+    }
+  }
+
+  .fc-theme-picker-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  .fc-theme-picker-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .fc-theme-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.12s, box-shadow 0.12s;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    &.is-selected {
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2563eb;
+    }
+  }
+
+  .fc-theme-swatch-default {
+    background: #ffffff;
+    border-color: #d1d5db;
+  }
+
+  .fc-theme-custom-wrap {
+    position: relative;
+  }
+
+  .fc-theme-swatch-custom {
+    width: auto;
+    min-width: 64px;
+    height: 26px;
+    border-radius: 14px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #64748b;
+  }
+
+  .fc-theme-swatch-custom-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  }
+
+  .fc-side-switch {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: 0;
+    width: fit-content;
+    max-width: 100%;
+    background: #e5e7eb;
+    border-radius: 8px;
+    padding: 3px;
+  }
+
+  .fc-side-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.12s;
+
+    &:hover:not(.active) {
+      color: #374151;
+    }
+
+    &.active {
+      background: #fff;
+      color: #2563eb;
+      box-shadow: 0 1px 4px rgba(37, 99, 235, 0.15);
+    }
+  }
+
+  .fc-side-option-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f3f4f6;
+    border-radius: 999px;
+    padding: 2px 8px;
+
+    .fc-side-option.active & {
+      color: #5b21b6;
+      background: #ede9fe;
+    }
+
+    .fc-side-option.active:last-child & {
+      color: #047857;
+      background: #d1fae5;
+    }
+  }
+
+  .fc-config-quill-stack {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fc-config-quill-wrap {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+    flex: 1 1 auto;
+    min-height: 260px;
+    display: none;
+    flex-direction: column;
+
+    &.is-active {
+      display: flex;
+    }
+
+    tf-quill-editor {
+      display: block;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+
+      > div {
+        max-width: 100% !important;
+        height: 100% !important;
+        flex: 1 1 auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+
+      .ql-toolbar.ql-snow {
+        border: 0;
+        border-bottom: 1px solid #e5e7eb;
+        flex-shrink: 0;
+      }
+
+      .ql-container.ql-snow {
+        border: 0;
+        height: 240px;
+        flex: 1 1 auto;
+        overflow-y: auto;
+      }
+
+      .ql-editor {
+        min-height: 200px;
+      }
+    }
+  }
+
+  .fc-config-quill-skeleton {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .fc-config-quill-skeleton-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .fc-config-quill-skeleton-chip {
+    display: block;
+    width: 28px;
+    height: 24px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #eef2f7 0%, #f8fafc 50%, #eef2f7 100%);
+    background-size: 200% 100%;
+    animation: fc-config-quill-shimmer 1.2s ease-in-out infinite;
+
+    &:nth-child(3n) {
+      width: 36px;
+    }
+
+    &:nth-child(4n) {
+      width: 52px;
+    }
+  }
+
+  .fc-config-quill-skeleton-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1 1 auto;
+    min-height: 240px;
+    padding: 16px;
+  }
+
+  .fc-config-quill-skeleton-line {
+    display: block;
+    height: 14px;
+    width: 88%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #eef2f7 0%, #f8fafc 50%, #eef2f7 100%);
+    background-size: 200% 100%;
+    animation: fc-config-quill-shimmer 1.2s ease-in-out infinite;
+
+    &.is-short {
+      width: 56%;
+    }
+  }
+
+  @keyframes fc-config-quill-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  .fc-config-preview-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 16px;
+    background: #fff;
+    border-left: 1px solid #e5e7eb;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .fc-config-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .fc-config-preview-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7280;
+  }
+
+  .fc-config-preview-sub {
+    margin-top: -6px;
+    font-size: 12px;
+    color: #9ca3af;
+  }
+
+  .fc-config-preview-frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .fc-config-preview-deck {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: var(--flashcard-min-height, 270px);
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .fc-config-preview-deck .flashcards-deck,
+  .fc-config-preview-deck .flashcards-list,
+  .fc-config-preview-deck .flashcards-list-item {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  .fc-config-preview-deck .flashcard.fc-config-preview-card {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  .fc-config-preview-side-badge {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #374151;
+    pointer-events: none;
+  }
+
+  .fc-config-preview-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: #9ca3af;
+    text-align: center;
+
+    .fa {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+  }
+
+  .fc-config-preview-empty,
+  .fc-config-editor-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    color: #6b7280;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 900px) {
+  .flashcards-configure .fc-config-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .flashcards-configure .fc-config-preview-pane {
+    border-right: 0;
+    border-left: 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .flashcards-configure .fc-config-preview-deck {
+    min-height: max(var(--flashcard-min-height, 270px), 320px);
+  }
+
+  .flashcards-configure .fc-config-preview-frame {
+    min-height: 360px;
+  }
+}

@@ -42,72 +42,90 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
     current_user = Map.get(socket.assigns, :current_user)
 
     if connected?(socket) do
-      student = Oli.Delivery.Attempts.Core.get_user_from_attempt_guid(attempt_guid)
-      page_context = PageContext.create_for_review(section.slug, attempt_guid, student, false)
+      case Oli.Delivery.Attempts.Core.get_user_from_attempt_guid(attempt_guid) do
+        nil ->
+          {:ok,
+           socket
+           |> put_flash(:error, "This attempt is no longer available.")
+           |> redirect(to: Utils.learn_live_path(section.slug))}
 
-      socket = assign(socket, page_context: page_context)
+        student ->
+          page_context = PageContext.create_for_review(section.slug, attempt_guid, student, false)
 
-      socket =
-        if Map.get(socket.assigns, :user_token) == nil do
-          assign(socket, user_token: "")
-        else
-          socket
-        end
+          socket = assign(socket, page_context: page_context)
 
-      {:cont, socket} =
-        OliWeb.LiveSessionPlugs.InitPage.on_mount(:init_context_state, params, session, socket)
+          socket =
+            if Map.get(socket.assigns, :user_token) == nil do
+              assign(socket, user_token: "")
+            else
+              socket
+            end
 
-      {:cont, socket} =
-        OliWeb.LiveSessionPlugs.InitPage.on_mount(:previous_next_index, params, session, socket)
+          {:cont, socket} =
+            OliWeb.LiveSessionPlugs.InitPage.on_mount(
+              :init_context_state,
+              params,
+              session,
+              socket
+            )
 
-      {:cont, socket} =
-        OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
+          {:cont, socket} =
+            OliWeb.LiveSessionPlugs.InitPage.on_mount(
+              :previous_next_index,
+              params,
+              session,
+              socket
+            )
 
-      socket = assign(socket, loaded: true)
+          {:cont, socket} =
+            OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
 
-      page_revision = page_context.page
+          socket = assign(socket, loaded: true)
 
-      admin_or_instructor? =
-        is_admin || Oli.Delivery.Sections.has_instructor_role?(current_user, section.slug)
+          page_revision = page_context.page
 
-      can_access_attempt? =
-        ReviewPolicy.allowed?(attempt_guid, current_user, section, page_context)
+          admin_or_instructor? =
+            is_admin || Oli.Delivery.Sections.has_instructor_role?(current_user, section.slug)
 
-      if admin_or_instructor? || can_access_attempt? do
-        socket =
-          socket
-          |> assign(page_context: page_context)
-          |> assign(page_progress_state: page_context.progress_state)
-          |> assign(page_revision: page_revision)
-          |> assign_html_and_scripts()
-          |> assign_objectives()
-          |> slim_assigns()
+          can_access_attempt? =
+            ReviewPolicy.allowed?(attempt_guid, current_user, section, page_context)
 
-        script_sources =
-          Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
+          if admin_or_instructor? || can_access_attempt? do
+            socket =
+              socket
+              |> assign(page_context: page_context)
+              |> assign(page_progress_state: page_context.progress_state)
+              |> assign(page_revision: page_revision)
+              |> assign_html_and_scripts()
+              |> assign_objectives()
+              |> slim_assigns()
 
-        send(self(), :gc)
+            script_sources =
+              Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
 
-        {:ok,
-         push_event(socket, "load_survey_scripts", %{
-           script_sources: script_sources
-         })}
+            send(self(), :gc)
 
-        # These temp assigns were disabled in MER-3672
-        #  temporary_assigns: [
-        #    scripts: [],
-        #    html: [],
-        #    page_context: %{},
-        #    page_revision: %{},
-        #    objectives: []
-        #  ]}
-      else
-        Logger.debug("ReviewLive mount, did not have permission")
+            {:ok,
+             push_event(socket, "load_survey_scripts", %{
+               script_sources: script_sources
+             })}
 
-        {:ok,
-         socket
-         |> put_flash(:error, "You are not allowed to review this attempt.")
-         |> redirect(to: Utils.learn_live_path(section.slug))}
+            # These temp assigns were disabled in MER-3672
+            #  temporary_assigns: [
+            #    scripts: [],
+            #    html: [],
+            #    page_context: %{},
+            #    page_revision: %{},
+            #    objectives: []
+            #  ]}
+          else
+            Logger.debug("ReviewLive mount, did not have permission")
+
+            {:ok,
+             socket
+             |> put_flash(:error, "You are not allowed to review this attempt.")
+             |> redirect(to: Utils.learn_live_path(section.slug))}
+          end
       end
     else
       {:ok, assign(socket, loaded: false)}
@@ -186,14 +204,19 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             }
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
-          <div id="rawContent" class="content w-full mt-16" role="page_content">
+          <section
+            id="rawContent"
+            class="content w-full mt-16"
+            aria-label="Page content"
+            data-role="page-content"
+          >
             {raw(@html)}
-          </div>
+          </section>
           <.link
             href={
               Utils.lesson_live_path(@section.slug, @page_revision.slug, request_path: @request_path)
             }
-            role="back_to_summary_link"
+            data-role="back-to-summary-link"
           >
             <div class="h-10 px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded shadow justify-center items-center gap-2.5 inline-flex">
               <div class="text-white text-sm font-normal leading-tight">

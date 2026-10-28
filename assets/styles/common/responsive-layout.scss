@@ -97,12 +97,16 @@
   // Override absolute positioning for all components in responsive layout
   // This ensures components contribute to their parent's height
   .responsive-item > * {
+    display: block;
     position: relative !important;
     top: auto !important;
     left: auto !important;
     right: auto !important;
     bottom: auto !important;
     width: 100% !important;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   // Override react-rnd absolute positioning in responsive layout
@@ -176,21 +180,42 @@
   ------------------------------*/
 
   // Only scaleContent is true: width 100%, height from model
+  .responsive-image-scale-only,
   img.responsive-image-scale-only {
     width: 100% !important;
     height: var(--image-height) !important;
+
+    canvas {
+      width: 100% !important;
+      height: var(--image-height) !important;
+      display: block;
+    }
   }
 
   // Only lockAspectRatio is true: maintain aspect ratio - use original width, height auto
+  .responsive-image-lock-ratio-only,
   img.responsive-image-lock-ratio-only {
     width: var(--image-width) !important;
     height: auto !important;
+
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+      display: block;
+    }
   }
 
   // Both scaleContent and lockAspectRatio are true: width 100%, height auto
+  .responsive-image-scale-lock-both,
   img.responsive-image-scale-lock-both {
     width: 100% !important;
     height: auto !important;
+
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+      display: block;
+    }
   }
 
   janus-number-slider,

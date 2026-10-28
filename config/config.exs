@@ -12,21 +12,25 @@
 # General application configuration
 import Config
 
+lkt_aoa_defaults = [
+  gamma: 0.1,
+  rho: 1.0,
+  recency_decay: 0.9,
+  confidence_midpoint: 5.0,
+  confidence_steepness: 3.0
+]
+
+# Only the fallback defaults are compile-time configuration. The effective model
+# configuration is overridden by environment variables in runtime.exs.
+config :oli, :lkt_aoa_defaults, lkt_aoa_defaults
+config :oli, :lkt_aoa, lkt_aoa_defaults
+
 # Ensure caption files uploaded through the media library keep their WebVTT mime type.
 config :mime, :types, %{
   "text/vtt" => ["vtt"]
 }
 
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
-
-world_universities_and_domains_json =
-  case File.read("./priv/data/world_universities_and_domains.json") do
-    {:ok, body} ->
-      body
-
-    _ ->
-      "[]"
-  end
 
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
@@ -70,6 +74,10 @@ end
 config :oli,
   author_email_verification_required: true,
   user_email_verification_required: true,
+  preview_qa_tools: [preview_build?: false],
+  enable_playwright_scenarios: false,
+  enable_e2e_mailbox: false,
+  playwright_scenario_token: nil,
   logger_truncation_enabled: get_env_as_boolean.("LOGGER_TRUNCATION_ENABLED", "true"),
   logger_truncation_length: get_env_as_integer.("LOGGER_TRUNCATION_LENGTH", "5000"),
   instructor_dashboard_details: get_env_as_boolean.("INSTRUCTOR_DASHBOARD_DETAILS", "true"),
@@ -97,7 +105,6 @@ config :oli,
   email_errors_to_address: System.get_env("EMAIL_ERRORS_TO_ADDRESS"),
   email_return_path_address: System.get_env("EMAIL_RETURN_PATH_ADDRESS"),
   cashnet_email_fallback: System.get_env("CASHNET_EMAIL_FALLBACK"),
-  world_universities_and_domains_json: world_universities_and_domains_json,
   branding: [
     name: System.get_env("BRANDING_NAME", "OLI Torus"),
     logo: System.get_env("BRANDING_LOGO", "/branding/prod/oli_torus_logo.png"),
@@ -246,7 +253,9 @@ config :oli, Oban,
   ],
   queues: [
     default: 10,
-    snapshots: 20,
+    # Snapshot jobs perform several database-heavy analytics operations. Keep their concurrency below
+    # the Repo pool size so the server and other queues retain connection capacity.
+    snapshots: 4,
     embeddings: 1,
     selections: 2,
     updates: 10,
@@ -262,7 +271,8 @@ config :oli, Oban,
     mailer: 10,
     certificate_pdf: 3,
     certificate_mailer: 3,
-    certificate_eligibility: 10
+    certificate_eligibility: 10,
+    automation_teardown: 1
   ]
 
 config :ex_money,
@@ -380,6 +390,10 @@ config :oli, :datashop,
 
 config :oli, :student_sign_in,
   background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
+
+# Preserve Phoenix's default credential filters and redact captcha submissions
+# in HTTP and LiveView parameter logging in every environment.
+config :phoenix, :filter_parameters, ["password", "secret", "token", "g-recaptcha-response"]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

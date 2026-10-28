@@ -1,0 +1,159 @@
+# Scenario: Parent Learning Objective proficiency reflects an under-evidenced
+# Sub-LO instead of being calculated as if only the well-evidenced Sub-LO
+# existed.
+#
+# "Coverage Objective" has no evidence of its own. Its Sub-LO "Coverage Sub A"
+# has 3 correct first attempts (proficiency 1.0, weight 3) and its Sub-LO
+# "Coverage Sub B" has a single *incorrect* first attempt (proficiency 0.2,
+# weight 1) -- thin, but real, evidence, not zero evidence.
+#
+# Weighted average = (1.0*3 + 0.2*1) / (3+1) = 3.2/4 = 0.8 (Medium).
+# If Sub B's thin evidence were ignored (as if it had never been attempted),
+# the result would instead be Sub A's evidence alone: 1.0 (High) -- a
+# different bucket, which is what makes this assertion diagnostic rather
+# than coincidental.
+
+- project:
+    name: "reflects_incomplete_subobjective_coverage_project"
+    title: "Reflects Incomplete Subobjective Coverage"
+    objectives:
+      - Coverage Objective:
+        - Coverage Sub A
+        - Coverage Sub B
+    root:
+      children:
+        - page: "Coverage Sub A Practice"
+        - page: "Coverage Sub B Practice"
+
+- edit_page:
+    project: "reflects_incomplete_subobjective_coverage_project"
+    page: "Coverage Sub A Practice"
+    content: |
+      title: "Coverage Sub A Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "sub_a_q1"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Coverage Sub A"]
+            stem_md: "Coverage Sub A, question 1"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+        - type: activity
+          virtual_id: "sub_a_q2"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Coverage Sub A"]
+            stem_md: "Coverage Sub A, question 2"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+        - type: activity
+          virtual_id: "sub_a_q3"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Coverage Sub A"]
+            stem_md: "Coverage Sub A, question 3"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- edit_page:
+    project: "reflects_incomplete_subobjective_coverage_project"
+    page: "Coverage Sub B Practice"
+    content: |
+      title: "Coverage Sub B Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "sub_b_q1"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Coverage Sub B"]
+            stem_md: "Coverage Sub B, question 1"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- publish:
+    to: "reflects_incomplete_subobjective_coverage_project"
+    description: "Initial publication"
+
+- section:
+    name: "reflects_incomplete_subobjective_coverage_section"
+    title: "Reflects Incomplete Subobjective Coverage Section"
+    from: "reflects_incomplete_subobjective_coverage_project"
+
+- user:
+    name: "learner"
+    type: "student"
+    email: "reflects_incomplete_subobjective_coverage_learner@example.edu"
+    given_name: "Casey"
+    family_name: "Learner"
+
+- enroll:
+    user: "learner"
+    section: "reflects_incomplete_subobjective_coverage_section"
+    role: student
+
+- view_practice_page:
+    student: "learner"
+    section: "reflects_incomplete_subobjective_coverage_section"
+    page: "Coverage Sub A Practice"
+
+- answer_question:
+    student: "learner"
+    section: "reflects_incomplete_subobjective_coverage_section"
+    page: "Coverage Sub A Practice"
+    activity_virtual_id: "sub_a_q1"
+    response: "b"
+
+- answer_question:
+    student: "learner"
+    section: "reflects_incomplete_subobjective_coverage_section"
+    page: "Coverage Sub A Practice"
+    activity_virtual_id: "sub_a_q2"
+    response: "b"
+
+- answer_question:
+    student: "learner"
+    section: "reflects_incomplete_subobjective_coverage_section"
+    page: "Coverage Sub A Practice"
+    activity_virtual_id: "sub_a_q3"
+    response: "b"
+
+- view_practice_page:
+    student: "learner"
+    section: "reflects_incomplete_subobjective_coverage_section"
+    page: "Coverage Sub B Practice"
+
+- answer_question:
+    student: "learner"
+    section: "reflects_incomplete_subobjective_coverage_section"
+    page: "Coverage Sub B Practice"
+    activity_virtual_id: "sub_b_q1"
+    response: "a"
+
+- dashboard_analytics_ready:
+    section: "reflects_incomplete_subobjective_coverage_section"
+
+- assert:
+    proficiency:
+      section: "reflects_incomplete_subobjective_coverage_section"
+      objective: "Coverage Objective"
+      student: "learner"
+      bucket: "Medium"

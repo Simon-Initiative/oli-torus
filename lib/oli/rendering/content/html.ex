@@ -15,12 +15,16 @@ defmodule Oli.Rendering.Content.Html do
   alias Oli.Rendering.Context
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
+  alias Oli.Rendering.Content.LearningObjectives
   alias HtmlSanitizeEx.Scrubber
   alias Oli.Utils.Purposes
   alias Oli.Rendering.Content.ResourceSummary
   alias Oli.Rendering.Content.UrlHelpers
 
   @behaviour Oli.Rendering.Content
+
+  # Keep in sync with DEFAULT_WEBPAGE_ARIA_LABEL in assets/src/components/webpage/webpageAriaLabel.ts
+  @default_iframe_aria_label "Embedded webpage that contains additional learning content"
 
   def trigger(%Context{} = context, _, attrs) do
     {:safe, trigger} =
@@ -303,7 +307,7 @@ defmodule Oli.Rendering.Content.Html do
         """
         <div class="#{container_class}">
           <div class="embed-wrapper">
-            <iframe#{maybe_alt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}></iframe>
+            <iframe aria-label="#{escape_xml!(iframe_aria_label(attrs))}" class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}></iframe>
           </div>
         </div>
         """
@@ -424,7 +428,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def ol(%Context{} = _context, next, _) do
-    ["<ol class=\"list-inside pl-2\">", next.(), "</ol>\n"]
+    ["<ol class=\"list-decimal list-inside pl-2\">", next.(), "</ol>\n"]
   end
 
   def dl(%Context{}, next, title, %{}) do
@@ -451,7 +455,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def ul(%Context{} = _context, next, _) do
-    ["<ul class=\"list-inside pl-2\">", next.(), "</ul>\n"]
+    ["<ul class=\"list-disc list-inside pl-2\">", next.(), "</ul>\n"]
   end
 
   def li(%Context{} = context, next, attrs) do
@@ -963,6 +967,10 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
+  def learning_objectives(%Context{} = context, _next, element) do
+    LearningObjectives.render(context, element)
+  end
+
   defp revision_slug_from_course_link(href) do
     href
     |> String.replace_prefix("/course/link/", "")
@@ -1138,6 +1146,15 @@ defmodule Oli.Rendering.Content.Html do
       []
     end
   end
+
+  defp iframe_aria_label(%{"title" => title}) when is_binary(title) do
+    case String.trim(title) do
+      "" -> @default_iframe_aria_label
+      trimmed -> trimmed
+    end
+  end
+
+  defp iframe_aria_label(_attrs), do: @default_iframe_aria_label
 
   defp maybe_alt(attrs) do
     case attrs do

@@ -1,0 +1,229 @@
+# Scenario: Seed basic and adaptive manually scored delivery workflows for Playwright.
+
+- project:
+    name: 'manual_scoring_basic_project'
+    title: 'Manual Scoring Basic Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Manual Short Answer'
+
+- create_activity:
+    project: 'manual_scoring_basic_project'
+    title: 'Manual Short Answer Question'
+    virtual_id: 'manual_short_answer'
+    type: 'oli_short_answer'
+    content_format: 'json'
+    content:
+      activityType: 'oli_short_answer'
+      stem:
+        id: 'manual_short_answer_stem'
+        content:
+          - type: 'p'
+            id: 'manual_short_answer_stem_p'
+            children:
+              - text: 'Explain your reasoning in a sentence.'
+      inputType: 'textarea'
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ''
+        parts:
+          - id: '1'
+            scoringStrategy: 'best'
+            gradingApproach: 'manual'
+            outOf: 1
+            responses:
+              # Manual grading means the instructor sets the real score, so this catch-all
+              # response exists only so the activity has a valid one.
+              - id: 'manual_short_answer_response'
+                rule: 'input like {.*}'
+                score: 0
+                feedback:
+                  id: 'manual_short_answer_feedback'
+                  content: []
+            hints: []
+
+- edit_page:
+    project: 'manual_scoring_basic_project'
+    page: 'Manual Short Answer'
+    content: |
+      title: "Manual Short Answer"
+      graded: true
+      blocks:
+        - type: activity_reference
+          virtual_id: "manual_short_answer"
+
+- publish:
+    to: 'manual_scoring_basic_project'
+    description: 'Initial manual scoring basic publication'
+
+- section:
+    name: 'manual_scoring_basic_section'
+    title: 'Manual Scoring Basic Course ${RUN_ID}'
+    from: 'manual_scoring_basic_project'
+    type: 'enrollable'
+    registration_open: true
+
+- project:
+    name: 'manual_scoring_adaptive_project'
+    title: 'Manual Scoring Adaptive Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Manual Adaptive Page'
+
+- create_activity:
+    project: 'manual_scoring_adaptive_project'
+    title: 'Manual Adaptive Activity'
+    virtual_id: 'manual_adaptive_activity'
+    scope: 'embedded'
+    type: 'oli_adaptive'
+    content_format: 'json'
+    content:
+      authoring:
+        parts:
+          - id: 'capi_iframe_part'
+            type: 'janus-capi-iframe'
+            gradingApproach: 'manual'
+            outOf: 1
+            src: '${STUB_URL}'
+            sourceType: 'url'
+            configData:
+              - key: 'x'
+                type: 1
+                value: '0'
+        rules:
+          - id: 'r:manual_adaptive.complete.correct'
+            name: 'manual adaptive completed'
+            disabled: false
+            additionalScore: 0.0
+            forceProgress: false
+            default: false
+            correct: true
+            conditions:
+              all:
+                - id: 'c:manual_adaptive.x'
+                  fact: 'stage.capi_iframe_part.x'
+                  operator: 'equal'
+                  value: 5
+            event:
+              type: 'r:manual_adaptive.complete.correct'
+              params:
+                actions:
+                  - type: 'mutateState'
+                    params:
+                      target: 'stage.capi_iframe_part.acknowledged'
+                      operator: '='
+                      type: 1
+                      value: 1
+      custom:
+        x: 0
+        y: 0
+        z: 0
+        width: 800
+        height: 600
+        # Evaluation reads this maxScore and falls back to the parts' outOf above when it is
+        # missing, while the part's own maxScore below drives its render. Keep the three in sync.
+        maxScore: 1
+      partsLayout:
+        - id: 'capi_iframe_part'
+          type: 'janus-capi-iframe'
+          custom:
+            x: 0
+            y: 0
+            z: 0
+            width: 800
+            height: 600
+            maxScore: 1
+            src: '${STUB_URL}'
+            sourceType: 'url'
+            requiresManualGrading: true
+            configData:
+              - key: 'x'
+                type: 1
+                value: '0'
+
+- edit_adaptive_page:
+    project: 'manual_scoring_adaptive_project'
+    page: 'Manual Adaptive Page'
+    activity_virtual_id: 'manual_adaptive_activity'
+    graded: true
+
+- publish:
+    to: 'manual_scoring_adaptive_project'
+    description: 'Initial manual scoring adaptive publication'
+
+- section:
+    name: 'manual_scoring_adaptive_section'
+    title: 'Manual Scoring Adaptive Course ${RUN_ID}'
+    from: 'manual_scoring_adaptive_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'manual_scoring_student'
+    type: 'student'
+    email: 'manual-scoring-student${RUN_ID}@example.com'
+    given_name: 'Manual'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- user:
+    name: 'manual_scoring_student_two'
+    type: 'student'
+    email: 'manual-scoring-student-two${RUN_ID}@example.com'
+    given_name: 'Second'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- user:
+    name: 'manual_scoring_instructor'
+    type: 'instructor'
+    email: 'manual-scoring-instructor${RUN_ID}@example.com'
+    given_name: 'Manual'
+    family_name: 'Instructor'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'manual_scoring_student'
+    section: 'manual_scoring_basic_section'
+    role: 'student'
+
+- enroll:
+    user: 'manual_scoring_student'
+    section: 'manual_scoring_adaptive_section'
+    role: 'student'
+
+- enroll:
+    user: 'manual_scoring_instructor'
+    section: 'manual_scoring_basic_section'
+    role: 'instructor'
+
+- enroll:
+    user: 'manual_scoring_instructor'
+    section: 'manual_scoring_adaptive_section'
+    role: 'instructor'
+
+- enroll:
+    user: 'manual_scoring_student_two'
+    section: 'manual_scoring_basic_section'
+    role: 'student'
+
+# A second attempt left waiting for manual grading, seeded through the real page
+# lifecycle. It gives the grading queue more than one row, so selecting a row actually
+# has to pick the right one, and it is the attempt the score input test scribbles on.
+- visit_page:
+    student: 'manual_scoring_student_two'
+    section: 'manual_scoring_basic_section'
+    page: 'Manual Short Answer'
+
+- answer_question:
+    student: 'manual_scoring_student_two'
+    section: 'manual_scoring_basic_section'
+    page: 'Manual Short Answer'
+    activity_virtual_id: 'manual_short_answer'
+    response: 'Second student response awaiting review.'
+
+- finalize_attempt:
+    student: 'manual_scoring_student_two'
+    section: 'manual_scoring_basic_section'
+    page: 'Manual Short Answer'

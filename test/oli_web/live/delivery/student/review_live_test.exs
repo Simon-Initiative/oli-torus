@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
+  alias Oli.Repo
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
 
@@ -280,6 +281,117 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
   describe "student" do
     setup [:user_conn, :create_elixir_project]
 
+    for mode <- [:traditional, :one_at_a_time] do
+      test "secure #{mode} review retains one exit and no course navigation", c do
+        mode = unquote(mode)
+        Sections.enroll(c.user.id, c.section.id, [ContextRoles.get_role(:context_learner)])
+        Sections.mark_section_visited_for_student(c.section, c.user)
+        sr = Sections.get_section_resource(c.section.id, c.page_3.resource_id)
+        Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true, assessment_mode: mode))
+
+        attempt =
+          create_attempt(c.user, c.section, c.page_3)
+          |> Ecto.Changeset.change(lifecycle_state: :evaluated)
+          |> Oli.Repo.update!()
+
+        secure =
+          Oli.Accounts.generate_user_session_token(c.user,
+            scope: %Oli.Delivery.SecureAssessments.Scope{
+              section_id: c.section.id,
+              resource_id: c.page_3.resource_id
+            }
+          )
+
+        conn = c.conn |> recycle() |> init_test_session(%{user_token: secure})
+        path = Utils.review_live_path(c.section.slug, c.page_3.slug, attempt.attempt_guid)
+        {:ok, view, html} = live(conn, path)
+        assert length(Floki.find(Floki.parse_document!(html), "#secure-assessment-content")) == 1
+        ensure_content_is_visible(view)
+        assert has_element?(view, "form[action='/secure-assessment/exit'][method='post']")
+        refute has_element?(view, "[data-role='prev_page']")
+        refute has_element?(view, "[data-role='next_page']")
+        refute has_element?(view, "a[href='/sections/#{c.section.slug}']")
+        ordinary = c.conn |> recycle() |> log_in_user(c.user)
+        assert {:ok, ordinary_view, _} = live(ordinary, path)
+        ensure_content_is_visible(ordinary_view)
+        refute has_element?(ordinary_view, "form[action='/secure-assessment/exit']")
+        assert has_element?(ordinary_view, "[data-role='prev_page'], [data-role='next_page']")
+        assert Oli.Repo.reload!(attempt).lifecycle_state == :evaluated
+      end
+    end
+
+    for feedback <- [:disallow, :scheduled] do
+      test "adaptive secure and ordinary review retain attempt state with #{feedback} feedback",
+           c do
+        page = c.graded_adaptive_page_revision
+        Sections.enroll(c.user.id, c.section.id, [ContextRoles.get_role(:context_learner)])
+        Sections.mark_section_visited_for_student(c.section, c.user)
+        sr = Sections.get_section_resource(c.section.id, page.resource_id)
+
+        Oli.Repo.update!(
+          Ecto.Changeset.change(sr,
+            secure_delivery: true,
+            feedback_mode: unquote(feedback),
+            feedback_scheduled_date:
+              DateTime.utc_now() |> DateTime.add(86_400) |> DateTime.truncate(:second)
+          )
+        )
+
+        attempt =
+          create_attempt(c.user, c.section, page)
+          |> Ecto.Changeset.change(
+            lifecycle_state: :evaluated,
+            state: %{
+              "session.tutorialScore" => 987_654,
+              "session.currentQuestionScore" => 456_789,
+              "session.resume" => "screen-1",
+              "app.calculator.input" => 42
+            }
+          )
+          |> Oli.Repo.update!()
+
+        scope = %Oli.Delivery.SecureAssessments.Scope{
+          section_id: c.section.id,
+          resource_id: page.resource_id
+        }
+
+        for secure? <- [true, false] do
+          token = Oli.Accounts.generate_user_session_token(c.user, scope: if(secure?, do: scope))
+          conn = c.conn |> recycle() |> init_test_session(%{user_token: token})
+
+          html =
+            conn
+            |> get(
+              "/sections/#{c.section.slug}/adaptive_lesson/#{page.slug}/attempt/#{attempt.attempt_guid}/review"
+            )
+            |> html_response(200)
+
+          props =
+            html
+            |> Floki.parse_document!()
+            |> Floki.find("[data-react-class='Components.Delivery']")
+            |> Floki.attribute("data-react-props")
+            |> hd()
+            |> Jason.decode!()
+
+          assert props["reviewMode"]
+          assert !!props["restrictNavigation"] == secure?
+          assert props["resourceAttemptState"]["session.tutorialScore"] == 987_654
+          assert props["resourceAttemptState"]["session.resume"] == "screen-1"
+          assert props["resourceAttemptState"]["app.calculator.input"] == 42
+
+          if secure? do
+            assert props["overviewURL"] == Utils.prologue_live_path(c.section.slug, page.slug)
+
+            assert length(Floki.find(Floki.parse_document!(html), "#secure-assessment-content")) ==
+                     1
+          end
+        end
+
+        assert Oli.Repo.reload!(attempt).state == attempt.state
+      end
+    end
+
     test "can not access when not enrolled to course", %{
       conn: conn,
       user: user,
@@ -319,6 +431,22 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       attempt = create_attempt(user, section, page_1)
 
       {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
+
+      assert redirect_path == Utils.learn_live_path(section.slug)
+    end
+
+    test "redirects when the reviewed attempt was deleted", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      attempt = create_attempt(user, section, page_1)
+      Repo.delete!(attempt)
+
+      {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
       assert redirect_path == Utils.learn_live_path(section.slug)
@@ -373,13 +501,13 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="prev_page"]},
+               ~s{div[data-role="prev_page"]},
                module_1.title
              )
 
       assert has_element?(
                view,
-               ~s{div[role="next_page"]},
+               ~s{div[data-role="next_page"]},
                page_2.title
              )
     end
@@ -401,21 +529,21 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       ensure_content_is_visible(view)
 
-      assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
-      assert has_element?(view, ~s{div[role="page read time"]}, "15")
-      assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
+      assert has_element?(view, ~s{div[data-role="container label"]}, "Module 1")
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
+      assert has_element?(view, ~s{div[data-role="page read time"]}, "15")
+      assert has_element?(view, ~s{div[data-role="page schedule"]}, "Tue Nov 14, 2023")
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o1.resource_id}"]},
+               ~s{[data-testid="objective-#{o1.resource_id}-title"]},
                "this is the first objective"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o2.resource_id}"]},
+               ~s{[data-testid="objective-#{o2.resource_id}-title"]},
                "this is the second objective"
              )
     end
@@ -438,10 +566,9 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       ensure_content_is_visible(view)
 
-      refute has_element?(view, ~s{div[role="container label"]})
-      refute has_element?(view, ~s{div[role="page header divider"]})
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+      refute has_element?(view, ~s{div[data-role="container label"]})
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
     end
 
     test "loads review header for pages inside an unnumbered unit", %{
@@ -463,9 +590,9 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       ensure_content_is_visible(view)
 
-      refute has_element?(view, ~s{div[role="container label"]})
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+      refute has_element?(view, ~s{div[data-role="container label"]})
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
     end
 
     test "back to summary screen button redirects to the prologue page", %{
@@ -489,9 +616,10 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         )
 
       ensure_content_is_visible(view)
+      assert has_element?(view, ~s{section[data-role="page-content"][aria-label="Page content"]})
 
       view
-      |> element(~s{a[role="back_to_summary_link"]})
+      |> element(~s{a[data-role="back-to-summary-link"]})
       |> render_click
 
       assert_redirected(
@@ -517,7 +645,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="next_page"] a})
+      |> element(~s{div[data-role="next_page"] a})
       |> render_click
 
       # It redirects to the next page, but still referencing the targeted Learn view in the URL with the next page resource
@@ -562,7 +690,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="next_page"] a})
+      |> element(~s{div[data-role="next_page"] a})
       |> render_click
 
       assert_redirected(
@@ -600,7 +728,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="next_page"] a})
+      |> element(~s{div[data-role="next_page"] a})
       |> render_click
 
       assert_redirected(
@@ -621,7 +749,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="prev_page"] a})
+      |> element(~s{div[data-role="prev_page"] a})
       |> render_click
 
       assert_redirected(
@@ -656,7 +784,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click
 
       assert_redirected(
@@ -788,7 +916,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       ensure_content_is_visible(view)
       assert has_element?(view, "span", "The best course ever!")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 1")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 1")
     end
 
     test "student cannot access attempt when review_submission is disallowed", %{

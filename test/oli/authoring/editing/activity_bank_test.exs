@@ -5,8 +5,10 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
 
   alias Oli.Activities.Realizer.Logic
   alias Oli.Activities.Realizer.Query.Paging
+  alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Editing.ActivityBank
+  alias Oli.Repo
   alias Oli.Resources.ResourceType
   alias Oli.Seeder
 
@@ -435,14 +437,24 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
     setup [:project_with_activity_bank]
 
     test "builds the Activity Bank editor context", %{author: author, project: project} do
+      project
+      |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: nil})
+      |> Repo.update!()
+
       assert {:ok, context} = ActivityBank.context(project.slug, author)
 
       assert context.authorEmail == author.email
       assert context.projectSlug == project.slug
       assert context.totalCount == 2
+      refute context.loWellFormed
       assert is_map(context.editorMap)
       assert is_list(context.allObjectives)
       assert is_list(context.allTags)
+      refute Repo.get!(Project, project.id).lo_well_formed
+    end
+
+    test "returns not found when working publication lookup returns nil", %{author: author} do
+      assert {:error, :not_found} = ActivityBank.context("missing-project", author)
     end
   end
 

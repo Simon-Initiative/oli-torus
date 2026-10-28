@@ -193,7 +193,7 @@ defmodule Oli.Accounts do
   def get_users_by_ids(user_ids) when is_list(user_ids) do
     from(u in User,
       where: u.id in ^user_ids,
-      select: struct(u, [:id, :name, :given_name, :family_name, :email])
+      select: struct(u, [:id, :name, :given_name, :family_name, :email, :picture])
     )
     |> Repo.all()
   end
@@ -1141,15 +1141,11 @@ defmodule Oli.Accounts do
   Since both operations are related, they are wrapped in a transaction.
   """
   def accept_user_invitation(user, enrollment, attrs \\ %{}) do
-    Repo.transaction(fn ->
-      user
-      |> User.accept_invitation_changeset(attrs)
-      |> Repo.update!()
-
-      enrollment
-      |> Enrollment.changeset(%{status: :enrolled})
-      |> Repo.update!()
-    end)
+    Multi.new()
+    |> Multi.update(:account, User.accept_invitation_changeset(user, attrs))
+    |> Multi.update(:enrollment, Enrollment.changeset(enrollment, %{status: :enrolled}))
+    |> Repo.transaction()
+    |> normalize_invitation_transaction(:enrollment)
   end
 
   @doc """
@@ -1352,12 +1348,58 @@ defmodule Oli.Accounts do
   ## Session
 
   @doc """
-  Generates a session token.
+  Generates an independent session token. Trusted admission callers may supply
+  `scope: %Oli.Delivery.SecureAssessments.Scope{}`; this never updates other tokens.
   """
-  def generate_user_session_token(user) do
-    {token, user_token} = UserToken.build_session_token(user)
+  def generate_user_session_token(user, opts \\ []) do
+    {token, user_token} = UserToken.build_session_token(user, Keyword.get(opts, :scope))
     Repo.insert!(user_token)
     token
+  end
+
+  @doc "Loads the presented valid session and its scope; malformed scope fails closed."
+  @spec get_user_session(term()) ::
+          {:ok,
+           %{
+             user: %User{},
+             token_id: integer(),
+             scope: nil | Oli.Delivery.SecureAssessments.Scope.t()
+           }}
+          | {:error, :unauthenticated}
+  def get_user_session(token) when is_binary(token) do
+    session_context(Repo.one(UserToken.session_query(token)))
+  end
+
+  def get_user_session(_), do: {:error, :unauthenticated}
+
+  @doc "Reloads an exact session row from a server-verified signed capability, never client IDs."
+  def get_user_session_by_id(id) when is_integer(id) and id > 0 do
+    session_context(Repo.one(UserToken.session_id_query(id)))
+  end
+
+  def get_user_session_by_id(_), do: {:error, :unauthenticated}
+
+  defp session_context(record) do
+    case record do
+      {user, token_id, nil, nil} ->
+        {:ok, %{user: user, token_id: token_id, scope: nil}}
+
+      {user, token_id, section_id, resource_id}
+      when is_integer(section_id) and section_id > 0 and is_integer(resource_id) and
+             resource_id > 0 ->
+        {:ok,
+         %{
+           user: user,
+           token_id: token_id,
+           scope: %Oli.Delivery.SecureAssessments.Scope{
+             section_id: section_id,
+             resource_id: resource_id
+           }
+         }}
+
+      _ ->
+        {:error, :unauthenticated}
+    end
   end
 
   @doc """
@@ -1670,15 +1712,32 @@ defmodule Oli.Accounts do
   Since both operations are related, they are wrapped in a transaction.
   """
   def accept_collaborator_invitation(author, author_project, attrs \\ %{}) do
-    Repo.transaction(fn ->
-      author
-      |> Author.accept_invitation_changeset(attrs)
-      |> Repo.update!()
+    Multi.new()
+    |> Multi.update(:account, Author.accept_invitation_changeset(author, attrs))
+    |> Multi.update(
+      :author_project,
+      AuthorProject.changeset(author_project, %{status: :accepted})
+    )
+    |> Repo.transaction()
+    |> normalize_invitation_transaction(:author_project)
+  end
 
-      author_project
-      |> AuthorProject.changeset(%{status: :accepted})
-      |> Repo.update!()
-    end)
+  defp normalize_invitation_transaction({:ok, changes}, membership) do
+    {:ok, Map.fetch!(changes, membership)}
+  end
+
+  defp normalize_invitation_transaction(
+         {:error, :account, %Ecto.Changeset{} = changeset, _changes},
+         _membership
+       ) do
+    {:error, changeset}
+  end
+
+  defp normalize_invitation_transaction(
+         {:error, operation, reason, _changes},
+         _membership
+       ) do
+    {:error, {operation, reason}}
   end
 
   @doc """
@@ -1869,12 +1928,49 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Updates an author as an admin.
+  Updates an author on behalf of an admin. Role changes are restricted to system
+  admins and recorded atomically with the update, including identity snapshots.
+  Reloads and locks the author so the audit reflects the persisted previous role.
   """
-  def admin_update_author(author, attrs \\ %{}) do
-    author
-    |> Author.noauth_changeset(attrs)
-    |> Repo.update()
+  def admin_update_author(%Author{} = author, attrs, %Author{} = admin) do
+    Repo.transaction(fn ->
+      previous = Repo.one!(from a in Author, where: a.id == ^author.id, lock: "FOR UPDATE")
+
+      changeset =
+        previous
+        |> Author.noauth_changeset(attrs)
+        |> Ecto.Changeset.validate_inclusion(:system_role_id, Map.values(SystemRole.role_id()))
+
+      changeset =
+        case is_system_admin?(admin) do
+          true -> changeset
+          false -> Ecto.Changeset.delete_change(changeset, :system_role_id)
+        end
+
+      with {:ok, updated} <- Repo.update(changeset),
+           {:ok, _event} <- audit_author_role_change(admin, previous, updated) do
+        updated
+      else
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp audit_author_role_change(_admin, %{system_role_id: role}, %{system_role_id: role}),
+    do: {:ok, nil}
+
+  defp audit_author_role_change(admin, previous, updated) do
+    Oli.Auditing.log_admin_action(admin, :author_role_changed, updated, %{
+      "actor_name" => admin.name,
+      "actor_email" => admin.email,
+      "author_id" => updated.id,
+      "author_name" => updated.name,
+      "author_email" => updated.email,
+      "previous_role_id" => previous.system_role_id,
+      "new_role_id" => updated.system_role_id,
+      "previous_role" => SystemRole.label(previous.system_role_id),
+      "new_role" => SystemRole.label(updated.system_role_id)
+    })
   end
 
   @doc """

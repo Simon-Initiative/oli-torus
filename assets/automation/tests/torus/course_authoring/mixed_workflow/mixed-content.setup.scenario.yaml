@@ -20,6 +20,7 @@
     root:
       children:
         - page: 'Mixed Workflow Page'
+        - page: 'Mixed Workflow Link Target'
 
 - edit_page:
     project: 'workflow_authoring_project'
@@ -30,6 +31,16 @@
       blocks:
         - type: prose
           body_md: "Base content for mixed workflow coverage."
+
+- edit_page:
+    project: 'workflow_authoring_project'
+    page: 'Mixed Workflow Link Target'
+    content: |
+      title: "Mixed Workflow Link Target"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Target page for the mixed workflow internal-link test."
 
 - publish:
     to: 'workflow_authoring_project'

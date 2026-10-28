@@ -108,10 +108,25 @@ defmodule Oli.Delivery.Depot do
   """
   def query(%DepotDesc{} = depot_desc, table_id, conditions, fields \\ []) do
     match_spec = MatchSpecTranslator.translate(depot_desc, conditions, fields)
+    table_name = DepotDesc.table_name(depot_desc, table_id)
 
-    DepotDesc.table_name(depot_desc, table_id)
-    |> :ets.select([match_spec])
-    |> Serializer.unserialize(depot_desc)
+    case :ets.whereis(table_name) do
+      :undefined ->
+        []
+
+      table_reference ->
+        try do
+          table_reference
+          |> :ets.select([match_spec])
+          |> Serializer.unserialize(depot_desc)
+        rescue
+          error in ArgumentError ->
+            case :ets.info(table_reference) do
+              :undefined -> []
+              _table_info -> reraise error, __STACKTRACE__
+            end
+        end
+    end
   end
 
   @doc """

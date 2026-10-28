@@ -18,6 +18,7 @@ interface SurveyEditorProps extends EditorProps {
 export const SurveyEditor = ({
   resourceContext,
   editMode,
+  supportsLtiConfiguration,
   projectSlug,
   resourceSlug,
   contentItem,
@@ -39,6 +40,9 @@ export const SurveyEditor = ({
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
+  onStartLearningObjectivesRefresh,
+  onRefreshLearningObjectives,
+  onFinishLearningObjectivesRefresh,
   onDuplicate,
 }: SurveyEditorProps) => {
   const onEditChild = (child: ResourceContent) => {
@@ -69,6 +73,9 @@ export const SurveyEditor = ({
               resourceContext={resourceContext}
               featureFlags={featureFlags}
               onAddItem={onAddItem}
+              onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
+              onRefreshLearningObjectives={onRefreshLearningObjectives}
+              onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
             />
             {createEditor({
               resourceContext,
@@ -77,6 +84,7 @@ export const SurveyEditor = ({
               parents: [...parents, contentItem],
               activities,
               editMode,
+              supportsLtiConfiguration,
               resourceSlug,
               projectSlug,
               graded,
@@ -94,6 +102,9 @@ export const SurveyEditor = ({
               onRegisterNewObjective,
               onRegisterNewTag,
               onAddItem,
+              onStartLearningObjectivesRefresh,
+              onRefreshLearningObjectives,
+              onFinishLearningObjectivesRefresh,
               onDuplicate,
             })}
           </div>
@@ -107,6 +118,9 @@ export const SurveyEditor = ({
         resourceContext={resourceContext}
         featureFlags={featureFlags}
         onAddItem={onAddItem}
+        onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
+        onRefreshLearningObjectives={onRefreshLearningObjectives}
+        onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
         onRegisterNewObjective={onRegisterNewObjective}
       />
     </SurveyBlock>

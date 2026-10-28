@@ -60,16 +60,8 @@ defmodule OliWeb.Common.Params do
   def get_atom_param(params, name, valid, default_value)
       when is_list(valid) and is_binary(name) do
     case params[name] do
-      nil ->
-        default_value
-
-      value ->
-        value = String.to_existing_atom(value)
-
-        case MapSet.new(valid) |> MapSet.member?(value) do
-          true -> value
-          _ -> default_value
-        end
+      nil -> default_value
+      value -> Enum.find(valid, default_value, fn allowed -> Atom.to_string(allowed) == value end)
     end
   end
 

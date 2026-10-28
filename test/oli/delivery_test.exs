@@ -6,8 +6,11 @@ defmodule Oli.DeliveryTest do
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery
+  alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, SectionSpecification}
+  alias Oli.Delivery.Sections.{CopyOptions, Section, SectionSpecification}
+  alias Oli.Authoring.Course.Project
+  alias Oli.Repo
 
   describe "user_research_consent_required?/2" do
     setup do
@@ -175,7 +178,7 @@ defmodule Oli.DeliveryTest do
     end
   end
 
-  describe "create_section/4" do
+  describe "create_section/1" do
     ## Course Hierarchy
     #
     # Root Container --> Page 1 --> Activity X
@@ -258,21 +261,227 @@ defmodule Oli.DeliveryTest do
 
       cache_lti_params(lti_params, context.user.id)
 
-      changeset = Sections.change_section(%Section{title: "New Section"})
-
       section_spec = SectionSpecification.lti(context.user, section.context_id)
 
       assert {:ok, returned_section_id, returned_section_slug} =
                Delivery.create_section(
-                 changeset,
-                 "publication:#{context.publication.id}",
-                 context.user,
-                 section_spec
+                 request!(
+                   context.user,
+                   "publication:#{context.publication.id}",
+                   %{title: "New Section"},
+                   section_spec
+                 )
                )
 
       # Should return the existing section
       assert returned_section_id == section.id
       assert returned_section_slug == section.slug
+    end
+
+    test "copies and pins the Project learning model for a new Section", context do
+      project = set_project_learning_model(context.project, :lkt_aoa)
+      context_id = "project-learning-model-#{System.unique_integer([:positive])}"
+
+      cache_lti_params(
+        put_in(
+          context.lti_params,
+          ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
+          context_id
+        ),
+        context.user.id
+      )
+
+      assert {:ok, section_id, _slug} =
+               Delivery.create_section(
+                 request!(
+                   context.user,
+                   "publication:#{context.publication.id}",
+                   %{title: "Project model Section"},
+                   SectionSpecification.lti(context.user, context_id)
+                 )
+               )
+
+      assert Sections.get_section!(section_id).learning_model_version == :lkt_aoa
+
+      set_project_learning_model(project, :naive)
+      assert Sections.get_section!(section_id).learning_model_version == :lkt_aoa
+    end
+
+    test "copies the Project onboarding fields to a new Section", context do
+      welcome_title = %{
+        "type" => "p",
+        "children" => [
+          %{
+            "id" => "project-welcome-title",
+            "type" => "p",
+            "children" => [%{"text" => "Welcome from the project"}]
+          }
+        ]
+      }
+
+      description = String.duplicate("Project description", 20)
+
+      project =
+        context.project
+        |> Project.changeset(%{
+          description: description,
+          welcome_title: welcome_title,
+          encouraging_subtitle: "Project subtitle"
+        })
+        |> Repo.update!()
+
+      user = insert(:user, independent_learner: true, can_create_sections: true)
+
+      publication = Oli.Publishing.get_latest_published_publication_by_slug(project.slug)
+
+      assert {:ok, section_id, _slug} =
+               Delivery.create_section(
+                 request!(
+                   user,
+                   "publication:#{publication.id}",
+                   %{title: "Project onboarding Section"},
+                   SectionSpecification.direct()
+                 )
+               )
+
+      section = Sections.get_section!(section_id)
+      assert section.description == description
+      assert section.welcome_title == welcome_title
+      assert section.encouraging_subtitle == "Project subtitle"
+    end
+
+    @tag capture_log: true
+    test "refuses legacy creation with no user", context do
+      sections_before = Repo.aggregate(Section, :count, :id)
+
+      for source <- [
+            "project:#{context.project.id}",
+            "publication:#{context.publication.id}",
+            "product:#{context.product.id}"
+          ] do
+        assert {:error, _message} =
+                 SectionCreationRequest.new(
+                   nil,
+                   source,
+                   %{title: "Unauthorized Section"},
+                   SectionSpecification.direct()
+                 )
+      end
+
+      assert Repo.aggregate(Section, :count, :id) == sections_before
+    end
+
+    test "copies the blueprint model even when it differs from its base Project", context do
+      product = set_section_learning_model(context.product, :lkt_aoa)
+      assert context.project.learning_model_version == :naive
+
+      context_id = "product-learning-model-#{System.unique_integer([:positive])}"
+
+      cache_lti_params(
+        put_in(
+          context.lti_params,
+          ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
+          context_id
+        ),
+        context.user.id
+      )
+
+      assert {:ok, section_id, _slug} =
+               Delivery.create_section(
+                 request!(
+                   context.user,
+                   "product:#{product.id}",
+                   %{title: "Product model Section"},
+                   SectionSpecification.lti(context.user, context_id)
+                 )
+               )
+
+      section = Sections.get_section!(section_id)
+      assert section.learning_model_version == :lkt_aoa
+      assert section.blueprint_id == product.id
+
+      set_section_learning_model(product, :naive)
+      assert Sections.get_section!(section_id).learning_model_version == :lkt_aoa
+    end
+
+    test "creates an independent course from a section source identifier", context do
+      user =
+        context.user
+        |> Ecto.Changeset.change(independent_learner: true)
+        |> Repo.update!()
+
+      {:ok, source} =
+        Oli.Delivery.Sections.Blueprint.duplicate(context.product, %{
+          type: :enrollable,
+          title: "Existing Course",
+          open_and_free: true,
+          blueprint_id: context.product.id
+        })
+
+      {:ok, _} =
+        Sections.enroll(user.id, source.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+
+      student = insert(:user)
+
+      {:ok, _} =
+        Sections.enroll(student.id, source.id, [ContextRoles.get_role(:context_learner)])
+
+      attrs =
+        %{
+          title: "Copied Course",
+          start_date: ~U[2026-08-01 12:00:00Z],
+          end_date: ~U[2026-12-01 12:00:00Z]
+        }
+
+      {:ok, copy_options} =
+        CopyOptions.for_previous_section([
+          :content,
+          :section_settings,
+          :assessment_settings,
+          :ai_settings
+        ])
+
+      request = request!(user, "section:#{source.id}", attrs, SectionSpecification.direct())
+
+      assert {:ok, copied_section_id, _slug} =
+               Delivery.create_section(%{request | copy_options: copy_options})
+
+      copy = Sections.get_section!(copied_section_id)
+
+      assert copy.id != source.id
+      assert copy.base_project_id == source.base_project_id
+      assert copy.blueprint_id == source.blueprint_id
+      assert copy.title == "Copied Course"
+      assert copy.context_id != source.context_id
+      assert copy.root_section_resource_id != source.root_section_resource_id
+
+      destination_enrollments = Sections.list_enrollments(copy.slug)
+      assert Enum.map(destination_enrollments, & &1.user_id) == [user.id]
+
+      assert Enum.any?(hd(destination_enrollments).context_roles, fn role ->
+               role.id == ContextRoles.get_role(:context_instructor).id
+             end)
+    end
+
+    @tag capture_log: true
+    test "refuses an identityless section-copy request", context do
+      {:ok, source} =
+        Oli.Delivery.Sections.Blueprint.duplicate(context.product, %{
+          type: :enrollable,
+          title: "Existing Course",
+          open_and_free: true,
+          blueprint_id: context.product.id
+        })
+
+      assert {:error, _message} =
+               Delivery.create_section(%SectionCreationRequest{
+                 actor: nil,
+                 source: {:section, source.id},
+                 attrs: %{title: "Unauthorized Copy"},
+                 section_spec: SectionSpecification.direct()
+               })
     end
 
     test "creates section with contained objectives from publication if it does not exist",
@@ -287,16 +496,16 @@ defmodule Oli.DeliveryTest do
 
       cache_lti_params(lti_params, context.user.id)
 
-      changeset = Sections.change_section(%Section{title: title})
-
       section_spec = SectionSpecification.lti(context.user, context_id)
 
       assert {:ok, returned_section_id, _returned_section_slug} =
                Delivery.create_section(
-                 changeset,
-                 "publication:#{context.publication.id}",
-                 context.user,
-                 section_spec
+                 request!(
+                   context.user,
+                   "publication:#{context.publication.id}",
+                   %{title: title},
+                   section_spec
+                 )
                )
 
       # Get the created section for verification
@@ -399,16 +608,16 @@ defmodule Oli.DeliveryTest do
 
       cache_lti_params(lti_params, context.user.id)
 
-      changeset = Sections.change_section(%Section{title: context.product.title})
-
       section_spec = SectionSpecification.lti(context.user, context.product.context_id)
 
       assert {:ok, returned_section_id, _returned_section_slug} =
                Delivery.create_section(
-                 changeset,
-                 "publication:#{context.publication.id}",
-                 context.user,
-                 section_spec
+                 request!(
+                   context.user,
+                   "product:#{context.product.id}",
+                   %{title: context.product.title},
+                   section_spec
+                 )
                )
 
       # Get the created section for verification
@@ -498,5 +707,26 @@ defmodule Oli.DeliveryTest do
                  context.resources.obj_resource_f.id
                ])
     end
+  end
+
+  defp set_project_learning_model(project, learning_model_version) do
+    project
+    |> Project.trusted_learning_model_changeset(%{
+      learning_model_version: learning_model_version
+    })
+    |> Repo.update!()
+  end
+
+  defp set_section_learning_model(section, learning_model_version) do
+    section
+    |> Section.trusted_learning_model_changeset(%{
+      learning_model_version: learning_model_version
+    })
+    |> Repo.update!()
+  end
+
+  defp request!(actor, source, attrs, section_spec) do
+    {:ok, request} = SectionCreationRequest.new(actor, source, attrs, section_spec)
+    request
   end
 end

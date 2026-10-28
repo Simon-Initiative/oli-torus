@@ -1,6 +1,11 @@
 /* eslint-disable */
 
 module.exports = {
+  // Black Alpha
+  'Black-Alpha-000': {
+    light: '#000000',
+    dark: '#000000',
+  },
   // Background
   'Background-bg-primary': {
     light: '#F3F4F8',
@@ -92,6 +97,10 @@ module.exports = {
   'Fill-Buttons-fill-primary-muted-hover': {
     light: '#CADFFC',
     dark: '#063A85',
+  },
+  'Fill-Buttons-fill-primary-disabled': {
+    light: '#B0B4BF',
+    dark: '#3B3740',
   },
   'Fill-Buttons-fill-secondary': {
     light: '#FFFFFF1A',
@@ -199,6 +208,47 @@ module.exports = {
     light: '#FF5757',
     dark: '#D01B1B',
   },
+  // Graph
+  'Graph-dot-low-inactive': {
+    light: '#FFA9BE',
+    dark: '#972525',
+  },
+  'Graph-dot-high-inactive': {
+    light: '#B8E6D3',
+    dark: '#6F9D8A',
+  },
+  'Graph-dot-medium-inactive': {
+    light: '#FFB387',
+    dark: '#795746',
+  },
+  'Graph-dot-notenoughinfo-inactive': {
+    light: '#D6DCE4',
+    dark: '#757682',
+  },
+  'Graph-dot-low-active': {
+    light: '#FB2157',
+    dark: '#FB2157',
+  },
+  'Graph-dot-high-active': {
+    light: '#218358',
+    dark: '#39E581',
+  },
+  'Graph-dot-medium-active': {
+    light: '#A94F0E',
+    dark: '#FFB387',
+  },
+  'Graph-dot-notenoughinfo-active': {
+    light: '#757682',
+    dark: '#757682',
+  },
+  'Graph-region-excelling': {
+    light: '#DFFAED',
+    dark: '#3D4F47',
+  },
+  'Graph-region-limited-activity': {
+    light: '#F3F4F8',
+    dark: '#353740',
+  },
   // Border
   'Border-border-muted': {
     light: '#F3F4F8',
@@ -249,6 +299,10 @@ module.exports = {
     light: '#FFFFFF',
     dark: '#FFFFFF',
   },
+  'Text-text-charcoal': {
+    light: '#353740',
+    dark: '#353740',
+  },
   'Text-text-high': {
     light: '#353740',
     dark: '#EEEBF5',
@@ -278,7 +332,7 @@ module.exports = {
     dark: '#99CCFF',
   },
   'Text-text-danger': {
-    light: '#CE2C31',
+    light: '#B60202',
     dark: '#FF8787',
   },
   'Text-text-danger-hover': {
@@ -411,6 +465,10 @@ module.exports = {
   'Specially-Tokens-Background-lesson-page': {
     light: '#E6E9F2',
     dark: '#1B191F',
+  },
+  'Specially-Tokens-Background-course-cards': {
+    light: '#FFFFFF',
+    dark: '#3B3740',
   },
   // Specially Tokens/Fill
   'Specially-Tokens-Fill-fill-avatar': {

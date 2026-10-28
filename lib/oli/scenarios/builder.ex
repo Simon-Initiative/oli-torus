@@ -10,6 +10,48 @@ defmodule Oli.Scenarios.Builder do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.ResourceType
 
+  @empty_page_content %{"version" => "0.1.0", "model" => []}
+
+  @doc """
+  Creates and attaches a scenario hierarchy node with the canonical revision defaults.
+
+  Accepting only `:container` or `:page` keeps raw content attributes out of scenario call sites and
+  guarantees that every created node has traversable page content.
+  """
+  @spec add_hierarchy_node(
+          Oli.Resources.Revision.t(),
+          :container | :page,
+          String.t(),
+          Oli.Accounts.Author.t(),
+          Oli.Authoring.Course.Project.t()
+        ) :: {:ok, Oli.Resources.Revision.t()} | {:error, term()}
+  def add_hierarchy_node(parent, type, title, author, project) do
+    ContainerEditor.add_new(parent, hierarchy_node_attrs(type, title), author, project)
+  end
+
+  defp hierarchy_node_attrs(:container, title) when is_binary(title) do
+    %{
+      objectives: %{"attached" => []},
+      children: [],
+      content: @empty_page_content,
+      title: title,
+      graded: false,
+      resource_type_id: ResourceType.id_for_container()
+    }
+  end
+
+  defp hierarchy_node_attrs(:page, title) when is_binary(title) do
+    %{
+      objectives: %{"attached" => []},
+      children: [],
+      content: @empty_page_content,
+      title: title,
+      graded: false,
+      max_attempts: 0,
+      resource_type_id: ResourceType.id_for_page()
+    }
+  end
+
   def build!(
         %ProjectSpec{
           title: title,
@@ -17,14 +59,20 @@ defmodule Oli.Scenarios.Builder do
           objectives: objectives,
           tags: tags,
           slug: slug,
-          visibility: visibility
+          visibility: visibility,
+          learning_model_version: learning_model_version
         },
         author,
         _institution
       ) do
     # Use the standard Oli.Authoring.Course.create_project infrastructure
     # that the UI uses when creating projects
-    {:ok, project_setup} = Course.create_project(title || "Test Project", author)
+    {:ok, project_setup} =
+      Course.create_project_from_archive(
+        title || "Test Project",
+        author,
+        learning_model_version || :naive
+      )
 
     %{
       project: project,
@@ -110,17 +158,7 @@ defmodule Oli.Scenarios.Builder do
          rev_map
        ) do
     # Use ContainerEditor to create and attach the page
-    attrs = %{
-      objectives: %{"attached" => []},
-      children: [],
-      content: %{"version" => "0.1.0", "model" => []},
-      title: title,
-      graded: false,
-      max_attempts: 0,
-      resource_type_id: ResourceType.id_for_page()
-    }
-
-    {:ok, page_rev} = ContainerEditor.add_new(parent_rev, attrs, author, proj)
+    {:ok, page_rev} = add_hierarchy_node(parent_rev, :page, title, author, proj)
 
     # Parent revision has been updated, so fetch the latest version
     updated_parent_rev = AuthoringResolver.from_resource_id(proj.slug, parent_rev.resource_id)
@@ -144,16 +182,7 @@ defmodule Oli.Scenarios.Builder do
          rev_map
        ) do
     # Use ContainerEditor to create and attach the container
-    attrs = %{
-      objectives: %{"attached" => []},
-      children: [],
-      content: %{},
-      title: title,
-      graded: false,
-      resource_type_id: ResourceType.id_for_container()
-    }
-
-    {:ok, cont_rev} = ContainerEditor.add_new(parent_rev, attrs, author, proj)
+    {:ok, cont_rev} = add_hierarchy_node(parent_rev, :container, title, author, proj)
 
     # Build children of this container (note: cont_rev is already the latest)
     {id_map_updated, rev_map_updated} =
@@ -191,24 +220,26 @@ defmodule Oli.Scenarios.Builder do
       {:ok, %{revision: parent_rev}} =
         ObjectiveEditor.add_new(%{title: objective.title}, author, project)
 
-      parent_map = Map.put(acc, objective.title, parent_rev)
-
-      # Create sub-objectives if any
+      # Create sub-objectives if any, attaching each to the parent. Each
+      # attachment produces a new parent revision (its `children` list
+      # grows), so the returned `container` -- not the original `parent_rev`
+      # -- is the up-to-date parent once all children are attached.
       case objective[:children] do
-        nil ->
-          parent_map
-
-        [] ->
-          parent_map
+        children when children in [nil, []] ->
+          Map.put(acc, objective.title, parent_rev)
 
         children when is_list(children) ->
-          # Create each sub-objective and attach to parent
-          Enum.reduce(children, parent_map, fn child_title, child_acc ->
-            {:ok, %{revision: child_rev}} =
-              ObjectiveEditor.add_new(%{title: child_title}, author, project, parent_rev.slug)
+          {child_map, updated_parent_rev} =
+            Enum.reduce(children, {%{}, parent_rev}, fn child_title, {child_acc, _parent_rev} ->
+              {:ok, %{revision: child_rev, container: updated_parent_rev}} =
+                ObjectiveEditor.add_new(%{title: child_title}, author, project, parent_rev.slug)
 
-            Map.put(child_acc, child_title, child_rev)
-          end)
+              {Map.put(child_acc, child_title, child_rev), updated_parent_rev}
+            end)
+
+          acc
+          |> Map.put(objective.title, updated_parent_rev)
+          |> Map.merge(child_map)
       end
     end)
   end

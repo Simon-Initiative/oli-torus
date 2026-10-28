@@ -101,6 +101,7 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
       <div class="flex flex-row items-center justify-between">
         <TextSearch.render
           id="text-search"
+          aria_label="Search external tools"
           class="lg:!max-w-[33%] w-full"
           text={@options.text_search}
           event_target={nil}

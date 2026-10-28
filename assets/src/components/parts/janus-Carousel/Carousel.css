@@ -50,6 +50,11 @@
   padding-top: 8px;
   padding-bottom: 32px;
 }
+.janus-image-carousel figcaption.janus-rich-label p,
+.janus-image-carousel figcaption.janus-rich-label div {
+  margin: 0;
+  line-height: inherit;
+}
 .janus-image-carousel .no-images {
   width: 100%;
   font-size: 18px;

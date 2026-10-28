@@ -21,7 +21,15 @@ The primary goal is to improve the quality of the branch's changes, not to perfo
      3. `assisted`
 
 2. State the base branch before doing cleanup work.
-   - Default to `master` unless the user says otherwise.
+   - Use the base the user provided, if any.
+   - Otherwise, use the base of the branch's open pull request when one exists
+     (`gh pr view --json baseRefName --jq .baseRefName`).
+   - Otherwise, pick the closest candidate among `origin/master` and integration branches
+     matching `origin/integ-*`, `origin/story/*`, `origin/bug/*`, or `origin/task/*`.
+     Match integration branch prefixes case-insensitively, as documented in
+     `guides/process/development.md`. Choose the candidate whose merge-base with `HEAD`
+     has the fewest commits between it and `HEAD`. If the candidates are equally close,
+     ask the user.
    - Make the chosen base explicit so the user can correct it.
 
 3. Use the branch diff against the base branch as the primary cleanup boundary.
@@ -98,12 +106,29 @@ Evaluate the changed surface for the following:
    - Search beyond the current edit loop when needed.
    - Confirm duplication with codebase facts before proposing consolidation.
 
+9. Stale added files and orphaned entrypoints
+   - For every file added by the branch, identify how it is reached from an active root:
+     application code, tests, scripts, workflows, config, docs that are meant to be executed,
+     or a documented convention used by an existing runner.
+   - Search by path, basename, exported module/class/function names, and any string-based
+     references the file introduces. This is required for dynamic systems where static imports
+     are not enough, such as YAML scenario hooks, workflow paths, reflection-based module names,
+     route/action names, or generated-file conventions.
+   - If an added file is only referenced by another added file, continue tracing that chain until
+     it reaches an active root. If the chain has no active root, classify the files as stale
+     iteration residue.
+   - For tests and scenario assets, verify that the relevant runner, spec, workflow, or documented
+     command actually invokes the new file. A scenario fixture, hook, or support module should not
+     remain only because it could be useful later.
+   - Prefer proposing deletion when a whole added file belongs to an abandoned setup path and
+     removing it does not affect the active branch behavior. Keep the evidence in the finding.
+
 ## Workflow
 
 1. Determine the mode before starting the cleanup pass.
    - If the user already provided `self-driving`, `smart`, or `assisted`, confirm that mode and proceed without asking again.
    - Otherwise, in the first reply include:
-     - the explicit base branch, defaulting to `master` unless already provided
+     - the explicit base branch, detected as described in Scope Rules step 2 unless already provided
      - one short sentence explaining the cleanup frame
      - a numbered list:
        1. `self-driving`: fully automatic cleanup pass; research, decide, and implement without per-finding approval
@@ -118,8 +143,12 @@ Evaluate the changed surface for the following:
 
 3. Build context from facts.
    - Inspect the diff against the base branch.
+   - List added, modified, deleted, and renamed files separately so newly added files can be
+     checked for an active entrypoint instead of only reviewed internally.
    - Read the changed code.
    - Search nearby modules or components when checking for duplication, helper reuse, or better module placement.
+   - For added files, trace usage from each file to an active root before deciding that the file
+     belongs in the branch.
    - Do not guess about usage, duplication, or business intent.
 
 4. Classify findings before proposing edits.
@@ -250,6 +279,9 @@ Use this mode for a rule-by-rule walkthrough with the user before making any edi
 - Do not add docs, specs, or comments to unchanged code just because a file changed.
 - Do not expand cleanup into unrelated repo-wide refactors.
 - Do not remove assigns, attrs, props, or helper code unless usage has been checked.
+- Do not keep an added file solely because it is internally valid or referenced by another
+  unrooted added file. It must have an active caller, runner, workflow, config entry, or documented
+  convention that is in scope for the branch.
 - Do not introduce comments with ticket IDs, person names, or ephemeral discussion context.
 - Do not create speculative abstraction layers.
 - Keep summaries concise and only go deep on the current finding or rule under discussion.

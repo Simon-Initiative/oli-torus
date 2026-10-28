@@ -2,6 +2,8 @@ import React, { CSSProperties, useCallback, useEffect, useRef, useState } from '
 import debounce from 'lodash/debounce';
 import { clone } from 'utils/common';
 import { AuthorPartComponentProps } from '../types/parts';
+import GifPlayer from './GifPlayer';
+import { isGifSrc } from './hooks/useGifPlayer';
 import { ImageModel } from './schema';
 
 // 🔹 Module-level variable persists across re-renders and re-mounts
@@ -140,24 +142,37 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
       onSaveConfigure({ id, snapshot: modelClone });
     }
   };
+  const isGif = isGifSrc(src);
+
   return ready ? (
-    <img
-      ref={imageContainerRef}
-      onLoad={() => {
-        // Only manipulate size if lockAspectRatio is checked AND we're not in responsive layout with scaleContent
-        // When scaleContent is true (including when both flags are checked), CSS handles sizing
-        if (lockAspectRatio && !(isResponsiveLayout && scaleContent === true)) {
-          manipulateImageSize(model, false);
-        }
-      }}
-      draggable="false"
-      alt={decorative ? '' : alt}
-      aria-hidden={decorative ? true : undefined}
-      role={decorative ? 'presentation' : undefined}
-      src={src}
-      className={imageClasses || undefined}
-      style={imageStyles}
-    />
+    isGif ? (
+      <GifPlayer
+        src={src}
+        alt={alt}
+        decorative={decorative}
+        className={imageClasses || undefined}
+        style={imageStyles}
+        dataJanusType={tagName}
+      />
+    ) : (
+      <img
+        ref={imageContainerRef}
+        onLoad={() => {
+          // Only manipulate size if lockAspectRatio is checked AND we're not in responsive layout with scaleContent
+          // When scaleContent is true (including when both flags are checked), CSS handles sizing
+          if (lockAspectRatio && !(isResponsiveLayout && scaleContent === true)) {
+            manipulateImageSize(model, false);
+          }
+        }}
+        draggable="false"
+        alt={decorative ? '' : alt}
+        aria-hidden={decorative ? true : undefined}
+        role={decorative ? 'presentation' : undefined}
+        src={src}
+        className={imageClasses || undefined}
+        style={imageStyles}
+      />
+    )
   ) : null;
 };
 

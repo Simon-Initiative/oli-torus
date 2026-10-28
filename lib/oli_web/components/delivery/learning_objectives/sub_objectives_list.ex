@@ -6,7 +6,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList do
     {:ok, sub_objectives_table_model} =
       OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel.new(
         assigns.sub_objectives_data,
-        assigns.parent_unique_id
+        assigns.parent_unique_id,
+        assigns[:text_search],
+        assigns[:confidence_supported?] || false,
+        assigns[:sub_objective_confidences] || %{}
       )
 
     socket =
@@ -54,7 +57,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList do
     {:ok, new_table_model} =
       OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel.new(
         sorted_rows,
-        socket.assigns[:parent_unique_id]
+        socket.assigns[:parent_unique_id],
+        socket.assigns[:text_search],
+        socket.assigns[:confidence_supported?] || false,
+        socket.assigns[:sub_objective_confidences] || %{}
       )
 
     updated_table_model =

@@ -6,6 +6,8 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { hasAiTriggerPrompt, invokeAdaptiveAiTrigger } from '../aiTrigger';
 import { PartComponentProps } from '../types/parts';
+import GifPlayer from './GifPlayer';
+import { isGifSrc } from './hooks/useGifPlayer';
 import { ImageModel } from './schema';
 
 const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
@@ -182,33 +184,48 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
       },
     });
 
+  const sharedStyle: CSSProperties = {
+    ...imageStyles,
+    ...(aiTriggerAvailable ? { cursor: 'pointer' } : {}),
+  };
+  const isGif = isGifSrc(imgSrc);
+
   return ready ? (
-    <img
-      data-janus-type={tagName}
-      data-testid="janus-image"
-      draggable="false"
-      alt={decorative ? '' : alt}
-      aria-hidden={decorative ? true : undefined}
-      role={decorative ? 'presentation' : aiTriggerAvailable ? 'button' : undefined}
-      src={imgSrc}
-      className={imageClasses || undefined}
-      onClick={aiTriggerAvailable ? () => void fireAiTrigger() : undefined}
-      onKeyDown={
-        aiTriggerAvailable
-          ? (event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                void fireAiTrigger();
+    isGif ? (
+      <GifPlayer
+        src={imgSrc}
+        alt={alt}
+        decorative={decorative}
+        className={imageClasses || undefined}
+        style={sharedStyle}
+        dataJanusType={tagName}
+        onClick={aiTriggerAvailable ? () => void fireAiTrigger() : undefined}
+      />
+    ) : (
+      <img
+        data-janus-type={tagName}
+        data-testid="janus-image"
+        draggable="false"
+        alt={decorative ? '' : alt}
+        aria-hidden={decorative ? true : undefined}
+        role={decorative ? 'presentation' : aiTriggerAvailable ? 'button' : undefined}
+        src={imgSrc}
+        className={imageClasses || undefined}
+        onClick={aiTriggerAvailable ? () => void fireAiTrigger() : undefined}
+        onKeyDown={
+          aiTriggerAvailable
+            ? (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  void fireAiTrigger();
+                }
               }
-            }
-          : undefined
-      }
-      tabIndex={aiTriggerAvailable ? 0 : undefined}
-      style={{
-        ...imageStyles,
-        ...(aiTriggerAvailable ? { cursor: 'pointer' } : {}),
-      }}
-    />
+            : undefined
+        }
+        tabIndex={aiTriggerAvailable ? 0 : undefined}
+        style={sharedStyle}
+      />
+    )
   ) : null;
 };
 

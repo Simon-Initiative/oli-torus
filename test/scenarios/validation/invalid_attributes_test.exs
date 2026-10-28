@@ -4,6 +4,23 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
   alias Oli.Scenarios.DirectiveParser
 
   describe "directive attribute validation" do
+    test "post_reaction directive with unknown attribute fails" do
+      yaml = """
+      - post_reaction:
+          post: "note"
+          student: "student"
+          reaction: "like"
+          action: "add"
+          emoji: "thumbs_up"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'post_reaction' directive: \["emoji"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "project directive with unknown attribute fails" do
       yaml = """
       - project:
@@ -35,6 +52,46 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    fn ->
                      DirectiveParser.parse_yaml!(yaml)
                    end
+    end
+
+    test "section directive rejects an invalid assistant_enabled value" do
+      yaml = """
+      - section:
+          name: "test_section"
+          assistant_enabled: "enabled"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid boolean for assistant_enabled: enabled/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
+    test "section directive rejects an empty assistant service config name" do
+      yaml = """
+      - section:
+          name: "test_section"
+          assistant_enabled: true
+          assistant_service_config: "  "
+      """
+
+      assert_raise RuntimeError, ~r/Invalid non-empty string for assistant_service_config/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
+    test "project directive rejects an invalid learning model" do
+      yaml = """
+      - project:
+          name: "project1"
+          title: "Project 1"
+          root:
+            children: []
+          learning_model_version: "experimental"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid learning_model_version/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
     end
 
     test "clone directive with extra attributes fails" do
@@ -306,6 +363,23 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "learning_objectives assertion with unknown attribute fails" do
+      yaml = """
+      - assert:
+          learning_objectives:
+            section: "section1"
+            includes:
+              - "Objective"
+            hidden: false
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'learning_objectives assertion' directive: \["hidden"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "wait directive with unknown attribute fails" do
       yaml = """
       - wait:
@@ -561,6 +635,7 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           from: "test"
           type: "enrollable"
           registration_open: true
+          assistant_enabled: true
 
       - user:
           name: "testuser"

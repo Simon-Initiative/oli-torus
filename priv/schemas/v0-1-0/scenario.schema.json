@@ -70,6 +70,19 @@
         }
       ]
     },
+    "progressProfile": {
+      "type": "string",
+      "enum": ["high_proficiency", "steady_learner", "persistent_learner", "low_engagement"]
+    },
+    "progressCohort": {
+      "type": "object",
+      "required": ["profile", "count"],
+      "additionalProperties": false,
+      "properties": {
+        "profile": {"$ref": "#/definitions/progressProfile"},
+        "count": {"type": "integer", "minimum": 1, "maximum": 100}
+      }
+    },
     "moneyLike": {
       "type": "object",
       "required": [
@@ -378,12 +391,6 @@
             ]
           },
           "student": {
-            "type": "string"
-          },
-          "page": {
-            "type": "string"
-          },
-          "container": {
             "type": "string"
           }
         }
@@ -763,6 +770,19 @@
               "archived"
             ]
           },
+          "reaction": {
+            "type": "string",
+            "enum": [
+              "like"
+            ]
+          },
+          "reaction_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reacted_by": {
+            "type": "string"
+          },
           "contains_discussions": {
             "$ref": "#/definitions/booleanLike"
           },
@@ -771,6 +791,73 @@
           },
           "anonymous_posting": {
             "$ref": "#/definitions/booleanLike"
+          }
+        }
+      },
+      "annotationAssertion": {
+        "type": "object",
+        "required": [
+          "post"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "post": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string"
+          },
+          "page": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "approved",
+              "deleted",
+              "archived"
+            ]
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "public"
+            ]
+          },
+          "annotation_type": {
+            "type": "string",
+            "enum": [
+              "none",
+              "point",
+              "range"
+            ]
+          },
+          "block_id": {
+            "type": "string"
+          },
+          "reply_to": {
+            "type": "string"
+          },
+          "reaction": {
+            "type": "string",
+            "enum": [
+              "like"
+            ]
+          },
+          "reaction_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reacted_by": {
+            "type": "string"
           }
         }
       },
@@ -1204,6 +1291,49 @@
           }
         }
       },
+      "learningObjectivesAssertion": {
+        "type": "object",
+        "required": [
+          "section"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "section": {
+            "type": "string"
+          },
+          "container": {
+            "type": "string"
+          },
+          "includes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "excludes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        },
+        "anyOf": [
+          {
+            "required": ["includes"],
+            "properties": {
+              "includes": { "minItems": 1 }
+            }
+          },
+          {
+            "required": ["excludes"],
+            "properties": {
+              "excludes": { "minItems": 1 }
+            }
+          }
+        ]
+      },
       "insightsExpected": {
         "type": "object",
         "additionalProperties": false,
@@ -1332,11 +1462,17 @@
           "activity_objectives": {
             "$ref": "#/definitions/activityObjectivesAssertion"
           },
+          "learning_objectives": {
+            "$ref": "#/definitions/learningObjectivesAssertion"
+          },
           "insights": {
             "$ref": "#/definitions/insightsAssertion"
           },
           "discussion": {
             "$ref": "#/definitions/discussionAssertion"
+          },
+          "annotation": {
+            "$ref": "#/definitions/annotationAssertion"
           },
           "instructor_dashboard_summary": {
             "$ref": "#/definitions/instructorDashboardSummaryAssertion"
@@ -1402,11 +1538,17 @@
           "activity_objectives": {
             "$ref": "#/definitions/activityObjectivesAssertion"
           },
+          "learning_objectives": {
+            "$ref": "#/definitions/learningObjectivesAssertion"
+          },
           "insights": {
             "$ref": "#/definitions/insightsAssertion"
           },
           "discussion": {
             "$ref": "#/definitions/discussionAssertion"
+          },
+          "annotation": {
+            "$ref": "#/definitions/annotationAssertion"
           },
           "instructor_dashboard_summary": {
             "$ref": "#/definitions/instructorDashboardSummaryAssertion"
@@ -2294,14 +2436,21 @@
                   "slug": {
                     "type": "string"
                   },
-                  "visibility": {
-                    "type": "string",
-                    "enum": [
-                      "authors",
-                      "selected",
-                      "global"
-                    ]
-                  }
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "authors",
+            "selected",
+            "global"
+          ]
+        },
+        "learning_model_version": {
+          "type": "string",
+          "enum": [
+            "naive",
+            "lkt_aoa"
+          ]
+        }
                 }
               }
             }
@@ -2376,8 +2525,15 @@
                   "open_and_free": {
                     "$ref": "#/definitions/booleanLike"
                   },
-                  "requires_enrollment": {
+            "requires_enrollment": {
+              "$ref": "#/definitions/booleanLike"
+            },
+            "assistant_enabled": {
                     "$ref": "#/definitions/booleanLike"
+                  },
+                  "assistant_service_config": {
+                    "type": "string",
+                    "minLength": 1
                   },
                   "requires_payment": {
                     "$ref": "#/definitions/booleanLike"
@@ -2781,6 +2937,33 @@
                   },
                   "institution_url": {
                     "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "ownership"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "ownership": {
+                "type": "object",
+                "required": [
+                  "author",
+                  "institution"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "author": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "institution": {
+                    "type": "string",
+                    "minLength": 1
                   }
                 }
               }
@@ -3706,6 +3889,9 @@
                 ],
                 "additionalProperties": false,
                 "properties": {
+                  "name": {
+                    "type": "string"
+                  },
                   "student": {
                     "type": "string"
                   },
@@ -3717,6 +3903,52 @@
                   },
                   "body": {
                     "type": "string"
+                  },
+                  "reply_to": {
+                    "type": "string"
+                  },
+                  "block_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "post_reaction"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "post_reaction": {
+                "type": "object",
+                "required": [
+                  "post",
+                  "student",
+                  "reaction",
+                  "action"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "post": {
+                    "type": "string"
+                  },
+                  "student": {
+                    "type": "string"
+                  },
+                  "reaction": {
+                    "type": "string",
+                    "enum": [
+                      "like"
+                    ]
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "remove"
+                    ]
                   }
                 }
               }
@@ -3955,6 +4187,62 @@
                   "users": {"type": "array", "items": {"type": "string"}},
                   "products": {"type": "array", "items": {"type": "string"}}
                 }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["bulk_create_enroll_users"],
+            "additionalProperties": false,
+            "properties": {
+              "bulk_create_enroll_users": {
+                "type": "object",
+                "required": ["section"],
+                "additionalProperties": false,
+                "properties": {
+                  "section": {"type": "string", "minLength": 1},
+                  "prefix": {"type": "string", "minLength": 1, "maxLength": 40},
+                  "instructors": {"type": "integer", "minimum": 0, "maximum": 1000},
+                  "learners": {"type": "integer", "minimum": 0, "maximum": 10000}
+                },
+                "anyOf": [
+                  {"required": ["instructors"], "properties": {"instructors": {"minimum": 1}}},
+                  {"required": ["learners"], "properties": {"learners": {"minimum": 1}}}
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["simulate_progress"],
+            "additionalProperties": false,
+            "properties": {
+              "simulate_progress": {
+                "type": "object",
+                "required": ["section"],
+                "additionalProperties": false,
+                "properties": {
+                  "section": {"type": "string", "minLength": 1},
+                  "users": {"type": "array", "minItems": 1, "maxItems": 100, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+                  "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+                  "profile": {"$ref": "#/definitions/progressProfile"},
+                  "cohorts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "items": {"$ref": "#/definitions/progressCohort"}
+                  },
+                  "timing": {
+                    "type": "object",
+                    "required": ["mode"],
+                    "additionalProperties": false,
+                    "properties": {"mode": {"type": "string", "enum": ["fast", "paced"]}}
+                  }
+                },
+                "oneOf": [
+                  {"required": ["profile"], "not": {"required": ["cohorts"]}},
+                  {"required": ["cohorts"], "not": {"required": ["profile"]}}
+                ]
               }
             }
           },

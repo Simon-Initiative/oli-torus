@@ -11,6 +11,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
+import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
 import './Carousel.css';
 import { CarouselModel } from './schema';
@@ -241,7 +242,7 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
     const slide = images[slideIndex];
     const slideText = `Slide ${slideIndex + 1} of ${images.length}`;
     const altText = slide?.alt?.trim();
-    const captionText = slide?.caption?.trim();
+    const captionText = htmlToPlainText(slide?.caption || '');
     const details = [altText, captionText].filter(Boolean).join('. ');
 
     setViewedSlides((viewedSlides) => [...viewedSlides, slideIndex]);
@@ -310,9 +311,12 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
                   aria-describedby={image.caption ? `carousel-caption-${id}-${index}` : undefined}
                 />
                 {image.caption && (
-                  <figcaption id={`carousel-caption-${id}-${index}`} ref={captionRefs[index]}>
-                    {image.caption}
-                  </figcaption>
+                  <figcaption
+                    id={`carousel-caption-${id}-${index}`}
+                    ref={captionRefs[index]}
+                    className="janus-rich-label"
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(image.caption) }}
+                  />
                 )}
               </figure>
             </SwiperSlide>

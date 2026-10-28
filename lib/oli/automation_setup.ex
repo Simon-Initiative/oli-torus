@@ -5,11 +5,18 @@ defmodule Oli.AutomationSetup do
   """
   alias Lti_1p3.Roles.ContextRoles
 
-  alias Oli.Repo
   alias Oli.Accounts.User
+  alias Oli.Analytics.Summary.ResourcePartResponse
+  alias Oli.Analytics.Summary.ResourceSummary
+  alias Oli.Analytics.Summary.ResponseSummary
   alias Oli.Analytics.Summary.StudentResponse
+  alias Oli.AutomationSetup.ProjectTeardownWorker
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectResource
+  alias Oli.Authoring.MediaLibrary.MediaItem
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Repo
   alias Oli.Resources.Resource
 
   alias Ecto.Multi
@@ -68,15 +75,40 @@ defmodule Oli.AutomationSetup do
     end
   end
 
-  # Tears down a test project
-  # Deletes:
-  # project
-  #   -> publications
-  #       -> publication_resources
-  #   -> project_resources
-  #       -> resources
-  #          -> revisions
-  #
+  @doc """
+  Validates an automation project and queues its full teardown.
+  """
+  @spec enqueue_project_teardown(String.t()) ::
+          %{success: true, queued: true, job_id: pos_integer()}
+          | %{success: false, message: String.t()}
+  def enqueue_project_teardown(slug) do
+    with {:ok, project} <-
+           Repo.one(from p in Project, where: p.slug == ^slug, preload: [:authors])
+           |> validate_project_for_teardown(),
+         {:ok, job} <-
+           %{project_slug: project.slug}
+           |> ProjectTeardownWorker.new()
+           |> Oban.insert() do
+      %{success: true, queued: true, job_id: job.id}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        Logger.error(
+          "Could not enqueue automation project teardown: #{inspect(changeset.errors)}"
+        )
+
+        %{success: false, message: "Could not queue project teardown"}
+
+      {:error, message} ->
+        %{success: false, message: message}
+
+      _ ->
+        %{success: false, message: "Unknown Reason"}
+    end
+  end
+
+  # Tears down a test project, including publications, project-resource
+  # associations, revisions, analytics rollups with non-cascading resource
+  # references, resources, and imported media.
   # Only works on automation-test projects
   def teardown_project(slug) do
     with {:ok, project} <-
@@ -93,16 +125,34 @@ defmodule Oli.AutomationSetup do
                  :publications
                ]
            )
-           |> has_project(),
-         # Only tear down projects where duplicates are not allowed
-         {:ok} <- no_duplicates(project),
-         # Only tear down projects with no authors
-         {:ok} <-
-           has_no_authors(project.authors) do
+           |> validate_project_for_teardown() do
       resource_ids = for r <- project.resources, do: r.id
+      publication_ids = for p <- project.publications, do: p.id
+
+      project_sections =
+        from(s in Section, where: s.base_project_id == ^project.id)
 
       result =
         Multi.new()
+        # Full-course archives can contain delivery sections in addition to the
+        # section created by automation setup. Release every section owned by
+        # this disposable project before revision deletion cascades into its
+        # section_resources.
+        |> Multi.update_all(
+          :clear_project_section_roots,
+          project_sections,
+          set: [root_section_resource_id: nil]
+        )
+        |> Multi.delete_all(:project_sections, project_sections)
+        # Delete section/publication pins before deleting publications. Sections created by automation
+        # usually clear these via section deletion, but projects may still have pinned publications from
+        # additional or stale section mappings.
+        |> Multi.delete_all(
+          :section_project_publications,
+          from(spp in SectionsProjectsPublications,
+            where: spp.project_id == ^project.id or spp.publication_id in ^publication_ids
+          )
+        )
         # Delete all the publications for this project, this will also get the publication_resources
         |> Multi.run(:publications, fn _, _ ->
           {:ok, Enum.each(project.publications, &Oli.Publishing.delete_publication/1)}
@@ -117,8 +167,31 @@ defmodule Oli.AutomationSetup do
           :revisions,
           from(r in Oli.Resources.Revision, where: r.resource_id in ^resource_ids)
         )
+        # These rollups reference resources with ON DELETE NO ACTION, so they
+        # must precede the resources themselves; response summaries also
+        # reference resource part responses, so they precede those too.
+        |> Multi.delete_all(
+          :resource_summaries,
+          from(rs in ResourceSummary, where: rs.resource_id in ^resource_ids)
+        )
+        |> Multi.delete_all(
+          :response_summaries,
+          from(rs in ResponseSummary,
+            where: rs.page_id in ^resource_ids or rs.activity_id in ^resource_ids
+          )
+        )
+        |> Multi.delete_all(
+          :resource_part_responses,
+          from(rpr in ResourcePartResponse, where: rpr.resource_id in ^resource_ids)
+        )
         # Delete the project resources
         |> Multi.delete_all(:resources, from(r in Resource, where: r.id in ^resource_ids))
+        # Importing a course archive brings its media along, and those rows
+        # reference the project with ON DELETE NO ACTION
+        |> Multi.delete_all(
+          :media_items,
+          from(m in MediaItem, where: m.project_id == ^project.id)
+        )
         |> Multi.delete(:project, project)
         |> Repo.transaction()
 
@@ -208,15 +281,18 @@ defmodule Oli.AutomationSetup do
       end
 
     {:ok, section} =
-      Oli.Delivery.Sections.create_section(%{
-        title: "Automation test section",
-        context_id: UUID.uuid4(),
-        start_date: Timex.now(),
-        end_date: Timex.add(Timex.now(), Timex.Duration.from_days(1)),
-        base_project_id: project.id,
-        open_and_free: true,
-        customizations: customizations
-      })
+      Oli.Delivery.Sections.create_section_from_source(
+        %{
+          title: "Automation test section",
+          context_id: UUID.uuid4(),
+          start_date: Timex.now(),
+          end_date: Timex.add(Timex.now(), Timex.Duration.from_days(1)),
+          base_project_id: project.id,
+          open_and_free: true,
+          customizations: customizations
+        },
+        project
+      )
 
     Oli.Delivery.Sections.create_section_resources(section, publication)
 
@@ -327,6 +403,14 @@ defmodule Oli.AutomationSetup do
     {:ok, project}
   end
 
+  defp validate_project_for_teardown(project) do
+    with {:ok, project} <- has_project(project),
+         {:ok} <- no_duplicates(project),
+         {:ok} <- has_no_authors(project.authors) do
+      {:ok, project}
+    end
+  end
+
   defp has_no_authors([]) do
     {:ok}
   end
@@ -394,7 +478,11 @@ defmodule Oli.AutomationSetup do
         # instead of leaving the user partially cleaned up.
         try do
           Repo.transaction(fn ->
-            Repo.delete_all(from(sr in StudentResponse, where: sr.user_id == ^user.id))
+            case user_type do
+              :user -> Repo.delete_all(from(sr in StudentResponse, where: sr.user_id == ^user.id))
+              :author -> :ok
+            end
+
             Repo.delete!(user)
           end)
 

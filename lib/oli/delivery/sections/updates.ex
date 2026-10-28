@@ -1,4 +1,6 @@
 defmodule Oli.Delivery.Sections.Updates do
+  @moduledoc "Applies publication changes while retaining section-owned curriculum and tool choices."
+
   require Logger
   import Ecto.Query, warn: false
 
@@ -12,6 +14,7 @@ defmodule Oli.Delivery.Sections.Updates do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
+  alias Oli.Lti.PlatformExternalTools
 
   alias Oli.Delivery.Sections.{
     Section,
@@ -26,6 +29,7 @@ defmodule Oli.Delivery.Sections.Updates do
                                     :scheduling_type,
                                     :manually_scheduled,
                                     :removed_from_schedule,
+                                    :secure_delivery,
                                     :start_date,
                                     :end_date,
                                     :collab_space_config,
@@ -46,6 +50,8 @@ defmodule Oli.Delivery.Sections.Updates do
                                   ]}
 
   @doc """
+  Serializes projection writes with JIT migration by locking the Section first.
+
   Gracefully applies the specified publication update to a given section by leaving the existing
   curriculum and section modifications in-tact while applying the structural changes that
   occurred between the old and new publication.
@@ -55,7 +61,12 @@ defmodule Oli.Delivery.Sections.Updates do
   This makes it simpler to apply changes to the existing curriculum but if necessary, this implementation
   could be extended to not just apply the changes to the first node found that contains the changed resource,
   but any/all nodes in the hierarchy which reference the changed resource.
+
+  Missing LTI selections (resource configurations chosen in external tools) are
+  initialized from the applied publication after destination resources and projections
+  are finalized. Initialization failure rolls back the update.
   """
+  @spec apply_publication_update(%Section{}, integer()) :: {:ok, %Section{}} | {:error, term()}
   def apply_publication_update(
         %Section{id: section_id} = section,
         publication_id
@@ -68,13 +79,21 @@ defmodule Oli.Delivery.Sections.Updates do
 
     result =
       Oli.Repo.transaction(fn ->
-        case do_update(section, project.id, current_publication, new_publication) do
-          {:ok, _} ->
-            SectionResourceMigration.migrate(section.id)
-            do_post_processing_steps(section)
+        SectionResourceMigration.lock_section!(section.id)
 
-          e ->
-            Oli.Repo.rollback(e)
+        updated_section =
+          case do_update(section, project.id, current_publication, new_publication) do
+            {:ok, _} ->
+              SectionResourceMigration.migrate(section.id)
+              do_post_processing_steps(section)
+
+            e ->
+              Oli.Repo.rollback(e)
+          end
+
+        case PlatformExternalTools.initialize_section_deep_links(section.id, publication_id) do
+          {:ok, _} -> updated_section
+          {:error, reason} -> Repo.rollback(reason)
         end
       end)
 
@@ -82,7 +101,7 @@ defmodule Oli.Delivery.Sections.Updates do
       {:ok, _} ->
         Oli.Delivery.Sections.SectionCache.clear(section.slug)
 
-        Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.DepotCoordinator.clear_synchronously(
           Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
           section_id
         )
@@ -103,9 +122,12 @@ defmodule Oli.Delivery.Sections.Updates do
   # Implements the logic to determine *how* to apply the update to the course section,
   # taking into account the update type (minor / major) and the source of the section
   # (project / product)
+  # Unchanged publications follow normal minor processing, allowing missing tool
+  # configurations to initialize without bypassing existing update stages.
   defp do_update(section, project_id, current_publication, new_publication) do
     case Publishing.get_publication_diff(current_publication, new_publication) do
-      %PublicationDiff{classification: :minor} = diff ->
+      %PublicationDiff{classification: classification} = diff
+      when classification in [:minor, :no_changes] ->
         do_minor_update(diff, section, project_id, new_publication)
 
       %PublicationDiff{classification: :major} = diff ->

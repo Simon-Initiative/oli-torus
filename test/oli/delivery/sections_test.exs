@@ -8,8 +8,10 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Utils.Seeder
   alias Oli.Factory
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.LinkedActivities
 
   alias Oli.Delivery.Sections.{
+    ContainedObjective,
     PostProcessing,
     SectionResource,
     SectionResourceDepot,
@@ -20,8 +22,10 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAccess
 
+  alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.ResourceType
+  alias Oli.Resources.Revision
   alias Lti_1p3.Roles.ContextRoles
 
   defp set_progress(
@@ -3554,7 +3558,7 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
-  describe "get_activities_for_objective/2" do
+  describe "LinkedActivities.get_activities_for_objective/2" do
     setup do
       setup_objectives_and_activities_test()
     end
@@ -3564,17 +3568,70 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{objective_a: objective_a},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
-      # Should return 1 activity that has objective A
-      assert length(result) == 1
+      # Includes objective A and activities attached to its sub-objectives.
+      assert length(result) == 3
 
-      activity = List.first(result)
+      activity = Enum.find(result, &(&1.resource_id == activities.page_1_mcq_1.resource_id))
       assert activity.resource_id == activities.page_1_mcq_1.resource_id
       assert activity.title == "Page 1 MCQ 1"
       assert activity.question_stem == "What is the capital of France?"
       assert activity.attempts == 0
-      assert activity.percent_correct == 0
+      assert is_nil(activity.percent_correct)
+      assert is_nil(activity.avg_score)
+    end
+
+    test "indexes only the objective's own activities by page", %{
+      section: section,
+      objectives: %{objective_a: objective_a},
+      activities: activities
+    } do
+      page =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Mixed objectives page",
+          activity_refs: [
+            activities.page_1_mcq_1.resource_id,
+            activities.page_4_mcq_1.resource_id
+          ],
+          graded: false
+        )
+
+      insert(:section_resource,
+        section: section,
+        project: section.base_project,
+        resource_id: page.resource_id,
+        revision_id: page.id,
+        resource_type_id: ResourceType.id_for_page(),
+        hidden: false
+      )
+
+      Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+        section.id
+      )
+
+      handler = {__MODULE__, make_ref()}
+      parent = self()
+
+      :ok =
+        :telemetry.attach(
+          handler,
+          [:oli, :delivery, :linked_activities, :load],
+          fn _, _, metadata, _ -> send(parent, {handler, metadata}) end,
+          nil
+        )
+
+      on_exit(fn -> :telemetry.detach(handler) end)
+
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
+
+      assert_received {^handler, %{activity_count: activity_count, page_group_count: page_groups}}
+      assert activity_count == length(result)
+      assert activities.page_1_mcq_1.resource_id in Enum.map(result, & &1.resource_id)
+      refute activities.page_4_mcq_1.resource_id in Enum.map(result, & &1.resource_id)
+      assert page_groups == 1
     end
 
     test "returns activities for objective C (multiple activities)", %{
@@ -3582,7 +3639,7 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{objective_c: objective_c},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, objective_c.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_c.resource_id)
 
       # Should return 3 activities that have objective C:
       # - page_1_mcq_4 (has both objective_b and objective_c)
@@ -3601,7 +3658,7 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{objective_d: objective_d},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, objective_d.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_d.resource_id)
 
       # Should return 2 activities that have objective D:
       # - page_4_mcq_2 (graded)
@@ -3618,7 +3675,8 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{sub_objective_a1: sub_objective_a1},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, sub_objective_a1.resource_id)
+      result =
+        LinkedActivities.get_activities_for_objective(section, sub_objective_a1.resource_id)
 
       # Should return 1 activity that has sub-objective A.1
       assert length(result) == 1
@@ -3631,7 +3689,7 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "returns empty list for non-existent objective", %{section: section} do
       non_existent_objective_id = 99999
-      result = Sections.get_activities_for_objective(section, non_existent_objective_id)
+      result = LinkedActivities.get_activities_for_objective(section, non_existent_objective_id)
 
       assert result == []
     end
@@ -3670,10 +3728,10 @@ defmodule Oli.Delivery.SectionsTest do
       Sections.rebuild_contained_objectives(section)
       Sections.PostProcessing.apply(section, :all)
 
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
-      # Should now return 2 activities (original + new one)
-      assert length(result) == 2
+      # Should now return 4 activities (direct + two sub-objective activities + new one)
+      assert length(result) == 4
 
       activity_no_stem_result =
         Enum.find(result, &(&1.resource_id == activity_no_stem.resource_id))
@@ -3685,14 +3743,15 @@ defmodule Oli.Delivery.SectionsTest do
       section: section,
       objectives: %{objective_a: objective_a}
     } do
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
-      # All activities should have 0 attempts and 0% correct when no attempts exist
+      # All activities should have no measured score when no attempts exist
       assert length(result) > 0
 
       Enum.each(result, fn activity ->
         assert activity.attempts == 0
-        assert activity.percent_correct == 0.0
+        assert is_nil(activity.percent_correct)
+        assert is_nil(activity.avg_score)
       end)
     end
 
@@ -3716,12 +3775,13 @@ defmodule Oli.Delivery.SectionsTest do
       ])
 
       # Get activities for objective A initially
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
       first_activity = List.first(result)
 
-      # Initially should have 0 attempts and 0% correct
+      # Initially there is no measured score
       assert first_activity.attempts == 0
-      assert first_activity.percent_correct == 0.0
+      assert is_nil(first_activity.percent_correct)
+      assert is_nil(first_activity.avg_score)
 
       # Create some attempts using the helper function
       # Student 1: 2 attempts, 1 correct (50%)
@@ -3739,7 +3799,8 @@ defmodule Oli.Delivery.SectionsTest do
       })
 
       # Get fresh results after creating attempts
-      updated_result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      updated_result =
+        LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
       updated_activity =
         Enum.find(updated_result, &(&1.resource_id == activities.page_1_mcq_1.resource_id))
@@ -3747,6 +3808,121 @@ defmodule Oli.Delivery.SectionsTest do
       # Verify calculations: 3 total attempts, 2 correct = 66.67%
       assert updated_activity.attempts == 3
       assert_in_delta updated_activity.percent_correct, 66.67, 0.1
+    end
+
+    test "reports section-wide summary counts once for an activity placed on several pages", %{
+      section: section,
+      objectives: %{objective_a: objective_a},
+      activities: activities
+    } do
+      activity = activities.page_1_mcq_1
+
+      # Deliver two extra pages that both reference the same activity, so it resolves through
+      # more than one page context.
+      host_pages =
+        for title <- ["First host page", "Second host page"] do
+          page =
+            insert(:revision,
+              resource_type_id: ResourceType.id_for_page(),
+              title: title,
+              activity_refs: [activity.resource_id],
+              graded: false
+            )
+
+          insert(:section_resource,
+            section: section,
+            project: section.base_project,
+            resource_id: page.resource_id,
+            revision_id: page.id,
+            resource_type_id: ResourceType.id_for_page(),
+            hidden: false
+          )
+
+          page
+        end
+
+      Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+        section.id
+      )
+
+      # A single section-wide summary row holds the totals for the activity. `ResourceSummary`
+      # is scoped to the section and not to the page, so it must be read once per activity:
+      # reading it once per containing page and summing would report twice these counts.
+      Oli.Repo.insert!(%Oli.Analytics.Summary.ResourceSummary{
+        project_id: -1,
+        section_id: section.id,
+        user_id: -1,
+        resource_id: activity.resource_id,
+        part_id: "1",
+        num_attempts: 10,
+        num_correct: 4
+      })
+
+      part_response =
+        Oli.Repo.insert!(%Oli.Analytics.Summary.ResourcePartResponse{
+          resource_id: activity.resource_id,
+          part_id: "1",
+          response: "choice_a",
+          label: "A"
+        })
+
+      # Response rows are what tie an activity to a page, so one per host page is required for
+      # the page-scoped summary lookup to resolve this activity at all.
+      for page <- host_pages do
+        Oli.Repo.insert!(%Oli.Analytics.Summary.ResponseSummary{
+          project_id: -1,
+          section_id: section.id,
+          page_id: page.resource_id,
+          activity_id: activity.resource_id,
+          part_id: "1",
+          resource_part_response_id: part_response.id,
+          count: 1
+        })
+      end
+
+      contexts =
+        LinkedActivities.resolve_context(section.id, objective_a.resource_id)
+        |> elem(1)
+        |> Map.fetch!(:activity_page_contexts)
+        |> Map.get(activity.resource_id, [])
+
+      assert length(contexts) > 1,
+             "expected more than one page context, got #{length(contexts)}"
+
+      row =
+        LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
+        |> Enum.find(&(&1.resource_id == activity.resource_id))
+
+      assert row.attempts == 10, "section-wide attempts were counted more than once"
+      assert row.percent_correct == 40.0
+    end
+
+    test "sums every part of a multi-part activity, as the detail pane does", %{
+      section: section,
+      objectives: %{objective_a: objective_a},
+      activities: activities
+    } do
+      activity = activities.page_1_mcq_1
+
+      for {part_id, attempts, correct} <- [{"1", 10, 10}, {"2", 5, 2}] do
+        Oli.Repo.insert!(%Oli.Analytics.Summary.ResourceSummary{
+          project_id: -1,
+          section_id: section.id,
+          user_id: -1,
+          resource_id: activity.resource_id,
+          part_id: part_id,
+          num_attempts: attempts,
+          num_correct: correct
+        })
+      end
+
+      row =
+        LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
+        |> Enum.find(&(&1.resource_id == activity.resource_id))
+
+      assert row.attempts == 15
+      assert row.percent_correct == 80.0
     end
   end
 
@@ -3761,8 +3937,10 @@ defmodule Oli.Delivery.SectionsTest do
     } do
       result = Sections.get_objectives_and_subobjectives(section)
 
-      # Should return 9 items: 5 top-level objectives + 4 subobjectives
-      assert length(result) == 9
+      # Should return 8 items: 4 top-level objectives + 4 subobjectives. The fifth top-level
+      # objective is not contained by any page or activity, so it is not part of the course
+      # as it is currently delivered.
+      assert length(result) == 8
 
       # Find top-level objectives
       top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
@@ -3825,14 +4003,23 @@ defmodule Oli.Delivery.SectionsTest do
       assert is_list(sub_b2.container_ids)
     end
 
+    test "confidence is nil for naive sections", %{section: section} do
+      assert section.learning_model_version == :naive
+
+      result = Sections.get_objectives_and_subobjectives(section)
+
+      assert Enum.all?(result, &(&1.confidence_obj == nil))
+      assert Enum.all?(result, &(&1.confidence_subobj == nil))
+    end
+
     test "excludes subobjectives when exclude_sub_objectives is true", %{
       section: section,
       objectives: %{objective_a: objective_a, objective_b: objective_b}
     } do
       result = Sections.get_objectives_and_subobjectives(section, exclude_sub_objectives: true)
 
-      # Should return only 5 top-level objectives
-      assert length(result) == 5
+      # Should return only the 4 contained top-level objectives
+      assert length(result) == 4
 
       # Verify only top-level objectives are returned
       objective_ids = Enum.map(result, & &1.objective_resource_id)
@@ -3859,11 +4046,11 @@ defmodule Oli.Delivery.SectionsTest do
       assert Map.has_key?(top_level_a, :related_activities_count)
       assert Map.has_key?(top_level_b, :related_activities_count)
 
-      # Objective A should have 1 related activity (page_1_mcq_1)
-      assert top_level_a.related_activities_count == 1
+      # Objective A: page_1_mcq_1 plus one activity under each of its two sub-objectives
+      assert top_level_a.related_activities_count == 3
 
-      # Objective B should have 1 related activity (page_1_mcq_4)
-      assert top_level_b.related_activities_count == 1
+      # Objective B: page_1_mcq_4 plus one activity under each of its two sub-objectives
+      assert top_level_b.related_activities_count == 3
 
       # Find subobjectives and verify they also have the count
       subobjectives = Enum.filter(result, &(&1.subobjective != nil))
@@ -3872,6 +4059,52 @@ defmodule Oli.Delivery.SectionsTest do
         assert Map.has_key?(sub, :related_activities_count)
         assert is_integer(sub.related_activities_count)
       end)
+    end
+
+    test "the count matches the destination page for a sub-objective missing containment records",
+         %{
+           section: section,
+           objectives: %{objective_a: objective_a, sub_objective_a2: sub_objective_a2}
+         } do
+      drop_containment_records(section, sub_objective_a2)
+
+      result =
+        Sections.get_objectives_and_subobjectives(section, include_related_activities_count: true)
+
+      refute Enum.any?(result, &(&1.subobjective_resource_id == sub_objective_a2.resource_id))
+
+      parent_row =
+        Enum.find(
+          result,
+          &(&1.objective_resource_id == objective_a.resource_id and is_nil(&1.subobjective))
+        )
+
+      assert parent_row.related_activities_count == 3
+
+      {:ok, context} = LinkedActivities.resolve_context(section.id, objective_a.resource_id)
+
+      assert length(context.activity_ids) == parent_row.related_activities_count
+    end
+
+    test "a parent whose projected children were cleared counts only its own activities", %{
+      section: section,
+      objectives: %{objective_a: objective_a}
+    } do
+      clear_projected_children(section, objective_a)
+
+      parent_row =
+        Sections.get_objectives_and_subobjectives(section,
+          include_related_activities_count: true
+        )
+        |> Enum.find(
+          &(&1.objective_resource_id == objective_a.resource_id and is_nil(&1.subobjective))
+        )
+
+      assert parent_row.related_activities_count == 1
+
+      {:ok, context} = LinkedActivities.resolve_context(section.id, objective_a.resource_id)
+
+      assert length(context.activity_ids) == parent_row.related_activities_count
     end
 
     test "filters by student_id when provided", %{
@@ -3914,14 +4147,124 @@ defmodule Oli.Delivery.SectionsTest do
       top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
       assert top_level_a != nil
       assert top_level_a.section_id == section.id
-      assert top_level_a.student_proficiency_obj == "High"
+
+      # objective_a has Sub-LOs (sub_objective_a1 and sub_objective_a2), so its
+      # displayed proficiency now reflects its Sub-LOs' combined evidence in
+      # addition to its own directly-tagged evidence — always combined, never
+      # excluded, per a deliberate product decision (Darren Siegel, Slack,
+      # 2026-09-01, "Option B" in
+      # docs/exec-plans/current/epics/learning_model_v2/lo_aggregation/parent_evidence_aggregation_options.md):
+      # objective_a's own evidence (3/3 first attempts, proficiency 1.0) and
+      # sub_objective_a1's evidence (0/3, proficiency 0.2) combine as
+      # (1.0*3 + 0.2*3) / (3+3) = 0.6 => "Medium" (sub_objective_a2 has no
+      # evidence and contributes nothing). Previously this showed only
+      # objective_a's own evidence directly ("High"), ignoring its Sub-LOs
+      # entirely.
+      assert top_level_a.student_proficiency_obj == "Medium"
       assert top_level_a.student_proficiency_obj_dist == nil
 
       sub_a1 = Enum.find(result, &(&1.subobjective == "Sub-objective A.1"))
       assert sub_a1 != nil
-      assert sub_a1.student_proficiency_obj == "High"
+      # student_proficiency_obj on a sub-objective's row always mirrors its
+      # parent's (combined) proficiency, not the sub-objective's own.
+      assert sub_a1.student_proficiency_obj == "Medium"
+      # student_proficiency_subobj is sub_objective_a1's own proficiency. It
+      # is itself a leaf (no Sub-LOs of its own), so it is unaffected by the
+      # parent's combined value.
       assert sub_a1.student_proficiency_subobj == "Low"
       assert sub_a1.student_proficiency_subobj_dist == nil
+    end
+
+    test "reflects incomplete coverage instead of ignoring an under-evidenced Sub-LO", %{
+      section: section,
+      objectives: %{
+        objective_a: objective_a,
+        sub_objective_a1: sub_objective_a1,
+        sub_objective_a2: sub_objective_a2
+      }
+    } do
+      student = insert(:user)
+      objective_type_id = ResourceType.id_for_objective()
+
+      # sub_objective_a1: well-attempted, perfect proficiency.
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: student.id,
+        resource_id: sub_objective_a1.resource_id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 10,
+        num_attempts: 10,
+        num_hints: 0,
+        num_first_attempts: 10,
+        num_first_attempts_correct: 10
+      })
+
+      # sub_objective_a2: under-evidenced (attempted, but with a thin, nonzero
+      # count), not wholly unattempted. This distinguishes "correctly weighted
+      # in" from "silently dropped": a zero-count child can't change a weighted
+      # average by definition, so testing only that case wouldn't prove
+      # anything (see the aggregate_weighted_proficiency/1 unit tests for that
+      # boundary case instead).
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: student.id,
+        resource_id: sub_objective_a2.resource_id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 0,
+        num_attempts: 5,
+        num_hints: 0,
+        num_first_attempts: 5,
+        num_first_attempts_correct: 0
+      })
+
+      result =
+        Sections.get_objectives_and_subobjectives(section, student_id: student.id)
+        |> Enum.find(&(&1.objective_resource_id == objective_a.resource_id))
+
+      # If sub_objective_a2's under-evidenced result were silently dropped,
+      # objective_a would be computed as if only sub_objective_a1 existed:
+      # proficiency 1.0 => "High". Correctly weighting both Sub-LOs together
+      # instead yields (1.0*10 + 0.2*5) / 15 = 0.733 => "Medium" — a different
+      # bucket, so this test actually discriminates between the two outcomes.
+      # (0.2, not 0.0, because the naive formula gives 0.2 partial credit per
+      # incorrect first attempt rather than 0 — see the SQL fragment in
+      # Metrics.raw_proficiency_per_student_for_objective/3: sub_objective_a2's
+      # 0 correct out of 5 first attempts is (1.0*0 + 0.2*5) / 5 = 0.2, not
+      # 0.0.)
+      assert result.student_proficiency_obj == "Medium"
+    end
+
+    test "a leaf Learning Objective with no Sub-LOs uses only its own evidence, unaffected by aggregation",
+         %{section: section, objectives: %{objective_c: objective_c}} do
+      student = insert(:user)
+      objective_type_id = ResourceType.id_for_objective()
+
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: student.id,
+        resource_id: objective_c.resource_id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 2,
+        num_attempts: 4,
+        num_hints: 0,
+        num_first_attempts: 4,
+        num_first_attempts_correct: 2
+      })
+
+      result =
+        Sections.get_objectives_and_subobjectives(section, student_id: student.id)
+        |> Enum.find(&(&1.objective_resource_id == objective_c.resource_id))
+
+      assert objective_c.children == []
+      # (1.0*2 + 0.2*2) / 4 = 0.6 => "Medium", identical to reading
+      # objective_c's own evidence directly (no Sub-LOs to combine).
+      assert result.student_proficiency_obj == "Medium"
     end
 
     test "returns proficiency data with correct structure", %{section: section} do
@@ -3981,22 +4324,86 @@ defmodule Oli.Delivery.SectionsTest do
       assert result == []
     end
 
-    test "handles objectives with no activities", %{
+    test "excludes objectives that no active page or activity references", %{
       section: section,
       objectives: %{objective_no_activities: objective_no_activities}
     } do
       result =
         Sections.get_objectives_and_subobjectives(section, include_related_activities_count: true)
 
-      # Find objective with no activities
-      no_activities_obj =
-        Enum.find(result, &(&1.objective_resource_id == objective_no_activities.resource_id))
-
-      # Objective with no activities should have 0 related activities
-      assert no_activities_obj.related_activities_count == 0
+      refute Enum.any?(
+               result,
+               &(&1.objective_resource_id == objective_no_activities.resource_id)
+             )
     end
 
-    test "falls back to revision children when objective section resources do not store hierarchy",
+    test "excludes uncontained objectives for the individual student view", %{
+      section: section,
+      objectives: %{
+        objective_a: objective_a,
+        objective_no_activities: objective_no_activities
+      }
+    } do
+      student = insert(:user)
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      result = Sections.get_objectives_and_subobjectives(section, student_id: student.id)
+
+      assert Enum.any?(result, &(&1.objective_resource_id == objective_a.resource_id))
+
+      refute Enum.any?(
+               result,
+               &(&1.objective_resource_id == objective_no_activities.resource_id)
+             )
+    end
+
+    test "preserves a parent objective when only one of its subobjectives is contained", %{
+      section: section,
+      objectives: %{
+        objective_a: objective_a,
+        sub_objective_a1: sub_objective_a1,
+        sub_objective_a2: sub_objective_a2
+      }
+    } do
+      # Objective A is attached to "Page 1 MCQ 1", A.1 to "Page 1 MCQ 2" and A.2 to "Page 1 MCQ 3".
+      # Dropping the containment of the parent and of A.2 leaves A.1 as the only contained member
+      # of the tree, which is the case where the parent must still be reported.
+      uncontained_ids = [objective_a.resource_id, sub_objective_a2.resource_id]
+
+      from(co in ContainedObjective,
+        where:
+          co.section_id == ^section.id and
+            co.objective_id in ^uncontained_ids
+      )
+      |> Oli.Repo.delete_all()
+
+      result = Sections.get_objectives_and_subobjectives(section)
+
+      parent_row =
+        Enum.find(
+          result,
+          &(&1.objective_resource_id == objective_a.resource_id and is_nil(&1.subobjective))
+        )
+
+      assert parent_row != nil
+      assert parent_row.objective == "Objective A"
+
+      assert Enum.any?(
+               result,
+               &(&1.subobjective_resource_id == sub_objective_a1.resource_id)
+             )
+
+      refute Enum.any?(
+               result,
+               &(&1.subobjective_resource_id == sub_objective_a2.resource_id)
+             )
+
+      # The preserved parent must not depend on whether subobjectives are expanded.
+      assert Sections.get_objectives_and_subobjectives(section, exclude_sub_objectives: true)
+             |> Enum.any?(&(&1.objective_resource_id == objective_a.resource_id))
+    end
+
+    test "JIT projection repairs objective hierarchy before depot reads",
          %{
            section: section,
            objectives: %{objective_a: objective_a}
@@ -4011,6 +4418,9 @@ defmodule Oli.Delivery.SectionsTest do
       )
       |> Oli.Repo.update_all(set: [children: []])
 
+      from(s in Oli.Delivery.Sections.Section, where: s.id == ^section.id)
+      |> Oli.Repo.update_all(set: [section_resource_migration_version: 1])
+
       result = Sections.get_objectives_and_subobjectives(section)
 
       top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
@@ -4022,6 +4432,84 @@ defmodule Oli.Delivery.SectionsTest do
       assert sub_a1.objective_resource_id == objective_a.resource_id
       assert sub_a2 != nil
       assert sub_a2.objective_resource_id == objective_a.resource_id
+
+      projected_parent =
+        Oli.Repo.get_by!(SectionResource,
+          section_id: section.id,
+          resource_id: objective_a.resource_id
+        )
+
+      assert projected_parent.children != []
+    end
+  end
+
+  describe "get_objectives_and_subobjectives/2 for a section built from a publication with deleted objectives" do
+    setup [:create_project_with_objectives]
+
+    test "omits an objective deleted in authoring before the section was created", %{
+      project: project,
+      publication: publication,
+      obj_revision_1: obj_revision_1,
+      obj_revision_2: obj_revision_2
+    } do
+      %{authors: [author]} = project
+
+      # The author deletes Objective 2 and detaches it from Page 2.
+      {:ok, _} =
+        Oli.Resources.update_revision(obj_revision_2, %{deleted: true, author_id: author.id})
+
+      page_2 = Oli.Repo.one!(from(r in Revision, where: r.slug == "page_2"))
+
+      {:ok, _} =
+        Oli.Resources.update_revision(page_2, %{
+          objectives: %{"attached" => []},
+          author_id: author.id
+        })
+
+      {:ok, _} = Publishing.update_publication(publication, %{published: nil})
+
+      {:ok, new_publication} =
+        Publishing.publish_project(project, "deleted objective 2", author.id)
+
+      # A section created from this publication gets a section resource for the deleted
+      # objective, because create_nonstructural_section_resources/3 builds them from the
+      # published resource mappings without excluding deleted revisions.
+      section =
+        insert(:section,
+          base_project: project,
+          context_id: UUID.uuid4(),
+          open_and_free: true,
+          registration_open: true,
+          type: :enrollable
+        )
+
+      {:ok, section} = Sections.create_section_resources(section, new_publication)
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+      {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+      deleted_objective_id = obj_revision_2.resource_id
+
+      assert Oli.Repo.exists?(
+               from(sr in SectionResource,
+                 where: sr.section_id == ^section.id and sr.resource_id == ^deleted_objective_id
+               )
+             ),
+             "expected the deleted objective to still have a section resource"
+
+      refute Oli.Repo.exists?(
+               from(co in ContainedObjective,
+                 where:
+                   co.section_id == ^section.id and
+                     co.objective_id == ^deleted_objective_id and
+                     is_nil(co.container_id)
+               )
+             ),
+             "expected the deleted objective to have no root containment"
+
+      titles = Sections.get_objectives_and_subobjectives(section) |> Enum.map(& &1.objective)
+
+      assert obj_revision_1.title in titles
+      refute obj_revision_2.title in titles
     end
   end
 
@@ -4135,6 +4623,25 @@ defmodule Oli.Delivery.SectionsTest do
   end
 
   # Helper function to create a test section with objectives and activities
+  defp clear_projected_children(section, objective) do
+    from(sr in SectionResource,
+      where: sr.section_id == ^section.id and sr.resource_id == ^objective.resource_id
+    )
+    |> Oli.Repo.update_all(set: [children: []])
+
+    Oli.Delivery.DepotCoordinator.clear(
+      Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+      section.id
+    )
+  end
+
+  defp drop_containment_records(section, objective) do
+    from(co in ContainedObjective,
+      where: co.section_id == ^section.id and co.objective_id == ^objective.resource_id
+    )
+    |> Oli.Repo.delete_all()
+  end
+
   defp setup_objectives_and_activities_test do
     # Create author and project
     author = insert(:author)

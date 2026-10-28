@@ -17,13 +17,17 @@ type RuntimeConfig = {
   baseUrl?: string;
   scenarioToken?: string;
   autoCloseBrowser?: boolean;
-  loginData?: Record<TypeUser, LoginRecord>;
+  loginData?: Partial<Record<TypeUser, LoginRecord>>;
 };
 
 let runtimeConfig: RuntimeConfig = {};
 
 export function setRuntimeConfig(update: RuntimeConfig) {
   runtimeConfig = { ...runtimeConfig, ...update };
+}
+
+export function resetRuntimeConfig() {
+  runtimeConfig = {};
 }
 
 export function getRuntimeConfig(): RuntimeConfig {
@@ -42,8 +46,12 @@ export function getBaseUrl(): string {
   return runtimeConfig.baseUrl || process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 }
 
+export function hasRuntimeBaseUrl(): boolean {
+  return runtimeConfig.baseUrl !== undefined;
+}
+
 export function getScenarioToken(): string {
-  return runtimeConfig.scenarioToken || 'my-token';
+  return runtimeConfig.scenarioToken || process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token';
 }
 
 export function shouldAutoCloseBrowser(): boolean {

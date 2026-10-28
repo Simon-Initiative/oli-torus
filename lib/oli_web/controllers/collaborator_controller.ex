@@ -9,6 +9,7 @@ defmodule OliWeb.CollaboratorController do
 
   @max_invitation_emails 20
 
+  @doc "Sends collaborator invitations after verifying the submitted captcha response."
   def create(
         conn,
         %{
@@ -19,7 +20,7 @@ defmodule OliWeb.CollaboratorController do
     project_id = conn.params["project_id"]
     g_recaptcha_response = Map.get(params, "g-recaptcha-response", "")
 
-    case Oli.Utils.Recaptcha.verify(g_recaptcha_response) do
+    case Oli.Recaptcha.verify(g_recaptcha_response) do
       {:success, true} ->
         all_emails =
           collaborator_emails

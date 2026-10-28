@@ -99,6 +99,16 @@ config :oli, :cashnet_provider,
 # For development, we disable any cache and enable
 https_enabled? = System.get_env("SCHEME") == "https"
 
+# Trust an additional local LMS CA only for LTI requests in development.
+case System.get_env("LTI_CA_CERT_PATH") do
+  nil ->
+    :ok
+
+  path ->
+    config :oli, Oli.Lti.DevHTTPClient, ca_cert_path: Path.expand(path)
+    config :lti_1p3, http_client: Oli.Lti.DevHTTPClient
+end
+
 endpoint_config = [
   http: [
     port: String.to_integer(System.get_env("HTTP_PORT", "80"))
@@ -205,6 +215,7 @@ config :logger, :console, format: "[$level] $message\n"
 
 config :oli,
   enable_playwright_scenarios: true,
+  enable_e2e_mailbox: false,
   playwright_scenario_token: System.get_env("PLAYWRIGHT_SCENARIO_TOKEN"),
   playwright_assets_bucket: System.get_env("PLAYWRIGHT_ASSETS_BUCKET"),
   # runtime.exs points ex_aws at real AWS even in dev, so the playwright

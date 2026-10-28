@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { configureCaptcha } from '@core/captcha';
 import { test as base } from '@playwright/test';
 import { Utils } from '@core/Utils';
 import { Verifier } from '@core/verify/Verifier';
@@ -6,20 +7,29 @@ import { seedScenarioFromFile, SeedScenarioResponse } from '@core/seedScenario';
 import { runWorkflowFromFile } from '@core/workflow/runWorkflow';
 import { RunWorkflowOptions, WorkflowState } from '@core/workflow/types';
 import { AdministrationTask } from '@tasks/AdministrationTask';
+import { AccountLinkingTask } from '@tasks/AccountLinkingTask';
 import { CurriculumTask } from '@tasks/CurriculumTask';
 import { HomeTask } from '@tasks/HomeTask';
 import { ProjectTask } from '@tasks/ProjectTask';
+import { SimpleAuthorTask } from '@tasks/SimpleAuthorTask';
 import { StudentTask } from '@tasks/StudentTask';
-import { getBaseUrl, getScenarioToken, shouldAutoCloseBrowser } from '@core/runtimeConfig';
+import {
+  getBaseUrl,
+  getScenarioToken,
+  hasRuntimeBaseUrl,
+  shouldAutoCloseBrowser,
+} from '@core/runtimeConfig';
 
 type MyFixtures = {
   forEachTest: void;
   utils: Utils;
   verifier: Verifier;
   administrationTask: AdministrationTask;
+  accountLinkingTask: AccountLinkingTask;
   curriculumTask: CurriculumTask;
   homeTask: HomeTask;
   projectTask: ProjectTask;
+  simpleAuthorTask: SimpleAuthorTask;
   studentTask: StudentTask;
   seedScenario: (
     relativePath: string,
@@ -29,9 +39,20 @@ type MyFixtures = {
 };
 
 export const test = base.extend<MyFixtures>({
+  context: async ({ context }, use, testInfo) => {
+    const baseUrl = hasRuntimeBaseUrl()
+      ? getBaseUrl()
+      : ((testInfo.project.use.baseURL as string) ?? getBaseUrl());
+    await configureCaptcha(context, baseUrl);
+    await use(context);
+  },
   forEachTest: [
-    async ({ homeTask }, use) => {
-      await homeTask.goToSite();
+    async ({ homeTask }, use, testInfo) => {
+      const baseUrl = hasRuntimeBaseUrl()
+        ? getBaseUrl()
+        : ((testInfo.project.use.baseURL as string) ?? getBaseUrl());
+
+      await homeTask.goToSite(baseUrl);
       await use();
 
       if (shouldAutoCloseBrowser()) {
@@ -53,6 +74,12 @@ export const test = base.extend<MyFixtures>({
     },
     { title: '🏢 Administration Task' },
   ],
+  accountLinkingTask: [
+    async ({ page }, use) => {
+      await use(new AccountLinkingTask(page));
+    },
+    { title: '🔗 Account Linking Task' },
+  ],
   curriculumTask: [
     async ({ page }, use) => {
       await use(new CurriculumTask(page));
@@ -71,6 +98,12 @@ export const test = base.extend<MyFixtures>({
     },
     { title: '📂 Project Task' },
   ],
+  simpleAuthorTask: [
+    async ({ page }, use) => {
+      await use(new SimpleAuthorTask(page));
+    },
+    { title: '🧩 Simple Author Task' },
+  ],
   studentTask: [
     async ({ page }, use) => {
       await use(new StudentTask(page));
@@ -81,7 +114,9 @@ export const test = base.extend<MyFixtures>({
     async ({ request }, use, testInfo) => {
       const scenarioRunner = async (relativePath: string, params: Record<string, unknown> = {}) => {
         const scenarioPath = path.resolve(path.dirname(testInfo.file), relativePath);
-        const projectBaseUrl = (testInfo.project.use.baseURL as string) || getBaseUrl();
+        const projectBaseUrl = hasRuntimeBaseUrl()
+          ? getBaseUrl()
+          : ((testInfo.project.use.baseURL as string) ?? getBaseUrl());
         return seedScenarioFromFile(
           request,
           scenarioPath,

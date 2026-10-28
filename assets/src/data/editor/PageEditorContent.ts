@@ -333,7 +333,7 @@ function toPersistence(items: Immutable.List<ResourceContent>): any[] {
   return items.reduce((acc, val) => {
     const children = isResourceGroup(val)
       ? toPersistence((val as ResourceGroup).children)
-      : val.type === 'break'
+      : val.type === 'break' || val.type === 'learning_objectives'
       ? undefined
       : val.children;
 

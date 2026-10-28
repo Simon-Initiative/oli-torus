@@ -477,41 +477,14 @@ defmodule Oli.TestHelpers do
     with {:ok, body} <- File.read(filename), {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end
 
-  def expect_recaptcha_http_post() do
-    verify_recaptcha_url = Application.fetch_env!(:oli, :recaptcha)[:verify_url]
-
-    Oli.Test.MockHTTP
-    |> expect(:post, fn ^verify_recaptcha_url, _body, _headers, _opts ->
-      {:ok,
-       %HTTPoison.Response{
-         status_code: 200,
-         body:
-           Jason.encode!(%{
-             "challenge_ts" => "some-challenge-ts",
-             "hostname" => "testkey.google.com",
-             "success" => true
-           })
-       }}
-    end)
+  @doc "Expects a successful response through the compile-selected captcha boundary."
+  def expect_recaptcha_success() do
+    expect(Oli.Test.RecaptchaMock, :verify, fn _ -> {:success, true} end)
   end
 
-  # Sets up a mock to simulate a recaptcha failure
-  def expect_recaptcha_http_failure_post() do
-    verify_recaptcha_url = Application.fetch_env!(:oli, :recaptcha)[:verify_url]
-
-    Oli.Test.MockHTTP
-    |> expect(:post, fn ^verify_recaptcha_url, _body, _headers, _opts ->
-      {:ok,
-       %HTTPoison.Response{
-         status_code: 200,
-         body:
-           Jason.encode!(%{
-             "challenge_ts" => "some-challenge-ts",
-             "hostname" => "testkey.google.com",
-             "success" => false
-           })
-       }}
-    end)
+  @doc "Expects rejection through the compile-selected captcha boundary."
+  def expect_recaptcha_failure() do
+    expect(Oli.Test.RecaptchaMock, :verify, fn _ -> {:success, false} end)
   end
 
   def part_component_registration_fixture(attrs \\ %{}) do
@@ -1691,7 +1664,7 @@ defmodule Oli.TestHelpers do
     }
   end
 
-  defp create_objective(title, slug, project, subobjectives \\ []) do
+  def create_objective(title, slug, project, subobjectives \\ []) do
     obj_resource = insert(:resource)
 
     obj_revision =
@@ -1735,7 +1708,7 @@ defmodule Oli.TestHelpers do
     {activity_resource, activity_revision}
   end
 
-  defp create_page(title, slug, project, content_model, objectives \\ []) do
+  def create_page(title, slug, project, content_model, objectives \\ []) do
     page_resource = insert(:resource)
 
     page_revision =
@@ -1757,7 +1730,7 @@ defmodule Oli.TestHelpers do
     {page_resource, page_revision}
   end
 
-  defp create_container(title, slug, project, children) do
+  def create_container(title, slug, project, children) do
     container_resource = insert(:resource)
 
     container_revision =

@@ -1,4 +1,12 @@
 .deleteButton {
+  width: 31px;
+  height: 31px;
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+
   &:not([disabled]) {
     color: rgba(var(--color-body-color), 0.8);
 

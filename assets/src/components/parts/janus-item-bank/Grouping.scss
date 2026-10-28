@@ -28,6 +28,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  &.janus-rich-label {
+    p,
+    div {
+      margin: 0;
+      display: inline;
+    }
+  }
 }
 
 @mixin grouping-item-image-content {
@@ -46,6 +54,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  &.janus-rich-label {
+    p,
+    div {
+      margin: 0;
+      display: inline;
+    }
+  }
 }
 
 @mixin grouping-item-image-full {
@@ -157,7 +173,17 @@
     flex-wrap: wrap;
     gap: 12px;
     align-items: stretch;
-    overflow-x: hidden;
+    overflow-x: auto;
+  }
+
+  .grouping-board-introduction {
+    border-radius: 5px;
+
+    &:focus-visible {
+      outline: 3px solid #005ea8;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 5px #fff;
+    }
   }
 
   .grouping-column {
@@ -224,6 +250,11 @@
 
     &:active {
       cursor: grabbing;
+    }
+
+    &.is-disabled {
+      cursor: default;
+      touch-action: auto;
     }
 
     &.is-dragging {

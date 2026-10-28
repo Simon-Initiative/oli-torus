@@ -84,6 +84,27 @@ defmodule Oli.Delivery.PaywallTest do
       assert Paywall.summarize_access(user, section).available
     end
 
+    @tag :copy_configuration_regression
+    test "summarize_access/5 accepts users without preloaded platform roles", %{
+      section: section,
+      user1: user
+    } do
+      user = Oli.Accounts.get_user!(user.id)
+      enrollment = Sections.get_enrollment(section.slug, user.id)
+
+      summary =
+        Paywall.summarize_access(
+          user,
+          section,
+          ContextRoles.get_role(:context_learner).id,
+          enrollment,
+          nil
+        )
+
+      refute summary.available
+      assert summary.reason == :not_paid
+    end
+
     test "summarize_access/2 succeeds during grace period", %{
       section: section,
       user1: user,

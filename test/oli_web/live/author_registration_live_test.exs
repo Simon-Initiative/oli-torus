@@ -2,6 +2,8 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  alias Oli.Accounts
+  alias Oli.Utils.Seeder.AccountsFixtures
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do
@@ -51,7 +53,8 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
 
   describe "register author" do
     test "confirms and redirects the author when email verification is disabled", %{conn: conn} do
-      stub_recaptcha()
+      Oli.TestHelpers.stub_recaptcha()
+
       previous = Application.get_env(:oli, :author_email_verification_required)
       Application.put_env(:oli, :author_email_verification_required, false)
 
@@ -60,7 +63,7 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
       end)
 
       {:ok, lv, _html} = live(conn, ~p"/authors/register")
-      email = unique_author_email()
+      email = AccountsFixtures.unique_author_email()
 
       form =
         form(lv, "#registration_form",
@@ -77,7 +80,7 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
       conn = follow_trigger_action(form, conn)
 
       assert redirected_to(conn) == ~p"/workspaces/course_author"
-      assert Oli.Accounts.get_author_by_email(email).email_confirmed_at
+      assert Accounts.get_author_by_email(email).email_confirmed_at
       Swoosh.TestAssertions.assert_no_email_sent()
     end
   end

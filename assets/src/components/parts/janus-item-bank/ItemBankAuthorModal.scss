@@ -354,6 +354,14 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      &.janus-rich-label {
+        p,
+        div {
+          margin: 0;
+          display: inline;
+        }
+      }
     }
 
     .grouping-item-content--image {
@@ -372,6 +380,14 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      &.janus-rich-label {
+        p,
+        div {
+          margin: 0;
+          display: inline;
+        }
+      }
     }
 
     .grouping-item-image {
@@ -479,6 +495,27 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .janus-rich-label-editor-quill {
+    width: 100%;
+
+    .ql-toolbar.ql-snow {
+      border-radius: 6px 6px 0 0;
+    }
+
+    .ql-container.ql-snow {
+      border-radius: 0 0 6px 6px;
+      min-height: 120px;
+    }
+
+    .ql-editor {
+      min-height: 100px;
+
+      p {
+        margin: 0;
+      }
+    }
   }
 
   .iem-label {

@@ -5,7 +5,8 @@
     object-fit: cover;
   }
 
-  .card-text {
+  .card-text,
+  .card-title-clamp {
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;

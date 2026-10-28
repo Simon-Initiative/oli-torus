@@ -8,6 +8,7 @@ defmodule OliWeb.Sections.EditLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Repo
 
   defp live_view_edit_route(section_slug) do
     ~p"/sections/#{section_slug}/edit"
@@ -223,6 +224,42 @@ defmodule OliWeb.Sections.EditLiveTest do
       refute html =~ "/authoring/products/#{section.slug}/discounts"
     end
 
+    test "limits section descriptions that do not exceed 300 characters", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      assert has_element?(
+               view,
+               ~s(input[name="section[description]"][maxlength="300"])
+             )
+    end
+
+    test "grandfathers section descriptions that already exceed 300 characters", %{
+      conn: conn,
+      section: section
+    } do
+      description = String.duplicate("a", 301)
+
+      section =
+        section
+        |> Ecto.Changeset.change(description: description)
+        |> Repo.update!()
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      refute has_element?(view, ~s(input[name="section[description]"][maxlength]))
+
+      updated_description = description <> "b"
+
+      view
+      |> element("#section-edit-form")
+      |> render_submit(section: %{description: updated_description})
+
+      assert Repo.get(Section, section.id).description == updated_description
+    end
+
     test "loads open and free section data correctly", %{conn: conn} do
       welcome_title = %{
         type: "p",
@@ -254,13 +291,17 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert has_element?(view, "input[value='#{section.description}']")
       assert has_element?(view, "input[value='#{section.encouraging_subtitle}']")
 
-      # Loads the welcome title
-      view
-      |> render()
-      |> Floki.parse_fragment!()
-      |> Floki.find(~s{div[data-live-react-class="Components.RichTextEditor"]})
-      |> Floki.attribute("data-live-react-props")
-      |> hd() =~ "Welcome Title"
+      # Loads the welcome title with block formatting enabled.
+      editor_props =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{div[data-live-react-class="Components.RichTextEditor"]})
+        |> Floki.attribute("data-live-react-props")
+        |> hd()
+
+      assert editor_props =~ "Welcome Title"
+      assert editor_props =~ ~s("allowBlockElements":true)
 
       assert view
              |> element(
@@ -273,6 +314,56 @@ defmodule OliWeb.Sections.EditLiveTest do
                "select[id=section_institution_id] option[selected][value='#{section.institution_id}']"
              )
              |> has_element?()
+    end
+
+    test "preserves welcome title block formatting when another field changes", %{
+      conn: conn,
+      section: section
+    } do
+      welcome_title = %{
+        "type" => "p",
+        "children" => [
+          %{
+            "id" => "welcome-list",
+            "type" => "ul",
+            "children" => [
+              %{
+                "id" => "welcome-list-item",
+                "type" => "li",
+                "children" => [
+                  %{
+                    "id" => "welcome-list-paragraph",
+                    "type" => "p",
+                    "children" => [%{"text" => "Review the syllabus"}]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      html =
+        view
+        |> element("#section-edit-form")
+        |> render_change(%{
+          section: %{
+            description: "An updated description",
+            welcome_title: Poison.encode!(welcome_title)
+          }
+        })
+
+      hidden_welcome_title =
+        html
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{input[name="section[welcome_title]"]})
+        |> Floki.attribute("value")
+        |> hd()
+        |> Poison.decode!()
+
+      assert hidden_welcome_title == welcome_title
     end
 
     test "institution dropdown is disabled for LTI sections", %{conn: conn} do

@@ -118,6 +118,32 @@ defmodule Oli.Resources.PageContentTest do
     end
   end
 
+  describe "contains_activity_opportunity?/1" do
+    test "detects embedded activities and bank selections" do
+      assert PageContent.contains_activity_opportunity?(@basic_content)
+
+      assert PageContent.contains_activity_opportunity?(%{
+               "model" => [
+                 %{
+                   "type" => "group",
+                   "children" => [%{"type" => "selection", "id" => "selection-1"}]
+                 }
+               ]
+             })
+    end
+
+    test "returns false for content-only pages" do
+      refute PageContent.contains_activity_opportunity?(%{
+               "model" => [
+                 %{
+                   "type" => "content",
+                   "children" => [%{"type" => "p", "children" => [%{"text" => "Reading"}]}]
+                 }
+               ]
+             })
+    end
+  end
+
   describe "survey_activities" do
     test "returns a mapping of all surveys to the activities they contain" do
       mapping = PageContent.survey_activities(@basic_content)

@@ -2,6 +2,7 @@
 
 Scope and reference artifacts:
 - Jira story: `MER-5416`
+- Regression spreadsheet source, `MIXED` tab: <https://docs.google.com/spreadsheets/d/1Ne9lo3DfcqS4U25pUE4aYkPy4mlqko9rEb4oU6w79pY/edit?gid=270463718#gid=270463718>
 - Epic plan source: `docs/exec-plans/current/epics/automated_testing/plan.md`
 - Existing authoring Playwright coverage:
   - `assets/automation/tests/torus/course_authoring/course-authoring.spec.ts`
@@ -39,6 +40,10 @@ For this ticket, the agreed meaning of the two assertion surfaces is:
   - validate the rendered output of the same content after publish, section creation, and learner delivery
 
 This interpretation matters because the repository currently has stronger precedent for instructor preview assertions than for authoring preview assertions.
+
+### Spreadsheet Evidence Interpretation
+
+The regression spreadsheet tracks four surfaces per row: editing, persisted state, authoring preview, and learner delivery. In a workflow, the Playwright action provides the editing evidence. Persisted state is evidenced by a successful server-rendered authoring preview after the editor explicitly flushes pending changes and reports that all changes are saved. Preview and delivery assertions then verify their respective render surfaces. A separate editor-reload assertion is only required for a row that specifically covers reopening the editor.
 
 ## Current State In The Repo
 ### What already exists

@@ -56,12 +56,27 @@ defmodule OliWeb.Products.DetailsViewTest do
     } do
       {:ok, _view, html} = live(conn, product_route(product.slug))
 
+      assert html =~ ~s(maxlength="300")
+
       {description_index, _} = :binary.match(html, "Description")
       {tags_index, _} = :binary.match(html, "Tags")
       {welcome_title_index, _} = :binary.match(html, "Welcome Message Title")
 
       assert description_index < tags_index
       assert tags_index < welcome_title_index
+    end
+
+    test "grandfathers template descriptions that already exceed 300 characters", %{
+      conn: conn,
+      product: product
+    } do
+      product
+      |> Ecto.Changeset.change(description: String.duplicate("a", 301))
+      |> Oli.Repo.update!()
+
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      refute has_element?(view, ~s(input[name="section[description]"][maxlength]))
     end
 
     test "displays Tags section with editable TagsComponent", %{
@@ -364,6 +379,21 @@ defmodule OliWeb.Products.DetailsViewTest do
       assert has_element?(view, "h4", "Certificate Settings")
       assert has_element?(view, "h4", "Feature Flags")
       assert has_element?(view, "h4", "Actions")
+    end
+  end
+
+  describe "product details page - cover image upload" do
+    setup [:setup_admin_conn, :create_product]
+
+    test "submitting the upload form with no staged file flashes an error instead of crashing",
+         %{conn: conn, product: product} do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      view
+      |> form("#img-upload-form")
+      |> render_submit()
+
+      assert render(view) =~ "update template image"
     end
   end
 

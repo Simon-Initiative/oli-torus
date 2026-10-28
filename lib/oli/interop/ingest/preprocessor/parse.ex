@@ -12,8 +12,9 @@ defmodule Oli.Interop.Ingest.Preprocessor.Parse do
   end
 
   defp parse_json_entries(%State{entries: entries, errors: errors} = state) do
-    {resource_map, error_map} =
-      Enum.reduce(entries, {%{}, %{}}, fn {file, content}, {resource_map, error_map} ->
+    {resource_map, error_map, archive_source_files} =
+      Enum.reduce(entries, {%{}, %{}, %{}}, fn {file, content},
+                                               {resource_map, error_map, archive_source_files} ->
         State.notify_step_progress(state, "#{file}.json")
 
         id_from_file = fn file ->
@@ -37,7 +38,10 @@ defmodule Oli.Interop.Ingest.Preprocessor.Parse do
                 id -> id
               end
 
-            {Map.put(resource_map, id, decoded), error_map}
+            archive_file = id_from_file.(file)
+
+            {Map.put(resource_map, id, decoded), error_map,
+             Map.put(archive_source_files, id, archive_file)}
 
           _ ->
             {resource_map,
@@ -45,11 +49,16 @@ defmodule Oli.Interop.Ingest.Preprocessor.Parse do
                error_map,
                id_from_file.(file),
                "failed to decode JSON in file '#{id_from_file.(file)}'"
-             )}
+             ), archive_source_files}
         end
       end)
 
-    %{state | resource_map: resource_map, errors: Map.values(error_map) ++ errors}
+    %{
+      state
+      | resource_map: resource_map,
+        archive_source_files: archive_source_files,
+        errors: Map.values(error_map) ++ errors
+    }
   end
 
   defp identify_well_known(

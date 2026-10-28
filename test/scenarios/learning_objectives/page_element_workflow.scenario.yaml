@@ -1,0 +1,167 @@
+# Learning Objectives page element workflow.
+#
+# The scenario DSL creates the project, objective hierarchy, tagged activities,
+# publication updates, section, enrollment, and learner work. Hooks cover the
+# native page-element insertion and render assertions that TorusDoc cannot
+# express directly.
+- project:
+    name: "lo_element_course"
+    title: "Learning Objectives Element Course"
+    objectives:
+      - "Compute slope"
+      - "Interpret intercepts"
+    root:
+      children:
+        - container: "Unit 1"
+          children:
+            - page: "Objectives Page"
+            - page: "Practice A"
+            - container: "Nested Module"
+              children:
+                - page: "Practice B"
+            - page: "Plain Page"
+
+- edit_page:
+    project: "lo_element_course"
+    page: "Objectives Page"
+    content: |
+      title: "Objectives Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "The objectives element will be inserted by a scenario hook."
+
+- edit_page:
+    project: "lo_element_course"
+    page: "Practice A"
+    content: |
+      title: "Practice A"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Practice finding slope."
+        - type: activity
+          virtual_id: "slope_question"
+          activity:
+            type: oli_multiple_choice
+            objectives:
+              - "Compute slope"
+            stem_md: "What is the slope of y = 2x + 1?"
+            choices:
+              - id: "a"
+                body_md: "2"
+                score: 1
+              - id: "b"
+                body_md: "1"
+                score: 0
+
+- hook:
+    function: "Oli.Scenarios.LearningObjectives.PageElementHooks.sync_activity_ref_cache/1"
+
+- edit_page:
+    project: "lo_element_course"
+    page: "Practice B"
+    content: |
+      title: "Practice B"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "This page gets a new objective-attached activity after the first section exists."
+
+- edit_page:
+    project: "lo_element_course"
+    page: "Plain Page"
+    content: |
+      title: "Plain Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "A normal page without the Learning Objectives element."
+
+- hook:
+    function: "Oli.Scenarios.LearningObjectives.PageElementHooks.insert_summary_element/1"
+
+- publish:
+    to: "lo_element_course"
+    description: "Initial objective element publication"
+
+- section:
+    name: "lo_element_section"
+    title: "Learning Objectives Element Section"
+    from: "lo_element_course"
+
+- user:
+    name: "learner"
+    type: "student"
+
+- enroll:
+    user: "learner"
+    section: "lo_element_section"
+    role: "student"
+
+- visit_page:
+    student: "learner"
+    section: "lo_element_section"
+    page: "Objectives Page"
+
+- visit_page:
+    student: "learner"
+    section: "lo_element_section"
+    page: "Plain Page"
+
+- visit_page:
+    student: "learner"
+    section: "lo_element_section"
+    page: "Practice A"
+
+- answer_question:
+    student: "learner"
+    section: "lo_element_section"
+    page: "Practice A"
+    activity_virtual_id: "slope_question"
+    response: "a"
+
+- edit_page:
+    project: "lo_element_course"
+    page: "Practice B"
+    content: |
+      title: "Practice B"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Practice interpreting intercepts."
+        - type: activity
+          virtual_id: "intercept_question"
+          activity:
+            type: oli_multiple_choice
+            objectives:
+              - "Interpret intercepts"
+            stem_md: "What is the y-intercept of y = 2x + 1?"
+            choices:
+              - id: "a"
+                body_md: "2"
+                score: 0
+              - id: "b"
+                body_md: "1"
+                score: 1
+
+- hook:
+    function: "Oli.Scenarios.LearningObjectives.PageElementHooks.sync_activity_ref_cache/1"
+
+- publish:
+    to: "lo_element_course"
+    description: "Add later objective-attached activity"
+
+- update:
+    from: "lo_element_course"
+    to: "lo_element_section"
+
+- assert:
+    activity_objectives:
+      project: "lo_element_course"
+      activity_virtual_id: "intercept_question"
+      expected:
+        - "Interpret intercepts"
+
+- hook:
+    function: "Oli.Scenarios.LearningObjectives.PageElementHooks.assert_updated_authoring_and_delivery_state/1"

@@ -7,6 +7,40 @@ For a complete list of changes and release notes, please refer to the [GitHub re
 If a PR is opened that adds a new environment config or requires infrastructure changes, please
 update this file accordingly.
 
+## 0.35.0
+
+### Environment Configs
+
+| Name                              | Required | Description                                                                     |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------- |
+| MOODLE_BASE_URL                    | No       | Moodle base URL for Moodle LTI Playwright automation                            |
+| MOODLE_INSTRUCTOR_EMAIL            | No       | Moodle instructor username required by Moodle LTI Playwright automation         |
+| MOODLE_INSTRUCTOR_PASSWORD         | No       | Moodle instructor password required by Moodle LTI Playwright automation         |
+| MOODLE_STUDENT_EMAIL               | No       | Moodle student username required by the Moodle grade passback Playwright test   |
+| MOODLE_STUDENT_PASSWORD            | No       | Moodle student password required by the Moodle grade passback Playwright test   |
+| MOODLE_API_TOKEN                   | No       | Moodle web service token used to create/delete/import the fixture course via API |
+| MOODLE_LTI_TOOL_NAME                | No       | Pre-registered Moodle course tool display name to select (default "Tokamak")     |
+| OBAN_QUEUE_SIZE_SNAPSHOTS          | No       | Snapshot queue concurrency per node (Default: 4)                                |
+
+- `MOODLE_*` environment variables configure the Moodle-to-Torus LTI launch and grade passback
+  Playwright automation. They are not required by the Torus application runtime. See
+  `assets/automation/tests/torus/lti_moodle/moodle_playwright.md` for the full setup.
+
+- Moodle LTI course-provisioning Playwright settings are local/test-runner configuration only
+  and are not required for the Torus application runtime. Do not commit real Moodle credentials
+  or API tokens.
+
+- `OBAN_QUEUE_SIZE_SNAPSHOTS` controls the maximum number of snapshot jobs that each production or
+  preview application node executes concurrently. Keep it lower than the database connection
+  `POOL_SIZE` so snapshot processing leaves connections available for web requests and other
+  background queues.
+
+### Infrastructure Changes
+
+None
+
+---
+
 ## 0.34.0
 
 ### Environment Configs
@@ -35,6 +69,7 @@ update this file accordingly.
 | GOOGLE_DOCS_IMPORT_FILE_ID    | No       | Google Docs file ID used by Google Docs import Playwright automation            |
 | DUMMY_LTI_TOOL_ADMIN_PASSWORD | No       | Admin password used to register Torus with the dummy LTI tool                   |
 | DUMMY_LTI_TOOL_BASE_URL       | No       | Dummy LTI tool base URL used by LTI external tool Playwright automation         |
+| OBAN_QUEUE_SIZE_AUTOMATION_TEARDOWN | No | Automation project teardown queue concurrency (Default: 1)                     |
 
 - `CANVAS_*` environment variables configure the Canvas-to-Torus grade passback Playwright
   smoke test. They are not required by the Torus application runtime. The student credentials
@@ -51,7 +86,7 @@ update this file accordingly.
 - `PLAYWRIGHT_ASSETS_BUCKET` and `PLAYWRIGHT_AUTOMATION_API_KEY` are local/test-runner
   configuration only and are not required for the Torus application runtime. Neither has a
   default value — never reuse a value that appears in this repo for either. Without
-  `PLAYWRIGHT_AUTOMATION_API_KEY` the MER-5672 Playwright test is skipped; without
+  `PLAYWRIGHT_AUTOMATION_API_KEY` the MER-5672, MER-5673 and MER-5674 Playwright tests are skipped; without
   `PLAYWRIGHT_ASSETS_BUCKET` it fails, since the private test assets endpoint has no bucket
   to read from.
 

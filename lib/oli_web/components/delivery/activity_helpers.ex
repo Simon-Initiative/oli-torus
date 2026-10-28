@@ -23,6 +23,20 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   alias OliWeb.Components.Delivery.AdaptiveIFrame
   alias Phoenix.LiveView.JS
 
+  @attempts_filter_options [
+    %{id: 1, name: "None", selected: false},
+    %{id: 2, name: "Less than 5", selected: false},
+    %{id: 3, name: "More than 5", selected: false}
+  ]
+
+  @doc """
+  Options for the Attempts filter shared by the Insights View activity tables.
+
+  The ids are the contract between the multi-select and the filter predicates, so both
+  must change together.
+  """
+  def attempts_filter_options, do: @attempts_filter_options
+
   @doc """
   Returns a list of summarizing details for all activities that have been attempted for a given course
   section and page. This function is used to render the Insights View in the instructor dashboard.
@@ -49,6 +63,30 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   def summarize_activity_performance(
         %Section{} = section,
         page_revision,
+        activity_types_map,
+        students,
+        only_for_activity_ids,
+        opts \\ []
+      ) do
+    summarize_activities_across_pages(
+      section,
+      [page_revision],
+      activity_types_map,
+      students,
+      only_for_activity_ids,
+      opts
+    )
+  end
+
+  @doc """
+  Summarizes activities over every page they appear on, as one population.
+
+  `graded` and the question ordinal belong to a single page, so both come from the first revision
+  given; the analytics inputs are gathered across all of them before any grouping.
+  """
+  def summarize_activities_across_pages(
+        %Section{} = section,
+        [page_revision | _] = page_revisions,
         activity_types_map,
         students,
         only_for_activity_ids,
@@ -81,7 +119,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     # {list of all response summaries, map of activity_id -> set of user ids}
     {response_summaries, attempted_activities} =
-      Summary.get_response_summary_for(page_id, section.id, only_for_activity_ids)
+      page_revisions
+      |> Enum.map(& &1.resource_id)
+      |> Summary.get_response_summary_for_pages(section.id, only_for_activity_ids)
+      |> merge_responses_across_pages()
       |> Enum.reduce({[], %{}}, fn summary, {all, attempted_activities} ->
         # The users who have answered these responses comes over as a list of user ids,
         # so we need to convert them to a list of user structs, but careful to dedupe, handle
@@ -275,6 +316,26 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         OliWeb.ManualGrading.Rendering.render(context, :instructor_preview)
     end
   end
+
+  # One row per answer per page arrives here. Staging picks a response by first match, so rows for the
+  # same answer must become one row carrying the combined count and student list before it runs.
+  defp merge_responses_across_pages(summaries) do
+    by_answer = Enum.group_by(summaries, &answer_key/1)
+
+    summaries
+    |> Enum.uniq_by(&answer_key/1)
+    |> Enum.map(fn first ->
+      rows = Map.fetch!(by_answer, answer_key(first))
+
+      %{
+        first
+        | count: Enum.sum(Enum.map(rows, & &1.count)),
+          users: rows |> Enum.flat_map(& &1.users) |> Enum.uniq()
+      }
+    end)
+  end
+
+  defp answer_key(summary), do: {summary.activity_id, summary.part_id, summary.response}
 
   defp build_ordinal_mapping(revision) do
     {mapping, _} =
@@ -1632,17 +1693,50 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     Map.put(activity_attempt, :student_responses, Map.merge(sr, grouped))
   end
 
+  defp authored_text(%{"content" => [%{"children" => [%{"text" => text} | _]} | _]})
+       when is_binary(text),
+       do: present_text(text, String.trim(text))
+
+  defp authored_text(_node), do: nil
+
+  defp present_text(_text, ""), do: nil
+  defp present_text(text, _trimmed), do: text
+
+  defp distinct_labels(nodes, prefix) do
+    nodes = List.wrap(nodes)
+    authored = Enum.map(nodes, &authored_text/1)
+    taken = authored |> Enum.reject(&is_nil/1) |> MapSet.new()
+
+    {labels, _taken} =
+      authored
+      |> Enum.with_index(1)
+      |> Enum.map_reduce(taken, fn
+        {nil, position}, taken ->
+          label = free_label("#{prefix} #{position}", taken)
+          {label, MapSet.put(taken, label)}
+
+        {text, _position}, taken ->
+          {text, taken}
+      end)
+
+    labels
+  end
+
+  defp free_label(candidate, taken) do
+    if MapSet.member?(taken, candidate),
+      do: free_label(candidate <> " (untitled)", taken),
+      else: candidate
+  end
+
   defp add_likert_details(activity, response_summaries) do
+    items = activity.revision.content["items"]
+
     %{questions: questions, question_mapper: question_mapper} =
       Enum.reduce(
-        activity.revision.content["items"],
+        Enum.zip(items, distinct_labels(items, "Question")),
         %{questions: [], question_mapper: %{}, question_number: 1},
-        fn q, acc ->
-          question = %{
-            id: q["id"],
-            text: q["content"] |> hd() |> Map.get("children") |> hd() |> Map.get("text"),
-            number: acc.question_number
-          }
+        fn {q, label}, acc ->
+          question = %{id: q["id"], text: label, number: acc.question_number}
 
           %{
             questions: [question | acc.questions],
@@ -1656,14 +1750,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         end
       )
 
+    choices = activity.revision.content["choices"]
+
     {ordered_choices, choice_mapper} =
       Enum.reduce(
-        activity.revision.content["choices"],
+        Enum.zip(choices, distinct_labels(choices, "Choice")),
         %{ordered_choices: [], choice_mapper: %{}, aux_points: 1},
-        fn ch, acc ->
+        fn {ch, label}, acc ->
           choice = %{
             id: ch["id"],
-            text: ch["content"] |> hd() |> Map.get("children") |> hd() |> Map.get("text"),
+            text: label,
             points: acc.aux_points
           }
 

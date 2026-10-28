@@ -5,9 +5,11 @@ defmodule OliWeb.PageDeliveryController do
 
   import OliWeb.Common.FormatDateTime
 
+  alias OliWeb.Components.SecureAssessment
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
+  alias Oli.Delivery.LearningObjectives.PageElement, as: LearningObjectivesPageElement
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections, Settings}
   alias Oli.Delivery.Sections
@@ -627,6 +629,17 @@ defmodule OliWeb.PageDeliveryController do
         this_attempt.content
       end
 
+    render_context = %Context{
+      render_context
+      | learning_objectives:
+          LearningObjectivesPageElement.prepare_render_payload(
+            section,
+            context.page.resource_id,
+            attempt_content,
+            render_context.user
+          )
+    }
+
     html = render_content_html(render_context, attempt_content, context.page.slug)
 
     # Cache the page as text to allow the AI agent LV to access it.
@@ -768,59 +781,61 @@ defmodule OliWeb.PageDeliveryController do
     numbered_revisions = Sections.get_revision_indexes(section.slug)
 
     render(conn, "advanced_delivery.html", %{
-      app_params: %{
-        activityTypes: activity_types,
-        resourceId: context.page.resource_id,
-        sectionSlug: section_slug,
-        userId: context.user.id,
-        userName: context.user.name,
-        pageTitle: context.page.title,
-        pageSlug: context.page.slug,
-        graded: context.page.graded,
-        content:
-          build_page_content(context.page.content, Plug.Conn.get_session(conn, :request_path)),
-        resourceAttemptState: Core.fetch_extrinsic_state(resource_attempt),
-        resourceAttemptGuid: resource_attempt.attempt_guid,
-        resourceAttemptNumber: resource_attempt.attempt_number,
-        currentServerTime: DateTime.utc_now() |> to_epoch,
-        effectiveEndTime:
-          Settings.determine_effective_deadline(
-            resource_attempt,
-            context.effective_settings
-          )
-          |> to_epoch,
-        lateSubmit: context.effective_settings.late_submit,
-        activityGuidMapping: context.activities,
-        signoutUrl: unless(screen_idle_timeout_disabled?, do: ~p"/users/log_out"),
-        previousPageURL: previous_url,
-        nextPageURL: next_url,
-        previewMode: preview_mode,
-        reviewMode: context.review_mode,
-        overviewURL: ~p"/sections/#{section_slug}",
-        finalizeGradedURL:
-          Routes.page_lifecycle_path(
-            conn,
-            :transition
-          ),
-        blobStorageProvider:
-          if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] == false do
-            "new"
-          else
-            "deprecated"
-          end,
-        screenIdleTimeOutInSeconds:
-          if(screen_idle_timeout_disabled?,
-            do: 0,
-            else: String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
-          ),
-        isAuthor: !is_nil(author),
-        isAdmin: Accounts.is_admin?(author),
-        isInstructor: context.is_instructor,
-        debuggerURL:
-          if context.review_mode && Accounts.at_least_content_admin?(author) do
-            ~p"/sections/#{section_slug}/debugger/#{resource_attempt.attempt_guid}"
-          end
-      },
+      app_params:
+        %{
+          activityTypes: activity_types,
+          resourceId: context.page.resource_id,
+          sectionSlug: section_slug,
+          userId: context.user.id,
+          userName: context.user.name,
+          pageTitle: context.page.title,
+          pageSlug: context.page.slug,
+          graded: context.page.graded,
+          content:
+            build_page_content(context.page.content, Plug.Conn.get_session(conn, :request_path)),
+          resourceAttemptState: Core.fetch_extrinsic_state(resource_attempt),
+          resourceAttemptGuid: resource_attempt.attempt_guid,
+          resourceAttemptNumber: resource_attempt.attempt_number,
+          currentServerTime: DateTime.utc_now() |> to_epoch,
+          effectiveEndTime:
+            Settings.determine_effective_deadline(
+              resource_attempt,
+              context.effective_settings
+            )
+            |> to_epoch,
+          lateSubmit: context.effective_settings.late_submit,
+          activityGuidMapping: context.activities,
+          signoutUrl: unless(screen_idle_timeout_disabled?, do: ~p"/users/log_out"),
+          previousPageURL: previous_url,
+          nextPageURL: next_url,
+          previewMode: preview_mode,
+          reviewMode: context.review_mode,
+          overviewURL: ~p"/sections/#{section_slug}",
+          finalizeGradedURL:
+            Routes.page_lifecycle_path(
+              conn,
+              :transition
+            ),
+          blobStorageProvider:
+            if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] == false do
+              "new"
+            else
+              "deprecated"
+            end,
+          screenIdleTimeOutInSeconds:
+            if(screen_idle_timeout_disabled?,
+              do: 0,
+              else: String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+            ),
+          isAuthor: !is_nil(author),
+          isAdmin: Accounts.is_admin?(author),
+          isInstructor: context.is_instructor,
+          debuggerURL:
+            if context.review_mode && Accounts.at_least_content_admin?(author) do
+              ~p"/sections/#{section_slug}/debugger/#{resource_attempt.attempt_guid}"
+            end
+        }
+        |> SecureAssessment.adaptive_params(conn.assigns[:user_session]),
       bib_app_params: %{
         bibReferences: context.bib_revisions
       },
@@ -829,7 +844,9 @@ defmodule OliWeb.PageDeliveryController do
       additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
       graded: context.page.graded,
       latest_attempts: %{},
-      mount_dialogue_window?: !screen_idle_timeout_disabled?,
+      mount_dialogue_window?:
+        !screen_idle_timeout_disabled? and
+          not (context.review_mode and section_resource.secure_delivery),
       next_page: next,
       current_page: current,
       numbered_revisions: numbered_revisions,

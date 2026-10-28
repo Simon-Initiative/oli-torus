@@ -15,6 +15,7 @@ defmodule OliWeb.Common.Paging do
   attr :has_shorter_label, :boolean, default: false
   attr :should_add_empty_flex, :boolean, default: true
   attr :is_page_size_right, :boolean, default: false
+  attr :container_class, :string, default: "mx-4"
 
   def render(assigns) do
     params =
@@ -34,9 +35,11 @@ defmodule OliWeb.Common.Paging do
     ~H"""
     <div
       id={@id}
-      class={"flex justify-between items-center py-2 mx-4 " <> if Map.get(@params, :rendered_pages_count) == 1, do: "justify-end", else: ""}
+      class={"flex justify-between items-center py-2 #{@container_class} " <> if Map.get(@params, :rendered_pages_count) == 1, do: "justify-end", else: ""}
     >
-      <div :if={@show_pagination} class="ml-4">{@params.label}</div>
+      <div :if={@show_pagination} class={if @container_class in [nil, ""], do: nil, else: "ml-4"}>
+        {@params.label}
+      </div>
       <div :if={@should_add_empty_flex} class="flex-1"></div>
       <.form
         :if={!@is_page_size_right}
@@ -45,7 +48,7 @@ defmodule OliWeb.Common.Paging do
         phx-change={@limit_change}
       >
         <div :if={@show_limit_change} class="inline-flex flex-col gap-1 mr-2">
-          <small class="torus-small uppercase">
+          <small class="text-xs font-normal uppercase text-Text-text-low">
             Page size
           </small>
           <select class="torus-select" name="limit">
@@ -123,7 +126,7 @@ defmodule OliWeb.Common.Paging do
         phx-change={@limit_change}
       >
         <div :if={@show_limit_change} class="inline-flex flex-col gap-1">
-          <small class="torus-small uppercase">
+          <small class="text-xs font-normal uppercase text-Text-text-low">
             Page size
           </small>
           <select class="torus-select" name="limit">

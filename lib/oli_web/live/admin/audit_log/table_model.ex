@@ -85,6 +85,22 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
     """
   end
 
+  @doc """
+  Displays the acting admin's identity as recorded when an author role changed.
+  """
+  def render_actor_column(assigns, %{event_type: :author_role_changed} = event, _) do
+    assigns = Map.put(assigns, :event, event)
+
+    ~H"""
+    <div>
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @event.author_id)}>
+        {@event.details["actor_name"]}
+      </a>
+      <div class="text-xs text-gray-500 dark:text-gray-400">{@event.details["actor_email"]}</div>
+    </div>
+    """
+  end
+
   def render_actor_column(assigns, event, _) do
     actor_name = LogEvent.actor_name(event)
 
@@ -122,6 +138,22 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
           <% end %>
         <% end %>
       </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Displays the affected author for role changes, or the event's project or section.
+  """
+  def render_resource_column(assigns, %{event_type: :author_role_changed} = event, _) do
+    assigns = Map.put(assigns, :event, event)
+
+    ~H"""
+    <div>
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @event.resource_id)}>
+        {@event.details["author_name"]}
+      </a>
+      <div class="text-xs text-gray-500 dark:text-gray-400">{@event.details["author_email"]}</div>
     </div>
     """
   end
@@ -168,12 +200,27 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
     """
   end
 
-  def render_details_column(assigns, %{details: details}, _) do
+  @doc """
+  Displays audit details with the explicit transition for author role changes.
+  """
+  def render_details_column(assigns, event, _) do
+    details = event.details
     formatted_details = format_details(details)
-    assigns = Map.put(assigns, :formatted_details, formatted_details)
+
+    assigns =
+      assigns
+      |> Map.put(:formatted_details, formatted_details)
+      |> Map.put(
+        :transition,
+        case event.event_type do
+          :author_role_changed -> LogEvent.event_description(event)
+          _ -> nil
+        end
+      )
 
     ~H"""
     <div class="max-w-xs">
+      <div :if={@transition} class="text-sm font-medium">{@transition}</div>
       <button
         phx-click="show_details"
         phx-value-details={Jason.encode!(@formatted_details)}

@@ -69,7 +69,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
 
           publication_id =
-            Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)
+            Publishing.get_publication_id_for_resource(
+              section_slug,
+              page_revision.resource_id
+            )
 
           context = %VisitContext{
             publication_id: publication_id,
@@ -80,8 +83,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             user: user,
             audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
             datashop_session_id: datashop_session_id,
-            activity_provider: activity_provider,
-            effective_settings: effective_settings
+            effective_settings: effective_settings,
+            activity_provider: activity_provider
           }
 
           impl = determine_page_impl(page_revision.graded)

@@ -30,11 +30,13 @@ defmodule Oli.Scenarios.Directives.HookHandler do
     end
   end
 
-  defp parse_and_execute(function_spec, state) do
+  defp parse_and_execute(function_spec, %ExecutionState{} = state) do
+    existing_atoms_only? = state.ownership
+
     try do
       # Parse the function specification
-      case parse_function_spec(function_spec) do
-        {:ok, module, function_name, arity} ->
+      case parse_function_spec(function_spec, existing_atoms_only?) do
+        {:ok, module, function_name_string, arity} ->
           # Verify arity is 1 (function must accept ExecutionState)
           if arity != 1 do
             {:error, "Hook function must have arity 1, got #{arity}"}
@@ -42,7 +44,8 @@ defmodule Oli.Scenarios.Directives.HookHandler do
             # Ensure module is loaded and, if necessary, refreshed from disk
             ensure_module_loaded(module)
 
-            with :ok <- ensure_function_loaded(module, function_name, 1) do
+            with {:ok, function_name} <- safe_atom(function_name_string, existing_atoms_only?),
+                 :ok <- ensure_function_loaded(module, function_name, 1) do
               result = apply(module, function_name, [state])
               {:ok, result}
             else
@@ -59,7 +62,7 @@ defmodule Oli.Scenarios.Directives.HookHandler do
     end
   end
 
-  defp parse_function_spec(spec) when is_binary(spec) do
+  defp parse_function_spec(spec, existing_atoms_only?) when is_binary(spec) do
     # Expected format: "Module.Path.function/arity"
     case Regex.run(~r/^(.+)\.([^\/]+)\/(\d+)$/, spec) do
       [_, module_path, function_name, arity_str] ->
@@ -69,20 +72,10 @@ defmodule Oli.Scenarios.Directives.HookHandler do
         end
 
         # Convert module path to atom safely
-        module =
-          try do
-            String.to_existing_atom("Elixir.#{module_path}")
-          rescue
-            ArgumentError ->
-              # Module not loaded yet, but validated to be in safe namespace
-              String.to_atom("Elixir.#{module_path}")
-          end
-
-        # Function names are less risky as atoms since they're limited in scope
-        function_name = String.to_atom(function_name)
-        {arity, _} = Integer.parse(arity_str)
-
-        {:ok, module, function_name, arity}
+        with {:ok, module} <- safe_atom("Elixir.#{module_path}", existing_atoms_only?) do
+          {arity, _} = Integer.parse(arity_str)
+          {:ok, module, function_name, arity}
+        end
 
       _ ->
         {:error,
@@ -90,7 +83,17 @@ defmodule Oli.Scenarios.Directives.HookHandler do
     end
   end
 
-  defp parse_function_spec(_), do: {:error, "Function specification must be a string"}
+  defp parse_function_spec(_, _), do: {:error, "Function specification must be a string"}
+
+  defp safe_atom(value, true) do
+    try do
+      {:ok, String.to_existing_atom(value)}
+    rescue
+      ArgumentError -> {:error, "Hook module and function must already be compiled"}
+    end
+  end
+
+  defp safe_atom(value, false), do: {:ok, String.to_atom(value)}
 
   defp ensure_module_loaded(module) do
     case Code.ensure_loaded(module) do

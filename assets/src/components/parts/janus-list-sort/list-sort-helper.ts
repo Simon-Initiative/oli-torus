@@ -1,7 +1,9 @@
+import { htmlToPlainText } from '../../../utils/richOptionLabel';
+
 export const LIST_SORT_INSTRUCTIONS =
   'Tab through items and use space bar or enter to select and deselect the item. Once an item is selected, tab through the list or use arrow keys to move the selected item.';
 
-export const buildItemAccessibleName = (text: string): string => text;
+export const buildItemAccessibleName = (text: string): string => htmlToPlainText(text || '');
 
 export const buildFocusAnnouncement = (
   index: number,
@@ -9,7 +11,8 @@ export const buildFocusAnnouncement = (
   text: string,
   isSelected: boolean,
 ): string => {
-  const position = `Position ${index + 1} of ${total}. ${text}.`;
+  const plain = htmlToPlainText(text || '');
+  const position = `Position ${index + 1} of ${total}. ${plain}.`;
   if (isSelected) {
     return `${position} Press space bar or enter to deselect. Use arrow keys to move.`;
   }

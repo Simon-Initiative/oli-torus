@@ -7,8 +7,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Components.Modal
+  alias OliWeb.Components.Tooltip
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
+
+  @beginning_course_message "Students haven’t started yet. This dashboard will surface progress, proficiency, and areas needing attention as soon as activity begins."
 
   @tooltip_copy %{
     average_student_progress:
@@ -49,7 +52,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
      |> assign(:cards, Map.get(projection, :cards, []))
      |> assign(
        :recommendation,
-       normalize_recommendation(Map.get(projection, :recommendation, default_recommendation()))
+       projection
+       |> Map.get(:recommendation, default_recommendation())
+       |> normalize_recommendation()
+       |> recommendation_for_activity(
+         Map.get(projection, :activity_state),
+         Enum.any?(Map.get(projection, :cards, []), &(Map.get(&1, :status) == :loading))
+       )
      )
      |> assign(
        :layout,
@@ -72,11 +81,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       <section
         id={"learning-dashboard-summary-metrics-#{@id}"}
         aria-label={summary_scope_copy(@scope_label, @course_title)}
-        class="rounded-2xl bg-[linear-gradient(90deg,#6D3C97_0%,#2D628E_46%,#0DBBD3_100%)] px-[23px] py-[22px] shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
+        class="rounded-2xl bg-[linear-gradient(95.67775419553948deg,#BE60D1_10.262%,#1EB3C7_40.159%,#87D7E0_80.021%)] dark:bg-[linear-gradient(95.67775419553948deg,#5F3A79_10.262%,#236F8A_40.159%,#00A8BF_80.021%)] px-[23px] py-[22px] shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
       >
         <div class={["grid items-stretch gap-2", row_grid_classes(@layout, @show_recommendation)]}>
           <%= if @cards == [] do %>
-            <div class="rounded-2xl bg-Surface-surface-secondary px-6 py-5 text-sm leading-6 text-Text-text-high opacity-80 lg:col-span-3">
+            <div class="rounded-2xl bg-Surface-surface-secondary px-6 py-5 text-sm leading-6 text-Text-text-high opacity-80">
               Summary metrics will appear as scoped progress, proficiency, and assessment data become available.
             </div>
           <% else %>
@@ -91,60 +100,50 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       <p class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[0] text-Text-text-high">
                         {card_title_line_one(card.label)}
                       </p>
-                      <p class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[0] text-Text-text-high">
-                        <span class="inline-flex items-center gap-3 align-middle pr-1">
+                      <div class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[0] text-Text-text-high">
+                        <div class="inline-flex items-center gap-3 align-middle pr-1">
                           <span class="whitespace-nowrap">{card_title_line_two(card.label)}</span>
-                          <span class="group relative inline-flex items-center text-Text-text-high">
-                            <button
-                              id={"summary-tooltip-trigger-#{card.id}"}
-                              type="button"
-                              aria-label={"#{card.label} definition"}
-                              aria-describedby={"summary-tooltip-#{card.id}"}
-                              class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                            >
+                          <Tooltip.render
+                            id={"summary-tooltip-#{card.id}"}
+                            trigger_id={"summary-tooltip-trigger-#{card.id}"}
+                            label={"#{card.label} definition"}
+                            position="bottom"
+                            align="right"
+                            offset={8}
+                          >
+                            <:trigger>
                               <span class="scale-[0.9]">
                                 <Icons.info />
                               </span>
-                            </button>
-                            <span
-                              id={"summary-tooltip-#{card.id}"}
-                              role="tooltip"
-                              class="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-20 hidden w-64 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
-                            >
-                              {tooltip_copy(card.tooltip_key)}
-                            </span>
-                          </span>
-                        </span>
-                      </p>
+                            </:trigger>
+                            <:content>{tooltip_copy(card.tooltip_key)}</:content>
+                          </Tooltip.render>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   <div :if={!@show_recommendation} class="min-h-[40px] min-w-0">
-                    <p class="font-open-sans text-[16px] font-bold leading-[20px] tracking-[0] text-Text-text-high">
-                      <span class="inline-flex items-center gap-1 align-middle">
+                    <div class="font-open-sans text-[16px] font-bold leading-[20px] tracking-[0] text-Text-text-high">
+                      <div class="inline-flex items-center gap-1 align-middle">
                         <span>{card.label}</span>
-                        <span class="group relative inline-flex items-center text-Text-text-high">
-                          <button
-                            id={"summary-tooltip-trigger-#{card.id}"}
-                            type="button"
-                            aria-label={"#{card.label} definition"}
-                            aria-describedby={"summary-tooltip-#{card.id}"}
-                            class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                          >
+                        <Tooltip.render
+                          id={"summary-tooltip-#{card.id}"}
+                          trigger_id={"summary-tooltip-trigger-#{card.id}"}
+                          label={"#{card.label} definition"}
+                          position="bottom"
+                          align="right"
+                          offset={8}
+                        >
+                          <:trigger>
                             <span class="scale-[0.9]">
                               <Icons.info />
                             </span>
-                          </button>
-                          <span
-                            id={"summary-tooltip-#{card.id}"}
-                            role="tooltip"
-                            class="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-20 hidden w-64 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
-                          >
-                            {tooltip_copy(card.tooltip_key)}
-                          </span>
-                        </span>
-                      </span>
-                    </p>
+                          </:trigger>
+                          <:content>{tooltip_copy(card.tooltip_key)}</:content>
+                        </Tooltip.render>
+                      </div>
+                    </div>
                   </div>
 
                   <p class="mt-3 font-open-sans text-[40px] font-semibold leading-[54px] tracking-[0] text-Text-text-high">
@@ -480,6 +479,38 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     }
   end
 
+  # Async recommendation updates can replace the projector's recommendation payload.
+  # Resolve initial presentation from metric evidence on every component update.
+  defp recommendation_for_activity(
+         %{status: :beginning_course} = recommendation,
+         :not_started,
+         _metrics_loading?
+       ) do
+    %{
+      recommendation
+      | body: @beginning_course_message,
+        aria_label: "AI Recommendation: #{@beginning_course_message}"
+    }
+  end
+
+  defp recommendation_for_activity(
+         %{status: :beginning_course} = recommendation,
+         :unknown,
+         true
+       ) do
+    %{
+      recommendation
+      | status: :thinking,
+        body: nil,
+        aria_label: "AI Recommendation",
+        can_regenerate?: false,
+        can_submit_sentiment?: false
+    }
+  end
+
+  defp recommendation_for_activity(recommendation, _activity_state, _metrics_loading?),
+    do: recommendation
+
   defp normalize_recommendation(%{label: _, status: _, recommendation_id: _} = recommendation),
     do: Map.merge(default_recommendation(), recommendation)
 
@@ -674,7 +705,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         recommendation_body_during_regeneration(recommendation)
 
       :beginning_course ->
-        "Students have not generated enough activity in this scope yet. A recommendation will appear once meaningful work is available."
+        recommendation_body(recommendation)
 
       :ready ->
         recommendation_body(recommendation)

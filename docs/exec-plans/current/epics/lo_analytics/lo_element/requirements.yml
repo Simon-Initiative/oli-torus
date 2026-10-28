@@ -1,0 +1,284 @@
+work_item: lo_element
+requirements:
+- title: Add Learning Objectives as a terminal basic-page ResourceContent type
+  status: proposed
+  id: FR-001
+- title: Restrict Learning Objectives element insertion to top-level page content
+  status: proposed
+  id: FR-002
+- title: Provide authoring Insert menu support for the Learning Objectives element
+  status: proposed
+  id: FR-003
+- title: Provide an authoring editor for Introduction and Summary configuration
+  status: proposed
+  id: FR-004
+- title: Persist sparse advisory Learning Objectives element configuration
+  status: proposed
+  id: FR-005
+- title: Discover delivery Learning Objectives from the current section container
+    scope
+  status: proposed
+  id: FR-006
+- title: Precompute delivery Learning Objectives payload once per page render
+  status: proposed
+  id: FR-007
+- title: Render Learning Objective Introduction for students
+  status: proposed
+  id: FR-008
+- title: Render Learning Objective Summary with student proficiency and recommendations
+  status: proposed
+  id: FR-009
+- title: Preserve existing page, content type, and publication behavior
+  status: proposed
+  id: FR-010
+acceptance_criteria:
+- title: The `learning_objectives` content type is part of `ResourceContent`, has
+    a default factory, has a display name, and is recognized by resource-content validation
+    helpers
+  status: proposed
+  verification_method: automated
+  proofs:
+  - assets/test/data/content/resource_test.ts via `cd assets && yarn test test/data/content/resource_test.ts test/data/content/learningObjectives_test.ts test/components/resource/editors/learning_objectives_editor_test.tsx`
+  - test/oli/utils/schema_resolver_test.exs via targeted ExUnit suite
+  id: AC-001
+- title: The `learning_objectives` content type is not part of `ResourceGroup`, has
+    no children, and has no nested content contract
+  status: proposed
+  verification_method: automated
+  proofs:
+  - assets/test/data/content/resource_test.ts via targeted Jest suite
+  - priv/schemas/v0-1-0/page-content-basic.schema.json plus test/oli/utils/schema_resolver_test.exs via targeted ExUnit suite
+  id: AC-002
+- title: '`canInsert` allows `learning_objectives` when `parents` is empty and rejects
+    it whenever `parents` contains a group, survey, report, alternatives, alternative,
+    or other container'
+  status: proposed
+  verification_method: automated
+  proofs:
+  - assets/test/data/content/resource_test.ts via targeted Jest suite
+  - assets/test/components/resource/editors/learning_objectives_editor_test.tsx verifies nested insert menu rejection
+  id: AC-003
+- title: Drag/drop, duplication, import, and nested add-control paths cannot place
+    a Learning Objectives element below another content element
+  status: proposed
+  verification_method: hybrid
+  proofs:
+  - assets/test/data/content/resource_test.ts covers shared insertion policy used by drag/drop and nested insertion paths
+  - test/oli/utils/schema_resolver_test.exs covers schema rejection for nested placement
+  id: AC-004
+- title: The Insert menu shows a Learning Objectives item only in the Content Types
+    section with the approved label, icon, hover description, hover state, focus state,
+    and selected state
+  status: proposed
+  verification_method: hybrid
+  proofs:
+  - assets/test/components/resource/editors/learning_objectives_editor_test.tsx verifies the root-only Objectives item, approved label, focus/hover helper text behavior, and insertion output
+  - docs/exec-plans/current/epics/lo_analytics/lo_element/images/mer-5802-insert-menu-learning-objectives.png present and referenced from plan.md
+  id: AC-005
+- title: Selecting the Learning Objectives Insert menu item adds a new element to
+    the current top-level page position without modifying existing content items
+  status: proposed
+  verification_method: automated
+  proofs:
+  - assets/test/components/resource/editors/learning_objectives_editor_test.tsx verifies top-level insertion output
+  id: AC-006
+- title: The authoring editor defaults new Learning Objectives elements to Introduction
+    mode with Include Sub-Objectives enabled
+  status: proposed
+  verification_method: automated
+  proofs:
+  - assets/test/data/content/resource_test.ts verifies default factory state
+  - assets/test/components/resource/editors/learning_objectives_editor_test.tsx verifies editor default behavior
+  id: AC-007
+- title: Authors can switch between Introduction and Summary modes through a keyboard-accessible
+    selector without losing shared configuration
+  status: proposed
+  verification_method: hybrid
+  proofs:
+  - assets/test/components/resource/editors/learning_objectives_editor_test.tsx verifies the selector is focusable, responds from a keyboard-focused state, and preserves advisory config
+  id: AC-008
+- title: The authoring editor resolves and displays Learning Objectives for the current
+    container and descendant containers in parent-before-child order
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/authoring/learning_objectives/page_element_test.exs via targeted ExUnit suite
+  - test/scenarios/learning_objectives/page_element_workflow_test.exs verifies authoring payload after a later objective is added
+  id: AC-009
+- title: Toggling Include Sub-Objectives affects only the current Learning Objectives
+    element
+  status: proposed
+  verification_method: automated
+  proofs:
+  - assets/test/components/resource/editors/learning_objectives_editor_test.tsx verifies element-local Include Sub-Objectives behavior
+  - test/oli/rendering/content/learning_objectives_test.exs verifies delivery Include Sub-Objectives rendering
+  id: AC-010
+- title: Removing or restoring a Learning Objective inside the element updates only
+    that element's advisory enabled state and does not delete objectives or remove
+    activity tags
+  status: proposed
+  verification_method: automated
+  proofs:
+  - assets/test/components/resource/editors/learning_objectives_editor_test.tsx verifies remove and restore update only advisory enabled state
+  - assets/test/data/content/learningObjectives_test.ts verifies reconciliation does not mutate activity objective tags
+  id: AC-011
+- title: Removing a parent objective hides that parent and its displayed Sub-Objectives
+    for the current element, while removing a Sub-Objective does not hide its parent
+  status: proposed
+  verification_method: automated
+  proofs:
+  - assets/test/components/resource/editors/learning_objectives_editor_test.tsx verifies parent-before-child display and hide behavior
+  - test/oli/rendering/content/learning_objectives_test.exs verifies renderer hides disabled parents and handles subobjectives
+  id: AC-012
+- title: Summary-mode recommendation controls allow authors to add and remove review
+    page references scoped to the current course
+  status: proposed
+  verification_method: hybrid
+  proofs:
+  - assets/test/components/resource/editors/learning_objectives_editor_test.tsx verifies review recommendation add/remove, objective-specific accessible names, and page scoping
+  - docs/exec-plans/current/epics/lo_analytics/lo_element/images/mer-5804-authoring-summary-review.png present and referenced from plan.md
+  id: AC-013
+- title: Summary-mode recommendation controls allow authors to add and remove practice
+    page references scoped to the current course
+  status: proposed
+  verification_method: hybrid
+  proofs:
+  - assets/test/components/resource/editors/learning_objectives_editor_test.tsx verifies practice recommendation add/remove, objective-specific accessible names, and page scoping
+  - docs/exec-plans/current/epics/lo_analytics/lo_element/images/mer-5804-authoring-summary-practice.png present and referenced from plan.md
+  id: AC-014
+- title: Adding review or practice recommendations does not tag those pages or opportunities
+    to the Learning Objective
+  status: proposed
+  verification_method: automated
+  proofs:
+  - assets/test/data/content/learningObjectives_test.ts verifies recommendation reconciliation does not mutate unrelated page content or activity tags
+  - test/oli/authoring/learning_objectives/page_element_test.exs verifies recommendation IDs are filtered without objective/tag mutation
+  id: AC-015
+- title: Persisted element state stores mode, Include Sub-Objectives, and only authored
+    per-objective advisory config needed for enabled state and recommendations
+  status: proposed
+  verification_method: automated
+  proofs:
+  - assets/test/data/content/resource_test.ts verifies persisted element shape
+  - assets/test/data/content/learningObjectives_test.ts verifies sparse advisory state refresh adds current objectives and removes stale rows
+  - test/scenarios/learning_objectives/page_element_workflow_test.exs verifies workflow with stale advisory state
+  id: AC-016
+- title: Delivery scans for Learning Objectives elements before doing discovery work
+    and does no additional Learning Objectives work for pages without the element
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/delivery/learning_objectives/page_element_test.exs verifies no-element skip behavior
+  - test/scenarios/learning_objectives/page_element_workflow_test.exs verifies pages without the element do not receive a delivery payload
+  id: AC-017
+- title: Delivery included-objective discovery uses SectionResourceDepot for cached
+    container, page, and objective data and uses at most one narrow page-revision
+    query for descendant page `activity_refs`
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/delivery/learning_objectives/page_element_test.exs verifies depot-first traversal and one narrow activity_refs query boundary
+  id: AC-018
+- title: Delivery included-objective discovery returns objectives attached to activities
+    on descendant pages in the current container and excludes objectives attached
+    only outside that container
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/delivery/learning_objectives/page_element_test.exs verifies current-container inclusion and out-of-container exclusion
+  - test/scenarios/learning_objectives/page_element_workflow_test.exs verifies nested-container delivery inclusion after section update
+  id: AC-019
+- title: Delivery included-objective discovery includes a parent objective when an
+    in-scope activity is attached only to one of its Sub-Objectives
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/delivery/learning_objectives/page_element_test.exs verifies parent inclusion for matched subobjectives
+  - test/oli/authoring/learning_objectives/page_element_test.exs verifies authoring parent-before-child behavior
+  id: AC-020
+- title: Hidden descendant pages do not contribute Learning Objectives to the student-facing
+    element
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/delivery/learning_objectives/page_element_test.exs verifies hidden descendant pages are excluded
+  id: AC-021
+- title: Delivery ignores stale advisory objective config that no longer matches any
+    objective discovered in the current container
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/delivery/learning_objectives/page_element_test.exs verifies stale config tolerance
+  - test/oli/rendering/content/learning_objectives_test.exs verifies stale advisory entries do not render
+  - test/scenarios/learning_objectives/page_element_workflow_test.exs verifies stale advisory ID is ignored
+  id: AC-022
+- title: A Learning Objective discovered at delivery time but absent from the advisory
+    config renders enabled with no review or practice recommendations
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/delivery/learning_objectives/page_element_test.exs verifies newly discovered objectives are included
+  - test/oli/rendering/content/learning_objectives_test.exs verifies absent config renders enabled with no recommendations
+  - test/scenarios/learning_objectives/page_element_workflow_test.exs verifies later-added objective renders in delivery
+  id: AC-023
+- title: Introduction mode renders the Learning Objectives heading, included objective
+    hierarchy, optional Sub-Objectives, and proficiency explanation accordion without
+    showing proficiency estimates or recommendations
+  status: proposed
+  verification_method: hybrid
+  proofs:
+  - test/oli/rendering/content/learning_objectives_test.exs verifies Introduction heading, hierarchy, accordion, and absence of estimates/recommendations
+  - docs/exec-plans/current/epics/lo_analytics/lo_element/images/mer-5807-student-introduction-collapsed.png present and referenced from plan.md
+  - docs/exec-plans/current/epics/lo_analytics/lo_element/images/mer-5807-student-introduction-expanded.png present and referenced from plan.md
+  id: AC-024
+- title: If no Learning Objectives are discovered for the current container, the student-facing
+    element renders no empty objective cards and does not display the Introduction
+    component
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/rendering/content/learning_objectives_test.exs verifies empty payload renders no component
+  id: AC-025
+- title: Summary mode queries current student proficiency only when at least one Summary-mode
+    element is present and normalizes missing data to Not Enough Information
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/delivery/learning_objectives/page_element_test.exs verifies Summary-only proficiency query behavior
+  - test/oli/rendering/content/learning_objectives_test.exs verifies Not Enough Information fallback
+  id: AC-026
+- title: Summary mode maps internal proficiency labels to the approved student-facing
+    proficiency icon and label set
+  status: proposed
+  verification_method: hybrid
+  proofs:
+  - test/oli/rendering/content/learning_objectives_test.exs verifies internal proficiency labels map to approved student-facing labels/icons
+  id: AC-027
+- title: Summary mode resolves all enabled recommendation page IDs for an element
+    through one SectionResourceDepot batch lookup and ignores unresolved or out-of-section
+    resources
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/rendering/content/learning_objectives_test.exs verifies single recommendation-page batch lookup and stale recommendation filtering
+  - test/scenarios/learning_objectives/page_element_workflow_test.exs verifies recommendations render only for authored advisory config
+  id: AC-028
+- title: Student rendering allows objective and Sub-Objective titles to wrap without
+    truncation across supported viewport sizes
+  status: proposed
+  verification_method: manual
+  proofs:
+  - test/oli/rendering/content/learning_objectives_test.exs verifies wrapping classes on long objective and recommendation labels
+  - Manual screenshot check against docs/exec-plans/current/epics/lo_analytics/lo_element/images/mer-5807-student-introduction-collapsed.png and mer-5807-student-introduction-expanded.png
+  - docs/exec-plans/current/epics/lo_analytics/lo_element/manual_verification.md records the Phase 6 visual risk audit
+  id: AC-029
+- title: Existing content types, question types, authored content, published pages,
+    and current attempts continue to render unchanged when a page does not contain
+    a Learning Objectives element
+  status: proposed
+  verification_method: automated
+  proofs:
+  - test/oli/rendering/content/html_test.exs, plaintext_test.exs, and url_helpers_test.exs via targeted ExUnit suite
+  - test/oli/delivery/learning_objectives/page_element_test.exs verifies no-element pages skip new delivery work
+  - test/scenarios/learning_objectives/page_element_workflow_test.exs verifies a plain page in the same section has no Learning Objectives payload while the learner visit and existing attempt workflow complete
+  id: AC-030

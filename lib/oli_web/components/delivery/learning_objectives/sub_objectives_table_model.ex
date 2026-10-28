@@ -2,11 +2,18 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Common.Chip
+  alias OliWeb.Common.Utils
+  alias OliWeb.Delivery.LearningObjectives.Proficiency
+  alias OliWeb.Icons
 
-  @proficiency_labels ["Not enough data", "Low", "Medium", "High"]
-
-  def new(sub_objectives, parent_unique_id \\ nil) do
+  @doc "Builds the sub-objective table with optional model-supported confidence labels keyed by resource ID."
+  def new(
+        sub_objectives,
+        parent_unique_id \\ nil,
+        text_search \\ nil,
+        confidence_supported? \\ false,
+        sub_objective_confidences \\ %{}
+      ) do
     column_specs = [
       %ColumnSpec{
         name: :sub_objective,
@@ -29,47 +36,76 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       },
       %ColumnSpec{
         name: :related_activities,
-        label: "Related Activities",
+        label: "Linked Activities",
         render_fn: &custom_render/3,
         sortable: false
       }
     ]
 
+    column_specs =
+      case confidence_supported? do
+        true ->
+          List.insert_at(column_specs, 2, %ColumnSpec{
+            name: :confidence,
+            label: "Confidence",
+            render_fn: &custom_render/3,
+            sortable: false
+          })
+
+        false ->
+          column_specs
+      end
+
     SortableTableModel.new(
       rows: sub_objectives,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id],
-      data: %{parent_unique_id: parent_unique_id}
+      id_field: ["subobj", :id],
+      data: %{
+        parent_unique_id: parent_unique_id,
+        text_search: text_search,
+        sub_objective_confidences: sub_objective_confidences
+      }
     )
   end
 
   # SUB-OBJECTIVE NAME
-  defp custom_render(_assigns, sub_objective, %ColumnSpec{name: :sub_objective}) do
-    sub_objective.title
+  defp custom_render(assigns, sub_objective, %ColumnSpec{name: :sub_objective}) do
+    assigns =
+      Map.merge(assigns, %{
+        title: sub_objective.title,
+        text_search: assigns.model.data[:text_search]
+      })
+
+    ~H"""
+    <span>
+      {Phoenix.HTML.raw(Utils.highlight_search_term(@title, @text_search, class: "search-highlight"))}
+    </span>
+    """
   end
 
   # STUDENT PROFICIENCY CHIP
   defp custom_render(assigns, sub_objective, %ColumnSpec{name: :student_proficiency}) do
     student_proficiency = sub_objective.student_proficiency || "Not enough data"
 
-    {bg_color, text_color} =
-      case student_proficiency do
-        "High" -> {"bg-Fill-Chip-Green", "text-Text-Chip-Green"}
-        "Medium" -> {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
-        "Low" -> {"bg-Fill-fill-danger", "text-Text-text-danger"}
-        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
-      end
-
-    assigns =
-      Map.merge(assigns, %{
-        label: student_proficiency,
-        bg_color: bg_color,
-        text_color: text_color
-      })
+    assigns = Map.put(assigns, :student_proficiency, student_proficiency)
 
     ~H"""
-    <Chip.render {assigns} />
+    <Proficiency.chip label={@student_proficiency} />
+    """
+  end
+
+  # CONFIDENCE
+  defp custom_render(assigns, sub_objective, %ColumnSpec{name: :confidence}) do
+    confidence = Map.get(assigns.model.data.sub_objective_confidences, sub_objective.id)
+    assigns = Map.put(assigns, :confidence, confidence)
+
+    ~H"""
+    <div :if={@confidence} class="flex items-center gap-1.5 text-Text-text-high">
+      <Icons.confidence_bars level={@confidence} />
+      <span>{@confidence}</span>
+    </div>
+    <span :if={is_nil(@confidence)}>-</span>
     """
   end
 
@@ -88,21 +124,22 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       assigns
       |> Map.put(:sub_objective_id, sub_objective.id)
       |> Map.put(:proficiency_distribution, proficiency_distribution)
-      |> Map.put(:proficiency_labels, @proficiency_labels)
+      |> Map.put(
+        :tooltip_id,
+        "proficiency-distribution-tooltip-#{build_chart_id(sub_objective.id, assigns.parent_unique_id)}"
+      )
 
     ~H"""
-    <div class="group flex relative">
+    <Proficiency.distribution_chart_with_tooltip
+      id={@tooltip_id}
+      distribution={@proficiency_distribution}
+    >
       {render_proficiency_chart(
         @sub_objective_id,
         @proficiency_distribution,
         @parent_unique_id
       )}
-      <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
-        <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
-          <p>{label}: {value}%</p>
-        <% end %>
-      </div>
-    </div>
+    </Proficiency.distribution_chart_with_tooltip>
     """
   end
 
@@ -120,7 +157,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
   # RENDER PROFICIENCY CHART (same as main table but for sub-objectives)
   defp render_proficiency_chart(sub_objective_id, data, parent_unique_id) do
     # Order labels correctly and calculate positions manually
-    counts = Enum.map(@proficiency_labels, fn label -> Map.get(data, label, 0) end)
+    counts = Enum.map(Proficiency.labels(), fn label -> Map.get(data, label, 0) end)
     total = Enum.sum(counts)
 
     data_with_positions =
@@ -128,7 +165,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
         []
       else
         {result, _} =
-          Enum.reduce(@proficiency_labels, {[], 0}, fn label, {acc, cumulative_start} ->
+          Enum.reduce(Proficiency.labels(), {[], 0}, fn label, {acc, cumulative_start} ->
             count = Map.get(data, label, 0)
 
             if count > 0 do
@@ -150,17 +187,17 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
 
     spec = %{
       height: 12,
-      mark: "bar",
+      mark: %{type: "bar", binSpacing: 2},
       data: %{values: data_with_positions},
       encoding: %{
-        x: %{field: "start", type: "quantitative", scale: %{nice: false}},
+        x: %{field: "start", type: "quantitative", bin: "binned", scale: %{nice: false}},
         x2: %{field: "end"},
         color: %{
           field: "proficiency",
           type: "nominal",
           scale: %{
             domain: ["Not enough data", "Low", "Medium", "High"],
-            range: ["#C2C2C2", "#B37CEA", "#964BEA", "#7818BB"]
+            range: Proficiency.colors(:light)
           }
         }
       },
@@ -182,9 +219,10 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       %{
         spec: spec,
         dark_mode_colors: %{
-          light: ["#C2C2C2", "#B37CEA", "#964BEA", "#7818BB"],
-          dark: ["#C2C2C2", "#E6D4FA", "#B17BE8", "#7B19C1"]
-        }
+          light: Proficiency.colors(:light),
+          dark: Proficiency.colors(:dark)
+        },
+        transparent_background: true
       },
       id: build_chart_id(sub_objective_id, parent_unique_id)
     )
@@ -196,18 +234,5 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       nil -> "proficiency-chart-sub-objective-#{sub_objective_id}"
       parent_id -> "proficiency-chart-sub-objective-#{sub_objective_id}-#{parent_id}"
     end
-  end
-
-  # CALCULATE PERCENTAGES
-  defp calc_percentages(data) do
-    total = data |> Map.values() |> Enum.sum()
-
-    perc = fn label ->
-      if total == 0, do: 0, else: round(Map.get(data, label, 0) / total * 100)
-    end
-
-    @proficiency_labels
-    |> Enum.map(fn label -> {label, perc.(label)} end)
-    |> Map.new()
   end
 end

@@ -21,6 +21,9 @@ defmodule Oli.Delivery.Paywall do
   Summarizes a users ability to access a course section, taking into account the paywall configuration
   for that course section.
 
+  Platform roles are loaded when needed, so callers may pass a user without
+  preloaded associations.
+
   Returns an `%AccessSummary` struct which details the following:
   1. Whether or not the user can access the course material
   2. A reason for why the user can or cannot access
@@ -33,6 +36,8 @@ defmodule Oli.Delivery.Paywall do
         %User{id: id} = user,
         %Section{slug: slug, requires_payment: true, amount: amount} = section
       ) do
+    user = Repo.preload(user, :platform_roles)
+
     if Sections.is_instructor?(user, slug) or Sections.is_admin?(user, slug) do
       AccessSummary.instructor()
     else
@@ -63,6 +68,18 @@ defmodule Oli.Delivery.Paywall do
     end
   end
 
+  @doc """
+  Summarizes course access using an already fetched role, enrollment and payment.
+  Platform roles are loaded when needed for the administrator check, just as in
+  `summarize_access/2`.
+  """
+  @spec summarize_access(
+          %User{} | nil,
+          %Section{},
+          integer() | nil,
+          %Enrollment{} | nil,
+          %Payment{} | nil
+        ) :: %AccessSummary{}
   def summarize_access(_, %Section{requires_payment: false}, _, _, _),
     do: AccessSummary.build_no_paywall()
 
@@ -73,6 +90,8 @@ defmodule Oli.Delivery.Paywall do
         enrollment,
         payment
       ) do
+    user = Repo.preload(user, :platform_roles)
+
     if user_role_id in Sections.get_instructor_role_ids() or Sections.is_admin?(user, slug) do
       AccessSummary.instructor()
     else

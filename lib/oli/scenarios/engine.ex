@@ -18,7 +18,10 @@ defmodule Oli.Scenarios.Engine do
     AssertDirective,
     UserDirective,
     EnrollDirective,
+    BulkCreateEnrollUsersDirective,
+    SimulateProgressDirective,
     InstitutionDirective,
+    OwnershipDirective,
     InstitutionDiscountDirective,
     CommunityDirective,
     AssertSourcesDirective,
@@ -45,6 +48,7 @@ defmodule Oli.Scenarios.Engine do
     DiscussionModerationDirective,
     DiscussionDeleteDirective,
     ClassNoteDirective,
+    PostReactionDirective,
     CompleteScoredPageDirective,
     FinalizeAttemptDirective,
     StudentExceptionDirective,
@@ -68,7 +72,10 @@ defmodule Oli.Scenarios.Engine do
     AssertHandler,
     UserHandler,
     EnrollmentHandler,
+    BulkCreateEnrollUsersHandler,
+    SimulateProgressHandler,
     InstitutionHandler,
+    OwnershipHandler,
     InstitutionDiscountHandler,
     CommunityHandler,
     AssertSourcesHandler,
@@ -95,6 +102,7 @@ defmodule Oli.Scenarios.Engine do
     DiscussionModerationHandler,
     DiscussionDeleteHandler,
     ClassNoteHandler,
+    PostReactionHandler,
     CompleteScoredPageHandler,
     FinalizeAttemptHandler,
     StudentExceptionHandler,
@@ -109,6 +117,10 @@ defmodule Oli.Scenarios.Engine do
   @doc """
   Executes a list of directives sequentially, maintaining state throughout.
   Returns an ExecutionResult with final state and any verification results.
+
+  Seed execution may supply `:preview_account_defaults`, a `DemoAccounts` settings struct
+  containing creation-only confirmation and login flags without credentials. Omitting the
+  option preserves inherited defaults; explicitly passing `nil` clears them.
   """
   def execute(directives, opts \\ []) when is_list(directives) do
     previous_time_override = Oli.DateTime.get_override()
@@ -116,17 +128,33 @@ defmodule Oli.Scenarios.Engine do
 
     try do
       {final_state, verifications, errors} =
-        Enum.reduce(directives, {initial_state, [], []}, fn directive, {state, verifs, errs} ->
-          case execute_directive(directive, state) do
-            {:ok, new_state} ->
-              {new_state, verifs, errs}
+        Enum.reduce_while(directives, {initial_state, [], []}, fn
+          directive, {state, verifs, errs} ->
+            case execute_checked_directive(directive, state) do
+              {:ok, new_state} ->
+                {:cont, {new_state, verifs, errs}}
 
-            {:ok, new_state, verification} ->
-              {new_state, [verification | verifs], errs}
+              {:ok, new_state, verification} ->
+                {:cont, {new_state, [verification | verifs], errs}}
 
-            {:error, reason} ->
-              {state, verifs, [{directive, reason} | errs]}
-          end
+              {:error, reason} ->
+                result = {state, verifs, [{directive, reason} | errs]}
+
+                if state.ownership do
+                  {:halt, result}
+                else
+                  {:cont, result}
+                end
+
+              {:error, reason, new_state} ->
+                result = {new_state, verifs, [{directive, reason} | errs]}
+
+                if new_state.ownership do
+                  {:halt, result}
+                else
+                  {:cont, result}
+                end
+            end
         end)
 
       %ExecutionResult{
@@ -161,17 +189,17 @@ defmodule Oli.Scenarios.Engine do
 
       nil ->
         # Use provided author or create a default one
-        author = opts[:author] || create_default_author()
+        author = opts[:author] || maybe_create_default_author(opts)
 
         # Use provided institution or create a default one
-        institution = opts[:institution] || create_default_institution()
+        institution = opts[:institution] || maybe_create_default_institution(opts)
 
         base_state = %ExecutionState{
           projects: %{},
           sections: %{},
           products: %{},
-          users: %{"default_author" => author},
-          institutions: %{"default" => institution},
+          users: initial_reference_map("default_author", author),
+          institutions: initial_reference_map("default", institution),
           communities: %{},
           activities: %{},
           activity_virtual_ids: %{},
@@ -180,19 +208,65 @@ defmodule Oli.Scenarios.Engine do
           finalized_attempts: %{},
           activity_evaluations: %{},
           discussion_posts: %{},
+          annotation_posts: %{},
           gates: %{},
           scenario_time: nil,
           current_author: author,
-          current_institution: institution
+          current_institution: institution,
+          ownership: opts[:ownership] || false
         }
 
         apply_execution_opts(base_state, opts)
     end
   end
 
+  defp initial_reference_map(_name, nil), do: %{}
+  defp initial_reference_map(name, value), do: %{name => value}
+
+  defp maybe_create_default_author(opts) do
+    if opts[:ownership], do: nil, else: create_default_author()
+  end
+
+  defp maybe_create_default_institution(opts) do
+    if opts[:ownership], do: nil, else: create_default_institution()
+  end
+
+  @doc false
+  def execute_checked_directive(directive, %{ownership: true} = state) do
+    if ownership_bootstrap_directive?(directive) or ownership_established?(state) do
+      execute_directive(directive, state)
+    else
+      {:error,
+       "release scenario must establish an active author and institution before #{directive_name(directive)}"}
+    end
+  end
+
+  def execute_checked_directive(directive, state), do: execute_directive(directive, state)
+
+  defp ownership_bootstrap_directive?(%UserDirective{type: :author}), do: true
+  defp ownership_bootstrap_directive?(%InstitutionDirective{}), do: true
+  defp ownership_bootstrap_directive?(%OwnershipDirective{}), do: true
+  defp ownership_bootstrap_directive?(%UseDirective{}), do: true
+  defp ownership_bootstrap_directive?(_), do: false
+
+  defp ownership_established?(state) do
+    match?(%Oli.Accounts.Author{}, state.current_author) and
+      match?(%Oli.Institutions.Institution{status: :active}, state.current_institution)
+  end
+
+  defp directive_name(directive) do
+    directive.__struct__ |> Module.split() |> List.last()
+  end
+
   defp apply_execution_opts(%ExecutionState{} = state, opts) do
     state
     |> maybe_put_current_dir(opts)
+    |> Map.put(
+      :preview_account_defaults,
+      Keyword.get(opts, :preview_account_defaults, state.preview_account_defaults)
+    )
+    |> Map.put(:seed_remaining_bytes, opts[:seed_remaining_bytes])
+    |> Map.put(:seed_max_include_depth, opts[:seed_max_include_depth])
     |> Map.put(:params, opts[:params] || Map.get(state, :params, %{}))
   end
 
@@ -290,8 +364,20 @@ defmodule Oli.Scenarios.Engine do
     EnrollmentHandler.handle(directive, state)
   end
 
+  def execute_directive(%BulkCreateEnrollUsersDirective{} = directive, state) do
+    BulkCreateEnrollUsersHandler.handle(directive, state)
+  end
+
+  def execute_directive(%SimulateProgressDirective{} = directive, state) do
+    SimulateProgressHandler.handle(directive, state)
+  end
+
   def execute_directive(%InstitutionDirective{} = directive, state) do
     InstitutionHandler.handle(directive, state)
+  end
+
+  def execute_directive(%OwnershipDirective{} = directive, state) do
+    OwnershipHandler.handle(directive, state)
   end
 
   def execute_directive(%InstitutionDiscountDirective{} = directive, state) do
@@ -396,6 +482,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%ClassNoteDirective{} = directive, state) do
     ClassNoteHandler.handle(directive, state)
+  end
+
+  def execute_directive(%PostReactionDirective{} = directive, state) do
+    PostReactionHandler.handle(directive, state)
   end
 
   def execute_directive(%CompleteScoredPageDirective{} = directive, state) do
@@ -518,6 +608,27 @@ defmodule Oli.Scenarios.Engine do
   """
   def put_discussion_post(state, name, post) do
     %{state | discussion_posts: Map.put(state.discussion_posts, name, post)}
+  end
+
+  @doc """
+  Gets a named annotation post from the state.
+  """
+  def get_annotation_post(state, name) do
+    Map.get(state.annotation_posts, name)
+  end
+
+  @doc """
+  Upserts an annotation post by name into the state.
+  """
+  def put_annotation_post(state, name, post) do
+    %{state | annotation_posts: Map.put(state.annotation_posts, name, post)}
+  end
+
+  @doc """
+  Gets a named annotation or discussion post from the state.
+  """
+  def get_named_post(state, name) do
+    Map.get(state.annotation_posts, name) || Map.get(state.discussion_posts, name)
   end
 
   @doc """

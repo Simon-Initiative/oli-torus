@@ -6,7 +6,16 @@ defmodule Oli.Scenarios.DirectiveTypes do
   # Directive types
   defmodule ProjectDirective do
     @moduledoc "Creates a new project with specified structure"
-    defstruct [:name, :title, :root, :objectives, :tags, :slug, :visibility]
+    defstruct [
+      :name,
+      :title,
+      :root,
+      :objectives,
+      :tags,
+      :slug,
+      :visibility,
+      :learning_model_version
+    ]
   end
 
   defmodule SectionDirective do
@@ -21,6 +30,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :slug,
       :open_and_free,
       :requires_enrollment,
+      :assistant_enabled,
+      :assistant_service_config,
       :requires_payment,
       :payment_options,
       :pay_by_institution,
@@ -105,7 +116,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
   end
 
   defmodule AssertDirective do
-    @moduledoc "Asserts the structure, resource properties, progress, proficiency, or general assertions"
+    @moduledoc "Holds one parsed assertion specification."
     defstruct [
       :structure,
       :resource,
@@ -120,8 +131,10 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :activity_customization,
       :page_objectives,
       :activity_objectives,
+      :learning_objectives,
       :insights,
       :discussion,
+      :annotation,
       :instructor_dashboard_summary,
       :instructor_dashboard_progress,
       :instructor_dashboard_student_support,
@@ -151,9 +164,31 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:user, :section, :role, :email]
   end
 
+  defmodule BulkCreateEnrollUsersDirective do
+    @moduledoc "Creates deterministic synthetic users and enrolls them in a section"
+    defstruct [:section, :prefix, instructors: 0, learners: 0]
+  end
+
+  defmodule SimulateProgressDirective do
+    @moduledoc "Simulates profile-driven course progress for learners in a section"
+    defstruct [
+      :section,
+      :users,
+      :profile,
+      :cohorts,
+      seed: 0,
+      timing: :fast
+    ]
+  end
+
   defmodule InstitutionDirective do
     @moduledoc "Creates an institution"
     defstruct [:name, :country_code, :institution_email, :institution_url]
+  end
+
+  defmodule OwnershipDirective do
+    @moduledoc "Selects the author and institution used by release scenario execution"
+    defstruct [:author, :institution]
   end
 
   defmodule UpdateDirective do
@@ -403,12 +438,26 @@ defmodule Oli.Scenarios.DirectiveTypes do
   defmodule ClassNoteDirective do
     @moduledoc """
     Creates a public class note for a student on a page in a section.
+    name: optional scenario-local name for referencing the note later
     student: scenario user name
     section: scenario section name
     page: title of the page being annotated
     body: note body
+    reply_to: optional scenario-local parent note name
+    block_id: optional content block id for a point annotation
     """
-    defstruct [:student, :section, :page, :body]
+    defstruct [:name, :student, :section, :page, :body, :reply_to, :block_id]
+  end
+
+  defmodule PostReactionDirective do
+    @moduledoc """
+    Adds or removes a reaction for a scenario user on a named collaboration post.
+    post: scenario-local collaboration post name
+    student: scenario user name
+    reaction: reaction type
+    action: add or remove
+    """
+    defstruct [:post, :student, :reaction, :action]
   end
 
   defmodule CompleteScoredPageDirective do
@@ -487,6 +536,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               activity_evaluations: %{},
               # name -> Discussion post
               discussion_posts: %{},
+              # name -> Class note or annotation reply
+              annotation_posts: %{},
               # gate name -> GatingCondition
               gates: %{},
               # scenario-local current time
@@ -496,7 +547,17 @@ defmodule Oli.Scenarios.DirectiveTypes do
               # Default author for operations
               current_author: nil,
               # Default institution
-              current_institution: nil
+              current_institution: nil,
+              # Release execution requires ownership to be established by YAML
+              ownership: false,
+              # Creation-only preview confirmation and login flags; contains no credentials
+              preview_account_defaults: nil,
+              # Release-only cumulative include budget and nesting limit
+              seed_remaining_bytes: nil,
+              seed_max_include_depth: nil,
+              # Bounded structured results emitted by data-generation directives
+              scenario_results: %{},
+              scenario_warnings: []
   end
 
   # Result types

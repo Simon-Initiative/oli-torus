@@ -11,8 +11,11 @@ defmodule Oli.Delivery.Gating do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.Sections.SectionResourceMigration
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Accounts.User
   alias Oli.Delivery.Gating.ConditionTypes.ConditionContext
   alias Oli.Delivery.Gating.ConditionTypes
@@ -97,25 +100,82 @@ defmodule Oli.Delivery.Gating do
   end
 
   @doc """
-  Duplicates all top-level gates in a source section into a destination section.  Does
-  not duplicate student specific exceptions.  Does not validate that resources in the gate
-  exist within the destination section.
+  Duplicates top-level gates from a source section into a destination section.
+
+  Student-specific exceptions are never duplicated. `condition_types` can be `:all` or a list
+  of gate types, allowing callers to copy schedule-shaped gates separately from content gates.
   """
-  def duplicate_gates(%Section{} = source, %Section{} = destination) do
-    Repo.transaction(fn _ ->
-      list_gating_conditions(source.id)
-      |> Enum.filter(fn gc -> is_nil(gc.parent_id) end)
-      |> Enum.each(fn gc ->
-        Map.take(gc, [:type, :graded_resource_policy, :resource_id])
-        |> Map.merge(%{
-          parent_id: nil,
-          section_id: destination.id,
-          data: Map.from_struct(gc.data)
-        })
-        |> create_gating_condition()
-      end)
+  @spec duplicate_gates(%Section{}, %Section{}, :all | [atom()]) ::
+          {:ok, non_neg_integer()} | {:error, term()}
+  def duplicate_gates(%Section{} = source, %Section{} = destination, condition_types \\ :all) do
+    Repo.transaction(fn ->
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      attrs =
+        source.id
+        |> list_gating_conditions(true)
+        |> Enum.filter(&matches_condition_types?(&1, condition_types))
+        |> Enum.map(fn gating_condition ->
+          gating_condition
+          |> Map.take([:type, :graded_resource_policy, :resource_id])
+          |> Map.merge(%{
+            parent_id: nil,
+            user_id: nil,
+            section_id: destination.id,
+            data: gate_data_attrs(gating_condition.data)
+          })
+        end)
+
+      with {:ok, rows} <- validate_gate_rows(attrs, now),
+           {count, _} <- Repo.insert_all(GatingCondition, rows),
+           true <- count == length(rows) do
+        count
+      else
+        false -> Repo.rollback(:gate_copy_incomplete)
+        {:error, error} -> Repo.rollback(error)
+      end
     end)
   end
+
+  defp validate_gate_rows(attrs, now) do
+    Enum.reduce_while(attrs, {:ok, []}, fn attrs, {:ok, rows} ->
+      changeset = GatingCondition.changeset(%GatingCondition{}, attrs)
+
+      case Ecto.Changeset.apply_action(changeset, :insert) do
+        {:ok, gate} ->
+          row =
+            gate
+            |> Map.from_struct()
+            |> Map.take([
+              :type,
+              :graded_resource_policy,
+              :resource_id,
+              :section_id,
+              :user_id,
+              :parent_id,
+              :data
+            ])
+            |> Map.merge(%{inserted_at: now, updated_at: now})
+
+          {:cont, {:ok, [row | rows]}}
+
+        {:error, changeset} ->
+          {:halt, {:error, changeset}}
+      end
+    end)
+    |> case do
+      {:ok, rows} -> {:ok, Enum.reverse(rows)}
+      error -> error
+    end
+  end
+
+  defp gate_data_attrs(nil), do: %{}
+  defp gate_data_attrs(data), do: Map.from_struct(data)
+
+  defp matches_condition_types?(_gating_condition, :all), do: true
+
+  defp matches_condition_types?(%GatingCondition{type: type}, types) when is_list(types),
+    do: type in types
 
   @doc """
   Returns the list of gating_conditions for a section, optionally restricted
@@ -130,15 +190,18 @@ defmodule Oli.Delivery.Gating do
       [%GatingCondition{}, ...]
 
   """
+  @spec list_gating_conditions(integer(), boolean()) :: [%GatingCondition{}]
   def list_gating_conditions(section_id, top_level_only \\ false) do
     filter_by_top_level =
-      if is_nil(top_level_only) do
-        dynamic(
-          [gc],
-          is_nil(gc.parent_id)
-        )
-      else
-        true
+      case top_level_only do
+        true ->
+          dynamic(
+            [gc],
+            is_nil(gc.parent_id)
+          )
+
+        _ ->
+          true
       end
 
     query =
@@ -201,6 +264,119 @@ defmodule Oli.Delivery.Gating do
     |> GatingCondition.changeset(attrs)
     |> Repo.insert()
   end
+
+  @doc """
+  Creates a gate and its enforcement index atomically under the section lifecycle
+  lock. Student exceptions do not change the shared index and skip its rebuild.
+  Request-facing callers must authorize the destination section first.
+  """
+  @spec create_gating_condition_with_index(map()) ::
+          {:ok, %GatingCondition{}} | {:error, term()}
+  def create_gating_condition_with_index(attrs) do
+    %GatingCondition{}
+    |> GatingCondition.changeset(attrs)
+    |> persist_gate_with_index(:insert)
+  end
+
+  @doc """
+  Updates a gate and its enforcement index atomically under the section lifecycle
+  lock. Moving a gate to another section is not supported. Callers must authorize
+  the section before invoking this persistence operation. The index is rebuilt
+  only when the gate's top-level resource membership changes, not for changes to
+  its condition, dates, or student exception configuration.
+  """
+  @spec update_gating_condition_with_index(%GatingCondition{}, map()) ::
+          {:ok, %GatingCondition{}} | {:error, term()}
+  def update_gating_condition_with_index(%GatingCondition{} = gate, attrs) do
+    gate
+    |> GatingCondition.changeset(attrs)
+    |> Ecto.Changeset.validate_change(:section_id, fn :section_id, section_id ->
+      case section_id == gate.section_id do
+        true -> []
+        false -> [section_id: "cannot move a gate to another section"]
+      end
+    end)
+    |> persist_gate_with_index(:update, attrs)
+  end
+
+  @doc """
+  Deletes a gate (and any child exceptions) and refreshes its index atomically
+  under the section lifecycle lock. Deleting a student exception leaves the
+  shared index unchanged. Callers must authorize the section first.
+  """
+  @spec delete_gating_condition_with_index(%GatingCondition{}) ::
+          {:ok, %GatingCondition{}, non_neg_integer()} | {:error, term()}
+  def delete_gating_condition_with_index(%GatingCondition{} = gate) do
+    with_gating_index(gate.section_id, gate.id, :delete, &delete_gating_condition/1)
+  end
+
+  defp persist_gate_with_index(changeset, operation, attrs \\ %{})
+
+  defp persist_gate_with_index(%Ecto.Changeset{valid?: false} = changeset, _operation, _attrs),
+    do: {:error, changeset}
+
+  defp persist_gate_with_index(changeset, operation, attrs) do
+    section_id = Ecto.Changeset.get_field(changeset, :section_id)
+
+    with_gating_index(section_id, changeset.data.id, operation, fn current_gate ->
+      case operation do
+        :insert -> Repo.insert(changeset)
+        :update -> current_gate |> GatingCondition.changeset(attrs) |> Repo.update()
+      end
+    end)
+  end
+
+  defp with_gating_index(section_id, gate_id, operation, mutation) do
+    Repo.transaction(fn ->
+      section = SectionResourceMigration.lock_section!(section_id)
+
+      # Read membership under the lock, rather than relying on a caller's stale
+      # gate struct. Apply only the requested changes to that current row.
+      before_gate =
+        case gate_id do
+          nil ->
+            nil
+
+          id ->
+            case Repo.get_by(GatingCondition, id: id, section_id: section_id) do
+              nil -> Repo.rollback(:gating_condition_not_found)
+              gate -> gate
+            end
+        end
+
+      case mutation.(before_gate) do
+        result when elem(result, 0) == :ok ->
+          after_gate =
+            case operation do
+              :delete -> nil
+              _ -> elem(result, 1)
+            end
+
+          case indexed_resource(before_gate) == indexed_resource(after_gate) do
+            true ->
+              result
+
+            false ->
+              case rebuild_resource_gating_index(section) do
+                {:ok, _section} -> result
+                {:error, reason} -> Repo.rollback(reason)
+              end
+          end
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+    |> case do
+      {:ok, result} -> result
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp indexed_resource(%GatingCondition{parent_id: nil, resource_id: resource_id}),
+    do: resource_id
+
+  defp indexed_resource(_gate), do: nil
 
   @doc """
   Updates a gating_condition.
@@ -271,6 +447,59 @@ defmodule Oli.Delivery.Gating do
     |> Sections.update_section(%{
       resource_gating_index: generate_resource_gating_index(section)
     })
+  end
+
+  @doc """
+  Rebuilds the enforcement index from persisted section resources and gates.
+
+  Intended for lifecycle creation and atomic gate edits, where the resource depot
+  may not yet exist or reflect in-transaction writes. The caller must hold the
+  section lifecycle lock inside a transaction. Ordinary delivery reads continue
+  to use the depot-backed `generate_resource_gating_index/1`.
+  """
+  @spec rebuild_resource_gating_index(%Section{}) :: {:ok, %Section{}} | {:error, term()}
+  def rebuild_resource_gating_index(%Section{} = section) do
+    resources =
+      from(sr in SectionResource,
+        where: sr.section_id == ^section.id,
+        select: %{id: sr.id, resource_id: sr.resource_id, children: sr.children}
+      )
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    gated_resources =
+      section.id
+      |> list_gating_conditions(true)
+      |> Map.new(&{&1.resource_id, true})
+
+    index =
+      case gating_hierarchy(section.root_section_resource_id, resources, MapSet.new()) do
+        nil -> %{}
+        hierarchy -> Hierarchy.gated_ancestry_map(hierarchy, gated_resources)
+      end
+
+    Sections.update_section(section, %{resource_gating_index: index})
+  end
+
+  defp gating_hierarchy(id, resources, ancestors) do
+    case {Map.get(resources, id), MapSet.member?(ancestors, id)} do
+      {nil, _} ->
+        nil
+
+      {_, true} ->
+        nil
+
+      {resource, false} ->
+        ancestors = MapSet.put(ancestors, id)
+
+        children =
+          resource.children
+          |> List.wrap()
+          |> Enum.map(&gating_hierarchy(&1, resources, ancestors))
+          |> Enum.reject(&is_nil/1)
+
+        %HierarchyNode{resource_id: resource.resource_id, children: children}
+    end
   end
 
   @doc """

@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Sections.Section do
   alias Oli.Authoring.Course.Project
   alias Oli.Institutions.Institution
   alias Oli.Branding.Brand
+  alias Oli.LearningModel.ModelVersion
   alias Oli.Delivery.DeliveryPolicy
   alias Oli.Branding.CustomLabels
 
@@ -38,6 +39,11 @@ defmodule Oli.Delivery.Sections.Section do
     field(:open_and_free, :boolean, default: false)
     field(:requires_enrollment, :boolean, default: false)
     field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v2)
+    field(:learning_model_version, Ecto.Enum, values: ModelVersion.values(), default: :naive)
+
+    # Internal projection marker. It is intentionally absent from every public
+    # changeset so only SectionResourceMigration can advance it.
+    field(:section_resource_migration_version, :integer, default: 0)
 
     field(:status, Ecto.Enum, values: [:active, :deleted, :archived], default: :active)
     field(:invite_token, :string)
@@ -249,9 +255,22 @@ defmodule Oli.Delivery.Sections.Section do
     |> enforce_minimum_price()
     |> validate_dates_consistency(:start_date, :end_date)
     |> unique_constraint(:context_id, name: :sections_active_context_id_unique_index)
+    |> check_constraint(:learning_model_version, name: :sections_learning_model_version_check)
     |> Slug.update_never("sections")
     |> validate_length(:title, max: 255)
     |> cast_assoc(:certificate)
+  end
+
+  @doc """
+  Casts learning-model selection at trusted creation and propagation boundaries.
+
+  Do not use this function with unfiltered user or form parameters.
+  """
+  def trusted_learning_model_changeset(section_or_changeset, attrs) do
+    section_or_changeset
+    |> cast(attrs, [:learning_model_version])
+    |> validate_required([:learning_model_version])
+    |> check_constraint(:learning_model_version, name: :sections_learning_model_version_check)
   end
 
   def validate_positive_grace_period(changeset) do

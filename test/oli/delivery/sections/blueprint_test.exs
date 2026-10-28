@@ -5,10 +5,12 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
   import Ecto.Query, warn: false
 
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Delivery.Gating
   alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
@@ -71,6 +73,9 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       # Section from product action
       {:ok, duplicate} = Blueprint.duplicate(blueprint, section_params)
 
+      assert duplicate.section_resource_migration_version ==
+               Oli.Delivery.Sections.SectionResourceMigration.current_version()
+
       # Grab graded pages and its section_resources (only 1 at this moment)
       [{page_revision_duplicate, sr_page_duplicate}] =
         DeliveryResolver.graded_pages_revisions_and_section_resources(duplicate.slug)
@@ -94,6 +99,271 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
 
       assert sr_page_blueprint.feedback_scheduled_date ==
                sr_page_duplicate.feedback_scheduled_date
+    end
+
+    test "copies the immediate source model and ignores an attrs override" do
+      %{project: project, publication: publication} = Seeder.base_project_with_resource2()
+
+      project =
+        project
+        |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
+        |> Repo.update!()
+
+      {:ok, source_section} =
+        Sections.create_section_from_source(
+          %{
+            title: "LKT source Section",
+            registration_open: true,
+            context_id: UUID.uuid4(),
+            base_project_id: project.id,
+            publisher_id: project.publisher_id
+          },
+          project
+        )
+
+      {:ok, source_section} = Sections.create_section_resources(source_section, publication)
+
+      assert {:ok, blueprint} =
+               Blueprint.duplicate(source_section, %{learning_model_version: :naive})
+
+      assert blueprint.type == :blueprint
+      assert blueprint.learning_model_version == :lkt_aoa
+
+      assert {:ok, enrollable_section} =
+               Blueprint.duplicate(blueprint, %{
+                 type: :enrollable,
+                 learning_model_version: :naive
+               })
+
+      assert enrollable_section.type == :enrollable
+      assert enrollable_section.learning_model_version == :lkt_aoa
+    end
+
+    test "duplicates a legacy description over the authoring character limit" do
+      %{project: project, publication: publication, institution: institution} =
+        Seeder.base_project_with_resource2()
+
+      description = String.duplicate("Legacy description", 20)
+
+      {:ok, blueprint} =
+        Sections.create_section(%{
+          type: :blueprint,
+          title: "Legacy description template",
+          description: description,
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          institution_id: institution.id,
+          base_project_id: project.id,
+          publisher_id: project.publisher_id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(publication)
+
+      assert {:ok, duplicate} = Blueprint.duplicate(blueprint)
+      assert duplicate.description == description
+    end
+  end
+
+  # Characterization coverage for the mechanics `Blueprint.duplicate/3` delegates
+  # to `Oli.Delivery.Sections.SectionCopy`. These pin the behaviour product
+  # duplication has today so the extraction of the copy engine, and any later
+  # move of this path onto an allowlisted policy, cannot change it silently.
+  describe "duplicate/3 mechanics" do
+    setup do
+      seed = Seeder.base_project_with_resource2()
+
+      {:ok, product} =
+        Sections.create_section(%{
+          type: :blueprint,
+          title: "A Product",
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          base_project_id: seed.project.id,
+          publisher_id: seed.project.publisher_id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(seed.publication)
+
+      {:ok, Map.put(seed, :product, product)}
+    end
+
+    test "legacy product duplication retains its existing delivery policy behavior", %{
+      product: product,
+      page1: page
+    } do
+      policy =
+        %Oli.Delivery.DeliveryPolicy{}
+        |> Ecto.Changeset.change(section_id: product.id, assessment_time_limit_sec: 120)
+        |> Repo.insert!()
+
+      source_page =
+        Repo.get_by!(Oli.Delivery.Sections.SectionResource,
+          section_id: product.id,
+          resource_id: page.id
+        )
+
+      {:ok, _} = Sections.update_section_resource(source_page, %{delivery_policy_id: policy.id})
+      {:ok, duplicate} = Blueprint.duplicate(product)
+
+      copied_page =
+        Repo.get_by!(Oli.Delivery.Sections.SectionResource,
+          section_id: duplicate.id,
+          resource_id: page.id
+        )
+
+      assert copied_page.delivery_policy_id == policy.id
+    end
+
+    test "deep copies section resources onto new ids", %{product: product} do
+      {:ok, duplicate} = Blueprint.duplicate(product)
+
+      source_ids = product.id |> get_resources() |> Enum.map(& &1.id)
+      duplicate_ids = duplicate.id |> get_resources() |> Enum.map(& &1.id)
+
+      assert length(duplicate_ids) == length(source_ids)
+      assert MapSet.disjoint?(MapSet.new(source_ids), MapSet.new(duplicate_ids))
+    end
+
+    test "rewires children onto the duplicate's own section resources", %{product: product} do
+      {:ok, duplicate} = Blueprint.duplicate(product)
+
+      duplicate_ids = duplicate.id |> get_resources() |> Enum.map(& &1.id) |> MapSet.new()
+
+      children = duplicate.id |> get_resources() |> Enum.flat_map(& &1.children)
+
+      assert children != []
+      assert Enum.all?(children, &MapSet.member?(duplicate_ids, &1))
+    end
+
+    test "points root_section_resource_id at the duplicate's own root", %{product: product} do
+      {:ok, duplicate} = Blueprint.duplicate(product)
+
+      root = Repo.get(Oli.Delivery.Sections.SectionResource, duplicate.root_section_resource_id)
+
+      assert root.section_id == duplicate.id
+      assert duplicate.root_section_resource_id != product.root_section_resource_id
+    end
+
+    test "duplicates publication pins as rows owned by the duplicate", %{product: product} do
+      {:ok, duplicate} = Blueprint.duplicate(product)
+
+      source_pins = get_pub_mappings(product.id)
+      duplicate_pins = get_pub_mappings(duplicate.id)
+
+      assert length(duplicate_pins) == length(source_pins)
+      assert Enum.all?(duplicate_pins, &(&1.section_id == duplicate.id))
+
+      assert Enum.map(source_pins, & &1.publication_id) |> Enum.sort() ==
+               Enum.map(duplicate_pins, & &1.publication_id) |> Enum.sort()
+    end
+
+    test "duplicates instructor activity exclusions", %{product: product, page1: page1} do
+      excluded = insert(:resource)
+
+      insert_activity_exclusion!(product.id, page1.id, %{
+        kind: :embedded_activity,
+        excluded_resource_id: excluded.id
+      })
+
+      {:ok, duplicate} = Blueprint.duplicate(product)
+
+      assert exclusion_count(product.id) == 1
+      assert exclusion_count(duplicate.id) == 1
+    end
+
+    test "duplicates top-level gates but not student exceptions",
+         %{product: product, page1: page1} do
+      {:ok, gate} =
+        Gating.create_gating_condition(%{
+          type: :schedule,
+          section_id: product.id,
+          resource_id: page1.id,
+          graded_resource_policy: :allows_review,
+          data: %{
+            start_datetime: ~U[2026-04-01 12:00:00Z],
+            end_datetime: ~U[2026-05-01 12:00:00Z]
+          }
+        })
+
+      user = insert(:user)
+
+      {:ok, _exception} =
+        Gating.create_gating_condition(%{
+          type: :schedule,
+          section_id: product.id,
+          resource_id: page1.id,
+          parent_id: gate.id,
+          user_id: user.id,
+          graded_resource_policy: :allows_review,
+          data: %{end_datetime: ~U[2026-06-01 12:00:00Z]}
+        })
+
+      {:ok, duplicate} = Blueprint.duplicate(product)
+
+      copied = Gating.list_gating_conditions(duplicate.id)
+
+      assert length(copied) == 1
+      assert Enum.all?(copied, &is_nil(&1.parent_id))
+      assert Enum.all?(copied, &is_nil(&1.user_id))
+    end
+
+    test "a gate that cannot be written rolls the whole duplication back",
+         %{product: product, page1: page1} do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      Repo.insert_all(Oli.Delivery.Gating.GatingCondition, [
+        %{
+          type: :schedule,
+          section_id: product.id,
+          resource_id: page1.id,
+          graded_resource_policy: :allows_review,
+          data: %Oli.Delivery.Gating.GatingConditionData{
+            start_datetime: ~U[2026-05-01 12:00:00Z],
+            end_datetime: ~U[2026-04-01 12:00:00Z]
+          },
+          inserted_at: now,
+          updated_at: now
+        }
+      ])
+
+      sections_before = Repo.aggregate(Oli.Delivery.Sections.Section, :count, :id)
+
+      assert {:error, _reason} = Blueprint.duplicate(product)
+
+      assert Repo.aggregate(Oli.Delivery.Sections.Section, :count, :id) == sections_before
+    end
+
+    test "the duplicate is independent of later source edits", %{product: product} do
+      {:ok, duplicate} = Blueprint.duplicate(product)
+
+      {:ok, _} = Sections.update_section(product, %{title: "Renamed Product"})
+
+      assert Repo.get(Oli.Delivery.Sections.Section, duplicate.id).title != "Renamed Product"
+    end
+
+    test "no enrollment is carried over", %{product: product} do
+      user = insert(:user)
+
+      {:ok, _} =
+        Sections.enroll(user.id, product.id, [
+          Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
+        ])
+
+      {:ok, duplicate} = Blueprint.duplicate(product)
+
+      assert Repo.aggregate(
+               from(e in Oli.Delivery.Sections.Enrollment, where: e.section_id == ^duplicate.id),
+               :count,
+               :id
+             ) == 0
+    end
+
+    def exclusion_count(section_id) do
+      Repo.aggregate(
+        from(e in ActivityExclusion, where: e.section_id == ^section_id),
+        :count,
+        :id
+      )
     end
   end
 
@@ -160,6 +430,10 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert duplicate.skip_email_verification == true
       assert duplicate.registration_open == true
       assert duplicate.requires_enrollment == true
+
+      assert duplicate.section_resource_migration_version ==
+               Oli.Delivery.Sections.SectionResourceMigration.current_version()
+
       refute duplicate.id == section.id
       refute duplicate.slug == section.slug
       refute duplicate.root_section_resource_id == section.root_section_resource_id
@@ -641,6 +915,24 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
 
       assert length(section_project_publications) == 1
       assert Enum.at(section_project_publications, 0).project_id == project.id
+    end
+
+    test "copies and pins the Project learning model", %{project: project, author: author} do
+      project =
+        project
+        |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
+        |> Repo.update!()
+
+      {:ok, _publication} = Publishing.publish_project(project, "initial publication", author.id)
+      {:ok, blueprint} = Blueprint.create_blueprint(project.slug, "LKT Blueprint", %{})
+
+      assert blueprint.learning_model_version == :lkt_aoa
+
+      project
+      |> Project.trusted_learning_model_changeset(%{learning_model_version: :naive})
+      |> Repo.update!()
+
+      assert Repo.reload!(blueprint).learning_model_version == :lkt_aoa
     end
 
     test "creates blueprint with default values when attrs not provided", %{

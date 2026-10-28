@@ -8,6 +8,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
   attr(:section, :map, required: true)
   attr(:ctx, :map, required: true)
   attr(:revision, :map, required: true)
+  attr(:can_delete_attempt, :boolean, default: false)
   attr(:request_path, :string, default: "")
 
   @spec render(
@@ -51,6 +52,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
           Submit Attempt on Behalf of Student
         </button>
       <% end %>
+      <.delete_attempt_button :if={@can_delete_attempt} guid={@attempt.attempt_guid} />
     </div>
     """
   end
@@ -107,6 +109,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
           <% end %>
         </div>
       </div>
+      <.delete_attempt_button :if={@can_delete_attempt} guid={@attempt.attempt_guid} />
     </div>
     """
   end
@@ -137,7 +140,23 @@ defmodule OliWeb.Progress.PageAttemptSummary do
           Time elapsed: {duration(@attempt.inserted_at, @attempt.date_submitted)}.
         </small>
       </.link>
+      <.delete_attempt_button :if={@can_delete_attempt} guid={@attempt.attempt_guid} />
     </div>
+    """
+  end
+
+  attr(:guid, :string, required: true)
+
+  defp delete_attempt_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      class="btn btn-danger mt-2"
+      phx-click="delete_attempt"
+      phx-value-guid={@guid}
+    >
+      Delete Attempt
+    </button>
     """
   end
 end

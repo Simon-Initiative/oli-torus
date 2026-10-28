@@ -1,7 +1,12 @@
 import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MarkupTree, renderFlow } from 'components/parts/janus-text-flow/TextFlow';
 import './Flashcard.css';
-import { getFaceNodes, stripFlashcardImageDimensions } from './flashcardContent';
+import { flashcardThemeStyles } from './flashcard-util';
+import {
+  announceFlashcardImages,
+  getFaceNodes,
+  stripFlashcardImageDimensions,
+} from './flashcardContent';
 import {
   FLASHCARDS_GRID_GAP_REM,
   FLASHCARD_NARROW_MIN_HEIGHT_PX,
@@ -55,7 +60,10 @@ type FlashcardFaceContentProps = {
   nodes: MarkupTree[];
 };
 
-const FlashcardFaceContent: React.FC<FlashcardFaceContentProps> = ({ contentKeyPrefix, nodes }) => {
+export const FlashcardFaceContent: React.FC<FlashcardFaceContentProps> = ({
+  contentKeyPrefix,
+  nodes,
+}) => {
   const containsImage = hasNodeTag(nodes, 'img');
   const containsText = hasText(nodes);
 
@@ -67,7 +75,10 @@ const FlashcardFaceContent: React.FC<FlashcardFaceContentProps> = ({ contentKeyP
     .filter(Boolean)
     .join(' ');
 
-  const renderNodes = useMemo(() => stripFlashcardImageDimensions(nodes), [nodes]);
+  const renderNodes = useMemo(
+    () => announceFlashcardImages(stripFlashcardImageDimensions(nodes)),
+    [nodes],
+  );
 
   return (
     <div className={className}>
@@ -242,6 +253,7 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
     const visibleSide = isFlipped ? 'back' : 'front';
     const nextSide = isFlipped ? 'front' : 'back';
     const instructionsId = `flashcard-${card.id}-instructions`;
+    const faceStyle = flashcardThemeStyles(card.themeColor);
 
     return (
       <div key={card.id} className="flashcards-list-item" role="listitem">
@@ -264,13 +276,21 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
           </span>
 
           <div className="flashcard-inner">
-            <div className="flashcard-face flashcard-front" aria-hidden={isFlipped}>
+            <div
+              className="flashcard-face flashcard-front"
+              style={faceStyle}
+              aria-hidden={isFlipped}
+            >
               <FlashcardFaceContent
                 contentKeyPrefix={`${card.id}-front`}
                 nodes={getFaceNodes(card, 'front')}
               />
             </div>
-            <div className="flashcard-face flashcard-back" aria-hidden={!isFlipped}>
+            <div
+              className="flashcard-face flashcard-back"
+              style={faceStyle}
+              aria-hidden={!isFlipped}
+            >
               <FlashcardFaceContent
                 contentKeyPrefix={`${card.id}-back`}
                 nodes={getFaceNodes(card, 'back')}

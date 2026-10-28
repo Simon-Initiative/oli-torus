@@ -28,23 +28,31 @@ defmodule Oli.Interop.Ingest.Processor.Activities do
         _ -> :embedded
       end
 
-    %{
-      slug: Oli.Utils.Slug.slug_with_prefix(state.slug_prefix, title),
-      legacy: %Oli.Resources.Legacy{id: legacy_id, path: legacy_path},
-      resource_id: resource_id,
-      scope: scope,
-      tags: transform_tags(resource, state.legacy_to_resource_id_map),
-      title: title,
-      objectives: process_activity_objectives(resource, state.legacy_to_resource_id_map),
-      content: Map.get(resource, "content"),
-      author_id: {:placeholder, :author_id},
-      children: {:placeholder, :children},
-      resource_type_id: {:placeholder, :resource_type_id},
-      activity_type_id: Map.get(state.registration_by_subtype, Map.get(resource, "subType")),
-      scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
-      inserted_at: {:placeholder, :now},
-      updated_at: {:placeholder, :now}
-    }
+    content = Map.get(resource, "content")
+    resource_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+    with {:ok, learning_model_parameters} <-
+           decode_learning_model_parameters(resource, resource_type_id, content) do
+      {:ok,
+       %{
+         slug: Oli.Utils.Slug.slug_with_prefix(state.slug_prefix, title),
+         legacy: %Oli.Resources.Legacy{id: legacy_id, path: legacy_path},
+         resource_id: resource_id,
+         scope: scope,
+         tags: transform_tags(resource, state.legacy_to_resource_id_map),
+         title: title,
+         objectives: process_activity_objectives(resource, state.legacy_to_resource_id_map),
+         content: content,
+         learning_model_parameters: learning_model_parameters,
+         author_id: {:placeholder, :author_id},
+         children: {:placeholder, :children},
+         resource_type_id: {:placeholder, :resource_type_id},
+         activity_type_id: Map.get(state.registration_by_subtype, Map.get(resource, "subType")),
+         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
+         inserted_at: {:placeholder, :now},
+         updated_at: {:placeholder, :now}
+       }}
+    end
   end
 
   defp process_activity_objectives(activity, objective_map) do

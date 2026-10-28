@@ -77,8 +77,16 @@ defmodule Oli.GenAI.Dialogue.Server do
     GenServer.cast(server, {:engage, message})
   end
 
+  def engage(server, %Message{} = message, engagement_id) when is_pid(server) do
+    GenServer.cast(server, {:engage, message, engagement_id})
+  end
+
   def remember(server, %Message{} = message) when is_pid(server) do
     GenServer.cast(server, {:remember, message})
+  end
+
+  def cancel_engagement(server) when is_pid(server) do
+    GenServer.cast(server, :cancel_engagement)
   end
 
   def init(%Configuration{} = static_configuration) do
@@ -92,34 +100,49 @@ defmodule Oli.GenAI.Dialogue.Server do
   def handle_cast({:engage, message}, %State{} = state) do
     %{configuration: cfg} = state
 
-    # spawn a Task so we don’t block the GenServer loop
-    server = self()
-
-    Task.start(fn ->
-      build_notify_fns(server, state)
-      |> do_engage(state, message)
-    end)
-
     Logger.debug(
       "Engaging dialogue for client #{inspect(cfg.reply_to_pid)} with message: #{inspect(message)}"
     )
 
-    {:noreply, %State{state | messages: [message | state.messages]}}
+    {:noreply, state |> start_engagement(message, nil) |> prepend_message(message)}
+  end
+
+  def handle_cast({:engage, message, engagement_id}, %State{} = state) do
+    {:noreply, state |> start_engagement(message, engagement_id) |> prepend_message(message)}
   end
 
   def handle_cast({:remember, message}, %State{} = state) do
     {:noreply, remember_message(state, message)}
   end
 
-  defp build_notify_fns(server_pid, %State{
-         configuration: %Configuration{reply_to_pid: reply_to_pid}
-       }) do
+  def handle_cast(:cancel_engagement, state), do: {:noreply, cancel_engagement_task(state)}
+
+  defp build_notify_fns(
+         server_pid,
+         %State{
+           configuration: %Configuration{reply_to_pid: reply_to_pid}
+         },
+         nil
+       ) do
     {
       fn message ->
         send(server_pid, message)
       end,
       fn message ->
         send(reply_to_pid, message)
+      end
+    }
+  end
+
+  defp build_notify_fns(
+         server_pid,
+         %State{configuration: %Configuration{reply_to_pid: reply_to_pid}},
+         engagement_id
+       ) do
+    {
+      fn {:stream_chunk, chunk} -> send(server_pid, {:stream_chunk, engagement_id, chunk}) end,
+      fn {:dialogue_server, event} ->
+        send(reply_to_pid, {:dialogue_server, engagement_id, event})
       end
     }
   end
@@ -134,6 +157,9 @@ defmodule Oli.GenAI.Dialogue.Server do
     process_chunk = fn chunk ->
       case chunk do
         {:error} ->
+          notify_server_fn.({:stream_chunk, {:error}})
+
+        {:error, _details} ->
           notify_server_fn.({:stream_chunk, {:error}})
 
         {:function_call, function_call} ->
@@ -167,27 +193,25 @@ defmodule Oli.GenAI.Dialogue.Server do
       service_config_id: configuration.service_config.id
     }
 
-    case Execution.stream(
+    on_plan = fn plan ->
+      notify_client_fn.({:dialogue_server, {:llm_routing, routing_metadata(plan.selected_model)}})
+    end
+
+    execution_fn = configuration.execution_fn || (&execute_stream/6)
+
+    case execution_fn.(
            request_ctx,
            messages_for_execution(state.messages, state.adaptive_runtime_message, message),
            configuration.functions,
            configuration.service_config,
            response_handler_fn,
-           on_plan: fn plan ->
-             notify_client_fn.(
-               {:dialogue_server, {:llm_routing, routing_metadata(plan.selected_model)}}
-             )
-           end
+           on_plan
          ) do
       :ok ->
         {:noreply, state}
 
       {:error, error} ->
-        Logger.info(
-          "Encountered completions http error for client #{inspect(configuration.reply_to_pid)}: #{inspect(error)}"
-        )
-
-        Logger.warning("Failed without backup for client #{inspect(configuration.reply_to_pid)}")
+        log_dialogue_failure(state, :execution_failed, error)
 
         notify_client_fn.(
           {:dialogue_server, {:error, "An error occurred while processing the request"}}
@@ -197,14 +221,27 @@ defmodule Oli.GenAI.Dialogue.Server do
     end
   end
 
+  defp send_to_listener(
+         %State{engagement_id: engagement_id, configuration: %Configuration{reply_to_pid: pid}},
+         message
+       )
+       when not is_nil(engagement_id) do
+    send(pid, {:dialogue_server, engagement_id, elem(message, 1)})
+  end
+
   defp send_to_listener(%State{configuration: %Configuration{reply_to_pid: pid}}, message) do
     send(pid, message)
   end
 
   # All stream chunks come back here
 
+  def handle_info({:stream_chunk, engagement_id, chunk}, %{engagement_id: engagement_id} = state),
+    do: handle_info({:stream_chunk, chunk}, state)
+
+  def handle_info({:stream_chunk, _stale_engagement_id, _chunk}, state), do: {:noreply, state}
+
   def handle_info({:stream_chunk, {:error}}, state) do
-    Logger.warning("Streaming error for client #{inspect(state.configuration.reply_to_pid)}")
+    notify_error(state)
 
     {:noreply, %{state | messages: discard_last_assistant_message(state.messages)}}
   end
@@ -258,12 +295,19 @@ defmodule Oli.GenAI.Dialogue.Server do
             {:noreply, state, {:continue, :execute_function}}
 
           {:error, reason} ->
-            Logger.error("Failed to execute function #{name}: #{reason}")
+            log_dialogue_failure(
+              state,
+              :tool_execution_failed,
+              safe_function_error_category(reason)
+            )
+
+            notify_error(state)
             {:noreply, state}
         end
 
       {:error, _} ->
-        Logger.error("Failed to decode function arguments: #{args}")
+        log_dialogue_failure(state, :tool_arguments_invalid_json, :invalid_json)
+        notify_error(state)
         {:noreply, state}
     end
   end
@@ -276,14 +320,27 @@ defmodule Oli.GenAI.Dialogue.Server do
   # This is the entry point for engaging the dialogue server from within the server itself
   # (e.g., when the server sends a message to itself after executing a function call)
   def handle_info({:engage, message}, %State{} = state) do
-    server = self()
+    {:noreply,
+     state |> start_engagement(message, state.engagement_id) |> prepend_message(message)}
+  end
 
-    Task.start(fn ->
-      build_notify_fns(server, state)
-      |> do_engage(state, message)
-    end)
+  def handle_info({ref, _result}, %{engagement_task: %Task{ref: ref}} = state) do
+    Process.demonitor(ref, [:flush])
+    {:noreply, %{state | engagement_task: nil}}
+  end
 
-    {:noreply, %State{state | messages: [message | state.messages]}}
+  # A task can complete just before its engagement is replaced. Demonitoring
+  # suppresses its :DOWN message but does not flush an already-delivered reply.
+  def handle_info({ref, _result}, state) when is_reference(ref), do: {:noreply, state}
+
+  def handle_info(
+        {:DOWN, ref, :process, _pid, reason},
+        %{engagement_task: %Task{ref: ref}} = state
+      ) do
+    log_dialogue_failure(state, :engagement_task_terminated, task_exit_category(reason))
+
+    notify_error(state)
+    {:noreply, %{state | engagement_task: nil}}
   end
 
   def handle_continue(:execute_function, %{function_message: message} = state) do
@@ -303,6 +360,88 @@ defmodule Oli.GenAI.Dialogue.Server do
         [Message.new(:assistant, token) | messages]
     end
   end
+
+  defp start_engagement(state, message, engagement_id) do
+    state = cancel_engagement_task(state)
+    server = self()
+
+    task =
+      Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
+        build_notify_fns(server, state, engagement_id)
+        |> do_engage(state, message)
+      end)
+
+    %{state | engagement_task: task, engagement_id: engagement_id}
+  end
+
+  defp prepend_message(state, message), do: %{state | messages: [message | state.messages]}
+
+  defp cancel_engagement_task(%{engagement_task: nil} = state), do: state
+
+  defp cancel_engagement_task(%{engagement_task: %Task{} = task} = state) do
+    Process.demonitor(task.ref, [:flush])
+    Process.exit(task.pid, :kill)
+    %{state | engagement_task: nil}
+  end
+
+  defp task_exit_category(:normal), do: "normal"
+  defp task_exit_category(:killed), do: "killed"
+  defp task_exit_category({exception, _stacktrace}) when is_exception(exception), do: "exception"
+  defp task_exit_category(_), do: "error"
+
+  defp execute_stream(
+         request_ctx,
+         messages,
+         functions,
+         service_config,
+         response_handler_fn,
+         on_plan
+       ) do
+    Execution.stream(
+      request_ctx,
+      messages,
+      functions,
+      service_config,
+      response_handler_fn,
+      on_plan: on_plan
+    )
+  end
+
+  defp notify_error(state) do
+    send_to_listener(
+      state,
+      {:dialogue_server, {:error, "An error occurred while processing the request"}}
+    )
+  end
+
+  defp log_dialogue_failure(state, event, error_category) do
+    %Configuration{service_config: service_config} = state.configuration
+
+    Logger.warning(
+      "Dialogue engagement failed event=#{event} error_category=#{safe_error_category(error_category)} " <>
+        "service_config_id=#{service_config.id}"
+    )
+  end
+
+  defp safe_error_category(reason)
+       when reason in [
+              :all_breakers_open,
+              :exception,
+              :invalid_json,
+              :missing_api_key,
+              :stream_error
+            ],
+       do: reason
+
+  defp safe_error_category({:invalid_model_configuration, :missing_api_key}), do: :missing_api_key
+  defp safe_error_category({:http_error, status}) when is_integer(status), do: :http_error
+  defp safe_error_category(_), do: :unknown
+
+  defp safe_function_error_category(reason)
+       when reason in [:invalid_arguments, :invalid_function_name],
+       do: reason
+
+  defp safe_function_error_category(_), do: :unknown
 
   defp discard_last_assistant_message(messages) do
     case messages do

@@ -451,6 +451,122 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   describe "student" do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
+    for gated? <- [false, true] do
+      @tag isolation: "serializable"
+      test "secure prologue confines navigation with gating #{gated?}", c do
+        page = c.page_3
+        Sections.enroll(c.user.id, c.section.id, [ContextRoles.get_role(:context_learner)])
+        refute Sections.has_visited_section(c.section, c.user)
+
+        # A secure launch must reach the assessment even on a learner's first
+        # visit, with course onboarding and a required survey still unfinished.
+        Oli.Repo.update!(
+          Ecto.Changeset.change(c.section, required_survey_resource_id: c.page_1.resource_id)
+        )
+
+        sr = Sections.get_section_resource(c.section.id, page.resource_id)
+        Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
+
+        case unquote(gated?) do
+          true ->
+            gating_condition_fixture(%{
+              section_id: c.section.id,
+              resource_id: page.resource_id,
+              data: %{end_datetime: yesterday()}
+            })
+
+            Oli.Delivery.Gating.update_resource_gating_index(c.section)
+
+          false ->
+            :ok
+        end
+
+        token =
+          Oli.Accounts.generate_user_session_token(c.user,
+            scope: %Oli.Delivery.SecureAssessments.Scope{
+              section_id: c.section.id,
+              resource_id: page.resource_id
+            }
+          )
+
+        conn = c.conn |> recycle() |> init_test_session(%{user_token: token})
+        {:ok, view, html} = live(conn, Utils.prologue_live_path(c.section.slug, page.slug))
+        document = Floki.parse_document!(html)
+        assert length(Floki.find(document, "#secure-assessment-content")) == 1
+        assert has_element?(view, "a[href='#secure-assessment-content']", "Skip to assessment")
+
+        assert has_element?(
+                 view,
+                 "form[action='/secure-assessment/exit'][method='post'] input[name='_csrf_token']"
+               )
+
+        refute has_element?(
+                 view,
+                 "[data-role='prev_page'], [data-role='next_page'], #dialogue-window"
+               )
+
+        refute has_element?(view, "a[href='/sections/#{c.section.slug}']")
+        assert has_element?(view, "#blocking_gates_warning") == unquote(gated?)
+        assert has_element?(view, "#begin_attempt_button") == not unquote(gated?)
+        refute has_element?(view, "#tech_support_lti_error")
+
+        case unquote(gated?) do
+          false ->
+            view |> element("#begin_attempt_button") |> render_click()
+            {path, _flash} = assert_redirect(view)
+
+            lesson_conn =
+              conn
+              |> recycle()
+              |> init_test_session(%{user_token: token, current_user_id: c.user.id})
+
+            {:ok, lesson, _html} = live(lesson_conn, path)
+            assert has_element?(lesson, "#secure-assessment-content")
+
+          true ->
+            :ok
+        end
+      end
+    end
+
+    test "secure reconnect and begin_attempt revalidate only the current token", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      sr =
+        Oli.Repo.get_by!(Oli.Delivery.Sections.SectionResource,
+          section_id: section.id,
+          resource_id: page.resource_id
+        )
+
+      Oli.Repo.update!(Ecto.Changeset.change(sr, secure_delivery: true))
+      ordinary = Oli.Accounts.generate_user_session_token(user)
+
+      token =
+        Oli.Accounts.generate_user_session_token(user,
+          scope: %Oli.Delivery.SecureAssessments.Scope{
+            section_id: section.id,
+            resource_id: page.resource_id
+          }
+        )
+
+      conn =
+        conn |> recycle() |> init_test_session(%{user_token: token, current_user_id: user.id})
+
+      {:ok, view, _} = live(conn, Utils.prologue_live_path(section.slug, page.slug))
+      Oli.Accounts.delete_user_session_token(token)
+
+      assert {:error, {:redirect, %{to: "/secure-assessment/restricted"}}} =
+               render_hook(view, "begin_attempt", %{})
+
+      assert {:ok, %{scope: nil}} = Oli.Accounts.get_user_session(ordinary)
+    end
+
     test "cannot access removed instructor preview prologue route", %{
       conn: conn,
       user: user,
@@ -498,13 +614,13 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="prev_page"]},
+               ~s{div[data-role="prev_page"]},
                module_1.title
              )
 
       assert has_element?(
                view,
-               ~s{div[role="next_page"]},
+               ~s{div[data-role="next_page"]},
                page_2.title
              )
     end
@@ -603,10 +719,13 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               ~s{#page_due_terms [aria-hidden="true"] svg[role="schedule icon"]}
+               ~s{#page_due_terms [aria-hidden="true"] svg[data-role="schedule icon"]}
              )
 
-      assert has_element?(view, ~s{#attempts_summary [aria-hidden="true"] svg[role="flag icon"]})
+      assert has_element?(
+               view,
+               ~s{#attempts_summary [aria-hidden="true"] svg[data-role="flag icon"]}
+             )
     end
 
     test "can see prologue on graded adaptive pages with no attempt in progress", %{
@@ -981,12 +1100,12 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
-      assert has_element?(view, ~s{div[role="page read time"]}, "15")
-      refute has_element?(view, ~s{div[role="page schedule"]})
-      refute has_element?(view, ~s{div[role="assignment marker"]})
+      assert has_element?(view, ~s{div[data-role="container label"]}, "Module 1")
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
+      assert has_element?(view, ~s{div[data-role="page read time"]}, "15")
+      refute has_element?(view, ~s{div[data-role="page schedule"]})
+      refute has_element?(view, ~s{div[data-role="assignment marker"]})
     end
 
     test "hides numbering in scored page header when curriculum numbering is disabled", %{
@@ -1003,10 +1122,9 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      refute has_element?(view, ~s{div[role="container label"]})
-      refute has_element?(view, ~s{div[role="page header divider"]})
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+      refute has_element?(view, ~s{div[data-role="container label"]})
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
     end
 
     test "loads scored page header for pages inside an unnumbered unit", %{
@@ -1024,9 +1142,9 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      refute has_element?(view, ~s{div[role="container label"]})
-      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+      refute has_element?(view, ~s{div[data-role="container label"]})
+      assert has_element?(view, ~s{div[data-role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[data-role="page title"]}, "Page 2")
     end
 
     test "can see learning objectives and proficiency on page header", %{
@@ -1060,55 +1178,55 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o1} title"]},
+               ~s{[data-testid="objective-#{o1}-title"]},
                "this is the first objective"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o1}"] svg[role="beginning proficiency icon"]}
+               ~s{[data-objective-id="#{o1}"] span[aria-label="Beginning Proficiency"]}
              )
 
-      assert has_element?(view, ~s{div[id="objective_#{o1}_tooltip"]}, "Beginning Proficiency")
+      assert has_element?(view, ~s{span[id="objective_#{o1}_tooltip"]}, "Beginning Proficiency")
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o2} title"]},
+               ~s{[data-testid="objective-#{o2}-title"]},
                "this is the second objective"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o2}"] svg[role="growing proficiency icon"]}
+               ~s{[data-objective-id="#{o2}"] span[aria-label="Growing Proficiency"]}
              )
 
-      assert has_element?(view, ~s{div[id="objective_#{o2}_tooltip"]}, "Growing Proficiency")
+      assert has_element?(view, ~s{span[id="objective_#{o2}_tooltip"]}, "Growing Proficiency")
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o3} title"]},
+               ~s{[data-testid="objective-#{o3}-title"]},
                "this is the third objective"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o3}"] svg[role="establishing proficiency icon"]}
+               ~s{[data-objective-id="#{o3}"] span[aria-label="Strong Proficiency"]}
              )
 
-      assert has_element?(view, ~s{div[id="objective_#{o3}_tooltip"]}, "Establishing Proficiency")
+      assert has_element?(view, ~s{span[id="objective_#{o3}_tooltip"]}, "Strong Proficiency")
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o4} title"]},
+               ~s{[data-testid="objective-#{o4}-title"]},
                "this is the forth objective"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o4}"] svg[role="no data proficiency icon"]}
+               ~s{[data-objective-id="#{o4}"] span[aria-label="Not Enough Information"]}
              )
 
-      assert has_element?(view, ~s{div[id="objective_#{o4}_tooltip"]}, "Not enough information")
+      assert has_element?(view, ~s{span[id="objective_#{o4}_tooltip"]}, "Not Enough Information")
     end
 
     test "can see proficiency explanation modal", %{
@@ -1122,10 +1240,6 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      # if we render_click() on PROFICIENCY to show the modal, a JS command should be triggered.
-      # But, since the phx-click does not have any push command, we get "no push command found within JS commands".
-      # The workaround is to directly assert on the content of the modal
-
       assert has_element?(
                view,
                "#proficiency_explanation_modal h2",
@@ -1135,7 +1249,31 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert has_element?(
                view,
                "#proficiency_explanation_modal p",
-               "This course contains several learning objectives. As you continue the course, you will receive an estimate of your understanding of each objective. This estimate takes into account the activities you complete on each page."
+               "Proficiency is our best estimate of how likely you are to successfully apply a learning objective"
+             )
+    end
+
+    test "can see proficiency explanation accordion", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert has_element?(
+               view,
+               ~s{section[data-testid="page-objectives"] summary},
+               "What is proficiency"
+             )
+
+      assert has_element?(
+               view,
+               ~s{section[data-testid="page-objectives"] p},
+               "Proficiency is our best estimate of how likely you are to successfully apply a learning objective"
              )
     end
 
@@ -1157,7 +1295,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         )
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click
 
       assert_redirected(view, request_path)
@@ -1181,7 +1319,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         )
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click
 
       assert_redirected(view, request_path)
@@ -1211,7 +1349,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         )
 
       view
-      |> element(~s{div[role="back_link"] a})
+      |> element(~s{div[data-role="back_link"] a})
       |> render_click
 
       assert_redirected(view, request_path)
@@ -1249,7 +1387,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       [href] =
         view
-        |> element(~s{div[role="back_link"] a})
+        |> element(~s{div[data-role="back_link"] a})
         |> render()
         |> Floki.parse_document!()
         |> Floki.find("a")

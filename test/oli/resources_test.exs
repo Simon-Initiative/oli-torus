@@ -5,6 +5,8 @@ defmodule Oli.Resources.ResourcesTest do
   import Oli.Factory
 
   alias Oli.Resources
+  alias Oli.LearningModel.Parameters
+  alias Oli.LearningModel.V2.{ActivityParameters, LearningObjectiveParameters, PartParameters}
   alias Oli.Utils.Seeder
   alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
   alias Oli.Rendering.Content.ResourceSummary
@@ -43,6 +45,86 @@ defmodule Oli.Resources.ResourcesTest do
                page1_revision.resource_id,
                page2_revision.resource_id
              ]
+    end
+  end
+
+  describe "create_revision_from_previous/2 learning-model parameters" do
+    setup do
+      %{author: insert(:author)}
+    end
+
+    test "inherits learning-objective parameters", %{author: author} do
+      parameters = learning_objective_parameters(-0.42)
+      previous = create_revision(author, :objective, %{}, parameters)
+
+      assert {:ok, child} = Resources.create_revision_from_previous(previous, %{title: "Child"})
+      assert child.learning_model_parameters == parameters
+      assert child.previous_revision_id == previous.id
+    end
+
+    test "an explicit replacement takes precedence and preserves zero", %{author: author} do
+      previous = create_revision(author, :objective, %{}, learning_objective_parameters(-0.42))
+      replacement = learning_objective_parameters(0.0)
+
+      assert {:ok, child} =
+               Resources.create_revision_from_previous(previous, %{
+                 "learning_model_parameters" => replacement
+               })
+
+      assert child.learning_model_parameters == replacement
+      assert child.learning_model_parameters.payload.beta_lo == 0.0
+    end
+
+    test "an explicit nil clears inherited parameters and missing parameters remain nil", %{
+      author: author
+    } do
+      parameterized =
+        create_revision(author, :objective, %{}, learning_objective_parameters(-0.42))
+
+      untrained = create_revision(author, :objective, %{}, nil)
+
+      assert {:ok, cleared} =
+               Resources.create_revision_from_previous(parameterized, %{
+                 learning_model_parameters: nil
+               })
+
+      assert {:ok, still_untrained} = Resources.create_revision_from_previous(untrained, %{})
+      assert cleared.learning_model_parameters == nil
+      assert still_untrained.learning_model_parameters == nil
+    end
+
+    test "reconciles inherited parts against child content without training new parts", %{
+      author: author
+    } do
+      previous_content = activity_content(["part-1", "part-2"])
+
+      previous =
+        create_revision(
+          author,
+          :activity,
+          previous_content,
+          activity_parameters(%{"part-1" => -0.5, "part-2" => 0.25})
+        )
+
+      child_content = activity_content(["part-2", "part-3"])
+
+      assert {:ok, child} =
+               Resources.create_revision_from_previous(previous, %{content: child_content})
+
+      assert child.learning_model_parameters == activity_parameters(%{"part-2" => 0.25})
+      refute Map.has_key?(child.learning_model_parameters.payload.parts, "part-1")
+      refute Map.has_key?(child.learning_model_parameters.payload.parts, "part-3")
+    end
+
+    test "strictly validates an explicit activity replacement", %{author: author} do
+      previous = create_revision(author, :activity, activity_content(["part-1"]), nil)
+
+      assert {:error, changeset} =
+               Resources.create_revision_from_previous(previous, %{
+                 learning_model_parameters: activity_parameters(%{"unknown-part" => 0.5})
+               })
+
+      assert "unknown activity part IDs: unknown-part" in errors_on(changeset).learning_model_parameters
     end
   end
 
@@ -252,5 +334,53 @@ defmodule Oli.Resources.ResourcesTest do
       page2: page2_revision,
       page3: page3_revision
     }
+  end
+
+  defp create_revision(author, resource_type, content, learning_model_parameters) do
+    resource = insert(:resource)
+
+    attrs = %{
+      author_id: author.id,
+      resource_id: resource.id,
+      resource_type_id: resource_type_id(resource_type),
+      title: "Parameterized Revision",
+      content: content,
+      learning_model_parameters: learning_model_parameters
+    }
+
+    {:ok, revision} = Resources.create_revision(attrs)
+    revision
+  end
+
+  defp resource_type_id(:objective), do: Oli.Resources.ResourceType.id_for_objective()
+  defp resource_type_id(:activity), do: Oli.Resources.ResourceType.id_for_activity()
+
+  defp learning_objective_parameters(beta_lo) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :learning_objective,
+      payload: %LearningObjectiveParameters{beta_lo: beta_lo}
+    }
+  end
+
+  defp activity_parameters(parts) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :activity,
+      payload: %ActivityParameters{
+        parts:
+          Map.new(parts, fn {part_id, beta_difficulty} ->
+            {part_id, %PartParameters{beta_difficulty: beta_difficulty}}
+          end)
+      }
+    }
+  end
+
+  defp activity_content(part_ids) do
+    %{"authoring" => %{"parts" => Enum.map(part_ids, &%{"id" => &1})}}
   end
 end

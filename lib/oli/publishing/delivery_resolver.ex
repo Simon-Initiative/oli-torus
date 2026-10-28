@@ -73,8 +73,8 @@ defmodule Oli.Publishing.DeliveryResolver do
       ) do
     from(rs in ResourceSummary,
       where:
-        rs.section_id == ^section_id and rs.resource_id == ^page.resource_id and
-          rs.user_id in ^student_ids,
+        rs.project_id == -1 and rs.section_id == ^section_id and
+          rs.resource_id == ^page.resource_id and rs.user_id in ^student_ids,
       distinct: rs.user_id,
       select: rs.user_id
     )

@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import { sanitizeRichLabelHtml } from 'utils/richOptionLabel';
 import './ListSort.scss';
 import { itemBarStyle } from './list-sort-util';
 import { DEFAULT_LIST_SORT_BAR_COLOR, ListSortModel } from './schema';
@@ -34,7 +35,12 @@ const ListSortAuthor: React.FC<AuthorPartComponentProps<ListSortModel>> = (props
       className="list-sort list-sort--authoring"
       style={containerStyle}
     >
-      {showHeaderFooter && <div className="list-sort__header">{headerLabel}</div>}
+      {showHeaderFooter && (
+        <div
+          className="list-sort__header janus-rich-label"
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(headerLabel) }}
+        />
+      )}
       <div className="list-sort__items" role="list">
         {listItems.map((item, index) => (
           <div
@@ -45,12 +51,20 @@ const ListSortAuthor: React.FC<AuthorPartComponentProps<ListSortModel>> = (props
           >
             <span className="list-sort__bar" aria-hidden="true" />
             <div className="list-sort__text">
-              <span className="list-sort__text-label">{item.text}</span>
+              <span
+                className="list-sort__text-label janus-rich-label"
+                dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(item.text) }}
+              />
             </div>
           </div>
         ))}
       </div>
-      {showHeaderFooter && <div className="list-sort__footer">{footerLabel}</div>}
+      {showHeaderFooter && (
+        <div
+          className="list-sort__footer janus-rich-label"
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(footerLabel) }}
+        />
+      )}
     </div>
   );
 };

@@ -16,6 +16,7 @@ import styles from './InlineActivityEditor.modules.scss';
 
 export interface ActivityEditorProps extends ActivityEditContext {
   editMode: boolean;
+  supportsLtiConfiguration?: boolean;
   optionalContentTypes: OptionalContentTypes;
   projectSlug: string;
   revisionHistoryLink: boolean;
@@ -32,6 +33,7 @@ export interface ActivityEditorProps extends ActivityEditContext {
   onRemove: () => void;
   onDuplicate?: () => void;
   responsiveLayout?: boolean;
+  loWellFormed?: boolean;
 }
 
 // This is the state of our activity editing that is undoable
@@ -101,6 +103,14 @@ export class InlineActivityEditor extends React.Component<
 
     this.customEventHandler = ((event: Event) => {
       const e = event as CustomEvent;
+      // The page editor owns persistence; let this request reach its listener.
+      if (
+        this.props.supportsLtiConfiguration &&
+        ['ltiAuthoringPrepare', 'ltiAuthoringSave', 'ltiAuthoringClose'].includes(
+          e.detail.payload?.eventName,
+        )
+      )
+        return;
       e.preventDefault();
       e.stopPropagation();
 
@@ -211,6 +221,7 @@ export class InlineActivityEditor extends React.Component<
       projectslug: this.props.projectSlug,
       authoringcontext: JSON.stringify({
         contentBreaksExist,
+        supportsLtiConfiguration: this.props.supportsLtiConfiguration === true,
         variables,
         optionalContentTypes: this.props.optionalContentTypes,
       }),
@@ -289,6 +300,7 @@ export class InlineActivityEditor extends React.Component<
           projectSlug={webComponentProps.projectslug}
           objectives={this.props.objectives}
           allObjectives={this.props.allObjectives}
+          loWellFormed={this.props.loWellFormed}
           onRegisterNewObjective={this.props.onRegisterNewObjective}
           onEdit={(objectives) => this.update({ objectives })}
         />

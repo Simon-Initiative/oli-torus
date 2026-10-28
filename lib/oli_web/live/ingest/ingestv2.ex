@@ -6,6 +6,7 @@ defmodule OliWeb.Admin.IngestV2 do
   alias Oli.Interop.Ingest.ScalableIngest, as: Ingest
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Interop.Ingest.Preprocessor
+  alias Oli.Interop.Ingest.State
   alias OliWeb.Common.PagedTable
   alias OliWeb.Admin.Ingest.ErrorsTableModel
   import OliWeb.DelegatedEvents
@@ -237,7 +238,7 @@ defmodule OliWeb.Admin.IngestV2 do
     Task.async(fn ->
       case Oli.Interop.Ingest.Processor.process(socket.assigns.state) do
         {:ok, state} -> send(pid, {:finish_process, state})
-        {:error, e} -> send(pid, {:failed_process, e})
+        {:error, e} -> send(pid, {:failed_process, process_error(e)})
         _ -> send(pid, {:failed_process, "unknown"})
       end
     end)
@@ -349,4 +350,9 @@ defmodule OliWeb.Admin.IngestV2 do
     # needed to ignore results of Task invocation
     {:noreply, socket}
   end
+
+  @doc false
+  def process_error(%State{errors: [message | _]}) when is_binary(message), do: message
+  def process_error(error) when is_binary(error), do: error
+  def process_error(_error), do: "An error occurred while processing the archive"
 end

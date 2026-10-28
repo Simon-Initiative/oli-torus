@@ -2,12 +2,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
+  import Ecto.Query
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
   import Oli.Factory
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.ContainedObjective
+  alias Oli.Repo
   alias Oli.Resources.ResourceType
 
   defp live_view_learning_objectives_route(section_slug, params \\ %{}) do
@@ -20,6 +23,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       params
     )
   end
+
+  defp search(view, term),
+    do:
+      view
+      |> element("form[phx-change='search_objective']")
+      |> render_change(%{"objective_name" => term})
+
+  # A collapsed row renders no aria-expanded attribute; an expanded one does.
+  defp expanded?(view, resource_id),
+    do: has_element?(view, "[aria-controls='details-row_#{resource_id}'][aria-expanded]")
 
   describe "user" do
     test "can not access page when it is not logged in", %{conn: conn} do
@@ -79,6 +92,61 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
 
   describe "objectives" do
     setup [:instructor_conn, :create_project_with_objectives]
+
+    test "unit and module navigation reuses the loaded objectives", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      module_revision: module_revision
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      # The full-course data is already loaded. Navigating should only filter it,
+      # without remounting the LiveView and querying learner metrics again.
+      handler_id = "objectives-navigation-#{System.unique_integer([:positive])}"
+      test_pid = self()
+      view_pid = view.pid
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _event, _measurements, metadata, _config ->
+          if self() == view_pid and
+               Enum.any?(
+                 ["resource_summary", "student_responses", "learning_states"],
+                 &String.contains?(metadata.query, &1)
+               ) do
+            send(test_pid, {:objectives_metrics_query, metadata.query})
+          end
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert has_element?(view, "a[role='next item link'][data-phx-link='patch']")
+      view |> element("a[role='next item link']") |> render_click()
+      assert_patch(view)
+
+      view
+      |> element("button[role='option'][phx-click*='#{module_revision.resource_id}']")
+      |> render_click()
+
+      assert_patch(
+        view,
+        live_view_learning_objectives_route(section.slug, %{
+          filter_by: module_revision.resource_id
+        })
+      )
+
+      assert has_element?(view, "#objectives-table", "Objective 2")
+      refute has_element?(view, "#objectives-table", "Objective 1")
+
+      view |> element("a[role='previous item link']") |> render_click()
+      assert_patch(view)
+      refute_received {:objectives_metrics_query, _query}
+    end
 
     test "deep-link params load learning objectives without normalizing the url", %{
       conn: conn,
@@ -390,6 +458,23 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
                view,
                "#proficiency-data-bar-chart-for-objective-#{obj_revision_2.resource_id}"
              )
+
+      html = render(view)
+
+      for color <- ~w(#CED1D9 #CE2C31 #BF5B13 #218358 #353740 #FF8787 #FFB387 #39E581) do
+        assert html =~ color
+      end
+
+      chart_props =
+        html
+        |> Floki.parse_fragment!()
+        |> Floki.find("#proficiency-data-bar-chart-for-objective-#{obj_revision_1.resource_id}")
+        |> Floki.attribute("data-live-react-props")
+        |> hd()
+        |> Jason.decode!()
+
+      assert chart_props["spec"]["mark"] == %{"type" => "bar", "binSpacing" => 2}
+      assert chart_props["spec"]["encoding"]["x"]["bin"] == "binned"
     end
   end
 
@@ -529,6 +614,180 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "span", "#{revisions.obj_revision_a.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_b.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+    end
+
+    test "searching for a subobjective shows and expands its parent objective", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_learning_objectives_route(section.slug, %{
+            offset: 4
+          })
+        )
+
+      search(view, revisions.obj_revision_c1.title)
+
+      assert_patch(
+        view,
+        live_view_learning_objectives_route(section.slug, %{
+          text_search: revisions.obj_revision_c1.title
+        })
+      )
+
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      assert expanded?(view, revisions.obj_revision_c.resource_id)
+
+      wait_until(fn ->
+        has_element?(view, ".search-highlight", revisions.obj_revision_c1.title)
+      end)
+
+      refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+    end
+
+    test "clearing the search collapses the rows the search expanded", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      search(view, revisions.obj_revision_c1.title)
+      assert expanded?(view, revisions.obj_revision_c.resource_id)
+
+      search(view, "")
+      refute expanded?(view, revisions.obj_revision_c.resource_id)
+    end
+
+    test "a row collapsed by hand stays collapsed while the search term holds", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      search(view, revisions.obj_revision_c1.title)
+      assert expanded?(view, revisions.obj_revision_c.resource_id)
+
+      render_click(
+        element(view, "[aria-controls='details-row_#{revisions.obj_revision_c.resource_id}']")
+      )
+
+      refute expanded?(view, revisions.obj_revision_c.resource_id)
+
+      render_patch(
+        view,
+        live_view_learning_objectives_route(section.slug, %{
+          text_search: revisions.obj_revision_c1.title,
+          sort_order: "desc"
+        })
+      )
+
+      refute expanded?(view, revisions.obj_revision_c.resource_id)
+    end
+
+    test "finds a subobjective that is not a row in the objectives table", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      # Without contained objectives C1 is dropped from the table dataset, but the expanded
+      # panel still lists it, so search has to reach it through its parent.
+      {deleted, _} =
+        Repo.delete_all(
+          from(co in ContainedObjective,
+            where:
+              co.section_id == ^section.id and
+                co.objective_id == ^revisions.obj_revision_c1.resource_id
+          )
+        )
+
+      assert deleted > 0
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      search(view, revisions.obj_revision_c1.title)
+
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+
+      wait_until(fn ->
+        has_element?(view, ".search-highlight", revisions.obj_revision_c1.title)
+      end)
+    end
+  end
+
+  describe "confidence filtering" do
+    setup [:instructor_conn, :create_lkt_aoa_project_with_mixed_confidence_children]
+
+    # Regression test for a bug where filtering by Confidence could show a parent
+    # objective whose OWN (displayed) confidence did not match the selected filter,
+    # because the filter incorrectly promoted the parent into view whenever ANY of
+    # its sub-objectives matched, rather than checking the parent's own aggregate.
+    test "only shows objectives whose own confidence matches the filter, not a differently-valued child's",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section,
+           revisions: revisions
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      # The parent's confidence is the attempt-weighted average of its two children
+      # (High and Low, equal weights), which lands squarely in "Medium".
+      params = %{selected_confidence_ids: Jason.encode!([3])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      refute has_element?(view, "span", "#{revisions.parent_revision.title}")
+
+      params = %{selected_confidence_ids: Jason.encode!([2])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      assert has_element?(view, "span", "#{revisions.parent_revision.title}")
+    end
+
+    # Regression test for the same bug affecting the Student Proficiency filter: a
+    # parent objective whose own proficiency did not match the selected filter could
+    # still appear because one of its sub-objectives happened to match.
+    test "only shows objectives whose own proficiency matches the filter, not a differently-valued child's",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section,
+           revisions: revisions
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      # The parent's proficiency is the attempt-weighted average aoa of its two
+      # children (High and Low, equal weights), which lands squarely in "Medium".
+      params = %{selected_proficiency_ids: Jason.encode!([3])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      refute has_element?(view, "span", "#{revisions.parent_revision.title}")
+
+      params = %{selected_proficiency_ids: Jason.encode!([2])}
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      assert has_element?(view, "span", "#{revisions.parent_revision.title}")
     end
   end
 
@@ -672,16 +931,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       }
 
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
-      expected_row_id = "row_#{revisions.obj_revision_c1.resource_id}"
+      expected_id = "subobj-#{revisions.obj_revision_c1.resource_id}"
 
       assert_push_event(view, "learning-objectives-scroll", %{
-        id: ^expected_row_id
+        id: ^expected_id
       })
 
-      assert has_element?(
-               view,
-               "[id^='expanded-objective-row_#{revisions.obj_revision_c1.resource_id}_']"
-             )
+      assert expanded?(view, revisions.obj_revision_c.resource_id)
     end
 
     test "invalid deep-link ids fall back without crashing or forcing expansion", %{
@@ -707,10 +963,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
     end
   end
 
-  describe "related activities column" do
+  describe "linked activities column" do
     setup [:instructor_conn, :create_project_with_objectives]
 
-    test "related activities column is present for instructors", %{
+    test "linked activities column and empty state are present for instructors", %{
       conn: conn,
       instructor: instructor,
       section: section
@@ -720,12 +976,151 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
 
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
-      # Check that the "Related Activities" column header is present
       assert has_element?(
                view,
-               "table thead th span[title*='Number of activities']",
-               "Related Activities"
+               "table thead th[data-sortable='false'] span[title*='Number of activities']",
+               "Linked Activities"
              )
+
+      assert has_element?(view, "[data-linked-activities-empty]", "No linked activities")
+      refute has_element?(view, "[data-linked-activities-button]", "View 0 Activities")
     end
+  end
+
+  describe "linked activities controls" do
+    setup [:instructor_conn, :create_full_project_with_objectives]
+
+    test "renders a secondary navigation button for linked activities", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      resources: %{obj_resource_d: objective}
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Oli.Delivery.Sections.PostProcessing.apply(section, [:related_activities])
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      assert has_element?(
+               view,
+               "a[data-linked-activities-button][href*='/related_activities/#{objective.id}']",
+               "View 1 Activity"
+             )
+
+      assert has_element?(
+               view,
+               "a[data-linked-activities-button].whitespace-nowrap[aria-label='View 1 linked activity'] svg[width='16'][height='16'][class*='-rotate-90']"
+             )
+
+      assert render(view) =~ "transparent_background"
+    end
+  end
+
+  defp create_lkt_aoa_project_with_mixed_confidence_children(_conn) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    {child_1_resource, child_1_revision} =
+      create_objective("Child Objective 1", "child_1", project)
+
+    {child_2_resource, child_2_revision} =
+      create_objective("Child Objective 2", "child_2", project)
+
+    {parent_resource, parent_revision} =
+      create_objective("Parent Objective", "parent_objective", project, [
+        child_1_resource.id,
+        child_2_resource.id
+      ])
+
+    {page_1_resource, page_1_revision} =
+      create_page("Page 1", "page_1", project, [], [child_1_resource.id])
+
+    {page_2_resource, page_2_revision} =
+      create_page("Page 2", "page_2", project, [], [child_2_resource.id])
+
+    {root_resource, root_revision} =
+      create_container("Root Container", "root_container", project, [
+        page_1_resource.id,
+        page_2_resource.id
+      ])
+
+    publication =
+      insert(:publication, %{project: project, root_resource_id: root_resource.id, published: nil})
+
+    [
+      {child_1_resource, child_1_revision},
+      {child_2_resource, child_2_revision},
+      {parent_resource, parent_revision},
+      {page_1_resource, page_1_revision},
+      {page_2_resource, page_2_revision},
+      {root_resource, root_revision}
+    ]
+    |> Enum.each(fn {resource, revision} ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable,
+        learning_model_version: :lkt_aoa
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+    student = insert(:user)
+    Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    Repo.insert_all("learning_states", [
+      %{
+        section_id: section.id,
+        user_id: student.id,
+        learning_objective_id: child_1_resource.id,
+        attempt_count: 10,
+        success_score: 4.75,
+        failure_score: 0.25,
+        recency_logit: 0.0,
+        aoa: 0.95,
+        unique_activity_part_count: 10,
+        inserted_at: now,
+        updated_at: now
+      },
+      %{
+        section_id: section.id,
+        user_id: student.id,
+        learning_objective_id: child_2_resource.id,
+        attempt_count: 10,
+        success_score: 1.0,
+        failure_score: 4.0,
+        recency_logit: 0.0,
+        aoa: 0.2,
+        unique_activity_part_count: 2,
+        inserted_at: now,
+        updated_at: now
+      }
+    ])
+
+    %{
+      project: project,
+      section: section,
+      publication: publication,
+      revisions: %{
+        parent_revision: parent_revision,
+        child_1_revision: child_1_revision,
+        child_2_revision: child_2_revision
+      }
+    }
   end
 end

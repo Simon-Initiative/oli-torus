@@ -1,10 +1,14 @@
-import React, { CSSProperties, useEffect, useRef } from 'react';
+import React, { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import chroma from 'chroma-js';
 import { Environment } from 'janus-script';
 import PartsLayoutRenderer from 'components/activities/adaptive/components/delivery/PartsLayoutRenderer';
+import guid from 'utils/guid';
+import { getPopupDescriptionText } from './popupAccessibility';
 import { ContextProps, InitResultProps } from './types';
 
 interface PopupWindowProps {
+  /** Short dialog name, separate from its reading target or rendered description. */
+  accessibleName: string;
   config: any;
   parts: any[];
   context: ContextProps;
@@ -14,6 +18,7 @@ interface PopupWindowProps {
 }
 
 const PopupWindow: React.FC<PopupWindowProps> = ({
+  accessibleName,
   config,
   parts,
   context,
@@ -27,6 +32,44 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
     width: config?.width || 300,
   };
   const dialogRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const readingRef = useRef<HTMLParagraphElement>(null);
+  const initialFocus = useRef({ placed: false, reading: false });
+  const [contentId] = useState(() => `popup-content-${guid()}`);
+  const [descriptionText, setDescriptionText] = useState<string | null>(null);
+  const hasInformationalParts = parts.every((part) =>
+    ['janus-text-flow', 'janus-image'].includes(part.type),
+  );
+
+  useLayoutEffect(() => {
+    const content = contentRef.current;
+    if (!content || !hasInformationalParts) {
+      setDescriptionText(null);
+      return;
+    }
+
+    const updateDescription = () => setDescriptionText(getPopupDescriptionText(content));
+    updateDescription();
+    const observer = new MutationObserver(updateDescription);
+    observer.observe(content, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: [
+        'alt',
+        'aria-label',
+        'aria-hidden',
+        'hidden',
+        'style',
+        'class',
+        'href',
+        'tabindex',
+        'contenteditable',
+      ],
+    });
+    return () => observer.disconnect();
+  }, [hasInformationalParts, parts]);
   if (config?.palette) {
     if (config.palette.useHtmlProps) {
       popupModalStyles.backgroundColor = config.palette.backgroundColor;
@@ -53,7 +96,6 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
     }
   }
 
-  // position is an offset from the parent element now
   popupModalStyles.left = config.x || 0;
   popupModalStyles.top = config.y || 0;
   popupModalStyles.zIndex = config.z || 1000;
@@ -119,26 +161,45 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
     return result;
   };
   useEffect(() => {
-    requestAnimationFrame(() => {
-      dialogRef.current?.focus({ preventScroll: true });
+    const frame = requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      if (!dialog || initialFocus.current.reading) {
+        return;
+      }
+
+      if (!initialFocus.current.placed || document.activeElement === dialog) {
+        const target = readingRef.current ?? dialog;
+        target.focus({ preventScroll: true });
+        initialFocus.current = { placed: true, reading: target === readingRef.current };
+      }
     });
-  }, []);
+    return () => cancelAnimationFrame(frame);
+  }, [descriptionText]);
 
   return (
     <div
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
+      aria-label={accessibleName}
+      aria-describedby={descriptionText ? undefined : contentId}
       tabIndex={-1}
       className={`info-icon-popup ${config?.customCssClass ? config.customCssClass : ''}`}
       style={popupModalStyles}
     >
       <div className="popup-background" style={popupBGStyles}>
-        <PartsLayoutRenderer
-          onPartInit={handlePartInit}
-          parts={parts}
-          responsiveLayout={responsiveLayout}
-        ></PartsLayoutRenderer>
+        {descriptionText && (
+          <p id={`${contentId}-description`} ref={readingRef} className="sr-only" tabIndex={-1}>
+            {descriptionText}
+          </p>
+        )}
+        <div id={contentId} ref={contentRef}>
+          <PartsLayoutRenderer
+            onPartInit={handlePartInit}
+            parts={parts}
+            responsiveLayout={responsiveLayout}
+          ></PartsLayoutRenderer>
+        </div>
 
         <button
           aria-label="Close"

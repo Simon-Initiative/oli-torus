@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.Sections.SectionSpecification do
   alias Oli.Delivery.Sections.SectionSpecification
+  alias Oli.Lti.LaunchIdentity
   alias Oli.Lti.LtiParams
   alias Oli.Institutions
   alias Lti_1p3.Tool.Services.{AGS, NRPS}
@@ -7,6 +8,11 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
   defmodule Lti do
     @moduledoc """
     LTI details for section creation.
+
+    `identity` is the validated `Oli.Lti.LaunchIdentity` of the launch this section is
+    bound to. The authorization boundary sets it when it rebuilds the specification from
+    the launch it authorized; a specification that has not been through the boundary
+    cannot be applied.
     """
     @enforce_keys [:lti_params, :institution, :registration, :deployment]
 
@@ -14,7 +20,8 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
       :lti_params,
       :institution,
       :registration,
-      :deployment
+      :deployment,
+      :identity
     ]
   end
 
@@ -26,7 +33,6 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
   end
 
   @deployment_claims "https://purl.imsglobal.org/spec/lti/claim/deployment_id"
-  @context_claims "https://purl.imsglobal.org/spec/lti/claim/context"
 
   @doc """
   Creates a specification for an LTI section based on the user and context ID.
@@ -70,14 +76,15 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
           lti_params: lti_params,
           institution: institution,
           registration: registration,
-          deployment: deployment
+          deployment: deployment,
+          identity: %LaunchIdentity{context_id: context_id}
         }
       ),
       do:
         section_params
         |> Map.merge(%{
           open_and_free: false,
-          context_id: lti_params[@context_claims]["id"],
+          context_id: context_id,
           institution_id: institution.id,
           lti_1p3_deployment_id: deployment.id,
           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),

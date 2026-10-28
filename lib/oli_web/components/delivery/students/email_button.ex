@@ -17,7 +17,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
 
   def render(assigns) do
     ~H"""
-    <div id="email_button_wrapper" class={if(@variant == :full, do: "relative", else: nil)}>
+    <div id={"email_button_wrapper_#{@id}"} class={if(@variant == :full, do: "relative", else: nil)}>
       <%= if @variant == :minimal do %>
         <Button.button
           variant={:secondary}

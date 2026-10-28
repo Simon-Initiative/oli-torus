@@ -164,10 +164,13 @@ The current selectors rely on:
   `/sections/new/:context_id` for the same LTI context.
 
 After selecting a source, the stepper collects the course name, course section
-number, modality, dates, and schedule details. Creating the section calls
-`Delivery.create_section(changeset, source, current_user, section_spec)`, where
-`section_spec` is an LTI section specification built from the latest LTI params
-for the launched Canvas context.
+number, modality, dates, and schedule details. Creating the section builds an
+`Oli.Delivery.SectionCreationRequest` — the acting account, the chosen source
+identifier, the form attributes and the LTI section specification for the launched
+Canvas context — and calls `Delivery.create_section/1`. That function reloads the
+actor, authorizes it against the persisted launch, and rebuilds the specification
+from the launch it authorized, so a refused launch or source returns
+`{:error, :unauthorized}` and no section is created.
 
 ## Historical Fixed Course
 

@@ -12,6 +12,21 @@ import { ProjectSlug } from 'data/types';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 import styles from './ObjectivesSelection.modules.scss';
+import type { AttachmentType, ObjectiveOption } from './objectivesSelectionHelpers';
+import {
+  canCreateObjective,
+  getPlaceholderLabel,
+  isSearchOnly,
+  objectivesForAttachment,
+} from './objectivesSelectionHelpers';
+
+export {
+  canCreateObjective,
+  getPlaceholderLabel,
+  isSearchOnly,
+  objectivesForAttachment,
+} from './objectivesSelectionHelpers';
+export type { AttachmentType, ObjectiveOption } from './objectivesSelectionHelpers';
 
 export type ObjectivesProps = {
   objectives: Objective[];
@@ -20,11 +35,17 @@ export type ObjectivesProps = {
   projectSlug: ProjectSlug;
   onEdit: (objectives: ResourceId[]) => void;
   onRegisterNewObjective?: (objective: Objective) => void;
+  attachmentType?: AttachmentType;
+  loWellFormed?: boolean;
 };
 
 // Custom filterBy function for the Typeahead. This allows searches to
 // pick up child objectives for text that matches any of their parents
-function filterBy(byId: any, option: Objective, props: AllTypeaheadOwnAndInjectedProps<Objective>) {
+function filterBy(
+  byId: any,
+  option: ObjectiveOption,
+  props: AllTypeaheadOwnAndInjectedProps<ObjectiveOption>,
+) {
   const searchText = props.text.toLocaleLowerCase();
 
   // First check if the objective's own title matches
@@ -50,22 +71,22 @@ function createMapById(objectives: Objective[]) {
   }, {});
 }
 
-const getPlaceholderLabel = (hasObjectives: boolean, editMode: boolean) => {
-  if (editMode) {
-    return hasObjectives
-      ? 'Select or Create learning objectives...'
-      : 'Create a new learning objective';
-  } else {
-    return 'Select a learning objective';
-  }
-};
-
 export const ObjectivesSelection = (props: ObjectivesProps) => {
-  const { objectives, editMode, selected, onEdit, onRegisterNewObjective } = props;
+  const {
+    objectives,
+    editMode,
+    selected,
+    onEdit,
+    onRegisterNewObjective,
+    attachmentType,
+    loWellFormed,
+  } = props;
+  const attachmentObjectives = objectivesForAttachment(objectives, attachmentType, loWellFormed);
 
   // Typeahead throws a bunch of warnings if it doesn't contain
   // a unique DOM id.  So we generate one for it.
   const [id] = useState(guid());
+  const [searchResetNonce, setSearchResetNonce] = useState(0);
   const [byId, setById] = useState(createMapById(objectives));
 
   const allSelected = selected.reduce((m: any, id: any) => {
@@ -78,15 +99,21 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   }, [objectives]);
 
   const renderMenuItemChildren = (
-    option: TypeaheadResult<Objective>,
-    _props: TypeaheadMenuProps<Objective>,
+    option: TypeaheadResult<ObjectiveOption>,
+    _props: TypeaheadMenuProps<ObjectiveOption>,
     _index: number,
   ) => {
     const isChild = option.parentIds !== null && option.parentIds.length > 0;
     return (
       <div>
         {isChild ? <span className="ml-3">&nbsp;</span> : null}
-        <input className="mr-2" type="checkbox" readOnly checked={allSelected[option.id]}></input>
+        <input
+          className="mr-2"
+          type="checkbox"
+          readOnly
+          disabled={option.disabled}
+          checked={allSelected[option.id]}
+        ></input>
         {option.title}
       </div>
     );
@@ -97,18 +124,27 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   const map = Immutable.Map<ResourceId, Objective>(objectives.map((o) => [o.id, o]));
   const asObjectives = selected.map((s) => map.get(s) as Objective).filter((o) => !!o);
 
-  const allowNewObjective = !!onRegisterNewObjective;
-  const hasObjectives = objectives.length > 0;
-  const placeholder = getPlaceholderLabel(hasObjectives, editMode && !!onRegisterNewObjective);
+  const searchOnly = isSearchOnly(attachmentType, loWellFormed);
+  const allowNewObjective = canCreateObjective(
+    onRegisterNewObjective,
+    attachmentType,
+    loWellFormed,
+  );
+  const placeholder = getPlaceholderLabel(editMode, searchOnly);
+
+  const clearSearch = () => setSearchResetNonce((nonce) => nonce + 1);
 
   return (
     <div className={classNames(styles.objectivesSelection, 'flex-grow-1')}>
       <Typeahead
+        key={searchResetNonce}
         id={id}
         filterBy={filterBy.bind(this, byId)}
         renderMenuItemChildren={renderMenuItemChildren}
         multiple={true}
         disabled={!editMode}
+        emptyLabel={searchOnly ? 'No eligible learning objectives found.' : undefined}
+        onBlur={() => searchOnly && clearSearch()}
         onChange={(updated: (Objective & { customOption?: boolean })[]) => {
           // we can safely assume that only one objective will ever be selected at a time
           const createdObjective = updated.find((o) => o.customOption);
@@ -159,7 +195,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
             }
           }
         }}
-        options={props.objectives}
+        options={attachmentObjectives}
         allowNew={allowNewObjective}
         newSelectionPrefix="Create new objective: "
         labelKey="title"

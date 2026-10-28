@@ -18,27 +18,38 @@ get_env_as_boolean = fn key, default ->
   end
 end
 
+config :oli, :supports_secure_delivery, get_env_as_boolean.("SUPPORTS_SECURE_DELIVERY", "false")
+
 get_env_as_integer = fn key, default ->
   System.get_env(key, default)
   |> String.to_integer()
 end
 
-runtime_env =
-  case System.get_env("MIX_ENV") do
-    nil ->
-      config_env()
+# The release shape is fixed when the artifact is compiled. Do not allow a
+# mutable runtime environment variable to select a different configuration.
+runtime_env = config_env()
 
-    env ->
-      env
-      |> String.trim()
-      |> String.downcase()
-      |> case do
-        "prod" -> :prod
-        "dev" -> :dev
-        "test" -> :test
-        _ -> config_env()
-      end
+# These capabilities are selected by the build, never by runtime flags. Keep
+# secrets out of compile configuration so they can rotate without rebuilding.
+if runtime_env == :playwright do
+  required_token = fn name ->
+    case System.get_env(name) do
+      value when is_binary(value) and byte_size(value) > 0 -> value
+      _ -> raise "#{name} must be set and nonempty for the Playwright environment"
+    end
   end
+
+  config :oli,
+    playwright_scenario_token: required_token.("PLAYWRIGHT_SCENARIO_TOKEN"),
+    playwright_captcha_token: required_token.("PLAYWRIGHT_CAPTCHA_TOKEN"),
+    playwright_assets_bucket: System.get_env("PLAYWRIGHT_ASSETS_BUCKET")
+end
+
+# Read model overrides at release startup, including PROFICIENCY_CONFIDENCE_MIDPOINT
+# (default 5.0) and PROFICIENCY_CONFIDENCE_STEEPNESS (default 3.0).
+{lkt_aoa_config, lkt_aoa_sources} = Oli.LearningModel.Config.load_from_env!()
+Oli.LearningModel.Config.log_effective(lkt_aoa_config, lkt_aoa_sources)
+config :oli, :lkt_aoa, Oli.LearningModel.Config.to_keyword(lkt_aoa_config)
 
 # Resolve the xAPI actor account home page at runtime so releases can configure it
 # without recompilation. XAPI_HOST_NAME may differ from the web endpoint hostname;
@@ -325,8 +336,25 @@ if runtime_env != :test do
     host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
 end
 
-force_ssl_default = if runtime_env == :prod, do: "true", else: "false"
+force_ssl_default = if runtime_env in [:prod, :preview, :playwright], do: "true", else: "false"
 config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", force_ssl_default)
+
+# Opt-in measurement only. See guides/deployment/transport-and-headers.md before
+# configuring a reporting destination or promoting any directive to enforcement.
+csp_report_only = System.get_env("CSP_REPORT_ONLY")
+
+case csp_report_only do
+  policy when is_binary(policy) ->
+    case byte_size(policy) <= 4096 and not String.contains?(policy, ["\r", "\n", <<0>>]) do
+      true -> :ok
+      false -> raise "CSP_REPORT_ONLY must be a single header value of at most 4096 bytes"
+    end
+
+  nil ->
+    :ok
+end
+
+config :oli, :csp_report_only, csp_report_only
 
 config :oli,
        :author_email_verification_required,
@@ -339,10 +367,10 @@ config :oli,
 config :oli, :vendor_property,
   billing_descriptor: System.get_env("VENDOR_PROPERTY_BILLING_DESCRIPTOR", "CARNEGIE MELLON UNI")
 
-####################### Production-only configurations ########################
-## Note: These configurations are only applied in production
+######################## Release-only configurations #########################
+## Note: These configurations are applied in production, preview and Playwright releases.
 ###############################################################################
-if runtime_env == :prod do
+if runtime_env in [:prod, :preview, :playwright] do
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -625,17 +653,19 @@ if runtime_env == :prod do
 
   if System.get_env("SSL_CERT_PATH") && System.get_env("SSL_KEY_PATH") do
     config :oli, OliWeb.Endpoint,
-      https: [
-        port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
-        otp_app: :oli,
-        keyfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.key"),
-        certfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.crt"),
-        protocol_options: [
-          max_header_name_length: http_max_header_name_length,
-          max_header_value_length: http_max_header_value_length,
-          max_headers: http_max_headers
-        ]
-      ]
+      https:
+        OliWeb.TransportSecurity.https_options() ++
+          [
+            port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
+            otp_app: :oli,
+            keyfile: System.fetch_env!("SSL_KEY_PATH"),
+            certfile: System.fetch_env!("SSL_CERT_PATH"),
+            protocol_options: [
+              max_header_name_length: http_max_header_name_length,
+              max_header_value_length: http_max_header_value_length,
+              max_headers: http_max_headers
+            ]
+          ]
   end
 
   truncate =
@@ -730,7 +760,7 @@ if runtime_env == :prod do
     ],
     queues: [
       default: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DEFAULT", "10")),
-      snapshots: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_SNAPSHOTS", "20")),
+      snapshots: get_env_as_integer.("OBAN_QUEUE_SIZE_SNAPSHOTS", "4"),
       s3_uploader: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_S3UPLOADER", "20")),
       selections: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_SELECTIONS", "20")),
       updates: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_UPDATES", "2")),
@@ -748,7 +778,9 @@ if runtime_env == :prod do
       objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3")),
       mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10")),
       certificate_eligibility:
-        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10"))
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10")),
+      automation_teardown:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_AUTOMATION_TEARDOWN", "1"))
     ]
 
   config :oli, Oli.Vault,

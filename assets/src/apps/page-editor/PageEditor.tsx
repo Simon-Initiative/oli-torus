@@ -21,14 +21,18 @@ import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { ActivityEditContext } from 'data/content/activity';
 import { guaranteeValididty } from 'data/content/bank';
 import { ActivityEditorMap } from 'data/content/editors';
+import {
+  reconcileLearningObjectivesContent,
+  reconcileLearningObjectivesInPageContent,
+} from 'data/content/learningObjectives';
 import { Objective } from 'data/content/objective';
 import {
   ActivityMap,
   ActivityReference,
   EditorType,
+  ResolvedLearningObjective,
   ResourceContent,
   ResourceContext,
-  StructuredContent,
   getResourceContentName,
 } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
@@ -37,6 +41,7 @@ import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenc
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import * as ActivityPersistence from 'data/persistence/activity';
 import { NotAcquired, acquireLock, releaseLock } from 'data/persistence/lock';
+import { saveAuthoringDeepLink, startAuthoringDeepLink } from 'data/persistence/lti_platform';
 import * as Persistence from 'data/persistence/resource';
 import { ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
 import { loadPreferences } from 'state/preferences';
@@ -64,6 +69,8 @@ type EditorUpdate = {
   title: string;
   content: PageEditorContent;
   objectives: Immutable.List<ResourceId>;
+  learningObjectives: ResolvedLearningObjective[];
+  learningObjectivesRefreshPendingFor?: string;
 };
 
 type PageEditorState = {
@@ -74,10 +81,14 @@ type PageEditorState = {
   content: PageEditorContent;
   activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
   objectives: Immutable.List<ResourceId>;
+  learningObjectives: ResolvedLearningObjective[];
+  learningObjectivesRefreshPendingFor?: string;
   allObjectives: Immutable.List<Objective>;
   allTags: Immutable.List<Tag>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   editMode: boolean;
+  ltiActivityId?: ResourceId;
+  ltiPersistence: 'idle' | 'inflight' | 'failed';
   persistence: 'idle' | 'pending' | 'inflight';
   undoables: Undoables;
   appsignal: Appsignal | null;
@@ -146,6 +157,8 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   previewRequestedListener: any;
   pageOptionsFlushRequestedListener: any;
   editorsRef: React.RefObject<HTMLDivElement> = React.createRef();
+  pendingLearningObjectivesReconciliationSave = false;
+  private ltiMounted = true;
 
   constructor(props: PageEditorProps) {
     super(props);
@@ -168,16 +181,26 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       resourceId: String(props.resourceId),
     });
 
+    const reconciledContent = reconcileLearningObjectivesInPageContent(
+      PageEditorContent.fromPersistence(content),
+      props.learningObjectives,
+    );
+
+    this.pendingLearningObjectivesReconciliationSave = reconciledContent.changed;
+
     this.state = {
       activityContexts,
       messages: [],
       editMode: false,
+      ltiPersistence: 'idle',
       title,
       graded: props.graded,
       resourceSlug: props.resourceSlug,
       allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),
-      content: PageEditorContent.fromPersistence(content),
+      learningObjectives: props.learningObjectives || [],
+      learningObjectivesRefreshPendingFor: undefined,
+      content: reconciledContent.content,
       persistence: 'idle',
       allObjectives: arrangeObjectives(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
@@ -194,6 +217,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   }
 
   componentDidMount() {
+    window.addEventListener('customEvent', this.ltiAuthoringListener);
     const { projectSlug, onLoadPreferences } = this.props;
 
     onLoadPreferences();
@@ -202,21 +226,26 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       .initialize(
         () => acquireLock(projectSlug, this.currentResourceSlug),
         () => releaseLock(projectSlug, this.currentResourceSlug),
-        // eslint-disable-next-line
-        () => {},
+        this.onAutosaveSuccess,
         (failure) => this.publishErrorMessage(failure),
         (persistence) => this.setState({ persistence }),
       )
       .then((editMode) => {
-        this.setState({ editMode });
-        this.pushTitleLockState(editMode);
-        if (editMode) {
-          this.initActivityPersistence();
-          this.windowUnloadListener = registerUnload(this.persistence);
-        } else if (this.persistence.getLockResult().type === 'not_acquired') {
-          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
-          this.editingLockedMessage(notAcquired.user);
-        }
+        this.setState({ editMode }, () => {
+          this.pushTitleLockState(editMode);
+          if (editMode) {
+            this.initActivityPersistence();
+            this.windowUnloadListener = registerUnload(this.persistence);
+
+            if (this.pendingLearningObjectivesReconciliationSave) {
+              this.pendingLearningObjectivesReconciliationSave = false;
+              this.save();
+            }
+          } else if (this.persistence.getLockResult().type === 'not_acquired') {
+            const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
+            this.editingLockedMessage(notAcquired.user);
+          }
+        });
       });
 
     this.titleUpdatedListener = (event: Event) => {
@@ -277,7 +306,81 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     }
   }
 
+  ltiAuthoringListener = (event: Event) => {
+    const { payload, continuation, props } = (event as CustomEvent).detail || {};
+    if (
+      !['ltiAuthoringPrepare', 'ltiAuthoringSave', 'ltiAuthoringClose'].includes(
+        payload?.eventName,
+      ) ||
+      props?.projectSlug !== this.props.projectSlug
+    )
+      return;
+    const entry = this.state.activityContexts.find(
+      (activity) => activity.activityId === props.activityId,
+    );
+    if (!entry || entry.authoringElement !== 'lti-external-tool-authoring') return;
+    event.stopPropagation();
+    const run = async () => {
+      const activity = String(entry.activityId);
+      switch (payload.eventName) {
+        case 'ltiAuthoringPrepare':
+          if (!this.state.editMode || this.state.ltiActivityId !== undefined)
+            throw new Error('Finish the current edit before configuring this activity.');
+          this.setState({ ltiActivityId: entry.activityId });
+          await this.persistence.flushPendingChangesAsync?.(false);
+          await this.activityPersistence[entry.activitySlug].flushPendingChangesAsync?.(false);
+          if (!this.ltiMounted) throw new Error('The editor was closed.');
+          return startAuthoringDeepLink(
+            this.props.projectSlug,
+            activity,
+            this.props.resourceId,
+            payload.payload.role,
+          );
+        case 'ltiAuthoringSave': {
+          if (!this.state.editMode || this.state.ltiActivityId !== entry.activityId)
+            throw new Error('This configuration is no longer active.');
+          this.setState({ ltiPersistence: 'inflight' });
+          const saved = await saveAuthoringDeepLink(
+            this.props.projectSlug,
+            activity,
+            payload.payload.token,
+          );
+          if (!this.ltiMounted) return false;
+          this.setState((state) => ({
+            ltiActivityId: undefined,
+            ltiPersistence: 'idle',
+            activityContexts: state.activityContexts.update(entry.activitySlug, (current) => ({
+              ...current!,
+              model: saved.model,
+              title: saved.title,
+              objectives: saved.objectives,
+              tags: saved.tags,
+            })),
+          }));
+          return true;
+        }
+        case 'ltiAuthoringClose':
+          this.setState({ ltiActivityId: undefined });
+          return true;
+      }
+    };
+    run().then(
+      (result) => continuation(result),
+      (error) => {
+        if (this.ltiMounted) {
+          this.setState({ ltiActivityId: undefined, ltiPersistence: 'failed' });
+          this.publishErrorMessage({
+            message: error?.message || 'The tool selection could not be saved.',
+          });
+        }
+        continuation(undefined, error);
+      },
+    );
+  };
+
   componentWillUnmount() {
+    this.ltiMounted = false;
+    window.removeEventListener('customEvent', this.ltiAuthoringListener);
     this.persistence.destroy();
 
     unregisterUnload(this.windowUnloadListener);
@@ -310,6 +413,12 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     return Promise.resolve();
   }
 
+  onAutosaveSuccess = () => {
+    if (this.state.ltiPersistence === 'failed') {
+      this.setState({ ltiPersistence: 'idle' });
+    }
+  };
+
   initActivityPersistence() {
     this.activityPersistence = Object.keys(this.state.activityContexts.toObject()).reduce(
       (map, key) => {
@@ -321,8 +430,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
         persistence.initialize(
           () => Promise.resolve({ type: 'acquired' }),
           () => Promise.resolve({ type: 'acquired' }),
-          // eslint-disable-next-line
-          () => {},
+          this.onAutosaveSuccess,
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
@@ -375,7 +483,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
   onEditActivity(id: string, update: ActivityEditorUpdate): void {
     // only update if editMode is active
-    if (!this.state.editMode) return;
+    if (!this.state.editMode || this.state.ltiActivityId !== undefined) return;
 
     const constrainedContent = this.adjustActivityForConstraints(
       this.state.activityContexts.get(id)?.typeSlug,
@@ -593,15 +701,13 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       resourceSlug: state.resourceSlug,
       graded: state.graded,
       title: state.title,
+      learningObjectives: state.learningObjectives,
+      learningObjectivesRefreshPendingFor: state.learningObjectivesRefreshPendingFor,
     };
 
     const onEdit = (content: PageEditorContent) => this.update({ content });
 
-    const onAddItem = (
-      c: StructuredContent | ActivityReference,
-      index: number[],
-      a?: ActivityEditContext,
-    ) => {
+    const onAddItem = (c: ResourceContent, index: number[], a?: ActivityEditContext) => {
       this.update({
         content: this.state.content.insertAt(index, c),
       });
@@ -610,14 +716,42 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
         persistence.initialize(
           () => Promise.resolve({ type: 'acquired' }),
           () => Promise.resolve({ type: 'acquired' }),
-          // eslint-disable-next-line
-          () => {},
+          this.onAutosaveSuccess,
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
         this.activityPersistence[a.activitySlug] = persistence;
 
         this.setState({ activityContexts: this.state.activityContexts.set(a.activitySlug, a) });
+      }
+    };
+
+    const onRefreshLearningObjectives = (
+      contentId: string,
+      learningObjectives: ResolvedLearningObjective[],
+    ) => {
+      const contentItem = this.state.content.find(contentId);
+
+      if (contentItem === undefined || contentItem.type !== 'learning_objectives') {
+        return;
+      }
+
+      const reconciled = reconcileLearningObjectivesContent(contentItem, learningObjectives);
+
+      this.update({
+        content: this.state.content.updateContentItem(contentId, reconciled.content),
+        learningObjectives,
+        learningObjectivesRefreshPendingFor: undefined,
+      });
+    };
+
+    const onStartLearningObjectivesRefresh = (contentId: string) => {
+      this.setState({ learningObjectivesRefreshPendingFor: contentId });
+    };
+
+    const onFinishLearningObjectivesRefresh = (contentId: string) => {
+      if (this.state.learningObjectivesRefreshPendingFor === contentId) {
+        this.setState({ learningObjectivesRefreshPendingFor: undefined });
       }
     };
 
@@ -675,12 +809,20 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                   executeAction={executeAction}
                   messages={this.state.messages}
                 />
-                <div className="d-flex justify-content-end align-items-center py-2">
-                  <PersistenceStatus persistence={this.state.persistence} />
+                <div role="status" className="d-flex justify-content-end align-items-center py-2">
+                  {(state.ltiPersistence !== 'failed' || state.persistence !== 'idle') && (
+                    <PersistenceStatus
+                      persistence={
+                        state.ltiPersistence === 'inflight' ? 'inflight' : state.persistence
+                      }
+                    />
+                  )}
                 </div>
                 <Objectives>
                   <ObjectivesSelection
                     editMode={this.state.editMode}
+                    attachmentType="page"
+                    loWellFormed={this.props.loWellFormed}
                     projectSlug={this.props.projectSlug}
                     objectives={this.state.allObjectives.toArray()}
                     selected={this.state.objectives.toArray()}
@@ -705,7 +847,8 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                       {...props}
                       graded={state.graded}
                       editorsRef={this.editorsRef}
-                      editMode={this.state.editMode}
+                      editMode={this.state.editMode && state.ltiActivityId === undefined}
+                      supportsLtiConfiguration
                       objectives={this.state.allObjectives}
                       allTags={this.state.allTags}
                       childrenObjectives={this.state.childrenObjectives}
@@ -718,6 +861,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                       onPostUndoable={this.onPostUndoable}
                       content={this.state.content}
                       onAddItem={onAddItem}
+                      onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
+                      onRefreshLearningObjectives={onRefreshLearningObjectives}
+                      onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
                       resourceContext={resourceContext}
                       onDuplicate={onDuplicateActivity}
                     />

@@ -71,6 +71,7 @@ defmodule Oli.Rendering.Content do
   @callback page_link(%Context{}, next, %{}) :: [any()]
   @callback popup(%Context{}, next, %{}) :: [any()]
   @callback selection(%Context{}, next, %{}) :: [any()]
+  @callback learning_objectives(%Context{}, next, %{}) :: [any()]
   @callback cite(%Context{}, next, %{}) :: [any()]
 
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
@@ -462,6 +463,10 @@ defmodule Oli.Rendering.Content do
 
   def render(%Context{} = context, %{"type" => "selection"} = selection, writer) do
     writer.selection(context, fn -> true end, selection)
+  end
+
+  def render(%Context{} = context, %{"type" => "learning_objectives"} = element, writer) do
+    writer.learning_objectives(context, fn -> [] end, element)
   end
 
   # Renders content elements that have a model field containing an array of content elements

@@ -43,6 +43,21 @@ export const isimageOnlyNodes = (nodes: MarkupTree[]): boolean => {
   return hasImg && !/\btext":"[^"]{2,}/.test(text);
 };
 
+/**
+ * Identifies images in the flashcard button's accessible name, where child image roles may be
+ * flattened. Only rendered nodes are changed; authored alt text and decorative images are preserved.
+ */
+export const announceFlashcardImages = (nodes: MarkupTree[]): MarkupTree[] =>
+  nodes.map((node) => {
+    const children = node.children ? announceFlashcardImages(node.children) : node.children;
+
+    if (node.tag !== 'img' || !node.alt?.trim() || /^\s*image\b/i.test(node.alt)) {
+      return children === node.children ? node : { ...node, children };
+    }
+
+    return { ...node, alt: `Image: ${node.alt}`, children };
+  });
+
 export const stripFlashcardImageDimensions = (nodes: MarkupTree[]): MarkupTree[] =>
   nodes.map((node) => {
     const children = node.children ? stripFlashcardImageDimensions(node.children) : node.children;

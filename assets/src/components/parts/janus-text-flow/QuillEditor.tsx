@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Modal } from 'react-bootstrap';
+import { Alert, Modal, ModalProps } from 'react-bootstrap';
 import ReactQuill, { Quill } from 'react-quill';
 import Delta from 'quill-delta';
 import { normalizeHref } from 'data/content/model/elements/utils';
@@ -15,7 +15,9 @@ import {
 } from '../janus-fill-blanks/FIBUtils';
 import type { OptionItem } from '../janus-fill-blanks/FIBUtils';
 import { QuillFIBOptionEditor } from './QuillFIBOptionEditor';
+import { QuillImageResize } from './QuillImageResize';
 import { QuillImageUploader } from './QuillImageUploader';
+import { normalizeImageAspectRatio, normalizeImageDimension } from './imageSizing';
 import {
   convertJanusToQuill,
   convertQuillToJanus,
@@ -32,9 +34,13 @@ interface QuillEditorProps {
   onCancel: () => void;
   showSaveCancelButtons?: boolean;
   showimagecontrol?: boolean;
+  /** Enables image selection, drag handles, and keyboard sizing for supported authoring surfaces. */
+  enableImageResize?: boolean;
   showfibinsertoptioncontrol?: boolean;
   options?: any;
   projectSlug?: string;
+  /** Allows embedded editors to keep dialogs in their parent's modal container. */
+  ModalComponent?: React.ComponentType<ModalProps>;
 }
 
 // Get supported fonts from shared mapping (ensures consistency)
@@ -269,9 +275,30 @@ class ImageWithAlt extends BaseImage {
   }
 
   static formats(node: HTMLElement) {
+    const width = normalizeImageDimension(node.getAttribute('width'));
+    const height = normalizeImageDimension(node.getAttribute('height'));
     return {
       alt: node.getAttribute('alt'),
+      ...(width !== undefined ? { width } : {}),
+      ...(height !== undefined ? { height } : {}),
     };
+  }
+
+  format(name: string, value: unknown) {
+    if (name === 'width' || name === 'height') {
+      const dimension = normalizeImageDimension(value);
+      if (dimension !== undefined) {
+        this.domNode.setAttribute(name, String(dimension));
+      } else {
+        this.domNode.removeAttribute(name);
+      }
+      const width = normalizeImageDimension(this.domNode.getAttribute('width'));
+      const height = normalizeImageDimension(this.domNode.getAttribute('height'));
+      // Explicit dimensions define the authored ratio; height stays responsive as width shrinks.
+      this.domNode.style.aspectRatio = width && height ? `${width} / ${height}` : '';
+      return;
+    }
+    super.format(name, value);
   }
 }
 
@@ -483,9 +510,11 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   onSave,
   onCancel,
   showimagecontrol = false,
+  enableImageResize = false,
   showfibinsertoptioncontrol = false,
   options = '',
   projectSlug = '',
+  ModalComponent = Modal,
 }) => {
   const resolveProjectSlug = () => {
     if (projectSlug) return projectSlug;
@@ -514,6 +543,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   }, [projectSlug]);
 
   const quill: any = useRef();
+  const imageEditorContainer = useRef<HTMLDivElement>(null);
+  const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
+  const deselectImage = React.useCallback(() => setSelectedImage(null), []);
   const [contents, setContents] = React.useState<any>(tree);
   const [selectedKey, setSelectedKey] = useState<number>(0);
   const [fibElements, setFibElements] = React.useState<any>([]);
@@ -638,6 +670,30 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     [quill],
   );
 
+  const openImageDialog = React.useCallback((image: HTMLImageElement) => {
+    const editor = quill.current?.getEditor();
+    const blot = Quill.find(image);
+    if (!editor || !blot || !editor.root.contains(image)) return;
+
+    const index = editor.getIndex(blot);
+    const op = editor.getContents(index, 1)?.ops?.[0];
+    const value = op?.insert?.image;
+    setSelectedImage(null);
+    setEditingImageIndex(index);
+    setCurrentQuillRange(index);
+    setImageDialogInitialSrc(typeof value === 'string' ? value : value?.src || '');
+    setImageDialogInitialAlt(
+      (typeof value === 'object' ? value?.alt : undefined) ||
+        op?.attributes?.alt ||
+        op?.insert?.alt ||
+        '',
+    );
+    setShowImageSelectorDailog(true);
+  }, []);
+  const editSelectedImage = React.useCallback(() => {
+    if (selectedImage) openImageDialog(selectedImage);
+  }, [selectedImage, openImageDialog]);
+
   useEffect(() => {
     if (!quill?.current) return;
 
@@ -668,6 +724,14 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     };
 
     const onEditorClick = (event: MouseEvent) => {
+      if (enableImageResize && event.target instanceof HTMLImageElement) {
+        event.preventDefault();
+        event.stopPropagation();
+        setSelectedImage(event.target);
+        return;
+      }
+
+      setSelectedImage(null);
       const anchor = getAnchorFromEventTarget(event.target);
       if (anchor) {
         const blot = Quill.find(anchor);
@@ -685,29 +749,33 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       }
 
       if (event.target instanceof HTMLImageElement) {
-        const imageBlot = Quill.find(event.target);
-        if (!imageBlot) return;
-
         event.preventDefault();
         event.stopPropagation();
-
-        const imageIndex = editor.getIndex(imageBlot);
-        const imageOp = editor.getContents(imageIndex, 1)?.ops?.[0];
-        const imageValue = imageOp?.insert?.image;
-        const imageSrc = typeof imageValue === 'string' ? imageValue : imageValue?.src || '';
-        const imageAlt =
-          typeof imageValue === 'object'
-            ? imageValue?.alt || imageOp?.attributes?.alt || imageOp?.insert?.alt || ''
-            : imageOp?.attributes?.alt || imageOp?.insert?.alt || '';
-
-        setEditingImageIndex(imageIndex);
-        setCurrentQuillRange(imageIndex);
-        setImageDialogInitialSrc(imageSrc);
-        setImageDialogInitialAlt(imageAlt);
-        setShowImageSelectorDailog(true);
+        openImageDialog(event.target);
       }
     };
 
+    const prepareImages = () => {
+      if (!enableImageResize) return;
+      root.querySelectorAll('img').forEach((image: HTMLImageElement) => {
+        image.tabIndex = 0;
+      });
+    };
+    const onImageKeyDown = (event: KeyboardEvent) => {
+      if (
+        enableImageResize &&
+        event.target instanceof HTMLImageElement &&
+        (event.key === 'Enter' || event.key === ' ')
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        setSelectedImage(event.target);
+      }
+    };
+
+    prepareImages();
+    editor.on('text-change', prepareImages);
+    root.addEventListener('keydown', onImageKeyDown);
     root.addEventListener('mousedown', onEditorMouseDown, true);
     root.addEventListener('click', onEditorClick, true);
     const clipboard = editor.getModule('clipboard');
@@ -717,18 +785,38 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         return new DeltaCtor();
       }
 
-      return new DeltaCtor().insert({
-        image: {
-          src,
-          alt: node.getAttribute('alt') || '',
+      const width = enableImageResize
+        ? normalizeImageDimension(node.getAttribute('width') || node.style.width)
+        : undefined;
+      const ratio = normalizeImageAspectRatio(node.style.aspectRatio);
+      const height =
+        width !== undefined
+          ? normalizeImageDimension(
+              node.getAttribute('height') || (ratio ? width / ratio : node.style.height),
+            )
+          : undefined;
+      return new DeltaCtor().insert(
+        {
+          image: {
+            src,
+            alt: node.getAttribute('alt') || '',
+          },
         },
-      });
+        width !== undefined ? { width, ...(height !== undefined ? { height } : {}) } : undefined,
+      );
     });
     return () => {
+      editor.off('text-change', prepareImages);
+      root.removeEventListener('keydown', onImageKeyDown);
       root.removeEventListener('mousedown', onEditorMouseDown, true);
       root.removeEventListener('click', onEditorClick, true);
+      if (enableImageResize) {
+        root.querySelectorAll('img').forEach((image: HTMLImageElement) => {
+          image.removeAttribute('tabindex');
+        });
+      }
     };
-  }, [openLinkDialog]);
+  }, [openLinkDialog, openImageDialog, enableImageResize]);
   const applyColorFormat = React.useCallback(
     (format: 'color' | 'background', value: string) => {
       const editor = quill?.current?.getEditor();
@@ -788,6 +876,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       }
     },
     image: function (this: any, value: string) {
+      setSelectedImage(null);
       setEditingImageIndex(null);
       setImageDialogInitialSrc('');
       setImageDialogInitialAlt('');
@@ -868,10 +957,21 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     const isEditing = editingImageIndex !== null;
     const index = isEditing ? editingImageIndex : currentQuillRange ?? editor.getLength();
 
-    if (isEditing) {
-      editor.deleteText(index, 1, 'user');
-    }
-    editor.insertEmbed(index, 'image', { src: imageURL, alt: imageAltText }, 'user');
+    // Replace atomically so changing URL/alt preserves size and takes a single undo step.
+    // Quill applies attributes after creating the embed, so replace the previous alt there too.
+    const attributes = isEditing
+      ? { ...editor.getContents(index, 1)?.ops?.[0]?.attributes, alt: imageAltText }
+      : undefined;
+    const history = editor.getModule('history');
+    history.cutoff();
+    editor.updateContents(
+      new Delta()
+        .retain(index)
+        .delete(isEditing ? 1 : 0)
+        .insert({ image: { src: imageURL, alt: imageAltText } }, attributes),
+      'user',
+    );
+    history.cutoff();
     setEditingImageIndex(null);
     setImageDialogInitialSrc('');
     setImageDialogInitialAlt('');
@@ -904,6 +1004,13 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     setEditingImageIndex(null);
     setImageDialogInitialSrc('');
     setImageDialogInitialAlt('');
+  };
+
+  // Bootstrap cannot restore a shadow-root editor through document.activeElement.
+  const restoreEmbeddedEditorFocus = () => {
+    if (ModalComponent !== Modal) {
+      quill.current?.focus();
+    }
   };
 
   const handleFIBOptionsEditorClose = () => {
@@ -1025,10 +1132,18 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         </Alert>
       )}
       <div
+        ref={imageEditorContainer}
+        className={
+          enableImageResize
+            ? '[&_.ql-editor_img]:max-w-full [&_.ql-editor_img]:h-auto [&_.ql-editor_img]:cursor-pointer [&_.ql-editor_img:not([width])]:w-full'
+            : undefined
+        }
         style={{
+          position: 'relative',
           maxWidth: 520,
-          height: '100%',
-          flex: 1,
+          height: enableImageResize ? 'auto' : '100%',
+          minHeight: enableImageResize ? '100%' : undefined,
+          flex: enableImageResize ? '0 0 auto' : 1,
           display: 'flex',
           flexDirection: 'column',
           backgroundColor: '#fff',
@@ -1036,7 +1151,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       >
         <ReactQuill
           ref={quill}
-          style={{ maxHeight: '100%' }}
+          style={{ maxHeight: enableImageResize ? undefined : '100%' }}
           modules={modules}
           defaultValue={delta}
           onChange={handleQuillChange}
@@ -1058,10 +1173,22 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
             'align',
             'link',
             'image',
+            'width',
+            'height',
             'adaptivity',
             'insertFIBOption',
           ]}
         />
+        {enableImageResize && selectedImage && imageEditorContainer.current && (
+          <QuillImageResize
+            key={selectedImage.src}
+            editor={quill.current.getEditor()}
+            image={selectedImage}
+            container={imageEditorContainer.current}
+            onEdit={editSelectedImage}
+            onDeselect={deselectImage}
+          />
+        )}
         {showSaveCancelButtons && (
           <>
             <button onClick={handleSave}>Save</button>
@@ -1071,6 +1198,8 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       </div>
       {
         <QuillImageUploader
+          ModalComponent={ModalComponent}
+          onExited={restoreEmbeddedEditorFocus}
           showImageSelectorDailog={showImageSelectorDailog}
           handleImageDetailsSave={handleImageDetailsSave}
           handleImageDailogClose={handleImageUploaderDailogClose}
@@ -1088,7 +1217,12 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           selectedIndex={selectedKey}
         ></QuillFIBOptionEditor>
       )}
-      <Modal show={showLinkDialog} onHide={() => setShowLinkDialog(false)} centered>
+      <ModalComponent
+        show={showLinkDialog}
+        onHide={() => setShowLinkDialog(false)}
+        onExited={restoreEmbeddedEditorFocus}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Insert Link</Modal.Title>
         </Modal.Header>
@@ -1182,7 +1316,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
             Save
           </button>
         </Modal.Footer>
-      </Modal>
+      </ModalComponent>
     </React.Fragment>
   );
 };

@@ -194,7 +194,7 @@ const EditingCanvas: React.FC = () => {
           payload: { id: currentSelectedPartId, type: 'Copy' },
         });
       } else if (!_currentPartPropertyFocus) {
-        //if user first copies a part and then before pasting it, if they click on the properties and do a cntrl+c, we need to clear the existing cntrl+c for part
+        //if user first copies a part and then before pasting it, if they click on the properties and do a cntrl+c, we need to clear the existing cntrl+c for part.
         dispatch(setCopiedPart({ copiedPart: null }));
         dispatch(setCopiedPartActivityId({ copiedPartActivityId: null }));
       }
@@ -229,7 +229,7 @@ const EditingCanvas: React.FC = () => {
           onCancelConfigurePart={handlePartCancelConfigure}
           onSaveConfigurePart={handlePartSaveConfigure}
           onPartChangePosition={handlePositionChanged}
-          notificationStream={notificationStream}
+          notificationStream={activity.id === currentActivityId ? notificationStream : null}
         />
       );
     });

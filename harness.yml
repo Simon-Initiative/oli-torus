@@ -7,7 +7,7 @@ capabilities:
     details_file: docs/OPERATIONS.md
   telemetry:
     adoption: enabled
-    default: include
+    default: exclude
     details_file: docs/OPERATIONS.md
   performance_requirements:
     adoption: enabled

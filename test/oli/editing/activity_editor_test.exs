@@ -3,7 +3,12 @@ defmodule Oli.ActivityEditingTest do
 
   import Mox
 
+  alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor, ObjectiveEditor}
+  alias Oli.LearningModel.Parameters
+  alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
+  alias Oli.Publishing
+  alias Oli.Repo
   alias Oli.Resources
 
   describe "activity editing" do
@@ -665,7 +670,17 @@ defmodule Oli.ActivityEditingTest do
       # Now generate the resource editing context with this attached activity in place
       # so that we can verify that the activities, editorMap and content are all wired
       # together correctly
-      {:ok, %ResourceContext{activities: activities, content: content, editorMap: editorMap}} =
+      project
+      |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: nil})
+      |> Repo.update!()
+
+      {:ok,
+       %ResourceContext{
+         activities: activities,
+         content: content,
+         editorMap: editorMap,
+         loWellFormed: true
+       }} =
         PageEditor.create_context(project.slug, updated_revision.slug, author)
 
       activity_ref = hd(Map.get(content, "model"))
@@ -677,6 +692,7 @@ defmodule Oli.ActivityEditingTest do
       # and that activity map entry has a type slug that references an editor map entry
       %{typeSlug: typeSlug} = Map.get(activities, activity_slug)
       assert Map.has_key?(editorMap, typeSlug)
+      assert Repo.get!(Project, project.id).lo_well_formed
     end
 
     test "can repeatedly edit an activity", %{
@@ -749,6 +765,10 @@ defmodule Oli.ActivityEditingTest do
       assert {:ok, %{slug: revision_slug}} =
                PageEditor.edit(project.slug, revision.slug, author.email, update)
 
+      project
+      |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: nil})
+      |> Repo.update!()
+
       # create the activity context
       {:ok, context} = ActivityEditor.create_context(project.slug, revision_slug, slug_1, author)
 
@@ -762,6 +782,25 @@ defmodule Oli.ActivityEditingTest do
       assert context.resourceSlug == revision_slug
       assert context.authorEmail == author.email
       assert length(context.allObjectives) == 2
+      assert context.loWellFormed
+      assert Repo.get!(Project, project.id).lo_well_formed
+    end
+
+    test "activity context creation returns not found when working publication lookup returns nil",
+         %{author: author} do
+      assert {:error, :not_found} =
+               ActivityEditor.create_context(
+                 "missing-project",
+                 "missing-revision",
+                 "missing-activity",
+                 author
+               )
+    end
+
+    test "page context creation returns not found when working publication lookup returns nil",
+         %{author: author} do
+      assert {:error, :not_found} =
+               PageEditor.create_context("missing-project", "missing-revision", author)
     end
 
     test "attaching an unknown activity to a resource fails", %{
@@ -865,6 +904,61 @@ defmodule Oli.ActivityEditingTest do
                "1" => [ob1.resource_id],
                "2" => [ob2.resource_id]
              }
+    end
+
+    test "copy-on-write edits reconcile inherited parameters with the final activity parts", %{
+      author: author,
+      project: project,
+      revision1: page_revision
+    } do
+      content = activity_content(["deleted-part", "retained-part"])
+
+      {:ok, {activity_revision, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_multiple_choice",
+          author,
+          content,
+          [],
+          "embedded",
+          nil,
+          %{},
+          [],
+          activity_parameters(%{"deleted-part" => -0.2, "retained-part" => 0.45})
+        )
+
+      {:ok, _published} =
+        Publishing.publish_project(project, "publish trained activity", author.id)
+
+      before_edit =
+        Publishing.AuthoringResolver.from_resource_id(project.slug, activity_revision.resource_id)
+
+      {:acquired} = PageEditor.acquire_lock(project.slug, page_revision.slug, author.email)
+
+      assert {:ok, updated} =
+               ActivityEditor.edit(
+                 project.slug,
+                 page_revision.resource_id,
+                 activity_revision.resource_id,
+                 author.email,
+                 %{
+                   "authoring" => %{
+                     "parts" => [
+                       %{"id" => "retained-part"},
+                       %{"id" => "new-part"}
+                     ]
+                   }
+                 }
+               )
+
+      assert updated.id != before_edit.id
+      assert updated.previous_revision_id == before_edit.id
+
+      assert updated.learning_model_parameters ==
+               activity_parameters(%{"retained-part" => 0.45})
+
+      refute Map.has_key?(updated.learning_model_parameters.payload.parts, "deleted-part")
+      refute Map.has_key?(updated.learning_model_parameters.payload.parts, "new-part")
     end
 
     test "edit/5 allows adaptive internal links when idref references a project resource", %{
@@ -1717,5 +1811,28 @@ defmodule Oli.ActivityEditingTest do
       )
 
     handler_id
+  end
+
+  defp activity_content(part_ids) do
+    %{
+      "authoring" => %{
+        "parts" => Enum.map(part_ids, &%{"id" => &1})
+      }
+    }
+  end
+
+  defp activity_parameters(parts) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :activity,
+      payload: %ActivityParameters{
+        parts:
+          Map.new(parts, fn {part_id, beta_difficulty} ->
+            {part_id, %PartParameters{beta_difficulty: beta_difficulty}}
+          end)
+      }
+    }
   end
 end

@@ -236,14 +236,17 @@ defmodule Oli.Seeder do
     {:ok, pub1} = Publishing.publish_project(project, "some changes", author.id)
 
     {:ok, section} =
-      Sections.create_section(%{
-        title: "Section Title",
-        registration_open: true,
-        open_and_free: true,
-        context_id: UUID.uuid4(),
-        institution_id: institution.id,
-        base_project_id: project.id
-      })
+      Sections.create_section_from_source(
+        %{
+          title: "Section Title",
+          registration_open: true,
+          open_and_free: true,
+          context_id: UUID.uuid4(),
+          institution_id: institution.id,
+          base_project_id: project.id
+        },
+        project
+      )
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub1)
 
@@ -376,14 +379,17 @@ defmodule Oli.Seeder do
     {:ok, pub1} = Publishing.publish_project(project, "some changes", author.id)
 
     {:ok, section} =
-      Sections.create_section(%{
-        title: "Section Title",
-        registration_open: true,
-        open_and_free: true,
-        context_id: UUID.uuid4(),
-        institution_id: institution.id,
-        base_project_id: project.id
-      })
+      Sections.create_section_from_source(
+        %{
+          title: "Section Title",
+          registration_open: true,
+          open_and_free: true,
+          context_id: UUID.uuid4(),
+          institution_id: institution.id,
+          base_project_id: project.id
+        },
+        project
+      )
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub1)
 
@@ -719,15 +725,18 @@ defmodule Oli.Seeder do
     {:ok, pub1} = Publishing.publish_project(project, "some changes", mappings.author.id)
 
     {:ok, section} =
-      Sections.create_section(%{
-        title: "3",
-        registration_open: true,
-        open_and_free: true,
-        context_id: UUID.uuid4(),
-        institution_id: mappings.institution.id,
-        base_project_id: project.id,
-        analytics_version: :v1
-      })
+      Sections.create_section_from_source(
+        %{
+          title: "3",
+          registration_open: true,
+          open_and_free: true,
+          context_id: UUID.uuid4(),
+          institution_id: mappings.institution.id,
+          base_project_id: project.id,
+          analytics_version: :v1
+        },
+        project
+      )
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub1)
 
@@ -816,39 +825,48 @@ defmodule Oli.Seeder do
 
     # Create a course section, one for each publication
     {:ok, section_1} =
-      Sections.create_section(%{
-        title: "1",
-        registration_open: true,
-        context_id: UUID.uuid4(),
-        institution_id: map.institution.id,
-        base_project_id: map.project.id,
-        customizations: customizations
-      })
+      Sections.create_section_from_source(
+        %{
+          title: "1",
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          institution_id: map.institution.id,
+          base_project_id: map.project.id,
+          customizations: customizations
+        },
+        map.project
+      )
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub1)
 
     {:ok, section_2} =
-      Sections.create_section(%{
-        title: "2",
-        registration_open: true,
-        context_id: UUID.uuid4(),
-        institution_id: map.institution.id,
-        base_project_id: map.project.id,
-        customizations: customizations
-      })
+      Sections.create_section_from_source(
+        %{
+          title: "2",
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          institution_id: map.institution.id,
+          base_project_id: map.project.id,
+          customizations: customizations
+        },
+        map.project
+      )
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub2)
 
     {:ok, oaf_section_1} =
-      Sections.create_section(%{
-        title: "3",
-        registration_open: true,
-        open_and_free: true,
-        context_id: UUID.uuid4(),
-        institution_id: map.institution.id,
-        base_project_id: map.project.id,
-        customizations: customizations
-      })
+      Sections.create_section_from_source(
+        %{
+          title: "3",
+          registration_open: true,
+          open_and_free: true,
+          context_id: UUID.uuid4(),
+          institution_id: map.institution.id,
+          base_project_id: map.project.id,
+          customizations: customizations
+        },
+        map.project
+      )
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub2)
 
@@ -883,9 +901,7 @@ defmodule Oli.Seeder do
       contains_deliberate_practice: map[:contains_deliberate_practice] || false
     }
 
-    {:ok, section} =
-      Section.changeset(%Section{}, params)
-      |> Repo.insert()
+    {:ok, section} = Sections.create_section_from_source(params, map.project)
 
     Map.put(map, :section, section)
   end
@@ -908,9 +924,7 @@ defmodule Oli.Seeder do
         attrs
       )
 
-    {:ok, section} =
-      Section.changeset(%Section{}, params)
-      |> Repo.insert()
+    {:ok, section} = Sections.create_section_from_source(params, map.project)
 
     Map.put(map, tag, section)
   end

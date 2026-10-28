@@ -19,6 +19,7 @@ export interface PageContext {
   title: string;
   content: PageContent;
   allObjectives?: any[];
+  loWellFormed?: boolean;
   editorMap?: any;
   projectSlug?: string;
   resourceSlug?: string;

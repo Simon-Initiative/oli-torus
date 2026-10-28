@@ -27,6 +27,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Publishing.Publications.Publication
   alias Oli.Authoring.Broadcaster
   alias Oli.Resources.ContentMigrator
+  alias Oli.LearningModel.Parameters.Validation, as: ParameterValidation
+  alias Oli.Authoring.LearningObjectives.ProjectClassifier
   alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
   alias ExAws.S3
 
@@ -533,14 +535,29 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   .`{:error, {:not_found}}` if the project, resource, activity, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this activity
   .`{:error, {:invalid_update_field}}` if the update contains an invalid field
+  .`{:error, :stale_selection}` if a signed tool selection (the resource configuration
+  chosen in the external tool) no longer matches the editor state
   .`{:error, {:error}}` unknown error
+
+  A sole `deep_link_result` field supplies a server-signed selection token. It is
+  validated under the existing editing lock and merged into current content;
+  ordinary single/bulk content edits preserve the stored LTI selection.
+
   """
-  @spec edit(String.t(), String.t(), any(), String.t(), %{}) ::
+  @spec edit(
+          String.t(),
+          pos_integer() | String.t(),
+          pos_integer() | String.t(),
+          String.t(),
+          map()
+        ) ::
           {:ok, %Revision{}}
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:lock_not_acquired, any()}}
           | {:error, {:not_authorized}}
+          | {:error, {:invalid_update_field}}
+          | {:error, :stale_selection}
   def edit(project_slug, lock_id, activity_id, author_email, update) do
     result =
       with {:ok, {author, project, _publication}} <-
@@ -552,13 +569,37 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         project_page_targets = project_page_targets(project.id)
 
         Repo.transaction(fn ->
-          case Locks.update(project.slug, publication.id, resource.id, author.id) do
+          lock_result = Locks.update(project.slug, publication.id, resource.id, author.id)
+          selection_save? = Map.has_key?(update, "deep_link_result")
+
+          update =
+            case {lock_result, selection_save?} do
+              {{status}, true} when status in [:acquired, :updated] ->
+                with {:ok, request, selected} <-
+                       Oli.Lti.AuthoringLaunch.validate_result(
+                         author,
+                         project.slug,
+                         activity.id,
+                         update["deep_link_result"]
+                       ),
+                     true <- request["lock_id"] == resource.id do
+                  current = get_latest_revision(publication.id, activity.id)
+                  %{"content" => Map.put(current.content, "deepLink", selected)}
+                else
+                  _ -> Repo.rollback(:stale_selection)
+                end
+
+              _ ->
+                update
+            end
+
+          case lock_result do
             # If we acquired the lock, we must first create a new revision
             {:acquired} ->
               updated =
                 get_latest_revision(publication.id, activity.id)
                 |> create_new_revision(publication, activity, author.id)
-                |> update_revision(update, project.id, project_page_targets)
+                |> update_revision(update, project.id, project_page_targets, selection_save?)
 
               case updated do
                 {:ok, revision} ->
@@ -576,8 +617,23 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
             {:updated} ->
               updated =
                 get_latest_revision(publication.id, activity.id)
-                |> maybe_create_new_revision(publication, project, activity, author.id, update)
-                |> update_revision(update, project.id, project_page_targets)
+                |> then(fn revision ->
+                  case selection_save? do
+                    true ->
+                      create_new_revision(revision, publication, activity, author.id)
+
+                    false ->
+                      maybe_create_new_revision(
+                        revision,
+                        publication,
+                        project,
+                        activity,
+                        author.id,
+                        update
+                      )
+                  end
+                end)
+                |> update_revision(update, project.id, project_page_targets, selection_save?)
 
               case updated do
                 {:ok, revision} ->
@@ -644,22 +700,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   # Creates a new activity revision and updates the publication mapping
   defp create_new_revision(previous, publication, activity, author_id) do
     {:ok, revision} =
-      Resources.create_revision(%{
-        resource_type_id: previous.resource_type_id,
-        content: previous.content,
-        objectives: previous.objectives,
-        deleted: previous.deleted,
-        slug: previous.slug,
-        title: previous.title,
-        author_id: author_id,
-        resource_id: previous.resource_id,
-        primary_resource_id: previous.primary_resource_id,
-        scoring_strategy_id: previous.scoring_strategy_id,
-        previous_revision_id: previous.id,
-        activity_type_id: previous.activity_type_id,
-        scope: previous.scope,
-        tags: previous.tags
-      })
+      Resources.create_revision_from_previous(previous, %{author_id: author_id})
 
     Publishing.get_published_resource!(publication.id, activity.id)
     |> Publishing.update_published_resource(%{revision_id: revision.id})
@@ -680,8 +721,28 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
-  # Applies the update to the revision, converting any objective slugs back to ids
-  defp update_revision(revision, update, project_id, project_page_targets \\ nil) do
+  # Applies revision edits and converts objective slugs back to IDs. Ordinary edits
+  # retain the stored LTI selection (the external tool's chosen resource configuration);
+  # only a validated signed-result save may replace it.
+  defp update_revision(
+         revision,
+         update,
+         project_id,
+         project_page_targets \\ nil,
+         selection_save? \\ false
+       ) do
+    revision = Repo.preload(revision, :activity_type)
+
+    update =
+      case selection_save? do
+        true -> update
+        false -> preserve_lti_selection(revision, update)
+      end
+
+    explicit_learning_model_parameters? =
+      Map.has_key?(update, "learning_model_parameters") or
+        Map.has_key?(update, :learning_model_parameters)
+
     objectives =
       if Map.has_key?(update, "objectives"),
         do: Map.get(update, "objectives"),
@@ -731,6 +792,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         |> sync_objectives_to_parts(update, parts)
         |> maybe_update_scoring_strategy()
 
+      update =
+        reconcile_implicit_learning_model_parameters(
+          revision,
+          update,
+          explicit_learning_model_parameters?
+        )
+
       # do not allow resource_id, if present, to be editable.  resource_id is only allowed to be
       # present in bulk update situations so that the server knows which resource we are editing
       update = Map.delete(update, "resource_id")
@@ -745,6 +813,30 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       end
     else
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp reconcile_implicit_learning_model_parameters(
+         _revision,
+         update,
+         true
+       ),
+       do: update
+
+  defp reconcile_implicit_learning_model_parameters(revision, update, false) do
+    case Map.fetch(update, "content") do
+      {:ok, content} ->
+        Map.put(
+          update,
+          "learning_model_parameters",
+          ParameterValidation.reconcile_inherited_parts(
+            revision.learning_model_parameters,
+            content
+          )
+        )
+
+      :error ->
+        update
     end
   end
 
@@ -772,6 +864,30 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp get_scoring_strategy_from_content(_), do: "total"
 
+  # Keeps ordinary autosaves from replacing or clearing the stored LTI selection
+  # (the external tool's chosen resource configuration), even from an older client model.
+  # Non-map LTI content is rejected rather than discarding the stored configuration.
+  defp preserve_lti_selection(
+         %Revision{activity_type: %{authoring_element: "lti-external-tool-authoring"}} = revision,
+         %{"content" => content} = update
+       ) do
+    case is_map(content) do
+      true ->
+        content =
+          case Map.fetch(revision.content, "deepLink") do
+            {:ok, selection} -> Map.put(content, "deepLink", selection)
+            :error -> Map.delete(content, "deepLink")
+          end
+
+        Map.put(update, "content", content)
+
+      false ->
+        Repo.rollback({:invalid_update_field})
+    end
+  end
+
+  defp preserve_lti_selection(_, update), do: update
+
   # Check to see if this update is valid
   defp validate_request(update) when is_list(update) do
     all_valid? =
@@ -786,6 +902,15 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     case all_valid? do
       true -> {:ok, update}
       _ -> {:error, {:invalid_update_field}}
+    end
+  end
+
+  # A signed-result save must contain only its token; its tool configuration is
+  # derived server-side instead of being mixed with client-supplied content changes.
+  defp validate_request(%{"deep_link_result" => token} = update) do
+    case is_binary(token) and map_size(update) == 1 do
+      true -> {:ok, update}
+      false -> {:error, {:invalid_update_field}}
     end
   end
 
@@ -815,6 +940,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp adaptive_activity?(%Revision{activity_type_id: nil}), do: false
+
+  # Reuses an already loaded registration when classifying the activity, avoiding
+  # another lookup after revision update preparation has preloaded it.
+  defp adaptive_activity?(%Revision{activity_type: %ActivityRegistration{slug: slug}}),
+    do: slug == "oli_adaptive"
 
   defp adaptive_activity?(%Revision{activity_type_id: activity_type_id}) do
     case Activities.get_registration(activity_type_id) do
@@ -1534,7 +1664,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         scope \\ "embedded",
         title \\ nil,
         objective_map \\ %{},
-        tags \\ []
+        tags \\ [],
+        learning_model_parameters \\ nil
       ) do
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
@@ -1551,7 +1682,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
              model,
              title,
              tags,
-             objective_map
+             objective_map,
+             learning_model_parameters
            ) do
       case Transformers.apply_transforms([activity]) do
         [{:ok, nil}] -> {:ok, {activity, content}}
@@ -1639,7 +1771,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          model,
          title,
          tags,
-         objective_map
+         objective_map,
+         learning_model_parameters \\ nil
        ) do
     Repo.transaction(fn ->
       with {:ok, activity_type} <-
@@ -1656,7 +1789,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                  content: model,
                  scope: scope,
                  activity_type_id: activity_type.id,
-                 tags: tags
+                 tags: tags,
+                 learning_model_parameters: learning_model_parameters
                },
                Oli.Resources.ResourceType.id_for_activity()
              ),
@@ -2026,6 +2160,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                authoringScript: any,
                description: any,
                friendlyName: any,
+               loWellFormed: boolean,
                model: any,
                objectives: any,
                projectSlug: any,
@@ -2042,7 +2177,10 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   def create_context(project_slug, revision_slug, activity_slug, author) do
     with {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
+         publication = Repo.preload(publication, :project),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
+         {:ok, lo_well_formed} <-
+           ProjectClassifier.ensure_classified(publication.project, publication),
          {:ok, all_objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, %{title: resource_title}} <-
@@ -2077,6 +2215,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         model: model,
         objectives: filtered_objectives,
         allObjectives: all_objectives_with_parents,
+        loWellFormed: lo_well_formed,
         typeSlug: activity_type.slug,
         tags: tags,
         variables:
@@ -2092,7 +2231,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
-  def create_contexts(all_objectives_with_parents, project_slug, activity_ids) do
+  def create_contexts(
+        all_objectives_with_parents,
+        project_slug,
+        activity_ids,
+        lo_well_formed
+      ) do
     type_by_id =
       Activities.list_activity_registrations()
       |> Enum.reduce(%{}, fn t, m -> Map.put(m, t.id, t) end)
@@ -2118,6 +2262,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         model: r.content,
         objectives: filtered_objectives,
         allObjectives: all_objectives_with_parents,
+        loWellFormed: lo_well_formed,
         typeSlug: activity_type.slug,
         tags: r.tags,
         variables:

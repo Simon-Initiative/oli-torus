@@ -1,0 +1,129 @@
+# Page annotation workflow covering a point note, reply, and deterministic reactions.
+
+- project:
+    name: "annotation_course"
+    title: "Annotation Course"
+    root:
+      children:
+        - page: "Annotated Lesson"
+
+- edit_page:
+    project: "annotation_course"
+    page: "Annotated Lesson"
+    content: |
+      title: "Annotated Lesson"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "This paragraph is the target of the annotation."
+
+- publish:
+    to: "annotation_course"
+    description: "Publish annotation workflow content"
+
+- section:
+    name: "annotation_section"
+    title: "Annotation Section"
+    from: "annotation_course"
+
+- user:
+    name: "note_author"
+    type: "student"
+    email: "note_author@test.edu"
+
+- user:
+    name: "note_responder"
+    type: "student"
+    email: "note_responder@test.edu"
+
+- enroll:
+    user: "note_author"
+    section: "annotation_section"
+    role: "student"
+
+- enroll:
+    user: "note_responder"
+    section: "annotation_section"
+    role: "student"
+
+- class_note:
+    name: "point_note"
+    student: "note_author"
+    section: "annotation_section"
+    page: "Annotated Lesson"
+    block_id: "annotation-point-1"
+    body: "This is an important point."
+
+- assert:
+    annotation:
+      post: "point_note"
+      section: "annotation_section"
+      page: "Annotated Lesson"
+      body: "This is an important point."
+      author: "note_author"
+      status: "approved"
+      visibility: "public"
+      annotation_type: "point"
+      block_id: "annotation-point-1"
+      reaction: "like"
+      reaction_count: 0
+
+- class_note:
+    name: "point_note_reply"
+    student: "note_responder"
+    section: "annotation_section"
+    page: "Annotated Lesson"
+    reply_to: "point_note"
+    body: "I agree with this observation."
+
+- assert:
+    annotation:
+      post: "point_note_reply"
+      section: "annotation_section"
+      page: "Annotated Lesson"
+      body: "I agree with this observation."
+      author: "note_responder"
+      status: "approved"
+      visibility: "public"
+      annotation_type: "point"
+      block_id: "annotation-point-1"
+      reply_to: "point_note"
+
+- post_reaction:
+    post: "point_note_reply"
+    student: "note_author"
+    reaction: "like"
+    action: "add"
+
+# Repeating an add is intentionally idempotent.
+- post_reaction:
+    post: "point_note_reply"
+    student: "note_author"
+    reaction: "like"
+    action: "add"
+
+- assert:
+    annotation:
+      post: "point_note_reply"
+      reaction: "like"
+      reaction_count: 1
+      reacted_by: "note_author"
+
+- post_reaction:
+    post: "point_note_reply"
+    student: "note_author"
+    reaction: "like"
+    action: "remove"
+
+# Repeating a remove is intentionally idempotent.
+- post_reaction:
+    post: "point_note_reply"
+    student: "note_author"
+    reaction: "like"
+    action: "remove"
+
+- assert:
+    annotation:
+      post: "point_note_reply"
+      reaction: "like"
+      reaction_count: 0

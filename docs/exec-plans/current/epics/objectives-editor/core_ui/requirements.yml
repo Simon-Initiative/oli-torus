@@ -1,0 +1,147 @@
+work_item: core_ui
+requirements:
+- title: Render Learning Objective and Sub-Objective coverage summaries
+  description: Show page, formative activity, summative activity, and descendant Sub-Objective
+    counts for parent Learning Objectives, and formative and summative activity counts
+    for Sub-Objectives.
+  status: verified
+  id: FR-001
+- title: Provide independent expansion and assessment filtering
+  description: Allow each objective row to expand independently and filter its page-first
+    attachment details between formative and summative assessment buckets without
+    repeated content queries.
+  status: verified
+  id: FR-002
+- title: Render page-first attachment details
+  description: Render tagged pages before their embedded activities, retain pages
+    with no activities in the selected bucket, and use the ObjectiveCoverage model
+    as the single data source.
+  status: verified
+  id: FR-003
+- title: Support read-only page and embedded activity navigation
+  description: Navigate authors to the selected page or embedded activity while preserving
+    project, resource, slug, and anchor context and without changing associations.
+  status: verified
+  id: FR-004
+- title: Apply the approved visual and accessibility behavior
+  description: Use the Figma-defined icons, overflow layout, component states, keyboard
+    behavior, ARIA state, and visible focus treatment.
+  status: verified
+  id: FR-005
+- title: Exclude deferred Activity Bank coverage from v35
+  description: Do not display or navigate Activity Bank selections in this implementation;
+    initial UI coverage remains limited to static embedded activities supplied by
+    the core data model.
+  status: verified
+  id: FR-006
+- title: Preserve authoring performance and domain boundaries
+  description: Keep coverage shaping in Oli.Authoring.ObjectiveCoverage, avoid full
+    page or activity content loads and per-row queries, and keep the workspace UI
+    read-only.
+  status: verified
+  id: FR-007
+acceptance_criteria:
+- requirement_id: FR-001
+  title: Each top-level Learning Objective displays page, formative activity, summative
+    activity, and descendant Sub-Objective counts, including direct and descendant
+    attachments.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/authoring/objective_coverage_test.exs: derives hierarchical coverage, page-first details, and search projections
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: summary rendering and refresh tests
+  id: AC-001
+- requirement_id: FR-001
+  title: Each Sub-Objective displays formative and summative activity counts from
+    direct attachments only and does not inherit parent or sibling content.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/authoring/objective_coverage_test.exs: derives hierarchical coverage, page-first details, and search projections
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: Sub-Objective summary and child coverage tests
+  id: AC-002
+- requirement_id: FR-002
+  title: Expanding one Learning Objective or Sub-Objective changes only that row and
+    does not expand other rows; rows with no tagged pages or activities do not display
+    an empty assessment toggle.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: expands and collapses objectives independently; no assessment toggle for empty objectives
+  id: AC-003
+- requirement_id: FR-002
+  title: Formative and Summative selections show only pages and embedded activities
+    in the selected bucket, with activity classification inherited from the containing
+    page.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: formative/summative bucket filtering and assessment icon tests
+  - test/oli/authoring/objective_coverage_test.exs: assessment-bucket detail assertions
+  id: AC-004
+- requirement_id: FR-003
+  title: Expanded details render pages before their embedded activities and retain
+    a tagged page with the appropriate empty-state message when no activity matches
+    the selected bucket.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: page-first coverage and page-empty-state test
+  - test/oli/authoring/objective_coverage_test.exs: page-first detail grouping test
+  id: AC-005
+- requirement_id: FR-004
+  title: Selecting a page navigates to its authoring editor and selecting an embedded
+    activity navigates to its containing page with focus or anchor context when supported.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: links pages and embedded activities to read-only editor targets
+  - assets/src/components/resource/editors/ActivityBlock.tsx: activity_<resource_id> focus anchor
+  id: AC-006
+- requirement_id: FR-004
+  title: Navigation from the coverage UI performs no writes and does not modify objective,
+    page, activity, or association data.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: no-phx-click assertions on page and activity links
+  id: AC-007
+- requirement_id: FR-005
+  title: The UI follows the approved Figma icons, two-column overflow activity layout,
+    and visual states for summaries, expansion, assessment selection, empty content,
+    loading, and failure.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: tokenized overflow layout and assessment icons
+  - lib/oli_web/live/workspaces/course_author/objectives_live.ex: loading, error, ready, and empty-state rendering
+  id: AC-008
+- requirement_id: FR-005
+  title: Expand/collapse controls and the assessment toggle are keyboard accessible,
+    expose expanded/selected state to assistive technologies, and show visible focus
+    indicators.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: accessible child expansion state and focus classes
+  - lib/oli_web/live/workspaces/course_author/objectives/listing.ex: keyboard-native controls with ARIA and focus tokens
+  id: AC-009
+- requirement_id: FR-006
+  title: Activity Bank selections and standalone banked activities are absent from
+    the v35 coverage UI and no page-content scan is introduced to recover them.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: keeps banked activities out of rendered coverage
+  - test/oli/authoring/objective_coverage_test.exs: banked activity exclusion from details
+  id: AC-010
+- requirement_id: FR-007
+  title: The workspace editor obtains summaries and details from Oli.Authoring.ObjectiveCoverage
+    without embedding a competing coverage query or loading full page/activity content.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - lib/oli/authoring/objective_coverage.ex: compact single projection and in-memory indexes
+  - lib/oli_web/live/workspaces/course_author/objectives_live.ex: one asynchronous ObjectiveCoverage load and refresh path
+  - test/oli/authoring/objective_coverage_test.exs: compact projection and telemetry tests
+  id: AC-011

@@ -12,7 +12,11 @@ defmodule Oli.PublishingTest do
   alias Oli.Authoring.Editing.{PageEditor, ObjectiveEditor, ActivityEditor}
   alias Oli.Activities
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections
+  alias Oli.LearningModel.Parameters
+  alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
   alias Oli.Publishing
+  alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
   alias Oli.Publishing.PublishedResource
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources
@@ -45,6 +49,374 @@ defmodule Oli.PublishingTest do
       )
 
     revision
+  end
+
+  describe "get_objective_mappings_by_publication/2" do
+    setup do
+      %{publication: insert(:publication)}
+    end
+
+    test "returns only active objectives with their associations preloaded", %{
+      publication: publication
+    } do
+      first_resource = insert(:resource)
+      second_resource = insert(:resource)
+      second = insert_published_mapping(publication, %{resource: second_resource})
+      first = insert_published_mapping(publication, %{resource: first_resource})
+      insert_published_mapping(publication, %{deleted: true})
+      insert_published_mapping(publication, %{resource_type_id: ResourceType.id_for_page()})
+      insert_published_mapping(insert(:publication))
+
+      results = Publishing.get_objective_mappings_by_publication(publication.id)
+
+      assert MapSet.new(Enum.map(results, & &1.id)) == MapSet.new([first.id, second.id])
+
+      first_result = Enum.find(results, &(&1.id == first.id))
+      second_result = Enum.find(results, &(&1.id == second.id))
+
+      assert first_result.id == first.id
+      assert second_result.id == second.id
+      assert first_result.resource.id == first_resource.id
+      assert first_result.revision.id == first.revision_id
+      assert second_result.resource.id == second_resource.id
+      assert second_result.revision.id == second.revision_id
+    end
+
+    test "filters by revision slugs without including deleted or foreign-publication objectives",
+         %{
+           publication: publication
+         } do
+      selected = insert_published_mapping(publication)
+      insert_published_mapping(publication)
+      deleted = insert_published_mapping(publication, %{deleted: true})
+      foreign = insert_published_mapping(insert(:publication))
+      slugs = [selected.revision.slug, deleted.revision.slug, foreign.revision.slug]
+
+      assert [%PublishedResource{id: id}] =
+               Publishing.get_objective_mappings_by_publication(publication.id, slugs: slugs)
+
+      assert id == selected.id
+      assert [] == Publishing.get_objective_mappings_by_publication(publication.id, slugs: [])
+
+      assert [] ==
+               Publishing.get_objective_mappings_by_publication(publication.id,
+                 slugs: ["missing_objective"]
+               )
+    end
+
+    test "locks only the selected mappings when requested inside a transaction", %{
+      publication: publication
+    } do
+      first_resource = insert(:resource)
+      second_resource = insert(:resource)
+      second = insert_published_mapping(publication, %{resource: second_resource})
+      first = insert_published_mapping(publication, %{resource: first_resource})
+      insert_published_mapping(publication)
+      handler_id = {__MODULE__, :objective_mapping_locks, make_ref()}
+
+      :ok =
+        :telemetry.attach(
+          handler_id,
+          [:oli, :repo, :query],
+          fn _event, _measurements, metadata, owner ->
+            case self() == owner and String.contains?(metadata.query, "FOR UPDATE") do
+              true -> send(owner, {:objective_mapping_lock, metadata.query, metadata.params})
+              false -> :ok
+            end
+          end,
+          self()
+        )
+
+      result =
+        try do
+          Repo.transaction(fn ->
+            Publishing.get_objective_mappings_by_publication(publication.id,
+              slugs: [second.revision.slug, first.revision.slug],
+              lock: true
+            )
+          end)
+        after
+          :telemetry.detach(handler_id)
+        end
+
+      assert {:ok, [%PublishedResource{id: first_id}, %PublishedResource{id: second_id}]} = result
+      assert first_id == first.id
+      assert second_id == second.id
+      assert_receive {:objective_mapping_lock, query, params}
+      assert query =~ "ORDER BY"
+      assert [second.revision.slug, first.revision.slug] in params
+      refute_receive {:objective_mapping_lock, _, _}
+    end
+  end
+
+  describe "objective_parent_ids/2" do
+    setup do
+      %{publication: insert(:publication), child: insert(:resource)}
+    end
+
+    test "returns each active parent resource ID once", %{publication: publication, child: child} do
+      first = insert_published_mapping(publication, %{children: [child.id, child.id]})
+      second = insert_published_mapping(publication, %{children: [child.id]})
+      insert_published_mapping(publication)
+
+      assert Enum.sort(Publishing.objective_parent_ids(child.id, publication.id)) ==
+               Enum.sort([first.resource_id, second.resource_id])
+    end
+
+    test "ignores deleted parents, non-objectives, and other publications", %{
+      publication: publication,
+      child: child
+    } do
+      insert_published_mapping(publication, %{children: [child.id], deleted: true})
+
+      insert_published_mapping(publication, %{
+        children: [child.id],
+        resource_type_id: ResourceType.id_for_container()
+      })
+
+      insert_published_mapping(insert(:publication), %{children: [child.id]})
+
+      assert Publishing.objective_parent_ids(child.id, publication.id) == []
+      assert Publishing.objective_parent_ids(child.id, insert(:publication).id) == []
+    end
+
+    test "uses the currently mapped parent revision rather than historical children", %{
+      publication: publication,
+      child: child
+    } do
+      parent = insert_published_mapping(publication, %{children: [child.id]})
+      assert Publishing.objective_parent_ids(child.id, publication.id) == [parent.resource_id]
+
+      assert {:ok, revision} =
+               Resources.create_revision_from_previous(parent.revision, %{children: []})
+
+      assert {:ok, _mapping} =
+               Publishing.update_published_resource(parent, %{revision_id: revision.id})
+
+      assert Publishing.objective_parent_ids(child.id, publication.id) == []
+      assert Resources.get_revision!(parent.revision_id).children == [child.id]
+    end
+  end
+
+  describe "objective_referenced?/2" do
+    setup do
+      publication = insert(:publication)
+      objective_id = insert(:resource).id
+
+      references = %{
+        page: %{
+          resource_type_id: ResourceType.id_for_page(),
+          objectives: %{"attached" => [objective_id]}
+        },
+        activity: %{
+          resource_type_id: ResourceType.id_for_activity(),
+          objectives: %{"first_part" => [], "second_part" => [objective_id]}
+        },
+        selection: %{
+          resource_type_id: ResourceType.id_for_page(),
+          content: %{
+            "model" => [
+              %{
+                "type" => "selection",
+                "logic" => %{
+                  "conditions" => %{
+                    "all" => [
+                      %{
+                        "any" => [
+                          %{
+                            "fact" => "objectives",
+                            "operator" => "contains",
+                            "value" => [objective_id]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      %{publication: publication, objective_id: objective_id, references: references}
+    end
+
+    for source <- [:page, :activity, :selection] do
+      test "detects an objective referenced only by #{source}", %{
+        publication: publication,
+        objective_id: objective_id,
+        references: references
+      } do
+        insert_published_mapping(publication, Map.fetch!(references, unquote(source)))
+
+        assert Publishing.objective_referenced?(objective_id, publication.id)
+        refute Publishing.objective_referenced?(insert(:resource).id, publication.id)
+      end
+
+      test "ignores deleted #{source} references", %{
+        publication: publication,
+        objective_id: objective_id,
+        references: references
+      } do
+        attrs = Map.fetch!(references, unquote(source)) |> Map.put(:deleted, true)
+        insert_published_mapping(publication, attrs)
+
+        refute Publishing.objective_referenced?(objective_id, publication.id)
+      end
+
+      test "does not count #{source} references from another publication", %{
+        publication: publication,
+        objective_id: objective_id,
+        references: references
+      } do
+        other_publication = insert(:publication)
+        insert_published_mapping(other_publication, Map.fetch!(references, unquote(source)))
+
+        refute Publishing.objective_referenced?(objective_id, publication.id)
+        assert Publishing.objective_referenced?(objective_id, other_publication.id)
+      end
+
+      test "ignores #{source} references in superseded revisions", %{
+        publication: publication,
+        objective_id: objective_id,
+        references: references
+      } do
+        mapping = insert_published_mapping(publication, Map.fetch!(references, unquote(source)))
+        assert Publishing.objective_referenced?(objective_id, publication.id)
+
+        assert {:ok, revision} =
+                 Resources.create_revision_from_previous(mapping.revision, %{
+                   objectives: %{},
+                   content: %{"model" => []}
+                 })
+
+        assert {:ok, _mapping} =
+                 Publishing.update_published_resource(mapping, %{revision_id: revision.id})
+
+        refute Publishing.objective_referenced?(objective_id, publication.id)
+      end
+    end
+
+    test "returns false when there are no mapped references", %{
+      publication: publication,
+      objective_id: objective_id
+    } do
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        objectives: %{"attached" => [objective_id]}
+      )
+
+      refute Publishing.objective_referenced?(objective_id, publication.id)
+    end
+
+    test "ignores references on resource types other than pages and activities", %{
+      publication: publication,
+      objective_id: objective_id,
+      references: references
+    } do
+      insert_published_mapping(publication, references.page |> Map.delete(:resource_type_id))
+
+      insert_published_mapping(
+        publication,
+        Map.put(references.selection, :resource_type_id, ResourceType.id_for_container())
+      )
+
+      refute Publishing.objective_referenced?(objective_id, publication.id)
+    end
+
+    test "does not confuse other facts, page objective keys, or string IDs with objective tags",
+         %{
+           publication: publication,
+           objective_id: objective_id
+         } do
+      insert_published_mapping(publication, %{
+        resource_type_id: ResourceType.id_for_page(),
+        objectives: %{"attached" => [Integer.to_string(objective_id)], "other" => [objective_id]},
+        content: %{
+          "model" => [
+            %{
+              "type" => "selection",
+              "logic" => %{"conditions" => %{"fact" => "tags", "value" => [objective_id]}}
+            }
+          ]
+        }
+      })
+
+      insert_published_mapping(publication, %{
+        resource_type_id: ResourceType.id_for_activity(),
+        objectives: %{"part" => [Integer.to_string(objective_id)]}
+      })
+
+      refute Publishing.objective_referenced?(objective_id, publication.id)
+    end
+  end
+
+  describe "learning-model parameter publication resolution" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "delivery resolves the published Revision after authoring advances", %{
+      project: project,
+      publication: publication,
+      author: author
+    } do
+      published_parameters = activity_parameters("part-1", -0.4)
+      authoring_parameters = activity_parameters("part-1", 0.8)
+
+      %{resource: resource, revision: published_revision} =
+        Oli.Seeder.create_activity(
+          %{
+            title: "Parameterized Activity",
+            content: %{"authoring" => %{"parts" => [%{"id" => "part-1"}]}},
+            learning_model_parameters: published_parameters
+          },
+          publication,
+          project,
+          author
+        )
+
+      assert {:ok, published_publication} =
+               Publishing.publish_project(project, "parameterized publication", author.id)
+
+      assert {:ok, section} =
+               Sections.create_section_from_source(
+                 %{
+                   title: "Pinned Parameter Section",
+                   context_id: UUID.uuid4(),
+                   base_project_id: project.id,
+                   publisher_id: project.publisher_id
+                 },
+                 project
+               )
+
+      assert {:ok, section} =
+               Sections.create_section_resources(section, published_publication)
+
+      assert {:ok, authoring_revision} =
+               Resources.create_revision_from_previous(published_revision, %{
+                 learning_model_parameters: authoring_parameters
+               })
+
+      working_publication = Publishing.project_working_publication(project.slug)
+
+      assert {:ok, _mapping} =
+               working_publication.id
+               |> Publishing.get_published_resource!(resource.id)
+               |> Publishing.update_published_resource(%{revision_id: authoring_revision.id})
+
+      resolved_for_authoring = AuthoringResolver.from_resource_id(project.slug, resource.id)
+      resolved_for_delivery = DeliveryResolver.from_resource_id(section.slug, resource.id)
+
+      assert resolved_for_authoring.id == authoring_revision.id
+      assert resolved_for_authoring.learning_model_parameters == authoring_parameters
+      assert resolved_for_delivery.id == published_revision.id
+      assert resolved_for_delivery.learning_model_parameters == published_parameters
+
+      assert Resources.get_revision!(published_revision.id).learning_model_parameters ==
+               published_parameters
+    end
   end
 
   describe "create_resource_batch tests" do
@@ -190,6 +562,8 @@ defmodule Oli.PublishingTest do
       results = Publishing.find_objective_in_selections(one.resource.id, publication.id)
       assert length(results) == 2
       assert Enum.empty?(Publishing.find_objective_in_selections(two.resource.id, publication.id))
+      assert Publishing.objective_referenced?(one.resource.id, publication.id)
+      refute Publishing.objective_referenced?(two.resource.id, publication.id)
 
       assert Enum.at(results, 0).title != Enum.at(results, 1).title
 
@@ -380,6 +754,9 @@ defmodule Oli.PublishingTest do
       {:ok, %{revision: obj2}} = ObjectiveEditor.add_new(%{title: "two"}, author, project)
       {:ok, %{revision: obj3}} = ObjectiveEditor.add_new(%{title: "three"}, author, project)
 
+      {:ok, %{revision: page_only_objective}} =
+        ObjectiveEditor.add_new(%{title: "page only"}, author, project)
+
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       activity1 =
@@ -415,7 +792,9 @@ defmodule Oli.PublishingTest do
         )
 
       update = %{
-        "objectives" => %{"attached" => [obj1.resource_id]},
+        "objectives" => %{
+          "attached" => [obj1.resource_id, page_only_objective.resource_id]
+        },
         "content" => %{
           "version" => "0.1.0",
           "model" => [
@@ -455,6 +834,14 @@ defmodule Oli.PublishingTest do
       results = Publishing.find_objective_attachments(obj1.resource_id, publication.id)
 
       assert length(results) == 4
+      assert Publishing.objective_referenced?(obj1.resource_id, publication.id)
+      assert Publishing.objective_referenced?(obj3.resource_id, publication.id)
+      assert Publishing.objective_referenced?(page_only_objective.resource_id, publication.id)
+
+      {:ok, %{revision: untagged_objective}} =
+        ObjectiveEditor.add_new(%{title: "untagged"}, author, project)
+
+      refute Publishing.objective_referenced?(untagged_objective.resource_id, publication.id)
 
       # activity 2 should appear twice since it has the objective attached in multiple parts
       assert Enum.filter(results, fn r -> r.resource_id == activity2.resource_id end) |> length ==
@@ -1569,5 +1956,33 @@ defmodule Oli.PublishingTest do
                }
              ]
     end
+  end
+
+  defp insert_published_mapping(publication, attrs \\ %{}) do
+    revision =
+      attrs
+      |> Map.put_new_lazy(:resource, fn -> insert(:resource) end)
+      |> Map.put_new_lazy(:author, fn -> insert(:author) end)
+      |> Map.put_new(:resource_type_id, ResourceType.id_for_objective())
+      |> then(&insert(:revision, &1))
+
+    insert(:published_resource,
+      publication: publication,
+      resource: revision.resource,
+      revision: revision,
+      author: revision.author
+    )
+  end
+
+  defp activity_parameters(part_id, beta_difficulty) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :activity,
+      payload: %ActivityParameters{
+        parts: %{part_id => %PartParameters{beta_difficulty: beta_difficulty}}
+      }
+    }
   end
 end

@@ -211,7 +211,8 @@ defmodule OliWeb.Progress.StudentResourceViewLiveTest do
 
       attempt = create_attempt(user, section, page_revision)
 
-      activity_attempt =
+      %ActivityAttempt{} =
+        activity_attempt =
         Repo.preload(attempt, activity_attempts: [:part_attempts]).activity_attempts |> hd()
 
       activity_attempt = %ActivityAttempt{

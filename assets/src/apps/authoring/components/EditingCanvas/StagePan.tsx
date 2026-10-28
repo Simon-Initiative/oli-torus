@@ -40,11 +40,13 @@ export const StagePan: React.FC = ({ children }) => {
       }}
       onMouseMove={onMove}
       onMouseDown={(e) => {
-        /*  console.log('pan event', e); */
+        /*  console.log('pan events', e); */
         const clickTarget = e.target;
         if (
           (clickTarget as HTMLElement).classList.contains('aa-stage-pan') ||
           (clickTarget as HTMLElement).classList.contains('activity-content') ||
+          (clickTarget as HTMLElement).classList.contains('activity-no-part-content') ||
+          (clickTarget as HTMLElement).classList.contains('activity-stack-container') ||
           (clickTarget as HTMLElement).classList.contains('advance-authoring-responsive-layout')
         ) {
           setMoving(true);

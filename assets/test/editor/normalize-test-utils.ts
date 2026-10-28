@@ -61,7 +61,6 @@ export const runNormalizer = (
   Editor.normalize(editor, { force: true });
 
   jest.runAllTimers();
-  jest.runAllImmediates();
 
   const consoleWarnCalls = warn.mock.calls;
   const consoleErrorCalls = error.mock.calls;

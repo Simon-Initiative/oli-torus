@@ -139,6 +139,7 @@ defmodule OliWeb.Sections.EditView do
         >
           <MainDetails.render
             form={@form}
+            description={@section.description}
             disabled={false}
             is_admin={@is_admin}
             brands={@brands}
@@ -177,6 +178,7 @@ defmodule OliWeb.Sections.EditView do
       params
       |> can_change_payment?(socket.assigns.is_admin)
       |> convert_dates(socket.assigns.ctx)
+      |> decode_welcome_title()
 
     {:noreply, assign(socket, changeset: Sections.change_section(socket.assigns.section, params))}
   end

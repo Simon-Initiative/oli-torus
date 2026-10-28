@@ -511,7 +511,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   const buttonProps = {
     title: buttonTitle,
     onClick: () => submitButtonSelection(true),
-    'aria-label': ariaLabel,
+    ...(ariaLabel?.trim() ? { 'aria-label': ariaLabel } : {}),
     disabled: !buttonEnabled,
   };
   return ready && buttonVisible ? (

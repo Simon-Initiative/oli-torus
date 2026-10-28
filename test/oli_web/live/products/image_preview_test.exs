@@ -34,6 +34,12 @@ defmodule OliWeb.Products.ImagePreviewTest do
       assert html =~ "Course Progress"
       assert html =~ "data-preview-mode=\"true\""
       refute html =~ ~s(href="/sections/)
+
+      document = Floki.parse_fragment!(html)
+      assert [search] = Floki.find(document, "[data-search-bar-state='default']")
+      assert Floki.attribute(search, "aria-hidden") == ["true"]
+      assert search |> Floki.text() |> String.trim() == "Search by course or instructor name"
+      assert Floki.find(search, "input, button") == []
     end
 
     test "course picker preview reuses card listing without selection behavior" do
@@ -52,12 +58,26 @@ defmodule OliWeb.Products.ImagePreviewTest do
         })
 
       assert html =~ "Select your source materials"
-      assert html =~ "New Course Setup"
-      assert html =~ "Select source"
+      assert html =~ "New course set up"
+      assert html =~ "All Sources"
+      assert html =~ "Templates"
+      assert html =~ "My Course Sections"
+      assert html =~ "Showing result 21 - 38 of 38 total"
       assert html =~ "Preview Biology"
       assert html =~ "/images/course_default.png"
       assert html =~ "data-preview-mode=\"true\""
+      refute html =~ "-mt-60"
       refute html =~ "phx-click="
+
+      document = Floki.parse_fragment!(html)
+      assert [_] = Floki.find(document, "[data-preview-course-picker-control='filter-tabs']")
+      assert [_] = Floki.find(document, "[data-preview-course-picker-control='search-sort-view']")
+      assert [_] = Floki.find(document, "[data-preview-course-picker-control='view-toggle']")
+      assert [_] = Floki.find(document, "[data-preview-course-picker-control='pagination']")
+      assert [search] = Floki.find(document, "[data-search-bar-state='default']")
+      assert Floki.attribute(search, "aria-hidden") == ["true"]
+      assert Floki.find(search, "input, button") == []
+      assert Floki.find(document, "input, button, select, a") == []
     end
 
     test "student welcome preview reflects actual onboarding options" do
@@ -65,7 +85,19 @@ defmodule OliWeb.Products.ImagePreviewTest do
         insert(:section,
           type: :blueprint,
           title: "Preview Biology",
-          cover_image: nil
+          cover_image: nil,
+          description: "Prepare for the course.",
+          welcome_title: %{
+            "type" => "p",
+            "children" => [
+              %{
+                "id" => "preview-welcome-video",
+                "type" => "youtube",
+                "src" => "RpnEyBIkdMc",
+                "children" => [%{"text" => ""}]
+              }
+            ]
+          }
         )
         |> Map.put(:required_survey_resource_id, nil)
         |> Map.put(:contains_explorations, false)
@@ -82,6 +114,8 @@ defmodule OliWeb.Products.ImagePreviewTest do
       refute html =~ "Learning about the new ‘Exploration’ activities"
       assert html =~ "Go to course"
       assert html =~ "/images/course_default.png"
+      assert html =~ ~s(id="image-preview-youtube--preview-welcome-video")
+      assert html =~ ~s(phx-hook="LiveReact")
     end
 
     test "gallery renders the full uploaded image above the three shared runtime contexts" do

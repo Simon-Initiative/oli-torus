@@ -1,0 +1,165 @@
+import type { Hook } from 'phoenix_live_view/assets/js/types/view_hook';
+
+type LabelElement = SVGGElement;
+
+// A label's rect is captured once (alongside its covered-by-a-dot flag) instead of being
+// re-read on every mousemove -- see the note on LabelOverlap below.
+type LabelOverlap = {
+  covered: boolean;
+  rect: DOMRect;
+};
+
+type StudentDistributionMatrixLabelsState = {
+  __studentDistributionMatrixMouseMove?: (event: MouseEvent) => void;
+  __studentDistributionMatrixMouseLeave?: () => void;
+  __studentDistributionMatrixInvalidate?: () => void;
+  __studentDistributionMatrixDotSignature?: string;
+  __studentDistributionMatrixLabelOverlap?: LabelOverlap[];
+  __studentDistributionMatrixNeedsRecompute?: boolean;
+};
+
+const FADED_LABEL_CLASS = 'opacity-25';
+
+function intersects(a: DOMRect, b: DOMRect): boolean {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+function containsPoint(rect: DOMRect, x: number, y: number): boolean {
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+}
+
+function labels(svg: Element): LabelElement[] {
+  return Array.from(svg.querySelectorAll<LabelElement>('[data-count-badge="true"]'));
+}
+
+function studentDots(svg: Element): SVGCircleElement[] {
+  return Array.from(svg.querySelectorAll<SVGCircleElement>('g[data-student-points="true"] circle'));
+}
+
+function clearFadedLabels(svg: Element) {
+  labels(svg).forEach((label) => label.classList.remove(FADED_LABEL_CLASS));
+}
+
+// A cheap signature of dot count + position, used to skip re-running the (relatively
+// expensive, getBoundingClientRect-per-dot-per-label) overlap scan on `updated()` patches
+// that only change selection styling (fill/stroke class) rather than dot layout. Dot
+// positions are static for the lifetime of one expanded row, so a patch triggered by
+// clicking a region (which only toggles which group's dots are "active") never needs a
+// fresh overlap scan; only a genuinely different student list (a new/re-expanded objective)
+// does.
+function dotSignature(svg: Element): string {
+  return studentDots(svg)
+    .map((dot) => `${dot.getAttribute('cx')},${dot.getAttribute('cy')}`)
+    .join(';');
+}
+
+// Covered-by-points state (and each label's rect, see LabelOverlap) is tracked here (in the
+// hook's JS memory) rather than as a DOM dataset attribute on the label. Every LiveView patch
+// re-diffs this `<g>`'s attributes against the server-rendered markup, which doesn't know
+// about a JS-only dataset field, so a dataset attribute gets silently stripped on the very
+// next patch (e.g. selecting a region) even when the patch doesn't touch dot layout. Plain JS
+// state has no such lifecycle tied to the DOM and survives patches untouched.
+//
+// Each label's rect is captured here too, once, instead of being re-read via
+// `getBoundingClientRect()` on every `mousemove` in `updateFadedLabel`. `getBoundingClientRect`
+// forces a synchronous layout of the whole document when one is pending, and re-running that on
+// a high-frequency event like `mousemove` -- scaled by however many student dots are on
+// screen -- is a real jank source; caching it here keeps that cost off the hot path.
+function computeLabelOverlap(svg: Element): LabelOverlap[] {
+  const dots = studentDots(svg);
+
+  return labels(svg).map((label) => {
+    const rect = label.getBoundingClientRect();
+    return { covered: dots.some((dot) => intersects(rect, dot.getBoundingClientRect())), rect };
+  });
+}
+
+function updateFadedLabel(svg: Element, event: MouseEvent, labelOverlap: LabelOverlap[]) {
+  const labelElements = labels(svg);
+  let activeIndex = -1;
+
+  for (let i = 0; i < labelElements.length; i++) {
+    if (
+      labelOverlap[i]?.covered &&
+      containsPoint(labelOverlap[i].rect, event.clientX, event.clientY)
+    ) {
+      activeIndex = i;
+      break;
+    }
+  }
+
+  labelElements.forEach((label, i) => {
+    label.classList.toggle(FADED_LABEL_CLASS, i === activeIndex);
+  });
+}
+
+export const StudentDistributionMatrixLabels: Hook<StudentDistributionMatrixLabelsState> = {
+  mounted() {
+    this.__studentDistributionMatrixLabelOverlap = computeLabelOverlap(this.el);
+    this.__studentDistributionMatrixDotSignature = dotSignature(this.el);
+    this.__studentDistributionMatrixNeedsRecompute = false;
+
+    this.__studentDistributionMatrixMouseMove = (event: MouseEvent) => {
+      // getBoundingClientRect() is viewport-relative, so a scroll or resize anywhere since
+      // the last computation (of the page, a scrollable ancestor, or the window itself) can
+      // leave the cached label rects pointing at stale on-screen positions even though dot
+      // layout (dotSignature) never changed. Recomputing here -- once, lazily, only after
+      // one of those actually happened -- keeps that cost off the common case of a
+      // mousemove with neither in between, which is the hot path this cache exists to
+      // protect.
+      if (this.__studentDistributionMatrixNeedsRecompute) {
+        this.__studentDistributionMatrixLabelOverlap = computeLabelOverlap(this.el);
+        this.__studentDistributionMatrixNeedsRecompute = false;
+      }
+
+      updateFadedLabel(this.el, event, this.__studentDistributionMatrixLabelOverlap ?? []);
+    };
+
+    this.__studentDistributionMatrixMouseLeave = () => {
+      clearFadedLabels(this.el);
+    };
+
+    this.__studentDistributionMatrixInvalidate = () => {
+      this.__studentDistributionMatrixNeedsRecompute = true;
+    };
+
+    this.el.addEventListener('mousemove', this.__studentDistributionMatrixMouseMove);
+    this.el.addEventListener('mouseleave', this.__studentDistributionMatrixMouseLeave);
+    // capture: true so this also sees scroll events from a scrollable ancestor -- those
+    // don't bubble, but they do fire during the capture phase.
+    window.addEventListener('scroll', this.__studentDistributionMatrixInvalidate, {
+      capture: true,
+      passive: true,
+    });
+    window.addEventListener('resize', this.__studentDistributionMatrixInvalidate, {
+      passive: true,
+    });
+  },
+
+  updated() {
+    const signature = dotSignature(this.el);
+
+    if (signature !== this.__studentDistributionMatrixDotSignature) {
+      this.__studentDistributionMatrixDotSignature = signature;
+      this.__studentDistributionMatrixLabelOverlap = computeLabelOverlap(this.el);
+      this.__studentDistributionMatrixNeedsRecompute = false;
+    }
+  },
+
+  destroyed() {
+    if (this.__studentDistributionMatrixMouseMove) {
+      this.el.removeEventListener('mousemove', this.__studentDistributionMatrixMouseMove);
+    }
+
+    if (this.__studentDistributionMatrixMouseLeave) {
+      this.el.removeEventListener('mouseleave', this.__studentDistributionMatrixMouseLeave);
+    }
+
+    if (this.__studentDistributionMatrixInvalidate) {
+      window.removeEventListener('scroll', this.__studentDistributionMatrixInvalidate, {
+        capture: true,
+      });
+      window.removeEventListener('resize', this.__studentDistributionMatrixInvalidate);
+    }
+  },
+};

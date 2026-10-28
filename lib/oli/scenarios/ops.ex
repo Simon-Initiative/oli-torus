@@ -3,9 +3,9 @@ defmodule Oli.Scenarios.Ops do
   Operations that can be applied to course structures.
   """
   alias Oli.{Publishing}
-  alias Oli.Resources.ResourceType
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Scenarios.Builder
 
   def apply_ops!(built_dest, ops) do
     # Always fetch the current working publication
@@ -72,17 +72,8 @@ defmodule Oli.Scenarios.Ops do
         dest.root.revision
       end
 
-    # Use ContainerEditor to create and attach the container
-    attrs = %{
-      objectives: %{"attached" => []},
-      children: [],
-      content: %{},
-      title: title,
-      graded: false,
-      resource_type_id: ResourceType.id_for_container()
-    }
-
-    {:ok, cont_rev} = ContainerEditor.add_new(parent_rev, attrs, author, proj)
+    # Use the shared scenario constructor to create and attach the container
+    {:ok, cont_rev} = Builder.add_hierarchy_node(parent_rev, :container, title, author, proj)
 
     # Get the updated parent revision
     parent_key = to || "root"
@@ -115,18 +106,8 @@ defmodule Oli.Scenarios.Ops do
         dest.root.revision
       end
 
-    # Use ContainerEditor to create and attach the page
-    attrs = %{
-      objectives: %{"attached" => []},
-      children: [],
-      content: %{"version" => "0.1.0", "model" => []},
-      title: title,
-      graded: false,
-      max_attempts: 0,
-      resource_type_id: ResourceType.id_for_page()
-    }
-
-    {:ok, page_rev} = ContainerEditor.add_new(parent_rev, attrs, author, proj)
+    # Use the shared scenario constructor to create and attach the page
+    {:ok, page_rev} = Builder.add_hierarchy_node(parent_rev, :page, title, author, proj)
 
     # Get the updated parent revision
     parent_key = to || "root"

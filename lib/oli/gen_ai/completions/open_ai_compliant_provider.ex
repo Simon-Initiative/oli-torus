@@ -45,7 +45,6 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
            config
          ) do
       {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.error("OpenAI Provider HTTP failure: #{inspect(reason)}")
         {:error, reason}
 
       stream ->
@@ -53,7 +52,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
         |> Elixir.Stream.transform(:ok, fn chunk, :ok ->
           case process_stream_chunk(chunk) do
             {:error} ->
-              response_handler_fn.({:error})
+              response_handler_fn.({:error, stream_error_details(chunk)})
               {:halt, {:error}}
 
             :ignore ->
@@ -217,7 +216,8 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     |> add_beta_header(config)
   end
 
-  def bearer(config), do: {"Authorization", "Bearer #{config.api_key || Config.api_key()}"}
+  def bearer(%{api_key: api_key}) when is_binary(api_key) and byte_size(api_key) > 0,
+    do: {"Authorization", "Bearer #{api_key}"}
 
   def request_options(config), do: config.http_options || Config.http_options()
 
@@ -319,7 +319,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
         {:ok, content}
 
       _ ->
-        Logger.error("Unexpected OpenAI response format: #{inspect(response)}")
+        Logger.warning("OpenAI response normalization failed error_category=unexpected_response")
         {:error, :unexpected_response}
     end
   end
@@ -681,7 +681,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       [Jason.decode!(payload)]
     rescue
       error in Jason.DecodeError ->
-        Logger.error("GenAI raw stream payload decode failure: #{inspect(payload)}")
+        Logger.error("GenAI stream payload decode failure error_category=invalid_json")
         reraise error, __STACKTRACE__
     end
   end
@@ -714,4 +714,22 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   defp accumulate_error_body(state, chunk) do
     %{state | error_body: state.error_body <> chunk}
   end
+
+  defp stream_error_details(%{"status" => :error} = chunk) do
+    status = Map.get(chunk, "code")
+
+    %{http_status: status, error_category: stream_error_category(status, Map.get(chunk, "body"))}
+  end
+
+  defp stream_error_details(_), do: %{error_category: :invalid_response}
+
+  defp stream_error_category(429, body) do
+    case Jason.decode(body || "") do
+      {:ok, %{"error" => %{"code" => "credit_balance_exhausted"}}} -> :insufficient_quota
+      _ -> :rate_limited
+    end
+  end
+
+  defp stream_error_category(status, _body) when is_integer(status), do: :http_error
+  defp stream_error_category(_, _body), do: :network_error
 end

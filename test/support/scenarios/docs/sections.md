@@ -23,6 +23,8 @@ Creates a course section from a project, product, or as a standalone section.
 - `institution`: Scenario institution name to assign explicitly to the section
 - `type`: Section type - `enrollable` (default) or `open_and_free`
 - `registration_open`: Whether registration is open (default: true)
+- `assistant_enabled`: Whether the Dot AI assistant is available in the section (default: false)
+- `assistant_service_config`: Optional named GenAI service configuration to use for Dot in this section; requires `assistant_enabled: true`
 - `requires_payment`: Whether the section is paywalled
 - `payment_options`: `direct`, `deferred`, or `direct_and_deferred`
 - `pay_by_institution`: Whether learners are institution-funded
@@ -71,6 +73,16 @@ Creates a course section from a project, product, or as a standalone section.
 - section:
     name: "custom_section"
     title: "Custom Built Section"
+```
+
+#### Section with Dot Enabled
+```yaml
+- section:
+    name: "dot_section"
+    title: "Course with Dot"
+    from: "source_project"
+    assistant_enabled: true
+    assistant_service_config: "nightly-dot-service"
 ```
 
 #### Section-Level Paywall Override

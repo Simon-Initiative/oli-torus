@@ -83,6 +83,12 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {
+  headerLabel: {
+    'ui:widget': 'RichLabelWidget',
+  },
+  footerLabel: {
+    'ui:widget': 'RichLabelWidget',
+  },
   barColor: {
     'ui:widget': 'ColorPicker',
   },
@@ -153,6 +159,12 @@ export const simpleUISchema = {
     'listItems',
     'customCss',
   ],
+  headerLabel: {
+    'ui:widget': 'RichLabelWidget',
+  },
+  footerLabel: {
+    'ui:widget': 'RichLabelWidget',
+  },
   barColor: {
     'ui:widget': 'ColorPicker',
   },

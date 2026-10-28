@@ -25,8 +25,10 @@ defmodule Oli.Delivery.SingletonDepotCoordinator do
     if Depot.table_exists?(depot_desc, table_id) do
       {:ok, :exists}
     else
-      caller_module.process_table_creation(table_id)
-      {:ok, :created}
+      case caller_module.process_table_creation(table_id) do
+        result when result in [:ok, true] -> {:ok, :created}
+        {:error, _reason} = error -> error
+      end
     end
   end
 end

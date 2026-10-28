@@ -11,9 +11,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       emit_page_viewed_event: 1
     ]
 
+  alias OliWeb.Components.SecureAssessment
   alias Oli.Accounts
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Experiments.PageDecisions
@@ -89,11 +91,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           is_instructor: is_instructor,
           active_sidebar_panel:
             if(
-              Accounts.get_user_preference(
-                current_user.id,
-                :page_outline_panel_active?,
-                false
-              ),
+              not SecureAssessment.restrict_navigation?(socket.assigns[:user_session]) and
+                Accounts.get_user_preference(
+                  current_user.id,
+                  :page_outline_panel_active?,
+                  false
+                ),
               do: :outline,
               else: nil
             ),
@@ -137,6 +140,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       auto_submit = page_context.effective_settings.late_submit == :disallow
       batch_scoring = page_context.effective_settings.batch_scoring
+      single_embedded_page = single_embedded_page?(page_context)
       auto_finalize_single_embedded = auto_finalize_single_embedded?(page_context)
 
       now = DateTime.utc_now() |> to_epoch
@@ -152,6 +156,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         end
 
       Oli.Delivery.ScoreAsYouGoNotifications.subscribe(resource_attempt.id)
+
+      if single_embedded_page do
+        Broadcaster.subscribe_to_page_attempt_finalized(resource_attempt.attempt_guid)
+
+        case Core.get_resource_attempt_lifecycle_state(resource_attempt.attempt_guid) do
+          lifecycle_state when lifecycle_state not in [:active, nil] ->
+            send(self(), {:page_attempt_finalized, resource_attempt.attempt_guid})
+
+          _ ->
+            :ok
+        end
+      end
 
       # Get the latest ResourceAccess for this resource to get the current out_of value
       resource_access =
@@ -852,6 +868,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def handle_info(
+        {:page_attempt_finalized, attempt_guid},
+        %{assigns: %{attempt_guid: attempt_guid, effective_settings: effective_settings}} = socket
+      ) do
+    redirect_after_finalization(socket, effective_settings)
+  end
+
+  def handle_info({:page_attempt_finalized, _attempt_guid}, socket), do: {:noreply, socket}
+
   def handle_info({:disable_question_inputs, question_id}, socket) do
     {:noreply, push_event(socket, "disable_question_inputs", %{"question_id" => question_id})}
   end
@@ -916,7 +941,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mt-3 mb-10">
         </div>
 
-        <Utils.blocking_gates_warning attempt_message={@attempt_message} />
+        <Utils.blocking_gates_warning
+          attempt_message={@attempt_message}
+          restrict_navigation?={SecureAssessment.restrict_navigation?(@user_session)}
+        />
       </div>
     </div>
     """
@@ -984,7 +1012,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </:point_markers>
     </.page_content_with_sidebar_layout>
 
-    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
+    <div
+      :if={not SecureAssessment.restrict_navigation?(@user_session)}
+      id="sticky_panel"
+      class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full"
+    >
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
           "hidden sm:inline-flex absolute top-24",
@@ -1027,6 +1059,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             />
           <% :outline -> %>
             <.live_component
+              :if={not SecureAssessment.restrict_navigation?(@user_session)}
               module={OutlineComponent}
               id="outline_component"
               hierarchy={@hierarchy}
@@ -1086,7 +1119,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </div>
     </.page_content_with_sidebar_layout>
 
-    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
+    <div
+      :if={not SecureAssessment.restrict_navigation?(@user_session)}
+      id="sticky_panel"
+      class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full"
+    >
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
           "hidden sm:inline-flex absolute top-24",
@@ -1108,7 +1145,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
 
         <.live_component
-          :if={@active_sidebar_panel == :outline}
+          :if={
+            @active_sidebar_panel == :outline and
+              not SecureAssessment.restrict_navigation?(@user_session)
+          }
           module={OutlineComponent}
           id="outline_component"
           hierarchy={@hierarchy}
@@ -1161,6 +1201,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           <div :if={@questions != []} class="relative min-h-[500px] w-full justify-center">
             <.live_component
               id="one_at_a_time_questions"
+              user_session={@user_session}
+              secure_route_params={@secure_route_params}
               module={OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion}
               questions={@questions}
               attempt_number={@attempt_number}
@@ -1243,12 +1285,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <script>
           window.userToken = "<%= @user_token %>";
         </script>
-        {OliWeb.Common.React.component(
-          %{is_liveview: true},
-          "Components.Delivery",
-          @app_params,
-          id: "adaptive_content"
-        )}
+        <%= if SecureAssessment.restrict_navigation?(@user_session) do %>
+          <OliWeb.Components.SecureAssessment.shell>
+            {OliWeb.Common.React.component(%{is_liveview: true}, "Components.Delivery", @app_params,
+              id: "adaptive_content"
+            )}
+          </OliWeb.Components.SecureAssessment.shell>
+        <% else %>
+          {OliWeb.Common.React.component(%{is_liveview: true}, "Components.Delivery", @app_params,
+            id: "adaptive_content"
+          )}
+        <% end %>
       </div>
 
       {OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets})}
@@ -1308,7 +1355,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         z-index: 1000 !important;
       }
     </style>
-    <div id="sticky_panel" class="absolute right-0 z-50 h-full">
+    <div
+      :if={not SecureAssessment.restrict_navigation?(@user_session)}
+      id="sticky_panel"
+      class="absolute right-0 z-50 h-full"
+    >
       <div class="sticky ml-auto top-20 right-0">
         <div class={[
           "absolute top-24",
@@ -1330,7 +1381,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
 
         <.live_component
-          :if={@active_sidebar_panel == :outline}
+          :if={
+            @active_sidebar_panel == :outline and
+              not SecureAssessment.restrict_navigation?(@user_session)
+          }
           module={OutlineComponent}
           id="outline_component"
           hierarchy={@hierarchy}
@@ -1716,18 +1770,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         if section.grade_passback_enabled,
           do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 
-        redirect_to =
-          case effective_settings.review_submission do
-            :allow ->
-              Utils.review_live_path(section.slug, revision_slug, attempt_guid,
-                request_path: request_path
-              )
-
-            _ ->
-              Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
-          end
-
-        {:noreply, redirect(socket, to: redirect_to)}
+        redirect_after_finalization(socket, effective_settings)
 
       {:ok, %FinalizationSummary{graded: false}} ->
         {:noreply,
@@ -1756,19 +1799,70 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  defp redirect_after_finalization(
+         %{
+           assigns: %{
+             section: section,
+             request_path: request_path,
+             revision_slug: revision_slug,
+             attempt_guid: attempt_guid
+           }
+         } = socket,
+         effective_settings
+       ) do
+    redirect_to =
+      case effective_settings.review_submission do
+        :allow ->
+          Utils.review_live_path(section.slug, revision_slug, attempt_guid,
+            request_path: request_path
+          )
+
+        _ ->
+          Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
+      end
+
+    {:noreply, redirect(socket, to: redirect_to)}
+  end
+
   defp auto_finalize_single_embedded?(%{
          effective_settings: %{batch_scoring: true},
          review_mode: false,
          activities: activities
        })
        when is_map(activities) do
-    case Map.values(activities) do
-      [%{delivery_element: "oli-embedded-delivery", lifecycle_state: :active}] -> true
-      _ -> false
+    case map_size(activities) do
+      1 ->
+        Enum.any?(activities, fn
+          {_id, %{delivery_element: "oli-embedded-delivery", lifecycle_state: :active}} -> true
+          _ -> false
+        end)
+
+      _ ->
+        false
     end
   end
 
   defp auto_finalize_single_embedded?(_), do: false
+
+  defp single_embedded_page?(%{
+         effective_settings: %{batch_scoring: true},
+         review_mode: false,
+         activities: activities
+       })
+       when is_map(activities) do
+    case map_size(activities) do
+      1 ->
+        Enum.any?(activities, fn
+          {_id, %{delivery_element: "oli-embedded-delivery"}} -> true
+          _ -> false
+        end)
+
+      _ ->
+        false
+    end
+  end
+
+  defp single_embedded_page?(_), do: false
 
   defp get_post(socket, post_id) do
     Enum.find(socket.assigns.annotations.posts, fn post -> post.id == post_id end)
@@ -2215,7 +2309,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     assign(
       socket,
       assistant_available?:
-        section && page_context &&
+        not SecureAssessment.restrict_navigation?(socket.assigns[:user_session]) &&
+          section && page_context &&
           Sections.assistant_enabled_for_page?(section, page_context.page)
     )
   end

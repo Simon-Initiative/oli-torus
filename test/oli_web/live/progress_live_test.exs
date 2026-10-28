@@ -7,7 +7,9 @@ defmodule OliWeb.ProgressLiveTest do
 
   alias Lti_1p3.Roles.{ContextRoles, PlatformRoles}
   alias Oli.Accounts
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections
+  alias Oli.Repo
 
   defp live_view_student_resource_route(section_slug, user_id, resource_id) do
     Routes.live_path(
@@ -65,6 +67,66 @@ defmodule OliWeb.ProgressLiveTest do
 
       assert html =~ "Details"
       assert html =~ "Attempt History"
+    end
+
+    test "system admins can delete an attempt with typed confirmation", %{
+      conn: conn,
+      section: section,
+      resource: resource,
+      revision: revision,
+      student: student
+    } do
+      resource_access =
+        insert(:resource_access,
+          user: student,
+          section: section,
+          resource: resource,
+          score: 4.0,
+          out_of: 5.0
+        )
+
+      resource_attempt =
+        insert(:resource_attempt,
+          resource_access: resource_access,
+          revision: revision,
+          attempt_number: 1
+        )
+
+      activity_attempt =
+        insert(:activity_attempt,
+          resource_attempt: resource_attempt,
+          resource: resource,
+          revision: revision
+        )
+
+      part_attempt = insert(:part_attempt, activity_attempt: activity_attempt)
+
+      {:ok, view, html} =
+        live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
+
+      assert html =~ "Delete Attempt"
+
+      view
+      |> element("button", "Delete Attempt")
+      |> render_click()
+
+      assert has_element?(view, "#delete-attempt-dialog-form")
+
+      view
+      |> element("#delete-attempt-dialog-form")
+      |> render_submit(%{"confirmation" => "not the confirmation"})
+
+      assert has_element?(view, "#delete-attempt-dialog-form")
+      assert has_element?(view, "#delete-attempt-dialog-confirmation-error")
+
+      view
+      |> element("#delete-attempt-dialog-form")
+      |> render_submit(%{"confirmation" => "delete this attempt"})
+
+      refute Repo.get(ResourceAttempt, resource_attempt.id)
+      refute Repo.get(ActivityAttempt, activity_attempt.id)
+      refute Repo.get(PartAttempt, part_attempt.id)
+      assert %{score: nil, out_of: nil} = Repo.get!(ResourceAccess, resource_access.id)
     end
 
     scores_expected_format = %{

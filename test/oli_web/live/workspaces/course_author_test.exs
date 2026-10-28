@@ -261,7 +261,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
         {:ok, view, _html} = live(conn, workspace)
 
         assert has_element?(view, "button[id=workspace-user-menu]", "HS")
-        assert has_element?(view, "div[role='account label']", "Admin")
+        assert has_element?(view, "div[data-role='account label']", "Admin")
       end)
     end
   end
@@ -374,11 +374,29 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
 
       assert has_element?(
                view,
-               "p",
-               "Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies."
+               "p.text-Text-text-high",
+               "Learning objectives define the knowledge and skills students should demonstrate throughout your course."
              )
 
-      assert has_element?(view, "button", "Create new Objective")
+      assert has_element?(
+               view,
+               "p",
+               "Learning objectives define the knowledge and skills students should demonstrate throughout your course."
+             )
+
+      assert has_element?(
+               view,
+               ~s|a[href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"][rel="noopener"][target="_blank"]|,
+               "CMU Eberly Center guide on learning objectives"
+             )
+
+      assert has_element?(
+               view,
+               "p",
+               "to learn more about the importance of attaching learning objectives to pages and activities."
+             )
+
+      assert has_element?(view, "button", "New Objective")
     end
 
     test "experiments menu is shown correctly", %{

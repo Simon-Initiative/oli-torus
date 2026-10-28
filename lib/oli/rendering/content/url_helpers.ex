@@ -21,6 +21,13 @@ defmodule Oli.Rendering.Content.UrlHelpers do
     )
   end
 
+  def lesson_path(section_slug, revision_slug, params \\ nil) do
+    section_slug = encode_path_segment(section_slug)
+    revision_slug = encode_path_segment(revision_slug)
+
+    append_query("/sections/#{section_slug}/lesson/#{revision_slug}", params)
+  end
+
   def append_query(path, nil), do: path
   def append_query(path, []), do: path
 

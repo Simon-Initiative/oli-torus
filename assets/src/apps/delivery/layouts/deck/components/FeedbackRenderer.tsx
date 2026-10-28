@@ -116,13 +116,9 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
     setRenderId(Date.now());
   }, [feedbacks, pending]);
 
-  const handlePartInit = useCallback(
-    async (partId: string) => {
-      // console.log('FEEDBACK part init', { partId, snapshot });
-      return { snapshot };
-    },
-    [snapshot],
-  );
+  const handlePartInit = useCallback(async () => {
+    return { snapshot };
+  }, [snapshot]);
 
   return (
     <Fragment>
@@ -243,7 +239,7 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
               id={index === 0 ? 'feedback-content' : undefined}
               className="feedback-item feedback-ai-generated"
               tabIndex={index === 0 ? -1 : undefined}
-              role={index === 0 ? 'text' : undefined}
+              role="group"
               aria-label="AI-generated feedback"
             >
               <AIGeneratedBadge />
@@ -264,7 +260,6 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
               }}
               className="feedback-item"
               tabIndex={index === 0 ? -1 : undefined}
-              role={index === 0 ? 'text' : undefined}
             >
               <PartsLayoutRenderer
                 parts={feedback.partsLayout}

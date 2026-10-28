@@ -1,5 +1,5 @@
 import { Verifier } from '@core/verify/Verifier';
-import { expect, Locator, Page } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 
 export class StudentCoursePO {
   private readonly courseHomeMarkers: Locator[];
@@ -50,7 +50,7 @@ export class StudentCoursePO {
     const groupedOutlineLink = this.page
       .locator('a')
       .filter({
-        has: this.page.locator('div[role="group_item"]').filter({
+        has: this.page.locator('div[data-role="group-item"]').filter({
           hasText: pageName,
         }),
       })
@@ -88,7 +88,43 @@ export class StudentCoursePO {
       }
     }
 
-    await Verifier.expectIsVisible(this.page.getByRole('heading', { name: pageName, exact: true }));
+    await Verifier.expectIsVisible(this.openedPageTitle(pageName));
+  }
+
+  async openFirstPage(pageName: string) {
+    const startCourse = this.page.getByRole('link', { name: 'Start course', exact: true });
+    const pageEntry = this.page.getByText(pageName, { exact: true });
+
+    await Verifier.expectIsVisible(startCourse.or(pageEntry).first());
+
+    if (await startCourse.isVisible().catch(() => false)) {
+      await Promise.all([
+        this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+          timeout: 15000,
+        }),
+        startCourse.click(),
+      ]);
+
+      await Verifier.expectIsVisible(this.openedPageTitle(pageName));
+      return;
+    }
+
+    await this.openPage(pageName);
+  }
+
+  /**
+   * The title of an opened page. Basic pages render it as a heading. The adaptive
+   * lesson header renders it as plain text after a screen-reader "Title:" prefix.
+   */
+  private openedPageTitle(pageName: string) {
+    const adaptiveHeaderTitle = this.page
+      .locator('#delivery-header .lessonTitle')
+      .filter({ hasText: new RegExp(`(^|\\s)${escapeRegExp(pageName)}$`) });
+
+    return this.page
+      .getByRole('heading', { name: pageName, exact: true })
+      .or(adaptiveHeaderTitle)
+      .first();
   }
 
   private galleryTitle(pageName: string) {
@@ -154,8 +190,6 @@ export class StudentCoursePO {
 
     if (!(await enrollButton.isVisible({ timeout: 5000 }).catch(() => false))) return;
 
-    await this.fillAutomationRecaptchaResponse();
-
     const currentUrl = this.page.url();
     await Promise.all([
       this.page
@@ -168,7 +202,7 @@ export class StudentCoursePO {
 
     if (await recaptchaError.isVisible({ timeout: 1000 }).catch(() => false)) {
       throw new Error(
-        'Enrollment captcha was rejected. Use the dev reCAPTCHA test keys or start Torus with LOAD_TESTING_MODE=true for automation.',
+        'Enrollment captcha was rejected. Run this suite against a MIX_ENV=playwright build.',
       );
     }
   }
@@ -225,32 +259,16 @@ export class StudentCoursePO {
     url.search = '';
     return url.toString();
   }
-
-  private async fillAutomationRecaptchaResponse() {
-    const recaptcha = this.page.locator('.g-recaptcha').first();
-
-    if (!(await recaptcha.isVisible({ timeout: 1000 }).catch(() => false))) return;
-
-    await this.page.evaluate(() => {
-      const token = 'playwright-test-token';
-      const form = document.querySelector<HTMLFormElement>('form[action*="/enroll"]');
-      if (form == null) return;
-
-      document
-        .querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[name="g-recaptcha-response"]')
-        .forEach((response) => {
-          response.value = token;
-        });
-
-      const response = document.createElement('input');
-      response.type = 'hidden';
-      response.name = 'g-recaptcha-response';
-      response.value = token;
-      form.appendChild(response);
-    });
-  }
 }
 
 function isStudentLessonPath(pathname: string) {
-  return pathname.includes('/lesson/') || pathname.includes('/adaptive_lesson/');
+  return (
+    pathname.includes('/lesson/') ||
+    pathname.includes('/adaptive_lesson/') ||
+    pathname.includes('/prologue/')
+  );
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

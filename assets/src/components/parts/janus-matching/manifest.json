@@ -1,0 +1,16 @@
+{
+  "id": "janus_matching",
+  "friendlyName": "Matching",
+  "description": "Match items between two columns by drawing connecting lines",
+  "icon": "icon-part-matching.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-matching",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-matching",
+    "entry": "./authoring-entry.ts"
+  }
+}

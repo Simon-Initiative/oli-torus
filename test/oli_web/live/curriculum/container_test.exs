@@ -1,6 +1,8 @@
 defmodule OliWeb.Curriculum.ContainerLiveTest do
   use OliWeb.ConnCase
 
+  @moduletag sandbox_owner: true
+
   alias Oli.Seeder
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
@@ -131,6 +133,8 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       )
       |> render_click =~
         "entry-title\">Copy of #{revision_page_two.title}</span>"
+
+      GenServer.stop(view.pid)
     end
 
     test "does not show duplicate action for adaptive pages when feature is disabled", %{
@@ -183,6 +187,8 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       )
       |> render_click() =~
         "entry-title\">Copy of #{adaptive_page_revision.title}</span>"
+
+      GenServer.stop(view.pid)
     end
 
     test "shows an error flash when adaptive duplication fails", %{

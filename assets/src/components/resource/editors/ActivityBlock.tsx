@@ -7,16 +7,23 @@ interface ActivityBlockProps {
   editMode: boolean;
   canRemove: boolean;
   contentItem: ActivityReference;
+  activityId: number;
   onRemove: (key: string) => void;
 }
 
-export const ActivityBlock = ({ children, contentItem }: PropsWithChildren<ActivityBlockProps>) => {
+export const ActivityBlock = ({
+  children,
+  contentItem,
+  activityId,
+}: PropsWithChildren<ActivityBlockProps>) => {
   return (
     <div
       id={`resource-editor-${contentItem.id}`}
       className={classNames(styles.activityBlock, 'activity-block')}
     >
-      <div>{children}</div>
+      <div id={`activity_${activityId}`} tabIndex={-1}>
+        {children}
+      </div>
     </div>
   );
 };

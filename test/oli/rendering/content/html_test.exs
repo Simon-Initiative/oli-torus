@@ -13,6 +13,23 @@ defmodule Oli.Content.Content.HtmlTest do
       %{author: author}
     end
 
+    test "shifts authored heading levels below the page title", %{author: author} do
+      content = %{
+        "type" => "content",
+        "id" => "heading-test",
+        "children" => [
+          %{"type" => "h1", "id" => "heading-one", "children" => [%{"text" => "Authored H1"}]},
+          %{"type" => "h2", "id" => "heading-two", "children" => [%{"text" => "Authored H2"}]}
+        ]
+      }
+
+      rendered_html = Content.render(%Context{user: author}, content, Content.Html)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~ ~s|<h2 class="h1">Authored H1</h2>|
+      assert rendered_html_string =~ ~s|<h3 class="h2">Authored H2</h3>|
+    end
+
     test "renders well-formed content properly", %{author: author} do
       {:ok, content} = read_json_file("./test/oli/rendering/content/example_content.json")
       context = %Context{user: author, section_slug: "some_section"}
@@ -40,10 +57,10 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~ "<h4 class=\"h3\">1651–1748: Early seeds</h4>"
 
       assert rendered_html_string =~
-               "<ol class=\"list-inside pl-2\"><li data-point-marker=\"1896247178\">one</li>\n<li data-point-marker=\"1896247178\"><em>two</em></li>\n<li data-point-marker=\"1896247178\"><em><strong>three</strong></em></li>\n</ol>"
+               "<ol class=\"list-decimal list-inside pl-2\"><li data-point-marker=\"1896247178\">one</li>\n<li data-point-marker=\"1896247178\"><em>two</em></li>\n<li data-point-marker=\"1896247178\"><em><strong>three</strong></em></li>\n</ol>"
 
       assert rendered_html_string =~
-               "<ul class=\"list-inside pl-2\"><li data-point-marker=\"18868465\">alpha</li>\n<li data-point-marker=\"18868465\">beta</li>\n<li data-point-marker=\"18868465\">gamma</li>\n</ul>"
+               "<ul class=\"list-disc list-inside pl-2\"><li data-point-marker=\"18868465\">alpha</li>\n<li data-point-marker=\"18868465\">beta</li>\n<li data-point-marker=\"18868465\">gamma</li>\n</ul>"
 
       assert rendered_html_string =~
                ~r/<div data-react-class="Components.YoutubePlayer"/
@@ -52,7 +69,7 @@ defmodule Oli.Content.Content.HtmlTest do
                "<pre><code class=\"torus-code language-python\" data-point-marker=\"4076323894\">import fresh-pots</code></pre>"
 
       assert rendered_html_string =~
-               ~r/<iframe class=".*"  allowfullscreen src="https:\/\/www.wikipedia.org" data-point-marker="1713634991"><\/iframe>/
+               ~r/<iframe aria-label="Embedded webpage that contains additional learning content" class=".*"  allowfullscreen src="https:\/\/www.wikipedia.org" data-point-marker="1713634991"><\/iframe>/
 
       assert rendered_html_string =~ "<span class=\"callout-block\">a richtext callout</span>"
 
@@ -290,6 +307,50 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~ ~r/data-live-react-class="Components\.WebpageEmbed"/
       assert rendered_html_string =~ ~r/&quot;targetId&quot;:&quot;demo_target&quot;/
       assert rendered_html_string =~ ~r/id="iframe-test-attempt-123-src-/
+    end
+
+    test "renders iframe title as aria-label", %{author: author} do
+      iframe_content = %{
+        "type" => "iframe",
+        "src" => "https://phet.colorado.edu/sims/ph-scale",
+        "title" => "  PhET simulation: pH scale <macro> & micro  ",
+        "alt" => "pH scale simulation",
+        "children" => [%{"text" => ""}]
+      }
+
+      rendered_html_string =
+        %Context{user: author, section_slug: "test_section"}
+        |> Content.render(iframe_content, Content.Html)
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~
+               ~s(<iframe aria-label="PhET simulation: pH scale &lt;macro&gt; &amp; micro" class=")
+
+      refute rendered_html_string =~ "alt="
+    end
+
+    test "renders default aria-label for iframe with missing or blank title", %{author: author} do
+      context = %Context{user: author, section_slug: "test_section"}
+
+      for title <- [nil, "", "   "] do
+        iframe_content =
+          %{
+            "type" => "iframe",
+            "src" => "https://h5p.org/embed/123",
+            "children" => [%{"text" => ""}]
+          }
+          |> then(fn content -> if title, do: Map.put(content, "title", title), else: content end)
+
+        rendered_html_string =
+          context
+          |> Content.render(iframe_content, Content.Html)
+          |> Phoenix.HTML.raw()
+          |> Phoenix.HTML.safe_to_string()
+
+        assert rendered_html_string =~
+                 ~s(<iframe aria-label="Embedded webpage that contains additional learning content" class=")
+      end
     end
 
     test "renders uploaded video with list src format", %{author: author} do

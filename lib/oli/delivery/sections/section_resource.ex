@@ -1,4 +1,12 @@
 defmodule Oli.Delivery.Sections.SectionResource do
+  @moduledoc """
+  Delivery-time projection of a Section-pinned resource revision.
+
+  `related_activities` has type-specific meanings: objective records contain
+  distinct activities targeting that objective, while page records contain
+  distinct activities embedded by the pinned page Revision. Other resource
+  types keep an empty list unless a future projection contract says otherwise.
+  """
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -96,10 +104,10 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :objectives, :map, default: %{}
     field :relates_to, {:array, :id}, default: []
     field :allow_hints, :boolean, default: false
+    field :secure_delivery, :boolean, default: false
 
-    # Pre-calculated array of related activity resource IDs for performance optimization.
-    # This field is only meaningful for section resources of type objective (or subobjective).
-    # It stores the resource IDs of activities that reference this objective in their objectives map.
+    # See the module contract: readiness is tracked on Section, because [] is a
+    # valid processed value and cannot distinguish an empty page from legacy data.
     field :related_activities, {:array, :id}, default: []
 
     belongs_to :resource_type, Oli.Resources.ResourceType
@@ -155,6 +163,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :objectives,
       :relates_to,
       :allow_hints,
+      :secure_delivery,
       :related_activities,
       :resource_type_id,
       :revision_id,
@@ -169,6 +178,28 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :section_id
     ])
     |> unique_constraint([:section_id, :resource_id])
+    |> validate_required([:secure_delivery])
+    |> validate_secure_delivery()
+  end
+
+  defp validate_secure_delivery(changeset) do
+    case get_change(changeset, :secure_delivery) do
+      true ->
+        case {Oli.Delivery.SecureAssessments.supported?(), get_field(changeset, :graded),
+              get_field(changeset, :resource_type_id)} do
+          {true, true, 1} ->
+            changeset
+
+          {false, _, _} ->
+            add_error(changeset, :secure_delivery, "is not supported on this instance")
+
+          _ ->
+            add_error(changeset, :secure_delivery, "requires a graded page")
+        end
+
+      _ ->
+        changeset
+    end
   end
 
   @initial_keys [

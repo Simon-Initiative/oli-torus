@@ -3,8 +3,20 @@ defmodule Oli.Lti.LtiParams do
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
+  alias Lti_1p3.Roles.{ContextRoles, PlatformRoles}
+  alias Oli.Lti.LaunchIdentity
   alias Oli.Repo
   alias Oli.Lti.LtiParams
+
+  @roles_claim "https://purl.imsglobal.org/spec/lti/claim/roles"
+
+  @configure_section_roles [
+    PlatformRoles.get_role(:system_administrator),
+    PlatformRoles.get_role(:institution_administrator),
+    ContextRoles.get_role(:context_administrator),
+    ContextRoles.get_role(:context_instructor)
+  ]
+  @configure_section_roles_set MapSet.new(@configure_section_roles)
 
   schema "lti_1p3_params" do
     field(:issuer, :string)
@@ -54,11 +66,21 @@ defmodule Oli.Lti.LtiParams do
   to nil once it has been set.
   """
   def create_or_update_lti_params(params, user_id \\ nil) do
-    issuer = params["iss"]
-    client_id = peek_client_id(params)
+    case LaunchIdentity.from_claims(params) do
+      {:ok, identity} -> upsert_lti_params(identity, params, user_id)
+      :error -> {:error, :invalid_launch_identity}
+    end
+  end
+
+  defp upsert_lti_params(%LaunchIdentity{} = identity, params, user_id) do
+    %LaunchIdentity{
+      issuer: issuer,
+      client_id: client_id,
+      deployment_id: deployment_id,
+      context_id: context_id
+    } = identity
+
     sub = params["sub"]
-    deployment_id = params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-    context_id = params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
     exp = Timex.from_unix(params["exp"])
 
     case Repo.get_by(LtiParams,
@@ -142,7 +164,60 @@ defmodule Oli.Lti.LtiParams do
     |> Repo.all()
   end
 
+  @doc """
+  Returns the lti params bound to the given user and launch identity.
+  """
+  def get_lti_params_for_user_launch(user_id, %LaunchIdentity{} = identity)
+      when is_integer(user_id) do
+    from(p in LtiParams,
+      where:
+        p.user_id == ^user_id and p.issuer == ^identity.issuer and
+          p.client_id == ^identity.client_id and
+          p.deployment_id == ^identity.deployment_id and
+          p.context_id == ^identity.context_id,
+      order_by: [desc: p.updated_at],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  def get_lti_params_for_user_launch(_user_id, _identity), do: nil
+
   def peek_client_id(%{"aud" => [client_id | _]}), do: client_id
   def peek_client_id(%{"aud" => client_id}), do: client_id
   def peek_client_id(_), do: nil
+
+  @doc """
+  The roles a launch must carry to configure a course section.
+  """
+  def configure_section_roles, do: @configure_section_roles
+
+  @doc """
+  Parses the role uris of a launch into a set of context and platform roles.
+  """
+  def launch_roles(roles) when is_list(roles) do
+    MapSet.new(ContextRoles.get_roles_by_uris(roles) ++ PlatformRoles.get_roles_by_uris(roles))
+  end
+
+  def launch_roles(_roles), do: MapSet.new()
+
+  @doc """
+  Returns true when the given role set allows configuring a course section.
+  """
+  def can_configure_section?(roles) do
+    MapSet.intersection(roles, @configure_section_roles_set) |> MapSet.size() > 0
+  end
+
+  @doc """
+  Returns true when the roles claim of the given launch params allows configuring a
+  course section.
+  """
+  def can_configure_section_from_params?(params) when is_map(params) do
+    params
+    |> Map.get(@roles_claim)
+    |> launch_roles()
+    |> can_configure_section?()
+  end
+
+  def can_configure_section_from_params?(_params), do: false
 end

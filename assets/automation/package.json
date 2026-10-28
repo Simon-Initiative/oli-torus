@@ -6,7 +6,12 @@
     "pw": "npx playwright test",
     "test-config": "npm run pw config.spec.ts",
     "test-config:headed": "npm run test-config -- --headed",
+    "test-dot-smoke": "npm run pw dot-chatbot.spec.ts",
+    "test-oauth-logins": "npm run pw oauth-login.spec.ts",
     "test-useraccounts": "npm run pw user-accounts.spec",
+    "test-account-linking-smoke": "npm run pw user-accounts.spec -- --grep @account-linking",
+    "test-admin-roles-smoke": "npm run pw user-accounts.spec -- --grep @admin-roles",
+    "test-simple-author": "npm run pw simple-author.spec.ts",
     "test-all": "npm run pw user-accounts.spec course-authoring.spec.ts",
     "show-report": "npx playwright show-report",
     "lint": "eslint .",
@@ -19,21 +24,27 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@eslint/js": "^9.28.0",
     "@playwright/test": "^1.56.1",
-    "@types/node": "^22.13.10",
+    "@types/node": "^24.0.0",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "js-yaml": "^4.3.2",
     "typescript-eslint": "^8.33.0",
     "@trivago/prettier-plugin-sort-imports": "^4.1.1",
     "prettier": "^3.3.3"
   },
   "dependencies": {
-    "csv-parse": "^5.6.0",
+    "csv-parse": "^7.0.2",
     "eslint": "^9.27.0",
+    "json-rules-engine": "6.1.2",
     "ww-torus-e2e": "file:"
   }
 }

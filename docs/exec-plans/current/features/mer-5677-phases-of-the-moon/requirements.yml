@@ -1,0 +1,48 @@
+version: 1
+feature: 'MER-5677 adaptive lesson: Phases of the Moon'
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Add an isolated Playwright happy-path spec for the Phases of the Moon adaptive
+    practice lesson.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: The spec imports the private course archive, creates a learner section,
+      opens the lesson, selects Easy Mission, switches to Difficult Mission at Mission
+      Update, and reaches its completion state.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: Keep private course content and answer keys outside the repository.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: The spec fetches a ZIP archive and answers JSON from the authenticated
+      Playwright assets endpoint, and no answer values or course content are committed.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: Reuse the shared adaptive-lesson driver and setup infrastructure.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: The spec uses AutomationAssetsTask, AutomationSetupTask, AdaptiveLessonTask,
+      and completeAdaptiveHappyPath rather than duplicating their behavior.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Make the new coverage maintainable and diagnosable in targeted automation
+    runs.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: The spec validates that its answer key targets the expected lesson, has
+      bounded setup, execution, and teardown behavior, and passes TypeScript linting,
+      formatting, and its targeted Playwright run when private assets are configured.
+    status: proposed
+    verification_method: hybrid
+    proofs: []

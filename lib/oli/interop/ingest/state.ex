@@ -11,6 +11,7 @@ defmodule Oli.Interop.Ingest.State do
     # The preprocessed state
     # ----------------------
     :resource_map,
+    :archive_source_files,
     :bypass_validation,
 
     # The three well-known resources
@@ -56,6 +57,7 @@ defmodule Oli.Interop.Ingest.State do
       errors: [],
       entries: nil,
       resource_map: nil,
+      archive_source_files: %{},
       tags: [],
       bib_entries: [],
       activities: [],
@@ -63,6 +65,19 @@ defmodule Oli.Interop.Ingest.State do
       pages: [],
       products: []
     }
+  end
+
+  @doc """
+  Returns the bounded archive entry name associated with a parsed resource ID.
+
+  Resource JSON may contain an `id` that differs from its archive filename, so
+  diagnostics must use the filename captured by the parser rather than the
+  client-controlled internal ID.
+  """
+  def archive_source_file(%__MODULE__{archive_source_files: source_files}, resource_id) do
+    (Map.get(source_files || %{}, resource_id) || resource_id)
+    |> to_string()
+    |> String.slice(0, 120)
   end
 
   def step_descriptors() do

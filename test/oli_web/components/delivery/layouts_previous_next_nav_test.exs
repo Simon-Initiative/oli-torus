@@ -31,6 +31,8 @@ defmodule OliWeb.Components.Delivery.LayoutsPreviousNextNavTest do
       assert html =~
                ~s(class="hidden lg:flex grow shrink basis-0 min-w-0 h-10 justify-start items-center z-10")
 
+      assert html =~ ~s(data-role="prev_page")
+
       assert html =~
                ~s(class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 w-0 flex-1 min-w-0 dark:text-white text-xs font-normal overflow-hidden whitespace-nowrap")
 
@@ -40,8 +42,16 @@ defmodule OliWeb.Components.Delivery.LayoutsPreviousNextNavTest do
       assert html =~
                ~s(class="hidden lg:flex grow shrink basis-0 min-w-0 h-10 justify-end items-center z-10")
 
+      assert html =~ ~s(data-role="next_page")
+
       assert html =~
-               ~s(class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 w-0 flex-1 min-w-0 text-right dark:text-white text-xs font-normal overflow-hidden whitespace-nowrap")
+               ~s(class="px-2 lg:px-6 py-2 rounded flex items-center justify-end gap-6 min-w-0")
+
+      assert html =~
+               ~s(class="hidden sm:flex flex-row gap-x-1 justify-end items-center min-w-0 text-right dark:text-white text-xs font-normal overflow-hidden whitespace-nowrap")
+
+      assert html =~
+               ~s(class="block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap")
     end
   end
 end

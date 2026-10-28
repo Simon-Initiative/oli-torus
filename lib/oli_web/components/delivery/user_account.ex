@@ -111,7 +111,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
             @ctx.user != nil and @active_workspace == :instructor and @ctx.user.can_create_sections
           }
           label="Instructor"
-          class="text-emerald-400"
+          class="text-Text-Chip-Green"
+          text_size="text-lg"
         />
         <.user_menu_items
           :if={@ctx.user != nil}
@@ -136,12 +137,15 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr(:label, :string, required: true)
   attr(:class, :string, default: "")
+  attr(:text_size, :string, default: "text-sm")
 
   def account_label(assigns) do
     ~H"""
-    <div role="account label" class={["text-sm font-bold font-['Roboto'] p-[5px]", @class]}>
-      {@label}
-    </div>
+    <li>
+      <div data-role="account label" class={[@text_size, "font-bold font-['Roboto'] p-[5px]", @class]}>
+        {@label}
+      </div>
+    </li>
     """
   end
 
@@ -703,7 +707,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
               "px-4 py-3 flex items-center gap-4 hover:no-underline hover:bg-gray-100 dark:hover:bg-gray-800/60 sm:px-2" do %>
             <div
               class="flex-1 overflow-hidden text-ellipsis text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark"
-              role="linked authoring account email"
+              data-role="linked-authoring-account-email"
             >
               {linked_author_account_email}
             </div>

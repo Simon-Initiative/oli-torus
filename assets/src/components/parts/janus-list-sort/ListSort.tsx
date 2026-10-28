@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { parseBool } from 'utils/common';
+import { htmlToPlainText, sanitizeRichLabelHtml } from 'utils/richOptionLabel';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -168,7 +169,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
           {
             key: 'currentItemList',
             type: CapiVariableTypes.ARRAY,
-            value: current.map((i) => i.text),
+            value: current.map((i) => htmlToPlainText(i.text)),
           },
         ],
       });
@@ -188,7 +189,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
             {
               key: 'currentItemList',
               type: CapiVariableTypes.ARRAY,
-              value: correct.map((i) => i.text),
+              value: correct.map((i) => htmlToPlainText(i.text)),
             },
             { key: 'showAnswer', type: CapiVariableTypes.BOOLEAN, value: true },
           ],
@@ -232,7 +233,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
           {
             key: 'currentItemList',
             type: CapiVariableTypes.ARRAY,
-            value: initialItems.map((i) => i.text),
+            value: initialItems.map((i) => htmlToPlainText(i.text)),
           },
           { key: 'customCss', type: CapiVariableTypes.STRING, value: dCustomCss },
         ],
@@ -268,9 +269,9 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       } else {
         const sCurrentItemList = snapshot[`stage.${id}.currentItemList`];
         if (Array.isArray(sCurrentItemList) && sCurrentItemList.length) {
-          const byText = new Map(listItems.map((item) => [item.text, item]));
+          const byText = new Map(listItems.map((item) => [htmlToPlainText(item.text), item]));
           const restored = sCurrentItemList
-            .map((text: string) => byText.get(text))
+            .map((text: string) => byText.get(htmlToPlainText(String(text ?? ''))))
             .filter((item): item is ListSortItem => !!item);
           if (restored.length === listItems.length) {
             setItems(restored);
@@ -619,7 +620,12 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   return ready ? (
     <div data-janus-type={tagName} className={rootClass} style={containerStyle}>
       {customCss ? <style>{customCss}</style> : null}
-      {showHeaderFooter && <div className="list-sort__header">{headerLabel}</div>}
+      {showHeaderFooter && (
+        <div
+          className="list-sort__header janus-rich-label"
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(headerLabel) }}
+        />
+      )}
       <span id={instructionsId} className="sr-only">
         {LIST_SORT_INSTRUCTIONS}
       </span>
@@ -678,13 +684,21 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
               <span className="list-sort__bar" aria-hidden="true" />
               <div className={`list-sort__text ${hintClass}`}>
                 {showHints && <HintBadge type={inCorrectSlot ? 'correct' : 'incorrect'} />}
-                <span className="list-sort__text-label">{item.text}</span>
+                <span
+                  className="list-sort__text-label janus-rich-label"
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(item.text) }}
+                />
               </div>
             </div>
           );
         })}
       </div>
-      {showHeaderFooter && <div className="list-sort__footer">{footerLabel}</div>}
+      {showHeaderFooter && (
+        <div
+          className="list-sort__footer janus-rich-label"
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(footerLabel) }}
+        />
+      )}
     </div>
   ) : null;
 };

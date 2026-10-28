@@ -4,6 +4,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   alias Oli.Grading.GradebookRow
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
+  alias OliWeb.Components.Delivery.ThresholdValue
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias OliWeb.Delivery.ScoreDisplay
   alias OliWeb.Router.Helpers, as: Routes
@@ -212,7 +213,12 @@ defmodule OliWeb.Grades.GradebookTableModel do
         }
       >
         <%= if @has_score? do %>
-          {"#{@score}/#{@out_of}"}
+          <ThresholdValue.render
+            at_risk={@score_status == :bad}
+            warning_label="Assessment score below threshold"
+          >
+            {"#{@score}/#{@out_of}"}
+          </ThresholdValue.render>
         <% else %>
           Not Finished
         <% end %>
@@ -410,7 +416,13 @@ defmodule OliWeb.Grades.GradebookTableModel do
   defp score_badge(assigns) do
     ~H"""
     <%= if @score_status == :bad do %>
-      <span class="text-Text-text-danger no-underline">{@score}</span><span class="text-Text-text-high">{"/#{@out_of}"}</span>
+      <span class="text-Text-text-danger no-underline">
+        <ThresholdValue.render at_risk={true} warning_label="Assessment score below threshold">
+          <span>
+            {@score}<span class="text-Text-text-high">{"/#{@out_of}"}</span>
+          </span>
+        </ThresholdValue.render>
+      </span>
     <% else %>
       <span class="text-Text-text-button no-underline">{@score}</span><span class="text-Text-text-high">{"/#{@out_of}"}</span>
     <% end %>

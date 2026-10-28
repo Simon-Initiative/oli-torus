@@ -1,14 +1,18 @@
 import React from 'react';
 import * as Immutable from 'immutable';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
+import { LearningObjectivesIcon } from 'components/misc/icons/Icons';
 import { SelectModal } from 'components/modal/SelectModal';
 import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
 import { modalActions } from 'actions/modal';
 import { FeatureFlags } from 'apps/page-editor/types';
 import {
+  ResolvedLearningObjective,
   ResourceContext,
+  canInsert,
   createAlternative,
   createAlternatives,
+  createDefaultLearningObjectivesContent,
   createDefaultStructuredContent,
   createGroup,
   createReport,
@@ -38,6 +42,12 @@ interface Props {
   parents: ResourceContent[];
   featureFlags: FeatureFlags;
   resourceContext: ResourceContext;
+  onRefreshLearningObjectives: (
+    contentId: string,
+    learningObjectives: ResolvedLearningObjective[],
+  ) => void;
+  onStartLearningObjectivesRefresh: (contentId: string) => void;
+  onFinishLearningObjectivesRefresh: (contentId: string) => void;
   onSetTip: (tip: string) => void;
   onResetTip: () => void;
 }
@@ -50,6 +60,9 @@ export const NonActivities: React.FC<Props> = ({
   parents,
   featureFlags,
   resourceContext,
+  onStartLearningObjectivesRefresh,
+  onRefreshLearningObjectives,
+  onFinishLearningObjectivesRefresh,
 }) => {
   const hasAlternativesAncestor = hasAncestorOfType(parents, 'alternatives');
 
@@ -92,6 +105,26 @@ export const NonActivities: React.FC<Props> = ({
             document.body.click();
           }}
         />
+        {canInsert(createDefaultLearningObjectivesContent(), parents) && (
+          <ResourceChoice
+            icon={<LearningObjectivesIcon />}
+            label="Objectives"
+            onHoverStart={() => onSetTip('Render a learning objective introduction or summary')}
+            onHoverEnd={() => onResetTip()}
+            key={'learning_objectives'}
+            disabled={false}
+            onClick={() =>
+              addLearningObjectives(
+                onAddItem,
+                index,
+                resourceContext,
+                onStartLearningObjectivesRefresh,
+                onRefreshLearningObjectives,
+                onFinishLearningObjectivesRefresh,
+              )
+            }
+          />
+        )}
         <ResourceChoice
           icon="columns"
           label="Break"
@@ -163,6 +196,55 @@ const addGroup = (onAddItem: AddCallback, index: number[]) => {
 const addPageBreak = (onAddItem: AddCallback, index: number[]) => {
   onAddItem(createBreak(), index);
   document.body.click();
+};
+
+const addLearningObjectives = async (
+  onAddItem: AddCallback,
+  index: number[],
+  resourceContext: ResourceContext,
+  onStartLearningObjectivesRefresh: (contentId: string) => void,
+  onRefreshLearningObjectives: (
+    contentId: string,
+    learningObjectives: ResolvedLearningObjective[],
+  ) => void,
+  onFinishLearningObjectivesRefresh: (contentId: string) => void,
+) => {
+  document.body.click();
+
+  const content = createDefaultLearningObjectivesContent();
+  onAddItem(content, index);
+  onStartLearningObjectivesRefresh(content.id);
+
+  const resolved = await resolveLearningObjectives(resourceContext);
+
+  if (resolved !== undefined) {
+    onRefreshLearningObjectives(content.id, resolved);
+  } else {
+    onFinishLearningObjectivesRefresh(content.id);
+  }
+};
+
+const resolveLearningObjectives = async (
+  resourceContext: ResourceContext,
+): Promise<ResolvedLearningObjective[] | undefined> => {
+  if (resourceContext.learningObjectives && resourceContext.learningObjectives.length > 0) {
+    return resourceContext.learningObjectives;
+  }
+
+  try {
+    const result = await Persistence.learningObjectives(
+      resourceContext.projectSlug,
+      resourceContext.resourceSlug,
+    );
+
+    if (result.type === 'success') {
+      return result.learningObjectives;
+    }
+  } catch (_e) {
+    return undefined;
+  }
+
+  return undefined;
 };
 
 const addSurvey = (onAddItem: AddCallback, index: number[]) => {

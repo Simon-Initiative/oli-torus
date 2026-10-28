@@ -122,8 +122,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
             Sections.get_objectives_and_subobjectives(socket.assigns.section,
               exclude_sub_objectives: false,
               include_related_activities_count: true
-            )
-            |> filter_root_contained_objectives(),
+            ),
           navigator_items:
             SectionResourceDepot.containers(socket.assigns.section.id,
               numbering_level: {:in, [1, 2]}
@@ -786,6 +785,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         v25_migration={@section.v25_migration}
         patch_url_type={:instructor_dashboard}
         current_user={@current_user}
+        confidence_supported?={Oli.Delivery.Proficiency.confidence_supported?(@section)}
       />
     </div>
     """
@@ -1145,7 +1145,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     params =
       Map.merge(socket.assigns.params, %{
         "selected_card_value" => value,
-        "container_id" => container_id
+        "container_id" => container_id,
+        "offset" => 0
       })
 
     {:noreply,
@@ -1161,7 +1162,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       ) do
     params =
       Map.merge(socket.assigns.params, %{
-        "selected_card_value" => value
+        "selected_card_value" => value,
+        "offset" => 0
       })
 
     {:noreply,
@@ -1193,7 +1195,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
       {:insights, :learning_objectives} ->
         # The modal is rendered by LearningObjectives (a sibling of the objectives table),
-        # not the in-row StudentProficiencyList, so it overlays the page correctly.
+        # not the in-row expanded-objective student table, so it overlays the page correctly.
         send_update(OliWeb.Components.Delivery.LearningObjectives,
           id: "objectives_table_#{socket.assigns.section_slug}",
           email_modal_payload: caller_assigns.email_modal_payload
@@ -1395,6 +1397,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_info({:dashboard_runtime_stream_complete, task_pid, completion_ref}, socket) do
+    IntelligentDashboardTab.acknowledge_dashboard_runtime_stream(
+      socket,
+      task_pid,
+      completion_ref
+    )
+  end
+
+  @impl Phoenix.LiveView
   def handle_info(
         {:dashboard_summary_recommendation_trigger, request_token, scope_selector, oracle_context,
          snapshot},
@@ -1455,6 +1466,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_async({:dashboard_runtime, oracle_keys, _ref}, result, socket) do
+    IntelligentDashboardTab.handle_dashboard_runtime_async(socket, oracle_keys, result)
+  end
+
   # Intentional cancellation (modal close / superseded generation). Not a failure — deliver
   # nothing. Must precede the generic {:exit, reason} clause, which would surface it as an error.
   def handle_async({:draft, _component_id, _request_id}, {:exit, {:shutdown, :cancel}}, socket) do
@@ -1752,31 +1767,4 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp parse_dashboard_section_split(_split), do: :error
-
-  defp filter_root_contained_objectives(objectives) do
-    root_contained_ids =
-      objectives
-      |> Enum.filter(&root_contained_objective?/1)
-      |> Enum.map(& &1.resource_id)
-      |> MapSet.new()
-
-    parent_ids_for_root_contained_subobjectives =
-      objectives
-      |> Enum.filter(fn objective ->
-        not is_nil(objective.subobjective) and
-          MapSet.member?(root_contained_ids, objective.resource_id)
-      end)
-      |> Enum.map(& &1.objective_resource_id)
-      |> MapSet.new()
-
-    Enum.filter(objectives, fn objective ->
-      MapSet.member?(root_contained_ids, objective.resource_id) or
-        (is_nil(objective.subobjective) and
-           MapSet.member?(parent_ids_for_root_contained_subobjectives, objective.resource_id))
-    end)
-  end
-
-  defp root_contained_objective?(objective) do
-    nil in List.wrap(Map.get(objective, :container_ids))
-  end
 end

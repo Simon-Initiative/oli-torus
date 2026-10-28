@@ -274,6 +274,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       partComponentTypes,
       activityTypes,
       allObjectives: content.allObjectives || [],
+      loWellFormed: content.loWellFormed === true,
       applicationMode:
         content.content?.custom?.contentMode === 'flowchart' ? 'flowchart' : 'expert',
     };
@@ -520,7 +521,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   return (
     <AppsignalContext.Provider value={appsignal}>
       <button
-        role="update sidebar state on React"
+        data-role="update-sidebar-state-on-react"
         className="hidden"
         onClick={() => {
           handleSidebarExpanded();

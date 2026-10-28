@@ -1,0 +1,223 @@
+work_item: lo_aggregation
+requirements:
+- id: FR-001
+  title: Provide a single, algorithm-agnostic weighted-aggregation function that computes
+    a parent Learning Objective's proficiency score from (proficiency, count) pairs
+    contributed by its Sub-LOs and, when present, its own directly-tagged evidence.
+  status: verified
+  acceptance_criteria:
+  - id: AC-001
+    title: "Given a parent LO with multiple Sub-LOs each having a (proficiency, count)\
+      \ pair, when the aggregation function is called, then it returns score = \u03A3\
+      (proficiency_i \xD7 count_i) / \u03A3(count_i) over all supplied children."
+    status: verified
+    verification_method: automated
+    proofs:
+      - lib/oli/delivery/metrics.ex (Metrics.aggregate_weighted_proficiency/1)
+      - test/oli/delivery/metrics/aggregate_weighted_proficiency_test.exs
+  - id: AC-002
+    title: Given a parent LO that has both directly-tagged evidence and one or more
+      Sub-LOs, when the aggregation function is called, then the parent's own (proficiency,
+      count) pair is combined into the same weighted average as its Sub-LOs' pairs.
+    status: verified
+    verification_method: automated
+    proofs:
+      - lib/oli/delivery/metrics.ex (Metrics.aggregate_weighted_proficiency/1)
+      - test/oli/delivery/metrics/aggregate_weighted_proficiency_test.exs
+- id: FR-002
+  title: Document the aggregation function's count contract explicitly, making it
+    the caller's responsibility to supply a count consistent with whichever algorithm
+    computed that child's proficiency.
+  status: verified
+  acceptance_criteria:
+  - id: AC-003
+    title: The function's documentation states that a naive/legacy child's count must
+      be num_first_attempts and that an LKT-AOA child's count must be its total attempt
+      ("opportunity") count per the LKT-AOA technical notes section 6.2, and states
+      that the function itself has no way to detect mismatched count semantics across
+      children.
+    status: verified
+    verification_method: manual
+    proofs:
+      - lib/oli/delivery/metrics.ex (Metrics.aggregate_weighted_proficiency/1 @doc,
+        verified verbatim against informal.md's "Agreed function contract")
+- id: FR-003
+  title: "SUPERSEDED (Darren Siegel, Slack, 2026-09-01, \"Option B\"): always combine\
+    \ a parent LO's own directly-tagged evidence with its Sub-LOs' evidence in the\
+    \ weighted average, whenever the parent has evidence of its own. This replaces\
+    \ the original Jira AC requiring that an activity tagged to both a parent LO and\
+    \ one of its Sub-LOs contribute to the aggregation only once, at the Sub-LO —\
+    \ that de-duplication is explicitly NOT implemented; see\
+    \ parent_evidence_aggregation_options.md for the alternatives considered and why\
+    \ Option B was chosen over them."
+  status: verified
+  acceptance_criteria:
+  - id: AC-004
+    title: Given a parent LO with one or more Sub-LOs, when parent LO proficiency is
+      aggregated, then the parent's own directly-tagged evidence (when present) is
+      always combined with each Sub-LO's evidence into the weighted average. An
+      activity tagged to both a parent LO and one of its Sub-LOs is NOT deduplicated
+      under this rule — its evidence contributes once via the parent's own row and
+      again via the Sub-LO's row. This double-counting is a deliberate, accepted
+      trade-off (see FR-003), not a defect.
+    status: verified
+    verification_method: automated
+    proofs:
+      - "lib/oli/delivery/metrics.ex (Metrics.evidence_resource_ids/2) — the
+        shared always-combine rule now used by all three call sites: Metrics
+        (naive delivery-side), Sections.get_objectives_and_subobjectives/2
+        (Instructor Dashboard/CSV export), and
+        PageElement.maybe_proficiency/6 (the 'learning_objectives' page
+        element)."
+      - test/oli/analytics/summary/metrics_v2_test.exs
+      - "test/oli/delivery/sections_test.exs ('filters by student_id when
+        provided')"
+      - "test/oli/delivery/learning_objectives/page_element_test.exs
+        ('combines a parent's own evidence with a Sub-LO's evidence, including a Sub-LO outside
+        this page element's own scope, consistent with the Instructor
+        Dashboard')"
+      - "test/scenarios/proficiency/parent_combines_own_and_subobjective_evidence.scenario.yaml
+        and test/scenarios/instructor_dashboard/lo_aggregation_weighted_and_combined.scenario.yaml
+        — exercise the real attempt-submission pipeline (Oli.Scenarios'
+        answer_question/finalize_attempt directives, not factory-inserted
+        ResourceSummary rows) so this behavior is verified end to end, not
+        just at the Metrics function boundary."
+      - "test/scenarios/proficiency/parent_double_counts_activity_tagged_to_both_parent_and_subobjective.scenario.yaml
+        — the literal double-counting case named in this AC's title: one
+        real activity tagged to both the parent and a Sub-LO is answered
+        once, and the parent's aggregation counts it twice (once via its
+        own row, again via the Sub-LO's row), which is what pushes a
+        2-real-attempt section past the 3-attempt 'enough data' minimum."
+- id: FR-004
+  title: Preserve incomplete-coverage semantics so a Sub-LO with insufficient evidence
+    is represented in the aggregation rather than silently excluded from it.
+  status: verified
+  acceptance_criteria:
+  - id: AC-005
+    title: Given a parent LO with one Sub-LO that has sufficient evidence and another
+      Sub-LO that has not been attempted or has insufficient evidence, when parent
+      LO proficiency is aggregated, then the result reflects the incomplete coverage
+      of the unattempted or under-evidenced Sub-LO rather than being calculated as
+      if only the attempted Sub-LO existed.
+    status: verified
+    verification_method: automated
+    proofs:
+      - lib/oli/delivery/metrics.ex (Metrics.aggregate_weighted_proficiency/1)
+      - test/oli/delivery/metrics/aggregate_weighted_proficiency_test.exs
+      - "test/scenarios/proficiency/parent_reflects_incomplete_subobjective_coverage.scenario.yaml
+        — a Sub-LO with a single (incorrect) real attempt still shifts the
+        parent's bucket from what it would be if that Sub-LO's thin evidence
+        were ignored (High) to the correct combined value (Medium)."
+- id: FR-005
+  title: Audit and update every runtime call site that rolls up (or should roll up)
+    Sub-LO proficiency into a parent LO, across both authoring and delivery surfaces,
+    so all of them consume the shared aggregation function.
+  status: verified
+  acceptance_criteria:
+  - id: AC-006
+    title: Given a section with a parent LO that has Sub-LOs and no direct evidence,
+      when an instructor views the Instructor Dashboard Learning Objectives tab, the
+      per-student instructor view, or downloads the Learning Objectives CSV export,
+      then the parent LO's displayed/exported proficiency reflects its Sub-LOs' combined
+      evidence instead of "not enough data".
+    status: verified
+    verification_method: automated
+    proofs:
+      - "lib/oli/delivery/sections.ex (Sections.get_objectives_and_subobjectives/2,
+        via the shared Metrics.evidence_resource_ids/2 and
+        Metrics.proficiency_bucket_for_student/3) — the Instructor Dashboard
+        tab (instructor_dashboard_live.ex:120), per-student instructor view
+        (student_dashboard_live.ex:54), and CSV export
+        (delivery_controller.ex:471) all route through this same function."
+      - test/oli/delivery/sections_test.exs ("filters by student_id when
+        provided", "reflects incomplete coverage instead of ignoring an
+        under-evidenced Sub-LO")
+      - "test/oli_web/live/delivery/instructor_dashboard/insights/lo_aggregation_ui_test.exs
+        — logs in as a real instructor and checks the actual rendered
+        Instructor Dashboard Learning Objectives tab, the per-student
+        instructor view, and the Learning Objectives CSV export, seeded via
+        Oli.Scenarios (real attempt pipeline). Closes a coverage gap: no
+        prior automated test exercised
+        Sections.get_objectives_and_subobjectives/2 through these three UI
+        surfaces rather than by calling the function directly."
+  - id: AC-007
+    title: Given the same section and parent LO, when a student views their proficiency
+      on the prologue, lesson, or review pages, or when the "learning_objectives"
+      page element renders that LO, then the displayed proficiency reflects the same
+      combined Sub-LO evidence, consistent with the Instructor Dashboard's value for
+      that student.
+    status: verified
+    verification_method: automated
+    proofs:
+      - "lib/oli/delivery/learning_objectives/page_element.ex
+        (PageElement.maybe_proficiency/6) — resolves evidence resource_ids
+        from the section's authoritative objective hierarchy (not the page
+        element's own narrow render scope), so a Sub-LO with no activity on
+        the current page still contributes to its parent's aggregated
+        proficiency."
+      - "test/oli/delivery/learning_objectives/page_element_test.exs
+        ('combines a parent's own evidence with a Sub-LO's evidence, including a Sub-LO outside
+        this page element's own scope, consistent with the Instructor
+        Dashboard') — directly cross-checks
+        PageElement.prepare_render_payload/5's result against
+        Sections.get_objectives_and_subobjectives/2's result for the same
+        student/section and asserts they match."
+      - test/oli/analytics/summary/metrics_v2_test.exs (student
+        prologue/lesson/review side, Phase 2)
+      - "test/oli_web/live/delivery/instructor_dashboard/insights/lo_aggregation_ui_test.exs
+        — the same seeded student/section is checked against both the
+        Instructor Dashboard tab and the per-student instructor view and
+        asserts the same bucket in both."
+  - id: AC-008
+    title: Given a leaf Learning Objective with no Sub-LOs, when its proficiency is
+      read from any of the updated call sites, then its value is unchanged from current
+      behavior.
+    status: verified
+    verification_method: automated
+    proofs:
+      - test/oli/analytics/summary/metrics_v2_test.exs (o3, a leaf objective)
+      - "test/oli/delivery/sections_test.exs ('a leaf Learning Objective with
+        no Sub-LOs uses only its own evidence, unaffected by aggregation')"
+      - "test/oli/delivery/learning_objectives/page_element_test.exs
+        ('queries proficiency only when a Summary element exists' —
+        obj_resource_c1/obj_resource_d, both leaves, are queried by their own
+        resource_id)"
+- id: FR-006
+  title: Keep Learning Objective proficiency aggregation a runtime projection computed
+    at read time rather than a persisted, write-time calculation.
+  status: verified
+  acceptance_criteria:
+  - id: AC-009
+    title: Given a learner submits a new attempt on an activity tagged to a Sub-LO,
+      when that attempt is evaluated, then no parent LO proficiency value is persisted
+      or recalculated as part of that evaluation; the parent's aggregated value is
+      computed only when subsequently read.
+    status: verified
+    verification_method: manual
+    proofs:
+      - "This work item's entire diff (git diff master...HEAD) touches only
+        read-side aggregation functions in lib/oli/delivery/metrics.ex,
+        lib/oli/delivery/sections.ex, and
+        lib/oli/delivery/learning_objectives/page_element.ex; no file under
+        lib/oli/delivery/attempts/ (attempt submission/evaluation) is
+        modified, confirming aggregation stays a runtime projection with no
+        new write-time persistence introduced."
+- id: FR-007
+  title: Route the naive algorithm's aggregated score through the existing Metrics.proficiency_range/2
+    bucketing so parent LO Not Enough Information/Low/Medium/High distributions reflect
+    combined evidence without duplicating threshold logic.
+  status: verified
+  acceptance_criteria:
+  - id: AC-010
+    title: Given a parent LO's aggregated naive score and total evidence count, when
+      it is bucketed for display, then Metrics.proficiency_range/2's existing thresholds
+      are used unchanged rather than a second, duplicated set of thresholds.
+    status: verified
+    verification_method: automated
+    proofs:
+      - "lib/oli/delivery/metrics.ex (Metrics.proficiency_bucket_for_student/3
+        and proficiency_for_student_per_learning_objective/3) both call
+        proficiency_range/2 directly on the aggregated (score, total_count)
+        pair; no second bucketing implementation exists anywhere in this
+        work item's diff."
+acceptance_criteria: []

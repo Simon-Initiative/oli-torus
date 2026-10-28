@@ -5,6 +5,8 @@ defmodule Oli.Interop.IngestTest do
   alias Oli.Resources.Revision
   alias Oli.Repo
   alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Sections.Section
   use Oli.DataCase
 
   def by_title(project, title) do
@@ -127,6 +129,11 @@ defmodule Oli.Interop.IngestTest do
       # verify that every practice page has a content attribute with a model
       assert Enum.all?(practice_pages, fn p -> Map.has_key?(p.content, "model") end)
 
+      assert Enum.all?(practice_pages, fn p ->
+               MapSet.new(p.activity_refs) ==
+                 Oli.Authoring.Editing.Utils.activity_references(p.content)
+             end)
+
       # verify that citations are rewired correctly
       page_with_citation = Enum.filter(practice_pages, fn p -> p.title == "Feedback" end) |> hd
 
@@ -208,5 +215,518 @@ defmodule Oli.Interop.IngestTest do
 
       assert Enum.count(product_root.children) == 2
     end
+
+    test "ingest rewires learning objective recommendation IDs to imported pages", %{
+      author: author
+    } do
+      objective = %{
+        "id" => "90000001",
+        "type" => "Objective",
+        "title" => "Recommended objective",
+        "objectives" => []
+      }
+
+      recommendation_pages =
+        Enum.map(
+          [{"90000002", "Revisit page"}, {"90000003", "Practice page"}],
+          fn {id, title} ->
+            %{
+              "id" => id,
+              "type" => "Page",
+              "title" => title,
+              "objectives" => [],
+              "content" => %{"model" => []}
+            }
+          end
+        )
+
+      summary_page = %{
+        "id" => "90000004",
+        "type" => "Page",
+        "title" => "Objective summary",
+        "objectives" => [objective["id"]],
+        "content" => %{
+          "model" => [
+            %{
+              "id" => "learning-objectives-summary",
+              "type" => "learning_objectives",
+              "mode" => "summary",
+              "learning_objectives" => [
+                %{
+                  "resource_id" => 90_000_001,
+                  "revisit_pages" => [90_000_002],
+                  "practice_pages" => [90_000_003]
+                }
+              ]
+            }
+          ]
+        }
+      }
+
+      assert {:ok, project} =
+               minimal_digest(%{"title" => "Learning objective recommendations"}, [], [
+                 objective,
+                 summary_page | recommendation_pages
+               ])
+               |> Ingest.process(author)
+
+      [imported_objective] =
+        Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "objective")
+
+      pages_by_title =
+        Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "page")
+        |> Map.new(&{&1.title, &1})
+
+      [element] = pages_by_title["Objective summary"].content["model"]
+      [config] = element["learning_objectives"]
+
+      assert config["resource_id"] == imported_objective.resource_id
+
+      assert Map.take(config, ["revisit_pages", "practice_pages"]) == %{
+               "revisit_pages" => [pages_by_title["Revisit page"].resource_id],
+               "practice_pages" => [pages_by_title["Practice page"].resource_id]
+             }
+    end
+
+    test "ingests a legacy project description over the authoring character limit", %{
+      author: author
+    } do
+      description = String.duplicate("Legacy description", 20)
+
+      assert {:ok, project} =
+               minimal_digest(%{"title" => "Legacy project", "description" => description})
+               |> Ingest.process(author)
+
+      assert project.description == description
+    end
+  end
+
+  describe "hierarchy entries that do not resolve" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "ingest drops items whose idref does not resolve instead of adding nil children", %{
+      author: author
+    } do
+      {:ok, project} =
+        simulate_unzipping()
+        |> update_hierarchy(fn hierarchy ->
+          missing_item = %{"type" => "item", "idref" => "missing-page", "children" => []}
+
+          hierarchy
+          |> update_first_unit(fn unit ->
+            Map.update!(unit, "children", &[missing_item | &1])
+          end)
+          |> Map.update!("children", &(&1 ++ [missing_item]))
+        end)
+        |> Ingest.process(author)
+
+      root = AuthoringResolver.root_container(project.slug)
+      [unit_id] = root.children
+      unit = AuthoringResolver.from_resource_id(project.slug, unit_id)
+
+      assert unit.title == "Unit 1"
+      assert length(unit.children) == 7
+      refute Enum.any?(unit.children, &is_nil/1)
+
+      assert %{children: [%{children: unit_nodes}]} =
+               AuthoringResolver.full_hierarchy(project.slug)
+
+      assert length(unit_nodes) == 7
+    end
+
+    test "ingest skips null entries in nested container children", %{author: author} do
+      {:ok, project} =
+        simulate_unzipping()
+        |> update_hierarchy(fn hierarchy ->
+          update_first_unit(hierarchy, fn unit ->
+            Map.update!(unit, "children", &[nil | &1])
+          end)
+        end)
+        |> Ingest.process(author)
+
+      root = AuthoringResolver.root_container(project.slug)
+      [unit_id] = root.children
+      unit = AuthoringResolver.from_resource_id(project.slug, unit_id)
+
+      assert length(unit.children) == 7
+      refute Enum.any?(unit.children, &is_nil/1)
+    end
+
+    test "an export whose container lists a deleted page can be ingested again", %{
+      author: author
+    } do
+      {:ok, project} =
+        simulate_unzipping()
+        |> Ingest.process(author)
+
+      root = AuthoringResolver.root_container(project.slug)
+      [unit_id] = root.children
+      unit = AuthoringResolver.from_resource_id(project.slug, unit_id)
+      [deleted_page_id | remaining_ids] = unit.children
+      deleted_page = AuthoringResolver.from_resource_id(project.slug, deleted_page_id)
+
+      # Mark the page deleted without removing it from the unit, leaving a dangling reference
+      {:ok, _} =
+        Oli.Publishing.ChangeTracker.track_revision(project.slug, deleted_page, %{deleted: true})
+
+      entries = Export.export(project) |> unzip_to_memory()
+
+      unit_entry =
+        entries
+        |> Enum.find_value(fn {file, contents} ->
+          if file == ~c"_hierarchy.json", do: Jason.decode!(contents)
+        end)
+        |> Map.get("children")
+        |> hd()
+
+      # Export writes the dangling child as a null entry (see "export handles nil" in export_test)
+      assert [nil | exported_items] = unit_entry["children"]
+
+      assert Enum.map(exported_items, & &1["idref"]) ==
+               Enum.map(remaining_ids, &Integer.to_string/1)
+
+      assert {:ok, reimported} = Ingest.process(entries, author)
+
+      reimported_root = AuthoringResolver.root_container(reimported.slug)
+      [reimported_unit_id] = reimported_root.children
+      reimported_unit = AuthoringResolver.from_resource_id(reimported.slug, reimported_unit_id)
+
+      assert length(reimported_unit.children) == length(remaining_ids)
+      refute Enum.any?(reimported_unit.children, &is_nil/1)
+    end
+  end
+
+  describe "learning-model archive compatibility" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "legacy missing and null selections use documented fallbacks", %{author: author} do
+      {:ok, legacy_project} =
+        minimal_digest(%{"title" => "Legacy missing model"}, [
+          %{"id" => "_product-legacy", "type" => "Product", "title" => "Legacy Product"}
+        ])
+        |> Ingest.process(author)
+
+      assert legacy_project.learning_model_version == :naive
+
+      legacy_product =
+        Repo.get_by!(Section, base_project_id: legacy_project.id, type: :blueprint)
+
+      assert legacy_product.learning_model_version == :naive
+
+      {:ok, inherited_project} =
+        minimal_digest(
+          %{
+            "title" => "Legacy Product inherits",
+            "learningModelVersion" => "lkt_aoa"
+          },
+          [
+            %{"id" => "_product-inherit", "type" => "Product", "title" => "Inherited Product"}
+          ]
+        )
+        |> Ingest.process(author)
+
+      assert inherited_project.learning_model_version == :lkt_aoa
+
+      inherited_product =
+        Repo.get_by!(Section, base_project_id: inherited_project.id, type: :blueprint)
+
+      assert inherited_product.learning_model_version == :lkt_aoa
+
+      {:ok, null_project} =
+        minimal_digest(
+          %{
+            "title" => "Null models",
+            "learningModelVersion" => nil
+          },
+          [
+            %{
+              "id" => "_product-null",
+              "type" => "Product",
+              "title" => "Null Product",
+              "learningModelVersion" => nil
+            }
+          ]
+        )
+        |> Ingest.process(author)
+
+      assert null_project.learning_model_version == :naive
+
+      assert Repo.get_by!(Section, base_project_id: null_project.id).learning_model_version ==
+               :naive
+
+      {:ok, null_product_project} =
+        minimal_digest(
+          %{
+            "title" => "Null Product inherits LKT-AOA",
+            "learningModelVersion" => "lkt_aoa"
+          },
+          [
+            %{
+              "id" => "_product-null-inherits",
+              "type" => "Product",
+              "title" => "Null Product inherits",
+              "learningModelVersion" => nil
+            }
+          ]
+        )
+        |> Ingest.process(author)
+
+      assert null_product_project.learning_model_version == :lkt_aoa
+
+      assert Repo.get_by!(Section, base_project_id: null_product_project.id).learning_model_version ==
+               :lkt_aoa
+    end
+
+    test "invalid explicit Project and Product selections roll back with file context", %{
+      author: author
+    } do
+      invalid_archives = [
+        {minimal_digest(%{
+           "title" => "Invalid project model",
+           "learningModelVersion" => "v2"
+         }), "_project.json"},
+        {minimal_digest(%{"title" => "Invalid product model"}, [
+           %{
+             "id" => "misleading-internal-id",
+             "archiveFile" => "_product-invalid",
+             "type" => "Product",
+             "title" => "Invalid Product",
+             "learningModelVersion" => %{"unexpected" => true}
+           }
+         ]), "_product-invalid.json"}
+      ]
+
+      Enum.each(invalid_archives, fn {digest, expected_file} ->
+        before_count = Repo.aggregate(Project, :count)
+
+        assert {:error, error} = Ingest.process(digest, author)
+        assert error =~ "Invalid learningModelVersion"
+        assert error =~ expected_file
+        assert Repo.aggregate(Project, :count) == before_count
+      end)
+    end
+
+    test "imports learning parameters separately from generic objective parameters", %{
+      author: author
+    } do
+      objective = %{
+        "id" => "objective-parameters",
+        "type" => "Objective",
+        "title" => "Imported Parameterized Objective",
+        "objectives" => [],
+        "parameters" => %{"legacy" => "preserved"},
+        "learningModelParameters" => learning_objective_envelope(0.0)
+      }
+
+      activity = %{
+        "id" => "activity-untrained",
+        "type" => "Activity",
+        "title" => "Imported Untrained Activity",
+        "subType" => "oli_multiple_choice",
+        "objectives" => %{},
+        "content" => activity_content(["part-1"])
+      }
+
+      assert {:ok, project} =
+               minimal_digest(%{"title" => "Parameter separation"}, [], [objective, activity])
+               |> Ingest.process(author)
+
+      [imported_objective] =
+        Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "objective")
+        |> Enum.filter(&(&1.title == "Imported Parameterized Objective"))
+
+      [imported_activity] =
+        Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "activity")
+        |> Enum.filter(&(&1.title == "Imported Untrained Activity"))
+
+      assert imported_objective.parameters == %{"legacy" => "preserved"}
+      assert imported_objective.learning_model_parameters.payload.beta_lo == 0.0
+      assert imported_activity.learning_model_parameters == nil
+    end
+
+    test "invalid parameter envelopes roll back with resource context", %{author: author} do
+      cases = [
+        {"unsupported schema version",
+         %{
+           "id" => "misleading-objective-id",
+           "archiveFile" => "objective-version",
+           "type" => "Objective",
+           "title" => "Bad Version",
+           "objectives" => [],
+           "learningModelParameters" =>
+             Map.put(learning_objective_envelope(0.1), "schema_version", 99)
+         }, "objective-version.json"},
+        {"resource type mismatch",
+         %{
+           "id" => "objective-mismatch",
+           "type" => "Objective",
+           "title" => "Bad Type",
+           "objectives" => [],
+           "learningModelParameters" => activity_envelope(%{"part-1" => 0.2})
+         }, "objective-mismatch.json"},
+        {"reverse resource type mismatch",
+         %{
+           "id" => "activity-mismatch",
+           "type" => "Activity",
+           "title" => "Bad Activity Type",
+           "subType" => "oli_multiple_choice",
+           "objectives" => %{},
+           "content" => activity_content(["part-1"]),
+           "learningModelParameters" => learning_objective_envelope(0.2)
+         }, "activity-mismatch.json"},
+        {"unsupported model version",
+         %{
+           "id" => "objective-model-version",
+           "type" => "Objective",
+           "title" => "Bad Model Version",
+           "objectives" => [],
+           "learningModelParameters" =>
+             Map.put(learning_objective_envelope(0.1), "model_version", 99)
+         }, "objective-model-version.json"},
+        {"unsupported parameter type",
+         %{
+           "id" => "objective-parameter-type",
+           "type" => "Objective",
+           "title" => "Bad Parameter Type",
+           "objectives" => [],
+           "learningModelParameters" =>
+             Map.put(learning_objective_envelope(0.1), "parameter_type", "future_model")
+         }, "objective-parameter-type.json"},
+        {"non-finite coefficient",
+         %{
+           "id" => "objective-number",
+           "type" => "Objective",
+           "title" => "Bad Number",
+           "objectives" => [],
+           "learningModelParameters" => learning_objective_envelope("NaN")
+         }, "objective-number.json"},
+        {"unknown activity part",
+         %{
+           "id" => "activity-part",
+           "type" => "Activity",
+           "title" => "Bad Part",
+           "subType" => "oli_multiple_choice",
+           "objectives" => %{},
+           "content" => activity_content(["known-part"]),
+           "learningModelParameters" => activity_envelope(%{"unknown-part" => 0.2})
+         }, "activity-part.json"}
+      ]
+
+      Enum.each(cases, fn {label, resource, expected_file} ->
+        before_count = Repo.aggregate(Project, :count)
+
+        assert {:error, error} =
+                 minimal_digest(%{"title" => "Invalid #{label}"}, [], [resource])
+                 |> Ingest.process(author)
+
+        assert error =~ expected_file
+        assert error =~ "learningModelParameters"
+        assert Repo.aggregate(Project, :count) == before_count
+      end)
+    end
+  end
+
+  describe "learning-objective compatibility archive handling" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "preserves explicit boolean values", %{author: author} do
+      Enum.each([true, false], fn lo_well_formed ->
+        {:ok, project} =
+          minimal_digest(%{
+            "title" => "Explicit LO compatibility #{lo_well_formed}",
+            "loWellFormed" => lo_well_formed
+          })
+          |> Ingest.process(author)
+
+        assert project.lo_well_formed == lo_well_formed
+      end)
+    end
+
+    test "maps a null or missing archive value to nil", %{author: author} do
+      Enum.each(
+        [
+          %{"title" => "Null LO compatibility", "loWellFormed" => nil},
+          %{"title" => "Missing LO compatibility"}
+        ],
+        fn project_details ->
+          {:ok, project} = minimal_digest(project_details) |> Ingest.process(author)
+
+          assert is_nil(project.lo_well_formed)
+        end
+      )
+    end
+  end
+
+  defp update_hierarchy(entries, update_fn) do
+    Enum.map(entries, fn
+      {~c"_hierarchy.json", contents} ->
+        {~c"_hierarchy.json", contents |> Jason.decode!() |> update_fn.() |> Jason.encode!()}
+
+      entry ->
+        entry
+    end)
+  end
+
+  defp update_first_unit(hierarchy, update_fn) do
+    Map.update!(hierarchy, "children", fn [unit | rest] -> [update_fn.(unit) | rest] end)
+  end
+
+  defp minimal_digest(project, products \\ [], resources \\ []) do
+    base = [
+      {~c"_project.json", Map.put_new(project, "description", "")},
+      {~c"_hierarchy.json", %{"children" => []}},
+      {~c"_media-manifest.json", %{"mediaItems" => []}}
+    ]
+
+    product_entries =
+      Enum.map(products, fn product ->
+        archive_file = Map.get(product, "archiveFile", product["id"])
+        {String.to_charlist("#{archive_file}.json"), Map.delete(product, "archiveFile")}
+      end)
+
+    resource_entries =
+      Enum.map(resources, fn resource ->
+        archive_file = Map.get(resource, "archiveFile", resource["id"])
+        {String.to_charlist("#{archive_file}.json"), Map.delete(resource, "archiveFile")}
+      end)
+
+    Enum.map(base ++ product_entries ++ resource_entries, fn {file, value} ->
+      {file, Jason.encode!(value)}
+    end)
+  end
+
+  defp learning_objective_envelope(beta_lo) do
+    %{
+      "schema_version" => 1,
+      "model" => "lkt_aoa",
+      "model_version" => 2,
+      "parameter_type" => "learning_objective",
+      "payload" => %{"beta_lo" => beta_lo}
+    }
+  end
+
+  defp activity_envelope(parts) do
+    %{
+      "schema_version" => 1,
+      "model" => "lkt_aoa",
+      "model_version" => 2,
+      "parameter_type" => "activity",
+      "payload" => %{
+        "parts" =>
+          Map.new(parts, fn {part_id, beta_difficulty} ->
+            {part_id, %{"beta_difficulty" => beta_difficulty}}
+          end)
+      }
+    }
+  end
+
+  defp activity_content(part_ids) do
+    %{"authoring" => %{"parts" => Enum.map(part_ids, &%{"id" => &1})}}
   end
 end

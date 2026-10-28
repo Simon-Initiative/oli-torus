@@ -119,6 +119,24 @@
     activity_virtual_id: "hint_and_retry_question"
     response: "b"
 
+- visit_page:
+    student: "student"
+    section: "learner_attempt_actions_section"
+    page: "Hint and Retry Practice"
+
+- reset_activity:
+    student: "student"
+    section: "learner_attempt_actions_section"
+    page: "Hint and Retry Practice"
+    activity_virtual_id: "hint_and_retry_question"
+
+- answer_question:
+    student: "student"
+    section: "learner_attempt_actions_section"
+    page: "Hint and Retry Practice"
+    activity_virtual_id: "hint_and_retry_question"
+    response: "b"
+
 - assert:
     activity_attempt:
       section: "learner_attempt_actions_section"

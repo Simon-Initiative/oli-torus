@@ -5,7 +5,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
   import Phoenix.LiveViewTest
 
   alias OliWeb.Components.Delivery.LearningObjectives
-  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
+  alias OliWeb.Components.Delivery.Students.StudentSelection
 
   describe "LearningObjectives component" do
     test "renders the Draft Email modal outside the objectives table when a payload is set", %{
@@ -27,7 +27,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
 
       payload = %{
         students:
-          DraftEmailModal.recipients(
+          StudentSelection.recipients(
             [
               %{id: 4, full_name: "Davis, Emma", email: "emma@test.com", proficiency_range: "Low"}
             ],
@@ -64,6 +64,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
       assert has_element?(view, "#draft_email_modal_objectives_test-section_wrapper")
       assert html =~ "Draft Email"
       assert html =~ "emma@test.com"
+      assert has_element?(view, "[data-role='low-proficiency-warning'][aria-hidden='true']")
+
+      assert has_element?(view, "div.whitespace-nowrap", "Low")
 
       # ...and it is NOT nested inside the objectives table, so it escapes the table's
       # sticky-header stacking context (the regression this fix addresses).
@@ -73,7 +76,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
              )
     end
 
-    test "renders objectives and sub-objectives in the instructor table and counts respect filters",
+    test "renders parent objectives in the instructor table and counts respect subobjective filters",
          %{
            conn: conn
          } do
@@ -176,14 +179,77 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
         })
 
       html = render(view)
+      page_text = html |> Floki.parse_document!() |> Floki.text() |> String.replace(~r/\s+/, " ")
 
+      assert page_text =~
+               "Look at student proficiency by learning objective to identify where to focus instruction and support students."
+
+      assert html =~ "Low Proficiency Learning Objectives"
+      assert html =~ "Low Proficiency Sub-Objectives"
       assert html =~ "LO.02"
-      assert html =~ "Sub.LO.2a"
-      assert html =~ "Sub.LO.2b"
-      assert html =~ "Sub.LO.2c"
+      refute html =~ "Sub.LO.2a"
+      refute html =~ "Sub.LO.2b"
+      refute html =~ "Sub.LO.2c"
 
       assert card_text(html, "low_proficiency_outcomes") =~ "1"
+      assert card_text(html, "low_proficiency_outcomes") =~ "Learning objective"
       assert card_text(html, "low_proficiency_skills") =~ "1"
+      assert card_text(html, "low_proficiency_skills") =~ "Sub-objective"
+
+      assert has_element?(
+               view,
+               ~s(button[phx-value-selected="low_proficiency_outcomes"][aria-pressed="true"]),
+               "Low Proficiency Learning Objectives"
+             )
+    end
+
+    test "renders zero counts in low proficiency summary filters", %{conn: conn} do
+      objectives = [
+        %{
+          resource_id: 1,
+          title: "LO.01",
+          objective: "LO.01",
+          subobjective: nil,
+          student_proficiency_obj: "High",
+          student_proficiency_subobj: nil,
+          student_proficiency_obj_dist: %{},
+          container_ids: [10],
+          related_activities_count: 0
+        },
+        %{
+          resource_id: 2,
+          title: "Sub.LO.1a",
+          objective: "LO.01",
+          objective_resource_id: 1,
+          subobjective: "Sub.LO.1a",
+          student_proficiency_obj: "High",
+          student_proficiency_subobj: "Medium",
+          student_proficiency_obj_dist: %{},
+          student_proficiency_subobj_dist: %{},
+          container_ids: [10],
+          related_activities_count: 0
+        }
+      ]
+
+      {:ok, _view, html} =
+        live_component_isolated(conn, LearningObjectives, %{
+          id: "learning-objectives-zero-counts-test",
+          objectives_tab: %{objectives: objectives, navigator_items: []},
+          params: %{},
+          section_slug: "test-section",
+          section_id: 1,
+          section_title: "Test Section",
+          current_user: %{email: "instructor@example.edu"},
+          patch_url_type: :instructor_dashboard,
+          student_id: nil,
+          view: :insights,
+          v25_migration: :done
+        })
+
+      assert card_text(html, "low_proficiency_outcomes") =~ "0"
+      assert card_text(html, "low_proficiency_outcomes") =~ "Learning objectives"
+      assert card_text(html, "low_proficiency_skills") =~ "0"
+      assert card_text(html, "low_proficiency_skills") =~ "Sub-objectives"
     end
 
     test "keeps the targeted parent objective visible for tile deep-link context", %{conn: conn} do
@@ -281,13 +347,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
              }) == MapSet.new(["row_1"])
     end
 
-    test "initial_expanded_rows expands the subobjective row for a subobjective deep link" do
+    test "initial_expanded_rows expands the parent row for a subobjective deep link" do
       scoped_objectives = objectives_with_subobjective()
 
       assert LearningObjectives.initial_expanded_rows(scoped_objectives, %{
                objective_id: 1,
                subobjective_id: 2
-             }) == MapSet.new(["row_2"])
+             }) == MapSet.new(["row_1"])
     end
 
     test "update seeds expanded rows for subobjective tile navigation handoff" do
@@ -321,10 +387,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
       }
 
       assert {:ok, updated_socket} = LearningObjectives.update(assigns, socket)
-      assert updated_socket.assigns.expanded_objectives == MapSet.new(["row_2"])
+      assert updated_socket.assigns.expanded_objectives == MapSet.new(["row_1"])
 
       assert updated_socket.assigns.table_model.data.expanded_rows ==
-               MapSet.new(["row_2"])
+               MapSet.new(["row_1"])
     end
 
     test "tile navigation adjusts pagination so the targeted objective is present" do
@@ -395,9 +461,117 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
       }
 
       assert {:ok, updated_socket} = LearningObjectives.update(assigns, socket)
-      assert updated_socket.assigns.params.offset == 3
-      assert Enum.map(updated_socket.assigns.table_model.rows, & &1.resource_id) == [4]
-      assert updated_socket.assigns.expanded_objectives == MapSet.new(["row_4"])
+      assert updated_socket.assigns.params.offset == 2
+      assert Enum.map(updated_socket.assigns.table_model.rows, & &1.resource_id) == [3]
+      assert updated_socket.assigns.expanded_objectives == MapSet.new(["row_3"])
+    end
+
+    test "tile navigation paginates subobjective links using rendered parent rows" do
+      objectives = objectives_with_prior_subobjective_row()
+
+      socket =
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            __changed__: %{},
+            myself: %Phoenix.LiveComponent.CID{cid: 1}
+          }
+        }
+
+      assigns = %{
+        id: "learning-objectives-update-parent-only-pagination-test",
+        objectives_tab: %{objectives: objectives, navigator_items: []},
+        params: %{
+          "limit" => "1",
+          "offset" => "0",
+          "objective_id" => "3",
+          "subobjective_id" => "4",
+          "navigation_source" => "challenging_objectives_tile"
+        },
+        section_slug: "test-section",
+        section_id: 1,
+        section_title: "Test Section",
+        current_user: %{email: "instructor@example.edu"},
+        patch_url_type: :instructor_dashboard,
+        student_id: nil,
+        view: :insights,
+        v25_migration: :done
+      }
+
+      assert {:ok, updated_socket} = LearningObjectives.update(assigns, socket)
+      assert updated_socket.assigns.params.offset == 1
+      assert Enum.map(updated_socket.assigns.table_model.rows, & &1.resource_id) == [3]
+      assert updated_socket.assigns.expanded_objectives == MapSet.new(["row_3"])
+    end
+
+    test "search expands only rows matched by subobjective text" do
+      socket =
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            __changed__: %{},
+            myself: %Phoenix.LiveComponent.CID{cid: 1}
+          }
+        }
+
+      assigns = %{
+        id: "learning-objectives-search-expansion-test",
+        objectives_tab: %{
+          objectives: objectives_with_prior_subobjective_row(),
+          navigator_items: []
+        },
+        params: %{"text_search" => "Parent 3"},
+        section_slug: "test-section",
+        section_id: 1,
+        section_title: "Test Section",
+        current_user: %{email: "instructor@example.edu"},
+        patch_url_type: :instructor_dashboard,
+        student_id: nil,
+        view: :insights,
+        v25_migration: :done
+      }
+
+      assert {:ok, updated_socket} = LearningObjectives.update(assigns, socket)
+      assert Enum.map(updated_socket.assigns.table_model.rows, & &1.resource_id) == [3]
+      assert updated_socket.assigns.expanded_objectives == MapSet.new()
+
+      assert {:ok, updated_socket} =
+               LearningObjectives.update(
+                 put_in(assigns.params["text_search"], "Child 3.1"),
+                 socket
+               )
+
+      assert Enum.map(updated_socket.assigns.table_model.rows, & &1.resource_id) == [3]
+      assert updated_socket.assigns.expanded_objectives == MapSet.new(["row_3"])
+    end
+
+    test "ignores malformed text search params" do
+      socket =
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            __changed__: %{},
+            myself: %Phoenix.LiveComponent.CID{cid: 1}
+          }
+        }
+
+      assigns = %{
+        id: "learning-objectives-malformed-search-test",
+        objectives_tab: %{
+          objectives: objectives_with_prior_subobjective_row(),
+          navigator_items: []
+        },
+        params: %{"text_search" => ["Parent 3"]},
+        section_slug: "test-section",
+        section_id: 1,
+        section_title: "Test Section",
+        current_user: %{email: "instructor@example.edu"},
+        patch_url_type: :instructor_dashboard,
+        student_id: nil,
+        view: :insights,
+        v25_migration: :done
+      }
+
+      assert {:ok, updated_socket} = LearningObjectives.update(assigns, socket)
+      assert Enum.map(updated_socket.assigns.table_model.rows, & &1.resource_id) == [1, 3]
+      assert updated_socket.assigns.params.text_search == nil
     end
 
     test "initial_expanded_rows ignores unresolved deep-link ids" do
@@ -473,7 +647,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
 
   defp card_text(html, value) do
     {:ok, document} = Floki.parse_document(html)
-    [card] = Floki.find(document, ~s(div[phx-value-selected="#{value}"]))
+    [card] = Floki.find(document, ~s(button[phx-value-selected="#{value}"]))
     Floki.text(card)
   end
 
@@ -547,6 +721,59 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
         objective: "Objective 3",
         objective_resource_id: 3,
         subobjective: "Sub-Objective 3.1",
+        student_proficiency_obj: "Low",
+        student_proficiency_subobj: "Low",
+        student_proficiency_obj_dist: %{},
+        student_proficiency_subobj_dist: %{},
+        container_ids: [10],
+        related_activities_count: 0
+      }
+    ]
+  end
+
+  defp objectives_with_prior_subobjective_row do
+    [
+      %{
+        resource_id: 1,
+        title: "Objective 1",
+        objective: "Objective 1",
+        subobjective: nil,
+        student_proficiency_obj: "Low",
+        student_proficiency_subobj: nil,
+        student_proficiency_obj_dist: %{},
+        container_ids: [10],
+        related_activities_count: 0
+      },
+      %{
+        resource_id: 2,
+        title: "Sub-Objective 1.1",
+        objective: "Objective 1",
+        objective_resource_id: 1,
+        subobjective: "Sub-Objective 1.1",
+        student_proficiency_obj: "Low",
+        student_proficiency_subobj: "Low",
+        student_proficiency_obj_dist: %{},
+        student_proficiency_subobj_dist: %{},
+        container_ids: [10],
+        related_activities_count: 0
+      },
+      %{
+        resource_id: 3,
+        title: "Parent 3",
+        objective: "Parent 3",
+        subobjective: nil,
+        student_proficiency_obj: "Low",
+        student_proficiency_subobj: nil,
+        student_proficiency_obj_dist: %{},
+        container_ids: [10],
+        related_activities_count: 0
+      },
+      %{
+        resource_id: 4,
+        title: "Child 3.1",
+        objective: "Parent 3",
+        objective_resource_id: 3,
+        subobjective: "Child 3.1",
         student_proficiency_obj: "Low",
         student_proficiency_subobj: "Low",
         student_proficiency_obj_dist: %{},

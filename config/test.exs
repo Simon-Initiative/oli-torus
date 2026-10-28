@@ -5,6 +5,8 @@ config :bcrypt_elixir, :log_rounds, 1
 
 config :oli,
   env: :test,
+  inventory_recovery_on_boot: false,
+  logger_truncation_enabled: false,
   depot_coordinator: Oli.Delivery.SingletonDepotCoordinator,
   s3_media_bucket_name: "torus-media-test",
   s3_xapi_bucket_name: "torus-xapi-test",
@@ -52,6 +54,9 @@ end
 
 config :oli, Oli.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
+  # Concurrent learner tasks share one sandbox connection. Allow their queries
+  # to queue instead of shedding valid work at DBConnection's 50 ms default.
+  queue_target: 1_000,
   timeout: 600_000,
   pool_size: 30,
   ownership_timeout: 600_000
@@ -140,11 +145,12 @@ config :oli, OliWeb.Endpoint,
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshSync
 config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenTest
 
-# Print only warnings and errors during test
+# ExUnit captures logs emitted during each test and only prints them when that test fails.
 config :logger, level: :warning
 
 config :oli,
   enable_playwright_scenarios: true,
+  enable_e2e_mailbox: true,
   playwright_scenario_token: System.get_env("PLAYWRIGHT_SCENARIO_TOKEN"),
   # never hits real S3 in :test (Oli.Test.MockAws intercepts the request), so
   # a fixed name here carries none of the bucket-squatting risk that a

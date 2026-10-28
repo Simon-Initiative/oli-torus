@@ -19,7 +19,9 @@ defmodule Oli.GenAI.Dialogue.State do
     :function_name,
     :function_args,
     :function_id,
-    :function_message
+    :function_message,
+    :engagement_task,
+    :engagement_id
   ]
 
   def new(%Configuration{messages: messages, service_config: service_config} = configuration) do
@@ -35,7 +37,9 @@ defmodule Oli.GenAI.Dialogue.State do
       function_name: nil,
       function_args: nil,
       function_id: nil,
-      function_message: nil
+      function_message: nil,
+      engagement_task: nil,
+      engagement_id: nil
     }
   end
 end

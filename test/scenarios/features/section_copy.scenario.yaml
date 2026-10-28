@@ -1,0 +1,88 @@
+# An existing course can be copied as an independent snapshot.
+
+- project:
+    name: "copy_source_project"
+    title: "Copy Source Project"
+    root:
+      children:
+        - page: "Snapshot Lesson"
+        - page: "Independent Lesson"
+
+- section:
+    name: "source_course"
+    title: "Source Course"
+    from: "copy_source_project"
+
+- manipulate:
+    to: "source_course"
+    ops:
+      - revise:
+          target: "Snapshot Lesson"
+          set:
+            max_attempts: 3
+
+- user:
+    name: "source_student"
+    type: "student"
+    email: "source_student@test.edu"
+
+- enroll:
+    user: "source_student"
+    section: "source_course"
+
+- hook:
+    function: "Oli.Scenarios.SectionCopyHooks.copy_source_course/1"
+
+- assert:
+    structure:
+      to: "copied_course"
+      root:
+        children:
+          - page: "Snapshot Lesson"
+          - page: "Independent Lesson"
+
+- assert:
+    resource:
+      to: "copied_course"
+      target: "Snapshot Lesson"
+      resource:
+        max_attempts: 3
+
+- manipulate:
+    to: "source_course"
+    ops:
+      - revise:
+          target: "Snapshot Lesson"
+          set:
+            max_attempts: 8
+
+- customize:
+    to: "source_course"
+    ops:
+      - remove:
+          from: "Independent Lesson"
+
+- assert:
+    structure:
+      to: "source_course"
+      root:
+        children:
+          - page: "Snapshot Lesson"
+
+- assert:
+    structure:
+      to: "copied_course"
+      root:
+        children:
+          - page: "Snapshot Lesson"
+          - page: "Independent Lesson"
+
+- assert:
+    resource:
+      to: "copied_course"
+      target: "Snapshot Lesson"
+      resource:
+        max_attempts: 3
+
+- hook:
+    function: "Oli.Scenarios.SectionCopyHooks.assert_learner_data_was_not_copied/1"

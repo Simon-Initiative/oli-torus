@@ -15,7 +15,7 @@ defmodule OliWeb.InviteControllerTest do
   describe "`create_bulk` action" do
     test "for a new instructor: creates new user, enrolls user to the given section, creates invitation token and delivers email invitation",
          %{conn: conn} do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
       stub_real_current_time()
       section = insert_direct_delivery_section()
 
@@ -67,7 +67,7 @@ defmodule OliWeb.InviteControllerTest do
 
     test "for a new student: creates new user, enrolls user to the given section, creates invitation token and delivers email invitation",
          %{conn: conn} do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
       stub_real_current_time()
       section = insert_direct_delivery_section()
 
@@ -119,7 +119,7 @@ defmodule OliWeb.InviteControllerTest do
 
     test "for an existing instructor: enrolls user to the given section, creates invitation token and delivers email invitation",
          %{conn: conn} do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
       stub_real_current_time()
       section = insert_direct_delivery_section()
       existing_instructor = user_fixture(email: @invite_email)
@@ -170,7 +170,7 @@ defmodule OliWeb.InviteControllerTest do
 
     test "for an existing student: enrolls user to the given section, creates invitation token and delivers email invitation",
          %{conn: conn} do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
       stub_real_current_time()
       section = insert_direct_delivery_section()
       existing_student = user_fixture(email: @invite_email)
@@ -259,7 +259,7 @@ defmodule OliWeb.InviteControllerTest do
 
     test "a new invitation sent: updates the original enrollment to pending_confirmation, removes old invitation token, creates a new invitation token and delivers email invitation",
          %{conn: conn} do
-      expect_recaptcha_http_post()
+      expect_recaptcha_success()
       stub_real_current_time()
       section = insert_direct_delivery_section()
       existing_student = user_fixture(email: @invite_email)

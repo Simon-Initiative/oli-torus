@@ -66,6 +66,42 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
     end
   end
 
+  describe "rewire_learning_objectives_references/2" do
+    test "rewires objective and recommendation page IDs" do
+      content = %{
+        "model" => [
+          %{
+            "type" => "learning_objectives",
+            "learning_objectives" => [
+              %{
+                "resource_id" => 1,
+                "revisit_pages" => [2],
+                "practice_pages" => [3, 4]
+              }
+            ]
+          }
+        ]
+      }
+
+      result =
+        Rewiring.rewire_learning_objectives_references(content, %{
+          1 => 101,
+          2 => 102,
+          3 => 103,
+          4 => 104
+        })
+
+      [element] = result["model"]
+      [objective] = element["learning_objectives"]
+
+      assert objective == %{
+               "resource_id" => 101,
+               "revisit_pages" => [102],
+               "practice_pages" => [103, 104]
+             }
+    end
+  end
+
   describe "rewire_bank_selections/2" do
     test "rewires tag references in selection logic (children)" do
       old_id1 = 1

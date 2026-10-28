@@ -15,7 +15,8 @@ defmodule Oli.Scenarios.Directives.ProjectHandler do
           objectives: objectives,
           tags: tags,
           slug: slug,
-          visibility: visibility
+          visibility: visibility,
+          learning_model_version: learning_model_version
         },
         state
       ) do
@@ -27,7 +28,8 @@ defmodule Oli.Scenarios.Directives.ProjectHandler do
         objectives: objectives,
         tags: tags,
         slug: slug,
-        visibility: visibility
+        visibility: visibility,
+        learning_model_version: learning_model_version
       }
 
       built_project =

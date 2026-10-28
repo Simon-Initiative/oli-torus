@@ -33,6 +33,7 @@ interface PurposeGroupEditorProps extends EditorProps {
 export const PurposeGroupEditor = ({
   resourceContext,
   editMode,
+  supportsLtiConfiguration,
   projectSlug,
   resourceSlug,
   contentItem,
@@ -54,6 +55,9 @@ export const PurposeGroupEditor = ({
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
+  onStartLearningObjectivesRefresh,
+  onRefreshLearningObjectives,
+  onFinishLearningObjectivesRefresh,
   onDuplicate,
 }: PurposeGroupEditorProps) => {
   return (
@@ -69,6 +73,7 @@ export const PurposeGroupEditor = ({
       <GroupEditor
         resourceContext={resourceContext}
         editMode={editMode}
+        supportsLtiConfiguration={supportsLtiConfiguration}
         projectSlug={projectSlug}
         resourceSlug={resourceSlug}
         contentItem={contentItem}
@@ -90,6 +95,9 @@ export const PurposeGroupEditor = ({
         onPostUndoable={onPostUndoable}
         onRegisterNewObjective={onRegisterNewObjective}
         onRegisterNewTag={onRegisterNewTag}
+        onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
+        onRefreshLearningObjectives={onRefreshLearningObjectives}
+        onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
         onDuplicate={onDuplicate}
       />
     </PurposeGroupBlock>

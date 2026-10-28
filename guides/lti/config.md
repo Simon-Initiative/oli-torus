@@ -1,5 +1,7 @@
 # LTI 1.3 Configuration
 
+For authoring and instructor selection of resources in external tools launched by Torus, see [Configure external tools with Deep Linking](deep-linking.md).
+
 Torus supports LTI 1.3 integration and leverages the Learning Management System (LMS) for course delivery. The philosophy of Torus is to focus and excel at what it is specifically designed for, which is rich course content authoring, delivery and data-driven continuous improvement. Many of the necessary features of course delivery such as roster management, grade book management and scheduling are deferred to the LMS, which is what it is specifically designed for. These aspects of the student and instructor experience are crucial and require tight integration which is enabled by the LTI 1.3 standard.
 
 Many LMSs currently support the LTI 1.3 standard including Canvas, Blackboard, Moodle, Brightspace D2L, and more. Each LMS may have a slightly different method of configuring an external tool like Torus, but in general the process is similar between them and is driven by the [LTI 1.3 Specification](http://www.imsglobal.org/spec/lti/v1p3/).
@@ -130,7 +132,8 @@ Coming soon...
 
 ### Moodle
 
-Coming soon...
+For local Moodle and Torus development over HTTPS, see
+[Local Moodle HTTPS setup](moodle-local.md).
 
 ## Manual LTI 1.3 Configuration in Torus (Torus Admin)
 
@@ -164,3 +167,28 @@ To manually configure an LTI 1.3 integration in Torus, we need to gather some im
 1. Click "Add Deployment" and enter the Deployment ID saved from the instructions below when you created a deployment in your LMS. Click "Save".
 
 1. Once you have a **Registration** and a **Deployment** configured for your **Institution**, you can now return to your LMS and launch into Torus and you will be guided through course setup, which is outside the scope of this document.
+
+## Direct page launches
+
+An LTI 1.3 launch can select a page within the launched Torus section using the
+signed custom claim `https://purl.imsglobal.org/spec/lti/claim/custom`:
+
+```json
+{
+  "torus_resource_type": "page",
+  "torus_resource_id": "the-page-revision-slug"
+}
+```
+
+Despite its name, `torus_resource_id` contains the page's revision slug, not its
+numeric resource ID. The page must belong to the section resolved from the
+launch's registration, deployment, and context. A valid target sends learners
+and instructors to that page, subject to the normal page access controls. Older
+revision slugs stored in the LMS resolve to the revision in the section's pinned
+publication, so the redirect uses that revision's slug rather than an unpublished
+or otherwise newer revision outside the section's publication.
+
+Missing, unsupported, or unmatched page claims retain the ordinary destination:
+section home for learners and section management for instructors. Section
+creation and unconfigured-course behavior remain unchanged. This does not create
+an LTI Deep Linking picker or require a secure browser.

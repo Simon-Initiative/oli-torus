@@ -2,6 +2,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
   use ExUnit.Case, async: false
   use OliWeb.ConnCase
 
+  @moduletag sandbox_owner: true
+
   import Phoenix.LiveViewTest
   import Oli.Factory
 
@@ -19,6 +21,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       section_slug,
       view
     )
+  end
+
+  defp live_dashboard(conn, path) do
+    with {:ok, view, html} <- live(conn, path) do
+      await_dashboard(view)
+      {:ok, view, html}
+    end
+  end
+
+  defp await_dashboard(view) do
+    render_async(view, 5_000)
   end
 
   describe "user" do
@@ -76,19 +89,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
   describe "instructor" do
     setup [:instructor_conn, :section_with_assessment]
-
-    setup do
-      on_exit(fn ->
-        Oli.TaskSupervisor
-        |> Task.Supervisor.children()
-        |> Enum.each(fn pid ->
-          ref = Process.monitor(pid)
-          receive do: ({:DOWN, ^ref, :process, ^pid, _} -> :ok)
-        end)
-      end)
-
-      :ok
-    end
 
     test "cannot access page if not enrolled to section", %{conn: conn, section: section} do
       redirect_path = "/unauthorized"
@@ -185,7 +185,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert redirected_path ==
                "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(view, "a.active", "Dashboard")
     end
@@ -220,12 +220,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert redirected_path ==
                "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A#{container.id}"
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(view, "button", container.title)
 
       {:ok, _course_view, _html} =
-        live(
+        live_dashboard(
           conn,
           ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
         )
@@ -253,7 +253,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert redirected_path ==
                "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(view, "a.active", "Dashboard")
       assert has_element?(view, "#learning-dashboard")
@@ -277,7 +277,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, view, _html} =
-        live(
+        live_dashboard(
           conn,
           ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_progress[threshold]=80"
         )
@@ -327,7 +327,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert redirected_path ==
                "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A#{container.id}"
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(view, "button", container.title)
     end
@@ -351,7 +351,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(view, "a.active", "Dashboard")
       assert has_element?(view, "#learning-dashboard-shell")
@@ -380,11 +380,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       view
       |> element("button[data-list-navigator-option='true']", container.title)
       |> render_click()
+
+      await_dashboard(view)
 
       assert_patch(
         view,
@@ -416,7 +418,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(view, "#learning-dashboard-summary-tile")
       assert render(view) =~ "AI Recommendation"
@@ -426,6 +428,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       view
       |> element("button[data-list-navigator-option='true']", container.title)
       |> render_click()
+
+      await_dashboard(view)
 
       assert_patch(
         view,
@@ -449,11 +453,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       dashboard_path =
         "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_progress[mode]=percent&tile_progress[threshold]=80&tile_progress[page]=3"
 
-      {:ok, view, _html} = live(conn, dashboard_path)
+      {:ok, view, _html} = live_dashboard(conn, dashboard_path)
 
       view
       |> element("button[data-list-navigator-option='true']", container.title)
       |> render_click()
+
+      await_dashboard(view)
 
       assert_patch(
         view,
@@ -488,11 +494,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       view
       |> element("button[data-list-navigator-option='true']", "Entire Course")
       |> render_click()
+
+      await_dashboard(view)
 
       assert_patch(
         view,
@@ -525,7 +533,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert redirected_path ==
                "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(view, "button", "Entire Course")
     end
@@ -549,7 +557,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
       assessment_id = assessment_id_for_title(render(view), "Other test revision")
 
       view
@@ -593,7 +601,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
       assessment_id = assessment_id_for_title(render(view), "Other test revision")
 
       assert has_element?(view, "#learning-dashboard-assessments-tile")
@@ -678,7 +686,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       Enum.reduce_while(1..50, nil, fn _, _ ->
         html = render(view)
@@ -725,7 +733,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       render_hook(view, "student_support_bucket_selected", %{"bucket_id" => "on_track"})
 
@@ -754,7 +762,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert render(view) =~ "Entire Course"
       refute has_element?(view, "button", "Entire Course")
@@ -831,7 +839,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       view
       |> element("#learning-dashboard-content-group-toggle")
@@ -842,7 +850,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).collapsed_section_ids ==
                ["content"]
 
-      {:ok, restored_view, _html} = live(conn, redirected_path)
+      {:ok, restored_view, _html} = live_dashboard(conn, redirected_path)
 
       refute has_element?(restored_view, "#learning-dashboard-content-group-content")
     end
@@ -867,7 +875,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       view
       |> element("#learning-dashboard-content-group")
@@ -902,7 +910,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       view
       |> element("#learning-dashboard-content-group")
@@ -934,7 +942,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       view
       |> element("#learning-dashboard-engagement-group-tiles")
@@ -965,7 +973,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       refute has_element?(view, "#learning-dashboard-content-group")
       assert has_element?(view, "#learning-dashboard-engagement-group")
@@ -990,7 +998,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(
                view,
@@ -1038,7 +1046,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert redirected_path ==
                "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(view, "a.active", "Dashboard")
     end
@@ -1073,12 +1081,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert redirected_path ==
                "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A#{container.id}"
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(view, "button", container.title)
 
       {:ok, _course_view, _html} =
-        live(
+        live_dashboard(
           conn,
           ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
         )
@@ -1110,7 +1118,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
                live(conn, dashboard_path)
 
-      {:ok, view, _html} = live(conn, redirected_path)
+      {:ok, view, _html} = live_dashboard(conn, redirected_path)
 
       assert has_element?(view, "#learning-dashboard-content-group")
       assert has_element?(view, "[id^='learning-dashboard-challenging-objectives-']")
@@ -1129,7 +1137,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       container = hd(containers)
 
       {:ok, view, _html} =
-        live(
+        live_dashboard(
           conn,
           ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
         )
@@ -1156,6 +1164,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
         view,
         ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container:#{container.id}"
       )
+
+      await_dashboard(view)
 
       assert render(view) =~ ~s(data-dashboard-section-split="58")
       assert Repo.all(InstructorDashboardState) == []
@@ -1226,7 +1236,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
     # is covered in draft_email_async_test.exs via an isolated component harness.
     test "unknown task reply is ignored", %{conn: conn, section: section} do
       {:ok, view, _html} =
-        live(
+        live_dashboard(
           conn,
           ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
         )

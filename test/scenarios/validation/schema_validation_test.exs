@@ -31,6 +31,52 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
              end)
   end
 
+  test "schema and parser reject unsupported proficiency scopes" do
+    for scope <- ["page", "container"], student <- [nil, "alice"] do
+      student_yaml =
+        case student do
+          nil -> ""
+          name -> "      student: #{name}\n"
+        end
+
+      yaml =
+        """
+        - assert:
+            proficiency:
+              section: demo
+              objective: Understand concepts
+              bucket: High
+              #{scope}: Lesson
+        """ <> student_yaml
+
+      assert {:error, _errors} = Scenarios.validate_yaml(yaml)
+
+      error = assert_raise RuntimeError, fn -> DirectiveParser.parse_yaml!(yaml) end
+      assert error.message =~ "Unknown attributes in 'proficiency assertion' directive"
+      assert error.message =~ scope
+    end
+  end
+
+  test "schema and parser accept objective proficiency without scope filters" do
+    yaml = """
+    - assert:
+        proficiency:
+          section: demo
+          objective: Understand concepts
+          bucket: High
+          value: 0.9
+    - assert:
+        proficiency:
+          section: demo
+          objective: Understand concepts
+          student: alice
+          bucket: High
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+    assert length(DirectiveParser.parse_yaml!(yaml)) == 2
+  end
+
   test "schema and parser agree on unknown directives" do
     yaml = """
     - create_project:
@@ -40,6 +86,69 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert {:error, _errors} = Scenarios.validate_yaml(yaml)
 
     assert_raise RuntimeError, ~r/Unrecognized directive: 'create_project'/, fn ->
+      DirectiveParser.parse_yaml!(yaml)
+    end
+  end
+
+  test "schema and parser accept annotation workflows" do
+    yaml = """
+    - class_note:
+        name: "point_note"
+        student: "student"
+        section: "section"
+        page: "Lesson"
+        body: "Important point"
+        block_id: "block-1"
+
+    - class_note:
+        name: "reply"
+        student: "student"
+        section: "section"
+        page: "Lesson"
+        body: "A reply"
+        reply_to: "point_note"
+
+    - post_reaction:
+        post: "reply"
+        student: "student"
+        reaction: "like"
+        action: "add"
+
+    - assert:
+        annotation:
+          post: "reply"
+          section: "section"
+          page: "Lesson"
+          reply_to: "point_note"
+          reaction: "like"
+          reaction_count: 1
+          reacted_by: "student"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [point_note, reply, reaction, assertion] = DirectiveParser.parse_yaml!(yaml)
+
+    assert point_note.name == "point_note"
+    assert point_note.block_id == "block-1"
+    assert reply.reply_to == "point_note"
+    assert reaction.action == :add
+    assert reaction.reaction == :like
+    assert assertion.annotation.reaction_count == 1
+  end
+
+  test "schema and parser reject unsupported post reactions" do
+    yaml = """
+    - post_reaction:
+        post: "note"
+        student: "student"
+        reaction: "celebrate"
+        action: "toggle"
+    """
+
+    assert {:error, _errors} = Scenarios.validate_yaml(yaml)
+
+    assert_raise RuntimeError, ~r/Invalid post reaction 'celebrate'/, fn ->
       DirectiveParser.parse_yaml!(yaml)
     end
   end
@@ -144,6 +253,21 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     [section] = DirectiveParser.parse_yaml!(yaml)
     assert section.start_date == ~U[2026-01-01 00:00:00Z]
     assert section.end_date == ~U[2026-12-31 23:59:59Z]
+  end
+
+  test "schema and parser accept enabling the section assistant" do
+    yaml = """
+    - section:
+        name: "assistant_section"
+        assistant_enabled: true
+        assistant_service_config: "nightly-dot-service"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [section] = DirectiveParser.parse_yaml!(yaml)
+    assert section.assistant_enabled == true
+    assert section.assistant_service_config == "nightly-dot-service"
   end
 
   test "schema and parser accept paywall fields on product and section plus institution discounts" do
@@ -307,6 +431,46 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert :ok = Scenarios.validate_yaml(yaml)
     directives = DirectiveParser.parse_yaml!(yaml)
     assert length(directives) == 5
+  end
+
+  test "schema and parser accept scoped learning objective assertions" do
+    yaml = """
+    - assert:
+        learning_objectives:
+          section: "demo_section"
+          container: "Unit 1"
+          includes:
+            - "Understand systems"
+          excludes:
+            - "Unrelated objective"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+    [directive] = DirectiveParser.parse_yaml!(yaml)
+
+    assert directive.learning_objectives == %{
+             section: "demo_section",
+             container: "Unit 1",
+             includes: ["Understand systems"],
+             excludes: ["Unrelated objective"]
+           }
+  end
+
+  test "schema and parser reject learning objective assertions without expectations" do
+    yaml = """
+    - assert:
+        learning_objectives:
+          section: "demo_section"
+          container: "Unit 1"
+    """
+
+    assert {:error, _errors} = Scenarios.validate_yaml(yaml)
+
+    assert_raise RuntimeError,
+                 ~r/learning_objectives assertion requires a non-empty includes or excludes list/,
+                 fn ->
+                   DirectiveParser.parse_yaml!(yaml)
+                 end
   end
 
   test "schema accepts finalize_attempt and gradebook assertions" do

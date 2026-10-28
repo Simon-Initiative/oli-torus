@@ -20,10 +20,13 @@ defmodule Oli.Delivery.Sections do
     DisplayLabels,
     SectionResource,
     SectionResourceDepot,
+    SectionResourceMigration,
     ContainedObjective,
+    LinkedActivities,
     SectionsProjectsPublications,
     Enrollment,
     EnrollmentBrowseOptions,
+    ObjectiveChildrenProjection,
     EnrollmentContextRole,
     Scheduling,
     MinimalHierarchy
@@ -32,7 +35,8 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.Roles.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
-  alias Oli.Lti.LtiParams
+  alias Oli.Lti.LaunchIdentity
+  alias Oli.Lti.PlatformExternalTools
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
@@ -55,9 +59,12 @@ defmodule Oli.Delivery.Sections do
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
   alias Ecto.Multi
+  alias Oli.Analytics.Summary.{ResourcePartResponse, ResourceSummary, StudentResponse}
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
+
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Proficiency
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Branding.CustomLabels
 
@@ -192,6 +199,7 @@ defmodule Oli.Delivery.Sections do
     |> Enum.map(fn {user, context_role_id, enrollment, payment} ->
       Map.merge(user, %{
         enrollment_status: enrollment.status,
+        enrollment_date: enrollment.inserted_at,
         user_role_id: context_role_id,
         payment_status:
           Paywall.summarize_access(
@@ -1313,51 +1321,56 @@ defmodule Oli.Delivery.Sections do
       nil
   """
   def get_section_from_lti_params(lti_params) do
-    context_id =
-      Map.get(lti_params, "https://purl.imsglobal.org/spec/lti/claim/context")
-      |> Map.get("id")
-
-    issuer = lti_params["iss"]
-    client_id = LtiParams.peek_client_id(lti_params)
-
-    get_section_for_lti_context(context_id, issuer, client_id)
+    case LaunchIdentity.from_claims(lti_params) do
+      {:ok, identity} -> get_section_for_launch(identity)
+      :error -> nil
+    end
   end
 
-  def get_section_for_lti_context(context_id, issuer, client_id)
-      when is_binary(context_id) and is_binary(issuer) and is_binary(client_id) do
-    Repo.all(
+  @doc """
+  Returns the active section of one launch identity.
+
+  Every part of the identity is matched, deployment included: two deployments of the same
+  registration can carry the same context id, and each owns its own section.
+  """
+  def get_section_for_launch(%LaunchIdentity{} = identity) do
+    Repo.one(
       from(s in Section,
         join: d in Deployment,
         on: s.lti_1p3_deployment_id == d.id,
         join: r in Registration,
         on: d.registration_id == r.id,
         where:
-          s.context_id == ^context_id and s.status == :active and r.issuer == ^issuer and
-            r.client_id == ^client_id,
+          s.context_id == ^identity.context_id and s.status == :active and
+            r.issuer == ^identity.issuer and r.client_id == ^identity.client_id and
+            d.deployment_id == ^identity.deployment_id,
         order_by: [asc: :id],
         limit: 1,
         select: s
       )
     )
-    |> one_or_warn(context_id)
   end
 
-  def get_section_for_lti_context(_context_id, _issuer, _client_id), do: nil
+  @doc """
+  Returns the active section for an LTI context within one deployment.
 
-  defp one_or_warn(result, context_id) do
-    case result do
-      [] ->
-        nil
-
-      [first] ->
-        first
-
-      [first | _] ->
-        Logger.warning("More than one active section was returned for context_id #{context_id}")
-
-        first
-    end
+  Two deployments of the same registration can carry the same context id, and each owns
+  its own section.
+  """
+  def get_section_for_lti_deployment(context_id, deployment_id)
+      when is_binary(context_id) and is_integer(deployment_id) do
+    Repo.one(
+      from(s in Section,
+        where:
+          s.context_id == ^context_id and s.lti_1p3_deployment_id == ^deployment_id and
+            s.status == :active,
+        order_by: [asc: :id],
+        limit: 1
+      )
+    )
   end
+
+  def get_section_for_lti_deployment(_context_id, _deployment_id), do: nil
 
   @doc """
   Gets the associated deployment and registration from the given section
@@ -1635,6 +1648,28 @@ defmodule Oli.Delivery.Sections do
 
     %Section{}
     |> Section.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Creates a Section whose learning-model selection is copied from a trusted Project or Section.
+
+  The persisted source value takes precedence over any value present in `attrs`.
+  """
+  def create_section_from_source(attrs, %Project{} = source),
+    do: create_section_from_trusted_source(attrs, source.learning_model_version)
+
+  def create_section_from_source(attrs, %Section{} = source),
+    do: create_section_from_trusted_source(attrs, source.learning_model_version)
+
+  defp create_section_from_trusted_source(attrs, learning_model_version) do
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
+    %Section{}
+    |> Section.changeset(attrs)
+    |> Section.trusted_learning_model_changeset(%{
+      learning_model_version: learning_model_version
+    })
     |> Repo.insert()
   end
 
@@ -3986,6 +4021,8 @@ defmodule Oli.Delivery.Sections do
   If a finalized hierarchy node is given, then the section will be rebuilt from it. Otherwise, it
   will be rebuilt from a list of section resources.
 
+  The transaction locks the Section before writing SectionResources to serialize with JIT migration.
+
   project_publications is a map of the project id to the pinned publication for the section.
   %{1 => %Publication{project_id: 1, ...}, ...}
   """
@@ -3996,6 +4033,9 @@ defmodule Oli.Delivery.Sections do
       ) do
     if Hierarchy.finalized?(hierarchy) do
       Multi.new()
+      |> Multi.run(:lock_section, fn _repo, _ ->
+        {:ok, SectionResourceMigration.lock_section!(section_id)}
+      end)
       |> Multi.run(:keep_original_required_assessments_for_certificate, fn _repo, _ ->
         # guarantee no added assessments are required for gaining a certificate
         Certificates.switch_certificate_to_custom_assessments(section)
@@ -4023,7 +4063,7 @@ defmodule Oli.Delivery.Sections do
       # reset any section cached data
       SectionCache.clear(section.slug)
 
-      Oli.Delivery.DepotCoordinator.clear(
+      Oli.Delivery.DepotCoordinator.clear_synchronously(
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
         section_id
       )
@@ -4058,6 +4098,11 @@ defmodule Oli.Delivery.Sections do
     create_section_resources(section, publication)
   end
 
+  @doc """
+  Rebuilds section resources and publication mappings from a finalized hierarchy.
+
+  Locks the Section before projection writes, retaining the lock through any enclosing transaction.
+  """
   def rebuild_section_resources(
         %Section{id: section_id} = section,
         section_resources,
@@ -4066,6 +4111,8 @@ defmodule Oli.Delivery.Sections do
       )
       when is_list(section_resources) do
     Repo.transaction(fn ->
+      SectionResourceMigration.lock_section!(section_id)
+
       previous_section_resource_ids =
         get_section_resources(section_id)
         |> Enum.map(fn sr -> sr.id end)
@@ -4095,6 +4142,7 @@ defmodule Oli.Delivery.Sections do
              :scheduling_type,
              :manually_scheduled,
              :removed_from_schedule,
+             :secure_delivery,
              :start_date,
              :end_date,
              :collab_space_config,
@@ -4578,6 +4626,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Serializes projection writes with JIT migration by locking the Section first.
+
   Gracefully applies the specified publication update to a given section by leaving the existing
   curriculum and section modifications in-tact while applying the structural changes that
   occurred between the old and new publication.
@@ -4587,7 +4637,12 @@ defmodule Oli.Delivery.Sections do
   This makes it simpler to apply changes to the existing curriculum but if necessary, this implementation
   could be extended to not just apply the changes to the first node found that contains the changed resource,
   but any/all nodes in the hierarchy which reference the changed resource.
+
+  Missing LTI selections (resource configurations chosen in external tools) are
+  initialized within the update transaction, preserving existing section choices.
+  Failed initialization never reports a completed update.
   """
+  @spec apply_publication_update(%Section{}, integer()) :: {:ok, {:ok}} | {:error, term()}
   def apply_publication_update(
         %Section{id: section_id} = section,
         publication_id
@@ -4603,7 +4658,8 @@ defmodule Oli.Delivery.Sections do
 
     result =
       case diff do
-        %PublicationDiff{classification: :minor} ->
+        %PublicationDiff{classification: classification}
+        when classification in [:minor, :no_changes] ->
           current_hierarchy = MinimalHierarchy.full_hierarchy(section.slug)
           perform_update(:minor, section, project_id, new_publication, current_hierarchy)
 
@@ -4641,25 +4697,34 @@ defmodule Oli.Delivery.Sections do
           end
       end
 
-    Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
+    case result do
+      {:ok, _} -> Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
+      _ -> Broadcaster.broadcast_update_progress(section.id, new_publication.id, 0)
+    end
 
     result
   end
 
-  # for minor update, all we need to do is update the spp record and
-  # rebuild the section curriculum based on the current hierarchy
+  # Applies a minor publication change using the current section hierarchy and new
+  # publication pin. Missing tool configurations are initialized in the same
+  # transaction, while existing instructor choices are preserved.
   defp perform_update(:minor, section, project_id, new_publication, current_hierarchy) do
     mark = Oli.Timing.mark()
 
     result =
       Repo.transaction(fn ->
+        SectionResourceMigration.lock_section!(section.id)
+
         # Update the section project publication to the new publication
         update_section_project_publication(section, project_id, new_publication.id)
 
         project_publications = get_pinned_project_publications(section.id)
         rebuild_section_curriculum(section, current_hierarchy, project_publications)
 
-        {:ok}
+        case PlatformExternalTools.initialize_section_deep_links(section.id, new_publication.id) do
+          {:ok, _} -> {:ok}
+          {:error, reason} -> Repo.rollback(reason)
+        end
       end)
 
     Logger.info(
@@ -4669,12 +4734,16 @@ defmodule Oli.Delivery.Sections do
     result
   end
 
-  # for major update, update the spp record and use the diff and the AIRRO approach
+  # Reconciles the major publication diff with the section's existing curriculum
+  # using the AIRRO steps below. Missing tool configurations are initialized only
+  # after the destination resources are finalized, within the same transaction.
   defp perform_update(:major, section, project_id, prev_publication, new_publication) do
     mark = Oli.Timing.mark()
 
     result =
       Repo.transaction(fn ->
+        SectionResourceMigration.lock_section!(section.id)
+
         container = ResourceType.id_for_container()
 
         prev_published_resources_map =
@@ -4725,6 +4794,7 @@ defmodule Oli.Delivery.Sections do
                :scheduling_type,
                :manually_scheduled,
                :removed_from_schedule,
+               :secure_delivery,
                :start_date,
                :end_date,
                :collab_space_config,
@@ -4859,6 +4929,7 @@ defmodule Oli.Delivery.Sections do
                :scheduling_type,
                :manually_scheduled,
                :removed_from_schedule,
+               :secure_delivery,
                :start_date,
                :end_date,
                :collab_space_config,
@@ -4893,7 +4964,10 @@ defmodule Oli.Delivery.Sections do
         Oli.Delivery.maybe_update_section_contains_explorations(section)
         Oli.Delivery.maybe_update_section_contains_deliberate_practice(section)
 
-        {:ok}
+        case PlatformExternalTools.initialize_section_deep_links(section.id, new_publication.id) do
+          {:ok, _} -> {:ok}
+          {:error, reason} -> Repo.rollback(reason)
+        end
       end)
 
     Logger.info(
@@ -5047,6 +5121,7 @@ defmodule Oli.Delivery.Sections do
                  :scheduling_type,
                  :manually_scheduled,
                  :removed_from_schedule,
+                 :secure_delivery,
                  :start_date,
                  :end_date,
                  :collab_space_config,
@@ -5140,6 +5215,11 @@ defmodule Oli.Delivery.Sections do
         hierarchy_definition,
         skip_set
       )
+    end
+
+    case ObjectiveChildrenProjection.persist(section_id) do
+      {:ok, _count} -> :ok
+      {:error, reason} -> Repo.rollback(reason)
     end
   end
 
@@ -6105,15 +6185,25 @@ defmodule Oli.Delivery.Sections do
   }
 
   For objectives that are subobjectives, the objective is shown as the `subobjective` like the
-  above example, with the aggregated proficiency for its parent shown.  For objectives that are
-  top level objectives, they appear with their proficiency for only those activities that
-  directly attached to them.
+  above example, with the aggregated proficiency for its parent shown. For objectives that are
+  top level objectives in naive sections, their proficiency is the weighted average of their own directly-attached
+  evidence (when present) combined with all their Sub-LOs' evidence (see
+  `Metrics.evidence_resource_ids/2`) — a leaf objective with no Sub-LOs reduces to just its own
+  directly-attached evidence. LKT-AOA sections use their model provider's parent estimates.
+
+  Only objectives contained by the currently delivered course content are returned, so that the
+  instructor dashboard, the student dashboard and the CSV export report on the same objective set.
 
   ## Options
 
   * `:student_id` - If provided, filters proficiency results for a specific student
   * `:exclude_sub_objectives` - If true, only returns top-level objectives (default: false)
   * `:include_related_activities_count` - If true, includes `related_activities_count` field for each objective. A related activity is any activity that has the objective attached to it in its objectives map (default: false)
+
+  Container scopes union objectives statically attached to pages and embedded activities with
+  objectives from answered activities recorded in per-student analytics summaries. The latter
+  allows realized activity-bank selections to contribute their objectives after learners encounter
+  them.
   """
   def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, opts \\ []) do
     student_id = if opts[:student_id], do: opts[:student_id], else: nil
@@ -6149,7 +6239,7 @@ defmodule Oli.Delivery.Sections do
           |> Map.new()
       end
 
-    objectives =
+    section_objectives =
       objectives_section_resources
       |> Enum.map(fn sr ->
         children =
@@ -6174,20 +6264,62 @@ defmodule Oli.Delivery.Sections do
         }
       end)
 
-    id_list = Enum.map(objectives, & &1.resource_id)
+    # Include both statically contained objectives and objectives realized by enrolled learners.
+    # Building this before the proficiency queries keeps objectives outside delivered content out
+    # of the more expensive metrics work.
+    objective_to_container_ids_map =
+      objective_to_container_ids_map(section.id)
+
+    # Section resources outlive the content that referenced them, so containment - not the
+    # `deleted` flag - decides whether an objective still belongs to the delivered course.
+    root_contained? = fn resource_id ->
+      nil in Map.get(objective_to_container_ids_map, resource_id, [])
+    end
+
+    # From `objectives`, so membership proves a section resource exists: `children` may come from
+    # the revision fallback and name objectives absent here, breaking `lookup_map` below.
+    root_contained_ids =
+      section_objectives
+      |> Enum.filter(&root_contained?.(&1.resource_id))
+      |> MapSet.new(& &1.resource_id)
+
+    # Applied before proficiency so discards never reach the metrics queries. The parent rule
+    # reads `children`, not the expanded rows, so `exclude_sub_objectives` cannot change it.
+    contained_ids =
+      section_objectives
+      |> Enum.filter(fn objective ->
+        MapSet.member?(root_contained_ids, objective.resource_id) or
+          Enum.any?(objective.children, &MapSet.member?(root_contained_ids, &1))
+      end)
+      |> MapSet.new(& &1.resource_id)
+
+    objectives =
+      section_objectives
+      |> Enum.filter(&MapSet.member?(contained_ids, &1.resource_id))
+      |> Enum.map(fn objective ->
+        Map.merge(objective, %{
+          container_ids: Map.get(objective_to_container_ids_map, objective.resource_id, [])
+        })
+      end)
+      |> put_related_activities_count(
+        objectives_section_resources,
+        include_related_activities_count
+      )
 
     proficiencies_for_objectives =
-      Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
+      Metrics.aggregated_proficiency_per_student_for_objectives(section, objectives,
+        student_id: student_id
+      )
 
     student_proficiency_for_objectives =
       if student_id do
-        Enum.reduce(id_list, %{}, fn objective_id, acc ->
-          proficiency =
-            proficiencies_for_objectives
-            |> Map.get(objective_id, %{})
-            |> Map.get(student_id, "Not enough data")
-
-          Map.put(acc, objective_id, proficiency)
+        Enum.reduce(objectives, %{}, fn objective, acc ->
+          Map.put(
+            acc,
+            objective.resource_id,
+            get_in(proficiencies_for_objectives, [objective.resource_id, student_id]) ||
+              "Not enough data"
+          )
         end)
       else
         %{}
@@ -6196,25 +6328,15 @@ defmodule Oli.Delivery.Sections do
     {student_ids, proficiency_dist_for_objectives} =
       if is_nil(student_id) do
         student_ids = Sections.enrolled_student_ids(section_slug)
-        student_id_set = MapSet.new(student_ids)
 
         proficiency_dist_for_objectives =
-          proficiencies_for_objectives
-          |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
-            # Filter proficiency data to only include enrolled students (exclude instructors)
-            filtered_student_proficiency =
-              student_proficiency
-              |> Enum.filter(fn {user_id, _proficiency_level} ->
-                MapSet.member?(student_id_set, user_id)
-              end)
-              |> Map.new()
-
-            # Add "Not enough data" for students who don't have proficiency data
+          objectives
+          |> Enum.reduce(%{}, fn objective, acc ->
             student_proficiency =
-              student_ids
-              |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
-              |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
-                Map.put(acc, user_id, "Not enough data")
+              Enum.into(student_ids, %{}, fn enrolled_student_id ->
+                {enrolled_student_id,
+                 get_in(proficiencies_for_objectives, [objective.resource_id, enrolled_student_id]) ||
+                   "Not enough data"}
               end)
 
             proficiency_dist =
@@ -6246,7 +6368,7 @@ defmodule Oli.Delivery.Sections do
                 {proficiency_mode, proficiency_dist}
               end
 
-            Map.put(acc, objective_id,
+            Map.put(acc, objective.resource_id,
               proficiency_dist: proficiency_dist,
               proficiency_mode: proficiency_mode
             )
@@ -6257,30 +6379,32 @@ defmodule Oli.Delivery.Sections do
         {[], %{}}
       end
 
-    objective_to_container_ids_map =
-      from(co in ContainedObjective)
-      |> where([co], co.section_id == ^section.id)
-      |> select([co], co)
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn co, acc ->
-        Map.update(acc, co.objective_id, [co.container_id], &(&1 ++ [co.container_id]))
-      end)
+    # Confidence is only meaningful for models that compute it, and only for the
+    # class-wide view (a single student's own confidence isn't rolled up here).
+    confidence_for_objectives =
+      if is_nil(student_id) and Proficiency.confidence_supported?(section) do
+        confidence_per_student =
+          Metrics.confidence_per_student_for_objective(
+            section,
+            Enum.map(objectives, & &1.resource_id)
+          )
 
-    objectives =
-      if include_related_activities_count do
-        # Use pre-calculated related_activities field for performance
-        Enum.map(objectives, fn obj ->
-          Map.merge(obj, %{
-            container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, []),
-            related_activities_count: length(obj.related_activities || [])
-          })
+        Map.new(objectives, fn objective ->
+          confidences =
+            confidence_per_student
+            |> Map.get(objective.resource_id, %{})
+            |> Map.values()
+
+          label =
+            case confidences do
+              [] -> nil
+              values -> Metrics.confidence_label(Enum.sum(values) / length(values))
+            end
+
+          {objective.resource_id, label}
         end)
       else
-        Enum.map(objectives, fn obj ->
-          Map.merge(obj, %{
-            container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, [])
-          })
-        end)
+        %{}
       end
 
     lookup_map =
@@ -6329,17 +6453,24 @@ defmodule Oli.Delivery.Sections do
               objective_resource_id: objective.resource_id,
               student_proficiency_obj: student_proficiency_obj,
               student_proficiency_obj_dist: student_proficiency_obj_dist,
+              confidence_obj: Map.get(confidence_for_objectives, objective.resource_id),
               subobjective: nil,
               subobjective_resource_id: nil,
-              student_proficiency_subobj: nil
+              student_proficiency_subobj: nil,
+              confidence_subobj: nil
             })
 
           case exclude_sub_objectives do
             false ->
               # this is a top-level objective, so we need to include its subobjectives
               # in the result set as well
+              # `children` keeps every authored subobjective so callers can still resolve them
+              # by id; only contained ones become rows here, and membership in
+              # `root_contained_ids` guarantees `lookup_map` resolves them.
               sub_objectives =
-                Enum.map(objective.children, fn child ->
+                objective.children
+                |> Enum.filter(&MapSet.member?(root_contained_ids, &1))
+                |> Enum.map(fn child ->
                   sub_objective = Map.get(lookup_map, child)
 
                   {student_proficiency_subobj, student_proficiency_subobj_dist} =
@@ -6367,10 +6498,13 @@ defmodule Oli.Delivery.Sections do
                     objective_resource_id: objective.resource_id,
                     student_proficiency_obj: student_proficiency_obj,
                     student_proficiency_obj_dist: student_proficiency_obj_dist,
+                    confidence_obj: Map.get(confidence_for_objectives, objective.resource_id),
                     subobjective: sub_objective.title,
                     subobjective_resource_id: sub_objective.resource_id,
                     student_proficiency_subobj: student_proficiency_subobj,
-                    student_proficiency_subobj_dist: student_proficiency_subobj_dist
+                    student_proficiency_subobj_dist: student_proficiency_subobj_dist,
+                    confidence_subobj:
+                      Map.get(confidence_for_objectives, sub_objective.resource_id)
                   })
                 end)
 
@@ -6387,6 +6521,131 @@ defmodule Oli.Delivery.Sections do
       end
     end)
   end
+
+  defp put_related_activities_count(objectives, _objectives_section_resources, false),
+    do: objectives
+
+  defp put_related_activities_count(objectives, objectives_section_resources, true) do
+    counts =
+      objectives_section_resources
+      |> SectionResourceDepot.hydrate_objective_children()
+      |> LinkedActivities.activity_counts_by_family()
+
+    Enum.map(objectives, fn objective ->
+      Map.put(objective, :related_activities_count, Map.fetch!(counts, objective.resource_id))
+    end)
+  end
+
+  defp objective_to_container_ids_map(section_id) do
+    from(co in ContainedObjective,
+      where: co.section_id == ^section_id,
+      select: {co.objective_id, co.container_id}
+    )
+    |> Repo.all()
+    |> Enum.concat(realized_objective_container_pairs(section_id))
+    |> Enum.reduce(%{}, fn {objective_id, container_id}, acc ->
+      Map.update(acc, objective_id, MapSet.new([container_id]), &MapSet.put(&1, container_id))
+    end)
+    |> Map.new(fn {objective_id, container_ids} ->
+      {objective_id, container_ids |> MapSet.to_list() |> Enum.sort()}
+    end)
+  end
+
+  # Student response summaries retain the page on which an activity was answered. Pair them with
+  # per-student resource summaries to scope realized bank objectives without scanning attempts.
+  defp realized_objective_container_pairs(section_id) do
+    activity_type_id = ResourceType.id_for_activity()
+
+    # Match each recorded response to its own learner's evidence. Joining summaries
+    # to all response variants for an activity/part first creates a learner-by-response
+    # cross product. Deduplicate page/part membership before expanding containers or
+    # loading revision JSON, whose work should not grow with enrollment.
+    attempted_part =
+      from(summary in ResourceSummary,
+        where:
+          summary.project_id == -1 and summary.section_id == ^section_id and
+            summary.resource_type_id == ^activity_type_id and summary.num_attempts > 0 and
+            summary.user_id == parent_as(:response).user_id and
+            summary.resource_id == parent_as(:response).resource_id and
+            summary.part_id == parent_as(:response).part_id,
+        select: 1
+      )
+
+    recorded_parts =
+      from(student_response in StudentResponse,
+        join: resource_part_response in ResourcePartResponse,
+        on: resource_part_response.id == student_response.resource_part_response_id,
+        join: enrollment in Enrollment,
+        on:
+          enrollment.section_id == student_response.section_id and
+            enrollment.user_id == student_response.user_id,
+        join: enrollment_context_role in EnrollmentContextRole,
+        on: enrollment_context_role.enrollment_id == enrollment.id,
+        where:
+          student_response.section_id == ^section_id and
+            enrollment.status == :enrolled and
+            enrollment_context_role.context_role_id == ^@student_role_id,
+        distinct: true,
+        select: %{
+          user_id: student_response.user_id,
+          page_id: student_response.page_id,
+          resource_id: resource_part_response.resource_id,
+          part_id: resource_part_response.part_id
+        }
+      )
+
+    realized_parts =
+      from(response in subquery(recorded_parts),
+        as: :response,
+        where: exists(subquery(attempted_part)),
+        distinct: true,
+        select: %{
+          page_id: response.page_id,
+          resource_id: response.resource_id,
+          part_id: response.part_id
+        }
+      )
+
+    from(part in subquery(realized_parts),
+      join: contained_page in ContainedPage,
+      on:
+        contained_page.section_id == ^section_id and
+          contained_page.page_id == part.page_id,
+      join: spp in SectionsProjectsPublications,
+      on: spp.section_id == ^section_id,
+      join: published_resource in PublishedResource,
+      on:
+        published_resource.publication_id == spp.publication_id and
+          published_resource.resource_id == part.resource_id,
+      join: activity_revision in Revision,
+      on: activity_revision.id == published_resource.revision_id,
+      where: activity_revision.deleted == false,
+      distinct: [contained_page.container_id, activity_revision.id, part.part_id],
+      select: %{
+        container_id: contained_page.container_id,
+        objectives: activity_revision.objectives,
+        part_id: part.part_id
+      }
+    )
+    |> Repo.all()
+    |> Enum.flat_map(fn result ->
+      objective_ids_for_part(result.objectives, result.part_id)
+      |> Enum.map(&{&1, result.container_id})
+    end)
+  end
+
+  defp objective_ids_for_part(objectives, part_id) when is_map(objectives) do
+    objectives
+    |> Map.get(part_id, [])
+    |> List.wrap()
+    |> Enum.filter(&is_integer/1)
+  end
+
+  defp objective_ids_for_part(objectives, _part_id) when is_list(objectives) do
+    Enum.filter(objectives, &is_integer/1)
+  end
+
+  defp objective_ids_for_part(_objectives, _part_id), do: []
 
   @doc """
   Returns the container label and numbering for a given container.
@@ -7142,147 +7401,5 @@ defmodule Oli.Delivery.Sections do
     Enum.any?(@instructor_roles, fn r ->
       ContextRoles.contains_role?(roles, r)
     end)
-  end
-
-  @doc """
-  Gets all evaluated activities that have a specific objective attached to them in the given section.
-  Now uses the pre-calculated related_activities field from SectionResourceDepot for performance.
-  """
-  def get_activities_for_objective(section, resource_id) do
-    # Get the objective section resource with its pre-calculated related_activities
-    case SectionResourceDepot.get_section_resource(section.id, resource_id) do
-      nil ->
-        []
-
-      objective_sr ->
-        # Get the related activity IDs from the pre-calculated field
-        activity_ids = objective_sr.related_activities || []
-
-        if Enum.empty?(activity_ids) do
-          []
-        else
-          # Resolve activity revisions for the related activities
-          activities =
-            activity_ids
-            |> Enum.map(fn activity_resource_id ->
-              case DeliveryResolver.from_resource_id(section.slug, activity_resource_id) do
-                nil ->
-                  nil
-
-                revision ->
-                  %{
-                    resource_id: revision.resource_id,
-                    title: revision.title,
-                    content: revision.content,
-                    slug: revision.slug
-                  }
-              end
-            end)
-            |> Enum.reject(&is_nil/1)
-
-          # Single query to get all metrics at once
-          metrics_map = calculate_all_activity_metrics(section, activity_ids)
-
-          # Map activities with their pre-calculated metrics
-          activities
-          |> Enum.map(fn activity ->
-            question_stem = extract_question_stem(activity.content)
-            {attempts, percent_correct} = Map.get(metrics_map, activity.resource_id, {0, 0})
-
-            %{
-              resource_id: activity.resource_id,
-              title: activity.title,
-              question_stem: question_stem,
-              attempts: attempts,
-              percent_correct: percent_correct,
-              slug: activity.slug
-            }
-          end)
-        end
-    end
-  end
-
-  # Extracts question text from activity content for display purposes.
-  #
-  # This function follows the same pattern as activity renderers to extract text from
-  # activity content structures. It prioritizes the activity stem content, falls back
-  # to general activity content, and leverages the robust content rendering system.
-  #
-  # Content Structure Patterns:
-  # - content["stem"]["content"] - Structured activity stem content (most common)
-  # - content["stem"] - Simple stem text string
-  # - content["content"] - General activity content as fallback
-  #
-  # Returns "No question stem available" if no text can be extracted.
-  defp extract_question_stem(content) when is_map(content) do
-    # Follow the same pattern as the activity renderers
-    case Map.get(content, "stem") do
-      %{"content" => stem_content} when is_list(stem_content) ->
-        OliWeb.Common.Utils.extract_text_from_content(stem_content)
-
-      stem_text when is_binary(stem_text) ->
-        stem_text
-
-      _ ->
-        # Fallback to activity content field
-        case Map.get(content, "content") do
-          content_list when is_list(content_list) ->
-            OliWeb.Common.Utils.extract_text_from_content(content_list)
-
-          _ ->
-            "No question stem available"
-        end
-    end
-  rescue
-    _ -> "No question stem available"
-  end
-
-  defp extract_question_stem(_), do: "No question stem available"
-
-  defp calculate_all_activity_metrics(section, activity_ids) when is_list(activity_ids) do
-    if Enum.empty?(activity_ids) do
-      %{}
-    else
-      # Single query to get all attempt data for all activities at once
-      query =
-        from(aa in Oli.Delivery.Attempts.Core.ActivityAttempt,
-          join: ra in Oli.Delivery.Attempts.Core.ResourceAttempt,
-          on: aa.resource_attempt_id == ra.id,
-          join: rac in Oli.Delivery.Attempts.Core.ResourceAccess,
-          on: ra.resource_access_id == rac.id,
-          where:
-            rac.section_id == ^section.id and aa.resource_id in ^activity_ids and
-              aa.lifecycle_state == :evaluated,
-          select: %{
-            resource_id: aa.resource_id,
-            score: aa.score,
-            out_of: aa.out_of
-          }
-        )
-
-      attempts_data = Repo.all(query)
-
-      # Group by resource_id and calculate metrics
-      attempts_data
-      |> Enum.group_by(& &1.resource_id)
-      |> Enum.reduce(%{}, fn {resource_id, attempts}, acc ->
-        total_attempts = length(attempts)
-
-        correct_attempts =
-          attempts
-          |> Enum.count(fn attempt ->
-            attempt.score && attempt.out_of && attempt.score == attempt.out_of
-          end)
-
-        percent_correct =
-          if total_attempts > 0 do
-            (correct_attempts / total_attempts * 100) |> Float.round(1)
-          else
-            0
-          end
-
-        Map.put(acc, resource_id, {total_attempts, percent_correct})
-      end)
-    end
   end
 end

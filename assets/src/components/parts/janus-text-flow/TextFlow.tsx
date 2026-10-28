@@ -98,18 +98,19 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   const [state, setState] = useState<any>({});
   const [model, _setModel] = useState<any>(props.model);
   const [ready, setReady] = useState<boolean>(false);
+  const [responsiveLayout, setResponsiveLayout] = useState(false);
   const [scriptEnv, setScriptEnv] = useState<any>();
   const [textVisible, setTextVisible] = useState<boolean>(
     props.model.visible === undefined ? true : props.model.visible,
   );
   const id: string = props.id;
 
-  const handleStylingChanges = () => {
+  const handleStylingChanges = (isResponsive: boolean) => {
     const styleChanges: any = {};
     if (width !== undefined) {
       styleChanges.width = { value: width as number };
     }
-    if (height != undefined && props.model.overrideHeight) {
+    if (height != undefined && overrideHeight && !isResponsive) {
       styleChanges.height = { value: height as number };
     }
     props.onResize({ id: `${id}`, settings: styleChanges });
@@ -131,7 +132,9 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
       const flowEnv = new Environment(initResult.env);
       setScriptEnv(flowEnv);
     }
-    handleStylingChanges();
+    const isResponsive = initResult.context?.responsiveLayout === true;
+    setResponsiveLayout(isResponsive);
+    handleStylingChanges(isResponsive);
     setReady(true);
   }, []);
 
@@ -212,7 +215,8 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   if (overrideWidth) {
     styles.width = width;
   }
-  if (overrideHeight) {
+  // Keep the authored height for fixed layout; responsive text must grow with its content.
+  if (overrideHeight && !responsiveLayout) {
     styles.height = height;
   }
 

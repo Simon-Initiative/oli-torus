@@ -12,6 +12,7 @@ interface GroupEditorProps extends EditorProps {
 export const GroupEditor = ({
   resourceContext,
   editMode,
+  supportsLtiConfiguration,
   projectSlug,
   resourceSlug,
   contentItem,
@@ -32,6 +33,9 @@ export const GroupEditor = ({
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
+  onStartLearningObjectivesRefresh,
+  onRefreshLearningObjectives,
+  onFinishLearningObjectivesRefresh,
   onDuplicate,
 }: GroupEditorProps) => {
   const onEditChild = (child: ResourceContent) => {
@@ -57,6 +61,9 @@ export const GroupEditor = ({
               resourceContext={resourceContext}
               featureFlags={featureFlags}
               onAddItem={onAddItem}
+              onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
+              onRefreshLearningObjectives={onRefreshLearningObjectives}
+              onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
               onRegisterNewObjective={onRegisterNewObjective}
             />
             {createEditor({
@@ -66,6 +73,7 @@ export const GroupEditor = ({
               parents: [...parents, contentItem],
               activities,
               editMode,
+              supportsLtiConfiguration,
               resourceSlug,
               projectSlug,
               graded,
@@ -83,6 +91,9 @@ export const GroupEditor = ({
               onRegisterNewObjective,
               onRegisterNewTag,
               onAddItem,
+              onStartLearningObjectivesRefresh,
+              onRefreshLearningObjectives,
+              onFinishLearningObjectivesRefresh,
               onDuplicate,
             })}
           </div>
@@ -96,6 +107,9 @@ export const GroupEditor = ({
         resourceContext={resourceContext}
         featureFlags={featureFlags}
         onAddItem={onAddItem}
+        onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
+        onRefreshLearningObjectives={onRefreshLearningObjectives}
+        onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
         onRegisterNewObjective={onRegisterNewObjective}
       />
     </>

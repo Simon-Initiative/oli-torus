@@ -6,7 +6,7 @@ import { FeatureFlags } from 'apps/page-editor/types';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Objective, ResourceId } from 'data/content/objective';
-import { ResourceContent, ResourceContext } from 'data/content/resource';
+import { ResolvedLearningObjective, ResourceContent, ResourceContext } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
 import { ProjectSlug, ResourceSlug } from 'data/types';
@@ -19,6 +19,7 @@ import { EditorErrorBoundary } from './editor_error_boundary';
 export type EditorsProps = {
   className?: ClassName;
   editMode: boolean;
+  supportsLtiConfiguration?: boolean;
   content: PageEditorContent;
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   graded: boolean;
@@ -34,6 +35,12 @@ export type EditorsProps = {
   onEdit: (content: PageEditorContent) => void;
   onRemove: (id: string) => void;
   onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
+  onStartLearningObjectivesRefresh: (contentId: string) => void;
+  onRefreshLearningObjectives: (
+    contentId: string,
+    learningObjectives: ResolvedLearningObjective[],
+  ) => void;
+  onFinishLearningObjectivesRefresh: (contentId: string) => void;
   onRegisterNewObjective: (o: Objective) => void;
   onRegisterNewTag: (o: Tag) => void;
   onEditActivity: (id: string, update: EditorUpdate) => void;
@@ -61,6 +68,9 @@ export const Editors = (props: EditorsProps) => {
     featureFlags,
     editorsRef,
     onAddItem,
+    onStartLearningObjectivesRefresh,
+    onRefreshLearningObjectives,
+    onFinishLearningObjectivesRefresh,
     onEditActivity,
     onPostUndoable,
     onRegisterNewObjective,
@@ -87,6 +97,7 @@ export const Editors = (props: EditorsProps) => {
       parents: [],
       activities: activityContexts,
       editMode,
+      supportsLtiConfiguration: props.supportsLtiConfiguration,
       resourceSlug,
       projectSlug,
       graded,
@@ -103,6 +114,9 @@ export const Editors = (props: EditorsProps) => {
       onRegisterNewObjective,
       onRegisterNewTag,
       onAddItem,
+      onStartLearningObjectivesRefresh,
+      onRefreshLearningObjectives,
+      onFinishLearningObjectivesRefresh,
       onRemove,
       onDuplicate,
     });
@@ -120,6 +134,9 @@ export const Editors = (props: EditorsProps) => {
           resourceContext={props.resourceContext}
           featureFlags={featureFlags}
           onAddItem={onAddItem}
+          onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
+          onRefreshLearningObjectives={onRefreshLearningObjectives}
+          onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
           onRegisterNewObjective={props.onRegisterNewObjective}
         />
 
@@ -151,6 +168,9 @@ export const Editors = (props: EditorsProps) => {
         resourceContext={props.resourceContext}
         featureFlags={featureFlags}
         onAddItem={onAddItem}
+        onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
+        onRefreshLearningObjectives={onRefreshLearningObjectives}
+        onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
         onRegisterNewObjective={props.onRegisterNewObjective}
       />
     </div>

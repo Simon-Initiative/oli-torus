@@ -8,8 +8,11 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
   alias Oli.Seeder
 
   alias Oli.Delivery.Attempts.Core, as: Attempts
+  alias Oli.Delivery.Attempts.ActivityLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Activities
+  alias Oli.Activities.Model.Part
 
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -243,6 +246,531 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         )
 
       assert conn.resp_body =~ ~s(command not supported)
+      assert get_resp_header(conn, "content-type") == ["text/plain; charset=utf-8"]
+    end
+
+    test "loads a saved activity file using its persisted MIME type", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      attempt_map =
+        map
+        |> Map.put(:user, user)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user,
+          :page,
+          :resource_attempt
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity,
+          :resource_attempt,
+          :activity_attempt
+        )
+
+      activity_attempt = attempt_map.activity_attempt
+      saved_state = ~s({"steps":["first"]})
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "writeFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "byteEncoding" => "utf8",
+            "fileName" => "state.json",
+            "fileRecordData" => saved_state,
+            "resourceTypeID" => "oli_embedded",
+            "mimeType" => "application/json",
+            "userGuid" => Integer.to_string(user.id),
+            "attemptNumber" => 1
+          }
+        )
+
+      assert get_resp_header(conn, "content-type") == ["text/xml; charset=utf-8"]
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "loadFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "fileName" => "state.json",
+            "attemptNumber" => 1
+          }
+        )
+
+      assert conn.resp_body == saved_state
+      assert get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
+    end
+
+    test "does not reflect an active saved-file MIME type", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      attempt_map =
+        map
+        |> Map.put(:user, user)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user,
+          :page,
+          :resource_attempt
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity,
+          :resource_attempt,
+          :activity_attempt
+        )
+
+      activity_attempt = attempt_map.activity_attempt
+      saved_state = "<script>alert('unsafe')</script>"
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "writeFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "byteEncoding" => "utf8",
+            "fileName" => "state.html",
+            "fileRecordData" => saved_state,
+            "resourceTypeID" => "oli_embedded",
+            "mimeType" => "text/html",
+            "userGuid" => Integer.to_string(user.id),
+            "attemptNumber" => 1
+          }
+        )
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "loadFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "fileName" => "state.html",
+            "attemptNumber" => 1
+          }
+        )
+
+      assert conn.resp_body == saved_state
+      assert get_resp_header(conn, "content-type") == ["application/octet-stream; charset=utf-8"]
+      assert get_resp_header(conn, "x-content-type-options") == ["nosniff"]
+    end
+
+    test "communicates review mode to the embedded activity", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      attempt_map =
+        map
+        |> Map.put(:user, user)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user,
+          :page,
+          :resource_attempt
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity,
+          :resource_attempt,
+          :activity_attempt
+        )
+
+      response =
+        conn
+        |> recycle()
+        |> log_in_user(user)
+        |> get(
+          Routes.legacy_superactivity_path(
+            conn,
+            :context,
+            attempt_map.activity_attempt.attempt_guid,
+            mode: "review"
+          )
+        )
+        |> json_response(200)
+
+      assert response["mode"] == "review"
+      assert response["server_url"] =~ "/jcourse/superactivity/server?mode=review"
+
+      assert response["server_url"] =~
+               "reviewAttemptGuid=#{attempt_map.activity_attempt.attempt_guid}"
+
+      {:ok, {hidden_instructor, _token}} = Sections.fetch_hidden_instructor(section.id)
+
+      inferred_response =
+        conn
+        |> recycle()
+        |> log_in_user(hidden_instructor)
+        |> get(
+          Routes.legacy_superactivity_path(
+            conn,
+            :context,
+            attempt_map.activity_attempt.attempt_guid
+          )
+        )
+        |> json_response(200)
+
+      assert inferred_response["mode"] == "review"
+    end
+
+    test "review mode ignores persistence and grading requests", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      attempt_map =
+        map
+        |> Map.put(:user, user)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1, lifecycle_state: :active},
+          :user,
+          :page,
+          :resource_attempt
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, lifecycle_state: :active, transformed_model: nil},
+          :activity,
+          :resource_attempt,
+          :activity_attempt
+        )
+        |> Seeder.create_part_attempt(
+          %{attempt_number: 1, lifecycle_state: :active},
+          %Part{id: "1431162465", responses: [], hints: []},
+          :activity_attempt,
+          :part_attempt
+        )
+
+      evaluated_activity_attempt =
+        Oli.Repo.update!(
+          Ecto.Changeset.change(attempt_map.activity_attempt, %{
+            date_evaluated: DateTime.utc_now() |> DateTime.truncate(:second)
+          })
+        )
+
+      attempt_map = %{attempt_map | activity_attempt: evaluated_activity_attempt}
+
+      attempt_guid = attempt_map.activity_attempt.attempt_guid
+      user_id = Integer.to_string(user.id)
+
+      write_conn =
+        conn
+        |> recycle()
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process, mode: "delivery"),
+          %{
+            "commandName" => "writeFileRecord",
+            "activityContextGuid" => attempt_guid,
+            "byteEncoding" => "utf8",
+            "fileName" => "review-state.json",
+            "fileRecordData" => ~s({"changed":true}),
+            "resourceTypeID" => "oli_embedded",
+            "mimeType" => "application/json",
+            "userGuid" => user_id,
+            "attemptNumber" => 1
+          }
+        )
+
+      assert response(write_conn, 200) =~ ~s(<file_record file_name="review-state.json")
+
+      assert ActivityLifecycle.get_activity_attempt_save_file(
+               attempt_guid,
+               user_id,
+               1,
+               "review-state.json"
+             ) == nil
+
+      saved_state = ~s({"steps":["first"]})
+
+      {:ok, _save_file} =
+        ActivityLifecycle.save_activity_attempt_state_file(%{
+          attempt_guid: attempt_guid,
+          attempt_number: 1,
+          activity_type: "oli_embedded",
+          byte_encoding: "utf8",
+          content: URI.encode(saved_state),
+          file_name: "existing-state.json",
+          mime_type: "application/json",
+          user_id: user_id
+        })
+
+      {:ok, {hidden_instructor, _token}} = Sections.fetch_hidden_instructor(section.id)
+
+      load_conn =
+        conn
+        |> recycle()
+        |> log_in_user(hidden_instructor)
+        |> post(
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            mode: "review",
+            reviewAttemptGuid: attempt_guid
+          ),
+          %{
+            "commandName" => "loadFileRecord",
+            "activityContextGuid" => "undefined",
+            "fileName" => "existing-state.json",
+            "attemptNumber" => 1
+          }
+        )
+
+      assert response(load_conn, 200) == saved_state
+
+      score_conn =
+        conn
+        |> recycle()
+        |> log_in_user(hidden_instructor)
+        |> post(
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            mode: "review",
+            reviewAttemptGuid: attempt_guid
+          ),
+          %{
+            "commandName" => "scoreAttempt",
+            "activityContextGuid" => "undefined",
+            "scoreValue" => "1",
+            "scoreId" => "percent"
+          }
+        )
+
+      assert response(score_conn, 200) =~ ~s(<attempt_history max_attempts=)
+
+      end_conn =
+        conn
+        |> recycle()
+        |> log_in_user(hidden_instructor)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process, mode: "review"),
+          %{
+            "commandName" => "endAttempt",
+            "activityContextGuid" => attempt_guid
+          }
+        )
+
+      assert response(end_conn, 200) =~ ~s(<attempt_history max_attempts=)
+
+      unchanged_attempt = Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
+      assert unchanged_attempt.lifecycle_state == :active
+      assert unchanged_attempt.score == nil
+
+      unchanged_part_attempt =
+        Attempts.get_part_attempt_by(attempt_guid: attempt_map.part_attempt.attempt_guid)
+
+      assert unchanged_part_attempt.score == nil
+    end
+
+    test "restricts saved-file reads to the attempt owner and section instructors", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      attempt_map =
+        map
+        |> Map.put(:user, user)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user,
+          :page,
+          :resource_attempt
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity,
+          :resource_attempt,
+          :activity_attempt
+        )
+
+      activity_attempt = attempt_map.activity_attempt
+      saved_state = ~s({"steps":["first"]})
+
+      recycle(conn)
+      |> log_in_user(user)
+      |> post(
+        Routes.legacy_superactivity_path(conn, :process),
+        %{
+          "commandName" => "writeFileRecord",
+          "activityContextGuid" => activity_attempt.attempt_guid,
+          "byteEncoding" => "utf8",
+          "fileName" => "state.json",
+          "fileRecordData" => saved_state,
+          "resourceTypeID" => "oli_embedded",
+          "mimeType" => "application/json",
+          "userGuid" => Integer.to_string(user.id),
+          "attemptNumber" => 1
+        }
+      )
+
+      other_learner = user_fixture()
+      Sections.enroll(other_learner.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      unauthorized_conn =
+        recycle(conn)
+        |> log_in_user(other_learner)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "loadFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "fileName" => "state.json",
+            "attemptNumber" => 1
+          }
+        )
+
+      assert response(unauthorized_conn, 403) == "Unauthorized"
+
+      unauthorized_context_conn =
+        recycle(conn)
+        |> log_in_user(other_learner)
+        |> get(Routes.legacy_superactivity_path(conn, :context, activity_attempt.attempt_guid))
+
+      assert response(unauthorized_context_conn, 403) == "Unauthorized"
+
+      {:ok, {hidden_instructor, _token}} = Sections.fetch_hidden_instructor(section.id)
+
+      instructor_conn =
+        recycle(conn)
+        |> log_in_user(hidden_instructor)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "loadFileRecord",
+            "activityContextGuid" => activity_attempt.attempt_guid,
+            "fileName" => "state.json",
+            "attemptNumber" => 1
+          }
+        )
+
+      assert response(instructor_conn, 200) == saved_state
+
+      instructor_context_conn =
+        recycle(conn)
+        |> log_in_user(hidden_instructor)
+        |> get(Routes.legacy_superactivity_path(conn, :context, activity_attempt.attempt_guid))
+
+      assert response(instructor_context_conn, 200) =~ activity_attempt.attempt_guid
+    end
+
+    test "endAttempt broadcasts page finalization and schedules grade passback", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      {:ok, section} = Sections.update_section(section, %{grade_passback_enabled: true})
+
+      page_revision =
+        map.page.revision
+        |> Ecto.Changeset.change(%{graded: true})
+        |> Oli.Repo.update!()
+
+      Sections.get_section_resource(section.id, page_revision.resource_id)
+      |> Sections.update_section_resource(%{batch_scoring: true})
+
+      attempt_map =
+        map
+        |> put_in([:page, :revision], page_revision)
+        |> Map.put(:section, section)
+        |> Map.put(:user, user)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1, lifecycle_state: :active},
+          :user,
+          :page,
+          :resource_attempt
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, lifecycle_state: :active, transformed_model: nil},
+          :activity,
+          :resource_attempt,
+          :activity_attempt
+        )
+        |> Seeder.create_part_attempt(
+          %{attempt_number: 1, lifecycle_state: :active},
+          %Part{id: "1431162465", responses: [], hints: []},
+          :activity_attempt,
+          :part_attempt
+        )
+
+      Broadcaster.subscribe_to_page_attempt_finalized(attempt_map.resource_attempt.attempt_guid)
+
+      other_user = user_fixture()
+      Sections.enroll(other_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      unauthorized_conn =
+        recycle(conn)
+        |> log_in_user(other_user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "endAttempt",
+            "activityContextGuid" => attempt_map.activity_attempt.attempt_guid
+          }
+        )
+
+      assert response(unauthorized_conn, 403) == "Unauthorized"
+      refute_receive {:page_attempt_finalized, _resource_attempt_guid}
+
+      assert Attempts.get_resource_attempt_by(
+               attempt_guid: attempt_map.resource_attempt.attempt_guid
+             ).lifecycle_state == :active
+
+      assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() == []
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+        |> post(
+          Routes.legacy_superactivity_path(conn, :process),
+          %{
+            "commandName" => "endAttempt",
+            "activityContextGuid" => attempt_map.activity_attempt.attempt_guid
+          }
+        )
+
+      assert conn.resp_body =~ ~s(<attempt_history max_attempts=)
+
+      assert_receive {:page_attempt_finalized, resource_attempt_guid}
+      assert resource_attempt_guid == attempt_map.resource_attempt.attempt_guid
+
+      assert Attempts.get_resource_attempt_by(
+               attempt_guid: attempt_map.resource_attempt.attempt_guid
+             ).lifecycle_state == :evaluated
+
+      assert length(Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs()) == 1
     end
 
     test "creates and services an embedded preview session", %{
@@ -256,7 +784,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       preview_attempt_guid = Ecto.UUID.generate()
 
       preview_storage_path =
-        "/preview-save-files/#{preview_attempt_guid}/1/#{Base.url_encode64("preview.xml", padding: false)}"
+        "/preview-save-files/#{preview_attempt_guid}/1/#{Base.url_encode64("preview.json", padding: false)}"
+
+      saved_state = ~s({"preview":true})
 
       expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
         normalized_path = normalize_s3_path(op.path)
@@ -264,12 +794,12 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         cond do
           op.http_method == :put ->
             assert normalized_path == preview_storage_path
-            assert op.body == "<preview />"
+            assert op.body == saved_state
             {:ok, %{status_code: 200}}
 
           op.http_method == :get ->
             assert normalized_path == preview_storage_path
-            {:ok, %{status_code: 200, body: "<preview />"}}
+            {:ok, %{status_code: 200, body: saved_state}}
         end
       end)
 
@@ -371,17 +901,17 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
               "commandName" => "writeFileRecord",
               "activityContextGuid" => preview_attempt_guid,
               "byteEncoding" => "utf8",
-              "fileName" => "preview.xml",
-              "fileRecordData" => "<preview />",
+              "fileName" => "preview.json",
+              "fileRecordData" => saved_state,
               "resourceTypeID" => "oli_embedded",
-              "mimeType" => "xml",
+              "mimeType" => "application/json",
               "userGuid" => user.id,
               "attemptNumber" => 1
             }
           )
         )
 
-      assert conn.resp_body =~ ~s(<file_record file_name="preview.xml")
+      assert conn.resp_body =~ ~s(<file_record file_name="preview.json")
 
       conn =
         recycle(conn)
@@ -397,13 +927,14 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
             %{
               "commandName" => "loadFileRecord",
               "activityContextGuid" => preview_attempt_guid,
-              "fileName" => "preview.xml",
+              "fileName" => "preview.json",
               "attemptNumber" => 1
             }
           )
         )
 
-      assert conn.resp_body == "<preview />"
+      assert conn.resp_body == saved_state
+      assert get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
 
       conn =
         recycle(conn)
@@ -635,6 +1166,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       model =
         content
         |> Map.put("resourceBase", "bundles/attacker-controlled-bundle")
+        |> Map.put("suppressReviewInteraction", true)
         |> Map.put(
           "modelXml",
           """
@@ -692,6 +1224,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
                "src" => "index.html",
                "stem" => content["stem"],
                "supportingFilesPath" => "webcontent/",
+               "suppressReviewInteraction" => true,
                "title" => "Embedded activity",
                "version" => 1
              }
@@ -1000,6 +1533,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
                "src" => "index.html",
                "manifestXmlFile" => "manifest.xml",
                "supportingFilesPath" => "webcontent/",
+               "suppressReviewInteraction" => true,
                "title" => "Imported Embedded Activity",
                "stem" => %{"id" => "stem-id", "content" => []},
                "authoring" => %{
@@ -1061,6 +1595,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
                  "resourceBase" => ^existing_resource_base,
                  "resourceURLs" => resource_urls,
                  "resourceVerification" => %{},
+                 "suppressReviewInteraction" => true,
                  "authoring" => %{"parts" => [%{"id" => "part-1"}], "previewText" => ""},
                  "stem" => %{"id" => "stem-id", "content" => []},
                  "bibrefs" => []

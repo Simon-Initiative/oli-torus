@@ -29,6 +29,7 @@ import { EmailList } from './email_list';
 import { EndDateTimer } from './end_date_timer';
 import { EvaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
 import { ExpandContainers } from './expand_containers';
+import { ExplainObjectiveButton } from './explain_objective_button';
 import { FixedNavigationBar } from './fixed_navigation_bar';
 import { GlobalTooltip } from './global_tooltip';
 import { GraphNavigation } from './graph';
@@ -78,6 +79,8 @@ import { SessionBannerDismiss } from './session_banner_dismiss';
 import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { StickyTechSupportButton } from './sticky_tech_support_button';
+import { StudentDistributionMatrixLabels } from './student_distribution_matrix_labels';
+import { StudentDistributionRegionKeydown } from './student_distribution_region_keydown';
 import { StudentSupportChart } from './student_support_chart';
 import { StudentSupportParametersMatrix } from './student_support_parameters_matrix';
 import { SubmitForm } from './submit_form';
@@ -103,6 +106,7 @@ export const Hooks = {
   DebouncedTextInputListener,
   GlobalTooltip,
   WakeUpDot,
+  ExplainObjectiveButton,
   ExpandContainers,
   ShowTeaser,
   FirePageTrigger,
@@ -179,6 +183,8 @@ export const Hooks = {
   FixedNavigationBar,
   SubmitTechSupportForm,
   StickyTechSupportButton,
+  StudentDistributionMatrixLabels,
+  StudentDistributionRegionKeydown,
   StudentSupportChart,
   StudentSupportParametersMatrix,
   SyncChevronState,
