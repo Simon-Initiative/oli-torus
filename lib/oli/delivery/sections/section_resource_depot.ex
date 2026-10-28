@@ -36,16 +36,23 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   @doc """
   Retrieve the full hierarchy of section resources for a given section.
 
-  Usefull for generating a full hierarchy of section resources for a section,
+  Useful for generating a full hierarchy of section resources for a section,
   in places where code had been calling Oli.Delivery.Hierarchy.full_hierarchy
   directly.
 
   An optional keyword list can be passed to extend the filtering conditions.
+  An optional mapper projects embedded section resources during hierarchy node
+  construction, without changing the cached records. By default, records are
+  embedded unchanged.
 
   Example:
     SectionResourceDepot.get_full_hierarchy(some_section_id, [hidden: false])
   """
-  def get_full_hierarchy(%Section{} = section, additional_query_conditions \\ []) do
+  def get_full_hierarchy(
+        %Section{} = section,
+        additional_query_conditions \\ [],
+        section_resource_mapper \\ &Function.identity/1
+      ) do
     depot_coordinator().init_if_necessary(@depot_desc, section.id, __MODULE__)
 
     page = Oli.Resources.ResourceType.id_for_page()
@@ -55,7 +62,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
       Keyword.merge([{:resource_type_id, {:in, [page, container]}}], additional_query_conditions)
 
     srs = Depot.query(@depot_desc, section.id, query_conditions)
-    Oli.Delivery.Hierarchy.full_hierarchy(section, srs)
+    Oli.Delivery.Hierarchy.full_hierarchy(section, srs, section_resource_mapper)
   end
 
   @doc """
