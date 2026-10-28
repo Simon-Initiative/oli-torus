@@ -21,6 +21,7 @@ type AnalyticsConfig = {
   consent: unknown;
   consent_available: boolean;
   measurement_ids: string[];
+  signed_in: boolean;
 };
 
 const titles: Record<PageArea, string> = {
@@ -95,6 +96,7 @@ function sanitizeConfig(value: unknown): AnalyticsConfig | null {
     consent: config.consent,
     consent_available: config.consent_available === true,
     measurement_ids: config.measurement_ids,
+    signed_in: config.signed_in === true,
   };
 }
 
@@ -106,6 +108,7 @@ export function initializeAnalytics(value: unknown): void {
   initializeConsent(config.consent, {
     measurementAvailable: config.consent_available,
     measurementIds: config.measurement_ids,
+    signedIn: config.signed_in,
   });
   const isGranted = () => config.consent_available && consentOptions().analytics;
   const dataLayer = (window.dataLayer = window.dataLayer || []);

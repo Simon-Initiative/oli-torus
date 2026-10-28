@@ -85,6 +85,44 @@ defmodule OliWeb.CookiePreferencesLiveTest do
     refute has_element?(lv, "input[aria-label='Analytics Cookies'][checked]")
   end
 
+  test "pending iframe withdrawal can display denial before database persistence", %{conn: conn} do
+    user = user_fixture()
+    save_choices(user, %{functionality: false, analytics: true, version: 2})
+    {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/cookie-preferences")
+
+    render_hook(lv, "browser_cookie_preferences", %{
+      "preferences" => %{"functionality" => false, "analytics" => false, "version" => 2},
+      "pending_withdrawal" => true
+    })
+
+    refute has_element?(lv, "input[aria-label='Analytics Cookies'][checked]")
+    assert Consent.preferences_for_user(user.id)["analytics"] == true
+
+    render_hook(lv, "browser_cookie_preferences", %{
+      "preferences" => %{"functionality" => true, "analytics" => true, "version" => 2},
+      "pending_withdrawal" => true
+    })
+
+    refute has_element?(lv, "input[aria-label='Analytics Cookies'][checked]")
+  end
+
+  test "withdrawal acknowledged before the browser hook refreshes a stale mounted grant", %{
+    conn: conn
+  } do
+    user = user_fixture()
+    save_choices(user, %{functionality: true, analytics: true, version: 2})
+    {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/cookie-preferences")
+    assert has_element?(lv, "input[aria-label='Analytics Cookies'][checked]")
+
+    save_choices(user, %{functionality: true, analytics: false, version: 2})
+
+    render_hook(lv, "browser_cookie_preferences", %{
+      "preferences" => %{"functionality" => true, "analytics" => false, "version" => 2}
+    })
+
+    refute has_element?(lv, "input[aria-label='Analytics Cookies'][checked]")
+  end
+
   test "expired DB consent does not activate analytics", %{conn: conn} do
     user = user_fixture()
 

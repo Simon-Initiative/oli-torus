@@ -3,17 +3,41 @@ defmodule OliWeb.CookieConsentController do
 
   alias Oli.Consent
 
-  @doc "Persists validated consent cookies for the authenticated user."
+  @doc "Persists validated consent cookies and reports whether that exact decision is stored."
   def persist_cookies(conn, params) do
     case conn.assigns[:current_user] do
       nil ->
-        json(conn, %{"result" => "success", "info" => "user not found"})
+        decision =
+          case validate_decision(Map.fetch(params, "decision")) do
+            {:ok, decision} -> decision
+            _ -> nil
+          end
+
+        json(conn, %{
+          "result" => "success",
+          "info" => "user not found",
+          "persistence" => "browser_only",
+          "decision" => decision,
+          "acknowledged" => false
+        })
 
       user ->
         with {:ok, cookies} <- validate_cookies(params["cookies"]),
              {:ok, decision} <- validate_decision(Map.fetch(params, "decision")),
-             {:ok, _} <- Consent.persist_preferences(cookies, user.id, decision) do
-          json(conn, %{"result" => "success", "info" => "cookies persisted"})
+             {:ok, persistence} <- Consent.persist_preferences(cookies, user.id, decision) do
+          choices =
+            Enum.find_value(cookies, fn
+              %{name: "_cky_opt_choices", value: value} -> value
+              _ -> nil
+            end)
+
+          json(conn, %{
+            "result" => "success",
+            "info" => "cookies persisted",
+            "persistence" => persistence,
+            "decision" => decision,
+            "acknowledged" => Consent.acknowledged_decision?(user.id, decision, choices)
+          })
         else
           _ ->
             conn

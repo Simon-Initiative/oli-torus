@@ -7,6 +7,7 @@ defmodule Oli.Consent do
 
   @version 2
   @choices_cookie "_cky_opt_choices"
+  @pending_cookie "_cky_pending_consent"
   @defaults %{
     "necessary" => true,
     "functionality" => true,
@@ -19,12 +20,23 @@ defmodule Oli.Consent do
   @spec version() :: pos_integer()
   def version, do: @version
 
-  @doc "Resolves preferences using the signed-in user's stored choice before browser cookies."
+  @doc """
+  Resolves preferences using the signed-in user's stored choice before browser cookies.
+
+  A valid pending withdrawal can only deny analytics until the browser receives its
+  matching persistence acknowledgement; removing that marker restores normal precedence.
+  """
   @spec preferences(Plug.Conn.t()) :: map()
   def preferences(conn) do
-    case conn.assigns[:current_user] do
-      %{id: user_id} -> preferences_for_user(user_id) || browser_preferences(conn)
-      _ -> browser_preferences(conn)
+    case pending_preferences(conn) do
+      nil ->
+        case conn.assigns[:current_user] do
+          %{id: user_id} -> preferences_for_user(user_id) || browser_preferences(conn)
+          _ -> browser_preferences(conn)
+        end
+
+      preferences ->
+        preferences
     end
   end
 
@@ -145,6 +157,29 @@ defmodule Oli.Consent do
   end
 
   @doc """
+  Checks whether the stored current choice matches a specific browser save.
+
+  An equal-sequence retry is acknowledged if that exact choice is already stored;
+  a stale, metadata-free, expired, or mismatched decision is never acknowledged.
+  """
+  @spec acknowledged_decision?(integer(), map() | nil, term()) :: boolean()
+  def acknowledged_decision?(user_id, %{group: group, sequence: sequence}, preferences) do
+    with true <- valid_decision?(%{"group" => group, "sequence" => sequence}),
+         true <- current_decision?(preferences),
+         %CookiesConsent{} = cookie <- choices_for_user(user_id),
+         :gt <- DateTime.compare(cookie.expiration, DateTime.utc_now()),
+         {:ok, %{"_decision_group" => ^group, "_decision_sequence" => ^sequence} = stored} <-
+           decode_preferences(cookie.value),
+         true <- current_decision?(stored) do
+      normalize_preferences(stored) == normalize_preferences(preferences)
+    else
+      _ -> false
+    end
+  end
+
+  def acknowledged_decision?(_, _, _), do: false
+
+  @doc """
   Creates or updates cookie consent.
   """
   def insert_cookie(name, value, expires, user_id) do
@@ -194,6 +229,42 @@ defmodule Oli.Consent do
       cookies -> normalize_preferences(cookies[@choices_cookie])
     end
   end
+
+  defp pending_preferences(%{cookies: %Plug.Conn.Unfetched{}}), do: nil
+
+  defp pending_preferences(conn) do
+    with cookies when is_map(cookies) <- conn.cookies,
+         {:ok,
+          %{
+            "version" => @version,
+            "preferences" =>
+              %{
+                "necessary" => true,
+                "functionality" => functionality,
+                "analytics" => false,
+                "targeting" => false,
+                "version" => @version
+              } = preferences,
+            "decision" => decision,
+            "expiresIso" => expires
+          }} <- decode_preferences(cookies[@pending_cookie]),
+         true <- is_boolean(functionality),
+         true <- valid_decision?(decision),
+         true <- is_binary(expires),
+         {:ok, expiration, _offset} <- DateTime.from_iso8601(expires),
+         :gt <- DateTime.compare(expiration, DateTime.utc_now()) do
+      normalize_preferences(preferences)
+    else
+      _ -> nil
+    end
+  end
+
+  defp valid_decision?(%{"group" => group, "sequence" => sequence})
+       when is_binary(group) and is_integer(sequence) and sequence > 0 and
+              sequence <= 9_007_199_254_740_991,
+       do: Regex.match?(~r/\A[a-f0-9]{32}\z/, group)
+
+  defp valid_decision?(_), do: false
 
   defp boolean_or_default(value, _default) when is_boolean(value), do: value
   defp boolean_or_default(_, default), do: default

@@ -114,7 +114,7 @@ defmodule OliWeb.CookiePreferencesLive do
             %{
               domain: OliWeb.Endpoint.host(),
               cookies:
-                "_oli_key, _cky_opt_in, _cky_opt_in_dismiss, _cky_opt_choices, _legacy_normandy_session, log_session_id, _csrf_token",
+                "_oli_key, _cky_opt_in, _cky_opt_in_dismiss, _cky_opt_choices, _cky_pending_consent, _legacy_normandy_session, log_session_id, _csrf_token",
               type: "1st Party",
               description:
                 "This cookies are usually only set in response to actions made by you which amount to a request for services, such as setting your privacy preferences, logging in or where they're essential to provide you with a service you have requested."
@@ -383,15 +383,31 @@ defmodule OliWeb.CookiePreferencesLive do
     {:noreply, redirect(socket, to: socket.assigns.return_to)}
   end
 
-  def handle_event("browser_cookie_preferences", %{"preferences" => preferences}, socket)
+  def handle_event("browser_cookie_preferences", %{"preferences" => preferences} = params, socket)
       when is_map(preferences) do
-    case socket.assigns.has_db_preferences do
-      true ->
+    preferences = Consent.normalize_preferences(preferences)
+
+    pending_withdrawal =
+      params["pending_withdrawal"] == true and Consent.current_decision?(preferences) and
+        preferences["analytics"] == false
+
+    case {socket.assigns.has_db_preferences, params["pending_withdrawal"] == true,
+          pending_withdrawal} do
+      {_, true, false} ->
         {:noreply, socket}
 
-      false ->
-        preferences = Consent.normalize_preferences(preferences)
+      {true, false, false} ->
+        # Persistence may finish after mount's database read but before the hook runs.
+        {functional_active, analytics_active, has_db_preferences} = get_cookie_preferences(socket)
 
+        {:noreply,
+         assign(socket,
+           functional_active: functional_active,
+           analytics_active: analytics_active,
+           has_db_preferences: has_db_preferences
+         )}
+
+      _ ->
         {:noreply,
          assign(socket,
            functional_active: preferences["functionality"],

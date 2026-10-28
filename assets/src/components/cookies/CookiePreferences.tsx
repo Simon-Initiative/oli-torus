@@ -8,6 +8,7 @@ export interface CookiePreferencesProps {
   privacyPoliciesUrl: string;
   preferences?: unknown;
   isMobileOrTablet?: boolean;
+  signedIn?: boolean;
   onChange?: (preferences: ConsentPreferences) => void;
 }
 
@@ -65,7 +66,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
         {
           domain: window.location.hostname,
           cookies:
-            '_oli_key, _cky_opt_in, _cky_opt_in_dismiss, _cky_opt_choices, _legacy_normandy_session, log_session_id, _csrf_token',
+            '_oli_key, _cky_opt_in, _cky_opt_in_dismiss, _cky_opt_choices, _cky_pending_consent, _legacy_normandy_session, log_session_id, _csrf_token',
           type: '1st Party',
           description:
             'This cookies are usually only set in response to actions made by you which amount to a request for services, such as setting your privacy preferences, logging in or where they’re essential to provide you with a service you have requested.',
