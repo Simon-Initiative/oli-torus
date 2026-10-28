@@ -1,8 +1,12 @@
 /** @jest-environment-options {"url":"https://torus.example.test/courses/lesson"} */
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { CookieConsent } from '../../../src/components/cookies/CookieConsent';
-import { CookiePreferences } from '../../../src/components/cookies/CookiePreferences';
+import {
+  CookiePreferences,
+  selectCookiePreferences,
+} from '../../../src/components/cookies/CookiePreferences';
 import {
   CONSENT_CHANGED_EVENT,
   consentOptions,
@@ -40,7 +44,13 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.restoreAllMocks();
-  document.querySelector('#cookie_consent_display')?.remove();
+  for (const id of ['cookie_consent_display', 'cookie_prefs_display']) {
+    const container = document.getElementById(id);
+    if (container) {
+      ReactDOM.unmountComponentAtNode(container);
+      container.remove();
+    }
+  }
 });
 
 test.each([
@@ -168,6 +178,55 @@ test.each(['Accept', 'Reject'])('banner %s explicitly stores the decision', (nam
   expect(consentOptions().analytics).toBe(name === 'Accept');
   expect(hasCurrentDecision()).toBe(true);
   expect(dismiss).toHaveBeenCalled();
+});
+
+test('Manage then Cancel keeps the banner undecided and returns focus without dismissing consent', () => {
+  const previousOLI = window.OLI;
+  const previousJQuery = window.$;
+  window.$ = ((element: HTMLElement) => ({
+    modal: (action: string) => {
+      element.style.display = action === 'show' ? 'block' : 'none';
+    },
+    on: (name: string, handler: EventListener) => element.addEventListener(name, handler),
+  })) as unknown as typeof window.$;
+  window.OLI = {
+    ...previousOLI,
+    handleCookiePreferences: (privacyPoliciesUrl: string) =>
+      selectCookiePreferences({ privacyPoliciesUrl }),
+  };
+
+  try {
+    const dismiss = jest.fn();
+    render(<CookieConsent privacyPoliciesUrl="/privacy" onDismiss={dismiss} />);
+    const manage = screen.getByRole('link', { name: 'Manage preferences' });
+    manage.focus();
+    fireEvent.click(manage);
+
+    const modal = screen.getByRole('dialog', { name: 'Cookie Preferences' });
+    fireEvent(modal, new Event('shown.bs.modal'));
+    expect(modal.contains(document.activeElement)).toBe(true);
+    expect(screen.getByRole('dialog', { name: 'Your analytics choice' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent(modal, new Event('hidden.bs.modal'));
+
+    expect(screen.queryByRole('dialog', { name: 'Cookie Preferences' })).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Your analytics choice' })).toBeVisible();
+    expect(manage).toHaveFocus();
+    expect(isConsentDismissed()).toBe(false);
+    expect(hasCurrentDecision()).toBe(false);
+    expect(consentOptions().analytics).toBe(false);
+    expect(window.gtag).not.toHaveBeenCalled();
+    expect(dismiss).not.toHaveBeenCalled();
+  } finally {
+    const preferences = document.getElementById('cookie_prefs_display');
+    if (preferences) {
+      ReactDOM.unmountComponentAtNode(preferences);
+      preferences.remove();
+    }
+    window.OLI = previousOLI;
+    window.$ = previousJQuery;
+  }
 });
 
 test('preferences start analytics off, disclose actual cookies, and do not leak an unsaved draft', () => {

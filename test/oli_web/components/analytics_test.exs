@@ -114,7 +114,38 @@ defmodule OliWeb.Components.AnalyticsTest do
     document = Floki.parse_document!(html)
     [config] = Floki.attribute(document, "#torus-analytics", "data-config")
     assert Jason.decode!(config)["consent"]["analytics"] == true
+    assert Jason.decode!(config)["signed_in"] == true
+    [bootstrap] = Floki.attribute(document, "#torus-cookie-consent", "data-config")
+    assert Jason.decode!(bootstrap)["signedIn"] == true
     assert String.split(html, "analytics.js") |> hd() =~ "torus-cookie-consent"
+
+    pending = %{
+      version: 2,
+      preferences: %{
+        necessary: true,
+        functionality: true,
+        analytics: false,
+        targeting: false,
+        version: 2
+      },
+      decision: %{group: String.duplicate("a", 32), sequence: 2},
+      expiresIso: DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.to_iso8601()
+    }
+
+    pending_conn = %{
+      conn
+      | cookies: %{"_cky_pending_consent" => pending |> Jason.encode!() |> URI.encode_www_form()}
+    }
+
+    document =
+      render_component(&Analytics.gtm_head/1,
+        conn: Plug.Conn.assign(pending_conn, :current_user, user)
+      )
+      |> Floki.parse_document!()
+
+    [config] = Floki.attribute(document, "#torus-analytics", "data-config")
+    assert Jason.decode!(config)["consent"]["analytics"] == false
+    assert Oli.Consent.preferences_for_user(user.id)["analytics"] == true
   end
 
   test "blank privacy URL disables measurement availability", %{conn: conn} do

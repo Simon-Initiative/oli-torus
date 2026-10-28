@@ -95,6 +95,25 @@ decision replaces an outdated
 stored decision, and the database wins between two current decisions. Author-only
 accounts continue using browser storage.
 
+While a signed-in withdrawal is saving, `_cky_pending_consent` temporarily records
+the denied preference and its original ordering metadata. The server treats a valid,
+unexpired marker as denied even if the database still contains an older acceptance.
+The head bootstrap also restores a marker from session storage before starting GTM,
+covering LMS iframes that block cookies. This temporary state can only deny analytics;
+it cannot grant consent. Once the matching decision is acknowledged, the marker is
+removed and normal database precedence resumes.
+
+HTTP errors, network failures and missing database acknowledgements retain that
+protection. A shared unsaved notice offers Retry on the banner, desktop and mobile
+paths, including after those preference UIs close. Retrying uses the original group,
+sequence and expiration so it cannot become a newer decision than a subsequent save.
+On a new page, pending withdrawal persistence is resumed automatically. Older request
+successes or failures cannot clear a newer marker or replace its status.
+
+Signed-in browsers with both cookie and session storage blocked keep measurement
+disabled. When session storage is unavailable, a temporary `_cky_consent_storage`
+necessary-cookie probe checks cookie availability and is removed immediately.
+
 ## Required GA4 property configuration
 
 - Disable **all Enhanced Measurement** on the web stream, especially history-based
@@ -142,6 +161,14 @@ accounts continue using browser storage.
    Check keyboard focus, 200% zoom, mobile and Chrome/Safari LMS iframe behavior.
    Verify system-admin traffic and Developer traffic filters before production enablement.
    Record the reviewed container version, owners, property IDs and QA evidence.
+7. Delay a signed-in withdrawal POST, navigate before it completes, and confirm an
+   older database grant cannot initialize GTM. Repeat with iframe cookies blocked
+   and a pending marker in session storage. Exercise HTTP errors and network failure:
+   the unsaved notice must offer Retry while tracking stays denied. A successful
+   matching retry clears the marker; stale responses must not clear a newer choice.
+   Confirm measurement stays disabled when both storage channels are unavailable.
+8. Open Manage preferences from an undecided desktop banner and cancel. The banner
+   must remain available, without a session dismissal cookie or implied consent.
 
 Third-party cookie restrictions in Safari, Firefox and Chrome can fragment LMS
 iframe sessions even with the cookie flags above. Expect unreliable persistent

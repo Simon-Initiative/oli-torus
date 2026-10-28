@@ -10,8 +10,19 @@ defmodule OliWeb.CookieConsentControllerTest do
 
   describe "consent storage" do
     test "anonymous choices remain browser-only", %{conn: conn} do
-      response = post(conn, ~p"/consent/cookie", %{cookies: [choices_cookie(true)]})
-      assert json_response(response, 200)["info"] == "user not found"
+      decision = %{group: String.duplicate("a", 32), sequence: 1}
+
+      response =
+        post(conn, ~p"/consent/cookie", %{cookies: [choices_cookie(true)], decision: decision})
+
+      assert %{
+               "info" => "user not found",
+               "persistence" => "browser_only",
+               "decision" => %{"group" => group, "sequence" => 1},
+               "acknowledged" => false
+             } = json_response(response, 200)
+
+      assert group == decision.group
       assert Repo.aggregate(CookiesConsent, :count) == 0
     end
 
@@ -93,6 +104,54 @@ defmodule OliWeb.CookieConsentControllerTest do
       assert [%{"value" => value}] = json_response(get(conn, ~p"/consent/cookie"), 200)
       refute Map.has_key?(Jason.decode!(value), "_decision_group")
       refute Map.has_key?(Jason.decode!(value), "_decision_sequence")
+    end
+
+    test "acknowledges an exact save and its retry without acknowledging a stale or different choice",
+         %{
+           conn: conn
+         } do
+      user = user_fixture()
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+      group = String.duplicate("a", 32)
+
+      rejected = %{
+        cookies: [choices_cookie(false)],
+        decision: %{group: group, sequence: 2}
+      }
+
+      assert %{
+               "persistence" => "persisted",
+               "decision" => %{"group" => ^group, "sequence" => 2},
+               "acknowledged" => true
+             } = json_response(post(conn, ~p"/consent/cookie", rejected), 200)
+
+      assert %{
+               "persistence" => "superseded",
+               "decision" => %{"group" => ^group, "sequence" => 2},
+               "acknowledged" => true
+             } = json_response(post(conn, ~p"/consent/cookie", rejected), 200)
+
+      for {sequence, analytics} <- [{1, false}, {2, true}] do
+        stale = %{
+          cookies: [choices_cookie(analytics)],
+          decision: %{group: group, sequence: sequence}
+        }
+
+        assert %{"persistence" => "superseded", "acknowledged" => false} =
+                 json_response(post(conn, ~p"/consent/cookie", stale), 200)
+      end
+
+      assert %{"persistence" => "persisted", "acknowledged" => true} =
+               json_response(
+                 post(conn, ~p"/consent/cookie", %{
+                   cookies: [choices_cookie(true)],
+                   decision: %{group: group, sequence: 3}
+                 }),
+                 200
+               )
+
+      assert %{"persistence" => "superseded", "acknowledged" => false} =
+               json_response(post(conn, ~p"/consent/cookie", rejected), 200)
     end
 
     test "newer saves and a new page group may change the stored choice", %{conn: conn} do

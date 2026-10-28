@@ -86,7 +86,6 @@ export const CookieConsent = (props: CookiePreferencesProps & { onDismiss?: () =
             onClick={(event) => {
               if (!props.isMobileOrTablet && (window as any).OLI?.handleCookiePreferences) {
                 event.preventDefault();
-                close();
                 (window as any).OLI.handleCookiePreferences(props.privacyPoliciesUrl);
               }
             }}

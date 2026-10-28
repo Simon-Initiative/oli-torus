@@ -75,6 +75,52 @@ defmodule Oli.ConsentTest do
       assert Consent.analytics_consent(browser) == "denied"
       assert Consent.preferences(browser)["version"] == nil
     end
+
+    test "a pending withdrawal denies analytics until its browser marker is removed" do
+      user = user_fixture()
+      store(user.id, %{"version" => 2, "analytics" => true})
+
+      browser =
+        browser_conn(%{"version" => 2, "analytics" => false}) |> assign(:current_user, user)
+
+      marker = pending_marker()
+      pending = put_pending_cookie(browser, URI.encode_www_form(Jason.encode!(marker)))
+
+      assert Consent.analytics_consent(pending) == "denied"
+      refute Consent.preferences(pending)["functionality"]
+      assert Consent.preferences(pending)["version"] == 2
+      assert Consent.analytics_consent(browser) == "granted"
+    end
+
+    test "malformed, expired, or granting pending markers cannot override stored consent" do
+      user = user_fixture()
+      store(user.id, %{"version" => 2, "analytics" => true})
+      browser = browser_conn(%{}) |> assign(:current_user, user)
+      marker = pending_marker()
+
+      for invalid <- [
+            "broken",
+            "[]",
+            "null",
+            "%ZZ",
+            Jason.encode!(Map.delete(marker, "decision")),
+            Jason.encode!(%{marker | "version" => 1}),
+            Jason.encode!(%{marker | "expiresIso" => "invalid"}),
+            Jason.encode!(%{marker | "expiresIso" => "2000-01-01T00:00:00Z"}),
+            Jason.encode!(put_in(marker, ["preferences", "analytics"], true)),
+            Jason.encode!(put_in(marker, ["preferences", "version"], 1)),
+            Jason.encode!(put_in(marker, ["preferences", "functionality"], "false")),
+            Jason.encode!(put_in(marker, ["decision", "group"], String.duplicate("A", 32))),
+            Jason.encode!(put_in(marker, ["decision", "sequence"], 0)),
+            Jason.encode!(put_in(marker, ["decision", "sequence"], 9_007_199_254_740_992))
+          ] do
+        assert Consent.analytics_consent(put_pending_cookie(browser, invalid)) == "granted"
+      end
+
+      store(user.id, %{"version" => 2, "analytics" => false})
+      granting_marker = put_in(marker, ["preferences", "analytics"], true) |> Jason.encode!()
+      assert Consent.analytics_consent(put_pending_cookie(browser, granting_marker)) == "denied"
+    end
   end
 
   describe "sync_preferences/2" do
@@ -167,6 +213,45 @@ defmodule Oli.ConsentTest do
     end
   end
 
+  describe "acknowledged_decision?/3" do
+    test "acknowledges only the matching current, unexpired choice and ordering metadata" do
+      user = user_fixture()
+      group = String.duplicate("a", 32)
+      decision = %{group: group, sequence: 2}
+      choices = %{"version" => 2, "analytics" => false, "functionality" => false}
+
+      store(user.id, Map.merge(choices, %{"_decision_group" => group, "_decision_sequence" => 2}))
+
+      assert Consent.acknowledged_decision?(user.id, decision, choices)
+      assert Consent.acknowledged_decision?(user.id, decision, Jason.encode!(choices))
+      refute Consent.acknowledged_decision?(user.id, %{decision | sequence: 1}, choices)
+
+      refute Consent.acknowledged_decision?(
+               user.id,
+               %{decision | group: String.duplicate("b", 32)},
+               choices
+             )
+
+      refute Consent.acknowledged_decision?(user.id, decision, %{choices | "analytics" => true})
+
+      refute Consent.acknowledged_decision?(user.id, decision, %{
+               choices
+               | "functionality" => true
+             })
+
+      refute Consent.acknowledged_decision?(user.id, nil, choices)
+      refute Consent.acknowledged_decision?(user.id, decision, %{"analytics" => false})
+
+      store(
+        user.id,
+        Map.merge(choices, %{"_decision_group" => group, "_decision_sequence" => 2}),
+        DateTime.add(DateTime.utc_now(), -1)
+      )
+
+      refute Consent.acknowledged_decision?(user.id, decision, choices)
+    end
+  end
+
   test "upserts refresh the consent audit timestamp" do
     user = user_fixture()
     cookie = store(user.id, %{"version" => 2, "analytics" => false})
@@ -184,6 +269,25 @@ defmodule Oli.ConsentTest do
     conn(:get, "/")
     |> put_req_cookie("_cky_opt_choices", Jason.encode!(preferences))
     |> fetch_cookies()
+  end
+
+  defp put_pending_cookie(conn, value) do
+    %{conn | cookies: Map.put(conn.cookies, "_cky_pending_consent", value)}
+  end
+
+  defp pending_marker do
+    %{
+      "version" => 2,
+      "preferences" => %{
+        "necessary" => true,
+        "functionality" => false,
+        "analytics" => false,
+        "targeting" => false,
+        "version" => 2
+      },
+      "decision" => %{"group" => String.duplicate("a", 32), "sequence" => 2},
+      "expiresIso" => DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.to_iso8601()
+    }
   end
 
   defp store(user_id, preferences, expiration \\ DateTime.add(DateTime.utc_now(), 365, :day)) do

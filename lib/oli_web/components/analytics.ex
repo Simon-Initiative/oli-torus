@@ -18,6 +18,7 @@ defmodule OliWeb.Components.Analytics do
         consent_config:
           Jason.encode!(%{
             preferences: preferences,
+            signedIn: not is_nil(assigns.conn.assigns[:current_user]),
             privacyPoliciesUrl: privacy_url,
             isMobileOrTablet: OliWeb.Common.DeviceDetection.is_mobile_or_tablet?(assigns.conn)
           })
@@ -47,6 +48,7 @@ defmodule OliWeb.Components.Analytics do
         preview: config[:gtm_preview],
         measurement_ids: config[:measurement_ids] || [],
         consent: preferences,
+        signed_in: not is_nil(conn.assigns[:current_user]),
         consent_available: is_binary(privacy_url) and String.trim(privacy_url) != "",
         context: context
       })

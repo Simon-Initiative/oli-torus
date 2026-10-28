@@ -1,5 +1,8 @@
 export const CONSENT_VERSION = 2;
 export const CONSENT_CHANGED_EVENT = 'torus:consent-changed';
+export const CONSENT_PERSISTENCE_EVENT = 'torus:consent-persistence';
+const PENDING_CONSENT_KEY = '_cky_pending_consent';
+const STORAGE_PROBE_KEY = '_cky_consent_storage';
 const CONSENT_DURATION = 365 * 24 * 60 * 60 * 1000;
 
 export interface ConsentPreferences {
@@ -10,6 +13,22 @@ export interface ConsentPreferences {
   version?: number;
 }
 
+export type ConsentPersistenceStatus = 'idle' | 'saving' | 'failed';
+
+type Decision = { group: string; sequence: number };
+type ConsentRequest = {
+  preferences: ConsentPreferences;
+  decision: Decision;
+  expiresIso: string;
+  requiresAcknowledgement: boolean;
+};
+type PendingWithdrawal = {
+  version: number;
+  preferences: ConsentPreferences;
+  decision: Decision;
+  expiresIso: string;
+};
+
 declare global {
   interface Window {
     TorusConsentState?: {
@@ -17,17 +36,30 @@ declare global {
       initialized: boolean;
       measurementIds: string[];
       measurementAvailable?: boolean;
+      signedIn?: boolean;
+      durableStorageAvailable?: boolean;
       decisionGroup?: string;
       decisionSequence?: number;
+      pendingWithdrawal?: PendingWithdrawal;
+      latestRequest?: ConsentRequest;
+      persistenceStatus?: ConsentPersistenceStatus;
     };
   }
 }
 
-/** Reads one cookie defensively, supporting both legacy raw and encoded values. */
-export function readCookie(name: string): string {
-  const entry = document.cookie.split(';').find((cookie) => cookie.trim().startsWith(`${name}=`));
-  const value = entry ? entry.trim().slice(name.length + 1) : '';
+function browserCookies(): string {
   try {
+    return document.cookie;
+  } catch {
+    return '';
+  }
+}
+
+/** Reads one cookie defensively, including when iframe cookie access is blocked. */
+export function readCookie(name: string): string {
+  try {
+    const entry = document.cookie.split(';').find((cookie) => cookie.trim().startsWith(`${name}=`));
+    const value = entry ? entry.trim().slice(name.length + 1) : '';
     return decodeURIComponent(value);
   } catch {
     return '';
@@ -55,26 +87,104 @@ export function normalizeConsent(value: unknown): ConsentPreferences {
   };
 }
 
-function state() {
-  return (window.TorusConsentState ||= {
-    preferences: normalizeConsent(readCookie('_cky_opt_choices')),
-    initialized: false,
-    measurementIds: [],
-  });
+function parsePending(value: string | null): PendingWithdrawal | undefined {
+  try {
+    const pending = JSON.parse(value || 'null');
+    const preferences = pending?.preferences;
+    const decision = pending?.decision;
+    const expiration = Date.parse(pending?.expiresIso);
+    if (
+      pending?.version === CONSENT_VERSION &&
+      preferences?.necessary === true &&
+      typeof preferences.functionality === 'boolean' &&
+      preferences.analytics === false &&
+      preferences.targeting === false &&
+      preferences.version === CONSENT_VERSION &&
+      typeof decision?.group === 'string' &&
+      /^[a-f0-9]{32}$/.test(decision.group) &&
+      Number.isSafeInteger(decision.sequence) &&
+      decision.sequence > 0 &&
+      Number.isFinite(expiration) &&
+      expiration > Date.now() &&
+      expiration <= Date.now() + CONSENT_DURATION + 1000
+    )
+      return pending;
+  } catch {
+    // A malformed marker cannot change consent.
+  }
+  return undefined;
 }
 
-/** Seeds the shared browser state once from the authoritative server-rendered decision. */
+function sessionPending(): PendingWithdrawal | undefined {
+  try {
+    return parsePending(window.sessionStorage.getItem(PENDING_CONSENT_KEY));
+  } catch {
+    return undefined;
+  }
+}
+
+function readPending(): PendingWithdrawal | undefined {
+  const cookie = parsePending(readCookie(PENDING_CONSENT_KEY));
+  const session = sessionPending();
+  if (cookie && session && cookie.decision.group === session.decision.group) {
+    return cookie.decision.sequence >= session.decision.sequence ? cookie : session;
+  }
+  return cookie || session;
+}
+
+function state() {
+  if (!window.TorusConsentState) {
+    const pending = readPending();
+    window.TorusConsentState = {
+      preferences: pending?.preferences ?? normalizeConsent(readCookie('_cky_opt_choices')),
+      initialized: false,
+      measurementIds: [],
+      pendingWithdrawal: pending,
+      decisionGroup: pending?.decision.group,
+      decisionSequence: pending?.decision.sequence,
+    };
+  }
+  return window.TorusConsentState;
+}
+
+function storageAvailable(): boolean {
+  try {
+    window.sessionStorage.setItem(STORAGE_PROBE_KEY, '1');
+    const available = window.sessionStorage.getItem(STORAGE_PROBE_KEY) === '1';
+    window.sessionStorage.removeItem(STORAGE_PROBE_KEY);
+    if (available) return true;
+  } catch {
+    // When session storage is blocked, try a short-lived necessary cookie.
+  }
+  try {
+    writeCookie(STORAGE_PROBE_KEY, '1', new Date(Date.now() + 1000));
+    return readCookie(STORAGE_PROBE_KEY) === '1';
+  } catch {
+    return false;
+  } finally {
+    writeCookie(STORAGE_PROBE_KEY, '', new Date(0));
+  }
+}
+
+/** Seeds browser state from the server while retaining an unacknowledged withdrawal. */
 export function initializeConsent(
   preferences: unknown,
-  options: { measurementAvailable?: boolean; measurementIds?: string[] } = {},
+  options: { measurementAvailable?: boolean; measurementIds?: string[]; signedIn?: boolean } = {},
 ): ConsentPreferences {
   const current = state();
-  if (options.measurementAvailable !== undefined) {
+  if (options.measurementAvailable !== undefined)
     current.measurementAvailable = options.measurementAvailable;
-  }
+  if (options.signedIn !== undefined) current.signedIn = options.signedIn;
   if (!current.initialized) {
-    current.preferences = normalizeConsent(preferences);
+    current.preferences = current.pendingWithdrawal?.preferences ?? normalizeConsent(preferences);
     current.initialized = true;
+  }
+  if (
+    current.signedIn &&
+    current.durableStorageAvailable === undefined &&
+    !current.pendingWithdrawal
+  ) {
+    current.durableStorageAvailable = storageAvailable();
   }
   if (options.measurementIds) {
     current.measurementIds = Array.from(
@@ -83,16 +193,36 @@ export function initializeConsent(
         ...options.measurementIds.filter((id) => /^G-[A-Z0-9]+$/.test(id)),
       ]),
     );
-    const analytics = current.preferences.analytics && current.measurementAvailable !== false;
+    const analytics = consentOptions().analytics && current.measurementAvailable !== false;
     updateGoogleDisabled(analytics);
     if (!analytics) deleteAnalyticsCookies();
   }
-  return { ...current.preferences };
+  return consentOptions();
 }
 
-/** Returns the effective choice, shared between the head analytics bundle and application bundle. */
+/** Returns effective preferences; pending withdrawals and unavailable durable storage deny tracking. */
 export function consentOptions(): ConsentPreferences {
-  return { ...state().preferences };
+  const current = state();
+  if (current.pendingWithdrawal) return { ...current.preferences, analytics: false };
+  const unavailable = current.signedIn && current.durableStorageAvailable === false;
+  return { ...current.preferences, analytics: !unavailable && current.preferences.analytics };
+}
+
+/** Whether a valid withdrawal still requires acknowledgement from the server. */
+export function hasPendingWithdrawal(): boolean {
+  return state().pendingWithdrawal !== undefined;
+}
+
+/** Returns the shared status used by desktop, banner and mobile persistence feedback. */
+export function consentPersistenceStatus(): ConsentPersistenceStatus {
+  return state().persistenceStatus ?? 'idle';
+}
+
+function setPersistenceStatus(status: ConsentPersistenceStatus) {
+  const current = state();
+  if (current.persistenceStatus === status) return;
+  current.persistenceStatus = status;
+  window.dispatchEvent(new CustomEvent(CONSENT_PERSISTENCE_EVENT, { detail: status }));
 }
 
 /** Reports whether consent is decided for the current policy version. */
@@ -101,9 +231,13 @@ export function hasCurrentDecision(): boolean {
 }
 
 function writeCookie(name: string, value: string, expiration?: Date) {
-  document.cookie = `${name}=${encodeURIComponent(value)};path=/;SameSite=None;Secure${
-    expiration ? `;expires=${expiration.toUTCString()}` : ''
-  }`;
+  try {
+    document.cookie = `${name}=${encodeURIComponent(value)};path=/;SameSite=None;Secure${
+      expiration ? `;expires=${expiration.toUTCString()}` : ''
+    }`;
+  } catch {
+    // sessionStorage retains pending withdrawals when iframe cookies cannot be written.
+  }
 }
 
 /** Suppresses the current banner for this browser session without making a consent decision. */
@@ -118,10 +252,12 @@ export function isConsentDismissed(): boolean {
 
 function updateGoogleDisabled(analytics: boolean) {
   const current = state();
-  const cookieIds = document.cookie.split(';').flatMap((cookie) => {
-    const match = cookie.trim().match(/^_ga_([A-Z0-9]+)=/i);
-    return match ? [`G-${match[1]}`] : [];
-  });
+  const cookieIds = browserCookies()
+    .split(';')
+    .flatMap((cookie) => {
+      const match = cookie.trim().match(/^_ga_([A-Z0-9]+)=/i);
+      return match ? [`G-${match[1]}`] : [];
+    });
   const knownIds = Object.keys(window).flatMap((key) =>
     key.startsWith('ga-disable-G-') ? [key.slice('ga-disable-'.length)] : [],
   );
@@ -135,7 +271,7 @@ function updateGoogleDisabled(analytics: boolean) {
 
 /** Deletes host-only and current-host GA4 cookies without altering shared parent domains. */
 export function deleteAnalyticsCookies(): void {
-  const names = document.cookie
+  const names = browserCookies()
     .split(';')
     .map((cookie) => cookie.trim().split('=')[0])
     .filter((name) => name === '_ga' || name.startsWith('_ga_'));
@@ -148,35 +284,22 @@ export function deleteAnalyticsCookies(): void {
   for (const name of names) {
     for (const domain of domains) {
       for (const path of paths) {
-        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;max-age=0;path=${path}${
-          domain ? `;domain=${domain}` : ''
-        };SameSite=None;Secure`;
+        try {
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;max-age=0;path=${path}${
+            domain ? `;domain=${domain}` : ''
+          };SameSite=None;Secure`;
+        } catch {
+          // A blocked cookie store cannot be cleaned, but GA remains disabled.
+        }
       }
     }
   }
 }
 
-/** Stores and applies an explicit choice immediately, then persists it for signed-in users. */
-export async function saveConsent(
-  preferences: Pick<ConsentPreferences, 'functionality' | 'analytics'>,
-  options: { persist?: boolean } = {},
-): Promise<void> {
-  const chosen = normalizeConsent({ ...preferences, version: CONSENT_VERSION });
+function applyConsent(): void {
   const current = state();
-  current.preferences = chosen;
-  current.initialized = true;
-  const analytics = chosen.analytics && current.measurementAvailable !== false;
-  const expiration = new Date(Date.now() + CONSENT_DURATION);
-  const cookies = [
-    {
-      name: '_cky_opt_choices',
-      value: JSON.stringify(chosen),
-      expiresIso: expiration.toISOString(),
-    },
-    { name: '_cky_opt_in', value: 'true', expiresIso: expiration.toISOString() },
-  ];
-  cookies.forEach((cookie) => writeCookie(cookie.name, cookie.value, expiration));
-  writeCookie('_cky_opt_in_dismiss', '', new Date(0));
+  const preferences = consentOptions();
+  const analytics = preferences.analytics && current.measurementAvailable !== false;
   updateGoogleDisabled(analytics);
   window.gtag?.('consent', 'update', {
     analytics_storage: analytics ? 'granted' : 'denied',
@@ -185,19 +308,72 @@ export async function saveConsent(
     ad_personalization: 'denied',
   });
   if (!analytics) deleteAnalyticsCookies();
-  window.dispatchEvent(new CustomEvent(CONSENT_CHANGED_EVENT, { detail: chosen }));
+  window.dispatchEvent(new CustomEvent(CONSENT_CHANGED_EVENT, { detail: preferences }));
+}
 
-  if (options.persist === false) return;
-  const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-  // This transient document group orders overlapping saves on the server. It is never stored in
-  // browser cookies or sent to analytics, and every request starts before navigation can unload us.
-  current.decisionGroup ??= Array.from(window.crypto.getRandomValues(new Uint8Array(16)), (byte) =>
-    byte.toString(16).padStart(2, '0'),
-  ).join('');
-  current.decisionSequence = (current.decisionSequence ?? 0) + 1;
-  const decision = { group: current.decisionGroup, sequence: current.decisionSequence };
+function sameDecision(first: Decision | undefined, second: Decision | undefined): boolean {
+  return !!first && !!second && first.group === second.group && first.sequence === second.sequence;
+}
+
+function retainWithdrawal(request: ConsentRequest) {
+  const pending: PendingWithdrawal = {
+    version: CONSENT_VERSION,
+    preferences: request.preferences,
+    decision: request.decision,
+    expiresIso: request.expiresIso,
+  };
+  const current = state();
+  current.pendingWithdrawal = pending;
+  const value = JSON.stringify(pending);
+  writeCookie(PENDING_CONSENT_KEY, value, new Date(request.expiresIso));
   try {
-    await fetch('/consent/cookie', {
+    window.sessionStorage.setItem(PENDING_CONSENT_KEY, value);
+  } catch {
+    // A writable cookie still preserves withdrawal across navigation.
+  }
+}
+
+function clearWithdrawal() {
+  const current = state();
+  const decision = current.pendingWithdrawal?.decision;
+  if (sameDecision(parsePending(readCookie(PENDING_CONSENT_KEY))?.decision, decision)) {
+    writeCookie(PENDING_CONSENT_KEY, '', new Date(0));
+  }
+  if (sameDecision(sessionPending()?.decision, decision)) {
+    try {
+      window.sessionStorage.removeItem(PENDING_CONSENT_KEY);
+    } catch {
+      // The cookie or current in-memory state still governs this page.
+    }
+  }
+  current.pendingWithdrawal = readPending();
+  if (
+    current.signedIn &&
+    current.durableStorageAvailable === undefined &&
+    !current.pendingWithdrawal
+  ) {
+    current.durableStorageAvailable = storageAvailable();
+  }
+}
+
+function isLatest(current: ReturnType<typeof state>, request: ConsentRequest) {
+  return window.TorusConsentState === current && current.latestRequest === request;
+}
+
+async function persistConsent(request: ConsentRequest): Promise<void> {
+  const current = state();
+  setPersistenceStatus('saving');
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  const cookies = [
+    {
+      name: '_cky_opt_choices',
+      value: JSON.stringify(request.preferences),
+      expiresIso: request.expiresIso,
+    },
+    { name: '_cky_opt_in', value: 'true', expiresIso: request.expiresIso },
+  ];
+  try {
+    const response = await fetch('/consent/cookie', {
       method: 'POST',
       credentials: 'same-origin',
       keepalive: true,
@@ -206,9 +382,79 @@ export async function saveConsent(
         'Content-Type': 'application/json',
         ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
       },
-      body: JSON.stringify({ cookies, decision }),
+      body: JSON.stringify({ cookies, decision: request.decision }),
     });
+    if (!response.ok) throw new Error('Consent persistence failed');
+    if (request.requiresAcknowledgement) {
+      const result = await response.json();
+      if (result.acknowledged !== true || !sameDecision(result.decision, request.decision)) {
+        throw new Error('Consent was not acknowledged');
+      }
+    }
+    if (!isLatest(current, request)) return;
+    const previouslyGranted = consentOptions().analytics;
+    clearWithdrawal();
+    setPersistenceStatus('idle');
+    if (previouslyGranted !== consentOptions().analytics) applyConsent();
   } catch {
-    // The browser choice still applies if persistence is temporarily unavailable.
+    if (isLatest(current, request)) setPersistenceStatus('failed');
   }
+}
+
+/** Stores a choice immediately; signed-in withdrawal stays denied until matching acknowledgement. */
+export async function saveConsent(
+  preferences: Pick<ConsentPreferences, 'functionality' | 'analytics'>,
+  options: { persist?: boolean } = {},
+): Promise<void> {
+  const chosen = normalizeConsent({ ...preferences, version: CONSENT_VERSION });
+  const current = state();
+  current.preferences = chosen;
+  current.initialized = true;
+  const expiration = new Date(Date.now() + CONSENT_DURATION);
+  let request: ConsentRequest | undefined;
+  if (options.persist !== false) {
+    current.decisionGroup ??= Array.from(
+      window.crypto.getRandomValues(new Uint8Array(16)),
+      (byte) => byte.toString(16).padStart(2, '0'),
+    ).join('');
+    current.decisionSequence = (current.decisionSequence ?? 0) + 1;
+    request = {
+      preferences: chosen,
+      decision: { group: current.decisionGroup, sequence: current.decisionSequence },
+      expiresIso: expiration.toISOString(),
+      requiresAcknowledgement: current.signedIn === true || current.pendingWithdrawal !== undefined,
+    };
+    current.latestRequest = request;
+    if (!chosen.analytics && request.requiresAcknowledgement) retainWithdrawal(request);
+  }
+  writeCookie('_cky_opt_choices', JSON.stringify(chosen), expiration);
+  writeCookie('_cky_opt_in', 'true', expiration);
+  writeCookie('_cky_opt_in_dismiss', '', new Date(0));
+  applyConsent();
+  if (request) await persistConsent(request);
+}
+
+function restoredRequest(): ConsentRequest | undefined {
+  const pending = state().pendingWithdrawal;
+  return pending ? { ...pending, requiresAcknowledgement: true } : undefined;
+}
+
+/** Resumes an unacknowledged withdrawal once after page bootstrap, reusing its original order. */
+export async function resumePendingConsent(): Promise<void> {
+  const current = state();
+  if (current.latestRequest || !current.pendingWithdrawal) return;
+  const request = restoredRequest();
+  if (!request) return;
+  current.latestRequest = request;
+  await persistConsent(request);
+}
+
+/** Retries the latest unsuccessful save without inventing a new decision or expiry. */
+export async function retryConsent(): Promise<void> {
+  const current = state();
+  if (consentPersistenceStatus() === 'saving') return;
+  const request = current.latestRequest ?? restoredRequest();
+  if (!request) return;
+  current.latestRequest = request;
+  await persistConsent(request);
 }

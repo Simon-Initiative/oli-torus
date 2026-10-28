@@ -1,5 +1,6 @@
 import { PageContext, initializeAnalytics } from '../../src/analytics';
 import { saveConsent } from '../../src/components/cookies/consent';
+import { SaveCookiePreferences } from '../../src/hooks/save_cookie_preferences';
 
 const accepted = {
   measurement_ids: ['G-QA123'],
@@ -18,6 +19,7 @@ describe('analytics', () => {
   let listeners: jest.SpyInstance;
 
   beforeEach(() => {
+    window.sessionStorage.clear();
     delete window.TorusAnalytics;
     delete window.TorusConsentState;
     delete window.dataLayer;
@@ -276,5 +278,34 @@ describe('analytics', () => {
     await saveConsent(accepted.consent, { persist: false });
     expect(pageViews()).toHaveLength(0);
     expect(document.querySelector('script')).toBeNull();
+  });
+
+  test('pending withdrawal in iframe session storage blocks an older server grant before GTM loads', () => {
+    window.sessionStorage.setItem(
+      '_cky_pending_consent',
+      JSON.stringify({
+        version: 2,
+        preferences: { ...accepted.consent, analytics: false },
+        decision: { group: 'a'.repeat(32), sequence: 2 },
+        expiresIso: new Date(Date.now() + 86400000).toISOString(),
+      }),
+    );
+    initializeAnalytics({
+      container_id: 'GTM-QA123',
+      context: initialContext,
+      ...accepted,
+      signed_in: true,
+    });
+    expect(pageViews()).toHaveLength(0);
+    expect(document.querySelector('script')).toBeNull();
+    expect(Array.from(window.dataLayer![0] as IArguments)[2]).toMatchObject({
+      analytics_storage: 'denied',
+    });
+    const hook = { pushEvent: jest.fn(), handleEvent: jest.fn() };
+    SaveCookiePreferences.mounted.call(hook);
+    expect(hook.pushEvent).toHaveBeenCalledWith('browser_cookie_preferences', {
+      preferences: expect.objectContaining({ analytics: false, version: 2 }),
+      pending_withdrawal: true,
+    });
   });
 });

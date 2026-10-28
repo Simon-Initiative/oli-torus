@@ -29,6 +29,13 @@ and personalization are always denied. Deployment and container requirements are
 - Desktop Cookie Preferences and the mobile `/cookie-preferences` page use the same
   browser storage, persistence and Consent Mode update path. Unsaved changes grant
   nothing. Saving updates the current page immediately without a reload.
+- Signed-in withdrawals create an unacknowledged-denial marker in
+  `_cky_pending_consent`, with session storage as a fallback when iframe cookies are
+  blocked. That marker keeps measurement denied across navigation until the matching
+  decision is confirmed by the server. Normal database precedence resumes afterwards.
+  Failed saves expose an unsaved status and Retry action without enabling tracking.
+- Manage preferences opens the detailed UI without dismissing an undecided banner.
+  Cancelling returns to that banner; Close explicitly dismisses it for the session.
 - Signed-in user choices are also stored in `consent_cookies`, with expiration and
   an updated audit timestamp. The database decision is authoritative at page load,
   including in LMS iframes that block third-party cookies. At login, a current browser
@@ -41,3 +48,7 @@ and personalization are always denied. Deployment and container requirements are
   cookies remain enabled; no targeting choice or advertising use is offered.
 - A blank `PRIVACY_POLICIES_URL` keeps measurement disabled. The default notice is
   the CMU Privacy Notice; deployments must review its applicability before rollout.
+- Signed-in browsers that cannot retain either cookies or session storage keep
+  measurement disabled. A temporary `_cky_consent_storage` necessary-cookie probe
+  checks cookie availability only when session storage is unavailable, and is
+  removed immediately.

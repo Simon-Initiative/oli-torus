@@ -5,6 +5,7 @@ import {
   hasCurrentDecision,
   initializeConsent,
   isConsentDismissed,
+  resumePendingConsent,
 } from 'components/cookies/consent';
 
 export { consentOptions } from 'components/cookies/consent';
@@ -14,7 +15,7 @@ export const retrieveCookies = async (url: string, props: CookiePreferencesProps
   const privacyPoliciesUrl =
     typeof props.privacyPoliciesUrl === 'string' ? props.privacyPoliciesUrl.trim() : '';
   if (props.preferences !== undefined) {
-    initializeConsent(props.preferences);
+    initializeConsent(props.preferences, { signedIn: props.signedIn });
   } else if (!window.TorusConsentState?.initialized) {
     try {
       const response = await fetch(url, {
@@ -27,12 +28,13 @@ export const retrieveCookies = async (url: string, props: CookiePreferencesProps
           (cookie) =>
             cookie.name === '_cky_opt_choices' && new Date(cookie.expiration) > new Date(),
         );
-        initializeConsent(choice?.value ?? consentOptions());
+        initializeConsent(choice?.value ?? consentOptions(), { signedIn: props.signedIn });
       }
     } catch {
       // Browser choices remain usable when the server cannot be reached.
     }
   }
+  await resumePendingConsent();
   if (privacyPoliciesUrl && !hasCurrentDecision() && !isConsentDismissed()) {
     selectCookieConsent({ ...props, privacyPoliciesUrl });
   }
