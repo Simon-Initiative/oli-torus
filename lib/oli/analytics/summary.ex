@@ -777,7 +777,12 @@ defmodule Oli.Analytics.Summary do
     from(rs in ResponseSummary,
       join: s in ResourceSummary,
       on: rs.activity_id == s.resource_id and rs.section_id == s.section_id,
-      left_join: ec in subquery(EventualCorrectness.counts_query(nil, [section_id])),
+      left_join:
+        ec in subquery(
+          EventualCorrectness.counts_query(nil, [section_id], nil,
+            resource_ids: only_for_activity_ids
+          )
+        ),
       on:
         ec.resource_id == s.resource_id and ec.resource_type_id == s.resource_type_id and
           ec.section_id == s.section_id and ec.part_id == s.part_id,
@@ -789,8 +794,8 @@ defmodule Oli.Analytics.Summary do
       distinct: [s.resource_id, s.part_id],
       select: %{
         s
-        | num_eventually_correct: fragment("COALESCE(?, 0)", ec.num_correct),
-          num_eventually_attempted: fragment("COALESCE(?, 0)", ec.num_attempted)
+        | num_eventually_correct: ec.num_correct,
+          num_eventually_attempted: ec.num_attempted
       }
     )
     |> Repo.all()

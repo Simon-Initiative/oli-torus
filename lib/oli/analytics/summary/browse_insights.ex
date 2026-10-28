@@ -66,7 +66,13 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           EventualCorrectness.counts_query(
             project_id,
             options.section_ids,
-            options.resource_type_id
+            options.resource_type_id,
+            resource_ids:
+              case options.resource_id do
+                nil -> nil
+                id -> [id]
+              end,
+            part_id: options.part_id
           )
         ),
         as: :eventual_correctness,
@@ -138,6 +144,18 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
         "?::float8 / NULLIF(?::float8, 0::float8)",
         unquote(numerator),
         unquote(denominator)
+      )
+    end
+  end
+
+  # SUM ignores NULLs, so explicitly reject partially available rollups.
+  defmacrop complete_rate_fragment(correct, attempted) do
+    quote do
+      fragment(
+        "CASE WHEN count(?) = count(*) THEN sum(?)::float8 / NULLIF(sum(?)::float8, 0) END",
+        unquote(attempted),
+        unquote(correct),
+        unquote(attempted)
       )
     end
   end
@@ -249,7 +267,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
         num_first_attempts: sum(row.num_first_attempts),
         num_first_attempts_correct: sum(row.num_first_attempts_correct),
         eventually_correct:
-          safe_div_fragment(sum(row.num_eventually_correct), sum(row.num_eventually_attempted)),
+          complete_rate_fragment(row.num_eventually_correct, row.num_eventually_attempted),
         first_attempt_correct:
           safe_div_fragment(sum(row.num_first_attempts_correct), sum(row.num_first_attempts)),
         relative_difficulty:
@@ -393,7 +411,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           num_hints: sum(s.num_hints),
           num_first_attempts: sum(s.num_first_attempts),
           num_first_attempts_correct: sum(s.num_first_attempts_correct),
-          eventually_correct: safe_div_fragment(sum(ec.num_correct), sum(ec.num_attempted)),
+          eventually_correct: complete_rate_fragment(ec.num_correct, ec.num_attempted),
           first_attempt_correct:
             safe_div_fragment(sum(s.num_first_attempts_correct), sum(s.num_first_attempts)),
           relative_difficulty:
@@ -494,7 +512,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           order_by(
             query,
             [eventual_correctness: ec],
-            {^direction, safe_div_fragment(sum(ec.num_correct), sum(ec.num_attempted))}
+            {^direction, complete_rate_fragment(ec.num_correct, ec.num_attempted)}
           )
 
         :first_attempt_correct ->

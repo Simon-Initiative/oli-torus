@@ -3,6 +3,7 @@ defmodule Oli.Analytics.Summary.EventualCorrectnessTest do
 
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Summary.{BrowseInsights, BrowseInsightsOptions, ResourceSummary}
+  alias Oli.Analytics.Summary.EventualCorrectness
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
@@ -103,6 +104,14 @@ defmodule Oli.Analytics.Summary.EventualCorrectnessTest do
   test "missing student evidence does not fall back to submission accuracy", ctx do
     aggregate_summaries(ctx, 8, 18, 1)
     assert insight(ctx, []).eventually_correct == nil
+  end
+
+  test "a rollup is unavailable when any attempted part lacks learner evidence" do
+    assert EventualCorrectness.rate([{1, 2}, {nil, nil}]) == nil
+    assert EventualCorrectness.rate([{nil, nil}]) == nil
+    assert EventualCorrectness.rate([]) == nil
+    assert EventualCorrectness.rate([{0, 2}, {0, 1}]) == 0.0
+    assert EventualCorrectness.rate([{1, 2}, {1, 1}]) == 2 / 3
   end
 
   test "sorting and paging use learner success rather than submission accuracy", ctx do

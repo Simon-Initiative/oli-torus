@@ -7,6 +7,12 @@ defmodule OliWeb.Live.Insights.Common do
   def format_percent(float_or_nil) when is_float(float_or_nil),
     do: "#{round(100 * float_or_nil)}%"
 
+  @doc "Formats percentages, marking missing eventual-correctness evidence as unavailable."
+  def render_percentage(_, %{eventually_correct: nil}, %OliWeb.Common.Table.ColumnSpec{
+        name: :eventually_correct
+      }),
+      do: "Unavailable"
+
   def render_percentage(_, row, %OliWeb.Common.Table.ColumnSpec{name: field}) do
     row[field] |> format_percent()
   end

@@ -74,6 +74,13 @@ revision tags. Existing data requires no migration or analytics replay, provided
 those records are retained. `num_correct` and `num_attempts` continue to count
 submissions, and `relative_difficulty` retains its submission-based calculation.
 
+Missing learner evidence produces an unavailable Eventually Correct value,
+including when only part of a page, objective, or cross-section rollup has
+evidence. It is never replaced with submission accuracy or a measured zero.
+An observed zero still means learners attempted the question but none succeeded.
+Historical membership is filtered and deduplicated before joining learner
+summaries to avoid multiplying those summaries by retry history.
+
 ### Activity example
 
 ```yaml
