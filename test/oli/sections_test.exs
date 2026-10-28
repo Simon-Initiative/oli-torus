@@ -3,6 +3,7 @@ defmodule Oli.SectionsTest do
   use Oban.Testing, repo: Oli.Repo
 
   import Oli.Factory
+  import Ecto.Query, warn: false
   import Oli.Utils.Seeder.Utils
 
   alias Oli.Delivery.Sections
@@ -82,6 +83,8 @@ defmodule Oli.SectionsTest do
       [res_1_id, res_2_id, res_3_id, res_4_id, res_5_id, res_6_id, res_7_id] =
         Enum.map(res_list, & &1.id)
 
+      scheduled_dates = Sections.get_resources_scheduled_dates_for_student(sec.slug, user.id)
+
       assert %{
                ^res_1_id => %{end_date: ~U[2000-01-15 12:00:00Z], scheduled_type: :read_by},
                ^res_2_id => %{end_date: ~U[2000-02-16 12:00:00Z], scheduled_type: :schedule},
@@ -90,9 +93,58 @@ defmodule Oli.SectionsTest do
                ^res_5_id => %{end_date: ~U[2000-02-19 12:00:00Z], scheduled_type: :schedule},
                ^res_6_id => %{end_date: ~U[2000-03-20 12:00:00Z], scheduled_type: :schedule},
                ^res_7_id => %{end_date: ~U[2000-04-21 12:00:00Z], scheduled_type: :read_by}
-             } =
-               Sections.get_resources_scheduled_dates_for_student(sec.slug, user.id)
+             } = scheduled_dates
+
+      Oli.Repo.update_all(from(sr in SectionResource, where: sr.section_id == ^sec.id),
+        set: [removed_from_schedule: true]
+      )
+
+      assert Sections.get_resources_scheduled_dates_for_student(sec.slug, user.id) ==
+               Map.put(scheduled_dates, res_1_id, %{end_date: nil, scheduled_type: :read_by})
     end
+  end
+
+  test "sidebar dates retain removed assignment deadlines and exceptions" do
+    section = insert(:section)
+    user = insert(:user)
+    resource = insert(:resource)
+
+    sr =
+      insert(:section_resource,
+        section: section,
+        resource_id: resource.id,
+        scheduling_type: :due_by,
+        removed_from_schedule: true,
+        end_date: ~U[2027-06-01 00:00:00Z]
+      )
+
+    insert(:student_exception,
+      section: section,
+      user: user,
+      resource: resource,
+      end_date: ~U[2027-07-01 00:00:00Z]
+    )
+
+    insert(:gating_condition,
+      section: section,
+      user: nil,
+      resource: resource,
+      data: %{start_datetime: ~U[2027-01-01 00:00:00Z], end_datetime: ~U[2027-06-01 00:00:00Z]}
+    )
+
+    dates = Sections.get_resources_scheduled_dates_for_student(section.slug, user.id)
+    assert %{end_date: ~U[2027-07-01 00:00:00Z]} = dates[resource.id]
+
+    Oli.Repo.update_all(from(r in SectionResource, where: r.id == ^sr.id),
+      set: [removed_from_schedule: false]
+    )
+
+    assert %{end_date: ~U[2027-07-01 00:00:00Z]} =
+             Sections.get_resources_scheduled_dates_for_student(section.slug, user.id)[
+               resource.id
+             ]
+
+    assert Sections.get_resources_scheduled_dates_for_student(section.slug, user.id) == dates
   end
 
   describe "enrollments" do

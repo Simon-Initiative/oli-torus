@@ -919,6 +919,26 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Upcoming Agenda")
     end
 
+    test "removed assignments retain due-date labels on home cards", %{
+      conn: conn,
+      section: section,
+      page_3: page
+    } do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+
+      Sections.get_section_resource(section.id, page.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: nil,
+        end_date: ~U[2023-11-04 20:00:00Z],
+        scheduling_type: :due_by,
+        removed_from_schedule: true
+      })
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+      assert has_element?(view, "div#home-assignments", page.title)
+      assert has_element?(view, "div#home-assignments", "Due Today")
+    end
+
     test "shows due info for upcoming assignments when only end_date is set", %{
       conn: conn,
       section: section,

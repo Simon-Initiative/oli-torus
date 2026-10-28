@@ -13,6 +13,8 @@ defmodule Oli.Delivery.Sections.Scheduling do
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Repo
 
+  @container_type_id Oli.Resources.ResourceType.id_for_container()
+
   @doc """
   For a given course section, return a list of all soft schedulable
   section resources (that is, all containers and pages).
@@ -20,6 +22,31 @@ defmodule Oli.Delivery.Sections.Scheduling do
   def retrieve(%Section{id: section_id}, filter_resource_type \\ false) do
     SectionResourceDepot.retrieve_schedule(section_id, filter_resource_type)
   end
+
+  @doc """
+  Projects resource dates or combined settings for student schedule display.
+
+  Removal hides advisory container ranges and page completion dates. Assignment
+  deadlines, page availability dates, and student-specific date exceptions remain
+  visible. Stored dates and effective settings used for attempt availability and
+  submission policy are not changed.
+  """
+  @spec for_display(map()) :: map()
+  def for_display(
+        %SectionResource{removed_from_schedule: true, resource_type_id: @container_type_id} =
+          settings
+      ) do
+    %{settings | start_date: nil, end_date: nil}
+  end
+
+  def for_display(%{end_date_is_exception: true} = settings), do: settings
+
+  def for_display(%{removed_from_schedule: true, scheduling_type: type} = settings)
+      when type in [:read_by, :inclass_activity] do
+    %{settings | end_date: nil}
+  end
+
+  def for_display(settings), do: settings
 
   @doc """
   Persist scheduling updates to a list of section resources, for a given

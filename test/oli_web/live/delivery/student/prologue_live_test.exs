@@ -1426,6 +1426,20 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       refute has_element?(view, "#page_due_terms")
     end
 
+    test "removed assignments retain operative dates on the prologue", ctx do
+      %{conn: conn, user: user, section: section, page_2: page} = ctx
+      enroll_and_mark_visited(user, section)
+      resource = Sections.get_section_resource(section.id, page.resource_id)
+      assert {:ok, _} = Sections.update_section_resource(resource, %{removed_from_schedule: true})
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page.slug))
+      assert has_element?(view, "#page_due_terms", "Available:")
+      assert render(view) =~ page.title
+      saved = Sections.get_section_resource(section.id, page.resource_id)
+      assert saved.start_date == resource.start_date
+      assert saved.end_date == resource.end_date
+    end
+
     test "page terms render the due date when is set", ctx do
       %{conn: conn, user: user, section: section, page_2: page_2} = ctx
 
