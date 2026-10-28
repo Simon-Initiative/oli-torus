@@ -76,6 +76,7 @@ defmodule Oli.Repo.Migrations.AddGenaiProvidersAndTierCapacity do
 
     alter table(:registered_models) do
       modify :provider_id, :bigint, null: false
+      remove :pool_class, :string
       remove :provider, :string
       remove :url_template, :string
       remove :api_key, :binary
@@ -85,6 +86,7 @@ defmodule Oli.Repo.Migrations.AddGenaiProvidersAndTierCapacity do
 
   def down do
     alter table(:registered_models) do
+      add :pool_class, :string, null: false, default: "slow"
       add :provider, :string
       add :url_template, :string
       add :api_key, :binary

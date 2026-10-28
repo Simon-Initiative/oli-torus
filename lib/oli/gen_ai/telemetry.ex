@@ -46,9 +46,8 @@ defmodule Oli.GenAI.Telemetry do
     reason = normalize(metadata[:reason])
     request_type = normalize(metadata[:request_type])
     tier = normalize(metadata[:tier])
-    pool_class = normalize(metadata[:pool_class])
 
-    tags = %{reason: reason, request_type: request_type, tier: tier, pool_class: pool_class}
+    tags = %{reason: reason, request_type: request_type, tier: tier}
 
     Appsignal.add_distribution_value("oli.genai.router.duration_ms", duration_ms, tags)
     Appsignal.increment_counter("oli.genai.router.decision", 1, tags)
@@ -62,13 +61,11 @@ defmodule Oli.GenAI.Telemetry do
     admitted = Map.get(measurements, :admitted, 0)
     request_type = normalize(metadata[:request_type])
     tier = normalize(metadata[:tier])
-    pool_class = normalize(metadata[:pool_class])
 
     tags = %{
       admitted: if(admitted == 1, do: "true", else: "false"),
       request_type: request_type,
-      tier: tier,
-      pool_class: pool_class
+      tier: tier
     }
 
     Appsignal.increment_counter("oli.genai.router.admission", 1, tags)

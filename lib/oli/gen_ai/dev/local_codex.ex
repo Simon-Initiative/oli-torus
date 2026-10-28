@@ -98,7 +98,6 @@ defmodule Oli.GenAI.Dev.LocalCodex do
         max_concurrent: 4,
         model: opts.model,
         name: opts.model_name,
-        pool_class: :slow,
         recv_timeout: 60_000,
         routing_breaker_429_threshold: 0.0,
         routing_breaker_error_rate_threshold: 0.0,

@@ -34,7 +34,7 @@ defmodule Oli.GenAI.ProviderMigrationTest do
     end)
 
     MigrationRepo.query!(
-      "CREATE TABLE #{schema}.registered_models (id bigserial PRIMARY KEY, name text, provider text, model text, url_template text, api_key bytea, secondary_api_key bytea)"
+      "CREATE TABLE #{schema}.registered_models (id bigserial PRIMARY KEY, name text, provider text, model text, url_template text, api_key bytea, secondary_api_key bytea, pool_class text NOT NULL DEFAULT 'slow')"
     )
 
     MigrationRepo.query!(
@@ -69,7 +69,7 @@ defmodule Oli.GenAI.ProviderMigrationTest do
 
     assert [] ==
              MigrationRepo.query!(
-               "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'registered_models' AND column_name IN ('api_key', 'secondary_api_key', 'provider', 'url_template')",
+               "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'registered_models' AND column_name IN ('api_key', 'secondary_api_key', 'provider', 'url_template', 'pool_class')",
                [schema]
              ).rows
 
@@ -84,6 +84,11 @@ defmodule Oli.GenAI.ProviderMigrationTest do
     assert [[nil, nil], [nil, nil], [nil, nil]] ==
              MigrationRepo.query!(
                "SELECT api_key, secondary_api_key FROM #{schema}.registered_models ORDER BY id"
+             ).rows
+
+    assert [["slow"], ["slow"], ["slow"]] =
+             MigrationRepo.query!(
+               "SELECT pool_class FROM #{schema}.registered_models ORDER BY id"
              ).rows
 
     assert [[nil]] = MigrationRepo.query!("SELECT to_regclass('#{schema}.gen_ai_providers')").rows

@@ -44,10 +44,9 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
   end
 
   describe "registered_models routing policy fields" do
-    test "defaults pool_class to slow and sets max_concurrent default" do
+    test "sets model concurrency and breaker policy defaults" do
       registered_model = insert_registered_model()
 
-      assert registered_model.pool_class == :slow
       assert registered_model.max_concurrent == 95
       assert registered_model.routing_breaker_error_rate_threshold == 0.2
       assert registered_model.routing_breaker_429_threshold == 0.1

@@ -419,7 +419,7 @@ Each tier's actual transport pool is its sole capacity authority. Persist one po
 capacity setting for `(service_config_id, tier)` and use checked-out occupancy as a
 routing hint. Do not maintain application request counters, admission budgets,
 admission leases, or bounded request-task registries as a second representation of
-occupied capacity. Remove RegisteredModel-level `max_concurrent`, `pool_class`, and
+occupied capacity. Remove RegisteredModel-level `max_concurrent` and
 the shared fast/slow pools from the target design.
 
 ### Admission and transport
