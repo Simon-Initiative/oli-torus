@@ -497,11 +497,17 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
       |> Map.merge(%{
         "custom_assessments" => selected_ids,
         "title" => section.title,
-        "description" => section.description || "Certificate description"
+        "description" => certificate_description(section)
       })
 
     Certificate.changeset(certificate || %Certificate{}, params)
   end
+
+  # The product description is unbounded, but the certificate stores a bounded copy of it.
+  defp certificate_description(%{description: description}) when is_binary(description),
+    do: String.slice(description, 0, Certificate.description_max_length())
+
+  defp certificate_description(_section), do: "Certificate description"
 
   defp cast_value(_, value) when value in ["", nil], do: nil
   defp cast_value("min_percentage_for_completion", value), do: Float.parse(value) |> elem(0)
