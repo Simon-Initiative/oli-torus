@@ -781,12 +781,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
         {:noreply, assign(socket, form_params: params)}
 
       is_nil(ManualGrading.fetch_submitted_attempt(section, attempt.id)) ->
-        # someone else scored it since it was opened: keep the draft visible, read-only
-        {:noreply,
-         socket
-         |> put_flash(:error, "This submission was already scored by someone else.")
-         |> assign(form_params: params, readonly: true)
-         |> recompute_position()}
+        {:noreply, already_scored(socket, params)}
 
       true ->
         score_feedbacks =
@@ -816,6 +811,9 @@ defmodule OliWeb.ManualGrading.ScoringLive do
              )
              |> recompute_position()}
 
+          {:error, :not_pending} ->
+            {:noreply, already_scored(socket, params)}
+
           _ ->
             {:noreply, put_flash(socket, :error, "There was a problem scoring this attempt.")}
         end
@@ -842,6 +840,13 @@ defmodule OliWeb.ManualGrading.ScoringLive do
   end
 
   def handle_event(_event, _params, socket), do: {:noreply, socket}
+
+  defp already_scored(socket, params) do
+    socket
+    |> put_flash(:error, "This submission was already scored by someone else.")
+    |> assign(form_params: params, readonly: true)
+    |> recompute_position()
+  end
 
   # If someone else scored the open submission, the next scoring event freezes the form
   # with the draft still visible (leaving asks for confirmation; Discard is accepted).

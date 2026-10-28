@@ -440,39 +440,62 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   recalculate a resource access level score, and trigger LMS grade passback (if this is an LMS section and that
   section has gradepassback enabled)
 
-  It returns a tuple of `{:ok, part_attempt_guids}` if successful, or `{:error, reason}` if there was an error.
+  Scoring locks the activity attempt and rechecks its submitted state in the transaction before
+  reading or updating its parts. Overlapping calls for the same submission cannot both save.
+
+  It returns a tuple of `{:ok, part_attempt_guids}` if successful, `{:error, :not_pending}` when the
+  attempt is no longer submitted or does not belong to the section, or `{:error, reason}` for other errors.
   """
   def apply_manual_scoring(
         %Section{slug: section_slug} = section,
         activity_attempt,
         score_feedbacks_map
       ) do
-    part_attempts =
-      Core.get_latest_part_attempts(activity_attempt.attempt_guid)
-      |> filter_part_attempts_for_manual_grading(activity_attempt)
+    Repo.transaction(fn ->
+      state =
+        from(aa in ActivityAttempt,
+          join: ra in ResourceAttempt,
+          on: ra.id == aa.resource_attempt_id,
+          join: access in ResourceAccess,
+          on: access.id == ra.resource_access_id,
+          where:
+            aa.id == ^activity_attempt.id and aa.attempt_guid == ^activity_attempt.attempt_guid and
+              access.section_id == ^section.id,
+          select: aa.lifecycle_state,
+          lock: "FOR UPDATE OF a0"
+        )
+        |> Repo.one()
 
-    if part_attempts == [] do
-      {:error, :no_scorable_part_attempts}
-    else
-      manual_part_attempt_guids =
-        part_attempts
-        |> Enum.filter(fn pa ->
-          pa.grading_approach == :manual and pa.lifecycle_state == :submitted
-        end)
-        |> Enum.map(& &1.attempt_guid)
+      case state do
+        :submitted -> :ok
+        _ -> Repo.rollback(:not_pending)
+      end
 
-      datashop_session_id = hd(part_attempts).datashop_session_id
-      client_evaluations = to_client_evaluations(part_attempts, score_feedbacks_map)
+      part_attempts =
+        Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+        |> filter_part_attempts_for_manual_grading(activity_attempt)
 
-      graded = activity_attempt.graded
-      resource_attempt_guid = activity_attempt.resource_attempt_guid
+      if part_attempts == [] do
+        Repo.rollback(:no_scorable_part_attempts)
+      else
+        manual_part_attempt_guids =
+          part_attempts
+          |> Enum.filter(fn pa ->
+            pa.grading_approach == :manual and pa.lifecycle_state == :submitted
+          end)
+          |> Enum.map(& &1.attempt_guid)
 
-      mocked_part_attempts =
-        Enum.map(part_attempts, fn part_attempt ->
-          Map.put(part_attempt, :grading_approach, :automatic)
-        end)
+        datashop_session_id = hd(part_attempts).datashop_session_id
+        client_evaluations = to_client_evaluations(part_attempts, score_feedbacks_map)
 
-      Oli.Repo.transaction(fn ->
+        graded = activity_attempt.graded
+        resource_attempt_guid = activity_attempt.resource_attempt_guid
+
+        mocked_part_attempts =
+          Enum.map(part_attempts, fn part_attempt ->
+            Map.put(part_attempt, :grading_approach, :automatic)
+          end)
+
         case ApplyClientEvaluation.apply(
                section_slug,
                activity_attempt.attempt_guid,
@@ -500,8 +523,8 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
           {:error, error} ->
             Repo.rollback(error)
         end
-      end)
-    end
+      end
+    end)
   end
 
   @doc """

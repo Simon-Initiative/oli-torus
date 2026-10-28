@@ -1153,6 +1153,31 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       end
     end
 
+    test "losing Apply after the pending check preserves the draft read-only and explains why",
+         ctx do
+      handler = {__MODULE__, make_ref()}
+
+      :ok =
+        :telemetry.attach(
+          handler,
+          [:oli, :repo, :query],
+          &__MODULE__.score_after_pending_check/4,
+          %{handler: handler, view: ctx.view.pid, attempt: ctx.two_parts, parent: self()}
+        )
+
+      on_exit(fn -> :telemetry.detach(handler) end)
+
+      html = ctx.view |> form("#scoring-form", valid(ctx)) |> render_submit()
+      assert_receive :pending_check_passed
+      assert html =~ "This submission was already scored by someone else."
+      refute html =~ "applied successfully"
+      assert [_] = Floki.find(doc(html), ~s|input[name="score_#{ctx.g1}"][readonly][value="1"]|)
+      assert [_] = Floki.find(doc(html), ~s|textarea[name="feedback_#{ctx.g1}"][readonly]|)
+      assert text(doc(html), ~s|textarea[name="feedback_#{ctx.g1}"]|) == "Well done"
+      assert Floki.find(doc(html), "button#apply-button") == []
+      assert Floki.find(doc(html), "#submission-position") == []
+    end
+
     test "when someone else scored it meanwhile, Apply saves nothing, says so, and the draft stays visible read-only",
          ctx do
       change_draft(ctx.view, valid(ctx))
@@ -1323,6 +1348,17 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
       {path, flash} = assert_redirect(view)
       assert String.starts_with?(path, ctx.table_route)
       assert flash["info"] == @notice
+    end
+  end
+
+  @doc false
+  def score_after_pending_check(_event, _measurements, metadata, config) do
+    if self() == config.view and metadata.source == "activity_attempts" and
+         String.contains?(metadata.query, "LEFT OUTER JOIN") and
+         String.contains?(metadata.query, "\"users\"") do
+      :telemetry.detach(config.handler)
+      Oli.Repo.update!(Ecto.Changeset.change(config.attempt, lifecycle_state: :evaluated))
+      send(config.parent, :pending_check_passed)
     end
   end
 end

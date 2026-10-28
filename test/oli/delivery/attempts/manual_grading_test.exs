@@ -1158,6 +1158,232 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
     end
   end
 
+  test "overlapping manual scores save and finalize only the winning submission" do
+    sandbox = Ecto.Adapters.SQL.Sandbox
+    oban_config = Application.fetch_env!(:oli, Oban)
+    Application.put_env(:oli, Oban, Keyword.put(oban_config, :queues, []))
+    on_exit(fn -> Application.put_env(:oli, Oban, oban_config) end)
+
+    {section, attempt, part, rows} = sandbox.unboxed_run(Repo, &committed_submission/0)
+
+    on_exit(fn ->
+      sandbox.unboxed_run(Repo, fn ->
+        Repo.delete_all(
+          from j in Oban.Job,
+            where:
+              fragment("?->>'section_slug' = ?", j.args, ^section.slug) or
+                fragment("?->>'section_id' = ?", j.args, ^to_string(section.id))
+        )
+
+        Enum.each(rows, &Repo.delete!/1)
+        Enum.each(rows, fn row -> assert Repo.get(row.__struct__, row.id) == nil end)
+
+        refute Repo.exists?(
+                 from j in Oban.Job,
+                   where:
+                     fragment("?->>'section_slug' = ?", j.args, ^section.slug) or
+                       fragment("?->>'section_id' = ?", j.args, ^to_string(section.id))
+               )
+      end)
+    end)
+
+    Oli.Delivery.Attempts.PageLifecycle.Broadcaster.subscribe_to_lms_grade_update(section.id)
+    parent = self()
+
+    scores = fn score, feedback ->
+      %{part.attempt_guid => %{score: score, out_of: 1.0, feedback: feedback}}
+    end
+
+    winner =
+      Task.async(fn ->
+        sandbox.unboxed_run(Repo, fn ->
+          Repo.transaction(fn ->
+            %{rows: [[pid]]} = Repo.query!("SELECT pg_backend_pid()")
+            result = ManualGrading.apply_manual_scoring(section, attempt, scores.(1.0, "Winner"))
+            send(parent, {:winner_saved, pid, result})
+
+            receive do
+              :commit -> result
+            after
+              10_000 -> raise "winner was never released"
+            end
+          end)
+        end)
+      end)
+
+    try do
+      assert_receive {:winner_saved, winner_pid, {:ok, [guid]}}, 5_000
+      assert guid == part.attempt_guid
+
+      loser =
+        Task.async(fn ->
+          sandbox.unboxed_run(Repo, fn ->
+            %{rows: [[pid]]} = Repo.query!("SELECT pg_backend_pid()")
+            send(parent, {:loser_started, pid})
+            ManualGrading.apply_manual_scoring(section, attempt, scores.(0.0, "Loser"))
+          end)
+        end)
+
+      try do
+        assert_receive {:loser_started, loser_pid}, 5_000
+        refute winner_pid == loser_pid
+
+        sandbox.unboxed_run(Repo, fn ->
+          await_database_block(winner_pid, loser_pid, System.monotonic_time(:millisecond) + 5_000)
+        end)
+
+        send(winner.pid, :commit)
+        assert {:ok, {:ok, [^guid]}} = Task.await(winner, 5_000)
+        loser_result = Task.await(loser, 5_000)
+
+        sandbox.unboxed_run(Repo, fn ->
+          saved = Repo.get!(Core.PartAttempt, part.id)
+          assert saved.score == 1.0
+
+          assert saved.feedback == %{
+                   "content" => [%{"type" => "p", "children" => [%{"text" => "Winner"}]}]
+                 }
+
+          assert Repo.get!(Core.ActivityAttempt, attempt.id).lifecycle_state == :evaluated
+
+          assert Repo.get!(Core.ResourceAttempt, attempt.resource_attempt_id).lifecycle_state ==
+                   :evaluated
+        end)
+
+        assert loser_result == {:error, :not_pending}
+        assert_receive {:lms_grade_update_result, %{status: :queued}}, 1_000
+        refute_receive {:lms_grade_update_result, %{status: :queued}}, 0
+      after
+        Task.shutdown(loser, :brutal_kill)
+      end
+    after
+      send(winner.pid, :commit)
+      Task.shutdown(winner, :brutal_kill)
+    end
+  end
+
+  defp await_database_block(winner_pid, loser_pid, deadline) do
+    case Repo.query!("SELECT $1 = ANY(pg_blocking_pids($2))", [winner_pid, loser_pid]).rows do
+      [[true]] ->
+        :ok
+
+      [[false]] ->
+        assert System.monotonic_time(:millisecond) < deadline,
+               "second scorer never waited for the winner"
+
+        await_database_block(winner_pid, loser_pid, deadline)
+    end
+  end
+
+  defp committed_submission do
+    {:ok, fixture} =
+      Repo.transaction(fn ->
+        suffix = UUID.uuid4()
+        user = Repo.insert!(%User{email: "manual-score-#{suffix}@example.edu", sub: suffix})
+
+        section =
+          Repo.insert!(%Oli.Delivery.Sections.Section{
+            slug: "manual-score-#{suffix}",
+            grade_passback_enabled: true,
+            section_resource_migration_version:
+              Oli.Delivery.Sections.SectionResourceMigration.current_version()
+          })
+
+        page = Repo.insert!(%Oli.Resources.Resource{})
+        activity = Repo.insert!(%Oli.Resources.Resource{})
+        strategy = Oli.Resources.ScoringStrategy.get_id_by_type("total")
+
+        page_revision =
+          Repo.insert!(%Oli.Resources.Revision{
+            resource_id: page.id,
+            slug: "page-#{suffix}",
+            graded: true,
+            resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+            scoring_strategy_id: strategy
+          })
+
+        activity_revision =
+          Repo.insert!(%Oli.Resources.Revision{
+            resource_id: activity.id,
+            slug: "activity-#{suffix}",
+            scoring_strategy_id: strategy,
+            activity_type_id: Oli.Activities.get_registration_by_slug("oli_short_answer").id
+          })
+
+        section_resource =
+          Repo.insert!(%Oli.Delivery.Sections.SectionResource{
+            section_id: section.id,
+            resource_id: page.id,
+            revision_slug: page_revision.slug,
+            resource_type_id: page_revision.resource_type_id,
+            graded: true,
+            scoring_strategy_id: strategy,
+            batch_scoring: true
+          })
+
+        access =
+          Repo.insert!(%Core.ResourceAccess{
+            user_id: user.id,
+            section_id: section.id,
+            resource_id: page.id,
+            access_count: 1
+          })
+
+        resource_attempt =
+          Repo.insert!(%Core.ResourceAttempt{
+            resource_access_id: access.id,
+            revision_id: page_revision.id,
+            attempt_guid: UUID.uuid4(),
+            attempt_number: 1,
+            content: %{},
+            lifecycle_state: :submitted
+          })
+
+        activity_attempt =
+          Repo.insert!(%Core.ActivityAttempt{
+            resource_attempt_id: resource_attempt.id,
+            revision_id: activity_revision.id,
+            resource_id: activity.id,
+            attempt_guid: UUID.uuid4(),
+            attempt_number: 1,
+            lifecycle_state: :submitted
+          })
+
+        part =
+          Repo.insert!(%Core.PartAttempt{
+            activity_attempt_id: activity_attempt.id,
+            attempt_guid: UUID.uuid4(),
+            attempt_number: 1,
+            part_id: "1",
+            grading_approach: :manual,
+            lifecycle_state: :submitted,
+            response: %{"input" => "Student response"},
+            out_of: 1.0,
+            datashop_session_id: suffix
+          })
+
+        attempt = ManualGrading.fetch_submitted_attempt(section, activity_attempt.id)
+
+        rows = [
+          part,
+          activity_attempt,
+          resource_attempt,
+          access,
+          section_resource,
+          activity_revision,
+          page_revision,
+          activity,
+          page,
+          section,
+          user
+        ]
+
+        {section, attempt, part, rows}
+      end)
+
+    fixture
+  end
+
   describe "apply_manual_scoring/3" do
     setup do
       map = Seeder.base_project_with_resource2()
