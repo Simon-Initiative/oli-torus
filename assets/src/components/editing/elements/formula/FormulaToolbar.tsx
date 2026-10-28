@@ -33,7 +33,7 @@ export const FormulaToolbar: React.FC<Props> = ({ setSubtype, subtype }) => {
   const active = markups.find((m) => m.code === subtype);
 
   return (
-    <div className="toolbar">
+    <div className="toolbar bg-Background-bg-primary">
       <div className="buttons">
         {markups.map((m) => (
           <button
