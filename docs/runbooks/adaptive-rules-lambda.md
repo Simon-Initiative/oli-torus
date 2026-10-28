@@ -51,31 +51,15 @@ cp docs/runbooks/adaptive-rules-lambda/index.js "$PACKAGE_DIR/package/"
 
 `deploy-node` builds `rules.js` but does not upload it to AWS. `rules.js` exports `check`, so it needs the [JavaScript wrapper](adaptive-rules-lambda/index.js) copied above. No separate wrapper compilation is needed.
 
-Invoke the packaged handler with the [smoke-test input](adaptive-rules-lambda/rules-event.json) and check its response using Node. A failed invocation or assertion exits nonzero. Keep the input outside the deployment ZIP.
+Create the deployment ZIP and record the source revision:
 
 ```bash
-node - "$PACKAGE_DIR" <<'NODE'
-const assert = require('node:assert/strict');
-const path = require('node:path');
-const { handler } = require(path.resolve(process.argv[2], 'package/index.js'));
-const event = require('./docs/runbooks/adaptive-rules-lambda/rules-event.json');
-handler(event).then((result) => {
-  assert.equal(result.correct, false);
-  assert.equal(result.score, 0);
-  assert.equal(result.out_of, 1);
-  assert.ok(Array.isArray(result.results) && result.results.length > 0);
-  console.log('rules response contract passed');
-}).catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
-NODE
 (cd "$PACKAGE_DIR/package" && zip -q ../rules.zip ./*)
 unzip -l "$PACKAGE_DIR/rules.zip"
 printf '%s\n' "$SOURCE_SHA" > "$PACKAGE_DIR/source-sha.txt"
 ```
 
-The JavaScript files must be at the ZIP root, without a containing `package/` directory. Retain the ZIP and source SHA with the release artifacts. Local checks verify packaging and representative payloads, not AWS permissions or production behavior.
+The JavaScript files must be at the ZIP root, without a containing `package/` directory. Retain the ZIP and source SHA with the release artifacts.
 
 ## 3. Prepare the Lambda execution role
 
@@ -135,7 +119,9 @@ aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 
 Record the version number alongside the ZIP and source SHA. Torus will invoke that explicit version, so uploading new code does not silently change the live evaluator.
 
-## 5. Invoke the published version before cutover
+## 5. Smoke-test the deployed function in staging
+
+Invoke the published staging version with the [smoke-test input](adaptive-rules-lambda/rules-event.json), then check the invocation metadata and response below. Keep the input outside the deployment ZIP. Complete this check before configuring Torus to use the function or promoting the deployment to production.
 
 ```bash
 aws lambda invoke --function-name "$FUNCTION_NAME" --qualifier "$FUNCTION_VERSION" \
@@ -222,4 +208,4 @@ rm -rf -- "$PACKAGE_DIR"
 - [AWS CLI create-function](https://docs.aws.amazon.com/cli/latest/reference/lambda/create-function.html)
 - [AWS CLI update-function-code](https://docs.aws.amazon.com/cli/latest/reference/lambda/update-function-code.html)
 
-Local package loading and representative handler results can be verified without AWS. Function creation, IAM propagation, managed-runtime compatibility, and Torus cutover require target-environment verification; do not treat earlier automated tests as proof that a live rollout has occurred.
+The deployed-function smoke test verifies the published version in staging. Torus activity checks additionally verify runtime credentials, provider configuration, and end-to-end behavior. Repeat these checks in the target environment when deploying to production.

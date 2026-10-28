@@ -52,33 +52,17 @@ cp assets/node_modules/vm2/lib/setup-sandbox.js "$PACKAGE_DIR/package/"
 
 `deploy-node` builds `eval.js` but does not upload it to AWS. The bundled `vm2` code reads `bridge.js` and `setup-sandbox.js` relative to `eval.js` at runtime. Copy them from the same locked dependency installation used for the build. Uploading only `eval.js` fails with a missing-file error. No `node_modules` directory is needed for the paths exercised below.
 
-The current build emits warnings about dynamic requires and optional `coffee-script` resolution. A successful compilation alone is insufficient: run the isolated smoke checks below and repeat them whenever the bundler or `vm2` changes. This package supports the evaluator's JavaScript execution paths, not optional CoffeeScript/TypeScript compilers.
+The current build emits warnings about dynamic requires and optional `coffee-script` resolution. A successful compilation alone is insufficient: run the deployed-function smoke test in step 5, including after changes to the bundler or `vm2`. This package supports the evaluator's JavaScript execution paths, not optional CoffeeScript/TypeScript compilers.
 
-Invoke the packaged handler with the [smoke-test input](variable-substitution-lambda/eval-event.json) and check its response using Node. A failed invocation or assertion exits nonzero. Keep the input outside the deployment ZIP.
+Create the deployment ZIP and record the source revision:
 
 ```bash
-node - "$PACKAGE_DIR" <<'NODE'
-const assert = require('node:assert/strict');
-const path = require('node:path');
-const { handler } = require(path.resolve(process.argv[2], 'package/eval.js'));
-const event = require('./docs/runbooks/variable-substitution-lambda/eval-event.json');
-handler(event).then((result) => {
-  assert.deepEqual(result, [
-    [{ variable: 'V1', errored: false, result: 2 }],
-    [{ variable: 'answer', errored: false, result: 42 }],
-  ]);
-  console.log('eval response contract passed');
-}).catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
-NODE
 (cd "$PACKAGE_DIR/package" && zip -q ../eval.zip ./*)
 unzip -l "$PACKAGE_DIR/eval.zip"
 printf '%s\n' "$SOURCE_SHA" > "$PACKAGE_DIR/source-sha.txt"
 ```
 
-The JavaScript files must be at the ZIP root, without a containing `package/` directory. Retain the ZIP and source SHA with the release artifacts. Local checks verify packaging and representative payloads, not AWS permissions or production behavior.
+The JavaScript files must be at the ZIP root, without a containing `package/` directory. Retain the ZIP and source SHA with the release artifacts.
 
 ## 3. Prepare the Lambda execution role
 
@@ -138,7 +122,9 @@ aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 
 Record the version number alongside the ZIP and source SHA. Torus will invoke that explicit version, so uploading new code does not silently change the live evaluator.
 
-## 5. Invoke the published version before cutover
+## 5. Smoke-test the deployed function in staging
+
+Invoke the published staging version with the [smoke-test input](variable-substitution-lambda/eval-event.json), then check the invocation metadata and response below. Keep the input outside the deployment ZIP. Complete this check before configuring Torus to use the function or promoting the deployment to production.
 
 ```bash
 aws lambda invoke --function-name "$FUNCTION_NAME" --qualifier "$FUNCTION_VERSION" \
@@ -226,4 +212,4 @@ rm -rf -- "$PACKAGE_DIR"
 - [AWS CLI create-function](https://docs.aws.amazon.com/cli/latest/reference/lambda/create-function.html)
 - [AWS CLI update-function-code](https://docs.aws.amazon.com/cli/latest/reference/lambda/update-function-code.html)
 
-Local package loading and representative handler results can be verified without AWS. Function creation, IAM propagation, managed-runtime compatibility, and Torus cutover require target-environment verification; do not treat earlier automated tests as proof that a live rollout has occurred.
+The deployed-function smoke test verifies the published version in staging. Torus activity checks additionally verify runtime credentials, provider configuration, and end-to-end behavior. Repeat these checks in the target environment when deploying to production.
