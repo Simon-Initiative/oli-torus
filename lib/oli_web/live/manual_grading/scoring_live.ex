@@ -195,7 +195,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
       </div>
 
       <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_305px] xl:items-start xl:gap-3">
-        <div>
+        <div id="scoring-submission">
           <div
             id="scoring-header"
             class="rounded-2xl border border-Border-border-default bg-Background-bg-secondary p-4 shadow-[0px_8px_30px_0px_rgba(0,50,99,0.10)] xl:rounded-b-none"
@@ -261,7 +261,7 @@ defmodule OliWeb.ManualGrading.ScoringLive do
 
         <div
           id="scoring-panel"
-          class="rounded-2xl border border-Border-border-default bg-Background-bg-secondary shadow-[0px_8px_30px_0px_rgba(0,50,99,0.10)] xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto"
+          class="rounded-2xl border border-Border-border-default bg-Background-bg-secondary shadow-[0px_8px_30px_0px_rgba(0,50,99,0.10)] xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:data-[page-scroll=true]:max-h-[none] xl:data-[page-scroll=true]:overflow-visible"
         >
           <div class="px-4 pt-4">
             <div class="border-b border-Border-border-default pb-[13px] pt-3">

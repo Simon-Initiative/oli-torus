@@ -160,8 +160,29 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
     |> String.trim()
   end
 
+  defp assert_panel_scroll_layout(html) do
+    d = doc(html)
+    assert [_] = Floki.find(d, "#scoring-submission")
+    assert Floki.attribute(d, "#scoring-page", "phx-hook") == ["ScoringRevealFocus"]
+    [classes] = Floki.attribute(d, "#scoring-panel", "class")
+    assert classes =~ "xl:data-[page-scroll=true]:max-h-[none]"
+    assert classes =~ "xl:data-[page-scroll=true]:overflow-visible"
+    assert classes =~ "xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto"
+  end
+
   describe "opening a submission" do
     setup [:instructor_conn, :create_queue]
+
+    test "the panel keeps its responsive scroll contract through drafts and navigation", ctx do
+      {:ok, view, html} = live(ctx.conn, ctx.scoring_route.(ctx.a_2.id))
+      assert_panel_scroll_layout(html)
+      [pa] = Oli.Delivery.Attempts.Core.get_latest_part_attempts(ctx.a_2.attempt_guid)
+      html = change_draft(view, %{"score_#{pa.attempt_guid}" => "0.5"})
+      assert_panel_scroll_layout(html)
+      html = view |> element("a#next-link") |> render_click()
+      assert_patch(view, ctx.scoring_route.(ctx.a_1.id))
+      assert_panel_scroll_layout(html)
+    end
 
     test "shows the student name as the heading, the activity, the submission date as the table shows it, the position, and names Back, Previous and Next by their text",
          ctx do
@@ -1003,6 +1024,15 @@ defmodule OliWeb.ManualGrading.ScoringLiveTest do
         "score_#{ctx.g2}" => "0.5",
         "feedback_#{ctx.g2}" => "Half"
       }
+
+    test "the panel measurement targets remain after Apply replaces the form and shows a flash",
+         ctx do
+      html = ctx.view |> form("#scoring-form", valid(ctx)) |> render_submit()
+      assert html =~ "Score and feedback applied successfully."
+      assert_panel_scroll_layout(html)
+      assert [_] = Floki.find(doc(html), "#scoring-panel > #scoring-form")
+      assert Floki.find(doc(html), "#apply-button") == []
+    end
 
     test "saves the scores, says so, stays read-only, needs no modal to leave, and redirects on reload",
          ctx do
