@@ -8,7 +8,7 @@ defmodule Oli.Delivery.Sections.Certificate do
 
   @assessments_options [:all, :custom]
 
-  @description_max_length 1000
+  @description_max_length 500
   @admin_field_max_length 255
   @admin_fields [
     :admin_name1,

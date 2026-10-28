@@ -140,7 +140,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
       refute certificate.custom_assessments == [] and certificate.assessments_apply_to == :custom
     end
 
-    for {length, expected_length} <- [{300, 300}, {5000, 1000}] do
+    for {length, expected_length} <- [{300, 300}, {5000, 500}] do
       test "saves thresholds when the product description has #{length} characters", ctx do
         description = String.duplicate("a", unquote(length))
         product = Oli.Repo.update!(Ecto.Changeset.change(ctx.product, description: description))
