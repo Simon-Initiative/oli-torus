@@ -13,6 +13,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   alias OliWeb.Components.Common
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Components.Modal
+  alias OliWeb.Delivery.ScheduleDisplay
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
   alias OliWeb.Icons
@@ -1262,14 +1263,15 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       <div class="pr-2 pl-1 self-end">
         <div class="flex items-end gap-1">
           <div
-            :if={not is_nil(@display_settings.end_date)}
+            :if={not is_nil(@display_settings.end_date) or not is_nil(@display_settings.start_date)}
             class="text-right dark:text-white text-opacity-90 text-xs font-semibold"
           >
-            {Utils.days_difference(
-              @display_settings.end_date,
-              @display_settings.scheduling_type,
-              @ctx
-            )}
+            <%= case @display_settings.end_date do %>
+              <% nil -> %>
+                Available: {ScheduleDisplay.available_date(@display_settings.start_date, @ctx)}
+              <% end_date -> %>
+                {Utils.days_difference(end_date, @display_settings.scheduling_type, @ctx)}
+            <% end %>
           </div>
         </div>
       </div>

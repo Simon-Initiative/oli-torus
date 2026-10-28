@@ -3106,7 +3106,7 @@ defmodule Oli.Delivery.Sections do
 
   defp visible_scheduled_resources(section, combined_settings) do
     Scheduling.retrieve(section, :pages)
-    |> Enum.map(fn
+    |> Stream.map(fn
       %{removed_from_schedule: true} = resource ->
         display =
           Scheduling.for_display(Map.get(combined_settings, resource.resource_id, resource))
