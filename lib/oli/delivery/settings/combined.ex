@@ -1,6 +1,15 @@
 defmodule Oli.Delivery.Settings.Combined do
+  @moduledoc """
+  Effective settings for a resource and student.
+
+  `removed_from_schedule` and `end_date_is_exception` describe schedule display
+  precedence. They do not deactivate availability dates or assignment deadlines.
+  """
+
   defstruct resource_id: nil,
             scheduling_type: :read_by,
+            removed_from_schedule: false,
+            end_date_is_exception: false,
             start_date: nil,
             end_date: nil,
             max_attempts: 0,
@@ -25,6 +34,8 @@ defmodule Oli.Delivery.Settings.Combined do
   @type t() :: %__MODULE__{
           resource_id: integer(),
           scheduling_type: :due_by | :read_by | :inclass_activity,
+          removed_from_schedule: boolean(),
+          end_date_is_exception: boolean(),
           start_date: DateTime.t(),
           end_date: DateTime.t(),
           max_attempts: integer(),

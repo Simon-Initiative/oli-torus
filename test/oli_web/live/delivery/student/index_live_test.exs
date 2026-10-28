@@ -919,6 +919,64 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Upcoming Agenda")
     end
 
+    test "removed assignments retain due-date labels on home cards", %{
+      conn: conn,
+      section: section,
+      page_3: page
+    } do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+
+      Sections.get_section_resource(section.id, page.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-11-04 20:00:00Z],
+        end_date: ~U[2023-11-04 20:00:00Z],
+        scheduling_type: :due_by,
+        removed_from_schedule: true
+      })
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+      assert has_element?(view, "div#home-assignments", page.title)
+      assert has_element?(view, "div#home-assignments", "Due Today")
+
+      refute has_element?(
+               view,
+               ~s{#home-assignments a[href*="#{page.slug}"] [data-role=details]},
+               "Available:"
+             )
+    end
+
+    for {removed, scheduling_type, end_date} <- [
+          {false, :due_by, nil},
+          {true, :due_by, nil},
+          {true, :read_by, ~U[2023-11-10 20:00:00Z]}
+        ] do
+      @availability_case {removed, scheduling_type, end_date}
+      test "shows availability on home cards with removal=#{removed} and scheduling=#{scheduling_type}",
+           %{
+             conn: conn,
+             section: section,
+             page_3: page
+           } do
+        stub_current_time(~U[2023-11-04 20:00:00Z])
+        {removed, scheduling_type, end_date} = @availability_case
+
+        Sections.get_section_resource(section.id, page.resource_id)
+        |> Sections.update_section_resource(%{
+          start_date: ~U[2023-11-05 02:00:00Z],
+          end_date: end_date,
+          scheduling_type: scheduling_type,
+          removed_from_schedule: removed
+        })
+
+        {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+        details = ~s{#home-assignments a[href*="#{page.slug}"] [data-role=details]}
+        assert has_element?(view, details, "Available: Sat Nov 4, 2023")
+        refute has_element?(view, details, "Due")
+        refute has_element?(view, details, "Suggested")
+        refute has_element?(view, details, "days left")
+      end
+    end
+
     test "shows due info for upcoming assignments when only end_date is set", %{
       conn: conn,
       section: section,

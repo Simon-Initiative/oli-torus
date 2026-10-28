@@ -6,17 +6,79 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
 
   alias Oli.Delivery.Depot
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Delivery.Hierarchy
   alias Oli.Resources.Numbering
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.Sections.Scheduling
   alias Oli.Resources.ResourceType
 
   @depot_desc SectionResourceDepot.depot_desc()
 
-  describe "get_full_hierarchy/2" do
+  describe "get_full_hierarchy" do
     setup [:create_project]
+
+    test "projects embedded schedule dates without changing cached or default resources", %{
+      section: section,
+      module_1_revision: module,
+      page_1_revision: lesson,
+      page_2_revision: assignment
+    } do
+      end_date = ~U[2027-06-01 00:00:00Z]
+
+      for {revision, scheduling_type, start_date} <- [
+            {module, :read_by, ~U[2027-01-01 00:00:00Z]},
+            {lesson, :read_by, nil},
+            {assignment, :due_by, ~U[2027-05-01 00:00:00Z]}
+          ] do
+        resource = Sections.get_section_resource(section.id, revision.resource_id)
+
+        assert {:ok, _} =
+                 Sections.update_section_resource(resource, %{
+                   removed_from_schedule: true,
+                   scheduling_type: scheduling_type,
+                   start_date: start_date,
+                   end_date: end_date
+                 })
+      end
+
+      projected =
+        SectionResourceDepot.get_full_hierarchy(
+          section,
+          [hidden: false],
+          &Scheduling.for_display/1
+        )
+
+      default = SectionResourceDepot.get_full_hierarchy(section, hidden: false)
+
+      for revision <- [module, lesson, assignment] do
+        node =
+          Hierarchy.find_in_hierarchy(projected, &(&1["resource_id"] == revision.resource_id))
+
+        default_node =
+          Hierarchy.find_in_hierarchy(default, &(&1["resource_id"] == revision.resource_id))
+
+        cached = SectionResourceDepot.get_section_resource(section.id, revision.resource_id)
+
+        assert default_node["section_resource"] == cached
+        assert cached.end_date == end_date
+        assert Repo.get!(SectionResource, cached.id).end_date == end_date
+        assert node["numbering"] == default_node["numbering"]
+        assert node["display_numbering"] == default_node["display_numbering"]
+
+        case revision.resource_id == assignment.resource_id do
+          true ->
+            assert node["section_resource"].start_date == cached.start_date
+            assert node["section_resource"].end_date == end_date
+
+          false ->
+            assert node["section_resource"].start_date == nil
+            assert node["section_resource"].end_date == nil
+        end
+      end
+    end
 
     test "gets hierarchy and triggers Depot", ctx do
       %{

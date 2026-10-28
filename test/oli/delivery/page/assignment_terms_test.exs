@@ -6,6 +6,30 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
   alias Oli.Delivery.Settings.Combined
 
   describe "build/3" do
+    test "removed assignments retain operative dates and other terms" do
+      settings = %Combined{
+        batch_scoring: true,
+        removed_from_schedule: true,
+        scheduling_type: :due_by,
+        start_date: ~U[2027-01-01 00:00:00Z],
+        end_date: ~U[2027-06-01 00:00:00Z],
+        time_limit: 15,
+        max_attempts: 5
+      }
+
+      terms = AssignmentTerms.build(settings, [])
+      assert terms.schedule.available == settings.start_date
+      assert terms.schedule.due == settings.end_date
+      assert terms.time_limit.minutes == 15
+      assert terms.attempts.value == "0/5"
+
+      advisory_terms =
+        AssignmentTerms.build(%{settings | scheduling_type: :read_by, start_date: nil}, [])
+
+      refute advisory_terms.schedule.available
+      refute advisory_terms.schedule.due
+    end
+
     test "builds score-at-end cards for scheduled multi-attempt assignments" do
       start_date = DateTime.utc_now() |> DateTime.add(1, :day)
       end_date = DateTime.utc_now() |> DateTime.add(30, :day)

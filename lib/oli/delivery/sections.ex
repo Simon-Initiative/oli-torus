@@ -2864,6 +2864,8 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns a structured schedule of all scheduled section resources for the given section, ordered by month,
   week, date range, and container module.
+  Removed advisory dates are excluded, while operative deadlines, availability,
+  and student exceptions remain visible.
 
   This function is being used for the v1 and v2 versions of the schedule.
   In the short term when all views use the v2 version, the version param will be removed and v2 will prevale.
@@ -2927,16 +2929,7 @@ defmodule Oli.Delivery.Sections do
     #     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
 
     scheduled_section_resources =
-      Scheduling.retrieve(section, :pages)
-      # filter out unscheduled resources
-      |> Enum.filter(fn section_resource ->
-        case section_resource do
-          %SectionResource{start_date: nil, end_date: nil} -> false
-          %SectionResource{hidden: true} -> false
-          %SectionResource{removed_from_schedule: true} -> false
-          _ -> true
-        end
-      end)
+      visible_scheduled_resources(section, combined_settings_for_all_resources)
       # group items by month and year, start date take precedence over end date
       |> group_and_sort_by_month_and_year()
       |> Enum.map(fn {{month, year}, section_resources} ->
@@ -2987,16 +2980,7 @@ defmodule Oli.Delivery.Sections do
       end
 
     scheduled_section_resources =
-      Scheduling.retrieve(section, :pages)
-      # filter out unscheduled resources
-      |> Enum.filter(fn section_resource ->
-        case section_resource do
-          %SectionResource{start_date: nil, end_date: nil} -> false
-          %SectionResource{hidden: true} -> false
-          %SectionResource{removed_from_schedule: true} -> false
-          _ -> true
-        end
-      end)
+      visible_scheduled_resources(section, combined_settings_for_all_resources)
       # group items by month and year, start date take precedence over end date
       |> group_and_sort_by_month_and_year()
       |> Enum.map(fn {{month, year}, section_resources} ->
@@ -3118,6 +3102,23 @@ defmodule Oli.Delivery.Sections do
     # %{{month, year} => sorted_container_groups}
     # month and year are nil since the section is not yet scheduled
     %{{nil, nil} => sorted_container_groups}
+  end
+
+  defp visible_scheduled_resources(section, combined_settings) do
+    Scheduling.retrieve(section, :pages)
+    |> Stream.map(fn
+      %{removed_from_schedule: true} = resource ->
+        display =
+          Scheduling.for_display(Map.get(combined_settings, resource.resource_id, resource))
+
+        %{resource | start_date: display.start_date, end_date: display.end_date}
+
+      resource ->
+        resource
+    end)
+    |> Enum.reject(fn resource ->
+      resource.hidden or (is_nil(resource.start_date) and is_nil(resource.end_date))
+    end)
   end
 
   defp build_user_data_for_section_schedule(section, current_user_id) do
@@ -3301,7 +3302,8 @@ defmodule Oli.Delivery.Sections do
         progress: progress_percentage(progress_per_resource_id[sr.resource_id]),
         raw_avg_score: raw_avg_score_per_page_id[sr.resource_id],
         resource_attempt_count: user_resource_attempt_counts[sr.resource_id] || 0,
-        effective_settings: combined_settings_for_all_resources[sr.resource_id],
+        effective_settings:
+          Scheduling.for_display(combined_settings_for_all_resources[sr.resource_id]),
         end_date: sr.end_date,
         last_attempt: last_attempt_per_page_id[sr.resource_id],
         duration_minutes: sr.duration_minutes
@@ -5620,6 +5622,8 @@ defmodule Oli.Delivery.Sections do
   A Student exception takes precedence over all other end dates.
   Hard sceduled dates for a specific student take precedence over "global" hard scheduled dates.
   Global hard scheduled dates take precedence over soft scheduled dates.
+  Removed advisory dates are suppressed; assignment deadlines, student exceptions,
+  and hard-schedule restrictions retain their existing precedence and remain visible.
   """
   @spec get_resources_scheduled_dates_for_student(String.t(), integer()) ::
           list(%{
@@ -5660,7 +5664,7 @@ defmodule Oli.Delivery.Sections do
                 ?,
                 CASE WHEN ? = 'null' THEN NULL ELSE CAST(CAST(? AS text) AS timestamp) END,
                 CASE WHEN ? = 'null' THEN NULL ELSE CAST(CAST(? AS text) AS timestamp) END,
-                ?
+                CASE WHEN ? AND ? != 'due_by' THEN NULL ELSE ? END
             )
             """,
             se.end_date,
@@ -5668,6 +5672,8 @@ defmodule Oli.Delivery.Sections do
             gc1.data["end_datetime"],
             gc2.data["end_datetime"],
             gc2.data["end_datetime"],
+            sr.removed_from_schedule,
+            sr.scheduling_type,
             sr.end_date
           )
           |> type(:utc_datetime),
@@ -5723,6 +5729,10 @@ defmodule Oli.Delivery.Sections do
     Repo.all(query)
   end
 
+  @doc """
+  Builds the student page-list query, hiding removed advisory dates while preserving
+  assignment deadlines and student exceptions.
+  """
   def get_student_pages(section_slug, user_id) do
     page_type_id = ResourceType.id_for_page()
 
@@ -5750,7 +5760,10 @@ defmodule Oli.Delivery.Sections do
       slug: rev.slug,
       end_date:
         fragment(
-          "coalesce(?, ?)",
+          "CASE WHEN ? AND ? != 'due_by' THEN ? ELSE coalesce(?, ?) END",
+          sr.removed_from_schedule,
+          sr.scheduling_type,
+          ds.end_date,
           ds.end_date,
           sr.end_date
         ),

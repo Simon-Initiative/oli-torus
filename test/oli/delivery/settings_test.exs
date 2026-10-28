@@ -331,6 +331,45 @@ defmodule Oli.Delivery.SettingsTest do
     assert combined.collab_space_config == %{status: :enabled}
   end
 
+  test "schedule removal is available for display without changing effective assignment dates" do
+    revision = %Revision{resource_id: 42, max_attempts: 5}
+
+    resource = %SectionResource{
+      scheduling_type: :due_by,
+      removed_from_schedule: true,
+      start_date: ~U[2099-01-01 00:00:00Z],
+      end_date: ~U[2100-01-01 00:00:00Z],
+      max_attempts: 5
+    }
+
+    exception = %StudentException{end_date: ~U[2100-02-01 00:00:00Z]}
+
+    settings = Settings.combine(revision, resource, exception)
+    assert settings.removed_from_schedule
+    assert settings.start_date == resource.start_date
+    assert settings.end_date == exception.end_date
+    assert {:before_start_date} = Settings.new_attempt_allowed(settings, 0, [])
+
+    display = Oli.Delivery.Sections.Scheduling.for_display(settings)
+    assert display.start_date == resource.start_date
+    assert display.end_date == exception.end_date
+
+    advisory = Settings.combine(revision, %{resource | scheduling_type: :read_by}, nil)
+    assert Oli.Delivery.Sections.Scheduling.for_display(advisory).end_date == nil
+
+    assert Oli.Delivery.Sections.Scheduling.for_display(advisory).start_date ==
+             resource.start_date
+
+    advisory_exception =
+      Settings.combine(revision, %{resource | scheduling_type: :read_by}, exception)
+
+    assert Oli.Delivery.Sections.Scheduling.for_display(advisory_exception).end_date ==
+             exception.end_date
+
+    restored = Settings.combine(revision, %{resource | removed_from_schedule: false}, exception)
+    assert Oli.Delivery.Sections.Scheduling.for_display(restored).end_date == exception.end_date
+  end
+
   test "combine/3 honors student exceptions" do
     revision = %Revision{
       max_attempts: 5

@@ -12,6 +12,42 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
   alias Oli.Resources
   alias OliWeb.Delivery.Student.Utils
 
+  test "page headers retain operative dates for removed assignments" do
+    settings = %Oli.Delivery.Settings.Combined{
+      removed_from_schedule: true,
+      scheduling_type: :due_by,
+      start_date: ~U[2027-01-01 00:00:00Z],
+      end_date: ~U[2027-06-01 00:00:00Z]
+    }
+
+    context =
+      struct(PageContext,
+        page: %Oli.Resources.Revision{title: "Optional page"},
+        effective_settings: settings
+      )
+
+    html =
+      render_component(&Utils.page_header/1,
+        page_context: context,
+        ctx: %OliWeb.Common.SessionContext{
+          local_tz: "Etc/UTC",
+          browser_timezone: "Etc/UTC",
+          author: nil,
+          user: nil,
+          is_liveview: true
+        },
+        objectives: [],
+        index: nil,
+        container_label: nil,
+        has_assignments?: false
+      )
+
+    assert html =~ "Optional page"
+    assert html =~ ~s(data-role="page schedule")
+    assert html =~ ~s(data-role="page start schedule")
+    assert context.effective_settings.end_date == ~U[2027-06-01 00:00:00Z]
+  end
+
   describe "reset_attempts_button/1" do
     test "shows Refresh Activities for an empty attempt whose authored page has activities" do
       html =

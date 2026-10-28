@@ -7,10 +7,14 @@ defmodule Oli.Delivery.Page.PrologueTerms do
   """
 
   alias OliWeb.Common.FormatDateTime
+  alias Oli.Delivery.Sections.Scheduling
 
+  @doc """
+  Builds student-facing terms, omitting removed advisory dates while retaining deadlines.
+  """
   def build(effective_settings, ctx, _has_scheduled_resources?) do
     [
-      due_term(effective_settings, ctx),
+      due_term(Scheduling.for_display(effective_settings), ctx),
       score_as_you_go_term(effective_settings),
       scoring_term(effective_settings),
       question_attempts_term(effective_settings),
