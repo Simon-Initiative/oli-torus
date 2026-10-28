@@ -121,29 +121,35 @@ Record the version number alongside the ZIP and source SHA. Torus will invoke th
 
 ## 5. Smoke-test the deployed function in staging
 
-Invoke the published staging version with the [smoke-test input](adaptive-rules-lambda/rules-event.json), then check the invocation metadata and response below. Keep the input outside the deployment ZIP. Complete this check before configuring Torus to use the function or promoting the deployment to production.
+Invoke the published staging version with the [smoke-test input](adaptive-rules-lambda/rules-event.json), then inspect the saved invocation metadata and response as described below. Keep the input outside the deployment ZIP. Complete this check before configuring Torus to use the function or promoting the deployment to production.
 
 ```bash
 aws lambda invoke --function-name "$FUNCTION_NAME" --qualifier "$FUNCTION_VERSION" \
   --cli-binary-format raw-in-base64-out --payload "file://docs/runbooks/adaptive-rules-lambda/rules-event.json" \
   "$PACKAGE_DIR/result.json" > "$PACKAGE_DIR/invoke.json"
-node - "$PACKAGE_DIR" <<'NODE'
-const assert = require('node:assert/strict');
-const path = require('node:path');
-const dir = path.resolve(process.argv[2]);
-const metadata = require(path.join(dir, 'invoke.json'));
-assert.equal(metadata.StatusCode, 200);
-assert.equal(metadata.FunctionError, undefined, JSON.stringify(metadata));
-const result = require(path.join(dir, 'result.json'));
-assert.equal(result.correct, false);
-assert.equal(result.score, 0);
-assert.equal(result.out_of, 1);
-assert.ok(Array.isArray(result.results) && result.results.length > 0);
-console.log('Lambda invocation and response passed');
-NODE
 ```
 
-Lambda can return HTTP 200 with `FunctionError`. Check both invocation metadata and payload, as above. If either check fails, stop before changing Torus configuration. Inspect `/aws/lambda/<function-name>` in CloudWatch for initialization, timeout, and handler errors.
+Open `$PACKAGE_DIR/invoke.json`. Look for `StatusCode: 200`, no `FunctionError` field, and an `ExecutedVersion` matching `$FUNCTION_VERSION`. For example, when invoking version `1`:
+
+```json
+{
+  "StatusCode": 200,
+  "ExecutedVersion": "1"
+}
+```
+
+Open `$PACKAGE_DIR/result.json`. For this smoke-test input, expect `correct: false`, `score: 0`, `out_of: 1`, and a nonempty `results` array containing the default-wrong event. The input has no authored rules, so `correct: false` is the expected result. The response should resemble this example, with additional event and debug fields omitted:
+
+```json
+{
+  "correct": false,
+  "score": 0,
+  "out_of": 1,
+  "results": [{ "type": "builtin.defaultWrong" }]
+}
+```
+
+A `200` status alone does not establish success: Lambda can also return `FunctionError`. Stop before changing Torus configuration if invocation fails or the payload does not match the expected result. Inspect `/aws/lambda/<function-name>` in CloudWatch for initialization, timeout, and handler errors.
 
 ## 6. Grant Torus invocation access and configure the provider
 
