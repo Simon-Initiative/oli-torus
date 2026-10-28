@@ -2,9 +2,11 @@
 
 This note captures the expected bounded deployment posture for the Phase 1 `vm2`-based eval Lambda.
 
+The adaptive rules and variable substitution AWS Lambda services are recommended for production deployments of OLI Torus. Each service can be deployed independently to replace its corresponding local Node evaluation process. For AWS Lambda deployment instructions, including Torus configuration, verification, and rollback, see the [adaptive rules runbook](../../../../runbooks/adaptive-rules-lambda.md) and [variable substitution runbook](../../../../runbooks/variable-substitution-lambda.md).
+
 ## Function Configuration
 
-- Artifact: `priv/node/eval.js`
+- Package: `priv/node/eval.js` plus the matching `vm2` runtime files `bridge.js` and `setup-sandbox.js`, as detailed in the runbook
 - Handler: `eval.handler`
 - Runtime: current supported AWS Lambda Node.js runtime used by Torus for node-based Lambdas
 - Function name source: `VARIABLE_SUBSTITUTION_LAMBDA_FN_NAME`
