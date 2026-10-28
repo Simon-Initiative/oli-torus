@@ -106,11 +106,15 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   end
 
   @doc """
-  Counts the attempts of the section that await manual scoring, ignoring any filter.
+  Counts the attempts of the section that await manual scoring, applying the same filters as
+  `browse_submitted_attempts/4`. Without options, counts the whole section.
   """
-  def count_submitted_attempts(%Section{id: section_id}) do
+  def count_submitted_attempts(
+        %Section{id: section_id},
+        %BrowseOptions{} = options \\ @unfiltered
+      ) do
     section_id
-    |> submitted_attempts_query(@unfiltered)
+    |> submitted_attempts_query(options)
     |> select([aa], count(aa.id))
     |> Repo.one()
   end

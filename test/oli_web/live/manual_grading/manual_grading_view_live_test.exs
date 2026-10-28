@@ -473,6 +473,47 @@ defmodule OliWeb.ManualGrading.ManualGradingViewLiveTest do
       assert query(href) == %{"selected_user_ids" => "[#{ctx.user_a.id}]", "sort_by" => "user"}
     end
 
+    test "an offset past the end loads table rows only for the requested and corrected pages",
+         ctx do
+      Enum.each(1..11, fn _ -> add_attempt(ctx, :ra_a, :act_1, :extra, :submitted) end)
+      Enum.each(1..9, fn _ -> add_attempt(ctx, :ra_b, :act_1, :extra, :submitted) end)
+      {:ok, view, _html} = live(ctx.conn, ctx.route)
+      handler = {__MODULE__, make_ref()}
+      parent = self()
+
+      :ok =
+        :telemetry.attach(
+          handler,
+          [:oli, :repo, :query],
+          fn _, _, %{query: sql}, {pid, recipient} ->
+            if self() == pid and String.contains?(sql, "count(*) OVER()"),
+              do: send(recipient, {handler, sql})
+          end,
+          {view.pid, parent}
+        )
+
+      on_exit(fn -> :telemetry.detach(handler) end)
+
+      params = "?offset=30&sort_by=user&sort_order=asc&selected_user_ids=[#{ctx.user_a.id}]"
+      html = render_patch(view, ctx.route <> params)
+      assert_patch(view, ctx.route <> params)
+      assert query(assert_patch(view))["offset"] == "10"
+      assert row_students(html) == List.duplicate(Utils.name(ctx.user_a), 3)
+      assert html =~ "Showing 13 of 23 submissions"
+
+      queries =
+        Stream.repeatedly(fn ->
+          receive do
+            {^handler, sql} -> sql
+          after
+            0 -> nil
+          end
+        end)
+        |> Enum.take_while(& &1)
+
+      assert length(queries) == 2
+    end
+
     test "an offset past the end of the queue moves to the last page that exists", ctx do
       # Amy's filtered queue has 13 rows (last page at 10); the whole section has 23 (it would be 20).
       Enum.each(1..11, fn _ -> add_attempt(ctx, :ra_a, :act_1, :extra, :submitted) end)

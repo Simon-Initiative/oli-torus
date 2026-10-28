@@ -538,6 +538,53 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       {:ok, map}
     end
 
+    test "filtered counts match the table total for the same browse options", ctx do
+      defaults = %BrowseOptions{
+        user_ids: [],
+        activity_ids: [],
+        page_ids: [],
+        graded: nil,
+        text_search: nil
+      }
+
+      for overrides <- [
+            [],
+            [user_ids: [ctx.user_a.id]],
+            [activity_ids: [ctx.act_1.resource.id]],
+            [page_ids: [ctx.page2.id]],
+            [graded: true],
+            [graded: false],
+            [text_search: "Alpha"],
+            [text_search: "no matching submission"],
+            [
+              user_ids: [ctx.user_a.id],
+              activity_ids: [ctx.act_2.resource.id],
+              page_ids: [ctx.page1.id],
+              graded: ctx.revision1.graded,
+              text_search: "Activity"
+            ]
+          ] do
+        options = struct!(defaults, overrides)
+
+        rows =
+          ManualGrading.browse_submitted_attempts(
+            ctx.section,
+            %Paging{limit: 1, offset: 0},
+            %Sorting{field: :user, direction: :asc},
+            options
+          )
+
+        total =
+          case rows do
+            [] -> 0
+            [row] -> row.total_count
+          end
+
+        assert ManualGrading.count_submitted_attempts(ctx.section, options) == total
+        assert ManualGrading.count_submitted_attempts(ctx.section) == 5
+      end
+    end
+
     test "each list filter selects its rows; [] means no filter", ctx do
       activity_ids =
         browse_ids(ctx.section, activity_ids: [ctx.act_1.resource.id, ctx.act_2.resource.id])

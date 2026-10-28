@@ -286,7 +286,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
     # Coming back to a page that no longer exists lands on the last page that does.
     if attempts == [] and offset > 0 do
-      {:past_the_end, last_page_offset(socket.assigns.section, table_model, options)}
+      {:past_the_end, last_page_offset(socket.assigns.section, options)}
     else
       table_model =
         table_model
@@ -316,15 +316,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     })
   end
 
-  defp last_page_offset(section, table_model, options) do
-    total =
-      section
-      |> ManualGrading.browse_submitted_attempts(
-        %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        options
-      )
-      |> determine_total()
+  defp last_page_offset(section, options) do
+    total = ManualGrading.count_submitted_attempts(section, options)
 
     div(max(total - 1, 0), @limit) * @limit
   end
