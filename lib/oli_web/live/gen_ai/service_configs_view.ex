@@ -242,7 +242,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           disabled={!@editing}
         />
         <p class="text-sm">
-          Capacity is per node. HTTP/1.1 streams retain one connection. Capacity changes immediately use a new pool; old work finishes with temporary capacity overlap. Claude transport capacity remains deferred.
+          Capacity is per node. HTTP/1.1 streams retain one connection. Capacity changes immediately use a new pool; old work finishes with temporary capacity overlap. Claude inference is currently unsupported.
         </p>
         <section class="mt-4 rounded border p-3" aria-label="Routing Health">
           <h2 class="font-semibold">Routing Health</h2>

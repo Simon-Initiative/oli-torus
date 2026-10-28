@@ -44,7 +44,7 @@ defmodule Oli.GenAI.ProviderMigrationTest do
     %{schema: schema}
   end
 
-  test "single Provider migration copies the first keyed model and rollback preserves all legacy values",
+  test "migration moves credentials to Provider and drops model keys; down restores empty columns",
        %{schema: schema} do
     {:ok, first_key} = Oli.Encrypted.Binary.dump("first-secret")
     {:ok, second_key} = Oli.Encrypted.Binary.dump("second-secret")
@@ -52,7 +52,6 @@ defmodule Oli.GenAI.ProviderMigrationTest do
     insert(schema, "no key", "null", "http://legacy.invalid", nil, nil)
     insert(schema, "first keyed", "open_ai", "https://first.example", first_key, organization)
     insert(schema, "second keyed", "claude", "https://second.example", second_key, nil)
-    before = MigrationRepo.query!("SELECT * FROM #{schema}.registered_models ORDER BY id").rows
     assert :ok = migrate(schema, :up)
 
     assert [["OpenAI production", "open_ai", "https://first.example", ^first_key, ^organization]] =
@@ -68,11 +67,24 @@ defmodule Oli.GenAI.ProviderMigrationTest do
     assert [[1]] =
              MigrationRepo.query!("SELECT id FROM #{schema}.registered_models WHERE health_check").rows
 
-    # Migrated metadata does not rewrite model-specific adapters, endpoints or keys.
+    assert [] ==
+             MigrationRepo.query!(
+               "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'registered_models' AND column_name IN ('api_key', 'secondary_api_key', 'provider', 'url_template')",
+               [schema]
+             ).rows
+
+    assert [["NO"]] =
+             MigrationRepo.query!(
+               "SELECT is_nullable FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'registered_models' AND column_name = 'provider_id'",
+               [schema]
+             ).rows
+
     assert :ok = migrate(schema, :down)
 
-    assert before ==
-             MigrationRepo.query!("SELECT * FROM #{schema}.registered_models ORDER BY id").rows
+    assert [[nil, nil], [nil, nil], [nil, nil]] ==
+             MigrationRepo.query!(
+               "SELECT api_key, secondary_api_key FROM #{schema}.registered_models ORDER BY id"
+             ).rows
 
     assert [[nil]] = MigrationRepo.query!("SELECT to_regclass('#{schema}.gen_ai_providers')").rows
   end

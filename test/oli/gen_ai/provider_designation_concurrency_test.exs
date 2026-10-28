@@ -37,10 +37,7 @@ defmodule Oli.GenAI.ProviderDesignationConcurrencyTest do
               GenAI.create_registered_model(%{
                 name: name,
                 model: name,
-                provider: :open_ai,
-                provider_id: provider.id,
-                api_key: "dummy-legacy-key",
-                url_template: provider.base_url
+                provider_id: provider.id
               })
 
             model

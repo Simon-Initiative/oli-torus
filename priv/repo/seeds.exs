@@ -188,33 +188,46 @@ case Oli.Repo.all(RegisteredModel) do
     open_ai_org_key = System.get_env("OPENAI_ORG_KEY")
     anthropic_api_key = System.get_env("ANTHROPIC_API_KEY")
 
-    # Insert the record for an OpenAI registered model, the NULL provider, and the Claude model.
+    # Providers own credentials; registered models reference their connection.
     if open_ai_key do
+      provider =
+        Oli.Repo.insert!(%Oli.GenAI.Provider{
+          name: "OpenAI",
+          adapter: :open_ai,
+          base_url: "https://api.openai.com",
+          api_key: open_ai_key,
+          organization_key: open_ai_org_key
+        })
+
       Oli.Repo.insert!(%RegisteredModel{
+        provider_id: provider.id,
         name: "openai-gpt4",
-        provider: :open_ai,
-        model: "gpt-4-1106-preview",
-        url_template: "https://api.openai.com",
-        api_key: open_ai_key,
-        secondary_api_key: open_ai_org_key
+        model: "gpt-4-1106-preview"
       })
     end
 
     if anthropic_api_key do
+      provider =
+        Oli.Repo.insert!(%Oli.GenAI.Provider{
+          name: "Anthropic",
+          adapter: :claude,
+          base_url: "https://api.anthropic.com/v1/messages",
+          api_key: anthropic_api_key
+        })
+
       Oli.Repo.insert!(%RegisteredModel{
+        provider_id: provider.id,
         name: "claude",
-        provider: :claude,
-        model: "claude-3-haiku-20240307",
-        url_template: "https://api.anthropic.com/v1/messages",
-        api_key: anthropic_api_key
+        model: "claude-3-haiku-20240307"
       })
     end
 
+    null_provider = Oli.Repo.insert!(%Oli.GenAI.Provider{name: "Null", adapter: :null})
+
     Oli.Repo.insert!(%RegisteredModel{
+      provider_id: null_provider.id,
       name: "null",
-      provider: :null,
-      model: "null",
-      url_template: "https://www.example.com"
+      model: "null"
     })
 
     primary_model =

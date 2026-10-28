@@ -202,7 +202,7 @@ defmodule Oli.GenAI.Execution do
       %{
         service_config_id: config.id,
         registered_model_id: plan.selected_model.id,
-        provider: plan.selected_model.provider,
+        provider: plan.provider.adapter,
         tier: plan.tier,
         request_type: mode,
         error_category: safe_category(result),
@@ -246,7 +246,7 @@ defmodule Oli.GenAI.Execution do
            content: content,
            metadata: %{
              model: plan.selected_model.model,
-             provider: plan.selected_model.provider,
+             provider: plan.provider.adapter,
              registered_model_id: plan.selected_model.id,
              service_config_id: config.id
            }

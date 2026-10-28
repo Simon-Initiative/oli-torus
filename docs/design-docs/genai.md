@@ -10,7 +10,7 @@ intentionally shares its production transport pools on each application node.
 - **Provider** owns the configured adapter, endpoint template, encrypted API and
   organization credentials, administrative enablement and independent probe policy.
   It is a connection/availability boundary, not a vendor enum.
-- **RegisteredModel** selects a Provider and model identifier, capabilities, a
+- **RegisteredModel** requires an explicit Provider ID and selects a model identifier, capabilities, a
   health-check candidate flag, connection timeout and response inactivity timeout.
 - **ServiceConfig** selects distinct primary/secondary models on the same Provider
   and an optional backup on a different Provider, required capabilities, and one
@@ -76,9 +76,10 @@ For verified Hackney 1.25.0 HTTP/1.1, capacity means **Maximum checked-out
 connections**, with an inference retaining its checkout during stream consumption.
 A connection count does not bound requests on multiplexed transports. Such adapters
 need equivalent request/stream capacity and verification before support is claimed.
-Claude's Anthropix/Req/Finch implementation remains unchanged and unverified. Its
-legacy primary dispatch does not promise tier capacity or Provider-health failover;
-managed administrative tests and backup do not silently use unverified transport.
+Claude transport is unsupported. Routing and administrative calls return an explicit
+unsupported-adapter error rather than invoking the old Anthropix implementation.
+Null completions require a resolved null Provider; OpenAI completions require the
+selected managed transport pool. Calls without transport context fail explicitly.
 
 Every node reconciles configuration on committed invalidations and periodic reload.
 Routing reads protected configuration snapshots without database queries or waiting
@@ -129,11 +130,12 @@ distinguish timeout, owner cancellation, startup deadline and transport failure.
 Pure successful per-request checkout wait is not exposed by this installed API.
 
 Legacy admission/breaker services are no longer supervised and old control/metric
-wiring is retired. Compatibility modules and legacy model columns remain for rollback
-and direct legacy adapter calls; they have no authority over managed production
-requests. The primary-only override is removed. See the operational runbook before
-cutover: the additive single-Provider migration cannot automatically represent
-heterogeneous legacy endpoints or repair same-Provider backup relationships.
+wiring is retired. Old admission/breaker modules and model routing-policy columns
+remain, but have no authority over managed production requests. Model connection
+settings and direct legacy adapter execution have been removed. The primary-only
+override is removed. See the operational runbook before cutover: the single-Provider
+migration cannot automatically represent heterogeneous legacy endpoints or repair
+same-Provider backup relationships.
 
 Implementation and dependency evidence:
 `docs/exec-plans/current/features/genai-redesign/plan.md`,

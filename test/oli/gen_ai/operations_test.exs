@@ -3,9 +3,8 @@ defmodule Oli.GenAI.OperationsTest do
   use Oli.DataCase, async: false
   alias Oli.GenAI
   alias Oli.GenAI.{Diagnostics, Operations}
-  alias Oli.GenAI.Completions.RegisteredModel
 
-  test "audit is secret-free and rollback prepares rotated Provider credentials (AC-020, AC-021)" do
+  test "audit is secret-free after Provider credential rotation (AC-020, AC-021)" do
     {:ok, p} =
       GenAI.create_provider(%{
         name: "Audit",
@@ -27,10 +26,7 @@ defmodule Oli.GenAI.OperationsTest do
     {:ok, _} = GenAI.update_provider(p, %{api_key: "rotated-secret"})
     audit = Operations.audit()
 
-    assert Enum.any?(
-             audit.model_issues,
-             &(&1.model_id == m.id and &1.category == :legacy_connection_differs)
-           )
+    refute Enum.any?(audit.model_issues, &(&1.model_id == m.id))
 
     assert Enum.any?(
              audit.allocations_per_node,
@@ -38,75 +34,6 @@ defmodule Oli.GenAI.OperationsTest do
            )
 
     refute inspect(audit) =~ "rotated-secret"
-
-    # Seeded models may have an initially missing key; make rollback valid for all OpenAI Providers.
-    for provider <- GenAI.providers(),
-        provider.adapter == :open_ai,
-        do:
-          GenAI.update_provider(provider, %{
-            api_key: provider.api_key || "seed-key",
-            base_url: provider.base_url || "https://example.test"
-          })
-
-    assert {:ok, count} = Operations.prepare_legacy_rollback()
-    assert count > 0
-    assert Repo.get!(RegisteredModel, m.id).api_key == "rotated-secret"
-  end
-
-  test "rollback preparation rejects missing, incompatible and invalid connections atomically (AC-020, AC-021)" do
-    for provider <- GenAI.providers(),
-        provider.adapter == :open_ai,
-        do:
-          GenAI.update_provider(provider, %{
-            api_key: provider.api_key || "seed-key",
-            base_url: provider.base_url || "https://example.test"
-          })
-
-    {:ok, first} =
-      GenAI.create_provider(%{
-        name: "Rollback first",
-        adapter: :open_ai,
-        base_url: "https://first.test",
-        api_key: "original"
-      })
-
-    {:ok, m1} =
-      GenAI.create_registered_model(%{name: "First", model: "first", provider_id: first.id})
-
-    {:ok, _} = GenAI.update_provider(first, %{api_key: "rotated"})
-
-    {:ok, second} =
-      GenAI.create_provider(%{
-        name: "Rollback second",
-        adapter: :open_ai,
-        base_url: "https://second.test",
-        api_key: "second"
-      })
-
-    {:ok, m2} =
-      GenAI.create_registered_model(%{name: "Second", model: "second", provider_id: second.id})
-
-    {:ok, second} = GenAI.update_provider(second, %{enabled: false})
-
-    for invalid <- [:missing_provider, :incompatible, :invalid_endpoint] do
-      Repo.get!(RegisteredModel, m2.id)
-      |> Ecto.Changeset.change(provider_id: second.id)
-      |> Repo.update!()
-
-      case invalid do
-        :missing_provider ->
-          Repo.update!(Ecto.Changeset.change(m2, provider_id: nil))
-
-        :incompatible ->
-          GenAI.update_provider(second, %{adapter: :null})
-
-        :invalid_endpoint ->
-          GenAI.update_provider(second, %{adapter: :open_ai, base_url: "invalid"})
-      end
-
-      assert {:error, :invalid_legacy_connection} = Operations.prepare_legacy_rollback()
-      assert Repo.get!(RegisteredModel, m1.id).api_key == "original"
-    end
   end
 
   test "the release retires legacy accounting supervision and metric wiring (AC-021)" do

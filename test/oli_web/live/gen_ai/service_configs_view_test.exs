@@ -41,6 +41,16 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
       conn: conn,
       service_config: config
     } do
+      loaded = Oli.GenAI.Configuration.runtime_configuration(reconcile_probes: false)
+      manager = start_supervised!({Oli.GenAI.PoolManager, name: nil, namespace: make_ref()})
+      tasks = start_supervised!({Task.Supervisor, max_children: 1})
+
+      start_supervised!(
+        {Oli.GenAI.Runtime,
+         source: fn -> loaded end, pool_manager: manager, task_supervisor: tasks, enabled: false}
+      )
+
+      assert :ok = Oli.GenAI.Runtime.reconcile()
       {:ok, view, _} = live(conn, @route)
       render_click(view, "select", %{"id" => to_string(config.id)})
       render_click(view, "test")
@@ -88,11 +98,8 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
     model =
       Repo.insert!(%RegisteredModel{
         name: "Test Model",
-        provider: :null,
         provider_id: provider.id,
         model: "null",
-        url_template: "http://localhost",
-        api_key: "secret",
         timeout: 8000,
         recv_timeout: 60_000
       })
@@ -100,11 +107,8 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
     secondary_model =
       Repo.insert!(%RegisteredModel{
         name: "Secondary Model",
-        provider: :null,
         provider_id: provider.id,
         model: "null-secondary",
-        url_template: "http://localhost",
-        api_key: "secret",
         timeout: 8000,
         recv_timeout: 60_000
       })

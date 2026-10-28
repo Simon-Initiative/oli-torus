@@ -63,11 +63,7 @@ defmodule Oli.GenAI.Configuration do
         end
 
       attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)
-      # Legacy UI clients do not yet send a Provider ID. Associate them with the
-      # initial Provider while retaining their old transport fields until cutover.
-      default_id = Repo.one(from p in Provider, order_by: p.id, limit: 1, select: p.id)
-      new_id = Map.get(attrs, "provider_id", model.provider_id || default_id)
-      changeset = RegisteredModel.changeset(model, Map.put(attrs, "provider_id", new_id))
+      changeset = RegisteredModel.changeset(model, attrs)
 
       ids =
         [model.provider_id, get_field(changeset, :provider_id)]
@@ -75,13 +71,7 @@ defmodule Oli.GenAI.Configuration do
         |> Enum.uniq()
         |> Enum.sort()
 
-      locked = Map.new(ids, fn id -> {id, lock_provider(id)} end)
-
-      attrs =
-        case model.id do
-          nil -> legacy_creation_defaults(attrs, locked[get_field(changeset, :provider_id)])
-          _ -> attrs
-        end
+      Enum.each(ids, &lock_provider/1)
 
       current =
         case model.id do
@@ -91,7 +81,7 @@ defmodule Oli.GenAI.Configuration do
 
       # Rebuild from the locked current value so a stale form cannot restore flags
       # or membership that changed after it was opened.
-      changeset = RegisteredModel.changeset(current, Map.put(attrs, "provider_id", new_id))
+      changeset = RegisteredModel.changeset(current, attrs)
       changeset = validate_required(changeset, [:provider_id])
       saved = persist(changeset)
 
@@ -221,8 +211,7 @@ defmodule Oli.GenAI.Configuration do
     {:ok, snapshot} =
       Repo.transaction(fn ->
         configuration_lock()
-        # Read all model-selection data in one query. Legacy keys are deliberately
-        # omitted: probes use Provider-owned credentials, and pool sizing needs none.
+        # Read model selection and inference settings in one query.
         models =
           Repo.all(
             from m in RegisteredModel,
@@ -232,7 +221,6 @@ defmodule Oli.GenAI.Configuration do
                   :id,
                   :provider_id,
                   :health_check,
-                  :provider,
                   :model,
                   :name,
                   :capabilities,
@@ -347,18 +335,6 @@ defmodule Oli.GenAI.Configuration do
       {:ok, saved} -> saved
       {:error, invalid} -> Repo.rollback(invalid)
     end
-  end
-
-  defp legacy_creation_defaults(attrs, nil), do: attrs
-
-  defp legacy_creation_defaults(attrs, provider) do
-    # New Provider-backed clients need not duplicate connection fields in input.
-    # Copies keep new models executable by the legacy dispatcher until Phase 3.
-    attrs
-    |> Map.put_new("provider", provider.adapter)
-    |> Map.put_new("url_template", provider.base_url || "http://localhost")
-    |> Map.put_new("api_key", provider.api_key)
-    |> Map.put_new("secondary_api_key", provider.organization_key)
   end
 
   defp configuration_lock, do: Repo.query!("SELECT pg_advisory_xact_lock(109492, 2)")

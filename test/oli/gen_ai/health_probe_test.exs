@@ -28,9 +28,8 @@ defmodule Oli.GenAI.HealthProbeTest do
 
     model = %RegisteredModel{
       id: 75,
-      provider: :open_ai,
-      model: "selected-probe-model",
-      api_key: "legacy-key"
+      provider_id: provider.id,
+      model: "selected-probe-model"
     }
 
     {:ok, origin} = Provider.origin(provider.base_url)
@@ -45,7 +44,6 @@ defmodule Oli.GenAI.HealthProbeTest do
     assert_receive {:request, server, headers, body}, 2_000
     assert headers =~ "provider-only-key"
     assert headers =~ "provider-organization"
-    refute headers =~ "legacy-key"
 
     assert %{
              "model" => "selected-probe-model",

@@ -8,46 +8,35 @@ defmodule Oli.GenAI.Router do
     started = System.monotonic_time(:millisecond)
 
     result =
-      case inputs(ctx, supplied.id) do
-        {:ok, inputs} ->
-          case inputs.config.primary_model do
-            %{provider: :claude, id: id, provider_id: provider_id} ->
-              case supplied.primary_model do
-                %{provider: :claude, id: ^id} = legacy ->
-                  unmanaged(
-                    ctx,
-                    %{supplied | primary_model: %{legacy | provider_id: provider_id}},
-                    inputs.providers
-                  )
+      with {:ok, inputs} <- inputs(ctx, supplied.id),
+           :ok <- main_configuration(inputs) do
+        provider = inputs.providers[inputs.config.primary_model.provider_id]
 
-                _ ->
-                  {:error, :configuration_unavailable}
-              end
+        case provider do
+          %{enabled: false} ->
+            backup_candidate(ctx, inputs, provider.id)
 
-            %{provider: :null} ->
-              unmanaged(ctx, inputs.config, inputs.providers)
+          %{adapter: :null} ->
+            {:ok,
+             %Oli.GenAI.RoutingPlan{
+               selected_model: inputs.config.primary_model,
+               provider: provider,
+               tier: :primary,
+               service_config_id: supplied.id,
+               request_type: Map.get(ctx, :request_type, :generate),
+               reason: :local_adapter
+             }}
 
-            _ ->
-              with :ok <- main_configuration(inputs) do
-                case eligibility(inputs, inputs.config.primary_model.provider_id) do
-                  :ok ->
-                    main(ctx, inputs)
+          %{adapter: :open_ai} ->
+            case eligibility(inputs, provider.id) do
+              :ok -> main(ctx, inputs)
+              :unavailable -> backup_candidate(ctx, inputs, provider.id)
+              :ineligible -> {:error, :provider_ineligible}
+            end
 
-                  :unavailable ->
-                    backup_candidate(ctx, inputs, inputs.config.primary_model.provider_id)
-
-                  :ineligible ->
-                    {:error, :provider_ineligible}
-                end
-              end
-          end
-
-        {:error, _} = error ->
-          case supplied.primary_model do
-            # Local placeholders and the explicitly deferred Claude adapter retain legacy dispatch.
-            %{provider: adapter} when adapter in [:null, :claude] -> unmanaged(ctx, supplied, %{})
-            _ -> error
-          end
+          _ ->
+            {:error, :unsupported_adapter}
+        end
       end
 
     emit(result, supplied.id, ctx, started)
@@ -64,25 +53,6 @@ defmodule Oli.GenAI.Router do
 
     emit(result, config.id, ctx, started)
     result
-  end
-
-  defp unmanaged(ctx, config, providers) do
-    model = config.primary_model
-
-    case providers[model.provider_id] do
-      %{enabled: false} ->
-        {:error, :provider_ineligible}
-
-      _ ->
-        {:ok,
-         %RoutingPlan{
-           selected_model: model,
-           tier: :primary,
-           service_config_id: config.id,
-           request_type: Map.get(ctx, :request_type, :generate),
-           reason: :unmanaged_adapter
-         }}
-    end
   end
 
   defp inputs(ctx, id) do
@@ -144,7 +114,7 @@ defmodule Oli.GenAI.Router do
     model = Map.fetch!(inputs.config, field(tier))
     key = {inputs.config.id, tier}
 
-    with %{provider: :open_ai} <- model,
+    with %Oli.GenAI.Completions.RegisteredModel{} <- model,
          %{adapter: :open_ai, api_key: key_value} = provider
          when is_binary(key_value) and byte_size(key_value) > 0 <-
            inputs.providers[model.provider_id],

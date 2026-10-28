@@ -73,7 +73,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
         When several models are flagged, the lowest ID is selected. With no flag, the lowest-ID model is automatically designated.
       </p>
       <p>
-        Provider credentials are managed on the Providers page. Claude transport isolation and health routing remain deferred.
+        Provider credentials are managed on the Providers page. Claude inference requires a managed transport implementation and is currently unsupported.
       </p>
       <button
         type="button"
@@ -184,14 +184,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
         nil ->
           {:error, :missing_provider}
 
-        provider
-        when not is_nil(socket.assigns.selected.id) and
-               provider.adapter != socket.assigns.selected.provider ->
-          {:error, :adapter_change_requires_new_model}
-
-        provider ->
-          attrs = Map.put(attrs, "provider", provider.adapter)
-
+        _provider ->
           case socket.assigns.selected.id do
             nil -> GenAI.create_registered_model(attrs)
             _ -> GenAI.update_registered_model(socket.assigns.selected, attrs)
@@ -224,9 +217,6 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
 
       {:error, %Ecto.Changeset{data: %RegisteredModel{}} = cs} ->
         {:noreply, assign(socket, form: to_form(cs, as: :registered_model))}
-
-      {:error, :adapter_change_requires_new_model} ->
-        {:noreply, put_flash(socket, :error, "Changing transport adapter requires a new model")}
 
       _ ->
         {:noreply, put_flash(socket, :error, "Model could not be saved; select a valid Provider")}

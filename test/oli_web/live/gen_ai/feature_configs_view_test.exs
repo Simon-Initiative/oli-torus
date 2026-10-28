@@ -56,11 +56,9 @@ defmodule OliWeb.GenAI.FeatureConfigsViewTest do
   defp create_feature_config(_context) do
     model =
       Repo.insert!(%RegisteredModel{
+        provider_id: Repo.insert!(%Oli.GenAI.Provider{name: "Feature test", adapter: :null}).id,
         name: "Test Model",
-        provider: :null,
         model: "null",
-        url_template: "http://localhost",
-        api_key: "secret",
         timeout: 8000,
         recv_timeout: 60_000
       })

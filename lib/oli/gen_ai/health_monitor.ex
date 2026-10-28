@@ -65,6 +65,7 @@ defmodule Oli.GenAI.HealthMonitor do
 
     snapshot = %{
       provider_id: provider.id,
+      adapter: provider.adapter,
       administrative_enabled: provider.enabled,
       monitoring_enabled: enabled,
       observed: observed,

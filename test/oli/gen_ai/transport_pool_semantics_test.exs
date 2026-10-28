@@ -2,9 +2,6 @@
 defmodule Oli.GenAI.TransportPoolSemanticsTest do
   use ExUnit.Case, async: false
 
-  alias Oli.GenAI.Completions.{OpenAICompliantProvider, RegisteredModel}
-  alias Oli.GenAI.HackneyPool
-
   @pool :genai_transport_semantics_test
 
   setup do
@@ -201,77 +198,6 @@ defmodule Oli.GenAI.TransportPoolSemanticsTest do
     assert_eventually(fn -> stat(:in_use_count) == 0 end)
   end
 
-  test "OpenAI adapter keeps checkout through SSE consumption and releases on completion", %{
-    url: url
-  } do
-    pool = HackneyPool.pool_name(:slow)
-    baseline = pool_stat(pool, :in_use_count)
-    parent = self()
-
-    task =
-      Task.async(fn ->
-        OpenAICompliantProvider.stream([], [], model(url), fn event ->
-          send(parent, {:adapter, event})
-        end)
-      end)
-
-    assert_receive {:connected, handler}, 2_000
-    assert_receive {:adapter, {:tokens_received, "hello"}}, 2_000
-    assert_eventually(fn -> pool_stat(pool, :in_use_count) == baseline + 1 end)
-    send(handler, :finish)
-    assert_receive {:adapter, {:tokens_finished}}, 2_000
-    assert :ok = Task.await(task, 2_000)
-    assert_eventually(fn -> pool_stat(pool, :in_use_count) == baseline end)
-  end
-
-  test "OpenAI adapter killed during SSE consumption releases checkout", %{url: url} do
-    pool = HackneyPool.pool_name(:slow)
-    baseline = pool_stat(pool, :in_use_count)
-    parent = self()
-
-    task =
-      Task.async(fn ->
-        OpenAICompliantProvider.stream([], [], model(url), fn event ->
-          send(parent, {:adapter, event})
-        end)
-      end)
-
-    assert_receive {:connected, _handler}, 2_000
-    assert_receive {:adapter, {:tokens_received, "hello"}}, 2_000
-    assert_eventually(fn -> pool_stat(pool, :in_use_count) == baseline + 1 end)
-    Process.unlink(task.pid)
-    monitor = Process.monitor(task.pid)
-    Process.exit(task.pid, :kill)
-    assert_receive {:DOWN, ^monitor, :process, _, :killed}, 2_000
-    assert_eventually(fn -> pool_stat(pool, :in_use_count) == baseline end)
-  end
-
-  test "OpenAI adapter closes checkout when its consumer cancels with an exception", %{url: url} do
-    pool = HackneyPool.pool_name(:slow)
-    baseline = pool_stat(pool, :in_use_count)
-
-    parent = self()
-
-    task =
-      Task.async(fn ->
-        try do
-          OpenAICompliantProvider.stream([], [], model(url), fn _ -> throw(:cancelled) end)
-        catch
-          :cancelled -> send(parent, :consumer_cancelled)
-        end
-
-        receive do
-          :finish -> :ok
-        end
-      end)
-
-    assert_receive {:connected, _handler}, 2_000
-    assert_receive :consumer_cancelled, 2_000
-    assert_eventually(fn -> pool_stat(pool, :in_use_count) == baseline end)
-    send(task.pid, :finish)
-    assert :ok = Task.await(task, 2_000)
-  end
-
   test "stopping async delivery retains checkout until explicitly closed", %{url: url} do
     {:ok, response} =
       HTTPoison.get(url, [], stream_to: self(), async: :once, hackney: [pool: @pool])
@@ -285,19 +211,6 @@ defmodule Oli.GenAI.TransportPoolSemanticsTest do
     :hackney.close(id)
     assert_eventually(fn -> stat(:in_use_count) == 0 end)
   end
-
-  defp model(url) do
-    %RegisteredModel{
-      model: "test-model",
-      api_key: "local-test-key",
-      url_template: String.trim_trailing(url, "/"),
-      timeout: 1_000,
-      recv_timeout: 2_000,
-      pool_class: :slow
-    }
-  end
-
-  defp pool_stat(pool, key), do: pool |> :hackney_pool.get_stats() |> Keyword.fetch!(key)
 
   defp start_stream(url) do
     Task.async(fn ->

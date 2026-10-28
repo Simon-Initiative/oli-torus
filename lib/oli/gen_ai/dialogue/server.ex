@@ -194,7 +194,7 @@ defmodule Oli.GenAI.Dialogue.Server do
     }
 
     on_plan = fn plan ->
-      notify_client_fn.({:dialogue_server, {:llm_routing, routing_metadata(plan.selected_model)}})
+      notify_client_fn.({:dialogue_server, {:llm_routing, routing_metadata(plan)}})
     end
 
     execution_fn = configuration.execution_fn || (&execute_stream/6)
@@ -475,13 +475,11 @@ defmodule Oli.GenAI.Dialogue.Server do
     %State{state | messages: [message | state.messages]}
   end
 
-  defp routing_metadata(nil), do: %{llm_provider_type: nil, llm_provider_url: nil, llm_model: nil}
-
-  defp routing_metadata(selected_model) do
+  defp routing_metadata(%{selected_model: model, provider: provider}) do
     %{
-      llm_provider_type: selected_model.provider,
-      llm_provider_url: selected_model.url_template,
-      llm_model: selected_model.model
+      llm_provider_type: provider && provider.adapter,
+      llm_provider_url: provider && provider.base_url,
+      llm_model: model.model
     }
   end
 end

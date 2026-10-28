@@ -679,7 +679,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
     %ServiceConfig{
       id: 1,
       name: "test-service-config",
-      primary_model: %RegisteredModel{id: 1, name: "null", provider: :null}
+      primary_model: %RegisteredModel{id: 1, name: "null"}
     }
   end
 end

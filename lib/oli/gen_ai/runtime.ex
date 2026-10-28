@@ -317,7 +317,7 @@ defmodule Oli.GenAI.Runtime do
         provider = model && provider_map[model.provider_id]
 
         case {model, provider} do
-          {%{provider: :open_ai}, %Provider{adapter: :open_ai} = provider} ->
+          {%Oli.GenAI.Completions.RegisteredModel{}, %Provider{adapter: :open_ai} = provider} ->
             case Provider.origin(Provider.endpoint(provider, model)) do
               {:ok, origin} ->
                 Map.put(specs, {config.id, tier}, %{

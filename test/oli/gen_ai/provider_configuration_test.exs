@@ -269,7 +269,7 @@ defmodule Oli.GenAI.ProviderConfigurationTest do
     end
   end
 
-  test "Provider-backed model creation derives transitional connection fields without duplicate input" do
+  test "Provider-backed model creation keeps credentials exclusively on Provider" do
     provider = provider()
 
     assert {:ok, registered} =
@@ -279,10 +279,21 @@ defmodule Oli.GenAI.ProviderConfigurationTest do
                provider_id: provider.id
              })
 
-    assert registered.provider == provider.adapter
-    assert registered.api_key == provider.api_key
-    assert registered.url_template == provider.base_url
+    assert registered.provider_id == provider.id
+    refute Map.has_key?(registered, :api_key)
+    refute Map.has_key?(registered, :secondary_api_key)
+    refute Map.has_key?(registered, :provider)
+    refute Map.has_key?(registered, :url_template)
     assert registered.health_check
+  end
+
+  test "model creation requires an explicit Provider even when Providers exist" do
+    provider()
+
+    assert {:error, changeset} =
+             GenAI.create_registered_model(%{name: "Missing Provider", model: "test"})
+
+    assert "can't be blank" in errors_on(changeset).provider_id
   end
 
   test "nested rolled-back configuration writes do not publish uncommitted changes" do
@@ -315,11 +326,8 @@ defmodule Oli.GenAI.ProviderConfigurationTest do
         Map.merge(
           %{
             name: "model",
-            provider: :open_ai,
             provider_id: provider.id,
-            model: "test-model",
-            url_template: provider.base_url,
-            api_key: "legacy-secret"
+            model: "test-model"
           },
           overrides
         )

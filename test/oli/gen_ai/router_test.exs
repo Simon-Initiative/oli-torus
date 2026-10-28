@@ -47,7 +47,6 @@ defmodule Oli.GenAI.RouterTest do
     primary = %RegisteredModel{
       id: 11,
       provider_id: 1,
-      provider: :open_ai,
       model: "primary",
       timeout: 1000,
       recv_timeout: 2000
@@ -442,53 +441,23 @@ defmodule Oli.GenAI.RouterTest do
     assert %{observe_only: false} = Runtime.snapshot(c.runtime)
   end
 
-  test "deferred Claude dispatch preserves caller legacy credentials with a cached model", c do
-    legacy = %{
-      c.config.primary_model
-      | provider: :claude,
-        api_key: "legacy-claude-key",
-        url_template: "https://legacy.example"
-    }
-
-    cached = %{legacy | api_key: nil, url_template: nil}
-
-    change(c, fn l ->
+  test "Claude cannot fall back to legacy dispatch", c do
+    change(c, fn loaded ->
       %{
-        l
-        | service_configs: [
-            %{c.config | primary_model: cached, secondary_model: nil, backup_model: nil}
-          ]
-      }
-    end)
-
-    assert {:ok, plan} = Router.route(c.ctx, %{c.config | primary_model: legacy})
-    assert plan.selected_model.api_key == "legacy-claude-key"
-    assert plan.selected_model.url_template == "https://legacy.example"
-    assert plan.provider == nil and plan.pool == nil
-
-    change(c, fn l ->
-      %{
-        l
-        | service_configs: [
-            %{
-              c.config
-              | primary_model: %{cached | provider_id: 2},
-                secondary_model: nil,
-                backup_model: nil
-            }
-          ],
-          providers:
-            Enum.map(l.providers, fn e ->
-              case e.provider.id do
-                2 -> %{e | provider: %{e.provider | enabled: false}}
-                _ -> e
-              end
+        loaded
+        | providers:
+            Enum.map(loaded.providers, fn entry ->
+              %{entry | provider: %{entry.provider | adapter: :claude}}
             end)
       }
     end)
 
-    assert {:error, :provider_ineligible} =
-             Router.route(c.ctx, %{c.config | primary_model: legacy})
+    assert {:error, :unsupported_adapter} = Router.route(c.ctx, c.config)
+  end
+
+  test "missing runtime configuration never falls back to caller models", c do
+    assert {:error, :configuration_unavailable} =
+             Router.route(%{runtime: :missing_genai_runtime}, c.config)
   end
 
   test "the deadline reclaims a checkout even while its callback remains blocked", c do

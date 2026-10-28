@@ -15,7 +15,7 @@ defmodule Oli.GenAI.HealthProbe do
       provider.adapter != :open_ai ->
         :unsupported_probe_adapter
 
-      model.provider != :open_ai ->
+      model.provider_id != provider.id ->
         :incompatible_probe_model
 
       not is_binary(provider.api_key) or provider.api_key == "" ->

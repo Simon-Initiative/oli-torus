@@ -23,12 +23,20 @@ defmodule Oli.GenAI.ExecutionTest do
   end
 
   setup do
-    %{
-      config: %ServiceConfig{
-        id: 1,
-        primary_model: %RegisteredModel{id: 1, provider: :null, model: "local"}
-      }
-    }
+    provider = %Oli.GenAI.Provider{id: 2, adapter: :null}
+    model = %RegisteredModel{id: 1, provider_id: provider.id, model: "local"}
+    config = %ServiceConfig{id: 1, primary_model: model, secondary_model: nil, backup_model: nil}
+    loaded = %{providers: [%{provider: provider, model: model}], service_configs: [config]}
+    manager = start_supervised!({Oli.GenAI.PoolManager, name: nil, namespace: make_ref()})
+    tasks = start_supervised!({Task.Supervisor, max_children: 1})
+
+    start_supervised!(
+      {Oli.GenAI.Runtime,
+       source: fn -> loaded end, pool_manager: manager, task_supervisor: tasks, enabled: false}
+    )
+
+    assert :ok = Oli.GenAI.Runtime.reconcile()
+    %{config: config}
   end
 
   test "forwards generation options and actual selection metadata", c do

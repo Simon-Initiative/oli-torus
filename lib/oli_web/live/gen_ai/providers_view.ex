@@ -39,7 +39,7 @@ defmodule OliWeb.GenAI.ProvidersView do
       </p>
       <p :if={@diagnostics.health.error} role="status">Runtime: {@diagnostics.health.error}</p>
       <p :if={@selected.adapter == :claude} role="status">
-        Claude runtime still uses legacy model connection settings. Provider credential edits do not rotate existing Claude model credentials; managed transport tests remain deferred.
+        Claude managed transport is not supported. Select an OpenAI-compatible Provider for inference.
       </p>
       <button
         id="toggle_editing"

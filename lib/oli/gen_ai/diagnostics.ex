@@ -53,10 +53,10 @@ defmodule Oli.GenAI.Diagnostics do
             p -> length(p.retired)
           end,
         transport:
-          case model.provider do
+          case Map.get(provider || %{}, :adapter) do
             :open_ai -> "HTTP/1.1"
             :null -> "Local"
-            _ -> "Deferred: no capacity guarantee"
+            _ -> "Unsupported adapter"
           end
       }
     end

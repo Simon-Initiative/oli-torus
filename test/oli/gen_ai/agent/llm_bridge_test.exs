@@ -11,19 +11,11 @@ defmodule Oli.GenAI.Agent.LLMBridgeTest do
       config = %ServiceConfig{
         primary_model: %RegisteredModel{
           model: "test-primary",
-          provider: :null,
-          url_template: "http://localhost",
-          api_key: "test-key",
-          secondary_api_key: "test-org",
           timeout: 8000,
           recv_timeout: 60000
         },
         backup_model: %RegisteredModel{
           model: "test-backup",
-          provider: :null,
-          url_template: "http://localhost",
-          api_key: "test-key-backup",
-          secondary_api_key: "test-org-backup",
           timeout: 8000,
           recv_timeout: 60000
         }
@@ -39,10 +31,6 @@ defmodule Oli.GenAI.Agent.LLMBridgeTest do
       config = %ServiceConfig{
         primary_model: %RegisteredModel{
           model: "test-primary",
-          provider: :null,
-          url_template: "http://localhost",
-          api_key: "test-key",
-          secondary_api_key: "test-org",
           timeout: 8000,
           recv_timeout: 60000
         },
@@ -77,19 +65,11 @@ defmodule Oli.GenAI.Agent.LLMBridgeTest do
       service_config = %ServiceConfig{
         primary_model: %RegisteredModel{
           model: "test-model",
-          provider: :null,
-          url_template: "http://localhost",
-          api_key: "test-key",
-          secondary_api_key: "test-org",
           timeout: 8000,
           recv_timeout: 60000
         },
         backup_model: %RegisteredModel{
           model: "backup-model",
-          provider: :null,
-          url_template: "http://localhost",
-          api_key: "test-key-null",
-          secondary_api_key: "test-org-null",
           timeout: 8000,
           recv_timeout: 60000
         }

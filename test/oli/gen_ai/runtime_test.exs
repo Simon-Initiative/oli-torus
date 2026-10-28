@@ -118,11 +118,8 @@ defmodule Oli.GenAI.RuntimeTest do
     {:ok, model} =
       GenAI.create_registered_model(%{
         name: "Runtime model",
-        provider: :open_ai,
         provider_id: provider.id,
-        model: "test-model",
-        url_template: provider.base_url,
-        api_key: "legacy-key"
+        model: "test-model"
       })
 
     {:ok, config} =

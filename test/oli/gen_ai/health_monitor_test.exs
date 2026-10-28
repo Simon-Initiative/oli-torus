@@ -185,7 +185,7 @@ defmodule Oli.GenAI.HealthMonitorTest do
     model =
       Keyword.get(opts, :model, %RegisteredModel{
         id: 18,
-        provider: :open_ai,
+        provider_id: provider.id,
         model: "test",
         health_check: true
       })

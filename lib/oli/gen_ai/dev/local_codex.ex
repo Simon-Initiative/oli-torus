@@ -84,32 +84,39 @@ defmodule Oli.GenAI.Dev.LocalCodex do
     do: raise(ArgumentError, "unsupported feature: #{inspect(other)}")
 
   defp upsert_registered_model(opts) do
-    attrs = %{
-      api_key: opts.api_key,
-      max_concurrent: 4,
-      model: opts.model,
-      name: opts.model_name,
-      pool_class: :slow,
-      provider: :open_ai,
-      recv_timeout: 60_000,
-      routing_breaker_429_threshold: 0.0,
-      routing_breaker_error_rate_threshold: 0.0,
-      routing_breaker_latency_p95_ms: 0,
-      routing_half_open_probe_count: 3,
-      routing_open_cooldown_ms: 30_000,
-      timeout: 8_000,
-      url_template: opts.url
-    }
+    provider = Repo.get_by(Oli.GenAI.Provider, name: opts.model_name) || %Oli.GenAI.Provider{}
 
-    case Repo.get_by(RegisteredModel, name: opts.model_name) do
-      nil ->
-        %RegisteredModel{}
+    with {:ok, provider} <-
+           Oli.GenAI.Configuration.save_provider(provider, %{
+             name: opts.model_name,
+             adapter: :open_ai,
+             api_key: opts.api_key,
+             base_url: opts.url
+           }) do
+      attrs = %{
+        provider_id: provider.id,
+        max_concurrent: 4,
+        model: opts.model,
+        name: opts.model_name,
+        pool_class: :slow,
+        recv_timeout: 60_000,
+        routing_breaker_429_threshold: 0.0,
+        routing_breaker_error_rate_threshold: 0.0,
+        routing_breaker_latency_p95_ms: 0,
+        routing_half_open_probe_count: 3,
+        routing_open_cooldown_ms: 30_000,
+        timeout: 8_000
+      }
 
-      registered_model ->
-        registered_model
+      case Repo.get_by(RegisteredModel, name: opts.model_name) do
+        nil ->
+          %RegisteredModel{}
+
+        registered_model ->
+          registered_model
+      end
+      |> Oli.GenAI.Configuration.save_model(attrs)
     end
-    |> RegisteredModel.changeset(attrs)
-    |> Repo.insert_or_update()
   end
 
   defp upsert_service_config(%RegisteredModel{id: registered_model_id}, opts) do

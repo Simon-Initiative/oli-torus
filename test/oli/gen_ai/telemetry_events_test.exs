@@ -22,7 +22,7 @@ defmodule Oli.GenAI.TelemetryEventsTest do
     attach(handler_id, [@router_decision, @router_admission])
     config = build_service_config(1)
     assert {:ok, _} = Router.route(%{}, config)
-    assert_receive {:telemetry_event, @router_decision, _, %{reason: :unmanaged_adapter}}
+    assert_receive {:telemetry_event, @router_decision, _, %{reason: :local_adapter}}
     refute_receive {:telemetry_event, @router_admission, _, _}
     detach(handler_id)
   end
@@ -81,9 +81,9 @@ defmodule Oli.GenAI.TelemetryEventsTest do
   end
 
   defp build_service_config(id, overrides \\ %{}) do
-    primary = %RegisteredModel{id: id * 10 + 1, name: "Primary", provider: :null}
-    secondary = %RegisteredModel{id: id * 10 + 2, name: "Secondary", provider: :null}
-    backup = %RegisteredModel{id: id * 10 + 3, name: "Backup", provider: :null}
+    primary = %RegisteredModel{id: id * 10 + 1, name: "Primary", provider_id: 1}
+    secondary = %RegisteredModel{id: id * 10 + 2, name: "Secondary", provider_id: 1}
+    backup = %RegisteredModel{id: id * 10 + 3, name: "Backup", provider_id: 1}
 
     base = %ServiceConfig{
       id: id,
@@ -93,7 +93,24 @@ defmodule Oli.GenAI.TelemetryEventsTest do
       backup_model: backup
     }
 
-    struct(base, overrides)
+    config = struct(base, overrides)
+    provider = %Oli.GenAI.Provider{id: 1, adapter: :null}
+
+    loaded = %{
+      providers: [%{provider: provider, model: primary, models: [primary, secondary, backup]}],
+      service_configs: [config]
+    }
+
+    manager = start_supervised!({Oli.GenAI.PoolManager, name: nil, namespace: make_ref()})
+    tasks = start_supervised!({Task.Supervisor, max_children: 1})
+
+    start_supervised!(
+      {Oli.GenAI.Runtime,
+       source: fn -> loaded end, pool_manager: manager, task_supervisor: tasks, enabled: false}
+    )
+
+    assert :ok = Oli.GenAI.Runtime.reconcile()
+    config
   end
 
   defp thresholds(overrides) do

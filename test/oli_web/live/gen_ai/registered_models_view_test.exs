@@ -116,7 +116,7 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
       assert Oli.Repo.get!(RegisteredModel, secondary.id)
     end
 
-    test "changing an existing model adapter requires creating a new model", %{conn: conn} do
+    test "model transport settings follow the selected Provider", %{conn: conn} do
       {:ok, provider} = GenAI.create_provider(%{name: "Local", adapter: :null})
 
       {:ok, other} =
@@ -143,8 +143,8 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
         |> form("#registered-model-form", registered_model: %{provider_id: other.id})
         |> render_submit()
 
-      assert html =~ "Changing transport adapter requires a new model"
-      assert Oli.Repo.get!(RegisteredModel, model.id).provider_id == provider.id
+      refute html =~ "Changing transport adapter requires a new model"
+      assert Oli.Repo.get!(RegisteredModel, model.id).provider_id == other.id
     end
 
     test "model tests run asynchronously and show only a safe result", %{conn: conn} do

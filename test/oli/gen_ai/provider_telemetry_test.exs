@@ -21,7 +21,7 @@ defmodule Oli.GenAI.ProviderTelemetryTest do
   test "probe and state-change events contain bounded safe categories without raw credentials or errors" do
     tasks = start_supervised!({Task.Supervisor, max_children: 1})
     provider = provider()
-    model = %RegisteredModel{id: 2, provider: :open_ai, model: "probe"}
+    model = %RegisteredModel{id: 2, provider_id: 1, model: "probe"}
 
     start_supervised!(
       {HealthMonitor,
@@ -54,7 +54,7 @@ defmodule Oli.GenAI.ProviderTelemetryTest do
       providers: [
         %{
           provider: provider(),
-          model: %RegisteredModel{id: 2, provider: :open_ai, model: "probe"}
+          model: %RegisteredModel{id: 2, provider_id: 1, model: "probe"}
         }
       ],
       service_configs: []

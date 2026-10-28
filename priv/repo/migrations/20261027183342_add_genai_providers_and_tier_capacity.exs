@@ -52,8 +52,7 @@ defmodule Oli.Repo.Migrations.AddGenaiProvidersAndTierCapacity do
     end
 
     # Copy ciphertext directly, without materializing secrets in migration logs.
-    # Legacy connection fields remain intact until the later execution cutover,
-    # preserving heterogeneous endpoints/adapters and providing a lossless rollback.
+    # Credentials are owned exclusively by Providers after the backfill.
     providers = qualified_table("gen_ai_providers")
     models = qualified_table("registered_models")
 
@@ -74,9 +73,24 @@ defmodule Oli.Repo.Migrations.AddGenaiProvidersAndTierCapacity do
     execute "UPDATE #{models} SET provider_id = (SELECT id FROM #{providers})"
 
     execute "UPDATE #{models} SET health_check = true WHERE id = (SELECT MIN(id) FROM #{models})"
+
+    alter table(:registered_models) do
+      modify :provider_id, :bigint, null: false
+      remove :provider, :string
+      remove :url_template, :string
+      remove :api_key, :binary
+      remove :secondary_api_key, :binary
+    end
   end
 
   def down do
+    alter table(:registered_models) do
+      add :provider, :string
+      add :url_template, :string
+      add :api_key, :binary
+      add :secondary_api_key, :binary
+    end
+
     for tier <- [:primary, :secondary, :backup] do
       drop constraint(:completions_service_configs, "#{tier}_pool_capacity_positive")
     end

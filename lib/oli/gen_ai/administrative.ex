@@ -24,13 +24,20 @@ defmodule Oli.GenAI.Administrative do
 
   defp plan(%{provider: %{enabled: false}}), do: {:error, :provider_ineligible}
 
-  defp plan(%{model: %{provider: :null} = model}),
-    do: {:ok, %RoutingPlan{selected_model: model, tier: :administrative, reason: :administrative}}
+  defp plan(%{provider: %{adapter: :null} = provider, model: model}),
+    do:
+      {:ok,
+       %RoutingPlan{
+         selected_model: model,
+         provider: provider,
+         tier: :administrative,
+         reason: :administrative
+       }}
 
   defp plan(
          %{
            provider: %{adapter: :open_ai, api_key: key} = provider,
-           model: %{provider: :open_ai} = model
+           model: model
          } = inputs
        )
        when is_binary(key) and byte_size(key) > 0 do
