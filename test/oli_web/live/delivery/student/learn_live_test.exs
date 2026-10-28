@@ -838,6 +838,155 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
   end
 
+  describe "removed soft schedule dates" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    for selected_view <- [:gallery, :outline] do
+      @selected_view selected_view
+      test "#{selected_view} hides removed advisory dates while preserving assignment deadlines",
+           context do
+        %{
+          conn: conn,
+          section: section,
+          unit_1: unit,
+          module_1: module,
+          page_4: page,
+          page_12: assignment
+        } =
+          context
+
+        resources =
+          Enum.map([unit, module, page, assignment], fn revision ->
+            Sections.get_section_resource(section.id, revision.resource_id)
+          end)
+
+        updates =
+          Enum.map(resources, fn resource ->
+            %{
+              id: resource.id,
+              scheduling_type: Atom.to_string(resource.scheduling_type),
+              start_date:
+                case resource.resource_type_id do
+                  2 -> "2023-10-31"
+                  _ -> nil
+                end,
+              end_date:
+                case resource.scheduling_type do
+                  :due_by -> "2024-01-15"
+                  _ -> "2023-12-31"
+                end,
+              manually_scheduled: false,
+              removed_from_schedule: true
+            }
+          end)
+
+        assert {:ok, 4} = Sections.Scheduling.update(section, updates, "Etc/UTC")
+
+        hierarchy =
+          OliWeb.Delivery.Student.LearnLive.get_full_hierarchy(section, @selected_view, nil)
+
+        for resource <- resources do
+          node =
+            Oli.Delivery.Hierarchy.find_in_hierarchy(
+              hierarchy,
+              &(&1["resource_id"] == resource.resource_id)
+            )
+
+          assert node["section_resource"].start_date == nil
+
+          case resource.scheduling_type do
+            :due_by -> assert node["section_resource"].end_date == ~U[2024-01-15 23:59:59Z]
+            _ -> assert node["section_resource"].end_date == nil
+          end
+        end
+
+        {:ok, view, _html} =
+          live(conn, Utils.learn_live_path(section.slug, selected_view: @selected_view))
+
+        html = render(view)
+        assert html =~ unit.title
+        assert html =~ module.title
+        refute html =~ "Dec 31, 2023"
+
+        # Removal changes the student projection, preserving dates for the scheduler.
+        saved = Sections.Scheduling.retrieve(section)
+
+        assert Enum.find(saved, &(&1.id == hd(resources).id)).end_date ==
+                 ~U[2023-12-31 23:59:59Z]
+
+        student_pages =
+          Oli.Repo.all(
+            from(p in subquery(Sections.get_student_pages(section.slug, context.user.id)))
+          )
+
+        assert Enum.find(student_pages, &(&1.resource_id == assignment.resource_id)).end_date ==
+                 ~N[2024-01-15 23:59:59]
+
+        assert Enum.find(student_pages, &(&1.resource_id == page.resource_id)).end_date == nil
+
+        scheduled =
+          for {_, weeks} <- Sections.get_ordered_schedule(section, context.user.id, nil, :v2),
+              {_, groups} <- weeks,
+              group <- groups,
+              item <- group.resources,
+              do: item.resource.resource_id
+
+        assert assignment.resource_id in scheduled
+        refute page.resource_id in scheduled
+
+        updates = Enum.map(updates, &Map.put(&1, :removed_from_schedule, false))
+        assert {:ok, 4} = Sections.Scheduling.update(section, updates, "Etc/UTC")
+
+        {:ok, restored_view, _html} =
+          live(conn, Utils.learn_live_path(section.slug, selected_view: @selected_view))
+
+        assert render(restored_view) =~ "Dec 31, 2023"
+      end
+    end
+
+    test "removed items retain student date exceptions in their date groups", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_11: page,
+      page_12: assignment
+    } do
+      for revision <- [page, assignment] do
+        Sections.get_section_resource(section.id, revision.resource_id)
+        |> Sections.update_section_resource(%{removed_from_schedule: true})
+
+        insert(:student_exception,
+          section: section,
+          user: user,
+          resource: Oli.Repo.get!(Oli.Resources.Resource, revision.resource_id),
+          end_date: ~U[2027-06-01 20:00:00Z]
+        )
+      end
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+      view |> element(~s{div[data-role="unit-5"] div[data-card-index="4"]}) |> render_click()
+
+      unscheduled =
+        view |> element(~s{div[data-role="pages-grouped-by--Not yet scheduled"]}) |> render()
+
+      refute unscheduled =~ "Page 11"
+      refute unscheduled =~ "Page 12"
+      refute has_element?(view, ~s{div[data-role="pages-grouped-by-due_by-2023-11-03"]})
+
+      assert has_element?(
+               view,
+               ~s{div[data-role="pages-grouped-by-due_by-2027-06-01"]},
+               "Page 12"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[data-role="pages-grouped-by-read_by-2027-06-01"]},
+               "Page 11"
+             )
+    end
+  end
+
   describe "student at Gallery view mode (the default view)" do
     setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
 

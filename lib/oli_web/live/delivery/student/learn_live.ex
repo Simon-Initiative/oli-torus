@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.Sections.Scheduling
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.ScheduleDisplay
   alias OliWeb.Delivery.Student.Utils
@@ -4406,20 +4407,26 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     )
   end
 
-  _docp = """
-  This function returns the full hierarchy for a section.
-  If the hierarchy is not in the cache, it computes it and stores it in the cache.
-
-  For the outline view, it also filters the hierarchy by the search term (if any)
+  @doc """
+  Returns the visible Learn hierarchy with removed advisory dates suppressed.
+  Assignment deadlines and page availability remain visible.
+  Outline results are also filtered by the search term.
   """
+  def get_full_hierarchy(section, selected_view, search_term) do
+    hierarchy =
+      SectionResourceDepot.get_full_hierarchy(section, hidden: false)
+      |> hide_removed_schedule_dates()
 
-  def get_full_hierarchy(section, :outline, search_term) do
-    SectionResourceDepot.get_full_hierarchy(section, hidden: false)
-    |> Hierarchy.filter_hierarchy_by_search_term(search_term)
+    case selected_view do
+      :outline -> Hierarchy.filter_hierarchy_by_search_term(hierarchy, search_term)
+      _ -> hierarchy
+    end
   end
 
-  def get_full_hierarchy(section, _seleted_view, _search_term) do
-    SectionResourceDepot.get_full_hierarchy(section, hidden: false)
+  defp hide_removed_schedule_dates(node) do
+    node
+    |> Map.update!("section_resource", &Scheduling.for_display/1)
+    |> Map.update!("children", &Enum.map(&1, fn child -> hide_removed_schedule_dates(child) end))
   end
 
   def get_or_compute_contained_scheduling_types(section_slug, full_hierarchy) do

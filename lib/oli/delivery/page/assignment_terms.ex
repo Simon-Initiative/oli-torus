@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
 
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Settings.Combined
+  alias Oli.Delivery.Sections.Scheduling
 
   @type formatted_segment :: {:text | :strong, String.t()}
 
@@ -66,6 +67,9 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
         }
 
   @spec build(Combined.t(), [ResourceAttempt.t()], keyword()) :: t()
+  @doc """
+  Builds student assignment terms, hiding removed advisory dates while retaining deadlines.
+  """
   def build(
         %Combined{} = effective_settings,
         historical_attempts,
@@ -77,7 +81,7 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
     feedback_texts_by_attempt_guid = Keyword.get(opts, :feedback_texts_by_attempt_guid, %{})
 
     %{
-      schedule: schedule_card(effective_settings),
+      schedule: schedule_card(Scheduling.for_display(effective_settings)),
       time_limit: time_limit_card(effective_settings),
       scoring: scoring_card(effective_settings),
       attempts:

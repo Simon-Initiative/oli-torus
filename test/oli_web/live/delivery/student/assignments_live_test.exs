@@ -590,6 +590,35 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
              )
     end
 
+    test "removed assignments retain deadlines and student exceptions", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page
+    } do
+      resource = Sections.get_section_resource(section.id, page.resource_id)
+      assert {:ok, _} = Sections.update_section_resource(resource, %{removed_from_schedule: true})
+
+      insert(:student_exception,
+        section: section,
+        user: user,
+        resource: Oli.Repo.get!(Oli.Resources.Resource, page.resource_id),
+        end_date: ~U[2027-06-01 00:00:00Z]
+      )
+
+      {:ok, view, _html} = live(conn, live_view_assignments_live_route(section.slug))
+
+      html =
+        view
+        |> element("#assignment_#{page.resource_id} [data-role=assignment-schedule-details]")
+        |> render()
+
+      assert html =~ "2023"
+      assert html =~ "Jun 1, 2027"
+      refute html =~ "None"
+      assert has_element?(view, "#assignment_#{page.resource_id}", page.title)
+    end
+
     test "can see schedule details when course has scheduled resources", %{
       conn: conn,
       section: section,
