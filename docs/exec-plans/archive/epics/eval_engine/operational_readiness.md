@@ -2,7 +2,7 @@
 
 This note captures the expected bounded deployment posture for the Phase 1 `vm2`-based eval Lambda.
 
-For build, packaging, deployment, provider configuration, verification, and rollback commands, use the [variable-substitution Lambda runbook](../../../../runbooks/variable-substitution-lambda.md). Adaptive rules have a [separate deployment runbook](../../../../runbooks/adaptive-rules-lambda.md). These notes record the original implementation posture; they do not establish that a live rollout has been verified.
+The adaptive rules and variable substitution AWS Lambda services are recommended for production deployments of OLI Torus. Each service can be deployed independently to replace its corresponding local Node evaluation process. For AWS Lambda deployment instructions, including Torus configuration, verification, and rollback, see the [adaptive rules runbook](../../../../runbooks/adaptive-rules-lambda.md) and [variable substitution runbook](../../../../runbooks/variable-substitution-lambda.md).
 
 ## Function Configuration
 
