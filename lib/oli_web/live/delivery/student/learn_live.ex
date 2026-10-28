@@ -4414,19 +4414,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   """
   def get_full_hierarchy(section, selected_view, search_term) do
     hierarchy =
-      SectionResourceDepot.get_full_hierarchy(section, hidden: false)
-      |> hide_removed_schedule_dates()
+      SectionResourceDepot.get_full_hierarchy(section, [hidden: false], &Scheduling.for_display/1)
 
     case selected_view do
       :outline -> Hierarchy.filter_hierarchy_by_search_term(hierarchy, search_term)
       _ -> hierarchy
     end
-  end
-
-  defp hide_removed_schedule_dates(node) do
-    node
-    |> Map.update!("section_resource", &Scheduling.for_display/1)
-    |> Map.update!("children", &Enum.map(&1, fn child -> hide_removed_schedule_dates(child) end))
   end
 
   def get_or_compute_contained_scheduling_types(section_slug, full_hierarchy) do
