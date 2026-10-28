@@ -1,6 +1,6 @@
 # Deploy the Torus adaptive rules Lambda
 
-This runbook builds, deploys, and configures the adaptive rules function. Torus invokes it synchronously through Elixir's AWS client using `AWSLambdaEvaluator`. This procedure changes only this service; deploy the other evaluator independently using the [variable-substitution runbook](variable-substitution-lambda.md).
+This runbook builds, deploys, and configures the adaptive rules function. Torus invokes it synchronously through Elixir's AWS client using `AWSLambdaEvaluator`.
 
 Use a staging environment first. The normal Torus release workflow compiles evaluator bundles but does not deploy Lambda functions. The commands below publish immutable versions and leave provider defaults unchanged until you explicitly configure Torus.
 
@@ -20,7 +20,7 @@ Source references: [bundle configuration](../../assets/webpack.config.node.js), 
 
 Use a clean checkout of the Torus revision being deployed and the Node, Yarn, and Gleam versions specified by `.tool-versions`. Install AWS CLI v2, `zip`, and `unzip`. Run the shell blocks in order in one Bash session, starting at the repository root. Keep the temporary directory until rollout verification is complete.
 
-Edit these example values for the target environment. Use separate function names for staging and production. This procedure assumes Torus and the function belong to the same AWS account. If deploying both evaluators, use a fresh shell for each runbook so their temporary-directory and function settings remain separate.
+Edit these example values for the target environment. Use separate function names for staging and production. This procedure assumes Torus and the function belong to the same AWS account.
 
 ```bash
 set -euo pipefail
@@ -49,7 +49,7 @@ cp priv/node/rules.js priv/node/rules.js.LICENSE.txt "$PACKAGE_DIR/package/"
 cp docs/runbooks/adaptive-rules-lambda/index.js "$PACKAGE_DIR/package/"
 ```
 
-`deploy-node` compiles both evaluator bundles but does not upload either to AWS. This runbook packages and deploys only `rules.js`. `rules.js` exports `check`, so it needs the [JavaScript wrapper](adaptive-rules-lambda/index.js) copied above. No separate wrapper compilation is needed.
+`deploy-node` builds `rules.js` but does not upload it to AWS. `rules.js` exports `check`, so it needs the [JavaScript wrapper](adaptive-rules-lambda/index.js) copied above. No separate wrapper compilation is needed.
 
 Invoke the packaged handler with the [smoke-test input](adaptive-rules-lambda/rules-event.json) and check its response using Node. A failed invocation or assertion exits nonzero. Keep the input outside the deployment ZIP.
 
@@ -161,7 +161,7 @@ Lambda can return HTTP 200 with `FunctionError`. Check both invocation metadata 
 
 ## 6. Grant Torus invocation access and configure the provider
 
-Grant the Torus runtime role access to this exact function version. If IAM policies are managed elsewhere, apply the equivalent policy through that process. Preserve access to previous versions until the rollback window closes; the example uses a separate policy per function version and does not replace the other evaluator's policy.
+Grant the Torus runtime role access to this exact function version. If IAM policies are managed elsewhere, apply the equivalent policy through that process. Preserve access to previous versions until the rollback window closes; the example uses a separate policy per function version.
 
 ```bash
 FUNCTION_TARGET="$FUNCTION_NAME:$FUNCTION_VERSION"
@@ -184,7 +184,7 @@ printf '%s\n' \
   "EVAL_LAMBDA_REGION=$AWS_REGION"
 ```
 
-Save the existing three settings, including whether each was unset. Apply the printed values to the environment used by the Torus service or container, not just an interactive shell. Leave the other evaluator's provider and function settings unchanged. Use the normal restart/redeploy procedure.
+Save the existing three settings, including whether each was unset. Apply the printed values to the environment used by the Torus service or container, not just an interactive shell. Use the normal restart/redeploy procedure.
 
 Use the deployed Torus release's remote command to verify the effective configuration, substituting the actual release path:
 
@@ -204,17 +204,11 @@ In staging, through Torus itself:
 
 Repeat the approved checks after production cutover. Keep local Node available during the rollback window.
 
-Changing this service alone does not establish that the entire deployment can remove local Node. Torus starts its Node pool when the rules provider is `NodeEvaluator` or the variable provider is `NodeImpl`. When both services use Lambda, neither condition applies. Check the other provider using the [variable-substitution runbook](variable-substitution-lambda.md) before removing the host dependency, and verify that this command returns `nil`:
-
-```bash
-/path/to/oli/bin/oli rpc 'IO.inspect(Process.whereis(NodeJS.Supervisor))'
-```
-
-A separate local REST evaluator may still need Node even when the Torus pool is absent. Development watchers and the dev/test-only rules API still use local Node. Build jobs must continue to install Node and compile the bundles. Removing Node from the shared Docker runtime image is a separate packaging change because other deployments may select a local provider. Node and JavaScript dependencies inside Lambda still need updates.
+Before removing Node from a Torus host, verify that no remaining runtime workloads or rollback procedures require it. Build jobs still need Node to compile the bundle, and Node and JavaScript dependencies inside Lambda still need updates.
 
 ## Rollback and cleanup
 
-Restore this service's prior provider, function/version, and region settings, then restart Torus and repeat its activity checks. Leave the other evaluator's settings and policies unchanged. For a later Lambda update, restoring the prior version-qualified function name selects the previous immutable code. For the initial migration, restore the previous rules provider (normally `NodeEvaluator`); local Node must still be available.
+Restore this service's prior provider, function/version, and region settings, then restart Torus and repeat its activity checks. For a later Lambda update, restoring the prior version-qualified function name selects the previous immutable code. For the initial migration, restore the previous rules provider (normally `NodeEvaluator`); local Node must still be available.
 
 Do not delete previous versions or their invocation grants until rollback is no longer needed. Afterward, remove obsolete per-release IAM policies for this function to avoid accumulating inline policies. Retain the deployment ZIP, version number, source SHA, prior configuration, and verification results in the release record. Remove only the temporary directory created by this runbook once those records have been saved:
 
@@ -224,7 +218,6 @@ rm -rf -- "$PACKAGE_DIR"
 
 ## References and validation scope
 
-- [Variable-substitution runbook](variable-substitution-lambda.md)
 - [AWS Node.js runtime and handler documentation](https://docs.aws.amazon.com/lambda/latest/dg/lambda-nodejs.html)
 - [AWS CLI create-function](https://docs.aws.amazon.com/cli/latest/reference/lambda/create-function.html)
 - [AWS CLI update-function-code](https://docs.aws.amazon.com/cli/latest/reference/lambda/update-function-code.html)
