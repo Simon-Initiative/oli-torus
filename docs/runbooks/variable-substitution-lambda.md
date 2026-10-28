@@ -54,13 +54,25 @@ cp assets/node_modules/vm2/lib/setup-sandbox.js "$PACKAGE_DIR/package/"
 
 The current build emits warnings about dynamic requires and optional `coffee-script` resolution. A successful compilation alone is insufficient: run the isolated smoke checks below and repeat them whenever the bundler or `vm2` changes. This package supports the evaluator's JavaScript execution paths, not optional CoffeeScript/TypeScript compilers.
 
-The TypeScript utilities live in [`variable-substitution-lambda/`](variable-substitution-lambda/) beside this runbook. Run them directly with the repository's Node 24 installation; no additional runner is needed. JSON inputs and IAM templates remain JSON.
-
-Run the checked-in [local invocation script](variable-substitution-lambda/run-local.ts) with the [eval smoke-test input](variable-substitution-lambda/eval-event.json), then validate the response with the [result checker](variable-substitution-lambda/check-result.ts). These checks exit nonzero on failure. Keep the smoke-test scripts and inputs outside the deployment ZIP.
+Invoke the packaged handler with the [smoke-test input](variable-substitution-lambda/eval-event.json) and check its response using Node. A failed invocation or assertion exits nonzero. Keep the input outside the deployment ZIP.
 
 ```bash
-node docs/runbooks/variable-substitution-lambda/run-local.ts "$PACKAGE_DIR"
-node docs/runbooks/variable-substitution-lambda/check-result.ts "$PACKAGE_DIR/result.json"
+node - "$PACKAGE_DIR" <<'NODE'
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { handler } = require(path.resolve(process.argv[2], 'package/eval.js'));
+const event = require('./docs/runbooks/variable-substitution-lambda/eval-event.json');
+handler(event).then((result) => {
+  assert.deepEqual(result, [
+    [{ variable: 'V1', errored: false, result: 2 }],
+    [{ variable: 'answer', errored: false, result: 42 }],
+  ]);
+  console.log('eval response contract passed');
+}).catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
+NODE
 (cd "$PACKAGE_DIR/package" && zip -q ../eval.zip ./*)
 unzip -l "$PACKAGE_DIR/eval.zip"
 printf '%s\n' "$SOURCE_SHA" > "$PACKAGE_DIR/source-sha.txt"
@@ -73,8 +85,18 @@ The JavaScript files must be at the ZIP root, without a containing `package/` di
 For first-time setup, create an execution role trusted by Lambda and grant CloudWatch logging access. This evaluator does not need database, S3, secret-store, or Lambda-invocation access. If reusing a role, skip creation and verify its trust and permissions instead.
 
 ```bash
+cat > "$PACKAGE_DIR/lambda-trust.json" <<'JSON'
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": { "Service": "lambda.amazonaws.com" },
+    "Action": "sts:AssumeRole"
+  }]
+}
+JSON
 aws iam create-role --role-name "$EXECUTION_ROLE_NAME" \
-  --assume-role-policy-document "file://docs/runbooks/variable-substitution-lambda/lambda-trust.json"
+  --assume-role-policy-document "file://$PACKAGE_DIR/lambda-trust.json"
 aws iam attach-role-policy --role-name "$EXECUTION_ROLE_NAME" \
   --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 ```
@@ -122,8 +144,20 @@ Record the version number alongside the ZIP and source SHA. Torus will invoke th
 aws lambda invoke --function-name "$FUNCTION_NAME" --qualifier "$FUNCTION_VERSION" \
   --cli-binary-format raw-in-base64-out --payload "file://docs/runbooks/variable-substitution-lambda/eval-event.json" \
   "$PACKAGE_DIR/result.json" > "$PACKAGE_DIR/invoke.json"
-node docs/runbooks/variable-substitution-lambda/check-invocation.ts "$PACKAGE_DIR/invoke.json"
-node docs/runbooks/variable-substitution-lambda/check-result.ts "$PACKAGE_DIR/result.json"
+node - "$PACKAGE_DIR" <<'NODE'
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const dir = path.resolve(process.argv[2]);
+const metadata = require(path.join(dir, 'invoke.json'));
+assert.equal(metadata.StatusCode, 200);
+assert.equal(metadata.FunctionError, undefined, JSON.stringify(metadata));
+const result = require(path.join(dir, 'result.json'));
+assert.deepEqual(result, [
+  [{ variable: 'V1', errored: false, result: 2 }],
+  [{ variable: 'answer', errored: false, result: 42 }],
+]);
+console.log('Lambda invocation and response passed');
+NODE
 ```
 
 Lambda can return HTTP 200 with `FunctionError`. The variable handler can also return an error object without setting `FunctionError`. Check both invocation metadata and payload, as above. If either check fails, stop before changing Torus configuration. Inspect `/aws/lambda/<function-name>` in CloudWatch for initialization, timeout, and handler errors.
@@ -134,9 +168,16 @@ Grant the Torus runtime role access to this exact function version. If IAM polic
 
 ```bash
 FUNCTION_TARGET="$FUNCTION_NAME:$FUNCTION_VERSION"
-node docs/runbooks/variable-substitution-lambda/write-invoke-policy.ts \
-  "arn:aws:lambda:$AWS_REGION:$ACCOUNT_ID:function:$FUNCTION_TARGET" \
-  > "$PACKAGE_DIR/torus-invoke.json"
+cat > "$PACKAGE_DIR/torus-invoke.json" <<JSON
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "lambda:InvokeFunction",
+    "Resource": "arn:aws:lambda:$AWS_REGION:$ACCOUNT_ID:function:$FUNCTION_TARGET"
+  }]
+}
+JSON
 aws iam put-role-policy --role-name "$TORUS_ROLE_NAME" \
   --policy-name "TorusEvaluator-$FUNCTION_NAME-$FUNCTION_VERSION" \
   --policy-document "file://$PACKAGE_DIR/torus-invoke.json"
