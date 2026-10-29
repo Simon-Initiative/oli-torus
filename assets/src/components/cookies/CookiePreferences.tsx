@@ -200,6 +200,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                       <div id={tableId}>
                         <div className="mt-2 overflow-x-auto max-w-full">
                           <table className="table table-striped w-full">
+                            <caption className="sr-only">{section.title}</caption>
                             <thead>
                               <tr>
                                 <th

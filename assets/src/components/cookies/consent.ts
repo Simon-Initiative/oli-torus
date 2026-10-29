@@ -269,28 +269,21 @@ function updateGoogleDisabled(analytics: boolean) {
   }
 }
 
-/** Deletes host-only and current-host GA4 cookies without altering shared parent domains. */
+/** Deletes root-path host-only and current-host GA4 cookies without altering shared parent domains. */
 export function deleteAnalyticsCookies(): void {
   const names = browserCookies()
     .split(';')
     .map((cookie) => cookie.trim().split('=')[0])
     .filter((name) => name === '_ga' || name.startsWith('_ga_'));
   const domains = ['', window.location.hostname];
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const paths = [
-    '/',
-    ...pathParts.map((_, index) => `/${pathParts.slice(0, index + 1).join('/')}`),
-  ];
   for (const name of names) {
     for (const domain of domains) {
-      for (const path of paths) {
-        try {
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;max-age=0;path=${path}${
-            domain ? `;domain=${domain}` : ''
-          };SameSite=None;Secure`;
-        } catch {
-          // A blocked cookie store cannot be cleaned, but GA remains disabled.
-        }
+      try {
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;max-age=0;path=/${
+          domain ? `;domain=${domain}` : ''
+        };SameSite=None;Secure`;
+      } catch {
+        // A blocked cookie store cannot be cleaned, but GA remains disabled.
       }
     }
   }

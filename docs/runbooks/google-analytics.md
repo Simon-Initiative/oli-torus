@@ -59,7 +59,8 @@ execution: tags can access student answers, account information and CSRF tokens.
    reconnects and duplicate mounts add none. This installation does not emit React
    internal navigation or custom activity events (MER-5306).
 5. Set `cookie_domain` explicitly to the Torus hostname (never `auto`) to avoid
-   collisions with other properties on the registrable domain. Set
+   collisions with other properties on the registrable domain. Set `cookie_path`
+   to `/`, the root path used by withdrawal cleanup. Set
    `cookie_flags` to `samesite=none;secure` for LMS iframes over HTTPS.
 6. Prohibit Custom HTML and third-party tags without engineering/privacy review.
    Restrict publish rights and require review of every container version. No
@@ -75,13 +76,13 @@ never replayed. LiveView navigation checks consent before adding a behavioral ev
 
 On withdrawal the application immediately denies consent, blocks its event writer,
 sets Google's `ga-disable-G-<measurement-id>` flag for configured IDs and IDs discovered
-from GA4 cookies, and deletes host-only and current-host `_ga` / `_ga_*` cookies.
+from GA4 cookies, and deletes root-path host-only and current-host `_ga` / `_ga_*` cookies.
 Parent-domain cookies are preserved because they may belong to sibling applications.
 Removing legacy `cookie_domain: auto` cookies requires establishing Torus ownership
 and a separately reviewed, validated domain allowlist; automatic ancestor-domain
 cleanup is not supported. Reacceptance clears those disable flags. Keep GA4's standard
-cookie names and host domain configuration, and list every measurement ID in deployment
-configuration. Additional consent checks remain mandatory on every tag to prevent
+cookie names, root path and host domain configuration, and list every measurement ID
+in deployment configuration. Additional consent checks remain mandatory on every tag to prevent
 subsequent denied pings.
 
 The head bootstrap covers lessons without footers. An old or malformed decision
