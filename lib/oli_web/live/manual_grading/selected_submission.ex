@@ -64,9 +64,10 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
 
       <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
         <div class="text-sm font-semibold text-Text-text-high">Selected Response</div>
-        <div class="mt-3 min-h-[10rem] whitespace-pre-wrap break-words rounded-lg border border-Border-border-subtle bg-Surface-surface-secondary-muted px-4 py-4 text-sm leading-6 text-Text-text-high">
-          {@view.selected_summary}
-        </div>
+        <div
+          class="mt-3 min-h-[10rem] whitespace-pre-wrap break-words rounded-lg border border-Border-border-subtle bg-Surface-surface-secondary-muted px-4 py-4 text-sm leading-6 text-Text-text-high"
+          phx-no-format
+        >{@view.selected_summary}</div>
       </div>
     </div>
     """
@@ -87,9 +88,10 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
               <div class="text-sm font-semibold text-Text-text-high">{blank.label}</div>
               <span :if={blank.meta} class={meta_badge_classes(blank.meta)}>{blank.meta}</span>
             </div>
-            <div class="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-Text-text-high">
-              {blank.value}
-            </div>
+            <div
+              class="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-Text-text-high"
+              phx-no-format
+            >{blank.value}</div>
           </div>
         <% end %>
       </div>
@@ -121,9 +123,10 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
               <div class="text-xs font-semibold uppercase tracking-wide text-Text-text-low">
                 {detail.label}
               </div>
-              <div class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-Text-text-high">
-                {detail.value}
-              </div>
+              <div
+                class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-Text-text-high"
+                phx-no-format
+              >{detail.value}</div>
             </div>
           <% end %>
         </div>
@@ -144,9 +147,10 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
           <div class="text-xs font-semibold uppercase tracking-wide text-Text-text-low">
             Submission
           </div>
-          <div class={prose_content_classes(@view.value)}>
-            {@view.value}
-          </div>
+          <div
+            class={prose_content_classes(@view.value)}
+            phx-no-format
+          >{@view.value}</div>
         </div>
       </div>
 
@@ -158,9 +162,10 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
               <div class="text-xs font-semibold uppercase tracking-wide text-Text-text-low">
                 {detail.label}
               </div>
-              <div class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-Text-text-high">
-                {detail.value}
-              </div>
+              <div
+                class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-Text-text-high"
+                phx-no-format
+              >{detail.value}</div>
             </div>
           <% end %>
         </div>
@@ -180,9 +185,10 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
         <%= for detail <- @view.details do %>
           <div class="rounded-xl bg-Surface-surface-primary px-4 py-4">
             <div class="text-sm font-semibold text-Text-text-high">{detail.label}</div>
-            <div class="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-Text-text-high">
-              {detail.value}
-            </div>
+            <div
+              class="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-Text-text-high"
+              phx-no-format
+            >{detail.value}</div>
           </div>
         <% end %>
       </div>

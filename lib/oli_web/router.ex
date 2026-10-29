@@ -1805,6 +1805,7 @@ defmodule OliWeb.Router do
       live("/grades/observe", Grades.ObserveGradeUpdatesView)
       live("/grades/gradebook", Grades.GradebookView)
       live("/scoring", ManualGrading.ManualGradingView)
+      live("/scoring/:attempt_id", ManualGrading.ScoringLive, as: :manual_scoring_attempt)
       live("/progress/:user_id/:resource_id", Progress.StudentResourceView)
       live("/progress/:user_id", Progress.StudentView)
       live("/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
