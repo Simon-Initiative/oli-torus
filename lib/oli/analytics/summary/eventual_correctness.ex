@@ -29,6 +29,9 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
   `:part_id` optionally narrows activity parts. Historical membership is
   deduplicated before joining learner summaries. Missing evidence in any
   contributing section or opportunity produces nil counts.
+
+  Internal ranking callers may supply a resource-ID query instead of a list,
+  keeping candidate filters within SQL rather than materializing all IDs.
   """
   def counts_query(project_id, section_ids, resource_type_id \\ nil, opts \\ []) do
     resource_type_id = resource_type_id || ResourceType.id_for_activity()
@@ -187,6 +190,10 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
   end
 
   defp filter_resources(query, nil), do: query
+
+  defp filter_resources(query, %Ecto.Query{} = ids),
+    do: where(query, [s], s.resource_id in subquery(ids))
+
   defp filter_resources(query, ids), do: where(query, [s], s.resource_id in ^ids)
   defp filter_part(query, nil), do: query
   defp filter_part(query, part_id), do: where(query, [s], s.part_id == ^part_id)
@@ -194,15 +201,20 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
   # Retry history is reduced to compact membership before learner summaries are
   # joined. Page queries do not need revision data; objective queries retain the
   # historical revision until its tags have been expanded and deduplicated.
-  defp historical_attempts(scope) do
+  defp historical_activity_attempts(scope) do
     from(access in ResourceAccess,
       join: ra in ResourceAttempt,
       on: ra.resource_access_id == access.id,
       join: aa in ActivityAttempt,
       on: aa.resource_attempt_id == ra.id,
+      where: ^scope
+    )
+  end
+
+  defp historical_attempts(scope) do
+    from([_access, _ra, aa] in historical_activity_attempts(scope),
       join: pa in PartAttempt,
       on: pa.activity_attempt_id == aa.id,
-      where: ^scope,
       where: pa.lifecycle_state == :evaluated
     )
   end
@@ -222,17 +234,36 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
   end
 
   defp objective_membership(scope, resource_ids) do
-    attempts =
+    activity_attempts =
       scope
-      |> historical_attempts()
-      |> distinct(true)
-      |> select([access, _ra, aa, pa], %{
+      |> historical_activity_attempts()
+      |> restrict_objective_revisions(scope, resource_ids)
+      |> select([access, _ra, aa], %{
         section_id: access.section_id,
         user_id: access.user_id,
         activity_id: aa.resource_id,
         revision_id: aa.revision_id,
-        activity_part_id: pa.part_id
+        activity_attempt_id: aa.id
       })
+      # Keep the filtered activity set ahead of the retry join in PostgreSQL's
+      # plan. Without this boundary the planner can materialize every retry
+      # before applying the objective-revision semi-join.
+      |> offset(0)
+
+    attempts =
+      from(aa in subquery(activity_attempts),
+        join: pa in PartAttempt,
+        on: pa.activity_attempt_id == aa.activity_attempt_id,
+        where: pa.lifecycle_state == :evaluated,
+        distinct: true,
+        select: %{
+          section_id: aa.section_id,
+          user_id: aa.user_id,
+          activity_id: aa.activity_id,
+          revision_id: aa.revision_id,
+          activity_part_id: pa.part_id
+        }
+      )
 
     membership =
       from(attempt in subquery(attempts),
@@ -258,6 +289,45 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
       )
 
     from(m in subquery(membership)) |> filter_resources(resource_ids)
+  end
+
+  defp restrict_objective_revisions(query, _scope, nil), do: query
+
+  defp restrict_objective_revisions(query, scope, resource_ids) do
+    # Narrow activity revisions before reading their retry history. Only this
+    # section/project's observed revisions are expanded, and part-specific tags
+    # are still checked by objective_membership after retries are deduplicated.
+    observed_revisions =
+      scope
+      |> historical_activity_attempts()
+      |> select([_access, _ra, aa], aa.revision_id)
+      |> distinct(true)
+
+    matching =
+      from(revision in Revision,
+        where: revision.id in subquery(observed_revisions),
+        join:
+          tags in fragment(
+            "jsonb_each(CASE WHEN jsonb_typeof(?) = 'array' THEN jsonb_build_object('_', ?) ELSE COALESCE(?, '{}'::jsonb) END)",
+            revision.objectives,
+            revision.objectives,
+            revision.objectives
+          ),
+        on: true,
+        join: objective in fragment("jsonb_array_elements_text(?)", tags.value),
+        on: true,
+        select: %{
+          resource_id: type(fragment("?::bigint", objective.value), :integer),
+          revision_id: revision.id
+        }
+      )
+
+    # Filter the objective IDs inside the derived membership, before selecting
+    # revision IDs for the activity-attempt semi-join.
+    filtered = from(row in subquery(matching)) |> filter_resources(resource_ids)
+    revision_ids = from(row in subquery(filtered), select: row.revision_id, distinct: true)
+
+    where(query, [_access, _ra, aa], aa.revision_id in subquery(revision_ids))
   end
 
   defp join_student_summaries(membership, students, resource_type_id) do

@@ -9,6 +9,7 @@ defmodule Oli.Scenarios.Analytics.AuthoringInsightsTest do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.ResourceType
+  alias Oli.Scenarios.DirectiveTypes.{AnswerQuestionDirective, VisitPageDirective}
 
   @scenario_path Path.join(__DIR__, "authoring_insights.scenario.yaml")
 
@@ -89,5 +90,83 @@ defmodule Oli.Scenarios.Analytics.AuthoringInsightsTest do
 
     assert is_nil(activity.all_attempt_pct)
     assert activity.total_attempts_count > 0
+  end
+
+  test "page and objective pagination ranks eventual correctness across all matching resources" do
+    result = Scenarios.execute_file(@scenario_path, RuntimeOpts.build())
+    assert result.errors == []
+
+    result =
+      Scenarios.execute(
+        [
+          %VisitPageDirective{
+            student: "alice",
+            section: "analytics_section_one",
+            page: "Unattempted Practice"
+          },
+          %AnswerQuestionDirective{
+            student: "alice",
+            section: "analytics_section_one",
+            page: "Unattempted Practice",
+            activity_virtual_id: "unattempted_question",
+            response: "a"
+          }
+        ],
+        RuntimeOpts.build(state: result.state)
+      )
+
+    assert result.errors == []
+
+    state = result.state
+    project_id = state.projects["authoring_insights_course"].project.id
+    section_id = state.sections["analytics_section_one"].id
+
+    for sections <- [[], [section_id]],
+        type <- [ResourceType.id_for_page(), ResourceType.id_for_objective()] do
+      options = %BrowseInsightsOptions{
+        project_id: project_id,
+        section_ids: sections,
+        resource_type_id: type
+      }
+
+      [low] =
+        BrowseInsights.browse_insights(
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :eventually_correct, direction: :asc},
+          options
+        )
+
+      [high] =
+        BrowseInsights.browse_insights(
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :eventually_correct, direction: :desc},
+          options
+        )
+
+      [second] =
+        BrowseInsights.browse_insights(
+          %Paging{limit: 1, offset: 1},
+          %Sorting{field: :eventually_correct, direction: :desc},
+          options
+        )
+
+      assert low.total_count == 2
+      assert high.total_count == 2
+      assert low.eventually_correct == 0.0
+      assert high.eventually_correct == 0.5
+      assert second.resource_id == low.resource_id
+      assert second.eventually_correct == 0.0
+
+      [filtered] =
+        BrowseInsights.browse_insights(
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :eventually_correct, direction: :asc},
+          %{options | text_search: high.title}
+        )
+
+      assert filtered.resource_id == high.resource_id
+      assert filtered.total_count == 1
+      assert filtered.eventually_correct == 0.5
+    end
   end
 end

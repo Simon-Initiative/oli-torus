@@ -122,6 +122,94 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       assert part.part_id == "part2"
     end
 
+    test "ordinary page and objective browsing reads history only for the selected page", %{
+      project: project
+    } do
+      for type <- [
+            Oli.Resources.ResourceType.id_for_page(),
+            Oli.Resources.ResourceType.id_for_objective()
+          ] do
+        {rows, queries} =
+          capture_queries(fn ->
+            BrowseInsights.browse_insights(
+              %Oli.Repo.Paging{limit: 1, offset: 1},
+              %Oli.Repo.Sorting{direction: :asc, field: :title},
+              %Oli.Analytics.Summary.BrowseInsightsOptions{
+                project_id: project.id,
+                section_ids: [],
+                resource_type_id: type
+              }
+            )
+          end)
+
+        assert [row] = rows
+        assert row.total_count > 1
+
+        assert [{history_sql, params}] =
+                 Enum.filter(queries, fn {sql, _} -> String.contains?(sql, "part_attempts") end)
+
+        assert [row.resource_id] in params
+        refute String.contains?(history_sql, "count(*) OVER() as total_count")
+
+        assert [{count_sql, _}] =
+                 Enum.filter(queries, fn {sql, _} ->
+                   String.contains?(sql, "count(*) OVER() as total_count")
+                 end)
+
+        refute String.contains?(count_sql, "part_attempts")
+        refute String.contains?(count_sql, "resource_accesses")
+      end
+    end
+
+    test "eventual-correctness ranking reads history once and keeps counting independent", %{
+      project: project
+    } do
+      for type <- [
+            Oli.Resources.ResourceType.id_for_page(),
+            Oli.Resources.ResourceType.id_for_objective()
+          ] do
+        {[row], queries} =
+          capture_queries(fn ->
+            BrowseInsights.browse_insights(
+              %Oli.Repo.Paging{limit: 1, offset: 1},
+              %Oli.Repo.Sorting{direction: :asc, field: :eventually_correct},
+              %Oli.Analytics.Summary.BrowseInsightsOptions{
+                project_id: project.id,
+                section_ids: [],
+                resource_type_id: type
+              }
+            )
+          end)
+
+        assert row.total_count > 1
+
+        assert [{ranking_sql, _}] =
+                 Enum.filter(queries, fn {sql, _} -> String.contains?(sql, "part_attempts") end)
+
+        assert String.contains?(ranking_sql, "LIMIT")
+        assert String.contains?(ranking_sql, "published_resources")
+        refute String.contains?(ranking_sql, "count(*) OVER() as total_count")
+      end
+    end
+
+    test "an empty result page does not read history", %{project: project} do
+      {rows, queries} =
+        capture_queries(fn ->
+          BrowseInsights.browse_insights(
+            %Oli.Repo.Paging{limit: 1, offset: 100},
+            %Oli.Repo.Sorting{direction: :asc, field: :title},
+            %Oli.Analytics.Summary.BrowseInsightsOptions{
+              project_id: project.id,
+              section_ids: [],
+              resource_type_id: Oli.Resources.ResourceType.id_for_page()
+            }
+          )
+        end)
+
+      assert rows == []
+      refute Enum.any?(queries, fn {sql, _} -> String.contains?(sql, "part_attempts") end)
+    end
+
     test "sorting", %{
       project: project
     } do
@@ -544,6 +632,34 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
         |> Enum.sort_by(& &1.part_id)
 
       assert Enum.map(adaptive_rows, & &1.part_id) == ["progress", "question"]
+    end
+  end
+
+  @doc false
+  def record_query(_event, _measurements, %{query: sql, params: params}, {pid, ref}) do
+    send(pid, {ref, sql, params})
+  end
+
+  defp capture_queries(fun) do
+    ref = make_ref()
+    handler = {__MODULE__, ref}
+
+    :ok =
+      :telemetry.attach(handler, [:oli, :repo, :query], &__MODULE__.record_query/4, {self(), ref})
+
+    try do
+      result = fun.()
+      {result, collect_queries(ref, [])}
+    after
+      :telemetry.detach(handler)
+    end
+  end
+
+  defp collect_queries(ref, queries) do
+    receive do
+      {^ref, sql, params} -> collect_queries(ref, [{sql, params} | queries])
+    after
+      0 -> Enum.reverse(queries)
     end
   end
 

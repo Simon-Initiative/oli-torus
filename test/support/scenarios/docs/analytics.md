@@ -81,6 +81,12 @@ An observed zero still means learners attempted the question but none succeeded.
 Historical membership is filtered and deduplicated before joining learner
 summaries to avoid multiplying those summaries by retry history.
 
+Page/objective browsing counts rows from aggregate summaries without reading
+attempt history. Ordinary sorts paginate those summaries first, then load
+eventual correctness for the returned resource IDs. Sorting by eventual
+correctness ranks all matching candidates in one query before fetching the
+selected display rows, preserving global order across result pages.
+
 ### Activity example
 
 ```yaml
