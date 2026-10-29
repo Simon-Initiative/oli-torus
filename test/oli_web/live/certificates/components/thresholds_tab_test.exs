@@ -140,6 +140,41 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
       refute certificate.custom_assessments == [] and certificate.assessments_apply_to == :custom
     end
 
+    for {length, expected_length} <- [{300, 300}, {5000, 500}] do
+      test "saves thresholds when the product description has #{length} characters", ctx do
+        description = String.duplicate("a", unquote(length))
+        product = Oli.Repo.update!(Ecto.Changeset.change(ctx.product, description: description))
+
+        {:ok, lcd, _html} =
+          live_component_isolated(ctx.conn, ThresholdsTab, %{
+            id: "thresholds_component",
+            section: product,
+            certificate: ctx.certificate,
+            active_tab: :thresholds,
+            graded_pages: [],
+            read_only: false
+          })
+
+        lcd
+        |> element("#certificate_form")
+        |> render_submit(%{
+          "certificate" => %{
+            "min_percentage_for_completion" => "80",
+            "min_percentage_for_distinction" => "90",
+            "required_discussion_posts" => "1",
+            "required_class_notes" => "2",
+            "section_id" => "#{product.id}",
+            "assessments_apply_to" => "all"
+          }
+        })
+
+        saved = Certificates.get_certificate(ctx.certificate.id)
+
+        assert saved.min_percentage_for_completion == 80
+        assert String.length(saved.description) == unquote(expected_length)
+      end
+    end
+
     test "toggles selection of scored pages", ctx do
       id = "thresholds_component"
       product = ctx.product
