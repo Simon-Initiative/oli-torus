@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Sections.Certificate do
   @assessments_options [:all, :custom]
 
   @description_max_length 500
+  @title_max_length 255
   @admin_field_max_length 255
   @admin_fields [
     :admin_name1,
@@ -87,6 +88,14 @@ defmodule Oli.Delivery.Sections.Certificate do
   @spec description_max_length() :: pos_integer()
   def description_max_length, do: @description_max_length
 
+  @doc """
+  Truncates a description copied from an unbounded source, such as a product description, to
+  `description_max_length/0` characters. Descriptions that already fit are returned unchanged.
+  """
+  @spec truncate_description(String.t()) :: String.t()
+  def truncate_description(description) when is_binary(description),
+    do: String.slice(description, 0, @description_max_length)
+
   def changeset(params \\ %{}) do
     changeset(%__MODULE__{}, params)
   end
@@ -96,7 +105,7 @@ defmodule Oli.Delivery.Sections.Certificate do
     |> cast(params, @all_fields)
     |> validate_required(@required_fields)
     |> validate_length(:description, max: @description_max_length)
-    |> validate_length_of_admin_fields()
+    |> validate_length_of_varchar_fields()
     |> validate_greater_than_or_equal(
       :min_percentage_for_completion,
       :min_percentage_for_distinction,
@@ -106,9 +115,14 @@ defmodule Oli.Delivery.Sections.Certificate do
     |> assoc_constraint(:section)
   end
 
-  defp validate_length_of_admin_fields(changeset) do
+  # These columns are `varchar(255)`, which Postgres limits by code points, whereas
+  # `validate_length/3` counts graphemes by default. Counting code points keeps a value that
+  # passes validation from failing at insert time.
+  defp validate_length_of_varchar_fields(changeset) do
+    changeset = validate_length(changeset, :title, max: @title_max_length, count: :codepoints)
+
     Enum.reduce(@admin_fields, changeset, fn field, acc ->
-      validate_length(acc, field, max: @admin_field_max_length)
+      validate_length(acc, field, max: @admin_field_max_length, count: :codepoints)
     end)
   end
 

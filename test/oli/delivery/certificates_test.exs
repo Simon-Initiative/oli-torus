@@ -98,6 +98,72 @@ defmodule Oli.Delivery.CertificatesTest do
     end
   end
 
+  describe "create/1 varchar length counted in code points" do
+    setup do
+      {:ok, section: insert(:section)}
+    end
+
+    # 128 graphemes, but 256 code points: the database would reject it if validation let it through.
+    @combining_accents String.duplicate("e\u0301", 128)
+
+    test "rejects values over 255 code points even when they have fewer graphemes", %{
+      section: section
+    } do
+      for field <- [
+            :title,
+            :admin_name1,
+            :admin_title1,
+            :admin_name2,
+            :admin_title2,
+            :admin_name3,
+            :admin_title3
+          ] do
+        assert {:error, changeset} =
+                 @valid_attrs
+                 |> Map.put(:section_id, section.id)
+                 |> Map.put(field, @combining_accents)
+                 |> Certificates.create()
+
+        assert %{^field => [_]} = errors_on(changeset)
+      end
+    end
+
+    test "persists values of exactly 255 code points", %{section: section} do
+      # 127 x (e + accent) = 254 code points, plus one plain character
+      value = String.duplicate("e\u0301", 127) <> "a"
+
+      assert {:ok, %Certificate{} = certificate} =
+               @valid_attrs
+               |> Map.merge(%{section_id: section.id, title: value, admin_name1: value})
+               |> Certificates.create()
+
+      assert Certificates.get_certificate(certificate.id).admin_name1 == value
+    end
+
+    test "rejects a title longer than 255 characters", %{section: section} do
+      assert {:error, changeset} =
+               @valid_attrs
+               |> Map.merge(%{section_id: section.id, title: String.duplicate("a", 256)})
+               |> Certificates.create()
+
+      assert %{title: [_]} = errors_on(changeset)
+    end
+  end
+
+  describe "Certificate.truncate_description/1" do
+    test "truncates a long description to the maximum length" do
+      assert Certificate.truncate_description(String.duplicate("a", 5000)) ==
+               String.duplicate("a", Certificate.description_max_length())
+    end
+
+    test "leaves a description that already fits unchanged" do
+      assert Certificate.truncate_description("Short description") == "Short description"
+
+      exact = String.duplicate("a", Certificate.description_max_length())
+      assert Certificate.truncate_description(exact) == exact
+    end
+  end
+
   describe "get_certificate/1" do
     test "returns a certificate when given a valid ID" do
       certificate = insert(:certificate)

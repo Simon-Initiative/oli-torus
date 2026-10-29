@@ -503,9 +503,8 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
     Certificate.changeset(certificate || %Certificate{}, params)
   end
 
-  # The product description is unbounded, but the certificate stores a bounded copy of it.
   defp certificate_description(%{description: description}) when is_binary(description),
-    do: String.slice(description, 0, Certificate.description_max_length())
+    do: Certificate.truncate_description(description)
 
   defp certificate_description(_section), do: "Certificate description"
 
