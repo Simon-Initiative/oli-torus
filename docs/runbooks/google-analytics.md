@@ -110,6 +110,12 @@ sequence and expiration so it cannot become a newer decision than a subsequent s
 On a new page, pending withdrawal persistence is resumed automatically. Older request
 successes or failures cannot clear a newer marker or replace its status.
 
+The consent POST validates the session-bound CSRF token supplied by the shared client
+module in `X-CSRF-Token`; requests without a valid token are rejected before any
+preferences are written. The read-only consent GET retains its existing API behavior.
+Mobile saves also use the server's per-save authentication flag, preserving withdrawal
+acknowledgement requirements even when browser bootstrap state is not yet available.
+
 Signed-in browsers with both cookie and session storage blocked keep measurement
 disabled. When session storage is unavailable, a temporary `_cky_consent_storage`
 necessary-cookie probe checks cookie availability and is removed immediately.

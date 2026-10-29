@@ -30,6 +30,7 @@ const accepted = {
 
 beforeEach(() => {
   delete window.TorusConsentState;
+  window.sessionStorage.clear();
   Object.keys(window)
     .filter((key) => key.startsWith('ga-disable-G-'))
     .forEach((key) => delete (window as unknown as Record<string, unknown>)[key]);
@@ -253,8 +254,12 @@ test('mobile hook uses the same browser and server persistence path for signed-i
     preferences: expect.objectContaining({ functionality: false, analytics: false }),
   });
   const save = hook.handleEvent.mock.calls[0][1];
+  (fetch as jest.Mock).mockImplementationOnce(async (_url, options) => ({
+    ok: true,
+    json: async () => ({ acknowledged: true, decision: JSON.parse(options.body).decision }),
+  }));
   await act(async () => {
-    save({ preferences: accepted, is_authenticated: true });
+    await save({ preferences: accepted, is_authenticated: true });
   });
   expect(JSON.parse(readCookie('_cky_opt_choices'))).toEqual(accepted);
   expect(fetch).toHaveBeenCalledWith(
