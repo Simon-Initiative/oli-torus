@@ -123,6 +123,7 @@ defmodule Oli.Application do
 
             # GenAI hackney connection pool
             Oli.GenAI.HackneyPool,
+            Oli.GenAI.PrimaryOnly,
 
             # GenAI telemetry
             Oli.GenAI.Telemetry,

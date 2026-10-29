@@ -28,6 +28,7 @@ defmodule Oli.GenAI.Diagnostics do
 
     %{
       node: node(),
+      primary_only: Oli.GenAI.PrimaryOnly.enabled?(),
       health: health,
       pools: safe(fn -> PoolManager.snapshot(manager) end, %{pools: %{}, retired: %{}})
     }

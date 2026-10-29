@@ -75,6 +75,7 @@ Provider splitting. Existing same-Provider backups require reassignment.
 
 | Environment | Default | Meaning |
 | --- | --- | --- |
+| `GENAI_ROUTING_PRIMARY_ONLY` | false | Emergency primary-only routing; bypasses health, tier selection and backup retries |
 | `GENAI_HEALTH_CHECKS_ENABLED` | true | Probes/observed gating only; capacity and administrative enablement remain |
 | `GENAI_PROBE_INTERVAL_MS` | 180000 | Regular and unavailable recovery interval |
 | `GENAI_PROBE_FAILURE_INTERVAL_MS` | 30000 | Suspected failure interval |
@@ -136,9 +137,32 @@ become current immediately while old bounded work finishes.
 7. Route a limited share of ordinary traffic to verified new canaries, observing per-node
    health, busy/timeouts, request interruption, backup use and retiring pools. Increase
    traffic only while these gates remain satisfactory. Old breaker/counter processes disappear
-   with old-node termination; the new release does not supervise them or read the
-   removed `GENAI_ROUTING_PRIMARY_ONLY` variable. Never use health-check disablement
+   with old-node termination; the new release does not supervise them. The primary-only
+   emergency override is available as described below. Never use health-check disablement
    to bypass capacity during rollout.
+
+### Emergency primary-only routing
+
+Set `GENAI_ROUTING_PRIMARY_ONLY=true` and restart every serving node. Setting it to
+`false` and restarting restores normal dynamic routing. Accepted boolean values are
+`true/false`, `1/0`, `on/off`, and `yes/no` (case insensitive).
+
+Primary-only requests read the current primary model and Provider directly from the
+database. They ignore secondary/backup configuration, observed health and the routing
+cache, and never retry against backup. An independent pool manager reuses the normal
+Hackney transport, bounded by each ServiceConfig's `primary_pool_capacity`; it does
+not depend on normal tier reconciliation. Provider disablement, credentials,
+inference deadlines and stream cancellation still apply. The database and primary
+Provider must remain available. Existing requests keep their selected transport;
+backup selection is blocked as soon as the override is active.
+
+Startup logs warn when enabled, router decisions report `kill_switch_primary_only`,
+and `Oli.GenAI.Diagnostics.snapshot().primary_only` reports the effective node mode.
+For an immediate console override without restarting, use
+`Application.put_env(:oli, :genai_routing_primary_only, true)` on **each** serving node;
+also update deployment environment settings so the override survives restarts.
+Health probes continue independently; use `GENAI_HEALTH_CHECKS_ENABLED=false` as well
+if probes need to stop. Explicit per-model administrative tests retain their own pools.
 
 ### Rollback
 

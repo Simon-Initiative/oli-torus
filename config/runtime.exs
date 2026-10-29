@@ -782,17 +782,22 @@ genai_positive_env = fn name, default ->
   end
 end
 
-genai_health_enabled =
-  case System.get_env("GENAI_HEALTH_CHECKS_ENABLED", "true")
+genai_boolean_env = fn name, default ->
+  case System.get_env(name, default)
        |> String.trim()
        |> String.downcase() do
     value when value in ["false", "0", "off", "no"] -> false
     value when value in ["true", "1", "on", "yes"] -> true
-    _ -> raise "GENAI_HEALTH_CHECKS_ENABLED must be a boolean"
+    _ -> raise "#{name} must be a boolean"
   end
+end
+
+config :oli,
+       :genai_routing_primary_only,
+       genai_boolean_env.("GENAI_ROUTING_PRIMARY_ONLY", "false")
 
 config :oli, :genai_health,
-  enabled: genai_health_enabled,
+  enabled: genai_boolean_env.("GENAI_HEALTH_CHECKS_ENABLED", "true"),
   probe_interval_ms: genai_positive_env.("GENAI_PROBE_INTERVAL_MS", "180000"),
   probe_failure_interval_ms: genai_positive_env.("GENAI_PROBE_FAILURE_INTERVAL_MS", "30000"),
   probe_deadline_ms: genai_positive_env.("GENAI_PROBE_DEADLINE_MS", "10000"),

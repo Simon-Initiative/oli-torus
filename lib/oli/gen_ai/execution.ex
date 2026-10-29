@@ -220,7 +220,9 @@ defmodule Oli.GenAI.Execution do
     )
 
     case result do
-      {:error, reason} when plan.tier in [:primary, :secondary] and not is_nil(plan.provider) ->
+      {:error, reason}
+      when plan.tier in [:primary, :secondary] and not is_nil(plan.provider) and
+             plan.reason != :kill_switch_primary_only ->
         case not Process.get(:genai_output_exposed) and retryable?(reason) and
                System.monotonic_time(:millisecond) < opts[:deadline] do
           true ->

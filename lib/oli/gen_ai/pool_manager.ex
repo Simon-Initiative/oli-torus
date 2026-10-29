@@ -15,6 +15,10 @@ defmodule Oli.GenAI.PoolManager do
   def reconcile(manager \\ __MODULE__, specs),
     do: GenServer.call(manager, {:reconcile, specs}, 30_000)
 
+  @doc "Creates or updates one pool without reconciling unrelated pools."
+  def ensure_pool(manager, key, spec),
+    do: GenServer.call(manager, {:ensure_pool, key, spec}, 30_000)
+
   @doc "Returns a logical coordinator, not a stale physical generation handle."
   def lookup(manager \\ __MODULE__, key), do: GenServer.call(manager, {:lookup, key})
 
@@ -80,29 +84,38 @@ defmodule Oli.GenAI.PoolManager do
     {pools, retired} =
       Enum.reduce(specs, {Map.drop(state.pools, removed), retired}, fn {key, spec},
                                                                        {pools, retired} ->
-        pid =
-          case pools[key] || retired[key] do
-            nil ->
-              {:ok, pid} =
-                TransportPool.start_link(key: {state.namespace, key}, poll_ms: state.poll_ms)
-
-              pid
-
-            pid ->
-              pid
-          end
-
-        :ok = TransportPool.configure(pid, spec)
-        {Map.put(pools, key, pid), Map.delete(retired, key)}
+        configure_pool(state, pools, retired, key, spec)
       end)
 
     {:reply, :ok, %{state | pools: pools, retired: retired}}
+  end
+
+  def handle_call({:ensure_pool, key, spec}, _from, state) do
+    {pools, retired} = configure_pool(state, state.pools, state.retired, key, spec)
+    {:reply, {:ok, pools[key]}, %{state | pools: pools, retired: retired}}
   end
 
   def handle_call(:snapshot, _from, state) do
     snapshots = Map.new(state.pools, fn {key, pid} -> {key, TransportPool.snapshot(pid)} end)
     retired = Map.new(state.retired, fn {key, pid} -> {key, TransportPool.snapshot(pid)} end)
     {:reply, %{pools: snapshots, retiring: retired}, state}
+  end
+
+  defp configure_pool(state, pools, retired, key, spec) do
+    pid =
+      case pools[key] || retired[key] do
+        nil ->
+          {:ok, pid} =
+            TransportPool.start_link(key: {state.namespace, key}, poll_ms: state.poll_ms)
+
+          pid
+
+        pid ->
+          pid
+      end
+
+    :ok = TransportPool.configure(pid, spec)
+    {Map.put(pools, key, pid), Map.delete(retired, key)}
   end
 
   @impl true

@@ -1,55 +1,68 @@
 defmodule Oli.GenAI.Router do
   @moduledoc "Best-effort tier selection using actual transport occupancy and independent Provider health."
-  alias Oli.GenAI.{PoolManager, RoutingPlan, Runtime, Telemetry, TransportPool}
+  alias Oli.GenAI.{PoolManager, PrimaryOnly, RoutingPlan, Runtime, Telemetry, TransportPool}
   alias Oli.GenAI.Completions.ServiceConfig
 
-  @doc "Observes occupancy without reserving capacity; subsequent checkout may briefly queue."
+  @doc "Routes primary-only when overridden; otherwise observes occupancy without reserving capacity."
   def route(ctx, %ServiceConfig{} = supplied) do
     started = System.monotonic_time(:millisecond)
 
     result =
-      with {:ok, inputs} <- inputs(ctx, supplied.id),
-           :ok <- main_configuration(inputs) do
-        provider = inputs.providers[inputs.config.primary_model.provider_id]
-
-        case provider do
-          %{enabled: false} ->
-            backup_candidate(ctx, inputs, provider.id)
-
-          %{adapter: :null} ->
-            {:ok,
-             %Oli.GenAI.RoutingPlan{
-               selected_model: inputs.config.primary_model,
-               provider: provider,
-               tier: :primary,
-               service_config_id: supplied.id,
-               request_type: Map.get(ctx, :request_type, :generate),
-               reason: :local_adapter
-             }}
-
-          %{adapter: :open_ai} ->
-            case eligibility(inputs, provider.id) do
-              :ok -> main(ctx, inputs)
-              :unavailable -> backup_candidate(ctx, inputs, provider.id)
-              :ineligible -> {:error, :provider_ineligible}
-            end
-
-          _ ->
-            {:error, :unsupported_adapter}
-        end
+      case PrimaryOnly.enabled?() do
+        true -> PrimaryOnly.route(supplied.id, Map.get(ctx, :request_type, :generate))
+        false -> dynamic_route(ctx, supplied.id)
       end
 
     emit(result, supplied.id, ctx, started)
     result
   end
 
-  @doc "Selects a distinct eligible backup for one pre-output availability failure."
+  defp dynamic_route(ctx, id) do
+    with {:ok, inputs} <- inputs(ctx, id),
+         :ok <- main_configuration(inputs) do
+      provider = inputs.providers[inputs.config.primary_model.provider_id]
+
+      case provider do
+        %{enabled: false} ->
+          backup_candidate(ctx, inputs, provider.id)
+
+        %{adapter: :null} ->
+          {:ok,
+           %Oli.GenAI.RoutingPlan{
+             selected_model: inputs.config.primary_model,
+             provider: provider,
+             tier: :primary,
+             service_config_id: id,
+             request_type: Map.get(ctx, :request_type, :generate),
+             reason: :local_adapter
+           }}
+
+        %{adapter: :open_ai} ->
+          case eligibility(inputs, provider.id) do
+            :ok -> main(ctx, inputs)
+            :unavailable -> backup_candidate(ctx, inputs, provider.id)
+            :ineligible -> {:error, :provider_ineligible}
+          end
+
+        _ ->
+          {:error, :unsupported_adapter}
+      end
+    end
+  end
+
+  @doc "Selects a distinct eligible backup for one pre-output failure unless primary-only is enabled."
   def backup(ctx, config, excluded_provider_id) do
     started = System.monotonic_time(:millisecond)
 
     result =
-      with {:ok, inputs} <- inputs(ctx, config.id),
-           do: backup_candidate(ctx, inputs, excluded_provider_id)
+      case PrimaryOnly.enabled?() do
+        true ->
+          {:error, :primary_only}
+
+        false ->
+          with {:ok, inputs} <- inputs(ctx, config.id),
+               do: backup_candidate(ctx, inputs, excluded_provider_id)
+      end
 
     emit(result, config.id, ctx, started)
     result

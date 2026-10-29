@@ -132,8 +132,10 @@ Pure successful per-request checkout wait is not exposed by this installed API.
 Legacy admission/breaker services are no longer supervised and old control/metric
 wiring is retired. Old admission/breaker modules and model routing-policy columns
 remain, but have no authority over managed production requests. Model connection
-settings and direct legacy adapter execution have been removed. The primary-only
-override is removed. See the operational runbook before cutover: the single-Provider
+settings and direct legacy adapter execution have been removed. The
+`GENAI_ROUTING_PRIMARY_ONLY` emergency override reads the primary directly
+from the database and uses independent bounded pools, bypassing health, tier selection
+and backup retries. See the operational runbook before cutover: the single-Provider
 migration cannot automatically represent heterogeneous legacy endpoints or repair
 same-Provider backup relationships.
 
