@@ -111,7 +111,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       {:ok, view, _html} = live(conn, authors_detail_view(author.id))
 
       view
-      |> element("#author_pending_invitations table button", "Decline")
+      |> element("#author_pending_invitations button", "Decline")
       |> render_click()
 
       assert has_element?(

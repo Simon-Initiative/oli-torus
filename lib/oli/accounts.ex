@@ -1633,7 +1633,8 @@ defmodule Oli.Accounts do
         where:
           e.id == ^enrollment.id and
             e.user_id == ^user.id and
-            e.status == :pending_confirmation
+            e.status == :pending_confirmation,
+        select: e
 
     Multi.new()
     |> Multi.update(
@@ -1646,8 +1647,12 @@ defmodule Oli.Accounts do
       )
     )
     |> Multi.run(:enrollment, fn repo, _changes ->
-      case repo.update_all(enrollment_query, set: [status: :enrolled, updated_at: now]) do
-        {1, _} -> {:ok, repo.get!(Enrollment, enrollment.id)}
+      case repo.update_all(
+             enrollment_query,
+             [set: [status: :enrolled, updated_at: now]],
+             returning: true
+           ) do
+        {1, [updated_enrollment]} -> {:ok, updated_enrollment}
         _ -> {:error, :invalid_pending_invitation}
       end
     end)
@@ -2342,7 +2347,8 @@ defmodule Oli.Accounts do
         where:
           ap.author_id == ^author.id and
             ap.project_id == ^author_project.project_id and
-            ap.status == :pending_confirmation
+            ap.status == :pending_confirmation,
+        select: ap
 
     Multi.new()
     |> Multi.update(
@@ -2353,13 +2359,13 @@ defmodule Oli.Accounts do
       )
     )
     |> Multi.run(:author_project, fn repo, _changes ->
-      case repo.update_all(author_project_query, set: [status: :accepted, updated_at: now]) do
-        {1, _} ->
-          {:ok,
-           repo.get_by!(AuthorProject,
-             author_id: author.id,
-             project_id: author_project.project_id
-           )}
+      case repo.update_all(
+             author_project_query,
+             [set: [status: :accepted, updated_at: now]],
+             returning: true
+           ) do
+        {1, [updated_author_project]} ->
+          {:ok, updated_author_project}
 
         _ ->
           {:error, :invalid_pending_invitation}

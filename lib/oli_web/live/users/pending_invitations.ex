@@ -41,7 +41,9 @@ defmodule OliWeb.Users.PendingInvitations do
       </StripedTable.render>
 
       <Modal.modal
+        :if={@decline_invitation_id}
         id="decline_invitation_modal"
+        show={true}
         wrapper_class="w-full max-w-md p-4 sm:p-6 lg:py-8"
         on_cancel={JS.push("cancel_decline_invitation")}
         on_confirm={
@@ -105,10 +107,7 @@ defmodule OliWeb.Users.PendingInvitations do
       variant={:outline}
       size={:xs}
       class="ml-2 !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted"
-      phx-click={
-        JS.push("show_decline_invitation_modal")
-        |> Modal.show_modal("decline_invitation_modal")
-      }
+      phx-click="show_decline_invitation_modal"
       phx-value-id={@invitation.id}
     >
       Decline
