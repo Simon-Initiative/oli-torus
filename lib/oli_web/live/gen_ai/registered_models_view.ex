@@ -4,6 +4,8 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
   alias Oli.GenAI
   alias Oli.GenAI.{Administrative, Diagnostics}
   alias Oli.GenAI.Completions.{RegisteredModel, Message}
+  alias OliWeb.GenAI.AdminComponents
+  alias OliWeb.Common.Breadcrumb
 
   @doc "Loads model inference settings; credentials and capacity belong to Providers and ServiceConfigs."
   def mount(_, _, socket) do
@@ -19,128 +21,161 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
        editing: false,
        testing: false,
        test_results: "",
-       breadcrumbs: []
+       breadcrumbs: [
+         Breadcrumb.new(%{
+           link: ~p"/admin/gen_ai/registered_models",
+           full_title: "Registered LLM Models"
+         })
+       ]
      )
      |> form(model)}
   end
 
-  @doc "Renders model selection, inference timeouts, capabilities and the probe designation flag."
+  @doc "Renders model selection, inference timeouts and the probe designation flag."
   def render(assigns) do
+    assigns = assign(assigns, :form_control_classes, AdminComponents.form_control_classes())
+
     ~H"""
-    <main class="space-y-4 p-4">
+    <div class="flex flex-col">
       <h1 class="text-xl font-semibold">Registered LLM Models</h1>
-      <nav class="flex gap-4" aria-label="GenAI administration">
+      <AdminComponents.editing_toggle editing={@editing} />
+      <nav class="flex flex-wrap items-center gap-3" aria-label="GenAI administration">
         <.link navigate={~p"/admin/gen_ai/providers"}>Providers and health</.link>
-        <.link navigate={~p"/admin/gen_ai/service_configs"}>
-          Service configurations and capacity
-        </.link>
+        <.link navigate={~p"/admin/gen_ai/service_configs"}>Service configurations</.link>
       </nav>
-      <button
-        id="toggle_editing"
-        type="button"
-        phx-click="toggle_editing"
-        aria-pressed={to_string(@editing)}
-        class="rounded border px-3 py-2"
-      >
-        {case @editing do
-          true -> "Disable editing"
-          false -> "Enable editing"
-        end}
-      </button>
-      <ul aria-label="Registered models" class="space-y-2">
-        <li :for={model <- @registered_models}>
-          <button
-            type="button"
-            phx-click="select_model"
-            phx-value-id={model.id}
-            aria-pressed={to_string(@selected.id == model.id)}
-            class="rounded border px-3 py-2"
-          >
-            {model.name} ({model.model})
-          </button>
-          <span :if={model.health_check}>Health-check candidate</span>
-        </li>
-      </ul>
-      <button
-        type="button"
-        phx-click="new_model"
-        disabled={!@editing}
-        class="rounded border px-3 py-2"
-      >
-        New Model
-      </button>
-      <p>
-        When several models are flagged, the lowest ID is selected. With no flag, the lowest-ID model is automatically designated.
-      </p>
-      <p>
-        Provider credentials are managed on the Providers page. Claude inference requires a managed transport implementation and is currently unsupported.
-      </p>
-      <button
-        type="button"
-        phx-click="test"
-        disabled={@testing or is_nil(@selected.id)}
-        class="rounded border px-3 py-2"
-      >
-        Test Model
-      </button>
-      <p role="status" aria-live="polite">{@test_results}</p>
-      <.form for={@form} id="registered-model-form" phx-submit="save" class="max-w-2xl space-y-3">
-        <.input field={@form[:name]} label="Friendly Name" disabled={!@editing} />
-        <.input
-          class="block w-full rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          field={@form[:provider_id]}
-          type="select"
-          label="Configured Provider"
-          prompt="Select a Provider"
-          options={Enum.map(@providers, &{&1.name, &1.id})}
-          disabled={!@editing}
-        />
-        <.input field={@form[:model]} label="Model" disabled={!@editing} />
-        <.input
-          class="block w-full rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          field={@form[:health_check]}
-          type="checkbox"
-          label="Health-check candidate"
-          disabled={!@editing}
-        />
-        <label for="model-capabilities" class="block">Capabilities (comma-separated)</label>
-        <input
-          id="model-capabilities"
-          name="registered_model[capabilities_text]"
-          value={Enum.join(@form[:capabilities].value || [], ", ")}
-          disabled={!@editing}
-          class="w-full rounded border p-2"
-        />
-        <.input
-          class="block w-full rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          field={@form[:timeout]}
-          type="number"
-          min="1"
-          label="Connection establishment timeout (ms)"
-          disabled={!@editing}
-        />
-        <.input
-          class="block w-full rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          field={@form[:recv_timeout]}
-          type="number"
-          min="1"
-          label="Response inactivity timeout (ms)"
-          disabled={!@editing}
-        />
-        <button type="submit" disabled={!@editing} class="rounded bg-blue-700 px-4 py-2 text-white">
-          Save
-        </button>
+      <div class="my-3 flex flex-wrap items-center gap-3">
         <button
           type="button"
-          phx-click="delete"
-          disabled={!@editing or is_nil(@selected.id) or (@selected.service_config_count || 0) > 0}
-          data-confirm="Delete this unreferenced model?"
-          class="rounded border px-4 py-2"
+          phx-click="test"
+          disabled={@testing or is_nil(@selected.id)}
+          class="rounded border px-3 py-2"
         >
-          Delete
+          Test Model
         </button>
-      </.form>
-    </main>
+        <p role="status" aria-live="polite">{@test_results}</p>
+      </div>
+      <div class="flex flex-col gap-4 lg:flex-row">
+        <div class="flex w-full flex-col lg:w-1/2">
+          <p :if={@registered_models == []}>
+            No registered models yet. Configure a Provider, then create a model.
+          </p>
+          <ul aria-label="Registered models" role="list" class="divide-y divide-gray-100">
+            <li :for={model <- @registered_models}>
+              <button
+                type="button"
+                phx-click="select_model"
+                phx-value-id={model.id}
+                aria-pressed={to_string(@selected.id == model.id)}
+                class={AdminComponents.list_item_classes(@selected.id == model.id)}
+              >
+                <div class="flex min-w-0 flex-col gap-x-4">
+                  <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
+                    {model.name}
+                  </h3>
+                  <div class="text-xs text-gray-800 dark:text-gray-100">
+                    Model: <span class="font-mono">{model.model}</span>
+                  </div>
+                </div>
+                <div class="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
+                  <p :if={model.health_check} class="mt-0 text-xs text-gray-500 dark:text-gray-400">
+                    Health-check candidate
+                  </p>
+                  <p
+                    :if={(model.service_config_count || 0) > 0}
+                    class="mt-0 text-xs text-gray-500 dark:text-gray-400"
+                  >
+                    Used by <strong>{model.service_config_count}</strong> service config(s)
+                  </p>
+                  <p :if={(model.service_config_count || 0) == 0} class="mt-0 text-xs text-red-500">
+                    No usages
+                  </p>
+                </div>
+              </button>
+            </li>
+          </ul>
+          <div class="mt-3">
+            <button
+              type="button"
+              phx-click="new_model"
+              disabled={!@editing}
+              class="btn btn-primary btn-sm"
+            >
+              + New Model
+            </button>
+          </div>
+        </div>
+        <div class="w-full p-4 lg:w-1/2">
+          <.form for={@form} id="registered-model-form" phx-submit="save">
+            <.input
+              field={@form[:name]}
+              label="Friendly Name"
+              class={@form_control_classes}
+              disabled={!@editing}
+            />
+            <.input
+              class={@form_control_classes}
+              field={@form[:provider_id]}
+              type="select"
+              label="Configured Provider"
+              prompt="Select a Provider"
+              options={Enum.map(@providers, &{&1.name, &1.id})}
+              disabled={!@editing}
+            />
+            <.input
+              field={@form[:model]}
+              label="Model"
+              class={@form_control_classes}
+              disabled={!@editing}
+            />
+            <.input
+              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              field={@form[:health_check]}
+              type="checkbox"
+              label="Health-check candidate"
+              disabled={!@editing}
+            />
+            <p class="text-sm">
+              When several models are flagged, the lowest ID is selected. With no flag, the lowest-ID model is automatically designated.
+            </p>
+            <.input
+              class={@form_control_classes}
+              field={@form[:timeout]}
+              type="number"
+              min="1"
+              label="Connection establishment timeout (ms)"
+              disabled={!@editing}
+            />
+            <.input
+              class={@form_control_classes}
+              field={@form[:recv_timeout]}
+              type="number"
+              min="1"
+              label="Response inactivity timeout (ms)"
+              disabled={!@editing}
+            />
+            <p class="text-sm">
+              Provider credentials are managed on the Providers page. Claude inference requires a managed transport implementation and is currently unsupported.
+            </p>
+            <div class="flex justify-between">
+              <.button disabled={!@editing} class="mt-3 btn btn-primary" phx-disable-with="Saving…">
+                Save
+              </.button>
+              <button
+                type="button"
+                phx-click="delete"
+                disabled={
+                  !@editing or is_nil(@selected.id) or (@selected.service_config_count || 0) > 0
+                }
+                data-confirm="Delete this unreferenced model?"
+                class="mt-3 btn btn-danger"
+              >
+                Delete
+              </button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
     """
   end
 
@@ -167,14 +202,6 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
 
   def handle_event("save", %{"registered_model" => params}, socket) do
     attrs = Map.take(params, ~w(name provider_id model health_check timeout recv_timeout))
-
-    attrs =
-      Map.put(
-        attrs,
-        "capabilities",
-        String.split(params["capabilities_text"] || "", ",", trim: true)
-        |> Enum.map(&String.trim/1)
-      )
 
     # The adapter comes from the configured Provider, never from a forged form field.
     provider = Enum.find(GenAI.providers(), &(to_string(&1.id) == attrs["provider_id"]))

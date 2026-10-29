@@ -68,19 +68,18 @@ defmodule Oli.GenAI.ProviderConfigurationTest do
     assert {:error, _changeset} = GenAI.delete_provider(provider)
   end
 
-  test "ServiceConfig validates Provider and capability boundaries" do
+  test "ServiceConfig validates Provider boundaries" do
     main = provider()
     other = provider()
-    primary = model(main, %{capabilities: ["tools"]})
-    secondary = model(main, %{capabilities: ["tools"]})
-    backup = model(other, %{capabilities: ["tools"]})
+    primary = model(main)
+    secondary = model(main)
+    backup = model(other)
 
     attrs = %{
       name: "valid",
       primary_model_id: primary.id,
       secondary_model_id: secondary.id,
       backup_model_id: backup.id,
-      required_capabilities: ["tools"],
       primary_pool_capacity: 7
     }
 
@@ -105,10 +104,6 @@ defmodule Oli.GenAI.ProviderConfigurationTest do
 
     assert errors_on(invalid).backup_model_id != []
 
-    assert {:error, invalid} =
-             GenAI.create_service_config(%{attrs | required_capabilities: ["vision"]})
-
-    assert errors_on(invalid).primary_model_id != []
     assert {:error, invalid} = GenAI.create_service_config(%{attrs | primary_pool_capacity: 0})
     assert errors_on(invalid).primary_pool_capacity != []
   end
@@ -181,7 +176,7 @@ defmodule Oli.GenAI.ProviderConfigurationTest do
     assert Repo.get!(RegisteredModel, model.id).health_check
   end
 
-  test "nil capacities and capability arrays return changeset errors rather than database exceptions" do
+  test "nil and blank capacities return changeset errors rather than database exceptions" do
     provider = provider()
     primary = model(provider)
     attrs = %{name: "invalid-null", primary_model_id: primary.id}
@@ -192,15 +187,6 @@ defmodule Oli.GenAI.ProviderConfigurationTest do
 
       assert errors_on(invalid).primary_pool_capacity != []
     end
-
-    assert {:error, invalid} =
-             GenAI.create_service_config(Map.put(attrs, :required_capabilities, nil))
-
-    assert errors_on(invalid).required_capabilities != []
-    assert {:error, invalid} = GenAI.update_registered_model(primary, %{capabilities: nil})
-    assert errors_on(invalid).capabilities != []
-    assert {:ok, _} = GenAI.create_service_config(Map.put(attrs, :required_capabilities, []))
-    assert {:ok, _} = GenAI.update_registered_model(primary, %{capabilities: []})
   end
 
   test "an existing missing-key or malformed Provider can be disabled but must be repaired before enabling" do

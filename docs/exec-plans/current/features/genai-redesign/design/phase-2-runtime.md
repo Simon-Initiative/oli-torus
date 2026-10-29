@@ -27,9 +27,8 @@ legacy configuration until Phase 3. New Provider-backed model creation derives t
 Capacities are persisted on ServiceConfig, initially 100 per tier rather than copied
 from every selected model. These are initial defaults requiring allocation review,
 not production sizing advice. Configured tiers have pools; absent tiers do not.
-`capabilities` and `required_capabilities` are explicit string lists, including empty
-lists. Context validation enforces distinct same-Provider primary/secondary, different
-backup Provider, required capabilities, and positive non-null capacities.
+Context validation enforces distinct same-Provider primary/secondary, different
+backup Provider, and positive non-null capacities.
 
 Existing migrated backup relationships or unassociated raw legacy inserts can fail
 those new rules. `Configuration.audit_service_config/1` and runtime snapshot

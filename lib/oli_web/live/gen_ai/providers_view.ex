@@ -3,19 +3,26 @@ defmodule OliWeb.GenAI.ProvidersView do
   on_mount OliWeb.GenAI.AdminMount
   alias Oli.GenAI
   alias Oli.GenAI.{Diagnostics, Provider}
+  alias OliWeb.GenAI.AdminComponents
+  alias OliWeb.Common.Breadcrumb
 
   @doc "Loads Provider administration with write-only credential fields."
   def mount(_, _, socket) do
+    providers = GenAI.providers()
+    provider = List.first(providers) || %Provider{}
+
     socket =
       assign(socket,
-        providers: GenAI.providers(),
+        providers: providers,
         model_names: Map.new(GenAI.registered_models(), &{&1.id, &1.name}),
-        selected: %Provider{},
+        selected: %{provider | api_key: nil, organization_key: nil},
         editing: false,
         diagnostics: Diagnostics.snapshot(),
-        breadcrumbs: []
+        breadcrumbs: [
+          Breadcrumb.new(%{link: ~p"/admin/gen_ai/providers", full_title: "GenAI Providers"})
+        ]
       )
-      |> form(Ecto.Changeset.change(%Provider{}))
+      |> form(Ecto.Changeset.change(provider))
 
     case connected?(socket) do
       true -> Process.send_after(self(), :refresh, 5_000)
@@ -27,166 +34,197 @@ defmodule OliWeb.GenAI.ProvidersView do
 
   @doc "Renders connection configuration separately from independently observed health."
   def render(assigns) do
+    assigns = assign(assigns, :form_control_classes, AdminComponents.form_control_classes())
+
     ~H"""
-    <main class="space-y-4 p-4">
+    <div class="flex flex-col">
       <h1 class="text-xl font-semibold">GenAI Providers</h1>
-      <nav class="flex gap-4" aria-label="GenAI administration">
-        <.link navigate={~p"/admin/gen_ai/registered_models"}>Models</.link>
+      <AdminComponents.editing_toggle editing={@editing} />
+      <nav class="flex flex-wrap items-center gap-3" aria-label="GenAI administration">
+        <.link navigate={~p"/admin/gen_ai/registered_models"}>Registered models</.link>
         <.link navigate={~p"/admin/gen_ai/service_configs"}>Service configurations</.link>
       </nav>
-      <p>
-        Availability comes only from independent probes. Status and capacity are local to this node.
-      </p>
-      <p :if={@diagnostics.health.error} role="status">Runtime: {@diagnostics.health.error}</p>
-      <p :if={@selected.adapter == :claude} role="status">
-        Claude managed transport is not supported. Select an OpenAI-compatible Provider for inference.
-      </p>
-      <button
-        id="toggle_editing"
-        type="button"
-        phx-click="toggle_editing"
-        aria-pressed={to_string(@editing)}
-        class="rounded border px-3 py-2"
-      >
-        {case @editing do
-          true -> "Disable editing"
-          false -> "Enable editing"
-        end}
-      </button>
-      <ul aria-label="Providers" class="space-y-2">
-        <li :for={provider <- @providers}>
-          <button
-            type="button"
-            phx-click="select"
-            phx-value-id={provider.id}
-            aria-pressed={to_string(@selected.id == provider.id)}
-            class="rounded border px-3 py-2"
-          >
-            {provider.name} ({provider.adapter})
-          </button>
-          <span>{Diagnostics.status(@diagnostics.health.providers[provider.id])}</span>
-        </li>
-      </ul>
-      <button type="button" phx-click="new" disabled={!@editing} class="rounded border px-3 py-2">
-        New Provider
-      </button>
-      <section aria-label="Selected Provider health" class="rounded border p-3">
-        <%= case @diagnostics.health.providers[@selected.id] do %>
-          <% nil -> %>
-            <p>Unknown: no monitor snapshot</p>
-          <% health -> %>
-            <dl class="grid grid-cols-2 gap-2">
-              <dt>Administrative state</dt>
-              <dd>
-                {case health.administrative_enabled do
-                  true -> "Enabled"
-                  false -> "Disabled"
-                end}
-              </dd>
-              <dt>Observed availability</dt>
-              <dd>{Diagnostics.status(health)}</dd>
-              <dt>Selected health-check model ID</dt>
-              <dd>
-                {Map.get(@model_names, health.health_check_model_id, "Missing model")} (ID {health.health_check_model_id ||
-                  "none"})
-              </dd>
-              <dt>Last check</dt>
-              <dd>{time(health.last_check)}</dd>
-              <dt>Last success</dt>
-              <dd>{time(health.last_success)}</dd>
-              <dt>Next check</dt>
-              <dd>{time(health.next_check)}</dd>
-              <dt>Consecutive failures / successes</dt>
-              <dd>{health.consecutive_failures} / {health.consecutive_successes}</dd>
-              <dt>Diagnostic category</dt>
-              <dd>{health.failure_category || "None"}</dd>
-            </dl>
-        <% end %>
-      </section>
-      <.form for={@form} id="provider-form" phx-submit="save" class="max-w-2xl space-y-3">
-        <.input field={@form[:name]} label="Provider name" disabled={!@editing} />
-        <.input
-          class="block w-full rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          field={@form[:adapter]}
-          type="select"
-          label="Transport adapter"
-          options={[
-            {"OpenAI HTTP/1.1", :open_ai},
-            {"Claude (transport deferred)", :claude},
-            {"Local null", :null}
-          ]}
-          disabled={!@editing or not is_nil(@selected.id)}
-        />
-        <.input
-          class="block w-full rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          field={@form[:enabled]}
-          type="checkbox"
-          label="Administratively enabled"
-          disabled={!@editing}
-        />
-        <.input field={@form[:base_url]} label="Base URL or endpoint template" disabled={!@editing} />
-        <p id="credential-help">Credentials are write-only. Leave blank to retain existing keys.</p>
-        <.input
-          class="block w-full rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          field={@form[:api_key]}
-          type="password"
-          value=""
-          autocomplete="new-password"
-          label="API key"
-          aria-describedby="credential-help"
-          disabled={!@editing}
-        />
-        <.input
-          class="block w-full rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          field={@form[:organization_key]}
-          type="password"
-          value=""
-          autocomplete="new-password"
-          label="Organization key"
-          aria-describedby="credential-help"
-          disabled={!@editing}
-        />
-        <label class="flex gap-2">
-          <input
-            type="checkbox"
-            name="provider[clear_organization_key]"
-            value="true"
-            disabled={!@editing}
-          /> Clear stored organization key
-        </label>
-        <p>Endpoint templates may use :model, :api_key and :secondary_api_key placeholders.</p>
-        <p>Blank probe settings inherit runtime defaults. Durations are milliseconds.</p>
-        <.input
-          :for={
-            {field, label} <- [
-              probe_interval_ms: "Regular / recovery interval (ms)",
-              probe_failure_interval_ms: "Suspected failure interval (ms)",
-              probe_deadline_ms: "Probe deadline (ms)",
-              failure_threshold: "Failures to mark unavailable",
-              recovery_threshold: "Successes to recover"
-            ]
-          }
-          class="block w-full rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          field={@form[field]}
-          type="number"
-          min="1"
-          label={label}
-          disabled={!@editing}
-        />
-        <button type="submit" disabled={!@editing} class="rounded bg-blue-700 px-4 py-2 text-white">
-          Save Provider
-        </button>
-        <button
-          type="button"
-          phx-click="delete"
-          disabled={!@editing or is_nil(@selected.id)}
-          data-confirm="Delete this unreferenced Provider?"
-          class="rounded border px-4 py-2"
-        >
-          Delete Provider
-        </button>
-      </.form>
-    </main>
+      <div class="flex flex-col gap-4 lg:flex-row">
+        <div class="flex w-full flex-col lg:w-1/2">
+          <p :if={@providers == []}>No Providers yet. Enable editing to create a Provider.</p>
+          <ul aria-label="Providers" role="list" class="divide-y divide-gray-100">
+            <li :for={provider <- @providers}>
+              <button
+                type="button"
+                phx-click="select"
+                phx-value-id={provider.id}
+                aria-pressed={to_string(@selected.id == provider.id)}
+                class={AdminComponents.list_item_classes(@selected.id == provider.id)}
+              >
+                <div class="flex min-w-0 flex-col gap-x-4">
+                  <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
+                    {provider.name}
+                  </h3>
+                  <div class="text-xs text-gray-800 dark:text-gray-100">
+                    Adapter: <span class="font-mono">{provider.adapter}</span>
+                  </div>
+                </div>
+                <div class="hidden shrink-0 text-xs text-gray-500 dark:text-gray-400 sm:flex sm:items-start">
+                  {Diagnostics.status(@diagnostics.health.providers[provider.id])}
+                </div>
+              </button>
+            </li>
+          </ul>
+          <div class="mt-3">
+            <button type="button" phx-click="new" disabled={!@editing} class="btn btn-primary btn-sm">
+              + New Provider
+            </button>
+          </div>
+        </div>
+        <div class="w-full p-4 lg:w-1/2">
+          <.form for={@form} id="provider-form" phx-submit="save">
+            <.input
+              field={@form[:name]}
+              label="Provider name"
+              class={@form_control_classes}
+              disabled={!@editing}
+            />
+            <.input
+              class={@form_control_classes}
+              field={@form[:adapter]}
+              type="select"
+              label="Transport adapter"
+              options={[
+                {"OpenAI HTTP/1.1", :open_ai},
+                {"Claude (transport deferred)", :claude},
+                {"Local null", :null}
+              ]}
+              disabled={!@editing or not is_nil(@selected.id)}
+            />
+            <.input
+              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              field={@form[:enabled]}
+              type="checkbox"
+              label="Administratively enabled"
+              disabled={!@editing}
+            />
+            <.input
+              field={@form[:base_url]}
+              label="Base URL or endpoint template"
+              class={@form_control_classes}
+              disabled={!@editing}
+            />
+            <p :if={@selected.adapter == :claude} class="text-sm" role="status">
+              Claude managed transport is not supported. Select an OpenAI-compatible Provider for inference.
+            </p>
+            <p id="credential-help" class="text-sm">
+              Credentials are write-only. Leave blank to retain existing keys.
+            </p>
+            <.input
+              class={@form_control_classes}
+              field={@form[:api_key]}
+              type="password"
+              value=""
+              autocomplete="new-password"
+              label="API key"
+              aria-describedby="credential-help"
+              disabled={!@editing}
+            />
+            <.input
+              class={@form_control_classes}
+              field={@form[:organization_key]}
+              type="password"
+              value=""
+              autocomplete="new-password"
+              label="Organization key"
+              aria-describedby="credential-help"
+              disabled={!@editing}
+            />
+            <label class="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                name="provider[clear_organization_key]"
+                value="true"
+                disabled={!@editing}
+              /> Clear stored organization key
+            </label>
+            <p class="text-sm">
+              Endpoint templates may use :model, :api_key and :secondary_api_key placeholders.
+            </p>
+            <p class="text-sm">
+              Blank probe settings inherit runtime defaults. Durations are milliseconds.
+            </p>
+            <.input
+              :for={
+                {field, label} <- [
+                  probe_interval_ms: "Regular / recovery interval (ms)",
+                  probe_failure_interval_ms: "Suspected failure interval (ms)",
+                  probe_deadline_ms: "Probe deadline (ms)",
+                  failure_threshold: "Failures to mark unavailable",
+                  recovery_threshold: "Successes to recover"
+                ]
+              }
+              class={@form_control_classes}
+              field={@form[field]}
+              type="number"
+              min="1"
+              label={label}
+              disabled={!@editing}
+            />
+            <section aria-label="Selected Provider health" class="mt-4 rounded border p-3">
+              <h2 class="font-semibold">Provider Health</h2>
+              <p class="text-sm">
+                Availability comes only from independent probes. Status and capacity are local to this node.
+              </p>
+              <p :if={@diagnostics.health.error} role="status">
+                Runtime: {@diagnostics.health.error}
+              </p>
+              <%= case @diagnostics.health.providers[@selected.id] do %>
+                <% nil -> %>
+                  <p>Unknown: no monitor snapshot</p>
+                <% health -> %>
+                  <dl class="grid grid-cols-2 gap-2">
+                    <dt>Administrative state</dt>
+                    <dd>
+                      {case health.administrative_enabled do
+                        true -> "Enabled"
+                        false -> "Disabled"
+                      end}
+                    </dd>
+                    <dt>Observed availability</dt>
+                    <dd>{Diagnostics.status(health)}</dd>
+                    <dt>Selected health-check model ID</dt>
+                    <dd>
+                      {Map.get(@model_names, health.health_check_model_id, "Missing model")} (ID {health.health_check_model_id ||
+                        "none"})
+                    </dd>
+                    <dt>Last check</dt>
+                    <dd>{time(health.last_check)}</dd>
+                    <dt>Last success</dt>
+                    <dd>{time(health.last_success)}</dd>
+                    <dt>Next check</dt>
+                    <dd>{time(health.next_check)}</dd>
+                    <dt>Consecutive failures / successes</dt>
+                    <dd>{health.consecutive_failures} / {health.consecutive_successes}</dd>
+                    <dt>Diagnostic category</dt>
+                    <dd>{health.failure_category || "None"}</dd>
+                  </dl>
+              <% end %>
+            </section>
+            <div class="flex justify-between">
+              <.button disabled={!@editing} class="mt-3 btn btn-primary" phx-disable-with="Saving…">
+                Save Provider
+              </.button>
+              <button
+                type="button"
+                phx-click="delete"
+                disabled={!@editing or is_nil(@selected.id)}
+                data-confirm="Delete this unreferenced Provider?"
+                class="mt-3 btn btn-danger"
+              >
+                Delete Provider
+              </button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
     """
   end
 

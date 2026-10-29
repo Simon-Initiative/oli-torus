@@ -175,7 +175,7 @@ RegisteredModel should retain:
 
 - Provider reference.
 - Model identifier and display name.
-- Model capabilities and generation-specific settings.
+- Model generation-specific settings.
 - Model-specific request budgets/timeouts where needed.
 
 Add `health_check`, a boolean attribute defaulting to `false`. It is an editable
@@ -252,7 +252,6 @@ Validate:
 - Backup references a different Provider.
 - Backup meets the intended different-vendor/failure-domain requirement; merely
   selecting a second connection record for the same vendor may not satisfy it.
-- Required model capabilities are compatible with the feature using the config.
 
 ## Independent provider health monitoring
 

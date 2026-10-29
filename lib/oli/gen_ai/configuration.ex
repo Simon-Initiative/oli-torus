@@ -85,7 +85,7 @@ defmodule Oli.GenAI.Configuration do
       changeset = validate_required(changeset, [:provider_id])
       saved = persist(changeset)
 
-      case (current.provider_id != saved.provider_id or current.capabilities != saved.capabilities) and
+      case current.provider_id != saved.provider_id and
              not is_nil(current.provider_id) do
         true -> validate_model_dependencies!(saved.id)
         false -> :ok
@@ -132,7 +132,7 @@ defmodule Oli.GenAI.Configuration do
     end)
   end
 
-  @doc "Saves ServiceConfig selections with Provider membership and capability validation."
+  @doc "Saves ServiceConfig selections with Provider membership validation."
   def save_service_config(config, attrs) do
     transaction(fn ->
       config =
@@ -223,7 +223,6 @@ defmodule Oli.GenAI.Configuration do
                   :health_check,
                   :model,
                   :name,
-                  :capabilities,
                   :timeout,
                   :recv_timeout
                 ])
@@ -375,26 +374,18 @@ defmodule Oli.GenAI.Configuration do
     primary = models[:primary]
 
     Enum.reduce(models, changeset, fn {tier, model}, cs ->
-      cs =
-        case {primary, model.provider_id, tier} do
-          {_, nil, _} ->
-            add_error(cs, model_field(tier), "must belong to a configured Provider")
+      case {primary, model.provider_id, tier} do
+        {_, nil, _} ->
+          add_error(cs, model_field(tier), "must belong to a configured Provider")
 
-          {%{provider_id: main}, other, :secondary} when main != other ->
-            add_error(cs, :secondary_model_id, "must belong to the primary Provider")
+        {%{provider_id: main}, other, :secondary} when main != other ->
+          add_error(cs, :secondary_model_id, "must belong to the primary Provider")
 
-          {%{provider_id: main}, main, :backup} ->
-            add_error(cs, :backup_model_id, "must belong to a different Provider")
+        {%{provider_id: main}, main, :backup} ->
+          add_error(cs, :backup_model_id, "must belong to a different Provider")
 
-          _ ->
-            cs
-        end
-
-      required = get_field(cs, :required_capabilities) || []
-
-      case Enum.all?(required, &(&1 in model.capabilities)) do
-        true -> cs
-        false -> add_error(cs, model_field(tier), "does not support the required capabilities")
+        _ ->
+          cs
       end
     end)
   end

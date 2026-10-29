@@ -12,7 +12,6 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
     field :primary_pool_capacity, :integer, default: 100
     field :secondary_pool_capacity, :integer, default: 100
     field :backup_pool_capacity, :integer, default: 100
-    field :required_capabilities, {:array, :string}, default: []
 
     field :usage_count, :integer, virtual: true
 
@@ -27,7 +26,6 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
       :primary_pool_capacity,
       :secondary_pool_capacity,
       :backup_pool_capacity,
-      :required_capabilities,
       :primary_model_id,
       :secondary_model_id,
       :backup_model_id
@@ -43,7 +41,6 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
     |> foreign_key_constraint(:secondary_model_id)
     |> foreign_key_constraint(:backup_model_id)
     |> validate_blank_capacities(attrs)
-    |> validate_capability_array()
     |> validate_secondary_model()
     |> validate_number(:primary_pool_capacity, greater_than: 0)
     |> validate_number(:secondary_pool_capacity, greater_than: 0)
@@ -64,13 +61,6 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
         end
       end
     )
-  end
-
-  defp validate_capability_array(changeset) do
-    case get_field(changeset, :required_capabilities) do
-      nil -> add_error(changeset, :required_capabilities, "must be a list")
-      _ -> changeset
-    end
   end
 
   defp validate_secondary_model(changeset) do

@@ -33,7 +33,6 @@ defmodule Oli.Repo.Migrations.AddGenaiProvidersAndTierCapacity do
     alter table(:registered_models) do
       add :provider_id, references(:gen_ai_providers, on_delete: :nothing)
       add :health_check, :boolean, default: false, null: false
-      add :capabilities, {:array, :string}, default: [], null: false
     end
 
     create index(:registered_models, [:provider_id])
@@ -42,7 +41,6 @@ defmodule Oli.Repo.Migrations.AddGenaiProvidersAndTierCapacity do
       add :primary_pool_capacity, :integer, default: 100, null: false
       add :secondary_pool_capacity, :integer, default: 100, null: false
       add :backup_pool_capacity, :integer, default: 100, null: false
-      add :required_capabilities, {:array, :string}, default: [], null: false
     end
 
     for tier <- [:primary, :secondary, :backup] do
@@ -98,7 +96,6 @@ defmodule Oli.Repo.Migrations.AddGenaiProvidersAndTierCapacity do
     end
 
     alter table(:completions_service_configs) do
-      remove :required_capabilities
       remove :backup_pool_capacity
       remove :secondary_pool_capacity
       remove :primary_pool_capacity
@@ -107,7 +104,6 @@ defmodule Oli.Repo.Migrations.AddGenaiProvidersAndTierCapacity do
     drop index(:registered_models, [:provider_id])
 
     alter table(:registered_models) do
-      remove :capabilities
       remove :health_check
       remove :provider_id
     end

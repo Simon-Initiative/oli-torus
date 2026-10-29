@@ -20,7 +20,7 @@ defmodule OliWeb.GenAI.ProvidersViewTest do
       {:ok, view, html} = live(conn, @route)
       refute html =~ "stored-private-key"
       render_click(view, "select", %{"id" => to_string(provider.id)})
-      render_click(view, "toggle_editing")
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
 
       html =
         view
@@ -40,7 +40,7 @@ defmodule OliWeb.GenAI.ProvidersViewTest do
       refute html =~ "private-org"
       updated = Enum.find(GenAI.providers(), &(&1.id == provider.id))
       assert updated.api_key == "rotated-private-key" and updated.failure_threshold == 4
-      render_click(view, "toggle_editing")
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
 
       view
       |> form("#provider-form",
@@ -90,7 +90,9 @@ defmodule OliWeb.GenAI.ProvidersViewTest do
 
         assert html =~ expected
         assert html =~ "Selected health-check model"
-        assert html =~ ~s(aria-pressed="false")
+        document = Floki.parse_document!(html)
+        assert Floki.attribute(document, "#toggle_editing_checkbox", "type") == ["checkbox"]
+        assert Floki.attribute(document, "#toggle_editing_checkbox", "checked") == []
         assert html =~ ~s(autocomplete="new-password")
         assert html =~ ~s(for="provider_api_key")
       end
@@ -100,7 +102,7 @@ defmodule OliWeb.GenAI.ProvidersViewTest do
          %{conn: conn} do
       {:ok, view, _} = live(conn, @route)
       assert render_click(view, "save", %{"provider" => %{}}) =~ "Enable editing first"
-      render_click(view, "toggle_editing")
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
       render_click(view, "new")
 
       html =
@@ -121,7 +123,7 @@ defmodule OliWeb.GenAI.ProvidersViewTest do
 
     test "creates, disables and deletes an unused Provider", %{conn: conn} do
       {:ok, view, _} = live(conn, @route)
-      render_click(view, "toggle_editing")
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
       render_click(view, "new")
 
       view
@@ -132,7 +134,7 @@ defmodule OliWeb.GenAI.ProvidersViewTest do
 
       provider = Enum.find(GenAI.providers(), &(&1.name == "New local Provider"))
       refute provider.enabled
-      render_click(view, "toggle_editing")
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
       render_click(view, "delete")
       refute Enum.any?(GenAI.providers(), &(&1.id == provider.id))
     end

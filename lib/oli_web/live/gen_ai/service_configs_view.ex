@@ -9,12 +9,8 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   alias Oli.GenAI.{Administrative, Diagnostics}
   alias OliWeb.Common.Breadcrumb
 
-  @form_control_classes "block w-full p-2.5
-  text-sm text-gray-900 bg-gray-50
-  rounded-lg border border-gray-300
-  focus:ring-blue-500 focus:border-blue-500
-  dark:bg-gray-700 dark:border-gray-600
-  dark:placeholder-gray-400 dark:text-white"
+  alias OliWeb.GenAI.AdminComponents
+
   @health_refresh_ms 5_000
 
   def mount(_, _session, socket) do
@@ -43,28 +39,19 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   attr(:selected, ServiceConfig)
   attr :breadcrumbs, :any
   attr :form, :any
-  attr :title, :string, default: "Completions Service Configurations"
+  attr :title, :string, default: "Service Configs"
   attr :editing, :boolean, default: false
 
   def render(assigns) do
     ~H"""
     <div class="flex flex-col">
-      <h1 class="text-xl font-semibold">Completions Service Configurations</h1>
-      <div class="flex justify-end">
-        <div class="flex py-2 mb-2">
-          <div>Enable Editing</div>
-          <.toggle_switch
-            id="toggle_editing"
-            class="ml-4"
-            checked={@editing}
-            on_toggle="toggle_editing"
-            name="toggle_editing"
-          />
-        </div>
-      </div>
-      <div class="flex gap-3">
+      <h1 class="text-xl font-semibold">Service Configs</h1>
+      <AdminComponents.editing_toggle editing={@editing} />
+      <nav class="flex flex-wrap items-center gap-3" aria-label="GenAI administration">
         <.link navigate={~p"/admin/gen_ai/providers"}>Providers and health</.link>
         <.link navigate={~p"/admin/gen_ai/registered_models"}>Registered models</.link>
+      </nav>
+      <div class="my-3 flex flex-wrap items-center gap-3">
         <button
           type="button"
           phx-click="test"
@@ -116,18 +103,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         phx-click="select"
         phx-value-id={@service_config.id}
         aria-pressed={to_string(@selected.id == @service_config.id)}
-        class={
-          [
-            # base
-            "flex justify-between gap-x-6 py-1 px-2 rounded-md cursor-pointer transition-colors bg-white dark:bg-gray-900 dark:text-gray-100",
-
-            # selected (non-hover)
-            @selected.id == @service_config.id && "bg-indigo-50 dark:bg-gray-700 ",
-
-            # hover (overrides both unselected and selected)
-            "hover:bg-indigo-100 dark:hover:bg-gray-600"
-          ]
-        }
+        class={AdminComponents.list_item_classes(@selected.id == @service_config.id)}
       >
         <div class="flex flex-col min-w-0 gap-x-4">
           <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
@@ -191,7 +167,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   def selected_item(assigns) do
     assigns =
       assigns
-      |> assign_new(:form_control_classes, fn -> @form_control_classes end)
+      |> assign_new(:form_control_classes, fn -> AdminComponents.form_control_classes() end)
 
     ~H"""
     <div class="w-full p-4 lg:w-1/2">
@@ -236,6 +212,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
             ]
           }
           field={@form[field]}
+          class={@form_control_classes}
           type="number"
           min="1"
           label={label}
@@ -449,7 +426,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
     do: [
       Breadcrumb.new(%{
         link: ~p"/admin/gen_ai/service_configs",
-        full_title: "Completions Service Configurations"
+        full_title: "Service Configs"
       })
     ]
 

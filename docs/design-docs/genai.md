@@ -10,10 +10,10 @@ intentionally shares its production transport pools on each application node.
 - **Provider** owns the configured adapter, endpoint template, encrypted API and
   organization credentials, administrative enablement and independent probe policy.
   It is a connection/availability boundary, not a vendor enum.
-- **RegisteredModel** requires an explicit Provider ID and selects a model identifier, capabilities, a
+- **RegisteredModel** requires an explicit Provider ID and selects a model identifier, a
   health-check candidate flag, connection timeout and response inactivity timeout.
 - **ServiceConfig** selects distinct primary/secondary models on the same Provider
-  and an optional backup on a different Provider, required capabilities, and one
+  and an optional backup on a different Provider and one
   persisted pool capacity for each tier.
 
 Authorized administrators use `/admin/gen_ai/providers`,

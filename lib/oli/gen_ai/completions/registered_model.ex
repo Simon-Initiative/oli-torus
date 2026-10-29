@@ -8,7 +8,6 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
     field :model, :string
     belongs_to :configured_provider, Oli.GenAI.Provider, foreign_key: :provider_id
     field :health_check, :boolean, default: false
-    field :capabilities, {:array, :string}, default: []
     field :timeout, :integer, default: 8000
     field :recv_timeout, :integer, default: 60000
     field :max_concurrent, :integer, default: 95
@@ -31,7 +30,6 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
       :name,
       :provider_id,
       :health_check,
-      :capabilities,
       :model,
       :timeout,
       :recv_timeout,
@@ -56,7 +54,6 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
     ])
     |> validate_number(:timeout, greater_than: 0)
     |> validate_number(:recv_timeout, greater_than: 0)
-    |> validate_capability_array()
     |> foreign_key_constraint(:provider_id)
     |> validate_number(:max_concurrent, greater_than_or_equal_to: 0)
     |> validate_number(:routing_breaker_error_rate_threshold,
@@ -70,12 +67,5 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
     |> validate_number(:routing_breaker_latency_p95_ms, greater_than_or_equal_to: 0)
     |> validate_number(:routing_open_cooldown_ms, greater_than_or_equal_to: 0)
     |> validate_number(:routing_half_open_probe_count, greater_than_or_equal_to: 0)
-  end
-
-  defp validate_capability_array(changeset) do
-    case get_field(changeset, :capabilities) do
-      nil -> add_error(changeset, :capabilities, "must be a list")
-      _ -> changeset
-    end
   end
 end

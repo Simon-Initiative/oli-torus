@@ -27,7 +27,7 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
       refute html =~ "Fast Pool"
       refute html =~ "API Key"
       render_click(view, "select_model", %{"id" => to_string(model.id)})
-      render_click(view, "toggle_editing")
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
 
       view
       |> form("#registered-model-form",
@@ -37,8 +37,7 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
           provider_id: provider.id,
           health_check: "true",
           timeout: "9000",
-          recv_timeout: "120000",
-          capabilities_text: "chat, tools"
+          recv_timeout: "120000"
         }
       )
       |> render_submit()
@@ -46,7 +45,6 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
       updated = Oli.Repo.get!(RegisteredModel, model.id)
       assert updated.name == "Edited" and updated.health_check
       assert updated.timeout == 9000 and updated.recv_timeout == 120_000
-      assert updated.capabilities == ["chat", "tools"]
     end
 
     test "dependent configuration errors preserve model form and identify the blocked relationship",
@@ -58,29 +56,26 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
         GenAI.create_registered_model(%{
           name: "Primary",
           model: "p",
-          provider_id: provider.id,
-          capabilities: ["chat"]
+          provider_id: provider.id
         })
 
       {:ok, secondary} =
         GenAI.create_registered_model(%{
           name: "Secondary",
           model: "s",
-          provider_id: provider.id,
-          capabilities: ["chat"]
+          provider_id: provider.id
         })
 
       {:ok, _} =
         GenAI.create_service_config(%{
           name: "Dependent config",
           primary_model_id: primary.id,
-          secondary_model_id: secondary.id,
-          required_capabilities: ["chat"]
+          secondary_model_id: secondary.id
         })
 
       {:ok, view, _} = live(conn, @route)
       render_click(view, "select_model", %{"id" => to_string(secondary.id)})
-      render_click(view, "toggle_editing")
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
 
       html =
         view
@@ -88,8 +83,7 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
           registered_model: %{
             name: "Secondary",
             model: "s",
-            provider_id: other.id,
-            capabilities_text: "chat"
+            provider_id: other.id
           }
         )
         |> render_submit()
@@ -98,20 +92,6 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
       assert has_element?(view, "#registered_model_name[value=Secondary]")
       assert Oli.Repo.get!(RegisteredModel, secondary.id).provider_id == provider.id
 
-      html =
-        view
-        |> form("#registered-model-form",
-          registered_model: %{
-            name: "Secondary",
-            model: "s",
-            provider_id: provider.id,
-            capabilities_text: ""
-          }
-        )
-        |> render_submit()
-
-      assert html =~ "required capabilities"
-      assert Oli.Repo.get!(RegisteredModel, secondary.id).capabilities == ["chat"]
       assert render_click(view, "delete") =~ "Model is referenced"
       assert Oli.Repo.get!(RegisteredModel, secondary.id)
     end
@@ -136,7 +116,7 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
 
       {:ok, view, _} = live(conn, @route)
       render_click(view, "select_model", %{"id" => to_string(model.id)})
-      render_click(view, "toggle_editing")
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
 
       html =
         view
@@ -183,7 +163,7 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
     test "server enforces edit mode and handles new unsaved models", %{conn: conn} do
       {:ok, view, _} = live(conn, @route)
       assert render_click(view, "save", %{"registered_model" => %{}}) =~ "Enable editing first"
-      render_click(view, "toggle_editing")
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
       assert render_click(view, "new_model") =~ "Select a Provider"
     end
   end

@@ -16,7 +16,7 @@ Status: complete within the observe-only scope; full-suite limitations are recor
 - [x] Added `Oli.GenAI.Provider`, new model/ServiceConfig fields and GenAI context APIs.
   Keys are encrypted and redacted; new Provider-backed model inputs derive the
   transitional legacy connection fields. Model requests remain compatible with the
-  existing dispatcher. Context validation covers Provider/capability relationships
+  existing dispatcher. Context validation covers Provider relationships
   and positive, non-null capacities, including invalid blank/nullable inputs.
 - [x] Generated `priv/repo/migrations/20261027183342_add_genai_providers_and_tier_capacity.exs`
   using `mix ecto.gen.migration add_genai_providers_and_tier_capacity --no-compile --no-deps-check`.

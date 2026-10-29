@@ -69,7 +69,13 @@ defmodule Oli.GenAI.ProviderMigrationTest do
 
     assert [] ==
              MigrationRepo.query!(
-               "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'registered_models' AND column_name IN ('api_key', 'secondary_api_key', 'provider', 'url_template', 'pool_class')",
+               "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'registered_models' AND column_name IN ('api_key', 'secondary_api_key', 'provider', 'url_template', 'pool_class', 'capabilities')",
+               [schema]
+             ).rows
+
+    assert [] ==
+             MigrationRepo.query!(
+               "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'completions_service_configs' AND column_name = 'required_capabilities'",
                [schema]
              ).rows
 

@@ -20,8 +20,7 @@ requirements:
   status: verified
   acceptance_criteria:
   - id: AC-002
-    title: Primary and secondary are distinct models on the same Provider, backup uses a different Provider,
-      and selected capabilities are validated for the feature.
+    title: Primary and secondary are distinct models on the same Provider, backup uses a different Provider.
     status: verified
     verification_method: automated
     proofs: &id002
@@ -281,8 +280,7 @@ acceptance_criteria:
   proofs: *id001
   requirement_id: FR-001
 - id: AC-002
-  title: Primary and secondary are distinct models on the same Provider, backup uses a different Provider,
-    and selected capabilities are validated for the feature.
+  title: Primary and secondary are distinct models on the same Provider, backup uses a different Provider.
   status: verified
   verification_method: automated
   proofs: *id002

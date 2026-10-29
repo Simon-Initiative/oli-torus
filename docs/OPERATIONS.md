@@ -120,7 +120,7 @@ become current immediately while old bounded work finishes.
    code is capable of routing; ingress exclusion is the control. Restrict direct canary
    access to operators and use explicit administrative test calls.
 4. Run the persistent audit and resolve every missing Provider/key, incompatible adapter,
-   invalid primary/secondary/backup relationship and capability issue. Confirm
+   invalid primary/secondary/backup relationship. Confirm
    Provider ownership, endpoints, node allocations and upstream quotas.
    Claude inference is unsupported; it cannot fall back to the removed legacy adapter.
 5. Observe selected probe models, thresholds, failure/recovery, next checks and last

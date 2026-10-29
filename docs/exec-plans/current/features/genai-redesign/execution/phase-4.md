@@ -25,8 +25,7 @@ Claude implementation and transport verification remain explicitly deferred.
 - [x] Real TCP/Hackney coverage proves explicit administrative vs production pool
   selection, bounded administrative saturation without blocking production, and
   independent real-probe recovery during backup streaming despite production saturation.
-- [x] Admin authorization, write-only credential success/error forms, flag/capability/
-  timeout edits, tier capacity, empty lists, referenced deletion, dependent configuration
+- [x] Admin authorization, write-only credential success/error forms, flag/timeout edits, tier capacity, empty lists, referenced deletion, dependent configuration
   errors, asynchronous test buttons and six health-state rendering checks pass.
 - [x] Atomic rollback tests cover rotation success, missing/incompatible Providers,
   invalid endpoints and no partial legacy updates. Migration forward/down coverage
@@ -61,7 +60,7 @@ Claude implementation and transport verification remain explicitly deferred.
   return-shape regression while adding FK protection; fixed the result binding
   and strengthened the public context CRUD assertion.
 - UI: dependent ServiceConfig validation errors now preserve the submitted model
-  form and show the affected configuration/relationship; added membership/capability
+  form and show the affected configuration/relationship; added membership
   regressions. Responsive layout, empty state, referenced deletion safeguards and
   explicit adapter-change/Claude warnings were reviewed without remaining findings.
 - Requirements: no actionable scope gaps. Added negative atomic rollback checks for
