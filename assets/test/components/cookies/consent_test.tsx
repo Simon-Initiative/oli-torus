@@ -10,6 +10,7 @@ import {
 import {
   CONSENT_CHANGED_EVENT,
   consentOptions,
+  deleteAnalyticsCookies,
   hasCurrentDecision,
   initializeConsent,
   isConsentDismissed,
@@ -143,6 +144,37 @@ test('withdrawal removes Torus-host GA cookies, preserves parent-domain cookies 
   expect((window as unknown as Record<string, unknown>)['ga-disable-G-ABC123']).toBe(true);
   await saveConsent({ functionality: true, analytics: true });
   expect((window as unknown as Record<string, unknown>)['ga-disable-G-ABC123']).toBe(false);
+});
+
+test.each([
+  '/users/confirm/x;Domain=example.test;Path=',
+  '/users/confirm/x;Domain=example.test;Path=/;',
+])('analytics cleanup preserves parent-domain cookies on pathname %s', (pathname) => {
+  const originalUrl = window.location.href;
+  window.history.replaceState(null, '', pathname);
+  try {
+    document.cookie = '_ga=parent-client;domain=example.test;path=/;Secure';
+    document.cookie = '_ga_other=parent-session;domain=example.test;path=/users/confirm;Secure';
+    document.cookie = '_ga=host-client;path=/;Secure';
+    document.cookie = '_ga_ABC123=host-session;domain=torus.example.test;path=/;Secure';
+    document.cookie = 'unrelated=keep;path=/;Secure';
+    expect(readCookie('_ga_other')).toBe('parent-session');
+
+    deleteAnalyticsCookies();
+
+    expect(
+      document.cookie
+        .split(';')
+        .map((cookie) => cookie.trim())
+        .filter((cookie) => cookie.startsWith('_ga=')),
+    ).toEqual(['_ga=parent-client']);
+    expect(readCookie('_ga_other')).toBe('parent-session');
+    expect(readCookie('_ga_ABC123')).toBe('');
+    expect(readCookie('unrelated')).toBe('keep');
+  } finally {
+    document.cookie = '_ga_other=;max-age=0;domain=example.test;path=/users/confirm;Secure';
+    window.history.replaceState(null, '', originalUrl);
+  }
 });
 
 test('malformed percent-encoding is ignored', () => {

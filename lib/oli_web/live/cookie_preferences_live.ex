@@ -249,6 +249,7 @@ defmodule OliWeb.CookiePreferencesLive do
               <%= if @expanded_cookie_tables[@section.key] do %>
                 <div class="mt-2 overflow-x-auto max-w-full">
                   <table class="table table-striped w-full">
+                    <caption class="sr-only">{@section.title}</caption>
                     <thead>
                       <tr>
                         <th
