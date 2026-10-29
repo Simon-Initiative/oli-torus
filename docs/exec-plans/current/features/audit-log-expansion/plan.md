@@ -82,7 +82,7 @@ All Mix commands require scoped escalated permissions on the first attempt under
 
 - [ ] Before DDL, complete the field/action contract matrix from the domain changesets and the FDD catalog. Build valid and invalid factory-backed inserts for every admitted event, including future producer families, reset semantics, deleted subjects, bulk and async outcomes.
 - [ ] Implement shared context/builders, conditional v1/v2 checks, safe snapshots, indexed partitioned storage and compatible readers. Adapt current producers only as needed to keep their existing events writing strict v2; do not silently accept new v1 rows or invent missing actors.
-- [ ] Generate explicit up/down migrations; implement resumable bounded copying, validation, short swap, guarded same-deployment retirement, safe rollback archive and roll-forward. Integrate the guarded release sequence with Oli.Release and isolated test bootstrap.
+- [ ] Generate explicit up/down migrations; implement copy, validation, swap, same-deployment retirement, safe rollback archive and roll-forward. Primary path: one transactional migration with no `Oli.Release` change. Use the batched/resumable fallback with a guarded release sequence only if rehearsal at production volume requires it (see the PR-01 detailed design).
 - [ ] Benchmark six-month versus annual partitions with stated volume assumptions; provision and test future partitions, missing-partition failure, privileges, diagnostics and both Oban configurations. Document maintenance, retirement and recovery gates.
 
 ### Testing Tasks
@@ -400,6 +400,8 @@ All Mix commands require scoped escalated permissions on the first attempt under
 - [ ] Implement the approved investigation filters and safe snapshot-based text search with current-identity compatibility, UTC bounds, parameter validation and stable paging.
 - [ ] Render actor/affected subject, multi-field changes, settings history, deleted/system/unknown identities and confirmed async outcomes. Keep admin-only authorization and avoid exposing schema plumbing.
 - [ ] Benchmark actual predicates/indexes over representative multi-partition history; fix measured query costs and validate keyboard/labels/details behavior.
+
+Idea to explore (not a requirement or acceptance criterion): filtering by event family, derived from `EventCatalog` as `event_type IN (<family types>)`. Options include a separate family selector or an action selector grouped by family where a whole family can be chosen. Catalog descriptions could also serve as action tooltips. Evaluate during PR-07 design; adopting it requires owner agreement.
 
 ### Testing Tasks
 

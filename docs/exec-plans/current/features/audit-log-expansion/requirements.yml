@@ -651,8 +651,9 @@ requirements:
   status: verified_plan
   acceptance_criteria:
   - id: AC-079
-    title: Migration preserves existing central event identifiers, timestamps, meanings, reliable scope
-      references, and safe payload contents. Reconciliation accounts for every source record and explicitly
+    title: Migration records every existing central event identifier as provenance (legacy_source/legacy_id)
+      while allocating new central identifiers in original order, and preserves timestamps, meanings,
+      reliable scope references, and safe payload contents. Reconciliation accounts for every source record and explicitly
       records any required sanitization or invalid-data handling.
     status: verified_plan
     verification_method: automated
