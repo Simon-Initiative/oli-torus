@@ -58,7 +58,11 @@ defmodule Oli.Consent do
     end
   end
 
-  @doc "Normalizes JSON or map preferences, preserving functional consent when analytics needs re-consent."
+  @doc """
+  Normalizes JSON or map preferences, preserving functional consent when analytics needs re-consent.
+
+  JSON may be raw, percent-encoded, or form-encoded.
+  """
   @spec normalize_preferences(term()) :: map()
   def normalize_preferences(value) when is_binary(value) do
     case decode_preferences(value) do
@@ -270,21 +274,22 @@ defmodule Oli.Consent do
   defp boolean_or_default(_, default), do: default
 
   defp decode_preferences(value) when is_binary(value) do
-    case Jason.decode(value) do
-      {:ok, preferences} when is_map(preferences) ->
-        {:ok, preferences}
-
-      _ ->
-        case Jason.decode(URI.decode(value)) do
-          {:ok, preferences} when is_map(preferences) -> {:ok, preferences}
-          _ -> :error
-        end
+    with :error <- decode_json_preferences(value),
+         :error <- decode_json_preferences(URI.decode(value)) do
+      decode_json_preferences(URI.decode_www_form(value))
     end
   rescue
     ArgumentError -> :error
   end
 
   defp decode_preferences(_), do: :error
+
+  defp decode_json_preferences(value) do
+    case Jason.decode(value) do
+      {:ok, preferences} when is_map(preferences) -> {:ok, preferences}
+      _ -> :error
+    end
+  end
 
   defp superseded_decision?(%CookiesConsent{value: value}, %{group: group, sequence: sequence}) do
     case decode_preferences(value) do

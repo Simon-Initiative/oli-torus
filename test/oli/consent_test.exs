@@ -50,6 +50,26 @@ defmodule Oli.ConsentTest do
       end
     end
 
+    test "accepts form-encoded JSON with formatting whitespace" do
+      for analytics <- [true, false] do
+        cookie =
+          %{"version" => Consent.version(), "analytics" => analytics, "functionality" => false}
+          |> Jason.encode!(pretty: true)
+          |> URI.encode_www_form()
+
+        assert cookie =~ "+"
+        conn = conn(:get, "/") |> put_req_cookie("_cky_opt_choices", cookie) |> fetch_cookies()
+
+        assert Consent.preferences(conn) == %{
+                 "necessary" => true,
+                 "functionality" => false,
+                 "analytics" => analytics,
+                 "targeting" => false,
+                 "version" => Consent.version()
+               }
+      end
+    end
+
     test "signed-in stored choice wins over conflicting browser consent" do
       user = user_fixture()
       store(user.id, %{"version" => 2, "analytics" => false})
@@ -90,6 +110,23 @@ defmodule Oli.ConsentTest do
       refute Consent.preferences(pending)["functionality"]
       assert Consent.preferences(pending)["version"] == 2
       assert Consent.analytics_consent(browser) == "granted"
+    end
+
+    test "URI-encoded withdrawal markers preserve literal plus in timezone offsets" do
+      user = user_fixture()
+      store(user.id, %{"version" => 2, "analytics" => true})
+      browser = browser_conn(%{}) |> assign(:current_user, user)
+      marker = pending_marker()
+      marker = %{marker | "expiresIso" => String.replace(marker["expiresIso"], "Z", "+00:00")}
+      encoded = marker |> Jason.encode!() |> URI.encode()
+      assert encoded =~ "+00:00"
+
+      for value <- [Jason.encode!(marker), encoded] do
+        pending = put_pending_cookie(browser, value)
+        assert Consent.analytics_consent(pending) == "denied"
+        refute Consent.preferences(pending)["functionality"]
+        assert Consent.preferences(pending)["version"] == Consent.version()
+      end
     end
 
     test "malformed, expired, or granting pending markers cannot override stored consent" do
