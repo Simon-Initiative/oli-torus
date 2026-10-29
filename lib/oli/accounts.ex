@@ -1554,17 +1554,26 @@ defmodule Oli.Accounts do
   """
   def list_pending_user_invitations(user_id) do
     from(e in Enrollment,
+      as: :enrollment,
       join: s in Section,
+      as: :section,
       on: e.section_id == s.id,
       join: p in Project,
       on: s.base_project_id == p.id,
-      join: ut in UserToken,
-      on:
-        ut.user_id == e.user_id and
-          ut.context == fragment("? || ?", "enrollment_invitation:", s.slug),
       where: e.user_id == ^user_id and e.status == :pending_confirmation,
-      where: ut.inserted_at > ago(^@invitation_validity_in_days, "day"),
-      distinct: s.id,
+      where:
+        exists(
+          from ut in UserToken,
+            where:
+              ut.user_id == parent_as(:enrollment).user_id and
+                ut.context ==
+                  fragment(
+                    "? || ?",
+                    "enrollment_invitation:",
+                    parent_as(:section).slug
+                  ) and
+                ut.inserted_at > ago(^@invitation_validity_in_days, "day")
+        ),
       select: %{
         id: e.id,
         title: s.title,
@@ -1581,15 +1590,24 @@ defmodule Oli.Accounts do
   """
   def list_pending_author_invitations(author_id) do
     from(ap in AuthorProject,
+      as: :author_project,
       join: p in Project,
+      as: :project,
       on: ap.project_id == p.id,
-      join: at in AuthorToken,
-      on:
-        at.author_id == ap.author_id and
-          at.context == fragment("? || ?", "collaborator_invitation:", p.slug),
       where: ap.author_id == ^author_id and ap.status == :pending_confirmation,
-      where: at.inserted_at > ago(^@invitation_validity_in_days, "day"),
-      distinct: p.id,
+      where:
+        exists(
+          from at in AuthorToken,
+            where:
+              at.author_id == parent_as(:author_project).author_id and
+                at.context ==
+                  fragment(
+                    "? || ?",
+                    "collaborator_invitation:",
+                    parent_as(:project).slug
+                  ) and
+                at.inserted_at > ago(^@invitation_validity_in_days, "day")
+        ),
       select: %{
         id: ap.project_id,
         title: p.title,
@@ -1608,27 +1626,33 @@ defmodule Oli.Accounts do
   of appearing to be an unrelated or expired invitation.
   """
   def admin_accept_user_invitation(%User{} = user, %Enrollment{} = enrollment) do
-    case {enrollment.user_id == user.id, enrollment.status} do
-      {true, :pending_confirmation} ->
-        now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
 
-        Multi.new()
-        |> Multi.update(
-          :user,
-          Ecto.Changeset.change(user,
-            invitation_accepted_at: now,
-            email_confirmed_at: now,
-            email_verified: true,
-            independent_learner: true
-          )
-        )
-        |> Multi.update(:enrollment, Enrollment.changeset(enrollment, %{status: :enrolled}))
-        |> Repo.transaction()
-        |> normalize_invitation_transaction(:enrollment)
+    enrollment_query =
+      from e in Enrollment,
+        where:
+          e.id == ^enrollment.id and
+            e.user_id == ^user.id and
+            e.status == :pending_confirmation
 
-      _ ->
-        {:error, :invalid_pending_invitation}
-    end
+    Multi.new()
+    |> Multi.update(
+      :user,
+      Ecto.Changeset.change(user,
+        invitation_accepted_at: now,
+        email_confirmed_at: now,
+        email_verified: true,
+        independent_learner: true
+      )
+    )
+    |> Multi.run(:enrollment, fn repo, _changes ->
+      case repo.update_all(enrollment_query, set: [status: :enrolled, updated_at: now]) do
+        {1, _} -> {:ok, repo.get!(Enrollment, enrollment.id)}
+        _ -> {:error, :invalid_pending_invitation}
+      end
+    end)
+    |> Repo.transaction()
+    |> normalize_admin_invitation_transaction(:enrollment)
   end
 
   @doc """
@@ -1638,14 +1662,18 @@ defmodule Oli.Accounts do
   the already-rejected state until the token expires.
   """
   def admin_decline_user_invitation(%User{} = user, %Enrollment{} = enrollment) do
-    case {enrollment.user_id == user.id, enrollment.status} do
-      {true, :pending_confirmation} ->
-        enrollment
-        |> Enrollment.changeset(%{status: :rejected})
-        |> Repo.update()
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
 
-      _ ->
-        {:error, :invalid_pending_invitation}
+    query =
+      from e in Enrollment,
+        where:
+          e.id == ^enrollment.id and
+            e.user_id == ^user.id and
+            e.status == :pending_confirmation
+
+    case Repo.update_all(query, set: [status: :rejected, updated_at: now]) do
+      {1, _} -> {:ok, %{enrollment | status: :rejected, updated_at: now}}
+      _ -> {:error, :invalid_pending_invitation}
     end
   end
 
@@ -1841,6 +1869,17 @@ defmodule Oli.Accounts do
          _membership
        ) do
     {:error, {operation, reason}}
+  end
+
+  defp normalize_admin_invitation_transaction(
+         {:error, membership, :invalid_pending_invitation, _changes},
+         membership
+       ) do
+    {:error, :invalid_pending_invitation}
+  end
+
+  defp normalize_admin_invitation_transaction(transaction, membership) do
+    normalize_invitation_transaction(transaction, membership)
   end
 
   @doc """
@@ -2296,28 +2335,38 @@ defmodule Oli.Accounts do
   of appearing to be an unrelated or expired invitation.
   """
   def admin_accept_author_invitation(%Author{} = author, %AuthorProject{} = author_project) do
-    case {author_project.author_id == author.id, author_project.status} do
-      {true, :pending_confirmation} ->
-        now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
 
-        Multi.new()
-        |> Multi.update(
-          :author,
-          Ecto.Changeset.change(author,
-            invitation_accepted_at: now,
-            email_confirmed_at: now
-          )
-        )
-        |> Multi.update(
-          :author_project,
-          AuthorProject.changeset(author_project, %{status: :accepted})
-        )
-        |> Repo.transaction()
-        |> normalize_invitation_transaction(:author_project)
+    author_project_query =
+      from ap in AuthorProject,
+        where:
+          ap.author_id == ^author.id and
+            ap.project_id == ^author_project.project_id and
+            ap.status == :pending_confirmation
 
-      _ ->
-        {:error, :invalid_pending_invitation}
-    end
+    Multi.new()
+    |> Multi.update(
+      :author,
+      Ecto.Changeset.change(author,
+        invitation_accepted_at: now,
+        email_confirmed_at: now
+      )
+    )
+    |> Multi.run(:author_project, fn repo, _changes ->
+      case repo.update_all(author_project_query, set: [status: :accepted, updated_at: now]) do
+        {1, _} ->
+          {:ok,
+           repo.get_by!(AuthorProject,
+             author_id: author.id,
+             project_id: author_project.project_id
+           )}
+
+        _ ->
+          {:error, :invalid_pending_invitation}
+      end
+    end)
+    |> Repo.transaction()
+    |> normalize_admin_invitation_transaction(:author_project)
   end
 
   @doc """
@@ -2327,14 +2376,18 @@ defmodule Oli.Accounts do
   the already-rejected state until the token expires.
   """
   def admin_decline_author_invitation(%Author{} = author, %AuthorProject{} = author_project) do
-    case {author_project.author_id == author.id, author_project.status} do
-      {true, :pending_confirmation} ->
-        author_project
-        |> AuthorProject.changeset(%{status: :rejected})
-        |> Repo.update()
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
 
-      _ ->
-        {:error, :invalid_pending_invitation}
+    query =
+      from ap in AuthorProject,
+        where:
+          ap.author_id == ^author.id and
+            ap.project_id == ^author_project.project_id and
+            ap.status == :pending_confirmation
+
+    case Repo.update_all(query, set: [status: :rejected, updated_at: now]) do
+      {1, _} -> {:ok, %{author_project | status: :rejected, updated_at: now}}
+      _ -> {:error, :invalid_pending_invitation}
     end
   end
 

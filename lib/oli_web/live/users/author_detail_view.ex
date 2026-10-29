@@ -72,12 +72,15 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author_roles: SystemRole.role_id(),
            credentials_has_google: has_google,
            credentials_label: DetailViewHelpers.credentials_label(author, has_google),
-           pending_invitations: pending_invitations(author.id),
+           decline_invitation_id: nil,
            password_reset_link: "",
            author_name: author.name,
            author_header_name: DetailViewHelpers.formatted_header_name(author),
            form: author_form(author)
-         )}
+         )
+         |> assign_async(:pending_invitations, fn ->
+           {:ok, %{pending_invitations: pending_invitations(author.id)}}
+         end)}
     end
   end
 
@@ -261,17 +264,27 @@ defmodule OliWeb.Users.AuthorsDetailView do
                   password_reset_link={@password_reset_link}
                 >
                   <:pending_invitations>
-                    <OliWeb.Users.PendingInvitations.render
-                      invitations={@pending_invitations}
-                      id="author_pending_invitations"
-                    />
+                    <.async_result :let={invitations} assign={@pending_invitations}>
+                      <:loading>Loading pending invitations...</:loading>
+                      <:failed :let={_reason}>Unable to load pending invitations.</:failed>
+                      <OliWeb.Users.PendingInvitations.render
+                        invitations={invitations}
+                        id="author_pending_invitations"
+                        decline_invitation_id={@decline_invitation_id}
+                      />
+                    </.async_result>
                   </:pending_invitations>
                 </Actions.render>
               <% else %>
-                <OliWeb.Users.PendingInvitations.render
-                  invitations={@pending_invitations}
-                  id="author_pending_invitations"
-                />
+                <.async_result :let={invitations} assign={@pending_invitations}>
+                  <:loading>Loading pending invitations...</:loading>
+                  <:failed :let={_reason}>Unable to load pending invitations.</:failed>
+                  <OliWeb.Users.PendingInvitations.render
+                    invitations={invitations}
+                    id="author_pending_invitations"
+                    decline_invitation_id={@decline_invitation_id}
+                  />
+                </.async_result>
               <% end %>
             </div>
           </div>
@@ -301,12 +314,23 @@ defmodule OliWeb.Users.AuthorsDetailView do
       {:ok, _author_project} ->
         {:noreply,
          socket
-         |> assign(pending_invitations: pending_invitations(socket.assigns.author.id))
+         |> refresh_pending_invitations()
          |> put_flash(:info, "Invitation accepted.")}
 
       _ ->
         {:noreply, put_flash(socket, :error, "Invitation could not be accepted.")}
     end
+  end
+
+  def handle_event("show_decline_invitation_modal", %{"id" => id}, socket) do
+    case parse_id(id) do
+      {project_id, ""} -> {:noreply, assign(socket, :decline_invitation_id, project_id)}
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_decline_invitation", _params, socket) do
+    {:noreply, assign(socket, :decline_invitation_id, nil)}
   end
 
   def handle_event("decline_invitation", %{"id" => id}, socket) do
@@ -317,7 +341,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
       {:ok, _author_project} ->
         {:noreply,
          socket
-         |> assign(pending_invitations: pending_invitations(socket.assigns.author.id))
+         |> refresh_pending_invitations()
+         |> assign(:decline_invitation_id, nil)
          |> put_flash(:info, "Invitation declined.")}
 
       _ ->
@@ -574,11 +599,15 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   defp author_project_from_id(author_id, id) do
-    case Integer.parse(id) do
+    case parse_id(id) do
       {project_id, ""} -> Repo.get_by(AuthorProject, author_id: author_id, project_id: project_id)
       _ -> nil
     end
   end
+
+  defp parse_id(id) when is_integer(id), do: {id, ""}
+  defp parse_id(id) when is_binary(id), do: Integer.parse(id)
+  defp parse_id(_id), do: :error
 
   defp pending_invitations(author_id) do
     Accounts.list_pending_author_invitations(author_id)
@@ -588,6 +617,14 @@ defmodule OliWeb.Users.AuthorsDetailView do
         :path,
         ~p"/workspaces/course_author/#{invitation.project_slug}/overview"
       )
+    end)
+  end
+
+  defp refresh_pending_invitations(socket) do
+    author_id = socket.assigns.author.id
+
+    assign_async(socket, :pending_invitations, fn ->
+      {:ok, %{pending_invitations: pending_invitations(author_id)}}
     end)
   end
 

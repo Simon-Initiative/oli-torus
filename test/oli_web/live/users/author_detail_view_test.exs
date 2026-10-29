@@ -111,7 +111,22 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       {:ok, view, _html} = live(conn, authors_detail_view(author.id))
 
       view
-      |> element("#author_pending_invitations button", "Decline")
+      |> element("#author_pending_invitations table button", "Decline")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "#decline_invitation_modal",
+               "Are you sure you want to decline this invitation?"
+             )
+
+      assert Oli.Repo.get_by!(Oli.Authoring.Authors.AuthorProject,
+               author_id: author.id,
+               project_id: project.id
+             ).status == :pending_confirmation
+
+      view
+      |> element("#decline_invitation_modal-confirm")
       |> render_click()
 
       assert Oli.Repo.get_by!(Oli.Authoring.Authors.AuthorProject,

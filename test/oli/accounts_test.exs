@@ -1426,6 +1426,38 @@ defmodule Oli.AccountsTest do
              )
     end
 
+    test "lists user invitations ordered by section title" do
+      user = insert(:user)
+      first_project = insert(:project)
+      second_project = insert(:project)
+      first_section = insert(:section, base_project: first_project, title: "Zebra Section")
+      second_section = insert(:section, base_project: second_project, title: "Alpha Section")
+
+      insert(:enrollment, user: user, section: first_section, status: :pending_confirmation)
+      insert(:enrollment, user: user, section: second_section, status: :pending_confirmation)
+
+      insert(:user_token, user: user, context: "enrollment_invitation:#{first_section.slug}")
+      insert(:user_token, user: user, context: "enrollment_invitation:#{second_section.slug}")
+
+      assert [%{title: "Alpha Section"}, %{title: "Zebra Section"}] =
+               Accounts.list_pending_user_invitations(user.id)
+    end
+
+    test "does not accept a user invitation after its pending status changes" do
+      user = insert(:user)
+      section = insert(:section)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      Repo.update!(Ecto.Changeset.change(enrollment, status: :rejected))
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_user_invitation(user, enrollment)
+
+      assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status == :rejected
+    end
+
     test "declines a user invitation and keeps its token linked to the rejected enrollment" do
       project = insert(:project)
       section = insert(:section, base_project: project)
@@ -1447,6 +1479,21 @@ defmodule Oli.AccountsTest do
       assert Accounts.get_user_token_by_enrollment_invitation_token(
                Base.url_encode64("rejected-user-invitation", padding: false)
              )
+    end
+
+    test "does not decline a user invitation after its pending status changes" do
+      user = insert(:user)
+      section = insert(:section)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      Repo.update!(Ecto.Changeset.change(enrollment, status: :enrolled))
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_decline_user_invitation(user, enrollment)
+
+      assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status == :enrolled
     end
 
     test "accepts an author invitation and keeps its token linked to the redeemed project" do
@@ -1485,6 +1532,57 @@ defmodule Oli.AccountsTest do
              )
     end
 
+    test "lists author invitations ordered by project title" do
+      author = insert(:author)
+      first_project = insert(:project, title: "Zebra Project")
+      second_project = insert(:project, title: "Alpha Project")
+
+      insert(:author_project,
+        author_id: author.id,
+        project_id: first_project.id,
+        status: :pending_confirmation
+      )
+
+      insert(:author_project,
+        author_id: author.id,
+        project_id: second_project.id,
+        status: :pending_confirmation
+      )
+
+      insert(:author_token,
+        author: author,
+        context: "collaborator_invitation:#{first_project.slug}"
+      )
+
+      insert(:author_token,
+        author: author,
+        context: "collaborator_invitation:#{second_project.slug}"
+      )
+
+      assert [%{title: "Alpha Project"}, %{title: "Zebra Project"}] =
+               Accounts.list_pending_author_invitations(author.id)
+    end
+
+    test "does not accept an author invitation after its pending status changes" do
+      author = insert(:author)
+      project = insert(:project)
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      Repo.update!(Ecto.Changeset.change(author_project, status: :rejected))
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_author_invitation(author, author_project)
+
+      assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id).status ==
+               :rejected
+    end
+
     test "declines an author invitation and keeps its token linked to the rejected project" do
       author = insert(:author)
       project = insert(:project)
@@ -1512,6 +1610,26 @@ defmodule Oli.AccountsTest do
       assert Accounts.get_author_token_by_collaboration_invitation_token(
                Base.url_encode64("rejected-author-invitation", padding: false)
              )
+    end
+
+    test "does not decline an author invitation after its pending status changes" do
+      author = insert(:author)
+      project = insert(:project)
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      Repo.update!(Ecto.Changeset.change(author_project, status: :accepted))
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_decline_author_invitation(author, author_project)
+
+      assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id).status ==
+               :accepted
     end
   end
 

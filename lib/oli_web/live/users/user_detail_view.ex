@@ -76,7 +76,7 @@ defmodule OliWeb.Users.UsersDetailView do
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
-           pending_invitations: pending_invitations(user.id),
+           decline_invitation_id: nil,
            institution: institution,
            credentials_has_google: has_google,
            credentials_label: DetailViewHelpers.credentials_label(user, has_google),
@@ -84,7 +84,10 @@ defmodule OliWeb.Users.UsersDetailView do
            user_name: user.name,
            user_header_name: DetailViewHelpers.formatted_header_name(user),
            password_reset_link: ""
-         )}
+         )
+         |> assign_async(:pending_invitations, fn ->
+           {:ok, %{pending_invitations: pending_invitations(user.id)}}
+         end)}
     end
   end
 
@@ -300,11 +303,16 @@ defmodule OliWeb.Users.UsersDetailView do
           <h4>Actions</h4>
           <div class="text-Text-text-low-alpha">Actions that can be taken for this user</div>
           <div class="mt-4 w-full max-w-[535px]">
-            <div :if={@pending_invitations != []} class="mb-4">
-              <OliWeb.Users.PendingInvitations.render
-                invitations={@pending_invitations}
-                id="user_pending_invitations"
-              />
+            <div class="mb-4">
+              <.async_result :let={invitations} assign={@pending_invitations}>
+                <:loading>Loading pending invitations...</:loading>
+                <:failed :let={_reason}>Unable to load pending invitations.</:failed>
+                <OliWeb.Users.PendingInvitations.render
+                  invitations={invitations}
+                  id="user_pending_invitations"
+                  decline_invitation_id={@decline_invitation_id}
+                />
+              </.async_result>
             </div>
             <%= if @user.independent_learner do %>
               <Actions.render
@@ -353,12 +361,23 @@ defmodule OliWeb.Users.UsersDetailView do
       {:ok, _enrollment} ->
         {:noreply,
          socket
-         |> assign(pending_invitations: pending_invitations(socket.assigns.user.id))
+         |> refresh_pending_invitations()
          |> put_flash(:info, "Invitation accepted.")}
 
       _ ->
         {:noreply, put_flash(socket, :error, "Invitation could not be accepted.")}
     end
+  end
+
+  def handle_event("show_decline_invitation_modal", %{"id" => id}, socket) do
+    case parse_id(id) do
+      {enrollment_id, ""} -> {:noreply, assign(socket, :decline_invitation_id, enrollment_id)}
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_decline_invitation", _params, socket) do
+    {:noreply, assign(socket, :decline_invitation_id, nil)}
   end
 
   def handle_event("decline_invitation", %{"id" => id}, socket) do
@@ -368,7 +387,8 @@ defmodule OliWeb.Users.UsersDetailView do
       {:ok, _enrollment} ->
         {:noreply,
          socket
-         |> assign(pending_invitations: pending_invitations(socket.assigns.user.id))
+         |> refresh_pending_invitations()
+         |> assign(:decline_invitation_id, nil)
          |> put_flash(:info, "Invitation declined.")}
 
       _ ->
@@ -641,11 +661,15 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   defp enrollment_from_id(id) do
-    case Integer.parse(id) do
+    case parse_id(id) do
       {enrollment_id, ""} -> Repo.get(Enrollment, enrollment_id)
       _ -> nil
     end
   end
+
+  defp parse_id(id) when is_integer(id), do: {id, ""}
+  defp parse_id(id) when is_binary(id), do: Integer.parse(id)
+  defp parse_id(_id), do: :error
 
   defp pending_invitations(user_id) do
     Accounts.list_pending_user_invitations(user_id)
@@ -661,6 +685,14 @@ defmodule OliWeb.Users.UsersDetailView do
           :content
         )
       )
+    end)
+  end
+
+  defp refresh_pending_invitations(socket) do
+    user_id = socket.assigns.user.id
+
+    assign_async(socket, :pending_invitations, fn ->
+      {:ok, %{pending_invitations: pending_invitations(user_id)}}
     end)
   end
 

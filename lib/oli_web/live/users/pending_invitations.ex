@@ -1,11 +1,14 @@
 defmodule OliWeb.Users.PendingInvitations do
   use OliWeb, :html
 
+  alias OliWeb.Components.Modal
   alias OliWeb.Common.SortableTable.StripedTable
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias Phoenix.LiveView.JS
 
   attr :invitations, :list, required: true
   attr :id, :string, default: "pending_invitations"
+  attr :decline_invitation_id, :integer, default: nil
 
   def render(assigns) do
     invitations =
@@ -36,6 +39,21 @@ defmodule OliWeb.Users.PendingInvitations do
           </caption>
         </:caption>
       </StripedTable.render>
+
+      <Modal.modal
+        id="decline_invitation_modal"
+        wrapper_class="w-full max-w-md p-4 sm:p-6 lg:py-8"
+        on_cancel={JS.push("cancel_decline_invitation")}
+        on_confirm={
+          JS.push("decline_invitation", value: %{id: @decline_invitation_id})
+          |> Modal.hide_modal("decline_invitation_modal")
+        }
+      >
+        <:title>Decline invitation</:title>
+        Are you sure you want to decline this invitation?
+        <:cancel>Cancel</:cancel>
+        <:confirm>Decline</:confirm>
+      </Modal.modal>
     </div>
     """
   end
@@ -87,7 +105,10 @@ defmodule OliWeb.Users.PendingInvitations do
       variant={:outline}
       size={:xs}
       class="ml-2 !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted"
-      phx-click="decline_invitation"
+      phx-click={
+        JS.push("show_decline_invitation_modal")
+        |> Modal.show_modal("decline_invitation_modal")
+      }
       phx-value-id={@invitation.id}
     >
       Decline
