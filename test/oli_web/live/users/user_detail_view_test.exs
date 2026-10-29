@@ -55,7 +55,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       independent_student: user
     } do
       project = insert(:project, title: "Pending Course")
-      section = insert(:section, base_project: project)
+      section = insert(:section, base_project: project, title: "Pending Section")
 
       enrollment =
         insert(:enrollment, user: user, section: section, status: :pending_confirmation)
@@ -73,12 +73,12 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       {:ok, view, _html} = live(conn)
 
-      assert has_element?(view, "#user_pending_invitations", "Pending Course")
+      assert has_element?(view, "#user_pending_invitations", "Pending Section")
 
       assert has_element?(
                view,
                "#user_pending_invitations a[href='/sections/#{section.slug}/student_dashboard/#{user.id}/content']",
-               "Pending Course"
+               "Pending Section"
              )
 
       view

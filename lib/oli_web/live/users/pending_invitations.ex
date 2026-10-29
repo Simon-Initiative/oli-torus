@@ -1,59 +1,97 @@
 defmodule OliWeb.Users.PendingInvitations do
   use OliWeb, :html
 
+  alias OliWeb.Common.SortableTable.StripedTable
+  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+
   attr :invitations, :list, required: true
   attr :id, :string, default: "pending_invitations"
 
   def render(assigns) do
+    invitations =
+      Enum.map(assigns.invitations, fn invitation ->
+        Map.put(invitation, :pending_invitation_id, "pending-invitation-#{invitation.id}")
+      end)
+
+    {:ok, table_model} =
+      SortableTableModel.new(
+        rows: invitations,
+        column_specs: column_specs(),
+        event_suffix: "",
+        id_field: :pending_invitation_id
+      )
+
+    assigns = Phoenix.Component.assign(assigns, :table_model, table_model)
+
     ~H"""
     <div :if={@invitations != []} id={@id} class="w-full overflow-x-auto">
-      <table class="w-full border-collapse border border-Border-border-default text-xs">
-        <caption class="border border-b-0 border-Border-border-default p-2 text-left font-semibold">
-          Pending Invitations
-        </caption>
-        <thead class="sr-only">
-          <tr>
-            <th scope="col">Invitation</th>
-            <th scope="col">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            :for={invitation <- @invitations}
-            id={"pending-invitation-#{invitation.id}"}
-            class="bg-Table-table-row-1"
-          >
-            <td class="border-t border-Border-border-default p-2">
-              <.link
-                navigate={invitation.path}
-                class="font-semibold text-Text-text-link"
-              >
-                {invitation.title}
-              </.link>
-            </td>
-            <td class="border-t border-Border-border-default p-2 text-right">
-              <.button
-                variant={:primary}
-                size={:xs}
-                phx-click="accept_invitation"
-                phx-value-id={invitation.id}
-              >
-                Accept
-              </.button>
-              <.button
-                variant={:outline}
-                size={:xs}
-                class="ml-2 !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted"
-                phx-click="decline_invitation"
-                phx-value-id={invitation.id}
-              >
-                Decline
-              </.button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <StripedTable.render
+        model={@table_model}
+        sort=""
+        additional_table_class="border-collapse text-xs"
+      >
+        <:caption>
+          <caption class="border border-b-0 border-Border-border-default p-2 text-left font-semibold">
+            Pending Invitations
+          </caption>
+        </:caption>
+      </StripedTable.render>
     </div>
+    """
+  end
+
+  defp column_specs do
+    [
+      %ColumnSpec{
+        name: :title,
+        label: "Invitation",
+        sortable: false,
+        th_class: "sr-only",
+        td_class: "border-t",
+        render_fn: &render_invitation/3
+      },
+      %ColumnSpec{
+        name: :actions,
+        label: "Actions",
+        sortable: false,
+        th_class: "sr-only",
+        td_class: "border-t text-right",
+        render_fn: &render_actions/3
+      }
+    ]
+  end
+
+  defp render_invitation(assigns, invitation, _column_spec) do
+    assigns = Map.put(assigns, :invitation, invitation)
+
+    ~H"""
+    <.link navigate={@invitation.path} class="font-semibold text-Text-text-link">
+      {@invitation.title}
+    </.link>
+    """
+  end
+
+  defp render_actions(assigns, invitation, _column_spec) do
+    assigns = Map.put(assigns, :invitation, invitation)
+
+    ~H"""
+    <.button
+      variant={:primary}
+      size={:xs}
+      phx-click="accept_invitation"
+      phx-value-id={@invitation.id}
+    >
+      Accept
+    </.button>
+    <.button
+      variant={:outline}
+      size={:xs}
+      class="ml-2 !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted"
+      phx-click="decline_invitation"
+      phx-value-id={@invitation.id}
+    >
+      Decline
+    </.button>
     """
   end
 end

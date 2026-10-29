@@ -1549,8 +1549,8 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Lists pending section invitations for a user, including the project associated
-  with each invited section.
+  Lists pending section invitations for a user, including the course section
+  associated with each invitation.
   """
   def list_pending_user_invitations(user_id) do
     from(e in Enrollment,
@@ -1567,11 +1567,11 @@ defmodule Oli.Accounts do
       distinct: s.id,
       select: %{
         id: e.id,
-        title: p.title,
+        title: s.title,
         project_slug: p.slug,
         section_slug: s.slug
       },
-      order_by: [asc: p.title]
+      order_by: [asc: s.title]
     )
     |> Repo.all()
   end

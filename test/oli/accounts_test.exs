@@ -1395,7 +1395,7 @@ defmodule Oli.AccountsTest do
   describe "admin invitation actions" do
     test "accepts a user invitation and keeps its token linked to the redeemed enrollment" do
       project = insert(:project, title: "Admin Course")
-      section = insert(:section, base_project: project)
+      section = insert(:section, base_project: project, title: "Admin Section")
       user = insert(:user, invitation_accepted_at: nil, email_confirmed_at: nil)
 
       enrollment =
@@ -1407,7 +1407,7 @@ defmodule Oli.AccountsTest do
         non_hashed_token: "user-invitation"
       )
 
-      assert [%{id: enrollment_id, title: "Admin Course"}] =
+      assert [%{id: enrollment_id, title: "Admin Section"}] =
                Accounts.list_pending_user_invitations(user.id)
 
       assert enrollment_id == enrollment.id
