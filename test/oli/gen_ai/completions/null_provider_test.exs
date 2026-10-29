@@ -9,7 +9,7 @@ defmodule Oli.GenAI.Completions.NullProviderTest do
     test "that it generates the static text" do
       messages = [Message.new(:system, "Hello")]
       functions = []
-      registered_model = %RegisteredModel{name: "test_model", provider: :null}
+      registered_model = %RegisteredModel{name: "test_model"}
 
       assert NullProvider.generate(messages, functions, registered_model) ==
                {:ok,
@@ -30,7 +30,7 @@ defmodule Oli.GenAI.Completions.NullProviderTest do
     test "that it streams the static test" do
       messages = [Message.new(:system, "Hello")]
       functions = []
-      registered_model = %RegisteredModel{name: "test_model", provider: :null}
+      registered_model = %RegisteredModel{name: "test_model"}
 
       stream_fn = fn _chunk ->
         :ok

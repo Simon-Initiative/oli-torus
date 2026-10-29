@@ -17,26 +17,24 @@ defmodule Oli.GenAITest do
 
   describe "registered models" do
     test "registered models crud" do
+      {:ok, provider} = GenAI.create_provider(%{name: "Test", adapter: :null})
+
       {:ok, model} =
         GenAI.create_registered_model(%{
+          provider_id: provider.id,
           name: "Test Model",
-          provider: :open_ai,
           model: "gpt-3.5-turbo",
-          url_template: "https://api.openai.com/v1/engines/{model}/completions",
-          api_key: "test_api_key",
           timeout: 8000,
           recv_timeout: 60000
         })
 
       model = Oli.Repo.get(Oli.GenAI.Completions.RegisteredModel, model.id)
       assert model.name == "Test Model"
-      assert model.provider == :open_ai
+      assert model.provider_id == provider.id
       assert model.model == "gpt-3.5-turbo"
-      assert model.url_template == "https://api.openai.com/v1/engines/{model}/completions"
-      assert model.api_key == "test_api_key"
+      refute Map.has_key?(model, :api_key)
       assert model.timeout == 8000
       assert model.recv_timeout == 60000
-      assert model.pool_class == :slow
       assert model.max_concurrent == 95
       assert model.routing_breaker_error_rate_threshold == 0.2
       assert model.routing_breaker_429_threshold == 0.1
@@ -47,13 +45,11 @@ defmodule Oli.GenAITest do
       m = GenAI.registered_models() |> Enum.reverse() |> hd
       assert m.id == model.id
       assert m.name == "Test Model"
-      assert m.provider == :open_ai
+      assert m.provider_id == provider.id
       assert m.model == "gpt-3.5-turbo"
-      assert m.url_template == "https://api.openai.com/v1/engines/{model}/completions"
-      assert m.api_key == "test_api_key"
+      refute Map.has_key?(m, :secondary_api_key)
       assert m.timeout == 8000
       assert m.recv_timeout == 60000
-      assert m.pool_class == :slow
       assert m.max_concurrent == 95
       assert m.routing_breaker_error_rate_threshold == 0.2
       assert m.routing_breaker_429_threshold == 0.1
@@ -89,7 +85,10 @@ defmodule Oli.GenAITest do
       updated_model = Oli.Repo.get(Oli.GenAI.Completions.RegisteredModel, updated_model.id)
       assert updated_model.name == "Updated Model"
 
-      {:ok, _} = GenAI.delete_registered_model(updated_model)
+      assert {:ok, %Oli.GenAI.Completions.RegisteredModel{id: deleted_id}} =
+               GenAI.delete_registered_model(updated_model)
+
+      assert deleted_id == updated_model.id
       assert Oli.Repo.get(Oli.GenAI.Completions.RegisteredModel, updated_model.id) == nil
     end
   end
@@ -118,13 +117,13 @@ defmodule Oli.GenAITest do
     end
 
     test "feature config crud", %{section: section, section2: section2} do
+      {:ok, provider} = GenAI.create_provider(%{name: "Test", adapter: :null})
+
       {:ok, model} =
         GenAI.create_registered_model(%{
+          provider_id: provider.id,
           name: "Test Model",
-          provider: :open_ai,
           model: "gpt-3.5-turbo",
-          url_template: "https://api.openai.com/v1/engines/{model}/completions",
-          api_key: "test_api_key",
           timeout: 8000,
           recv_timeout: 60000
         })

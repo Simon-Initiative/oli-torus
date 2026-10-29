@@ -5,14 +5,11 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
 
   schema "registered_models" do
     field :name, :string
-    field :provider, Ecto.Enum, values: [:null, :open_ai, :claude]
     field :model, :string
-    field :url_template, :string
-    field :api_key, Oli.Encrypted.Binary
-    field :secondary_api_key, Oli.Encrypted.Binary
+    belongs_to :configured_provider, Oli.GenAI.Provider, foreign_key: :provider_id
+    field :health_check, :boolean, default: false
     field :timeout, :integer, default: 8000
     field :recv_timeout, :integer, default: 60000
-    field :pool_class, Ecto.Enum, values: [:fast, :slow], default: :slow
     field :max_concurrent, :integer, default: 95
     field :routing_breaker_error_rate_threshold, :float, default: 0.2
     field :routing_breaker_429_threshold, :float, default: 0.1
@@ -26,19 +23,16 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
     timestamps(type: :utc_datetime)
   end
 
-  @doc false
+  @doc "Validates model inference settings; connection credentials belong to the associated Provider."
   def changeset(registered_model, attrs) do
     registered_model
     |> cast(attrs, [
       :name,
-      :provider,
+      :provider_id,
+      :health_check,
       :model,
-      :url_template,
-      :api_key,
-      :secondary_api_key,
       :timeout,
       :recv_timeout,
-      :pool_class,
       :max_concurrent,
       :routing_breaker_error_rate_threshold,
       :routing_breaker_429_threshold,
@@ -47,20 +41,20 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
       :routing_half_open_probe_count
     ])
     |> validate_required([
+      :provider_id,
       :name,
-      :provider,
       :model,
-      :url_template,
-      :api_key,
       :timeout,
       :recv_timeout,
-      :pool_class,
       :routing_breaker_error_rate_threshold,
       :routing_breaker_429_threshold,
       :routing_breaker_latency_p95_ms,
       :routing_open_cooldown_ms,
       :routing_half_open_probe_count
     ])
+    |> validate_number(:timeout, greater_than: 0)
+    |> validate_number(:recv_timeout, greater_than: 0)
+    |> foreign_key_constraint(:provider_id)
     |> validate_number(:max_concurrent, greater_than_or_equal_to: 0)
     |> validate_number(:routing_breaker_error_rate_threshold,
       greater_than_or_equal_to: 0.0,

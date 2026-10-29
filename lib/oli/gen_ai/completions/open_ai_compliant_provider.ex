@@ -1,71 +1,7 @@
 defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
-  alias OpenAI.Config
   require Logger
 
-  @moduledoc """
-  An OpenAI compliant provider for chat completions. Note that this provider
-  is a bit of a "clone and own" of internal code from the :openai library. That library
-  has a limitation in that you cannot actually override the base URL, which makes it
-  impossible to use with custom OpenAI compliant providers. This provider is
-  designed to be used with OpenAI itself AND compliant models that support the
-  OpenAI chat completions API.
-  """
-
-  import HTTPoison, only: [post: 4]
-
-  @behaviour Oli.GenAI.Completions.Provider
-
-  alias Oli.GenAI.Completions.RegisteredModel
-
-  def generate(messages, functions, %RegisteredModel{model: model} = registered_model, opts \\ []) do
-    config = config(:sync, registered_model)
-    params = completion_params(model, messages, functions, opts)
-
-    case api_post(config.api_url <> "/v1/chat/completions", params, config) do
-      {:ok, response} ->
-        extract_content(response)
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  def stream(
-        messages,
-        functions,
-        %RegisteredModel{model: model} = registered_model,
-        response_handler_fn
-      ) do
-    config = config(:async, registered_model)
-    params = completion_params(model, messages, functions, stream: true)
-
-    case api_post(
-           config.api_url <> "/v1/chat/completions",
-           params,
-           config
-         ) do
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, reason}
-
-      stream ->
-        stream
-        |> Elixir.Stream.transform(:ok, fn chunk, :ok ->
-          case process_stream_chunk(chunk) do
-            {:error} ->
-              response_handler_fn.({:error, stream_error_details(chunk)})
-              {:halt, {:error}}
-
-            :ignore ->
-              {[], :ok}
-
-            other ->
-              response_handler_fn.(other)
-              {[], :ok}
-          end
-        end)
-        |> Elixir.Stream.run()
-    end
-  end
+  @moduledoc "OpenAI request encoding, Provider headers and SSE decoding shared by managed transport and probes."
 
   def process_stream_chunk(chunk) do
     case chunk["choices"] do
@@ -142,53 +78,9 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     end)
   end
 
-  def process_response_body(body) do
-    try do
-      {status, res} = Jason.decode(body)
-
-      case status do
-        :ok ->
-          {:ok, res}
-
-        :error ->
-          body
-      end
-    rescue
-      _ ->
-        body
-    end
-  end
-
-  def handle_response(httpoison_response) do
-    case httpoison_response do
-      {:ok, %HTTPoison.Response{status_code: 200, body: {:ok, body}}} ->
-        res =
-          body
-          |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
-          |> Map.new()
-
-        {:ok, normalize_response(res)}
-
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, normalize_response(body)}
-
-      {:ok, %HTTPoison.Response{body: {:ok, body}}} ->
-        {:error, body}
-
-      {:ok, %HTTPoison.Response{body: {:error, body}}} ->
-        {:error, body}
-
-      # html error responses
-      {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
-        {:error, %{status_code: status_code, body: body}}
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, reason}
-    end
-  end
-
+  @doc "Adds only the selected Provider organization key, when configured."
   def add_organization_header(headers, config) do
-    org_key = config.organization_key || Config.org_key()
+    org_key = config.organization_key
 
     if org_key do
       [{"OpenAI-Organization", org_key} | headers]
@@ -207,6 +99,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     end
   end
 
+  @doc "Builds probe headers from explicit Provider credentials."
   def request_headers(config) do
     [
       bearer(config),
@@ -218,120 +111,6 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
 
   def bearer(%{api_key: api_key}) when is_binary(api_key) and byte_size(api_key) > 0,
     do: {"Authorization", "Bearer #{api_key}"}
-
-  def request_options(config), do: config.http_options || Config.http_options()
-
-  def stream_request_options(config) do
-    http_options = request_options(config)
-
-    case http_options[:stream_to] do
-      nil ->
-        http_options ++ [stream_to: self()]
-
-      _ ->
-        http_options
-    end
-  end
-
-  def api_post(url, params \\ [], config) do
-    body =
-      params
-      |> Enum.into(%{})
-      |> Jason.encode!()
-
-    case params |> Keyword.get(:stream, false) do
-      true ->
-        stream_response(fn ->
-          url
-          |> post(body, request_headers(config), stream_request_options(config))
-        end)
-
-      false ->
-        url
-        |> post(body, request_headers(config), request_options(config))
-        |> handle_response()
-    end
-  end
-
-  defp config(:sync, %RegisteredModel{} = registered_model) do
-    url =
-      Oli.GenAI.Completions.Utils.realize_url(registered_model.url_template, %{
-        "model" => registered_model.model,
-        "api_key" => registered_model.api_key,
-        "secondary_api_key" => registered_model.secondary_api_key
-      })
-
-    %OpenAI.Config{
-      http_options: [
-        timeout: registered_model.timeout,
-        recv_timeout: registered_model.recv_timeout,
-        hackney: [pool: Oli.GenAI.HackneyPool.pool_name(registered_model)]
-      ],
-      api_key: registered_model.api_key,
-      organization_key: registered_model.secondary_api_key,
-      api_url: url
-    }
-  end
-
-  defp config(:async, %RegisteredModel{} = registered_model) do
-    url =
-      Oli.GenAI.Completions.Utils.realize_url(registered_model.url_template, %{
-        "model" => registered_model.model,
-        "api_key" => registered_model.api_key,
-        "secondary_api_key" => registered_model.secondary_api_key
-      })
-
-    %OpenAI.Config{
-      http_options: [
-        timeout: registered_model.timeout,
-        recv_timeout: registered_model.recv_timeout,
-        stream_to: self(),
-        async: :once,
-        hackney: [pool: Oli.GenAI.HackneyPool.pool_name(registered_model)]
-      ],
-      api_key: registered_model.api_key,
-      organization_key: registered_model.secondary_api_key,
-      api_url: url
-    }
-  end
-
-  # Normalize OpenAI response to consistent format
-  defp normalize_response(response) when is_binary(response) do
-    case Jason.decode(response) do
-      {:ok, parsed} -> normalize_response(parsed)
-      {:error, _} -> response
-    end
-  end
-
-  defp normalize_response(response) when is_map(response), do: response
-
-  defp normalize_response(response), do: response
-
-  defp extract_content(response) do
-    response = decode_response(response)
-
-    case response do
-      %{"choices" => [%{"message" => %{"content" => content}} | _]}
-      when is_binary(content) ->
-        {:ok, content}
-
-      %{choices: [%{message: %{content: content}} | _]} when is_binary(content) ->
-        {:ok, content}
-
-      _ ->
-        Logger.warning("OpenAI response normalization failed error_category=unexpected_response")
-        {:error, :unexpected_response}
-    end
-  end
-
-  defp decode_response(response) when is_binary(response) do
-    case Jason.decode(response) do
-      {:ok, parsed} -> parsed
-      {:error, _} -> response
-    end
-  end
-
-  defp decode_response(response), do: response
 
   defp encode_standard_message(message) do
     message
@@ -449,151 +228,6 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     {data, rest}
   end
 
-  defp stream_response(start_fun) do
-    Stream.resource(
-      start_fun,
-      fn
-        {:error, %HTTPoison.Error{} = error} ->
-          {
-            [
-              %{
-                "status" => :error,
-                "reason" => error.reason
-              }
-            ],
-            error
-          }
-
-        %HTTPoison.Error{} = error ->
-          {:halt, error}
-
-        {:ok, res = %HTTPoison.AsyncResponse{id: id}} ->
-          handle_stream_event(%{
-            response: res,
-            id: id,
-            buffer: "",
-            error_status_code: nil,
-            error_body: ""
-          })
-
-        res = %HTTPoison.AsyncResponse{id: id} ->
-          handle_stream_event(%{
-            response: res,
-            id: id,
-            buffer: "",
-            error_status_code: nil,
-            error_body: ""
-          })
-
-        %{halted: true} = state ->
-          {:halt, state}
-
-        %{response: %HTTPoison.AsyncResponse{}, id: _id, buffer: _buffer} = state ->
-          handle_stream_event(state)
-      end,
-      fn
-        %{id: id} ->
-          :hackney.stop_async(id)
-
-          :ok
-
-        _ ->
-          :ok
-      end
-    )
-  end
-
-  defp handle_stream_event(
-         %{
-           response: res,
-           id: id,
-           buffer: buffer,
-           error_status_code: error_status_code
-         } = state
-       ) do
-    receive do
-      %HTTPoison.AsyncStatus{id: ^id, code: 200} = message ->
-        HTTPoison.stream_next(res)
-        advance_stream_state(state, process_async_stream_message(message, buffer))
-
-      %HTTPoison.AsyncStatus{id: ^id, code: code} ->
-        HTTPoison.stream_next(res)
-        {[], %{state | error_status_code: code, error_body: ""}}
-
-      %HTTPoison.AsyncHeaders{id: ^id} = message ->
-        HTTPoison.stream_next(res)
-
-        case error_status_code do
-          nil ->
-            advance_stream_state(state, process_async_stream_message(message, buffer))
-
-          _ ->
-            {[], state}
-        end
-
-      %HTTPoison.AsyncChunk{id: ^id} = message ->
-        HTTPoison.stream_next(res)
-
-        case error_status_code do
-          nil ->
-            advance_stream_state(state, process_async_stream_message(message, buffer))
-
-          _ ->
-            {[], accumulate_error_body(state, message.chunk)}
-        end
-
-      %HTTPoison.AsyncEnd{id: ^id} = message ->
-        case error_status_code do
-          nil ->
-            advance_stream_state(state, process_async_stream_message(message, buffer))
-
-          code ->
-            advance_stream_state(
-              state,
-              {:emit_and_halt, [status_error_chunk(code, state.error_body)]}
-            )
-        end
-
-      %HTTPoison.Error{id: ^id} = message ->
-        advance_stream_state(state, process_async_stream_message(message, buffer))
-    end
-  end
-
-  @doc false
-  def process_async_stream_message(%HTTPoison.AsyncStatus{code: 200}, buffer) do
-    {:continue, [], buffer}
-  end
-
-  def process_async_stream_message(%HTTPoison.AsyncStatus{code: code}, buffer) do
-    {:continue, [status_error_chunk(code)], buffer}
-  end
-
-  def process_async_stream_message(%HTTPoison.AsyncHeaders{}, buffer) do
-    {:continue, [], buffer}
-  end
-
-  def process_async_stream_message(%HTTPoison.AsyncChunk{chunk: chunk}, buffer) do
-    {data, next_buffer} = decode_stream_chunk(buffer, chunk)
-    {:continue, data, next_buffer}
-  end
-
-  def process_async_stream_message(%HTTPoison.AsyncEnd{}, buffer) do
-    case finalize_stream_buffer(buffer) do
-      [] ->
-        {:halt}
-
-      {:error, reason} ->
-        {:emit_and_halt, [reason_error_chunk(reason)]}
-
-      data ->
-        {:emit_and_halt, data}
-    end
-  end
-
-  def process_async_stream_message(%HTTPoison.Error{reason: reason}, _buffer) do
-    {:emit_and_halt, [reason_error_chunk(reason)]}
-  end
-
   defp split_sse_events(data) do
     parts = String.split(data, "\n\n")
 
@@ -614,42 +248,6 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     event
     |> extract_sse_payload_lines()
     |> decode_sse_payload_lines()
-  end
-
-  defp advance_stream_state(state, {:continue, data, next_buffer}) do
-    {data, %{state | buffer: next_buffer}}
-  end
-
-  defp advance_stream_state(state, {:emit_and_halt, data}) do
-    {data, state |> Map.put(:buffer, "") |> Map.put(:halted, true)}
-  end
-
-  defp advance_stream_state(state, {:halt}) do
-    {:halt, state}
-  end
-
-  defp finalize_stream_buffer(buffer) do
-    case String.trim(buffer) do
-      "" ->
-        []
-
-      remaining ->
-        case extract_sse_payload_lines(remaining) do
-          [] ->
-            {:error, :incomplete_sse_event}
-
-          ["[DONE]"] ->
-            []
-
-          payload_lines ->
-            try do
-              decode_sse_payload_lines(payload_lines)
-            rescue
-              Jason.DecodeError ->
-                {:error, :incomplete_sse_event}
-            end
-        end
-    end
   end
 
   defp extract_sse_data_line("data:" <> rest) do
@@ -685,51 +283,4 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
         reraise error, __STACKTRACE__
     end
   end
-
-  defp reason_error_chunk(reason) do
-    %{
-      "status" => :error,
-      "reason" => reason,
-      "choices" => []
-    }
-  end
-
-  defp status_error_chunk(code) do
-    %{
-      "status" => :error,
-      "code" => code,
-      "choices" => []
-    }
-  end
-
-  defp status_error_chunk(code, body) do
-    %{
-      "status" => :error,
-      "code" => code,
-      "body" => body,
-      "choices" => []
-    }
-  end
-
-  defp accumulate_error_body(state, chunk) do
-    %{state | error_body: state.error_body <> chunk}
-  end
-
-  defp stream_error_details(%{"status" => :error} = chunk) do
-    status = Map.get(chunk, "code")
-
-    %{http_status: status, error_category: stream_error_category(status, Map.get(chunk, "body"))}
-  end
-
-  defp stream_error_details(_), do: %{error_category: :invalid_response}
-
-  defp stream_error_category(429, body) do
-    case Jason.decode(body || "") do
-      {:ok, %{"error" => %{"code" => "credit_balance_exhausted"}}} -> :insufficient_quota
-      _ -> :rate_limited
-    end
-  end
-
-  defp stream_error_category(status, _body) when is_integer(status), do: :http_error
-  defp stream_error_category(_, _body), do: :network_error
 end

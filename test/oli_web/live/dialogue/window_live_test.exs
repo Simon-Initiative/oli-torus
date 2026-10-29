@@ -2,6 +2,10 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
+  # LiveView teardown can still finish a queued persistence operation after the
+  # test process exits. Keep ownership alive until its registered cleanup runs.
+  @moduletag sandbox_owner: true
+
   import Ecto.Query
   import Oli.Factory
   import Phoenix.LiveViewTest
@@ -570,6 +574,9 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
       } = socket_assigns(view)
 
       assert second_watchdog != first_watchdog
+      # Complete the queued continuation before the proxy's forceful teardown can
+      # interrupt its persistence query.
+      GenServer.stop(view.pid)
     end
 
     test "ignores dialogue events from a stale engagement", %{
@@ -672,7 +679,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
     %ServiceConfig{
       id: 1,
       name: "test-service-config",
-      primary_model: %RegisteredModel{id: 1, name: "null", provider: :null}
+      primary_model: %RegisteredModel{id: 1, name: "null"}
     }
   end
 end

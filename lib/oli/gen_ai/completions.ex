@@ -1,39 +1,40 @@
 defmodule Oli.GenAI.Completions do
-  @moduledoc """
-  This module provides a unified interface for chat completion from any registered
-  LLM model and provider.  This is only a chat completion inferface. There
-  is no state management and no automatic function calling, no automatic retry, etc.
+  @moduledoc "Completion execution using an explicitly selected Provider and transport."
 
-  Synchronous and asynchronous chat completion are supported via the
-  `generate` and `stream` functions.
-  """
+  alias Oli.GenAI.{Provider, RoutingPlan}
+  alias Oli.GenAI.Completions.{ManagedOpenAI, NullProvider, RegisteredModel}
 
-  alias Oli.GenAI.Completions.RegisteredModel
-
-  def generate(messages, functions, %RegisteredModel{} = registered_model, opts \\ []) do
-    get_provider(registered_model)
-    |> apply(:generate, [messages, functions, registered_model, opts])
+  @doc "Generates a completion through the selected Provider transport."
+  def generate(messages, functions, %RegisteredModel{} = model, opts \\ []) do
+    request(:generate, messages, functions, model, nil, opts)
   end
 
-  def stream(messages, functions, %RegisteredModel{} = registered_model, response_handler_fn) do
-    get_provider(registered_model)
-    |> apply(:stream, [messages, functions, registered_model, response_handler_fn])
+  @doc "Streams a completion through the selected Provider transport."
+  def stream(messages, functions, %RegisteredModel{} = model, handler, opts \\ []) do
+    request(:stream, messages, functions, model, handler, opts)
   end
 
-  def validate_registered_model(%RegisteredModel{provider: :null}), do: :ok
+  defp request(mode, messages, functions, model, handler, opts) do
+    case Keyword.get(opts, :transport_context) do
+      %RoutingPlan{provider: %Provider{enabled: false}} ->
+        {:error, :provider_ineligible}
 
-  def validate_registered_model(%RegisteredModel{api_key: api_key})
-      when is_binary(api_key) and byte_size(api_key) > 0,
-      do: :ok
+      %RoutingPlan{provider: %Provider{adapter: :null}, selected_model: ^model} ->
+        case mode do
+          :generate -> NullProvider.generate(messages, functions, model, opts)
+          :stream -> NullProvider.stream(messages, functions, model, handler)
+        end
 
-  def validate_registered_model(%RegisteredModel{}),
-    do: {:error, {:invalid_model_configuration, :missing_api_key}}
+      %RoutingPlan{provider: %Provider{adapter: :open_ai}, selected_model: ^model, pool: pool} =
+          plan
+      when is_pid(pool) ->
+        ManagedOpenAI.request(mode, messages, functions, plan, handler, opts)
 
-  defp get_provider(%RegisteredModel{} = registered_model) do
-    case registered_model.provider do
-      :null -> Oli.GenAI.Completions.NullProvider
-      :open_ai -> Oli.GenAI.Completions.OpenAICompliantProvider
-      :claude -> Oli.GenAI.Completions.ClaudeProvider
+      %RoutingPlan{provider: %Provider{adapter: adapter}} when adapter != :open_ai ->
+        {:error, :unsupported_adapter}
+
+      _ ->
+        {:error, :missing_transport_context}
     end
   end
 end

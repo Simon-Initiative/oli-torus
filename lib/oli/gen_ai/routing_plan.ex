@@ -1,15 +1,14 @@
 defmodule Oli.GenAI.RoutingPlan do
-  @moduledoc """
-  Represents a routing decision for a single GenAI request.
-  """
-
+  @moduledoc "A non-reserving transport selection for one request attempt."
   defstruct [
     :selected_model,
+    :provider,
+    :service_config_id,
     :tier,
-    :fallback_models,
     :reason,
-    :admission,
     :request_type,
-    :pool_name
+    :pool,
+    :pool_name,
+    :signature
   ]
 end

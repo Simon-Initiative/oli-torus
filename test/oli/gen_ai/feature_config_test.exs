@@ -18,13 +18,13 @@ defmodule Oli.GenAI.FeatureConfigTest do
 
   describe "Ecto.Enum on :feature accepts :instructor_email" do
     setup do
+      {:ok, provider} = Oli.GenAI.create_provider(%{name: "Feature test", adapter: :null})
+
       {:ok, model} =
         Oli.GenAI.create_registered_model(%{
+          provider_id: provider.id,
           name: "instructor-email-test-model",
-          provider: :open_ai,
-          model: "gpt-test",
-          url_template: "https://api.example.com",
-          api_key: "test_api_key"
+          model: "gpt-test"
         })
 
       service_config =

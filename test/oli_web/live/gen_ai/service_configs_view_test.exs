@@ -1,7 +1,9 @@
+# Acceptance coverage: AC-018.
 defmodule OliWeb.GenAI.ServiceConfigsViewTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  import Ecto.Query
 
   alias Oli.GenAI
   alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig}
@@ -16,6 +18,45 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
       {:ok, _view, html} = live(conn, @route)
 
       assert html =~ "Routing Health"
+      assert html =~ "Maximum checked-out connections"
+      refute html =~ "Breaker"
+      refute html =~ "Latency p95"
+    end
+
+    test "empty configuration lists mount and deleting the last configuration stays usable", %{
+      conn: conn,
+      service_config: config
+    } do
+      Repo.delete_all(Oli.GenAI.FeatureConfig)
+      Repo.delete_all(from c in ServiceConfig, where: c.id != ^config.id)
+      {:ok, view, _} = live(conn, @route)
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
+      html = render_click(view, "delete", %{"id" => to_string(config.id)})
+      assert html =~ "No service configurations yet"
+      {:ok, _new_view, html} = live(conn, @route)
+      assert html =~ "No service configurations yet"
+    end
+
+    test "configuration tests report asynchronously without rendering raw content", %{
+      conn: conn,
+      service_config: config
+    } do
+      loaded = Oli.GenAI.Configuration.runtime_configuration(reconcile_probes: false)
+      manager = start_supervised!({Oli.GenAI.PoolManager, name: nil, namespace: make_ref()})
+      tasks = start_supervised!({Task.Supervisor, max_children: 1})
+
+      start_supervised!(
+        {Oli.GenAI.Runtime,
+         source: fn -> loaded end, pool_manager: manager, task_supervisor: tasks, enabled: false}
+      )
+
+      assert :ok = Oli.GenAI.Runtime.reconcile()
+      {:ok, view, _} = live(conn, @route)
+      render_click(view, "select", %{"id" => to_string(config.id)})
+      render_click(view, "test")
+      html = render_async(view)
+      assert html =~ "Test successful"
+      refute html =~ "No generation performed"
     end
 
     test "updates service config fields", %{conn: conn, service_config: service_config} do
@@ -31,7 +72,10 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
         "name" => service_config.name,
         "primary_model_id" => to_string(service_config.primary_model_id),
         "secondary_model_id" => to_string(service_config.secondary_model_id),
-        "backup_model_id" => ""
+        "backup_model_id" => "",
+        "primary_pool_capacity" => "7",
+        "secondary_pool_capacity" => "9",
+        "backup_pool_capacity" => "3"
       }
 
       view
@@ -44,17 +88,18 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
 
       updated = Repo.get!(ServiceConfig, service_config.id)
       assert updated.secondary_model_id == service_config.secondary_model_id
+      assert updated.primary_pool_capacity == 7 and updated.secondary_pool_capacity == 9
     end
   end
 
   defp create_service_config(_context) do
+    {:ok, provider} = GenAI.create_provider(%{name: "Test local Provider", adapter: :null})
+
     model =
       Repo.insert!(%RegisteredModel{
         name: "Test Model",
-        provider: :null,
+        provider_id: provider.id,
         model: "null",
-        url_template: "http://localhost",
-        api_key: "secret",
         timeout: 8000,
         recv_timeout: 60_000
       })
@@ -62,10 +107,8 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
     secondary_model =
       Repo.insert!(%RegisteredModel{
         name: "Secondary Model",
-        provider: :null,
+        provider_id: provider.id,
         model: "null-secondary",
-        url_template: "http://localhost",
-        api_key: "secret",
         timeout: 8000,
         recv_timeout: 60_000
       })

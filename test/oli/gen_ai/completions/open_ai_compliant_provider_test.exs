@@ -3,12 +3,11 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProviderTest do
 
   alias Oli.GenAI.Completions.Function
   alias Oli.GenAI.Completions.OpenAICompliantProvider
-  alias HTTPoison.{AsyncEnd, Error}
 
   describe "bearer/1" do
-    test "uses only the registered model API key" do
-      assert OpenAICompliantProvider.bearer(%{api_key: "registered-model-key"}) ==
-               {"Authorization", "Bearer registered-model-key"}
+    test "uses the supplied Provider API key" do
+      assert OpenAICompliantProvider.bearer(%{api_key: "provider-key"}) ==
+               {"Authorization", "Bearer provider-key"}
     end
 
     test "rejects a missing API key instead of falling back to global OpenAI configuration" do
@@ -472,39 +471,6 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProviderTest do
       chunk = %{"choices" => [%{"finish_reason" => "function_call"}]}
 
       assert OpenAICompliantProvider.process_stream_chunk(chunk) == {:error}
-    end
-  end
-
-  describe "process_async_stream_message/2" do
-    test "emits an error chunk and halts on mid-stream transport errors" do
-      message = %Error{id: make_ref(), reason: :closed}
-
-      assert OpenAICompliantProvider.process_async_stream_message(message, "") ==
-               {:emit_and_halt, [%{"choices" => [], "reason" => :closed, "status" => :error}]}
-    end
-
-    test "emits buffered content when the final SSE event arrives without a delimiter" do
-      message = %AsyncEnd{id: make_ref()}
-      buffer = "data: {\"choices\":[{\"finish_reason\":\"stop\"}]}"
-
-      assert OpenAICompliantProvider.process_async_stream_message(message, buffer) ==
-               {:emit_and_halt, [%{"choices" => [%{"finish_reason" => "stop"}]}]}
-    end
-
-    test "emits an error chunk when EOF arrives with an incomplete buffered event" do
-      message = %AsyncEnd{id: make_ref()}
-      buffer = "data: {\"choices\":[{\"delta\":{\"content\":\"Hi"
-
-      assert OpenAICompliantProvider.process_async_stream_message(message, buffer) ==
-               {:emit_and_halt,
-                [%{"choices" => [], "reason" => :incomplete_sse_event, "status" => :error}]}
-    end
-
-    test "treats a final done sentinel without a delimiter as a clean halt" do
-      message = %AsyncEnd{id: make_ref()}
-
-      assert OpenAICompliantProvider.process_async_stream_message(message, "data: [DONE]") ==
-               {:halt}
     end
   end
 end

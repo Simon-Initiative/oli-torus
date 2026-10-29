@@ -15,7 +15,7 @@ This design adds a centralized routing and health layer for GenAI calls so Torus
 - Breaker thresholds and provider timeouts are configured per RegisteredModel (FR-008).
 - Read-only health indicators in ServiceConfig UI (FR-011).
 - ServiceConfig editor extended for Secondary selection (FR-012).
-- RegisteredModel editor extended for pool_class, max_concurrent, and breaker thresholds; admin pool size controls (FR-013).
+- RegisteredModel editor extended for max_concurrent and breaker thresholds; admin pool size controls (FR-013).
 - Operational introspection for breaker/counter state (FR-009).
 
 ### Non-Functional Requirements
@@ -33,7 +33,7 @@ This design adds a centralized routing and health layer for GenAI calls so Torus
 - PRD section 11 includes stale migration notes; FDD supersedes schema details. Impact: update PRD in a follow-up if desired.
 
 ## 3. Torus Context Summary
-From `docs/design-docs/genai.md`, GenAI routing currently flows through `Oli.GenAI.Completions` (generate/stream) with provider implementations for OpenAI-compatible and Claude. `RegisteredModel` and `ServiceConfig` form the static routing config; `GenAI.FeatureConfig` associates features and section overrides. Streaming dialogue is handled by `Oli.GenAI.Dialogue.Server` (GenServer) and uses the shared execution layer; fallback is now handled by routing rather than reactive retries. GenAI HTTP uses hackney pools started via `Oli.GenAI.HackneyPool` in `Oli.Application`, now split into fast/slow pools selected by `RegisteredModel.pool_class`. Admin GenAI UIs exist as LiveViews, including `OliWeb.GenAI.ServiceConfigsView` (model selection + health) and `OliWeb.GenAI.RegisteredModelsView` (pool_class/cap edits + pool size controls), both following established admin patterns. Feature flags are available via `Oli.ScopedFeatureFlags` with audited changes and per-section/project scope, but this feature does not add a new flag. Deployment supports clustering (per design docs), so node-local state must be considered and documented for multi-node behavior.
+From `docs/design-docs/genai.md`, GenAI routing currently flows through `Oli.GenAI.Completions` (generate/stream) with provider implementations for OpenAI-compatible and Claude. `RegisteredModel` and `ServiceConfig` form the static routing config; `GenAI.FeatureConfig` associates features and section overrides. Streaming dialogue is handled by `Oli.GenAI.Dialogue.Server` (GenServer) and uses the shared execution layer; fallback is now handled by routing rather than reactive retries. GenAI HTTP uses hackney pools started via `Oli.GenAI.HackneyPool` in `Oli.Application`, configured as shared fast/slow pools. Admin GenAI UIs exist as LiveViews, including `OliWeb.GenAI.ServiceConfigsView` (model selection + health) and `OliWeb.GenAI.RegisteredModelsView` (capacity edits + pool size controls), both following established admin patterns. Feature flags are available via `Oli.ScopedFeatureFlags` with audited changes and per-section/project scope, but this feature does not add a new flag. Deployment supports clustering (per design docs), so node-local state must be considered and documented for multi-node behavior.
 
 ## 4. Proposed Design
 ### 4.1 Component Roles & Interactions
@@ -42,7 +42,7 @@ From `docs/design-docs/genai.md`, GenAI routing currently flows through `Oli.Gen
 - **Oli.GenAI.AdmissionControl**: ETS-backed counters for per-model and per-pool inflight counts. Provides O(1) increments/decrements and atomic `try_admit` checks.
 - **Oli.GenAI.BreakerSupervisor / BreakerRegistry / Breaker**: Dynamic supervisor + per-model GenServer that maintains rolling health, emits breaker state changes, and writes a snapshot into ETS for fast reads.
 - **Oli.GenAI.Execution** (new helper): Wraps provider calls, applies RoutingPlan, releases admissions, emits telemetry, and reports outcomes to breakers. It delegates actual model calls to `Oli.GenAI.Completions`.
-- **Admin UI Extension**: `OliWeb.GenAI.ServiceConfigsView` adds Secondary selection and read-only health indicators; `OliWeb.GenAI.RegisteredModelsView` adds pool_class/max_concurrent fields and pool size controls.
+- **Admin UI Extension**: `OliWeb.GenAI.ServiceConfigsView` adds Secondary selection and read-only health indicators; `OliWeb.GenAI.RegisteredModelsView` adds max_concurrent fields and pool size controls.
 
 ### 4.2 State & Message Flow
 1. A feature resolves ServiceConfig via existing FeatureConfig + section override logic.
@@ -75,7 +75,7 @@ From `docs/design-docs/genai.md`, GenAI routing currently flows through `Oli.Gen
   - Add read-only health display (breaker state, recent error/429/latency snapshot).
   - Reuse existing `phx-submit="save"` and `toggle_editing` flows; validate model selection in the ServiceConfig changeset.
  - `OliWeb.GenAI.RegisteredModelsView`:
-  - Add fields for pool_class and max_concurrent.
+  - Add the max_concurrent field.
   - Add admin-only pool size controls for fast/slow pools.
 
 ### 5.3 Processes
@@ -94,7 +94,6 @@ Add/update fields on `completions_service_configs`:
 - `secondary_model_id` (nullable FK)
 
 Add/update fields on `registered_models`:
-- `pool_class` (`:fast | :slow`, default `:slow`)
 - `max_concurrent` (integer, nullable; per-model cap)
 - `routing_breaker_error_rate_threshold` (numeric or float, 0.0..1.0)
 - `routing_breaker_429_threshold` (numeric or float, 0.0..1.0)
@@ -149,8 +148,8 @@ Note: admission control is enforced via per-model and per-pool caps; routing doe
 
 ## 11. Observability
 Telemetry events (examples):
-- `[:oli, :genai, :router, :decision]` measurements: `%{duration_ms}` metadata: `%{service_config_id, registered_model_id, reason, tier, pool_class, pool_name, request_type}`
-- `[:oli, :genai, :router, :admission]` measurements: `%{admitted: 0|1}` metadata: `%{tier, pool_class, pool_name}`
+- `[:oli, :genai, :router, :decision]` measurements: `%{duration_ms}` metadata: `%{service_config_id, registered_model_id, reason, tier, pool_name, request_type}`
+- `[:oli, :genai, :router, :admission]` measurements: `%{admitted: 0|1}` metadata: `%{tier, pool_name}`
 - `[:oli, :genai, :provider, :stop]` measurements: `%{duration_ms}` metadata: `%{provider, model, outcome, http_status}`
 - `[:oli, :genai, :breaker, :state_change]` measurements: `%{state}` metadata: `%{registered_model_id, reason}`
 
@@ -165,7 +164,7 @@ AppSignal dashboards: routing decisions by reason, rejection counts, breaker ope
 - Unit tests for router policies (primary/secondary/backup selection, cap boundaries).
 - Property tests for breaker state transitions and windowed metrics.
 - LiveView tests for ServiceConfig form validation and persistence (including Secondary).
-- LiveView tests for RegisteredModel pool_class/max_concurrent edits and pool size controls.
+- LiveView tests for RegisteredModel max_concurrent edits and pool size controls.
 - Concurrency tests for ETS counters (model/pool increment/decrement correctness under load).
 - Failure injection tests for provider 429/timeouts to verify breaker open and fallback.
 

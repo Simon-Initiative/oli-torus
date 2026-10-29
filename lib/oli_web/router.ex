@@ -1962,6 +1962,7 @@ defmodule OliWeb.Router do
     live("/intelligent_dashboard", Admin.IntelligentDashboardLive)
 
     # Gen AI
+    live("/gen_ai/providers", GenAI.ProvidersView)
     live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
     live("/gen_ai/service_configs", GenAI.ServiceConfigsView)
     live("/gen_ai/feature_configs", GenAI.FeatureConfigsView)
