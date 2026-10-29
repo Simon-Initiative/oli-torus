@@ -51,7 +51,11 @@ const csrfToken = (document as any)
   .getAttribute('content');
 const liveSocket = new LiveSocket('/live', Socket, {
   hooks: Hooks,
-  params: { _csrf_token: csrfToken },
+  params: () => ({
+    _csrf_token: csrfToken,
+    analytics_enabled: !!window.TorusAnalytics,
+    analytics_page_path: window.TorusAnalytics?.pagePath,
+  }),
   debug: false,
   timeout: 60000,
   metadata: {
