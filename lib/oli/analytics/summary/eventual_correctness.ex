@@ -240,7 +240,6 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
     activity_attempts =
       scope
       |> historical_activity_attempts()
-      |> restrict_objective_revisions(scope, resource_ids)
       |> select([access, _ra, aa], %{
         section_id: access.section_id,
         user_id: access.user_id,
@@ -248,6 +247,7 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
         revision_id: aa.revision_id,
         activity_attempt_id: aa.id
       })
+      |> restrict_objective_revisions(resource_ids)
       # Keep the filtered activity set ahead of the retry join in PostgreSQL's
       # plan. Without this boundary the planner can materialize every retry
       # before applying the objective-revision semi-join.
@@ -296,17 +296,28 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
     from(m in subquery(membership)) |> filter_resources(resource_ids)
   end
 
-  defp restrict_objective_revisions(query, _scope, nil), do: query
+  defp restrict_objective_revisions(query, nil), do: query
 
-  defp restrict_objective_revisions(query, scope, resource_ids) do
+  defp restrict_objective_revisions(query, resource_ids) do
     # Narrow activity revisions before reading their retry history. Only this
     # section/project's observed revisions are expanded, and part-specific tags
     # are still checked by objective_membership after retries are deduplicated.
+    # Both consumers share one scoped history scan. Materialize only the compact
+    # activity projection; evaluated part retries remain behind the revision filter.
+    scoped_attempts =
+      from(aa in "scoped_objective_attempts",
+        select: %{
+          section_id: aa.section_id,
+          user_id: aa.user_id,
+          activity_id: aa.activity_id,
+          revision_id: aa.revision_id,
+          activity_attempt_id: aa.activity_attempt_id
+        }
+      )
+      |> with_cte("scoped_objective_attempts", as: ^query, materialized: true)
+
     observed_revisions =
-      scope
-      |> historical_activity_attempts()
-      |> select([_access, _ra, aa], aa.revision_id)
-      |> distinct(true)
+      from(aa in "scoped_objective_attempts", select: aa.revision_id, distinct: true)
 
     matching =
       from(revision in Revision,
@@ -338,7 +349,7 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
     filtered = from(row in subquery(matching)) |> filter_resources(resource_ids)
     revision_ids = from(row in subquery(filtered), select: row.revision_id, distinct: true)
 
-    where(query, [_access, _ra, aa], aa.revision_id in subquery(revision_ids))
+    where(scoped_attempts, [aa], aa.revision_id in subquery(revision_ids))
   end
 
   defp join_student_summaries(membership, students, resource_type_id) do

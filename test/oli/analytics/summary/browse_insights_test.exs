@@ -149,6 +149,7 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
                  Enum.filter(queries, fn {sql, _} -> String.contains?(sql, "part_attempts") end)
 
         assert [row.resource_id] in params
+        assert length(Regex.scan(~r/"resource_accesses"/, history_sql)) == 1
         refute String.contains?(history_sql, "count(*) OVER() as total_count")
 
         assert [{count_sql, _}] =
@@ -188,6 +189,7 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
 
         assert String.contains?(ranking_sql, "LIMIT")
         assert String.contains?(ranking_sql, "published_resources")
+        assert length(Regex.scan(~r/"resource_accesses"/, ranking_sql)) == 1
         refute String.contains?(ranking_sql, "count(*) OVER() as total_count")
       end
     end
