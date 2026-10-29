@@ -16,6 +16,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Components.Utils, as: ComponentsUtils
   alias OliWeb.Icons
+  alias OliWeb.Analytics
   alias Phoenix.LiveView.JS
 
   @default_selected_view :gallery
@@ -689,6 +690,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         ~p"/sections/#{section.slug}/preview/learn?#{params}"
       else
         ~p"/sections/#{section.slug}/learn?#{params}"
+      end
+
+    # Searches update on each debounced change; only the start of a search counts as usage.
+    socket =
+      case search_term not in ["", nil] and socket.assigns.params["search_term"] in ["", nil] do
+        true -> Analytics.track(socket, "feature_used", %{feature_name: "search_used"})
+        false -> socket
       end
 
     {:noreply,

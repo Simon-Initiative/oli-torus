@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   alias OliWeb.Delivery.ScheduleDisplay
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
+  alias OliWeb.Analytics
   alias OliWeb.Components.Utils, as: ComponentsUtils
 
   # this is an optimization to reduce the memory footprint of the liveview process
@@ -80,10 +81,20 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   def handle_event("select_filter", params, socket) do
     case params["filter"] do
-      "all" -> {:noreply, assign(socket, filter: :all, filter_expanded: false)}
-      "required" -> {:noreply, assign(socket, filter: :required, filter_expanded: false)}
+      "all" -> {:noreply, select_filter(socket, :all)}
+      "required" -> {:noreply, select_filter(socket, :required)}
       _ -> socket
     end
+  end
+
+  defp select_filter(socket, filter) do
+    socket =
+      case filter == socket.assigns.filter do
+        true -> socket
+        false -> Analytics.track(socket, "feature_used", %{feature_name: "filter_used"})
+      end
+
+    assign(socket, filter: filter, filter_expanded: false)
   end
 
   def render(assigns) do
