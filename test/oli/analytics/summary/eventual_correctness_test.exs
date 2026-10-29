@@ -152,6 +152,76 @@ defmodule Oli.Analytics.Summary.EventualCorrectnessTest do
     assert insight(ctx, []).eventually_correct == 1.0
   end
 
+  test "explicit section filters cannot include learner evidence from unrelated projects", ctx do
+    summary(ctx, ctx.alice.id, 1, 2, 1)
+    aggregate_summaries(ctx, 1, 2, 1)
+
+    foreign = Seeder.base_project_with_resource2() |> Seeder.create_section()
+    summary(%{ctx | section: foreign.section}, ctx.alice.id, 0, 50, 0)
+
+    Repo.insert!(%ResourceSummary{
+      section_id: foreign.section.id,
+      resource_id: ctx.question.resource.id,
+      resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+      part_id: "part1",
+      num_attempts: 50,
+      num_first_attempts: 1
+    })
+
+    assert EventualCorrectness.counts_query(ctx.project.id, [foreign.section.id]) |> Repo.all() ==
+             []
+
+    expected = EventualCorrectness.counts_query(ctx.project.id, [ctx.section.id]) |> Repo.all()
+
+    assert EventualCorrectness.counts_query(ctx.project.id, [ctx.section.id, foreign.section.id])
+           |> Repo.all() == expected
+
+    for field <- [:title, :eventually_correct] do
+      options = %BrowseInsightsOptions{
+        project_id: ctx.project.id,
+        section_ids: [foreign.section.id],
+        resource_type_id: Oli.Resources.ResourceType.id_for_activity()
+      }
+
+      paging = %Paging{limit: 10, offset: 0}
+      sorting = %Sorting{field: field, direction: :desc}
+
+      assert BrowseInsights.browse_insights(paging, sorting, options) == []
+
+      [row] =
+        BrowseInsights.browse_insights(paging, sorting, %{
+          options
+          | section_ids: [ctx.section.id, foreign.section.id]
+        })
+
+      assert row.eventually_correct == 1.0
+      assert row.num_attempts == 2
+    end
+  end
+
+  test "explicit section filters include projects linked through publications", ctx do
+    associated = Seeder.base_project_with_resource2() |> Seeder.create_section()
+
+    Oli.Factory.insert(:section_project_publication,
+      section: associated.section,
+      project: ctx.project,
+      publication: Oli.Factory.insert(:publication, project: ctx.project)
+    )
+
+    associated_ctx = %{ctx | section: associated.section}
+    summary(associated_ctx, ctx.alice.id, 1, 2, 1)
+    aggregate_summaries(associated_ctx, 1, 2, 1)
+
+    [row] =
+      EventualCorrectness.counts_query(ctx.project.id, [associated.section.id]) |> Repo.all()
+
+    assert row.section_id == associated.section.id
+    assert row.num_correct == 1
+    assert row.num_attempted == 1
+
+    assert EventualCorrectness.counts_query(nil, [associated.section.id]) |> Repo.all() == [row]
+  end
+
   test "unavailable activity rates sort after measured rates in either direction", ctx do
     summary(ctx, ctx.alice.id, 1, 2, 1)
     summary(ctx, ctx.bob.id, 0, 2, 0)

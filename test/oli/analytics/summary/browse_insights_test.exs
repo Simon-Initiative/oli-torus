@@ -358,6 +358,9 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
         |> Seeder.add_user(%{}, :user2)
 
       map = Seeder.publish_project(map)
+      map = Map.put(map, :second_section, Seeder.create_section(map).section)
+      first_id = map.section.id
+      second_id = map.second_section.id
 
       a1 = map.a1
       a2 = map.a2
@@ -369,35 +372,103 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       page2 = map.page2
 
       insert_summaries(map.project.id, [
-        [a1.resource.id, a1.revision.resource_type_id, -1, 1, "part1", 1, 2, 0, 1, 1],
-        [a1.resource.id, a1.revision.resource_type_id, -1, 1, "part2", 2, 3, 0, 1, 1],
-        [a2.resource.id, a2.revision.resource_type_id, -1, 1, "part1", 3, 4, 0, 1, 1],
-        [a2.resource.id, a2.revision.resource_type_id, -1, 1, "part2", 4, 5, 0, 1, 1],
-        [a3.resource.id, a3.revision.resource_type_id, -1, 1, "part1", 5, 6, 0, 1, 1],
-        [a3.resource.id, a3.revision.resource_type_id, -1, 1, "part2", 6, 7, 0, 1, 1],
-        [o1.resource.id, o1.revision.resource_type_id, -1, 1, nil, 1, 2, 1, 1, 1],
-        [o2.resource.id, o2.revision.resource_type_id, -1, 1, nil, 1, 3, 1, 1, 1],
-        [o3.resource.id, o3.revision.resource_type_id, -1, 1, nil, 1, 4, 1, 1, 1],
-        [page1.id, 1, -1, 1, nil, 1, 2, 1, 1, 1],
-        [page2.id, 1, -1, 1, nil, 1, 2, 1, 1, 1],
-        [a1.resource.id, a1.revision.resource_type_id, -1, 2, "part1", 1, 2, 0, 1, 3],
-        [a1.resource.id, a1.revision.resource_type_id, -1, 2, "part2", 2, 3, 0, 1, 1],
-        [a2.resource.id, a2.revision.resource_type_id, -1, 2, "part1", 3, 4, 0, 1, 1],
-        [a2.resource.id, a2.revision.resource_type_id, -1, 2, "part2", 4, 5, 0, 1, 1],
-        [a3.resource.id, a3.revision.resource_type_id, -1, 2, "part1", 5, 6, 0, 1, 1],
-        [a3.resource.id, a3.revision.resource_type_id, -1, 2, "part2", 6, 7, 0, 1, 1],
-        [o1.resource.id, o1.revision.resource_type_id, -1, 2, nil, 1, 2, 1, 1, 1],
-        [o2.resource.id, o2.revision.resource_type_id, -1, 2, nil, 1, 3, 1, 1, 1],
-        [o3.resource.id, o3.revision.resource_type_id, -1, 2, nil, 1, 4, 1, 1, 1],
-        [page1.id, 1, -1, 2, nil, 1, 2, 1, 1, 1],
-        [page2.id, 1, -1, 2, nil, 1, 2, 1, 1, 1]
+        [a1.resource.id, a1.revision.resource_type_id, -1, first_id, "part1", 1, 2, 0, 1, 1],
+        [a1.resource.id, a1.revision.resource_type_id, -1, first_id, "part2", 2, 3, 0, 1, 1],
+        [a2.resource.id, a2.revision.resource_type_id, -1, first_id, "part1", 3, 4, 0, 1, 1],
+        [a2.resource.id, a2.revision.resource_type_id, -1, first_id, "part2", 4, 5, 0, 1, 1],
+        [a3.resource.id, a3.revision.resource_type_id, -1, first_id, "part1", 5, 6, 0, 1, 1],
+        [a3.resource.id, a3.revision.resource_type_id, -1, first_id, "part2", 6, 7, 0, 1, 1],
+        [o1.resource.id, o1.revision.resource_type_id, -1, first_id, nil, 1, 2, 1, 1, 1],
+        [o2.resource.id, o2.revision.resource_type_id, -1, first_id, nil, 1, 3, 1, 1, 1],
+        [o3.resource.id, o3.revision.resource_type_id, -1, first_id, nil, 1, 4, 1, 1, 1],
+        [page1.id, 1, -1, first_id, nil, 1, 2, 1, 1, 1],
+        [page2.id, 1, -1, first_id, nil, 1, 2, 1, 1, 1],
+        [
+          a1.resource.id,
+          a1.revision.resource_type_id,
+          -1,
+          second_id,
+          "part1",
+          1,
+          2,
+          0,
+          1,
+          3
+        ],
+        [
+          a1.resource.id,
+          a1.revision.resource_type_id,
+          -1,
+          second_id,
+          "part2",
+          2,
+          3,
+          0,
+          1,
+          1
+        ],
+        [
+          a2.resource.id,
+          a2.revision.resource_type_id,
+          -1,
+          second_id,
+          "part1",
+          3,
+          4,
+          0,
+          1,
+          1
+        ],
+        [
+          a2.resource.id,
+          a2.revision.resource_type_id,
+          -1,
+          second_id,
+          "part2",
+          4,
+          5,
+          0,
+          1,
+          1
+        ],
+        [
+          a3.resource.id,
+          a3.revision.resource_type_id,
+          -1,
+          second_id,
+          "part1",
+          5,
+          6,
+          0,
+          1,
+          1
+        ],
+        [
+          a3.resource.id,
+          a3.revision.resource_type_id,
+          -1,
+          second_id,
+          "part2",
+          6,
+          7,
+          0,
+          1,
+          1
+        ],
+        [o1.resource.id, o1.revision.resource_type_id, -1, second_id, nil, 1, 2, 1, 1, 1],
+        [o2.resource.id, o2.revision.resource_type_id, -1, second_id, nil, 1, 3, 1, 1, 1],
+        [o3.resource.id, o3.revision.resource_type_id, -1, second_id, nil, 1, 4, 1, 1, 1],
+        [page1.id, 1, -1, second_id, nil, 1, 2, 1, 1, 1],
+        [page2.id, 1, -1, second_id, nil, 1, 2, 1, 1, 1]
       ])
 
       map
     end
 
     test "browsing activities, basic query operation, paging", %{
-      project: project
+      project: project,
+      section: section,
+      second_section: second_section
     } do
       activity_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
 
@@ -407,7 +478,7 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
           %Oli.Repo.Sorting{direction: :asc, field: :title},
           %Oli.Analytics.Summary.BrowseInsightsOptions{
             project_id: project.id,
-            section_ids: [1],
+            section_ids: [section.id],
             resource_type_id: activity_type_id
           }
         )
@@ -423,7 +494,7 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
           %Oli.Repo.Sorting{direction: :asc, field: :title},
           %Oli.Analytics.Summary.BrowseInsightsOptions{
             project_id: project.id,
-            section_ids: [1],
+            section_ids: [section.id],
             resource_type_id: activity_type_id
           }
         )
@@ -437,7 +508,7 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
           %Oli.Repo.Sorting{direction: :asc, field: :title},
           %Oli.Analytics.Summary.BrowseInsightsOptions{
             project_id: project.id,
-            section_ids: [1, 2],
+            section_ids: [section.id, second_section.id],
             resource_type_id: activity_type_id
           }
         )

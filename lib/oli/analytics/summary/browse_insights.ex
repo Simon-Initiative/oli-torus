@@ -119,15 +119,17 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
   end
 
   defp section_filter(%BrowseInsightsOptions{
+         project_id: project_id,
          resource_type_id: resource_type_id,
          section_ids: section_ids
        }) do
+    scope = EventualCorrectness.section_scope(project_id, section_ids)
+
     dynamic(
       [s, pub, pr, _],
-      s.project_id == -1 and s.resource_id == pr.resource_id and
+      ^scope and s.project_id == -1 and s.resource_id == pr.resource_id and
         is_nil(pub.published) and
         s.resource_type_id == ^resource_type_id and
-        s.section_id in ^section_ids and
         s.user_id == -1
     )
   end

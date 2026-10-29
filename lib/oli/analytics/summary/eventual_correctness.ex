@@ -21,6 +21,9 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
   Returns attempted and successful learner counts per resource and part.
 
   With no section filter, counts are combined over sections using the project.
+  Explicit section IDs are intersected with the project's sections, including
+  sections using the project through a publication association. Section-only
+  callers may pass a nil project ID after authorizing access to those sections.
   Submission counters are read without modification, so historical data needs
   no migration or replay of the analytics pipeline.
 
@@ -168,7 +171,14 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
     end
   end
 
-  defp section_scope(project_id, []) do
+  @doc """
+  Returns a summary-row section filter constrained to the supplied project.
+
+  An empty section list includes all sections using the project. Explicit IDs
+  narrow that set. A nil project ID supports section-only callers that have
+  already authorized access to the supplied sections.
+  """
+  def section_scope(project_id, []) do
     project_sections =
       from(section in Section,
         left_join: sp in SectionsProjectsPublications,
@@ -180,7 +190,12 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
     dynamic([s], s.section_id in subquery(project_sections))
   end
 
-  defp section_scope(_project_id, ids), do: dynamic([s], s.section_id in ^ids)
+  def section_scope(nil, ids), do: dynamic([s], s.section_id in ^ids)
+
+  def section_scope(project_id, ids) do
+    project_scope = section_scope(project_id, [])
+    dynamic([s], ^project_scope and s.section_id in ^ids)
+  end
 
   defp student_summaries_query(scope) do
     activity_type_id = ResourceType.id_for_activity()
