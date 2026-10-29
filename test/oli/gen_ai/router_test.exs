@@ -491,6 +491,41 @@ defmodule Oli.GenAI.RouterTest do
     empty(c)
   end
 
+  test "fragmented SSE records preserve CRLF boundaries, UTF-8 and multiline data", c do
+    {task, server} = stream(c)
+    # Splitting every byte exercises every possible delimiter and UTF-8 boundary.
+    data = "data: {\r\ndata: \"choices\": [{\"delta\": {\"content\": \"héllo 🌍\"}}]}\r\n\r\n"
+    for <<byte <- data>>, do: send(server, {:chunk, <<byte>>})
+    assert_receive {:chunk, {:tokens_received, "héllo 🌍"}}, 2000
+    send(server, {:chunk, sse(%{choices: [%{delta: %{}, finish_reason: "stop"}]})})
+    assert :ok = Task.await(task)
+    empty(c)
+  end
+
+  test "a large SSE event fragmented into many reads is delivered exactly once", c do
+    {task, server} = stream(c)
+    content = String.duplicate("x", 500_000)
+    data = sse(%{choices: [%{delta: %{content: content}}]})
+
+    for chunk <-
+          Stream.unfold(data, fn
+            "" ->
+              nil
+
+            remaining ->
+              size = min(byte_size(remaining), 256)
+              <<chunk::binary-size(size), rest::binary>> = remaining
+              {chunk, rest}
+          end),
+        do: send(server, {:chunk, chunk})
+
+    assert_receive {:chunk, {:tokens_received, ^content}}, 2000
+    refute_receive {:chunk, {:tokens_received, _}}, 20
+    send(server, {:chunk, sse(%{choices: [%{delta: %{}, finish_reason: "stop"}]})})
+    assert :ok = Task.await(task)
+    empty(c)
+  end
+
   test "oversized complete SSE events are rejected before exposure, including split input", c do
     oversized = sse(%{choices: [%{delta: %{content: String.duplicate("x", 1_048_576)}}]})
 

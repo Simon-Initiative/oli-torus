@@ -264,10 +264,12 @@ requirements:
   - id: AC-021
     title: Before routing is enabled, audit existing ServiceConfigs and allocations, verify transport
       behavior and stream reporting, observe probes, and deliberately retire obsolete breaker and counter
-      state and the primary-only override.
+      state and retain a bounded primary-only emergency override that bypasses health, runtime caches,
+      secondary selection and backup retries while preserving Provider disablement and transport limits.
     status: verified
     verification_method: hybrid
     proofs: &id021
+    - test/oli/gen_ai/primary_only_test.exs
     - test/oli/gen_ai/router_test.exs
     - test/oli/gen_ai/operations_test.exs
     - docs/OPERATIONS.md
@@ -426,7 +428,8 @@ acceptance_criteria:
 - id: AC-021
   title: Before routing is enabled, audit existing ServiceConfigs and allocations, verify transport behavior
     and stream reporting, observe probes, and deliberately retire obsolete breaker and counter state and
-    the primary-only override.
+    retain a bounded primary-only emergency override that bypasses health, runtime caches, secondary
+    selection and backup retries while preserving Provider disablement and transport limits.
   status: verified
   verification_method: hybrid
   proofs: *id021

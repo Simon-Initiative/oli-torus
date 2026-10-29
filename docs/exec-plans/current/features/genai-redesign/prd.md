@@ -53,9 +53,9 @@ Requirements are found in requirements.yml
 - Use repository testing and review policies, including security, performance, and requirements review. Track implementation through the normal Jira workflow; no issue identifier was supplied.
 
 ## 11. Feature Flagging, Rollout & Migration
-- Use `GENAI_HEALTH_CHECKS_ENABLED` as the specified node-level health-check override, not as a capacity bypass. Remove the current primary-only override.
+- Use `GENAI_HEALTH_CHECKS_ENABLED` as the specified node-level health-check override, not as a capacity bypass. Retain `GENAI_ROUTING_PRIMARY_ONLY` as a bounded emergency override: read the primary and Provider directly from the database, bypass health and secondary/backup routing, and preserve Provider disablement, credentials, native pool capacity, deadlines and cancellation.
 - Initially migrate exactly one Provider named "OpenAI production", copy credentials from the lowest-ID RegisteredModel with API keys, and associate all existing RegisteredModels with it. Administrators can subsequently create Providers and reassign models.
-- Audit ServiceConfigs and pool sizing before rollout; observe probes before enabling health-based diversion, verify transport behavior, and define rollback and obsolete-state handling. Use deployment controls as needed; no additional scoped flag is specified.
+- Audit ServiceConfigs and pool sizing before rollout; observe probes before enabling health-based diversion, verify transport behavior, and define rollback and obsolete-state handling. Use deployment controls and the node-level emergency override as needed.
 
 ## 12. Telemetry & Success Metrics
 - Report probe results, scheduling and health changes; routing decisions, busy and unavailable rejections; and backup attempts.

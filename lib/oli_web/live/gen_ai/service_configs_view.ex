@@ -111,8 +111,8 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           </h3>
           <div class="flex">
             <div class="mr-5">
-              <span class="text-gray-800 text-xs py-0.5">Primary: </span>
-              <span class="text-gray-800 text-xs font-mono py-0.5 ">
+              <span class="text-gray-800 dark:text-gray-100 text-xs py-0.5">Primary: </span>
+              <span class="text-gray-800 dark:text-gray-100 text-xs font-mono py-0.5 ">
                 {case @service_config.primary_model do
                   nil -> "Missing model"
                   model -> model.name
@@ -120,8 +120,8 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
               </span>
             </div>
             <div class="mr-5">
-              <span class="text-gray-800 text-xs py-0.5">Secondary: </span>
-              <span class="text-gray-800 text-xs font-mono py-0.5">
+              <span class="text-gray-800 dark:text-gray-100 text-xs py-0.5">Secondary: </span>
+              <span class="text-gray-800 dark:text-gray-100 text-xs font-mono py-0.5">
                 {if is_nil(@service_config.secondary_model) do
                   "None"
                 else
@@ -130,8 +130,8 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
               </span>
             </div>
             <div>
-              <span class="text-gray-800 text-xs py-0.5">Backup: </span>
-              <span class="text-gray-800 text-xs font-mono py-0.5">
+              <span class="text-gray-800 dark:text-gray-100 text-xs py-0.5">Backup: </span>
+              <span class="text-gray-800 dark:text-gray-100 text-xs font-mono py-0.5">
                 {if is_nil(@service_config.backup_model) do
                   "None"
                 else

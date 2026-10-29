@@ -62,6 +62,27 @@ defmodule Oli.GenAI.HealthProbeTest do
     end)
   end
 
+  test "a Provider without an organization never inherits the global SDK organization", ctx do
+    previous = Application.fetch_env(:openai, :organization_key)
+    Application.put_env(:openai, :organization_key, "unrelated-global-organization")
+
+    on_exit(fn ->
+      case previous do
+        {:ok, value} -> Application.put_env(:openai, :organization_key, value)
+        :error -> Application.delete_env(:openai, :organization_key)
+      end
+    end)
+
+    provider = %{ctx.provider | organization_key: nil}
+    task = Task.async(fn -> HealthProbe.run(provider, ctx.model, ctx.manager) end)
+    assert_receive {:request, server, headers, _}, 2000
+    refute String.downcase(headers) =~ "openai-organization"
+    refute headers =~ "unrelated-global-organization"
+    assert headers =~ "provider-only-key"
+    send(server, {:respond, 200, valid_body()})
+    assert :ok = Task.await(task, 2000)
+  end
+
   test "probe realizes model and credential endpoint templates exactly like the ordinary adapter",
        ctx do
     provider = %{

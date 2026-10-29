@@ -1,13 +1,23 @@
 defmodule Oli.Conversation.LLMFeedbackTest do
-  use Oli.DataCase, async: true
+  use Oli.DataCase, async: false
 
   alias Oli.Conversation.LLMFeedback
   alias Oli.Delivery.Attempts.Core.StudentInput
 
   describe "generate/5" do
     test "returns ok with feedback text when service config is available (null provider)" do
-      # With a DataCase sandbox, the global null-provider service config is available.
-      # The null provider returns a canned string, validating the full pipeline runs.
+      # Exercise normal routing with the seeded null Provider and a test-owned runtime.
+      loaded = Oli.GenAI.Configuration.runtime_configuration(reconcile_probes: false)
+      manager = start_supervised!({Oli.GenAI.PoolManager, name: nil, namespace: make_ref()})
+      tasks = start_supervised!({Task.Supervisor, max_children: 1})
+
+      start_supervised!(
+        {Oli.GenAI.Runtime,
+         source: fn -> loaded end, pool_manager: manager, task_supervisor: tasks, enabled: false}
+      )
+
+      assert :ok = Oli.GenAI.Runtime.reconcile()
+
       result =
         LLMFeedback.generate(
           "Help the student",
@@ -17,7 +27,7 @@ defmodule Oli.Conversation.LLMFeedbackTest do
           -1
         )
 
-      assert {:ok, _text} = result
+      assert {:ok, "This is a null provider. No generation performed."} = result
     end
   end
 

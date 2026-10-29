@@ -1,15 +1,20 @@
 # Phase 3 routing and execution contract
 
 Phase 3 connects OpenAI production requests to the Phase 2 runtime. A deployment
-of this version enables the new execution path; there is no primary-only override
-or silent fallback to legacy OpenAI pools when reconciliation fails. Phase 2's
+of this version enables the new execution path. `GENAI_ROUTING_PRIMARY_ONLY=true`
+selects the current primary model and Provider directly from the database, ignoring
+health, secondary/backup configuration and retries, and runtime caches. Independent
+bounded pools reuse the managed transport while retaining Provider disablement,
+credentials, deadlines and cancellation. This path does not depend on normal pool
+reconciliation. It never falls back to legacy OpenAI pools. See `docs/OPERATIONS.md`
+for node-wide activation, restart behavior and diagnostics. Phase 2's
 observe-only state describes the preceding version. `Runtime.snapshot/0` now reports
 `observe_only: false`. Phase 4 must complete the migration audit and controlled
 rollout/rollback procedure before deployment. No deployment is performed here.
 
 ## Capacity and configuration
 
-Routing obtains reconciled ServiceConfig and Provider inputs from protected per-config
+Normal routing obtains reconciled ServiceConfig and Provider inputs from protected per-config
 ETS snapshots, with no per-request database query or wait behind configuration reloads.
 A persistent-term discovery handle contains only the ETS identifier, is published once
 per runtime, and is removed by an owner monitor even on runtime kill. Only main and backup Provider snapshots are read.

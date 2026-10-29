@@ -102,14 +102,12 @@ defmodule Oli.GenAI.Completions.ManagedOpenAI do
     end
   end
 
-  defp consume(:stream, ref, handler), do: read_stream(ref, handler, "", false)
+  defp consume(:stream, ref, handler), do: read_stream(ref, handler, {"", 0}, false)
 
-  defp read_stream(ref, handler, buffer, finished) do
+  defp read_stream(ref, handler, {buffer, scanned}, finished) do
     case :hackney.stream_body(ref) do
       {:ok, chunk} ->
-        data = String.replace(buffer <> chunk, "\r\n", "\n")
-        parts = String.split(data, "\n\n")
-        {complete, [rest]} = Enum.split(parts, -1)
+        {complete, rest} = split_events(buffer <> chunk, scanned, [])
 
         case byte_size(rest) > 1_048_576 or Enum.any?(complete, &(byte_size(&1) > 1_048_576)) do
           true ->
@@ -119,7 +117,7 @@ defmodule Oli.GenAI.Completions.ManagedOpenAI do
             with {:ok, finished} <- events(complete, handler, finished) do
               case finished do
                 true -> :ok
-                false -> read_stream(ref, handler, rest, false)
+                false -> read_stream(ref, handler, {rest, max(byte_size(rest) - 3, 0)}, false)
               end
             end
         end
@@ -135,11 +133,27 @@ defmodule Oli.GenAI.Completions.ManagedOpenAI do
     end
   end
 
+  # Resume at the previous tail so delimiters spanning chunks are recognized
+  # without rescanning an incomplete event on every network read.
+  defp split_events(data, scanned, complete) do
+    case :binary.match(data, ["\n\n", "\r\n\r\n", "\r\n\n", "\n\r\n"],
+           scope: {scanned, byte_size(data) - scanned}
+         ) do
+      {offset, length} ->
+        <<event::binary-size(offset), _delimiter::binary-size(length), rest::binary>> = data
+        split_events(rest, 0, [event | complete])
+
+      :nomatch ->
+        {Enum.reverse(complete), data}
+    end
+  end
+
   defp events([], _, finished), do: {:ok, finished}
 
   defp events([event | rest], handler, finished) do
     payload =
       event
+      |> String.replace("\r\n", "\n")
       |> String.split("\n")
       |> Enum.flat_map(fn
         "data:" <> line -> [String.trim_leading(line)]
