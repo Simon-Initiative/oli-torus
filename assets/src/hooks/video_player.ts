@@ -1,4 +1,5 @@
 import * as XAPI from 'data/persistence/xapi';
+import { track } from '../analytics/track';
 
 export const VideoPlayer = {
   mounted() {
@@ -15,7 +16,16 @@ export const VideoPlayer = {
     const getSectionId = () => metadata.sectionId as any;
     const getResourceId = () => metadata.resourceId as any;
 
+    // Intro videos share one player; each video counts its first play once per page view.
+    const startedVideos = new Set<string>();
+    const trackStarted = (url: string, video_source: 'hosted' | 'youtube') => {
+      if (startedVideos.has(url)) return;
+      startedVideos.add(url);
+      track({ name: 'video_started', params: { video_source } });
+    };
+
     cloudVideo.onplaying = () => {
+      trackStarted(cloudVideo.src, 'hosted');
       const segment = { start: cloudVideo.currentTime, end: null };
       metadata.segments = [...metadata.segments, segment];
 
@@ -91,6 +101,7 @@ export const VideoPlayer = {
         section_id: getSectionId(),
       };
       XAPI.emit_delivery(key, event);
+      track({ name: 'video_completed', params: { video_source: 'hosted' } });
     };
 
     window.addEventListener('phx:play_video', (e) => {
@@ -101,6 +112,8 @@ export const VideoPlayer = {
 
       videoWrapper.classList.remove('hidden');
       if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+        // The plain autoplay embed exposes no player events, so the start is the play request.
+        trackStarted(videoUrl, 'youtube');
         youtubeIframe.src = this.convertToEmbedURL(videoUrl);
         youtubeIframe.requestFullscreen();
       } else {

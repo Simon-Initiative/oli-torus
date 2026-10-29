@@ -18,6 +18,7 @@ import {
   getLocalizedStateSnapshot,
   getValue,
 } from '../../../../../../adaptivity/scripting';
+import { track } from '../../../../../../analytics/track';
 import { IAction, IActivationPointAction, IAdaptiveRule } from '../../activities/slice';
 import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
 import {
@@ -334,6 +335,11 @@ export const triggerCheck = createAsyncThunk(
             currentActivityAttemptGuid,
             partResponses,
           );
+
+          const activityType = currentActivity.activityType?.slug;
+          if (!isReviewMode && typeof activityType === 'string') {
+            track({ name: 'attempt_submitted', params: { activity_type: activityType } });
+          }
 
           const resultData: CheckResult = (evalResult as any).result.actions;
           checkResult = resultData.results;

@@ -50,7 +50,8 @@ defmodule OliWeb.Components.Analytics do
         consent: preferences,
         signed_in: not is_nil(conn.assigns[:current_user]),
         consent_available: is_binary(privacy_url) and String.trim(privacy_url) != "",
-        context: context
+        context: context,
+        media_url: Application.get_env(:oli, :media_url)
       })
     else
       _ -> nil

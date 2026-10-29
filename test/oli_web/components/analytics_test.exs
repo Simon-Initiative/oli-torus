@@ -51,12 +51,15 @@ defmodule OliWeb.Components.AnalyticsTest do
     assert Floki.attribute(document, "#torus-analytics", "src") == ["/js/analytics.js"]
     [config] = Floki.attribute(document, "#torus-analytics", "data-config")
 
+    media_url = Application.fetch_env!(:oli, :media_url)
+
     assert %{
              "container_id" => "GTM-QA123",
              "auth" => "auth",
              "preview" => "env-2",
              "measurement_ids" => ["G-QA123"],
-             "context" => %{"page_path" => "/users/reset_password/:token"}
+             "context" => %{"page_path" => "/users/reset_password/:token"},
+             "media_url" => ^media_url
            } = Jason.decode!(config)
 
     refute html =~ "private"

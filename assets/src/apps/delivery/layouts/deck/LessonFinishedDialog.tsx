@@ -1,6 +1,7 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { ActionFailure, ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
+import { track } from '../../../../analytics/track';
 import {
   selectIsGraded,
   selectPageSlug,
@@ -77,6 +78,8 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
             return;
           }
 
+          // Practice-page completion is not part of the analytics MVP.
+          if (graded) track({ name: 'page_completed' });
           setRedirectURL(finalizeResult.redirectTo);
         } else {
           console.error('failed to finalize attempt (SERVER ERROR)', finalizeResult);

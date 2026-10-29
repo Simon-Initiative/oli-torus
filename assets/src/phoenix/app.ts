@@ -55,7 +55,7 @@ const liveSocket = new LiveSocket('/live', Socket, {
   params: () => ({
     _csrf_token: csrfToken,
     analytics_enabled: !!window.TorusAnalytics,
-    analytics_page_path: window.TorusAnalytics?.pagePath,
+    analytics_context: window.TorusAnalytics?.context,
   }),
   debug: false,
   timeout: 60000,

@@ -65,6 +65,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
          delivery_element: type.delivery_element,
          authoring_element: type.authoring_element,
          script: type.delivery_script,
+         activity_type_slug: type.slug,
          graded: graded,
          has_more_attempts: state.hasMoreAttempts,
          aggregate_score: activity_attempt.aggregate_score,

@@ -21,6 +21,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias Oli.GenAI.Dialogue.{Server, Configuration}
   alias Oli.GenAI.Completions.Message
   alias Oli.GenAI.FeatureConfig
+  alias OliWeb.Analytics
   alias OliWeb.Components
   alias OliWeb.Dialogue.UserInput
 
@@ -302,6 +303,7 @@ defmodule OliWeb.Dialogue.WindowLive do
                "translate-x-0 translate-y-0 opacity-100"}
           )
           |> JS.focus(to: "#ai_bot_input")
+          |> Analytics.js_track("feature_used", %{feature_name: "dot_opened"})
         }
         class="absolute right-[1px] cursor-pointer hover:scale-105"
         id="ai_bot_collapsed_button"
@@ -719,7 +721,8 @@ defmodule OliWeb.Dialogue.WindowLive do
     {:noreply,
      socket
      |> assign(messages: messages)
-     |> start_streaming(engagement_id)}
+     |> start_streaming(engagement_id)
+     |> Analytics.track("feature_used", %{feature_name: "dot_question_submitted"})}
   end
 
   def handle_event(

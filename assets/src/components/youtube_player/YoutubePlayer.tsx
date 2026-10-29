@@ -9,6 +9,7 @@ import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
 import { WriterContext, defaultWriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import * as XAPI from 'data/persistence/xapi';
+import { track } from '../../analytics/track';
 
 interface Player {
   seekTo: (time: number) => void;
@@ -32,6 +33,7 @@ export const YoutubePlayer: React.FC<{
   const url = useRef<string>('');
   const duration = useRef<number>(0);
   const pauseAtPosition = useRef(video.endTime || -1);
+  const started = useRef(false);
   const videoId = video.src || CUTE_OTTERS;
   const youTubeRef = useRef<YouTube>(null);
   context = context || defaultWriterContext();
@@ -125,10 +127,16 @@ export const YoutubePlayer: React.FC<{
             content_element_id: video.id,
           } as XAPI.VideoCompletedEvent,
         );
+        track({ name: 'video_completed', params: { video_source: 'youtube' } });
         break;
       case 1:
         const segment = { start: videoTarget.getCurrentTime(), end: null };
         segments.current.push(segment);
+
+        if (!started.current) {
+          started.current = true;
+          track({ name: 'video_started', params: { video_source: 'youtube' } });
+        }
 
         XAPI.emit_delivery(
           {

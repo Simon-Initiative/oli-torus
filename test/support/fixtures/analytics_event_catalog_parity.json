@@ -1,0 +1,79 @@
+[
+  {
+    "description": "event without event parameters",
+    "name": "page_entered",
+    "params": {},
+    "expected": { "params": {}, "dropped": [] }
+  },
+  {
+    "description": "valid activity type",
+    "name": "attempt_submitted",
+    "params": { "activity_type": "oli_multiple_choice" },
+    "expected": { "params": { "activity_type": "oli_multiple_choice" }, "dropped": [] }
+  },
+  {
+    "description": "activity type with a trailing newline",
+    "name": "hint_viewed",
+    "params": { "activity_type": "oli_short_answer\n" },
+    "expected": { "params": {}, "dropped": ["activity_type"] }
+  },
+  {
+    "description": "activity type that is not a slug",
+    "name": "hint_viewed",
+    "params": { "activity_type": "https://example.org/activity?id=1" },
+    "expected": { "params": {}, "dropped": ["activity_type"] }
+  },
+  {
+    "description": "context, uncatalogued and identifying parameters",
+    "name": "attempt_submitted",
+    "params": {
+      "activity_type": "oli_ordering",
+      "course_id": 42,
+      "page_type": "graded",
+      "user_role": "admin",
+      "attempt_number": 2,
+      "correctness": "correct",
+      "user_id": 5555
+    },
+    "expected": {
+      "params": { "activity_type": "oli_ordering" },
+      "dropped": ["attempt_number", "correctness", "course_id", "page_type", "user_id", "user_role"]
+    }
+  },
+  {
+    "description": "catalogued parameter of another event",
+    "name": "video_started",
+    "params": { "video_source": "youtube", "file_type": "pdf" },
+    "expected": { "params": { "video_source": "youtube" }, "dropped": ["file_type"] }
+  },
+  {
+    "description": "enum value outside the catalog",
+    "name": "video_completed",
+    "params": { "video_source": "vimeo" },
+    "expected": { "params": {}, "dropped": ["video_source"] }
+  },
+  {
+    "description": "non-string enum value",
+    "name": "file_link_clicked",
+    "params": { "file_type": true },
+    "expected": { "params": {}, "dropped": ["file_type"] }
+  },
+  {
+    "description": "derived parameter is never accepted from emitters",
+    "name": "feature_used",
+    "params": { "feature_name": "dot_opened", "feature_area": "notes" },
+    "expected": { "params": { "feature_name": "dot_opened" }, "dropped": ["feature_area"] }
+  },
+  {
+    "description": "uncatalogued event",
+    "name": "page_exited",
+    "params": {},
+    "expected": null
+  },
+  {
+    "description": "non-object parameters",
+    "name": "feature_used",
+    "params": ["dot_opened"],
+    "expected": null
+  }
+]
