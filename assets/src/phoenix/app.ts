@@ -20,6 +20,7 @@ import NProgress from 'nprogress';
 import { Socket } from 'phoenix';
 import 'phoenix_html';
 import { LiveSocket } from 'phoenix_live_view';
+import { mountConsentPersistenceStatus } from 'components/cookies/ConsentPersistenceStatus';
 import { selectCookieConsent } from 'components/cookies/CookieConsent';
 import { selectCookiePreferences } from 'components/cookies/CookiePreferences';
 import { retrieveCookies } from 'components/cookies/utils';
@@ -225,6 +226,26 @@ window.OLI = {
   finalize,
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
+
+// Covered roots provide the authoritative server decision, including on lessons
+// without a footer. Wait until the body is ready before mounting the banner.
+onReady(() => {
+  const bootstrap = document.getElementById('torus-cookie-consent');
+  if (!bootstrap?.dataset.config) return;
+  try {
+    const config = JSON.parse(bootstrap.dataset.config);
+    (window as any).isMobileOrTablet = config.isMobileOrTablet === true;
+    mountConsentPersistenceStatus();
+    retrieveCookies('/consent/cookie', {
+      privacyPoliciesUrl: config.privacyPoliciesUrl,
+      preferences: config.preferences,
+      isMobileOrTablet: config.isMobileOrTablet === true,
+      signedIn: config.signedIn === true,
+    });
+  } catch {
+    // Invalid bootstrap data cannot opt the browser into analytics.
+  }
+});
 
 // connect if there are any LiveViews on the page
 liveSocket.connect();

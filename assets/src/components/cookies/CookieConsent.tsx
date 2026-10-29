@@ -1,87 +1,113 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { CookiePreferencesProps } from 'components/cookies/CookiePreferences';
-import { consentOptions, setCookies } from 'components/cookies/utils';
-import { Modal } from 'components/modal/Modal';
+import {
+  CONSENT_CHANGED_EVENT,
+  consentOptions,
+  dismissConsent,
+  saveConsent,
+} from 'components/cookies/consent';
 
-export const CookieConsent = (cookiePreferences: CookiePreferencesProps) => {
+const choiceClass =
+  'rounded-md border border-Border-border-bold bg-Background-bg-primary px-6 py-3 font-semibold text-Text-text-button focus-visible:outline focus-visible:outline-2';
+
+/** Offers explicit analytics choices without blocking access to the platform. */
+export const CookieConsent = (props: CookiePreferencesProps & { onDismiss?: () => void }) => {
+  const banner = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const onConsentChanged = () => props.onDismiss?.();
+    window.addEventListener(CONSENT_CHANGED_EVENT, onConsentChanged);
+    banner.current?.focus();
+    return () => {
+      window.removeEventListener(CONSENT_CHANGED_EVENT, onConsentChanged);
+      if (previous?.isConnected) previous.focus();
+    };
+  }, [props.onDismiss]);
+
+  const close = () => {
+    dismissConsent();
+    props.onDismiss?.();
+  };
+  const choose = (analytics: boolean) => {
+    void saveConsent({ ...consentOptions(), analytics });
+  };
+
   return (
-    <div className="form-inline">
-      <p>
-        We use cookies on our website to enhance site navigation, analyze site usage, and assist in
-        our marketing efforts. By clicking &quot;Accept&quot;, you consent to the storing of cookies
-        on your device. You can change your cookie settings at any time by clicking &quot;Cookie
-        Preferences&quot;
-      </p>
-      <p>
-        <a href={cookiePreferences.privacyPoliciesUrl}>Privacy Notice</a>
-      </p>
-    </div>
-  );
-};
-
-export function selectCookieConsent(cookiePreferences: CookiePreferencesProps): void {
-  const footer = (
-    <>
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={() => {
-          dismiss();
-          storeConsent();
-        }}
-      >
-        Accept
-      </button>
-      <button
-        type="button"
-        className="btn btn-outline-primary"
-        onClick={() => {
-          dismiss();
-          (window as any).OLI.handleCookiePreferences(cookiePreferences.privacyPoliciesUrl);
-        }}
-      >
-        Cookie Preferences
-      </button>
-    </>
-  );
-  const cookieConsent = (
-    <Modal
-      title="We use cookies"
-      footer={footer}
-      onCancel={() => {
-        dismiss();
+    <section
+      ref={banner}
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="cookie-consent-heading"
+      aria-describedby="cookie-consent-description"
+      aria-live="polite"
+      tabIndex={-1}
+      className="fixed bottom-0 left-0 right-0 z-[1050] max-h-[80vh] overflow-y-auto border-t border-Border-border-bold bg-Background-bg-primary p-4 font-open-sans text-Text-text-high shadow-lg"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') close();
       }}
     >
-      <CookieConsent privacyPoliciesUrl={cookiePreferences.privacyPoliciesUrl} />
-    </Modal>
+      <div className="mx-auto max-w-5xl">
+        <div className="flex items-start justify-between gap-4">
+          <h2 id="cookie-consent-heading" className="text-lg font-bold">
+            Your analytics choice
+          </h2>
+          <button
+            type="button"
+            className="rounded-md px-3 py-2 text-Text-text-button"
+            aria-label="Close cookie banner"
+            onClick={close}
+          >
+            Close
+          </button>
+        </div>
+        <p id="cookie-consent-description">
+          With your permission, we use Google Analytics cookies to understand how Torus is used and
+          improve it. We measure pages visited by type, features used, and videos started or
+          completed in aggregate. Analytics is off until you accept. You can change your choice in
+          Cookie Preferences at any time.
+        </p>
+        <a
+          className="font-semibold text-Text-text-button underline"
+          href={props.privacyPoliciesUrl}
+        >
+          Privacy Notice
+        </a>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button type="button" className={choiceClass} onClick={() => choose(true)}>
+            Accept
+          </button>
+          <button type="button" className={choiceClass} onClick={() => choose(false)}>
+            Reject
+          </button>
+          <a
+            href="/cookie-preferences"
+            className="rounded-md px-3 py-3 font-semibold text-Text-text-button underline"
+            onClick={(event) => {
+              if (!props.isMobileOrTablet && (window as any).OLI?.handleCookiePreferences) {
+                event.preventDefault();
+                (window as any).OLI.handleCookiePreferences(props.privacyPoliciesUrl);
+              }
+            }}
+          >
+            Manage preferences
+          </a>
+        </div>
+      </div>
+    </section>
   );
+};
 
-  display(cookieConsent);
+export function selectCookieConsent(props: CookiePreferencesProps): void {
+  let container = document.querySelector('#cookie_consent_display');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'cookie_consent_display';
+    document.body.appendChild(container);
+  }
+  const target = container;
+  ReactDOM.render(
+    <CookieConsent {...props} onDismiss={() => ReactDOM.unmountComponentAtNode(target)} />,
+    target,
+  );
 }
-
-const storeConsent = () => {
-  const userOptions = consentOptions();
-  const days = 365 * 24 * 60 * 60 * 1000;
-  setCookies([
-    { name: '_cky_opt_choices', value: JSON.stringify(userOptions), duration: days },
-    { name: '_cky_opt_in', value: 'true', duration: days },
-  ]);
-};
-
-const display = (c: any) => {
-  let cookieConsentEl = document.querySelector('#cookie_consent_display');
-  if (!cookieConsentEl) {
-    cookieConsentEl = document.createElement('div');
-    cookieConsentEl.id = 'cookie_consent_display';
-    document.body.appendChild(cookieConsentEl);
-  }
-  ReactDOM.render(c, cookieConsentEl);
-};
-
-const dismiss = () => {
-  const cookiePrefs = document.querySelector('#cookie_consent_display');
-  if (cookiePrefs) {
-    ReactDOM.unmountComponentAtNode(cookiePrefs);
-  }
-};

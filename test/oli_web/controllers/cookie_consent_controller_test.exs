@@ -1,324 +1,298 @@
 defmodule OliWeb.CookieConsentControllerTest do
-  use OliWeb.ConnCase
+  use OliWeb.ConnCase, async: true
+
+  import Ecto.Query
 
   alias Oli.Consent
   alias Oli.Consent.CookiesConsent
-  alias Oli.Delivery.Sections
   alias Oli.Repo
-  alias Oli.Seeder
-  alias Lti_1p3.Roles.ContextRoles
+  alias OliWeb.UserAuth
 
-  describe "persist_cookies when NOT logged in" do
-    test "does not persist to database and returns user not found", %{conn: conn} do
-      conn =
-        post(
-          conn,
-          Routes.cookie_consent_path(conn, :persist_cookies),
-          cookies: [
-            %{
-              expiresIso: "2027-04-26T18:17:21.264Z",
-              name: "_cky_opt_choices",
-              value:
-                ~s({"necessary":true,"functionality":true,"analytics":false,"targeting":false})
-            }
-          ]
-        )
+  describe "consent storage" do
+    test "anonymous choices remain browser-only", %{conn: conn} do
+      decision = %{group: String.duplicate("a", 32), sequence: 1}
 
-      # Should return success but with "user not found" info
-      response = json_response(conn, 200)
-      assert response["result"] == "success"
-      assert response["info"] == "user not found"
+      response =
+        post(conn, ~p"/consent/cookie", %{cookies: [choices_cookie(true)], decision: decision})
 
-      # Verify NO records were created in the database
-      count = Repo.aggregate(CookiesConsent, :count, :id)
-      assert count == 0
+      assert %{
+               "info" => "user not found",
+               "persistence" => "browser_only",
+               "decision" => %{"group" => group, "sequence" => 1},
+               "acknowledged" => false
+             } = json_response(response, 200)
+
+      assert group == decision.group
+      assert Repo.aggregate(CookiesConsent, :count) == 0
     end
-  end
 
-  describe "sync cookies on login" do
-    test "syncs browser cookies to database when user has no existing preferences", %{conn: conn} do
-      # Create a user with password
-      user = user_fixture(%{password: "valid_password123!"})
+    test "persists and retrieves a current decision for the signed-in user", %{conn: conn} do
+      user = user_fixture()
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+      response = post(conn, ~p"/consent/cookie", %{cookies: [choices_cookie(true)]})
+      assert json_response(response, 200)["info"] == "cookies persisted"
 
-      # Verify user has no cookie preferences in DB
+      response = get(conn, ~p"/consent/cookie")
+      assert [%{"name" => "_cky_opt_choices", "value" => value}] = json_response(response, 200)
+      preferences = Jason.decode!(value)
+      assert preferences["analytics"]
+      assert preferences["version"] == 2
+      assert preferences["necessary"]
+      refute preferences["targeting"]
+    end
+
+    test "normalizes advertising consent and never persists malformed requests", %{conn: conn} do
+      user = user_fixture()
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+      cookie = choices_cookie(true)
+      cookie = %{cookie | "value" => ~s({"version":2,"analytics":true,"targeting":true})}
+      assert json_response(post(conn, ~p"/consent/cookie", %{cookies: [cookie]}), 200)
+      refute Consent.preferences_for_user(user.id)["targeting"]
+
+      for cookies <- [
+            nil,
+            [],
+            [%{}],
+            [Map.put(cookie, "name", "arbitrary")],
+            [Map.put(cookie, "value", "invalid")],
+            [Map.put(cookie, "value", ~s({"analytics":true}))],
+            [Map.put(cookie, "expiresIso", "invalid")],
+            [Map.put(cookie, "expiresIso", "2000-01-01T00:00:00Z")]
+          ] do
+        assert json_response(post(conn, ~p"/consent/cookie", %{cookies: cookies}), 422)["result"] ==
+                 "error"
+      end
+
+      assert length(Consent.retrieve_cookies(user.id)) == 1
+    end
+
+    test "rejects a mixed batch before writing any cookies", %{conn: conn} do
+      user = user_fixture()
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+      cookies = [choices_cookie(true), %{"name" => "invalid"}]
+      assert json_response(post(conn, ~p"/consent/cookie", %{cookies: cookies}), 422)
       assert Consent.retrieve_cookies(user.id) == []
-
-      # Set browser cookie on conn (simulating cookie set while not logged in)
-      cookie_value =
-        ~s({"necessary":true,"functionality":false,"analytics":true,"targeting":false})
-
-      conn =
-        conn
-        |> Plug.Test.init_test_session([])
-        |> put_req_cookie("_cky_opt_choices", cookie_value)
-        |> post(Routes.user_session_path(conn, :create), %{
-          "user" => %{
-            "email" => user.email,
-            "password" => "valid_password123!"
-          }
-        })
-
-      # Should redirect (successful login)
-      assert redirected_to(conn)
-
-      # Verify cookie was synced to database
-      cookies = Consent.retrieve_cookies(user.id)
-      assert length(cookies) == 1
-
-      cookie = hd(cookies)
-      assert cookie.name == "_cky_opt_choices"
-      assert cookie.value == cookie_value
     end
 
-    test "does NOT sync browser cookies if user already has preferences in database", %{
+    test "a late or repeated older save cannot overwrite the latest decision", %{conn: conn} do
+      user = user_fixture()
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+      group = String.duplicate("a", 32)
+
+      rejected = %{
+        cookies: [choices_cookie(false)],
+        decision: %{group: group, sequence: 2}
+      }
+
+      assert json_response(post(conn, ~p"/consent/cookie", rejected), 200)
+
+      for sequence <- [1, 2] do
+        accepted = %{
+          cookies: [choices_cookie(true)],
+          decision: %{group: group, sequence: sequence}
+        }
+
+        assert json_response(post(conn, ~p"/consent/cookie", accepted), 200)
+        refute Consent.preferences_for_user(user.id)["analytics"]
+      end
+
+      [stored] = Consent.retrieve_cookies(user.id)
+      assert Jason.decode!(stored.value)["_decision_group"] == group
+      assert Jason.decode!(stored.value)["_decision_sequence"] == 2
+      refute Map.has_key?(Consent.preferences_for_user(user.id), "_decision_group")
+
+      assert [%{"value" => value}] = json_response(get(conn, ~p"/consent/cookie"), 200)
+      refute Map.has_key?(Jason.decode!(value), "_decision_group")
+      refute Map.has_key?(Jason.decode!(value), "_decision_sequence")
+    end
+
+    test "acknowledges an exact save and its retry without acknowledging a stale or different choice",
+         %{
+           conn: conn
+         } do
+      user = user_fixture()
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+      group = String.duplicate("a", 32)
+
+      rejected = %{
+        cookies: [choices_cookie(false)],
+        decision: %{group: group, sequence: 2}
+      }
+
+      assert %{
+               "persistence" => "persisted",
+               "decision" => %{"group" => ^group, "sequence" => 2},
+               "acknowledged" => true
+             } = json_response(post(conn, ~p"/consent/cookie", rejected), 200)
+
+      assert %{
+               "persistence" => "superseded",
+               "decision" => %{"group" => ^group, "sequence" => 2},
+               "acknowledged" => true
+             } = json_response(post(conn, ~p"/consent/cookie", rejected), 200)
+
+      for {sequence, analytics} <- [{1, false}, {2, true}] do
+        stale = %{
+          cookies: [choices_cookie(analytics)],
+          decision: %{group: group, sequence: sequence}
+        }
+
+        assert %{"persistence" => "superseded", "acknowledged" => false} =
+                 json_response(post(conn, ~p"/consent/cookie", stale), 200)
+      end
+
+      assert %{"persistence" => "persisted", "acknowledged" => true} =
+               json_response(
+                 post(conn, ~p"/consent/cookie", %{
+                   cookies: [choices_cookie(true)],
+                   decision: %{group: group, sequence: 3}
+                 }),
+                 200
+               )
+
+      assert %{"persistence" => "superseded", "acknowledged" => false} =
+               json_response(post(conn, ~p"/consent/cookie", rejected), 200)
+    end
+
+    test "newer saves and a new page group may change the stored choice", %{conn: conn} do
+      user = user_fixture()
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+
+      for {group, sequence, analytics} <- [
+            {String.duplicate("a", 32), 2, false},
+            {String.duplicate("a", 32), 3, true},
+            {String.duplicate("b", 32), 1, false}
+          ] do
+        params = %{
+          cookies: [choices_cookie(analytics)],
+          decision: %{group: group, sequence: sequence}
+        }
+
+        assert json_response(post(conn, ~p"/consent/cookie", params), 200)
+        assert Consent.preferences_for_user(user.id)["analytics"] == analytics
+      end
+    end
+
+    test "metadata-free writes cannot replace a sequenced rejection or alter its batch", %{
       conn: conn
     } do
-      # Create a user with password
-      user = user_fixture(%{password: "valid_password123!"})
+      user = user_fixture()
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+      rejected = choices_cookie(false)
+      opted_in = %{rejected | "name" => "_cky_opt_in", "value" => "true"}
 
-      # Pre-populate DB with existing preferences
-      existing_value =
-        ~s({"necessary":true,"functionality":true,"analytics":true,"targeting":true})
+      assert json_response(
+               post(conn, ~p"/consent/cookie", %{
+                 cookies: [rejected, opted_in],
+                 decision: %{group: String.duplicate("a", 32), sequence: 2}
+               }),
+               200
+             )
 
-      Consent.insert_cookie(
-        "_cky_opt_choices",
-        existing_value,
-        DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second),
-        user.id
+      old_timestamp = DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second)
+
+      Repo.update_all(from(cookie in CookiesConsent, where: cookie.user_id == ^user.id),
+        set: [updated_at: old_timestamp]
       )
 
-      # Set DIFFERENT browser cookie
-      browser_value =
-        ~s({"necessary":true,"functionality":false,"analytics":false,"targeting":false})
+      original_cookies = Map.new(Consent.retrieve_cookies(user.id), &{&1.name, &1})
+      expiry = DateTime.utc_now() |> DateTime.add(1, :day) |> DateTime.to_iso8601()
+      accepted = %{choices_cookie(true) | "expiresIso" => expiry}
+      opted_out = %{opted_in | "value" => "false", "expiresIso" => expiry}
 
-      conn =
-        conn
-        |> Plug.Test.init_test_session([])
-        |> put_req_cookie("_cky_opt_choices", browser_value)
-        |> post(Routes.user_session_path(conn, :create), %{
-          "user" => %{
-            "email" => user.email,
-            "password" => "valid_password123!"
-          }
-        })
+      assert json_response(
+               post(conn, ~p"/consent/cookie", %{cookies: [accepted, opted_out]}),
+               200
+             )
 
-      # Should redirect (successful login)
-      assert redirected_to(conn)
-
-      # Verify DB preferences were NOT overwritten
-      cookies = Consent.retrieve_cookies(user.id)
-      assert length(cookies) == 1
-
-      cookie = hd(cookies)
-      assert cookie.value == existing_value
-      refute cookie.value == browser_value
+      assert Map.new(Consent.retrieve_cookies(user.id), &{&1.name, &1}) == original_cookies
+      refute Consent.preferences_for_user(user.id)["analytics"]
     end
 
-    test "handles login without browser cookies gracefully", %{conn: conn} do
-      # Create a user with password
-      user = user_fixture(%{password: "valid_password123!"})
+    test "malformed supplied decision metadata is rejected before writing", %{conn: conn} do
+      user = user_fixture()
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+      group = String.duplicate("a", 32)
 
-      # No browser cookie set
-      conn =
-        conn
-        |> Plug.Test.init_test_session([])
-        |> post(Routes.user_session_path(conn, :create), %{
-          "user" => %{
-            "email" => user.email,
-            "password" => "valid_password123!"
-          }
-        })
+      for decision <- [
+            nil,
+            %{},
+            %{group: group, sequence: 0},
+            %{group: group, sequence: -1},
+            %{group: group, sequence: 1.5},
+            %{group: group, sequence: "1"},
+            %{group: group, sequence: 9_007_199_254_740_992},
+            %{group: String.duplicate("A", 32), sequence: 1},
+            %{group: String.duplicate("a", 31), sequence: 1},
+            %{group: String.duplicate("a", 33), sequence: 1},
+            %{group: "<script>", sequence: 1}
+          ] do
+        params = %{cookies: [choices_cookie(true)], decision: decision}
+        assert json_response(post(conn, ~p"/consent/cookie", params), 422)
+      end
 
-      # Should redirect (successful login)
-      assert redirected_to(conn)
-
-      # Verify no cookies were created (nothing to sync)
-      cookies = Consent.retrieve_cookies(user.id)
-      assert cookies == []
+      assert Consent.retrieve_cookies(user.id) == []
     end
 
-    test "does not create duplicate records on subsequent logins", %{conn: conn} do
-      # Create a user with password
-      user = user_fixture(%{password: "valid_password123!"})
+    test "does not retrieve expired decisions or another user's cookies", %{conn: conn} do
+      user = user_fixture()
+      other = user_fixture()
+      store(user.id, ~s({"version":2,"analytics":true}), -1)
+      store(other.id, ~s({"version":2,"analytics":true}))
+      conn = conn |> init_test_session(%{}) |> log_in_user(user)
+      assert json_response(get(conn, ~p"/consent/cookie"), 200) == []
+    end
+  end
 
-      cookie_value =
-        ~s({"necessary":true,"functionality":true,"analytics":false,"targeting":false})
+  describe "login synchronization" do
+    test "copies a current browser decision when DB is empty", %{conn: conn} do
+      user = user_fixture()
+      login_with_cookie(conn, user, ~s({"version":2,"analytics":true}))
+      assert Consent.preferences_for_user(user.id)["analytics"]
+    end
 
-      # First login with browser cookie
-      conn
-      |> Plug.Test.init_test_session([])
-      |> put_req_cookie("_cky_opt_choices", cookie_value)
-      |> post(Routes.user_session_path(conn, :create), %{
-        "user" => %{
-          "email" => user.email,
-          "password" => "valid_password123!"
-        }
-      })
+    test "upgrades legacy decisions and keeps current DB decisions", %{conn: conn} do
+      user = user_fixture()
+      store(user.id, ~s({"analytics":true,"functionality":false}))
+      login_with_cookie(conn, user, ~s({"version":2,"analytics":false}))
+      assert Consent.preferences_for_user(user.id)["version"] == 2
+      refute Consent.preferences_for_user(user.id)["analytics"]
 
-      # Verify one record exists
+      login_with_cookie(build_conn(), user, ~s({"version":2,"analytics":true}))
+      refute Consent.preferences_for_user(user.id)["analytics"]
       assert length(Consent.retrieve_cookies(user.id)) == 1
+    end
 
-      # Second login with same browser cookie
-      build_conn()
-      |> Plug.Test.init_test_session([])
-      |> put_req_cookie("_cky_opt_choices", cookie_value)
-      |> post(Routes.user_session_path(conn, :create), %{
-        "user" => %{
-          "email" => user.email,
-          "password" => "valid_password123!"
-        }
-      })
-
-      # Should still have only one record (no duplicates)
-      cookies = Consent.retrieve_cookies(user.id)
-      assert length(cookies) == 1
+    test "ignores malformed browser cookies", %{conn: conn} do
+      user = user_fixture()
+      login_with_cookie(conn, user, "invalid")
+      assert Consent.retrieve_cookies(user.id) == []
     end
   end
 
-  describe "cookie_consent controller " do
-    setup [:setup_session]
-
-    test "handle cookie consent persist and retrieve", %{
-      conn: conn,
-      user: user,
-      section: section
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-
-      conn1 =
-        post(
-          conn,
-          Routes.cookie_consent_path(conn, :persist_cookies),
-          cookies: [
-            %{
-              duration: "Tue, 26 Apr 2022 18:17:21 GMT",
-              expiresIso: "2022-04-26T18:17:21.264Z",
-              name: "_cky_opt_in",
-              value: "true"
-            }
-          ]
-        )
-
-      assert keys1 = json_response(conn1, 200)
-      assert Map.get(keys1, "info") == "cookies persisted"
-
-      conn2 =
-        get(
-          conn,
-          Routes.cookie_consent_path(conn, :retrieve)
-        )
-
-      assert keys2 = json_response(conn2, 200)
-
-      assert keys2 == [
-               %{
-                 "expiration" => "2022-04-26T18:17:21Z",
-                 "name" => "_cky_opt_in",
-                 "value" => "true"
-               }
-             ]
-    end
+  defp choices_cookie(analytics) do
+    %{
+      "name" => "_cky_opt_choices",
+      "value" => Jason.encode!(%{"version" => 2, "analytics" => analytics}),
+      "expiresIso" => DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.to_iso8601()
+    }
   end
 
-  defp setup_session(%{conn: conn}) do
-    user = user_fixture()
-
-    content = %{
-      "stem" => "1",
-      "authoring" => %{
-        "parts" => [
-          %{
-            "id" => "1",
-            "responses" => [
-              %{
-                "rule" => "input like {a}",
-                "score" => 10,
-                "id" => "r1",
-                "feedback" => %{"id" => "1", "content" => "yes"}
-              },
-              %{
-                "rule" => "input like {b}",
-                "score" => 11,
-                "id" => "r2",
-                "feedback" => %{"id" => "2", "content" => "almost"}
-              },
-              %{
-                "rule" => "input like {c}",
-                "score" => 0,
-                "id" => "r3",
-                "feedback" => %{"id" => "3", "content" => "no"}
-              }
-            ],
-            "scoringStrategy" => "best",
-            "evaluationStrategy" => "regex"
-          }
-        ]
-      }
-    }
-
-    map =
-      Seeder.base_project_with_resource2()
-      |> Seeder.add_objective("objective one", :o1)
-      |> Seeder.add_activity(
-        %{title: "one", max_attempts: 2, content: content},
-        :publication,
-        :project,
-        :author,
-        :activity
-      )
-
-    attrs = %{
-      graded: true,
-      max_attempts: 1,
-      title: "page1",
-      content: %{
-        "model" => [
-          %{
-            "type" => "activity-reference",
-            "purpose" => "None",
-            "activity_id" => Map.get(map, :activity).resource.id
-          }
-        ]
-      },
-      objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
-    }
-
-    map = Seeder.add_page(map, attrs, :page)
-
-    Seeder.attach_pages_to(
-      [map.page1, map.page2, map.page.resource],
-      map.container.resource,
-      map.container.revision,
-      map.publication
+  defp store(user_id, value, seconds \\ 86_400) do
+    Consent.insert_cookie(
+      "_cky_opt_choices",
+      value,
+      DateTime.utc_now() |> DateTime.add(seconds) |> DateTime.truncate(:second),
+      user_id
     )
+  end
 
-    section =
-      section_fixture(%{
-        context_id: "some-context-id",
-        base_project_id: map.project.id,
-        institution_id: map.institution.id,
-        open_and_free: false
-      })
-
-    Oli.Lti.TestHelpers.all_default_claims()
-    |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
-    |> cache_lti_params(user.id)
-
-    conn =
-      Plug.Test.init_test_session(conn, [])
-      |> log_in_author(map.author)
-      |> log_in_user(user)
-
-    {:ok,
-     conn: conn,
-     map: map,
-     author: map.author,
-     institution: map.institution,
-     user: user,
-     project: map.project,
-     publication: map.publication,
-     section: section,
-     revision: map.revision1,
-     page_revision: map.page.revision}
+  defp login_with_cookie(conn, user, value) do
+    conn
+    |> Map.replace!(:secret_key_base, OliWeb.Endpoint.config(:secret_key_base))
+    |> init_test_session(%{})
+    |> put_req_cookie("_cky_opt_choices", value)
+    |> fetch_cookies()
+    |> UserAuth.log_in_user(user)
   end
 end
