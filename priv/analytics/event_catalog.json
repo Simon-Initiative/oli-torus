@@ -1,0 +1,203 @@
+{
+  "description": "Google Analytics product event catalog (MER-5306). The Elixir and TypeScript emitters validate against this file; docs/features/analytics/ga-event-catalog.md is the human-readable reference. Values must stay low-cardinality and must never identify a person, cohort, attempt or content item.",
+  "context_parameters": {
+    "user_role": {
+      "description": "Coarse role of the signed-in user for the current page, resolved on the server.",
+      "type": "enum",
+      "values": {
+        "learner": "Any other signed-in user.",
+        "instructor": "Instructor area, or instructor preview of a course section.",
+        "author": "Authoring area, or template preview.",
+        "admin": "System administrator, or the administration area.",
+        "guest": "Guest learner."
+      }
+    },
+    "page_area": {
+      "description": "Area of Torus the current route belongs to (MER-5292).",
+      "type": "enum",
+      "values": {
+        "delivery": "Learner-facing course delivery.",
+        "instructor": "Instructor dashboards and workspace.",
+        "authoring": "Authoring workspace.",
+        "admin": "Administration.",
+        "public": "Anything else, such as sign-in pages."
+      }
+    },
+    "course_id": {
+      "description": "Base project ID of the course design (section base project in delivery, project in authoring). Never a section, cohort or slug.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "page_type": {
+      "description": "Kind of lesson page, for page-related events only.",
+      "type": "enum",
+      "values": {
+        "practice": "Ungraded basic page.",
+        "graded": "Graded basic page.",
+        "adaptive": "Adaptive page, graded or not.",
+        "exploration": "Exploration page.",
+        "other": "Any other resource rendered as a page."
+      }
+    },
+    "entry_point": {
+      "description": "How the user's session reached the course.",
+      "type": "enum",
+      "values": {
+        "lti": "LMS (LTI) account.",
+        "direct": "Independent Torus account, guest or administrator."
+      }
+    }
+  },
+  "event_parameters": {
+    "activity_type": {
+      "description": "Activity registration slug, such as oli_multiple_choice.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+    },
+    "video_source": {
+      "description": "Where the video is hosted.",
+      "type": "enum",
+      "values": {
+        "hosted": "Video file played by the Torus player.",
+        "youtube": "YouTube embed."
+      }
+    },
+    "feature_name": {
+      "description": "Feature the user completed a meaningful action with. Adding a value requires a catalog change and review.",
+      "type": "enum",
+      "values": {
+        "dot_opened": {
+          "feature_area": "ai_assistant",
+          "description": "Learner opens the DOT AI assistant."
+        },
+        "dot_question_submitted": {
+          "feature_area": "ai_assistant",
+          "description": "Learner sends a question to DOT."
+        },
+        "outline_opened": {
+          "feature_area": "navigation",
+          "description": "Learner opens the lesson outline panel."
+        },
+        "notes_opened": {
+          "feature_area": "notes",
+          "description": "Learner opens the lesson notes panel."
+        },
+        "search_used": {
+          "feature_area": "navigation",
+          "description": "Learner starts searching the course content on the Learn page."
+        },
+        "filter_used": {
+          "feature_area": "navigation",
+          "description": "Learner changes the Assignments filter."
+        },
+        "preview_launched": {
+          "feature_area": "preview",
+          "description": "Instructor or author starts previewing a course, once per browser-tab session and course."
+        },
+        "template_preview_launched": {
+          "feature_area": "preview",
+          "description": "Author starts a template preview, once per browser-tab session and template."
+        },
+        "author_publish_clicked": {
+          "feature_area": "authoring",
+          "description": "Author clicks Publish on the Publish page."
+        }
+      }
+    },
+    "file_type": {
+      "description": "Coarse type of a linked file. Never the URL or file name.",
+      "type": "enum",
+      "values": {
+        "pdf": "PDF document.",
+        "doc": "Word processing document.",
+        "slides": "Presentation.",
+        "sheet": "Spreadsheet or CSV.",
+        "image": "Image.",
+        "other": "Any other media library file."
+      }
+    }
+  },
+  "derived_parameters": {
+    "feature_area": {
+      "description": "Area of the feature, derived from feature_name by the writer. Emitters never send it.",
+      "type": "enum",
+      "derived_from": "feature_name",
+      "values": {
+        "ai_assistant": "DOT AI assistant.",
+        "navigation": "Course navigation.",
+        "notes": "Notes and annotations.",
+        "preview": "Instructor, author and template previews.",
+        "authoring": "Authoring workflow."
+      }
+    }
+  },
+  "events": {
+    "course_entered": {
+      "description": "First time a user reaches a course delivery or instructor page in a browser-tab session.",
+      "parameters": { "user_role": true, "page_area": true, "course_id": true, "entry_point": true }
+    },
+    "page_entered": {
+      "description": "User opens a lesson page.",
+      "parameters": { "user_role": true, "page_area": true, "course_id": true, "page_type": true }
+    },
+    "page_completed": {
+      "description": "Learner submits (finalizes) a graded page. Practice-page completion is deferred.",
+      "parameters": { "user_role": true, "page_area": true, "course_id": true, "page_type": true }
+    },
+    "attempt_submitted": {
+      "description": "Learner successfully submits an activity attempt, after the API succeeds.",
+      "parameters": {
+        "user_role": true,
+        "page_area": true,
+        "course_id": true,
+        "page_type": true,
+        "activity_type": true
+      }
+    },
+    "hint_viewed": {
+      "description": "Learner receives a hint. Requests after the last hint do not count.",
+      "parameters": {
+        "user_role": true,
+        "page_area": true,
+        "course_id": true,
+        "page_type": true,
+        "activity_type": true
+      }
+    },
+    "video_started": {
+      "description": "First play of a video on a page view.",
+      "parameters": {
+        "user_role": true,
+        "page_area": true,
+        "course_id": true,
+        "page_type": true,
+        "video_source": true
+      }
+    },
+    "video_completed": {
+      "description": "Video reaches its end, the same trigger as the xAPI video_completed statement.",
+      "parameters": {
+        "user_role": true,
+        "page_area": true,
+        "course_id": true,
+        "page_type": true,
+        "video_source": true
+      }
+    },
+    "feature_used": {
+      "description": "User completes a meaningful feature action.",
+      "parameters": {
+        "user_role": true,
+        "page_area": true,
+        "course_id": true,
+        "page_type": true,
+        "feature_name": true,
+        "feature_area": true
+      }
+    },
+    "file_link_clicked": {
+      "description": "User clicks a link to an uploaded or linked file in lesson content.",
+      "parameters": { "user_role": true, "page_area": true, "course_id": true, "file_type": true }
+    }
+  }
+}

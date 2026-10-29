@@ -119,7 +119,7 @@ describe('analytics', () => {
     });
 
     expect(pageViews()).toHaveLength(1);
-    expect(window.TorusAnalytics!.pagePath).toBe(initialContext.page_path);
+    expect(window.TorusAnalytics!.context).toEqual({ ...initialContext, page_title: 'Learning' });
     expect(document.querySelectorAll('script')).toHaveLength(1);
   });
 

@@ -1,4 +1,4 @@
-# Google Tag Manager and GA4 (MER-5292, MER-5307)
+# Google Tag Manager and GA4 (MER-5292, MER-5307, MER-5306)
 
 Product owns the GTM container and GA4 property. Engineering owns this installation;
 DevOps owns deployment configuration. Confirm named owners and provide developers
@@ -41,7 +41,9 @@ execution: tags can access student answers, account information and CSRF tokens.
    `analytics_storage`. Built-in consent checks alone allow cookieless pings and
    do not meet this rollout's Basic Consent Mode requirement.
 2. Create Data Layer Variables (version 2) for `page_location`, `page_title`,
-   `page_referrer`, `page_path`, `page_area` and `traffic_type`. Use these values
+   `page_referrer`, `page_path`, `page_area` and `traffic_type`, plus the catalog
+   parameters `user_role`, `course_id`, `page_type`, `entry_point`, `activity_type`,
+   `video_source`, `feature_name`, `feature_area` and `file_type`. Use these values
    exclusively; never use built-in Page URL, Page Path, Page Title or Referrer
    variables. `page_location` already contains origin + Phoenix route template;
    `page_title` is generic and `page_referrer` is always an empty string.
@@ -56,17 +58,27 @@ execution: tags can access student answers, account information and CSRF tokens.
    After acceptance, the application queues one current-page event before the container
    loads. Navigations
    to a different route template add one event; same-template patches, slug changes,
-   reconnects and duplicate mounts add none. This installation does not emit React
-   internal navigation or custom activity events (MER-5306).
-5. Set `cookie_domain` explicitly to the Torus hostname (never `auto`) to avoid
+   reconnects and duplicate mounts add none. Page views also carry `user_role`,
+   `course_id` and `page_type`; map them on the page view event too.
+5. Send the product event catalog (MER-5306) with one generic GA4 Event tag whose event
+   name is `{{Event}}`. Trigger it with a Custom Event trigger that uses the regex
+   `^(course_entered|page_entered|page_completed|attempt_submitted|hint_viewed|video_started|video_completed|feature_used|file_link_clicked)$`,
+   and keep the additional `analytics_storage` consent check. Map every catalog parameter
+   from its Data Layer Variable, and set `page_location`, `page_title` and `page_referrer`
+   as above. The writer sets every catalog key on every push, with `undefined` for those
+   that do not apply, so earlier values cannot leak into later events through GTM's merged
+   data model. `docs/features/analytics/ga-event-catalog.md` lists the events, parameters and
+   values; update the regex whenever the catalog changes.
+6. Set `cookie_domain` explicitly to the Torus hostname (never `auto`) to avoid
    collisions with other properties on the registrable domain. Set `cookie_path`
    to `/`, the root path used by withdrawal cleanup. Set
    `cookie_flags` to `samesite=none;secure` for LMS iframes over HTTPS.
-6. Prohibit Custom HTML and third-party tags without engineering/privacy review.
+7. Prohibit Custom HTML and third-party tags without engineering/privacy review.
    Restrict publish rights and require review of every container version. No
-   automatic URL capture, user IDs, course context, answers, search strings or
-   user-provided data may be added by tags. Future custom events must use the
-   writer in `assets/src/analytics/` and a reviewed sanitized contract.
+   automatic URL capture, user IDs, answers, search strings or user-provided data
+   may be added by tags, and course context is limited to the catalog's `course_id`.
+   New events must be added to `priv/analytics/event_catalog.json` and sent through
+   the writer in `assets/src/analytics/`.
 
 The banner, desktop modal and mobile `/cookie-preferences` page use the same consent
 module. Accept and Reject store a version-2 decision for 365 days, write the browser
@@ -129,7 +141,9 @@ necessary-cookie probe checks cookie availability and is removed immediately.
 - Turn off Google Signals, ads personalization, user-provided data collection and
   optional data sharing. Use the minimum retention period unless product approves
   a documented need. Do not link advertising accounts as part of this installation.
-- Register `page_area` as an event-scoped custom dimension if product needs it.
+- Register the catalog parameters as event-scoped custom dimensions: `user_role`,
+  `course_id`, `page_area`, `page_type`, `activity_type`, `feature_name`,
+  `feature_area`, `entry_point`, `video_source` and `file_type` (10 of GA4's 50).
 - Configure and activate the Internal traffic filter for `traffic_type=internal`.
   Torus marks system-admin author sessions internal on all environments. Other
   sessions use `external`, so prior internal context cannot persist in the data layer.
@@ -176,11 +190,21 @@ necessary-cookie probe checks cookie availability and is removed immediately.
    Confirm measurement stays disabled when both storage channels are unavailable.
 8. Open Manage preferences from an undecided desktop banner and cancel. The banner
    must remain available, without a session dismissal cookie or implied consent.
+9. Product events (MER-5306), in Tag Assistant and GA4 DebugView on the QA property.
+   As a student, enter a course through LTI and directly, open a practice page and a
+   graded page, submit an activity, view a hint, play a video to the end, click a PDF
+   in lesson content, open DOT and the outline. As an instructor, open the dashboard and
+   launch a preview. As an author, click Publish. Verify event names, parameters and
+   custom dimensions against `docs/features/analytics/ga-event-catalog.md`; confirm
+   that no event carries names, emails, user, section, resource or attempt identifiers,
+   slugs, titles, URLs, file names, search terms, scores or correctness. Confirm that a
+   preview only reports `preview_launched`, that `course_entered` fires once per tab and
+   course, and that no event is sent before consent or after withdrawal.
 
 Third-party cookie restrictions in Safari, Firefox and Chrome can fragment LMS
 iframe sessions even with the cookie flags above. Expect unreliable persistent
-client IDs; do not interpret these counts as unique students. Low-cardinality
-launch context is deferred to MER-5306. A future CSP must account for GTM/GA hosts;
+client IDs; do not interpret these counts as unique students. Product events are
+directional and must not be reconciled with Torus xAPI telemetry. A future CSP must account for GTM/GA hosts;
 adding a container does not authorize arbitrary additional third-party hosts.
 
 Rollback: unset `GOOGLE_TAG_MANAGER_ID` and restart the deployment. Existing open
@@ -190,7 +214,9 @@ measurement tags in GTM as well if immediate containment is required.
 ## Implementation references
 
 - Runtime validation: `lib/oli/analytics/config.ex`, `config/runtime.exs`
-- Sanitized routes and areas: `lib/oli_web/analytics.ex`
+- Sanitized routes, areas and event context: `lib/oli_web/analytics.ex`
+- Event catalog: `priv/analytics/event_catalog.json`, `lib/oli_web/analytics/catalog.ex`,
+  `assets/src/analytics/catalog.ts`; reference in `docs/features/analytics/ga-event-catalog.md`
 - Head component: `lib/oli_web/components/analytics.ex`
 - Navigation hook: `lib/oli_web/live_session_plugs/analytics_page_view.ex`
 - Sole data-layer writer and head bootstrap: `assets/src/analytics/`

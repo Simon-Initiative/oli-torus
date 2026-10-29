@@ -70,6 +70,8 @@ export interface ActivityContext {
   pageState?: any;
   showFeedback: boolean | null;
   resourceId?: number;
+  /** Activity registration slug, such as oli_multiple_choice. */
+  activityType?: string | null;
   renderPointMarkers: boolean;
   isAnnotationLevel: boolean;
   variables: any;

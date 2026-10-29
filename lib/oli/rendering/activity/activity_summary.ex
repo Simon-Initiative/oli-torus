@@ -40,8 +40,9 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :preview_script,
     # whether or not the activity is rendering in a graded context
     :graded,
-    # preview-specific metadata used by the instructor preview path
+    # activity registration slug, also reported to analytics as the activity type
     :activity_type_slug,
+    # preview-specific metadata used by the instructor preview path
     :preview_context,
     # bibliography references
     :bib_refs,
