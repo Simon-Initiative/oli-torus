@@ -5,6 +5,7 @@ defmodule Oli.Resources.Revision do
   alias Oli.Utils.Slug
   alias Oli.LearningModel.Parameters
   alias Oli.LearningModel.Parameters.Validation
+  alias Oli.Resources.ObjectiveIds
 
   @derive {Jason.Encoder,
            only: [
@@ -106,7 +107,7 @@ defmodule Oli.Resources.Revision do
     timestamps(type: :utc_datetime)
   end
 
-  @doc false
+  @doc "Builds a revision changeset, validating changed objective bindings as positive bigint IDs."
   def changeset(resource_revision, attrs \\ %{}) do
     resource_revision
     |> cast(attrs, [
@@ -151,6 +152,12 @@ defmodule Oli.Resources.Revision do
     |> cast_embed(:explanation_strategy)
     |> cast_embed(:collab_space_config)
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])
+    |> validate_change(:objectives, fn :objectives, objectives ->
+      case ObjectiveIds.valid_bindings?(objectives) do
+        true -> []
+        false -> [objectives: "must map parts to lists of positive bigint objective IDs"]
+      end
+    end)
     |> validate_learning_model_parameters()
     |> Slug.update_on_change("revisions")
   end

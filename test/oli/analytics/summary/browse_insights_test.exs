@@ -210,6 +210,39 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       refute Enum.any?(queries, fn {sql, _} -> String.contains?(sql, "part_attempts") end)
     end
 
+    test "ordinary activity sorting loads learner counts only for the selected resource", %{
+      project: project
+    } do
+      {[row], queries} =
+        capture_queries(fn ->
+          BrowseInsights.browse_insights(
+            %Oli.Repo.Paging{limit: 1, offset: 2},
+            %Oli.Repo.Sorting{direction: :asc, field: :title},
+            %Oli.Analytics.Summary.BrowseInsightsOptions{
+              project_id: project.id,
+              section_ids: [],
+              resource_type_id: Oli.Resources.ResourceType.id_for_activity()
+            }
+          )
+        end)
+
+      assert row.total_count == 6
+
+      assert [{learner_sql, params}] =
+               Enum.filter(queries, fn {sql, _} ->
+                 String.contains?(sql, "num_attempted") and
+                   not String.contains?(sql, "count(*) OVER()")
+               end)
+
+      assert [row.resource_id] in params
+      refute String.contains?(learner_sql, "part_attempts")
+
+      assert [{page_sql, _}] =
+               Enum.filter(queries, fn {sql, _} -> String.contains?(sql, "count(*) OVER()") end)
+
+      refute String.contains?(page_sql, "num_attempted")
+    end
+
     test "sorting", %{
       project: project
     } do
@@ -704,7 +737,11 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
                              num_first_attempts
                            ] ->
         %{
-          project_id: project_id,
+          project_id:
+            case section_id do
+              -1 -> project_id
+              _ -> -1
+            end,
           section_id: section_id,
           user_id: -1,
           resource_id: resource_id,

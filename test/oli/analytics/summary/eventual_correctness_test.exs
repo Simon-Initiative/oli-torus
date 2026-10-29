@@ -152,6 +152,50 @@ defmodule Oli.Analytics.Summary.EventualCorrectnessTest do
     assert insight(ctx, []).eventually_correct == 1.0
   end
 
+  test "unavailable activity rates sort after measured rates in either direction", ctx do
+    summary(ctx, ctx.alice.id, 1, 2, 1)
+    summary(ctx, ctx.bob.id, 0, 2, 0)
+    aggregate_summaries(ctx, 1, 4, 1)
+    aggregate_summaries(ctx, 0, 4, 0, "missing")
+
+    for sections <- [[], [ctx.section.id]], direction <- [:asc, :desc] do
+      [measured, missing] =
+        BrowseInsights.browse_insights(
+          %Paging{limit: 2, offset: 0},
+          %Sorting{field: :eventually_correct, direction: direction},
+          %BrowseInsightsOptions{
+            project_id: ctx.project.id,
+            section_ids: sections,
+            resource_type_id: Oli.Resources.ResourceType.id_for_activity()
+          }
+        )
+
+      assert measured.eventually_correct == 0.5
+      assert is_nil(missing.eventually_correct)
+      assert missing.part_id == "missing"
+    end
+  end
+
+  test "section counts ignore records that do not use the section scope sentinel", ctx do
+    summary(ctx, ctx.alice.id, 1, 2, 1)
+    aggregate_summaries(ctx, 1, 2, 1)
+
+    Repo.insert!(%ResourceSummary{
+      project_id: ctx.project.id,
+      section_id: ctx.section.id,
+      resource_id: ctx.question.resource.id,
+      resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+      part_id: "foreign_scope",
+      num_attempts: 10
+    })
+
+    [row] = EventualCorrectness.counts_query(ctx.project.id, [ctx.section.id]) |> Repo.all()
+    assert row.part_id == "part1"
+    assert row.num_correct == 1
+    assert row.num_attempted == 1
+    assert insight(ctx, [ctx.section.id]).eventually_correct == 1.0
+  end
+
   defp summary(ctx, user_id, correct, attempts, first_correct, part_id \\ "part1") do
     {:ok, row} =
       Summary.create_resource_summary(%{

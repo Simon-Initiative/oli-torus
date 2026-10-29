@@ -13,6 +13,9 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
   alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Resources.{ResourceType, Revision}
+  alias Oli.Resources.ObjectiveIds
+
+  require ObjectiveIds
 
   @doc """
   Returns attempted and successful learner counts per resource and part.
@@ -127,7 +130,7 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
         ec.section_id == s.section_id and ec.resource_id == s.resource_id and
           ec.resource_type_id == s.resource_type_id and
           fragment("? IS NOT DISTINCT FROM ?", ec.part_id, s.part_id),
-      where: s.user_id == -1 and s.section_id != -1 and s.num_attempts > 0,
+      where: s.project_id == -1 and s.user_id == -1 and s.section_id != -1 and s.num_attempts > 0,
       where: s.resource_type_id == ^resource_type_id,
       where: ^scope,
       distinct: [s.section_id, s.resource_id, s.resource_type_id, s.part_id],
@@ -271,16 +274,18 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
         on: revision.id == attempt.revision_id,
         join:
           objective in fragment(
-            "jsonb_array_elements_text(CASE WHEN jsonb_typeof(?) = 'array' THEN ? ELSE COALESCE(? -> ?, '[]'::jsonb) END)",
+            "jsonb_array_elements_text(CASE WHEN jsonb_typeof(?) = 'array' THEN ? WHEN jsonb_typeof(? -> ?) = 'array' THEN ? -> ? ELSE '[]'::jsonb END)",
             revision.objectives,
             revision.objectives,
+            revision.objectives,
+            attempt.activity_part_id,
             revision.objectives,
             attempt.activity_part_id
           ),
         on: true,
         distinct: true,
         select: %{
-          resource_id: type(fragment("?::bigint", objective.value), :integer),
+          resource_id: type(ObjectiveIds.safe_id(objective.value), :integer),
           section_id: attempt.section_id,
           user_id: attempt.user_id,
           activity_id: attempt.activity_id,
@@ -308,16 +313,22 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
         where: revision.id in subquery(observed_revisions),
         join:
           tags in fragment(
-            "jsonb_each(CASE WHEN jsonb_typeof(?) = 'array' THEN jsonb_build_object('_', ?) ELSE COALESCE(?, '{}'::jsonb) END)",
+            "jsonb_each(CASE WHEN jsonb_typeof(?) = 'array' THEN jsonb_build_object('_', ?) WHEN jsonb_typeof(?) = 'object' THEN ? ELSE '{}'::jsonb END)",
+            revision.objectives,
             revision.objectives,
             revision.objectives,
             revision.objectives
           ),
         on: true,
-        join: objective in fragment("jsonb_array_elements_text(?)", tags.value),
+        join:
+          objective in fragment(
+            "jsonb_array_elements_text(CASE WHEN jsonb_typeof(?) = 'array' THEN ? ELSE '[]'::jsonb END)",
+            tags.value,
+            tags.value
+          ),
         on: true,
         select: %{
-          resource_id: type(fragment("?::bigint", objective.value), :integer),
+          resource_id: type(ObjectiveIds.safe_id(objective.value), :integer),
           revision_id: revision.id
         }
       )
