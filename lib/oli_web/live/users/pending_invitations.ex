@@ -46,10 +46,7 @@ defmodule OliWeb.Users.PendingInvitations do
         show={true}
         wrapper_class="w-full max-w-md p-4 sm:p-6 lg:py-8"
         on_cancel={JS.push("cancel_decline_invitation")}
-        on_confirm={
-          JS.push("decline_invitation", value: %{id: @decline_invitation_id})
-          |> Modal.hide_modal("decline_invitation_modal")
-        }
+        on_confirm={JS.push("decline_invitation", value: %{id: @decline_invitation_id})}
       >
         <:title>Decline invitation</:title>
         Are you sure you want to decline this invitation?
@@ -99,6 +96,7 @@ defmodule OliWeb.Users.PendingInvitations do
       variant={:primary}
       size={:xs}
       phx-click="accept_invitation"
+      phx-disable-with="Accepting..."
       phx-value-id={@invitation.id}
     >
       Accept

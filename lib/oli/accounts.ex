@@ -1586,6 +1586,17 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Gets a pending enrollment invitation scoped to a user and enrollment.
+  """
+  def get_pending_user_invitation(user_id, enrollment_id) do
+    Repo.get_by(Enrollment,
+      id: enrollment_id,
+      user_id: user_id,
+      status: :pending_confirmation
+    )
+  end
+
+  @doc """
   Lists pending project invitations for an author.
   """
   def list_pending_author_invitations(author_id) do
@@ -1616,6 +1627,17 @@ defmodule Oli.Accounts do
       order_by: [asc: p.title]
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Gets a pending author invitation scoped to an author and project.
+  """
+  def get_pending_author_invitation(author_id, project_id) do
+    Repo.get_by(AuthorProject,
+      author_id: author_id,
+      project_id: project_id,
+      status: :pending_confirmation
+    )
   end
 
   @doc """

@@ -219,7 +219,8 @@ defmodule OliWeb.Components.Common do
   attr(:class, :string, default: nil)
 
   attr(:rest, :global,
-    include: ~w(disabled form name value target rel method download xphx-mouseover)
+    include:
+      ~w(disabled form name value target rel method download phx-disable-with xphx-mouseover)
   )
 
   slot(:inner_block, required: true)

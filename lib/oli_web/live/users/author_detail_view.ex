@@ -9,7 +9,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
   alias Oli.Accounts
   alias Oli.Accounts.{Author, SystemRole}
   alias Oli.Auditing
-  alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Repo
   alias OliWeb.Users.DetailViewHelpers
 
@@ -307,7 +306,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def handle_event("accept_invitation", %{"id" => id}, socket) do
-    author_project = author_project_from_id(socket.assigns.author.id, id)
+    author_project = pending_author_invitation_from_id(socket.assigns.author.id, id)
 
     case author_project &&
            Accounts.admin_accept_author_invitation(socket.assigns.author, author_project) do
@@ -334,7 +333,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def handle_event("decline_invitation", %{"id" => id}, socket) do
-    author_project = author_project_from_id(socket.assigns.author.id, id)
+    author_project = pending_author_invitation_from_id(socket.assigns.author.id, id)
 
     case author_project &&
            Accounts.admin_decline_author_invitation(socket.assigns.author, author_project) do
@@ -598,9 +597,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
     {:noreply, socket}
   end
 
-  defp author_project_from_id(author_id, id) do
+  defp pending_author_invitation_from_id(author_id, id) do
     case parse_id(id) do
-      {project_id, ""} -> Repo.get_by(AuthorProject, author_id: author_id, project_id: project_id)
+      {project_id, ""} -> Accounts.get_pending_author_invitation(author_id, project_id)
       _ -> nil
     end
   end

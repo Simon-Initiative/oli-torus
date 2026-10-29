@@ -86,7 +86,7 @@ defmodule OliWeb.Users.Actions do
           <.button
             variant={:outline}
             size={:xs}
-            class="w-[113px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+            class="min-w-[113px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
             phx-click="show_unlock_account_modal"
             phx-value-id={@user_id}
           >
@@ -96,7 +96,7 @@ defmodule OliWeb.Users.Actions do
           <.button
             variant={:outline}
             size={:xs}
-            class="w-[113px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+            class="min-w-[113px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
             phx-click="show_lock_account_modal"
             phx-value-id={@user_id}
           >
@@ -107,7 +107,7 @@ defmodule OliWeb.Users.Actions do
         <.button
           variant={:outline}
           size={:xs}
-          class="w-[113px] !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+          class="min-w-[113px] !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
           phx-click="show_delete_account_modal"
           phx-value-id={@user_id}
         >

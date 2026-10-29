@@ -9,10 +9,8 @@ defmodule OliWeb.Users.UsersDetailView do
   alias Oli.Accounts.User
   alias Oli.Auditing
   alias Oli.Delivery.{Metrics, Paywall, Sections}
-  alias Oli.Delivery.Sections.Enrollment
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
-  alias Oli.Repo
   alias OliWeb.Users.DetailViewHelpers
 
   alias OliWeb.Accounts.Modals.{
@@ -355,7 +353,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("accept_invitation", %{"id" => id}, socket) do
-    enrollment = enrollment_from_id(id)
+    enrollment = pending_enrollment_from_id(socket.assigns.user.id, id)
 
     case enrollment && Accounts.admin_accept_user_invitation(socket.assigns.user, enrollment) do
       {:ok, _enrollment} ->
@@ -381,7 +379,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("decline_invitation", %{"id" => id}, socket) do
-    enrollment = enrollment_from_id(id)
+    enrollment = pending_enrollment_from_id(socket.assigns.user.id, id)
 
     case enrollment && Accounts.admin_decline_user_invitation(socket.assigns.user, enrollment) do
       {:ok, _enrollment} ->
@@ -660,9 +658,9 @@ defmodule OliWeb.Users.UsersDetailView do
     Accounts.get_user(id, preload: [:platform_roles, :user_identities])
   end
 
-  defp enrollment_from_id(id) do
+  defp pending_enrollment_from_id(user_id, id) do
     case parse_id(id) do
-      {enrollment_id, ""} -> Repo.get(Enrollment, enrollment_id)
+      {enrollment_id, ""} -> Accounts.get_pending_user_invitation(user_id, enrollment_id)
       _ -> nil
     end
   end
