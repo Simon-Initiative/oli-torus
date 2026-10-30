@@ -302,15 +302,17 @@ defmodule OliWeb.Users.UsersDetailView do
           <div class="text-Text-text-low-alpha">Actions that can be taken for this user</div>
           <div class="mt-4 w-full max-w-[535px]">
             <div class="mb-4">
-              <.async_result :let={invitations} assign={@pending_invitations}>
-                <:loading>Loading pending invitations...</:loading>
-                <:failed :let={_reason}>Unable to load pending invitations.</:failed>
-                <OliWeb.Users.PendingInvitations.render
-                  invitations={invitations}
-                  id="user_pending_invitations"
-                  decline_invitation_id={@decline_invitation_id}
-                />
-              </.async_result>
+              <div role="status" aria-live="polite">
+                <.async_result :let={invitations} assign={@pending_invitations}>
+                  <:loading>Loading pending invitations...</:loading>
+                  <:failed :let={_reason}>Unable to load pending invitations.</:failed>
+                  <OliWeb.Users.PendingInvitations.render
+                    invitations={invitations}
+                    id="user_pending_invitations"
+                    decline_invitation_id={@decline_invitation_id}
+                  />
+                </.async_result>
+              </div>
             </div>
             <%= if @user.independent_learner do %>
               <Actions.render

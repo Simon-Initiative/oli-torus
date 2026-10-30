@@ -263,27 +263,31 @@ defmodule OliWeb.Users.AuthorsDetailView do
                   password_reset_link={@password_reset_link}
                 >
                   <:pending_invitations>
-                    <.async_result :let={invitations} assign={@pending_invitations}>
-                      <:loading>Loading pending invitations...</:loading>
-                      <:failed :let={_reason}>Unable to load pending invitations.</:failed>
-                      <OliWeb.Users.PendingInvitations.render
-                        invitations={invitations}
-                        id="author_pending_invitations"
-                        decline_invitation_id={@decline_invitation_id}
-                      />
-                    </.async_result>
+                    <div role="status" aria-live="polite">
+                      <.async_result :let={invitations} assign={@pending_invitations}>
+                        <:loading>Loading pending invitations...</:loading>
+                        <:failed :let={_reason}>Unable to load pending invitations.</:failed>
+                        <OliWeb.Users.PendingInvitations.render
+                          invitations={invitations}
+                          id="author_pending_invitations"
+                          decline_invitation_id={@decline_invitation_id}
+                        />
+                      </.async_result>
+                    </div>
                   </:pending_invitations>
                 </Actions.render>
               <% else %>
-                <.async_result :let={invitations} assign={@pending_invitations}>
-                  <:loading>Loading pending invitations...</:loading>
-                  <:failed :let={_reason}>Unable to load pending invitations.</:failed>
-                  <OliWeb.Users.PendingInvitations.render
-                    invitations={invitations}
-                    id="author_pending_invitations"
-                    decline_invitation_id={@decline_invitation_id}
-                  />
-                </.async_result>
+                <div role="status" aria-live="polite">
+                  <.async_result :let={invitations} assign={@pending_invitations}>
+                    <:loading>Loading pending invitations...</:loading>
+                    <:failed :let={_reason}>Unable to load pending invitations.</:failed>
+                    <OliWeb.Users.PendingInvitations.render
+                      invitations={invitations}
+                      id="author_pending_invitations"
+                      decline_invitation_id={@decline_invitation_id}
+                    />
+                  </.async_result>
+                </div>
               <% end %>
             </div>
           </div>

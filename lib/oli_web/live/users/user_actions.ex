@@ -17,7 +17,7 @@ defmodule OliWeb.Users.Actions do
         <.button
           variant={:link}
           size={nil}
-          class="group inline-flex items-center gap-1 p-0 text-sm font-semibold leading-4"
+          class="group inline-flex min-h-11 items-center gap-1 p-0 text-sm font-semibold leading-4"
           phx-click="generate_reset_password_link"
           phx-value-id={@user_id}
         >
@@ -66,7 +66,7 @@ defmodule OliWeb.Users.Actions do
           <.button
             variant={:link}
             size={nil}
-            class="group inline-flex items-center gap-1 p-0 text-sm font-semibold leading-4"
+            class="group inline-flex min-h-11 items-center gap-1 p-0 text-sm font-semibold leading-4"
             phx-click="send_reset_password_link"
             phx-value-id={@user_id}
           >

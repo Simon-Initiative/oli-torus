@@ -49,7 +49,7 @@ defmodule OliWeb.Users.PendingInvitations do
         on_confirm={JS.push("decline_invitation", value: %{id: @decline_invitation_id})}
       >
         <:title>Decline invitation</:title>
-        Are you sure you want to decline this invitation?
+        <:subtitle>Are you sure you want to decline this invitation?</:subtitle>
         <:cancel>Cancel</:cancel>
         <:confirm>Decline</:confirm>
       </Modal.modal>
