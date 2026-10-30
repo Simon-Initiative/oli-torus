@@ -886,7 +886,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         replace_summary_recommendation(socket, recommendation)
 
       _ ->
-        socket
+        show_unavailable_recommendation_after_failure(socket)
+    end
+  end
+
+  # Keeps a displayed recommendation; otherwise stops the tile from thinking forever.
+  defp show_unavailable_recommendation_after_failure(socket) do
+    case get_in(socket.assigns, [:dashboard, :summary_projection, :recommendation]) do
+      %{status: status} when status in [:ready, :beginning_course] -> socket
+      _ -> replace_summary_recommendation(socket, %{state: :unavailable})
     end
   end
 
@@ -1028,10 +1036,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       end
 
     if active_request? and current_scope == scope_selector do
-      update(socket, :dashboard, fn current ->
+      socket
+      |> update(:dashboard, fn current ->
         current = current || %{}
         Map.put(current, :summary_status, status_message)
       end)
+      |> show_unavailable_recommendation_after_failure()
     else
       socket
     end
