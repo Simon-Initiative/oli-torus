@@ -1041,6 +1041,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         current = current || %{}
         Map.put(current, :summary_status, status_message)
       end)
+      |> assign(:summary_tile_state, %{summary_tile_state(socket) | regenerate_in_flight?: false})
       |> show_unavailable_recommendation_after_failure()
     else
       socket
