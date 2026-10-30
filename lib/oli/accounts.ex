@@ -1671,7 +1671,8 @@ defmodule Oli.Accounts do
   that a previously issued link can render the already-redeemed state instead
   of appearing to be an unrelated or expired invitation.
   """
-  def admin_accept_user_invitation(%User{} = user, %Enrollment{} = enrollment) do
+  def admin_accept_user_invitation(%User{} = user, enrollment_id)
+      when is_integer(enrollment_id) do
     now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
 
     enrollment_query =
@@ -1681,7 +1682,7 @@ defmodule Oli.Accounts do
         as: :section,
         on: e.section_id == s.id,
         where:
-          e.id == ^enrollment.id and
+          e.id == ^enrollment_id and
             e.user_id == ^user.id and
             e.status == :pending_confirmation,
         where: ^valid_user_invitation_token(),
@@ -1711,13 +1712,18 @@ defmodule Oli.Accounts do
     |> normalize_admin_invitation_transaction(:enrollment)
   end
 
+  def admin_accept_user_invitation(%User{} = user, %Enrollment{id: enrollment_id}) do
+    admin_accept_user_invitation(user, enrollment_id)
+  end
+
   @doc """
   Declines a pending user invitation from an administrator.
 
   The invitation token is retained so that a previously issued link renders
   the already-rejected state until the token expires.
   """
-  def admin_decline_user_invitation(%User{} = user, %Enrollment{} = enrollment) do
+  def admin_decline_user_invitation(%User{} = user, enrollment_id)
+      when is_integer(enrollment_id) do
     now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
 
     query =
@@ -1727,15 +1733,20 @@ defmodule Oli.Accounts do
         as: :section,
         on: e.section_id == s.id,
         where:
-          e.id == ^enrollment.id and
+          e.id == ^enrollment_id and
             e.user_id == ^user.id and
             e.status == :pending_confirmation,
-        where: ^valid_user_invitation_token()
+        where: ^valid_user_invitation_token(),
+        select: e
 
-    case Repo.update_all(query, set: [status: :rejected, updated_at: now]) do
-      {1, _} -> {:ok, %{enrollment | status: :rejected, updated_at: now}}
+    case Repo.update_all(query, [set: [status: :rejected, updated_at: now]], returning: true) do
+      {1, [updated_enrollment]} -> {:ok, updated_enrollment}
       _ -> {:error, :invalid_pending_invitation}
     end
+  end
+
+  def admin_decline_user_invitation(%User{} = user, %Enrollment{id: enrollment_id}) do
+    admin_decline_user_invitation(user, enrollment_id)
   end
 
   @doc """
@@ -2395,7 +2406,8 @@ defmodule Oli.Accounts do
   that a previously issued link can render the already-redeemed state instead
   of appearing to be an unrelated or expired invitation.
   """
-  def admin_accept_author_invitation(%Author{} = author, %AuthorProject{} = author_project) do
+  def admin_accept_author_invitation(%Author{} = author, project_id)
+      when is_integer(project_id) do
     now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
 
     author_project_query =
@@ -2406,7 +2418,7 @@ defmodule Oli.Accounts do
         on: ap.project_id == p.id,
         where:
           ap.author_id == ^author.id and
-            ap.project_id == ^author_project.project_id and
+            ap.project_id == ^project_id and
             ap.status == :pending_confirmation,
         where: ^valid_author_invitation_token(),
         select: ap
@@ -2436,13 +2448,18 @@ defmodule Oli.Accounts do
     |> normalize_admin_invitation_transaction(:author_project)
   end
 
+  def admin_accept_author_invitation(%Author{} = author, %AuthorProject{project_id: project_id}) do
+    admin_accept_author_invitation(author, project_id)
+  end
+
   @doc """
   Declines a pending project invitation from an administrator.
 
   The invitation token is retained so that a previously issued link renders
   the already-rejected state until the token expires.
   """
-  def admin_decline_author_invitation(%Author{} = author, %AuthorProject{} = author_project) do
+  def admin_decline_author_invitation(%Author{} = author, project_id)
+      when is_integer(project_id) do
     now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
 
     query =
@@ -2453,14 +2470,19 @@ defmodule Oli.Accounts do
         on: ap.project_id == p.id,
         where:
           ap.author_id == ^author.id and
-            ap.project_id == ^author_project.project_id and
+            ap.project_id == ^project_id and
             ap.status == :pending_confirmation,
-        where: ^valid_author_invitation_token()
+        where: ^valid_author_invitation_token(),
+        select: ap
 
-    case Repo.update_all(query, set: [status: :rejected, updated_at: now]) do
-      {1, _} -> {:ok, %{author_project | status: :rejected, updated_at: now}}
+    case Repo.update_all(query, [set: [status: :rejected, updated_at: now]], returning: true) do
+      {1, [updated_author_project]} -> {:ok, updated_author_project}
       _ -> {:error, :invalid_pending_invitation}
     end
+  end
+
+  def admin_decline_author_invitation(%Author{} = author, %AuthorProject{project_id: project_id}) do
+    admin_decline_author_invitation(author, project_id)
   end
 
   @doc """

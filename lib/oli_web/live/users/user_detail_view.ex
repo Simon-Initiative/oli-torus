@@ -302,17 +302,19 @@ defmodule OliWeb.Users.UsersDetailView do
           <div class="text-Text-text-low-alpha">Actions that can be taken for this user</div>
           <div class="mt-4 w-full max-w-[535px]">
             <div class="mb-4">
-              <div role="status" aria-live="polite">
-                <.async_result :let={invitations} assign={@pending_invitations}>
-                  <:loading>Loading pending invitations...</:loading>
-                  <:failed :let={_reason}>Unable to load pending invitations.</:failed>
-                  <OliWeb.Users.PendingInvitations.render
-                    invitations={invitations}
-                    id="user_pending_invitations"
-                    decline_invitation_id={@decline_invitation_id}
-                  />
-                </.async_result>
-              </div>
+              <.async_result :let={invitations} assign={@pending_invitations}>
+                <:loading>
+                  <div role="status" aria-live="polite">Loading pending invitations...</div>
+                </:loading>
+                <:failed :let={_reason}>
+                  <div role="status" aria-live="polite">Unable to load pending invitations.</div>
+                </:failed>
+                <OliWeb.Users.PendingInvitations.render
+                  invitations={invitations}
+                  id="user_pending_invitations"
+                  decline_invitation_id={@decline_invitation_id}
+                />
+              </.async_result>
             </div>
             <%= if @user.independent_learner do %>
               <Actions.render
@@ -355,14 +357,18 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("accept_invitation", %{"id" => id}, socket) do
-    enrollment = pending_enrollment_from_id(socket.assigns.user.id, id)
+    case parse_id(id) do
+      {enrollment_id, ""} ->
+        case Accounts.admin_accept_user_invitation(socket.assigns.user, enrollment_id) do
+          {:ok, _enrollment} ->
+            {:noreply,
+             socket
+             |> refresh_pending_invitations()
+             |> put_flash(:info, "Invitation accepted.")}
 
-    case enrollment && Accounts.admin_accept_user_invitation(socket.assigns.user, enrollment) do
-      {:ok, _enrollment} ->
-        {:noreply,
-         socket
-         |> refresh_pending_invitations()
-         |> put_flash(:info, "Invitation accepted.")}
+          _ ->
+            {:noreply, put_flash(socket, :error, "Invitation could not be accepted.")}
+        end
 
       _ ->
         {:noreply, put_flash(socket, :error, "Invitation could not be accepted.")}
@@ -381,15 +387,19 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("decline_invitation", %{"id" => id}, socket) do
-    enrollment = pending_enrollment_from_id(socket.assigns.user.id, id)
+    case parse_id(id) do
+      {enrollment_id, ""} ->
+        case Accounts.admin_decline_user_invitation(socket.assigns.user, enrollment_id) do
+          {:ok, _enrollment} ->
+            {:noreply,
+             socket
+             |> refresh_pending_invitations()
+             |> assign(:decline_invitation_id, nil)
+             |> put_flash(:info, "Invitation declined.")}
 
-    case enrollment && Accounts.admin_decline_user_invitation(socket.assigns.user, enrollment) do
-      {:ok, _enrollment} ->
-        {:noreply,
-         socket
-         |> refresh_pending_invitations()
-         |> assign(:decline_invitation_id, nil)
-         |> put_flash(:info, "Invitation declined.")}
+          _ ->
+            {:noreply, put_flash(socket, :error, "Invitation could not be declined.")}
+        end
 
       _ ->
         {:noreply, put_flash(socket, :error, "Invitation could not be declined.")}
@@ -658,13 +668,6 @@ defmodule OliWeb.Users.UsersDetailView do
 
   defp user_with_preloaded_fields(id) do
     Accounts.get_user(id, preload: [:platform_roles, :user_identities])
-  end
-
-  defp pending_enrollment_from_id(user_id, id) do
-    case parse_id(id) do
-      {enrollment_id, ""} -> Accounts.get_pending_user_invitation(user_id, enrollment_id)
-      _ -> nil
-    end
   end
 
   defp parse_id(id) when is_integer(id), do: {id, ""}
