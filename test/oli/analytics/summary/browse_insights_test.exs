@@ -122,6 +122,127 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       assert part.part_id == "part2"
     end
 
+    test "ordinary page and objective browsing reads history only for the selected page", %{
+      project: project
+    } do
+      for type <- [
+            Oli.Resources.ResourceType.id_for_page(),
+            Oli.Resources.ResourceType.id_for_objective()
+          ] do
+        {rows, queries} =
+          capture_queries(fn ->
+            BrowseInsights.browse_insights(
+              %Oli.Repo.Paging{limit: 1, offset: 1},
+              %Oli.Repo.Sorting{direction: :asc, field: :title},
+              %Oli.Analytics.Summary.BrowseInsightsOptions{
+                project_id: project.id,
+                section_ids: [],
+                resource_type_id: type
+              }
+            )
+          end)
+
+        assert [row] = rows
+        assert row.total_count > 1
+
+        assert [{history_sql, params}] =
+                 Enum.filter(queries, fn {sql, _} -> String.contains?(sql, "part_attempts") end)
+
+        assert [row.resource_id] in params
+        refute String.contains?(history_sql, "count(*) OVER() as total_count")
+
+        assert [{count_sql, _}] =
+                 Enum.filter(queries, fn {sql, _} ->
+                   String.contains?(sql, "count(*) OVER() as total_count")
+                 end)
+
+        refute String.contains?(count_sql, "part_attempts")
+        refute String.contains?(count_sql, "resource_accesses")
+      end
+    end
+
+    test "eventual-correctness ranking reads history once and keeps counting independent", %{
+      project: project
+    } do
+      for type <- [
+            Oli.Resources.ResourceType.id_for_page(),
+            Oli.Resources.ResourceType.id_for_objective()
+          ] do
+        {[row], queries} =
+          capture_queries(fn ->
+            BrowseInsights.browse_insights(
+              %Oli.Repo.Paging{limit: 1, offset: 1},
+              %Oli.Repo.Sorting{direction: :asc, field: :eventually_correct},
+              %Oli.Analytics.Summary.BrowseInsightsOptions{
+                project_id: project.id,
+                section_ids: [],
+                resource_type_id: type
+              }
+            )
+          end)
+
+        assert row.total_count > 1
+
+        assert [{ranking_sql, _}] =
+                 Enum.filter(queries, fn {sql, _} -> String.contains?(sql, "part_attempts") end)
+
+        assert String.contains?(ranking_sql, "LIMIT")
+        assert String.contains?(ranking_sql, "published_resources")
+        refute String.contains?(ranking_sql, "count(*) OVER() as total_count")
+      end
+    end
+
+    test "an empty result page does not read history", %{project: project} do
+      {rows, queries} =
+        capture_queries(fn ->
+          BrowseInsights.browse_insights(
+            %Oli.Repo.Paging{limit: 1, offset: 100},
+            %Oli.Repo.Sorting{direction: :asc, field: :title},
+            %Oli.Analytics.Summary.BrowseInsightsOptions{
+              project_id: project.id,
+              section_ids: [],
+              resource_type_id: Oli.Resources.ResourceType.id_for_page()
+            }
+          )
+        end)
+
+      assert rows == []
+      refute Enum.any?(queries, fn {sql, _} -> String.contains?(sql, "part_attempts") end)
+    end
+
+    test "ordinary activity sorting loads learner counts only for the selected resource", %{
+      project: project
+    } do
+      {[row], queries} =
+        capture_queries(fn ->
+          BrowseInsights.browse_insights(
+            %Oli.Repo.Paging{limit: 1, offset: 2},
+            %Oli.Repo.Sorting{direction: :asc, field: :title},
+            %Oli.Analytics.Summary.BrowseInsightsOptions{
+              project_id: project.id,
+              section_ids: [],
+              resource_type_id: Oli.Resources.ResourceType.id_for_activity()
+            }
+          )
+        end)
+
+      assert row.total_count == 6
+
+      assert [{learner_sql, params}] =
+               Enum.filter(queries, fn {sql, _} ->
+                 String.contains?(sql, "num_attempted") and
+                   not String.contains?(sql, "count(*) OVER()")
+               end)
+
+      assert [row.resource_id] in params
+      refute String.contains?(learner_sql, "part_attempts")
+
+      assert [{page_sql, _}] =
+               Enum.filter(queries, fn {sql, _} -> String.contains?(sql, "count(*) OVER()") end)
+
+      refute String.contains?(page_sql, "num_attempted")
+    end
+
     test "sorting", %{
       project: project
     } do
@@ -237,6 +358,9 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
         |> Seeder.add_user(%{}, :user2)
 
       map = Seeder.publish_project(map)
+      map = Map.put(map, :second_section, Seeder.create_section(map).section)
+      first_id = map.section.id
+      second_id = map.second_section.id
 
       a1 = map.a1
       a2 = map.a2
@@ -248,35 +372,103 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       page2 = map.page2
 
       insert_summaries(map.project.id, [
-        [a1.resource.id, a1.revision.resource_type_id, -1, 1, "part1", 1, 2, 0, 1, 1],
-        [a1.resource.id, a1.revision.resource_type_id, -1, 1, "part2", 2, 3, 0, 1, 1],
-        [a2.resource.id, a2.revision.resource_type_id, -1, 1, "part1", 3, 4, 0, 1, 1],
-        [a2.resource.id, a2.revision.resource_type_id, -1, 1, "part2", 4, 5, 0, 1, 1],
-        [a3.resource.id, a3.revision.resource_type_id, -1, 1, "part1", 5, 6, 0, 1, 1],
-        [a3.resource.id, a3.revision.resource_type_id, -1, 1, "part2", 6, 7, 0, 1, 1],
-        [o1.resource.id, o1.revision.resource_type_id, -1, 1, nil, 1, 2, 1, 1, 1],
-        [o2.resource.id, o2.revision.resource_type_id, -1, 1, nil, 1, 3, 1, 1, 1],
-        [o3.resource.id, o3.revision.resource_type_id, -1, 1, nil, 1, 4, 1, 1, 1],
-        [page1.id, 1, -1, 1, nil, 1, 2, 1, 1, 1],
-        [page2.id, 1, -1, 1, nil, 1, 2, 1, 1, 1],
-        [a1.resource.id, a1.revision.resource_type_id, -1, 2, "part1", 1, 2, 0, 1, 3],
-        [a1.resource.id, a1.revision.resource_type_id, -1, 2, "part2", 2, 3, 0, 1, 1],
-        [a2.resource.id, a2.revision.resource_type_id, -1, 2, "part1", 3, 4, 0, 1, 1],
-        [a2.resource.id, a2.revision.resource_type_id, -1, 2, "part2", 4, 5, 0, 1, 1],
-        [a3.resource.id, a3.revision.resource_type_id, -1, 2, "part1", 5, 6, 0, 1, 1],
-        [a3.resource.id, a3.revision.resource_type_id, -1, 2, "part2", 6, 7, 0, 1, 1],
-        [o1.resource.id, o1.revision.resource_type_id, -1, 2, nil, 1, 2, 1, 1, 1],
-        [o2.resource.id, o2.revision.resource_type_id, -1, 2, nil, 1, 3, 1, 1, 1],
-        [o3.resource.id, o3.revision.resource_type_id, -1, 2, nil, 1, 4, 1, 1, 1],
-        [page1.id, 1, -1, 2, nil, 1, 2, 1, 1, 1],
-        [page2.id, 1, -1, 2, nil, 1, 2, 1, 1, 1]
+        [a1.resource.id, a1.revision.resource_type_id, -1, first_id, "part1", 1, 2, 0, 1, 1],
+        [a1.resource.id, a1.revision.resource_type_id, -1, first_id, "part2", 2, 3, 0, 1, 1],
+        [a2.resource.id, a2.revision.resource_type_id, -1, first_id, "part1", 3, 4, 0, 1, 1],
+        [a2.resource.id, a2.revision.resource_type_id, -1, first_id, "part2", 4, 5, 0, 1, 1],
+        [a3.resource.id, a3.revision.resource_type_id, -1, first_id, "part1", 5, 6, 0, 1, 1],
+        [a3.resource.id, a3.revision.resource_type_id, -1, first_id, "part2", 6, 7, 0, 1, 1],
+        [o1.resource.id, o1.revision.resource_type_id, -1, first_id, nil, 1, 2, 1, 1, 1],
+        [o2.resource.id, o2.revision.resource_type_id, -1, first_id, nil, 1, 3, 1, 1, 1],
+        [o3.resource.id, o3.revision.resource_type_id, -1, first_id, nil, 1, 4, 1, 1, 1],
+        [page1.id, 1, -1, first_id, nil, 1, 2, 1, 1, 1],
+        [page2.id, 1, -1, first_id, nil, 1, 2, 1, 1, 1],
+        [
+          a1.resource.id,
+          a1.revision.resource_type_id,
+          -1,
+          second_id,
+          "part1",
+          1,
+          2,
+          0,
+          1,
+          3
+        ],
+        [
+          a1.resource.id,
+          a1.revision.resource_type_id,
+          -1,
+          second_id,
+          "part2",
+          2,
+          3,
+          0,
+          1,
+          1
+        ],
+        [
+          a2.resource.id,
+          a2.revision.resource_type_id,
+          -1,
+          second_id,
+          "part1",
+          3,
+          4,
+          0,
+          1,
+          1
+        ],
+        [
+          a2.resource.id,
+          a2.revision.resource_type_id,
+          -1,
+          second_id,
+          "part2",
+          4,
+          5,
+          0,
+          1,
+          1
+        ],
+        [
+          a3.resource.id,
+          a3.revision.resource_type_id,
+          -1,
+          second_id,
+          "part1",
+          5,
+          6,
+          0,
+          1,
+          1
+        ],
+        [
+          a3.resource.id,
+          a3.revision.resource_type_id,
+          -1,
+          second_id,
+          "part2",
+          6,
+          7,
+          0,
+          1,
+          1
+        ],
+        [o1.resource.id, o1.revision.resource_type_id, -1, second_id, nil, 1, 2, 1, 1, 1],
+        [o2.resource.id, o2.revision.resource_type_id, -1, second_id, nil, 1, 3, 1, 1, 1],
+        [o3.resource.id, o3.revision.resource_type_id, -1, second_id, nil, 1, 4, 1, 1, 1],
+        [page1.id, 1, -1, second_id, nil, 1, 2, 1, 1, 1],
+        [page2.id, 1, -1, second_id, nil, 1, 2, 1, 1, 1]
       ])
 
       map
     end
 
     test "browsing activities, basic query operation, paging", %{
-      project: project
+      project: project,
+      section: section,
+      second_section: second_section
     } do
       activity_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
 
@@ -286,7 +478,7 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
           %Oli.Repo.Sorting{direction: :asc, field: :title},
           %Oli.Analytics.Summary.BrowseInsightsOptions{
             project_id: project.id,
-            section_ids: [1],
+            section_ids: [section.id],
             resource_type_id: activity_type_id
           }
         )
@@ -302,7 +494,7 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
           %Oli.Repo.Sorting{direction: :asc, field: :title},
           %Oli.Analytics.Summary.BrowseInsightsOptions{
             project_id: project.id,
-            section_ids: [1],
+            section_ids: [section.id],
             resource_type_id: activity_type_id
           }
         )
@@ -316,7 +508,7 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
           %Oli.Repo.Sorting{direction: :asc, field: :title},
           %Oli.Analytics.Summary.BrowseInsightsOptions{
             project_id: project.id,
-            section_ids: [1, 2],
+            section_ids: [section.id, second_section.id],
             resource_type_id: activity_type_id
           }
         )
@@ -428,6 +620,22 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
         ]
       ])
 
+      # Historical learner summaries are needed to distinguish learner success
+      # from submission accuracy. Two of four learner-part outcomes succeeded.
+      users = [Oli.Factory.insert(:user), Oli.Factory.insert(:user)]
+
+      for {user, correct} <- Enum.zip(users, [1, 0]), part <- ["progress", "question"] do
+        Repo.insert!(%Oli.Analytics.Summary.ResourceSummary{
+          section_id: section.id,
+          user_id: user.id,
+          resource_id: adaptive_activity.resource.id,
+          resource_type_id: adaptive_activity.revision.resource_type_id,
+          part_id: part,
+          num_correct: correct,
+          num_attempts: 3
+        })
+      end
+
       Map.put(map, :adaptive_activity, adaptive_activity)
     end
 
@@ -531,6 +739,34 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
     end
   end
 
+  @doc false
+  def record_query(_event, _measurements, %{query: sql, params: params}, {pid, ref}) do
+    send(pid, {ref, sql, params})
+  end
+
+  defp capture_queries(fun) do
+    ref = make_ref()
+    handler = {__MODULE__, ref}
+
+    :ok =
+      :telemetry.attach(handler, [:oli, :repo, :query], &__MODULE__.record_query/4, {self(), ref})
+
+    try do
+      result = fun.()
+      {result, collect_queries(ref, [])}
+    after
+      :telemetry.detach(handler)
+    end
+  end
+
+  defp collect_queries(ref, queries) do
+    receive do
+      {^ref, sql, params} -> collect_queries(ref, [{sql, params} | queries])
+    after
+      0 -> Enum.reverse(queries)
+    end
+  end
+
   defp create_adaptive_activity(map, title) do
     adaptive_registration = Activities.get_registration_by_slug("oli_adaptive")
 
@@ -572,7 +808,11 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
                              num_first_attempts
                            ] ->
         %{
-          project_id: project_id,
+          project_id:
+            case section_id do
+              -1 -> project_id
+              _ -> -1
+            end,
           section_id: section_id,
           user_id: -1,
           resource_id: resource_id,

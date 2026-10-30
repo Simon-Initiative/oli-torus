@@ -1,7 +1,7 @@
 # Cross-section authoring analytics workflow.
 #
 # Learner outcomes for the analyzed activity:
-# - Alice (section one): correct on her first attempt
+# - Alice (section one): correct on her first attempt, then incorrect after a reset
 # - Bob (section one): incorrect, resets the activity, then answers correctly
 # - Carol (section two): requests a hint, then answers incorrectly
 # - Dave (section two): enrolled but does not attempt either activity
@@ -89,6 +89,23 @@
           body_md: "Correct"
           correct: true
 
+- create_activity:
+    project: "authoring_insights_course"
+    title: "Rollup Question"
+    virtual_id: "rollup_question"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Interpret analytics evidence"
+    content: |
+      stem_md: "Which option is correct?"
+      choices:
+        - id: "a"
+          body_md: "Incorrect"
+          score: 0
+        - id: "b"
+          body_md: "Correct"
+          score: 1
+
 - edit_page:
     project: "authoring_insights_course"
     page: "Analyzed Practice"
@@ -102,6 +119,8 @@
           body_md: "Practice interpreting evidence."
         - type: activity_reference
           virtual_id: "analyzed_question"
+        - type: activity_reference
+          virtual_id: "rollup_question"
 
 - edit_page:
     project: "authoring_insights_course"
@@ -179,6 +198,19 @@
     activity_virtual_id: "analyzed_question"
     response: "b"
 
+- reset_activity:
+    student: "alice"
+    section: "analytics_section_one"
+    page: "Analyzed Practice"
+    activity_virtual_id: "analyzed_question"
+
+- answer_question:
+    student: "alice"
+    section: "analytics_section_one"
+    page: "Analyzed Practice"
+    activity_virtual_id: "analyzed_question"
+    response: "a"
+
 - visit_page:
     student: "bob"
     section: "analytics_section_one"
@@ -222,8 +254,8 @@
     activity_virtual_id: "analyzed_question"
     response: "a"
 
-# Across both sections: 2 correct responses from 4 attempts, one hint,
-# and one correct first attempt from three learners who attempted the activity.
+# Across both sections: 2 correct responses from 5 attempts, one hint,
+# one correct first attempt, and two eventually correct learners out of three.
 - assert:
     insights:
       project: "authoring_insights_course"
@@ -234,13 +266,13 @@
       activity_virtual_id: "analyzed_question"
       expected:
         num_correct: 2
-        num_attempts: 4
+        num_attempts: 5
         num_hints: 1
         num_first_attempts: 3
         num_first_attempts_correct: 1
-        eventually_correct: 0.5
+        eventually_correct: 0.6666666666666666
         first_attempt_correct: 0.3333333333333333
-        relative_difficulty: 0.6833333333333333
+        relative_difficulty: 0.7133333333333334
 
 - assert:
     insights:
@@ -252,13 +284,13 @@
       page: "Analyzed Practice"
       expected:
         num_correct: 2
-        num_attempts: 4
+        num_attempts: 5
         num_hints: 1
         num_first_attempts: 3
         num_first_attempts_correct: 1
-        eventually_correct: 0.5
+        eventually_correct: 0.6666666666666666
         first_attempt_correct: 0.3333333333333333
-        relative_difficulty: 0.6833333333333333
+        relative_difficulty: 0.7133333333333334
 
 - assert:
     insights:
@@ -270,13 +302,13 @@
       objective: "Interpret analytics evidence"
       expected:
         num_correct: 2
-        num_attempts: 4
+        num_attempts: 5
         num_hints: 1
         num_first_attempts: 3
         num_first_attempts_correct: 1
-        eventually_correct: 0.5
+        eventually_correct: 0.6666666666666666
         first_attempt_correct: 0.3333333333333333
-        relative_difficulty: 0.6833333333333333
+        relative_difficulty: 0.7133333333333334
 
 # Section-specific checks prove that the cross-section result is an aggregation,
 # rather than one section's result being returned for every filter.
@@ -289,13 +321,13 @@
       activity_virtual_id: "analyzed_question"
       expected:
         num_correct: 2
-        num_attempts: 3
+        num_attempts: 4
         num_hints: 0
         num_first_attempts: 2
         num_first_attempts_correct: 1
-        eventually_correct: 0.6666666666666666
+        eventually_correct: 1.0
         first_attempt_correct: 0.5
-        relative_difficulty: 0.35
+        relative_difficulty: 0.4
 
 - assert:
     insights:
@@ -347,3 +379,85 @@
       objective: "Apply unattempted concepts"
       exists: false
       expected: {}
+
+# On the second question Alice and Bob are wrong; Carol is correct.
+# Every learner has now succeeded somewhere, but only 3 of 6 learner-question
+# opportunities are eventually correct. Page/objective rates must be 50%.
+- answer_question:
+    student: "alice"
+    section: "analytics_section_one"
+    page: "Analyzed Practice"
+    activity_virtual_id: "rollup_question"
+    response: "a"
+
+- answer_question:
+    student: "bob"
+    section: "analytics_section_one"
+    page: "Analyzed Practice"
+    activity_virtual_id: "rollup_question"
+    response: "a"
+
+- answer_question:
+    student: "carol"
+    section: "analytics_section_two"
+    page: "Analyzed Practice"
+    activity_virtual_id: "rollup_question"
+    response: "b"
+
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      sections:
+        - "analytics_section_one"
+        - "analytics_section_two"
+      resource_type: "page"
+      page: "Analyzed Practice"
+      expected:
+        num_correct: 3
+        num_attempts: 8
+        num_first_attempts: 6
+        num_first_attempts_correct: 2
+        eventually_correct: 0.5
+        first_attempt_correct: 0.3333333333333333
+
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      sections:
+        - "analytics_section_one"
+        - "analytics_section_two"
+      resource_type: "objective"
+      objective: "Interpret analytics evidence"
+      expected:
+        num_correct: 3
+        num_attempts: 8
+        num_first_attempts: 6
+        num_first_attempts_correct: 2
+        eventually_correct: 0.5
+        first_attempt_correct: 0.3333333333333333
+
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      resource_type: "page"
+      page: "Analyzed Practice"
+      expected:
+        num_correct: 3
+        num_attempts: 8
+        num_first_attempts: 6
+        num_first_attempts_correct: 2
+        eventually_correct: 0.5
+        first_attempt_correct: 0.3333333333333333
+
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      resource_type: "objective"
+      objective: "Interpret analytics evidence"
+      expected:
+        num_correct: 3
+        num_attempts: 8
+        num_first_attempts: 6
+        num_first_attempts_correct: 2
+        eventually_correct: 0.5
+        first_attempt_correct: 0.3333333333333333
