@@ -176,7 +176,7 @@ export class CurriculumTask {
   }
 
   @step('Create an adaptive page in Advanced Author')
-  async createAdaptivePageInAdvancedAuthor(stayInEditor = false) {
+  async createAdaptivePageInAdvancedAuthor(stayInEditor = false, lessonTitle?: string) {
     const openedEditor = await this.addPage('adaptive-practice', true);
     if (!openedEditor) {
       await this.enterPage(
@@ -188,9 +188,10 @@ export class CurriculumTask {
     }
     await this.basicPP.ensureAdvancedAuthorEditable();
     await this.basicPP.waitForChangesSaved().catch(() => void 0);
+    if (lessonTitle) await this.basicPP.renameTitle(lessonTitle);
     if (!stayInEditor) {
       await this.returnToCurriculum();
-      await this.curriculum.expectPageVisible('New Advanced Author Page');
+      await this.curriculum.expectPageVisible(lessonTitle ?? 'New Advanced Author Page');
     }
   }
 

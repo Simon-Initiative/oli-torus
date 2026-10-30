@@ -34,8 +34,20 @@ defmodule Oli.AutomationSetupTest do
     end
   end
 
-  defp insert_response(user_id) do
-    section = insert(:section)
+  describe "teardown_section/1" do
+    test "deletes a section that still has responses from a learner who was not torn down" do
+      section = insert(:section, title: "Automation test section")
+      learner = insert(:user)
+      insert_response(learner.id, section)
+
+      assert %{success: true} = AutomationSetup.teardown_section(section.slug)
+
+      refute Repo.get(Oli.Delivery.Sections.Section, section.id)
+      assert response_count(learner.id) == 0
+    end
+  end
+
+  defp insert_response(user_id, section \\ insert(:section)) do
     page = insert(:resource)
 
     part_response =
