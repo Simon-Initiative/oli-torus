@@ -3817,6 +3817,36 @@
           {
             "type": "object",
             "required": [
+              "page_collab_config"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "page_collab_config": {
+                "type": "object",
+                "required": [
+                  "section"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "section": { "type": "string" },
+                  "enabled": { "$ref": "#/definitions/booleanLike" },
+                  "threaded": { "$ref": "#/definitions/booleanLike" },
+                  "auto_accept": { "$ref": "#/definitions/booleanLike" },
+                  "show_full_history": { "$ref": "#/definitions/booleanLike" },
+                  "anonymous_posting": { "$ref": "#/definitions/booleanLike" },
+                  "participation_min_replies": {
+                    "oneOf": [{ "type": "integer" }, { "type": "string" }]
+                  },
+                  "participation_min_posts": {
+                    "oneOf": [{ "type": "integer" }, { "type": "string" }]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
               "discussion_moderation"
             ],
             "additionalProperties": false,

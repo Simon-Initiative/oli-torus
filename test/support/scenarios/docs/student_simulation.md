@@ -398,6 +398,25 @@ Configures course discussions on a section or product blueprint by updating the 
     auto_accept: false
 ```
 
+## page_collab_config
+
+Enables or disables Notes collaboration spaces for every page in a section.
+
+The directive defaults `anonymous_posting` to `false`; set it to `true` explicitly
+when anonymous notes should be allowed. This differs from the underlying
+`CollabSpaceConfig` schema default.
+
+### Example
+```yaml
+- page_collab_config:
+    section: "my_section"
+    enabled: true
+    threaded: true
+    auto_accept: true
+    show_full_history: true
+    anonymous_posting: false
+```
+
 ---
 
 ## discussion_moderation
