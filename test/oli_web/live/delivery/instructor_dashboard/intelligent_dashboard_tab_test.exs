@@ -622,6 +622,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert socket.assigns.dashboard.summary_status == "Showing latest recommendation"
     end
 
+    test "shows the recommendation as unavailable instead of thinking when the request fails" do
+      socket =
+        recommendation_result_socket(%{
+          status: :thinking,
+          recommendation_id: nil,
+          body: nil
+        })
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+                 socket,
+                 101,
+                 "course",
+                 {:error, :generation_failed}
+               )
+
+      assert socket.assigns.dashboard.summary_projection.recommendation.status == :unavailable
+      assert socket.assigns.dashboard.summary_projection_status == %{status: :ready}
+    end
+
+    test "keeps a displayed recommendation when a later recommendation request fails" do
+      displayed = %{
+        status: :ready,
+        recommendation_id: "77",
+        body: "Review Module 3 assessment performance."
+      }
+
+      socket = recommendation_result_socket(displayed)
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+                 socket,
+                 101,
+                 "course",
+                 {:error, :generation_failed}
+               )
+
+      assert socket.assigns.dashboard.summary_projection.recommendation == displayed
+    end
+
     test "ignores stale async recommendation results from an older dashboard load token" do
       socket = %Phoenix.LiveView.Socket{
         assigns: %{
@@ -952,6 +992,47 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert updated.assigns.dashboard_summary_recommendation_request == nil
       assert updated.assigns.dashboard_summary_recommendation_job_tokens == %{}
       assert updated.assigns.dashboard_summary_recommendation_task_refs == %{}
+    end
+
+    test "shows the recommendation as unavailable instead of thinking when the load task crashes" do
+      ref = make_ref()
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard_request_token: 111,
+          dashboard_scope: "course",
+          dashboard: %{
+            summary_projection: %{
+              recommendation: %{status: :thinking, recommendation_id: nil, body: nil}
+            },
+            summary_projection_status: %{status: :loading}
+          },
+          dashboard_summary_recommendation_request: %{
+            request_token: 111,
+            scope_selector: "course",
+            status: :started
+          },
+          dashboard_summary_recommendation_task_refs: %{
+            ref => %{
+              request_token: 111,
+              scope_selector: "course",
+              action: :load,
+              recommendation_id: nil
+            }
+          }
+        }
+      }
+
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_summary_recommendation_task_down(
+                 socket,
+                 ref,
+                 :boom
+               )
+
+      assert updated.assigns.dashboard.summary_projection.recommendation.status == :unavailable
+      assert updated.assigns.dashboard.summary_projection_status == %{status: :ready}
     end
 
     test "clears stale sentiment state when a sentiment task crashes for the active recommendation" do
@@ -1879,6 +1960,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
 
   defp summary_tile_state(overrides) do
     Map.merge(IntelligentDashboardTab.default_summary_tile_state(), overrides)
+  end
+
+  defp recommendation_result_socket(recommendation) do
+    %Phoenix.LiveView.Socket{
+      assigns: %{
+        __changed__: %{},
+        dashboard: %{
+          summary_recommendation: nil,
+          summary_status: "Loading recommendation",
+          summary_projection: %{recommendation: recommendation},
+          summary_projection_status: %{status: :loading}
+        },
+        dashboard_request_token: 101,
+        dashboard_scope: "course",
+        dashboard_summary_recommendation_request: %{
+          request_token: 101,
+          scope_selector: "course",
+          status: :started
+        }
+      }
+    }
   end
 
   defp restore_env(key, nil), do: Application.delete_env(:oli, key)
