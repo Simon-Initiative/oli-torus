@@ -1035,6 +1035,45 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert updated.assigns.dashboard.summary_projection_status == %{status: :ready}
     end
 
+    test "stops regenerating and keeps the displayed recommendation when the regenerate task crashes" do
+      ref = make_ref()
+      displayed = %{status: :ready, recommendation_id: "77", body: "Review Module 3."}
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard_request_token: 111,
+          dashboard_scope: "course",
+          dashboard: %{summary_projection: %{recommendation: displayed}},
+          summary_tile_state:
+            summary_tile_state(%{scope_selector: "course", regenerate_in_flight?: true}),
+          dashboard_summary_recommendation_request: %{
+            request_token: 111,
+            scope_selector: "course",
+            status: :started_explicit
+          },
+          dashboard_summary_recommendation_task_refs: %{
+            ref => %{
+              request_token: 111,
+              scope_selector: "course",
+              action: :regenerate,
+              recommendation_id: "77"
+            }
+          }
+        }
+      }
+
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_summary_recommendation_task_down(
+                 socket,
+                 ref,
+                 :boom
+               )
+
+      refute updated.assigns.summary_tile_state.regenerate_in_flight?
+      assert updated.assigns.dashboard.summary_projection.recommendation == displayed
+    end
+
     test "clears stale sentiment state when a sentiment task crashes for the active recommendation" do
       ref = make_ref()
 
