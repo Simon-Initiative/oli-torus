@@ -292,6 +292,25 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
     assert latest.state == :fallback
   end
 
+  test "persists fallback payloads when the provider returns an empty completion", %{
+    context: context,
+    section: section
+  } do
+    snapshot_bundle = snapshot_bundle_fixture(section.id)
+
+    assert {:ok, recommendation} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: fn _request_ctx, _messages, _service_config -> {:ok, "  \n "} end
+             )
+
+    assert recommendation.state == :fallback
+    assert recommendation.metadata.fallback_reason == :empty_response
+
+    latest = Recommendations.latest_instance(section.id, context.scope)
+    assert latest.state == :fallback
+  end
+
   test "submits thumbs feedback idempotently and exposes it in subsequent reads", %{
     context: context,
     section: section
