@@ -31,6 +31,8 @@ defmodule Oli.Accounts do
   alias Oli.Delivery.Sections.{Section, Enrollment}
   alias Lti_1p3.DataProviders.EctoProvider
 
+  @invitation_validity_in_days 30
+
   @spec browse_users(
           Oli.Repo.Paging.t(),
           Oli.Repo.Sorting.t(),
@@ -1547,6 +1549,207 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Lists pending section invitations for a user, including the course section
+  associated with each invitation.
+  """
+  def list_pending_user_invitations(user_id) do
+    from(e in Enrollment,
+      as: :enrollment,
+      join: s in Section,
+      as: :section,
+      on: e.section_id == s.id,
+      join: p in Project,
+      on: s.base_project_id == p.id,
+      where: e.user_id == ^user_id and e.status == :pending_confirmation,
+      where: ^valid_user_invitation_token(),
+      select: %{
+        id: e.id,
+        title: s.title,
+        project_slug: p.slug,
+        section_slug: s.slug
+      },
+      order_by: [asc: s.title]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets a pending enrollment invitation scoped to a user and enrollment.
+  """
+  def get_pending_user_invitation(user_id, enrollment_id) do
+    from(e in Enrollment,
+      as: :enrollment,
+      join: s in Section,
+      as: :section,
+      on: e.section_id == s.id,
+      where:
+        e.id == ^enrollment_id and e.user_id == ^user_id and
+          e.status == :pending_confirmation,
+      where: ^valid_user_invitation_token()
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Lists pending project invitations for an author.
+  """
+  def list_pending_author_invitations(author_id) do
+    from(ap in AuthorProject,
+      as: :author_project,
+      join: p in Project,
+      as: :project,
+      on: ap.project_id == p.id,
+      where: ap.author_id == ^author_id and ap.status == :pending_confirmation,
+      where: ^valid_author_invitation_token(),
+      select: %{
+        id: ap.project_id,
+        title: p.title,
+        project_slug: p.slug
+      },
+      order_by: [asc: p.title]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets a pending author invitation scoped to an author and project.
+  """
+  def get_pending_author_invitation(author_id, project_id) do
+    from(ap in AuthorProject,
+      as: :author_project,
+      join: p in Project,
+      as: :project,
+      on: ap.project_id == p.id,
+      where:
+        ap.author_id == ^author_id and ap.project_id == ^project_id and
+          ap.status == :pending_confirmation,
+      where: ^valid_author_invitation_token()
+    )
+    |> Repo.one()
+  end
+
+  defp valid_user_invitation_token do
+    dynamic(
+      [_e, _s],
+      exists(
+        from ut in UserToken,
+          where:
+            ut.user_id == parent_as(:enrollment).user_id and
+              ut.context ==
+                fragment(
+                  "? || ?",
+                  "enrollment_invitation:",
+                  parent_as(:section).slug
+                ) and
+              ut.inserted_at > ago(^@invitation_validity_in_days, "day")
+      )
+    )
+  end
+
+  defp valid_author_invitation_token do
+    dynamic(
+      [_ap, _p],
+      exists(
+        from at in AuthorToken,
+          where:
+            at.author_id == parent_as(:author_project).author_id and
+              at.context ==
+                fragment(
+                  "? || ?",
+                  "collaborator_invitation:",
+                  parent_as(:project).slug
+                ) and
+              at.inserted_at > ago(^@invitation_validity_in_days, "day")
+      )
+    )
+  end
+
+  @doc """
+  Accepts a pending user invitation from an administrator.
+
+  The invitation token is intentionally retained until its normal expiry so
+  that a previously issued link can render the already-redeemed state instead
+  of appearing to be an unrelated or expired invitation.
+  """
+  def admin_accept_user_invitation(%User{} = user, enrollment_id)
+      when is_integer(enrollment_id) do
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+
+    enrollment_query =
+      from e in Enrollment,
+        as: :enrollment,
+        join: s in Section,
+        as: :section,
+        on: e.section_id == s.id,
+        where:
+          e.id == ^enrollment_id and
+            e.user_id == ^user.id and
+            e.status == :pending_confirmation,
+        where: ^valid_user_invitation_token(),
+        select: e
+
+    Multi.new()
+    |> Multi.update(
+      :user,
+      Ecto.Changeset.change(user,
+        invitation_accepted_at: now,
+        email_confirmed_at: now,
+        email_verified: true,
+        independent_learner: true
+      )
+    )
+    |> Multi.run(:enrollment, fn repo, _changes ->
+      case repo.update_all(
+             enrollment_query,
+             [set: [status: :enrolled, updated_at: now]],
+             returning: true
+           ) do
+        {1, [updated_enrollment]} -> {:ok, updated_enrollment}
+        _ -> {:error, :invalid_pending_invitation}
+      end
+    end)
+    |> Repo.transaction()
+    |> normalize_admin_invitation_transaction(:enrollment)
+  end
+
+  def admin_accept_user_invitation(%User{} = user, %Enrollment{id: enrollment_id}) do
+    admin_accept_user_invitation(user, enrollment_id)
+  end
+
+  @doc """
+  Declines a pending user invitation from an administrator.
+
+  The invitation token is retained so that a previously issued link renders
+  the already-rejected state until the token expires.
+  """
+  def admin_decline_user_invitation(%User{} = user, enrollment_id)
+      when is_integer(enrollment_id) do
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+
+    query =
+      from e in Enrollment,
+        as: :enrollment,
+        join: s in Section,
+        as: :section,
+        on: e.section_id == s.id,
+        where:
+          e.id == ^enrollment_id and
+            e.user_id == ^user.id and
+            e.status == :pending_confirmation,
+        where: ^valid_user_invitation_token(),
+        select: e
+
+    case Repo.update_all(query, [set: [status: :rejected, updated_at: now]], returning: true) do
+      {1, [updated_enrollment]} -> {:ok, updated_enrollment}
+      _ -> {:error, :invalid_pending_invitation}
+    end
+  end
+
+  def admin_decline_user_invitation(%User{} = user, %Enrollment{id: enrollment_id}) do
+    admin_decline_user_invitation(user, enrollment_id)
+  end
+
+  @doc """
   Deletes all the enrollment invitation tokens for a list of emails in a given section.
   """
 
@@ -1738,6 +1941,17 @@ defmodule Oli.Accounts do
          _membership
        ) do
     {:error, {operation, reason}}
+  end
+
+  defp normalize_admin_invitation_transaction(
+         {:error, membership, :invalid_pending_invitation, _changes},
+         membership
+       ) do
+    {:error, :invalid_pending_invitation}
+  end
+
+  defp normalize_admin_invitation_transaction(transaction, membership) do
+    normalize_invitation_transaction(transaction, membership)
   end
 
   @doc """
@@ -2183,6 +2397,92 @@ defmodule Oli.Accounts do
     else
       _ -> nil
     end
+  end
+
+  @doc """
+  Accepts a pending project invitation from an administrator.
+
+  The invitation token is intentionally retained until its normal expiry so
+  that a previously issued link can render the already-redeemed state instead
+  of appearing to be an unrelated or expired invitation.
+  """
+  def admin_accept_author_invitation(%Author{} = author, project_id)
+      when is_integer(project_id) do
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+
+    author_project_query =
+      from ap in AuthorProject,
+        as: :author_project,
+        join: p in Project,
+        as: :project,
+        on: ap.project_id == p.id,
+        where:
+          ap.author_id == ^author.id and
+            ap.project_id == ^project_id and
+            ap.status == :pending_confirmation,
+        where: ^valid_author_invitation_token(),
+        select: ap
+
+    Multi.new()
+    |> Multi.update(
+      :author,
+      Ecto.Changeset.change(author,
+        invitation_accepted_at: now,
+        email_confirmed_at: now
+      )
+    )
+    |> Multi.run(:author_project, fn repo, _changes ->
+      case repo.update_all(
+             author_project_query,
+             [set: [status: :accepted, updated_at: now]],
+             returning: true
+           ) do
+        {1, [updated_author_project]} ->
+          {:ok, updated_author_project}
+
+        _ ->
+          {:error, :invalid_pending_invitation}
+      end
+    end)
+    |> Repo.transaction()
+    |> normalize_admin_invitation_transaction(:author_project)
+  end
+
+  def admin_accept_author_invitation(%Author{} = author, %AuthorProject{project_id: project_id}) do
+    admin_accept_author_invitation(author, project_id)
+  end
+
+  @doc """
+  Declines a pending project invitation from an administrator.
+
+  The invitation token is retained so that a previously issued link renders
+  the already-rejected state until the token expires.
+  """
+  def admin_decline_author_invitation(%Author{} = author, project_id)
+      when is_integer(project_id) do
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+
+    query =
+      from ap in AuthorProject,
+        as: :author_project,
+        join: p in Project,
+        as: :project,
+        on: ap.project_id == p.id,
+        where:
+          ap.author_id == ^author.id and
+            ap.project_id == ^project_id and
+            ap.status == :pending_confirmation,
+        where: ^valid_author_invitation_token(),
+        select: ap
+
+    case Repo.update_all(query, [set: [status: :rejected, updated_at: now]], returning: true) do
+      {1, [updated_author_project]} -> {:ok, updated_author_project}
+      _ -> {:error, :invalid_pending_invitation}
+    end
+  end
+
+  def admin_decline_author_invitation(%Author{} = author, %AuthorProject{project_id: project_id}) do
+    admin_decline_author_invitation(author, project_id)
   end
 
   @doc """

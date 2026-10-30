@@ -1392,6 +1392,347 @@ defmodule Oli.AccountsTest do
     end
   end
 
+  describe "admin invitation actions" do
+    test "accepts a user invitation and keeps its token linked to the redeemed enrollment" do
+      project = insert(:project, title: "Admin Course")
+      section = insert(:section, base_project: project, title: "Admin Section")
+      user = insert(:user, invitation_accepted_at: nil, email_confirmed_at: nil)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      insert(:user_token,
+        user: user,
+        context: "enrollment_invitation:#{section.slug}",
+        non_hashed_token: "user-invitation"
+      )
+
+      assert [%{id: enrollment_id, title: "Admin Section"}] =
+               Accounts.list_pending_user_invitations(user.id)
+
+      assert enrollment_id == enrollment.id
+      assert {:ok, _} = Accounts.admin_accept_user_invitation(user, enrollment)
+
+      accepted_user = Repo.get!(User, user.id)
+      accepted_enrollment = Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id)
+
+      assert accepted_enrollment.status == :enrolled
+      assert accepted_user.email_confirmed_at
+      assert accepted_user.invitation_accepted_at
+      assert Accounts.list_pending_user_invitations(user.id) == []
+
+      assert Accounts.get_user_token_by_enrollment_invitation_token(
+               Base.url_encode64("user-invitation", padding: false)
+             )
+    end
+
+    test "lists user invitations ordered by section title" do
+      user = insert(:user)
+      first_project = insert(:project)
+      second_project = insert(:project)
+      first_section = insert(:section, base_project: first_project, title: "Zebra Section")
+      second_section = insert(:section, base_project: second_project, title: "Alpha Section")
+
+      insert(:enrollment, user: user, section: first_section, status: :pending_confirmation)
+      insert(:enrollment, user: user, section: second_section, status: :pending_confirmation)
+
+      insert(:user_token, user: user, context: "enrollment_invitation:#{first_section.slug}")
+      insert(:user_token, user: user, context: "enrollment_invitation:#{second_section.slug}")
+
+      assert [%{title: "Alpha Section"}, %{title: "Zebra Section"}] =
+               Accounts.list_pending_user_invitations(user.id)
+    end
+
+    test "does not accept a user invitation after its pending status changes" do
+      user = insert(:user)
+      section = insert(:section)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      Repo.update!(Ecto.Changeset.change(enrollment, status: :rejected))
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_user_invitation(user, enrollment)
+
+      assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status == :rejected
+    end
+
+    test "declines a user invitation and keeps its token linked to the rejected enrollment" do
+      project = insert(:project)
+      section = insert(:section, base_project: project)
+      user = insert(:user)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      insert(:user_token,
+        user: user,
+        context: "enrollment_invitation:#{section.slug}",
+        non_hashed_token: "rejected-user-invitation"
+      )
+
+      assert {:ok, _} = Accounts.admin_decline_user_invitation(user, enrollment)
+      assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status == :rejected
+      assert Accounts.list_pending_user_invitations(user.id) == []
+
+      assert Accounts.get_user_token_by_enrollment_invitation_token(
+               Base.url_encode64("rejected-user-invitation", padding: false)
+             )
+    end
+
+    test "does not decline a user invitation after its pending status changes" do
+      user = insert(:user)
+      section = insert(:section)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      Repo.update!(Ecto.Changeset.change(enrollment, status: :enrolled))
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_decline_user_invitation(user, enrollment)
+
+      assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status == :enrolled
+    end
+
+    test "does not accept or decline an expired user invitation" do
+      user = insert(:user)
+      section = insert(:section)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      token =
+        insert(:user_token,
+          user: user,
+          context: "enrollment_invitation:#{section.slug}"
+        )
+
+      Repo.update!(
+        Ecto.Changeset.change(token,
+          inserted_at:
+            DateTime.utc_now()
+            |> DateTime.add(-31, :day)
+            |> DateTime.truncate(:second)
+        )
+      )
+
+      assert Accounts.list_pending_user_invitations(user.id) == []
+      assert Accounts.get_pending_user_invitation(user.id, enrollment.id) == nil
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_user_invitation(user, enrollment)
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_decline_user_invitation(user, enrollment)
+
+      assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status ==
+               :pending_confirmation
+    end
+
+    test "does not accept a tokenless user invitation" do
+      user = insert(:user)
+      section = insert(:section)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_user_invitation(user, enrollment)
+    end
+
+    test "accepts an author invitation and keeps its token linked to the redeemed project" do
+      author = insert(:author, invitation_accepted_at: nil, email_confirmed_at: nil)
+      project = insert(:project, title: "Admin Project")
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      insert(:author_token,
+        author: author,
+        context: "collaborator_invitation:#{project.slug}",
+        non_hashed_token: "author-invitation"
+      )
+
+      assert [%{id: project_id, title: "Admin Project"}] =
+               Accounts.list_pending_author_invitations(author.id)
+
+      assert project_id == project.id
+      assert {:ok, _} = Accounts.admin_accept_author_invitation(author, author_project)
+
+      accepted_author = Repo.get!(Author, author.id)
+      accepted_project = Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id)
+
+      assert accepted_project.status == :accepted
+      assert accepted_author.email_confirmed_at
+      assert accepted_author.invitation_accepted_at
+      assert Accounts.list_pending_author_invitations(author.id) == []
+
+      assert Accounts.get_author_token_by_collaboration_invitation_token(
+               Base.url_encode64("author-invitation", padding: false)
+             )
+    end
+
+    test "lists author invitations ordered by project title" do
+      author = insert(:author)
+      first_project = insert(:project, title: "Zebra Project")
+      second_project = insert(:project, title: "Alpha Project")
+
+      insert(:author_project,
+        author_id: author.id,
+        project_id: first_project.id,
+        status: :pending_confirmation
+      )
+
+      insert(:author_project,
+        author_id: author.id,
+        project_id: second_project.id,
+        status: :pending_confirmation
+      )
+
+      insert(:author_token,
+        author: author,
+        context: "collaborator_invitation:#{first_project.slug}"
+      )
+
+      insert(:author_token,
+        author: author,
+        context: "collaborator_invitation:#{second_project.slug}"
+      )
+
+      assert [%{title: "Alpha Project"}, %{title: "Zebra Project"}] =
+               Accounts.list_pending_author_invitations(author.id)
+    end
+
+    test "does not accept an author invitation after its pending status changes" do
+      author = insert(:author)
+      project = insert(:project)
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      Repo.update!(Ecto.Changeset.change(author_project, status: :rejected))
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_author_invitation(author, author_project)
+
+      assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id).status ==
+               :rejected
+    end
+
+    test "declines an author invitation and keeps its token linked to the rejected project" do
+      author = insert(:author)
+      project = insert(:project)
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      insert(:author_token,
+        author: author,
+        context: "collaborator_invitation:#{project.slug}",
+        non_hashed_token: "rejected-author-invitation"
+      )
+
+      assert {:ok, _} = Accounts.admin_decline_author_invitation(author, author_project)
+
+      assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id).status ==
+               :rejected
+
+      assert Accounts.list_pending_author_invitations(author.id) == []
+
+      assert Accounts.get_author_token_by_collaboration_invitation_token(
+               Base.url_encode64("rejected-author-invitation", padding: false)
+             )
+    end
+
+    test "does not decline an author invitation after its pending status changes" do
+      author = insert(:author)
+      project = insert(:project)
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      Repo.update!(Ecto.Changeset.change(author_project, status: :accepted))
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_decline_author_invitation(author, author_project)
+
+      assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id).status ==
+               :accepted
+    end
+
+    test "does not accept or decline an expired author invitation" do
+      author = insert(:author)
+      project = insert(:project)
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      token =
+        insert(:author_token,
+          author: author,
+          context: "collaborator_invitation:#{project.slug}"
+        )
+
+      Repo.update!(
+        Ecto.Changeset.change(token,
+          inserted_at:
+            DateTime.utc_now()
+            |> DateTime.add(-31, :day)
+            |> DateTime.truncate(:second)
+        )
+      )
+
+      assert Accounts.list_pending_author_invitations(author.id) == []
+      assert Accounts.get_pending_author_invitation(author.id, project.id) == nil
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_author_invitation(author, author_project)
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_decline_author_invitation(author, author_project)
+
+      assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id).status ==
+               :pending_confirmation
+    end
+
+    test "does not accept a tokenless author invitation" do
+      author = insert(:author)
+      project = insert(:project)
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_author_invitation(author, author_project)
+    end
+  end
+
   describe "delete_enrollment_invitation_tokens/2" do
     test "deletes all invitation tokens for a list of emails in the provided section" do
       user_1 = insert(:user)

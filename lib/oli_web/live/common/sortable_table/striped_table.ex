@@ -161,6 +161,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     doc:
       "Optional CSS class for header cell background. When set, applies to <th> elements to override default styling."
 
+  slot :caption
+
   def render(assigns) do
     ~H"""
     <table
@@ -168,6 +170,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
       class={"min-w-full border table-fixed " <> @additional_table_class}
       phx-hook="SyncChevronState"
     >
+      {render_slot(@caption)}
       <thead
         class="sticky z-[40]"
         style={"top: #{@sticky_header_offset}px"}

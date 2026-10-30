@@ -71,11 +71,15 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author_roles: SystemRole.role_id(),
            credentials_has_google: has_google,
            credentials_label: DetailViewHelpers.credentials_label(author, has_google),
+           decline_invitation_id: nil,
            password_reset_link: "",
            author_name: author.name,
            author_header_name: DetailViewHelpers.formatted_header_name(author),
            form: author_form(author)
-         )}
+         )
+         |> assign_async(:pending_invitations, fn ->
+           {:ok, %{pending_invitations: pending_invitations(author.id)}}
+         end)}
     end
   end
 
@@ -249,15 +253,49 @@ defmodule OliWeb.Users.AuthorsDetailView do
           </div>
           <div class="flex flex-col">
             <h4>Actions</h4>
-            <div class="text-Text-text-low-alpha">Actions that can be taken for this user</div>
-            <div class="mt-4 w-full max-w-[535px]">
+            <div class="text-Text-text-low-alpha">Actions that can be taken for this author</div>
+            <div class="mt-4 w-full max-w-[644px]">
               <%= if @author.id != @current_author.id and @author.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
                 <Actions.render
                   user_id={@author.id}
                   account_locked={!is_nil(@author.locked_at)}
                   email_confirmation_pending={Accounts.author_confirmation_pending?(@author)}
                   password_reset_link={@password_reset_link}
-                />
+                >
+                  <:pending_invitations>
+                    <.async_result :let={invitations} assign={@pending_invitations}>
+                      <:loading>
+                        <div role="status" aria-live="polite">Loading pending invitations...</div>
+                      </:loading>
+                      <:failed :let={_reason}>
+                        <div role="status" aria-live="polite">
+                          Unable to load pending invitations.
+                        </div>
+                      </:failed>
+                      <OliWeb.Users.PendingInvitations.render
+                        invitations={invitations}
+                        id="author_pending_invitations"
+                        decline_invitation_id={@decline_invitation_id}
+                      />
+                    </.async_result>
+                  </:pending_invitations>
+                </Actions.render>
+              <% else %>
+                <.async_result :let={invitations} assign={@pending_invitations}>
+                  <:loading>
+                    <div role="status" aria-live="polite">Loading pending invitations...</div>
+                  </:loading>
+                  <:failed :let={_reason}>
+                    <div role="status" aria-live="polite">
+                      Unable to load pending invitations.
+                    </div>
+                  </:failed>
+                  <OliWeb.Users.PendingInvitations.render
+                    invitations={invitations}
+                    id="author_pending_invitations"
+                    decline_invitation_id={@decline_invitation_id}
+                  />
+                </.async_result>
               <% end %>
             </div>
           </div>
@@ -277,6 +315,56 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     socket = assign(socket, password_reset_link: password_reset_link)
     {:noreply, socket}
+  end
+
+  def handle_event("accept_invitation", %{"id" => id}, socket) do
+    case parse_id(id) do
+      {project_id, ""} ->
+        case Accounts.admin_accept_author_invitation(socket.assigns.author, project_id) do
+          {:ok, _author_project} ->
+            {:noreply,
+             socket
+             |> refresh_pending_invitations()
+             |> put_flash(:info, "Invitation accepted.")}
+
+          _ ->
+            {:noreply, put_flash(socket, :error, "Invitation could not be accepted.")}
+        end
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Invitation could not be accepted.")}
+    end
+  end
+
+  def handle_event("show_decline_invitation_modal", %{"id" => id}, socket) do
+    case parse_id(id) do
+      {project_id, ""} -> {:noreply, assign(socket, :decline_invitation_id, project_id)}
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_decline_invitation", _params, socket) do
+    {:noreply, assign(socket, :decline_invitation_id, nil)}
+  end
+
+  def handle_event("decline_invitation", %{"id" => id}, socket) do
+    case parse_id(id) do
+      {project_id, ""} ->
+        case Accounts.admin_decline_author_invitation(socket.assigns.author, project_id) do
+          {:ok, _author_project} ->
+            {:noreply,
+             socket
+             |> refresh_pending_invitations()
+             |> assign(:decline_invitation_id, nil)
+             |> put_flash(:info, "Invitation declined.")}
+
+          _ ->
+            {:noreply, put_flash(socket, :error, "Invitation could not be declined.")}
+        end
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Invitation could not be declined.")}
+    end
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do
@@ -525,6 +613,29 @@ defmodule OliWeb.Users.AuthorsDetailView do
     # that don't need handling (like dropdown toggles)
     Logger.warning("Unhandled event in AuthorDetailView: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
+  end
+
+  defp parse_id(id) when is_integer(id), do: {id, ""}
+  defp parse_id(id) when is_binary(id), do: Integer.parse(id)
+  defp parse_id(_id), do: :error
+
+  defp pending_invitations(author_id) do
+    Accounts.list_pending_author_invitations(author_id)
+    |> Enum.map(fn invitation ->
+      Map.put(
+        invitation,
+        :path,
+        ~p"/workspaces/course_author/#{invitation.project_slug}/overview"
+      )
+    end)
+  end
+
+  defp refresh_pending_invitations(socket) do
+    author_id = socket.assigns.author.id
+
+    assign_async(socket, :pending_invitations, fn ->
+      {:ok, %{pending_invitations: pending_invitations(author_id)}}
+    end)
   end
 
   defp maybe_audit_internal_toggle(admin, :author, %Author{} = previous, %Author{} = updated) do
