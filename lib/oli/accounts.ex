@@ -1561,19 +1561,7 @@ defmodule Oli.Accounts do
       join: p in Project,
       on: s.base_project_id == p.id,
       where: e.user_id == ^user_id and e.status == :pending_confirmation,
-      where:
-        exists(
-          from ut in UserToken,
-            where:
-              ut.user_id == parent_as(:enrollment).user_id and
-                ut.context ==
-                  fragment(
-                    "? || ?",
-                    "enrollment_invitation:",
-                    parent_as(:section).slug
-                  ) and
-                ut.inserted_at > ago(^@invitation_validity_in_days, "day")
-        ),
+      where: ^valid_user_invitation_token(),
       select: %{
         id: e.id,
         title: s.title,
@@ -1589,11 +1577,17 @@ defmodule Oli.Accounts do
   Gets a pending enrollment invitation scoped to a user and enrollment.
   """
   def get_pending_user_invitation(user_id, enrollment_id) do
-    Repo.get_by(Enrollment,
-      id: enrollment_id,
-      user_id: user_id,
-      status: :pending_confirmation
+    from(e in Enrollment,
+      as: :enrollment,
+      join: s in Section,
+      as: :section,
+      on: e.section_id == s.id,
+      where:
+        e.id == ^enrollment_id and e.user_id == ^user_id and
+          e.status == :pending_confirmation,
+      where: ^valid_user_invitation_token()
     )
+    |> Repo.one()
   end
 
   @doc """
@@ -1606,19 +1600,7 @@ defmodule Oli.Accounts do
       as: :project,
       on: ap.project_id == p.id,
       where: ap.author_id == ^author_id and ap.status == :pending_confirmation,
-      where:
-        exists(
-          from at in AuthorToken,
-            where:
-              at.author_id == parent_as(:author_project).author_id and
-                at.context ==
-                  fragment(
-                    "? || ?",
-                    "collaborator_invitation:",
-                    parent_as(:project).slug
-                  ) and
-                at.inserted_at > ago(^@invitation_validity_in_days, "day")
-        ),
+      where: ^valid_author_invitation_token(),
       select: %{
         id: ap.project_id,
         title: p.title,
@@ -1633,10 +1615,52 @@ defmodule Oli.Accounts do
   Gets a pending author invitation scoped to an author and project.
   """
   def get_pending_author_invitation(author_id, project_id) do
-    Repo.get_by(AuthorProject,
-      author_id: author_id,
-      project_id: project_id,
-      status: :pending_confirmation
+    from(ap in AuthorProject,
+      as: :author_project,
+      join: p in Project,
+      as: :project,
+      on: ap.project_id == p.id,
+      where:
+        ap.author_id == ^author_id and ap.project_id == ^project_id and
+          ap.status == :pending_confirmation,
+      where: ^valid_author_invitation_token()
+    )
+    |> Repo.one()
+  end
+
+  defp valid_user_invitation_token do
+    dynamic(
+      [_e, _s],
+      exists(
+        from ut in UserToken,
+          where:
+            ut.user_id == parent_as(:enrollment).user_id and
+              ut.context ==
+                fragment(
+                  "? || ?",
+                  "enrollment_invitation:",
+                  parent_as(:section).slug
+                ) and
+              ut.inserted_at > ago(^@invitation_validity_in_days, "day")
+      )
+    )
+  end
+
+  defp valid_author_invitation_token do
+    dynamic(
+      [_ap, _p],
+      exists(
+        from at in AuthorToken,
+          where:
+            at.author_id == parent_as(:author_project).author_id and
+              at.context ==
+                fragment(
+                  "? || ?",
+                  "collaborator_invitation:",
+                  parent_as(:project).slug
+                ) and
+              at.inserted_at > ago(^@invitation_validity_in_days, "day")
+      )
     )
   end
 
@@ -1652,10 +1676,15 @@ defmodule Oli.Accounts do
 
     enrollment_query =
       from e in Enrollment,
+        as: :enrollment,
+        join: s in Section,
+        as: :section,
+        on: e.section_id == s.id,
         where:
           e.id == ^enrollment.id and
             e.user_id == ^user.id and
             e.status == :pending_confirmation,
+        where: ^valid_user_invitation_token(),
         select: e
 
     Multi.new()
@@ -1693,10 +1722,15 @@ defmodule Oli.Accounts do
 
     query =
       from e in Enrollment,
+        as: :enrollment,
+        join: s in Section,
+        as: :section,
+        on: e.section_id == s.id,
         where:
           e.id == ^enrollment.id and
             e.user_id == ^user.id and
-            e.status == :pending_confirmation
+            e.status == :pending_confirmation,
+        where: ^valid_user_invitation_token()
 
     case Repo.update_all(query, set: [status: :rejected, updated_at: now]) do
       {1, _} -> {:ok, %{enrollment | status: :rejected, updated_at: now}}
@@ -2366,10 +2400,15 @@ defmodule Oli.Accounts do
 
     author_project_query =
       from ap in AuthorProject,
+        as: :author_project,
+        join: p in Project,
+        as: :project,
+        on: ap.project_id == p.id,
         where:
           ap.author_id == ^author.id and
             ap.project_id == ^author_project.project_id and
             ap.status == :pending_confirmation,
+        where: ^valid_author_invitation_token(),
         select: ap
 
     Multi.new()
@@ -2408,10 +2447,15 @@ defmodule Oli.Accounts do
 
     query =
       from ap in AuthorProject,
+        as: :author_project,
+        join: p in Project,
+        as: :project,
+        on: ap.project_id == p.id,
         where:
           ap.author_id == ^author.id and
             ap.project_id == ^author_project.project_id and
-            ap.status == :pending_confirmation
+            ap.status == :pending_confirmation,
+        where: ^valid_author_invitation_token()
 
     case Repo.update_all(query, set: [status: :rejected, updated_at: now]) do
       {1, _} -> {:ok, %{author_project | status: :rejected, updated_at: now}}

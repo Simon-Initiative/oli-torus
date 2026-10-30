@@ -1496,6 +1496,52 @@ defmodule Oli.AccountsTest do
       assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status == :enrolled
     end
 
+    test "does not accept or decline an expired user invitation" do
+      user = insert(:user)
+      section = insert(:section)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      token =
+        insert(:user_token,
+          user: user,
+          context: "enrollment_invitation:#{section.slug}"
+        )
+
+      Repo.update!(
+        Ecto.Changeset.change(token,
+          inserted_at:
+            DateTime.utc_now()
+            |> DateTime.add(-31, :day)
+            |> DateTime.truncate(:second)
+        )
+      )
+
+      assert Accounts.list_pending_user_invitations(user.id) == []
+      assert Accounts.get_pending_user_invitation(user.id, enrollment.id) == nil
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_user_invitation(user, enrollment)
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_decline_user_invitation(user, enrollment)
+
+      assert Repo.get!(Oli.Delivery.Sections.Enrollment, enrollment.id).status ==
+               :pending_confirmation
+    end
+
+    test "does not accept a tokenless user invitation" do
+      user = insert(:user)
+      section = insert(:section)
+
+      enrollment =
+        insert(:enrollment, user: user, section: section, status: :pending_confirmation)
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_user_invitation(user, enrollment)
+    end
+
     test "accepts an author invitation and keeps its token linked to the redeemed project" do
       author = insert(:author, invitation_accepted_at: nil, email_confirmed_at: nil)
       project = insert(:project, title: "Admin Project")
@@ -1630,6 +1676,60 @@ defmodule Oli.AccountsTest do
 
       assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id).status ==
                :accepted
+    end
+
+    test "does not accept or decline an expired author invitation" do
+      author = insert(:author)
+      project = insert(:project)
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      token =
+        insert(:author_token,
+          author: author,
+          context: "collaborator_invitation:#{project.slug}"
+        )
+
+      Repo.update!(
+        Ecto.Changeset.change(token,
+          inserted_at:
+            DateTime.utc_now()
+            |> DateTime.add(-31, :day)
+            |> DateTime.truncate(:second)
+        )
+      )
+
+      assert Accounts.list_pending_author_invitations(author.id) == []
+      assert Accounts.get_pending_author_invitation(author.id, project.id) == nil
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_author_invitation(author, author_project)
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_decline_author_invitation(author, author_project)
+
+      assert Repo.get_by!(Oli.Authoring.Authors.AuthorProject, author_id: author.id).status ==
+               :pending_confirmation
+    end
+
+    test "does not accept a tokenless author invitation" do
+      author = insert(:author)
+      project = insert(:project)
+
+      author_project =
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          status: :pending_confirmation
+        )
+
+      assert {:error, :invalid_pending_invitation} =
+               Accounts.admin_accept_author_invitation(author, author_project)
     end
   end
 
