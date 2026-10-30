@@ -34,7 +34,8 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
   `:resource_ids` limits the requested activity, page, or objective IDs;
   `:part_id` optionally narrows activity parts. Historical membership is
   deduplicated before joining learner summaries. Missing evidence in any
-  contributing section or opportunity produces nil counts.
+  contributing section or opportunity, including a NULL correctness counter,
+  produces nil counts.
 
   Internal ranking callers may supply a resource-ID query instead of a list,
   keeping candidate filters within SQL rather than materializing all IDs.
@@ -82,11 +83,16 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
           part_id: s.part_id,
           section_id: s.section_id,
           num_attempted:
-            fragment("CASE WHEN count(?) = count(*) THEN count(*) END", s.num_attempts),
+            fragment(
+              "CASE WHEN count(?) = count(*) AND count(?) = count(*) THEN count(*) END",
+              s.num_attempts,
+              s.num_correct
+            ),
           num_correct:
             fragment(
-              "CASE WHEN count(?) = count(*) THEN count(*) FILTER (WHERE ? > 0) END",
+              "CASE WHEN count(?) = count(*) AND count(?) = count(*) THEN count(*) FILTER (WHERE ? > 0) END",
               s.num_attempts,
+              s.num_correct,
               s.num_correct
             )
         }

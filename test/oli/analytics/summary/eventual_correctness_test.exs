@@ -106,6 +106,48 @@ defmodule Oli.Analytics.Summary.EventualCorrectnessTest do
     assert insight(ctx, []).eventually_correct == nil
   end
 
+  test "a null correctness counter makes section and cross-section rates unavailable", ctx do
+    summary(ctx, ctx.alice.id, nil, 2, 1)
+    summary(ctx, ctx.bob.id, 1, 2, 1)
+    aggregate_summaries(ctx, 2, 4, 2)
+
+    second = Seeder.create_section(ctx)
+    summary(second, ctx.alice.id, 1, 2, 1)
+
+    Repo.insert!(%ResourceSummary{
+      section_id: second.section.id,
+      resource_id: ctx.question.resource.id,
+      resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+      part_id: "part1",
+      num_correct: 1,
+      num_attempts: 2,
+      num_first_attempts: 1
+    })
+
+    for sections <- [[], [ctx.section.id], [ctx.section.id, second.section.id]] do
+      counts = EventualCorrectness.counts_query(ctx.project.id, sections) |> Repo.all()
+      assert Enum.any?(counts, &is_nil(&1.num_attempted))
+      assert Enum.any?(counts, &is_nil(&1.num_correct))
+
+      for field <- [:title, :eventually_correct] do
+        [row] =
+          BrowseInsights.browse_insights(
+            %Paging{limit: 10, offset: 0},
+            %Sorting{field: field, direction: :desc},
+            %BrowseInsightsOptions{
+              project_id: ctx.project.id,
+              section_ids: sections,
+              resource_type_id: Oli.Resources.ResourceType.id_for_activity()
+            }
+          )
+
+        assert is_nil(row.eventually_correct)
+      end
+    end
+
+    assert insight(ctx, [second.section.id]).eventually_correct == 1.0
+  end
+
   test "a rollup is unavailable when any attempted part lacks learner evidence" do
     assert EventualCorrectness.rate([{1, 2}, {nil, nil}]) == nil
     assert EventualCorrectness.rate([{nil, nil}]) == nil
