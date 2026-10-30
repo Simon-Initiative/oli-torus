@@ -44,8 +44,8 @@ defmodule OliWeb.Users.Actions do
       <%= if @email_confirmation_pending do %>
         <.button
           variant={:primary}
-          size={:xs}
-          class="mt-4 mr-1"
+          size={:sm}
+          class="mt-4 mr-1 min-h-11"
           phx-click="resend_confirmation_link"
           phx-value-id={@user_id}
         >
@@ -53,7 +53,8 @@ defmodule OliWeb.Users.Actions do
         </.button>
         <.button
           variant={:primary}
-          size={:xs}
+          size={:sm}
+          class="min-h-11"
           phx-click="show_confirm_email_modal"
           phx-value-id={@user_id}
         >
@@ -85,8 +86,8 @@ defmodule OliWeb.Users.Actions do
         <%= if @account_locked do %>
           <.button
             variant={:outline}
-            size={:xs}
-            class="min-w-[113px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+            size={:sm}
+            class="min-h-11 min-w-[113px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
             phx-click="show_unlock_account_modal"
             phx-value-id={@user_id}
           >
@@ -95,8 +96,8 @@ defmodule OliWeb.Users.Actions do
         <% else %>
           <.button
             variant={:outline}
-            size={:xs}
-            class="min-w-[113px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+            size={:sm}
+            class="min-h-11 min-w-[113px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
             phx-click="show_lock_account_modal"
             phx-value-id={@user_id}
           >
@@ -106,8 +107,8 @@ defmodule OliWeb.Users.Actions do
 
         <.button
           variant={:outline}
-          size={:xs}
-          class="min-w-[113px] !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+          size={:sm}
+          class="min-h-11 min-w-[113px] !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
           phx-click="show_delete_account_modal"
           phx-value-id={@user_id}
         >

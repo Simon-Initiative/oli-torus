@@ -95,6 +95,7 @@ defmodule OliWeb.Users.PendingInvitations do
     <.button
       variant={:primary}
       size={:xs}
+      class="min-h-11"
       phx-click="accept_invitation"
       phx-disable-with="Accepting..."
       phx-value-id={@invitation.id}
@@ -104,7 +105,7 @@ defmodule OliWeb.Users.PendingInvitations do
     <.button
       variant={:outline}
       size={:xs}
-      class="ml-2 !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted"
+      class="ml-2 min-h-11 !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted"
       phx-click="show_decline_invitation_modal"
       phx-value-id={@invitation.id}
     >
