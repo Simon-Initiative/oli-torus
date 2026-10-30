@@ -12,12 +12,16 @@ const VisualIndicator = ({ className, disabled, checked }: Props & { checked: bo
     aria-hidden="true"
     className={classNames(
       'oli-checkbox inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border border-current',
-      checked && 'bg-current',
+      checked && 'border-[var(--color-delivery-primary)] bg-[var(--color-delivery-primary)]',
       disabled && 'opacity-50',
       className,
     )}
   >
-    {checked && <span className="h-2.5 w-2.5 rounded-sm bg-white" />}
+    {checked && (
+      <svg aria-hidden="true" className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none">
+        <path d="M2 6.25 4.75 9 10 3" stroke="currentColor" strokeWidth="1.75" />
+      </svg>
+    )}
   </span>
 );
 

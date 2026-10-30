@@ -12,7 +12,7 @@ const VisualIndicator = ({ className, disabled, checked }: Props & { checked: bo
     aria-hidden="true"
     className={classNames(
       'oli-radio inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border border-current',
-      checked && 'bg-current',
+      checked && 'border-[var(--color-delivery-primary)] bg-[var(--color-delivery-primary)]',
       disabled && 'opacity-50',
       className,
     )}

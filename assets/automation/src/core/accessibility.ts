@@ -53,44 +53,98 @@ export async function expectKeyboardFocus(page: Page, selector: string) {
   await expect(focused).toBeVisible();
 
   const hasVisibleFocusIndicator = await focused.evaluate((element) => {
-    const properties = [
-      'outlineStyle',
-      'outlineWidth',
-      'outlineColor',
-      'outlineOffset',
-      'boxShadow',
-      'borderTopColor',
-      'borderRightColor',
-      'borderBottomColor',
-      'borderLeftColor',
-      'borderTopWidth',
-      'borderRightWidth',
-      'borderBottomWidth',
-      'borderLeftWidth',
-      'backgroundColor',
-      'color',
-      'textDecorationLine',
-      'textDecorationStyle',
-      'textDecorationColor',
-      'textDecorationThickness',
-      'textUnderlineOffset',
-      'opacity',
-      'transform',
-    ] as const;
-
     const readStyles = () => {
       const computed = window.getComputedStyle(element);
-      return properties.map((property) => computed[property]);
+      return {
+        outline: {
+          style: computed.outlineStyle,
+          width: computed.outlineWidth,
+          color: computed.outlineColor,
+        },
+        boxShadow: computed.boxShadow,
+        borders: [
+          {
+            color: computed.borderTopColor,
+            style: computed.borderTopStyle,
+            width: computed.borderTopWidth,
+          },
+          {
+            color: computed.borderRightColor,
+            style: computed.borderRightStyle,
+            width: computed.borderRightWidth,
+          },
+          {
+            color: computed.borderBottomColor,
+            style: computed.borderBottomStyle,
+            width: computed.borderBottomWidth,
+          },
+          {
+            color: computed.borderLeftColor,
+            style: computed.borderLeftStyle,
+            width: computed.borderLeftWidth,
+          },
+        ],
+      };
     };
+
+    const hasVisibleColor = (value: string) => {
+      if (!value || value.toLowerCase() === 'transparent') return false;
+
+      const alpha = value.match(/rgba?\((?:[^,]+,){3}\s*([^,)]+)/i)?.[1];
+      return alpha === undefined || Number.parseFloat(alpha) > 0;
+    };
+
+    const hasVisibleBoxShadow = (value: string) =>
+      value !== 'none' &&
+      value.split(/,(?![^()]*\))/).some((shadow) => {
+        if (!hasVisibleColor(shadow)) return false;
+
+        const dimensions = shadow
+          .replace(/rgba?\([^)]*\)|hsla?\([^)]*\)|#[0-9a-f]+|\b[a-z]+\b/gi, '')
+          .match(/-?(?:\d+\.?\d*|\.\d+)/g);
+
+        return dimensions?.some((dimension) => Number.parseFloat(dimension) !== 0) ?? false;
+      });
+
+    const originalTransition = element.style.getPropertyValue('transition');
+    const originalTransitionPriority = element.style.getPropertyPriority('transition');
+    element.style.setProperty('transition', 'none', 'important');
 
     const focusedStyles = readStyles();
     const wasFocused = document.activeElement === element;
 
     if (wasFocused) element.blur();
     const unfocusedStyles = readStyles();
+
+    if (originalTransition) {
+      element.style.setProperty('transition', originalTransition, originalTransitionPriority);
+    } else {
+      element.style.removeProperty('transition');
+    }
+
     if (wasFocused) element.focus({ preventScroll: true });
 
-    return focusedStyles.some((value, index) => value !== unfocusedStyles[index]);
+    const hasOutline =
+      focusedStyles.outline.style !== 'none' &&
+      Number.parseFloat(focusedStyles.outline.width) > 0 &&
+      hasVisibleColor(focusedStyles.outline.color);
+
+    const hasBoxShadow = hasVisibleBoxShadow(focusedStyles.boxShadow);
+
+    const hasBorderChange = focusedStyles.borders.some((focusedBorder, index) => {
+      const unfocusedBorder = unfocusedStyles.borders[index];
+      const hasVisibleBorder =
+        Number.parseFloat(focusedBorder.width) > 0 && hasVisibleColor(focusedBorder.color);
+
+      return (
+        hasVisibleBorder &&
+        (focusedBorder.color !== unfocusedBorder.color ||
+          focusedBorder.style !== unfocusedBorder.style ||
+          focusedBorder.width !== unfocusedBorder.width)
+      );
+    });
+
+    return hasOutline || hasBoxShadow || hasBorderChange;
   });
 
   expect(hasVisibleFocusIndicator).toBe(true);

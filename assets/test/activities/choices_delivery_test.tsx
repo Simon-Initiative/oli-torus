@@ -103,6 +103,23 @@ describe('ChoicesDelivery', () => {
     expect(container.querySelector('span[aria-hidden="true"]')).toHaveClass('opacity-50');
   });
 
+  it('renders a checked decorative checkbox with a checkmark', () => {
+    const { container } = render(
+      <ChoicesDelivery
+        choices={[makeChoice('Choice A', 'choice-a')]}
+        selected={['choice-a']}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={jest.fn()}
+        isEvaluated={false}
+        unselectedIcon={<Checkbox.Unchecked />}
+        selectedIcon={<Checkbox.Checked />}
+        multiSelect
+      />,
+    );
+
+    expect(container.querySelector('span[aria-hidden="true"] svg')).toBeInTheDocument();
+  });
+
   it('preserves disabled state from caller-provided icons', () => {
     const { container } = render(
       <ChoicesDelivery

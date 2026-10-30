@@ -1,6 +1,7 @@
 defmodule Oli.Scenarios.DiscussionDirectivesTest do
   use Oli.DataCase
 
+  alias Oli.Resources.Collaboration
   alias Oli.Scenarios.DirectiveParser
   alias Oli.Scenarios.Engine
 
@@ -440,6 +441,73 @@ defmodule Oli.Scenarios.DiscussionDirectivesTest do
   end
 
   describe "page_collab_config" do
+    test "configures enabled and disabled page collaboration spaces" do
+      yaml = """
+      - project:
+          name: "page_collab_config_project"
+          title: "Page Collaboration Config"
+          root:
+            children:
+              - page: "Welcome"
+
+      - publish:
+          to: "page_collab_config_project"
+
+      - section:
+          name: "page_collab_enabled_section"
+          title: "Page Collaboration Enabled"
+          from: "page_collab_config_project"
+
+      - page_collab_config:
+          section: "page_collab_enabled_section"
+          enabled: true
+          threaded: false
+          auto_accept: false
+          show_full_history: false
+          anonymous_posting: true
+          participation_min_replies: 2
+          participation_min_posts: 3
+
+      - section:
+          name: "page_collab_disabled_section"
+          title: "Page Collaboration Disabled"
+          from: "page_collab_config_project"
+
+      - page_collab_config:
+          section: "page_collab_disabled_section"
+          enabled: false
+      """
+
+      result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+      assert result.errors == []
+
+      enabled_section = Engine.get_section(result.state, "page_collab_enabled_section")
+      disabled_section = Engine.get_section(result.state, "page_collab_disabled_section")
+
+      assert {:ok, enabled_config} =
+               Collaboration.get_collab_space_config_for_page_in_section(
+                 "welcome",
+                 enabled_section.slug
+               )
+
+      assert enabled_config.status == :enabled
+      assert enabled_config.threaded == false
+      assert enabled_config.auto_accept == false
+      assert enabled_config.show_full_history == false
+      assert enabled_config.anonymous_posting == true
+      assert enabled_config.participation_min_replies == 2
+      assert enabled_config.participation_min_posts == 3
+
+      assert {:ok, disabled_config} =
+               Collaboration.get_collab_space_config_for_page_in_section(
+                 "welcome",
+                 disabled_section.slug
+               )
+
+      assert disabled_config.status == :disabled
+    end
+
     test "returns an execution error for malformed participation limits" do
       for {field, value} <- [
             {"participation_min_replies", "abc"},
