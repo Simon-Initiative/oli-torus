@@ -1,0 +1,53 @@
+name: Update Jira status on PR approval
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+
+jobs:
+  transition-jira-ticket-on-approval:
+    if: >-
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # Load the helper from the reviewed base, never from the PR's head.
+      - name: Checkout trusted workflow helper
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Identify approval team
+        id: approval-team
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ secrets.TEAM_MEMBERS_READ_TOKEN }}
+          result-encoding: string
+          script: |
+            const getApprovalTeam = require('./.github/scripts/review-approval.cjs');
+            return (await getApprovalTeam({ github, context })) ?? '';
+
+      - name: Notify Jira automation
+        if: steps.approval-team.outputs.result != ''
+        env:
+          JIRA_WEBHOOK_URL: ${{ secrets.JIRA_WEBHOOK_URL }}
+          JIRA_WEBHOOK_SECRET: ${{ secrets.JIRA_WEBHOOK_SECRET }}
+          APPROVAL_TEAM: ${{ steps.approval-team.outputs.result }}
+        run: |
+          jq --arg team "$APPROVAL_TEAM" '. + {approval_team: $team}' \
+            "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/jira-approval.json"
+          curl --fail-with-body --silent --show-error \
+            --connect-timeout 10 --max-time 30 \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "X-Automation-Webhook-Token: ${JIRA_WEBHOOK_SECRET}" \
+            --data-binary "@${RUNNER_TEMP}/jira-approval.json" \
+            "${JIRA_WEBHOOK_URL}"
