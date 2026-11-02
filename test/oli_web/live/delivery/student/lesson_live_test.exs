@@ -792,6 +792,21 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     assert has_element?(view, "span", "The best course ever!")
   end
 
+  defp create_section_without_consent(%{project: project, publication: publication}) do
+    section =
+      insert(:section,
+        base_project: project,
+        institution: insert(:institution, research_consent: :no_form),
+        open_and_free: true,
+        lti_1p3_deployment: nil,
+        lti_1p3_deployment_id: nil
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+    section
+  end
+
   describe "research consent" do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
@@ -923,19 +938,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     end
 
     test "live navigation checks the target section without an HTTP request", c do
-      institution = insert(:institution, research_consent: :no_form)
-
-      other_section =
-        insert(:section,
-          base_project: c.project,
-          institution: institution,
-          open_and_free: true,
-          lti_1p3_deployment: nil,
-          lti_1p3_deployment_id: nil
-        )
-
-      {:ok, other_section} = Sections.create_section_resources(other_section, c.publication)
-      {:ok, _} = Sections.rebuild_contained_pages(other_section)
+      other_section = create_section_without_consent(c)
       {:ok, _} = Oli.Accounts.update_user(c.user, %{research_opt_out: nil})
 
       for section <- [c.section, other_section] do
@@ -951,6 +954,39 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert to ==
                "/research_consent?" <>
                  URI.encode_query(%{"user_return_to" => "/sections/#{c.section.slug}"})
+    end
+
+    test "live navigation checks enrollment before consent in the target section", c do
+      other_section = create_section_without_consent(c)
+      {:ok, _} = Oli.Accounts.update_user(c.user, %{research_opt_out: nil})
+      Sections.enroll(c.user.id, other_section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(other_section, c.user)
+
+      {:ok, view, _} = live(c.conn, ~p"/sections/#{other_section.slug}/learn")
+
+      assert {:error, {:redirect, %{to: to}}} =
+               live_redirect(view, to: ~p"/sections/#{c.section.slug}/learn")
+
+      assert to == ~p"/sections/#{c.section.slug}/enroll"
+      refute Oli.Repo.get_by(ResourceAccess, user_id: c.user.id, section_id: c.section.id)
+    end
+
+    test "a connecting lesson validates enrollment before consent or creating attempts", c do
+      Sections.enroll(c.user.id, c.section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(c.section, c.user)
+
+      conn = get(c.conn, Utils.lesson_live_path(c.section.slug, c.page_1.slug))
+      assert html_response(conn, 200)
+
+      Sections.get_enrollment(c.section.slug, c.user.id)
+      |> Ecto.Changeset.change(status: :suspended)
+      |> Oli.Repo.update!()
+
+      {:ok, _} = Oli.Accounts.update_user(c.user, %{research_opt_out: nil})
+
+      assert {:error, {:redirect, %{to: to}}} = live(conn)
+      assert to == ~p"/users/log_in?request_path=#{"/sections/#{c.section.slug}"}"
+      refute Oli.Repo.get_by(ResourceAccess, user_id: c.user.id, section_id: c.section.id)
     end
 
     test "a section with no consent form allows a student with no answer", c do

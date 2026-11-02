@@ -6,7 +6,8 @@ defmodule OliWeb.LiveSessionPlugs.EnsureResearchConsent do
 
   @doc """
   Halts before mounting section content when the user has a pending consent form.
-  Must run after authentication and SetSection, and before page context initialization.
+  Must run after authentication, SetSection, and RequireEnrollment, and before
+  page context initialization.
   """
   def on_mount(:default, _params, _session, socket) do
     with false <- socket.assigns[:is_admin] == true,

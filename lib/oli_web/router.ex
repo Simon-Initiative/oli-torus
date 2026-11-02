@@ -1487,6 +1487,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.EnsureResearchConsent,
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetRequireCertificationCheck,
@@ -1494,7 +1495,6 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.SetAnnotations,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetNotificationBadges,
           OliWeb.LiveSessionPlugs.SetPaywallSummary,
           OliWeb.LiveSessionPlugs.SetDeviceType
@@ -1521,6 +1521,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.EnsureResearchConsent,
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetBrand,
@@ -1528,7 +1529,6 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.SetAnnotations,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetDeviceType
         ] do
         live("/", Delivery.Student.IndexLive, :preview)
@@ -1590,12 +1590,12 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.EnsureResearchConsent,
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           {OliWeb.LiveSessionPlugs.InitPage, :set_prologue_context},
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetRequestPath,
           OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
@@ -1612,12 +1612,12 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.EnsureResearchConsent,
           OliWeb.LiveSessionPlugs.SetRequireCertificationCheck,
           {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetRequestPath,
           OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
@@ -1634,11 +1634,11 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.EnsureResearchConsent,
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
         live("/", Delivery.Student.ReviewLive)
@@ -1719,10 +1719,10 @@ defmodule OliWeb.Router do
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.RequireEnrollment,
         OliWeb.LiveSessionPlugs.EnsureResearchConsent,
         OliWeb.LiveSessionPlugs.SetBrand,
-        OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.RequireEnrollment
+        OliWeb.LiveSessionPlugs.SetPreviewMode
       ] do
       live(
         "/welcome",
