@@ -1073,6 +1073,33 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert has_element?(view, "label", "Calculate embeddings on publish")
     end
 
+    test "keeps admin-only activities listed after the activities are refreshed", %{
+      conn: conn,
+      admin: admin
+    } do
+      project = create_project_with_author(admin)
+
+      admin_only =
+        insert(:activity_registration, %{
+          title: "Admin Only Simulator",
+          globally_visible: false,
+          globally_available: false
+        })
+
+      insert(:activity_registration_project, %{
+        activity_registration_id: admin_only.id,
+        project_id: project.id,
+        status: :enabled
+      })
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      assert has_element?(view, "div", "Admin Only Simulator")
+
+      send(view.pid, {:refresh_tools_and_activities})
+
+      assert has_element?(view, "div", "Admin Only Simulator")
+    end
+
     test "can update calculate_embeddings_on_publish attribute (false by default)", %{
       conn: conn,
       admin: admin

@@ -3,6 +3,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
   import LiveComponentTests
+  import Ecto.Query, only: [where: 2]
 
   alias Oli.Activities.ActivityRegistrationProject
   alias Oli.Repo
@@ -19,6 +20,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
     setup do
       project = insert(:project)
       author = insert(:author)
+      collaboration = insert(:author_project, project_id: project.id, author_id: author.id)
 
       # Create advanced activities
       activity1 =
@@ -54,6 +56,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
       [
         project: project,
         author: author,
+        collaboration: collaboration,
         activity1: activity1,
         activity2: activity2,
         lti_tool: lti_tool,
@@ -61,13 +64,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
       ]
     end
 
-    test "mounts correctly in loading state", %{conn: conn, project: project} do
+    test "mounts correctly in loading state", %{author: author, conn: conn, project: project} do
       {:ok, _lcd, html} =
         live_component_isolated(
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
-          project_id: project.id,
+          project: project,
+          current_author: author,
           is_admin: true
         )
 
@@ -76,6 +80,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
     end
 
     test "shows modal content when loading is complete", %{
+      author: author,
       conn: conn,
       project: project,
       activity1: activity1
@@ -92,7 +97,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
-          project_id: project.id,
+          project: project,
+          current_author: author,
           is_admin: true
         )
 
@@ -113,6 +119,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
     end
 
     test "filters activities by search term", %{
+      author: author,
       conn: conn,
       project: project,
       activity1: activity1,
@@ -136,7 +143,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
-          project_id: project.id,
+          project: project,
+          current_author: author,
           is_admin: true
         )
 
@@ -158,6 +166,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
     end
 
     test "clears search when clear_search is triggered", %{
+      author: author,
       conn: conn,
       project: project,
       activity1: activity1,
@@ -181,7 +190,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
-          project_id: project.id,
+          project: project,
+          current_author: author,
           is_admin: true
         )
 
@@ -208,6 +218,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
     end
 
     test "switches between activities and tools tabs", %{
+      author: author,
       conn: conn,
       project: project,
       activity1: activity1,
@@ -231,7 +242,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
-          project_id: project.id,
+          project: project,
+          current_author: author,
           is_admin: true
         )
 
@@ -278,7 +290,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
                "data-selected=\"false\""
     end
 
-    test "toggles activity selection", %{conn: conn, project: project, activity1: activity1} do
+    test "toggles activity selection", %{
+      author: author,
+      conn: conn,
+      project: project,
+      activity1: activity1
+    } do
       # Add activity to project
       insert(:activity_registration_project, %{
         activity_registration_id: activity1.id,
@@ -291,7 +308,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
-          project_id: project.id,
+          project: project,
+          current_author: author,
           is_admin: true
         )
 
@@ -331,6 +349,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
     end
 
     test "shows pending changes summary", %{
+      author: author,
       conn: conn,
       project: project,
       activity1: activity1,
@@ -363,7 +382,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
-          project_id: project.id,
+          project: project,
+          current_author: author,
           is_admin: true
         )
 
@@ -407,6 +427,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
     end
 
     test "saves selections successfully", %{
+      author: author,
       conn: conn,
       project: project,
       activity1: activity1
@@ -425,7 +446,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           %{
             id: "test-modal",
-            project_id: project.id,
+            project: project,
+            current_author: author,
             is_admin: true
           }
         )
@@ -478,13 +500,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
       assert_receive :refresh_tools_and_activities
 
       # check on the db that the activity is not longer in the project
-      refute Repo.exists?(ActivityRegistrationProject,
-               activity_registration_id: activity1.id,
-               project_id: project.id
-             )
+      refute associated?(activity1, project)
     end
 
     test "shows no results message when search yields no results", %{
+      author: author,
       conn: conn,
       project: project,
       activity1: activity1
@@ -501,7 +521,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
-          project_id: project.id,
+          project: project,
+          current_author: author,
           is_admin: true
         )
 
@@ -533,6 +554,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
     end
 
     test "handles LTI tools correctly", %{
+      author: author,
       conn: conn,
       project: project,
       lti_tool: lti_tool
@@ -551,7 +573,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           %{
             id: "test-modal",
-            project_id: project.id,
+            project: project,
+            current_author: author,
             is_admin: true
           }
         )
@@ -591,13 +614,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
              |> render() =~ "checked"
     end
 
-    test "disables apply button when no changes", %{conn: conn, project: project} do
+    test "disables apply button when no changes", %{author: author, conn: conn, project: project} do
       {:ok, lcd, _html} =
         live_component_isolated(
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
-          project_id: project.id,
+          project: project,
+          current_author: author,
           is_admin: true
         )
 
@@ -610,6 +634,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
     end
 
     test "enables apply button when changes are made", %{
+      author: author,
       conn: conn,
       project: project,
       activity1: activity1
@@ -626,7 +651,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
-          project_id: project.id,
+          project: project,
+          current_author: author,
           is_admin: true
         )
 
@@ -645,5 +671,64 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
       assert lcd |> element("[role='apply-button']") |> render() =~ "bg-[#0165DA]"
       refute lcd |> element("[role='apply-button']") |> render() =~ "disabled"
     end
+
+    test "applies changes to its own project when the event names another project", %{
+      conn: conn,
+      project: project,
+      author: author,
+      activity1: activity1
+    } do
+      other_project = insert(:project)
+      {:ok, lcd, _html} = mount_modal(conn, project, author)
+
+      lcd
+      |> element("#test-show-modal-button")
+      |> render_click(%{"project_id" => other_project.id})
+
+      select_and_apply(lcd, activity1)
+
+      refute associated?(activity1, other_project)
+      assert associated?(activity1, project)
+    end
+
+    test "refuses to apply once the author no longer collaborates on the project", %{
+      conn: conn,
+      project: project,
+      author: author,
+      collaboration: collaboration,
+      activity1: activity1
+    } do
+      {:ok, lcd, _html} = mount_modal(conn, project, author)
+      manually_trigger_show_modal_event(lcd)
+      Repo.delete!(collaboration)
+
+      select_and_apply(lcd, activity1)
+
+      refute associated?(activity1, project)
+    end
+  end
+
+  defp mount_modal(conn, project, author) do
+    live_component_isolated(
+      conn,
+      OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
+      %{id: "test-modal", project: project, current_author: author, is_admin: false}
+    )
+  end
+
+  defp select_and_apply(lcd, activity) do
+    lcd
+    |> element("[role='activity-item'][data-activity-id='#{activity.id}']")
+    |> render_click()
+
+    lcd
+    |> element("[role='apply-button']")
+    |> render_click()
+  end
+
+  defp associated?(activity, project) do
+    ActivityRegistrationProject
+    |> where(activity_registration_id: ^activity.id, project_id: ^project.id)
+    |> Repo.exists?()
   end
 end

@@ -1,6 +1,7 @@
 defmodule Oli.CloneTest do
   use Oli.DataCase
   import Ecto.Query, warn: false
+  import Oli.Factory
   alias Oli.Repo
 
   alias Oli.Authoring.Collaborators
@@ -336,6 +337,42 @@ defmodule Oli.CloneTest do
 
       assert item_count == 1
       assert hd(items).project_id == duplicated.id
+    end
+
+    test "clone_project/2 keeps each added activity's enabled or disabled status", %{
+      project: project,
+      author2: author2
+    } do
+      disabled_activity =
+        insert(:activity_registration, %{title: "Disabled Activity", globally_available: false})
+
+      enabled_activity =
+        insert(:activity_registration, %{title: "Enabled Activity", globally_available: false})
+
+      insert(:activity_registration_project,
+        activity_registration_id: disabled_activity.id,
+        project_id: project.id,
+        status: :disabled
+      )
+
+      insert(:activity_registration_project,
+        activity_registration_id: enabled_activity.id,
+        project_id: project.id,
+        status: :enabled
+      )
+
+      {:ok, copy} = Clone.clone_project(project.slug, author2)
+
+      copied_statuses =
+        from(arp in Oli.Activities.ActivityRegistrationProject,
+          where: arp.project_id == ^copy.id,
+          select: {arp.activity_registration_id, arp.status}
+        )
+        |> Repo.all()
+        |> Map.new()
+
+      assert copied_statuses[disabled_activity.id] == :disabled
+      assert copied_statuses[enabled_activity.id] == :enabled
     end
 
     test "editing a cloned project revision -> in base project", %{

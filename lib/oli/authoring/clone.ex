@@ -102,8 +102,8 @@ defmodule Oli.Authoring.Clone do
 
   def clone_all_project_activity_registrations(base_project_id, cloned_project_id) do
     query = """
-      INSERT INTO activity_registration_projects(activity_registration_id, project_id, inserted_at, updated_at)
-      SELECT activity_registration_id, $1, now(), now()
+      INSERT INTO activity_registration_projects(activity_registration_id, project_id, status, inserted_at, updated_at)
+      SELECT activity_registration_id, $1, status, now(), now()
       FROM activity_registration_projects as p
       WHERE p.project_id = $2;
     """
