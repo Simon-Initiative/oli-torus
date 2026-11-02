@@ -1,99 +1,294 @@
 defmodule Oli.Auditing do
   @moduledoc """
-  The Auditing context provides functionality for logging and querying audit events.
+  Writes and reads audit events.
+
+  Application code records events through `build/2` and then `append/3` (inside an
+  `Ecto.Multi`) or `insert/1`. Every row is validated against the envelope rules and its
+  contract in `Oli.Auditing.EventCatalog`, and failures are reported as `Oli.Auditing.Error`
+  values that never contain the rejected data.
+
+  `capture/4` keeps the call shape of the producers written before the catalog; it maps them
+  to version 2 rows through `Oli.Auditing.LegacyAdapter`.
   """
 
   import Ecto.Query, warn: false
+
+  require Logger
+
+  alias Ecto.{Changeset, Multi}
   alias Oli.Repo
-  alias Oli.Auditing.{LogEvent, BrowseOptions}
+
+  alias Oli.Auditing.{
+    BrowseOptions,
+    Context,
+    Error,
+    LegacyAdapter,
+    LogEvent,
+    Partitions,
+    Snapshot
+  }
+
   alias Oli.Accounts.{User, Author}
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.Repo.{Paging, Sorting}
 
-  @doc """
-  Captures an audit log event.
+  @scope_columns [:project_id, :section_id, :resource_id, :institution_id]
 
-  ## Parameters
-    - actor: The user or author performing the action (or nil for system actions)
-    - event_type: The type of event (atom)
-    - resource: The resource being acted upon (optional)
-    - details: Additional details about the event (map)
-
-  ## Examples
-
-      iex> capture(%User{id: 1}, :project_published, %Project{id: 10}, %{version: "1.0"})
-      {:ok, %LogEvent{}}
-
-      iex> capture(%Author{id: 2}, :user_deleted, nil, %{email: "user@example.com"})
-      {:ok, %LogEvent{}}
-  """
-  def capture(actor, event_type, resource \\ nil, details \\ %{}) do
-    attrs = build_attrs(actor, event_type, resource, details)
-
-    %LogEvent{}
-    |> LogEvent.changeset(attrs)
-    |> Repo.insert()
-  end
+  @type proposal_attrs :: %{
+          required(:event_type) => atom(),
+          required(:entity) => {atom(), term(), map() | struct()},
+          required(:event_key) => String.t(),
+          optional(:outcome) => atom(),
+          optional(:affected) => {:user | :author, pos_integer()},
+          optional(:scope) => %{
+            optional(:project_id | :section_id | :resource_id | :institution_id) => pos_integer()
+          },
+          optional(:refs) => [
+            %{required(:role) => atom(), required(:type) => atom(), optional(atom()) => term()}
+          ],
+          optional(:changes) => map(),
+          optional(:details) => map(),
+          optional(:occurred_at) => DateTime.t()
+        }
 
   @doc """
-  Captures an audit log event, raising an exception on failure.
+  Builds a version 2 changeset from who acted (`context`) and what happened (`proposal`).
+
+  `inserted_at` is now; `occurred_at` defaults to it. The entity snapshot keeps only the
+  allowlisted identity fields of the given struct or map, and `search_text` is derived from the
+  actor and entity snapshots and the reference labels.
+
+  Only the scope columns are taken from `scope`, so a proposal cannot replace the actor or any
+  other envelope field.
+
+  Returns `{:error, :no_changes}` for an event with a `:skip` contract and no changes, and
+  `{:error, changeset}` when the row does not satisfy its contract.
   """
-  def capture!(actor, event_type, resource \\ nil, details \\ %{}) do
-    case capture(actor, event_type, resource, details) do
-      {:ok, event} -> event
-      {:error, changeset} -> raise "Failed to capture audit event: #{inspect(changeset)}"
+  @spec build(Context.t(), proposal_attrs()) ::
+          {:ok, Changeset.t()} | {:error, :no_changes | Changeset.t()}
+  def build(%Context{} = context, %{} = proposal) do
+    now = DateTime.utc_now()
+    {entity_type, entity_id, entity_snapshot} = entity(Map.fetch!(proposal, :entity))
+    refs = proposal |> Map.get(:refs, []) |> Enum.map(&ref/1)
+
+    attrs =
+      %{
+        inserted_at: now,
+        occurred_at: Map.get(proposal, :occurred_at, now),
+        event_type: Map.fetch!(proposal, :event_type),
+        outcome: Map.get(proposal, :outcome, :succeeded),
+        actor_type: context.actor_type,
+        actor_key: context.system_key && Atom.to_string(context.system_key),
+        user_id: context.user_id,
+        author_id: context.author_id,
+        actor_snapshot: context.actor_snapshot,
+        entity_type: entity_type,
+        entity_id: entity_id,
+        entity_snapshot: entity_snapshot,
+        refs: refs,
+        changes: Map.get(proposal, :changes, %{}),
+        details:
+          proposal |> Map.get(:details, %{}) |> Map.new(fn {k, v} -> {to_string(k), v} end),
+        source: context.source,
+        operation_id: context.operation_id,
+        parent_operation_id: context.parent_operation_id,
+        event_key: Map.fetch!(proposal, :event_key),
+        search_text:
+          Snapshot.search_text([
+            context.actor_snapshot,
+            entity_snapshot | Enum.map(refs, &Map.take(&1, ["label"]))
+          ])
+      }
+      |> Map.merge(proposal |> Map.get(:scope, %{}) |> Map.take(@scope_columns))
+      |> Map.merge(affected(Map.get(proposal, :affected)))
+
+    changeset = LogEvent.v2_changeset(%LogEvent{}, attrs)
+
+    case changeset do
+      %Changeset{valid?: true} -> {:ok, changeset}
+      changeset -> build_error(changeset)
     end
   end
 
-  defp build_attrs(actor, event_type, resource, details) do
-    attrs = %{
-      event_type: event_type,
-      details: details
-    }
-
-    attrs
-    |> add_actor_attrs(actor)
-    |> add_resource_attrs(resource)
+  defp build_error(changeset) do
+    case Enum.any?(changeset.errors, fn {_field, {_message, meta}} ->
+           meta[:validation] == :no_changes
+         end) do
+      true -> {:error, :no_changes}
+      false -> {:error, changeset}
+    end
   end
 
-  defp add_actor_attrs(attrs, %User{id: id}), do: Map.put(attrs, :user_id, id)
-  defp add_actor_attrs(attrs, %Author{id: id}), do: Map.put(attrs, :author_id, id)
-  defp add_actor_attrs(attrs, nil), do: attrs
-  defp add_actor_attrs(attrs, _), do: attrs
+  defp entity({type, id, snapshot}), do: {type, to_string(id), Snapshot.of(snapshot)}
 
-  defp add_resource_attrs(attrs, %Project{id: id}), do: Map.put(attrs, :project_id, id)
-  defp add_resource_attrs(attrs, %Section{id: id}), do: Map.put(attrs, :section_id, id)
+  defp ref(%{role: role, type: type, id: id} = ref) do
+    %{"role" => Atom.to_string(role), "type" => Atom.to_string(type), "id" => id}
+    |> put_label(Map.get(ref, :label))
+  end
 
-  defp add_resource_attrs(attrs, %{id: id, __struct__: struct_name}) do
-    # For other resources with an id, store in resource_id
-    Map.put(attrs, :resource_id, id)
-    |> Map.update(:details, %{}, fn details ->
-      Map.put(details, "resource_type", to_string(struct_name))
+  defp put_label(ref, nil), do: ref
+  defp put_label(ref, label), do: Map.put(ref, "label", label)
+
+  defp affected(nil), do: %{}
+  defp affected({:user, id}), do: %{affected_user_id: id}
+  defp affected({:author, id}), do: %{affected_author_id: id}
+
+  @doc """
+  Adds a step to `multi` that writes the event returned by `builder`.
+
+  `builder` receives the results of the previous steps and returns `{:ok, changeset}` (usually
+  from `build/2`), `:skip` or `{:error, :no_changes}` to write nothing, or `{:error, term}`.
+  Any error rolls back the whole `Ecto.Multi`; changesets and unexpected builder results are
+  reported as `Oli.Auditing.Error` values.
+  """
+  @spec append(
+          Multi.t(),
+          Multi.name(),
+          (map() -> {:ok, Changeset.t()} | {:error, term()} | :skip)
+        ) :: Multi.t()
+  def append(%Multi{} = multi, name, builder) when is_function(builder, 1) do
+    Multi.run(multi, name, fn _repo, changes ->
+      case builder.(changes) do
+        {:ok, %Changeset{} = changeset} -> insert(changeset)
+        :skip -> {:ok, nil}
+        {:error, :no_changes} -> {:ok, nil}
+        {:error, %Changeset{} = changeset} -> {:error, report(invalid_error(changeset))}
+        {:error, reason} -> {:error, reason}
+        _unexpected -> {:error, report(Error.new(:invalid_event))}
+      end
     end)
   end
 
-  defp add_resource_attrs(attrs, nil), do: attrs
-  defp add_resource_attrs(attrs, _), do: attrs
+  @doc """
+  Inserts a changeset built by `build/2` outside an `Ecto.Multi`.
+
+  A row whose `inserted_at` has no partition returns `:partition_missing`. Every failure is
+  logged once, without values, with the error's correlation ID, and emits the telemetry event
+  `[:oli, :auditing, :append, :error]`.
+
+  A database failure aborts the surrounding transaction, if any, so a caller inside
+  `Repo.transaction/1` must roll back on `{:error, _}` instead of issuing more queries.
+  """
+  @spec insert(Changeset.t()) :: {:ok, LogEvent.t()} | {:error, Error.t()}
+  def insert(%Changeset{valid?: true} = changeset) do
+    do_insert(changeset, Changeset.get_field(changeset, :event_type))
+  end
+
+  def insert(%Changeset{} = changeset), do: {:error, report(invalid_error(changeset))}
+
+  defp do_insert(changeset, event_type) do
+    case Repo.insert(changeset) do
+      {:ok, event} -> {:ok, event}
+      {:error, changeset} -> {:error, report(invalid_error(changeset))}
+    end
+  rescue
+    error in Postgrex.Error ->
+      code = database_error_code(error)
+      {:error, report(Error.new(code, event_type), interval(code, changeset))}
+
+    DBConnection.ConnectionError ->
+      {:error, report(Error.new(:insert_failed, event_type))}
+  end
+
+  defp database_error_code(%Postgrex.Error{postgres: %{code: :check_violation, message: message}}) do
+    case String.contains?(message, "no partition of relation") do
+      true -> :partition_missing
+      false -> :invalid_event
+    end
+  end
+
+  defp database_error_code(_error), do: :insert_failed
+
+  defp interval(:partition_missing, changeset) do
+    case Changeset.get_field(changeset, :inserted_at) do
+      %DateTime{} = inserted_at -> Partitions.name_for(DateTime.to_date(inserted_at))
+      _ -> nil
+    end
+  end
+
+  defp interval(_code, _changeset), do: nil
+
+  defp invalid_error(changeset),
+    do: Error.new(:invalid_event, Changeset.get_field(changeset, :event_type))
+
+  defp report(%Error{} = error, interval \\ nil) do
+    Logger.error(
+      "Audit event write failed code=#{error.code} event_type=#{error.event_type} " <>
+        "correlation_id=#{error.correlation_id}" <>
+        case interval do
+          nil -> ""
+          interval -> " partition=#{interval}"
+        end
+    )
+
+    :telemetry.execute([:oli, :auditing, :append, :error], %{count: 1}, Map.from_struct(error))
+    error
+  end
 
   @doc """
-  Lists audit events with optional filters.
+  Records an event with the call shape used before the event catalog.
+
+  `actor` must be a `User` or an `Author`; a `nil` actor returns
+  `{:error, %Oli.Auditing.Error{code: :invalid_event}}` (no system actor is invented). A row
+  that does not satisfy its contract returns `{:error, changeset}`, built from the mapped
+  values, so existing callers that match on a changeset keep working.
+
+  ## Examples
+
+      iex> capture(author, :project_published, project, %{"project_title" => "Biology"})
+      {:ok, %LogEvent{}}
+  """
+  @spec capture(%User{} | %Author{} | nil, atom(), struct() | nil, map()) ::
+          {:ok, LogEvent.t()} | {:error, Error.t() | Changeset.t()}
+  def capture(actor, event_type, resource \\ nil, details \\ %{}) do
+    with {:ok, context, proposal} <-
+           LegacyAdapter.to_proposal(actor, event_type, resource, details),
+         {:ok, changeset} <- build(context, proposal) do
+      insert(changeset)
+    else
+      {:error, :invalid_event} -> {:error, report(Error.new(:invalid_event, event_type))}
+      {:error, :no_changes} -> {:error, Error.new(:no_changes, event_type)}
+      {:error, %Changeset{} = changeset} -> report_changeset(changeset)
+    end
+  end
+
+  defp report_changeset(changeset) do
+    report(invalid_error(changeset))
+    {:error, changeset}
+  end
+
+  @doc """
+  Like `capture/4`, but raises on failure.
+  """
+  @spec capture!(%User{} | %Author{} | nil, atom(), struct() | nil, map()) :: LogEvent.t()
+  def capture!(actor, event_type, resource \\ nil, details \\ %{}) do
+    case capture(actor, event_type, resource, details) do
+      {:ok, event} -> event
+      {:error, %Error{code: code}} -> raise "Failed to capture audit event: #{code}"
+      {:error, %Changeset{}} -> raise "Failed to capture audit event: invalid_event"
+    end
+  end
+
+  @doc """
+  Lists audit events with optional filters, newest first.
 
   ## Options
     - :user_id - Filter by user ID
     - :author_id - Filter by author ID
     - :event_type - Filter by event type
     - :limit - Maximum number of results (default: 100)
-    - :order_by - Order results (default: [desc: :inserted_at])
+    - :order_by - Order results (default: newest first by `inserted_at`, then `id`)
 
   ## Examples
 
       iex> list_events(user_id: 1, event_type: :project_published)
       [%LogEvent{}, ...]
   """
+  @spec list_events(keyword()) :: [LogEvent.t()]
   def list_events(opts \\ []) do
     limit = Keyword.get(opts, :limit, 100)
-    order_by = Keyword.get(opts, :order_by, desc: :inserted_at)
+    order_by = Keyword.get(opts, :order_by, desc: :inserted_at, desc: :id)
 
     LogEvent
     |> apply_filters(opts)
@@ -113,46 +308,39 @@ defmodule Oli.Auditing do
   end
 
   @doc """
-  Gets a single audit event.
+  Gets a single audit event by ID. Searches every partition; use `get_event!/2` when the
+  event's `inserted_at` is known.
 
   Raises `Ecto.NoResultsError` if the event does not exist.
-
-  ## Examples
-
-      iex> get_event!(123)
-      %LogEvent{}
-
-      iex> get_event!(456)
-      ** (Ecto.NoResultsError)
   """
+  @spec get_event!(pos_integer()) :: LogEvent.t()
   def get_event!(id) do
     LogEvent
-    |> Repo.get!(id)
+    |> where([e], e.id == ^id)
+    |> Repo.one!()
     |> preload_associations()
   end
 
   @doc """
-  Convenience function to log a user action.
+  Gets a single audit event by its full primary key, reading only the partition that holds it.
+
+  Raises `Ecto.NoResultsError` if the event does not exist.
   """
-  def log_user_action(%User{} = user, event_type, details \\ %{}) do
-    capture(user, event_type, nil, details)
+  @spec get_event!(pos_integer(), DateTime.t()) :: LogEvent.t()
+  def get_event!(id, %DateTime{} = inserted_at) do
+    LogEvent
+    |> where([e], e.id == ^id and e.inserted_at == ^inserted_at)
+    |> Repo.one!()
+    |> preload_associations()
   end
 
   @doc """
-  Convenience function to log an author action.
+  Records an action performed by an administrator. Same as `capture/4`.
   """
-  def log_author_action(%Author{} = author, event_type, details \\ %{}) do
-    capture(author, event_type, nil, details)
-  end
-
-  @doc """
-  Convenience function to log an admin-only action.
-  Admin actions are typically performed by users with admin privileges.
-  """
-  def log_admin_action(admin, event_type, resource \\ nil, details \\ %{}) do
-    details_with_admin = Map.put(details, "admin_action", true)
-    capture(admin, event_type, resource, details_with_admin)
-  end
+  @spec log_admin_action(%User{} | %Author{} | nil, atom(), struct() | nil, map()) ::
+          {:ok, LogEvent.t()} | {:error, Error.t() | Changeset.t()}
+  def log_admin_action(admin, event_type, resource \\ nil, details \\ %{}),
+    do: capture(admin, event_type, resource, details)
 
   # Preload associations for display purposes
   defp preload_associations(events) when is_list(events) do
@@ -186,7 +374,7 @@ defmodule Oli.Auditing do
       |> Map.put(:actor, users[event.user_id] || authors[event.author_id])
       |> Map.put(
         :resource,
-        projects[event.project_id] || sections[event.section_id]
+        sections[event.section_id] || projects[event.project_id]
       )
     end)
   end
@@ -200,6 +388,7 @@ defmodule Oli.Auditing do
   @doc """
   Paged, sorted, filterable queries for audit log events.
   """
+  @spec browse_events_query(Paging.t(), Sorting.t(), BrowseOptions.t()) :: Ecto.Query.t()
   def browse_events_query(
         %Paging{limit: limit, offset: offset},
         %Sorting{direction: direction, field: field},
@@ -217,6 +406,7 @@ defmodule Oli.Auditing do
           |> Enum.map(fn x -> x <> ":*" end)
           |> Enum.join(" & ")
 
+        # Current account and record names, plus the identities stored with the event.
         dynamic(
           [e, u, a, p, s],
           fragment(
@@ -228,7 +418,8 @@ defmodule Oli.Auditing do
             p.slug,
             s.slug,
             ^search_term
-          )
+          ) or
+            fragment("? @@ to_tsquery('simple', ?)", e.search_vector, ^search_term)
         )
       end
 
@@ -284,8 +475,9 @@ defmodule Oli.Auditing do
           order_by(query, [e], {^direction, field(e, ^field)})
       end
 
-    # Ensure stable sort order based on id
-    order_by(query, [e], e.id)
+    # Stable order for rows that tie on the sorted field, in the same direction so an index on
+    # (inserted_at, id) can serve it.
+    order_by(query, [e], [{^direction, e.inserted_at}, {^direction, e.id}])
   end
 
   @doc """

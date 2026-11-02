@@ -335,7 +335,7 @@ Legacy adapter mapping (all `source: :application`, fresh `operation_id`, `outco
 | `section_created` | `section` | `section:<id>:created` | `section_id` |
 | `resource_attempt_deleted` | `resource_attempt` from `attempt_guid` | `attempt:<guid>:deleted` | `section_id`, `resource_id`, `affected_user_id` from details |
 | feature flag events | `feature_flag` from `feature_name` | `flag:<name>:<event>` | `project_id`/`section_id` when resource is a project/section; otherwise system-wide scope ref |
-| rollout events | `feature_rollout`/`rollout_exemption` | `rollout:<feature>:<scope>:<event>` | scope in `refs` with role `scope` |
+| rollout events | `feature_rollout`/`rollout_exemption` | `rollout:<feature>:<scope>:<event>` | project or section scope in `project_id`/`section_id` (§4.1: a known scope record goes in its column); global scope and exemption publishers as a `refs` entry with role `scope` |
 | `clickhouse_admin_operation_initiated` | `clickhouse_operation` from details `operation_id` | `clickhouse:<kind>:initiated` | `outcome: :initiated` |
 
 A `nil` actor returns `{:error, %Error{code: :invalid_event}}`; the adapter never invents a system actor. Callers that currently skip nil actors keep doing so.
