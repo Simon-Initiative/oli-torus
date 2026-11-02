@@ -117,16 +117,26 @@ defmodule Oli.Auditing.Partitions do
   Detaches a partition from `audit_log_events`, leaving it as a standalone table. For
   rehearsals and operators only; nothing calls it on a schedule.
 
+  A plain `DETACH` needs ACCESS EXCLUSIVE on the parent, so it gives up after a five-second lock
+  timeout instead of queueing every read and write behind a long query. Production removal uses
+  `DETACH PARTITION ... CONCURRENTLY` (see `docs/runbooks/audit-log/partitioned-storage.md`).
+
   Returns `{:error, :invalid_name}` for a name that is not a partition name and
   `{:error, :not_found}` when no such partition is attached.
   """
   @spec detach(String.t()) :: :ok | {:error, :invalid_name | :not_found}
   def detach(name) when is_binary(name) do
     with true <- Regex.match?(@name_pattern, name) || {:error, :invalid_name},
-         true <- name in attached_partitions() || {:error, :not_found} do
-      Repo.query!("ALTER TABLE #{@table} DETACH PARTITION #{name}")
+         true <- name in attached_partitions() || {:error, :not_found},
+         {:ok, :ok} <- Repo.transaction(fn -> detach!(name) end) do
       :ok
     end
+  end
+
+  defp detach!(name) do
+    Repo.query!("SET LOCAL lock_timeout = '5s'")
+    Repo.query!("ALTER TABLE #{@table} DETACH PARTITION #{name}")
+    :ok
   end
 
   defp create_missing(date) do
@@ -141,6 +151,10 @@ defmodule Oli.Auditing.Partitions do
     |> Enum.map(&create_partition/1)
   end
 
+  # Creates the table first and then attaches it. `CREATE TABLE ... PARTITION OF` needs ACCESS
+  # EXCLUSIVE on the parent, so behind a long read every insert would queue for up to the lock
+  # timeout; `ATTACH PARTITION` needs only SHARE UPDATE EXCLUSIVE, which reads and writes do not
+  # conflict with. The new table is empty, so the attach's bounds validation costs nothing.
   defp create_partition(start) do
     name = name_for(start)
     {from, to} = bounds(start)
@@ -148,7 +162,12 @@ defmodule Oli.Auditing.Partitions do
     Repo.query!("SET LOCAL lock_timeout = '5s'")
 
     Repo.query!("""
-    CREATE TABLE #{name} PARTITION OF #{@table}
+    CREATE TABLE #{name}
+      (LIKE #{@table} INCLUDING DEFAULTS INCLUDING CONSTRAINTS INCLUDING GENERATED)
+    """)
+
+    Repo.query!("""
+    ALTER TABLE #{@table} ATTACH PARTITION #{name}
       FOR VALUES FROM ('#{Date.to_iso8601(from)} 00:00:00+00') TO ('#{Date.to_iso8601(to)} 00:00:00+00')
     """)
 
