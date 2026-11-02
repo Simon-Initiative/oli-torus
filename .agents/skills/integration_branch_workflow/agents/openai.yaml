@@ -1,0 +1,3 @@
+interface:
+  display_name: "Integration Branch Workflow"
+  short_description: "Set up and sync Torus integration branches"

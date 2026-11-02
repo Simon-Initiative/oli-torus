@@ -24,9 +24,12 @@ The primary goal is to improve the quality of the branch's changes, not to perfo
    - Use the base the user provided, if any.
    - Otherwise, use the base of the branch's open pull request when one exists
      (`gh pr view --json baseRefName --jq .baseRefName`).
-   - Otherwise, pick the closest candidate among `origin/master` and any feature integration
-     branches (`origin/integ-*`): the one whose merge-base with `HEAD` has the fewest commits
-     between it and `HEAD`. If the candidates are equally close, ask the user.
+   - Otherwise, pick the closest candidate among `origin/master` and integration branches
+     matching `origin/integ-*`, `origin/story/*`, `origin/bug/*`, or `origin/task/*`.
+     Match integration branch prefixes case-insensitively, as documented in
+     `guides/process/development.md`. Choose the candidate whose merge-base with `HEAD`
+     has the fewest commits between it and `HEAD`. If the candidates are equally close,
+     ask the user.
    - Make the chosen base explicit so the user can correct it.
 
 3. Use the branch diff against the base branch as the primary cleanup boundary.
