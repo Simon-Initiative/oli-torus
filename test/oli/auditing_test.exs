@@ -335,12 +335,12 @@ defmodule Oli.AuditingTest do
     end
   end
 
-  describe "get_event!/1" do
+  describe "get_event!/2" do
     test "returns the event with given id" do
       admin = insert(:user)
       {:ok, event} = Auditing.capture(admin, :user_deleted, insert(:user), %{})
 
-      fetched_event = Auditing.get_event!(event.id)
+      fetched_event = Auditing.get_event!(event.id, event.inserted_at)
       assert fetched_event.id == event.id
       assert fetched_event.user_id == admin.id
       assert fetched_event.event_type == :user_deleted
@@ -348,7 +348,7 @@ defmodule Oli.AuditingTest do
 
     test "raises if event does not exist" do
       assert_raise Ecto.NoResultsError, fn ->
-        Auditing.get_event!(999_999)
+        Auditing.get_event!(999_999, DateTime.utc_now())
       end
     end
 
@@ -356,7 +356,7 @@ defmodule Oli.AuditingTest do
       admin = insert(:user)
       {:ok, event} = Auditing.capture(admin, :user_deleted, insert(:user), %{})
 
-      fetched_event = Auditing.get_event!(event.id)
+      fetched_event = Auditing.get_event!(event.id, event.inserted_at)
       assert fetched_event.actor.id == admin.id
       assert fetched_event.actor.email == admin.email
     end
@@ -443,6 +443,6 @@ defmodule Oli.AuditingTest do
 
   defp captured_by(actor) do
     {:ok, event} = Auditing.capture(actor, :user_deleted, insert(:user), %{})
-    Auditing.get_event!(event.id)
+    Auditing.get_event!(event.id, event.inserted_at)
   end
 end

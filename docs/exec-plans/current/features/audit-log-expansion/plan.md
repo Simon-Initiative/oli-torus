@@ -401,6 +401,12 @@ All Mix commands require scoped escalated permissions on the first attempt under
 - [ ] Render actor/affected subject, multi-field changes, settings history, deleted/system/unknown identities and confirmed async outcomes. Keep admin-only authorization and avoid exposing schema plumbing.
 - [ ] Benchmark actual predicates/indexes over representative multi-partition history; fix measured query costs and validate keyboard/labels/details behavior.
 
+Carried over from PR-01 (measured or found during PR-01; see `evidence/pr-01-storage.md`):
+
+- Replace the admin list query shape. `count(*) OVER()`, the left joins, and the OR'ed joined-name `to_tsvector` read every matching row: the default page takes about 0.5 s and text search about 1.8 s at the 440,000 rows PR-05 brings, and 30 to 66 s at 10M. Options: an estimated or capped count, keyset pagination, and a `search_text`-only match using the GIN index.
+- Make text search safe for malformed input. `to_tsquery` raises on input such as unmatched parentheses or trailing operators. Switching to `websearch_to_tsquery` or `plainto_tsquery` would drop the current prefix matching (`:*`), so choose the parser together with the new search semantics.
+- `get_event!/1` (lookup by ID alone, across all partitions) was removed because nothing called it. If the event detail view needs a lookup without `inserted_at`, reintroduce it with that caller as justification.
+
 Idea to explore (not a requirement or acceptance criterion): filtering by event family, derived from `EventCatalog` as `event_type IN (<family types>)`. Options include a separate family selector or an action selector grouped by family where a whole family can be chosen. Catalog descriptions could also serve as action tooltips. Evaluate during PR-07 design; adopting it requires owner agreement.
 
 ### Testing Tasks

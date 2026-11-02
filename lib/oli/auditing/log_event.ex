@@ -25,7 +25,7 @@ defmodule Oli.Auditing.LogEvent do
     * `project_id`, `section_id`, `resource_id`, `institution_id` - scope. A scope record known
       to the event always goes in its column, never only in `refs` or `details`.
     * `refs` - other typed references: `%{"role", "type", "id", "label"}`.
-    * `changes` - per-field change records (`Oli.Auditing.Changes`).
+    * `changes` - per-field change records (`Oli.Auditing.Changes`), at most 64 KiB serialized.
     * `details` - event-specific context, allowlisted per event.
     * `source`, `operation_id`, `parent_operation_id`, `event_key` - where the change came from,
       the command it belongs to, and the event's key within that command.

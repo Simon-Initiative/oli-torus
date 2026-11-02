@@ -2,7 +2,7 @@ defmodule Oli.Auditing.ContractsTest do
   use ExUnit.Case, async: true
 
   alias Oli.Auditing.{Changes, EntityId, EventCatalog, EventExamples}
-  alias Oli.Auditing.EventCatalog.Contract
+  alias Oli.Auditing.EventCatalog.{Contract, Validation}
 
   @writable for %Contract{v1_only: false, deprecated: false, name: name} <-
                   EventCatalog.contracts(),
@@ -239,6 +239,27 @@ defmodule Oli.Auditing.ContractsTest do
                EventCatalog.validate(%{example | details: %{"page_title" => big}})
 
       assert [details: "exceed 16384 bytes"] = errors
+    end
+
+    test "rejects changes over the size limit and accepts them just under it" do
+      example = EventExamples.example(:student_exception_updated)
+      limit = Validation.max_changes_bytes()
+
+      changes = fn text ->
+        %{"end_date" => %{"operation" => "set", "before" => nil, "after" => text}}
+      end
+
+      # The record's JSON wrapper takes about 60 bytes on top of the text.
+      assert :ok =
+               EventCatalog.validate(%{
+                 example
+                 | changes: changes.(String.duplicate("a", limit - 100))
+               })
+
+      assert {:error, [changes: message]} =
+               EventCatalog.validate(%{example | changes: changes.(String.duplicate("a", limit))})
+
+      assert message == "exceed #{limit} bytes"
     end
 
     test "returns errors instead of raising on malformed input" do

@@ -156,6 +156,7 @@ A report-style transaction holds the parent for 2 seconds while a new partition 
 ## Open Items
 
 - Admin list query shape: PR-07 must fix it before history volume grows (measured above).
+- Admin text search: `to_tsquery` raises on malformed input (pre-existing); PR-07 chooses a safe parser together with the new search semantics. Both items are recorded in `plan.md` Phase 7.
 - Operations inputs before release (runbook Preflight):
   - PostgreSQL version;
   - whether the application role has `CREATE` on the schema, and who runs partition maintenance otherwise;

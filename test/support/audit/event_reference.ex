@@ -46,7 +46,7 @@ defmodule Oli.Auditing.EventReference do
     {:refs,
      "Other related records as `{role, type, id, label}`; roles: #{Enum.map_join(Validation.ref_roles(), ", ", &"`#{&1}`")}."},
     {:changes,
-     "Per-field records `{operation, before, after, ...}` limited to the contract's fields; secret fields only record `redacted: true`."},
+     "Per-field records `{operation, before, after, ...}` limited to the contract's fields; secret fields only record `redacted: true`; at most #{Validation.max_changes_bytes()} bytes."},
     {:details,
      "Extra facts limited to the contract's keys; at most #{Validation.max_details_bytes()} bytes."},
     {:source,

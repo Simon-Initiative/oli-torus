@@ -17,6 +17,8 @@ defmodule Oli.Auditing.EventCatalog.Validation do
   @type_name ~r/^[a-z][a-z0-9_]{1,63}$/
   @scope_columns ~w(project_id section_id resource_id institution_id)a
   @max_details_bytes 16_384
+  # Larger than details: each field keeps its value before and after, and some are long texts.
+  @max_changes_bytes 65_536
   @actor_snapshot_fields %{
     user: ~w(id name email),
     author: ~w(id name email),
@@ -36,6 +38,10 @@ defmodule Oli.Auditing.EventCatalog.Validation do
   @doc "Returns the maximum serialized size of `details`, in bytes."
   @spec max_details_bytes() :: pos_integer()
   def max_details_bytes, do: @max_details_bytes
+
+  @doc "Returns the maximum serialized size of `changes`, in bytes."
+  @spec max_changes_bytes() :: pos_integer()
+  def max_changes_bytes, do: @max_changes_bytes
 
   @doc """
   Validates `attrs`. Returns `:ok`, `{:error, :no_changes}` for an empty change set on a
@@ -333,10 +339,19 @@ defmodule Oli.Auditing.EventCatalog.Validation do
     end
   end
 
+  # Keys are limited by the contract, but values can be long user text, so the serialized size is
+  # capped too; the cap also bounds nesting in practice.
   defp validate_changes(contract, attrs) do
-    case Changes.validate(Map.get(attrs, :changes, %{}), contract.change_fields) do
-      :ok -> []
-      {:error, message} -> [{:changes, message}]
+    changes = Map.get(attrs, :changes, %{})
+
+    with :ok <- Changes.validate(changes, contract.change_fields),
+         {:ok, json} <- Jason.encode(changes),
+         true <- byte_size(json) > @max_changes_bytes do
+      [{:changes, "exceed #{@max_changes_bytes} bytes"}]
+    else
+      {:error, message} when is_binary(message) -> [{:changes, message}]
+      {:error, _encode_error} -> [{:changes, "must be JSON-encodable"}]
+      false -> []
     end
   end
 

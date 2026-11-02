@@ -32,7 +32,7 @@ columns an event sets; omitted columns are `NULL`, `{}`, or `[]`.
 | `resource_id` | Resource (page, assessment, container, objective) the event belongs to, whenever known. |
 | `institution_id` | Institution the event belongs to, whenever known. |
 | `refs` | Other related records as `{role, type, id, label}`; roles: `scope`, `source`, `previous`, `resulting`, `linked`, `provider`. |
-| `changes` | Per-field records `{operation, before, after, ...}` limited to the contract's fields; secret fields only record `redacted: true`. |
+| `changes` | Per-field records `{operation, before, after, ...}` limited to the contract's fields; secret fields only record `redacted: true`; at most 65536 bytes. |
 | `details` | Extra facts limited to the contract's keys; at most 16384 bytes. |
 | `source` | Where the change originated: `system`, `ui`, `api`, `mcp`, `job`, `scenario`, `application`. |
 | `operation_id` | Command that produced the event; events of one bulk command share it. |

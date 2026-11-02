@@ -182,7 +182,6 @@ Auditing.EventCatalog.build(event_type, context, target, before, after, safe_met
 
 Auditing.append(multi, step_name, proposal_fun)
 Auditing.browse_events(paging, sorting, browse_options)
-Auditing.get_event!(id)                         # lookup by central ID across partitions
 Auditing.get_event!(id, inserted_at)            # efficient exact partition lookup
 
 # A domain-specific async coordinator owns the Multi containing both

@@ -16,7 +16,7 @@ Status: approved by the owner on 2026-10-29 (plan Phase 1 gate: concrete schema,
   - Contracts and factory-backed insert/reject tests for every catalog event, including families whose producers arrive in PR-02..PR-06.
   - One generated migration that creates, copies, verifies, swaps, and retires in a single transaction, with explicit `up/0` and `down/0` (section 4.5). No change to `Oli.Release` and no manual deployment step. The batched procedure (section 4.7) is used only if production volume requires it.
   - A narrow `capture/4` adapter so the 16 existing event types keep their current producers and write strict v2 rows.
-  - Reader compatibility: `get_event!/1`, `get_event!/2`, `browse_events/3`, `LogEvent.event_description/1`, `LogEvent.actor_name/1`, and the admin table render new and v1 rows without crashing.
+  - Reader compatibility: `get_event!/2`, `browse_events/3`, `LogEvent.event_description/1`, `LogEvent.actor_name/1`, and the admin table render new and v1 rows without crashing.
   - Disposable-database rehearsal and benchmark scripts, plus an evidence report.
   - Event documentation (section 4.6): column comments, the `LogEvent` field glossary, one test-only example per event type, and the generated reference `docs/design-docs/audit-log-events.md`.
 - Out of scope:
@@ -209,7 +209,7 @@ Every v2 event shares this envelope:
 | Actor | `Context` actor: user, author, or system key from `[:playwright_setup, :provider_provisioning, :scheduled_maintenance]`. `actor_snapshot`: `%{"id", "name", "email"}` for accounts, `%{"key", "label"}` for system |
 | Entity | `entity_type` from the contract's allowed list; `entity_id` text: numeric ID, UUID, stable key, or composite `section:<id>/resource:<id>/user:<id>`; `entity_snapshot` from `Snapshot` |
 | Scope and references | Required columns per contract; any known project, section, resource, or institution always fills its column; other references go to `refs` with a `role` (section 4.1) |
-| Changes | Only the contract's change fields. Record keys: `operation` (`set`, `reset`, `added`, `removed`), `before`, `after`, `effective_before`, `effective_after`, `result_source`, `unit`, `currency`, `redacted`, `changed`. A missing key means not applicable; `null` means explicit null. Values are JSON-native; no byte limit, because only allowlisted contract fields can appear |
+| Changes | Only the contract's change fields. Record keys: `operation` (`set`, `reset`, `added`, `removed`), `before`, `after`, `effective_before`, `effective_after`, `result_source`, `unit`, `currency`, `redacted`, `changed`. A missing key means not applicable; `null` means explicit null. Values are JSON-native; at most 64 KiB serialized, because values can be long user text even though only allowlisted contract fields can appear (added after the PR's automated review; the previous design had no limit) |
 | Details | Only the contract's detail keys; values are scalars, lists of scalars, or allowlisted nested maps; serialized size limit 16 KiB per event (larger evidence must use references, not truncation) |
 | Outcome | From the contract's allowed outcomes; `succeeded` for synchronous mutations |
 | Keys | `event_key` matches `^[a-z0-9_]+(:[a-z0-9_\-]+)*$`; deterministic from the semantic slot, e.g. `account:primary:deleted`, `exception:<user_id>:updated` |
@@ -311,7 +311,6 @@ Field policy completeness (owner decision, 2026-10-30): every field policy in `O
 @spec Oli.Auditing.capture(User.t() | Author.t() | nil, atom(), struct() | nil, map()) ::
         {:ok, LogEvent.t()} | {:error, Oli.Auditing.Error.t() | Ecto.Changeset.t()}
 
-@spec Oli.Auditing.get_event!(pos_integer()) :: LogEvent.t()                 # where id == ^id, Repo.one!
 @spec Oli.Auditing.get_event!(pos_integer(), DateTime.t()) :: LogEvent.t()   # exact partition lookup
 @spec Oli.Auditing.browse_events(Paging.t(), Sorting.t(), BrowseOptions.t()) :: [LogEvent.t()]
 

@@ -308,20 +308,6 @@ defmodule Oli.Auditing do
   end
 
   @doc """
-  Gets a single audit event by ID. Searches every partition; use `get_event!/2` when the
-  event's `inserted_at` is known.
-
-  Raises `Ecto.NoResultsError` if the event does not exist.
-  """
-  @spec get_event!(pos_integer()) :: LogEvent.t()
-  def get_event!(id) do
-    LogEvent
-    |> where([e], e.id == ^id)
-    |> Repo.one!()
-    |> preload_associations()
-  end
-
-  @doc """
   Gets a single audit event by its full primary key, reading only the partition that holds it.
 
   Raises `Ecto.NoResultsError` if the event does not exist.
