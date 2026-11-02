@@ -22,11 +22,32 @@ defmodule OliWeb.PlaywrightSupportAssetControllerTest do
       assert response(conn, 200) =~ "name,value"
     end
 
-    test "serves the shared automation video fixture", %{conn: conn} do
+    test "serves the packaged image fixture", %{conn: conn} do
+      conn = get(conn, "/test/support/image_coding_sample.png")
+
+      assert response_content_type(conn, :png) =~ "image/png"
+      assert <<137, "PNG", 13, 10, 26, 10, _::binary>> = response(conn, 200)
+    end
+
+    test "serves the packaged video fixture", %{conn: conn} do
       conn = get(conn, "/test/support/video-test-01.mp4")
 
       assert response(conn, 200)
       assert conn |> get_resp_header("content-type") |> List.first() =~ "video/mp4"
+    end
+
+    test "serves the shared image name from the packaged fixture", %{conn: conn} do
+      conn = get(conn, "/test/support/image-test-01.png")
+
+      assert response_content_type(conn, :png) =~ "image/png"
+      assert <<137, "PNG", 13, 10, 26, 10, _::binary>> = response(conn, 200)
+    end
+
+    test "preserves the original CSV fixture URL", %{conn: conn} do
+      conn = get(conn, "/test/support/image_coding_table.csv")
+
+      assert response_content_type(conn, :csv) =~ "text/csv"
+      assert response(conn, 200) =~ "name,value"
     end
 
     test "rejects unknown support assets", %{conn: conn} do

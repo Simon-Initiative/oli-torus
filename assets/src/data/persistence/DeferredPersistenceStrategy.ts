@@ -17,6 +17,7 @@ export interface DeferredPersistenceStrategy {
  * wait period has exceeded.
  */
 export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
+  private lastSaveError: unknown;
   constructor(quietPeriodInMs = 2000, maxDeferredTimeInMs = 5000) {
     super();
     this.quietPeriodInMs = quietPeriodInMs;
@@ -53,7 +54,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
     const startTimer = () =>
       setTimeout(() => {
         this.timer = null;
-        this.persist();
+        void this.persist().catch(() => undefined);
       }, this.quietPeriodInMs);
 
     if (this.timer !== null) {
@@ -61,7 +62,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
       this.timer = null;
 
       if (this.now() - this.timerStart > this.maxDeferredTimeInMs) {
-        this.persist();
+        void this.persist().catch(() => undefined);
       } else {
         this.timer = startTimer();
       }
@@ -72,6 +73,8 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
   }
 
   persist(): Promise<unknown> {
+    if (this.inFlight) return this.flushPendingChangesAsync(false);
+    if (this.pending === null) return Promise.resolve();
     return new Promise((resolve, reject) => {
       this.inFlight = true;
       const saveFn = this.pending;
@@ -83,6 +86,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
 
       saveFn(false)
         .then((result: any) => {
+          this.lastSaveError = undefined;
           if (this.flushResolve !== null) {
             this.flushResolve();
             return;
@@ -100,12 +104,12 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
 
           if (this.pending !== null) {
             this.queueSave();
-          } else {
-            this.resolveIdleWaiters();
           }
+          this.resolveIdleWaiters();
           resolve(result);
         })
         .catch((err: any) => {
+          this.lastSaveError = err;
           if (this.stateChangeCallback !== null) {
             this.stateChangeCallback(this.pending === null ? 'idle' : 'pending');
           }
@@ -131,14 +135,22 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
 
   flushPendingChanges(releaseLock = true): boolean {
     const hasPendingChanges = this.pending !== null;
-    void this.flushPendingChangesAsync(releaseLock);
+    void this.flushPendingChangesAsync(releaseLock).catch(() => undefined);
     return hasPendingChanges;
   }
 
+  /** Flush queued edits after any running save, rejecting if the latest save failed. */
   flushPendingChangesAsync(releaseLock = true): Promise<void> {
     if (this.timer !== null) {
       clearTimeout(this.timer);
       this.timer = null;
+    }
+
+    // Finish the running save before flushing another payload, and propagate its failure.
+    if (this.inFlight) {
+      return new Promise<void>((resolve) => this.idleResolvers.push(resolve)).then(() =>
+        this.flushPendingChangesAsync(releaseLock),
+      );
     }
 
     if (this.pending !== null) {
@@ -152,6 +164,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
 
       return saveFn(releaseLock)
         .then(() => {
+          this.lastSaveError = undefined;
           if (this.successCallback !== null) {
             this.successCallback();
           }
@@ -164,11 +177,11 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
 
           if (this.pending !== null) {
             this.queueSave();
-          } else {
-            this.resolveIdleWaiters();
           }
+          this.resolveIdleWaiters();
         })
         .catch((err: any) => {
+          this.lastSaveError = err;
           this.inFlight = false;
 
           if (this.stateChangeCallback !== null) {
@@ -184,11 +197,9 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
         });
     }
 
-    if (this.inFlight) {
-      return new Promise((resolve) => this.idleResolvers.push(resolve));
-    }
-
-    return Promise.resolve();
+    return this.lastSaveError !== undefined
+      ? Promise.reject(this.lastSaveError)
+      : Promise.resolve();
   }
 
   resolveIdleWaiters() {

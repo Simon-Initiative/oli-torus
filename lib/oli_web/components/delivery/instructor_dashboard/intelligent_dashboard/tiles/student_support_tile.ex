@@ -4,12 +4,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   """
 
   use OliWeb, :live_component
+
+  alias Phoenix.LiveView.JS
   alias Oli.InstructorDashboard.StudentSupportParameters
-  alias OliWeb.Icons
   alias OliWeb.Components.DesignTokens.Primitives.Button
+  alias OliWeb.Components.DesignTokens.Primitives.SearchBar
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Students.EmailButton
   alias OliWeb.Components.Delivery.Students.StudentSelection
+  alias OliWeb.Icons
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
 
@@ -348,34 +351,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   <% end %>
                 </div>
 
-                <form phx-change="student_support_search_changed">
-                  <label for={"student-support-search-#{@id}"} class="sr-only">
-                    Search students in the current bucket
-                  </label>
-                  <div class="relative flex items-center gap-2 rounded-md border border-Border-border-default bg-Background-bg-primary px-3 py-2 shadow-[0px_2px_4px_0px_rgba(0,52,99,0.1)]">
-                    <Icons.search />
-                    <input
-                      id={"student-support-search-#{@id}"}
-                      type="text"
-                      name="value"
-                      value={@search_term}
-                      phx-debounce="300"
-                      placeholder="Search students..."
-                      aria-label="Search students in the current bucket"
-                      class={[
-                        "w-full border-0 !bg-transparent p-0 text-sm text-Text-text-high placeholder:text-Text-text-low focus:outline-none focus:ring-0",
-                        @search_term not in ["", nil] && "pr-7"
-                      ]}
-                    />
-                    <.link
-                      :if={@search_term not in ["", nil]}
-                      patch={tile_patch_path(assigns, %{"q" => nil, "page" => 1})}
-                      aria-label="Clear search"
-                      class="absolute right-3 inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm text-Icon-icon-default hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-                    >
-                      <Icons.close_sm class="h-4 w-4 stroke-current" />
-                    </.link>
-                  </div>
+                <form phx-change="student_support_search_changed" class="w-full">
+                  <SearchBar.search_bar
+                    id={"student-support-search-#{@id}"}
+                    type="text"
+                    name="value"
+                    value={@search_term}
+                    placeholder="Search students..."
+                    aria_label="Search students in the current bucket"
+                    class="w-full"
+                    on_clear={JS.patch(tile_patch_path(assigns, %{"q" => nil, "page" => 1}))}
+                    phx-debounce="300"
+                  />
                 </form>
 
                 <div class="flex flex-wrap items-center gap-1.5">

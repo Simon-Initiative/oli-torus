@@ -1,31 +1,40 @@
 # Development and QA approvals
 
-GitHub rulesets must enforce merge approval for `master` and integration branches
-matching `integ-*`, `story/*`, `bug/*`, and `task/*`. Jira tracks the
-handoff to QA and testing progress. GitHub does not enforce approval order, but
-Jira transitions expect Development approval first and QA approval afterward.
+GitHub rulesets must enforce two approval stages: developer code review for PRs into
+integration branches, then QA approval for the completed integration PR to `master`.
+Jira tracks testing progress separately; the review-event automation described below
+does not replace GitHub's merge requirements.
 
-## GitHub ruleset
+## GitHub rulesets
 
-Extend the integration branch ruleset to cover `integ-*`, `story/*`, `bug/*`, and
-`task/*`, and retain the same review requirements for `master`:
+Configure required reviewers by target branch:
 
-- One required approval from `Simon-Initiative/torus-dev` (Development), matching all files (`*`).
-- One required approval from `Simon-Initiative/torus-qa` (QA), matching all files (`*`).
-- Two required approvals overall, so two different people must approve.
+| Target branches | Required reviewer | Required approval count |
+| --- | --- | --- |
+| Integration branches matching `integ-*`, `story/*`, `bug/*`, and `task/*` | `Simon-Initiative/torus-dev` (Development), matching all files (`*`) | One |
+| `master` | `Simon-Initiative/torus-qa` (QA), matching all files (`*`) | One |
+
+The integration ruleset covers both implementation and sync PRs. The master ruleset
+requires QA approval of the integrated result. Do not apply both team requirements
+to both destinations through overlapping rulesets.
+
+Both rulesets must require:
+
 - Stale approvals dismissed when new commits change the reviewed code.
-- Pull requests required for all changes, including syncs from `master`; direct pushes blocked.
-- Existing required status checks retained, including Elixir and TypeScript build and test.
+- Pull requests for all changes, including syncs from `master`; direct pushes blocked.
+- Existing required status checks, including Elixir and TypeScript build and test.
 
-Every Story, Bug, and Task uses child Sub-task implementation PRs targeting its
-integration branch. The completed integration branch opens a PR to `master` and
-enters its merge queue after approvals and checks pass. Conflict resolution uses
-a `sync/*` branch based on the integration branch and a reviewed PR back into it.
-Sync PRs require merge commits to preserve ancestry from `master`; enable merge
-commits in repository settings and allow non-linear integration branch history.
+Every Story, Bug, and Task uses implementation PRs targeting its integration
+branch, referencing the main ticket or optional child Sub-tasks. The completed
+integration branch opens a PR to `master` and
+enters its merge queue after QA approval and required checks pass. Conflict
+resolution uses a `sync/*` branch based on the integration branch and a reviewed PR back into it.
+All PRs into integration branches, including implementation and sync PRs, must use
+**Create a merge commit**. Enable merge commits in repository settings and require
+this method for integration branches while allowing non-linear history.
 
-Use these two child teams as required reviewers. The parent `Simon-Initiative/torus`
-team does not distinguish Development from QA.
+Use the appropriate child team as the required reviewer for each target. The
+parent `Simon-Initiative/torus` team does not distinguish Development from QA.
 
 Both teams must have repository write permission or higher. Configure the QA team
 and its membership before enabling the rule. Prefer separate Development and QA
@@ -44,17 +53,17 @@ In the ruleset targeting **only `master`**, also require **Validate master sourc
 branch** and the merge queue after verifying the required checks on both PR and
 queue events. This check accepts `integ-*`, `story/*`,
 `bug/*`, `task/*`, and `dependabot/*` sources case-insensitively. Do not add this
-requirement to the shared review ruleset or integration branch ruleset: the
-source-branch policy applies to PRs targeting `master`. The current workflow still
+requirement to the integration branch ruleset: the source-branch policy applies to PRs targeting `master`. The current workflow still
 needs `merge_group` support before it can be required with the merge queue.
 All required master checks must report on queue events; do not validate GitHub's
 temporary queue ref as though it were the PR's source branch. Remove any requirement
 for the deleted integration-name validator. Complete the CI filter updates, queue
-support, and team notification in `guides/process/deployment.md` under **Rollout
+support, and team notification in `guides/process/development.md` under **Rollout
 Requirements** before relying on the new process.
 
-Use the ruleset's required-team reviewers. Listing both teams together in
-`CODEOWNERS` permits approval from either owner and does not require both teams.
+Use each ruleset's required-team reviewer. Listing both teams together in
+`CODEOWNERS` permits approval from either owner and does not enforce the reviewer
+required for each target branch.
 
 QA records its sign-off with an approving GitHub PR review. QA can use Request
 changes to block a previously approved PR again. Changing the Jira ticket status
@@ -148,9 +157,8 @@ automation to use the conditional block above **before enabling this workflow**.
 The old unconditional QA action cannot safely receive QA-team notifications.
 Then merge the renamed workflow/helper into the target branches before expecting
 the transitions to run there: the helper is deliberately read from the PR's base
-commit. Enable the merge-approval ruleset
-on the branches it should protect, and verify the following with test PRs and a
-test Jira ticket:
+commit. Enable the destination-specific approval rulesets, and verify the following
+with test PRs and a test Jira ticket:
 
 1. A Development approval sends `approval_team: torus-dev` and moves a PR-status ticket to QA
    for both draft and ready-for-review PRs, regardless of the target branch.
@@ -162,15 +170,16 @@ test Jira ticket:
    QA approvals leave Done tickets unchanged. Other statuses and missing or
    unrecognized `approval_team` values cause no transition.
 5. A reviewer in both teams requests only PR to QA, even on a workflow rerun.
-6. Only Development approval, only QA approval, or two approvals from one team
-   cannot satisfy both team requirements.
-7. Both teams approving and all required checks passing allow an implementation or
-   sync PR to merge, or a completed integration PR to enter the master merge queue.
+6. QA approval alone cannot satisfy the Development requirement on an integration
+   branch; Development approval alone cannot satisfy the QA requirement on `master`.
+7. Development approval and passing required checks allow an implementation or sync
+   PR into an integration branch. QA approval and passing required checks allow a
+   completed integration PR to enter the master merge queue.
 8. New code changes dismiss stale approvals and block merging until reapproval.
 9. Missing or invalid membership credentials fail the workflow without calling Jira.
 
 Also confirm that direct pushes to integration branches and `master` are rejected,
-that a reviewed sync PR can preserve the merge from `master`, and that a completed
+that implementation and sync PRs use merge commits and preserve ancestry, and that a completed
 integration PR can pass the required merge-group checks and merge through the queue.
 These live checks require the GitHub settings, credential, and Jira automation;
 the local tests cover approval-team classification and API failures only.

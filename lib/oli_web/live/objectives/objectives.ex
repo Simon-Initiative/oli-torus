@@ -164,6 +164,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
         card_body_text_class="mt-1 mb-4 text-Text-text-high"
       >
         <Filter.render
+          aria_label="Search learning objectives"
           change="change_search"
           reset="reset_search"
           apply="apply_search"

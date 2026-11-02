@@ -31,15 +31,14 @@ defmodule Oli.Delivery.SecureAssessments do
   @spec supported?() :: boolean()
   def supported?, do: Application.get_env(:oli, :supports_secure_delivery, false) == true
 
-  @doc "Requires both instance support and server-configured enforcement readiness for instructor controls."
+  @doc "Exposes instructor controls when this instance supports verified secure delivery."
   @spec settings_available?() :: boolean()
-  def settings_available? do
-    supported?() and Application.get_env(:oli, :secure_delivery_enforcement_ready, false) == true
-  end
+  def settings_available?, do: supported?()
 
   @doc """
   Rechecks verified entry against current policy and enrollment. Must run inside the
-  issuance transaction: the selected resource row stays locked through token insert.
+  issuance transaction: a shared row lock protects policy through token insert while
+  allowing concurrent admissions. Policy edits wait until these transactions finish.
   Only the assessment row is locked; no learner or other-session lock is taken.
   """
   @spec admit(%Oli.Accounts.User{}, Admission.t()) :: {:ok, Scope.t()} | {:error, atom()}
@@ -63,7 +62,7 @@ defmodule Oli.Delivery.SecureAssessments do
       Repo.one(
         from sr in SectionResource,
           where: sr.section_id == ^section_id and sr.resource_id == ^resource_id,
-          lock: "FOR UPDATE"
+          lock: "FOR SHARE"
       )
 
     cond do

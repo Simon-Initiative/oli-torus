@@ -91,11 +91,19 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
     test "deep linking launch details matches frontend component expectations", %{
       conn: conn,
       section: section,
-      activity_id: activity_id
+      activity_id: activity_id,
+      student: student,
+      project: project
     } do
+      enable_configuration(project, section, activity_id, student)
+
       conn =
-        get(
-          conn,
+        post(
+          put_req_header(
+            conn,
+            "origin",
+            Oli.Utils.get_base_url() |> URI.parse() |> Map.put(:path, nil) |> URI.to_string()
+          ),
           ~p"/api/v1/lti/sections/#{section.slug}/deep_linking_launch_details/#{activity_id}"
         )
 
@@ -142,14 +150,22 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
     test "deep linking message hint changes with message type context", %{
       conn: conn,
       section: section,
-      activity_id: activity_id
+      activity_id: activity_id,
+      student: student,
+      project: project
     } do
+      enable_configuration(project, section, activity_id, student)
+
       standard_conn =
         get(conn, ~p"/api/v1/lti/sections/#{section.slug}/launch_details/#{activity_id}")
 
       deep_linking_conn =
-        get(
-          conn,
+        post(
+          put_req_header(
+            conn,
+            "origin",
+            Oli.Utils.get_base_url() |> URI.parse() |> Map.put(:path, nil) |> URI.to_string()
+          ),
           ~p"/api/v1/lti/sections/#{section.slug}/deep_linking_launch_details/#{activity_id}"
         )
 
@@ -159,6 +175,25 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
       assert standard_launch_params["lti_message_hint"] !=
                deep_linking_launch_params["lti_message_hint"]
     end
+  end
+
+  defp enable_configuration(project, section, activity_id, instructor) do
+    {:ok, _} =
+      Sections.enroll(instructor.id, section.id, [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
+      ])
+
+    revision = Oli.Publishing.AuthoringResolver.from_resource_id(project.slug, activity_id)
+
+    deployment =
+      PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
+        activity_registration_id: revision.activity_type_id
+      )
+
+    {:ok, _} =
+      PlatformExternalTools.update_lti_external_tool_activity_deployment(deployment, %{
+        deep_linking_enabled: true
+      })
   end
 
   defp create_lti_external_tool_activity() do

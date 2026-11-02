@@ -846,6 +846,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     <div data-role="posts-actions" class="w-full flex">
       <div class="flex flex-1 gap-6">
         <Utils.search_box
+          aria_label="Search discussion posts"
           class="flex-1 max-w-[600px]"
           search_term={@posts_search_term}
           on_search="search_posts"
@@ -916,6 +917,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     <div data-role="notes-actions" class="w-full flex">
       <div class="flex flex-1 gap-6">
         <Utils.search_box
+          aria_label="Search notes"
           class="flex-1 max-w-[600px]"
           search_term={@notes_search_term}
           on_search="search_notes"

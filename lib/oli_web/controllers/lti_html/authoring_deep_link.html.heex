@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Tool selection</title>
+  </head>
+  <body>
+    <p>{@result[:error] || "Selection received. Returning to the activity editor…"}</p>
+    <div id="authoring-result" data-result={Jason.encode!(@result)}></div>
+    <script defer src={Routes.static_path(@conn, "/js/lti_authoring_return.js")}>
+    </script>
+  </body>
+</html>

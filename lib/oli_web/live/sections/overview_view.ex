@@ -248,18 +248,19 @@ defmodule OliWeb.Sections.OverviewView do
         </ul>
       </Group.render>
       <Group.render
+        :if={@section.certificate_enabled or @is_admin}
         label="Certificate Settings"
-        description="Design and deliver digital credentials to students that complete this course."
+        description="Review certificate requirements and design. Monitor students who have been issued certificates."
         description_class="max-w-[30rem]"
       >
         <div class="flex flex-col md:col-span-8 gap-2">
           <div>
-            This section <b>does {unless @section.certificate_enabled, do: "not"}</b>
-            currently produce a certificate.
+            This course <b>does {unless @section.certificate_enabled, do: "not"}</b>
+            produce a certificate
           </div>
-          <div :if={@section.certificate_enabled or @is_admin}>
+          <div>
             <a href={~p"/sections/#{@section.slug}/certificate_settings"}>
-              Manage Certificate Settings
+              View certificate settings
             </a>
           </div>
         </div>

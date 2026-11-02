@@ -15,20 +15,19 @@ ARG ELIXIR_VERSION=1.19.2
 ARG OTP_VERSION=28.1.1
 ARG GLEAM_VERSION=1.16.0
 ARG DEBIAN_VERSION=trixie-20260610-slim
-ARG NODE_VERSION=24.20.0
+ARG NODE_VERSION=24.22.1
 ARG MIX_ENV=prod
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
-FROM node:${NODE_VERSION}-trixie-slim@sha256:50c3b2f6988dfc307b86e5301d69611af31f4789bdf232863b07d3b02fe55ae0 AS node
+FROM node:${NODE_VERSION}-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS node
 
 FROM ${BUILDER_IMAGE} AS builder
 
 ARG GLEAM_VERSION
 ARG MIX_ENV
-ARG SHA
-ENV SHA=${SHA}
+ARG BUILD_SCOPE=release
 
 # install build dependencies
 RUN apt-get update -y && apt-get install -y build-essential git \
@@ -59,6 +58,9 @@ RUN mix local.hex --force && \
 
 # set build ENV
 ENV MIX_ENV=${MIX_ENV}
+# Separate trusted nightly, PR and production layer lineages even when the
+# selected Mix environment is the same. Never import untrusted PR caches.
+RUN test -n "$BUILD_SCOPE"
 
 # install mix dependencies
 COPY mix.exs mix.lock ./
@@ -71,6 +73,12 @@ RUN mkdir config
 # to ensure any relevant config change will trigger the dependencies
 # to be re-compiled.
 COPY config/config.exs config/${MIX_ENV}.exs config/
+# Identity is a compile input, not a runtime deployment setting.
+ARG SHA
+ENV SHA=${SHA}
+RUN if [ "$MIX_ENV" = playwright ]; then \
+      printf '%s' "$SHA" | grep -Eq '^[0-9a-f]{40}$'; \
+    fi
 RUN mix deps.compile
 
 COPY priv priv
@@ -130,6 +138,14 @@ RUN chown nobody /app
 
 # set runner ENV
 ENV MIX_ENV=${MIX_ENV}
+# Keep the Node bridge from reloading and retaining bundled modules on every call.
+ENV NODE_ENV=production
+
+ARG SHA
+ARG APP_VERSION
+LABEL org.opencontainers.image.source="https://github.com/simon-initiative/oli-torus" \
+      org.opencontainers.image.revision="${SHA}" \
+      org.opencontainers.image.version="${APP_VERSION}"
 
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/oli ./

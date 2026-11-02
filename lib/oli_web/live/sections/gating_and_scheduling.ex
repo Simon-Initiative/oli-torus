@@ -220,7 +220,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
         product_path_base={@product_path_base}
       />
       <div class="d-flex mb-3">
-        <TextSearch.render id="text-search" />
+        <TextSearch.render id="text-search" aria_label="Search gating conditions" />
         <div class="flex-grow-1"></div>
         <.link class="btn btn-primary ml-2" href={link_new(assigns)}>
           <i class="fas fa-plus"></i> New {render_type(assigns)}

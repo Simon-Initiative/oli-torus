@@ -65,14 +65,18 @@ defmodule OliWeb.Telemetry do
     ]
   end
 
+  @doc "Attaches the feature handler once, including across application restarts."
+  @spec attach() :: :ok
   def attach do
-    :telemetry.attach_many(
-      # make this unique to avoid double attach in dev
-      "torus-appsignal-handler",
-      [@event ++ [:start], @event ++ [:stop], @event ++ [:exception]],
-      &__MODULE__.handle_event/4,
-      %{}
-    )
+    case :telemetry.attach_many(
+           "torus-appsignal-handler",
+           [@event ++ [:start], @event ++ [:stop], @event ++ [:exception]],
+           &__MODULE__.handle_event/4,
+           %{}
+         ) do
+      :ok -> :ok
+      {:error, :already_exists} -> :ok
+    end
   end
 
   def handle_event([:torus, :feature, :exec, :stop], measurements, meta, _cfg) do

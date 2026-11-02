@@ -13,6 +13,8 @@ import { modalActions } from 'actions/modal';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { isCorrect } from 'data/activities/utils';
 import {
+  LTIExternalToolDetails,
+  cancelLtiExternalToolDeepLinking,
   getLtiExternalToolDeepLinkingDetails,
   getLtiExternalToolDetails,
 } from 'data/persistence/lti_platform';
@@ -23,7 +25,7 @@ import { GradedPoints } from '../common/delivery/graded_points/GradedPoints';
 import * as ActivityTypes from '../types';
 import { LTIExternalToolSchema } from './schema';
 
-const LTIExternalTool: React.FC = () => {
+export const LTIExternalTool: React.FC = () => {
   const { model, state, context, mode } = useDeliveryElementContext<LTIExternalToolSchema>();
 
   const ltiToolDetailsLoader = useLoader(() => {
@@ -112,7 +114,10 @@ const LTIExternalTool: React.FC = () => {
                 {ltiToolDetails.deep_link && (
                   <div className="overflow-hidden text-ellipsis whitespace-nowrap">
                     <i className="fa-solid fa-check text-success mr-1"></i>Selection:{' '}
-                    {ltiToolDetails.deep_link.title}
+                    {ltiToolDetails.deep_link.title ||
+                      ltiToolDetails.deep_link.text ||
+                      ltiToolDetails.deep_link.url ||
+                      'Configured resource'}
                   </div>
                 )}
               </div>
@@ -143,15 +148,14 @@ function showConfigureDeepLinkingModal(
         }}
         onCancel={() => {
           window.oliDispatch(modalActions.dismiss());
-          reload();
         }}
       />,
     ),
   );
 }
 
-interface ConfigureDeepLinkingModalModalProps {
-  onDone: (x: any) => void;
+interface ConfigureDeepLinkingModalProps {
+  onDone: () => void;
   onCancel: () => void;
   sectionSlug: string;
   activityId: string;
@@ -163,42 +167,104 @@ export const ConfigureDeepLinkingModal = ({
   sectionSlug,
   activityId,
   resourceId,
-}: ConfigureDeepLinkingModalModalProps) => {
-  const ltiToolDetailsLoader = useLoader(
-    () => getLtiExternalToolDeepLinkingDetails(sectionSlug, activityId),
-    [activityId],
-  );
+}: ConfigureDeepLinkingModalProps) => {
+  const [returnError, setReturnError] = React.useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = React.useState(false);
+  const request = React.useRef<Promise<LTIExternalToolDetails> | null>(null);
+  const phase = React.useRef<'active' | 'cancelling' | 'cancelled' | 'completed'>('active');
+  const closeRequested = React.useRef(false);
+  const finished = React.useRef(false);
+  const ltiToolDetailsLoader = useLoader(() => {
+    const pending = getLtiExternalToolDeepLinkingDetails(sectionSlug, activityId);
+    request.current = pending;
+    return pending;
+  }, [sectionSlug, activityId]);
+
+  const finish = (saved: boolean) => {
+    if (finished.current) return;
+    finished.current = true;
+    if (saved) onDone();
+    else onCancel();
+  };
+
+  const invalidate = async (close: boolean) => {
+    closeRequested.current ||= close;
+    if (finished.current || phase.current === 'cancelling') return;
+    if (phase.current === 'cancelled') {
+      if (closeRequested.current) finish(false);
+      return;
+    }
+    phase.current = 'cancelling';
+    setIsCancelling(true);
+    let details: LTIExternalToolDetails;
+    try {
+      if (!request.current) throw new Error('No configuration request');
+      details = await request.current;
+    } catch {
+      phase.current = 'cancelled';
+      setIsCancelling(false);
+      if (closeRequested.current) finish(false);
+      return;
+    }
+    if (finished.current) return;
+    try {
+      if (!details.request_token) throw new Error('Configuration request is missing');
+      const status = await cancelLtiExternalToolDeepLinking(
+        sectionSlug,
+        activityId,
+        details.request_token,
+      );
+      if (finished.current) return;
+      phase.current = status;
+      setIsCancelling(false);
+      if (status === 'completed') finish(true);
+      else if (closeRequested.current) finish(false);
+    } catch {
+      if (finished.current) return;
+      phase.current = 'active';
+      setIsCancelling(false);
+      setReturnError('Could not close configuration. Please try Close again.');
+    }
+  };
 
   return (
     <Modal
       title="Select Resource from External Tool"
       size={ModalSize.X_LARGE}
-      okLabel="Done"
+      okLabel="Close"
       hideCancelButton
-      onCancel={() => onCancel()}
-      onOk={() => onDone({})}
+      disableOk={isCancelling}
+      onRequestClose={() => void invalidate(true)}
+      onCancel={() => void invalidate(true)}
+      onOk={() => void invalidate(true)}
     >
       <div>
+        {isCancelling && <div role="status">Closing configuration…</div>}
+        {returnError && (
+          <div role="alert">
+            <Alert variant="error">{returnError}</Alert>
+          </div>
+        )}
         {ltiToolDetailsLoader.caseOf({
           loading: () => <LoadingSpinner />,
           failure: (error) => <Alert variant="error">{error}</Alert>,
-          success: (ltiToolDetails) => (
-            <LTIExternalToolFrame
-              mode="delivery"
-              name={ltiToolDetails.name}
-              launchParams={ltiToolDetails.launch_params}
-              status={ltiToolDetails.status}
-              resourceId={`${resourceId}`}
-              onDeepLinkingComplete={() => {
-                // Automatically close the modal and refresh when deep linking completes
-                onDone({});
-              }}
-              onCloseModal={() => {
-                // Handle modal close request from iframe
-                onDone({});
-              }}
-            />
-          ),
+          success: (ltiToolDetails) =>
+            closeRequested.current ? null : (
+              <LTIExternalToolFrame
+                mode="delivery"
+                name={ltiToolDetails.name}
+                launchParams={ltiToolDetails.launch_params}
+                status={ltiToolDetails.status}
+                resourceId={`${resourceId}`}
+                deepLinkRequestId={ltiToolDetails.request_id}
+                onDeepLinkingError={(message) => {
+                  setReturnError(message);
+                  void invalidate(false);
+                }}
+                onDeepLinkingComplete={() => finish(true)}
+                onCloseModal={() => void invalidate(true)}
+              />
+            ),
         })}
       </div>
     </Modal>
