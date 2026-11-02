@@ -58,8 +58,41 @@ Phase: `1` (MER-6111, PR-01), design `design/pr-01-event-contracts-partitioned-s
 - Round 5 findings (independent security, performance, and Elixir review of checkpoint D): the benchmark could leave its database behind after a helper crash or an open connection; the partition equivalence test compared only counts and names; no test guarded against returning to a parent-blocking provisioning path; the bounds `CHECK` saved nothing on an empty table; `detach/1` had no lock timeout; the benchmark's attach sequence differed from the code; the evidence extrapolated the 440,000-row admin list, read layout conclusions from noisy 10M admin numbers, measured only execution time, ran without `VACUUM` after loading, and stated the volume scenarios as 5x and 50x instead of 1x and 10x (also in the design); runbook errors (warning threshold, the provisioning role must own the parent, default privileges, who can set the override switch, removal approval and export handling, `DETACH CONCURRENTLY` waits and `FINALIZE`, `ATTACH` conflicts with parent maintenance).
 - Round 5 fixes: all addressed. Forced drop and trapped helper exits in the benchmark; full structural comparison and a concurrent-read test; `CHECK` removed; `detach/1` in a transaction with `SET LOCAL lock_timeout`; the benchmark repeats the code's sequence in one transaction with the lock timeout, runs `VACUUM (ANALYZE)` after loading, records planning time and the range of runs with per-node timing off, and measures 440,000 rows directly; evidence, runbook, and design corrected. The benchmark was rerun at 20,000, 440,000, 1M, and 10M rows.
 
+## Requirements Verification
+The design's coverage table (section 2) mapped to proof. "Covered" means PR-01 delivers everything the design assigns to it; "Partial" means later PRs complete the criterion as the plan says. `requirements.yml` keeps every criterion at `verified_plan`: criteria span several PRs and are promoted at final acceptance, and AC codes are not placed in code or test comments, so `verify_implementation` is a final-phase gate. `requirements_trace.py --action master_validate --stage plan_present` passes.
+
+| Criterion | PR-01 | Proof |
+| --- | --- | --- |
+| AC-001 | Partial (contract) | `test/oli/auditing/contracts_test.exs`, `constraints_test.exs`; producers instrumented in PR-02 to PR-06 |
+| AC-002 | Partial (contract) | `contracts_test.exs` (missing affected person rejected), `constraints_test.exs` (learner check) |
+| AC-003 | Partial (contract) | `changes_test.exs` (one-sided create/delete, missing versus null); persisted-state sourcing per coordinator in later PRs |
+| AC-004 | Partial (contract) | `contracts_test.exs` (`occurred_at`, `event_key`, async initiated plus terminal); concurrency in coordinator PRs |
+| AC-005 | Covered | `event_catalog_test.exs`, `field_policy_drift_test.exs`, `event_reference_test.exs`, `docs/design-docs/audit-log-events.md` |
+| AC-006 | Covered | `contracts_test.exs` over `Oli.Auditing.EventExamples` (every event, derived invalid variants, hand-written cases) |
+| AC-007 | Covered | `contracts_test.exs` (changeset errors), `constraints_test.exs` (raw SQL per check) |
+| AC-069, AC-070 | Covered | `legacy_adapter_test.exs` (16 producers), `test/oli/auditing_test.exs`, `test/oli_web/live/admin/audit_log_live_test.exs`, `test/oli/delivery/section_creation_test.exs` |
+| AC-071 | Covered | Migration projection (`outcome = 'initiated'`, rehearsal check), adapter (`legacy_adapter_test.exs`), catalog label "ClickHouse operation initiated" |
+| AC-072 | Covered | `secret_markers_test.exs`, `snapshot_test.exs`, `changes_test.exs`, `auditing_test.exs` (redacted inspect), migration sanitizer (rehearsal: no marker in details or `search_text`) |
+| AC-073 | Covered | `snapshot_test.exs`, `contracts_test.exs` (deleted target), schema without foreign keys (design section 4.1) |
+| AC-074 | Covered | `auditing_test.exs` and `partitions_test.exs` (`Oli.Auditing.Error` codes, safe log line), migration redaction summary |
+| AC-075 | Covered | `test/support/audit_log_partition_benchmark.exs`, `evidence/pr-01-storage.md` (six-month versus annual) |
+| AC-076 | Covered | `partitions_test.exs` (boundary routing, ID lookup), rehearsal (IDs above the legacy sequence, order kept) |
+| AC-077 | Covered | `partitions_test.exs` (`ensure_through/1`, missing partition, `status/0`), `partition_maintenance_worker_test.exs` (both cron configs) |
+| AC-078 | Covered | Benchmark removal rehearsal at 1M and 10M (`evidence/pr-01-storage.md`); no retention automation |
+| AC-079 | Covered | `test/support/audit_log_migration_rehearsal.exs` (44 checks, reconciliation), local development database checksum |
+| AC-080 | Covered | Rehearsal checks (unknown actor, no snapshots, `outcome` only for ClickHouse), `audit_log_live_test.exs` (v1 rows render) |
+| AC-081 | Covered | `context_test.exs` (no version option), `constraints_test.exs` (v1 unknowns accepted, v2 provenance rejected) |
+| AC-082 | Covered | Rehearsal (up, immediate rollback, rollback after new types, roll-forward, forced failure); the migration retires the legacy table |
+| AC-087 | Partial (compatibility) | `audit_log_live_test.exs` (every family, system and v1 rows); full rendering in PR-07 |
+| AC-088 | Partial (compatibility) | `auditing_test.exs` (name and `search_vector` match); full search in PR-07 |
+| AC-089 | Partial (compatibility) | `auditing_test.exs` (`(inserted_at, id)` tiebreaker in sort direction); filters in PR-07 |
+| AC-090 | Partial (compatibility) | `audit_log_live_test.exs` (no `schema_version` or secret marker in HTML); full in PR-07 |
+| AC-102 | Partial (baseline) | `evidence/pr-01-storage.md` (write and partition baseline, admin list measured for PR-07) |
+| AC-103 | Covered | Rehearsal (duration, locks, read waits, WAL, sizes); `partitions_test.exs` (partition failure diagnostics and telemetry) |
+
 ## Done Definition
-- [ ] Phase tasks complete
-- [ ] Tests and verification pass
-- [ ] Review completed when enabled
-- [ ] Validation passes
+- [x] Phase tasks complete: checkpoints A to D (`ea22e2b9f0`, `fbb6d53482`, `c94aa7a176`, `f96ecfa1b8`).
+- [x] Tests and verification pass: affected suites green; full `mix test` failures limited to known unrelated flakiness and passing on `--failed`; migration rehearsal and partition benchmark recorded in `evidence/pr-01-storage.md`.
+- [x] Review completed when enabled: five rounds (security, performance, Elixir), findings fixed or recorded as deferred with an owner.
+- [x] Validation passes: `validate_work_item.py --check all`; `requirements_trace.py --action master_validate --stage plan_present`.
+- Open before release (not before review): operations inputs listed in `evidence/pr-01-storage.md`; PR-07 must replace the admin list query shape before PR-05's volume.
