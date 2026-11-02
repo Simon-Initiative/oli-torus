@@ -666,6 +666,7 @@ defmodule OliWeb.Delivery.RemixSection do
      )}
   end
 
+  # Opens the picker with authorized sources and the existing curriculum preselected.
   def handle_event("show_add_materials_modal", _, socket) do
     %{
       hierarchy: hierarchy,
@@ -686,7 +687,11 @@ defmodule OliWeb.Delivery.RemixSection do
       hierarchy: nil,
       active: nil,
       selection: [],
-      selection_source_types: %{},
+      # Maps each checked page/container's {publication_id, resource_id} to its
+      # authorized source key: "project:<publication_id>" or "product:<template_id>".
+      # Identifies the exact origin for Deep Link inheritance, distinguishing
+      # templates that share a publication; also resolves the source type for telemetry.
+      selection_source_keys: %{},
       preselected: preselected,
       publications: available_sources,
       selected_source: nil,
@@ -708,15 +713,25 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, socket}
   end
 
+  # Transfers checked materials and their exact source keys into Remix state.
+  # Derives telemetry source types from those keys instead of keeping duplicate state.
   def handle_event("AddMaterialsModal.add", _, socket) do
     %{
       remix_state: state,
-      modal_assigns: %{selection: selection, selection_source_types: selection_source_types}
+      modal_assigns: %{
+        selection: selection,
+        selection_source_keys: selection_source_keys
+      }
     } = socket.assigns
 
-    source_types = selection_source_types |> Map.values() |> Enum.uniq()
+    source_types =
+      selection_source_keys
+      |> Map.values()
+      |> Enum.uniq()
+      |> Enum.map(&Remix.source_by_key(state, &1).type)
+      |> Enum.uniq()
 
-    case Remix.add_materials(state, selection) do
+    case Remix.add_materials_from_sources(state, selection, selection_source_keys) do
       {:ok, state} ->
         RemixTelemetry.add_materials(length(selection), source_types, :ok)
 
@@ -1250,20 +1265,23 @@ defmodule OliWeb.Delivery.RemixSection do
     |> Map.put(:exclude_resource_ids, preselected_resource_ids(modal_assigns.preselected))
   end
 
+  # Toggles a material selection (a page/container checked in Add Materials) and
+  # its authorized source key together. The key distinguishes templates sharing
+  # a publication so later Deep Link inheritance uses the actual chosen template.
   defp update_selection(socket, modal_assigns, selection, source, item) do
     case Remix.selection_tuple(source, item) do
       {:ok, tuple} ->
-        selection_source_types =
+        selection_source_keys =
           if tuple in selection do
-            Map.delete(modal_assigns.selection_source_types, tuple)
+            Map.delete(modal_assigns.selection_source_keys, tuple)
           else
-            Map.put(modal_assigns.selection_source_types, tuple, source.type)
+            Map.put(modal_assigns.selection_source_keys, tuple, source.key)
           end
 
         modal_assigns = %{
           modal_assigns
           | selection: xor(selection, tuple),
-            selection_source_types: selection_source_types,
+            selection_source_keys: selection_source_keys,
             error_message: nil
         }
 

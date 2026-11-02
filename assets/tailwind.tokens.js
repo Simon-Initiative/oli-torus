@@ -79,8 +79,8 @@ module.exports = {
   },
   // Fill/Buttons
   'Fill-Buttons-fill-primary': {
-    light: '#0080FF',
-    dark: '#0080FF',
+    light: '#0073E5',
+    dark: '#0062F2',
   },
   'Fill-Buttons-fill-primary-bold': {
     light: '#0062F2',
@@ -97,6 +97,10 @@ module.exports = {
   'Fill-Buttons-fill-primary-muted-hover': {
     light: '#CADFFC',
     dark: '#063A85',
+  },
+  'Fill-Buttons-fill-primary-disabled': {
+    light: '#B0B4BF',
+    dark: '#3B3740',
   },
   'Fill-Buttons-fill-secondary': {
     light: '#FFFFFF1A',
@@ -328,7 +332,7 @@ module.exports = {
     dark: '#99CCFF',
   },
   'Text-text-danger': {
-    light: '#CE2C31',
+    light: '#B60202',
     dark: '#FF8787',
   },
   'Text-text-danger-hover': {
@@ -461,6 +465,10 @@ module.exports = {
   'Specially-Tokens-Background-lesson-page': {
     light: '#E6E9F2',
     dark: '#1B191F',
+  },
+  'Specially-Tokens-Background-course-cards': {
+    light: '#FFFFFF',
+    dark: '#3B3740',
   },
   // Specially Tokens/Fill
   'Specially-Tokens-Fill-fill-avatar': {

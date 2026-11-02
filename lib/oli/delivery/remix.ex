@@ -23,6 +23,7 @@ defmodule Oli.Delivery.Remix do
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Groups.{Community, CommunityVisibility}
+  alias Oli.Lti.PlatformExternalTools
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.DeliveryResolver
@@ -329,8 +330,8 @@ defmodule Oli.Delivery.Remix do
   end
 
   @doc """
-  Converts an item selected from a source to the publication/resource tuple used
-  by the existing add and save paths.
+  Converts a material selection (a page or container chosen in Add Materials)
+  to the publication/resource tuple used by the existing add and save paths.
   """
   @spec selection_tuple(Source.t(), map()) ::
           {:ok, {pos_integer(), pos_integer()}} | {:error, :unavailable_publication}
@@ -354,8 +355,8 @@ defmodule Oli.Delivery.Remix do
   def selection_tuple(_source, _item), do: {:error, :unavailable_publication}
 
   @doc """
-  Resolves multiple product items with one visibility query, avoiding one query
-  per checked item in the Add Materials picker.
+  Resolves material selections (pages or containers chosen in Add Materials)
+  from a product with one visibility query, avoiding one query per checked item.
   """
   @spec selection_tuples(Source.t(), [map()]) ::
           {:ok, [{pos_integer(), pos_integer()}]} | {:error, :unavailable_publication}
@@ -525,21 +526,22 @@ defmodule Oli.Delivery.Remix do
   end
 
   defp visible_product_resource_pairs(product_id) do
-    case Sections.get_section_by(id: product_id) do
-      %Section{} = product ->
-        product
-        |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
-        |> visible_hierarchy()
-        |> case do
-          %HierarchyNode{} = hierarchy ->
-            hierarchy
-            |> Hierarchy.flatten_hierarchy()
-            |> Enum.map(&{&1.project_id, &1.resource_id})
-            |> MapSet.new()
+    Sections.get_section_by(id: product_id)
+    |> visible_product_resource_pairs_for_section()
+  end
 
-          nil ->
-            MapSet.new()
-        end
+  defp visible_product_resource_pairs_for_section(nil), do: MapSet.new()
+
+  defp visible_product_resource_pairs_for_section(%Section{} = product) do
+    product
+    |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
+    |> visible_hierarchy()
+    |> case do
+      %HierarchyNode{} = hierarchy ->
+        hierarchy
+        |> Hierarchy.flatten_hierarchy()
+        |> Enum.map(&{&1.project_id, &1.resource_id})
+        |> MapSet.new()
 
       nil ->
         MapSet.new()
@@ -638,7 +640,8 @@ defmodule Oli.Delivery.Remix do
   end
 
   @doc """
-  Add materials described by selection tuples to the active container.
+  Add material selections (pages or containers chosen in Add Materials) to the
+  active container.
   `selection` is a list of {publication_id, resource_id} tuples.
   `published_resources_by_resource_id_by_pub` is a map of pub_id => %{rid => %PublishedResource{}}.
   """
@@ -658,16 +661,33 @@ defmodule Oli.Delivery.Remix do
   end
 
   @doc """
-  Convenience: add materials with publication lookups and canonical ordering preserved
-  per original publication hierarchy.
+  Add material selections (pages or containers chosen in Add Materials) with
+  publication lookups and canonical ordering preserved per original publication hierarchy.
   """
   @spec add_materials(State.t(), list({pos_integer(), pos_integer()})) ::
           {:ok, State.t()} | {:error, term()}
   def add_materials(%State{} = state, selection) do
+    add_materials_from_sources(state, selection, %{})
+  end
+
+  @doc """
+  Adds material selections (pages or containers chosen in Add Materials) while
+  retaining each selection's authorized source key.
+
+  `source_keys` maps publication/resource tuples to keys in `available_sources`.
+  Omitted keys retain the project-publication behavior of `add_materials/2`.
+  Template selections are checked against their visible curriculum before adding.
+  """
+  @spec add_materials_from_sources(State.t(), [{pos_integer(), pos_integer()}], %{
+          optional({pos_integer(), pos_integer()}) => String.t()
+        }) ::
+          {:ok, State.t()} | {:error, term()}
+  def add_materials_from_sources(%State{} = state, selection, source_keys) do
     unique_pub_ids = add_material_publication_ids(selection)
     pub_by_id = publication_index(state)
 
     with :ok <- validate_publication_ids_available(unique_pub_ids, pub_by_id),
+         {:ok, origins} <- material_origins(state, selection, source_keys, pub_by_id),
          :ok <- validate_no_shared_project_resources(state, selection, pub_by_id) do
       published_resources_by_resource_id_by_pub =
         Publishing.get_published_resources_for_publications(unique_pub_ids)
@@ -689,16 +709,96 @@ defmodule Oli.Delivery.Remix do
         state,
         selection,
         published_resources_by_resource_id_by_pub,
-        pub_by_id
+        pub_by_id,
+        origins
       )
     end
   end
 
+  # Resolves each chosen page/container to its authorized publication or template.
+  # Loads template sections together and validates visibility through the depot.
+  # Returns the origin and visible resource set for each publication/resource tuple,
+  # so descendants hidden or removed in a template cannot inherit its configuration.
+  defp material_origins(state, selection, source_keys, pub_by_id) do
+    grouped = Enum.group_by(selection, &Map.get(source_keys, &1))
+
+    product_ids =
+      Enum.flat_map(grouped, fn {key, _tuples} ->
+        case source_by_key(state, key) do
+          %Source{type: :product, product_id: id} -> [id]
+          _ -> []
+        end
+      end)
+      |> Enum.uniq()
+
+    products_by_id =
+      case product_ids do
+        [] -> %{}
+        ids -> Repo.all(from(s in Section, where: s.id in ^ids)) |> Map.new(&{&1.id, &1})
+      end
+
+    grouped
+    |> Enum.reduce_while({:ok, %{}}, fn {key, tuples}, {:ok, origins} ->
+      case source_by_key(state, key) do
+        %Source{} = source ->
+          items =
+            Enum.map(tuples, fn {pub_id, resource_id} ->
+              %{project_id: pub_by_id[pub_id].project_id, resource_id: resource_id}
+            end)
+
+          visible_resources =
+            case source.type do
+              :project ->
+                :all
+
+              :product ->
+                products_by_id
+                |> Map.get(source.product_id)
+                |> visible_product_resource_pairs_for_section()
+            end
+
+          valid? =
+            Enum.zip(tuples, items)
+            |> Enum.all?(fn {tuple, item} ->
+              Source.selection_identity(source, item) == {:ok, tuple} and
+                (visible_resources == :all or
+                   MapSet.member?(visible_resources, {item.project_id, item.resource_id}))
+            end)
+
+          case valid? do
+            true ->
+              origin =
+                case source.type do
+                  :project -> {:publication, source.publication_id}
+                  :product -> {:section, source.product_id}
+                end
+
+              {:cont,
+               {:ok, Enum.reduce(tuples, origins, &Map.put(&2, &1, {origin, visible_resources}))}}
+
+            _ ->
+              {:halt, {:error, :unavailable_publication}}
+          end
+
+        nil when is_nil(key) ->
+          # Legacy callers add project materials using explicit publication tuples.
+          {:cont, {:ok, origins}}
+
+        nil ->
+          {:halt, {:error, :unavailable_publication}}
+      end
+    end)
+  end
+
+  # Adds the validated pages/containers to the hierarchy and retains publication pins.
+  # Records each eligible added node's origin by UUID for Deep Link inheritance at save,
+  # preserving that origin when the node is subsequently moved within the hierarchy.
   defp add_validated_materials(
          %State{} = state,
          selection,
          published_resources_by_resource_id_by_pub,
-         pub_by_id
+         pub_by_id,
+         origins \\ %{}
        ) do
     hierarchy =
       state.hierarchy
@@ -719,12 +819,31 @@ defmodule Oli.Delivery.Remix do
 
     active = Hierarchy.find_in_hierarchy(hierarchy, state.active.uuid)
 
+    material_sources =
+      active.children
+      |> Enum.take(-length(selection))
+      |> Enum.zip(selection)
+      |> Enum.reduce(state.material_sources, fn {node, {pub_id, _} = tuple}, sources ->
+        {origin, visible_resources} = Map.get(origins, tuple, {{:publication, pub_id}, :all})
+
+        node
+        |> Hierarchy.flatten_hierarchy()
+        # Publication reconstruction can include pages omitted by a template.
+        # Such pages must not inherit that template's private configuration.
+        |> Enum.filter(fn node ->
+          visible_resources == :all or
+            MapSet.member?(visible_resources, {node.project_id, node.resource_id})
+        end)
+        |> Enum.reduce(sources, &Map.put(&2, &1.uuid, origin))
+      end)
+
     {:ok,
      %State{
        state
        | hierarchy: hierarchy,
          active: active,
          has_unsaved_changes: true,
+         material_sources: material_sources,
          pinned_project_publications: pinned_project_publications
      }}
   end
@@ -924,6 +1043,10 @@ defmodule Oli.Delivery.Remix do
   @doc """
   Persist the current hierarchy and pinned publications for the section.
   Materializes any draft containers (negative resource_id) before rebuilding.
+  Inherits missing tool selections (resource configurations chosen within external
+  tools, including their URL, custom parameters and optional title/description)
+  for retained added pages from their chosen sources, in the same transaction as
+  the curriculum and publication mappings.
   The author parameter identifies who is performing the save (used for revision authorship).
   Returns `{:ok, %Section{}}` or `{:error, reason}`.
   """
@@ -947,6 +1070,11 @@ defmodule Oli.Delivery.Remix do
                section,
                Hierarchy.finalize(hierarchy),
                state.pinned_project_publications
+             ),
+           {:ok, _} <-
+             PlatformExternalTools.initialize_remixed_deep_links(
+               section.id,
+               remixed_activity_sources(hierarchy, state.material_sources)
              ) do
         section.id
       else
@@ -958,6 +1086,30 @@ defmodule Oli.Delivery.Remix do
       {:ok, section_id} -> {:ok, Sections.get_section!(section_id)}
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  # Groups activity IDs referenced by retained added pages by their recorded origin.
+  # Uses the same first-occurrence hierarchy deduplication as curriculum rebuilding,
+  # ignoring removed nodes, existing pages and non-page content. Shared activities
+  # keep their first recorded origin so initialization can run in bulk per source.
+  defp remixed_activity_sources(hierarchy, material_sources) do
+    page_type = Oli.Resources.ResourceType.id_for_page()
+
+    hierarchy
+    |> Hierarchy.purge_duplicate_resources()
+    |> Hierarchy.flatten_hierarchy()
+    |> Enum.reduce(%{}, fn node, activities ->
+      case {Map.fetch(material_sources, node.uuid), node.revision} do
+        {{:ok, origin}, %Revision{resource_type_id: ^page_type, content: %{"model" => _}}} ->
+          node.revision
+          |> Resources.activity_references()
+          |> Enum.reduce(activities, &Map.put_new(&2, &1, origin))
+
+        _ ->
+          activities
+      end
+    end)
+    |> Enum.group_by(fn {_id, origin} -> origin end, fn {id, _origin} -> id end)
   end
 
   defp container_revision?(nil), do: false

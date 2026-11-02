@@ -1,4 +1,6 @@
 defmodule Oli.Delivery.Sections.Updates do
+  @moduledoc "Applies publication changes while retaining section-owned curriculum and tool choices."
+
   require Logger
   import Ecto.Query, warn: false
 
@@ -12,6 +14,7 @@ defmodule Oli.Delivery.Sections.Updates do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
+  alias Oli.Lti.PlatformExternalTools
 
   alias Oli.Delivery.Sections.{
     Section,
@@ -58,7 +61,12 @@ defmodule Oli.Delivery.Sections.Updates do
   This makes it simpler to apply changes to the existing curriculum but if necessary, this implementation
   could be extended to not just apply the changes to the first node found that contains the changed resource,
   but any/all nodes in the hierarchy which reference the changed resource.
+
+  Missing LTI selections (resource configurations chosen in external tools) are
+  initialized from the applied publication after destination resources and projections
+  are finalized. Initialization failure rolls back the update.
   """
+  @spec apply_publication_update(%Section{}, integer()) :: {:ok, %Section{}} | {:error, term()}
   def apply_publication_update(
         %Section{id: section_id} = section,
         publication_id
@@ -73,13 +81,19 @@ defmodule Oli.Delivery.Sections.Updates do
       Oli.Repo.transaction(fn ->
         SectionResourceMigration.lock_section!(section.id)
 
-        case do_update(section, project.id, current_publication, new_publication) do
-          {:ok, _} ->
-            SectionResourceMigration.migrate(section.id)
-            do_post_processing_steps(section)
+        updated_section =
+          case do_update(section, project.id, current_publication, new_publication) do
+            {:ok, _} ->
+              SectionResourceMigration.migrate(section.id)
+              do_post_processing_steps(section)
 
-          e ->
-            Oli.Repo.rollback(e)
+            e ->
+              Oli.Repo.rollback(e)
+          end
+
+        case PlatformExternalTools.initialize_section_deep_links(section.id, publication_id) do
+          {:ok, _} -> updated_section
+          {:error, reason} -> Repo.rollback(reason)
         end
       end)
 
@@ -108,9 +122,12 @@ defmodule Oli.Delivery.Sections.Updates do
   # Implements the logic to determine *how* to apply the update to the course section,
   # taking into account the update type (minor / major) and the source of the section
   # (project / product)
+  # Unchanged publications follow normal minor processing, allowing missing tool
+  # configurations to initialize without bypassing existing update stages.
   defp do_update(section, project_id, current_publication, new_publication) do
     case Publishing.get_publication_diff(current_publication, new_publication) do
-      %PublicationDiff{classification: :minor} = diff ->
+      %PublicationDiff{classification: classification} = diff
+      when classification in [:minor, :no_changes] ->
         do_minor_update(diff, section, project_id, new_publication)
 
       %PublicationDiff{classification: :major} = diff ->

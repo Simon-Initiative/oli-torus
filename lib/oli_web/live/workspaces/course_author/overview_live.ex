@@ -542,7 +542,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             header_bg_class="!bg-white dark:!bg-black"
             sort="course_sections_sort"
             page_change="course_sections_page_change"
-            show_limit_change={false}
             render_top_info={false}
             no_records_message="None exist"
           />

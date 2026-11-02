@@ -40,7 +40,7 @@ defmodule OliWeb.Endpoint do
   plug(Plug.Static,
     at: "/",
     from: :oli,
-    gzip: Mix.env() in [:prod, :preview],
+    gzip: Mix.env() in [:prod, :preview, :playwright],
     only:
       ~w(assets css fonts images js custom branding vlab favicon.ico robots.txt flame_graphs ebsco superactivity)
   )

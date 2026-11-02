@@ -112,6 +112,7 @@ defmodule OliWeb.Admin.RegistrationsView do
         <.live_component
           module={TextSearch}
           id="text-search"
+          aria_label="Search registrations"
           text={@options.text_search}
           placeholder="Search..."
           event_target={:live_view}

@@ -99,7 +99,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const environment = `preview-${{ steps.target.outputs.pr_number }}`;
+            const environment = 'plasma-previews';
             const environmentUrl = `${{ steps.info.outputs.preview_url }}`;
             const deployment = await github.rest.repos.createDeployment({
               owner: context.repo.owner,
@@ -223,7 +223,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const environment = `preview-${{ steps.target.outputs.pr_number }}`;
+            const environment = 'plasma-previews';
             const environmentUrl = `${{ steps.info.outputs.preview_url }}`;
             const deployment = await github.rest.repos.createDeployment({
               owner: context.repo.owner,

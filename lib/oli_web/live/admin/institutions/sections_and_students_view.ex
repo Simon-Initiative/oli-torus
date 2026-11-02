@@ -116,7 +116,12 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
         <.tabs active_tab={@selected_tab} institution_id={@institution.id} />
 
         <form for="search" phx-change="text_search_change" class="w-44">
-          <SearchInput.render id="search_input" name="value" text={@params.text_search} />
+          <SearchInput.render
+            id="search_input"
+            name="value"
+            text={@params.text_search}
+            aria_label="Search sections and students"
+          />
         </form>
       </div>
       <PagedTable.render

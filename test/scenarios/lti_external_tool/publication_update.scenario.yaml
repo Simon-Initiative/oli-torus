@@ -1,0 +1,57 @@
+- use:
+    file: publication_update_setup.scenario.yaml
+
+- create_activity:
+    project: deep_linking_project
+    title: Added Tool
+    virtual_id: added
+    type: deep_linking_test_tool
+    content_format: json
+    content:
+      openInNewTab: false
+      authoring:
+        parts: []
+      deepLink:
+        type: ltiResourceLink
+        title: New task
+        url: https://tool.example/new
+        custom:
+          mode: new
+
+- manipulate:
+    to: deep_linking_project
+    ops:
+      - add_page:
+          title: Added Lesson
+
+- edit_page:
+    project: deep_linking_project
+    page: Added Lesson
+    content: |
+      title: Added Lesson
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: added
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.edit_presentation/1
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.select_review/1
+
+- publish:
+    to: deep_linking_project
+    description: Add a tool and change the project default
+
+- update:
+    from: deep_linking_project
+    to: draft_section
+
+- assert:
+    structure:
+      to: draft_section
+      root:
+        children:
+          - page: Tool Lesson
+          - page: Added Lesson

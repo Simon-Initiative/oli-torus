@@ -3,8 +3,18 @@ defmodule OliWeb.Common.PagedTableTest do
 
   alias OliWeb.Common.{PagedTable, StripedPagedTable}
   alias OliWeb.Common.InstructorDashboardPagedTable
+  alias Phoenix.LiveView.Socket
 
   @table_model %{sort_by_spec: %{name: :name}, sort_order: :asc}
+
+  describe "handle_delegated/4" do
+    test "returns :not_handled for an event the table does not own" do
+      patch_fn = fn _socket, _params -> flunk("patch_fn must not be called") end
+
+      assert :not_handled ==
+               PagedTable.handle_delegated("unknown_event", %{"a" => 1}, %Socket{}, patch_fn)
+    end
+  end
 
   for table_module <- [PagedTable, StripedPagedTable, InstructorDashboardPagedTable] do
     test "#{inspect(table_module)} resets the offset when sorting" do

@@ -76,12 +76,9 @@ defmodule Oli.Seeding.PreviewSeedManifestExamplesTest do
   test "Playwright setup remains independent of deployment seeding" do
     forbidden_values = [@scenario_id, @job_name, "startup-status", "startup_status"]
 
-    ["src", "tests"]
-    |> Enum.flat_map(fn directory ->
-      @repo_root
-      |> Path.join("assets/automation/#{directory}/**/*")
-      |> Path.wildcard()
-    end)
+    # Scan maintained inputs, excluding npm's self-link and generated reports.
+    ["assets/automation/*", "assets/automation/src/**/*", "assets/automation/tests/**/*"]
+    |> Enum.flat_map(&Path.wildcard(Path.join(@repo_root, &1)))
     |> Enum.filter(&(Path.extname(&1) in [".ts", ".yaml", ".yml", ".json", ".md"]))
     |> Enum.each(fn path ->
       contents = File.read!(path)

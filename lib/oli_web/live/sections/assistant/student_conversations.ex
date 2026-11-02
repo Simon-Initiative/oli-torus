@@ -147,7 +147,12 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
 
               <div class="flex flex-col">
                 <form for="search" phx-change="search" class="pb-6 lg:ml-auto lg:pt-7">
-                  <SearchInput.render id="search_input" name="text_search" text={@params.text_search} />
+                  <SearchInput.render
+                    id="search_input"
+                    name="text_search"
+                    text={@params.text_search}
+                    aria_label="Search student conversations"
+                  />
                 </form>
                 <div></div>
               </div>

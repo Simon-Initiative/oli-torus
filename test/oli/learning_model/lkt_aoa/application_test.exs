@@ -1,6 +1,7 @@
 defmodule Oli.LearningModel.LktAoa.ApplicationTest do
   use Oli.DataCase
 
+  alias Oli.Delivery.Proficiency
   alias Oli.LearningModel
 
   alias Oli.LearningModel.{
@@ -196,6 +197,40 @@ defmodule Oli.LearningModel.LktAoa.ApplicationTest do
       assert state.attempt_count == 2
       assert state.unique_activity_part_count == 1
       assert Repo.aggregate(PriorActivityPartEvidence, :count) == 1
+
+      assert {:ok, estimates} =
+               Proficiency.estimates_for_objectives(section, [user.id], [objective.id])
+
+      insufficient = estimates[objective.id][user.id]
+      assert insufficient.label == :not_enough_information
+      assert insufficient.score == nil
+      assert insufficient.attempt_count == 2
+
+      third_group =
+        LktAoaFixtures.add_attempt(second_group,
+          part_id: "part-1",
+          score: 1.0,
+          date_evaluated: DateTime.add(~U[2026-08-24 12:00:00Z], 120, :second)
+        )
+
+      assert {:ok, %BatchResult{status: :applied, new_evidence_count: 0}} =
+               LearningModel.apply_evaluated_attempts(section, third_group)
+
+      assert {:ok, estimates} =
+               Proficiency.estimates_for_objectives(section, [user.id], [objective.id])
+
+      sufficient = estimates[objective.id][user.id]
+      assert sufficient.label in [:low, :medium, :high]
+      assert is_number(sufficient.score)
+      assert sufficient.attempt_count == 3
+      assert sufficient.unique_activity_part_count == 1
+      assert sufficient.confidence == insufficient.confidence
+
+      assert {:ok, %BatchResult{status: :noop}} =
+               LearningModel.apply_evaluated_attempts(section, third_group)
+
+      assert {:ok, ^estimates} =
+               Proficiency.estimates_for_objectives(section, [user.id], [objective.id])
     end
 
     test "duplicate guid retry is a no-op for claims, evidence, and state" do

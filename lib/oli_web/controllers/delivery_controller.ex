@@ -161,6 +161,7 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
+  @doc "Processes section enrollment after captcha verification (or explicit load-testing mode)."
   def process_enroll(conn, params) do
     g_recaptcha_response = Map.get(params, "g-recaptcha-response", "")
     create_guest = true
@@ -222,7 +223,7 @@ defmodule OliWeb.DeliveryController do
     do: show_enroll(conn, Map.put(params, "from_invitation_link?", true))
 
   defp recaptcha_verified?(g_recaptcha_response) do
-    Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
+    Oli.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 
   defp current_or_guest_user(conn, requires_enrollment, create_guest) do

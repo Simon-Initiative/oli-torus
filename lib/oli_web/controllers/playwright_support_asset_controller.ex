@@ -7,7 +7,7 @@ defmodule OliWeb.PlaywrightSupportAssetController do
   This controller handles:
   - the embedded runtime stub needed by delivery automation when legacy
     superactivity assets are unavailable locally
-  - small fixture files that live alongside the Playwright specs so activity
+  - small public fixture files packaged under the application priv directory so activity
     tests can exercise resource-loading behavior without depending on the media
     library or object storage
   - private test assets (course archives, answer keys) proxied from the
@@ -19,8 +19,11 @@ defmodule OliWeb.PlaywrightSupportAssetController do
   alias OliWeb.PlaywrightAuth
 
   @allowed_files %{
-    "image_coding_sample.png" => "image/png",
-    "image_coding_table.csv" => "text/csv"
+    "image-test-01.png" => {"image_coding_sample.png", "image/png"},
+    "table-test-01.csv" => {"image_coding_table.csv", "text/csv"},
+    "video-test-01.mp4" => {"video-test-01.mp4", "video/mp4"},
+    "image_coding_sample.png" => {"image_coding_sample.png", "image/png"},
+    "image_coding_table.csv" => {"image_coding_table.csv", "text/csv"}
   }
 
   # private_asset serves S3-controlled content: never trust its content-type
@@ -28,24 +31,27 @@ defmodule OliWeb.PlaywrightSupportAssetController do
   # were ever uploaded as text/html or image/svg+xml).
   @safe_content_types ~w(application/zip application/json)
 
+  @doc "Serves the public embedded runtime fixture from the application package."
   def embedded_runtime(conn, _params) do
     conn
     |> put_resp_content_type("text/html")
     |> send_file(200, embedded_runtime_path())
   end
 
+  @doc "Serves only the allowlisted public automation fixtures."
   def support_asset(conn, %{"filename" => filename}) do
     case Map.fetch(@allowed_files, filename) do
-      {:ok, mime} ->
+      {:ok, {asset_filename, mime}} ->
         conn
         |> put_resp_content_type(mime)
-        |> send_file(200, asset_path(filename))
+        |> send_file(200, asset_path(asset_filename))
 
       :error ->
         send_resp(conn, 404, "Not found")
     end
   end
 
+  @doc "Proxies private object-storage fixtures after scenario-token authorization."
   def private_asset(conn, %{"path" => path_parts}) do
     with :ok <- PlaywrightAuth.authorize(conn),
          key <- Enum.join(path_parts, "/"),
@@ -67,14 +73,7 @@ defmodule OliWeb.PlaywrightSupportAssetController do
   defp safe_content_type(content_type) when content_type in @safe_content_types, do: content_type
   defp safe_content_type(_content_type), do: "application/octet-stream"
 
-  defp embedded_runtime_path do
-    Path.expand("../../../test/support/embedded_runtime_stub/index.html", __DIR__)
-  end
+  defp embedded_runtime_path, do: asset_path("embedded_runtime.html")
 
-  defp asset_path(filename) do
-    Path.expand(
-      "../../../assets/automation/tests/torus/student_delivery/support/#{filename}",
-      __DIR__
-    )
-  end
+  defp asset_path(filename), do: Application.app_dir(:oli, ["priv", "playwright", filename])
 end
