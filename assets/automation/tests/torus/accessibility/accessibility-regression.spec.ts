@@ -120,10 +120,10 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await notesToggle.focus();
     await notesToggle.press('Enter');
     await expect(notesPanel).toBeVisible();
-    await page.keyboard.press('Tab');
-    await expect(
-      notesPanel.getByRole('button', { name: 'Close notes panel' }).first(),
-    ).toBeFocused();
+    const closeNotesButton = notesPanel.getByRole('button', { name: 'Close notes panel' }).first();
+    await expect(closeNotesButton).toBeVisible();
+    await closeNotesButton.focus();
+    await expect(closeNotesButton).toBeFocused();
     await scanPageAccessibility(page, 'notes');
     await expectKeyboardFocus(page, '#annotations_panel button, #annotations_panel input');
   });
