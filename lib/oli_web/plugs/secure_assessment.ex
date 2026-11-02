@@ -134,6 +134,12 @@ defmodule OliWeb.Plugs.SecureAssessment do
       :authentication ->
         :ok
 
+      :research_consent when is_nil(scope) ->
+        :ok
+
+      :research_consent ->
+        authorize_consent_return(session, params["user_return_to"])
+
       :unmapped when is_nil(scope) ->
         :ok
 
@@ -237,8 +243,33 @@ defmodule OliWeb.Plugs.SecureAssessment do
     end
   end
 
+  # Consent is a launch prerequisite, but its return destination must remain
+  # inside the assessment scope just like a direct delivery request.
+  defp authorize_consent_return(session, return_to) when is_binary(return_to) do
+    with %URI{scheme: nil, host: nil, query: nil, fragment: nil, path: "/" <> _ = path} <-
+           URI.parse(return_to),
+         %{path_params: params} = route <-
+           Phoenix.Router.route_info(OliWeb.Router, "GET", path, "localhost"),
+         {controller, action} <-
+           (case route do
+              %{phoenix_live_view: {view, action, _, _}} -> {view, action}
+              %{plug: controller, plug_opts: action} -> {controller, action}
+            end),
+         {:page, :deliver} <- classify(controller, action, params) do
+      check(session, controller, action, params)
+    else
+      _ -> {:error, :secure_resource_mismatch}
+    end
+  end
+
+  defp authorize_consent_return(_, _), do: {:error, :secure_resource_mismatch}
+
   defp classify(OliWeb.LtiController, action, _) when action in [:login, :launch],
     do: :authentication
+
+  defp classify(OliWeb.DeliveryController, action, _)
+       when action in [:show_research_consent, :research_consent],
+       do: :research_consent
 
   defp classify(OliWeb.UserSessionController, action, _) when action in [:new, :create, :delete],
     do: :authentication

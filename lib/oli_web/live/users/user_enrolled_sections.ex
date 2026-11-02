@@ -61,6 +61,7 @@ defmodule OliWeb.Users.UserEnrolledSections do
           >
             <SearchInput.render
               id="section_search_input"
+              aria_label="Search enrolled sections"
               name="section_title"
               text={@params.text_search}
             />

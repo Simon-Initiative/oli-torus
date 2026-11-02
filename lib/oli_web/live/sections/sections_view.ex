@@ -188,7 +188,12 @@ defmodule OliWeb.Sections.SectionsView do
       <div class="flex justify-between">
         <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
           <.form for={%{}} phx-change="text_search_change" class="w-56">
-            <SearchInput.render id="text-search" name="section_name" text={@text_search_input} />
+            <SearchInput.render
+              id="text-search"
+              name="section_name"
+              text={@text_search_input}
+              aria_label="Search course sections"
+            />
           </.form>
 
           <Check.render

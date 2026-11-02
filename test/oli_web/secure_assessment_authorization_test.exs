@@ -57,6 +57,130 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     }
   end
 
+  test "secure assessment entry defers course onboarding and required surveys", c do
+    Oli.Delivery.Sections.enroll(c.user.id, c.section.id, [
+      Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
+    ])
+
+    conn =
+      c.conn
+      |> init_test_session(%{})
+      |> assign(:current_user, c.user)
+      |> assign(:section, %{c.section | required_survey_resource_id: c.revision.resource_id})
+      |> assign(:user_session, c.secure)
+
+    assert OliWeb.Plugs.EnsureUserSectionVisit.call(conn, []) == conn
+    assert Oli.Plugs.ForceRequiredSurvey.call(conn, []) == conn
+    refute get_session(conn, "visited_sections")
+    refute get_session(conn, "completed_section_surveys")
+
+    ordinary = assign(conn, :user_session, c.normal)
+
+    assert redirected_to(OliWeb.Plugs.EnsureUserSectionVisit.call(ordinary, [])) ==
+             "/sections/#{c.section.slug}/welcome"
+  end
+
+  test "secure consent permits only a return to the scoped assessment", c do
+    return_to = "/sections/#{c.section.slug}/page/#{c.revision.slug}"
+
+    for action <- [:show_research_consent, :research_consent] do
+      assert :ok =
+               Boundary.check(c.secure, OliWeb.DeliveryController, action, %{
+                 "user_return_to" => return_to
+               })
+
+      for destination <- [
+            nil,
+            "/sections",
+            "/research_consent",
+            "https://example.com" <> return_to
+          ] do
+        assert {:error, :secure_resource_mismatch} =
+                 Boundary.check(c.secure, OliWeb.DeliveryController, action, %{
+                   "user_return_to" => destination
+                 })
+      end
+
+      other = insert(:revision, graded: true)
+
+      insert(:section_resource,
+        section: c.section,
+        resource_id: other.resource_id,
+        revision_id: other.id
+      )
+
+      assert {:error, :secure_resource_mismatch} =
+               Boundary.check(c.secure, OliWeb.DeliveryController, action, %{
+                 "user_return_to" => "/sections/#{c.section.slug}/page/#{other.slug}"
+               })
+    end
+  end
+
+  test "a restriction page issues a usable CSRF token for secure exit", c do
+    Plug.CSRFProtection.delete_csrf_token()
+
+    conn =
+      c.conn
+      |> init_test_session(%{user_token: c.secure_token})
+      |> Plug.Conn.put_private(:plug_skip_csrf_protection, false)
+      |> get("/workspaces/student")
+
+    body = html_response(conn, 403)
+    assert body =~ "Exit assessment"
+
+    [token] =
+      body
+      |> Floki.parse_document!()
+      |> Floki.find("input[name=_csrf_token]")
+      |> Floki.attribute("value")
+
+    exited =
+      conn
+      |> recycle()
+      |> Plug.Conn.put_private(:plug_skip_csrf_protection, false)
+      |> post("/secure-assessment/exit", %{"_csrf_token" => token})
+
+    assert redirected_to(exited) == "/secure-assessment/signed-out"
+    assert {:error, :unauthenticated} = Accounts.get_user_session(c.secure_token)
+  end
+
+  test "a secure learner can submit required consent and return to the assessment", c do
+    Oli.Repo.update!(Ecto.Changeset.change(c.section.institution, research_consent: :oli_form))
+    Oli.Repo.update!(Ecto.Changeset.change(c.user, research_opt_out: nil))
+    return_to = "/sections/#{c.section.slug}/page/#{c.revision.slug}"
+    Plug.CSRFProtection.delete_csrf_token()
+
+    conn =
+      c.conn
+      |> init_test_session(%{user_token: c.secure_token})
+      |> Plug.Conn.put_private(:plug_skip_csrf_protection, false)
+      |> get("/research_consent", %{"user_return_to" => return_to})
+
+    body = html_response(conn, 200)
+    assert body =~ "Online Consent Form"
+
+    [token] =
+      body
+      |> Floki.parse_document!()
+      |> Floki.find("input[name=_csrf_token]")
+      |> Floki.attribute("value")
+
+    submitted =
+      conn
+      |> recycle()
+      |> Plug.Conn.put_private(:plug_skip_csrf_protection, false)
+      |> post("/research_consent", %{
+        "_csrf_token" => token,
+        "consent" => "false",
+        "user_return_to" => return_to
+      })
+
+    assert redirected_to(submitted) == return_to
+    assert Oli.Repo.reload!(c.user).research_opt_out
+    assert {:ok, %{scope: scope}} = Accounts.get_user_session(c.secure_token)
+    assert scope == c.scope
+  end
+
   test "ordinary page and attempt entry requires secure admission", c do
     p = %{"section_slug" => c.section.slug, "revision_slug" => c.revision.slug}
 

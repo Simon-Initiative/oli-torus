@@ -52,6 +52,15 @@ export const SliderScroll = {
 
     this.el.setAttribute('style', 'overflow-x: scroll;');
 
+    // Cards with role="button" are activated with Space (handled by phx-keydown on the server).
+    // Prevent the browser default so the page does not scroll when Space is pressed on a card.
+    this.el.addEventListener('keydown', (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (e.key === ' ' && target.matches?.('.slider-card[role="button"]')) {
+        e.preventDefault();
+      }
+    });
+
     // if any of the cards has the aria-expanded attribute set to true,
     // disable x scroll in that slider after 700ms (to allow the scroll animation to end first)
     cards.forEach((card: HTMLElement) => {

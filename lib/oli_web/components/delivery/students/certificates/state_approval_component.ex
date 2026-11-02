@@ -45,7 +45,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
     # (the student has not yet met all of the thresholds)
     ~H"""
     <div role="in progress status" class="flex w-full justify-between px-6">
-      <span class="text-[#383a44] text-sm font-bold font-['Open Sans']">
+      <span class="text-Text-text-low text-sm font-bold font-['Open Sans']">
         In Progress
       </span>
       <button phx-click="edit_certificate_status" phx-target={@myself}>

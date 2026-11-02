@@ -1,0 +1,30 @@
+- use:
+    file: deep_linking_setup.scenario.yaml
+
+- publish:
+    to: deep_linking_project
+    description: Published selected activity
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.capture_draft_publication/1
+
+- project:
+    name: unrelated_project
+    title: Unrelated Project
+    root:
+      children:
+        - page: Unrelated Lesson
+
+- publish:
+    to: unrelated_project
+    description: Publication with different resources
+
+- hook:
+    function: Oli.Scenarios.LtiExternalTool.DeepLinkingHooks.create_unrelated_section/1
+
+- assert:
+    structure:
+      to: unrelated_section
+      root:
+        children:
+          - page: Unrelated Lesson

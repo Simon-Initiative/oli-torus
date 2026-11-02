@@ -127,6 +127,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       {:ok, component, _html} =
         live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
 
+      assert has_element?(
+               component,
+               "#student-support-search-student_support_tile[aria-label='Search students in the current bucket']"
+             )
+
+      refute has_element?(component, "button[aria-label='Clear search.']")
+
       rerender_component(
         component,
         base_attrs(%{tile_state: tile_state(%{search_term: "student 21"})})
@@ -136,6 +143,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       assert has_element?(component, "a[data-filter='inactive']", "Inactive (2)")
       assert has_element?(component, "p", "Student 21")
       refute has_element?(component, "p", "Student 1")
+
+      assert has_element?(
+               component,
+               "#student-support-search-student_support_tile-clear[aria-label='Clear search.']"
+             )
     end
 
     test "shows empty state when search has no matches", %{conn: conn} do

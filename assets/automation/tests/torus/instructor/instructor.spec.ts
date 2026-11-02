@@ -1,4 +1,5 @@
 import { resetRuntimeConfig, setRuntimeConfig } from '@core/runtimeConfig';
+import { configureCaptcha } from '@core/captcha';
 import { test } from '@fixture/my-fixture';
 import { CourseManagePO } from '@pom/course/CourseManagePO';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
@@ -140,6 +141,7 @@ test.describe('Instructor Dashboard @nightly @smoke', () => {
       ignoreHTTPSErrors: true,
       viewport: { width: 1920, height: 1080 },
     });
+    await configureCaptcha(studentContext, baseUrl);
     const studentPage = await studentContext.newPage();
     const studentHomeTask = new HomeTask(studentPage);
     const studentCourse = new StudentCoursePO(studentPage);

@@ -296,6 +296,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
                     <TextSearch.render
                       event_target={:live_view}
                       id="text-search"
+                      aria_label="Search my projects"
                       reset="text_search_reset"
                       change="text_search_change"
                       text={@params.text_search}

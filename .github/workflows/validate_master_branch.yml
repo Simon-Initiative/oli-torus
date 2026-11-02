@@ -10,6 +10,9 @@ permissions: {}
 jobs:
   check-branch-name:
     name: Validate master source branch
+    # Stack workflows trigger against the trunk; enforce this rule only for
+    # pull requests whose immediate base is master.
+    if: github.event.pull_request.base.ref == 'master'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write

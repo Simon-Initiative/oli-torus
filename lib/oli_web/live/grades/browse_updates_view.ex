@@ -114,7 +114,7 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
   def render(assigns) do
     ~H"""
     <div class="container mx-auto">
-      <TextSearch.render id="text-search" />
+      <TextSearch.render id="text-search" aria_label="Search grade updates" />
 
       <div class="mb-3" />
 

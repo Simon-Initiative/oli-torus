@@ -122,6 +122,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
     <%= if @published? do %>
       <div class="mb-2 flex items-center gap-3">
         <DeliveryUtils.search_box
+          aria_label="Search course section templates"
           class="w-full max-w-[350px]"
           search_term={@text_search}
           on_search="search_template"

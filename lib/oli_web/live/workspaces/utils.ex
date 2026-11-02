@@ -184,7 +184,7 @@ defmodule OliWeb.Workspaces.Utils do
   attr :active_view, :atom, default: nil
   attr :additional_classes, :string, default: ""
 
-  @doc "Renders the label, icon, and badge of a workspace sidebar link."
+  @doc "Renders a workspace navigation item's label, icon, and notification badge."
   def nav_link_content(assigns) do
     item_id = assigns.sub_menu_item.text |> String.downcase() |> String.replace(" ", "_")
     assigns = assign(assigns, :item_id, item_id)

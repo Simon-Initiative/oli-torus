@@ -16,6 +16,7 @@ import { MultiInputDelivery } from 'components/activities/multi_input/schema';
 import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import { WebpageEmbed } from 'components/webpage/WebpageEmbed';
+import { webpageAriaLabel } from 'components/webpage/webpageAriaLabel';
 import { YoutubePlayer } from 'components/youtube_player/YoutubePlayer';
 import {
   Audio,
@@ -460,7 +461,7 @@ export class HtmlParser implements WriterImpl {
         <div className="embed-wrapper">
           <iframe
             id={attrs.id}
-            title={attrs.alt || attrs.id || 'Embedded webpage'}
+            aria-label={webpageAriaLabel(attrs)}
             className={iframeClass}
             {...dimensions}
             allowFullScreen

@@ -1,23 +1,24 @@
 defmodule Oli.Delivery.Attempts.ManualGrading.BrowseOptions do
   @moduledoc """
-  Params for manual graded activity attempt browse queries.
+  Params for manual graded activity attempt browse queries. Each id list filters by any of its
+  values; an empty list means no filter.
   """
 
   @enforce_keys [
-    :user_id,
-    :activity_id,
-    :page_id,
+    :user_ids,
+    :activity_ids,
+    :page_ids,
     :graded,
     :text_search
   ]
 
   defstruct [
-    # Filter attempts for a specific user id
-    :user_id,
-    # Filter attempts for a specific activity resource id
-    :activity_id,
-    # Filter attempts for a specific page resource id
-    :page_id,
+    # Filter attempts for these user ids ([] shows all)
+    :user_ids,
+    # Filter attempts for these activity resource ids ([] shows all)
+    :activity_ids,
+    # Filter attempts for these page resource ids ([] shows all)
+    :page_ids,
     # Filter attempts for graded, ungraded attempts (nil shows all)
     :graded,
     # Text search across user, page, and activity information
@@ -25,10 +26,10 @@ defmodule Oli.Delivery.Attempts.ManualGrading.BrowseOptions do
   ]
 
   @type t() :: %__MODULE__{
-          user_id: integer(),
-          activity_id: integer(),
-          page_id: integer(),
-          graded: boolean(),
-          text_search: String.t()
+          user_ids: [pos_integer()],
+          activity_ids: [pos_integer()],
+          page_ids: [pos_integer()],
+          graded: boolean() | nil,
+          text_search: String.t() | nil
         }
 end

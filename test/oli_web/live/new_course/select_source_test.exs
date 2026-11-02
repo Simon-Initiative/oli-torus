@@ -665,8 +665,12 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
          %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      assert has_element?(view, "input[aria-label='Search'][phx-debounce='300']")
-      assert has_element?(view, "input[aria-label='Search'][placeholder='']")
+      assert has_element?(
+               view,
+               "input[aria-label='Search course sources'][phx-debounce='300']"
+             )
+
+      assert has_element?(view, "input[aria-label='Search course sources'][placeholder='']")
       refute has_element?(view, "button", "Search")
       refute has_element?(view, "#reset_search")
     end
@@ -696,7 +700,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert_patch(view, "/sections/new")
       assert has_element?(view, "h5", "Chemistry 101")
       assert has_element?(view, "h5", "Biology 101")
-      assert has_element?(view, "input[aria-label='Search'][value='']")
+      assert has_element?(view, "input[aria-label='Search course sources'][value='']")
     end
 
     test "typing in the search input filters results immediately, without a separate apply step",

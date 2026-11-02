@@ -60,7 +60,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
              )
     end
 
-    test "the Next Step button renders as the shared primary Button component, switching from muted to filled once a source is selected",
+    test "the Next Step button renders as the shared primary Button component, switching from disabled to filled once a source is selected",
          %{conn: conn} do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
@@ -71,7 +71,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
       assert has_element?(
                view,
-               ~s(button[class*="Fill-Buttons-fill-primary-muted"]),
+               ~s(button[class*="Fill-Buttons-fill-primary-disabled"]),
                "Next Step"
              )
 
@@ -85,7 +85,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
 
       refute has_element?(
                view,
-               ~s(button[class*="Fill-Buttons-fill-primary-muted"]),
+               ~s(button[class*="Fill-Buttons-fill-primary-disabled"]),
                "Next Step"
              )
     end

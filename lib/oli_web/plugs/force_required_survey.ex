@@ -3,12 +3,20 @@ defmodule Oli.Plugs.ForceRequiredSurvey do
   import Phoenix.Controller
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.SecureAssessments.Scope
   alias OliWeb.Router.Helpers, as: Routes
 
   @completed_surveys_key "completed_section_surveys"
 
   @spec init(any) :: any
   def init(opts), do: opts
+
+  @doc "Defers course surveys during a scoped assessment without marking them complete."
+  def call(
+        %{assigns: %{user_session: %{scope: %Scope{section_id: id}}, section: %{id: id}}} = conn,
+        _opts
+      ),
+      do: conn
 
   def call(conn, _opts) do
     if has_required_survey?(conn) do
