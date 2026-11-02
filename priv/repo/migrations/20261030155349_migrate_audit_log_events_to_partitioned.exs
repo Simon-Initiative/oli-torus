@@ -7,14 +7,31 @@ defmodule Oli.Repo.Migrations.MigrateAuditLogEventsToPartitioned do
   `Oli.Auditing.LogEvent`, `Oli.Auditing.Partitions`, or any other application module, so later
   application changes cannot alter what it does.
 
-  Copying existing rows as `schema_version = 1` history is not implemented yet. Until it is, `up/0`
-  refuses to run when the legacy table has rows, and `down/0` refuses to run when the
-  partitioned table has rows, so no history is ever dropped.
+  `up/0` copies every legacy row as `schema_version = 1` history, reconciles the copy against the
+  legacy table, and only then drops it. `down/0` keeps the complete history in
+  `audit_log_events_rollback_archive` and rebuilds the original table with the original event
+  types; running `up/0` again restores the archive first. Each direction is one transaction, so a
+  failure at any step leaves the previous table untouched.
   """
 
   use Ecto.Migration
 
+  require Logger
+
   @future_intervals 4
+  @chunk_size 1_000
+  @archive "audit_log_events_rollback_archive"
+
+  # The event types the legacy table could hold; only these are rebuilt on rollback.
+  @legacy_event_types ~w(user_deleted author_deleted author_role_changed project_published
+    section_created feature_flag_enabled feature_flag_disabled feature_flag_removed
+    google_doc_imported feature_rollout_stage_changed feature_rollout_stage_deleted
+    feature_rollout_exemption_upserted feature_rollout_exemption_deleted
+    account_internal_flag_changed clickhouse_admin_operation_initiated resource_attempt_deleted)
+
+  # Identity values legacy producers already stored in details; never joined from current records.
+  @search_keys ~w(email name project_title section_title page_title feature_name author_name
+    author_email actor_name)
 
   @columns [
     id: "Event ID from audit_events_id_seq; unique together with inserted_at",
@@ -58,41 +75,457 @@ defmodule Oli.Repo.Migrations.MigrateAuditLogEventsToPartitioned do
   ]
 
   def up do
-    execute("SET LOCAL lock_timeout = '5s'")
-    execute("LOCK TABLE audit_log_events IN ACCESS EXCLUSIVE MODE")
-    # execute/1 only queues commands; flush so the lock is held before the reads below.
-    flush()
+    lock_audit_log_events()
+    refuse_detached_partitions!()
+    refuse_non_object_details!()
+    archived? = archive_exists?()
+    first_id = next_id(archived?)
 
-    refuse_unless_empty("audit_log_events")
-
-    execute("""
-    CREATE SEQUENCE audit_events_id_seq AS bigint START WITH #{next_id()}
-    """)
+    execute("CREATE SEQUENCE audit_events_id_seq AS bigint START WITH #{first_id}")
 
     create_parent()
     create_append_only_guard()
-    Enum.each(partitions(), &create_partition/1)
+    Enum.each(partitions(archived?), &create_partition/1)
     create_indexes()
     comment_columns()
+    # The steps below read and write the new table, so its DDL must have run.
+    flush()
+
+    restored = restore_archive(archived?)
+    summary = copy_legacy_rows(first_id)
+    # Autovacuum never analyzes a partitioned parent; the checks below and later reads need stats.
+    repo().query!("ANALYZE audit_log_events_p")
+    reconcile!()
+
+    # Mutation privileges would let a role bypass the append-only guard, so they are not copied.
+    copy_grants("audit_log_events", "audit_log_events_p", "TABLE", ~w(SELECT INSERT REFERENCES))
+    copy_grants("audit_log_events_id_seq", "audit_events_id_seq", "SEQUENCE")
 
     execute("DROP TABLE audit_log_events")
     execute("ALTER TABLE audit_log_events_p RENAME TO audit_log_events")
+    execute("DROP TABLE IF EXISTS #{@archive}")
+
+    log_summary(restored, summary)
   end
 
   def down do
+    lock_audit_log_events()
+    refuse_detached_partitions!()
+
+    # The archive keeps every event, including types the original table cannot hold, so a
+    # roll-forward loses nothing.
+    execute("""
+    CREATE TABLE #{@archive} AS
+      SELECT #{Enum.join(stored_columns(), ", ")} FROM audit_log_events
+    """)
+
+    create_legacy_table("audit_log_events_restore")
+    restore_legacy_rows("audit_log_events_restore")
+    flush()
+
+    copy_grants("audit_log_events", "audit_log_events_restore", "TABLE")
+    copy_grants("audit_events_id_seq", "audit_log_events_id_seq", "SEQUENCE")
+
+    execute("DROP TABLE audit_log_events")
+    execute("DROP FUNCTION audit_log_events_append_only()")
+    execute("ALTER TABLE audit_log_events_restore RENAME TO audit_log_events")
+  end
+
+  defp lock_audit_log_events do
     execute("SET LOCAL lock_timeout = '5s'")
     execute("LOCK TABLE audit_log_events IN ACCESS EXCLUSIVE MODE")
     # execute/1 only queues commands; flush so the lock is held before the reads below.
     flush()
+  end
 
-    refuse_unless_empty("audit_log_events")
+  # A detached partition keeps its truncate trigger, which blocks dropping the guard function, and
+  # its name, which blocks recreating that partition. Operators drop or reattach it first.
+  defp refuse_detached_partitions! do
+    %{rows: rows} =
+      repo().query!("""
+      SELECT relname FROM pg_class
+      WHERE relname ~ '^audit_log_events_y[0-9]{4}h[12]$' AND relkind = 'r' AND NOT relispartition
+      ORDER BY relname
+      """)
 
-    execute("DROP TABLE audit_log_events")
-    execute("DROP FUNCTION audit_log_events_append_only()")
+    case List.flatten(rows) do
+      [] -> :ok
+      names -> raise "drop or reattach detached audit partitions first: #{Enum.join(names, ", ")}"
+    end
+  end
+
+  # Only manual SQL can store non-object details; the error names row IDs, never values.
+  defp refuse_non_object_details! do
+    %{rows: rows} =
+      repo().query!("""
+      SELECT id FROM audit_log_events
+      WHERE details IS NOT NULL AND jsonb_typeof(details) <> 'object'
+      ORDER BY id
+      """)
+
+    case List.flatten(rows) do
+      [] ->
+        :ok
+
+      ids ->
+        raise "#{length(ids)} audit_log_events rows have details that are not a JSON object; " <>
+                "fix them before migrating (ids: #{ids |> Enum.take(20) |> Enum.join(", ")})"
+    end
+  end
+
+  defp archive_exists? do
+    %{rows: [[exists?]]} = repo().query!("SELECT to_regclass($1) IS NOT NULL", [@archive])
+    exists?
+  end
+
+  defp stored_columns, do: Keyword.keys(@columns) -- [:search_vector]
+
+  # Every new ID is above every legacy and archived ID, so a rollback can restore legacy IDs
+  # and a roll-forward can restore archived IDs without collisions.
+  defp next_id(archived?) do
+    archive_max =
+      case archived? do
+        true -> "(SELECT max(id) FROM #{@archive})"
+        false -> "0"
+      end
+
+    %{rows: [[max_id]]} =
+      repo().query!("""
+      SELECT GREATEST(
+        (SELECT COALESCE(max(id), 0) FROM audit_log_events),
+        (SELECT last_value FROM audit_log_events_id_seq),
+        COALESCE(#{archive_max}, 0))
+      """)
+
+    max_id + 1
+  end
+
+  defp restore_archive(false), do: 0
+
+  defp restore_archive(true) do
+    columns = Enum.join(stored_columns(), ", ")
+
+    %{num_rows: restored} =
+      repo().query!("""
+      INSERT INTO audit_log_events_p (#{columns}) SELECT #{columns} FROM #{@archive} ORDER BY id
+      """)
+
+    restored
+  end
+
+  # A legacy row is already present when the archive held it: as a migrated row under its legacy
+  # ID, or as an application event that the rollback rebuilt under its own ID. Matching on
+  # inserted_at too lets PostgreSQL skip the other partitions, and a row edited after the rollback
+  # is copied again, which reconciliation then reports as a duplicate.
+  defp represented(legacy) do
+    """
+    (EXISTS (SELECT 1 FROM audit_log_events_p p
+              WHERE p.schema_version = 1 AND p.legacy_source = 'audit_log_events'
+                AND p.legacy_id = #{legacy}.id AND p.inserted_at = #{legacy}.inserted_at)
+     OR #{rebuilt_event(legacy)})
+    """
+  end
+
+  defp rebuilt_event(legacy) do
+    """
+    EXISTS (SELECT 1 FROM audit_log_events_p p
+             WHERE p.schema_version = 2 AND p.id = #{legacy}.id
+               AND p.inserted_at = #{legacy}.inserted_at AND p.event_type = #{legacy}.event_type)
+    """
+  end
+
+  # Reads and transforms rows here, in source ID order, so new IDs keep the original order.
+  # Chunks only respect the parameter limit; they share the migration transaction.
+  defp copy_legacy_rows(first_id) do
+    %{rows: rows} =
+      repo().query!("""
+      SELECT id, inserted_at, event_type, user_id, author_id, project_id, section_id,
+             resource_id, details
+      FROM audit_log_events l
+      WHERE NOT #{represented("l")}
+      ORDER BY id
+      """)
+
+    projected = rows |> Enum.with_index(first_id) |> Enum.map(&project_row/1)
+
+    projected
+    |> Enum.map(fn {row, _redacted} -> row end)
+    |> Enum.chunk_every(@chunk_size)
+    |> Enum.each(&repo().insert_all("audit_log_events_p", &1))
+
+    case length(projected) do
+      0 -> :ok
+      count -> repo().query!("SELECT setval('audit_events_id_seq', $1)", [first_id + count - 1])
+    end
+
+    # Only the counts outlive this function, so the projected rows are released before reconcile.
+    %{
+      copied: length(projected),
+      by_type: projected |> Enum.map(fn {row, _} -> row.event_type end) |> Enum.frequencies(),
+      redacted: projected |> Enum.flat_map(fn {_, words} -> words end) |> Enum.frequencies(),
+      ambiguous: Enum.count(projected, fn {row, _} -> row.user_id && row.author_id end)
+    }
+  end
+
+  defp project_row(
+         {[
+            legacy_id,
+            inserted_at,
+            event_type,
+            user_id,
+            author_id,
+            project_id,
+            section_id,
+            resource_id,
+            details
+          ], id}
+       ) do
+    {projected_details, redacted} = project_details(details, resource_id)
+
+    {entity_type, entity_id, affected_user_id, affected_author_id} =
+      entity(event_type, details || %{}, resource_id, project_id, section_id)
+
+    row = %{
+      id: id,
+      inserted_at: inserted_at,
+      schema_version: 1,
+      event_type: event_type,
+      outcome: outcome(event_type),
+      actor_type: actor_type(user_id, author_id),
+      user_id: user_id,
+      author_id: author_id,
+      entity_type: entity_type,
+      entity_id: entity_id,
+      affected_user_id: affected_user_id,
+      affected_author_id: affected_author_id,
+      project_id: project_id,
+      section_id: section_id,
+      details: projected_details,
+      legacy_source: "audit_log_events",
+      legacy_id: legacy_id,
+      search_text: search_text(projected_details)
+    }
+
+    {row, redacted}
+  end
+
+  # Legacy rows used resource_id for IDs that are not course resources, so the value moves into
+  # details, where a rollback can read it back.
+  defp project_details(details, resource_id) do
+    {sanitized, redacted} = sanitize(details || %{})
+
+    case resource_id do
+      nil ->
+        {sanitized, redacted}
+
+      id ->
+        reference = %{"id" => id, "type" => sanitized["resource_type"]}
+        {Map.put(sanitized, "legacy_resource_ref", reference), redacted}
+    end
+  end
+
+  # Replaces the value of every secret-looking key, at any depth, with a marker. Returns the
+  # sanitized value and the matched pattern words; key names come from data and are not logged.
+  defp sanitize(map) when is_map(map) do
+    Enum.reduce(map, {%{}, []}, fn {key, value}, {acc, redacted} ->
+      case Regex.run(
+             ~r/password|secret|token|credential|api_key|private_key|authorization|cookie/i,
+             key
+           ) do
+        [word] ->
+          {Map.put(acc, key, %{"redacted" => true}), [String.downcase(word) | redacted]}
+
+        nil ->
+          {value, nested} = sanitize(value)
+          {Map.put(acc, key, value), nested ++ redacted}
+      end
+    end)
+  end
+
+  defp sanitize(list) when is_list(list) do
+    {values, redacted} = Enum.map(list, &sanitize/1) |> Enum.unzip()
+    {values, List.flatten(redacted)}
+  end
+
+  defp sanitize(value), do: {value, []}
+
+  defp entity(_type, %{"resource_type" => "Elixir.Oli.Accounts.User"}, id, _project, _section)
+       when is_integer(id),
+       do: {"user", Integer.to_string(id), id, nil}
+
+  defp entity(_type, %{"resource_type" => "Elixir.Oli.Accounts.Author"}, id, _project, _section)
+       when is_integer(id),
+       do: {"author", Integer.to_string(id), nil, id}
+
+  defp entity("section_created", _details, _id, _project, section_id) when is_integer(section_id),
+    do: {"section", Integer.to_string(section_id), nil, nil}
+
+  defp entity("project_published", _details, _id, project_id, _section)
+       when is_integer(project_id),
+       do: {"project", Integer.to_string(project_id), nil, nil}
+
+  defp entity(_type, _details, _id, _project, _section), do: {nil, nil, nil, nil}
+
+  defp outcome("clickhouse_admin_operation_initiated"), do: "initiated"
+  defp outcome(_type), do: nil
+
+  # Both IDs are not producible by the application, only by manual SQL; both are kept and the
+  # actor stays unknown.
+  defp actor_type(user_id, nil) when is_integer(user_id), do: "user"
+  defp actor_type(nil, author_id) when is_integer(author_id), do: "author"
+  defp actor_type(_user_id, _author_id), do: "unknown"
+
+  defp search_text(details) do
+    @search_keys
+    |> Enum.map(&details[&1])
+    |> Enum.filter(&(is_binary(&1) and &1 != ""))
+    |> Enum.join(" ")
+  end
+
+  # Any mismatch raises, which rolls back the whole migration and leaves the legacy table intact.
+  defp reconcile! do
+    migrated = "p.schema_version = 1 AND p.legacy_source = 'audit_log_events'"
+    legacy_types = Enum.map_join(@legacy_event_types, ", ", &"'#{&1}'")
+
+    counts = [
+      legacy_rows_missing:
+        "SELECT count(*) FROM audit_log_events l WHERE NOT #{represented("l")}",
+      migrated_rows_without_legacy_row: """
+      SELECT count(*) FROM audit_log_events_p p
+      WHERE #{migrated} AND NOT EXISTS (SELECT 1 FROM audit_log_events l WHERE l.id = p.legacy_id)
+      """,
+      archived_events_without_legacy_row: """
+      SELECT count(*) FROM audit_log_events_p p
+      WHERE p.schema_version = 2 AND p.event_type IN (#{legacy_types})
+        AND NOT EXISTS (SELECT 1 FROM audit_log_events l
+                        WHERE l.id = p.id AND l.inserted_at = p.inserted_at
+                          AND l.event_type = p.event_type)
+      """,
+      duplicate_legacy_ids:
+        "SELECT count(*) - count(DISTINCT legacy_id) FROM audit_log_events_p p WHERE #{migrated}",
+      out_of_order_ids: """
+      SELECT count(*) FROM (
+        SELECT id, lag(id) OVER (ORDER BY legacy_id) AS previous_id
+        FROM audit_log_events_p p WHERE #{migrated}) ordered
+      WHERE id < previous_id
+      """
+    ]
+
+    mismatches =
+      counts
+      |> Enum.map(fn {check, sql} ->
+        %{rows: [[count]]} = repo().query!(sql)
+        {check, count}
+      end)
+      |> Enum.concat(
+        checksum_mismatch: checksum_mismatch(migrated),
+        details_mismatch: details_mismatches(migrated)
+      )
+      |> Enum.reject(fn {_check, count} -> count == 0 end)
+
+    case mismatches do
+      [] -> :ok
+      _ -> raise "audit_log_events reconciliation failed: #{inspect(mismatches)}"
+    end
+  end
+
+  defp checksum_mismatch(migrated) do
+    fields = fn id, alias ->
+      "concat_ws('|', #{id}, #{alias}.inserted_at, #{alias}.event_type, " <>
+        Enum.map_join(
+          ~w(user_id author_id project_id section_id),
+          ", ",
+          &"COALESCE(#{alias}.#{&1}::text, '')"
+        ) <> ")"
+    end
+
+    %{rows: [[legacy, migrated_checksum]]} =
+      repo().query!("""
+      SELECT
+        (SELECT md5(string_agg(#{fields.("l.id", "l")}, ',' ORDER BY l.id))
+         FROM audit_log_events l
+         WHERE NOT #{rebuilt_event("l")}),
+        (SELECT md5(string_agg(#{fields.("p.legacy_id", "p")}, ',' ORDER BY p.legacy_id))
+         FROM audit_log_events_p p WHERE #{migrated})
+      """)
+
+    case legacy == migrated_checksum do
+      true -> 0
+      false -> 1
+    end
+  end
+
+  # Recomputes the sanitized details from each legacy row and compares them with what is stored.
+  defp details_mismatches(migrated) do
+    %{rows: stored} =
+      repo().query!("SELECT p.legacy_id, p.details FROM audit_log_events_p p WHERE #{migrated}")
+
+    stored = Map.new(stored, fn [legacy_id, details] -> {legacy_id, details} end)
+
+    %{rows: legacy} =
+      repo().query!("""
+      SELECT l.id, l.resource_id, l.details FROM audit_log_events l
+      WHERE NOT #{rebuilt_event("l")}
+      """)
+
+    Enum.count(legacy, fn [id, resource_id, details] ->
+      {expected, _redacted} = project_details(details, resource_id)
+      Map.get(stored, id) != expected
+    end)
+  end
+
+  # Grants absent from the target, such as a read-only reporting role, are copied from the source,
+  # limited to `privileges` when given. Column grants are not copied.
+  defp copy_grants(source, target, kind, privileges \\ :all) do
+    missing =
+      Enum.filter(grants(source) -- grants(target), fn [privilege | _] ->
+        privileges == :all or privilege in privileges
+      end)
+
+    Enum.each(missing, fn [privilege, grantee, grantable?] ->
+      option =
+        case grantable? do
+          true -> " WITH GRANT OPTION"
+          false -> ""
+        end
+
+      repo().query!("GRANT #{privilege} ON #{kind} #{target} TO #{grantee}#{option}")
+    end)
+  end
+
+  defp grants(relation) do
+    %{rows: rows} =
+      repo().query!(
+        """
+        SELECT a.privilege_type,
+               CASE WHEN a.grantee = 0 THEN 'PUBLIC'
+                    ELSE quote_ident(pg_get_userbyid(a.grantee)) END,
+               a.is_grantable
+        FROM pg_class c, aclexplode(c.relacl) a
+        WHERE c.oid = $1::text::regclass
+        """,
+        [relation]
+      )
+
+    rows
+  end
+
+  # Counts and pattern words only; never values or key names.
+  defp log_summary(restored, summary) do
+    Logger.info(
+      "audit_log_events migrated: restored_from_archive=#{restored} copied=#{summary.copied} " <>
+        "by_type=#{inspect(summary.by_type)} redacted=#{inspect(summary.redacted)} " <>
+        "ambiguous_actors=#{summary.ambiguous}"
+    )
+  end
+
+  # The original table definition and index names, under a temporary name until the swap.
+  defp create_legacy_table(name) do
+    execute("CREATE SEQUENCE audit_log_events_id_seq")
 
     execute("""
-    CREATE TABLE audit_log_events (
-      id bigserial PRIMARY KEY,
+    CREATE TABLE #{name} (
+      id bigint NOT NULL DEFAULT nextval('audit_log_events_id_seq'),
       user_id integer,
       author_id integer,
       event_type varchar(255) NOT NULL,
@@ -100,35 +533,50 @@ defmodule Oli.Repo.Migrations.MigrateAuditLogEventsToPartitioned do
       project_id integer,
       resource_id integer,
       details jsonb DEFAULT '{}'::jsonb,
-      inserted_at timestamptz NOT NULL
+      inserted_at timestamptz NOT NULL,
+      CONSTRAINT audit_log_events_pkey PRIMARY KEY (id)
     )
     """)
 
+    execute("ALTER SEQUENCE audit_log_events_id_seq OWNED BY #{name}.id")
+
     for column <- ~w(user_id author_id section_id project_id event_type inserted_at) do
-      execute("CREATE INDEX audit_log_events_#{column}_index ON audit_log_events (#{column})")
+      execute("CREATE INDEX audit_log_events_#{column}_index ON #{name} (#{column})")
     end
   end
 
-  defp refuse_unless_empty(table) do
-    %{rows: [[count]]} = repo().query!("SELECT count(*) FROM #{table}")
+  # Every migrated row returns under its legacy ID with resource_id restored, so a roll-forward
+  # finds all of them; application events of the original types return under their own ID in the
+  # legacy shape. Details stay sanitized, and NULL details come back as the column default `{}`.
+  defp restore_legacy_rows(name) do
+    legacy_types = Enum.map_join(@legacy_event_types, ", ", &"'#{&1}'")
 
-    case count do
-      0 ->
-        :ok
+    execute("""
+    INSERT INTO #{name}
+      (id, user_id, author_id, event_type, section_id, project_id, resource_id, details,
+       inserted_at)
+    SELECT legacy_id, user_id, author_id, event_type, section_id, project_id,
+           (details #>> '{legacy_resource_ref,id}')::integer, details - 'legacy_resource_ref',
+           inserted_at
+    FROM #{@archive}
+    WHERE schema_version = 1 AND legacy_source = 'audit_log_events'
+    UNION ALL
+    SELECT id, user_id, author_id, event_type, section_id, project_id,
+           CASE WHEN entity_type IN ('user', 'author') THEN entity_id::integer END,
+           CASE entity_type
+             WHEN 'user' THEN details || '{"resource_type": "Elixir.Oli.Accounts.User"}'
+             WHEN 'author' THEN details || '{"resource_type": "Elixir.Oli.Accounts.Author"}'
+             ELSE details
+           END,
+           inserted_at
+    FROM #{@archive}
+    WHERE schema_version = 2 AND event_type IN (#{legacy_types})
+    """)
 
-      _ ->
-        raise "#{table} has #{count} rows; copying history between layouts is not implemented yet"
-    end
-  end
-
-  # Every new ID is above every legacy ID, so a rollback can restore legacy IDs without collisions.
-  defp next_id do
-    %{rows: [[max_id]]} = repo().query!("SELECT COALESCE(max(id), 0) FROM audit_log_events")
-
-    %{rows: [[last_value]]} =
-      repo().query!("SELECT COALESCE(last_value, 0) FROM audit_log_events_id_seq")
-
-    max(max_id, last_value) + 1
+    execute("""
+    SELECT setval('audit_log_events_id_seq', GREATEST(max_id, 1), max_id > 0)
+    FROM (SELECT COALESCE(max(GREATEST(id, legacy_id)), 0) AS max_id FROM #{@archive}) archived
+    """)
   end
 
   defp create_parent do
@@ -215,14 +663,22 @@ defmodule Oli.Repo.Migrations.MigrateAuditLogEventsToPartitioned do
     execute("ALTER SEQUENCE audit_events_id_seq OWNED BY audit_log_events_p.id")
   end
 
-  # From the half-year holding the oldest row of audit_log_events or settings_changes (the
-  # current one when both are empty) through the current half-year plus four future ones.
-  defp partitions do
+  # From the half-year holding the oldest row of audit_log_events, settings_changes, or the
+  # rollback archive (the current one when all are empty) through the current half-year plus four
+  # future ones.
+  defp partitions(archived?) do
+    archive_oldest =
+      case archived? do
+        true -> "(SELECT min(inserted_at) FROM #{@archive})"
+        false -> "NULL"
+      end
+
     %{rows: [[oldest]]} =
       repo().query!("""
       SELECT least(
         (SELECT min(inserted_at) FROM audit_log_events),
-        (SELECT min(inserted_at) FROM settings_changes))
+        (SELECT min(inserted_at) FROM settings_changes),
+        #{archive_oldest})
       """)
 
     today = Date.utc_today()

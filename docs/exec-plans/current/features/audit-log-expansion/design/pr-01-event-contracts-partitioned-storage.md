@@ -350,22 +350,22 @@ Note for PR-05: `settings_changes` has 439,180 rows / 58 MB in production (2024-
 
 `up/0`, in order, all inside the migration transaction:
 
-1. `SET LOCAL lock_timeout = '5s'`; `LOCK TABLE audit_log_events IN ACCESS EXCLUSIVE MODE`. Writers to the legacy table wait or fail fast; no row can be added during the copy.
+1. `SET LOCAL lock_timeout = '5s'`; `LOCK TABLE audit_log_events IN ACCESS EXCLUSIVE MODE`. Writers to the legacy table wait or fail fast; no row can be added during the copy. Then refuse, naming only row IDs or table names, when a legacy `details` value is not a JSON object (only manual SQL can store one) or when a detached `audit_log_events_y*` table exists.
 2. Create `audit_events_id_seq` starting above the legacy `max(id)` and the legacy sequence `last_value`.
 3. Create `audit_log_events_p`, its partitions (section 4.1 range, including `settings_changes`), indexes, checks, and column comments (section 4.6).
 4. If `audit_log_events_rollback_archive` exists (roll-forward after a rollback), insert its rows first with all columns unchanged.
 5. Copy the legacy rows as v1 using the projection below, in ascending source `id` order. Legacy rows already represented in the archive are skipped: those whose `id` equals an archived v1 `legacy_id` or an archived v2 `id`. Rows are read and transformed in the migration module and inserted in chunks of 1,000 only to respect the PostgreSQL parameter limit; the chunks share the single transaction.
-6. Reconcile (below). Any mismatch raises.
-7. Copy grants from the legacy table's ACL when it differs from the new table's; drop `audit_log_events` (this also drops its owned sequence); `ALTER TABLE audit_log_events_p RENAME TO audit_log_events`; drop `audit_log_events_rollback_archive` if it exists.
+6. `ANALYZE` the new table (autovacuum never analyzes a partitioned parent), then reconcile (below). Any mismatch raises.
+7. Copy `SELECT`, `INSERT`, and `REFERENCES` grants from the legacy table's ACL, and every grant from its sequence, when the new table lacks them; mutation privileges are not copied because they would let a role bypass the append-only guard, and column grants are not copied; drop `audit_log_events` (this also drops its owned sequence); `ALTER TABLE audit_log_events_p RENAME TO audit_log_events`; drop `audit_log_events_rollback_archive` if it exists.
 8. Print a one-line summary: counts per event type, redaction counts by key, rows with ambiguous actors. Never values.
 
 `down/0`, also one transaction:
 
-1. `SET LOCAL lock_timeout = '5s'`; `LOCK TABLE audit_log_events IN ACCESS EXCLUSIVE MODE`.
+1. `SET LOCAL lock_timeout = '5s'`; `LOCK TABLE audit_log_events IN ACCESS EXCLUSIVE MODE`; refuse when a detached `audit_log_events_y*` table exists (its truncate trigger depends on the guard function).
 2. `CREATE TABLE audit_log_events_rollback_archive AS SELECT` every column except `search_vector` from the partitioned table. The archive is nonpartitioned and holds the complete safe history, including types the old code does not know.
-3. Create `audit_log_events_restore` with the original 2025 DDL and index names, and insert only rows whose `event_type` is one of the original 16:
-   - v1 rows under their `legacy_id`, with `resource_id` restored from `details.legacy_resource_ref`;
-   - v2 rows under their own `id`, mapped back to the legacy columns.
+3. Create `audit_log_events_restore` with the original 2025 DDL and index names, and insert:
+   - every v1 row from `audit_log_events` under its `legacy_id`, with `resource_id` restored from `details.legacy_resource_ref` (a legacy `NULL` `details` returns as the column default `{}`);
+   - v2 rows whose `event_type` is one of the original 16, under their own `id`, mapped back to the legacy columns in the shape `capture/4` used to write: actor and scope columns unchanged; a `user` or `author` entity becomes `resource_id` plus `details.resource_type` (`Elixir.Oli.Accounts.User`/`Author`); other entities leave `resource_id` empty, because projects and sections were already stored in `project_id`/`section_id`.
    The two ID ranges cannot collide because every new ID is above the legacy maximum. No secret values are restored; sanitized details stay sanitized.
 4. Drop the partitioned table and its sequence; rename `audit_log_events_restore` to `audit_log_events`; set its `id` sequence above the largest ID in the archive.
 
@@ -389,7 +389,8 @@ Copy projection, implemented inside the migration module (no application schemas
 A row outside every provisioned partition makes the insert fail and the whole migration roll back; no row is skipped.
 
 Reconciliation, inside the transaction before the legacy table is dropped:
-- every legacy row is either copied or represented in the archive, and vice versa (anti-joins between legacy `id` and destination `legacy_id`, plus archived v2 `id`s);
+- every legacy row is either copied or represented in the archive, and vice versa (anti-joins between legacy `id` and destination `legacy_id`, plus archived v2 `id`s; both matches also require equal `inserted_at`, and the v2 match equal `event_type`, so a row edited after a rollback is copied again and reported as a duplicate);
+- no `legacy_id` appears twice;
 - ascending source `id` maps to ascending new `id`;
 - equal checksum of `md5(string_agg(legacy_id || inserted_at || event_type || user_id || author_id || project_id || section_id, ',' ORDER BY legacy_id))` on both sides;
 - recomputing the sanitizer per row matches the stored `details`.
@@ -468,7 +469,7 @@ Adopting plan B requires owner approval at that time, with the rehearsal numbers
   - Fresh test databases: the migration runs on empty legacy tables during the normal `ecto.migrate` bootstrap, creating the current-interval partitions and dropping the empty legacy table.
   - Secret markers: a unique marker string in builder input never appears in persisted JSON, `search_text`, error structs, or captured logs.
 - Manual checks:
-  - `test/support/audit_log_migration_rehearsal.exs` on a newly created disposable database (refuses to reuse one), following `test/support/secure_delivery_migration_check.exs`: original 2025 table plus synthetic rows (both actor types, neither, both IDs, struct resource types, secret-named keys, boundary timestamps, IDs with gaps, `settings_changes` rows older than every audit row); `up/0`; a forced reconciliation failure that leaves the legacy table intact; immediate rollback; rollback after inserting new-type v2 events; roll-forward; records `up/0` and `down/0` duration (plan B threshold: 60 seconds at production volume), locks held, WAL bytes (`pg_current_wal_lsn` diff), table/index sizes.
+  - `test/support/audit_log_migration_rehearsal.exs` on a newly created disposable database (refuses to reuse one), following `test/support/secure_delivery_migration_check.exs`: original 2025 table plus synthetic rows (both actor types, neither, both IDs, struct resource types, secret-named keys, boundary timestamps, IDs with gaps, `settings_changes` rows older than every audit row); `up/0`; a forced reconciliation failure that leaves the legacy table intact (after a rollback, a legacy row the archive still holds is deleted, so roll-forward finds an archived row without its legacy row); immediate rollback; rollback after inserting new-type v2 events; roll-forward; records `up/0` and `down/0` duration (plan B threshold: 60 seconds at production volume), locks held, WAL bytes (`pg_current_wal_lsn` diff), table/index sizes.
   - `test/support/audit_log_partition_benchmark.exs`: six-month versus annual layouts at 1M and 10M synthetic rows over five years. The volume baseline comes from production on 2026-10-29: about 600 central events per month and about 16,000 `settings_changes` rows per month, roughly 200,000 rows per year if all assessment history were central. 1M and 10M are labeled growth scenarios (about 5x and 50x that rate), not measurements; single and 1,000-row insert latency, date-bounded and all-history first-page queries with `EXPLAIN (ANALYZE, BUFFERS)`; partition pruning visible.
   - Oldest-partition removal: `ALTER TABLE ... DETACH PARTITION ... CONCURRENTLY` then `DROP` on the disposable DB; newer partitions unaffected.
   - Planned commands, run only after verifying the isolated test DB and URL precedence (escalated permissions per `AGENTS.md`): `mix format --check-formatted`; `mix compile --warnings-as-errors`; `mix test test/oli/auditing_test.exs test/oli_web/live/admin/audit_log_live_test.exs test/oli/delivery/section_creation_test.exs test/oli/auditing`; full `mix test` because `test/test_helper.exs` changes; `MIX_ENV=test mix run test/support/audit_log_migration_rehearsal.exs`.
