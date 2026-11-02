@@ -44,6 +44,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     CertificateDirective,
     DiscussionPostDirective,
     DiscussionConfigDirective,
+    PageCollabConfigDirective,
     DiscussionModerationDirective,
     DiscussionDeleteDirective,
     ClassNoteDirective,
@@ -103,6 +104,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     "student_exception",
     "certificate",
     "discussion_config",
+    "page_collab_config",
     "discussion_post",
     "discussion_moderation",
     "discussion_delete",
@@ -988,6 +990,38 @@ defmodule Oli.Scenarios.DirectiveParser do
               discussion_config_data["anonymous_posting"],
               "anonymous_posting"
             )
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"page_collab_config" => config_data}) do
+    allowed_attrs = [
+      "section",
+      "enabled",
+      "threaded",
+      "auto_accept",
+      "show_full_history",
+      "anonymous_posting",
+      "participation_min_replies",
+      "participation_min_posts"
+    ]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, config_data, "page_collab_config") do
+      :ok ->
+        %PageCollabConfigDirective{
+          section: config_data["section"],
+          enabled: parse_optional_boolean(config_data["enabled"], "enabled"),
+          threaded: parse_optional_boolean(config_data["threaded"], "threaded"),
+          auto_accept: parse_optional_boolean(config_data["auto_accept"], "auto_accept"),
+          show_full_history:
+            parse_optional_boolean(config_data["show_full_history"], "show_full_history"),
+          anonymous_posting:
+            parse_optional_boolean(config_data["anonymous_posting"], "anonymous_posting"),
+          participation_min_replies: config_data["participation_min_replies"],
+          participation_min_posts: config_data["participation_min_posts"]
         }
 
       {:error, msg} ->
