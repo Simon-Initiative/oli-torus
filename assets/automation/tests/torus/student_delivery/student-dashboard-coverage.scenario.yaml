@@ -76,10 +76,6 @@
     family_name: 'Student'
     password: 'changeme123456'
 
-- collaborator:
-    user: 'student_dashboard_coverage_author'
-    project: 'student_dashboard_coverage_project'
-
 - user:
     name: 'student_dashboard_coverage_instructor'
     type: 'instructor'
