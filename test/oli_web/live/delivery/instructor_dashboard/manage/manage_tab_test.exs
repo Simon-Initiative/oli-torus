@@ -83,7 +83,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
              )
     end
 
-    test "does not show certificate settings link when certificates are disabled", %{
+    test "does not show certificate settings when certificates are disabled", %{
       instructor: instructor,
       section: section,
       conn: conn
@@ -92,10 +92,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
 
       {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
 
-      refute has_element?(
+      refute has_element?(view, "h4", "Certificate Settings")
+      refute has_element?(view, "a[href='/sections/#{section.slug}/certificate_settings']")
+    end
+
+    test "shows certificate settings when certificates are enabled", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
+
+      assert has_element?(view, "h4", "Certificate Settings")
+
+      assert has_element?(
+               view,
+               "div",
+               "Review certificate requirements and design. Monitor students who have been issued certificates."
+             )
+
+      assert has_element?(view, "div", "This course does produce a certificate")
+
+      assert has_element?(
                view,
                "a[href='/sections/#{section.slug}/certificate_settings']",
-               "Manage Certificate Settings"
+               "View certificate settings"
              )
     end
 
@@ -129,10 +153,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
 
       {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
 
+      assert has_element?(view, "div", "This course does not produce a certificate")
+
       assert has_element?(
                view,
                "a[href='/sections/#{section.slug}/certificate_settings']",
-               "Manage Certificate Settings"
+               "View certificate settings"
              )
     end
   end

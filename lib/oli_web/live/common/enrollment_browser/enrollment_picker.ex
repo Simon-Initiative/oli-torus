@@ -50,7 +50,11 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
   def render(assigns) do
     ~H"""
     <div id={@id}>
-      <TextSearch.render id="text-search" event_target={"#" <> assigns.id} />
+      <TextSearch.render
+        id="text-search"
+        event_target={"#" <> assigns.id}
+        aria_label="Search users"
+      />
 
       <div class="mb-3" />
 

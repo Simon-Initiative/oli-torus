@@ -1217,6 +1217,10 @@ defmodule OliWeb.Components.Common do
   It differs from the native focus_wrap as it does not autofocus the first element in the container
   on mount.
 
+  The empty sentinel spans that wrap the focus are only hidden from assistive technology while they
+  are not focusable (`tabindex="-1"`). A focusable element must not be `aria-hidden`, so callers
+  that toggle the sentinels' `tabindex` at runtime must toggle `aria-hidden` along with it.
+
   ## Examples
 
   Simply render your inner content within this component and focus will be wrapped around the
@@ -1249,7 +1253,7 @@ defmodule OliWeb.Components.Common do
       <span
         id={"#{@id}-start"}
         tabindex={if @initially_enabled, do: "0", else: "-1"}
-        aria-hidden="true"
+        aria-hidden={if @initially_enabled, do: "false", else: "true"}
       >
       </span>
       {render_slot(@inner_block)}

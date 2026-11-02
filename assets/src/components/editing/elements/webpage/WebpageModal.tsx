@@ -24,6 +24,7 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
   const [targetId, setTargetId] = useState(model.targetId ?? '');
   const [srcType, setSrcType] = useState<ContentModel.WebpageSrcType>(model.srcType || 'url');
   const [src, setSrc] = useState(model.src);
+  const [title, setTitle] = useState(model.title ?? '');
   const [alt, setAlt] = useState(model.alt ?? '');
   const [width, setWidth] = useState(model.width ? String(model.width) : '');
   const [height, setHeight] = useState(model.height ? String(model.height) : '');
@@ -45,16 +46,18 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
 
   const onSave = useCallback(() => {
     const nextTargetId = sanitizedTargetId === '' ? undefined : sanitizedTargetId;
+    const trimmedTitle = title.trim();
 
     onDone({
       targetId: nextTargetId,
+      title: trimmedTitle === '' ? undefined : trimmedTitle,
       alt,
       width: stringToNumOrUndefined(width),
       height: stringToNumOrUndefined(height),
       src,
       srcType,
     });
-  }, [alt, height, onDone, sanitizedTargetId, src, srcType, width]);
+  }, [alt, height, onDone, sanitizedTargetId, src, srcType, title, width]);
 
   return (
     <Modal
@@ -76,7 +79,7 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
           <MediaEntry href={src || ''} setHref={setSrc} projectSlug={projectSlug} />
         )}
         <h4 className="mb-2">Size (Leave blank for default)</h4>
-        <div className="d-flex flex-row">
+        <div className="d-flex flex-row mb-4">
           <div className="mr-2">
             <span>Width:</span>
             <input
@@ -99,8 +102,25 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
           </div>
         </div>
 
+        <h4 className="mb-2">Title</h4>
+        <p id="webpage-title-help" className="mb-2">
+          Describe the purpose of this embedded content. Screen readers announce this title to
+          students.
+        </p>
+        <label className="sr-only" htmlFor="webpage-title">
+          Title
+        </label>
+        <input
+          id="webpage-title"
+          className="form-control mb-4"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. PhET simulation: pH scale"
+          aria-describedby="webpage-title-help"
+        />
+
         <h4 className="mb-2">Alternative Text</h4>
-        <p className="mb-4">
+        <p className="mb-2">
           Specify alternative text to be rendered when the webpage cannot be rendered.
         </p>
 

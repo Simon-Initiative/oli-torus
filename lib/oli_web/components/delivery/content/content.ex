@@ -201,6 +201,7 @@ defmodule OliWeb.Components.Delivery.Content do
             <.form for={%{}} phx-target={@myself} phx-change="search_container" class="w-56">
               <SearchInput.render
                 id="content_search_input"
+                aria_label="Search course content"
                 name="container_name"
                 text={@params.text_search}
               />

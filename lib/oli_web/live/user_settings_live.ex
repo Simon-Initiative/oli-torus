@@ -8,6 +8,7 @@ defmodule OliWeb.UserSettingsLive do
   alias Oli.AssentAuth.UserAssentAuth
   alias OliWeb.Icons
 
+  @doc "Renders the account profile, email, and password settings form."
   def render(assigns) do
     ~H"""
     <div class="bg-Background-bg-primary flex flex-col gap-4 items-center py-2 w-full">
@@ -237,7 +238,7 @@ defmodule OliWeb.UserSettingsLive do
               <!-- Update Button -->
               <button
                 type="submit"
-                class="bg-Fill-Buttons-fill-primary flex gap-0 items-center justify-center px-6 py-3 rounded-md w-full"
+                class="bg-Fill-Buttons-fill-primary-bold flex gap-0 items-center justify-center px-6 py-3 rounded-md w-full"
                 phx-disable-with="Updating..."
               >
                 <div class="font-semibold text-sm leading-4 text-white">

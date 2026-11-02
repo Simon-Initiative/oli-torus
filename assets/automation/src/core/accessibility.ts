@@ -7,11 +7,45 @@ type AccessibilityScanOptions = {
   theme?: 'dark' | 'light';
 };
 
+/** Scan a connected, styled page after its finite loading animations settle. */
 export async function scanPageAccessibility(
   page: Page,
   pageName: string,
   options: AccessibilityScanOptions = {},
 ) {
+  await page.waitForLoadState('load');
+  await expect(page.locator('[data-phx-main]')).toHaveClass(/phx-connected/);
+  await expect(page.locator('#nprogress')).toHaveCount(0);
+  await expect
+    .poll(
+      () =>
+        page
+          .locator('link[rel="stylesheet"][href="/css/app.css"]')
+          .evaluate((link: HTMLLinkElement) => Boolean(link.sheet?.cssRules.length)),
+      { message: 'Tailwind CSS must be loaded before scanning accessibility' },
+    )
+    .toBe(true);
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            document.fonts.status === 'loaded' &&
+            document
+              .getAnimations()
+              .every(
+                (animation) =>
+                  animation.playState !== 'running' ||
+                  animation.effect?.getComputedTiming().iterations === Infinity,
+              ),
+        ),
+      {
+        message: 'Page fonts and finite animations must settle before scanning accessibility',
+        timeout: 10_000,
+      },
+    )
+    .toBe(true);
+
   const builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag412']);
 
   if (options.excludeCookieConsent ?? true) {

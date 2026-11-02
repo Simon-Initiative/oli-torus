@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useCommandTarget } from 'components/editing/elements/command_button/useCommandTarget';
 import * as ContentModel from 'data/content/model/elements/types';
 import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
+import { webpageAriaLabel } from './webpageAriaLabel';
 
 const getSafeIframeSrc = (src?: string): string | undefined => {
   if (!src) return undefined;
@@ -70,7 +71,7 @@ export const WebpageEmbed: React.FC<{
       <iframe
         ref={iframeRef}
         id={webpage.id}
-        title={webpage.alt || webpage.id || 'Embedded webpage'}
+        aria-label={webpageAriaLabel(webpage)}
         className={iframeClass}
         {...dimensions}
         allowFullScreen

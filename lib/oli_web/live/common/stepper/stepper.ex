@@ -246,7 +246,7 @@ defmodule OliWeb.Common.Stepper do
       <div class="flex min-w-0 flex-col">
         <h4 class={[
           "mb-[9px] text-[16px] font-bold leading-[24px] transition-colors duration-700",
-          if(@completed, do: "text-[#90a2c1]", else: "text-white")
+          "text-Text-text-white"
         ]}>
           {@step.title}
         </h4>
@@ -255,7 +255,7 @@ defmodule OliWeb.Common.Stepper do
           class={[
             "text-[16px] font-medium leading-[24px] transition-colors duration-700",
             if(@completed,
-              do: "text-[#90a2c1]",
+              do: "text-Text-text-white",
               else: "text-Specially-Tokens-Text-text-tile-details"
             )
           ]}

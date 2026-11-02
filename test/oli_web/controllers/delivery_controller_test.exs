@@ -1405,6 +1405,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~
                "Enroll"
 
+      expect_recaptcha_failure()
       conn = post(conn, Routes.delivery_path(conn, :process_enroll, section.slug))
 
       assert html_response(conn, 200) =~
@@ -1420,6 +1421,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~
                "Enroll"
 
+      expect_recaptcha_failure()
       conn = post(conn, Routes.delivery_path(conn, :process_enroll, section.slug))
 
       assert html_response(conn, 200) =~
@@ -1460,20 +1462,7 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   defp mock_captcha(conn, section) do
-    Oli.Test.MockHTTP
-    |> expect(:post, fn "https://www.google.com/recaptcha/api/siteverify",
-                        _body,
-                        _headers,
-                        _opts ->
-      {:ok,
-       %HTTPoison.Response{
-         status_code: 200,
-         body:
-           Jason.encode!(%{
-             "success" => true
-           })
-       }}
-    end)
+    expect(Oli.Test.RecaptchaMock, :verify, fn _ -> {:success, true} end)
 
     conn
     |> recycle(conn)

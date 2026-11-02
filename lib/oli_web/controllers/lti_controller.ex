@@ -4,16 +4,19 @@ defmodule OliWeb.LtiController do
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.SecureAssessments
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
+  alias Oli.Lti.AuthoringLaunch
   alias Oli.Lti.KeysetCache
   alias Oli.Lti.LaunchErrors
   alias Oli.Lti.LaunchIdentity
   alias Oli.Lti.LtiParams
+  alias Oli.Lti.SecureLaunch
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
-  alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformInstances
+  alias Oli.Lti.SectionDeepLinkLaunch
   alias Oli.Lti.Tokens
   alias Oli.Predefined
   alias Oli.Slack
@@ -83,13 +86,26 @@ defmodule OliWeb.LtiController do
     with :ok <- validate_session_state(conn, params),
          {:ok, lti_params} <- validate_launch(params, conn) do
       case handle_valid_lti_1p3_launch(lti_params) do
-        {:ok, user} ->
+        {:ok, %{user: user, token: token, destination: destination, mode: mode}} ->
+          observe_secure_admission(:accepted, mode)
+
           conn
-          |> UserAuth.create_session(user)
-          |> assign(:current_user, user)
-          |> LtiRedirect.redirect_from_lti_params(lti_params,
-            allow_new_section_creation: true,
-            source: :current_launch,
+          |> UserAuth.install_session(user, token)
+          |> put_resp_header("cache-control", "private, no-store")
+          |> LtiRedirect.redirect_to_destination(destination)
+
+        {:error, classification}
+        when classification in [
+               :secure_launch_required,
+               :secure_target_invalid,
+               :secure_delivery_unsupported,
+               :secure_session_persistence_failed,
+               :not_enrolled
+             ] ->
+          observe_secure_admission(:rejected, classification)
+
+          render_launch_error(conn, secure_error_classification(classification),
+            request_id: request_id(conn),
             transport_method: :session_storage
           )
 
@@ -167,13 +183,40 @@ defmodule OliWeb.LtiController do
            :ok <- update_user_platform_roles(user, lti_params),
            {:ok, section} <- get_and_update_lti_section_details(lti_params, registration),
            :ok <- enroll_user(user, section, lti_params) do
-        user
+        target = LtiRedirect.resolve_target(lti_params, section)
+
+        with {:ok, admission} <- SecureLaunch.admission(user, target, lti_params),
+             {:ok, token} <- issue_launch_session(user, admission) do
+          destination =
+            LtiRedirect.launch_destination(lti_params,
+              target: target,
+              allow_new_section_creation: true,
+              source: :current_launch,
+              transport_method: :session_storage
+            )
+
+          %{
+            user: user,
+            token: token,
+            destination: destination,
+            mode:
+              case admission do
+                nil -> :ordinary
+                _ -> :secure
+              end
+          }
+        else
+          {:error, reason} -> Oli.Repo.rollback(reason)
+        end
       else
         {:error, error} ->
           Oli.Repo.rollback(error)
       end
     end)
   end
+
+  defp issue_launch_session(user, nil), do: {:ok, Accounts.generate_user_session_token(user)}
+  defp issue_launch_session(user, admission), do: SecureAssessments.issue_session(user, admission)
 
   defp get_institution_and_registration(issuer, client_id, deployment_id) do
     case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
@@ -297,6 +340,11 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  @doc """
+  Completes the tool's OIDC authorization using the stored launch context.
+  Rechecks authoring/configuration access and signed request correlation before
+  issuing the appropriate resource-launch or Deep Linking claims to the tool.
+  """
   def authorize_redirect(conn, params) do
     case Lti_1p3.Platform.LoginHints.get_login_hint_by_value(params["login_hint"]) do
       nil ->
@@ -305,134 +353,267 @@ defmodule OliWeb.LtiController do
         )
 
       %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
-        client_id = params["client_id"]
-
-        {:ok, platform_instance} =
-          PlatformInstances.get_platform_instance_by_client_id(client_id)
-
-        {user, target_link_uri, activity_resource_id, roles, additional_claims, message_type} =
+        # Login-hint context has a 255-character limit; new authoring hints store a project ID.
+        context =
           case context do
-            %{"project" => project_slug, "resource_id" => activity_resource_id} ->
-              build_authorization_for(
-                :authoring,
-                conn,
-                platform_instance,
-                project_slug,
-                activity_resource_id,
-                session_user_id
-              )
+            %{"project_id" => project_id} ->
+              case Oli.Repo.get(Oli.Authoring.Course.Project, project_id) do
+                %{slug: slug} -> Map.put(context, "project", slug)
+                _ -> context
+              end
 
-            %{
-              "section" => section_slug,
-              "resource_id" => activity_resource_id,
-              "configure_deep_linking" => "true"
-            } ->
-              build_authorization_for(
-                :configure_deep_linking,
-                conn,
-                platform_instance,
-                section_slug,
-                activity_resource_id,
-                session_user_id
-              )
-
-            %{"section" => section_slug, "resource_id" => activity_resource_id} ->
-              build_authorization_for(
-                :delivery,
-                conn,
-                platform_instance,
-                section_slug,
-                activity_resource_id,
-                session_user_id
-              )
+            %{"section_id" => section_id} ->
+              case Sections.get_section_by(id: section_id) do
+                %{slug: slug} -> Map.put(context, "section", slug)
+                nil -> context
+              end
 
             _ ->
-              Logger.error("Unsupported context value in login hint: #{Kernel.inspect(context)}")
-
-              throw("Unsupported context value in login hint")
+              context
           end
 
-        issuer = Oli.Utils.get_base_url()
+        with {:ok, configuration} <-
+               authorize_configuration(
+                 conn,
+                 context,
+                 session_user_id,
+                 params
+               ) do
+          client_id = params["client_id"]
 
-        deployment =
-          Oli.Lti.PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
-            platform_instance_id: platform_instance.id
-          )
+          {:ok, platform_instance} =
+            PlatformInstances.get_platform_instance_by_client_id(client_id)
 
-        # Use the message type determined by the context
-        message_type_claim =
-          case message_type do
-            :deep_linking_request ->
-              Lti_1p3.Claims.MessageType.message_type(:lti_deep_linking_request)
+          {user, target_link_uri, activity_resource_id, roles, additional_claims, message_type} =
+            case context do
+              %{"project" => project_slug, "resource_id" => activity_resource_id} ->
+                build_authorization_for(
+                  :authoring,
+                  conn,
+                  platform_instance,
+                  project_slug,
+                  activity_resource_id,
+                  session_user_id,
+                  {context, configuration}
+                )
 
-            _ ->
-              Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request)
-          end
+              %{
+                "section" => section_slug,
+                "resource_id" => activity_resource_id,
+                "configure_deep_linking" => "true"
+              } ->
+                build_authorization_for(
+                  :configure_deep_linking,
+                  conn,
+                  platform_instance,
+                  section_slug,
+                  activity_resource_id,
+                  session_user_id,
+                  {context, configuration}
+                )
 
-        claims = [
-          # Required claims
-          message_type_claim,
-          Lti_1p3.Claims.Version.version("1.3.0"),
-          Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
-          Lti_1p3.Claims.TargetLinkUri.target_link_uri(target_link_uri),
-          Lti_1p3.Claims.Roles.roles(roles),
-          # Optional claims
-          Lti_1p3.Claims.PlatformInstance.platform_instance(
-            PlatformInstances.platform_instance_guid(platform_instance),
-            contact_email: Oli.VendorProperties.support_email(),
-            description: Oli.VendorProperties.product_description(),
-            name: Oli.VendorProperties.product_full_name(),
-            url: Oli.Utils.get_base_url(),
-            product_family_code: "oli-torus",
-            version: Application.fetch_env!(:oli, :build).version
-          )
-          | additional_claims
-        ]
+              %{"section" => section_slug, "resource_id" => activity_resource_id} ->
+                build_authorization_for(
+                  :delivery,
+                  conn,
+                  platform_instance,
+                  section_slug,
+                  activity_resource_id,
+                  session_user_id,
+                  context
+                )
 
-        # Add resource link claim only for resource link requests
-        claims =
-          case message_type do
-            :deep_linking_request -> claims
-            _ -> [Lti_1p3.Claims.ResourceLink.resource_link(activity_resource_id) | claims]
-          end
+              _ ->
+                Logger.error(
+                  "Unsupported context value in login hint: #{Kernel.inspect(context)}"
+                )
 
-        case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
-               params,
-               user,
-               issuer,
-               claims
-             ) do
-          {:ok, redirect_uri, state, id_token} ->
-            conn
-            |> put_view(OliWeb.LtiHTML)
-            |> put_root_layout({OliWeb.LayoutView, :lti_redirect})
-            |> render("post_redirect.html",
-              redirect_uri: redirect_uri,
-              state: state,
-              id_token: id_token
+                throw("Unsupported context value in login hint")
+            end
+
+          issuer = Oli.Utils.get_base_url()
+
+          deployment =
+            case configuration do
+              {_author, _revision, deployment, _request_token} ->
+                deployment
+
+              {_section, deployment} ->
+                deployment
+
+              nil ->
+                Oli.Lti.PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
+                  platform_instance_id: platform_instance.id
+                )
+            end
+
+          # Use the message type determined by the context
+          message_type_claim =
+            case message_type do
+              :deep_linking_request ->
+                Lti_1p3.Claims.MessageType.message_type(:lti_deep_linking_request)
+
+              _ ->
+                Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request)
+            end
+
+          claims = [
+            # Required claims
+            message_type_claim,
+            Lti_1p3.Claims.Version.version("1.3.0"),
+            Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
+            Lti_1p3.Claims.TargetLinkUri.target_link_uri(target_link_uri),
+            Lti_1p3.Claims.Roles.roles(roles),
+            # Optional claims
+            Lti_1p3.Claims.PlatformInstance.platform_instance(
+              PlatformInstances.platform_instance_guid(platform_instance),
+              contact_email: Oli.VendorProperties.support_email(),
+              description: Oli.VendorProperties.product_description(),
+              name: Oli.VendorProperties.product_full_name(),
+              url: Oli.Utils.get_base_url(),
+              product_family_code: "oli-torus",
+              version: Application.fetch_env!(:oli, :build).version
             )
+            | additional_claims
+          ]
 
-          {:error, %{reason: _reason, msg: msg}} ->
-            render(conn, "lti_error.html", reason: msg)
+          # Add resource link claim only for resource link requests
+          claims =
+            case message_type do
+              :deep_linking_request -> claims
+              _ -> [Lti_1p3.Claims.ResourceLink.resource_link(activity_resource_id) | claims]
+            end
+
+          case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
+                 params,
+                 user,
+                 issuer,
+                 claims
+               ) do
+            {:ok, redirect_uri, state, id_token} ->
+              conn
+              |> put_view(OliWeb.LtiHTML)
+              |> put_root_layout({OliWeb.LayoutView, :lti_redirect})
+              |> render("post_redirect.html",
+                redirect_uri: redirect_uri,
+                state: state,
+                id_token: id_token
+              )
+
+            {:error, %{reason: _reason, msg: msg}} ->
+              render(conn, "lti_error.html", reason: msg)
+          end
+        else
+          _ -> conn |> put_status(:forbidden) |> text("Tool configuration is unavailable")
         end
     end
   end
 
+  # Rechecks the initiating account and deployment for section configuration and
+  # authoring. Ordinary delivery keeps its existing path without configuration context.
+  defp authorize_configuration(
+         conn,
+         %{"configure_deep_linking" => "true"} = context,
+         user_id,
+         params
+       ) do
+    client_id = params["client_id"]
+
+    actor =
+      SectionDeepLinkLaunch.actor(conn.assigns[:current_user], conn.assigns[:current_author])
+
+    with %{id: ^user_id} <- actor,
+         true <- SectionDeepLinkLaunch.actor_type(actor) == context["actor_type"],
+         true <- is_binary(context["request_id"]),
+         {:ok, section, _, deployment} <-
+           SectionDeepLinkLaunch.resolve(actor, context["section"], context["resource_id"]),
+         true <- deployment.platform_instance.client_id == client_id do
+      {:ok, {section, deployment}}
+    else
+      _ -> {:error, :configuration_unavailable}
+    end
+  end
+
+  defp authorize_configuration(
+         conn,
+         %{"project" => project, "resource_id" => activity} = context,
+         author_id,
+         params
+       ) do
+    with %{id: ^author_id} = author <- conn.assigns[:current_author],
+         true <- Map.get(context, "role", "developer") in ["developer", "instructor"],
+         true <- Map.get(context, "launch_type", "regular") in ["regular", "deep_link"],
+         {:ok, revision, deployment} <- AuthoringLaunch.resolve(author, project, activity),
+         true <- deployment.platform_instance.client_id == params["client_id"],
+         {:ok, token} <-
+           authorize_authoring_request(author, project, activity, context, deployment, params) do
+      {:ok, {author, revision, deployment, token}}
+    else
+      _ -> {:error, :configuration_unavailable}
+    end
+  end
+
+  defp authorize_configuration(_conn, _context, _user_id, _params), do: {:ok, nil}
+
+  # Regular authoring needs no configuration request token. Deep Linking must
+  # recover and validate the request captured after the editor's pending saves.
+  defp authorize_authoring_request(author, project, activity, context, deployment, params) do
+    case Map.get(context, "launch_type", "regular") do
+      "regular" ->
+        {:ok, nil}
+
+      "deep_link" ->
+        validate_authoring_request_hint(author, project, activity, context, deployment, params)
+    end
+  end
+
+  # Verifies the echoed signed message hint belongs to this login/deployment/route,
+  # then checks its original authoring request against the current editor state.
+  defp validate_authoring_request_hint(author, project, activity, context, deployment, params) do
+    with hint when is_binary(hint) <- params["lti_message_hint"],
+         {:ok, wrapper} <-
+           Phoenix.Token.verify(OliWeb.Endpoint, "lti_message_hint", hint, max_age: 1800),
+         true <-
+           wrapper["login_hint"] == params["login_hint"] and
+             wrapper["endpoint"] == "project_deep_linking_launch_details" and
+             wrapper["deployment_id"] == deployment.deployment_id and
+             to_string(wrapper["resource_id"]) == to_string(activity),
+         {:ok, request} <-
+           AuthoringLaunch.validate_request(
+             author,
+             project,
+             activity,
+             wrapper["authoring_request"]
+           ),
+         true <- request["request_id"] == context["request_id"] do
+      {:ok, wrapper["authoring_request"]}
+    else
+      _ -> {:error, :configuration_unavailable}
+    end
+  end
+
+  # Builds authoring identity and claims using the chosen role and launch type.
+  # Regular reuses the selection (the external tool's chosen resource configuration);
+  # Deep Linking targets the selector and offers current custom values as optional hints.
   defp build_authorization_for(
          :authoring,
-         conn,
+         _conn,
          platform_instance,
          project_slug,
          activity_resource_id,
-         author_id
+         _author_id,
+         {launch_context, {author, revision, deployment, request_token}}
        ) do
-    author = conn.assigns[:current_author] || Accounts.get_author(author_id)
     project = Oli.Authoring.Course.get_project_by_slug(project_slug)
 
+    role =
+      case Map.get(launch_context, "role", "developer") do
+        "instructor" -> :context_instructor
+        "developer" -> :context_content_developer
+      end
+
     roles =
-      [
-        Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
-      ] ++
+      [Lti_1p3.Roles.ContextRoles.get_role(role)] ++
         if Oli.Accounts.is_admin?(author),
           do: [
             Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
@@ -448,6 +629,35 @@ defmodule OliWeb.LtiController do
       )
     ]
 
+    {target, additional_claims, message_type} =
+      case Map.get(launch_context, "launch_type", "regular") do
+        "deep_link" ->
+          true = deployment.deep_linking_enabled
+
+          selection = Map.get(revision.content, "deepLink") || %{}
+
+          settings =
+            Lti_1p3.Claims.DeepLinkingSettings.deep_linking_settings(
+              Oli.Utils.get_base_url() <> "/lti/authoring_deep_link",
+              ["ltiResourceLink"],
+              ["iframe"],
+              accept_multiple: false,
+              auto_create: true,
+              data: request_token
+            )
+
+          {platform_instance.target_link_uri,
+           [settings | additional_claims] ++ deep_link_custom_claims(selection["custom"]),
+           :deep_linking_request}
+
+        "regular" ->
+          selection = Map.get(revision.content, "deepLink") || %{}
+
+          {selection["url"] || platform_instance.target_link_uri,
+           additional_claims ++ maybe_add_custom_claims(selection["custom"]),
+           :resource_link_request}
+      end
+
     {%Accounts.User{
        id: author.id,
        sub: "author-#{author.id}",
@@ -457,39 +667,37 @@ defmodule OliWeb.LtiController do
        given_name: author.given_name,
        family_name: author.family_name,
        picture: author.picture
-     }, platform_instance.target_link_uri, activity_resource_id, roles, additional_claims,
-     :resource_link_request}
+     }, target, activity_resource_id, roles, additional_claims, message_type}
   end
 
+  # Builds a learner/instructor resource launch from enrollment roles and this
+  # section's selection (the external tool's chosen resource configuration),
+  # including grading endpoints when a corresponding activity attempt exists.
   defp build_authorization_for(
          :delivery,
          conn,
          platform_instance,
          section_slug,
          activity_resource_id,
-         user_id
+         user_id,
+         _launch_context
        ) do
     user = conn.assigns[:current_user] || Accounts.get_user!(user_id, preload: [:platform_roles])
     author = conn.assigns[:current_author]
     section = Sections.get_section_by_slug(section_slug)
 
-    context_roles =
-      Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section.slug)
-
-    platform_roles =
-      Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
+    context_roles = Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section.slug)
+    platform_roles = Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
 
     roles =
       context_roles ++
         platform_roles ++
-        if Oli.Accounts.is_admin?(author) do
-          [
-            Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
-            Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator)
-          ]
-        else
-          []
-        end
+        if Oli.Accounts.is_admin?(author),
+          do: [
+            PlatformRoles.get_role(:system_administrator),
+            PlatformRoles.get_role(:institution_administrator)
+          ],
+          else: []
 
     # If there is a section resource deep link for the activity,
     # use that as the target link URI. Otherwise, use the platform instance's target link URI.
@@ -549,35 +757,34 @@ defmodule OliWeb.LtiController do
      :resource_link_request}
   end
 
+  # Builds the section selector request for the authorized actor, binding the
+  # callback to its pending request. The current selection (the external tool's
+  # chosen resource configuration) supplies optional custom hints, without project fallback.
   defp build_authorization_for(
          :configure_deep_linking,
          conn,
          platform_instance,
          section_slug,
          activity_resource_id,
-         user_id
+         _user_id,
+         {launch_context, {section, deployment}}
        ) do
-    user = conn.assigns[:current_user] || Accounts.get_user!(user_id, preload: [:platform_roles])
-    author = conn.assigns[:current_author]
-    section = Sections.get_section_by_slug(section_slug)
+    actor =
+      SectionDeepLinkLaunch.actor(conn.assigns[:current_user], conn.assigns[:current_author])
 
-    context_roles =
-      Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section.slug)
+    {user, roles} = configuration_identity(actor, section.slug)
 
-    platform_roles =
-      Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
+    selection =
+      Oli.Lti.PlatformExternalTools.get_section_resource_deep_link_by(
+        section_id: section.id,
+        resource_id: activity_resource_id
+      )
 
-    roles =
-      context_roles ++
-        platform_roles ++
-        if Oli.Accounts.is_admin?(author) do
-          [
-            Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
-            Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator)
-          ]
-        else
-          []
-        end
+    custom_claims =
+      case selection do
+        %{custom: custom} -> deep_link_custom_claims(custom)
+        nil -> []
+      end
 
     # Build additional claims for deep linking
     additional_claims = [
@@ -590,17 +797,73 @@ defmodule OliWeb.LtiController do
         ["ltiResourceLink"],
         ["iframe", "window"],
         accept_multiple: false,
-        auto_create: true
+        auto_create: true,
+        data:
+          SectionDeepLinkLaunch.sign_request(
+            actor,
+            section,
+            activity_resource_id,
+            deployment,
+            launch_context["request_id"]
+          )
       )
     ]
 
-    {user, platform_instance.target_link_uri, nil, roles, additional_claims,
+    {user, platform_instance.target_link_uri, nil, roles, additional_claims ++ custom_claims,
      :deep_linking_request}
   end
 
-  defp maybe_add_custom_claims(nil) do
-    []
+  # Produces the tool-facing identity and roles for either account namespace.
+  # Delivery users retain enrollment roles; admin authors use an author-prefixed
+  # subject and instructor/admin roles rather than impersonating a delivery user.
+  defp configuration_identity(%Accounts.User{} = actor, section_slug) do
+    user = Accounts.get_user!(actor.id, preload: [:platform_roles])
+
+    roles =
+      Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section_slug) ++
+        Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
+
+    {user, roles}
   end
+
+  defp configuration_identity(%Accounts.Author{} = actor, _section_slug) do
+    user = %Accounts.User{
+      id: actor.id,
+      sub: "author-#{actor.id}",
+      email: actor.email,
+      name: actor.name,
+      given_name: actor.given_name,
+      family_name: actor.family_name,
+      email_verified: true
+    }
+
+    {user,
+     [
+       ContextRoles.get_role(:context_instructor),
+       PlatformRoles.get_role(:system_administrator),
+       PlatformRoles.get_role(:institution_administrator)
+     ]}
+  end
+
+  # LTI requires string custom values. Preserve compliant values verbatim; legacy values
+  # remain stored unchanged and are omitted only from this optional configuration hint.
+  defp deep_link_custom_claims(custom) when is_map(custom) do
+    values =
+      custom
+      |> Enum.filter(fn {key, value} -> is_binary(key) and is_binary(value) end)
+      |> Map.new()
+
+    case map_size(values) do
+      0 -> []
+      _ -> maybe_add_custom_claims(values)
+    end
+  end
+
+  defp deep_link_custom_claims(_), do: []
+
+  # Wraps saved custom configuration in the standard claim without coercing values;
+  # a missing configuration contributes no claim.
+  defp maybe_add_custom_claims(nil), do: []
 
   defp maybe_add_custom_claims(custom),
     do: [
@@ -650,6 +913,20 @@ defmodule OliWeb.LtiController do
         {:error, :validation_failure}
     end
   end
+
+  defp observe_secure_admission(outcome, classification) do
+    :telemetry.execute([:oli, :secure_assessment, :admission], %{count: 1}, %{
+      outcome: outcome,
+      classification: classification
+    })
+  end
+
+  defp secure_error_classification(:not_enrolled), do: :secure_target_invalid
+
+  defp secure_error_classification(:secure_session_persistence_failed),
+    do: :launch_handler_failure
+
+  defp secure_error_classification(classification), do: classification
 
   defp render_launch_error(conn, classification, opts) do
     details = LaunchErrors.details(classification)
@@ -787,6 +1064,9 @@ defmodule OliWeb.LtiController do
   @doc """
   Handles the Deep Linking response from the LTI tool.
   This endpoint receives the JWT containing the content items selected by the user.
+  Persists the selection (the resource configuration chosen in the external tool)
+  only after signature, initiating-request and current-permission checks succeed,
+  then reports the request identity back to the configuration dialog.
   """
   def deep_link(
         conn,
@@ -796,13 +1076,14 @@ defmodule OliWeb.LtiController do
          {:ok, content_item} <- require_single_content_item(claims),
          :ok <- require_lti_resource_link_type(content_item),
          {:ok, section} <- get_section_by_slug(section_slug),
-         :ok = process_deep_linking_content_item(content_item, section.id, resource_id) do
+         {:ok, request_id} <-
+           SectionDeepLinkLaunch.persist_return(claims, content_item, section, resource_id) do
       # Render success page with postMessage communication
       conn
       |> put_view(OliWeb.LtiHTML)
       |> put_layout(false)
       |> put_format("html")
-      |> render(:deep_link_success, content_item: content_item)
+      |> render(:deep_link_success, content_item: content_item, request_id: request_id)
     else
       {:error, _reason, error_description} ->
         conn
@@ -813,7 +1094,7 @@ defmodule OliWeb.LtiController do
         |> render(:deep_link_error, error_description: error_description)
 
       {:error, reason} ->
-        error_description = to_string(reason)
+        error_description = section_return_error(reason)
 
         conn
         |> put_view(OliWeb.LtiHTML)
@@ -823,6 +1104,19 @@ defmodule OliWeb.LtiController do
         |> render(:deep_link_error, error_description: error_description)
     end
   end
+
+  # Converts expected validation, replay and persistence failures into bounded
+  # dialog feedback without including the tool's JWT or configuration payload.
+  defp section_return_error(:invalid_section_return),
+    do: "The tool selection could not be validated. Close this window and try again."
+
+  defp section_return_error(:request_already_used),
+    do: "This selection request is no longer active. Close this window and try again."
+
+  defp section_return_error(:failed_to_create_deep_link),
+    do: "The tool selection could not be saved. Close this window and try again."
+
+  defp section_return_error(reason), do: to_string(reason)
 
   defp get_section_by_slug(section_slug) do
     case Sections.get_section_by_slug(section_slug) do
@@ -834,6 +1128,37 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  @doc """
+  Validates a project Deep Linking response and hands its selection (the resource
+  configuration chosen in the external tool) back to the editor as a signed result.
+  This callback does not write activity content; the editor must save the result.
+  """
+  def authoring_deep_link(conn, %{"JWT" => jwt}) do
+    result =
+      with {:ok, claims} <- validate_deep_linking_jwt(jwt),
+           {:ok, request} <- AuthoringLaunch.validate_return(claims),
+           [%{"type" => "ltiResourceLink"} = item] <-
+             claims["https://purl.imsglobal.org/spec/lti-dl/claim/content_items"],
+           {:ok, selection} <- AuthoringLaunch.selection(item) do
+        token =
+          AuthoringLaunch.result_token(request, selection)
+
+        %{token: token, request_id: request["request_id"]}
+      else
+        _ ->
+          %{error: "The tool selection could not be validated. Close this window and try again."}
+      end
+
+    conn
+    |> put_view(OliWeb.LtiHTML)
+    |> put_layout(false)
+    |> put_format("html")
+    |> render(:authoring_deep_link, result: result)
+  end
+
+  # Resolves the tool's signing key from its issuer/key ID, verifies the signature,
+  # audience and message type, and normalizes malformed responses without logging
+  # raw tokens. Flow-specific correlation and expiry checks follow in the domain layer.
   defp validate_deep_linking_jwt(jwt) do
     with {:ok, %JOSE.JWT{fields: %{"iss" => client_id, "aud" => audience}}} <-
            Tokens.peek_jwt(jwt),
@@ -847,14 +1172,24 @@ defmodule OliWeb.LtiController do
          :ok <- validate_message_type(jwt_claims) do
       {:ok, jwt_claims}
     else
-      e ->
-        Logger.error("Failed to validate deep linking JWT: #{inspect(e)}")
+      _ ->
+        Logger.warning("Failed to validate tool Deep Linking JWT")
         {:error, :invalid_deep_linking_jwt}
     end
+  rescue
+    _error in [ArgumentError, BadMapError, Jason.DecodeError] ->
+      Logger.warning("Failed to decode tool Deep Linking JWT or keyset")
+      {:error, :invalid_deep_linking_jwt}
   end
 
-  defp validate_audience(audience) when is_list(audience),
-    do: audience |> hd() |> validate_audience()
+  # Accepts the configured Torus issuer as a scalar audience or within an all-string
+  # audience list, regardless of its position in that list.
+  defp validate_audience(audience) when is_list(audience) do
+    case Enum.all?(audience, &is_binary/1) and Oli.Utils.get_base_url() in audience do
+      true -> :ok
+      false -> {:error, :invalid_audience}
+    end
+  end
 
   defp validate_audience(audience) do
     expected_audience = Oli.Utils.get_base_url()
@@ -876,44 +1211,30 @@ defmodule OliWeb.LtiController do
     {:error, :invalid_message_type}
   end
 
+  # Requires exactly one selection (the resource configuration returned by the
+  # external tool); missing, non-list or multiple content items cannot be persisted.
   defp require_single_content_item(%{
          "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => content_items
        }) do
-    if is_list(content_items) and length(content_items) == 1 do
-      {:ok, hd(content_items)}
-    else
-      {:error, :invalid_content_item,
-       "Expected exactly one content item, got #{length(content_items)}"}
+    case content_items do
+      [item] ->
+        {:ok, item}
+
+      items when is_list(items) ->
+        {:error, :invalid_content_item, "Expected exactly one content item, got #{length(items)}"}
+
+      _ ->
+        {:error, :invalid_content_item, "Expected exactly one content item"}
     end
   end
+
+  defp require_single_content_item(_),
+    do: {:error, :invalid_content_item, "Expected exactly one content item"}
 
   defp require_lti_resource_link_type(%{"type" => "ltiResourceLink"}), do: :ok
 
   defp require_lti_resource_link_type(_),
     do: {:error, :invalid_content_item_type, "Expected content item type to be 'ltiResourceLink'"}
-
-  defp process_deep_linking_content_item(content_item, section_id, resource_id) do
-    Logger.info("Processing deep linking content item: #{inspect(content_item)}")
-
-    case PlatformExternalTools.upsert_section_resource_deep_link(%{
-           type: content_item["type"],
-           title: content_item["title"],
-           text: content_item["text"],
-           url: content_item["url"],
-           custom: content_item["custom"],
-           resource_id: resource_id,
-           section_id: section_id
-         }) do
-      {:ok, _deep_link} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.error("Failed to create section resource deep link: #{inspect(reason)}")
-        {:error, :failed_to_create_deep_link}
-    end
-
-    :ok
-  end
 
   @doc """
   Displays the registration form for institutions using explicit request parameters.
