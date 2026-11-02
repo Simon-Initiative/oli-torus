@@ -4,6 +4,8 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Auditing.LogEvent
+  alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.FormatDateTime
 
   def render(assigns) do
@@ -93,9 +95,14 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
 
     ~H"""
     <div>
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @event.author_id)}>
-        {@event.details["actor_name"]}
-      </a>
+      <%= case @event.author_id do %>
+        <% nil -> %>
+          <span>{@event.details["actor_name"]}</span>
+        <% author_id -> %>
+          <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, author_id)}>
+            {@event.details["actor_name"]}
+          </a>
+      <% end %>
       <div class="text-xs text-gray-500 dark:text-gray-400">{@event.details["actor_email"]}</div>
     </div>
     """
@@ -105,7 +112,12 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
     actor_name = LogEvent.actor_name(event)
 
     actor_type =
-      if event.user_id, do: "User", else: if(event.author_id, do: "Author", else: "System")
+      case {event.actor_type, event.user_id, event.author_id} do
+        {:system, _, _} -> "System"
+        {_, user_id, _} when is_integer(user_id) -> "User"
+        {_, _, author_id} when is_integer(author_id) -> "Author"
+        _ -> "Unknown"
+      end
 
     assigns =
       Map.merge(assigns, %{
@@ -135,6 +147,8 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
             >
               {@actor_name}
             </a>
+          <% else %>
+            <span :if={@event.actor_type == :system}>{@actor_name}</span>
           <% end %>
         <% end %>
       </div>
@@ -150,9 +164,14 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
 
     ~H"""
     <div>
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @event.resource_id)}>
-        {@event.details["author_name"]}
-      </a>
+      <%= case @event.affected_author_id do %>
+        <% nil -> %>
+          <span>{@event.details["author_name"]}</span>
+        <% author_id -> %>
+          <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, author_id)}>
+            {@event.details["author_name"]}
+          </a>
+      <% end %>
       <div class="text-xs text-gray-500 dark:text-gray-400">{@event.details["author_email"]}</div>
     </div>
     """
@@ -163,8 +182,8 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
 
     ~H"""
     <div>
-      <%= cond do %>
-        <% @event.project_id && @event.resource -> %>
+      <%= case @event.resource do %>
+        <% %Project{} -> %>
           <a
             href={
               Routes.live_path(
@@ -178,7 +197,7 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
             {@event.resource.slug}
           </a>
           <div class="text-xs text-gray-500 dark:text-gray-400">Project</div>
-        <% @event.section_id && @event.resource -> %>
+        <% %Section{} -> %>
           <a
             href={
               Routes.live_path(
@@ -193,7 +212,7 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
             {@event.resource.slug}
           </a>
           <div class="text-xs text-gray-500 dark:text-gray-400">Section</div>
-        <% true -> %>
+        <% _ -> %>
           <span class="text-gray-400 dark:text-gray-500 text-sm">—</span>
       <% end %>
     </div>

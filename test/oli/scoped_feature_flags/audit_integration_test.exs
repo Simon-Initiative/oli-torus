@@ -12,9 +12,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       author = insert(:author)
       project = insert(:project)
 
-      # Clear any existing audit log entries
-      Repo.delete_all(LogEvent)
-
       assert {:ok, _flag_state} =
                ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
 
@@ -35,9 +32,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       user = insert(:user)
       section = insert(:section)
 
-      # Clear any existing audit log entries
-      Repo.delete_all(LogEvent)
-
       # mcp_authoring should fail on section since it's authoring-scoped only
       assert {:error, %{invalid_scope: [error_msg]}} =
                ScopedFeatureFlags.enable_feature(:mcp_authoring, section, user)
@@ -51,9 +45,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
 
     test "does not log when actor is nil" do
       project = insert(:project)
-
-      # Clear any existing audit log entries
-      Repo.delete_all(LogEvent)
 
       assert {:ok, _flag_state} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, nil)
 
@@ -71,18 +62,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       # First enable the feature
       {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
 
-      # Clear existing logs
-      Repo.delete_all(LogEvent)
-
       assert {:ok, _flag_state} =
                ScopedFeatureFlags.disable_feature(:mcp_authoring, project, author)
 
-      # Check that an audit log entry was created
-      events = Auditing.list_events()
-      assert length(events) == 1
-
-      event = List.first(events)
-      assert event.event_type == :feature_flag_disabled
+      # Check that an audit log entry was created; enabling the feature recorded its own event.
+      assert [event] = Auditing.list_events(event_type: :feature_flag_disabled)
       assert event.author_id == author.id
       assert event.project_id == project.id
       assert event.details["feature_name"] == "mcp_authoring"
@@ -93,9 +77,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
     test "validates scope constraints when disabling features" do
       user = insert(:user)
       section = insert(:section)
-
-      # Clear existing logs
-      Repo.delete_all(LogEvent)
 
       # mcp_authoring should fail on section since it's authoring-scoped only
       assert {:error, %{invalid_scope: [error_msg]}} =
@@ -117,18 +98,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       # First enable the feature
       {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
 
-      # Clear existing logs
-      Repo.delete_all(LogEvent)
-
       assert {:ok, _deleted_state} =
                ScopedFeatureFlags.remove_feature(:mcp_authoring, project, author)
 
-      # Check that an audit log entry was created
-      events = Auditing.list_events()
-      assert length(events) == 1
-
-      event = List.first(events)
-      assert event.event_type == :feature_flag_removed
+      # Check that an audit log entry was created; enabling the feature recorded its own event.
+      assert [event] = Auditing.list_events(event_type: :feature_flag_removed)
       assert event.author_id == author.id
       assert event.project_id == project.id
       assert event.details["feature_name"] == "mcp_authoring"
@@ -139,9 +113,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
     test "returns not found when removing non-existent feature from wrong scope" do
       user = insert(:user)
       section = insert(:section)
-
-      # Clear existing logs
-      Repo.delete_all(LogEvent)
 
       # mcp_authoring doesn't exist for sections, so should return not found
       assert {:error, :not_found} =
@@ -156,9 +127,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       author = insert(:author)
       project = insert(:project)
 
-      # Clear existing logs
-      Repo.delete_all(LogEvent)
-
       assert {:error, :not_found} =
                ScopedFeatureFlags.remove_feature(:mcp_authoring, project, author)
 
@@ -172,9 +140,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
     test "logs multiple feature changes for project" do
       author = insert(:author)
       project = insert(:project)
-
-      # Clear existing logs
-      Repo.delete_all(LogEvent)
 
       feature_settings = [
         {"mcp_authoring", true}
@@ -200,9 +165,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       user = insert(:user)
       section = insert(:section)
 
-      # Clear existing logs
-      Repo.delete_all(LogEvent)
-
       feature_settings = [
         {"mcp_authoring", true}
       ]
@@ -221,9 +183,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
     test "does not log when transaction fails" do
       author = insert(:author)
       project = insert(:project)
-
-      # Clear existing logs
-      Repo.delete_all(LogEvent)
 
       # Use an invalid feature name to cause transaction failure
       feature_settings = [
@@ -275,9 +234,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       author = insert(:author)
       project = insert(:project, title: "Test Project")
 
-      # Clear existing logs
-      Repo.delete_all(LogEvent)
-
       assert {:ok, _flag_state} =
                ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
 
@@ -292,9 +248,6 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
     test "validates section audit attempts fail with scope constraints" do
       user = insert(:user)
       section = insert(:section, title: "Test Section")
-
-      # Clear existing logs
-      Repo.delete_all(LogEvent)
 
       # Should fail due to scope constraint
       assert {:error, %{invalid_scope: [error_msg]}} =

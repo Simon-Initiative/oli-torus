@@ -4,34 +4,48 @@ defmodule Oli.AuditingTest do
   import Oli.Factory
 
   alias Oli.Auditing
-  alias Oli.Auditing.LogEvent
+  alias Oli.Auditing.{Context, Error, EventExamples, LogEvent}
+  alias Oli.Authoring.Course.Project
 
   describe "capture/4" do
-    test "captures user action" do
+    test "records a deleted user as the entity and the affected person" do
+      admin = insert(:author)
       user = insert(:user)
 
       assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(user, :user_deleted, nil, %{"email" => user.email})
+               Auditing.capture(admin, :user_deleted, user, %{
+                 "email" => user.email,
+                 "name" => user.name,
+                 "deleted_by" => admin.email
+               })
 
-      assert event.user_id == user.id
-      assert event.author_id == nil
+      assert event.schema_version == 2
+      assert event.author_id == admin.id
+      assert event.user_id == nil
+      assert event.actor_type == :author
       assert event.event_type == :user_deleted
+      assert event.entity_type == :user
+      assert event.entity_id == Integer.to_string(user.id)
+      assert event.affected_user_id == user.id
+      assert event.entity_snapshot["email"] == user.email
       assert event.details["email"] == user.email
+      assert event.source == :application
+      assert event.outcome == :succeeded
     end
 
-    test "captures author action" do
-      author = insert(:author)
+    test "records a user actor" do
+      admin = insert(:user)
+      deleted = insert(:user)
 
       assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(author, :author_deleted, nil, %{"email" => author.email})
+               Auditing.capture(admin, :user_deleted, deleted, %{"email" => deleted.email})
 
-      assert event.author_id == author.id
-      assert event.user_id == nil
-      assert event.event_type == :author_deleted
-      assert event.details["email"] == author.email
+      assert event.user_id == admin.id
+      assert event.author_id == nil
+      assert event.actor_snapshot["email"] == admin.email
     end
 
-    test "captures action with project resource" do
+    test "records a project resource in the project column" do
       author = insert(:author)
       project = insert(:project, authors: [author])
 
@@ -43,67 +57,202 @@ defmodule Oli.AuditingTest do
 
       assert event.author_id == author.id
       assert event.project_id == project.id
+      assert event.entity_type == :project
       assert event.event_type == :project_published
       assert event.details["version"] == "1.0.0"
     end
 
-    test "captures action with section resource" do
+    test "records a section resource in the section column" do
       user = insert(:user)
       section = insert(:section)
 
       assert {:ok, %LogEvent{} = event} =
                Auditing.capture(user, :section_created, section, %{
-                 "title" => section.title
+                 "section_title" => section.title
                })
 
       assert event.user_id == user.id
       assert event.section_id == section.id
       assert event.event_type == :section_created
-      assert event.details["title"] == section.title
+      assert event.details["section_title"] == section.title
     end
 
-    test "captures system action without actor" do
-      user = insert(:user)
+    test "drops detail keys outside the event contract" do
+      admin = insert(:author)
+      project = insert(:project)
 
-      assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(user, :user_deleted, nil, %{
-                 "setting" => "maintenance_mode",
-                 "value" => true
+      assert {:ok, event} =
+               Auditing.log_admin_action(admin, :project_published, project, %{
+                 "version" => "1.0",
+                 "setting" => "maintenance_mode"
                })
 
-      assert event.user_id == user.id
-      assert event.author_id == nil
-      assert event.event_type == :user_deleted
-      assert event.details["setting"] == "maintenance_mode"
+      assert event.details == %{"version" => "1.0"}
     end
 
-    test "fails with invalid event type" do
+    test "rejects event types outside the legacy producers" do
       user = insert(:user)
 
-      assert {:error, changeset} =
+      assert {:error, %Error{code: :invalid_event}} =
                Auditing.capture(user, :invalid_event_type, nil, %{})
-
-      assert errors_on(changeset)[:event_type]
     end
 
-    test "fails without actor" do
-      assert {:error, changeset} =
-               Auditing.capture(nil, :user_deleted, nil, %{})
+    test "rejects a nil actor without inventing a system actor" do
+      user = insert(:user)
 
-      assert errors_on(changeset)[:base]
+      assert {:error, %Error{code: :invalid_event, event_type: :user_deleted}} =
+               Auditing.capture(nil, :user_deleted, user, %{})
+    end
+  end
+
+  describe "build/2 and insert/1" do
+    test "writes an event that satisfies its contract" do
+      author = insert(:author)
+      project = insert(:project)
+      context = Context.for_actor(author, source: :ui)
+
+      assert {:ok, changeset} =
+               Auditing.build(context, %{
+                 event_type: :project_published,
+                 entity: {:project, project.id, project},
+                 scope: %{project_id: project.id},
+                 refs: [%{role: :resulting, type: :publication, id: 7, label: "1.0.0"}],
+                 details: %{project_title: project.title},
+                 event_key: "project:#{project.id}:published"
+               })
+
+      assert {:ok, event} = Auditing.insert(changeset)
+      assert event.operation_id == context.operation_id
+      assert event.details == %{"project_title" => project.title}
+      assert event.search_text =~ "1.0.0"
+      assert Auditing.get_event!(event.id, event.inserted_at).id == event.id
+    end
+
+    test "reports a skip event without changes as no changes" do
+      admin = insert(:author)
+      author = insert(:author)
+
+      assert {:error, :no_changes} =
+               Auditing.build(Context.for_actor(admin, source: :ui), %{
+                 event_type: :author_role_changed,
+                 entity: {:author, author.id, author},
+                 affected: {:author, author.id},
+                 event_key: "account:primary:author_role_changed"
+               })
+    end
+
+    test "returns a changeset when the row breaks its contract" do
+      author = insert(:author)
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Auditing.build(Context.for_actor(author, source: :ui), %{
+                 event_type: :project_published,
+                 entity: {:project, 1, %{}},
+                 event_key: "project:1:published"
+               })
+
+      assert errors_on(changeset)[:project_id]
+    end
+
+    test "append/3 writes inside a Multi and skips no-op events" do
+      author = insert(:author)
+      project = insert(:project)
+      context = Context.for_actor(author, source: :ui)
+
+      assert {:ok, %{published: %LogEvent{}, skipped: nil}} =
+               Ecto.Multi.new()
+               |> Auditing.append(:published, fn _changes ->
+                 Auditing.build(context, %{
+                   event_type: :project_published,
+                   entity: {:project, project.id, project},
+                   scope: %{project_id: project.id},
+                   event_key: "project:#{project.id}:published"
+                 })
+               end)
+               |> Auditing.append(:skipped, fn _changes -> :skip end)
+               |> Repo.transaction()
+    end
+
+    test "append/3 rolls back earlier steps when the event cannot be written" do
+      author = insert(:author)
+      context = Context.for_actor(author, source: :ui)
+
+      outside_every_partition =
+        LogEvent.v2_changeset(%LogEvent{}, %{
+          EventExamples.example(:project_published)
+          | inserted_at: ~U[1990-01-01 00:00:00.000000Z]
+        })
+
+      for {builder, code} <- [
+            {fn %{project: project} ->
+               Auditing.build(context, %{
+                 event_type: :project_published,
+                 entity: {:project, project.id, project},
+                 event_key: "project:#{project.id}:published"
+               })
+             end, :invalid_event},
+            {fn _changes -> {:ok, outside_every_partition} end, :partition_missing},
+            {fn _changes -> {:ok, nil} end, :invalid_event}
+          ] do
+        assert {:error, :event, %Error{code: ^code}, _changes} =
+                 Ecto.Multi.new()
+                 |> Ecto.Multi.insert(:project, build(:project, title: "Rolled back"))
+                 |> Auditing.append(:event, builder)
+                 |> Repo.transaction()
+
+        refute Repo.get_by(Project, title: "Rolled back")
+      end
+    end
+
+    test "build/2 takes only scope columns from the scope" do
+      author = insert(:author)
+      project = insert(:project)
+
+      assert {:ok, changeset} =
+               Auditing.build(Context.for_actor(author, source: :ui), %{
+                 event_type: :project_published,
+                 entity: {:project, project.id, project},
+                 scope: %{project_id: project.id, author_id: 999, actor_type: :system},
+                 event_key: "project:#{project.id}:published"
+               })
+
+      assert {:ok, event} = Auditing.insert(changeset)
+      assert {event.actor_type, event.author_id} == {:author, author.id}
+    end
+
+    test "inspecting an event or its changeset does not show identities or values" do
+      author = insert(:author, email: "redacted-author@example.edu")
+      project = insert(:project)
+
+      assert {:ok, changeset} =
+               Auditing.build(Context.for_actor(author, source: :ui), %{
+                 event_type: :project_published,
+                 entity: {:project, project.id, project},
+                 scope: %{project_id: project.id},
+                 details: %{project_title: "Secret Title"},
+                 event_key: "project:#{project.id}:published"
+               })
+
+      assert {:ok, event} = Auditing.insert(changeset)
+
+      for value <- [changeset, event], text = inspect(value) do
+        refute text =~ "redacted-author@example.edu"
+        refute text =~ "Secret Title"
+      end
     end
   end
 
   describe "list_events/1" do
     setup do
+      admin = insert(:author)
       user = insert(:user)
       author = insert(:author)
       project = insert(:project, authors: [author])
       section = insert(:section)
 
-      {:ok, event1} = Auditing.capture(user, :user_deleted, nil, %{"event" => "1"})
-      {:ok, event2} = Auditing.capture(author, :project_published, project, %{"event" => "2"})
-      {:ok, event3} = Auditing.capture(user, :section_created, section, %{"event" => "3"})
+      {:ok, event1} = Auditing.capture(admin, :user_deleted, insert(:user), %{})
+      {:ok, event2} = Auditing.capture(author, :project_published, project, %{})
+      {:ok, event3} = Auditing.capture(user, :section_created, section, %{})
 
       %{
         user: user,
@@ -115,21 +264,17 @@ defmodule Oli.AuditingTest do
     end
 
     test "lists all events", %{events: events} do
-      results = Auditing.list_events()
+      result_ids = Enum.map(Auditing.list_events(), & &1.id)
 
-      assert length(results) >= 3
-      event_ids = Enum.map(events, & &1.id)
-      result_ids = Enum.map(results, & &1.id)
-
-      Enum.each(event_ids, fn id ->
-        assert id in result_ids
+      Enum.each(events, fn event ->
+        assert event.id in result_ids
       end)
     end
 
     test "filters by user_id", %{user: user} do
       results = Auditing.list_events(user_id: user.id)
 
-      assert length(results) == 2
+      assert length(results) == 1
       assert Enum.all?(results, fn e -> e.user_id == user.id end)
     end
 
@@ -148,27 +293,20 @@ defmodule Oli.AuditingTest do
     end
 
     test "respects limit option" do
-      # Create more events
+      admin = insert(:author)
+
       for _ <- 1..10 do
-        user = insert(:user)
-        Auditing.capture(user, :user_deleted, nil, %{})
+        Auditing.capture(admin, :user_deleted, insert(:user), %{})
       end
 
-      results = Auditing.list_events(limit: 5)
-      assert length(results) == 5
+      assert length(Auditing.list_events(limit: 5)) == 5
     end
 
     test "orders by inserted_at desc by default", %{events: [_event1, _, event3]} do
-      results = Auditing.list_events()
-
-      # Most recent should be first (event3 was created last)
-      # Since there might be other events in the database, we check that event3
-      # appears before event1 in the results
-      event_ids = Enum.map(results, & &1.id)
+      event_ids = Enum.map(Auditing.list_events(), & &1.id)
       event3_index = Enum.find_index(event_ids, fn id -> id == event3.id end)
 
       assert event3_index != nil
-      # Should be in the first few results
       assert event3_index < 3
     end
 
@@ -197,116 +335,77 @@ defmodule Oli.AuditingTest do
     end
   end
 
-  describe "get_event!/1" do
+  describe "get_event!/2" do
     test "returns the event with given id" do
-      user = insert(:user)
-      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
+      admin = insert(:user)
+      {:ok, event} = Auditing.capture(admin, :user_deleted, insert(:user), %{})
 
-      fetched_event = Auditing.get_event!(event.id)
+      fetched_event = Auditing.get_event!(event.id, event.inserted_at)
       assert fetched_event.id == event.id
-      assert fetched_event.user_id == user.id
+      assert fetched_event.user_id == admin.id
       assert fetched_event.event_type == :user_deleted
     end
 
     test "raises if event does not exist" do
       assert_raise Ecto.NoResultsError, fn ->
-        Auditing.get_event!(999_999)
+        Auditing.get_event!(999_999, DateTime.utc_now())
       end
     end
 
     test "preloads associations" do
-      user = insert(:user)
-      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
-
-      fetched_event = Auditing.get_event!(event.id)
-      assert fetched_event.actor.id == user.id
-      assert fetched_event.actor.email == user.email
-    end
-  end
-
-  describe "convenience functions" do
-    test "log_user_action/3" do
-      user = insert(:user)
-
-      assert {:ok, event} = Auditing.log_user_action(user, :user_deleted, %{"test" => true})
-      assert event.user_id == user.id
-      assert event.details["test"] == true
-    end
-
-    test "log_author_action/3" do
-      author = insert(:author)
-
-      assert {:ok, event} = Auditing.log_author_action(author, :author_deleted, %{"test" => true})
-      assert event.author_id == author.id
-      assert event.details["test"] == true
-    end
-
-    test "log_admin_action/4" do
       admin = insert(:user)
-      project = insert(:project)
+      {:ok, event} = Auditing.capture(admin, :user_deleted, insert(:user), %{})
 
-      assert {:ok, event} =
-               Auditing.log_admin_action(
-                 admin,
-                 :project_published,
-                 project,
-                 %{"version" => "1.0"}
-               )
-
-      assert event.user_id == admin.id
-      assert event.project_id == project.id
-      assert event.details["admin_action"] == true
-      assert event.details["version"] == "1.0"
+      fetched_event = Auditing.get_event!(event.id, event.inserted_at)
+      assert fetched_event.actor.id == admin.id
+      assert fetched_event.actor.email == admin.email
     end
   end
 
   describe "LogEvent.actor_name/1" do
     test "returns user name when available" do
-      user = insert(:user, name: "John Doe")
-      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
-      event = Auditing.get_event!(event.id)
-
+      event = captured_by(insert(:user, name: "John Doe"))
       assert LogEvent.actor_name(event) == "John Doe"
     end
 
     test "returns user email when name is nil" do
-      user = insert(:user, name: nil, email: "user@example.com")
-      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
-      event = Auditing.get_event!(event.id)
-
+      event = captured_by(insert(:user, name: nil, email: "user@example.com"))
       assert LogEvent.actor_name(event) == "user@example.com"
     end
 
     test "returns author name when available" do
-      author = insert(:author, name: "Jane Author")
-      {:ok, event} = Auditing.capture(author, :author_deleted, nil, %{})
-      event = Auditing.get_event!(event.id)
-
+      event = captured_by(insert(:author, name: "Jane Author"))
       assert LogEvent.actor_name(event) == "Jane Author"
     end
 
     test "returns author email when name is nil" do
-      author = insert(:author, name: nil, email: "author@example.com")
-      {:ok, event} = Auditing.capture(author, :author_deleted, nil, %{})
-      event = Auditing.get_event!(event.id)
-
+      event = captured_by(insert(:author, name: nil, email: "author@example.com"))
       assert LogEvent.actor_name(event) == "author@example.com"
     end
 
-    test "returns User # when actor not loaded" do
-      user = insert(:user)
-      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
+    test "uses the stored snapshot when the account is not loaded" do
+      user = insert(:user, name: "Stored Name")
+      {:ok, event} = Auditing.capture(user, :user_deleted, insert(:user), %{})
 
-      # Don't preload associations
-      event = Repo.get!(LogEvent, event.id)
-      assert LogEvent.actor_name(event) == "User ##{user.id}"
+      event = Repo.get_by!(LogEvent, id: event.id)
+      assert event.actor == nil
+      assert LogEvent.actor_name(event) == "Stored Name"
     end
 
-    test "returns System for nil actor" do
-      user = insert(:user)
-      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
+    test "returns the account ID when nothing else is known" do
+      assert LogEvent.actor_name(%LogEvent{user_id: 7, actor_snapshot: %{}}) == "User #7"
+      assert LogEvent.actor_name(%LogEvent{author_id: 8, actor_snapshot: %{}}) == "Author #8"
+    end
 
-      assert LogEvent.actor_name(event) == "User ##{user.id}"
+    test "returns Unknown for migrated rows without an actor and the label for system actors" do
+      assert LogEvent.actor_name(%LogEvent{actor_type: :unknown, actor_snapshot: %{}}) ==
+               "Unknown"
+
+      assert LogEvent.actor_name(%LogEvent{
+               actor_type: :system,
+               actor_key: "provider_provisioning",
+               actor_snapshot: %{"label" => "Identity provider provisioning"}
+             }) == "Identity provider provisioning"
     end
   end
 
@@ -334,9 +433,16 @@ defmodule Oli.AuditingTest do
       assert LogEvent.event_description(event) == "Created section My Section"
     end
 
-    test "returns event type for unknown events" do
-      event = %LogEvent{event_type: :unknown_event, details: %{}}
-      assert LogEvent.event_description(event) == "unknown_event"
+    test "returns the catalog label for events without a custom description" do
+      event = %LogEvent{event_type: :student_exception_updated, details: %{}}
+
+      assert LogEvent.event_description(event) ==
+               Oli.Auditing.EventCatalog.label(:student_exception_updated)
     end
+  end
+
+  defp captured_by(actor) do
+    {:ok, event} = Auditing.capture(actor, :user_deleted, insert(:user), %{})
+    Auditing.get_event!(event.id, event.inserted_at)
   end
 end

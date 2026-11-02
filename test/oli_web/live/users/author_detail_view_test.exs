@@ -506,7 +506,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
           Auditing.list_events(event_type: :author_role_changed, order_by: [desc: :id], limit: 1)
 
         assert event.author_id == admin.id
-        assert event.resource_id == author.id
+        assert event.affected_author_id == author.id
         assert event.details["actor_name"] == admin.name
         assert event.details["actor_email"] == admin.email
         assert event.details["author_name"] == author.name
