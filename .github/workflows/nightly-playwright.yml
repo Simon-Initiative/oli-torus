@@ -432,7 +432,7 @@ jobs:
         run: mix deps.compile
 
       - name: Build project
-        run: set -a; source oli.env && mix compile --force --warnings-as-errors
+        run: set -a; source oli.env && mix compile --warnings-as-errors
 
       - name: Run nightly scenarios
         run: |

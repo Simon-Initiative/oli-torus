@@ -52,7 +52,7 @@ Every domain PR below inherits these tasks and gates; they are not deferred to f
 
 All Mix commands require scoped escalated permissions on the first attempt under AGENTS.md. The repository's `mix test` alias drops, creates and migrates its target database: verify an explicitly isolated test database and environment/URL precedence before using any test command below. These are planned commands, not commands executed during planning. Never reset/migrate the shared development database.
 
-- Per slice: `mix format --check-formatted`; forced `mix compile --force --warnings-as-errors` and the appropriate test-environment compile after PR-02; targeted `mix test` files listed below, plus the new audit tests delivered by the slice.
+- Per slice: `mix format --check-formatted`; `mix compile --warnings-as-errors` and the appropriate test-environment compile after PR-02; targeted `mix test` files listed below, plus the new audit tests delivered by the slice.
 - For schema work only: generate each migration with `mix ecto.gen.migration <descriptive_name>`, then implement explicit `up/0` and `down/0`. Rehearsal commands and disposable database identities must be recorded in the storage design before execution; do not put a destructive copy-paste command against the shared database here.
 - Scenario work: validate actual YAML with `Oli.Scenarios.validate_file/1`, then execute its ExUnit runner with real directives/application paths. Final browser acceptance uses the configured Playwright workflow; use `run-server` on port 4000 if local UI verification is needed.
 - If TypeScript/React changes are actually needed, run targeted tests, lint and formatting under `assets/`; otherwise do not add unrelated frontend work.
@@ -123,7 +123,7 @@ All Mix commands require scoped escalated permissions on the first attempt under
 
 - [ ] Install/configure Boundary and extract only the selected user-deletion mutation. Implement the actor-aware coordinator, historical identity capture and shared transaction; remove duplicate manual capture.
 - [ ] Classify callers and protect only the audited account internals, as narrowed by the owner on 2026-11-03. Preserve existing cross-context calls. Prove read-context, web and Scenario callers cannot statically call the private mutation; retain outgoing checks on callers and incoming checks on the independent audited boundary.
-- [ ] Add forced compilation with warnings as errors to relevant CI builds. Serialize concurrent deletions with a lock on the target user row; a repeated attempt finds no user and appends nothing. No replay protocol in this pilot (owner decision, 2026-11-03): replay is designed in the first asynchronous workflow (PR-04).
+- [ ] Enable the Boundary compiler in the existing warnings-as-errors CI builds (no `--force`: Boundary rechecks stored references on every compile). Serialize concurrent deletions with a lock on the target user row; a repeated attempt finds no user and appends nothing. No replay protocol in this pilot (owner decision, 2026-11-03): replay is designed in the first asynchronous workflow (PR-04).
 
 ### Testing Tasks
 

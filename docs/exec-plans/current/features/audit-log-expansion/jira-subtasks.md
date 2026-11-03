@@ -61,7 +61,7 @@ Implementation:
 
 - [ ] Install/configure Boundary and extract only the selected user-deletion mutation. Implement the actor-aware coordinator, historical identity capture and shared transaction; remove duplicate manual capture.
 - [ ] Inventory compiler dependencies and exact legacy exceptions. Prove read-context, web and Scenario callers cannot statically call the private mutation; no broad outgoing/incoming-check disable.
-- [ ] Add forced compilation with warnings as errors to relevant CI builds. Serialize concurrent deletions with a lock on the target user row; a repeated attempt finds no user and appends nothing. No replay protocol in this pilot (owner decision, 2026-11-03): replay is designed in the first asynchronous workflow (PR-04).
+- [ ] Enable the Boundary compiler in the existing warnings-as-errors CI builds (no `--force`: Boundary rechecks stored references on every compile). Serialize concurrent deletions with a lock on the target user row; a repeated attempt finds no user and appends nothing. No replay protocol in this pilot (owner decision, 2026-11-03): replay is designed in the first asynchronous workflow (PR-04).
 
 Validation:
 
