@@ -41,7 +41,7 @@ Every domain PR below inherits these tasks and gates; they are not deferred to f
 
 1. Complete a per-action/per-field caller matrix from the inventory: UI, API, MCP, bulk, worker, Scenario, internal composition, direct `Repo` writes and dynamic invocation. Assign every hit to migrated, internal/composed, or excluded with a reason and test reference. An empty lexical search is not evidence of absence.
 2. Close generic-update bypasses. For example, protecting `lock_user` is insufficient if unaudited `update_user` can still change the lock field. Move the raw write under the boundary and route protected attributes through an actor-aware command; restrict transitional APIs to explicitly unmigrated/derived fields, rejecting protected fields without trusted context. Mixed maps must compose the proper policies. If that cannot preserve behavior safely, pull the coupled callers into the same PR; only if execution demonstrates excessive size, discuss a split with the owner. Boundary alone cannot enforce field-level rules.
-3. Keep authorization, persisted before-state, raw mutation and required event writes in the correct transaction. Preserve locks, result shapes and post-commit cache/broadcast behavior. Define no-op, nested/bulk cardinality, safe errors and replay semantics per command. For async work, establish the protocol inside the first actual async coverage workflow and reuse it thereafter; classify partial/unknown outcomes truthfully. No separate pilot PR is planned.
+3. Keep authorization, persisted before-state, raw mutation and required event writes in the correct transaction. Preserve locks, result shapes and post-commit cache/broadcast behavior. Define no-op, nested/bulk cardinality and safe errors per command. Synchronous commands rely on the transaction and target row locks to avoid duplicate evidence and need no replay protocol. For async work, establish the replay protocol inside the first actual async coverage workflow (PR-04) and reuse it thereafter; classify partial/unknown outcomes truthfully. No separate pilot PR is planned.
 4. Keep event-specific allowlists, deleted identities and actor-versus-subject assertions. Remove superseded manual captures in the same slice. Existing tests remain; adapt public behavior tests to audited operations, while narrowly scoped internal tests may exercise raw mutations. Factories remain suitable for unrelated fixtures and contract inserts.
 5. Migrate each affected Scenario directive in its owning domain PR. Use the build_scenario skill for actual scenario authoring and extend_scenario only if required capability is missing. Setup PW is the explicit bootstrap actor; publishing/section/enrollment use the represented author/instructor. Do not create a global Scenario bypass. Changes to shared test support/configuration require the full clean-output suite.
 6. Add meaningful success/failure/authorization/no-op/audit-failure rollback and duplicate/retry tests at application and supported transport boundaries, not just mocks of `capture`. Record tested revision and commands. Force Boundary checks, format, and run targeted tests before broader risk-driven checks. Full integration QA remains additive.
@@ -123,11 +123,11 @@ All Mix commands require scoped escalated permissions on the first attempt under
 
 - [ ] Install/configure Boundary and extract only the selected user-deletion mutation. Implement the actor-aware coordinator, historical identity capture and shared transaction; remove duplicate manual capture.
 - [ ] Classify callers and protect only the audited account internals, as narrowed by the owner on 2026-11-03. Preserve existing cross-context calls. Prove read-context, web and Scenario callers cannot statically call the private mutation; retain outgoing checks on callers and incoming checks on the independent audited boundary.
-- [ ] Add forced compilation with warnings as errors to relevant CI builds. Demonstrate per-operation replay serialization, including deletion after the target no longer exists, without a coordination table.
+- [ ] Add forced compilation with warnings as errors to relevant CI builds. Serialize concurrent deletions with a lock on the target user row; a repeated attempt finds no user and appends nothing. No replay protocol in this pilot (owner decision, 2026-11-03): replay is designed in the first asynchronous workflow (PR-04).
 
 ### Testing Tasks
 
-- [ ] Prove real delete + event, authorization denial, mutation failure and injected audit failure rollback; concurrent retry emits one semantic success even across a partition boundary.
+- [ ] Prove real delete + event, authorization denial, mutation failure and injected audit failure rollback; concurrent deletions of the same user commit exactly one semantic success.
 - [ ] Run allowed and intentionally forbidden compilation fixtures; document .exs/test-support checking limits and direct SQL/dynamic invocation limits.
 - [ ] Apply the common actor/privacy/authorization/atomicity/cardinality and supported-entry tests throughout the PR; update actual proof references.
 - Existing regression command (only after isolated DB verification): `mix test test/oli/accounts_test.exs test/oli_web/live/users`. Add the new audit tests for each internal block.
@@ -139,7 +139,7 @@ All Mix commands require scoped escalated permissions on the first attempt under
 
 ### Gate
 
-- Compiled allowed/forbidden examples and real transaction/replay tests pass before broad Boundary replication.
+- Compiled allowed/forbidden examples and real transaction tests pass before broad Boundary replication.
 
 ### Dependencies
 
@@ -167,14 +167,14 @@ All Mix commands require scoped escalated permissions on the first attempt under
 - [ ] Preserve domain validation and safe response shapes; do not serialize password/email-verification inputs as arbitrary audit details.
 - [ ] Map every session entry point, including the lower-level create/install helpers and Playwright session setup, to one semantic issuance/revocation boundary.
 - [ ] Compose account linking and necessary profile/preferences writes without recapturing login. Define token persistence versus cookie delivery and server-side revocation semantics.
-- [ ] Audit recovery lifecycle without storing tokens or credential hashes; document authenticated replay behavior and secret-bearing response limits.
+- [ ] Audit recovery lifecycle without storing tokens or credential hashes; document retry behavior (a reused one-time token fails and records no new success) and secret-bearing response limits.
 - [ ] Introduce typed organization scopes and migrate settings/association writers, including bulk community membership and publisher defaults.
 - [ ] Audit research-consent configuration separately from an individual accepting consent or saving preferences.
 - [ ] Map organization/platform/section configuration inputs and safe-field policies; never capture JWKS secrets, signed launches or external credentials.
 - [ ] Coordinate registration/deployment and external-tool relationship changes, preserving existing provisioning and deep-link flows; compose with remix/publication operations without duplicates.
 - [ ] Explicitly locate roster synchronization and grade-passback policy writers, distinguishing them from routine synchronization/reporting.
 - [ ] Implement provider/configuration safe projections and credential lifecycle builders using stable non-secret IDs.
-- [ ] Route admin and project credential callers with actor/owner separation; preserve one-time credential responses without putting their values or hashes into audit/replay data.
+- [ ] Route admin and project credential callers with actor/owner separation; preserve one-time credential responses without putting their values or hashes into audit data.
 - [ ] Move existing capture ownership to shared audited coordinators while preserving the seven event names and typed scope.
 - [ ] Keep atomic feature-group behavior and post-commit cache invalidation; update all helper callers rather than layering a second capture.
 - [ ] Implement the account/access/provisioning and auth work first, then organization/integration/service/credential/flag configuration within this same PR. Do not turn these internal blocks into separate PRs.
@@ -285,7 +285,7 @@ All Mix commands require scoped escalated permissions on the first attempt under
 - [ ] Enumerate persisted DOT/activation keys at all three scopes, including revision content edits; migrate configuration writers and safe prompt projections.
 - [ ] Audit toggles and saved instructor prompts through section coordination. Treat trigger-point invocation as an exclusion/control case: its API invokes runtime behavior, not a settings mutation.
 - [ ] Audit the committed diff at Remix.save, preserving the existing transaction across hierarchy, materialization and external-tool deep-link mappings.
-- [ ] Coordinate manual and worker publication updates with initiator/system attribution and replay semantics; audit auto-update policy changes independently.
+- [ ] Coordinate manual and worker publication updates with initiator/system attribution, and replay semantics for the worker path; audit auto-update policy changes independently.
 - [ ] Compare persisted before/after curriculum per semantic entry; do not capture each intermediate in-memory drag or helper call.
 - [ ] Reuse the existing section-creation transactional sink pattern and consolidate all manual captures, including Scenario creation.
 - [ ] Classify the entity type and lifecycle/status transition; route API, author workspace, instructor creation and source-copy paths with correct actor.
@@ -474,7 +474,7 @@ Prefer the sequential PR order while sharing Accounts, Course, Sections and Inst
 | Gate | Required evidence | Owner |
 | --- | --- | --- |
 | Storage | Full payload model and insert cases; partition rationale; guarded migration, retirement and recovery | PR-01 |
-| Architecture | Static Boundary/CI proof and real action + audit transaction/replay | PR-02 |
+| Architecture | Static Boundary/CI proof and real action + audit transaction | PR-02 |
 | Domain coverage | Caller/field map, per-block tests, no duplicate events or unsafe bypass | Each of PR-03–PR-06 |
 | Async correctness | Actual job retries/terminal outcomes, crash recovery and pruning; no speculative registry | First async workflow in PR-04; reused/verified in PR-05/06 |
 | Settings history | Sanitized conversion, effective settings intact, source retired safely | PR-05 |
@@ -521,7 +521,7 @@ Document status describes planning coverage, not implemented behavior. Phase 8 v
 | FR-032 | AC-079, AC-080, AC-081, AC-082 | 1 | v1/v2 checks, bounded conversion, safe retirement/down/roll-forward |
 | FR-033 | AC-083, AC-084, AC-085, AC-086 | 5 | Source provenance/collisions/redaction and effective-settings invariance |
 | FR-034 | AC-087, AC-088, AC-089, AC-090 | 1, 7 | Search/filter/display/accessibility/pagination tests |
-| FR-035 | AC-091, AC-092 | 2, 7 | Admin-only page and domain/tenant/replay authorization |
+| FR-035 | AC-091, AC-092 | 2, 7 | Admin-only page and domain/tenant authorization; async replay authorization from PR-04 |
 | FR-036 | AC-093, AC-094, AC-095 | 2 | Private topology compilation fixtures and caller bypass checks |
 | FR-037 | AC-096, AC-097, AC-098 | 3, 4, 5, 6, 8 | Real directive paths and represented actors, no blanket bypass |
 | FR-038 | AC-099, AC-100, AC-101 | 1, 2, 8 | Per-PR tests and combined revision-bound QA/approval |
