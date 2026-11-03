@@ -3,9 +3,14 @@ defmodule Oli.RuntimeLogOverrides do
   Local-node runtime log override management for admin-applied overrides.
   """
 
+  import Ecto.Query, only: [from: 2]
+
   require Logger
 
-  alias Oli.RuntimeLogOverrides.Registry
+  alias Oli.Repo
+  alias Oli.RuntimeLogOverrides.{DebugLevelRevertWorker, DebugRevertConfig, Registry}
+
+  @pending_job_states ["available", "scheduled", "retryable"]
 
   @type override_state :: %{modules: list(map()), processes: list(map())}
   @type error_reason :: :invalid_level | :invalid_module
@@ -13,6 +18,32 @@ defmodule Oli.RuntimeLogOverrides do
   @spec list_overrides() :: override_state()
   def list_overrides do
     Registry.list_overrides()
+  end
+
+  @doc """
+  Sets the global log level on the local node.
+
+  When the level is `:debug`, schedules a `DebugLevelRevertWorker` job that reverts this node to
+  the configured level after the configured timeout (see `DebugRevertConfig`). Any pending revert
+  job for this node is cancelled first, so enabling `:debug` again restarts the timer.
+  """
+  @spec set_global_level(atom() | String.t()) :: {:ok, Logger.level()} | {:error, term()}
+  def set_global_level(level) do
+    # Schedule before applying so `:debug` is never enabled without a pending revert.
+    with {:ok, validated_level} <- validate_level(level),
+         :ok <- maybe_schedule_debug_revert(validated_level),
+         :ok <- Logger.configure(level: validated_level) do
+      Logger.info("Global log level set to #{validated_level} node=#{node()}")
+
+      {:ok, validated_level}
+    else
+      {:error, reason} = error ->
+        Logger.warning(
+          "Global log level change failed level=#{inspect(level)} reason=#{inspect(reason)} node=#{node()}"
+        )
+
+        error
+    end
   end
 
   @spec set_module_level(String.t(), atom() | String.t()) ::
@@ -47,6 +78,37 @@ defmodule Oli.RuntimeLogOverrides do
         log_failed_module_override("clear", module_name, nil, error)
         error
     end
+  end
+
+  defp maybe_schedule_debug_revert(:debug) do
+    node_name = Atom.to_string(node())
+
+    Repo.transaction(fn ->
+      {:ok, _cancelled} = Oban.cancel_all_jobs(pending_revert_jobs(node_name))
+
+      %{
+        "node" => node_name,
+        "revert_level" => Atom.to_string(DebugRevertConfig.revert_level())
+      }
+      |> DebugLevelRevertWorker.new(schedule_in: DebugRevertConfig.timeout_minutes() * 60)
+      |> Oban.insert!()
+    end)
+    |> case do
+      {:ok, _job} -> :ok
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp maybe_schedule_debug_revert(_level), do: :ok
+
+  defp pending_revert_jobs(node_name) do
+    worker = Oban.Worker.to_string(DebugLevelRevertWorker)
+
+    from(j in Oban.Job,
+      where:
+        j.worker == ^worker and j.state in @pending_job_states and
+          fragment("?->>'node' = ?", j.args, ^node_name)
+    )
   end
 
   defp parse_module(module_name) when is_binary(module_name) do
