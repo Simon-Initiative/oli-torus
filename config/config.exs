@@ -154,6 +154,10 @@ config :oli, :xapi_upload_pipeline,
 
 config :oli, :xapi_host_name, "localhost"
 
+# Admin-enabled global debug logging is reverted to this level after this many minutes.
+# Overridden at runtime by DEBUG_LOG_LEVEL_TIMEOUT_MINUTES and DEBUG_LOG_LEVEL_REVERT_LEVEL.
+config :oli, :debug_log_level_revert, timeout_minutes: 30, revert_level: :warning
+
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do
     nil -> Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator

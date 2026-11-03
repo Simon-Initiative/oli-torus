@@ -71,6 +71,11 @@ case System.get_env("LOG_LEVEL", nil) do
     config :logger, level: String.to_existing_atom(log_level)
 end
 
+# Admin-enabled global debug logging is automatically reverted after a timeout
+config :oli,
+       :debug_log_level_revert,
+       Oli.RuntimeLogOverrides.DebugRevertConfig.from_env!()
+
 if get_env_as_boolean.("APPSIGNAL_ENABLE_LOGGING", "false") do
   config :oli, :appsignal_logger_backend, group: "phoenix"
 end
