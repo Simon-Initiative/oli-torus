@@ -12,7 +12,15 @@ defmodule OliWeb.Analytics.Catalog do
   @external_resource @path
   @catalog @path |> File.read!() |> Jason.decode!()
 
-  @event_parameters @catalog["event_parameters"]
+  # dollar_endonly keeps "$" from matching before a trailing newline, as in JavaScript.
+  @event_parameters Map.new(@catalog["event_parameters"], fn
+                      {name, %{"pattern" => pattern} = definition} ->
+                        {name,
+                         %{definition | "pattern" => Regex.compile!(pattern, [:dollar_endonly])}}
+
+                      entry ->
+                        entry
+                    end)
   @events @catalog["events"]
 
   @doc "Returns the decoded catalog."
@@ -59,9 +67,8 @@ defmodule OliWeb.Analytics.Catalog do
 
   defp valid?(%{"values" => values}, value) when is_binary(value), do: Map.has_key?(values, value)
 
-  # dollar_endonly keeps "$" from matching before a trailing newline, as in JavaScript.
   defp valid?(%{"pattern" => pattern}, value) when is_binary(value),
-    do: pattern |> Regex.compile!([:dollar_endonly]) |> Regex.match?(value)
+    do: Regex.match?(pattern, value)
 
   defp valid?(_definition, _value), do: false
 end
