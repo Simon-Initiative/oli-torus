@@ -12,14 +12,14 @@ Status: implementation authorized through checkpoint A on 2026-11-03, after the 
 
 ## 1. Slice Summary
 
-Make user deletion an audited application command and prove the dependency boundary before extending it to other domains. Today `Accounts.delete_user/1` calls `Repo.delete/1`; `UsersDetailView` records `user_deleted` afterward and ignores the capture result. Replace that split with authorization, persisted-state capture, deletion, and the required event in one transaction.
+Make user deletion an audited application command and prove the dependency boundary before extending it to other domains. Today `Accounts.delete_user/1` calls `Repo.delete/1`; `UsersDetailView` records `user_deleted` afterward and ignores the capture result. Replace that split with persisted-state capture, deletion, and the required event in one transaction. Authorization stays in the route's account-administrator plug (owner decision, 2026-11-03).
 
 In scope:
 - `Oli.Accounts.Audited` as the shared facade, with unexported `Oli.Accounts.Audited.Mutations` inside its boundary.
 - Existing account-admin/system-admin deletion through the user-detail LiveView and application callers; removal of `Accounts.delete_user/1` and the LiveView's manual capture.
 - Serializing concurrent deletions of the same user through the target row lock, so a repeated attempt appends nothing.
 - Boundary classification limited to the audited account internals, allowed/forbidden compilation fixtures, and forced compilation in CI.
-- Transaction, authorization, historical identity, failure, concurrency, transport, and compatibility tests. Implementation evidence goes in `phase-2-execution.md`.
+- Transaction, historical identity, failure, concurrency, transport (including the unchanged route authorization), and compatibility tests. Implementation evidence goes in `phase-2-execution.md`.
 - An explicit inventory classification for technical test cleanup, so its direct writes are neither hidden nor mistaken for administrative commands (section 4.5).
 
 Out of scope: a replay protocol (owner decision, 2026-11-03; see section 4.3), author deletion, other account lifecycle actions, authentication, general account field migration, new transport endpoints, a general operation registry, async orchestration, additional storage migrations, Audit Log UI redesign, and automatic retention. Existing audit storage and the remaining legacy producers stay compatible. No partial feature deployment is implied.
@@ -30,7 +30,7 @@ These are design mappings, not implementation proof. Keep `requirements.yml` at 
 
 | Requirement / criteria | This slice's responsibility and planned proof |
 | --- | --- |
-| FR-003 / AC-008, AC-009 | One deletion/event transaction; authorization, domain failure, injected audit insert failure, and enclosing-Multi rollback tests |
+| FR-003 / AC-008, AC-009 | One deletion/event transaction; domain failure, injected audit insert failure, and enclosing-Multi rollback tests |
 | FR-003 / AC-010 | Canceling the confirmation writes nothing; an absent target, including a repeated attempt, is not a new successful deletion |
 | FR-004 / AC-011, AC-012, AC-014 | Caller matrix, one semantic event, removal of manual capture, concurrent deletions of one user commit exactly one event |
 | FR-004 / AC-013 | No bulk account-deletion endpoint exists in the inspected routes. No bulk protocol is introduced; future bulk commands need target-specific event keys |
@@ -38,7 +38,7 @@ These are design mappings, not implementation proof. Keep `requirements.yml` at 
 | FR-007 / AC-022, AC-023 | Creation/access/link/recovery remain PR-03; this pilot must not claim them complete |
 | FR-029 / AC-069 | Preserve `user_deleted` contract, exactly once; preserve other legacy producer behavior through regression suites |
 | FR-029 / AC-070, AC-071 | Existing flag/rollout and ClickHouse initiation semantics remain unchanged; run existing relevant compatibility tests |
-| FR-035 / AC-092 | Recheck persisted administrator authorization inside the transaction; reject untrusted/malformed context and tampered target IDs |
+| FR-035 / AC-092 | Keep the existing route plug (`:require_authenticated_account_admin`) as the authorization; the command adds no permission check. Reject malformed context and tampered target IDs; supplying a context grants nothing beyond the route's check |
 | FR-035 / AC-091 | Existing system-admin Audit Log access remains unchanged; account-delete permission does not grant Audit Log access |
 | FR-036 / AC-093 | Public command and composable Multi builder; raw mutation contains no auditing; existing reads remain available |
 | FR-036 / AC-094, AC-095 | Compiled positive/negative fixtures in actual Torus configuration, removal of old API, classified direct/dynamic writes, legacy compatibility and documented checking limits |
@@ -55,7 +55,7 @@ The supplied lexical inventory is a starting point. Design inspection followed t
 | --- | --- |
 | `lib/oli/accounts.ex`, `delete_user/1` | Raw public shortcut; remove, do not retain an actorless compatibility wrapper |
 | `lib/oli_web/live/users/user_detail_view.ex`, `delete_account` | Production UI caller; migrate to the facade, remove `log_admin_action/4` for this action |
-| `test/oli/accounts_test.exs`, user deletion test | Public behavior test; supply an authorized context and assert deletion plus persisted evidence |
+| `test/oli/accounts_test.exs`, user deletion test | Public behavior test; supply an author context and assert deletion plus persisted evidence |
 | `test/oli_web/controllers/page_delivery_controller_test.exs`, skipped account-deletion scenario | Update the user-deletion call even though the test is skipped; preserve its existing skip and author-deletion behavior. Use a separate live administrator, not the author deleted earlier in the test |
 | `lib/oli/automation_setup.ex`, `teardown_user/4` | Technical automation cleanup: validates account credentials/name, removes `StudentResponse` rows, then calls `Repo.delete!`. Explicitly excluded from administrative deletion; see section 4.5 |
 | `lib/oli_web/controllers/api/automation_setup_controller.ex`, `/api/v1/automation_teardown` | Adapter used by E2E teardown; protected by an automation-enabled API key. No change proposed in this slice |
@@ -82,7 +82,7 @@ The owner narrowed the scope on 2026-11-03: protect the private audited account 
 | Boundary / module | Configuration and responsibility |
 | --- | --- |
 | `Oli` and `OliWeb` | `deps: [Oli.Accounts.Audited]`, `check: [in: false]`; preserve unrestricted incoming legacy calls while retaining outgoing checks |
-| `Oli.Accounts.Audited` | `top_level?: true`, `exports: []`; both checks enabled, public facade and private implementation |
+| `Oli.Accounts.Audited` | `top_level?: true`, `exports: []`, `check: [out: false]`; incoming checks enabled, public facade and private implementation. Outgoing checks are off because the facade calls `Oli`, which depends on it, and Boundary rejects dependency cycles (checkpoint B, 2026-11-03) |
 | `Oli.Accounts.Audited.Mutations` | Ordinary private module owned by the audited boundary; raw deletion only |
 | `Oli.Application` | Remains part of `Oli`; no additional startup boundary |
 | Mix tasks | Explicitly classified directly into `Oli`; reuse its existing rules without a separate task boundary |
@@ -109,7 +109,6 @@ Public `Oli.Auditing.build/2` and `append/3` remain the storage API. The pilot c
 
 @type delete_error ::
         :invalid_request
-        | :unauthorized
         | :not_found
         | :delete_failed
         | :nested_transaction
@@ -130,9 +129,9 @@ Public `Oli.Auditing.build/2` and `append/3` remain the storage API. The pilot c
 
 The Multi builder puts the safe result at the supplied name and uses tuple-prefixed private step names. It never commits. Reusing a step name is a programming error. A later failing outer step rolls back the deletion and event. Callers must not return a Multi error tuple from a transaction callback as though it were success.
 
-The administrator entry accepts only a valid `Context` for an authenticated author, a positive integer user ID, a non-nil valid UUID operation ID, and supported source/correlation values. No client-supplied actor ID, role, audit sink, version, skip flag, or result payload is accepted by the transport. Because Elixir structs are not capabilities, the application trusts authenticated adapter construction and separately reloads authorization; it does not claim that a forged in-process struct establishes identity.
+The administrator entry accepts only a valid `Context` for an authenticated author, a positive integer user ID, a non-nil valid UUID operation ID, and supported source/correlation values. No client-supplied actor ID, role, audit sink, version, skip flag, or result payload is accepted by the transport. Because Elixir structs are not capabilities, the application trusts authenticated adapter construction; it does not claim that a forged in-process struct establishes identity.
 
-Inside the transaction, load the author with `FOR SHARE`; require a current account-admin or system-admin role, confirmed email, and an unlocked account, matching the route's authenticated-account-admin policy. Missing/revoked/locked actors receive `:unauthorized`. Rebuild the actor snapshot from that persisted row while retaining the trusted context's operation/source/parent IDs. Concurrent role or lock updates wait until the decision commits; later attempts see the change.
+The command does not authorize the actor (owner decision, 2026-11-03). MER-6066 and AC-092 require keeping each action's existing authorization, and for this action that is the route's `:require_authenticated_account_admin` plug, which checks a confirmed, unlocked account or system administrator. Reloading the author inside the transaction was considered and dropped: it adds a query to every deletion to guard a role change between mount and click, which Torus does not guard elsewhere. The event's actor snapshot comes from the context, built from the authenticated `current_author`. The `@doc` states that callers must authorize before calling.
 
 ### 4.2 Internal mutation and event
 
@@ -147,7 +146,7 @@ Build one existing `user_deleted` event with `Auditing.build/2`, then append wit
 
 | Attribute | Value |
 | --- | --- |
-| Actor | Persisted authorized author, separate from affected user |
+| Actor | Author from the trusted context, separate from affected user |
 | Entity / affected | `{:user, user.id, safe_identity}` / `{:user, user.id}` |
 | Snapshot | Only `id`, `name`, `email` from the locked row; no whole-account serialization |
 | Event key / outcome | `account:primary:deleted` / `:succeeded` |
@@ -163,14 +162,14 @@ Expected domain/constraint failures map to safe command errors; audit errors ret
 
 Owner decision, 2026-11-03: this pilot implements no replay protocol. MER-6066 requires no duplicate events, not retry receipts, and user deletion is naturally idempotent. The earlier proposal (operation advisory lock, all-partition completion lookup, `:already_applied` and `:operation_conflict`) is withdrawn; the FDD (section 7.1) assigns replay to asynchronous and external workflows, starting with PR-04.
 
-1. Begin the transaction and load/authorize the actor under its shared row lock.
+1. Begin the transaction.
 2. Load the user `FOR UPDATE`; absence returns `:not_found`. Then delete, build, append, and commit.
 
-Concurrent deletions of the same user, from a double submission, a retry, or two administrators, serialize on the user row. The winner commits the deletion and one event; the others wait, find no user, and return `:not_found` without writing anything. A failed, unauthorized, or canceled request leaves no event, and a rolled-back attempt can simply be repeated. Every supported writer of this command uses the same transaction.
+Concurrent deletions of the same user, from a double submission, a retry, or two administrators, serialize on the user row. The winner commits the deletion and one event; the others wait, find no user, and return `:not_found` without writing anything. A failed or canceled request leaves no event, and a rolled-back attempt can simply be repeated. Every supported writer of this command uses the same transaction.
 
 ### 4.4 LiveView integration
 
-Keep the current modal's appearance and flow. On confirmation, delete the user bound in `socket.assigns.user`, ignoring any client-submitted ID that does not match it, and build a fresh trusted context from the authenticated author. Do not preload the target outside the transaction. `{:ok, _}` keeps the existing success flash/navigation; `:not_found` and other errors use the existing failure flash. A repeated confirmation after a successful deletion therefore reports not found, as it does today. Remove the manual `log_admin_action/4`. Recheck actor authorization inside the coordinator even if HTTP route plugs already passed.
+Keep the current modal's appearance and flow. On confirmation, delete the user bound in `socket.assigns.user`, ignoring any client-submitted ID that does not match it, and build a fresh trusted context from the authenticated author. Do not preload the target outside the transaction. `{:ok, _}` keeps the existing success flash/navigation; `:not_found` and other errors use the existing failure flash. A repeated confirmation after a successful deletion therefore reports not found, as it does today. Remove the manual `log_admin_action/4`. Authorization remains the route plug.
 
 A fresh mount after deletion continues to show the existing not-found behavior. There is no new client storage or idempotency endpoint.
 
@@ -186,7 +185,7 @@ This does not exempt represented business actions exercised by tests: clicking a
 
 ## 5. Data Flow & Edge Cases
 
-The administrator path is: modal confirmation → audited facade → transaction → current actor authorization → locked user → raw Ecto deletion → safe event build/append → commit → flash/navigation. No notification/cache effect currently belongs to `Accounts.delete_user/1`; do not add one. Composed callers keep their own effects after their outer commit.
+The administrator path is: modal confirmation → audited facade → transaction → locked user → raw Ecto deletion → safe event build/append → commit → flash/navigation. No notification/cache effect currently belongs to `Accounts.delete_user/1`; do not add one. Composed callers keep their own effects after their outer commit.
 
 | Situation | Required result |
 | --- | --- |
@@ -194,9 +193,8 @@ The administrator path is: modal confirmation → audited facade → transaction
 | Audit validation/insert or missing-partition failure | User and cascaded rows restored by rollback; no new success; safe audit error |
 | FK/domain failure | Existing delete semantics preserved; no event and no partial association cleanup |
 | Concurrent or repeated deletion of the same user | One deletion and one event; the others return `:not_found` and write nothing |
-| Current actor revoked, locked, unconfirmed, or deleted | `:unauthorized` before target access |
 | Absent target | `:not_found`, no success event |
-| Actor/user identity updated before execution | Persisted locked identity supplies the new event; UI copies are ignored |
+| User identity updated before execution | The locked user row supplies the entity snapshot; UI copies are ignored |
 | Actor renamed after deletion | Historical snapshots stay unchanged |
 | Outer Multi fails after this operation | Roll back user deletion and event; the deletion can later be attempted again |
 | Same user ID and author ID | Distinct typed identities; no cross-type cleanup or attribution |
@@ -234,13 +232,13 @@ Test policy, clarified before implementation: unrelated fixtures and technical c
 
 Proposed new suites: `test/oli/accounts/audited_test.exs` and `test/oli/accounts/audited_concurrency_test.exs`. Use existing account and LiveView suites for regression rather than duplicating all account tests.
 
-- Exercise real successful deletes for both account-admin and system-admin; deny content-admin, ordinary author, user, system context, malformed context, and stale/revoked/locked/unconfirmed actor.
-- Assert actor/affected separation, persisted target identity, one event, safe details/search text, event-time identity after rename/deletion, and absence of marker secrets in payloads/errors/captured logs.
+- Exercise a real successful delete; reject user, system, and malformed contexts and invalid user IDs with `:invalid_request`.
+- Assert actor/affected separation, persisted target identity, one event, safe details/search text, event-time identity after deletion, and absence of marker secrets in payloads/errors/captured logs.
 - Cover an actual FK failure and existing cascading association behavior. Insert a test-only failure trigger, scoped to the tested operation, inside a rollback-isolated database test to force a real audit insert failure after deletion. No production sink override. Assert both the user and cascaded rows survive; capture intentional logs.
 - Exercise the Multi builder inside an outer failing transaction and verify no independent commit. Verify the convenience command rejects nested use.
 - Cover a missing user, a repeated deletion after success, and retry after a rolled-back attempt.
 - Use independent database sessions with an explicit barrier to prove waiting and exactly one committed success when two calls delete the same user concurrently. A shared Sandbox connection is not concurrency proof. Also test a role-revocation race.
-- Confirm/cancel the real LiveView modal; reject tampered target IDs and demotion after mount. Verify existing success/navigation and failure flashes, and that no manual capture duplicates the event.
+- Confirm/cancel the real LiveView modal; reject tampered target IDs; keep the route test that a non-administrator cannot reach the page. Verify existing success/navigation and failure flashes, and that no manual capture duplicates the event.
 - Preserve audit readers/catalog/legacy adapter regression coverage. No renamed/released event names or blanket removal of compatibility fixtures.
 
 Concurrency tests run `async: false` in `oli_test`. When committed fixtures are necessary for independent sessions, isolate them with tracked IDs, stop and await all tasks/connections, and clean up in `try/after` before releasing the test. Remove only those test events using a scoped transaction-local append-only override; remove only owned account/dependent fixtures. Assert cleanup and propagate failures. Do not reproduce the known `unboxed_run` leak, leave orphaned sessions, or disable global Logger output. No new shared test bypass.
@@ -261,8 +259,8 @@ Run design/work-item validation and requirements-reference validation. Supplemen
 
 - **Technical cleanup distinction:** section 4.5 records the narrowly identified automation teardown exclusion for owner review. It must not become a general unaudited deletion API or an exemption for represented administrative actions in tests.
 - **Compiler topology — checkpoint A gate:** the independent audited boundary and legacy compatibility settings need actual Boundary compiler evidence. Stop before expanding domain coverage if forbidden calls compile. The source inventory is not that evidence.
-- **Runtime enforcement limit:** Boundary protects static module use, not every Repo write, privileged SQL, arbitrary atom/module construction, or in-process actor forgery. Retain authenticated adapters, command authorization, caller inventory, and tests.
-- **Authorization locking:** enforce one lock order (actor, then target user) and current actor permissions. Query timeout cancellation must abort the transaction.
+- **Runtime enforcement limit:** Boundary protects static module use, not every Repo write, privileged SQL, arbitrary atom/module construction, or in-process actor forgery. Retain authenticated adapters, each caller's existing authorization, caller inventory, and tests.
+- **Authorization placement:** the command trusts its caller's authorization. A new caller (API, job, Scenario) must authorize before calling; review it when it is added. Query timeout cancellation must abort the transaction.
 - **Delete semantics:** existing restrictive FKs may legitimately block some accounts. Preserve failure and rollback instead of adding cascades in an auditing slice.
 - **Test isolation:** independent-session tests can leak committed rows and trigger existing list-test flakiness. Cleanup ownership, task shutdown, and clean ExUnit output are acceptance conditions.
 - **Scope size:** one implementation PR, with internal checkpoints; no additional pilot, split, branch, or PR is implied by the automation finding or dependency inventory.
@@ -282,7 +280,7 @@ Design verification on 2026-11-02: `validate_work_item.py --check design --file 
 ### Implementation checkpoints after approval
 
 1. **A — Boundary topology and compiler proof.** Install/configure Boundary, classify callers without restricting existing context relationships, add the private module/facade shell and compile fixtures, wire forced CI compilation. Record compiler evidence and pause for owner review before implementing the mutation.
-2. **B — Audited application command.** Implement authorization, row locking, raw mutation, event Multi, safe results/errors, and meaningful transaction/concurrency tests. Preserve the documented technical cleanup exclusion; pause with evidence.
+2. **B — Audited application command.** Implement row locking, raw mutation, event Multi, safe results/errors, and meaningful transaction/concurrency tests. Preserve the documented technical cleanup exclusion; pause with evidence.
 3. **C — Caller migration.** Migrate the LiveView, remove the old public delete/manual capture, update all owned application tests, verify transport and secret behavior, and close the caller inventory. Pause for review.
 4. **D — Final verification.** Format, forced dev/test/Playwright compilation as applicable, affected/full suites, delete latency evidence, `harness-review` (security, performance, Elixir, plus UI if warranted by actual changes), and work-item validation. Follow `docs/CODEREVIEW.md` for dedicated reviewers when running the review. Resolve findings and record residual limits before declaring PR-02 complete.
 
