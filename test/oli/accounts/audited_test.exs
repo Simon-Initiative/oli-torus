@@ -91,7 +91,13 @@ defmodule Oli.Accounts.AuditedTest do
     } do
       insert(:post, user: user)
 
-      assert {:error, :delete_failed} = Audited.delete_user(context, user.id)
+      log =
+        capture_log(fn ->
+          assert {:error, :delete_failed} = Audited.delete_user(context, user.id)
+        end)
+
+      assert log =~ "Audited user deletion failed user_id=#{user.id} reason=referenced"
+      refute log =~ user.email
       assert Repo.get(User, user.id)
       assert deletion_events(user.id) == []
     end

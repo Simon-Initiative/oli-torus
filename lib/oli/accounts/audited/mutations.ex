@@ -8,7 +8,8 @@ defmodule Oli.Accounts.Audited.Mutations do
   alias Oli.Repo
 
   # A row that still references the user through a restrictive foreign key blocks the deletion.
-  # The database has already aborted the surrounding transaction, so the caller must roll back.
+  # Postgres has already marked the transaction as failed, so the caller must return an error and
+  # let it roll back; no further queries can run in it.
   @spec delete_user(%User{}) :: {:ok, %User{}} | {:error, Ecto.Changeset.t() | :referenced}
   def delete_user(%User{} = user) do
     Repo.delete(user)

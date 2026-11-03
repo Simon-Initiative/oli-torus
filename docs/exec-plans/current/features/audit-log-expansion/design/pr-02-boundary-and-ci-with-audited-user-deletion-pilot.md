@@ -18,7 +18,7 @@ In scope:
 - `Oli.Accounts.Audited` as the shared facade, with unexported `Oli.Accounts.Audited.Mutations` inside its boundary.
 - Existing account-admin/system-admin deletion through the user-detail LiveView and application callers; removal of `Accounts.delete_user/1` and the LiveView's manual capture.
 - Serializing concurrent deletions of the same user through the target row lock, so a repeated attempt appends nothing.
-- Boundary classification limited to the audited account internals, allowed/forbidden compilation fixtures, and forced compilation in CI.
+- Boundary classification limited to the audited account internals, allowed/forbidden compilation fixtures, and warnings-as-errors compilation in CI.
 - Transaction, historical identity, failure, concurrency, transport (including the unchanged route authorization), and compatibility tests. Implementation evidence goes in `phase-2-execution.md`.
 - An explicit inventory classification for technical test cleanup, so its direct writes are neither hidden nor mistaken for administrative commands (section 4.5).
 
@@ -224,7 +224,7 @@ For each relevant environment, first force a clean successful application compil
 | Compiled test-support consumer attempts private call | Boundary failure in test environment |
 | Arbitrary `.exs` test or dynamic `apply/3` | Documented coverage limit; not claimed as a protected compile fixture |
 
-Add `--force` to existing warnings-as-errors project builds in `.github/workflows/build.yml`, `.github/workflows/pr-playwright.yml`, and `.github/workflows/nightly-playwright.yml`. The main build's forced test compilation is the CI enforcement: any forbidden reference becomes a warning and fails the build. Playwright compilation checks its actual environment. The fixture runner does not run in CI. Keep workflow branch filters unchanged: a draft based on `sub-task/MER-6111-event-contracts-partitioned-storage` still requires manual local checks. Do not broaden container/release packaging or disable caches to conceal compiler-manifest problems.
+Keep the existing `mix compile --warnings-as-errors` project builds in `.github/workflows/build.yml`, `.github/workflows/pr-playwright.yml`, and `.github/workflows/nightly-playwright.yml` unchanged; `--force` is not needed. Boundary stores cross-module references in its compiler manifest and rechecks all of them on every compile, so a forbidden reference fails an incremental build restored from the `_build` cache (verified in checkpoint D). The main build's test compilation is the CI enforcement: any forbidden reference becomes a warning and fails the build. Playwright compilation checks its actual environment. The fixture runner does not run in CI. Keep workflow branch filters unchanged: a draft based on `sub-task/MER-6111-event-contracts-partitioned-storage` still requires manual local checks. Do not broaden container/release packaging or disable caches to conceal compiler-manifest problems.
 
 `test/support/*.ex` is compiled in `MIX_ENV=test`; most `.exs` tests, runtime-loaded Scenario hooks, and migrations are not part of the normal application compiler pass. Factories remain suitable for unrelated setup. Do not put a forbidden reference in an ordinary `.exs` test and call that proof of enforcement. Protocol/macro/generated-code limits must be recorded from the actual compiled inventory.
 
@@ -281,7 +281,7 @@ Design verification on 2026-11-02: `validate_work_item.py --check design --file 
 
 ### Implementation checkpoints after approval
 
-1. **A — Boundary topology and compiler proof.** Install/configure Boundary, classify callers without restricting existing context relationships, add the private module/facade shell and compile fixtures, wire forced CI compilation. Record compiler evidence and pause for owner review before implementing the mutation.
+1. **A — Boundary topology and compiler proof.** Install/configure Boundary, classify callers without restricting existing context relationships, add the private module/facade shell and compile fixtures, enable the compiler in the CI builds. Record compiler evidence and pause for owner review before implementing the mutation.
 2. **B — Audited application command.** Implement row locking, raw mutation, event Multi, safe results/errors, and meaningful transaction/concurrency tests. Preserve the documented technical cleanup exclusion; pause with evidence.
 3. **C — Caller migration.** Migrate the LiveView, remove the old public delete/manual capture, update all owned application tests, verify transport and secret behavior, and close the caller inventory. Pause for review.
 4. **D — Final verification.** Format, forced dev/test/Playwright compilation as applicable, affected/full suites, delete latency evidence, `harness-review` (security, performance, Elixir, plus UI if warranted by actual changes), and work-item validation. Follow `docs/CODEREVIEW.md` for dedicated reviewers when running the review. Resolve findings and record residual limits before declaring PR-02 complete.

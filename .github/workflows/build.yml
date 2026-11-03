@@ -109,7 +109,7 @@ jobs:
         run: set -a;source oli.env && mix clean
 
       - name: 🔨 Build project
-        run: set -a; source oli.env && mix compile --force --warnings-as-errors
+        run: set -a; source oli.env && mix compile --warnings-as-errors
 
       - name: 📋 Check Formatting
         run: mix format --check-formatted

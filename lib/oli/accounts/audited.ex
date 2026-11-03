@@ -15,6 +15,8 @@ defmodule Oli.Accounts.Audited do
 
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias Ecto.Multi
   alias Oli.Accounts.User
   alias Oli.Accounts.Audited.Mutations
@@ -101,10 +103,23 @@ defmodule Oli.Accounts.Audited do
 
   defp delete(user) do
     case Mutations.delete_user(user) do
-      {:ok, user} -> {:ok, user}
-      {:error, _reason} -> {:error, :delete_failed}
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, reason} ->
+        Logger.warning(
+          "Audited user deletion failed user_id=#{user.id} reason=#{failure_reason(reason)}"
+        )
+
+        {:error, :delete_failed}
     end
   end
+
+  # Logs only error keys, never changeset values, so the user's personal data stays out of logs.
+  defp failure_reason(:referenced), do: "referenced"
+
+  defp failure_reason(%Ecto.Changeset{errors: errors}),
+    do: "changeset:" <> (errors |> Keyword.keys() |> Enum.uniq() |> Enum.join(","))
 
   defp user_deleted_event(context, user) do
     Auditing.build(context, %{

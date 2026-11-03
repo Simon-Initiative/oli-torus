@@ -132,7 +132,7 @@ jobs:
         run: mix deps.compile
 
       - name: Compile (MIX_ENV=playwright)
-        run: mix compile --force --warnings-as-errors
+        run: mix compile --warnings-as-errors
 
       # Generate runtime-only values after compilation; none enter build caches.
       - name: Generate job-scoped runtime secrets
