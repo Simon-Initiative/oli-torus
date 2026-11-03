@@ -1,0 +1,7 @@
+defmodule Mix.Tasks.ForbiddenBoundaryConsumer do
+  use Boundary, classify_to: Oli
+  use Mix.Task
+
+  @impl Mix.Task
+  def run(_args), do: Oli.Accounts.Audited.Mutations.__info__(:functions)
+end

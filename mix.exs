@@ -13,7 +13,7 @@ defmodule Oli.MixProject do
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
-      compilers: [:phoenix_live_view, :gleam, :gleam_runtime] ++ Mix.compilers(),
+      compilers: [:boundary, :phoenix_live_view, :gleam, :gleam_runtime] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
       archives: [mix_gleam: "~> 0.6"],
       erlc_paths: [
@@ -155,6 +155,7 @@ defmodule Oli.MixProject do
       {:assent, "~> 0.2.9"},
       {:base32_crockford, "~> 1.0.0"},
       {:bcrypt_elixir, "~> 3.0"},
+      {:boundary, "~> 0.12.0", runtime: false},
       {:briefly, "~> 0.5.0"},
       {:broadway, "~> 1.0.7"},
       {:broadway_dashboard, "~> 0.4.0"},

@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.GenAi.SetupLocalCodex do
+  use Boundary, classify_to: Oli
+
   @moduledoc """
   Configure a local OpenAI-compatible Codex proxy for a GenAI feature.
 

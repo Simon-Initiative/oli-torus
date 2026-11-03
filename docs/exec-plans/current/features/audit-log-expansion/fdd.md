@@ -79,31 +79,28 @@ Boundary exports modules, automatically exposes a boundary root, and permits a p
 
 Select a small boundary around each audited facade and its internal implementation. `Accounts.Audited.Mutations` is an ordinary unexported module inside the `Accounts.Audited` boundary, not a separate boundary root. Keep `Accounts` outside that boundary. This changes the illustrative mutation namespace, not the three responsibilities or ticket's decoupling requirement.
 
-Proposed pilot configuration, to compile and verify before expanding:
+Pilot configuration narrowed by the owner on 2026-11-03 to protect audited account internals only, without policing existing context relationships:
 
 ```elixir
-# Existing umbrella: explicit transitional exports; no mutation internals exported.
-# :all can be used for existing compatibility only if the pilot proves that it
-# does not expose unexported modules owned by the new child boundaries.
 defmodule Oli do
-  use Boundary, exports: :all
+  use Boundary, deps: [Oli.Accounts.Audited], check: [in: false]
 end
 
 defmodule OliWeb do
-  use Boundary, deps: [Oli], exports: :all
+  use Boundary, deps: [Oli.Accounts.Audited], check: [in: false]
 end
 
 defmodule Oli.Accounts.Audited do
-  use Boundary, deps: [Oli], exports: []
+  use Boundary, top_level?: true, exports: []
 end
 
-# No `use Boundary` here: this module belongs to Accounts.Audited.
+# Ordinary private module inside the audited boundary, not a boundary root.
 defmodule Oli.Accounts.Audited.Mutations do
   # Domain writes only.
 end
 ```
 
-This is a topology sketch, not drop-in configuration for the entire application. Classify application startup and Mix tasks explicitly, resolve dependency cycles, and inventory generated/protocol/test-support modules. If legacy cross-layer references require temporary `dirty_xrefs`, enumerate exact existing modules with reasons; never list protected mutation modules. No production caller boundary may disable outgoing checks, and no audited boundary may disable incoming checks. Do not silently install a broad ignore configuration to make CI green.
+Legacy boundaries permit incoming calls but retain outgoing checks. The audited boundary is independent, has both checks enabled, and exports only its root. Therefore the legacy incoming compatibility setting cannot expose private audited modules. Classify Mix tasks and standalone namespaces with the same compatibility settings, preserving compiled test-support checks. Do not disable outgoing checks on callers or incoming checks on audited boundaries. No legacy `dirty_xrefs` list or cross-context refactoring is required for this pilot. See the PR-02 detailed design and execution record for compiler proof and coverage limits.
 
 Compile a controlled forbidden-call fixture from the read context, a LiveView/controller boundary, and a Scenario caller; verify that allowed facade calls succeed. Enable the Boundary compiler ahead of the existing compiler list and use forced compilation with warnings as errors in CI. Establish behavior in both relevant dev/test builds without running a database reset. [Boundary compiler documentation](https://boundary.hexdocs.pm/Mix.Tasks.Compile.Boundary.html)
 

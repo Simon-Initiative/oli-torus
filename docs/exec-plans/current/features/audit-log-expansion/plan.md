@@ -122,7 +122,7 @@ All Mix commands require scoped escalated permissions on the first attempt under
 ### Tasks
 
 - [ ] Install/configure Boundary and extract only the selected user-deletion mutation. Implement the actor-aware coordinator, historical identity capture and shared transaction; remove duplicate manual capture.
-- [ ] Inventory compiler dependencies and exact legacy exceptions. Prove read-context, web and Scenario callers cannot statically call the private mutation; no broad outgoing/incoming-check disable.
+- [ ] Classify callers and protect only the audited account internals, as narrowed by the owner on 2026-11-03. Preserve existing cross-context calls. Prove read-context, web and Scenario callers cannot statically call the private mutation; retain outgoing checks on callers and incoming checks on the independent audited boundary.
 - [ ] Add forced compilation with warnings as errors to relevant CI builds. Demonstrate per-operation replay serialization, including deletion after the target no longer exists, without a coordination table.
 
 ### Testing Tasks

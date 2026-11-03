@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Scenarios.Nightly do
+  use Boundary, classify_to: Oli
+
   @moduledoc """
   Run scenario tests tagged as nightly.
 

@@ -1,0 +1,5 @@
+defmodule Oli.Accounts.ForbiddenBoundaryConsumer do
+  import Oli.Accounts.Audited.CompilerProbe, only: [probe: 0]
+
+  def run, do: probe()
+end
