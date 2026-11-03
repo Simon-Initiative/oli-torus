@@ -1,3 +1,0 @@
-defmodule Oli.Scenarios.ForbiddenBoundaryConsumer do
-  def probe, do: &Oli.Accounts.Audited.Replay.__info__/1
-end

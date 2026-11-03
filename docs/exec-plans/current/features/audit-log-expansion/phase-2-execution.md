@@ -24,6 +24,9 @@ Phase: `2` (MER-6112, PR-02), design `design/pr-02-boundary-and-ci-with-audited-
 - [x] `MIX_ENV=playwright mix compile --force --warnings-as-errors` passed (1,952 application Elixir files).
 - [x] Explicit `mix format --check-formatted` over every changed/new Elixir file and compiler fixture passed; `git diff --check` passed; the three edited workflow files passed YAML parsing.
 - [x] Re-verification after the `Oli.Mix` simplification (2026-11-03): forced `--warnings-as-errors` compilation passed in dev, test, and playwright; `elixir scripts/check_audit_boundary.exs` passed in dev (9 forbidden cases) and test (10 forbidden cases, adding `LiveComponentTests`), with a successful recovery compile after each; `mix format --check-formatted`, `git diff --check`, and YAML parsing of the three workflow files passed.
+- [x] Fixture runner timing on the owner's machine (2026-11-03): dev forced compile 58 s plus runner 75 s; test forced compile 56 s plus runner 82 s. The runner would add about 3.5 minutes to each `build.yml` run.
+- [x] Owner decision on 2026-11-03: the runner and fixtures served as a one-time proof of the configuration and are removed from the repository and CI. CI enforcement is the forced `--warnings-as-errors` compilation in `build.yml`, which fails on any forbidden reference. Comments in `lib/oli/accounts/audited.ex` and on the legacy `check: [in: false]` boundaries warn against weakening the configuration. A new module outside every boundary already fails CI through Boundary's `unclassified_module` warning.
+- To recover the runner and fixtures: `git checkout 8fc4be1a9c -- scripts/check_audit_boundary.exs test/fixtures/audit_boundary`, then restore its steps in `.github/workflows/build.yml` from the same commit.
 - No application startup, test alias, database access, or migration was used for checkpoint A.
 - [ ] Later checkpoints: targeted application/transport tests, real concurrency and replay, affected/full regressions.
 
@@ -46,7 +49,7 @@ Phase: `2` (MER-6112, PR-02), design `design/pr-02-boundary-and-ci-with-audited-
 ## Requirements Verification
 - The compiler results above establish the static private-module portion of FR-036 / AC-094, AC-095 for this checkpoint. They do not complete the broader requirement: transaction/replay and removal of the old delete route remain later. Requirements statuses/proofs are not promoted yet.
 - Actual configuration: `Oli.Accounts.Audited` is independent and exports only its root. `Oli`, `OliWeb`, `ECL.Constellation`, and compiled `LiveComponentTests` allow legacy incoming calls but check outgoing references. Mix tasks explicitly classify directly to `Oli`; other ordinary modules follow their namespace. No `dirty_xrefs` or protected incoming exemptions.
-- Fixture calls to generated `__info__/1` verify both real private modules without production probe functions. The import fixture uses an additional private, fixture-only module. Static metadata probes never execute; later command tests must exercise real behavior.
+- At checkpoint A, fixture calls to generated `__info__/1` verified both real private modules without production probe functions. The import fixture used an additional private, fixture-only module. Static metadata probes never executed; later command tests must exercise real behavior.
 - Coverage limits: arbitrary dynamic calls, direct SQL, runtime-loaded `.exs` modules, and protocol implementations left unclassified by Boundary are outside this compiler guarantee. No repository-wide write interception or audit generation is claimed.
 
 ## Done Definition

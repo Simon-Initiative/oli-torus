@@ -111,17 +111,6 @@ jobs:
       - name: 🔨 Build project
         run: set -a; source oli.env && mix compile --force --warnings-as-errors
 
-      - name: Verify audited account boundary (test)
-        run: elixir scripts/check_audit_boundary.exs
-
-      - name: Verify audited account boundary (dev)
-        env:
-          MIX_ENV: dev
-        run: |
-          set -a; source oli.env
-          mix compile --force --warnings-as-errors
-          elixir scripts/check_audit_boundary.exs
-
       - name: 📋 Check Formatting
         run: mix format --check-formatted
 
