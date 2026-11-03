@@ -15,14 +15,14 @@ Status: implementation authorized through checkpoint A on 2026-11-03, after the 
 Make user deletion an audited application command and prove the dependency boundary before extending it to other domains. Today `Accounts.delete_user/1` calls `Repo.delete/1`; `UsersDetailView` records `user_deleted` afterward and ignores the capture result. Replace that split with authorization, persisted-state capture, deletion, and the required event in one transaction.
 
 In scope:
-- `Oli.Accounts.Audited` as the shared facade, with unexported `Oli.Accounts.Audited.Mutations` and a narrowly scoped replay helper inside its boundary.
+- `Oli.Accounts.Audited` as the shared facade, with unexported `Oli.Accounts.Audited.Mutations` inside its boundary.
 - Existing account-admin/system-admin deletion through the user-detail LiveView and application callers; removal of `Accounts.delete_user/1` and the LiveView's manual capture.
-- Binding and serializing a retryable deletion across retained partitions without another table, including after the user row is gone.
+- Serializing concurrent deletions of the same user through the target row lock, so a repeated attempt appends nothing.
 - Boundary classification limited to the audited account internals, allowed/forbidden compilation fixtures, and forced compilation in CI.
 - Transaction, authorization, historical identity, failure, concurrency, transport, and compatibility tests. Implementation evidence goes in `phase-2-execution.md`.
 - An explicit inventory classification for technical test cleanup, so its direct writes are neither hidden nor mistaken for administrative commands (section 4.5).
 
-Out of scope: author deletion, other account lifecycle actions, authentication, general account field migration, new transport endpoints, a general operation registry, async orchestration, additional storage migrations, Audit Log UI redesign, and automatic retention. Existing audit storage and the remaining legacy producers stay compatible. No partial feature deployment is implied.
+Out of scope: a replay protocol (owner decision, 2026-11-03; see section 4.3), author deletion, other account lifecycle actions, authentication, general account field migration, new transport endpoints, a general operation registry, async orchestration, additional storage migrations, Audit Log UI redesign, and automatic retention. Existing audit storage and the remaining legacy producers stay compatible. No partial feature deployment is implied.
 
 ## 2. Requirements Coverage
 
@@ -31,21 +31,21 @@ These are design mappings, not implementation proof. Keep `requirements.yml` at 
 | Requirement / criteria | This slice's responsibility and planned proof |
 | --- | --- |
 | FR-003 / AC-008, AC-009 | One deletion/event transaction; authorization, domain failure, injected audit insert failure, and enclosing-Multi rollback tests |
-| FR-003 / AC-010 | Canceling the confirmation writes nothing; an absent target is not a new successful deletion; replay appends nothing |
-| FR-004 / AC-011, AC-012, AC-014 | Caller matrix, one semantic event, removal of manual capture, actor/target binding, concurrent retries and historical-partition replay |
+| FR-003 / AC-010 | Canceling the confirmation writes nothing; an absent target, including a repeated attempt, is not a new successful deletion |
+| FR-004 / AC-011, AC-012, AC-014 | Caller matrix, one semantic event, removal of manual capture, concurrent deletions of one user commit exactly one event |
 | FR-004 / AC-013 | No bulk account-deletion endpoint exists in the inspected routes. No bulk protocol is introduced; future bulk commands need target-specific event keys |
 | FR-007 / AC-024 | Deleted-user ID/name/email retained and searchable; application and LiveView tests. Author deletion remains PR-03 |
 | FR-007 / AC-022, AC-023 | Creation/access/link/recovery remain PR-03; this pilot must not claim them complete |
 | FR-029 / AC-069 | Preserve `user_deleted` contract, exactly once; preserve other legacy producer behavior through regression suites |
 | FR-029 / AC-070, AC-071 | Existing flag/rollout and ClickHouse initiation semantics remain unchanged; run existing relevant compatibility tests |
-| FR-035 / AC-092 | Recheck persisted administrator authorization for execution and replay; reject untrusted/malformed context and changed actor/target bindings |
+| FR-035 / AC-092 | Recheck persisted administrator authorization inside the transaction; reject untrusted/malformed context and tampered target IDs |
 | FR-035 / AC-091 | Existing system-admin Audit Log access remains unchanged; account-delete permission does not grant Audit Log access |
 | FR-036 / AC-093 | Public command and composable Multi builder; raw mutation contains no auditing; existing reads remain available |
 | FR-036 / AC-094, AC-095 | Compiled positive/negative fixtures in actual Torus configuration, removal of old API, classified direct/dynamic writes, legacy compatibility and documented checking limits |
 | Common FR-001 / AC-001 through AC-004 | Actor versus affected user, persisted snapshots, UTC timestamps, one committed semantic success |
 | Common FR-030 / AC-072 through AC-074 | Minimal projections, safe errors/logs, durable identities, secret-marker tests |
 | Common FR-038 / AC-099 through AC-101 | Per-checkpoint evidence, affected regressions and required review; broader integration gates remain later |
-| Common FR-039 / AC-102, AC-103 | Targeted replay query/latency and safe-failure evidence; migration evidence remains PR-01 |
+| Common FR-039 / AC-102, AC-103 | Targeted delete latency/query-count and safe-failure evidence; migration evidence remains PR-01 |
 
 ### Caller and write inventory
 
@@ -84,7 +84,6 @@ The owner narrowed the scope on 2026-11-03: protect the private audited account 
 | `Oli` and `OliWeb` | `deps: [Oli.Accounts.Audited]`, `check: [in: false]`; preserve unrestricted incoming legacy calls while retaining outgoing checks |
 | `Oli.Accounts.Audited` | `top_level?: true`, `exports: []`; both checks enabled, public facade and private implementation |
 | `Oli.Accounts.Audited.Mutations` | Ordinary private module owned by the audited boundary; raw deletion only |
-| `Oli.Accounts.Audited.Replay` | Ordinary private module owned by the audited boundary; pilot operation lock and completion lookup |
 | `Oli.Application` | Remains part of `Oli`; no additional startup boundary |
 | Mix tasks | Explicitly classified directly into `Oli`; reuse its existing rules without a separate task boundary |
 | `ECL.Constellation` and compiled `LiveComponentTests` | Explicit boundaries with the same compatibility settings; no outgoing-check exemption |
@@ -97,7 +96,7 @@ The owner narrowed the scope on 2026-11-03: protect the private audited account 
 
 The first compilation of the earlier nested design reported existing `Oli` to `OliWeb` and `OliWeb` to `ECL.Constellation` references. The owner explicitly excluded policing those relationships from this PR. Preserve those calls through the compatibility configuration above, without a growing `dirty_xrefs` list or broad context refactoring.
 
-The configuration is accepted only after real positive and negative compiler fixtures prove it once at checkpoint A (see the execution record). Never export `Mutations` or `Replay`, exempt their incoming calls, disable caller outgoing checks, or add protected modules to `dirty_xrefs`. Verify that legacy cross-context calls still compile. This scope decision supersedes the earlier proposed exact legacy exception inventory; only `delete_user` is migrated in this PR.
+The configuration is accepted only after real positive and negative compiler fixtures prove it once at checkpoint A (see the execution record). Never export `Mutations`, exempt its incoming calls, disable caller outgoing checks, or add protected modules to `dirty_xrefs`. Verify that legacy cross-context calls still compile. This scope decision supersedes the earlier proposed exact legacy exception inventory; only `delete_user` is migrated in this PR.
 
 Public `Oli.Auditing.build/2` and `append/3` remain the storage API. The pilot coordinator owns domain semantics; it does not introduce a generic callback orchestration framework. `LegacyAdapter` continues serving other producers. Remove this pilot's manual capture, but retain its legacy event mapping during the transitional PR because existing reader/contract fixtures still use it; do not claim the adapter itself enforces domain authorization.
 
@@ -106,19 +105,13 @@ Public `Oli.Auditing.build/2` and `append/3` remain the storage API. The pilot c
 ### 4.1 Public administrator command
 
 ```elixir
-@type delete_result :: %{
-        user_id: pos_integer(),
-        status: :deleted | :already_applied
-      }
+@type delete_result :: %{user_id: pos_integer()}
 
 @type delete_error ::
         :invalid_request
         | :unauthorized
         | :not_found
-        | :operation_conflict
-        | :busy
         | :delete_failed
-        | :unsupported_isolation
         | :nested_transaction
         | Oli.Auditing.Error.t()
 
@@ -133,13 +126,13 @@ Public `Oli.Auditing.build/2` and `append/3` remain the storage API. The pilot c
       ) :: Ecto.Multi.t()
 ```
 
-`delete_user/2` owns `Repo.transaction/1` and returns a small result instead of reconstructing a deleted `%User{}` on replay. This refines the FDD's illustrative result: the production caller uses only success/failure; its existing flash/navigation stays the same. It refuses an already-open transaction with `:nested_transaction`; composing callers use `delete_user_multi/4` so their outer transaction owns rollback and post-commit effects.
+`delete_user/2` owns `Repo.transaction/1` and returns a small result instead of the deleted `%User{}`. This refines the FDD's illustrative result: the production caller uses only success/failure; its existing flash/navigation stays the same. It refuses an already-open transaction with `:nested_transaction`; composing callers use `delete_user_multi/4` so their outer transaction owns rollback and post-commit effects.
 
-The Multi builder puts the safe result at the supplied name and uses tuple-prefixed private step names. It never commits. Reusing a step name is a programming error, not an alternate operation identity. A later failing outer step rolls back the deletion and event. Callers must not return a Multi error tuple from a transaction callback as though it were success.
+The Multi builder puts the safe result at the supplied name and uses tuple-prefixed private step names. It never commits. Reusing a step name is a programming error. A later failing outer step rolls back the deletion and event. Callers must not return a Multi error tuple from a transaction callback as though it were success.
 
 The administrator entry accepts only a valid `Context` for an authenticated author, a positive integer user ID, a non-nil valid UUID operation ID, and supported source/correlation values. No client-supplied actor ID, role, audit sink, version, skip flag, or result payload is accepted by the transport. Because Elixir structs are not capabilities, the application trusts authenticated adapter construction and separately reloads authorization; it does not claim that a forged in-process struct establishes identity.
 
-Inside the transaction, load the author with `FOR SHARE`; require a current account-admin or system-admin role, confirmed email, and an unlocked account, matching the route's authenticated-account-admin policy. Missing/revoked/locked actors receive `:unauthorized`, including on replay. Rebuild the actor snapshot from that persisted row while retaining the trusted context's operation/source/parent IDs. Concurrent role or lock updates wait until the decision commits; later attempts see the change.
+Inside the transaction, load the author with `FOR SHARE`; require a current account-admin or system-admin role, confirmed email, and an unlocked account, matching the route's authenticated-account-admin policy. Missing/revoked/locked actors receive `:unauthorized`. Rebuild the actor snapshot from that persisted row while retaining the trusted context's operation/source/parent IDs. Concurrent role or lock updates wait until the decision commits; later attempts see the change.
 
 ### 4.2 Internal mutation and event
 
@@ -158,36 +151,28 @@ Build one existing `user_deleted` event with `Auditing.build/2`, then append wit
 | Entity / affected | `{:user, user.id, safe_identity}` / `{:user, user.id}` |
 | Snapshot | Only `id`, `name`, `email` from the locked row; no whole-account serialization |
 | Event key / outcome | `account:primary:deleted` / `:succeeded` |
-| Source / operation / parent | Trusted context, preserved through retries |
+| Source / operation / parent | Trusted context |
 | Details | Existing allowed `email`, `name`, `deleted_by` projections; no password/hash, account state, identity-provider data, or submitted attrs |
 | Changes | Empty lifecycle changes, consistent with the current deletion example; snapshot supplies the applicable before-side identity |
 | Scope | No invented project/section/institution. User deletion is global; `lti_institution_id` is not blindly treated as the audit institution FK |
-| Times | Existing PR-01 `build/2` behavior; replay retains the original event and timestamps |
+| Times | Existing PR-01 `build/2` behavior |
 
 Expected domain/constraint failures map to safe command errors; audit errors retain the existing safe `Oli.Auditing.Error`. Do not inspect rejected user changesets or raw PostgreSQL error details into logs. A rescued database error must lead immediately to transaction rollback, not another query in an aborted transaction. Unexpected programming errors still propagate after rollback; do not silently convert them to success.
 
-### 4.3 Replay protocol
+### 4.3 Concurrency and repeated attempts
 
-The pilot operation represents one user-deletion semantic slot. It is not a general bulk or multi-command receipt. A caller that needs several deleted users must receive a separately reviewed key/cardinality contract rather than invoking this fixed-slot command repeatedly under one operation ID.
+Owner decision, 2026-11-03: this pilot implements no replay protocol. MER-6066 requires no duplicate events, not retry receipts, and user deletion is naturally idempotent. The earlier proposal (operation advisory lock, all-partition completion lookup, `:already_applied` and `:operation_conflict`) is withdrawn; the FDD (section 7.1) assigns replay to asynchronous and external workflows, starting with PR-04.
 
-1. Validate shape, begin the transaction, and require `READ COMMITTED`. The composable path checks the current isolation and rejects a stronger stale-snapshot configuration with `:unsupported_isolation`; it does not change an enclosing transaction's isolation.
-2. Load/authorize the actor under its shared row lock. Acquire a transaction-scoped advisory lock for the operation UUID. Use the first signed 64 bits of SHA-256 over a fixed `oli.audit.operation:` prefix plus the canonical UUID, passed as a bound bigint to `pg_advisory_xact_lock`. Do not include actor, target, or time in the lock identity: incompatible reuse of the same operation must serialize too. A hash collision only adds waiting; equality/binding still uses the full UUID.
-3. Bound the lock query wait (five seconds at the query call); timeout/connection cancellation returns a safe failure and rolls back. Never catch cancellation and continue to the mutation. Do not change session-level timeout settings. The transaction-scoped lock remains held until the outermost commit/rollback.
-4. After acquiring the lock, execute a separate query against the partitioned parent for the exact operation ID, without a date filter. Select only binding fields and at most two rows; the existing operation index supports this. Zero rows permits a fresh attempt. Exactly one row must match strict v2, actor type/ID, command/event type, target/affected ID, event key, parent operation identity, and successful outcome. Otherwise return `:operation_conflict` without returning any evidence. Multiple rows are an integrity conflict, not an arbitrary first match.
-5. A matching completion returns `:already_applied` before querying the absent user. Do not compare current name/email to historical snapshots or rewrite the original source/time. A source change across trusted adapters does not change the command binding.
-6. For a fresh operation, load the user `FOR UPDATE`; absence returns `:not_found`. Then delete, build, append, and commit. Every supported writer of this command must use this protocol.
+1. Begin the transaction and load/authorize the actor under its shared row lock.
+2. Load the user `FOR UPDATE`; absence returns `:not_found`. Then delete, build, append, and commit.
 
-The separate lookup after lock acquisition matters: at `READ COMMITTED`, each statement obtains a new snapshot, so a waiting retry can observe the preceding transaction's commit. Transaction-scoped advisory locks are released with the transaction. These PostgreSQL properties support the proposed protocol; the concurrency gate must prove the actual implementation. [Transaction isolation](https://www.postgresql.org/docs/14/transaction-iso.html), [advisory locks](https://www.postgresql.org/docs/14/explicit-locking.html#ADVISORY-LOCKS).
-
-Two different operation IDs deleting the same user serialize on the user row; the winner commits one event and the loser returns `:not_found`. A missing user alone never proves that this operation succeeded. Failed/unauthorized/canceled requests leave no receipt. Successful replay is guaranteed only while matching evidence is retained; after explicit retention removal the absent target returns `:not_found`. No automatic retention or ID reuse is introduced. Legacy captures allocate unrelated operation IDs and are not replay receipts for this command.
+Concurrent deletions of the same user, from a double submission, a retry, or two administrators, serialize on the user row. The winner commits the deletion and one event; the others wait, find no user, and return `:not_found` without writing anything. A failed, unauthorized, or canceled request leaves no event, and a rolled-back attempt can simply be repeated. Every supported writer of this command uses the same transaction.
 
 ### 4.4 LiveView integration
 
-Keep the current modal's appearance. On opening it, allocate one server-owned deletion context/operation ID tied to `socket.assigns.user.id`; retain it on failure/retry and clear it on completion/cancel or a new confirmation. Closing the Bootstrap modal without a server event has no mutation side effect; the next open creates a fresh intent. The client does not choose the operation UUID.
+Keep the current modal's appearance and flow. On confirmation, delete the user bound in `socket.assigns.user`, ignoring any client-submitted ID that does not match it, and build a fresh trusted context from the authenticated author. Do not preload the target outside the transaction. `{:ok, _}` keeps the existing success flash/navigation; `:not_found` and other errors use the existing failure flash. A repeated confirmation after a successful deletion therefore reports not found, as it does today. Remove the manual `log_admin_action/4`. Recheck actor authorization inside the coordinator even if HTTP route plugs already passed.
 
-On confirmation, parse and compare the submitted ID with the bound target and require an existing intent. Reject a missing intent, malformed ID, or changed target through the existing generic failure flash. Call the coordinator with the bound integer; do not preload the target before its replay check. Treat `:deleted` and `:already_applied` as success with the existing success flash/navigation. Remove the manual `log_admin_action/4`. Recheck actor authorization inside the coordinator even if HTTP route plugs already passed.
-
-A fresh mount after deletion continues to show the existing not-found behavior. This slice promises retry of an identified command, not durable restoration of a browser's lost modal state. There is no new client storage or idempotency endpoint.
+A fresh mount after deletion continues to show the existing not-found behavior. There is no new client storage or idempotency endpoint.
 
 ### 4.5 Technical test teardown exclusion
 
@@ -201,25 +186,24 @@ This does not exempt represented business actions exercised by tests: clicking a
 
 ## 5. Data Flow & Edge Cases
 
-The administrator path is: bound modal intent → audited facade → transaction → current actor authorization → operation lock → retained completion check → locked user → raw Ecto deletion → safe event build/append → commit → flash/navigation. No notification/cache effect currently belongs to `Accounts.delete_user/1`; do not add one. Composed callers keep their own effects after their outer commit.
+The administrator path is: modal confirmation → audited facade → transaction → current actor authorization → locked user → raw Ecto deletion → safe event build/append → commit → flash/navigation. No notification/cache effect currently belongs to `Accounts.delete_user/1`; do not add one. Composed callers keep their own effects after their outer commit.
 
 | Situation | Required result |
 | --- | --- |
 | Fresh authorized deletion | User and existing cascaded data removed, one v2 success event, `:deleted` |
 | Audit validation/insert or missing-partition failure | User and cascaded rows restored by rollback; no new success; safe audit error |
 | FK/domain failure | Existing delete semantics preserved; no event and no partial association cleanup |
-| Same operation, actor, and target after success | `:already_applied`; unchanged original event ID/time; user lookup not required |
-| Same operation, different actor/target/command/parent | Safe `:operation_conflict`, no event details and no mutation |
-| Current actor revoked, locked, unconfirmed, or deleted | `:unauthorized` before replay disclosure or target access |
-| New operation for an absent target | `:not_found`, no success event |
+| Concurrent or repeated deletion of the same user | One deletion and one event; the others return `:not_found` and write nothing |
+| Current actor revoked, locked, unconfirmed, or deleted | `:unauthorized` before target access |
+| Absent target | `:not_found`, no success event |
 | Actor/user identity updated before execution | Persisted locked identity supplies the new event; UI copies are ignored |
-| Actor renamed after original completion | Replay remains bound by ID and leaves historical snapshots unchanged |
-| Outer Multi fails after this operation | Roll back user deletion and event; same operation can later try again |
+| Actor renamed after deletion | Historical snapshots stay unchanged |
+| Outer Multi fails after this operation | Roll back user deletion and event; the deletion can later be attempted again |
 | Same user ID and author ID | Distinct typed identities; no cross-type cleanup or attribution |
 | Generic account update | Remains PR-03 scope; cannot invoke this private delete through the removed API |
 | Dynamic call/direct SQL | Not prevented by Boundary; supported-path inventory and behavioral tests remain required |
 
-No new migration is planned. Preserve PR-01's schema/indexes and append-only rules. Do not rely on a unique `(operation_id, event_key, inserted_at)` constraint: PR-01's physical schema deliberately has no such deduplication index. An older edge-case sentence in its design mentions one; this slice follows its physical-schema section, actual migration, and the FDD's serialized protocol.
+No new migration is planned. Preserve PR-01's schema/indexes and append-only rules. Do not rely on a unique `(operation_id, event_key, inserted_at)` constraint: PR-01's physical schema deliberately has no such deduplication index. An older edge-case sentence in its design mentions one; this slice follows its physical-schema section and actual migration, and relies on the user row lock instead.
 
 ## 6. Test Plan
 
@@ -235,7 +219,7 @@ For each relevant environment, first force a clean successful application compil
 | `OliWeb` consumer calls facade | Success |
 | Compiled `Oli.Scenarios` consumer calls facade | Success |
 | Same consumers call `Accounts.Audited.Mutations` directly, through an alias/import, or a captured static function | Boundary failure |
-| Consumer calls private `Accounts.Audited.Replay` | Boundary failure |
+| Consumer calls private `Accounts.Audited.Replay` (checkpoint A only; the module was removed with the replay protocol) | Boundary failure |
 | In-boundary coordinator calls private mutation | Success |
 | Compiled test-support consumer attempts private call | Boundary failure in test environment |
 | Arbitrary `.exs` test or dynamic `apply/3` | Documented coverage limit; not claimed as a protected compile fixture |
@@ -254,13 +238,12 @@ Proposed new suites: `test/oli/accounts/audited_test.exs` and `test/oli/accounts
 - Assert actor/affected separation, persisted target identity, one event, safe details/search text, event-time identity after rename/deletion, and absence of marker secrets in payloads/errors/captured logs.
 - Cover an actual FK failure and existing cascading association behavior. Insert a test-only failure trigger, scoped to the tested operation, inside a rollback-isolated database test to force a real audit insert failure after deletion. No production sink override. Assert both the user and cascaded rows survive; capture intentional logs.
 - Exercise the Multi builder inside an outer failing transaction and verify no independent commit. Verify the convenience command rejects nested use.
-- Cover same-operation replay, different target/actor/command/parent binding, multiple conflicting evidence rows, missing user under a new operation, and retry after a rolled-back attempt.
-- Use independent database sessions with an explicit barrier to prove waiting and one committed success under concurrent initial calls. A shared Sandbox connection is not concurrency proof. Test two operation IDs against one target and a role-revocation race.
-- For deterministic cross-partition replay, create canonical completed deletion evidence in a real delete/event fixture transaction with a historical `inserted_at` in an earlier retained half-year (as the existing partition tests do). Run concurrent current-time public retries, assert the original row/time stays unchanged and no current-partition copy appears. Combine this with the real concurrent initial-command test; do not describe historical timestamp injection as a wall-clock rollover measurement or add a public clock option.
-- Confirm/cancel the real LiveView modal; reject direct confirmation without intent, tampered target IDs, and demotion after mount. Verify existing success/navigation and failure flashes, and that no manual capture duplicates the event.
+- Cover a missing user, a repeated deletion after success, and retry after a rolled-back attempt.
+- Use independent database sessions with an explicit barrier to prove waiting and exactly one committed success when two calls delete the same user concurrently. A shared Sandbox connection is not concurrency proof. Also test a role-revocation race.
+- Confirm/cancel the real LiveView modal; reject tampered target IDs and demotion after mount. Verify existing success/navigation and failure flashes, and that no manual capture duplicates the event.
 - Preserve audit readers/catalog/legacy adapter regression coverage. No renamed/released event names or blanket removal of compatibility fixtures.
 
-Concurrency tests run `async: false` in `oli_test`. When committed fixtures are necessary for independent sessions, isolate them with tracked IDs/operation UUIDs, stop and await all tasks/connections, and clean up in `try/after` before releasing the test. Remove only those test events using a scoped transaction-local append-only override; remove only owned account/dependent fixtures. Assert cleanup and propagate failures. Do not reproduce the known `unboxed_run` leak, leave orphaned sessions, or disable global Logger output. No new shared test bypass.
+Concurrency tests run `async: false` in `oli_test`. When committed fixtures are necessary for independent sessions, isolate them with tracked IDs, stop and await all tasks/connections, and clean up in `try/after` before releasing the test. Remove only those test events using a scoped transaction-local append-only override; remove only owned account/dependent fixtures. Assert cleanup and propagate failures. Do not reproduce the known `unboxed_run` leak, leave orphaned sessions, or disable global Logger output. No new shared test bypass.
 
 Planned affected suites after test authorization: `test/oli/accounts_test.exs`, the new audited suites, `test/oli_web/live/users`, `test/oli_web/controllers/page_delivery_controller_test.exs`, `test/oli/auditing_test.exs`, `test/oli/auditing`, and `test/oli_web/live/admin/audit_log_live_test.exs`; existing feature-flag audit regressions for compatibility. Automation cleanup suites remain unchanged and run as part of the full regression suite. Record skipped tests as skipped, not proof.
 
@@ -270,7 +253,7 @@ Because Boundary changes compilation/test support classification, run the full s
 
 All Mix commands use scoped escalated permissions. Every migration/reset requires prior owner approval and a `pg_dump -Fc` backup under `~/db_backups/`, including migrations implicit in this repository's `mix test` alias. Before any approved test run, verify the effective `MIX_ENV=test` database is `oli_test`; `DATABASE_URL` takes precedence and `DB_NAME` is not the test-database selector. Record only safe host/database metadata, never credentials. Run no migration merely to prepare the design or compiler fixtures.
 
-Use the existing partition operation index for the bounded, all-history completion query. At checkpoint D record `EXPLAIN (ANALYZE, BUFFERS)` on the actual binding lookup, partition count, and initial-delete/replay latency at a documented volume. Measure serialized waiting separately from uncontended overhead. Compare p50/p95 and query count with the raw-delete baseline; use the FDD's proposed overhead budget `max(10 ms, 20% of baseline p95)` as a review threshold, not an asserted production SLA. Keep the targeted evidence here; PR-07 owns the known admin list/search performance work. No extra schema/index or benchmark framework without measured need.
+At checkpoint D record delete latency and query count at a documented volume. Measure serialized waiting separately from uncontended overhead. Compare p50/p95 and query count with the raw-delete baseline; use the FDD's proposed overhead budget `max(10 ms, 20% of baseline p95)` as a review threshold, not an asserted production SLA. Keep the targeted evidence here; PR-07 owns the known admin list/search performance work. No extra schema/index or benchmark framework without measured need.
 
 Run design/work-item validation and requirements-reference validation. Supplement the traceability tool with nested criteria/reference checks because its historical top-level-only limitation is recorded in the PRD. A passing document validator does not establish transaction, compiler, or security correctness.
 
@@ -279,8 +262,7 @@ Run design/work-item validation and requirements-reference validation. Supplemen
 - **Technical cleanup distinction:** section 4.5 records the narrowly identified automation teardown exclusion for owner review. It must not become a general unaudited deletion API or an exemption for represented administrative actions in tests.
 - **Compiler topology — checkpoint A gate:** the independent audited boundary and legacy compatibility settings need actual Boundary compiler evidence. Stop before expanding domain coverage if forbidden calls compile. The source inventory is not that evidence.
 - **Runtime enforcement limit:** Boundary protects static module use, not every Repo write, privileged SQL, arbitrary atom/module construction, or in-process actor forgery. Retain authenticated adapters, command authorization, caller inventory, and tests.
-- **Authorization/replay locking:** enforce one lock order and current actor permissions. Query timeout cancellation must abort the transaction. Stronger isolation needs explicit rejection rather than an assumed fresh snapshot.
-- **Retention horizon:** replay depends on retained completion evidence and non-reused account IDs. No indefinite receipt guarantee, tombstone table, or retention change is introduced.
+- **Authorization locking:** enforce one lock order (actor, then target user) and current actor permissions. Query timeout cancellation must abort the transaction.
 - **Delete semantics:** existing restrictive FKs may legitimately block some accounts. Preserve failure and rollback instead of adding cascades in an auditing slice.
 - **Test isolation:** independent-session tests can leak committed rows and trigger existing list-test flakiness. Cleanup ownership, task shutdown, and clean ExUnit output are acceptance conditions.
 - **Scope size:** one implementation PR, with internal checkpoints; no additional pilot, split, branch, or PR is implied by the automation finding or dependency inventory.
@@ -290,7 +272,7 @@ Run design/work-item validation and requirements-reference validation. Supplemen
 ### Design gate
 
 - [x] Requirements and existing caller evidence mapped, with uncovered/deferred scope distinguished.
-- [x] Public/private interfaces, authorization, replay, error, and transport behavior specified.
+- [x] Public/private interfaces, authorization, concurrency, error, and transport behavior specified (replay withdrawn by owner decision, 2026-11-03).
 - [x] Test strategy, compiler limitations, database safety, and compatibility defined.
 - [x] Design and full work-item validation pass for this document.
 - [x] Owner authorizes continuing with checkpoint A after the technical-cleanup and test-policy clarification (2026-11-03).
@@ -300,9 +282,9 @@ Design verification on 2026-11-02: `validate_work_item.py --check design --file 
 ### Implementation checkpoints after approval
 
 1. **A — Boundary topology and compiler proof.** Install/configure Boundary, classify callers without restricting existing context relationships, add the private module/facade shell and compile fixtures, wire forced CI compilation. Record compiler evidence and pause for owner review before implementing the mutation.
-2. **B — Audited application command.** Implement authorization, locking/replay, raw mutation, event Multi, safe results/errors, and meaningful transaction/concurrency tests. Preserve the documented technical cleanup exclusion; pause with evidence.
+2. **B — Audited application command.** Implement authorization, row locking, raw mutation, event Multi, safe results/errors, and meaningful transaction/concurrency tests. Preserve the documented technical cleanup exclusion; pause with evidence.
 3. **C — Caller migration.** Migrate the LiveView, remove the old public delete/manual capture, update all owned application tests, verify transport and secret behavior, and close the caller inventory. Pause for review.
-4. **D — Final verification.** Format, forced dev/test/Playwright compilation as applicable, affected/full suites, replay query/latency evidence, `harness-review` (security, performance, Elixir, plus UI if warranted by actual changes), and work-item validation. Follow `docs/CODEREVIEW.md` for dedicated reviewers when running the review. Resolve findings and record residual limits before declaring PR-02 complete.
+4. **D — Final verification.** Format, forced dev/test/Playwright compilation as applicable, affected/full suites, delete latency evidence, `harness-review` (security, performance, Elixir, plus UI if warranted by actual changes), and work-item validation. Follow `docs/CODEREVIEW.md` for dedicated reviewers when running the review. Resolve findings and record residual limits before declaring PR-02 complete.
 
 Maintain `phase-2-execution.md` in the style of Phase 1: implementation/test blocks, work-item sync, review rounds, requirement proof, and done definition. Distinguish proposed, executed, passing, and owner-accepted gates. A checkpoint is not permission to commit.
 
