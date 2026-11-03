@@ -340,7 +340,11 @@ if Mix.env() == :dev do
     clear: true
 end
 
-config :appsignal, :config, revision: build_sha
+# AppSignal 2.16.0 disabled the error backend by default; keep it enabled so crashes
+# outside instrumented contexts (e.g. GenServers, Tasks) are still reported.
+config :appsignal, :config,
+  revision: build_sha,
+  enable_error_backend: true
 
 # Configure Privacy Policies link
 config :oli, :privacy_policies,
