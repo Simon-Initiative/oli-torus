@@ -301,18 +301,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Deletes a user.
-  ## Examples
-      iex> delete_user(user)
-      {:ok, %User{}}
-      iex> delete_user(user)
-      {:error, %Ecto.Changeset{}}
-  """
-  def delete_user(%User{} = user) do
-    Repo.delete(user)
-  end
-
-  @doc """
   Updates user details if a record matches the given `sub` and `institution_id`. If no user is found, creates a new user.
 
   The function checks for a user who is enrolled in an active section, where the section and enrollment belong to the specified institution.
