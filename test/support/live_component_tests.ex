@@ -1,4 +1,8 @@
 defmodule LiveComponentTests do
+  # Incoming legacy calls stay unrestricted. Never disable outgoing checks: they keep
+  # the internals of audited boundaries private.
+  use Boundary, deps: [Oli.Accounts.Audited], check: [in: false]
+
   @moduledoc """
   Conveniences for testing a LiveComponent in isolation.
   For more info visit https://elixirforum.com/t/liveview-isolated-component-tests/54893/6

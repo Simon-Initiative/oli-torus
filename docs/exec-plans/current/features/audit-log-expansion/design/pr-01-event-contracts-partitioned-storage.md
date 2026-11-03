@@ -144,7 +144,7 @@ Indexes (created on the empty parent, so they cascade to partitions):
 | `audit_events_legacy_idx` | `(legacy_source, legacy_id, inserted_at) WHERE legacy_source IS NOT NULL` |
 | `audit_events_search_idx` | `GIN (search_vector)` |
 
-Entity-identity indexes are deferred to PR-07 measurements. There is deliberately no unique index on `(operation_id, event_key)`: with a per-attempt `inserted_at` and per-partition uniqueness it would almost never detect a retry. Duplicate protection is the serialized replay check in each retryable command (PR-02 onwards).
+Entity-identity indexes are deferred to PR-07 measurements. There is deliberately no unique index on `(operation_id, event_key)`: with a per-attempt `inserted_at` and per-partition uniqueness it would almost never detect a retry. Synchronous commands avoid duplicates through their transaction and target row locks; asynchronous workflows add a serialized replay check (PR-04 onwards).
 
 Append-only guard: a row-level `BEFORE UPDATE OR DELETE` trigger on the parent (inherited by every partition) raises `audit_log_events is append-only`, unless the transaction has explicitly run `SET LOCAL oli.audit_log_allow_mutation = 'on'`. Only an explicit, documented procedure sets it (for example, a future personal-data redaction); no application code path does. Dropping or detaching a partition is not a row `DELETE` and is unaffected.
 
@@ -442,7 +442,7 @@ Adopting plan B requires owner approval at that time, with the rehearsal numbers
   - A `settings_changes` row older than every `audit_log_events` row: covered because the partition range starts at the oldest timestamp of both tables.
   - Concurrent `ensure_through/1` calls: `pg_try_advisory_xact_lock(hashtext('oli.audit_log_events.partitions'))`; the loser returns the current report without DDL. Each partition is created as a standalone table with a `CHECK` matching its bounds and then attached with `ATTACH PARTITION` (`SHARE UPDATE EXCLUSIVE` on the parent, so reads and inserts are not blocked; measured in `evidence/pr-01-storage.md`), with `lock_timeout = '5s'` and is idempotent by catalog lookup.
   - Partition names come only from `Date` values through `Partitions.name_for/1`; no request input reaches identifiers.
-  - Duplicate `(operation_id, event_key)` in the same microsecond: rejected by the partial unique index. Across partitions it is not rejected by the DB; replay protocols are PR-02+.
+  - Duplicate `(operation_id, event_key)` in the same microsecond: rejected by the partial unique index. Across partitions it is not rejected by the DB; replay protocols for asynchronous workflows are PR-04+.
   - Builder input containing secret keys outside the contract: rejected with `:invalid_event`; the error lists field names only.
   - Test environment: migrations provision through current plus four half-years. `test/test_helper.exs` calls `Partitions.ensure_through/1` for today plus two years, so the suite does not depend on when the DB was migrated. Partition DDL tests run `async: false`.
 

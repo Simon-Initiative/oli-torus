@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Scenarios do
+  use Boundary, classify_to: Oli
+
   @moduledoc """
   Run scenario test files.
 

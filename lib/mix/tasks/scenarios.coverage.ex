@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Scenarios.Coverage do
+  use Boundary, classify_to: Oli
+
   @moduledoc """
   Run coverage for scenario-based tests only.
 
