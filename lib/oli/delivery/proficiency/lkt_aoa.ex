@@ -34,10 +34,16 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
      |> Enum.map(& &1.resource_id)}
   end
 
+  @doc "Returns learners with state on the requested objectives or their effective children."
   def user_ids_for_objectives(%Section{id: section_id}, objective_ids) do
+    source_ids =
+      section_id
+      |> objective_sources(normalize_ids(objective_ids))
+      |> source_objective_ids()
+
     ids =
       from(state in LearningState,
-        where: state.section_id == ^section_id and state.learning_objective_id in ^objective_ids,
+        where: state.section_id == ^section_id and state.learning_objective_id in ^source_ids,
         select: state.user_id,
         distinct: true
       )
@@ -235,7 +241,7 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
       %{requested_user_count: length(user_ids), requested_objective_count: length(objective_ids)},
       fn ->
         objective_sources = objective_sources(section_id, objective_ids)
-        state_objective_ids = objective_sources |> Map.values() |> List.flatten() |> Enum.uniq()
+        state_objective_ids = source_objective_ids(objective_sources)
         states = read_states(section_id, user_ids, state_objective_ids)
 
         {estimates, counts} =
@@ -264,6 +270,11 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
         child_ids -> {objective_id, child_ids}
       end
     end)
+  end
+
+  # Unique LearningState objective ids read for the given objective sources.
+  defp source_objective_ids(objective_sources) do
+    objective_sources |> Map.values() |> List.flatten() |> Enum.uniq()
   end
 
   defp operation_for(objective_sources) do
