@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Seed do
+  use Boundary, classify_to: Oli
+
   @moduledoc """
   Runs the environment-neutral Torus seeding CLI in development.
 

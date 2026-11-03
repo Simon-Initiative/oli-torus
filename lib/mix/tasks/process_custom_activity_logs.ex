@@ -1,4 +1,5 @@
 defmodule Mix.Tasks.ProcessCustomActivityLogs do
+  use Boundary, classify_to: Oli
   @shortdoc "Process custom activity logs XML data using SweetXml"
   @moduledoc """
   This task reads from the custom_activity_logs table and processes the XML info column and outputs datashop XML.

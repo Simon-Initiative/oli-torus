@@ -1,0 +1,5 @@
+defmodule OliWeb.ForbiddenBoundaryConsumer do
+  alias Oli.Accounts.Audited.Replay
+
+  def probe, do: Replay.__info__(:functions)
+end

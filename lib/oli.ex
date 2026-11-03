@@ -1,4 +1,6 @@
 defmodule Oli do
+  use Boundary, deps: [Oli.Accounts.Audited], check: [in: false]
+
   @moduledoc """
   Oli keeps the contexts that define your domain
   and business logic.

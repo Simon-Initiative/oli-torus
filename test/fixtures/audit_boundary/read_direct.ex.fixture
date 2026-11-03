@@ -1,0 +1,3 @@
+defmodule Oli.Accounts.ForbiddenBoundaryConsumer do
+  def probe, do: Oli.Accounts.Audited.Mutations.__info__(:functions)
+end

@@ -1,0 +1,5 @@
+defmodule OliWeb.ForbiddenBoundaryConsumer do
+  alias Oli.Accounts.Audited.Mutations
+
+  def probe, do: Mutations.__info__(:functions)
+end

@@ -1,4 +1,6 @@
 defmodule OliWeb do
+  use Boundary, deps: [Oli.Accounts.Audited], check: [in: false]
+
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, views, channels and so on.

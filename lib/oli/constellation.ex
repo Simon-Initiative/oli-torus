@@ -1,4 +1,6 @@
 defmodule ECL.Constellation do
+  use Boundary, deps: [Oli.Accounts.Audited], check: [in: false]
+
   @moduledoc """
   Constellation SDK.
   """
