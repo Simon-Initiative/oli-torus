@@ -1,6 +1,20 @@
 defmodule Oli.RuntimeLogOverrides do
   @moduledoc """
-  Local-node runtime log override management for admin-applied overrides.
+  Local-node runtime log level management for admin-applied changes from `/admin/features`.
+
+  All changes affect only the node handling the request; they are not propagated to the cluster
+  and are lost when the node restarts.
+
+  It covers two independent controls:
+
+    * Global log level (`set_global_level/1`): changes the node's global Logger level. When an
+      admin sets it to `:debug`, a `DebugLevelRevertWorker` job is scheduled to revert this node
+      to `DebugRevertConfig.revert_level/0` after `DebugRevertConfig.timeout_minutes/0`, so debug
+      logging cannot be left enabled indefinitely.
+
+    * Module-level overrides (`set_module_level/2`, `clear_module_level/1`, `list_overrides/0`):
+      per-module Logger levels tracked in `Registry`. They do not change the global level and are
+      never reverted automatically, including `:debug` overrides.
   """
 
   import Ecto.Query, only: [from: 2]
@@ -15,6 +29,9 @@ defmodule Oli.RuntimeLogOverrides do
   @type override_state :: %{modules: list(map()), processes: list(map())}
   @type error_reason :: :invalid_level | :invalid_module
 
+  @doc """
+  Returns the module-level overrides applied on the local node since it booted.
+  """
   @spec list_overrides() :: override_state()
   def list_overrides do
     Registry.list_overrides()
@@ -46,6 +63,12 @@ defmodule Oli.RuntimeLogOverrides do
     end
   end
 
+  @doc """
+  Applies a Logger level override to a single loaded module on the local node and records it in
+  the registry. Does not change the global level and is never reverted automatically.
+
+  Returns the updated override state, or `{:error, :invalid_module}` / `{:error, :invalid_level}`.
+  """
   @spec set_module_level(String.t(), atom() | String.t()) ::
           {:ok, override_state()} | {:error, error_reason()}
   def set_module_level(module_name, level) do
@@ -65,6 +88,10 @@ defmodule Oli.RuntimeLogOverrides do
     end
   end
 
+  @doc """
+  Removes the Logger level override for a module on the local node, so it falls back to the
+  global level, and returns the updated override state.
+  """
   @spec clear_module_level(String.t()) :: {:ok, override_state()} | {:error, :invalid_module}
   def clear_module_level(module_name) do
     with {:ok, module} <- parse_module(module_name),
