@@ -524,8 +524,11 @@ defmodule OliWeb.Features.FeaturesLive do
 
   defp logging_changed_message(:debug) do
     "Logging level changed to debug. It will automatically revert to " <>
-      "#{DebugRevertConfig.revert_level()} in #{DebugRevertConfig.timeout_minutes()} minutes"
+      "#{DebugRevertConfig.revert_level()} in #{minutes_label(DebugRevertConfig.timeout_minutes())}"
   end
 
   defp logging_changed_message(level), do: "Logging level changed to #{level}"
+
+  defp minutes_label(1), do: "1 minute"
+  defp minutes_label(minutes), do: "#{minutes} minutes"
 end
