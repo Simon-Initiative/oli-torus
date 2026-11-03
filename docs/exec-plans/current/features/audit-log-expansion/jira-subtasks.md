@@ -65,7 +65,7 @@ Implementation:
 
 Validation:
 
-- [ ] Prove real delete + event, authorization denial, mutation failure and injected audit failure rollback; concurrent deletions of the same user commit exactly one semantic success.
+- [ ] Prove real delete + event, unchanged route authorization, mutation failure and injected audit failure rollback; concurrent deletions of the same user commit exactly one semantic success.
 - [ ] Run allowed and intentionally forbidden compilation fixtures; document .exs/test-support checking limits and direct SQL/dynamic invocation limits.
 - [ ] Apply the common actor/privacy/authorization/atomicity/cardinality and supported-entry tests throughout the PR; update actual proof references.
 - Existing regression command (only after isolated DB verification): `mix test test/oli/accounts_test.exs test/oli_web/live/users`. Add the new audit tests for each internal block.

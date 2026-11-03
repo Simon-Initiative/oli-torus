@@ -63,7 +63,7 @@ Boundary is not installed. A text waypoint search finds `OliWeb` references in 3
 | Component | Responsibility and public boundary |
 | --- | --- |
 | Existing domain context, e.g. `Oli.Accounts` | Queries and existing not-yet-migrated operations during development; remove unaudited public shortcuts for every migrated operation |
-| `Oli.Accounts.Audited` and domain equivalents | Public application commands and composable Multi builders; authorization orchestration, persisted before-state, mutations, event proposals, and transaction ownership |
+| `Oli.Accounts.Audited` and domain equivalents | Public application commands and composable Multi builders; preserved existing authorization, persisted before-state, mutations, event proposals, and transaction ownership |
 | `Oli.Accounts.Audited.Mutations` | Internal domain writes; no audit insert or event construction; preserve domain validation and locking behavior |
 | `Oli.Auditing.Context` | Trusted actor, source, operation identity, and correlation value object; no process dictionary or user-supplied actor override |
 | `Oli.Auditing.EventCatalog` and family builders | Enumerated event contracts, safe-field projection, identity normalization, change semantics, and validation |
@@ -100,7 +100,7 @@ defmodule Oli.Accounts.Audited.Mutations do
 end
 ```
 
-Legacy boundaries permit incoming calls but retain outgoing checks. The audited boundary is independent, has both checks enabled, and exports only its root. Therefore the legacy incoming compatibility setting cannot expose private audited modules. Classify Mix tasks and standalone namespaces with the same compatibility settings, preserving compiled test-support checks. Do not disable outgoing checks on callers or incoming checks on audited boundaries. No legacy `dirty_xrefs` list or cross-context refactoring is required for this pilot. See the PR-02 detailed design and execution record for compiler proof and coverage limits.
+Legacy boundaries permit incoming calls but retain outgoing checks. The audited boundary is independent, keeps incoming checks enabled, and exports only its root. Its outgoing checks are off because it calls `Oli`, which depends on it, and Boundary rejects dependency cycles; this does not expose its internals. Therefore the legacy incoming compatibility setting cannot expose private audited modules. Classify Mix tasks and standalone namespaces with the same compatibility settings, preserving compiled test-support checks. Do not disable outgoing checks on callers or incoming checks on audited boundaries. No legacy `dirty_xrefs` list or cross-context refactoring is required for this pilot. See the PR-02 detailed design and execution record for compiler proof and coverage limits.
 
 Prove the configuration once by compiling controlled forbidden-call fixtures from the read context, a LiveView/controller boundary, and a Scenario caller, and by verifying that allowed facade calls succeed. Enable the Boundary compiler ahead of the existing compiler list and use forced compilation with warnings as errors in CI, so a forbidden reference fails the build. The fixtures are a one-time proof and are not kept in CI. Establish behavior in both relevant dev/test builds without running a database reset. [Boundary compiler documentation](https://boundary.hexdocs.pm/Mix.Tasks.Compile.Boundary.html)
 
@@ -116,7 +116,7 @@ sequenceDiagram
     participant Raw as Audited.Mutations
     participant Audit as Oli.Auditing
     Entry->>App: command(trusted context, target, input)
-    App->>DB: begin; authorize and lock state; check replay where applicable
+    App->>DB: begin; lock state; check replay where applicable
     App->>Raw: domain mutation
     Raw->>DB: write domain state
     Raw-->>App: persisted result
@@ -372,7 +372,7 @@ The maintenance-window approach remains a proposal pending size/window evidence.
 
 ### 7.1 Local commands and retries
 
-The outer domain coordinator creates one Multi: validate authorization, lock/read domain state, run mutation, construct and append safe events, commit. Lock target rows in stable ID order for bulk updates. Maintain existing optimistic/editing locks as well; database row locks do not replace authoring permissions or document locks.
+The outer domain coordinator creates one Multi: lock/read domain state, run mutation, construct and append safe events, commit. Each action keeps its existing authorization where it already lives (route plug, LiveView check, or domain function); a check that lived in the migrated domain function moves with it into the coordinator, but coordinators add no new permission checks (owner decision, 2026-11-03). Lock target rows in stable ID order for bulk updates. Maintain existing optimistic/editing locks as well; database row locks do not replace authoring permissions or document locks.
 
 Synchronous commands need no replay protocol. Locking the target row serializes concurrent attempts, and a repeated attempt finds the target already deleted (not found, no event), the value already applied (a no-op, no event), or creates a genuinely separate entity with its own truthful event. A repeated attempt never records a second success for the same change. Owner decision, 2026-11-03: MER-6066 requires no duplicate events, not retry receipts, so the user-deletion pilot implements no replay.
 
@@ -461,7 +461,7 @@ Existing feature flags and rollout controls are audited subjects. No new feature
 
 ## 12. Security & Privacy
 
-Preserve the administrator-only route and validate authorization in the application entry point that owns each command. Actor construction uses authenticated principals or explicitly authorized internal system identities. Replay checks and job/outcome lookups must not expose another actor's result through a guessed correlation UUID.
+Preserve the administrator-only route and each action's existing authorization where it already lives; audited coordinators do not add permission checks, and callers authorize before calling them. Actor construction uses authenticated principals or explicitly authorized internal system identities. Replay checks and job/outcome lookups must not expose another actor's result through a guessed correlation UUID.
 
 Allowlist payload fields recursively. Keep passwords, raw/hashed tokens, credential material, invitation secrets, private keys, payment instruments, and signed authentication payloads out of events, search text, errors, and job arguments. For lifecycle records, use database credential IDs or separate opaque references, not secret-derived identifiers. Test marker secrets across every persisted/serialized sink.
 
