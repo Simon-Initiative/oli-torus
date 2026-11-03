@@ -69,6 +69,8 @@ The supplied lexical inventory is a starting point. Design inspection followed t
 | Direct Repo deletion in unrelated test cleanup, including `secure_assessment_admission_test.exs` | Fixture cleanup, not product behavior. Do not migrate unrelated fixtures or reproduce their committed-row leakage in new concurrency tests |
 | Operator SQL and arbitrary runtime module calls | Outside Boundary's static guarantee; inspect supported repository paths and document the limit rather than claiming runtime prevention |
 
+Checkpoint C closure (2026-11-03): `Accounts.delete_user/1` is removed; the LiveView calls `Accounts.Audited.delete_user/2` and no longer captures manually; `accounts_test.exs` drops its raw-delete test (covered by `test/oli/accounts/audited_test.exs`); the skipped `page_delivery_controller_test.exs` scenario deletes through the facade with a separate account administrator. A final search of `lib` for `Repo.delete`/`delete_all`/`Multi.delete` on users, raw `DELETE FROM users`, `apply/3` on `Accounts`, and `:delete_user` atoms finds only `Mutations.delete_user/1` and the excluded automation teardown.
+
 The broad delete search found the automation writer that the `delete_user` symbol search missed. Its explicit disposition is technical fixture cleanup, with evidence and limits in section 4.5. Repeat searches for aliases, pipelines, Repo/Multi deletes, direct SQL, and runtime invocation when implementation is complete; an empty symbol search alone is not closure evidence.
 
 ## 3. Responsibilities & Boundaries
