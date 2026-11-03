@@ -217,6 +217,50 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
     end
   end
 
+  describe "deployment availability" do
+    test "a newly registered tool is Private" do
+      institution = insert(:institution)
+
+      {:ok, {_pi, _ar, deployment}} =
+        PlatformExternalTools.register_lti_external_tool_activity(%{
+          "name" => "New Private Tool",
+          "description" => "A test tool",
+          "target_link_uri" => "https://example.com/launch",
+          "client_id" => "new-private-tool",
+          "login_url" => "https://example.com/login",
+          "keyset_url" => "https://example.com/keyset",
+          "redirect_uris" => "https://example.com/redirect",
+          "institution_id" => institution.id
+        })
+
+      stored =
+        Oli.Repo.get!(
+          Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment,
+          deployment.deployment_id
+        )
+
+      assert stored.availability == :private
+    end
+
+    test "a deployment row inserted without availability is stored as private" do
+      registration = insert(:activity_registration)
+      platform_instance = insert(:platform_instance)
+
+      %{rows: [[availability]]} =
+        Oli.Repo.query!(
+          """
+          INSERT INTO lti_external_tool_activity_deployments
+            (activity_registration_id, platform_instance_id, inserted_at, updated_at)
+          VALUES ($1, $2, now(), now())
+          RETURNING availability
+          """,
+          [registration.id, platform_instance.id]
+        )
+
+      assert availability == "private"
+    end
+  end
+
   describe "update_lti_external_tool_activity/2" do
     setup do
       institution = insert(:institution)

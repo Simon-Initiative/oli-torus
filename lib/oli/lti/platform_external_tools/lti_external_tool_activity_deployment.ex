@@ -3,6 +3,7 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
   import Ecto.Changeset
 
   @status_values [:enabled, :disabled, :deleted]
+  @availability_values [:public, :private]
 
   # the primary key 'id' is the same as the LTI 1.3 deployment ID
   @primary_key {:deployment_id, Ecto.UUID, autogenerate: true}
@@ -19,6 +20,8 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
     field :status, Ecto.Enum, values: @status_values, default: :enabled
 
     field :deep_linking_enabled, :boolean, default: false
+
+    field :availability, Ecto.Enum, values: @availability_values, default: :private
 
     timestamps(type: :utc_datetime)
   end
