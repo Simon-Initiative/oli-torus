@@ -31,3 +31,7 @@ A release candidate can be created with a tag formatted as `vX.Y.Z-rcN` where X.
 Deployments to the production server can be initiated by manually invoking the 'Deploy' workflow from the GitHub Actions tab. The workflow will prompt for the version to deploy, which must be a tag that exists on the `master`. The deployment requires an approval from authorized personnel before it can proceed. The workflow will then deploy the tagged package release to the production server.
 
 > **Note:** Production deployments assume a previous build has been packaged, and therefore any commit tagged as a release must exist on the `master` branch, a `prerelease-*` branch or be packaged by manually invoking the 'Package' workflow first.
+
+## Evaluator Lambda deployments
+
+Adaptive rules and variable substitution can run in AWS Lambda. Use the separate [adaptive rules](../../docs/runbooks/adaptive-rules-lambda.md) and [variable substitution](../../docs/runbooks/variable-substitution-lambda.md) runbooks to build, package, deploy, configure, verify, and roll back each function independently. The normal Torus release workflow builds the evaluator bundles but does not deploy these functions.
