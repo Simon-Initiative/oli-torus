@@ -111,7 +111,9 @@ where:
 
   n            \= total attempts by student s on sub-objective k
 
-  P(correct)ᵢ  \= LKT predicted probability on attempt i
+  P(correct)ᵢ  \= LKT predicted probability after incorporating response i
+
+Runtime clarification: each response first increments practice count and updates decayed success/failure scores and recency logit. The prediction averaged for that response uses this updated state, including `gamma * log(new_attempt_count + 1)`.
 
 The score updates incrementally after each new attempt \- no need to re-average all historical predictions:
 

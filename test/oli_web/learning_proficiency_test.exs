@@ -269,6 +269,18 @@ defmodule OliWeb.LearningProficiencyTest do
              "At exactly 40%, this framework reports Medium"
            )
 
+    assert has_element?(
+             view,
+             "#lkt-aoa-parent-example",
+             "A parent LO shows a proficiency level only after at least one sub-objective has three attempts."
+           )
+
+    assert has_element?(
+             view,
+             "#lkt-aoa-parent-example",
+             "Two attempts on each of two sub-objectives still gives the parent Not enough data."
+           )
+
     assert has_element?(view, "#legacy-framework", "each incorrect first attempt contributes 0.2")
 
     assert has_element?(
@@ -276,6 +288,53 @@ defmodule OliWeb.LearningProficiencyTest do
              "#lkt-aoa-framework",
              "Answering the same question or answer field again contributes to proficiency but does not increase confidence."
            )
+  end
+
+  test "LKT documentation follows runtime cutoffs and post-response predictions", s do
+    original = Application.fetch_env!(:oli, :lkt_aoa)
+    on_exit(fn -> Application.put_env(:oli, :lkt_aoa, original) end)
+    conn = log_in_author(s.conn, s.author)
+    docs = "/workspaces/course_author/#{s.project.slug}/learning_proficiency"
+
+    {:ok, default_view, _} = live(conn, docs)
+    assert has_element?(default_view, "#lkt-aoa-framework", "Medium (40% through 70%)")
+
+    assert has_element?(
+             default_view,
+             "#lkt-aoa-proficiency-example",
+             "predicted after incorporating each response"
+           )
+
+    assert has_element?(default_view, "#lkt-aoa-insufficient-example", "Result: High proficiency")
+
+    assert has_element?(
+             default_view,
+             "#lkt-aoa-parent-example",
+             "Parent result: High proficiency"
+           )
+
+    Application.put_env(
+      :oli,
+      :lkt_aoa,
+      Keyword.merge(original, low_medium_cutoff: 55.5, medium_high_cutoff: 85.5)
+    )
+
+    {:ok, custom_view, _} = live(conn, docs)
+    assert has_element?(custom_view, "#lkt-aoa-framework", "Medium (55.5% through 85.5%)")
+
+    assert has_element?(
+             custom_view,
+             "#lkt-aoa-insufficient-example",
+             "Result: Medium proficiency"
+           )
+
+    assert has_element?(
+             custom_view,
+             "#lkt-aoa-parent-example",
+             "Parent result: Medium proficiency"
+           )
+
+    assert has_element?(custom_view, "#legacy-framework", "Medium (above 40% through 80%)")
   end
 
   test "documentation is restricted to authorized authors and content administrators", s do

@@ -74,11 +74,44 @@ defmodule Oli.LearningModel.LktAoa.ApplicationTest do
         )
 
       assert state.attempt_count == 1
-      assert_in_delta state.aoa, 0.5, 1.0e-12
+      assert_in_delta state.aoa, 0.6818879998182597, 1.0e-12
       assert_in_delta state.success_score, 1.0, 1.0e-12
       assert_in_delta state.failure_score, 0.0, 1.0e-12
       assert_in_delta state.recency_logit, :math.log(2.0), 1.0e-12
       assert state.unique_activity_part_count == 1
+    end
+
+    test "three evaluated responses immediately produce the expected score and level and retries are no-ops" do
+      for {third_score, expected_score, expected_label} <- [
+            {1.0, 0.751934909865977, :high},
+            {0.0, 0.6848988453281937, :medium}
+          ] do
+        %{section: section, group: group, user: user, objectives: [objective]} =
+          LktAoaFixtures.lkt_fixture(%{
+            part_attempts: [
+              %{part_id: "part-1", score: 1.0},
+              %{part_id: "part-2", score: 1.0},
+              %{part_id: "part-3", score: third_score}
+            ]
+          })
+
+        assert {:ok, %BatchResult{status: :applied, contribution_count: 3}} =
+                 LearningModel.apply_evaluated_attempts(section, group)
+
+        assert {:ok, estimates} =
+                 Proficiency.estimates_for_objectives(section, [user.id], [objective.id])
+
+        estimate = estimates[objective.id][user.id]
+        assert_in_delta estimate.score, expected_score, 1.0e-12
+        assert estimate.label == expected_label
+        assert estimate.attempt_count == 3
+
+        assert {:ok, %BatchResult{status: :noop}} =
+                 LearningModel.apply_evaluated_attempts(section, group)
+
+        assert {:ok, ^estimates} =
+                 Proficiency.estimates_for_objectives(section, [user.id], [objective.id])
+      end
     end
 
     test "resolves objectives from the attempted remixed project's publication" do

@@ -75,10 +75,65 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
     assert_in_delta aggregate.numeric_score, 0.5, 1.0e-12
     assert aggregate.contributing_count == 2
     assert aggregate.total_count == 3
-    assert aggregate.distribution == %{low: 1, medium: 1, not_enough_information: 1}
+    assert aggregate.distribution == %{low: 1, high: 1, not_enough_information: 1}
     assert_receive {:provider_operation, :class_scope}
     refute_receive {:provider_operation, :learner_scope}
     :telemetry.detach(handler)
+  end
+
+  test "configured cutoff boundaries agree across learner scopes and SQL class distributions" do
+    %{section: section, root: root, page: page, objectives: [objective | _]} = scope_fixture()
+    original = Application.fetch_env!(:oli, :lkt_aoa)
+    on_exit(fn -> Application.put_env(:oli, :lkt_aoa, original) end)
+
+    Application.put_env(
+      :oli,
+      :lkt_aoa,
+      Keyword.merge(original, low_medium_cutoff: 55.5, medium_high_cutoff: 85.5)
+    )
+
+    cases = [
+      {0.0, :low},
+      {0.555 - 0.000001, :low},
+      {0.555, :medium},
+      {0.855, :medium},
+      {0.855 + 0.000001, :high},
+      {1.0, :high}
+    ]
+
+    users =
+      Enum.map(cases, fn {score, _label} ->
+        user = insert(:user)
+        insert_state(section, user, objective, aoa: score, attempt_count: 3)
+        user
+      end)
+
+    unavailable = insert(:user)
+    insert_state(section, unavailable, objective, aoa: 1.0, attempt_count: 2)
+    user_ids = Enum.map(users, & &1.id) ++ [unavailable.id]
+    scopes = [{:page, page.resource_id}, {:container, root.resource_id}, :course]
+
+    assert {:ok, estimates} = LktAoa.estimates_for_scopes(section, user_ids, scopes, [])
+    assert {:ok, aggregates} = LktAoa.scope_aggregates(section, scopes, user_ids: user_ids)
+
+    for scope <- scopes do
+      for {user, {score, expected}} <- Enum.zip(users, cases) do
+        assert estimates[scope][user.id].label == expected
+        assert estimates[scope][user.id].score == score
+      end
+
+      assert estimates[scope][unavailable.id].label == :not_enough_information
+
+      assert aggregates[scope].distribution == %{
+               low: 2,
+               medium: 2,
+               high: 2,
+               not_enough_information: 1
+             }
+
+      assert aggregates[scope].distribution ==
+               Enum.frequencies_by(Map.values(estimates[scope]), & &1.label)
+    end
   end
 
   test "page label ties preserve the legacy proficiency ordering" do

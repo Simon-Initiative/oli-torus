@@ -148,7 +148,7 @@ future maintenance value.
     breaking, and the intentional absence of cross-job chronology. Do not comment elementary map
     or arithmetic operations.
 - Testing Tasks:
-  - [x] Add hand-calculated first/subsequent transition tests covering pre-response probability,
+  - [x] Add hand-calculated first/subsequent transition tests covering post-response probability,
     AOA order, decayed scores, recency logit, exact/partial credit, and confidence (`AC-004`,
     `AC-005`, `AC-006`, `AC-007`, `AC-010`).
   - [x] Test stable extreme logits, neutral state, multiple sequential contributions, shuffled
