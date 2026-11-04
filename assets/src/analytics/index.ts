@@ -226,7 +226,12 @@ export function initializeAnalytics(value: unknown): void {
         context.preview_mode === 'template_preview'
           ? 'template_preview_launched'
           : 'preview_launched';
-      if (firstInTab(`${context.preview_mode}:${context.course_id ?? ''}`)) {
+      // The template slug is only a local tab key, never analytics context or payload.
+      const templateSlug =
+        context.preview_mode === 'template_preview'
+          ? /^\/sections\/([^/]+)/.exec(window.location.pathname)?.[1]
+          : undefined;
+      if (firstInTab(`${context.preview_mode}:${templateSlug ?? context.course_id ?? ''}`)) {
         send('feature_used', { feature_name });
       }
     } else if (

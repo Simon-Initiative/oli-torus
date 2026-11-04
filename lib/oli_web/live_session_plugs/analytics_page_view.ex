@@ -16,6 +16,7 @@ defmodule OliWeb.LiveSessionPlugs.AnalyticsPageView do
 
   The analytics subject is captured here, before views slim their assigns. The browser
   reports the context it already holds, so an unchanged context is never pushed again.
+  Later context enrichment is retained even if the view removes its source assigns.
   """
   def on_mount(:default, :not_mounted_at_router, _session, socket), do: {:cont, socket}
 
@@ -38,6 +39,7 @@ defmodule OliWeb.LiveSessionPlugs.AnalyticsPageView do
 
   defp track_page(_params, url, socket) do
     subject = Analytics.subject(socket.assigns, socket.assigns.analytics_subject)
+    socket = assign(socket, :analytics_subject, subject)
 
     case Analytics.page_context(url, subject) do
       nil ->

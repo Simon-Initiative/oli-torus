@@ -3,6 +3,10 @@ defmodule OliWeb.LiveSessionPlugs.AnalyticsPageViewTest do
 
   import Phoenix.LiveViewTest
 
+  alias Oli.Authoring.Course.Project
+  alias OliWeb.LiveSessionPlugs.AnalyticsPageView
+  alias Phoenix.LiveView.{Lifecycle, Socket, Utils}
+
   setup do
     original = Application.fetch_env(:oli, :analytics)
     Application.put_env(:oli, :analytics, gtm_container_id: "GTM-QA123")
@@ -69,6 +73,47 @@ defmodule OliWeb.LiveSessionPlugs.AnalyticsPageViewTest do
 
     render_patch(view, "/users/log_in?tab=private")
     refute_push_event(view, "analytics:page_view", %{})
+  end
+
+  test "late course context survives removed source assigns, even when already reported" do
+    context = %{
+      "page_path" => "/workspaces/course_author",
+      "page_area" => "authoring",
+      "page_title" => "Authoring",
+      "traffic_type" => "external",
+      "course_id" => 7
+    }
+
+    for reported <- [context, nil] do
+      socket = %Socket{
+        router: OliWeb.Router,
+        transport_pid: self(),
+        private: %{
+          live_temp: %{},
+          lifecycle: %Lifecycle{},
+          connect_params: %{"analytics_enabled" => true, "analytics_context" => reported}
+        }
+      }
+
+      {:cont, socket} = AnalyticsPageView.on_mount(:default, %{}, %{}, socket)
+      socket = Phoenix.Component.assign(socket, :project, %Project{id: 7})
+
+      {:cont, socket} =
+        Lifecycle.handle_params(%{}, "https://torus.example/workspaces/course_author", socket)
+
+      pushed = Utils.get_push_events(socket)
+      socket = %{socket | assigns: Map.delete(socket.assigns, :project)}
+
+      {:cont, socket} =
+        Lifecycle.handle_params(
+          %{"tab" => "outline"},
+          "https://torus.example/workspaces/course_author?tab=outline",
+          socket
+        )
+
+      assert socket.assigns.analytics_context == context
+      assert Utils.get_push_events(socket) == pushed
+    end
   end
 
   test "LiveView navigation to another view in the live session pushes once", %{conn: conn} do
