@@ -38,5 +38,14 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
     |> validate_inclusion(:status, @status_values)
   end
 
+  @doc """
+  Casts and requires `availability` only, so changing it leaves every other field as it is.
+  """
+  def availability_changeset(lti_external_tool_deployment, attrs) do
+    lti_external_tool_deployment
+    |> cast(attrs, [:availability])
+    |> validate_required([:availability])
+  end
+
   def status_values, do: @status_values
 end
