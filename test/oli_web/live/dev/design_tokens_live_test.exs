@@ -31,6 +31,10 @@ defmodule OliWeb.Dev.DesignTokensLiveTest do
 
       assert rendered =~ "&lt;SearchBar.search_bar"
 
+      assert rendered =~ "Radio-Item/Orientation"
+      assert has_element?(view, "fieldset#radio-group-vertical input[type='radio']")
+      assert rendered =~ "&lt;RadioGroup.radio_group"
+
       # Badge has no meaningful "disabled" state, so it must not show one.
       refute has_element?(view, "[id^='copy-disabled-badge']")
     end

@@ -320,6 +320,7 @@ defmodule Oli.Lti.PlatformExternalTools do
           description: p.description,
           inserted_at: p.inserted_at,
           status: lad.status,
+          availability: lad.availability,
           total_count: fragment("count(*) OVER()")
         }
 
@@ -328,8 +329,8 @@ defmodule Oli.Lti.PlatformExternalTools do
         field when field in [:name, :description, :inserted_at] ->
           order_by(query, [p], {^direction, field(p, ^field)})
 
-        :status ->
-          order_by(query, [_p, lad], {^direction, lad.status})
+        field when field in [:status, :availability] ->
+          order_by(query, [_p, lad], {^direction, field(lad, ^field)})
 
         _ ->
           query

@@ -1,11 +1,14 @@
 defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
   use OliWeb.ConnCase, async: true
 
+  import Ecto.Query
   import Phoenix.LiveViewTest
   import Oli.Factory
   import Oli.TestHelpers
 
+  alias Oli.Accounts.SystemRole
   alias Oli.Lti.PlatformExternalTools
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolProjectGrant
   alias Oli.Repo
 
   def insert_lti_tool(_) do
@@ -330,6 +333,325 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       refute has_element?(view, "button", "Edit Details")
       refute has_element?(view, "#toggle_switch_form")
       refute has_element?(view, "button[role='delete tool']")
+      refute has_element?(view, "#availability_form")
+      refute has_element?(view, "#tool_grants")
     end
+  end
+
+  describe "availability and project access" do
+    setup [:admin_conn, :insert_lti_tool]
+
+    test "Public saves at once, Private is confirmed first, and projects with access show only while Private",
+         %{conn: conn, platform_instance: pi, deployment: dep} do
+      project = insert(:project, title: "Granted Chemistry")
+      {:ok, _} = PlatformExternalTools.grant_project(dep, project.id)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      assert has_element?(view, "fieldset#availability-0 legend", "Availability")
+      assert has_element?(view, "#availability-0-private[checked]")
+      refute has_element?(view, "#availability-0-public[checked]")
+
+      assert has_element?(
+               view,
+               "#availability_help",
+               "Only the projects below can add this tool."
+             )
+
+      assert has_element?(view, "#tool_grants", "Granted Chemistry")
+
+      view |> form("#availability_form", %{availability: "public"}) |> render_change()
+
+      assert reload(dep).availability == :public
+      refute has_element?(view, "#make_private_modal")
+      assert has_element?(view, "#flash", "made the LTI 1.3 External Tool public")
+      assert has_element?(view, "#availability-0-public[checked]")
+      assert has_element?(view, "#availability_help", "Any project can add this tool.")
+      refute has_element?(view, "#tool_grants")
+
+      view |> form("#availability_form", %{availability: "private"}) |> render_change()
+
+      assert has_element?(view, "#make_private_modal", "Make Original Tool private?")
+      assert has_element?(view, "#availability-0-private[checked]")
+      assert reload(dep).availability == :public
+
+      view |> element("#make_private_modal button", "Cancel") |> render_click()
+
+      refute has_element?(view, "#make_private_modal")
+      assert has_element?(view, "#availability-0-public[checked]")
+      assert reload(dep).availability == :public
+
+      view |> form("#availability_form", %{availability: "private"}) |> render_change()
+      view |> element("#make_private_modal-confirm") |> render_click()
+
+      assert reload(dep).availability == :private
+      assert has_element?(view, "#flash", "made the LTI 1.3 External Tool private")
+      assert has_element?(view, "#tool_grants", "Granted Chemistry")
+    end
+
+    test "grants a project found by the search and removes it", %{
+      conn: conn,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      chemistry = insert(:project, title: "Chemistry Target", slug: "chemistry_target")
+      physics = insert(:project, title: "Physics Target", slug: "physics_target")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      assert has_element?(view, "#no_grants", "No project can add this tool yet.")
+
+      view |> form("#project_search_form", %{value: "chemistry"}) |> render_change()
+
+      assert has_element?(view, "#search_results_table", "Chemistry Target")
+      refute has_element?(view, "#search_results_table", "Physics Target")
+
+      view |> form("#project_search_form", %{value: "target"}) |> render_change()
+
+      view
+      |> element("#search_results_table button[phx-value-id='#{chemistry.id}']", "Grant access")
+      |> render_click()
+
+      assert granted?(dep, chemistry)
+      refute granted?(dep, physics)
+      refute has_element?(view, "#no_grants")
+
+      assert has_element?(
+               view,
+               "#granted_projects_table a[href='/workspaces/course_author/chemistry_target/overview']",
+               "Chemistry Target"
+             )
+
+      assert has_element?(view, "#granted_projects_table", "ID: chemistry_target")
+      refute has_element?(view, "#granted_projects_table", "Physics Target")
+
+      assert has_element?(
+               view,
+               "#search_results_table button[phx-value-id='#{physics.id}']",
+               "Grant access"
+             )
+
+      refute has_element?(view, "#search_results_table", "Chemistry Target")
+
+      view
+      |> element("#granted_projects_table button[phx-value-id='#{chemistry.id}']", "Remove")
+      |> render_click()
+
+      refute granted?(dep, chemistry)
+      assert has_element?(view, "#no_grants")
+      assert has_element?(view, "#search_results_table", "Chemistry Target")
+    end
+
+    test "keeps row ids unique when a grant removed elsewhere shows one project in both lists", %{
+      conn: conn,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      project = insert(:project, title: "Chemistry Target")
+      {:ok, _} = PlatformExternalTools.grant_project(dep, project.id)
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      :ok = PlatformExternalTools.revoke_project(dep, project.id)
+      view |> form("#project_search_form", %{value: "chemistry"}) |> render_change()
+
+      assert has_element?(view, "#granted_projects_table tr#granted-#{project.id}")
+      assert has_element?(view, "#search_results_table tr#result-#{project.id}")
+    end
+
+    test "keeps the two clear buttons' ids distinct when both filters have text", %{
+      conn: conn,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      project = insert(:project, title: "Chemistry Target")
+      {:ok, _} = PlatformExternalTools.grant_project(dep, project.id)
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      view |> form("#granted_filter_form", %{value: "chemistry"}) |> render_change()
+      view |> form("#project_search_form", %{value: "physics"}) |> render_change()
+
+      assert has_element?(view, "button#reset_grants_filter")
+      assert has_element?(view, "button#clear_project_search")
+    end
+
+    test "does not grant a project that stopped being active after the search", %{
+      conn: conn,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      project = insert(:project, title: "Chemistry Target")
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+      view |> form("#project_search_form", %{value: "chemistry"}) |> render_change()
+
+      project |> Ecto.Changeset.change(status: :deleted) |> Repo.update!()
+
+      view
+      |> element("#search_results_table button[phx-value-id='#{project.id}']", "Grant access")
+      |> render_click()
+
+      refute granted?(dep, project)
+      assert has_element?(view, "#flash", "Chemistry Target is no longer active")
+      refute has_element?(view, "#search_results_table", "Chemistry Target")
+    end
+
+    test "the search shows the first 10 matches and says when there are more", %{
+      conn: conn,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      [first | _] =
+        for n <- 1..11 do
+          insert(:project, title: "Zeta Course #{String.pad_leading("#{n}", 2, "0")}")
+        end
+
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      html = view |> form("#project_search_form", %{value: "zeta course"}) |> render_change()
+
+      assert html |> row_slugs("#search_results_table") |> length() == 10
+      assert has_element?(view, "#more_results_notice", "Showing the first 10 matches.")
+
+      {:ok, _} = PlatformExternalTools.grant_project(dep, first.id)
+      html = view |> form("#project_search_form", %{value: "zeta course"}) |> render_change()
+
+      assert html |> row_slugs("#search_results_table") |> length() == 10
+      refute has_element?(view, "#more_results_notice")
+    end
+
+    test "lists projects with access 20 per page, sorted by title, with a filter", %{
+      conn: conn,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      for n <- 21..1//-1 do
+        number = String.pad_leading("#{n}", 2, "0")
+        project = insert(:project, title: "Alpha #{number}", slug: "alpha_#{number}")
+        {:ok, _} = PlatformExternalTools.grant_project(dep, project.id)
+      end
+
+      {:ok, view, html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      first_page = row_slugs(html, "#granted_projects_table")
+      assert length(first_page) == 20
+      assert hd(first_page) == "alpha_01"
+
+      html =
+        view
+        |> element("#granted_projects_table button[aria-label='Next page']")
+        |> render_click()
+
+      assert row_slugs(html, "#granted_projects_table") == ["alpha_21"]
+
+      html = view |> element("#granted_projects_table th", "Project") |> render_click()
+      assert html |> row_slugs("#granted_projects_table") |> hd() == "alpha_21"
+
+      html = view |> form("#granted_filter_form", %{value: "alpha 07"}) |> render_change()
+      assert row_slugs(html, "#granted_projects_table") == ["alpha_07"]
+
+      html = view |> form("#granted_filter_form", %{value: "alpha_12"}) |> render_change()
+      assert row_slugs(html, "#granted_projects_table") == ["alpha_12"]
+    end
+  end
+
+  describe "availability and project access for an account admin" do
+    setup [:account_admin_conn, :insert_lti_tool]
+
+    test "stop being allowed once the author is no longer an account admin", %{
+      conn: conn,
+      account_admin: account_admin,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      chemistry = insert(:project, title: "Chemistry Target")
+      physics = insert(:project, title: "Physics Target")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+      view |> form("#project_search_form", %{value: "target"}) |> render_change()
+
+      view
+      |> element("#search_results_table button[phx-value-id='#{chemistry.id}']")
+      |> render_click()
+
+      assert granted?(dep, chemistry)
+
+      set_role(account_admin, :content_admin)
+
+      view
+      |> element("#search_results_table button[phx-value-id='#{physics.id}']")
+      |> render_click()
+
+      refute granted?(dep, physics)
+      assert has_element?(view, "#flash", "Only account administrators can change")
+
+      view
+      |> element("#granted_projects_table button[phx-value-id='#{chemistry.id}']")
+      |> render_click()
+
+      assert granted?(dep, chemistry)
+
+      view |> form("#availability_form", %{availability: "public"}) |> render_change()
+
+      assert reload(dep).availability == :private
+    end
+
+    test "a refused change to Public renders the control again with the stored Private", %{
+      conn: conn,
+      account_admin: account_admin,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+      assert has_element?(view, "#availability-0-private[checked]")
+
+      set_role(account_admin, :author)
+      view |> form("#availability_form", %{availability: "public"}) |> render_change()
+
+      assert reload(dep).availability == :private
+      refute has_element?(view, "#availability-0-private")
+      assert has_element?(view, "#availability-1-private[checked]")
+    end
+
+    test "a Private confirmed by an author who lost the role is not saved", %{
+      conn: conn,
+      account_admin: account_admin,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      {:ok, _} = PlatformExternalTools.set_availability(dep, :public)
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      set_role(account_admin, :author)
+
+      view |> form("#availability_form", %{availability: "private"}) |> render_change()
+      view |> element("#make_private_modal-confirm") |> render_click()
+
+      assert reload(dep).availability == :public
+      assert has_element?(view, "#flash", "Only account administrators can change")
+    end
+  end
+
+  defp reload(dep),
+    do: PlatformExternalTools.get_lti_external_tool_activity_deployment!(dep.deployment_id)
+
+  defp granted?(dep, project) do
+    Repo.exists?(
+      from g in LtiExternalToolProjectGrant,
+        where: g.deployment_id == ^dep.deployment_id and g.project_id == ^project.id
+    )
+  end
+
+  defp set_role(author, role) do
+    author
+    |> Ecto.Changeset.change(system_role_id: Map.fetch!(SystemRole.role_id(), role))
+    |> Repo.update!()
+  end
+
+  # A filtered title is split into highlighted words, so rows are read by the slug in their link.
+  defp row_slugs(html, table) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find("#{table} tbody tr td:first-child a")
+    |> Enum.flat_map(&Floki.attribute(&1, "href"))
+    |> Enum.map(&(&1 |> String.split("/") |> Enum.at(-2)))
   end
 end
