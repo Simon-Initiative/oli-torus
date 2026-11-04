@@ -12,6 +12,7 @@ defmodule Oli.Activities do
   alias Oli.Activities.ActivityRegistrationProject
   alias Oli.Activities.ActivityMapEntry
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolProjectGrant
   import Oli.Utils
   require Logger
 
@@ -484,7 +485,8 @@ defmodule Oli.Activities do
 
   @doc """
   Returns all advanced activities and LTI tools that can be selected for a given project.
-  - For LTI tools, it only returns the ones that are enabled in the platform (by an admin).
+  - For LTI tools, it only returns the ones that are enabled in the platform (by an admin) and that the project can add
+  (Public, or Private with a grant for the project), plus the ones already added to the project, so they can be removed.
   - Each result includes the ActivityRegistration record with its project-specific status (enabled/disabled when already selected, or nil if not yet selected)
   and the deployment_id for LTI tools (for advanced activities this value is nil).
   - If the is_admin? argument is true, then the list will also include not globally visible activities/tools.
@@ -493,19 +495,41 @@ defmodule Oli.Activities do
           %{activity: ActivityRegistration.t(), project_status: atom() | nil}
         ]
   def selectable_activities_for_project(project_id, is_admin? \\ false) do
+    project_id
+    |> project_registrations(is_admin?)
+    |> where(^dynamic([association: arp], ^addable() or not is_nil(arp.project_id)))
+    |> order_by([registration: ar, deployment: d], desc: d.deployment_id, asc: ar.title)
+    |> select([registration: ar], ar)
+    |> select_merge([association: arp, deployment: d], %{
+      project_status: arp.status,
+      deployment_id: d.deployment_id
+    })
+    |> Repo.all()
+  end
+
+  defp project_registrations(project_id, is_admin?) do
     from(ar in ActivityRegistration,
+      as: :registration,
       left_join: arp in ActivityRegistrationProject,
+      as: :association,
       on: arp.activity_registration_id == ar.id and arp.project_id == ^project_id,
       left_join: d in LtiExternalToolActivityDeployment,
+      as: :deployment,
       on: d.activity_registration_id == ar.id,
+      left_join: g in LtiExternalToolProjectGrant,
+      as: :grant,
+      on: g.deployment_id == d.deployment_id and g.project_id == ^project_id,
       where:
         (ar.globally_visible or ^is_admin?) and (is_nil(d.status) or d.status == :enabled) and
-          not ar.globally_available,
-      order_by: [desc: d.deployment_id, asc: ar.title],
-      select: ar,
-      select_merge: %{project_status: arp.status, deployment_id: d.deployment_id}
+          not ar.globally_available
     )
-    |> Repo.all()
+  end
+
+  defp addable do
+    dynamic(
+      [deployment: d, grant: g],
+      is_nil(d.deployment_id) or d.availability == :public or not is_nil(g.id)
+    )
   end
 
   @doc """
@@ -536,46 +560,90 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Bulk update project activities - adds new activities and removes deselected ones
+  Bulk update project activities - adds new activities and removes deselected ones.
+  Every activity to add must be one the project can add for an actor with `is_admin?` (the rule of
+  `selectable_activities_for_project/2` without the activities already added); if any is not, nothing is added or
+  removed and `{:error, {:not_addable, titles}}` names them. Removals are not checked.
   """
-  @spec bulk_update_project_activities(integer(), [integer()], [integer()]) ::
-          :ok | {:error, String.t()}
-  def bulk_update_project_activities(project_id, activity_ids_to_add, activity_ids_to_remove) do
+  @spec bulk_update_project_activities(integer(), [integer()], [integer()], boolean()) ::
+          :ok | {:error, {:not_addable, [String.t()]}} | {:error, String.t()}
+  def bulk_update_project_activities(
+        project_id,
+        activity_ids_to_add,
+        activity_ids_to_remove,
+        is_admin?
+      ) do
     Repo.transaction(fn ->
-      # Add new activities
-      if Enum.any?(activity_ids_to_add) do
-        now = DateTime.utc_now() |> DateTime.truncate(:second)
+      case not_addable_titles(project_id, activity_ids_to_add, is_admin?) do
+        [] ->
+          apply_project_activity_changes(project_id, activity_ids_to_add, activity_ids_to_remove)
 
-        values =
-          Enum.map(activity_ids_to_add, fn activity_id ->
-            %{
-              activity_registration_id: activity_id,
-              project_id: project_id,
-              status: :enabled,
-              inserted_at: now,
-              updated_at: now
-            }
-          end)
-
-        Repo.insert_all(ActivityRegistrationProject, values,
-          on_conflict: [set: [status: :enabled, updated_at: now]],
-          conflict_target: [:activity_registration_id, :project_id]
-        )
-      end
-
-      # Remove deselected activities
-      if Enum.any?(activity_ids_to_remove) do
-        from(arp in ActivityRegistrationProject,
-          where:
-            arp.project_id == ^project_id and
-              arp.activity_registration_id in ^activity_ids_to_remove
-        )
-        |> Repo.delete_all()
+        titles ->
+          Repo.rollback({:not_addable, titles})
       end
     end)
     |> case do
       {:ok, _} -> :ok
+      {:error, {:not_addable, _titles} = reason} -> {:error, reason}
       {:error, error} -> {:error, "Failed to update project activities: #{inspect(error)}"}
+    end
+  end
+
+  defp not_addable_titles(_project_id, [], _is_admin?), do: []
+
+  defp not_addable_titles(project_id, activity_ids, is_admin?) do
+    addable_ids =
+      project_id
+      |> project_registrations(is_admin?)
+      |> where([registration: ar], ar.id in ^activity_ids)
+      |> where(^addable())
+      |> select([registration: ar], ar.id)
+      |> Repo.all()
+
+    case activity_ids -- addable_ids do
+      [] ->
+        []
+
+      refused_ids ->
+        from(ar in ActivityRegistration,
+          where: ar.id in ^refused_ids,
+          order_by: ar.title,
+          select: ar.title
+        )
+        |> Repo.all()
+    end
+  end
+
+  defp apply_project_activity_changes(project_id, activity_ids_to_add, activity_ids_to_remove) do
+    # Add new activities
+    if Enum.any?(activity_ids_to_add) do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      values =
+        Enum.map(activity_ids_to_add, fn activity_id ->
+          %{
+            activity_registration_id: activity_id,
+            project_id: project_id,
+            status: :enabled,
+            inserted_at: now,
+            updated_at: now
+          }
+        end)
+
+      Repo.insert_all(ActivityRegistrationProject, values,
+        on_conflict: [set: [status: :enabled, updated_at: now]],
+        conflict_target: [:activity_registration_id, :project_id]
+      )
+    end
+
+    # Remove deselected activities
+    if Enum.any?(activity_ids_to_remove) do
+      from(arp in ActivityRegistrationProject,
+        where:
+          arp.project_id == ^project_id and
+            arp.activity_registration_id in ^activity_ids_to_remove
+      )
+      |> Repo.delete_all()
     end
   end
 

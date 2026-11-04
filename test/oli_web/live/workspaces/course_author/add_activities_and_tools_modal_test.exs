@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
   import Ecto.Query, only: [where: 2]
 
   alias Oli.Activities.ActivityRegistrationProject
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolProjectGrant
   alias Oli.Repo
 
   defp manually_trigger_show_modal_event(lcd) do
@@ -50,7 +51,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
       deployment =
         insert(:lti_external_tool_activity_deployment, %{
           activity_registration: lti_tool,
-          status: :enabled
+          status: :enabled,
+          availability: :public
         })
 
       [
@@ -706,6 +708,239 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
 
       refute associated?(activity1, project)
     end
+
+    test "refuses a tool whose grant was removed while the modal was open and names it", %{
+      conn: conn,
+      project: project,
+      author: author,
+      lti_tool: lti_tool,
+      deployment: deployment
+    } do
+      make_private(deployment)
+      grant = grant(deployment, project)
+      {:ok, lcd, _html} = mount_modal(conn, project, author)
+      open_tools_tab(lcd)
+      Repo.delete!(grant)
+
+      select_tools_and_apply(lcd, [lti_tool], intercept_flash(lcd))
+
+      assert_received {:flash,
+                       {:error,
+                        "LTI Tool is not available for this project. No changes were applied."}}
+
+      refute associated?(lti_tool, project)
+    end
+
+    test "refuses tools switched to private while the modal was open and names them all", %{
+      conn: conn,
+      project: project,
+      author: author,
+      lti_tool: lti_tool,
+      deployment: deployment
+    } do
+      %{registration: geo_mapper, deployment: geo_deployment} = public_tool("Geo Mapper")
+      {:ok, lcd, _html} = mount_modal(conn, project, author)
+      open_tools_tab(lcd)
+      make_private(deployment)
+      make_private(geo_deployment)
+
+      select_tools_and_apply(lcd, [lti_tool, geo_mapper], intercept_flash(lcd))
+
+      assert_received {:flash,
+                       {:error,
+                        "Geo Mapper and LTI Tool are not available for this project. No changes were applied."}}
+
+      refute associated?(lti_tool, project)
+      refute associated?(geo_mapper, project)
+    end
+
+    test "a content admin demoted after opening the modal can no longer add an admin-only tool",
+         %{
+           conn: conn,
+           project: project,
+           lti_tool: lti_tool
+         } do
+      admin =
+        insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+
+      insert(:author_project, project_id: project.id, author_id: admin.id)
+
+      %{registration: admin_only} =
+        public_tool("Admin Only Tool", %{globally_visible: false})
+
+      {:ok, lcd, _html} =
+        live_component_isolated(
+          conn,
+          OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
+          %{id: "test-modal", project: project, current_author: admin, is_admin: true}
+        )
+
+      open_tools_tab(lcd)
+
+      admin
+      |> Ecto.Changeset.change(system_role_id: Oli.Accounts.SystemRole.role_id().author)
+      |> Repo.update!()
+
+      select_tools_and_apply(lcd, [admin_only], intercept_flash(lcd))
+
+      assert_received {:flash,
+                       {:error,
+                        "Admin Only Tool is not available for this project. No changes were applied."}}
+
+      refute associated?(admin_only, project)
+
+      select_tools_and_apply(lcd, [admin_only, lti_tool], fn -> :ok end)
+
+      assert associated?(lti_tool, project)
+      refute associated?(admin_only, project)
+    end
+
+    test "a content admin adds an admin-only tool", %{conn: conn, project: project} do
+      admin =
+        insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+
+      insert(:author_project, project_id: project.id, author_id: admin.id)
+
+      %{registration: admin_only} =
+        public_tool("Admin Only Tool", %{globally_visible: false})
+
+      {:ok, lcd, _html} =
+        live_component_isolated(
+          conn,
+          OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
+          %{id: "test-modal", project: project, current_author: admin, is_admin: true}
+        )
+
+      open_tools_tab(lcd)
+      select_tools_and_apply(lcd, [admin_only], fn -> :ok end)
+
+      assert associated?(admin_only, project)
+    end
+
+    test "says no external tool is available when every tool is private without a grant", %{
+      conn: conn,
+      project: project,
+      author: author,
+      lti_tool: lti_tool,
+      deployment: deployment
+    } do
+      make_private(deployment)
+      {:ok, lcd, _html} = mount_modal(conn, project, author)
+      open_tools_tab(lcd)
+
+      assert render(lcd) =~ "No external tools are currently available for this project."
+      refute has_element?(lcd, "[role='tool-item'][data-tool-id='#{lti_tool.id}']")
+
+      grant(deployment, project)
+      {:ok, granted_lcd, _html} = mount_modal(conn, project, author)
+      open_tools_tab(granted_lcd)
+
+      assert has_element?(granted_lcd, "[role='tool-item'][data-tool-id='#{lti_tool.id}']")
+      refute render(granted_lcd) =~ "No external tools are currently available for this project."
+    end
+
+    test "lists a private tool added before it lost its grant as selected, and removes it", %{
+      conn: conn,
+      project: project,
+      author: author,
+      lti_tool: lti_tool,
+      deployment: deployment
+    } do
+      make_private(deployment)
+
+      insert(:activity_registration_project, %{
+        project_id: project.id,
+        activity_registration_id: lti_tool.id,
+        status: :enabled
+      })
+
+      {:ok, lcd, _html} = mount_modal(conn, project, author)
+      open_tools_tab(lcd)
+
+      assert lcd
+             |> element(
+               "[role='tool-item'][data-tool-id='#{lti_tool.id}'] input[type='checkbox']"
+             )
+             |> render() =~ "checked"
+
+      select_tools_and_apply(lcd, [lti_tool], fn -> :ok end)
+
+      refute associated?(lti_tool, project)
+    end
+  end
+
+  defp public_tool(title, registration_attrs \\ %{}) do
+    registration =
+      insert(
+        :activity_registration,
+        Map.merge(
+          %{
+            title: title,
+            delivery_element: "lti-external-tool-delivery",
+            authoring_element: "lti-external-tool-authoring",
+            globally_visible: true,
+            globally_available: false
+          },
+          registration_attrs
+        )
+      )
+
+    deployment =
+      insert(:lti_external_tool_activity_deployment, %{
+        activity_registration: registration,
+        status: :enabled,
+        availability: :public
+      })
+
+    %{registration: registration, deployment: deployment}
+  end
+
+  defp make_private(deployment) do
+    deployment |> Ecto.Changeset.change(availability: :private) |> Repo.update!()
+  end
+
+  defp grant(deployment, project) do
+    Repo.insert!(%LtiExternalToolProjectGrant{
+      deployment_id: deployment.deployment_id,
+      project_id: project.id
+    })
+  end
+
+  defp open_tools_tab(lcd) do
+    manually_trigger_show_modal_event(lcd)
+
+    lcd
+    |> element("[role='tab'][data-tab='tools']")
+    |> render_click()
+  end
+
+  defp intercept_flash(lcd) do
+    test_pid = self()
+
+    fn ->
+      live_component_intercept(lcd, fn
+        {:flash_message, message}, socket ->
+          send(test_pid, {:flash, message})
+          {:halt, socket}
+
+        _other, socket ->
+          {:cont, socket}
+      end)
+    end
+  end
+
+  defp select_tools_and_apply(lcd, tools, before_apply) do
+    Enum.each(tools, fn tool ->
+      lcd
+      |> element("[role='tool-item'][data-tool-id='#{tool.id}']")
+      |> render_click()
+    end)
+
+    before_apply.()
+
+    lcd
+    |> element("[role='apply-button']")
+    |> render_click()
   end
 
   defp mount_modal(conn, project, author) do

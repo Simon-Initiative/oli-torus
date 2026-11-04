@@ -272,6 +272,46 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
 
       assert row_status(own_row) == :enabled
     end
+
+    test "disables and enables again a private tool the project has no grant for", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      tool =
+        insert(:activity_registration, %{
+          title: "Private Tool",
+          globally_visible: true,
+          globally_available: false
+        })
+
+      insert(:lti_external_tool_activity_deployment, %{
+        activity_registration: tool,
+        status: :enabled,
+        availability: :private
+      })
+
+      row = enabled_row(tool, project)
+
+      selected =
+        project.id
+        |> Oli.Activities.selected_activities_for_project()
+        |> Enum.find(&(&1.id == tool.id))
+
+      {:ok, lcd, _html} = mount_item(conn, selected, project, author)
+
+      lcd
+      |> element("button", "Disable")
+      |> render_click()
+
+      assert row_status(row) == :disabled
+
+      lcd
+      |> element("button", "Enable")
+      |> render_click()
+
+      assert row_status(row) == :enabled
+    end
   end
 
   defp mount_item(conn, activity, project, author) do

@@ -136,7 +136,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
 
     with %Author{} = author <- Accounts.get_author(current_author.id),
          true <- Accounts.can_access?(author, project) do
-      save_selections(socket, project)
+      save_selections(socket, project, Accounts.at_least_content_admin?(author))
     else
       _ ->
         send(self(), {:flash_message, {:error, "You don't have access to this project."}})
@@ -332,7 +332,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
                 No External Tools
               </h3>
               <p class="text-sm text-gray-500">
-                No external tools have been configured at the system level.
+                No external tools are currently available for this project.
               </p>
             </div>
           </div>
@@ -456,22 +456,35 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
     {tools, activities}
   end
 
-  defp save_selections(socket, project) do
+  defp save_selections(socket, project, is_admin?) do
     %{pending_changes: pending_changes} = socket.assigns
 
     to_add = pending_changes.activities_to_add ++ pending_changes.tools_to_add
     to_remove = pending_changes.activities_to_remove ++ pending_changes.tools_to_remove
 
-    case Activities.bulk_update_project_activities(project.id, to_add, to_remove) do
+    case Activities.bulk_update_project_activities(project.id, to_add, to_remove, is_admin?) do
       :ok ->
         send(self(), {:flash_message, {:info, "Activities and tools updated successfully."}})
         send(self(), {:refresh_tools_and_activities})
         {:noreply, reset_modal(socket, show_modal?: false)}
 
+      {:error, {:not_addable, titles}} ->
+        send(self(), {:flash_message, {:error, not_available_message(titles)}})
+        {:noreply, socket}
+
       {:error, message} ->
         send(self(), {:flash_message, {:error, message}})
         {:noreply, socket}
     end
+  end
+
+  defp not_available_message([title]),
+    do: "#{title} is not available for this project. No changes were applied."
+
+  defp not_available_message(titles) do
+    {last, rest} = List.pop_at(titles, -1)
+
+    "#{Enum.join(rest, ", ")} and #{last} are not available for this project. No changes were applied."
   end
 
   defp calculate_pending_changes(
