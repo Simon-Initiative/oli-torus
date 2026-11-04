@@ -72,6 +72,7 @@ describe('analytics events', () => {
   let documentListeners: jest.SpyInstance;
 
   beforeEach(() => {
+    window.history.replaceState({}, '', '/');
     window.sessionStorage.clear();
     reload();
     delete window.TorusConsentState;
@@ -82,6 +83,7 @@ describe('analytics events', () => {
   });
 
   afterEach(() => {
+    window.history.replaceState({}, '', '/');
     for (const [type, listener, options] of windowListeners.mock.calls) {
       window.removeEventListener(type, listener, options);
     }
@@ -248,6 +250,43 @@ describe('analytics events', () => {
       'template_preview_launched',
     ]);
   });
+
+  test.each([undefined, 42])(
+    'template previews count separately with course_id=%s and keep their identity local',
+    (course_id) => {
+      const preview = {
+        ...lesson,
+        course_id,
+        user_role: 'author',
+        preview_mode: 'template_preview',
+      };
+
+      window.history.replaceState({}, '', '/sections/private-template-one');
+      init(preview);
+
+      window.history.replaceState({}, '', '/sections/private-template-one/learn');
+      window.TorusAnalytics!.pageView({
+        ...preview,
+        course_id: 42,
+        page_path: '/sections/:section_slug/learn',
+      });
+      expect(events('feature_used')).toHaveLength(1);
+
+      window.history.replaceState({}, '', '/sections/private-template-two');
+      window.TorusAnalytics!.pageView(preview);
+      expect(events('feature_used').map((entry) => entry.feature_name)).toEqual([
+        'template_preview_launched',
+        'template_preview_launched',
+      ]);
+      expect(JSON.stringify(window.dataLayer)).not.toContain('private-template');
+      expect(JSON.stringify(window.TorusAnalytics!.context)).not.toContain('private-template');
+
+      window.history.replaceState({}, '', '/sections/private-template-one');
+      reload();
+      init(preview);
+      expect(events('feature_used')).toHaveLength(0);
+    },
+  );
 
   test('server pushes and bubbling JS command dispatches share one validated channel', () => {
     init();
