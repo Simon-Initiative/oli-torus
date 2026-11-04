@@ -16,6 +16,7 @@ defmodule Oli.CloneTest do
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Delivery.Sections
   alias Oli.LearningModel.Parameters
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolProjectGrant
   alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources
@@ -375,6 +376,73 @@ defmodule Oli.CloneTest do
       assert copied_statuses[enabled_activity.id] == :enabled
     end
 
+    test "clone_project/2 gives the copy the original's tool grants only when the author can access the original",
+         %{project: project, author: collaborator} do
+      non_collaborator = insert(:author)
+
+      content_admin =
+        insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+
+      private_tool = fn ->
+        insert(:lti_external_tool_activity_deployment,
+          availability: :private,
+          activity_registration: build(:activity_registration, globally_available: false)
+        )
+      end
+
+      added_and_granted = private_tool.()
+      granted_only = private_tool.()
+      added_without_grant = private_tool.()
+      granted_elsewhere = private_tool.()
+      other_project = insert(:project)
+
+      for tool <- [added_and_granted, added_without_grant] do
+        insert(:activity_registration_project,
+          activity_registration_id: tool.activity_registration_id,
+          project_id: project.id
+        )
+      end
+
+      for tool <- [added_and_granted, granted_only] do
+        Repo.insert!(%LtiExternalToolProjectGrant{
+          deployment_id: tool.deployment_id,
+          project_id: project.id
+        })
+      end
+
+      Repo.insert!(%LtiExternalToolProjectGrant{
+        deployment_id: granted_elsewhere.deployment_id,
+        project_id: other_project.id
+      })
+
+      {:ok, collaborator_copy} = Clone.clone_project(project.slug, collaborator)
+
+      assert granted_deployments(collaborator_copy) ==
+               MapSet.new([added_and_granted.deployment_id, granted_only.deployment_id])
+
+      refute added_without_grant.deployment_id in granted_deployments(collaborator_copy)
+      refute granted_elsewhere.deployment_id in granted_deployments(collaborator_copy)
+
+      {:ok, non_collaborator_copy} = Clone.clone_project(project.slug, non_collaborator)
+
+      assert Repo.get_by(Oli.Activities.ActivityRegistrationProject,
+               project_id: non_collaborator_copy.id,
+               activity_registration_id: added_and_granted.activity_registration_id
+             )
+
+      assert granted_deployments(non_collaborator_copy) == MapSet.new()
+
+      {:ok, content_admin_copy} = Clone.clone_project(project.slug, content_admin)
+
+      assert granted_deployments(content_admin_copy) ==
+               MapSet.new([added_and_granted.deployment_id, granted_only.deployment_id])
+
+      assert granted_deployments(project) ==
+               MapSet.new([added_and_granted.deployment_id, granted_only.deployment_id])
+
+      assert granted_deployments(other_project) == MapSet.new([granted_elsewhere.deployment_id])
+    end
+
     test "editing a cloned project revision -> in base project", %{
       author: author1,
       duplicated: duplicated,
@@ -448,5 +516,14 @@ defmodule Oli.CloneTest do
         parts: %{part_id => %PartParameters{beta_difficulty: beta_difficulty}}
       }
     }
+  end
+
+  defp granted_deployments(project) do
+    from(g in LtiExternalToolProjectGrant,
+      where: g.project_id == ^project.id,
+      select: g.deployment_id
+    )
+    |> Repo.all()
+    |> MapSet.new()
   end
 end
