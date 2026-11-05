@@ -494,7 +494,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       refute has_element?(view, "#search_results_table", "Chemistry Target")
     end
 
-    test "the search shows the first 10 matches and says when there are more", %{
+    test "the search announces accurate outcomes in one persistent polite status", %{
       conn: conn,
       platform_instance: pi,
       deployment: dep
@@ -505,17 +505,60 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
         end
 
       {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+      status = "#grant_search #project_search_status[role=status][aria-live=polite]"
+      assert has_element?(view, status)
 
-      html = view |> form("#project_search_form", %{value: "zeta course"}) |> render_change()
+      assert view
+             |> element(status)
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.text()
+             |> String.trim() == ""
 
-      assert html |> row_slugs("#search_results_table") |> length() == 10
+      for {query, message} <- [
+            {"missing course", "No matching projects."},
+            {"Zeta Course 01", "1 matching project."},
+            {"Zeta Course", "Showing the first 10 matches. Type more to narrow the search."}
+          ] do
+        html = view |> form("#project_search_form", %{value: query}) |> render_change()
+
+        assert view
+               |> element(status)
+               |> render()
+               |> Floki.parse_fragment!()
+               |> Floki.text()
+               |> String.trim() == message
+
+        assert length(
+                 Floki.find(
+                   Floki.parse_document!(html),
+                   "#grant_search [role=status], #grant_search [aria-live]"
+                 )
+               ) == 1
+
+        refute has_element?(view, "#project_search_status table")
+      end
+
+      assert render(view) |> row_slugs("#search_results_table") |> length() == 10
       assert has_element?(view, "#more_results_notice", "Showing the first 10 matches.")
 
       {:ok, _} = PlatformExternalTools.grant_project(dep, first.id)
       html = view |> form("#project_search_form", %{value: "zeta course"}) |> render_change()
-
       assert html |> row_slugs("#search_results_table") |> length() == 10
+      assert has_element?(view, status, "10 matching projects.")
       refute has_element?(view, "#more_results_notice")
+
+      view |> element("#clear_project_search") |> render_click()
+      assert has_element?(view, status)
+
+      assert view
+             |> element(status)
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.text()
+             |> String.trim() == ""
+
+      refute has_element?(view, "#search_results_table")
     end
 
     test "lists projects with access 20 per page, sorted by title, with a filter", %{

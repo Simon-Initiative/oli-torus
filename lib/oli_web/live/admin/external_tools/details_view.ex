@@ -314,19 +314,31 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
             debounce="300"
           />
         </div>
-        <p :if={@more_results?} id="more_results_notice" class="text-sm text-Text-text-low">
-          Showing the first {search_results_shown()} matches. Type more to narrow the search.
+        <p
+          id="project_search_status"
+          role="status"
+          aria-live="polite"
+          class="text-sm text-Text-text-low"
+        >
+          <%= cond do %>
+            <% String.trim(@project_query) == "" -> %>
+            <% @more_results? -> %>
+              <span id="more_results_notice">
+                Showing the first {search_results_shown()} matches. Type more to narrow the search.
+              </span>
+            <% @search_results == [] -> %>
+              <span id="no_search_results">No matching projects.</span>
+            <% true -> %>
+              <span class="sr-only">
+                {length(@search_results)} {if length(@search_results) == 1,
+                  do: "matching project.",
+                  else: "matching projects."}
+              </span>
+          <% end %>
         </p>
         <div :if={@search_results != []} id="search_results_table">
           <Table.render model={@results_table} sort="sort_grants" additional_table_class="" />
         </div>
-        <p
-          :if={@search_results == [] and String.trim(@project_query) != ""}
-          id="no_search_results"
-          class="text-sm text-Text-text-low"
-        >
-          No matching projects.
-        </p>
       </div>
     </div>
     """

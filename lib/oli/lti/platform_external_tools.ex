@@ -235,7 +235,7 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
-  Returns up to `limit` active projects, ordered by title, whose title or slug contains `text` (case-insensitive) and
+  Returns up to `limit` active projects, ordered by title, whose title or slug contains literal `text` (case-insensitive) and
   that are not yet granted access to the deployment.
   """
   @spec search_projects_to_grant(LtiExternalToolActivityDeployment.t(), String.t(), pos_integer()) ::
@@ -245,7 +245,14 @@ defmodule Oli.Lti.PlatformExternalTools do
         text,
         limit
       ) do
-    pattern = "%#{String.trim(text)}%"
+    escaped_text =
+      text
+      |> String.trim()
+      |> String.replace("\\", "\\\\")
+      |> String.replace("%", "\\%")
+      |> String.replace("_", "\\_")
+
+    pattern = "%#{escaped_text}%"
 
     from(p in Project,
       left_join: g in LtiExternalToolProjectGrant,

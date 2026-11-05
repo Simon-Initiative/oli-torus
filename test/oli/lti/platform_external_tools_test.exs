@@ -378,6 +378,32 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
                [astronomy.id, zoology.id]
     end
 
+    test "search treats percent, underscore and backslash literally in titles and slugs" do
+      deployment = tool_deployment(availability: :private)
+
+      for field <- [:title, :slug],
+          {literal, decoy} <- [{"rate%", "rateX"}, {"unit_7", "unitX7"}, {"path\\", "path%"}] do
+        prefix = "literal#{field}#{String.length(literal)}"
+        query = prefix <> literal
+
+        for n <- 1..12 do
+          insert(:project, Map.put(%{title: "A decoy #{n}"}, field, "A#{n} #{prefix}#{decoy}"))
+        end
+
+        target = insert(:project, Map.put(%{title: "Z target"}, field, "Z #{query}"))
+
+        assert Enum.map(
+                 PlatformExternalTools.search_projects_to_grant(
+                   deployment,
+                   "  #{String.upcase(query)}  ",
+                   11
+                 ),
+                 & &1.id
+               ) == [target.id],
+               "expected only the literal #{inspect(literal)} target in #{field}"
+      end
+    end
+
     test "searches active projects not yet granted by title or slug, up to the limit" do
       deployment = tool_deployment(availability: :private)
       other_deployment = tool_deployment(availability: :private)
