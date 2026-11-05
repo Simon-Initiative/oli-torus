@@ -1,6 +1,6 @@
 defmodule Oli.Authoring.ProjectRepair.Repair do
   @moduledoc """
-  Applies lock-aware, deterministic shared-activity repairs.
+  Restores referenced deleted activities and applies deterministic sharing repairs.
 
   Repair never accepts a browser-provided plan. It receives a fresh analysis report
   from the context, locks every source activity and every participant page, reruns
@@ -8,7 +8,8 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
   the first write. Each changed page is then one transaction containing all of its
   activity clones and exactly one new page revision.
 
-  Page transactions are intentionally sequential and fail-fast. Earlier commits
+  Original activity restorations and page transactions are sequential and fail-fast.
+  Restorations preserve the original resource id and do not rewrite keeper pages. Earlier commits
   remain valid after a later failure, while the failed page rolls back all clones
   and its page revision. A final analysis report makes partial completion safely
   retryable because already-isolated relationships no longer appear as shared.
@@ -57,7 +58,8 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
   @type plan :: %{
           fingerprint: list(),
           lock_targets: [lock_target()],
-          page_work: %{pos_integer() => page_work()}
+          page_work: %{pos_integer() => page_work()},
+          restorations: list()
         }
 
   @typedoc "Validated analysis controls passed through to post-lock/final analysis."
@@ -84,8 +86,8 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
 
     case plan.lock_targets do
       [] ->
-        # A missing-only or issue-free project is already complete. In particular,
-        # no missing id is ever converted into page work or passed to copy logic.
+        # An unresolved-only or issue-free project needs no writes. In particular,
+        # no unresolved id is ever converted into page work or passed to copy logic.
         {:ok,
          %RepairResult{
            status: :completed,
@@ -111,10 +113,12 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
       |> Enum.filter(& &1.repairable?)
       |> Enum.sort_by(& &1.activity_resource_id)
 
-    fingerprint = repair_fingerprint(repairable_groups)
+    restorations = report.deleted_activity_references
+    participants = Enum.uniq_by(repairable_groups ++ restorations, & &1.activity_resource_id)
+    fingerprint = repair_fingerprint(participants)
 
     {page_work, lock_targets} =
-      Enum.reduce(repairable_groups, {%{}, MapSet.new()}, fn group, {work, locks} ->
+      Enum.reduce(participants, {%{}, MapSet.new()}, fn group, {work, locks} ->
         pages = Enum.sort_by(group.pages, & &1.resource_id)
         [_keeper | non_keeper_pages] = pages
 
@@ -148,22 +152,25 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
 
     %{
       fingerprint: fingerprint,
+      restorations: restorations,
       page_work: page_work,
       lock_targets: Enum.sort_by(lock_targets, &lock_sort_key/1)
     }
   end
 
   # Fingerprints include every source id and participant page revision. Membership
-  # changes, page edits, newly Adaptive pages, or newly missing source activities
+  # changes, page edits, source revision/deletion changes, or newly unresolved activities
   # therefore invalidate the plan before any mutation begins.
   defp repair_fingerprint(repairable_groups) do
-    Enum.map(repairable_groups, fn group ->
+    repairable_groups
+    |> Enum.sort_by(& &1.activity_resource_id)
+    |> Enum.map(fn group ->
       pages =
         group.pages
         |> Enum.sort_by(& &1.resource_id)
         |> Enum.map(&{&1.resource_id, &1.revision_id})
 
-      {group.activity_resource_id, pages}
+      {group.activity_resource_id, group.revision_id, group.state, pages}
     end)
   end
 
@@ -339,9 +346,70 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
   end
 
   defp repair_pages(project, publication, actor, plan, acquired_locks) do
+    outcome = restore_activities(project, publication, actor, plan.restorations, acquired_locks)
+
+    case outcome.failures do
+      [] -> repair_shared_pages(project, publication, actor, plan, outcome)
+      _ -> outcome
+    end
+  end
+
+  defp restore_activities(project, publication, actor, groups, acquired_locks) do
+    Enum.reduce_while(groups, empty_outcome(acquired_locks), fn group, outcome ->
+      id = group.activity_resource_id
+
+      case refresh_locks(project, publication, actor, [{:activity, id}], outcome.acquired_locks) do
+        {:ok, locks} ->
+          outcome = %{outcome | acquired_locks: locks}
+
+          case restore_activity(project, actor, group) do
+            {:ok, revision} ->
+              Broadcaster.broadcast_revision(revision, project.slug)
+              {:cont, %{outcome | restored_activity_count: outcome.restored_activity_count + 1}}
+
+            {:error, failure} ->
+              {:halt, add_failure(outcome, failure)}
+          end
+
+        {:error, failure, locks} ->
+          {:halt, add_failure(%{outcome | acquired_locks: locks}, failure)}
+      end
+    end)
+  end
+
+  defp restore_activity(project, actor, group) do
+    Repo.transaction(fn ->
+      case AuthoringResolver.from_resource_id(project.slug, group.activity_resource_id) do
+        %Revision{id: id, deleted: true} = source when id == group.revision_id ->
+          # Pass the inherited learning parameters explicitly so restoration does
+          # not reconcile or otherwise change authored metadata as a side effect.
+          {:ok, restored} =
+            ChangeTracker.track_revision(project.slug, source, %{
+              deleted: false,
+              author_id: actor.id,
+              learning_model_parameters: source.learning_model_parameters
+            })
+
+          restored
+
+        _ ->
+          Repo.rollback(stale_failure())
+      end
+    end)
+  rescue
+    _ ->
+      {:error,
+       %RepairFailure{
+         stage: :activity_restore,
+         reason: :activity_restore_failed,
+         activity_resource_id: group.activity_resource_id
+       }}
+  end
+
+  defp repair_shared_pages(project, publication, actor, plan, initial_outcome) do
     plan.page_work
     |> Enum.sort_by(fn {page_resource_id, _work} -> page_resource_id end)
-    |> Enum.reduce_while(empty_outcome(acquired_locks), fn {_page_resource_id, work}, outcome ->
+    |> Enum.reduce_while(initial_outcome, fn {_page_resource_id, work}, outcome ->
       # Refresh only the locks needed for the next page transaction. The complete
       # participant set stays locked, but refreshing every lock before every page
       # would scale as changed_pages * total_locks for large repair batches.
@@ -596,9 +664,9 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
 
   defp finalize_result(project, publication, options, before_report, outcome, warnings) do
     {after_report, outcome} =
-      case outcome.updated_page_count do
+      case outcome.updated_page_count + outcome.restored_activity_count do
         0 ->
-          # If no page committed, the caller's before-report is still the best
+          # If no repair committed, the caller's before-report is still the best
           # after-report and avoids a second full project scan on ordinary lock or
           # stale-plan failures.
           {before_report, outcome}
@@ -622,6 +690,7 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
        status: outcome_status(outcome),
        report_before_repair: before_report,
        report_after_repair: after_report,
+       restored_activity_count: outcome.restored_activity_count,
        cloned_activity_count: outcome.cloned_activity_count,
        updated_page_count: outcome.updated_page_count,
        failures: Enum.reverse(outcome.failures),
@@ -631,6 +700,7 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
 
   defp empty_outcome(acquired_locks) do
     %{
+      restored_activity_count: 0,
       cloned_activity_count: 0,
       updated_page_count: 0,
       failures: [],
@@ -645,7 +715,10 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
     do: %{outcome | failures: [failure | outcome.failures]}
 
   defp outcome_status(%{failures: []}), do: :completed
-  defp outcome_status(%{updated_page_count: count}) when count > 0, do: :partial
+
+  defp outcome_status(%{updated_page_count: pages, restored_activity_count: activities})
+       when pages + activities > 0, do: :partial
+
   defp outcome_status(_outcome), do: :failed
 
   defp lock_failure({kind, resource_id}) do

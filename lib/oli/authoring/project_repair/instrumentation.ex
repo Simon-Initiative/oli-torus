@@ -96,6 +96,7 @@ defmodule Oli.Authoring.ProjectRepair.Instrumentation do
       status: :completed,
       failure_stage: nil,
       failure_reason: nil,
+      restored_activity_count: 0,
       cloned_activity_count: 0,
       updated_page_count: 0,
       failure_count: 0,
@@ -112,6 +113,7 @@ defmodule Oli.Authoring.ProjectRepair.Instrumentation do
       status: result.status,
       failure_stage: failure_stage(failure),
       failure_reason: failure_reason(failure),
+      restored_activity_count: result.restored_activity_count,
       cloned_activity_count: result.cloned_activity_count,
       updated_page_count: result.updated_page_count,
       failure_count: length(result.failures),
@@ -125,6 +127,7 @@ defmodule Oli.Authoring.ProjectRepair.Instrumentation do
       status: :failed,
       failure_stage: :context,
       failure_reason: normalize_reason(reason),
+      restored_activity_count: 0,
       cloned_activity_count: 0,
       updated_page_count: 0,
       failure_count: 1,
@@ -138,6 +141,7 @@ defmodule Oli.Authoring.ProjectRepair.Instrumentation do
       status: :failed,
       failure_stage: :context,
       failure_reason: :unexpected_result,
+      restored_activity_count: 0,
       cloned_activity_count: 0,
       updated_page_count: 0,
       failure_count: 1,
@@ -147,6 +151,8 @@ defmodule Oli.Authoring.ProjectRepair.Instrumentation do
 
   defp summary_metadata(%Report{summary: %Summary{} = summary}) do
     %{
+      deleted_activity_resource_count: summary.deleted_activity_resource_count,
+      deleted_activity_reference_count: summary.deleted_activity_reference_count,
       scanned_pages_count: summary.scanned_pages_count,
       skipped_adaptive_pages_count: summary.skipped_adaptive_pages_count,
       missing_activity_reference_count: summary.missing_activity_reference_count,
@@ -164,6 +170,8 @@ defmodule Oli.Authoring.ProjectRepair.Instrumentation do
 
   defp empty_summary_metadata do
     %{
+      deleted_activity_resource_count: 0,
+      deleted_activity_reference_count: 0,
       scanned_pages_count: 0,
       skipped_adaptive_pages_count: 0,
       missing_activity_reference_count: 0,

@@ -97,11 +97,12 @@ defmodule Oli.Authoring.ProjectRepair do
   end
 
   @doc """
-  Repairs every currently resolvable cross-page shared activity in a project.
+  Restores referenced deleted activities and isolates cross-page shared activities.
 
   Repair derives its plan from fresh server-side analysis, locks every source
   activity and participant page, and revalidates the revision-bearing plan before
-  writing. Missing references are report-only and Adaptive pages cannot enter the
+  writing. Deleted originals receive new active revisions; unresolved references
+  are report-only and Adaptive pages cannot enter the
   repair plan. Operation-level failures are returned in a structured
   `%Oli.Authoring.ProjectRepair.RepairResult{}` rather than raised to the caller.
   """
@@ -114,12 +115,16 @@ defmodule Oli.Authoring.ProjectRepair do
       {:ok, prepared} ->
         result =
           with {:ok, report} <-
-                 Analysis.analyze(prepared.project, prepared.publication, prepared.options) do
+                 Analysis.analyze(
+                   prepared.project,
+                   prepared.publication,
+                   repair_options(prepared.options)
+                 ) do
             Repair.repair(
               prepared.project,
               prepared.publication,
               prepared.actor,
-              prepared.options,
+              repair_options(prepared.options),
               report
             )
           end
@@ -147,6 +152,10 @@ defmodule Oli.Authoring.ProjectRepair do
         )
     end
   end
+
+  # Display limits must never omit participants from locks or mutation planning.
+  defp repair_options(options),
+    do: %{options | preview_issue_limit: nil, preview_group_page_limit: nil}
 
   # Authorization intentionally runs first. Besides providing defense in depth for
   # future console or service callers, this ordering prevents an unauthorized actor
