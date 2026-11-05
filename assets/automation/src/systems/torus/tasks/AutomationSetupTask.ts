@@ -26,7 +26,8 @@ type AutomationOptions = {
   apiKey: string;
   strictTeardown?: boolean;
   teardownTimeoutMs?: number;
-  createLearner?: boolean;
+  // An existing user to use as the learner instead of letting the API create one.
+  learner?: { email: string; password: string };
 };
 
 // Torus allows 300s idle time; nightly HAProxy allows 310s for the response.
@@ -39,7 +40,7 @@ const DEFAULT_TEARDOWN_TIMEOUT_MS = 10_000;
 export async function importArchiveAndCreateSection(
   request: APIRequestContext,
   archivePath: string,
-  { baseUrl, apiKey, createLearner }: AutomationOptions,
+  { baseUrl, apiKey, learner }: AutomationOptions,
 ): Promise<AutomationSetupResponse> {
   // The archive is downloaded outside Playwright's traced request context first;
   // this client only reads that file back for the multipart upload.
@@ -47,7 +48,7 @@ export async function importArchiveAndCreateSection(
   const response = await postAutomationSetupWithRetry(request, archivePath, archiveBuffer, {
     baseUrl,
     apiKey,
-    createLearner,
+    learner,
   });
 
   if (!response.ok()) {
@@ -62,7 +63,7 @@ export async function importArchiveAndCreateSection(
     throw new Error(`automation_setup returned unsuccessful payload: ${JSON.stringify(payload)}`);
   }
 
-  return payload;
+  return learner ? { ...payload, learner } : payload;
 }
 
 async function postAutomationSetupWithRetry(
@@ -91,7 +92,7 @@ function postAutomationSetup(
   request: APIRequestContext,
   archivePath: string,
   archiveBuffer: Buffer,
-  { baseUrl, apiKey, createLearner = true }: AutomationOptions,
+  { baseUrl, apiKey, learner }: AutomationOptions,
 ) {
   return request.post(new URL('/api/v1/automation_setup', baseUrl).toString(), {
     headers: {
@@ -100,7 +101,7 @@ function postAutomationSetup(
     multipart: {
       create_author: 'true',
       create_educator: 'true',
-      create_learner: String(createLearner),
+      create_learner: String(!learner),
       create_section: 'true',
       project_archive: {
         name: path.basename(archivePath),

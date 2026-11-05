@@ -56,12 +56,6 @@ test.describe.serial('Real Chem mobile invitation', () => {
     const archive = await fetchTestArchiveToTempFile(archiveKey, baseUrl);
     archiveTempDir = archive.tempDir;
 
-    const setup = await importArchiveAndCreateSection(request, archive.filePath, {
-      baseUrl,
-      apiKey: automationApiKey!,
-      createLearner: false,
-    });
-
     const scenario = await seedScenario('./real-chem-mobile-invitation.scenario.yaml', {
       RUN_ID: runId,
     });
@@ -69,7 +63,12 @@ test.describe.serial('Real Chem mobile invitation', () => {
     const studentEmail = users?.mobile_invitation_student ?? '';
     expect(studentEmail, 'Scenario did not return the student email').toBeTruthy();
 
-    seededCourse = { ...setup, learner: { email: studentEmail, password: studentPassword } };
+    const setup = await importArchiveAndCreateSection(request, archive.filePath, {
+      baseUrl,
+      apiKey: automationApiKey!,
+      learner: { email: studentEmail, password: studentPassword },
+    });
+    seededCourse = setup;
 
     const loginData = buildAutomationLoginData(studentEmail, studentPassword);
     setRuntimeConfig({
