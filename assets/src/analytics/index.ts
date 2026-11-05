@@ -46,6 +46,12 @@ const titles: Record<PageArea, string> = {
 const ENTERED_KEY = 'torus_analytics_entered';
 const LESSON_CONTENT = '#page_content';
 const DELIVERY_BUDGET_MS = 8;
+const DEFERRED_TASK_TIMEOUT_MS = 1000;
+
+type BrowserScheduler = {
+  yield?: () => Promise<void>;
+  postTask?: (callback: () => void, options: { priority: 'background' }) => Promise<unknown>;
+};
 
 const FILE_TYPES: Record<string, FileType> = {
   pdf: 'pdf',
@@ -74,17 +80,57 @@ const warn = (message: string) => {
   if (process.env.NODE_ENV !== 'production') console.warn(message);
 };
 
-async function yieldToMain(): Promise<void> {
-  const scheduler = (window as Window & { scheduler?: { yield?: () => Promise<void> } }).scheduler;
-  if (typeof scheduler?.yield === 'function') {
-    try {
-      await scheduler.yield();
-      return;
-    } catch {
-      // An unavailable or aborted scheduler must not prevent the timer fallback.
-    }
+function browserScheduler(): BrowserScheduler | undefined {
+  return (window as Window & { scheduler?: BrowserScheduler }).scheduler;
+}
+
+// A starved native task falls back to a timer; its eventual callback must not run twice.
+function scheduleTask(
+  callback: () => void,
+  nativeSchedule?: (run: () => void) => Promise<unknown>,
+): void {
+  let started = false;
+  let fallback: number;
+  const run = () => {
+    if (started) return;
+    started = true;
+    window.clearTimeout(fallback);
+    callback();
+  };
+  const fallbackSoon = () => {
+    if (started) return;
+    window.clearTimeout(fallback);
+    fallback = window.setTimeout(run, 0);
+  };
+  fallback = window.setTimeout(run, nativeSchedule ? DEFERRED_TASK_TIMEOUT_MS : 0);
+  if (!nativeSchedule) return;
+  try {
+    void nativeSchedule(run).catch(fallbackSoon);
+  } catch {
+    fallbackSoon();
   }
-  await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+}
+
+function yieldToMain(): Promise<void> {
+  const scheduler = browserScheduler();
+  const yieldTask = scheduler?.yield;
+  return new Promise<void>((resolve) => {
+    scheduleTask(
+      resolve,
+      typeof yieldTask === 'function' ? (run) => yieldTask.call(scheduler).then(run) : undefined,
+    );
+  });
+}
+
+function scheduleBackground(callback: () => void): void {
+  const scheduler = browserScheduler();
+  const postTask = scheduler?.postTask;
+  scheduleTask(
+    callback,
+    typeof postTask === 'function'
+      ? (run) => postTask.call(scheduler, run, { priority: 'background' })
+      : undefined,
+  );
 }
 
 // Only accept the server's route-level contract. Extra fields (including titles and
@@ -221,30 +267,36 @@ export function initializeAnalytics(value: unknown): void {
     containerQueued = false;
   };
 
-  const drain = async () => {
+  const deliverPending = (deadline?: number) => {
+    while (nextPending < pending.length) {
+      // Also guard delivery if consent changes without the normal notification handler.
+      if (!isGranted()) {
+        discardPending();
+        break;
+      }
+      const deliver = pending[nextPending++];
+      try {
+        deliver();
+      } catch {
+        // GTM/tag failures must never reach an activity's success continuation.
+        warn('Analytics delivery failed; event dropped');
+      }
+      // Startup has no scheduling pause between its initial context and loader. Consent
+      // still gates each operation. Lifecycle flushes omit the deadline and send all pending work.
+      if (deadline !== undefined && !containerQueued && performance.now() >= deadline) break;
+    }
+    pending = pending.slice(nextPending);
+    nextPending = 0;
+  };
+
+  const drain = async (deferFirstBatch: boolean) => {
     try {
+      if (deferFirstBatch) await yieldToMain();
       while (nextPending < pending.length) {
-        await yieldToMain();
-        const deadline = performance.now() + DELIVERY_BUDGET_MS;
-        while (nextPending < pending.length) {
-          if (!isGranted()) {
-            discardPending();
-            break;
-          }
-          const deliver = pending[nextPending++];
-          try {
-            deliver();
-          } catch {
-            // GTM/tag failures must never reach an activity's success continuation.
-            warn('Analytics delivery failed; event dropped');
-          }
-          // Publish the initial context and request its loader in one task. Before GTM loads,
-          // these pushes only fill its buffer; withdrawal must not interrupt that bootstrap.
-          // Later tag execution cannot be interrupted, but bursts yield between jobs.
-          if (!containerQueued && performance.now() >= deadline) break;
-        }
-        pending = pending.slice(nextPending);
-        nextPending = 0;
+        deliverPending(performance.now() + DELIVERY_BUDGET_MS);
+        // Inside postTask, yield retains background priority. Its timer fallback also bounds
+        // the wait between batches if background continuations are starved.
+        if (nextPending < pending.length) await yieldToMain();
       }
     } catch {
       discardPending();
@@ -259,7 +311,9 @@ export function initializeAnalytics(value: unknown): void {
     pending.push(deliver);
     if (!draining) {
       draining = true;
-      void drain();
+      // Keep the initial page context and loader at the current priority for short visits.
+      if (containerRequested) scheduleBackground(() => void drain(false));
+      else void drain(true);
     }
   };
 
@@ -421,5 +475,15 @@ export function initializeAnalytics(value: unknown): void {
       lastQueuedPath = '';
     }
   });
+  // Capture lifecycle signals before tag handlers. This hands off pending events best-effort;
+  // it cannot guarantee network delivery, particularly while GTM is still loading.
+  window.addEventListener(
+    'visibilitychange',
+    () => {
+      if (document.visibilityState === 'hidden') deliverPending();
+    },
+    true,
+  );
+  window.addEventListener('pagehide', () => deliverPending(), true);
   startMeasurement();
 }

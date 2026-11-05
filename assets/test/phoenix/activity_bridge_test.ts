@@ -15,6 +15,7 @@ describe('activity bridge analytics', () => {
   afterEach(() => {
     delete window.TorusAnalytics;
     delete (window as Partial<Window>).fetch;
+    jest.restoreAllMocks();
   });
 
   function respond(ok: boolean, body: unknown) {
@@ -26,7 +27,11 @@ describe('activity bridge analytics', () => {
     } as Response);
   }
 
-  function dispatch(name: string, activityType: unknown = 'oli_multiple_choice') {
+  function dispatch(
+    name: string,
+    activityType: unknown = 'oli_multiple_choice',
+    continuation?: jest.Mock,
+  ) {
     return new Promise<[unknown, unknown]>((resolve) => {
       activity.dispatchEvent(
         new CustomEvent(name, {
@@ -37,7 +42,10 @@ describe('activity bridge analytics', () => {
             partAttemptGuid: 'part',
             payload: [],
             props: { context: { activityType } },
-            continuation: (result: unknown, error: unknown) => resolve([result, error]),
+            continuation: (result: unknown, error: unknown) => {
+              continuation?.(result, error);
+              resolve([result, error]);
+            },
           },
         }),
       );
@@ -74,5 +82,23 @@ describe('activity bridge analytics', () => {
     expect(error).toBeUndefined();
     expect(result).toEqual({ type: 'success', hasMoreHints: false });
     expect(analyticsTrack).not.toHaveBeenCalled();
+  });
+
+  test('a synchronous analytics error cannot change a successful result or repeat its continuation', async () => {
+    const warning = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    analyticsTrack.mockImplementation(() => {
+      throw new Error('private analytics error');
+    });
+    respond(true, { type: 'success', actions: [] });
+    const continuation = jest.fn();
+
+    const [result, error] = await dispatch('submitActivity', 'oli_multiple_choice', continuation);
+    await Promise.resolve();
+
+    expect(result).toEqual({ actions: [] });
+    expect(error).toBeUndefined();
+    expect(continuation).toHaveBeenCalledTimes(1);
+    expect(continuation).toHaveBeenCalledWith({ actions: [] }, undefined);
+    expect(warning).toHaveBeenCalledWith('Analytics tracking failed; event dropped');
   });
 });
