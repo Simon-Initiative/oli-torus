@@ -1163,6 +1163,8 @@ defmodule OliWeb.LtiControllerTest do
           []
         )
 
+      :ok = PlatformExternalTools.revoke_project(deployment, project.id)
+
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(author.id, %{
           "project" => project.slug,
@@ -1228,6 +1230,8 @@ defmodule OliWeb.LtiControllerTest do
           %{"openInNewTab" => true, "authoring" => %{"parts" => []}},
           []
         )
+
+      :ok = PlatformExternalTools.revoke_project(deployment, project.id)
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(author.id, %{
@@ -1999,6 +2003,9 @@ defmodule OliWeb.LtiControllerTest do
 
     {:ok, {%{slug: slug2, resource_id: activity_id2}, _}} =
       ActivityEditor.create(project.slug, activity_registration.slug, author, content, [])
+
+    # Existing activities must still launch after the Private tool grant is removed.
+    :ok = PlatformExternalTools.revoke_project(deployment, project.id)
 
     seeds = Map.put(seeds, :activity_id, activity_id) |> Map.put(:activity_id2, activity_id2)
 

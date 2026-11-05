@@ -276,6 +276,9 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
     {:ok, {%{slug: slug2, resource_id: activity_id2}, _}} =
       ActivityEditor.create(project.slug, activity_registration.slug, author, content, [])
 
+    # Existing activities must still launch after the Private tool grant is removed.
+    :ok = PlatformExternalTools.revoke_project(deployment, project.id)
+
     seeds = Map.put(seeds, :activity_id, activity_id) |> Map.put(:activity_id2, activity_id2)
 
     update = %{
