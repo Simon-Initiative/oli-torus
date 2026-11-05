@@ -253,12 +253,13 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
   end
 
   def setup_project(%{conn: conn}) do
-    {:ok, {_platform_instance, activity_registration, _deployment}} =
+    {:ok, {_platform_instance, activity_registration, deployment}} =
       create_lti_external_tool_activity()
 
     seeds = Oli.Seeder.base_project_with_resource2()
 
     project = Map.get(seeds, :project)
+    {:ok, _grant} = PlatformExternalTools.grant_project(deployment, project.id)
     revision = Map.get(seeds, :revision1)
     author = Map.get(seeds, :author)
 

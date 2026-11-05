@@ -496,8 +496,7 @@ defmodule Oli.Activities do
         ]
   def selectable_activities_for_project(project_id, is_admin? \\ false) do
     project_id
-    |> project_registrations(is_admin?)
-    |> where(^dynamic([association: arp], ^addable() or not is_nil(arp.project_id)))
+    |> selectable_project_registrations(is_admin?)
     |> order_by([registration: ar, deployment: d], desc: d.deployment_id, asc: ar.title)
     |> select([registration: ar], ar)
     |> select_merge([association: arp, deployment: d], %{
@@ -505,6 +504,44 @@ defmodule Oli.Activities do
       deployment_id: d.deployment_id
     })
     |> Repo.all()
+  end
+
+  @doc """
+  Returns whether a new activity of this registration can be created in the project.
+
+  Global registrations and non-LTI activities retain their existing creation behavior.
+  Other LTI tools must pass the modal's eligibility rule, including its allowance for
+  tools already associated with the project.
+  """
+  @spec can_create_activity?(%ActivityRegistration{}, integer(), boolean()) :: boolean()
+  def can_create_activity?(
+        %ActivityRegistration{globally_available: true},
+        _project_id,
+        _is_admin?
+      ),
+      do: true
+
+  def can_create_activity?(%ActivityRegistration{id: id}, project_id, is_admin?) do
+    selectable_ids =
+      project_id
+      |> selectable_project_registrations(is_admin?)
+      |> where([registration: ar], ar.id == ^id)
+      |> select([registration: ar], ar.id)
+
+    from(ar in ActivityRegistration,
+      left_join: d in LtiExternalToolActivityDeployment,
+      on: d.activity_registration_id == ar.id,
+      where:
+        ar.id == ^id and
+          (is_nil(d.deployment_id) or ar.id in subquery(selectable_ids))
+    )
+    |> Repo.exists?()
+  end
+
+  defp selectable_project_registrations(project_id, is_admin?) do
+    project_id
+    |> project_registrations(is_admin?)
+    |> where(^dynamic([association: arp], ^addable() or not is_nil(arp.project_id)))
   end
 
   defp project_registrations(project_id, is_admin?) do

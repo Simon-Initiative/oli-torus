@@ -1642,6 +1642,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   @doc """
   Attempts to process a request to create a new activity.
+  LTI tools must be eligible for the project under the activity selection rule.
 
   Returns:
 
@@ -1698,6 +1699,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   @doc """
   Attempts to process a request to create a list of new activities.
+  LTI tools are checked for eligibility before any activity is created.
+  An eligibility refusal rejects the entire batch; other creation failures skip that item.
 
   Returns:
 
@@ -1720,7 +1723,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <-
-           Publishing.project_working_publication(project_slug) |> trap_nil() do
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
+         :ok <- authorize_bulk_activity_types(bulk_activity_data, project.id, author) do
       activities =
         Enum.reduce(bulk_activity_data, [], fn activity_data, m ->
           %{
@@ -1761,6 +1765,27 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
+  defp authorize_bulk_activity_types(activity_data, project_id, author) do
+    is_admin? = Accounts.at_least_content_admin?(author)
+
+    activity_data
+    |> Enum.map(& &1["activityTypeSlug"])
+    |> Enum.uniq()
+    |> Enum.reduce_while(:ok, fn slug, :ok ->
+      case Activities.get_registration_by_slug(slug) do
+        nil ->
+          # Unknown types retain the per-item creation failure/skip behavior.
+          {:cont, :ok}
+
+        registration ->
+          case Activities.can_create_activity?(registration, project_id, is_admin?) do
+            true -> {:cont, :ok}
+            false -> {:halt, {:error, {:not_authorized}}}
+          end
+      end
+    end)
+  end
+
   defp process_create_activity(
          project,
          author,
@@ -1777,6 +1802,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     Repo.transaction(fn ->
       with {:ok, activity_type} <-
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
+           true <-
+             Activities.can_create_activity?(
+               activity_type,
+               project.id,
+               Accounts.at_least_content_admin?(author)
+             ),
            {:ok, model} <- prepare_creation_model(activity_type_slug, model),
            {:ok, objectives} <- attach_objectives(model, objectives, objective_map),
            {:ok, activity} <-
@@ -1808,6 +1839,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
              }) do
         activity
       else
+        false -> Repo.rollback({:not_authorized})
         error -> Repo.rollback(error)
       end
     end)

@@ -1141,7 +1141,7 @@ defmodule OliWeb.LtiControllerTest do
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, {_, activity_registration, _}} =
+      {:ok, {_, activity_registration, deployment}} =
         PlatformExternalTools.register_lti_external_tool_activity(%{
           "name" => "some-platform",
           "description" => "some-description",
@@ -1151,6 +1151,8 @@ defmodule OliWeb.LtiControllerTest do
           "keyset_url" => "some-keyset-url",
           "redirect_uris" => "some-valid-url"
         })
+
+      {:ok, _grant} = PlatformExternalTools.grant_project(deployment, project.id)
 
       {:ok, {activity, _}} =
         ActivityEditor.create(
@@ -1205,7 +1207,7 @@ defmodule OliWeb.LtiControllerTest do
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, {_, activity_registration, _}} =
+      {:ok, {_, activity_registration, deployment}} =
         PlatformExternalTools.register_lti_external_tool_activity(%{
           "name" => "some-platform",
           "description" => "some-description",
@@ -1215,6 +1217,8 @@ defmodule OliWeb.LtiControllerTest do
           "keyset_url" => "some-keyset-url",
           "redirect_uris" => "some-valid-url"
         })
+
+      {:ok, _grant} = PlatformExternalTools.grant_project(deployment, project.id)
 
       {:ok, {activity, _}} =
         ActivityEditor.create(
@@ -1973,12 +1977,13 @@ defmodule OliWeb.LtiControllerTest do
   end
 
   def setup_project(%{conn: conn}) do
-    {:ok, {_platform_instance, activity_registration, _deployment}} =
+    {:ok, {_platform_instance, activity_registration, deployment}} =
       create_lti_external_tool_activity()
 
     seeds = Oli.Seeder.base_project_with_resource2()
 
     project = Map.get(seeds, :project)
+    {:ok, _grant} = PlatformExternalTools.grant_project(deployment, project.id)
     revision = Map.get(seeds, :revision1)
     author = Map.get(seeds, :author)
 

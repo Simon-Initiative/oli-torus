@@ -2,6 +2,7 @@ defmodule OliWeb.ActivityControllerTest do
   use OliWeb.ConnCase
 
   import Mox
+  import Oli.Factory
 
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ActivityEditor
@@ -547,6 +548,148 @@ defmodule OliWeb.ActivityControllerTest do
       assert r.content["1"] == "2"
       assert hd(r.content["authoring"]["parts"])["evaluationStrategy"] == "none"
     end
+  end
+
+  describe "tool creation eligibility" do
+    test "bulk refuses a mixed batch without retaining an earlier eligible activity", %{
+      conn: conn,
+      project: project
+    } do
+      public_tool = tool_registration(:public)
+      private_tool = tool_registration(:private)
+      before_counts = creation_counts()
+
+      data =
+        Enum.map([public_tool, private_tool], fn tool ->
+          %{
+            "activityTypeSlug" => tool.slug,
+            "content" => %{"authoring" => %{"parts" => []}},
+            "objectives" => [],
+            "title" => "Mixed batch",
+            "tags" => []
+          }
+        end)
+
+      conn =
+        post(conn, Routes.activity_path(conn, :create_bulk, project.slug), %{"bulkData" => data})
+
+      assert response(conn, 403) == "unauthorized"
+      assert creation_counts() == before_counts
+    end
+
+    for endpoint <- [:single, :bulk] do
+      @creation_endpoint endpoint
+
+      test "#{endpoint} refuses an ungranted private tool without creating resources", %{
+        conn: conn,
+        project: project
+      } do
+        tool = tool_registration(:private)
+        before_counts = creation_counts()
+
+        conn = create_tool(conn, project, tool, @creation_endpoint)
+
+        assert response(conn, 403) == "unauthorized"
+        assert creation_counts() == before_counts
+      end
+
+      for eligibility <- [:granted, :associated, :public, :global] do
+        @eligibility eligibility
+
+        test "#{endpoint} creates a #{@eligibility} tool", %{conn: conn, project: project} do
+          tool = tool_registration(:private)
+
+          case @eligibility do
+            :granted ->
+              deployment =
+                Oli.Repo.get_by!(Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment,
+                  activity_registration_id: tool.id
+                )
+
+              {:ok, _} = Oli.Lti.PlatformExternalTools.grant_project(deployment, project.id)
+
+            :associated ->
+              insert(:activity_registration_project,
+                activity_registration_id: tool.id,
+                project_id: project.id,
+                status: :disabled
+              )
+
+            :public ->
+              Oli.Repo.get_by!(Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment,
+                activity_registration_id: tool.id
+              )
+              |> Ecto.Changeset.change(availability: :public)
+              |> Oli.Repo.update!()
+
+            :global ->
+              tool |> Ecto.Changeset.change(globally_available: true) |> Oli.Repo.update!()
+          end
+
+          conn = create_tool(conn, project, tool, @creation_endpoint)
+          body = json_response(conn, 200)
+
+          resource_id =
+            case @creation_endpoint do
+              :single ->
+                body["resourceId"]
+
+              :bulk ->
+                assert [revision] = body["revisions"]
+                revision["resourceId"]
+            end
+
+          revision = AuthoringResolver.from_resource_id(project.slug, resource_id)
+          assert revision.activity_type_id == tool.id
+          assert revision.content == %{"authoring" => %{"parts" => []}}
+        end
+      end
+    end
+  end
+
+  defp tool_registration(availability) do
+    tool = insert(:activity_registration, globally_available: false, globally_visible: true)
+
+    insert(:lti_external_tool_activity_deployment,
+      activity_registration: tool,
+      availability: availability,
+      status: :enabled
+    )
+
+    tool
+  end
+
+  defp create_tool(conn, project, tool, :single) do
+    post(conn, Routes.activity_path(conn, :create, project.slug, tool.slug), %{
+      "model" => %{"authoring" => %{"parts" => []}},
+      "objectives" => []
+    })
+  end
+
+  defp create_tool(conn, project, tool, :bulk) do
+    post(conn, Routes.activity_path(conn, :create_bulk, project.slug), %{
+      "bulkData" => [
+        %{
+          "activityTypeSlug" => tool.slug,
+          "content" => %{"authoring" => %{"parts" => []}},
+          "objectives" => [],
+          "title" => "Tool activity",
+          "tags" => []
+        }
+      ]
+    })
+  end
+
+  defp creation_counts do
+    Enum.map(
+      [
+        Oli.Resources.Resource,
+        Oli.Resources.Revision,
+        Oli.Authoring.Course.ProjectResource,
+        Oli.Publishing.PublishedResource
+      ],
+      &Oli.Repo.aggregate(&1, :count)
+    )
   end
 
   def project_seed(%{conn: conn}) do

@@ -273,6 +273,24 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
       assert row_status(own_row) == :enabled
     end
 
+    test "refuses a non-collaborating content admin demoted after mount", %{
+      conn: conn,
+      project: project,
+      activity: activity
+    } do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      own_row = enabled_row(activity, project)
+      {:ok, lcd, _html} = mount_item(conn, activity, project, admin)
+
+      admin
+      |> Ecto.Changeset.change(system_role_id: Oli.Accounts.SystemRole.role_id().author)
+      |> Oli.Repo.update!()
+
+      lcd |> element("button", "Disable") |> render_click()
+
+      assert row_status(own_row) == :enabled
+    end
+
     test "disables and enables again a private tool the project has no grant for", %{
       conn: conn,
       project: project,

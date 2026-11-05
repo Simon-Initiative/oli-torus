@@ -1038,6 +1038,26 @@ defmodule Oli.ActivitiesTest do
     end
   end
 
+  describe "can_create_activity?/3" do
+    test "a hidden public LTI tool is creatable only by an admin", %{project: project} do
+      tool =
+        lti_tool("Admin Only Tool", %{availability: :public}, %{globally_visible: false})
+
+      refute Activities.can_create_activity?(tool.registration, project.id, false)
+      assert Activities.can_create_activity?(tool.registration, project.id, true)
+    end
+
+    test "a hidden non-global registration without an LTI deployment remains creatable", %{
+      project: project
+    } do
+      registration =
+        insert(:activity_registration, globally_available: false, globally_visible: false)
+
+      assert Activities.can_create_activity?(registration, project.id, false)
+      assert Activities.can_create_activity?(registration, project.id, true)
+    end
+  end
+
   defp lti_tool(title, deployment_attrs, registration_attrs \\ %{}) do
     registration =
       insert(
