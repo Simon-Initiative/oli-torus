@@ -26,6 +26,7 @@ type AutomationOptions = {
   apiKey: string;
   strictTeardown?: boolean;
   teardownTimeoutMs?: number;
+  createLearner?: boolean;
 };
 
 // Torus allows 300s idle time; nightly HAProxy allows 310s for the response.
@@ -38,7 +39,7 @@ const DEFAULT_TEARDOWN_TIMEOUT_MS = 10_000;
 export async function importArchiveAndCreateSection(
   request: APIRequestContext,
   archivePath: string,
-  { baseUrl, apiKey }: AutomationOptions,
+  { baseUrl, apiKey, createLearner }: AutomationOptions,
 ): Promise<AutomationSetupResponse> {
   // The archive is downloaded outside Playwright's traced request context first;
   // this client only reads that file back for the multipart upload.
@@ -46,6 +47,7 @@ export async function importArchiveAndCreateSection(
   const response = await postAutomationSetupWithRetry(request, archivePath, archiveBuffer, {
     baseUrl,
     apiKey,
+    createLearner,
   });
 
   if (!response.ok()) {
@@ -89,7 +91,7 @@ function postAutomationSetup(
   request: APIRequestContext,
   archivePath: string,
   archiveBuffer: Buffer,
-  { baseUrl, apiKey }: AutomationOptions,
+  { baseUrl, apiKey, createLearner = true }: AutomationOptions,
 ) {
   return request.post(new URL('/api/v1/automation_setup', baseUrl).toString(), {
     headers: {
@@ -98,7 +100,7 @@ function postAutomationSetup(
     multipart: {
       create_author: 'true',
       create_educator: 'true',
-      create_learner: 'true',
+      create_learner: String(createLearner),
       create_section: 'true',
       project_archive: {
         name: path.basename(archivePath),
