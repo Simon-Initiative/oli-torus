@@ -91,6 +91,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
               <form for="search" phx-target={@myself} phx-change="search_student" class="w-auto">
                 <SearchInput.render
                   id="student_search_input"
+                  aria_label="Search students"
                   name="student_name"
                   text={@params.text_search}
                 />

@@ -128,6 +128,15 @@ export class AdaptiveDeckPO {
       .catch(() => '');
   }
 
+  /**
+   * The deck's single footer control, including while it is disabled during a
+   * check. Its label follows the screen state (the screen's check label, then
+   * the feedback's button label).
+   */
+  footerButton(): Locator {
+    return this.page.locator('.checkContainer .buttonContainer button').first();
+  }
+
   // ------------------------------------------------------------ navigation
 
   /**
@@ -542,6 +551,17 @@ export class AdaptiveDeckPO {
   }
 
   // ------------------------------------------------------------ inspection
+
+  /**
+   * The lesson score shown in the deck header. Both the legacy and the themed
+   * header render it and the inactive one is hidden, so only the visible one
+   * is matched. Its text is the score with two decimals (e.g. "7.50").
+   */
+  score(): Locator {
+    return this.page
+      .locator('.theme-header-score__value, .nameScoreButtonWrapper .score')
+      .filter({ visible: true });
+  }
 
   /**
    * extraTextInputSelectors: additional CSS selectors to count/fill as text

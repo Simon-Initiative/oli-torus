@@ -5,10 +5,18 @@ defmodule OliWeb.Plugs.EnsureUserSectionVisit do
   import Phoenix.Controller
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.SecureAssessments.Scope
 
   @visited_sections_key "visited_sections"
 
   def init(opts), do: opts
+
+  @doc "Defers course onboarding during a scoped assessment without marking it complete."
+  def call(
+        %{assigns: %{user_session: %{scope: %Scope{section_id: id}}, section: %{id: id}}} = conn,
+        _opts
+      ),
+      do: conn
 
   def call(conn, _opts) do
     user = conn.assigns[:current_user]

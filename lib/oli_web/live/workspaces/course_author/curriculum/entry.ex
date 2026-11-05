@@ -103,7 +103,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
     if ResourceType.is_adaptive_page(child) do
       ~H"""
       <.link
-        class="entry-title mx-3 text-Text-text-button hover:text-Text-text-button-hover underline hover:underline"
+        class="entry-title mx-3 text-Text-text-link underline hover:text-Text-text-button-hover"
         href={
           ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@child.slug}/edit?sidebar_expanded=#{@sidebar_expanded}"
         }
@@ -114,7 +114,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
     else
       ~H"""
       <.link
-        class="entry-title mx-3 text-Text-text-button hover:text-Text-text-button-hover underline hover:underline"
+        class="entry-title mx-3 text-Text-text-link underline hover:text-Text-text-button-hover"
         navigate={
           ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@child.slug}/edit?sidebar_expanded=#{@sidebar_expanded}"
         }

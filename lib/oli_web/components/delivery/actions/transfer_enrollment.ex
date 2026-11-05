@@ -185,6 +185,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
             <form for="search" phx-target={@myself} phx-change="search_item" class="w-44">
               <SearchInput.render
                 id="section_search_input"
+                aria_label="Search course sections"
                 name="item_name"
                 text={@params.text_search}
               />
@@ -225,6 +226,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
             <form for="search" phx-target={@myself} phx-change="search_item" class="w-44">
               <SearchInput.render
                 id="student_search_input"
+                aria_label="Search students"
                 name="item_name"
                 text={@params.text_search}
               />

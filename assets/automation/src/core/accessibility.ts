@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, Page } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 
 type AccessibilityScanOptions = {
   /** The cookie consent component has a known contrast issue outside this test's scope. */
@@ -7,11 +7,45 @@ type AccessibilityScanOptions = {
   theme?: 'dark' | 'light';
 };
 
+/** Scan a connected, styled page after its finite loading animations settle. */
 export async function scanPageAccessibility(
   page: Page,
   pageName: string,
   options: AccessibilityScanOptions = {},
 ) {
+  await page.waitForLoadState('load');
+  await expect(page.locator('[data-phx-main]')).toHaveClass(/phx-connected/);
+  await expect(page.locator('#nprogress')).toHaveCount(0);
+  await expect
+    .poll(
+      () =>
+        page
+          .locator('link[rel="stylesheet"][href="/css/app.css"]')
+          .evaluate((link: HTMLLinkElement) => Boolean(link.sheet?.cssRules.length)),
+      { message: 'Tailwind CSS must be loaded before scanning accessibility' },
+    )
+    .toBe(true);
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            document.fonts.status === 'loaded' &&
+            document
+              .getAnimations()
+              .every(
+                (animation) =>
+                  animation.playState !== 'running' ||
+                  animation.effect?.getComputedTiming().iterations === Infinity,
+              ),
+        ),
+      {
+        message: 'Page fonts and finite animations must settle before scanning accessibility',
+        timeout: 10_000,
+      },
+    )
+    .toBe(true);
+
   const builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag412']);
 
   if (options.excludeCookieConsent ?? true) {
@@ -47,5 +81,105 @@ export async function expectKeyboardFocus(page: Page, selector: string) {
   await target.focus();
   await expect(target).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(page.locator(':focus-visible')).toHaveCount(1);
+
+  const focused = page.locator(':focus-visible');
+  await expect(focused).toHaveCount(1);
+  await expect(focused).toBeVisible();
+
+  const hasVisibleFocusIndicator = await focused.evaluate((element) => {
+    const readStyles = () => {
+      const computed = window.getComputedStyle(element);
+      return {
+        outline: {
+          style: computed.outlineStyle,
+          width: computed.outlineWidth,
+          color: computed.outlineColor,
+        },
+        boxShadow: computed.boxShadow,
+        borders: [
+          {
+            color: computed.borderTopColor,
+            style: computed.borderTopStyle,
+            width: computed.borderTopWidth,
+          },
+          {
+            color: computed.borderRightColor,
+            style: computed.borderRightStyle,
+            width: computed.borderRightWidth,
+          },
+          {
+            color: computed.borderBottomColor,
+            style: computed.borderBottomStyle,
+            width: computed.borderBottomWidth,
+          },
+          {
+            color: computed.borderLeftColor,
+            style: computed.borderLeftStyle,
+            width: computed.borderLeftWidth,
+          },
+        ],
+      };
+    };
+
+    const hasVisibleColor = (value: string) => {
+      if (!value || value.toLowerCase() === 'transparent') return false;
+
+      const alpha = value.match(/rgba?\((?:[^,]+,){3}\s*([^,)]+)/i)?.[1];
+      return alpha === undefined || Number.parseFloat(alpha) > 0;
+    };
+
+    const hasVisibleBoxShadow = (value: string) =>
+      value !== 'none' &&
+      value.split(/,(?![^()]*\))/).some((shadow) => {
+        if (!hasVisibleColor(shadow)) return false;
+
+        const dimensions = shadow
+          .replace(/rgba?\([^)]*\)|hsla?\([^)]*\)|#[0-9a-f]+|\b[a-z]+\b/gi, '')
+          .match(/-?(?:\d+\.?\d*|\.\d+)/g);
+
+        return dimensions?.some((dimension) => Number.parseFloat(dimension) !== 0) ?? false;
+      });
+
+    const originalTransition = element.style.getPropertyValue('transition');
+    const originalTransitionPriority = element.style.getPropertyPriority('transition');
+    element.style.setProperty('transition', 'none', 'important');
+
+    const focusedStyles = readStyles();
+    const wasFocused = document.activeElement === element;
+
+    if (wasFocused) element.blur();
+    const unfocusedStyles = readStyles();
+
+    if (originalTransition) {
+      element.style.setProperty('transition', originalTransition, originalTransitionPriority);
+    } else {
+      element.style.removeProperty('transition');
+    }
+
+    if (wasFocused) element.focus({ preventScroll: true });
+
+    const hasOutline =
+      focusedStyles.outline.style !== 'none' &&
+      Number.parseFloat(focusedStyles.outline.width) > 0 &&
+      hasVisibleColor(focusedStyles.outline.color);
+
+    const hasBoxShadow = hasVisibleBoxShadow(focusedStyles.boxShadow);
+
+    const hasBorderChange = focusedStyles.borders.some((focusedBorder, index) => {
+      const unfocusedBorder = unfocusedStyles.borders[index];
+      const hasVisibleBorder =
+        Number.parseFloat(focusedBorder.width) > 0 && hasVisibleColor(focusedBorder.color);
+
+      return (
+        hasVisibleBorder &&
+        (focusedBorder.color !== unfocusedBorder.color ||
+          focusedBorder.style !== unfocusedBorder.style ||
+          focusedBorder.width !== unfocusedBorder.width)
+      );
+    });
+
+    return hasOutline || hasBoxShadow || hasBorderChange;
+  });
+
+  expect(hasVisibleFocusIndicator).toBe(true);
 }

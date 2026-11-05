@@ -12,6 +12,7 @@ interface GroupEditorProps extends EditorProps {
 export const GroupEditor = ({
   resourceContext,
   editMode,
+  supportsLtiConfiguration,
   projectSlug,
   resourceSlug,
   contentItem,
@@ -72,6 +73,7 @@ export const GroupEditor = ({
               parents: [...parents, contentItem],
               activities,
               editMode,
+              supportsLtiConfiguration,
               resourceSlug,
               projectSlug,
               graded,

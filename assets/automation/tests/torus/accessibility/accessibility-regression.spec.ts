@@ -1,12 +1,13 @@
-import path from 'node:path';
-import { expect } from '@playwright/test';
-import { test } from '@fixture/my-fixture';
+import AxeBuilder from '@axe-core/playwright';
 import {
   expectKeyboardFocus,
   scanPageAccessibility,
   setAccessibilityTheme,
 } from '@core/accessibility';
+import { test } from '@fixture/my-fixture';
+import { expect } from '@playwright/test';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
+import path from 'node:path';
 import {
   configureStudentDeliveryRuntimeConfig,
   seedStudentDeliveryScenario,
@@ -63,10 +64,37 @@ test.beforeAll(async ({ seedScenario }) => {
 });
 
 test.describe('accessibility regression coverage @pr @accessibility', () => {
+  test('loading indicator has valid ARIA while visible', async ({ page, homeTask }) => {
+    await homeTask.login('student');
+    try {
+      await page.evaluate(() => window.dispatchEvent(new Event('phx:page-loading-start')));
+      await expect(page.locator('#nprogress .bar')).toBeVisible();
+      const results = await new AxeBuilder({ page })
+        .include('#nprogress')
+        .withRules(['aria-roles'])
+        .analyze();
+      expect(results.violations).toEqual([]);
+    } finally {
+      await page.evaluate(() => window.dispatchEvent(new Event('phx:page-loading-stop')));
+      await expect(page.locator('#nprogress')).toHaveCount(0);
+    }
+  });
+
   test('student home has no automated accessibility violations', async ({ page, homeTask }) => {
     await homeTask.login('student');
     await scanPageAccessibility(page, 'student home');
     await expectKeyboardFocus(page, 'a, button, input');
+  });
+
+  test('rejects accessibility scans when Tailwind CSS is missing', async ({ page, homeTask }) => {
+    await homeTask.login('student');
+    await page.route('**/css/app.css', (route) =>
+      route.fulfill({ status: 404, contentType: 'text/css', body: '' }),
+    );
+    await page.goto('/users/settings', { waitUntil: 'load' });
+    await expect(scanPageAccessibility(page, 'account settings without Tailwind')).rejects.toThrow(
+      'Tailwind CSS must be loaded before scanning accessibility',
+    );
   });
 
   test('course outline and notes have no automated accessibility violations', async ({
@@ -86,13 +114,18 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await studentCourse.openPage('Coverage Page');
     await scanPageAccessibility(page, 'coverage page');
 
-    // Notes are only available when collaboration spaces are enabled for the section.
     const notesToggle = page.getByRole('button', { name: 'Toggle Notes panel' });
-    if (await notesToggle.isVisible().catch(() => false)) {
-      await notesToggle.click();
-      await expect(page.getByRole('complementary', { name: 'Notes Panel' })).toBeVisible();
-      await scanPageAccessibility(page, 'notes');
-    }
+    const notesPanel = page.getByRole('complementary', { name: 'Notes Panel' });
+    await expect(notesToggle).toBeVisible();
+    await notesToggle.focus();
+    await notesToggle.press('Enter');
+    await expect(notesPanel).toBeVisible();
+    const closeNotesButton = notesPanel.getByRole('button', { name: 'Close notes panel' }).first();
+    await expect(closeNotesButton).toBeVisible();
+    await closeNotesButton.focus();
+    await expect(closeNotesButton).toBeFocused();
+    await scanPageAccessibility(page, 'notes');
+    await expectKeyboardFocus(page, '#annotations_panel button, #annotations_panel input');
   });
 
   test('scored activity has no automated accessibility violations', async ({
@@ -108,12 +141,24 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await expect(page.locator('#student_learn')).toBeVisible();
     await expect(page.locator('[id^="outline_rows-"] button').first()).toBeVisible();
     await studentCourse.openPage('Scored Activity');
-    await expect(page.getByRole('button', { name: 'Begin 1st Attempt' })).toBeVisible();
-    // Scan the navigation at full opacity, after its entrance transition finishes.
+    const beginAttemptButton = page.locator('#begin_attempt_button');
+    await expect(beginAttemptButton).toBeVisible();
     await page.locator('#bottom-bar-wrapper').hover();
     await expect(page.locator('#bottom-bar')).toHaveCSS('opacity', '1');
+    await beginAttemptButton.click();
+    await expect(page.locator('oli-multiple-choice-delivery')).toBeVisible();
+    await expect(page.getByText('Which option is correct?', { exact: true })).toBeVisible();
     await scanPageAccessibility(page, 'scored activity');
-    await expectKeyboardFocus(page, 'a, button, input');
+
+    const choices = page.getByRole('radio');
+    await expect(choices).toHaveCount(2);
+    await choices.first().focus();
+    await expect(choices.first()).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(choices.nth(1)).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(choices.nth(1)).toHaveAttribute('aria-checked', 'true');
+    await expectKeyboardFocus(page, '[role="radio"]');
   });
 
   test('schedule has light and dark theme accessibility coverage', async ({ page, homeTask }) => {
@@ -132,15 +177,23 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await expectKeyboardFocus(page, 'a, button, input');
   });
 
-  test('authoring curriculum has no automated accessibility violations', async ({
+  test('authoring dashboard and curriculum have no automated accessibility violations', async ({
     page,
     homeTask,
   }) => {
     await homeTask.login('author');
-    await page.goto(`/workspaces/course_author/${projectSlug}/curriculum`, {
+    await scanPageAccessibility(page, 'authoring dashboard');
+    const curriculumPath = `/workspaces/course_author/${projectSlug}/curriculum`;
+    await page.goto(curriculumPath, {
       waitUntil: 'domcontentloaded',
     });
-    await expect(page).toHaveURL(new RegExp(`/course_author/${projectSlug}/curriculum$`));
+    await expect(page).toHaveURL(
+      new RegExp(`/workspaces/course_author/${projectSlug}/curriculum(?:\\?|$)`),
+    );
+    await expect(page.locator('#curriculum-container')).toBeVisible();
+    await expect(
+      page.getByText('Create and arrange your learning materials below.', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Curriculum', exact: true })).toBeVisible();
     await expect(page.getByText('Coverage Page', { exact: true })).toBeVisible();
     await scanPageAccessibility(page, 'authoring curriculum');

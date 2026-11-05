@@ -28,7 +28,7 @@ defmodule OliWeb.Components.Project.LearningProficiency do
             rel="noopener noreferrer"
             class="font-bold text-Text-text-button hover:underline"
           >
-            Learn more
+            Learn more <span class="sr-only">about learning proficiency (opens in a new tab)</span>
           </.link>
           <Button.button
             id="upgrade-learning-framework"
@@ -61,6 +61,7 @@ defmodule OliWeb.Components.Project.LearningProficiency do
           class="font-bold text-Text-text-button hover:underline"
         >
           Learn more about the current learning proficiency framework.
+          <span class="sr-only">(opens in a new tab)</span>
         </.link>
         <p id="framework-upgrade-modal-description" class="mt-4 mb-6">
           Updating to the latest learning proficiency framework will update this project and all its existing templates.

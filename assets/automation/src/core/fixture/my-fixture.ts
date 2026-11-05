@@ -8,9 +8,11 @@ import { runWorkflowFromFile } from '@core/workflow/runWorkflow';
 import { RunWorkflowOptions, WorkflowState } from '@core/workflow/types';
 import { AdministrationTask } from '@tasks/AdministrationTask';
 import { AccountLinkingTask } from '@tasks/AccountLinkingTask';
+import { AdvancedAuthorTask } from '@tasks/AdvancedAuthorTask';
 import { CurriculumTask } from '@tasks/CurriculumTask';
 import { HomeTask } from '@tasks/HomeTask';
 import { ProjectTask } from '@tasks/ProjectTask';
+import { SimpleAuthorTask } from '@tasks/SimpleAuthorTask';
 import { StudentTask } from '@tasks/StudentTask';
 import {
   getBaseUrl,
@@ -25,9 +27,11 @@ type MyFixtures = {
   verifier: Verifier;
   administrationTask: AdministrationTask;
   accountLinkingTask: AccountLinkingTask;
+  advancedAuthorTask: AdvancedAuthorTask;
   curriculumTask: CurriculumTask;
   homeTask: HomeTask;
   projectTask: ProjectTask;
+  simpleAuthorTask: SimpleAuthorTask;
   studentTask: StudentTask;
   seedScenario: (
     relativePath: string,
@@ -78,6 +82,12 @@ export const test = base.extend<MyFixtures>({
     },
     { title: '🔗 Account Linking Task' },
   ],
+  advancedAuthorTask: [
+    async ({ page }, use) => {
+      await use(new AdvancedAuthorTask(page));
+    },
+    { title: '🧠 Advanced Author Task' },
+  ],
   curriculumTask: [
     async ({ page }, use) => {
       await use(new CurriculumTask(page));
@@ -95,6 +105,12 @@ export const test = base.extend<MyFixtures>({
       await use(new ProjectTask(page));
     },
     { title: '📂 Project Task' },
+  ],
+  simpleAuthorTask: [
+    async ({ page }, use) => {
+      await use(new SimpleAuthorTask(page));
+    },
+    { title: '🧩 Simple Author Task' },
   ],
   studentTask: [
     async ({ page }, use) => {

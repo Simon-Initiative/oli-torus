@@ -8,6 +8,18 @@ defmodule Oli.Delivery.Sections.Certificate do
 
   @assessments_options [:all, :custom]
 
+  @description_max_length 500
+  @title_max_length 255
+  @admin_field_max_length 255
+  @admin_fields [
+    :admin_name1,
+    :admin_title1,
+    :admin_name2,
+    :admin_title2,
+    :admin_name3,
+    :admin_title3
+  ]
+
   @derive {Jason.Encoder, except: [:id, :section, :granted_certificate, :__meta__]}
 
   schema "certificates" do
@@ -67,6 +79,23 @@ defmodule Oli.Delivery.Sections.Certificate do
 
   @all_fields @required_fields ++ @optional_fields
 
+  @doc """
+  Maximum number of characters accepted for the certificate description.
+
+  The description is copied from the product description, which is not length-bounded at the
+  database level, so callers copying it should truncate to this limit.
+  """
+  @spec description_max_length() :: pos_integer()
+  def description_max_length, do: @description_max_length
+
+  @doc """
+  Truncates a description copied from an unbounded source, such as a product description, to
+  `description_max_length/0` characters. Descriptions that already fit are returned unchanged.
+  """
+  @spec truncate_description(String.t()) :: String.t()
+  def truncate_description(description) when is_binary(description),
+    do: String.slice(description, 0, @description_max_length)
+
   def changeset(params \\ %{}) do
     changeset(%__MODULE__{}, params)
   end
@@ -75,6 +104,8 @@ defmodule Oli.Delivery.Sections.Certificate do
     certificate
     |> cast(params, @all_fields)
     |> validate_required(@required_fields)
+    |> validate_length(:description, max: @description_max_length)
+    |> validate_length_of_varchar_fields()
     |> validate_greater_than_or_equal(
       :min_percentage_for_completion,
       :min_percentage_for_distinction,
@@ -82,6 +113,17 @@ defmodule Oli.Delivery.Sections.Certificate do
     )
     |> validate_assessments()
     |> assoc_constraint(:section)
+  end
+
+  # These columns are `varchar(255)`, which Postgres limits by code points, whereas
+  # `validate_length/3` counts graphemes by default. Counting code points keeps a value that
+  # passes validation from failing at insert time.
+  defp validate_length_of_varchar_fields(changeset) do
+    changeset = validate_length(changeset, :title, max: @title_max_length, count: :codepoints)
+
+    Enum.reduce(@admin_fields, changeset, fn field, acc ->
+      validate_length(acc, field, max: @admin_field_max_length, count: :codepoints)
+    end)
   end
 
   defp validate_assessments(changeset) do

@@ -40,7 +40,7 @@ defmodule OliWeb.Curriculum.Actions do
             type="button"
             class="dropdown-item"
             phx-click={push_event_and_hide_dropdown("show_options_modal", @child.slug)}
-            role="show_options_modal"
+            data-role="show_options_modal"
             phx-value-slug={@child.slug}
           >
             <i class="fas fa-sliders-h mr-1 flex-1"></i> Settings
@@ -49,7 +49,7 @@ defmodule OliWeb.Curriculum.Actions do
             type="button"
             class="dropdown-item"
             phx-click={push_event_and_hide_dropdown("show_move_modal", @child.slug)}
-            role="show_move_modal"
+            data-role="show_move_modal"
             phx-value-slug={@child.slug}
           >
             <i class="fas fa-arrow-circle-right mr-1"></i> Move to...
@@ -59,7 +59,7 @@ defmodule OliWeb.Curriculum.Actions do
               type="button"
               class="dropdown-item"
               phx-click={push_event_and_hide_dropdown("duplicate_page", @child.slug)}
-              role="duplicate_page"
+              data-role="duplicate_page"
               phx-value-id={@child.id}
             >
               <i class="fas fa-copy mr-1"></i> Duplicate
@@ -90,7 +90,7 @@ defmodule OliWeb.Curriculum.Actions do
             type="button"
             class="dropdown-item text-danger"
             phx-click={push_event_and_hide_dropdown("show_delete_modal", @child.slug)}
-            role="show_delete_modal"
+            data-role="show_delete_modal"
             phx-value-slug={@child.slug}
           >
             <i class="far fa-trash-alt mr-1"></i> Delete

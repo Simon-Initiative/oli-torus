@@ -86,6 +86,7 @@ defmodule Oli.MixProject do
       "guides/process/pr-template.md",
       "guides/process/changelog-pr.md",
       "guides/process/claude-code.md",
+      "guides/process/development.md",
       "guides/process/deployment.md",
       "guides/process/building.md",
       "guides/process/testing.md",
@@ -158,6 +159,8 @@ defmodule Oli.MixProject do
       {:broadway, "~> 1.0.7"},
       {:broadway_dashboard, "~> 0.4.0"},
       {:cachex, "~> 3.5"},
+      # Minimum CA bundle with the eMudhra distrust update.
+      {:castore, "~> 1.0.22"},
       {:cloak_ecto, "~> 1.2.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0.5"},
