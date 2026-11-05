@@ -30,8 +30,8 @@ describe('analytics', () => {
   });
 
   afterEach(() => {
-    for (const [type, listener] of listeners.mock.calls) {
-      window.removeEventListener(type, listener);
+    for (const [type, listener, options] of listeners.mock.calls) {
+      window.removeEventListener(type, listener, options);
     }
     jest.restoreAllMocks();
     jest.clearAllTimers();

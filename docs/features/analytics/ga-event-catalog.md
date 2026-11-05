@@ -37,18 +37,32 @@ Each event has exactly one designated emitter, listed below, so LiveView and Rea
 report the same action.
 
 The writer captures each validated event and its current sanitized context in an in-memory FIFO
-queue. Callers return before GTM processes the event. A single queue drain uses
-`scheduler.yield()` with a `setTimeout(..., 0)` fallback, and yields again between batches when
-its time budget is spent. Page views and product events keep their original order. The initial
-page context and GTM loader are handed off together after the first yield. Consent defaults and
-updates remain immediate. This follows [web.dev's yielding guidance](https://web.dev/articles/optimize-long-tasks#cross-browser_support).
+queue. Callers return before GTM processes the event. Startup uses `scheduler.yield()` at the
+current priority, handing off the initial page context and GTM loader together after that yield.
+Keeping startup at this priority avoids delaying GTM until the page becomes idle on short visits.
+Later drains run inside `scheduler.postTask(..., { priority: 'background' })`, and use
+`scheduler.yield()` between batches when their 8 ms budget is spent. Those continuations inherit
+the background priority. Page views and product events keep their original order. Consent defaults
+and updates remain immediate. See [web.dev's yielding guidance](https://web.dev/articles/optimize-long-tasks#cross-browser_support)
+and the [scheduling specification's metrics-processing example](https://wicg.github.io/scheduling-apis/#task-priorities).
+
+Missing scheduling APIs fall back to `setTimeout(..., 0)`. Native scheduling also has a one-second
+fallback timer so a starved task or continuation cannot wait indefinitely; native failures use the
+timer fallback immediately. A late native callback cannot deliver the same work twice. Timers
+still depend on the browser getting an opportunity to run JavaScript.
 
 Delivery rechecks consent before each queued operation. Withdrawal discards pending operations,
 including a loader that has not started; a later acceptance starts with the current page only.
 Course-entry and preview deduplication keys are recorded on delivery, so canceled operations do
-not consume them. GTM/tag exceptions are contained by the drain and cannot change an activity's
-success result. Events still run on the main thread in later tasks; this does not remove their
-CPU cost, and queued events can be lost if the document unloads before delivery.
+not consume them. The shared `track()` facade contains synchronous writer errors, and delivery
+contains GTM/tag exceptions, so analytics failures cannot change an emitter's result.
+
+When `visibilitychange` reports a hidden document, or `pagehide` fires, the writer synchronously
+hands off all pending operations to the data layer without the batch budget, preserving consent
+checks and per-event error isolation. A scheduled drain that resumes afterward sees the updated
+queue. This reduces navigation losses; it cannot guarantee network delivery. In particular,
+flushing before GTM has loaded only fills its buffer. Events still run on the main thread, so
+deferral does not remove their CPU cost and a single slow tag cannot be interrupted.
 
 ## Context parameters
 
