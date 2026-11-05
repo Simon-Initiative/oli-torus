@@ -347,7 +347,13 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
       })
 
     ~H"""
-    <Button.button variant={:secondary} size={:sm} phx-click={@event} phx-value-id={@project.id}>
+    <Button.button
+      variant={:secondary}
+      size={:sm}
+      phx-click={@event}
+      phx-value-id={@project.id}
+      aria-label={"#{@label} for #{@project.title} (#{@project.slug})"}
+    >
       {@label}
     </Button.button>
     """
@@ -547,37 +553,49 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   end
 
   def handle_event("filter_grants", %{"value" => query}, socket) do
-    {:noreply,
-     socket |> assign(granted_query: query, granted_offset: 0) |> assign_granted_table()}
+    authorized(socket, fn socket ->
+      {:noreply,
+       socket |> assign(granted_query: query, granted_offset: 0) |> assign_granted_table()}
+    end)
   end
 
   def handle_event("reset_grants_filter", _params, socket) do
-    {:noreply, socket |> assign(granted_query: "", granted_offset: 0) |> assign_granted_table()}
+    authorized(socket, fn socket ->
+      {:noreply, socket |> assign(granted_query: "", granted_offset: 0) |> assign_granted_table()}
+    end)
   end
 
   def handle_event("page_grants", %{"offset" => offset}, socket) do
-    case Integer.parse(offset) do
-      {offset, ""} ->
-        {:noreply, socket |> assign(granted_offset: offset) |> assign_granted_table()}
+    authorized(socket, fn socket ->
+      case Integer.parse(offset) do
+        {offset, ""} ->
+          {:noreply, socket |> assign(granted_offset: offset) |> assign_granted_table()}
 
-      _ ->
-        {:noreply, socket}
-    end
+        _ ->
+          {:noreply, socket}
+      end
+    end)
   end
 
   def handle_event("sort_grants", _params, socket) do
-    order = if socket.assigns.granted_sort_order == :asc, do: :desc, else: :asc
+    authorized(socket, fn socket ->
+      order = if socket.assigns.granted_sort_order == :asc, do: :desc, else: :asc
 
-    {:noreply,
-     socket |> assign(granted_sort_order: order, granted_offset: 0) |> assign_granted_table()}
+      {:noreply,
+       socket |> assign(granted_sort_order: order, granted_offset: 0) |> assign_granted_table()}
+    end)
   end
 
   def handle_event("search_projects", %{"value" => query}, socket) do
-    {:noreply, socket |> assign(project_query: query) |> assign_search_results()}
+    authorized(socket, fn socket ->
+      {:noreply, socket |> assign(project_query: query) |> assign_search_results()}
+    end)
   end
 
   def handle_event("clear_project_search", _params, socket) do
-    {:noreply, socket |> assign(project_query: "") |> assign_search_results()}
+    authorized(socket, fn socket ->
+      {:noreply, socket |> assign(project_query: "") |> assign_search_results()}
+    end)
   end
 
   def handle_event("grant_project", %{"id" => id}, socket) do
@@ -602,8 +620,6 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
     {:noreply, socket}
   end
 
-  # The tools page is admitted once, by the router; every change to who can use the tool checks the
-  # author's current role again, so a role removed after the page loaded stops it.
   defp authorized(socket, action) do
     with %Author{} = author <- Accounts.get_author(socket.assigns.current_author.id),
          true <- Accounts.at_least_account_admin?(author) do
@@ -613,7 +629,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
         {:noreply,
          assign(socket, :custom_flash, %{
            type: :unauthorized,
-           message: "Only account administrators can change who can use this tool."
+           message: "Only account administrators can view or change who can use this tool."
          })}
     end
   end

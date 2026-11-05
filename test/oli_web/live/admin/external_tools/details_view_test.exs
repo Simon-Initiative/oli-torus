@@ -575,6 +575,134 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       end
     end
 
+    test "read events refuse a demoted admin without disclosing new or hidden projects", %{
+      conn: conn,
+      account_admin: account_admin,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      for n <- 1..21 do
+        number = String.pad_leading("#{n}", 2, "0")
+        project = insert(:project, title: "Cached #{number}", slug: "cached_#{number}")
+        {:ok, _} = PlatformExternalTools.grant_project(dep, project.id)
+      end
+
+      searchable = insert(:project, title: "Searchable project")
+
+      events = [
+        {"search_projects", %{"value" => "Searchable"}},
+        {"clear_project_search", %{}},
+        {"filter_grants", %{"value" => "cached_21"}},
+        {"reset_grants_filter", %{}},
+        {"page_grants", %{"offset" => "20"}},
+        {"sort_grants", %{}}
+      ]
+
+      for {event, params} <- events do
+        set_role(Repo.reload!(account_admin), :account_admin)
+        {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+        render_click(view, "search_projects", %{"value" => "Searchable"})
+
+        case event do
+          "reset_grants_filter" ->
+            render_click(view, "filter_grants", %{"value" => "cached_01"})
+
+          _ ->
+            :ok
+        end
+
+        before = view |> element("#tool_grants") |> render()
+        render_click(view, event, params)
+        refute has_element?(view, "#flash")
+
+        case event do
+          "search_projects" ->
+            assert has_element?(view, "#search_results_table", searchable.title)
+
+          "clear_project_search" ->
+            refute has_element?(view, "#search_results_table")
+
+          "filter_grants" ->
+            assert row_slugs(render(view), "#granted_projects_table") == ["cached_21"]
+
+          "reset_grants_filter" ->
+            assert length(row_slugs(render(view), "#granted_projects_table")) == 20
+
+          "page_grants" ->
+            assert row_slugs(render(view), "#granted_projects_table") == ["cached_21"]
+
+          "sort_grants" ->
+            assert hd(row_slugs(render(view), "#granted_projects_table")) == "cached_21"
+        end
+
+        {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+        render_click(view, "search_projects", %{"value" => "Searchable"})
+
+        case event do
+          "reset_grants_filter" ->
+            render_click(view, "filter_grants", %{"value" => "cached_01"})
+
+          _ ->
+            :ok
+        end
+
+        assert view |> element("#tool_grants") |> render() == before
+        refute has_element?(view, "#granted_projects_table", "Cached 21")
+        set_role(account_admin, :author)
+        new_project = insert(:project, title: "Searchable after demotion #{event}")
+        html = render_click(view, event, params)
+
+        assert has_element?(
+                 view,
+                 "#flash",
+                 "Only account administrators can view or change who can use this tool."
+               ),
+               event
+
+        refute html |> Floki.parse_document!() |> Floki.text() =~ new_project.title, event
+        assert view |> element("#tool_grants") |> render() == before, event
+      end
+    end
+
+    test "row action names distinguish equal titles and identify their own project", %{
+      conn: conn,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      projects =
+        for slug <- ["shared_title_one", "shared_title_two"] do
+          insert(:project, title: "Shared title", slug: slug)
+        end
+
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+      render_click(view, "search_projects", %{"value" => "Shared title"})
+
+      for {event, label, table, prefix} <- [
+            {"grant_project", "Grant access", "search_results_table", "result"},
+            {"revoke_project", "Remove", "granted_projects_table", "granted"}
+          ] do
+        for project <- projects do
+          selector = "##{table} tr##{prefix}-#{project.id} button"
+          button = view |> element(selector) |> render() |> Floki.parse_fragment!()
+
+          assert Floki.attribute(button, "aria-label") ==
+                   ["#{label} for #{project.title} (#{project.slug})"]
+
+          assert Floki.attribute(button, "phx-value-id") == [to_string(project.id)]
+          assert Floki.attribute(button, "phx-click") == [event]
+          assert button |> Floki.text() |> String.trim() == label
+        end
+
+        for project <- projects do
+          view
+          |> element("##{table} button[phx-value-id='#{project.id}']")
+          |> render_click()
+        end
+      end
+
+      for project <- projects, do: refute(granted?(dep, project))
+    end
+
     test "stop being allowed once the author is no longer an account admin", %{
       conn: conn,
       account_admin: account_admin,
@@ -600,7 +728,12 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       |> render_click()
 
       refute granted?(dep, physics)
-      assert has_element?(view, "#flash", "Only account administrators can change")
+
+      assert has_element?(
+               view,
+               "#flash",
+               "Only account administrators can view or change who can use this tool."
+             )
 
       view
       |> element("#granted_projects_table button[phx-value-id='#{chemistry.id}']")
@@ -651,7 +784,12 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       view |> element("#make_private_modal-confirm") |> render_click()
 
       assert reload(dep).availability == :public
-      assert has_element?(view, "#flash", "Only account administrators can change")
+
+      assert has_element?(
+               view,
+               "#flash",
+               "Only account administrators can view or change who can use this tool."
+             )
     end
   end
 
