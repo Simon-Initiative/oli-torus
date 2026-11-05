@@ -556,6 +556,25 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
   describe "availability and project access for an account admin" do
     setup [:account_admin_conn, :insert_lti_tool]
 
+    for {availability, help} <- [
+          {:public, "Any project can add this tool."},
+          {:private,
+           "Only the projects below can add this tool. Projects that already added it are not affected."}
+        ] do
+      @availability availability
+      @help help
+      test "#{availability} availability associates its help with the radio group", %{
+        conn: conn,
+        platform_instance: pi,
+        deployment: dep
+      } do
+        {:ok, _} = PlatformExternalTools.set_availability(dep, @availability)
+        {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+        assert_availability_description(view, "availability-0", @help)
+      end
+    end
+
     test "stop being allowed once the author is no longer an account admin", %{
       conn: conn,
       account_admin: account_admin,
@@ -609,6 +628,12 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       assert reload(dep).availability == :private
       refute has_element?(view, "#availability-0-private")
       assert has_element?(view, "#availability-1-private[checked]")
+
+      assert_availability_description(
+        view,
+        "availability-1",
+        "Only the projects below can add this tool. Projects that already added it are not affected."
+      )
     end
 
     test "a Private confirmed by an author who lost the role is not saved", %{
@@ -628,6 +653,15 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       assert reload(dep).availability == :public
       assert has_element?(view, "#flash", "Only account administrators can change")
     end
+  end
+
+  defp assert_availability_description(view, fieldset_id, help) do
+    document = view |> render() |> Floki.parse_document!()
+    fieldset = Floki.find(document, "fieldset##{fieldset_id}")
+
+    assert Floki.attribute(fieldset, "aria-describedby") == ["availability_help"]
+    assert [description] = Floki.find(document, "#availability_help")
+    assert description |> Floki.text() |> String.trim() == help
   end
 
   defp reload(dep),

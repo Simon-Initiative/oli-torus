@@ -156,6 +156,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
               id={"availability-#{@availability_rev}"}
               name="availability"
               legend="Availability"
+              aria-describedby="availability_help"
               options={[%{value: :public, label: "Public"}, %{value: :private, label: "Private"}]}
               value={if @confirming_private, do: :private, else: @deployment.availability}
               orientation={:horizontal}
@@ -221,10 +222,10 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
     <Modal.modal
       id="make_private_modal"
       show={true}
-      class="!w-1/2"
+      class="max-w-xl"
       header_class="flex items-start justify-between p-6 border-b border-gray-300"
       confirm_class={modal_confirm_class()}
-      cancel_class={modal_cancel_class()}
+      cancel_class={modal_cancel_class() <> " !px-3"}
       on_cancel={JS.push("cancel_private")}
       on_confirm={JS.push("confirm_private") |> Modal.hide_modal("make_private_modal")}
     >
