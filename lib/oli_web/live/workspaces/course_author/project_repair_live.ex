@@ -348,7 +348,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
         Confirm activity repair
       </h2>
       <p id="project-repair-confirmation-description">
-        This will restore {@report.summary.deleted_activity_resource_count} deleted activities and repair {@report.summary.repairable_shared_activity_resource_count} shared activity groups affecting {@report.summary.repairable_shared_activity_affected_page_count} Basic pages. Unresolved activity references will remain unchanged.
+        This will restore {ngettext(
+          "%{count} deleted activity",
+          "%{count} deleted activities",
+          @report.summary.deleted_activity_resource_count
+        )} and repair {ngettext(
+          "%{count} shared activity group",
+          "%{count} shared activity groups",
+          @report.summary.repairable_shared_activity_resource_count
+        )} affecting {ngettext(
+          "%{count} Basic page",
+          "%{count} Basic pages",
+          @report.summary.repairable_shared_activity_affected_page_count
+        )}. Unresolved activity references will remain unchanged.
       </p>
       <p>
         Changes affect only unpublished authoring content. Copies receive new activity ids;
@@ -397,8 +409,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
     <section class="mb-5" aria-labelledby="deleted-activity-heading">
       <h2 id="deleted-activity-heading" class="h4">References to deleted activities</h2>
       <p>
-        {@report.summary.deleted_activity_resource_count} distinct deleted activities; {@report.summary.deleted_activity_reference_count} page/activity references across {@report.summary.deleted_activity_affected_page_count} Basic pages. {@report.summary.deleted_shared_activity_resource_count} of these activities are also shared
-        and included in the shared counts below.
+        {ngettext(
+          "%{count} distinct deleted activity",
+          "%{count} distinct deleted activities",
+          @report.summary.deleted_activity_resource_count
+        )}; {ngettext(
+          "%{count} page/activity reference",
+          "%{count} page/activity references",
+          @report.summary.deleted_activity_reference_count
+        )} across {ngettext(
+          "%{count} Basic page",
+          "%{count} Basic pages",
+          @report.summary.deleted_activity_affected_page_count
+        )}. {ngettext(
+          "%{count} of these activities is also shared and included in the shared counts below.",
+          "%{count} of these activities are also shared and included in the shared counts below.",
+          @report.summary.deleted_shared_activity_resource_count
+        )}
       </p>
       <p>
         Repair creates an active revision with the same activity id. Shared activities keep that id
@@ -455,7 +482,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
         These targets cannot be resolved as project activities in the working publication. They are report-only; reference nodes are preserved.
       </p>
       <p>
-        {@summary.missing_activity_resource_count} distinct unresolved activity targets (report-only).
+        {ngettext(
+          "%{count} distinct unresolved activity target",
+          "%{count} distinct unresolved activity targets",
+          @summary.missing_activity_resource_count
+        )} (report-only).
       </p>
       <p
         :if={@summary.missing_activity_reference_count > length(@references)}
@@ -576,7 +607,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
     <section class={repair_result_alert_class(@result)} role="status" aria-live="polite">
       <h2 class="h4">{repair_result_heading(@result)}</h2>
       <p>
-        Restored {@result.restored_activity_count} deleted activities, updated {@result.updated_page_count} pages and cloned {@result.cloned_activity_count} activities. The analysis below has been refreshed from current project state.
+        Restored {ngettext(
+          "%{count} deleted activity",
+          "%{count} deleted activities",
+          @result.restored_activity_count
+        )}, updated {ngettext("%{count} page", "%{count} pages", @result.updated_page_count)} and cloned {ngettext(
+          "%{count} activity",
+          "%{count} activities",
+          @result.cloned_activity_count
+        )}. The analysis below has been refreshed from current project state.
       </p>
 
       <ul :if={!Enum.empty?(@result.failures)}>

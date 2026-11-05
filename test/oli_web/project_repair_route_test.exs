@@ -69,15 +69,17 @@ defmodule OliWeb.ProjectRepairRouteTest do
       {:ok, view, _} = live(conn, repair_tool_path(seed.project.slug))
       html = render_async(view, 5_000)
       assert html =~ "References to deleted activities"
-      assert html =~ "1 distinct deleted activities"
+      assert html =~ "1 distinct deleted activity"
+      assert html =~ "1 page/activity reference across 1 Basic page."
+      assert html =~ "0 of these activities are also shared"
       refute has_element?(view, "[aria-labelledby='deleted-activity-heading'] .alert-success")
       assert has_element?(view, "#project-repair-show-confirmation")
       view |> element("#project-repair-show-confirmation") |> render_click()
-      assert render(view) =~ "This will restore 1 deleted activities"
+      assert render(view) =~ "This will restore 1 deleted activity"
       view |> element("#project-repair-confirm-make-changes") |> render_click()
       html = render_async(view, 5_000)
       assert html =~ "Repair completed"
-      assert html =~ "Restored 1 deleted activities"
+      assert html =~ "Restored 1 deleted activity"
       assert has_element?(view, "[aria-labelledby='deleted-activity-heading'] .alert-success")
       refute AuthoringResolver.from_resource_id(seed.project.slug, activity.resource.id).deleted
     end
@@ -135,6 +137,7 @@ defmodule OliWeb.ProjectRepairRouteTest do
       |> render_click()
 
       assert has_element?(view, "#project-repair-confirmation")
+      assert render(view) =~ "1 shared activity group affecting 2 Basic pages."
 
       view
       |> element("#project-repair-confirm-make-changes")
@@ -143,7 +146,7 @@ defmodule OliWeb.ProjectRepairRouteTest do
       html = render_async(view, 10_000)
 
       assert html =~ "Repair completed"
-      assert html =~ "updated 1 pages and cloned 1 activities"
+      assert html =~ "updated 1 page and cloned 1 activity"
 
       assert {:ok, report} =
                Oli.Authoring.ProjectRepair.analyze_project(project, system_admin)
