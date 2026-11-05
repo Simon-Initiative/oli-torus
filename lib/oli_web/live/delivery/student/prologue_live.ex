@@ -368,7 +368,15 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         variant={:primary}
         size={:md}
         disabled={!@allow_attempt?}
-        class="w-full justify-center"
+        class={
+          case @allow_attempt? do
+            true ->
+              "w-full justify-center !bg-Fill-Buttons-fill-primary-bold hover:brightness-90"
+
+            false ->
+              "w-full justify-center"
+          end
+        }
         phx-click={@begin_attempt_click}
       >
         {@attempts.cta_label}

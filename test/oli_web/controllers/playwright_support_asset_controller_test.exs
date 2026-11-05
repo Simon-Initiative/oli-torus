@@ -16,10 +16,17 @@ defmodule OliWeb.PlaywrightSupportAssetControllerTest do
     end
 
     test "serves an allowed support asset", %{conn: conn} do
-      conn = get(conn, "/test/support/image_coding_table.csv")
+      conn = get(conn, "/test/support/table-test-01.csv")
 
       assert response_content_type(conn, :csv) =~ "text/csv"
       assert response(conn, 200) =~ "name,value"
+    end
+
+    test "serves the shared automation video fixture", %{conn: conn} do
+      conn = get(conn, "/test/support/video-test-01.mp4")
+
+      assert response(conn, 200)
+      assert conn |> get_resp_header("content-type") |> List.first() =~ "video/mp4"
     end
 
     test "rejects unknown support assets", %{conn: conn} do

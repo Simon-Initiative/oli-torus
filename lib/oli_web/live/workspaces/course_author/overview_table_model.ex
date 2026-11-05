@@ -40,6 +40,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
     )
   end
 
+  @doc "Renders a column in the course author's project overview."
   def custom_render(assigns, project, %ColumnSpec{name: name}) do
     assigns = Map.merge(assigns, %{project: project})
 
@@ -57,7 +58,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
       :status ->
         case project.status do
           :active ->
-            SortableTableModel.render_span_column(%{}, "Active", "text-success")
+            SortableTableModel.render_span_column(%{}, "Active", "text-Table-text-accent-green")
 
           :deleted ->
             SortableTableModel.render_span_column(%{}, "Deleted", "text-danger")
@@ -65,7 +66,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
 
       :name ->
         ~H"""
-        <span>{@project.name}</span> <small class="text-muted">{@project.email}</small>
+        <span>{@project.name}</span> <small class="text-Text-text-low">{@project.email}</small>
         """
     end
   end

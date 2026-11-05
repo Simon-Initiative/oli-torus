@@ -51,7 +51,11 @@ const csrfToken = (document as any)
   .getAttribute('content');
 const liveSocket = new LiveSocket('/live', Socket, {
   hooks: Hooks,
-  params: { _csrf_token: csrfToken },
+  params: () => ({
+    _csrf_token: csrfToken,
+    analytics_enabled: !!window.TorusAnalytics,
+    analytics_page_path: window.TorusAnalytics?.pagePath,
+  }),
   debug: false,
   timeout: 60000,
   metadata: {
@@ -67,7 +71,12 @@ const liveSocket = new LiveSocket('/live', Socket, {
 // Show progress bar on live navigation and form submits
 // this only shows the topbar if it's taking longer than 200 msec to receive the phx:page-loading-stop event
 let topBarScheduled: NodeJS.Timeout | undefined;
-NProgress.configure({ showSpinner: false });
+// NProgress's default template uses its selectors as invalid ARIA roles.
+NProgress.configure({
+  showSpinner: false,
+  barSelector: '.bar',
+  template: '<div class="bar" aria-hidden="true"><div class="peg"></div></div>',
+});
 
 window.addEventListener('phx:page-loading-start', () => {
   if (!topBarScheduled) {

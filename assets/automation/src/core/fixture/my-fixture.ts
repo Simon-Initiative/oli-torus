@@ -10,6 +10,7 @@ import { AccountLinkingTask } from '@tasks/AccountLinkingTask';
 import { CurriculumTask } from '@tasks/CurriculumTask';
 import { HomeTask } from '@tasks/HomeTask';
 import { ProjectTask } from '@tasks/ProjectTask';
+import { SimpleAuthorTask } from '@tasks/SimpleAuthorTask';
 import { StudentTask } from '@tasks/StudentTask';
 import {
   getBaseUrl,
@@ -27,6 +28,7 @@ type MyFixtures = {
   curriculumTask: CurriculumTask;
   homeTask: HomeTask;
   projectTask: ProjectTask;
+  simpleAuthorTask: SimpleAuthorTask;
   studentTask: StudentTask;
   seedScenario: (
     relativePath: string,
@@ -87,6 +89,12 @@ export const test = base.extend<MyFixtures>({
       await use(new ProjectTask(page));
     },
     { title: '📂 Project Task' },
+  ],
+  simpleAuthorTask: [
+    async ({ page }, use) => {
+      await use(new SimpleAuthorTask(page));
+    },
+    { title: '🧩 Simple Author Task' },
   ],
   studentTask: [
     async ({ page }, use) => {

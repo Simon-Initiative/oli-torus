@@ -75,6 +75,10 @@
     family_name: 'Instructor'
     password: 'changeme123456'
 
+- collaborator:
+    user: 'student_dashboard_coverage_author'
+    project: 'student_dashboard_coverage_project'
+
 - enroll:
     user: 'student_dashboard_coverage_student'
     section: 'student_dashboard_coverage_section'

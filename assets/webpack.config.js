@@ -19,6 +19,7 @@ const BUNDLE_ANALYZER_ENABLED = process.env.BUNDLE_ANALYZER_ENABLED === 'true';
 const populateEntries = () => {
   // These are the non-activity bundles
   const initialEntries = {
+    analytics: ['./src/analytics/bootstrap.ts'],
     app: ['babel-polyfill', './src/phoenix/app.ts'],
     components: ['./src/apps/Components.tsx'],
     pageeditor: ['./src/apps/PageEditorApp.tsx'],
