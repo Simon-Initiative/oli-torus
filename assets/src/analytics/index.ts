@@ -45,6 +45,7 @@ const titles: Record<PageArea, string> = {
 
 const ENTERED_KEY = 'torus_analytics_entered';
 const LESSON_CONTENT = '#page_content';
+const DELIVERY_BUDGET_MS = 8;
 
 const FILE_TYPES: Record<string, FileType> = {
   pdf: 'pdf',
@@ -72,6 +73,19 @@ const FILE_TYPES: Record<string, FileType> = {
 const warn = (message: string) => {
   if (process.env.NODE_ENV !== 'production') console.warn(message);
 };
+
+async function yieldToMain(): Promise<void> {
+  const scheduler = (window as Window & { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+  if (typeof scheduler?.yield === 'function') {
+    try {
+      await scheduler.yield();
+      return;
+    } catch {
+      // An unavailable or aborted scheduler must not prevent the timer fallback.
+    }
+  }
+  await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+}
 
 // Only accept the server's route-level contract. Extra fields (including titles and
 // URLs from future callers) are never copied into the data layer.
@@ -165,7 +179,10 @@ function linkedFileType(href: string, mediaUrl: string | undefined): FileType | 
   return mediaUrl && url.href.startsWith(mediaUrl) ? 'other' : null;
 }
 
-/** Initializes Basic Consent Mode; no container or behavioral events load before opt-in. */
+/**
+ * Initializes Basic Consent Mode with deferred, ordered analytics delivery. Consent commands
+ * remain immediate; no container or behavioral events load before opt-in.
+ */
 export function initializeAnalytics(value: unknown): void {
   const config = sanitizeConfig(value);
   if (window.TorusAnalytics || !config) return;
@@ -190,9 +207,61 @@ export function initializeAnalytics(value: unknown): void {
   });
 
   let currentContext = config.context;
-  let lastSentPath = '';
-  let containerLoaded = false;
+  let lastQueuedPath = '';
+  let containerRequested = false;
+  let containerQueued = false;
   const enteredInMemory = new Set<string>();
+  let pending: (() => void)[] = [];
+  let nextPending = 0;
+  let draining = false;
+
+  const discardPending = () => {
+    pending = [];
+    nextPending = 0;
+    containerQueued = false;
+  };
+
+  const drain = async () => {
+    try {
+      while (nextPending < pending.length) {
+        await yieldToMain();
+        const deadline = performance.now() + DELIVERY_BUDGET_MS;
+        while (nextPending < pending.length) {
+          if (!isGranted()) {
+            discardPending();
+            break;
+          }
+          const deliver = pending[nextPending++];
+          try {
+            deliver();
+          } catch {
+            // GTM/tag failures must never reach an activity's success continuation.
+            warn('Analytics delivery failed; event dropped');
+          }
+          // Publish the initial context and request its loader in one task. Before GTM loads,
+          // these pushes only fill its buffer; withdrawal must not interrupt that bootstrap.
+          // Later tag execution cannot be interrupted, but bursts yield between jobs.
+          if (!containerQueued && performance.now() >= deadline) break;
+        }
+        pending = pending.slice(nextPending);
+        nextPending = 0;
+      }
+    } catch {
+      discardPending();
+      warn('Analytics delivery failed; pending events dropped');
+    } finally {
+      draining = false;
+    }
+  };
+
+  const enqueue = (deliver: () => void) => {
+    if (!isGranted()) return;
+    pending.push(deliver);
+    if (!draining) {
+      draining = true;
+      void drain();
+    }
+  };
 
   // Course entry and preview launches count once per browser-tab session. Without session
   // storage (some LMS iframes), they count once per page load instead.
@@ -213,11 +282,15 @@ export function initializeAnalytics(value: unknown): void {
   };
 
   // Previews only measure their launch, so learner behavior never mixes with preview traffic.
-  const send = (name: EventName, params: Record<string, string>) => {
+  const send = (name: EventName, params: Record<string, string>, entryKey?: string) => {
     if (!isGranted()) return;
     const entry = dataLayerEvent(name, params, currentContext);
     if (currentContext.preview_mode && entry.feature_area !== 'preview') return;
-    dataLayer.push(entry);
+    enqueue(() => {
+      // Reserve tab entries only on delivery, so canceled visits do not consume their keys.
+      if (entryKey !== undefined && !firstInTab(entryKey)) return;
+      dataLayer.push(entry);
+    });
   };
 
   const enterContext = (context: PageContext) => {
@@ -231,15 +304,16 @@ export function initializeAnalytics(value: unknown): void {
         context.preview_mode === 'template_preview'
           ? /^\/sections\/([^/]+)/.exec(window.location.pathname)?.[1]
           : undefined;
-      if (firstInTab(`${context.preview_mode}:${templateSlug ?? context.course_id ?? ''}`)) {
-        send('feature_used', { feature_name });
-      }
+      send(
+        'feature_used',
+        { feature_name },
+        `${context.preview_mode}:${templateSlug ?? context.course_id ?? ''}`,
+      );
     } else if (
       context.course_id !== undefined &&
-      (context.page_area === 'delivery' || context.page_area === 'instructor') &&
-      firstInTab(`course:${context.course_id}`)
+      (context.page_area === 'delivery' || context.page_area === 'instructor')
     ) {
-      send('course_entered', {});
+      send('course_entered', {}, `course:${context.course_id}`);
     }
   };
 
@@ -253,9 +327,9 @@ export function initializeAnalytics(value: unknown): void {
       // the routes visited before consent or counts the initial LiveView mount.
       analytics.context = context;
       if (!isGranted()) return;
-      if (context.page_path !== lastSentPath) {
-        lastSentPath = context.page_path;
-        dataLayer.push({
+      if (context.page_path !== lastQueuedPath) {
+        lastQueuedPath = context.page_path;
+        const entry = {
           ...clearedParameters(),
           event: 'torus_page_view',
           page_path: context.page_path,
@@ -267,7 +341,8 @@ export function initializeAnalytics(value: unknown): void {
           page_type: context.page_type,
           page_location: window.location.origin + context.page_path,
           page_referrer: '',
-        });
+        };
+        enqueue(() => dataLayer.push(entry));
       }
       enterContext(context);
     },
@@ -291,21 +366,31 @@ export function initializeAnalytics(value: unknown): void {
   const startMeasurement = () => {
     if (!isGranted()) return;
     analytics.pageView(currentContext);
-    if (containerLoaded) return;
-    containerLoaded = true;
-    dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
-    const loader = document.createElement('script');
-    loader.async = true;
-    // The request itself must not carry a token-bearing Torus path or LMS referrer.
-    loader.referrerPolicy = 'no-referrer';
-    const params = new URLSearchParams({ id: config.container_id });
-    if (config.auth && config.preview) {
-      params.set('gtm_auth', config.auth);
-      params.set('gtm_preview', config.preview);
-      params.set('gtm_cookies_win', 'x');
-    }
-    loader.src = 'https://www.googletagmanager.com/gtm.js?' + params.toString();
-    document.head.appendChild(loader);
+    if (containerRequested || containerQueued) return;
+    containerQueued = true;
+    // Bootstrap shares the initial context's task, before any later event batches.
+    enqueue(() => {
+      try {
+        if (containerRequested) return;
+        dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+        if (!isGranted()) return;
+        const loader = document.createElement('script');
+        loader.async = true;
+        // The request itself must not carry a token-bearing Torus path or LMS referrer.
+        loader.referrerPolicy = 'no-referrer';
+        const params = new URLSearchParams({ id: config.container_id });
+        if (config.auth && config.preview) {
+          params.set('gtm_auth', config.auth);
+          params.set('gtm_preview', config.preview);
+          params.set('gtm_cookies_win', 'x');
+        }
+        loader.src = 'https://www.googletagmanager.com/gtm.js?' + params.toString();
+        document.head.appendChild(loader);
+        containerRequested = true;
+      } finally {
+        containerQueued = false;
+      }
+    });
   };
 
   window.addEventListener('phx:analytics:page_view', (event: Event) => {
@@ -331,8 +416,9 @@ export function initializeAnalytics(value: unknown): void {
     if (isGranted()) {
       startMeasurement();
     } else {
+      discardPending();
       // A later opt-in starts a new consented visit, including the current page.
-      lastSentPath = '';
+      lastQueuedPath = '';
     }
   });
   startMeasurement();
