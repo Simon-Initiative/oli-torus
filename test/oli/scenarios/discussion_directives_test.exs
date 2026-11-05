@@ -1,6 +1,7 @@
 defmodule Oli.Scenarios.DiscussionDirectivesTest do
   use Oli.DataCase
 
+  alias Oli.Resources.Collaboration
   alias Oli.Scenarios.DirectiveParser
   alias Oli.Scenarios.Engine
 
@@ -436,6 +437,150 @@ defmodule Oli.Scenarios.DiscussionDirectivesTest do
 
       assert [{_, error}] = result.errors
       assert error =~ "not authorized to delete"
+    end
+  end
+
+  describe "page_collab_config" do
+    test "configures enabled and disabled page collaboration spaces" do
+      yaml = """
+      - project:
+          name: "page_collab_config_project"
+          title: "Page Collaboration Config"
+          root:
+            children:
+              - page: "Welcome"
+
+      - publish:
+          to: "page_collab_config_project"
+
+      - section:
+          name: "page_collab_enabled_section"
+          title: "Page Collaboration Enabled"
+          from: "page_collab_config_project"
+
+      - page_collab_config:
+          section: "page_collab_enabled_section"
+          enabled: true
+          threaded: false
+          auto_accept: false
+          show_full_history: false
+          anonymous_posting: true
+          participation_min_replies: 2
+          participation_min_posts: 3
+
+      - section:
+          name: "page_collab_disabled_section"
+          title: "Page Collaboration Disabled"
+          from: "page_collab_config_project"
+
+      - page_collab_config:
+          section: "page_collab_disabled_section"
+          enabled: false
+      """
+
+      result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+      assert result.errors == []
+
+      enabled_section = Engine.get_section(result.state, "page_collab_enabled_section")
+      disabled_section = Engine.get_section(result.state, "page_collab_disabled_section")
+
+      assert {:ok, enabled_config} =
+               Collaboration.get_collab_space_config_for_page_in_section(
+                 "welcome",
+                 enabled_section.slug
+               )
+
+      assert enabled_config.status == :enabled
+      assert enabled_config.threaded == false
+      assert enabled_config.auto_accept == false
+      assert enabled_config.show_full_history == false
+      assert enabled_config.anonymous_posting == true
+      assert enabled_config.participation_min_replies == 2
+      assert enabled_config.participation_min_posts == 3
+
+      assert {:ok, disabled_config} =
+               Collaboration.get_collab_space_config_for_page_in_section(
+                 "welcome",
+                 disabled_section.slug
+               )
+
+      assert disabled_config.status == :disabled
+    end
+
+    test "returns an execution error for malformed participation limits" do
+      for {field, value} <- [
+            {"participation_min_replies", "abc"},
+            {"participation_min_posts", "12abc"}
+          ] do
+        yaml = """
+        - project:
+            name: "page_collab_invalid_#{field}"
+            title: "Page Collaboration Invalid #{field}"
+            root:
+              children:
+                - page: "Welcome"
+
+        - publish:
+            to: "page_collab_invalid_#{field}"
+
+        - section:
+            name: "page_collab_invalid_#{field}_section"
+            title: "Page Collaboration Invalid #{field} Section"
+            from: "page_collab_invalid_#{field}"
+
+        - page_collab_config:
+            section: "page_collab_invalid_#{field}_section"
+            enabled: true
+            #{field}: "#{value}"
+        """
+
+        result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+        assert [{_, error}] = result.errors
+        assert error =~ "#{field} must be an integer"
+        assert error =~ value
+      end
+    end
+
+    test "rejects negative participation limits" do
+      for {field, value} <- [
+            {"participation_min_replies", -1},
+            {"participation_min_posts", "-2"}
+          ] do
+        value_yaml =
+          case value do
+            value when is_binary(value) -> "\"#{value}\""
+            value -> to_string(value)
+          end
+
+        yaml = """
+        - project:
+            name: "page_collab_negative_#{field}"
+            title: "Page Collaboration Negative #{field}"
+            root:
+              children:
+                - page: "Welcome"
+
+        - publish:
+            to: "page_collab_negative_#{field}"
+
+        - section:
+            name: "page_collab_negative_#{field}_section"
+            title: "Page Collaboration Negative #{field} Section"
+            from: "page_collab_negative_#{field}"
+
+        - page_collab_config:
+            section: "page_collab_negative_#{field}_section"
+            enabled: true
+            #{field}: #{value_yaml}
+        """
+
+        result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+        assert [{_, error}] = result.errors
+        assert error =~ "#{field} must be greater than or equal to zero"
+      end
     end
   end
 end

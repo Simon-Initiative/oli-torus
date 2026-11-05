@@ -1,0 +1,170 @@
+# Advanced Author automated tests (MER-5986)
+
+Phase 1 Playwright coverage for the adaptive Advanced Author (canvas-mode) editor and the
+delivery of a lesson built with it, including real Adaptivity trap-state rules.
+
+## Files
+
+| File                                               | Purpose                                                                      |
+| -------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `advanced-author.spec.ts`                          | The suite.                                                                   |
+| `playwright_advanced_author.yaml`                  | Scenario seed: disposable author/educator/two learners, project, section.    |
+| `src/systems/torus/pom/page/AdvancedAuthorPO.ts`   | Editor page object: screens, parts, property panel, paste, Adaptivity rules. |
+| `src/systems/torus/tasks/AdvancedAuthorTask.ts`    | Workflows: create/open lesson, add screen, reload, publish.                  |
+| `src/systems/torus/pom/delivery/AdaptiveDeckPO.ts` | Reused for the delivery deck (`advance()`, `waitForDeckReady()`).            |
+
+## Coverage
+
+| Test                                                 | Asserts                                                                                                                                                                                                  |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<component> keeps its configuration ...`            | One parameterized row per Phase 1 component (static text, image, video, MCQ, number input, multiline text): author it on its own screen, reload, check the configuration.                                |
+| `copy/paste and undo/redo update the screen`         | Paste adds a part with a new id; the clipboard is single-use (a second paste, via keyboard, adds nothing); undo/redo; the result survives a reload.                                                      |
+| `responsive layout arranges components side by side` | Enabling the lesson's "Enable Responsive Layout" setting lets two parts take `50% left`/`50% right` widths, reflected in `.responsive-item`'s classes, and the widths persist after reload.              |
+| `author builds a branching lesson ...`               | A real Adaptivity rule pair (MCQ `correct` condition + `defaultWrong` fallback), each with a "Navigate To" action to a distinct terminal screen, then publishes.                                         |
+| `student answering correctly ...`                    | The first Check on the correct MCQ option is evaluated correct, none of its navigation goes to the default `next`, and the "Correct Terminal" screen's text shows.                                       |
+| `student answering incorrectly ...`                  | The first Check on a wrong option is evaluated incorrect, none of its navigation goes to the default `next`, and (once the built-in feedback is dismissed) the "Incorrect Terminal" screen's text shows. |
+| `item bank renders its default items and layout ...` | Item Bank (`janus_item_bank`) renders its default columns (Item Bank + 2 categories) and items, in its default responsive layout, and that persists after reload.                                        |
+| `author builds a responsive subscreen ...`           | A part placed on a subscreen (nested under a Layer, added via "Add Subscreen") takes a `50% left` width, persists after reload, then publishes.                                                          |
+| `student sees the subscreen part ...`                | The published lesson's Layer auto-resolves to its one subscreen on the first "Next", and the delivered part carries the same `half-width`/`responsive-align-left` classes as authoring.                  |
+
+Deferred to later phases: component library, list sort, flashcards, z-order, and advanced bank
+permutations. The slider regression check named in the ticket is written and moves with its bug to
+TRIAGE-2556, to land with the fix (see "Open questions"). Item-bank layout and responsive subscreens
+are resolved and covered; CAPI sizing has assertions in `capi.spec.ts`, but no CI job runs that spec
+and it currently fails at login locally, see below. Broad exploratory and subjective visual review
+stays manual.
+
+## Setup and teardown
+
+- `beforeAll` seeds `playwright_advanced_author.yaml` with a per-run `RUN_ID`. Lessons, screens,
+  and components are created through the UI, because that is what the suite covers.
+- The component/editing-command/responsive-layout cases run serially on one signed-in page with
+  the editor already open, created in `beforeAll`. Each case still reloads the editor to verify
+  persistence.
+- The lesson-delivery describe block logs in fresh per test (author, then two different seeded
+  students — one answers correctly, one incorrectly) since each needs its own session.
+- Media is set through the picker's "External URL" tab, so no S3 upload is needed. The image is
+  Torus's own `/images/oli_torus_logo.png`. The video is the shared fixture
+  `tests/resources/media_files/video-test-01.mp4`, served by `GET /test/support/video-test-01.mp4`
+  (`PlaywrightSupportAssetController`, added for Simple Author's suite and reused here, only
+  routed when Playwright scenarios are enabled).
+- `afterAll` calls the guarded automation teardown with `strictTeardown` when
+  `PLAYWRIGHT_AUTOMATION_API_KEY` is set. The seeded names ("Test Author/Educator/Learner",
+  "Automation test section") meet its contract. The second seeded student
+  (`advanced_author_student_2`, used only for the incorrect-answer path) is not covered by the
+  teardown call — it's cleaned up along with the rest of the run's database state in local/CI
+  runs that reset the DB between runs, but a persistent deployment would need the teardown
+  contract extended to a second learner to clean it up explicitly. Without an API key, for
+  example in the PR job, which runs against an ephemeral database, teardown is skipped entirely.
+
+## Running
+
+```bash
+cd assets/automation
+PLAYWRIGHT_BASE_URL=http://localhost:4000 PLAYWRIGHT_SCENARIO_TOKEN=my-token npm run test-advanced-author
+```
+
+## CI placement
+
+Every describe is tagged `@pr`, so the suite runs in the PR Playwright Suite
+(`.github/workflows/pr-playwright.yml`, `npx playwright test --grep @pr`). It only depends on
+data it seeds and needs no third-party credentials. It is not tagged `@nightly`, because the
+nightly job targets a persistent deployment where `/test/scenario-yaml` is not available. The PR
+job needs the Tailwind CSS build and the server-side rule-bundle build
+(`priv/node/rules.js`/`eval.js`) for any adaptive "Check" to work. Those workflow steps come from
+MER-5988 (Simple Author); this branch carries them because its base doesn't have them yet.
+
+## Editor behaviors the page object handles
+
+- **Advanced Author's toolbar carries no accessible names.** The "frequently used" row
+  (`ExpertHeaderNav`/`AddComponentToolbar`) renders each button as a bare
+  `<button><img src="icon-part-<x>.svg"></button>` with no `alt`/`title`/`aria-label`, so
+  `addComponent` matches those by icon `src`. Components outside that row go through the "More
+  Components" popover instead, whose entries do carry a visible label — but that label's icon has
+  a `title` attribute that leaks into the _accessible name_ (not the DOM text), so those are
+  matched by `hasText` rather than `getByRole(..., { name })`. The same leak happens with the "+"
+  menu's Font Awesome icons (Screen/Layer/Question Bank, New Correct/Incorrect Rule): `hasText`
+  sidesteps it there too.
+- **The left Sequence Editor panel and the floating per-part toolbar fight over the same screen
+  space.** A newly added part always starts at (or near) `x:0, y:0` — the canvas's
+  `newPartAddOffset` resets on every screen change — which sits directly under the left panel.
+  `selectPart` collapses the left panel before any toolbar interaction (edit/copy); `addScreen`,
+  `selectScreen`, and `selectRule` reopen it first, since sequence/rule navigation needs it.
+- **Property fields can share a duplicate id with their wrapper `<div>`** (an app bug, logged to
+  the console as "Multiple IDs detected" — seen on fields with a help tooltip, like "Enable
+  Responsive Layout"). `field()` only matches real `input`/`select`/`textarea` tags, never a
+  wrapper div that happens to share the id.
+- **A screen's own creation write can race a same-breath edit.** `addScreen` waits for saves to
+  settle between creating the screen and renaming it, or the two concurrent writes can persist
+  the "New Screen" template title over the rename (the same class of race Simple Author's
+  `addScreen` guards against).
+- **The real text editor vs. "Edit JSON".** A selected part's `.active-selection-toolbar
+button[title="Edit"]` (shared with Simple Author, rendered by `LayoutEditor`) opens the real
+  rich-text `ConfigurationModal`/`.ql-editor`. The Component tab's own toolbar
+  (`PartPropertyEditor`) has a visually similar but unlabeled edit icon that opens a raw "Edit
+  JSON" textarea instead — not what `setTextFlowText` uses.
+- **"defaultWrong" carries two actions, run in order.** Every part's Adaptivity list starts with
+  "Initial State", "correct", and "defaultWrong" (the first two names are fixed; "defaultWrong"
+  can be renamed but not deleted, and "+ New Incorrect/Correct Rule" is a no-op while one already
+  exists). `defaultWrong` ships with a built-in "Show Feedback" action ("Incorrect, please try
+  again.") _and_ whatever "Navigate To" action is authored on it — the feedback must be dismissed
+  before the navigation continues. `AdaptiveDeckPO.advance()` (already built for other delivery
+  specs) handles that click-dismiss-click cycle generically, which is why the delivery test uses
+  it instead of a single `submitCheck()`.
+- **Condition/action editing needs no Variable Picker dialog.** The Rule Editor's "Target" and
+  "Value" fields (`ConditionItemEditor`) are plain text inputs — `setRuleCondition` just types
+  `stage.<partId>.<property>` directly, unlike the manual flow the regression spreadsheet
+  describes (click a target icon, navigate a picker dialog).
+- **The "Navigate To" destination control regenerates its id on every change** (`ScreenDropdownTemplate`
+  assigns a fresh `guid()` per render), so `setRuleDestination` locates it by its "Navigate To"
+  label rather than a stable id.
+- **Every new Advanced Author screen starts in Flow (responsive) layout.** `LayoutEditor.tsx`'s
+  `renderPart` always passes `width: '100%'` to parts on such a screen, regardless of the lesson's
+  "Enable Responsive Layout" setting. Most parts don't care, but Item Bank (`janus-item-bank`) reads
+  its own `width` prop to decide its internal `grouping--fixed`/`grouping--responsive` layout class
+  (`grouping-util.ts`), so it renders responsive from the moment it's added — there's no author-
+  facing way found yet to get a non-Flow screen to see the fixed variant.
+- **A sequence row's own "⋮" context menu is not the "+" menu's dropdown.** "Add Subscreen" lives
+  in a single, globally-rendered popup (`LeftMenu`/`SequenceItemContextMenu.tsx`) reused for
+  whichever row's `.aa-context-menu-trigger` was clicked; unlike the "+" menu, its wrapper never
+  actually gets the `.dropdown-menu.show` class its own JSX names (the `show` prop that expression
+  reads is never passed down), so `addSubscreen` matches its items by text alone. A Layer with
+  exactly one subscreen resolves deterministically during normal delivery "Next" advancement
+  (`deck.ts`'s `findNextSequenceId` auto-descends to the Layer's only child) — no extra navigation
+  step needed, which is why the suite uses a Layer rather than a Question Bank for this test (a
+  Question Bank's subscreen selection is only deterministic on a first, forward-only pass).
+
+## Open questions
+
+### Resolved
+
+- **CAPI/iframe sizing** — `tests/torus/capi/capi.spec.ts` already covers the only CAPI sizing
+  mechanism that exists (the `RESIZE_PARENT_CONTAINER_REQUEST`/`RESPONSE` postMessage protocol);
+  there is no distinct authoring-side sizing control to add here. Its sizing test
+  (`capi.spec.ts:281`) doesn't run today: the spec has no `@pr`/`@nightly` tag, so no CI job
+  selects it, and locally all its tests fail at the student login (`capi.spec.ts:41`), on this
+  branch and on its base.
+- **Item-bank layout** — refers to the `janus_item_bank` stage component (via "More Components"),
+  not the Sequence Editor's "Question Bank" node (which has no rendering surface of its own and so
+  can't have a layout regression). Covered by `item bank renders its default items and layout ...`
+  above.
+- **Responsive subscreens** — asked Raphael directly (Slack, 2026-10-12); confirmed there's no
+  separate breakpoint behavior for subscreens — it's the same per-part `responsiveLayoutWidth`
+  workflow already covered, just verified on a part placed inside a nested subscreen (under a Layer
+  or Question Bank), including persistence and the delivered layout classes. Covered by
+  `author builds a responsive subscreen ...` and `student sees the subscreen part ...` above (a
+  Layer, not a Question Bank, to keep delivery navigation deterministic without touching
+  `bankShowCount`/`bankEndTarget`).
+
+### Confirmed bug, test lands with the fix
+
+- **Slider regression** — Raphael's Jira comment clarified the intended test: change the Slider's
+  maximum count away from its default 3, save, and confirm the value is retained and enforced in
+  delivery. That is Slider (Text) (`janus_text_slider`, created with `maximum: 3`), whose read-only
+  Max is recomputed as the number of option labels minus one. The test that does exactly that is
+  written and lives in TRIAGE-2556, to land with the fix: after two labels are added, the editor
+  reloads with five labels and Max 3 instead of 4. In the saved requests, each "+ Add Option" click
+  sends two writes; on the second click the first carries `maximum: 4` and the next one, about a
+  second later, `maximum: 3`, so the old value lands last. The delivered slider follows the label
+  count (`max="4"` with five labels). Removing a label was reported earlier as a separate failure
+  (the recompute doesn't trigger); no test covers that path.

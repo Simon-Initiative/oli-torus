@@ -141,24 +141,7 @@ export class BasicPracticePagePO {
   }
 
   async ensureAdvancedAuthorEditable() {
-    const hasToggle = (await this.adaptiveReadOnlyInput.count().catch(() => 0)) > 0;
-    if (!hasToggle) return this.assertAdvancedAuthorEditable();
-
-    await expect(this.adaptiveReadOnlyInput).toBeEnabled({ timeout: 30000 });
-
-    if (!(await this.adaptiveReadOnlyInput.isChecked().catch(() => false))) {
-      return this.assertAdvancedAuthorEditable();
-    }
-
-    await this.page.evaluate(() => {
-      const input = document.querySelector<HTMLInputElement>('input[name="adaptive_read_only"]');
-
-      if (input?.checked) {
-        input.click();
-      }
-    });
-
-    await expect(this.adaptiveReadOnlyInput).not.toBeChecked({ timeout: 10000 });
+    await this.disableAdaptiveReadOnly();
     await this.assertAdvancedAuthorEditable();
   }
 

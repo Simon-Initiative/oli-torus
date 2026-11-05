@@ -45,6 +45,7 @@ defmodule Oli.Scenarios.Engine do
     CertificateDirective,
     DiscussionPostDirective,
     DiscussionConfigDirective,
+    PageCollabConfigDirective,
     DiscussionModerationDirective,
     DiscussionDeleteDirective,
     ClassNoteDirective,
@@ -99,6 +100,7 @@ defmodule Oli.Scenarios.Engine do
     CertificateHandler,
     DiscussionPostHandler,
     DiscussionConfigHandler,
+    PageCollabConfigHandler,
     DiscussionModerationHandler,
     DiscussionDeleteHandler,
     ClassNoteHandler,
@@ -470,6 +472,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%DiscussionConfigDirective{} = directive, state) do
     DiscussionConfigHandler.handle(directive, state)
+  end
+
+  def execute_directive(%PageCollabConfigDirective{} = directive, state) do
+    PageCollabConfigHandler.handle(directive, state)
   end
 
   def execute_directive(%DiscussionModerationDirective{} = directive, state) do

@@ -219,7 +219,7 @@ defmodule Oli.AutomationSetup do
   def teardown_section(slug) do
     with {:ok, section} <-
            Oli.Delivery.Sections.get_section_by(slug: slug) |> can_delete_section(),
-         {:ok, _} <- Oli.Delivery.Sections.delete_section(section) do
+         {:ok, _} <- delete_section_with_responses(section) do
       %{success: true}
     else
       {:error, message} -> %{success: false, message: message}
@@ -229,6 +229,20 @@ defmodule Oli.AutomationSetup do
     e in Ecto.ConstraintError ->
       Logger.error("Could not delete automation test section: #{Exception.message(e)}")
       %{success: false, message: "Could not delete section"}
+  end
+
+  # student_responses references sections with ON DELETE NO ACTION. Learner
+  # teardown only clears the rows of the learner named in the request, so any
+  # other student who answered in the section (e.g. a second scenario learner)
+  # would otherwise block the section delete.
+  defp delete_section_with_responses(section) do
+    Multi.new()
+    |> Multi.delete_all(
+      :student_responses,
+      from(sr in StudentResponse, where: sr.section_id == ^section.id)
+    )
+    |> Multi.delete(:section, section)
+    |> Repo.transaction()
   end
 
   def teardown_educator(email, password) do
