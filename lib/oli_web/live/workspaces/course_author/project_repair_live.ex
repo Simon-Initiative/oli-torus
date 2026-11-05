@@ -248,26 +248,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
 
   defp summary_cards(assigns) do
     ~H"""
-    <ul class="row g-3 mb-4 list-unstyled">
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-scanned">
-          <div class="card-body">
+    <ul class="mb-4 list-none rounded-lg bg-white shadow-lg dark:bg-[#3e3f44]">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-scanned">
+          <div class="text-base">
             <h3 id="repair-summary-scanned" class="h6 text-muted">Basic pages scanned</h3>
             <p class="h3 mb-0">{@summary.scanned_pages_count}</p>
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-adaptive">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-adaptive">
+          <div class="text-base">
             <h3 id="repair-summary-adaptive" class="h6 text-muted">Adaptive pages skipped</h3>
             <p class="h3 mb-0">{@summary.skipped_adaptive_pages_count}</p>
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-deleted">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-deleted">
+          <div class="text-base">
             <h3 id="repair-summary-deleted" class="h6 text-muted">
               Referenced deleted activities
             </h3>
@@ -278,17 +278,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-missing">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-missing">
+          <div class="text-base">
             <h3 id="repair-summary-missing" class="h6 text-muted">Unresolved references</h3>
             <p class="h3 mb-0">{@summary.missing_activity_reference_count}</p>
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-missing-pages">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-missing-pages">
+          <div class="text-base">
             <h3 id="repair-summary-missing-pages" class="h6 text-muted">
               Pages with unresolved references
             </h3>
@@ -296,9 +296,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-shared">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-shared">
+          <div class="text-base">
             <h3 id="repair-summary-shared" class="h6 text-muted">
               Repairable shared activities
             </h3>
@@ -306,9 +306,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-shared-pages">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-shared-pages">
+          <div class="text-base">
             <h3 id="repair-summary-shared-pages" class="h6 text-muted">
               Pages with repairable shared activities
             </h3>
@@ -316,9 +316,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-shared-missing">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-shared-missing">
+          <div class="text-base">
             <h3 id="repair-summary-shared-missing" class="h6 text-muted">
               Shared unresolved activities
             </h3>
