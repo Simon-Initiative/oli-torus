@@ -80,6 +80,101 @@ defmodule Oli.MCP.HTTPTest do
              token |> rpc(session, "resources/read", params) |> json_response(200)
   end
 
+  test "authorizes activity creation with each request's token when sessions alternate" do
+    author = insert(:author)
+    first = insert(:project, authors: [author])
+    second = insert(:project, authors: [author])
+
+    for project <- [first, second] do
+      insert(:publication, project: project, root_resource_id: nil, published: nil)
+    end
+
+    {:ok, {_, first_token}} = Auth.create_token(author.id, first.id)
+    {:ok, {_, second_token}} = Auth.create_token(author.id, second.id)
+    first_session = initialize(first_token)
+    second_session = initialize(second_token)
+    revision_count = Oli.Repo.aggregate(Oli.Resources.Revision, :count)
+
+    conn = rpc(first_token, first_session, "tools/call", create_activity_params(second))
+
+    assert %{"result" => %{"isError" => true, "content" => [%{"text" => text}]}} =
+             json_response(conn, 200)
+
+    assert text =~ "Authorization failed"
+    assert Oli.Repo.aggregate(Oli.Resources.Revision, :count) == revision_count
+
+    for {token, session, project} <- [
+          {first_token, first_session, first},
+          {second_token, second_session, second},
+          {first_token, first_session, first}
+        ] do
+      conn = rpc(token, session, "tools/call", create_activity_params(project))
+
+      assert %{"result" => %{"isError" => false, "content" => [%{"text" => text}]}} =
+               json_response(conn, 200)
+
+      assert %{"success" => true, "activity" => %{"revision_id" => revision_id}} =
+               Jason.decode!(text)
+
+      revision = Oli.Resources.get_revision!(revision_id)
+
+      assert Oli.Repo.get_by(Oli.Authoring.Course.ProjectResource,
+               project_id: project.id,
+               resource_id: revision.resource_id
+             )
+    end
+
+    assert Oli.Repo.aggregate(Oli.Resources.Revision, :count) == revision_count + 3
+  end
+
+  test "rejects activity creation with missing, invalid, and revoked request tokens" do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+    insert(:publication, project: project, root_resource_id: nil, published: nil)
+    {:ok, {record, token}} = Auth.create_token(author.id, project.id)
+    session = initialize(token)
+    params = create_activity_params(project)
+    revision_count = Oli.Repo.aggregate(Oli.Resources.Revision, :count)
+
+    for invalid <- [nil, "invalid"] do
+      assert %{"error" => %{"code" => -32000}} =
+               invalid |> rpc(session, "tools/call", params) |> json_response(200)
+    end
+
+    {:ok, _} = Auth.update_token_status(record.id, :disabled)
+
+    assert %{"error" => %{"code" => -32000}} =
+             token |> rpc(session, "tools/call", params) |> json_response(200)
+
+    assert Oli.Repo.aggregate(Oli.Resources.Revision, :count) == revision_count
+  end
+
+  test "unauthenticated initialization preserves the server and existing sessions" do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+    {:ok, {_, token}} = Auth.create_token(author.id, project.id)
+    session = initialize(token)
+    server = Anubis.Server.Registry.server(Server)
+    params = %{"uri" => "torus://p/#{project.slug}"}
+
+    for invalid <- [nil, "invalid"] do
+      invalid_session = initialize(invalid)
+      assert Anubis.Server.Registry.server(Server) == server
+      assert :sys.get_state(server).frame.assigns == %{}
+
+      assert %{"error" => %{"code" => -32002}} =
+               invalid |> rpc(invalid_session, "resources/read", params) |> json_response(200)
+
+      assert %{"error" => %{"code" => -32000}} =
+               invalid
+               |> rpc(invalid_session, "tools/call", create_activity_params(project))
+               |> json_response(200)
+
+      assert %{"result" => %{"contents" => [_]}} =
+               token |> rpc(session, "resources/read", params) |> json_response(200)
+    end
+  end
+
   test "preserves static resources and tool dispatch" do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -107,6 +202,31 @@ defmodule Oli.MCP.HTTPTest do
              json_response(conn, 200)
 
     assert text =~ "Validation failed"
+  end
+
+  defp create_activity_params(project) do
+    %{
+      "name" => "create_activity_tool",
+      "arguments" => %{
+        "project_slug" => project.slug,
+        "activity_type_slug" => "oli_multiple_choice",
+        "activity_json" =>
+          Jason.encode!(%{
+            "stem" => %{
+              "id" => "stem_1",
+              "content" => [%{"type" => "p", "children" => [%{"text" => "Test question"}]}],
+              "editor" => "slate",
+              "textDirection" => "ltr"
+            },
+            "authoring" => %{
+              "version" => 2,
+              "parts" => [],
+              "transformations" => [],
+              "previewText" => "Test question"
+            }
+          })
+      }
+    }
   end
 
   defp initialize(token) do

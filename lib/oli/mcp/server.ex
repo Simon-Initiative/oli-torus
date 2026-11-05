@@ -8,7 +8,7 @@ defmodule Oli.MCP.Server do
   Uses Anubis MCP for MCP protocol implementation.
 
   Authentication is initialized in the init/2 callback using the Authorization
-  header. Dynamic project reads also validate the current request's Bearer token
+  header. Dynamic project reads and tool calls validate the current request's Bearer token
   because Anubis shares the frame between client sessions.
   """
 
@@ -35,7 +35,7 @@ defmodule Oli.MCP.Server do
   component(Oli.MCP.Tools.CreateActivityTool)
 
   @doc """
-  Lists project resource templates and dispatches dynamic project reads.
+  Lists project resource templates and dispatches dynamic project reads and tool calls.
 
   Anubis 0.14 only dispatches exact static resource URIs. Project reads must
   still pass through the project-resource handler's authorization checks.
@@ -70,7 +70,22 @@ defmodule Oli.MCP.Server do
     end
   end
 
-  @doc "Initializes the MCP authentication context from the request's Bearer token."
+  def handle_request(%{"method" => "tools/call"} = request, frame) do
+    with {:ok, request_frame} <- authenticate_request(frame) do
+      {status, result, _request_frame} = Handlers.handle(request, __MODULE__, request_frame)
+      {status, result, frame}
+    else
+      {:error, :unauthorized} ->
+        {:error, Error.execution("Unauthorized"), frame}
+    end
+  end
+
+  @doc """
+  Initializes authentication context without stopping the shared server on invalid tokens.
+
+  Failed authentication clears the shared assigns. Protected requests independently
+  validate their bearer token before dispatch.
+  """
   @impl true
   def init(_arg, frame) do
     case authenticate_request(frame) do
@@ -79,12 +94,12 @@ defmodule Oli.MCP.Server do
         {:ok, frame}
 
       {:error, _reason} ->
-        {:stop, :unauthorized}
+        {:ok, Map.put(frame, :assigns, %{})}
     end
   end
 
   # Anubis shares the frame between sessions, so never trust a previous request's
-  # assigns when reading project content. Validate this request's bearer token.
+  # assigns for project reads or tool calls. Validate this request's bearer token.
   defp authenticate_request(frame) do
     with {_, "Bearer " <> token} <-
            Enum.find(Map.get(frame.transport, :req_headers, []), fn {name, _} ->

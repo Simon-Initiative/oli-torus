@@ -30,8 +30,9 @@ defmodule Oli.MCP.AuthIntegrationTest do
       # Test: Simulate MCP Server init with invalid Bearer token
       frame = %{transport: %{req_headers: [{"authorization", "Bearer invalid_token_format"}]}}
 
-      # Assert: Server init should stop with unauthorized
-      assert {:stop, :unauthorized} = Server.init(nil, frame)
+      # Assert: Server init continues without granting authentication
+      assert {:ok, updated_frame} = Server.init(nil, frame)
+      assert updated_frame.assigns == %{}
     end
 
     test "authentication fails with disabled token" do
@@ -45,8 +46,9 @@ defmodule Oli.MCP.AuthIntegrationTest do
       # Test: Simulate MCP Server init with disabled token
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
 
-      # Assert: Server init should stop with unauthorized
-      assert {:stop, :unauthorized} = Server.init(nil, frame)
+      # Assert: Server init continues without granting authentication
+      assert {:ok, updated_frame} = Server.init(nil, frame)
+      assert updated_frame.assigns == %{}
     end
 
     test "authentication fails when project is deleted after token creation" do
@@ -62,8 +64,9 @@ defmodule Oli.MCP.AuthIntegrationTest do
       # Test: Simulate MCP Server init with token for deleted project
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
 
-      # Assert: Server init should stop with unauthorized
-      assert {:stop, :unauthorized} = Server.init(nil, frame)
+      # Assert: Server init continues without granting authentication
+      assert {:ok, updated_frame} = Server.init(nil, frame)
+      assert updated_frame.assigns == %{}
     end
 
     test "authentication fails when author loses project access" do
@@ -79,8 +82,9 @@ defmodule Oli.MCP.AuthIntegrationTest do
       # Test: Simulate MCP Server init with token after access revoked
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
 
-      # Assert: Server init should stop with unauthorized
-      assert {:stop, :unauthorized} = Server.init(nil, frame)
+      # Assert: Server init continues without granting authentication
+      assert {:ok, updated_frame} = Server.init(nil, frame)
+      assert updated_frame.assigns == %{}
     end
 
     test "token usage updates last_used_at timestamp" do
@@ -141,7 +145,8 @@ defmodule Oli.MCP.AuthIntegrationTest do
 
       for {description, auth_header} <- test_cases do
         frame = %{transport: %{req_headers: [{"authorization", auth_header}]}}
-        assert {:stop, :unauthorized} = Server.init(nil, frame), "Should fail for: #{description}"
+        assert {:ok, updated_frame} = Server.init(nil, frame)
+        assert updated_frame.assigns == %{}, "Should deny authentication for: #{description}"
       end
     end
 
@@ -159,7 +164,8 @@ defmodule Oli.MCP.AuthIntegrationTest do
 
       for {description, token} <- test_cases do
         frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token}"}]}}
-        assert {:stop, :unauthorized} = Server.init(nil, frame), "Should fail for: #{description}"
+        assert {:ok, updated_frame} = Server.init(nil, frame)
+        assert updated_frame.assigns == %{}, "Should deny authentication for: #{description}"
       end
     end
   end
@@ -212,15 +218,21 @@ defmodule Oli.MCP.AuthIntegrationTest do
     end
   end
 
-  describe "Error Response Format" do
-    test "returns unauthorized for invalid token" do
+  describe "Unauthenticated initialization" do
+    test "initializes without authentication for invalid token" do
       frame = %{transport: %{req_headers: [{"authorization", "Bearer invalid_token"}]}}
-      assert {:stop, :unauthorized} = Server.init(nil, frame)
+      assert {:ok, updated_frame} = Server.init(nil, frame)
+      assert updated_frame.assigns == %{}
     end
 
-    test "returns unauthorized for missing authorization header" do
-      frame = %{transport: %{req_headers: []}}
-      assert {:stop, :unauthorized} = Server.init(nil, frame)
+    test "clears previous authentication when the authorization header is missing" do
+      frame = %{
+        transport: %{req_headers: []},
+        assigns: %{author_id: 1, project_id: 2, bearer_token: "previous-session-token"}
+      }
+
+      assert {:ok, updated_frame} = Server.init(nil, frame)
+      assert updated_frame.assigns == %{}
     end
   end
 end
