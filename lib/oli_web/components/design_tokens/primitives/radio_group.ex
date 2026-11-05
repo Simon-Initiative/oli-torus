@@ -55,9 +55,9 @@ defmodule OliWeb.Components.DesignTokens.Primitives.RadioGroup do
               assigns: %{
                 id: "radio-group-vertical",
                 name: "radio-group-vertical",
-                legend: "Choose one",
+                legend: "Availability",
                 options: example_options(),
-                value: "second",
+                value: "private",
                 orientation: :vertical
               }
             },
@@ -66,9 +66,9 @@ defmodule OliWeb.Components.DesignTokens.Primitives.RadioGroup do
               assigns: %{
                 id: "radio-group-horizontal",
                 name: "radio-group-horizontal",
-                legend: "Choose one",
+                legend: "Availability",
                 options: example_options(),
-                value: "first",
+                value: "public",
                 orientation: :horizontal
               }
             }
@@ -87,7 +87,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.RadioGroup do
       |> Map.new()
       |> Map.put_new(:id, "radio-group-preview")
       |> Map.put_new(:name, "radio-group-preview")
-      |> Map.put_new(:legend, "Choose one")
+      |> Map.put_new(:legend, "Availability")
       |> Map.put_new(:options, example_options())
       |> Map.put_new(:value, nil)
       |> Map.put_new(:orientation, :vertical)
@@ -105,7 +105,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.RadioGroup do
   end
 
   defp example_options do
-    [%{value: "first", label: "First option"}, %{value: "second", label: "Second option"}]
+    [%{value: "public", label: "Public"}, %{value: "private", label: "Private"}]
   end
 
   attr :id, :string, required: true, doc: "the fieldset id; each input's id is derived from it"
