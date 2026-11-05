@@ -248,8 +248,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
 
   defp summary_cards(assigns) do
     ~H"""
-    <ul class="row g-3 mb-4 list-unstyled">
-      <li class="col-md-4">
+    <ul class="grid grid-cols-1 gap-3 mb-4 list-none sm:grid-cols-2 lg:grid-cols-4">
+      <li class="min-w-0">
         <article class="card h-100" aria-labelledby="repair-summary-scanned">
           <div class="card-body">
             <h3 id="repair-summary-scanned" class="h6 text-muted">Basic pages scanned</h3>
@@ -257,7 +257,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
+      <li class="min-w-0">
         <article class="card h-100" aria-labelledby="repair-summary-adaptive">
           <div class="card-body">
             <h3 id="repair-summary-adaptive" class="h6 text-muted">Adaptive pages skipped</h3>
@@ -265,7 +265,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
+      <li class="min-w-0">
         <article class="card h-100" aria-labelledby="repair-summary-deleted">
           <div class="card-body">
             <h3 id="repair-summary-deleted" class="h6 text-muted">
@@ -278,7 +278,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
+      <li class="min-w-0">
         <article class="card h-100" aria-labelledby="repair-summary-missing">
           <div class="card-body">
             <h3 id="repair-summary-missing" class="h6 text-muted">Unresolved references</h3>
@@ -286,7 +286,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
+      <li class="min-w-0">
         <article class="card h-100" aria-labelledby="repair-summary-missing-pages">
           <div class="card-body">
             <h3 id="repair-summary-missing-pages" class="h6 text-muted">
@@ -296,7 +296,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
+      <li class="min-w-0">
         <article class="card h-100" aria-labelledby="repair-summary-shared">
           <div class="card-body">
             <h3 id="repair-summary-shared" class="h6 text-muted">
@@ -306,7 +306,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
+      <li class="min-w-0">
         <article class="card h-100" aria-labelledby="repair-summary-shared-pages">
           <div class="card-body">
             <h3 id="repair-summary-shared-pages" class="h6 text-muted">
@@ -316,7 +316,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
+      <li class="min-w-0">
         <article class="card h-100" aria-labelledby="repair-summary-shared-missing">
           <div class="card-body">
             <h3 id="repair-summary-shared-missing" class="h6 text-muted">
