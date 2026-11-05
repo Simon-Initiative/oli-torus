@@ -33,6 +33,8 @@ defmodule Oli.Analytics.Datasets.Utils do
   @doc """
   Returns a list of user ids that should be ignored for dataset creation. These include
   users that have opted out of research and users that are not students in the section.
+  Students with a nil preference are included; this does not imply that they have
+  completed the research consent form.
   """
   def determine_ignored_student_ids(section_ids) do
     # The most robust way to calculate this is to get all user ids in the sections,
@@ -55,7 +57,7 @@ defmodule Oli.Analytics.Datasets.Utils do
         on: ecr.enrollment_id == e.id,
         where:
           e.section_id in ^section_ids and
-            u.research_opt_out == false and
+            (u.research_opt_out == false or is_nil(u.research_opt_out)) and
             ecr.context_role_id == @student_role,
         distinct: true,
         select: u.id

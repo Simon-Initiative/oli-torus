@@ -29,7 +29,7 @@ export class CurriculumPO {
     this.createModuleButton = page.getByRole('button', { name: 'Create a Module' });
     this.creationSectionButton = page.getByRole('button', { name: 'Create a Section' });
     this.editPageLink = page.getByRole('link', { name: 'Edit Page' });
-    this.deleteButton = page.locator('button[role="show_delete_modal"]');
+    this.deleteButton = page.locator('button[data-role="show_delete_modal"]');
     this.dropdown = page.locator('button.btn.dropdown-toggle');
   }
 

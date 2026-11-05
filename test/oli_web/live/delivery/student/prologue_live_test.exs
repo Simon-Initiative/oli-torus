@@ -691,6 +691,31 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
     end
 
+    test "the enabled Begin button keeps the shared primary button colours", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
+
+      classes =
+        view
+        |> element("button[id='begin_attempt_button']:not([disabled])")
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.attribute("class")
+        |> Enum.flat_map(&String.split/1)
+
+      assert classes |> Enum.filter(&String.contains?(&1, "bg-")) |> Enum.sort() ==
+               ["bg-Fill-Buttons-fill-primary", "hover:bg-Fill-Buttons-fill-primary-hover"]
+
+      refute Enum.any?(classes, &String.contains?(&1, "brightness-"))
+    end
+
     test "assignment terms cards expose accessible names and hide decorative icons", %{
       conn: conn,
       user: user,

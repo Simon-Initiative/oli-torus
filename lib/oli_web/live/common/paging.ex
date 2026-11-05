@@ -68,6 +68,7 @@ defmodule OliWeb.Common.Paging do
               phx-value-offset={0}
               phx-value-limit={@limit}
               disabled={@params.current_page_index == 0}
+              aria-label="First page"
             >
               <i class="fas fa-angle-double-left"></i>
             </button>
@@ -79,6 +80,7 @@ defmodule OliWeb.Common.Paging do
               phx-value-offset={@offset - @limit}
               phx-value-limit={@limit}
               disabled={@params.current_page_index == 0}
+              aria-label="Previous page"
             >
               <i class="fas fa-angle-left"></i>
             </button>
@@ -102,6 +104,7 @@ defmodule OliWeb.Common.Paging do
               phx-value-offset={@offset + @limit}
               phx-value-limit={@limit}
               disabled={@params.current_page_index == @params.last_page_index}
+              aria-label="Next page"
             >
               <i class="fas fa-angle-right"></i>
             </button>
@@ -113,6 +116,7 @@ defmodule OliWeb.Common.Paging do
               phx-value-offset={@params.last_page_index * @limit}
               phx-value-limit={@limit}
               disabled={@params.current_page_index == @params.last_page_index}
+              aria-label="Last page"
             >
               <i class="fas fa-angle-double-right"></i>
             </button>

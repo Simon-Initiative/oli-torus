@@ -280,4 +280,20 @@ defmodule Oli.Activities.AdaptivePartsTest do
     assert AdaptiveParts.persisted_part_ids(content) == MapSet.new(["janus_mcq-1"])
     refute MapSet.member?(AdaptiveParts.persisted_part_ids(content), nil)
   end
+
+  test "lists part ids in authored order: the screen layout first, then other authored parts" do
+    content = %{
+      "partsLayout" => [%{"id" => "b"}, %{"id" => "a"}, %{"type" => "no-id"}],
+      "authoring" => %{"parts" => [%{"id" => "a"}, %{"id" => "c"}]}
+    }
+
+    assert AdaptiveParts.ordered_part_ids(content) == ["b", "a", "c"]
+
+    assert AdaptiveParts.ordered_part_ids(%{"authoring" => %{"parts" => [%{"id" => "z"}]}}) == [
+             "z"
+           ]
+
+    assert AdaptiveParts.ordered_part_ids(%{}) == []
+    assert AdaptiveParts.ordered_part_ids(nil) == []
+  end
 end
