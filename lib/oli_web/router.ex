@@ -15,13 +15,13 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_current_author)
     plug(:fetch_current_user)
-    plug(OliWeb.Plugs.SecureAssessment, :global)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :default})
     plug(:put_layout, html: {OliWeb.LayoutView, :app})
     plug(:put_secure_browser_headers)
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
+    plug(OliWeb.Plugs.SecureAssessment, :global)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
     plug(OliWeb.Plugs.SessionContext)
     plug(OliWeb.Plugs.HeaderSizeLogger)
@@ -528,9 +528,12 @@ defmodule OliWeb.Router do
 
     # update limited session information
     post("/set_session", StaticPageController, :set_session)
+  end
 
-    # general health check for application & db
+  # Probes must not fetch sessions/users or require browser authentication.
+  scope "/", OliWeb do
     get("/healthz", HealthController, :index)
+    get("/readyz", ReadinessController, :index)
   end
 
   scope "/.well-known", OliWeb do
@@ -1053,6 +1056,7 @@ defmodule OliWeb.Router do
     post("/auth/token", Api.LtiController, :auth_token)
 
     post("/deep_link/:section_slug/:resource_id", LtiController, :deep_link)
+    post("/authoring_deep_link", LtiController, :authoring_deep_link)
   end
 
   # LTI routes WITHOUT CSRF protection (entry points from external LMS)
@@ -1486,13 +1490,14 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.EnsureResearchConsent,
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetRequireCertificationCheck,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.SetAnnotations,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetNotificationBadges,
           OliWeb.LiveSessionPlugs.SetPaywallSummary,
           OliWeb.LiveSessionPlugs.SetDeviceType
@@ -1519,13 +1524,14 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.EnsureResearchConsent,
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.SetAnnotations,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetDeviceType
         ] do
         live("/", Delivery.Student.IndexLive, :preview)
@@ -1573,6 +1579,7 @@ defmodule OliWeb.Router do
       :delivery_protected,
       :require_enrollment,
       :enforce_paywall,
+      :ensure_research_consent,
       :ensure_user_section_visit,
       :force_required_survey
     ])
@@ -1586,11 +1593,12 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.EnsureResearchConsent,
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           {OliWeb.LiveSessionPlugs.InitPage, :set_prologue_context},
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetRequestPath,
           OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
@@ -1607,11 +1615,12 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.EnsureResearchConsent,
           OliWeb.LiveSessionPlugs.SetRequireCertificationCheck,
           {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetRequestPath,
           OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
@@ -1628,10 +1637,11 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.EnsureResearchConsent,
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
         live("/", Delivery.Student.ReviewLive)
@@ -1702,7 +1712,8 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_protected
+      :delivery_protected,
+      :ensure_research_consent
     ])
 
     live_session :load_section,
@@ -1711,9 +1722,10 @@ defmodule OliWeb.Router do
         {OliWeb.UserAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.RequireEnrollment,
+        OliWeb.LiveSessionPlugs.EnsureResearchConsent,
         OliWeb.LiveSessionPlugs.SetBrand,
-        OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.RequireEnrollment
+        OliWeb.LiveSessionPlugs.SetPreviewMode
       ] do
       live(
         "/welcome",
@@ -1801,6 +1813,7 @@ defmodule OliWeb.Router do
       live("/grades/observe", Grades.ObserveGradeUpdatesView)
       live("/grades/gradebook", Grades.GradebookView)
       live("/scoring", ManualGrading.ManualGradingView)
+      live("/scoring/:attempt_id", ManualGrading.ScoringLive, as: :manual_scoring_attempt)
       live("/progress/:user_id/:resource_id", Progress.StudentResourceView)
       live("/progress/:user_id", Progress.StudentView)
       live("/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
@@ -1852,6 +1865,14 @@ defmodule OliWeb.Router do
   scope "/api/v1/lti/projects/:project_slug", OliWeb, as: :api do
     pipe_through([:api, :authoring_protected])
 
+    post("/deep_link_save/:activity_id", Api.LtiController, :authoring_deep_link_save)
+
+    post(
+      "/deep_linking_launch_details/:activity_id",
+      Api.LtiController,
+      :deep_linking_launch_details
+    )
+
     get(
       "/launch_details/:activity_id",
       Api.LtiController,
@@ -1868,11 +1889,13 @@ defmodule OliWeb.Router do
       :launch_details
     )
 
-    get(
+    post(
       "/deep_linking_launch_details/:activity_id",
       Api.LtiController,
       :deep_linking_launch_details
     )
+
+    post("/cancel_deep_linking/:activity_id", Api.LtiController, :cancel_deep_linking)
   end
 
   ### Invitations (to sections or projects)

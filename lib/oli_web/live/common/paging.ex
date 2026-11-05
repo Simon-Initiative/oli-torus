@@ -48,7 +48,7 @@ defmodule OliWeb.Common.Paging do
         phx-change={@limit_change}
       >
         <div :if={@show_limit_change} class="inline-flex flex-col gap-1 mr-2">
-          <small class="torus-small uppercase">
+          <small class="text-xs font-normal uppercase text-Text-text-low">
             Page size
           </small>
           <select class="torus-select" name="limit">
@@ -68,6 +68,7 @@ defmodule OliWeb.Common.Paging do
               phx-value-offset={0}
               phx-value-limit={@limit}
               disabled={@params.current_page_index == 0}
+              aria-label="First page"
             >
               <i class="fas fa-angle-double-left"></i>
             </button>
@@ -79,6 +80,7 @@ defmodule OliWeb.Common.Paging do
               phx-value-offset={@offset - @limit}
               phx-value-limit={@limit}
               disabled={@params.current_page_index == 0}
+              aria-label="Previous page"
             >
               <i class="fas fa-angle-left"></i>
             </button>
@@ -102,6 +104,7 @@ defmodule OliWeb.Common.Paging do
               phx-value-offset={@offset + @limit}
               phx-value-limit={@limit}
               disabled={@params.current_page_index == @params.last_page_index}
+              aria-label="Next page"
             >
               <i class="fas fa-angle-right"></i>
             </button>
@@ -113,6 +116,7 @@ defmodule OliWeb.Common.Paging do
               phx-value-offset={@params.last_page_index * @limit}
               phx-value-limit={@limit}
               disabled={@params.current_page_index == @params.last_page_index}
+              aria-label="Last page"
             >
               <i class="fas fa-angle-double-right"></i>
             </button>
@@ -126,7 +130,7 @@ defmodule OliWeb.Common.Paging do
         phx-change={@limit_change}
       >
         <div :if={@show_limit_change} class="inline-flex flex-col gap-1">
-          <small class="torus-small uppercase">
+          <small class="text-xs font-normal uppercase text-Text-text-low">
             Page size
           </small>
           <select class="torus-select" name="limit">

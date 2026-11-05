@@ -1,0 +1,17 @@
+{
+  "vars": [
+    [
+      {
+        "variable": "V1",
+        "expression": "1 + 1"
+      }
+    ],
+    [
+      {
+        "variable": "module",
+        "expression": "module.exports = { answer: 42 };"
+      }
+    ]
+  ],
+  "count": 1
+}

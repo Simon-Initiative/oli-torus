@@ -14,6 +14,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     as: ActivityBankSelectionCriteriaComponent
 
   alias OliWeb.Components.Modal
+  alias OliWeb.Components.DesignTokens.Primitives.SearchBar
   alias OliWeb.Delivery.Instructor.PreviewPageContext
   alias OliWeb.Components.Delivery.Layouts
   alias OliWeb.Delivery.Instructor.{PreviewReturn, PreviewRoutes}
@@ -807,18 +808,16 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                     id="candidate-search-form"
                     phx-change="filter_candidates"
                     phx-submit="filter_candidates"
-                    class="flex h-[35px] w-full max-w-[224px] items-center gap-3 rounded-md border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-2 py-1 shadow-[0px_2px_5px_0px_rgba(0,50,99,0.10)]"
+                    class="w-full max-w-[224px]"
                   >
-                    <Icons.search class="h-5 w-5 shrink-0 text-Icon-icon-default" />
-                    <label for="candidate-search-input" class="sr-only">Search questions</label>
-                    <input
+                    <SearchBar.search_bar
                       id="candidate-search-input"
-                      type="search"
                       name="text_search"
                       value={@candidate_filters.text_search}
+                      aria_label="Search questions"
+                      class="w-full"
                       phx-debounce="300"
                       autocomplete="off"
-                      class="min-w-0 flex-1 border-none bg-transparent p-0 font-open-sans text-base font-normal leading-6 text-Text-text-high placeholder:text-Text-text-low focus:outline-none focus:ring-0"
                     />
                   </form>
 

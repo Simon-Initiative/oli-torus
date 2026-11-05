@@ -14,6 +14,7 @@ interface ActivityEditorProps extends EditorProps {
 export const ActivityEditor = ({
   resourceContext,
   editMode,
+  supportsLtiConfiguration,
   projectSlug,
   contentItem,
   activities,
@@ -45,6 +46,7 @@ export const ActivityEditor = ({
           activitySlug={activity.activitySlug}
           typeSlug={activity.typeSlug}
           editMode={editMode}
+          supportsLtiConfiguration={supportsLtiConfiguration}
           projectSlug={projectSlug}
           authoringElement={activity.authoringElement}
           friendlyName={activity.friendlyName}

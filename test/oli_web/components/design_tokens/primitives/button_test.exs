@@ -24,6 +24,18 @@ defmodule OliWeb.Components.DesignTokens.Primitives.ButtonTest do
       refute html =~ "disabled"
     end
 
+    test "primary button switches its text to the primary hover text colour on hover" do
+      html =
+        render_component(fn assigns ->
+          ~H"""
+          <Button.button variant={:primary}>Save</Button.button>
+          """
+        end)
+
+      assert html =~ "hover:bg-Fill-Buttons-fill-primary-hover"
+      assert html =~ "hover:text-Specially-Tokens-Text-text-button-primary-hover"
+    end
+
     test "aria_disabled dims the button but keeps it operable (no HTML disabled attr)" do
       html =
         render_component(fn assigns ->

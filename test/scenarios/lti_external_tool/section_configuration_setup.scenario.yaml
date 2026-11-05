@@ -1,0 +1,26 @@
+- use:
+    file: publication_update_setup.scenario.yaml
+
+- enroll:
+    user: learner
+    section: draft_section
+    role: student
+
+- user:
+    name: instructor
+    type: instructor
+    email: deep-linking-instructor@example.com
+    given_name: Deep Linking
+    family_name: Instructor
+
+- enroll:
+    user: instructor
+    section: draft_section
+    role: instructor
+
+- assert:
+    structure:
+      to: draft_section
+      root:
+        children:
+          - page: Tool Lesson

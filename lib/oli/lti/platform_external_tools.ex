@@ -11,9 +11,16 @@ defmodule Oli.Lti.PlatformExternalTools do
   alias Oli.Activities
   alias Oli.Activities.ActivityRegistration
   alias Oli.Delivery.Sections.{Section, SectionResource}
-  alias Oli.Lti.PlatformExternalTools.{BrowseOptions, LtiExternalToolActivityDeployment}
+
+  alias Oli.Lti.PlatformExternalTools.{
+    BrowseOptions,
+    LtiExternalToolActivityDeployment,
+    LtiSectionResourceDeepLink
+  }
+
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Publishing.PublishedResource
   alias Oli.Resources.{ResourceType, Revision}
 
   @doc """
@@ -409,6 +416,196 @@ defmodule Oli.Lti.PlatformExternalTools do
       select: {p, lad}
     )
     |> Repo.one()
+  end
+
+  @doc """
+  Initializes missing section LTI selections (resource configurations chosen in
+  external tools, including URL/custom metadata) from an explicit publication.
+
+  Only LTI activity revisions present in both the destination and that publication are
+  considered. Absent or cleared selections create no records. Existing rows are excluded
+  before validation, and conflict-do-nothing inserts preserve a competing successful write.
+  Validation and batched inserts share the caller's transaction. Returns the number created.
+  An optional resource ID list restricts initialization to explicitly remixed activities.
+  """
+  @spec initialize_section_deep_links(integer(), integer()) ::
+          {:ok, non_neg_integer()} | {:error, term()}
+  @spec initialize_section_deep_links(integer(), integer(), :all | [integer()]) ::
+          {:ok, non_neg_integer()} | {:error, term()}
+  def initialize_section_deep_links(section_id, publication_id, resource_ids \\ :all) do
+    activity_type = ResourceType.id_for_activity()
+
+    Repo.transaction(fn ->
+      now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+      # Section revision IDs are populated later in creation; use publication mappings here.
+      rows =
+        from(sr in SectionResource,
+          as: :destination,
+          join: pr in PublishedResource,
+          on: pr.resource_id == sr.resource_id,
+          join: r in Revision,
+          on: r.id == pr.revision_id,
+          join: d in LtiExternalToolActivityDeployment,
+          on: d.activity_registration_id == r.activity_type_id,
+          where:
+            sr.section_id == ^section_id and pr.publication_id == ^publication_id and
+              r.resource_type_id == ^activity_type and r.deleted == false,
+          where:
+            not exists(
+              from(existing in LtiSectionResourceDeepLink,
+                where:
+                  existing.section_id == parent_as(:destination).section_id and
+                    existing.resource_id == parent_as(:destination).resource_id
+              )
+            ),
+          where: not is_nil(fragment("NULLIF(?->'deepLink', 'null'::jsonb)", r.content)),
+          select: {sr.resource_id, fragment("?->'deepLink'", r.content)}
+        )
+        |> restrict_deep_link_resources(resource_ids)
+        |> Repo.all()
+        |> Enum.map(fn {resource_id, selection} ->
+          case LtiSectionResourceDeepLink.selection(selection) do
+            {:ok, selected} ->
+              %{
+                section_id: section_id,
+                resource_id: resource_id,
+                type: :ltiResourceLink,
+                url: selected["url"],
+                custom: Map.get(selected, "custom", %{}),
+                title: selected["title"],
+                text: selected["text"],
+                inserted_at: now,
+                updated_at: now
+              }
+
+            {:error, _} ->
+              Repo.rollback(:invalid_lti_deep_link_selection)
+          end
+        end)
+
+      {created, _} =
+        Oli.Utils.Database.batch_insert_all(LtiSectionResourceDeepLink, rows,
+          on_conflict: :nothing,
+          conflict_target: [:section_id, :resource_id]
+        )
+
+      created
+    end)
+  rescue
+    _error in [Ecto.ConstraintError, Postgrex.Error] ->
+      {:error, :lti_deep_link_initialization_failed}
+  end
+
+  @doc """
+  Copies current source-owned tool selections (resource configurations chosen in
+  external tools, including URL/custom metadata) into a newly created destination.
+
+  Copies only resources present in both sections, preserving URL/custom/metadata
+  without consulting project defaults. Uses one INSERT … SELECT and participates
+  in the caller's source-locked copy transaction. The caller must authorize the
+  source and supply a destination created by that transaction. Returns the number
+  of rows copied or a bounded error so the owning creation can roll back.
+  """
+  @spec copy_section_deep_links(integer(), integer()) ::
+          {:ok, non_neg_integer()} | {:error, :lti_deep_link_copy_failed}
+  def copy_section_deep_links(source_section_id, destination_section_id) do
+    query = section_deep_links_query(source_section_id, destination_section_id)
+
+    {count, _} = Repo.insert_all(LtiSectionResourceDeepLink, query)
+    {:ok, count}
+  rescue
+    _error in [Ecto.ConstraintError, Postgrex.Error] ->
+      {:error, :lti_deep_link_copy_failed}
+  end
+
+  @doc """
+  Initializes missing selections (resource configurations chosen in external tools)
+  for explicitly remixed activities, grouped by source.
+
+  Sources map `{:publication, id}` or `{:section, id}` to activity resource IDs.
+  Callers must supply authorized sources and retained remixed activity IDs. Template
+  sources use only their current rows, without project fallback. Existing destination
+  choices win, including competing inserts. All groups share the remix transaction.
+  """
+  @spec initialize_remixed_deep_links(integer(), %{
+          optional({:publication | :section, integer()}) => [integer()]
+        }) :: {:ok, non_neg_integer()} | {:error, term()}
+  def initialize_remixed_deep_links(section_id, sources) do
+    Repo.transaction(fn ->
+      Enum.reduce(sources, 0, fn
+        {{_kind, _id}, []}, total ->
+          total
+
+        {{:publication, publication_id}, ids}, total ->
+          case initialize_section_deep_links(section_id, publication_id, ids) do
+            {:ok, count} -> total + count
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        {{:section, source_id}, ids}, total ->
+          query =
+            section_deep_links_query(source_id, section_id)
+            |> restrict_deep_link_resources(ids)
+            |> where(
+              [link],
+              not exists(
+                from(existing in LtiSectionResourceDeepLink,
+                  where:
+                    existing.section_id == ^section_id and
+                      existing.resource_id == parent_as(:source_link).resource_id
+                )
+              )
+            )
+
+          {count, _} =
+            Repo.insert_all(LtiSectionResourceDeepLink, query,
+              on_conflict: :nothing,
+              conflict_target: [:section_id, :resource_id]
+            )
+
+          total + count
+      end)
+    end)
+  rescue
+    _error in [Ecto.ConstraintError, Postgrex.Error] ->
+      {:error, :lti_deep_link_initialization_failed}
+  end
+
+  # Restricts inheritance candidates to the activities referenced by remixed pages.
+  # Creation/publication callers retain their full destination scope with :all.
+  defp restrict_deep_link_resources(query, :all), do: query
+
+  defp restrict_deep_link_resources(query, ids),
+    do: where(query, [resource], resource.resource_id in ^ids)
+
+  # Builds the shared INSERT SELECT source for whole-course copy and template remix.
+  # Only current source-owned configurations whose resources exist in both sections
+  # qualify; callers add any remix-specific activity and missing-row restrictions.
+  defp section_deep_links_query(source_section_id, destination_section_id) do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    from(link in LtiSectionResourceDeepLink,
+      as: :source_link,
+      join: source in SectionResource,
+      on: source.section_id == link.section_id and source.resource_id == link.resource_id,
+      join: destination in SectionResource,
+      on: destination.resource_id == link.resource_id,
+      where:
+        link.section_id == ^source_section_id and
+          destination.section_id == ^destination_section_id,
+      select: %{
+        section_id: ^destination_section_id,
+        resource_id: destination.resource_id,
+        type: link.type,
+        url: link.url,
+        custom: link.custom,
+        title: link.title,
+        text: link.text,
+        inserted_at: ^now,
+        updated_at: ^now
+      }
+    )
   end
 
   @doc """

@@ -23,6 +23,9 @@ defmodule Oli.Rendering.Content.Html do
 
   @behaviour Oli.Rendering.Content
 
+  # Keep in sync with DEFAULT_WEBPAGE_ARIA_LABEL in assets/src/components/webpage/webpageAriaLabel.ts
+  @default_iframe_aria_label "Embedded webpage that contains additional learning content"
+
   def trigger(%Context{} = context, _, attrs) do
     {:safe, trigger} =
       OliWeb.Common.React.component(
@@ -304,7 +307,7 @@ defmodule Oli.Rendering.Content.Html do
         """
         <div class="#{container_class}">
           <div class="embed-wrapper">
-            <iframe#{maybe_alt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}></iframe>
+            <iframe aria-label="#{escape_xml!(iframe_aria_label(attrs))}" class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}></iframe>
           </div>
         </div>
         """
@@ -1143,6 +1146,15 @@ defmodule Oli.Rendering.Content.Html do
       []
     end
   end
+
+  defp iframe_aria_label(%{"title" => title}) when is_binary(title) do
+    case String.trim(title) do
+      "" -> @default_iframe_aria_label
+      trimmed -> trimmed
+    end
+  end
+
+  defp iframe_aria_label(_attrs), do: @default_iframe_aria_label
 
   defp maybe_alt(attrs) do
     case attrs do

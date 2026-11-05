@@ -27,10 +27,10 @@ The `/test/assets/*`, `/api/v1/automation_setup`, `/api/v1/automation_teardown`,
 scenario-seeding routes are **compiled out of the production router** unless
 `enable_playwright_scenarios: true` is set at **compile time** (this is a value in the Mix config
 file used to build the app, not a runtime environment variable). The default in `config/prod.exs`
-is `false`. `config/ci_e2e.exs` already sets it to `true`.
+is `false`. `config/playwright.exs` already sets it to `true`.
 
 Any environment intended to run nightly tests must be built with `enable_playwright_scenarios: true`
-— either by using `MIX_ENV=ci_e2e` or by configuring a dedicated Mix environment. This is a
+— using the shared `MIX_ENV=playwright` environment. This is a
 deployment decision to coordinate with DevOps.
 
 ## S3 key naming convention
@@ -75,6 +75,7 @@ The following environment variables must be set on the Torus server for the targ
 | Variable | Required | Notes |
 |----------|----------|-------|
 | `PLAYWRIGHT_ASSETS_BUCKET` | Yes | Name of the S3/MinIO bucket containing test assets |
+| `PLAYWRIGHT_CAPTCHA_TOKEN` | Yes | Separate random secret shared with the runner; authorizes captcha-protected form submissions. Missing/empty configuration prevents Playwright server startup. |
 | `PLAYWRIGHT_SCENARIO_TOKEN` | Yes | Shared secret you choose — must match the value set on the CI runner. No admin UI needed; set it as an env var on both sides. |
 | `AWS_ACCESS_KEY_ID` | Yes (prod S3) | S3 access key. Use `AWS_S3_ACCESS_KEY_ID` to override with a dedicated key for the PW bucket, separate from other AWS credentials the server may already have. |
 | `AWS_SECRET_ACCESS_KEY` | Yes (prod S3) | S3 secret key. Same override pattern via `AWS_S3_SECRET_ACCESS_KEY`. |
@@ -104,9 +105,10 @@ admin access to the repository — they are not set in the codebase.
 | Variable | Type | Description |
 |----------|------|-------------|
 | `PLAYWRIGHT_BASE_URL` | Variable | URL of the target Torus server |
+| `PLAYWRIGHT_CAPTCHA_TOKEN` | Secret | Same captcha token as the server (Step 2); keep separate from the scenario token. |
 | `PLAYWRIGHT_SCENARIO_TOKEN` | Secret | Same value as the server-side token (Step 2) |
 | `PLAYWRIGHT_AUTOMATION_API_KEY` | Secret | Key created in Step 3 |
-| `PLAYWRIGHT_PARAMETER_CONFIG_URL` | Secret | URL to the Dot chatbot YAML config (see `nightly-ci.md`) |
+| `PLAYWRIGHT_PARAMETER_CONFIG_URL` | Variable | URL to the private Dot chatbot YAML config (see `nightly-ci.md`); authentication uses the scenario token |
 | `CANVAS_UI_EMAIL` | Secret | Canvas test-account email (for LTI tests) |
 | `CANVAS_UI_PASSWORD` | Secret | Canvas test-account password (for LTI tests) |
 
@@ -120,7 +122,7 @@ All tests tagged `@nightly` are included in the run. To run the nightly suite lo
 configured environment:
 
 ```sh
-npx playwright test --grep @nightly
+npx playwright test --config playwright.nightly.config.ts --grep @nightly
 ```
 
 ---
@@ -135,3 +137,27 @@ npx playwright test --grep @nightly
    test description string. This works with `--grep` today. Migrating to
    `test('...', { tag: '@nightly' }, ...)` is a future clean-up item that enables native UI
    filtering in Playwright, but it is not a blocker.
+
+### Captcha-protected forms
+
+Both PR and nightly use `Oli.Playwright.Recaptcha`, which accepts only the configured
+nonempty `PLAYWRIGHT_CAPTCHA_TOKEN` using constant-time comparison. Generate a random
+secret (for example, `openssl rand -base64 32`) and provide it to both the server and
+runner. Do not commit it or include it in public configuration. The PR workflow generates
+its own disposable token; nightly uses its protected environment secret. Missing, empty
+or incorrect responses are rejected without contacting Google.
+
+The shared fixture configures captcha submission before navigation. Runner routing blocks
+Google's scripts. A native POST `formdata` listener and LiveView `FormData` adapter supply
+the token without DOM fields or a deployed replacement client. Captcha templates and
+LiveView hooks remain unchanged. Custom browser contexts submitting protected forms must
+call `configureCaptcha(context, baseUrl)` before creating pages. The helper restricts
+injection to protected forms on the configured origin and guards native GET and unsafe
+submitter overrides. Production continues to use normal Google verification.
+
+Scenario/mailbox access requires its separate `PLAYWRIGHT_SCENARIO_TOKEN`, and normal
+account authentication remains enforced. CI and local runs carrying either automation
+token disable traces/screenshots. Do not attach request payloads, raw server logs,
+mailbox bodies or confirmation/reset URLs. The Playwright environment needs the
+release frontend/server bundles and `mix assets.deploy`; it does not run
+development watchers.

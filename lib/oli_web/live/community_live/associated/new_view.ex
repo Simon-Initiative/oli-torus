@@ -71,7 +71,13 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   def render(assigns) do
     ~H"""
     <div class="p-3">
-      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
+      <Filter.render
+        change="change_search"
+        reset="reset_search"
+        apply="apply_search"
+        query={@query}
+        aria_label="Search communities"
+      />
     </div>
 
     <div id="projects-products-table" class="p-4">

@@ -263,6 +263,13 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       |> render_change()
 
       assert has_element?(view, "#candidate-search-input[value=\"Candidate 30\"]")
+
+      assert has_element?(
+               view,
+               "#candidate-search-input[aria-label='Search questions'][type='search']"
+             )
+
+      refute has_element?(view, "#candidate-search-input-clear")
       assert has_element?(view, "#candidate-row-#{last_candidate.resource_id}")
       refute has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
       assert has_element?(view, "div", "Showing 1 of 1 questions")

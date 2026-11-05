@@ -32,45 +32,75 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
         _ -> "down"
       end
 
+    sorted? = assigns.model.sort_by_spec == column_spec
+    sort_button? = Map.get(assigns, :sort_button, false) and column_spec.sortable
+
+    aria_sort =
+      case {sort_button?, sorted?, assigns.model.sort_order} do
+        {true, true, :asc} -> "ascending"
+        {true, true, _} -> "descending"
+        _ -> nil
+      end
+
     assigns =
-      Map.merge(assigns, %{sort_direction_cls: sort_direction_cls, column_spec: column_spec})
+      Map.merge(assigns, %{
+        sort_direction_cls: sort_direction_cls,
+        column_spec: column_spec,
+        sorted?: sorted?,
+        sort_button?: sort_button?,
+        aria_sort: aria_sort
+      })
 
     ~H"""
     <th
       class={[
         @column_spec.th_class,
         "pl-2.5 font-semibold",
-        if(@column_spec.sortable, do: "cursor-pointer", else: ""),
+        if(@column_spec.sortable and not @sort_button?, do: "cursor-pointer", else: ""),
         @header_bg_class
       ]}
-      phx-click={if @column_spec.sortable, do: @sort, else: nil}
+      phx-click={if @column_spec.sortable and not @sort_button?, do: @sort, else: nil}
       phx-value-sort_by={@column_spec.name}
+      aria-sort={@aria_sort}
       data-sortable={if @column_spec.sortable == false, do: "false", else: "true"}
-      data-sort-column={if @model.sort_by_spec == @column_spec, do: "true", else: "false"}
-      data-sort-order={
-        if @model.sort_by_spec == @column_spec,
-          do: to_string(@model.sort_order || :desc),
-          else: "desc"
-      }
+      data-sort-column={if @sorted?, do: "true", else: "false"}
+      data-sort-order={if @sorted?, do: to_string(@model.sort_order || :desc), else: "desc"}
     >
-      <div class="flex items-center gap-1">
-        <%= if @column_spec.tooltip do %>
-          <span id={@column_spec.name} title={@column_spec.tooltip} phx-hook="TooltipInit">
-            {@column_spec.label}
-          </span>
-        <% else %>
-          {@column_spec.label}
-        <% end %>
-
-        <%= if @column_spec.sortable do %>
-          <OliWeb.Icons.chevron_down
-            width="16"
-            height="16"
-            class={"inline fill-black dark:fill-white " <> if @sort_direction_cls == "up", do: "", else: "rotate-180 "}
-          />
-        <% end %>
-      </div>
+      <%= if @sort_button? do %>
+        <button
+          type="button"
+          class="flex items-center gap-1 cursor-pointer"
+          phx-click={@sort}
+          phx-value-sort_by={@column_spec.name}
+        >
+          {render_th_content(assigns)}
+        </button>
+      <% else %>
+        <div class="flex items-center gap-1">
+          {render_th_content(assigns)}
+        </div>
+      <% end %>
     </th>
+    """
+  end
+
+  defp render_th_content(assigns) do
+    ~H"""
+    <%= if @column_spec.tooltip do %>
+      <span id={@column_spec.name} title={@column_spec.tooltip} phx-hook="TooltipInit">
+        {@column_spec.label}
+      </span>
+    <% else %>
+      {@column_spec.label}
+    <% end %>
+
+    <%= if @column_spec.sortable do %>
+      <OliWeb.Icons.chevron_down
+        width="16"
+        height="16"
+        class={"inline fill-black dark:fill-white " <> if @sort_direction_cls == "up", do: "", else: "rotate-180 "}
+      />
+    <% end %>
     """
   end
 
@@ -161,10 +191,19 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     doc:
       "Optional CSS class for header cell background. When set, applies to <th> elements to override default styling."
 
+  attr :sort_button, :boolean,
+    default: false,
+    doc:
+      "When true, each sortable header renders a <button> that carries the sort click and exposes aria-sort on the sorted column (keyboard accessible). The <th> keeps its data-* and phx-value-sort_by attributes."
+
+  attr :id, :string,
+    default: nil,
+    doc: "Fixed id for the <table>; when absent a new one is generated on every render."
+
   def render(assigns) do
     ~H"""
     <table
-      id={"sortable-table-#{@model.data[:view_type]}-#{Ecto.UUID.generate()}"}
+      id={@id || "sortable-table-#{@model.data[:view_type]}-#{Ecto.UUID.generate()}"}
       class={"min-w-full border table-fixed " <> @additional_table_class}
       phx-hook="SyncChevronState"
     >
@@ -181,7 +220,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                   sort: @sort,
                   select: @select,
                   additional_table_class: @additional_table_class,
-                  header_bg_class: @header_bg_class
+                  header_bg_class: @header_bg_class,
+                  sort_button: @sort_button
                 },
                 @model.data
               ),
