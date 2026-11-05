@@ -36,6 +36,20 @@ to `window.dataLayer`.
 Each event has exactly one designated emitter, listed below, so LiveView and React never both
 report the same action.
 
+The writer captures each validated event and its current sanitized context in an in-memory FIFO
+queue. Callers return before GTM processes the event. A single queue drain uses
+`scheduler.yield()` with a `setTimeout(..., 0)` fallback, and yields again between batches when
+its time budget is spent. Page views and product events keep their original order. The initial
+page context and GTM loader are handed off together after the first yield. Consent defaults and
+updates remain immediate. This follows [web.dev's yielding guidance](https://web.dev/articles/optimize-long-tasks#cross-browser_support).
+
+Delivery rechecks consent before each queued operation. Withdrawal discards pending operations,
+including a loader that has not started; a later acceptance starts with the current page only.
+Course-entry and preview deduplication keys are recorded on delivery, so canceled operations do
+not consume them. GTM/tag exceptions are contained by the drain and cannot change an activity's
+success result. Events still run on the main thread in later tasks; this does not remove their
+CPU cost, and queued events can be lost if the document unloads before delivery.
+
 ## Context parameters
 
 Resolved by `OliWeb.Analytics` from assigns that are already loaded, with no extra database
@@ -113,7 +127,8 @@ are `ai_assistant`, `navigation`, `notes`, `preview` and `authoring`.
 ## Rules enforced by the writer
 
 - **Consent:** nothing is pushed until analytics consent is granted and GTM is configured. After
-  withdrawal nothing is pushed. Events are never queued or replayed.
+  withdrawal nothing is pushed. Events are never queued while denied, and pending consented
+  events are discarded on withdrawal rather than replayed after a later opt-in.
 - **Previews:** in instructor, author and template previews, only `feature_used` events whose
   `feature_area` is `preview` are sent. Learner events never mix with preview traffic.
 - **Course entry and preview launch** are remembered in session storage per browser tab. Where an

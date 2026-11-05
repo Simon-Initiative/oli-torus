@@ -72,6 +72,7 @@ describe('analytics events', () => {
   let documentListeners: jest.SpyInstance;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     window.history.replaceState({}, '', '/');
     window.sessionStorage.clear();
     reload();
@@ -91,12 +92,15 @@ describe('analytics events', () => {
       document.removeEventListener(type, listener, options);
     }
     jest.restoreAllMocks();
+    jest.clearAllTimers();
+    jest.useRealTimers();
   });
 
-  test('catalogued events carry server context and only their own parameters', () => {
+  test('catalogued events carry server context and only their own parameters', async () => {
     init();
     track({ name: 'attempt_submitted', params: { activity_type: 'oli_multiple_choice' } });
 
+    await jest.runAllTimersAsync();
     const [entry] = events('attempt_submitted');
     expect(defined(entry)).toEqual({
       event: 'attempt_submitted',
@@ -108,12 +112,13 @@ describe('analytics events', () => {
     });
   });
 
-  test('earlier values are cleared so GTM cannot attribute them to later pushes', () => {
+  test('earlier values are cleared so GTM cannot attribute them to later pushes', async () => {
     init();
     track({ name: 'attempt_submitted', params: { activity_type: 'oli_multiple_choice' } });
     track({ name: 'video_started', params: { video_source: 'youtube' } });
     window.TorusAnalytics!.pageView({ ...lesson, page_path: '/sections/:section_slug/learn' });
 
+    await jest.runAllTimersAsync();
     const [video] = events('video_started');
     const pageView = entries().filter((entry) => entry.event === 'torus_page_view')[1];
     for (const entry of [video, pageView]) {
@@ -123,8 +128,9 @@ describe('analytics events', () => {
     expect(video.video_source).toBe('youtube');
   });
 
-  test('page views carry role, course and page type but never internal flags', () => {
+  test('page views carry role, course and page type but never internal flags', async () => {
     init({ ...lesson, preview_mode: undefined });
+    await jest.runAllTimersAsync();
     const [pageView] = entries().filter((entry) => entry.event === 'torus_page_view');
     expect(defined(pageView)).toEqual({
       event: 'torus_page_view',
@@ -140,7 +146,7 @@ describe('analytics events', () => {
     });
   });
 
-  test('invalid or extra context fields never reach the context or the data layer', () => {
+  test('invalid or extra context fields never reach the context or the data layer', async () => {
     init({
       ...lesson,
       user_role: 'superuser',
@@ -152,6 +158,7 @@ describe('analytics events', () => {
       user_id: 5555,
     });
 
+    await jest.runAllTimersAsync();
     expect(window.TorusAnalytics!.context).toEqual({
       page_path: lesson.page_path,
       page_area: 'delivery',
@@ -161,8 +168,9 @@ describe('analytics events', () => {
     expect(JSON.stringify(window.dataLayer)).not.toMatch(/9876|5555|superuser|quiz|sneaky/);
   });
 
-  test('course entry counts once per tab session and course, after the page view', () => {
+  test('course entry counts once per tab session and course, after the page view', async () => {
     init();
+    await jest.runAllTimersAsync();
     expect(entries().map((entry) => entry.event)).toEqual([
       'torus_page_view',
       'course_entered',
@@ -178,24 +186,28 @@ describe('analytics events', () => {
 
     window.TorusAnalytics!.pageView({ ...lesson, page_path: '/sections/:section_slug/learn' });
     window.TorusAnalytics!.pageView({ ...lesson, course_id: 43 });
+    await jest.runAllTimersAsync();
     expect(events('course_entered').map((entry) => entry.course_id)).toEqual([42, 43]);
 
     reload();
     init();
+    await jest.runAllTimersAsync();
     expect(events('course_entered')).toHaveLength(0);
 
     for (const page_area of ['authoring', 'public']) {
       window.TorusAnalytics!.pageView({ ...lesson, page_area, course_id: 77 });
     }
+    await jest.runAllTimersAsync();
     expect(events('course_entered')).toHaveLength(0);
   });
 
-  test('without session storage, course entry counts once per page load', () => {
+  test('without session storage, course entry counts once per page load', async () => {
     jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
     });
     init();
     window.TorusAnalytics!.pageView({ ...lesson, page_path: '/sections/:section_slug/learn' });
+    await jest.runAllTimersAsync();
     expect(events('course_entered')).toHaveLength(1);
   });
 
@@ -205,18 +217,21 @@ describe('analytics events', () => {
     window.dispatchEvent(
       new CustomEvent('phx:analytics:track', { detail: { name: 'page_completed' } }),
     );
+    await jest.runAllTimersAsync();
     expect(events()).toHaveLength(0);
     expect(window.sessionStorage.length).toBe(0);
 
     await saveConsent(consent, { persist: false });
+    await jest.runAllTimersAsync();
     expect(events().map((entry) => entry.event)).toEqual(['course_entered']);
 
     await saveConsent({ ...consent, analytics: false }, { persist: false });
     track({ name: 'hint_viewed', params: { activity_type: 'oli_short_answer' } });
+    await jest.runAllTimersAsync();
     expect(events()).toHaveLength(1);
   });
 
-  test('previews only report their launch, once per tab session', () => {
+  test('previews only report their launch, once per tab session', async () => {
     const preview = {
       ...lesson,
       page_path: '/sections/:section_slug/preview/learn',
@@ -228,6 +243,7 @@ describe('analytics events', () => {
     track({ name: 'feature_used', params: { feature_name: 'dot_opened' } });
     window.TorusAnalytics!.pageView({ ...preview, page_path: '/sections/:section_slug/preview' });
 
+    await jest.runAllTimersAsync();
     expect(events().map(defined)).toEqual([
       {
         event: 'feature_used',
@@ -245,6 +261,7 @@ describe('analytics events', () => {
       user_role: 'author',
       preview_mode: 'template_preview',
     });
+    await jest.runAllTimersAsync();
     expect(events().map((entry) => entry.feature_name)).toEqual([
       'preview_launched',
       'template_preview_launched',
@@ -253,7 +270,7 @@ describe('analytics events', () => {
 
   test.each([undefined, 42])(
     'template previews count separately with course_id=%s and keep their identity local',
-    (course_id) => {
+    async (course_id) => {
       const preview = {
         ...lesson,
         course_id,
@@ -270,10 +287,12 @@ describe('analytics events', () => {
         course_id: 42,
         page_path: '/sections/:section_slug/learn',
       });
+      await jest.runAllTimersAsync();
       expect(events('feature_used')).toHaveLength(1);
 
       window.history.replaceState({}, '', '/sections/private-template-two');
       window.TorusAnalytics!.pageView(preview);
+      await jest.runAllTimersAsync();
       expect(events('feature_used').map((entry) => entry.feature_name)).toEqual([
         'template_preview_launched',
         'template_preview_launched',
@@ -284,11 +303,12 @@ describe('analytics events', () => {
       window.history.replaceState({}, '', '/sections/private-template-one');
       reload();
       init(preview);
+      await jest.runAllTimersAsync();
       expect(events('feature_used')).toHaveLength(0);
     },
   );
 
-  test('server pushes and bubbling JS command dispatches share one validated channel', () => {
+  test('server pushes and bubbling JS command dispatches share one validated channel', async () => {
     init();
     window.dispatchEvent(
       new CustomEvent('phx:analytics:track', {
@@ -303,6 +323,7 @@ describe('analytics events', () => {
       }),
     );
 
+    await jest.runAllTimersAsync();
     expect(events('feature_used').map((entry) => [entry.feature_name, entry.feature_area])).toEqual(
       [
         ['outline_opened', 'navigation'],
@@ -311,7 +332,7 @@ describe('analytics events', () => {
     );
   });
 
-  test('uncatalogued parameters and events are dropped with a development warning', () => {
+  test('uncatalogued parameters and events are dropped with a development warning', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     init();
     window.TorusAnalytics!.track('feature_used', {
@@ -321,6 +342,7 @@ describe('analytics events', () => {
     });
     window.TorusAnalytics!.track('page_exited', { active_time_bucket: '15m+' });
 
+    await jest.runAllTimersAsync();
     expect(events().map((entry) => entry.event)).toEqual(['course_entered', 'feature_used']);
     expect(events('feature_used')[0].course_id).toBe(42);
     expect(warn.mock.calls.map(([message]) => message)).toEqual([
@@ -330,7 +352,7 @@ describe('analytics events', () => {
     expect(JSON.stringify(window.dataLayer)).not.toMatch(/5555/);
   });
 
-  test('file links in lesson content report only the file type', () => {
+  test('file links in lesson content report only the file type', async () => {
     init(lesson, { media_url: 'https://media.torus.example/media' });
     document.body.innerHTML = `
       <div id="page_content">
@@ -348,6 +370,7 @@ describe('analytics events', () => {
       (document.getElementById(id) as HTMLElement).click();
     }
 
+    await jest.runAllTimersAsync();
     expect(events('file_link_clicked').map(defined)).toEqual([
       {
         event: 'file_link_clicked',

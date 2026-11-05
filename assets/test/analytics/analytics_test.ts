@@ -19,6 +19,7 @@ describe('analytics', () => {
   let listeners: jest.SpyInstance;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     window.sessionStorage.clear();
     delete window.TorusAnalytics;
     delete window.TorusConsentState;
@@ -33,6 +34,8 @@ describe('analytics', () => {
       window.removeEventListener(type, listener);
     }
     jest.restoreAllMocks();
+    jest.clearAllTimers();
+    jest.useRealTimers();
   });
 
   function pageViews() {
@@ -103,7 +106,7 @@ describe('analytics', () => {
     },
   );
 
-  test('valid embedded configuration initializes analytics with nullable environment settings', () => {
+  test('valid embedded configuration initializes analytics with nullable environment settings', async () => {
     const script = document.createElement('script');
     script.dataset.config = JSON.stringify({
       container_id: 'GTM-QA123',
@@ -118,12 +121,13 @@ describe('analytics', () => {
       require('../../src/analytics/bootstrap');
     });
 
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(1);
     expect(window.TorusAnalytics!.context).toEqual({ ...initialContext, page_title: 'Learning' });
     expect(document.querySelectorAll('script')).toHaveLength(1);
   });
 
-  test('stored consent and one sanitized page view precede the async loader, which loads once', () => {
+  test('stored consent and one sanitized page view precede the async loader, which loads once', async () => {
     const append = jest.spyOn(document.head, 'appendChild');
     append.mockImplementation((node) => {
       const commands = window.dataLayer!;
@@ -143,6 +147,7 @@ describe('analytics', () => {
 
     initializeAnalytics({ container_id: 'GTM-QA123', ...accepted, context: initialContext });
     initializeAnalytics({ container_id: 'GTM-QA123', ...accepted, context: initialContext });
+    await jest.runAllTimersAsync();
     expect(append).toHaveBeenCalledTimes(1);
     const loader = append.mock.calls[0][0] as HTMLScriptElement;
     expect(loader.src).toBe('https://www.googletagmanager.com/gtm.js?id=GTM-QA123');
@@ -159,23 +164,26 @@ describe('analytics', () => {
     ]);
   });
 
-  test('new LiveView routes count once; duplicate mounts and patch/history events do not count', () => {
+  test('new LiveView routes count once; duplicate mounts and patch/history events do not count', async () => {
     initializeAnalytics({ container_id: 'GTM-QA123', ...accepted, context: initialContext });
     const nextContext = { ...initialContext, page_path: '/sections/:section_slug' };
     window.dispatchEvent(new CustomEvent('phx:analytics:page_view', { detail: initialContext }));
     window.dispatchEvent(new CustomEvent('phx:navigate', { detail: { patch: true } }));
     window.dispatchEvent(new PopStateEvent('popstate'));
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(1);
     for (let i = 0; i < 2; i++) {
       window.dispatchEvent(new CustomEvent('phx:analytics:page_view', { detail: nextContext }));
     }
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(2);
     window.dispatchEvent(new CustomEvent('phx:analytics:page_view', { detail: initialContext }));
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(3);
     expect(document.querySelectorAll('script')).toHaveLength(1);
   });
 
-  test('rejects raw URLs and queries and discards private extras, titles and referrers', () => {
+  test('rejects raw URLs and queries and discards private extras, titles and referrers', async () => {
     const title = jest.spyOn(document, 'title', 'get').mockImplementation(() => {
       throw new Error('document.title must never be read');
     });
@@ -183,6 +191,7 @@ describe('analytics', () => {
     for (const page_path of ['https://private.example/path', '/path?secret=token', '/path#token']) {
       window.TorusAnalytics!.pageView({ ...initialContext, page_path });
     }
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(1);
     window.TorusAnalytics!.pageView({
       page_path: '/users/reset_password/:token',
@@ -193,6 +202,7 @@ describe('analytics', () => {
       token: 'private',
       traffic_type: 'internal',
     });
+    await jest.runAllTimersAsync();
     expect(pageViews()[1]).toEqual({
       event: 'torus_page_view',
       page_path: '/users/reset_password/:token',
@@ -206,7 +216,7 @@ describe('analytics', () => {
     expect(JSON.stringify(window.dataLayer)).not.toMatch(/Private|private\.example|lms\.example/);
   });
 
-  test('QA environment settings are encoded on the container request', () => {
+  test('QA environment settings are encoded on the container request', async () => {
     initializeAnalytics({
       container_id: 'GTM-QA123',
       ...accepted,
@@ -214,6 +224,7 @@ describe('analytics', () => {
       preview: 'env-2',
       context: initialContext,
     });
+    await jest.runAllTimersAsync();
     const loader = document.querySelector('script')!;
     const url = new URL(loader.src);
     expect(url.searchParams.get('gtm_auth')).toBe('qa_auth-123');
@@ -227,7 +238,7 @@ describe('analytics', () => {
     { analytics: true, version: 1 },
     { analytics: false, version: 2 },
     { analytics: 'true', version: 2 },
-  ])('no current acceptance (%j) blocks Google and behavioral events', (consent) => {
+  ])('no current acceptance (%j) blocks Google and behavioral events', async (consent) => {
     initializeAnalytics({
       container_id: 'GTM-QA123',
       context: initialContext,
@@ -236,6 +247,7 @@ describe('analytics', () => {
       measurement_ids: ['G-QA123'],
     });
     window.TorusAnalytics!.pageView({ ...initialContext, page_path: '/users/log_in' });
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(0);
     expect(document.querySelector('script')).toBeNull();
     expect(Array.from(window.dataLayer![0] as IArguments)[2]).toMatchObject({
@@ -256,13 +268,16 @@ describe('analytics', () => {
     const current = { ...initialContext, page_path: '/users/log_in' };
     window.TorusAnalytics!.pageView(current);
     await saveConsent({ ...accepted.consent, analytics: true }, { persist: false });
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(1);
     expect(pageViews()[0]).toMatchObject({ page_path: current.page_path });
     expect(document.querySelectorAll('script')).toHaveLength(1);
     await saveConsent({ ...accepted.consent, analytics: false }, { persist: false });
     window.TorusAnalytics!.pageView(initialContext);
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(1);
     await saveConsent({ ...accepted.consent, analytics: true }, { persist: false });
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(2);
     expect(pageViews()[1]).toMatchObject({ page_path: initialContext.page_path });
     expect(document.querySelectorAll('script')).toHaveLength(1);
@@ -276,11 +291,12 @@ describe('analytics', () => {
       consent_available: false,
     });
     await saveConsent(accepted.consent, { persist: false });
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(0);
     expect(document.querySelector('script')).toBeNull();
   });
 
-  test('pending withdrawal in iframe session storage blocks an older server grant before GTM loads', () => {
+  test('pending withdrawal in iframe session storage blocks an older server grant before GTM loads', async () => {
     window.sessionStorage.setItem(
       '_cky_pending_consent',
       JSON.stringify({
@@ -296,6 +312,7 @@ describe('analytics', () => {
       ...accepted,
       signed_in: true,
     });
+    await jest.runAllTimersAsync();
     expect(pageViews()).toHaveLength(0);
     expect(document.querySelector('script')).toBeNull();
     expect(Array.from(window.dataLayer![0] as IArguments)[2]).toMatchObject({
