@@ -17,7 +17,7 @@ Feature leads should scope tickets small enough to use the single-PR process whe
 | Into an integration branch, including implementation and sync PRs | Developer code review | All required status checks | Create a merge commit for every PR |
 | Completed integration branch into `master` | Development and QA, one approval from each team | All required status checks and merge-queue checks | Submit to the `master` merge queue |
 
-Every PR to `master` requires two approvals, one from Development (`torus-dev`) and one from QA (`torus-qa`). By convention, developer review comes first, then QA acceptance testing and approval. GitHub requires both approvals but does not enforce their order. For integration work, developer review also occurs on each implementation and sync PR. See [Development and QA approvals](pull-request-approvals.md) for ruleset configuration.
+Every PR to `master` requires two approvals, one from Development (`development`) and one from QA (`torus-qa`). By convention, developer review comes first, then QA acceptance testing and approval. GitHub requires both approvals but does not enforce their order. For integration work, developer review also occurs on each implementation and sync PR. See [Development and QA approvals](pull-request-approvals.md) for ruleset configuration.
 
 Every PR must pass the required Elixir and TypeScript status checks, including builds, unit tests, and TypeScript lint checks. These checks start automatically when a PR is created. Coveralls and GitGuardian provide additional information; developers and reviewers decide whether their findings block the PR.
 
@@ -25,7 +25,7 @@ The `master` merge queue tests the combined result against current `master` and 
 
 ## Single-PR Work
 
-Create one feature branch from current `master`. Any valid Git branch name is allowed; a ticket key and description are useful for discoverability. Integration branch prefixes are not required. For example:
+Create one feature branch from current `master`. There is no required feature-branch naming format; a ticket key and description are useful for discoverability. Direct-to-master feature branches should not use integration naming conventions: `integ-*`, `integration/**`, `story/*`, `bug/*`, or `task/*`. The `integ-*` and `integration/**` namespaces match the integration ruleset and require PRs for subsequent changes; `integ-*` PRs to `master` also skip Danger and AI review. Use a name outside these namespaces for single-PR work. For example:
 
 ```sh
 git fetch origin
@@ -160,7 +160,7 @@ Use `integration_branch_workflow` from `.agents/skills/integration_branch_workfl
 | Work on a specific child Sub-task | "Set up branches for MER-1000 and use Sub-task MER-1001" |
 | Sync with master | "Sync MER-1000 integration branch" or "Pull the latest from master into my integration branch" |
 
-For single-PR setup, the skill creates or reuses one feature branch from `origin/master`, honors any valid branch name, and reports `master` as the PR target. It does not require an integration branch or a Sub-task. For multi-PR setup, the skill creates or reuses the integration branch, defaulting new branches to `origin/master`. It then creates or reuses a working branch based on that integration branch and checks it out. With no Sub-tasks, or an explicit choice to work directly on the main ticket, it uses the main ticket key without offering or requiring a Sub-task. For example, you can request `integ-MER-1000-student-dashboard` and `MER-1000-student-dashboard`. When Sub-tasks exist and you have not chosen to use the main ticket, it retains the existing selection behavior: honor a selected child, use a single active child, or choose the first unstarted child by ticket number when several exist. Creating a new Sub-task requires an explicit request and approval of its draft. Setup prepares local branches; request publication separately.
+For single-PR setup, the skill creates or reuses one feature branch from `origin/master`, honors valid feature-branch names outside the integration conventions above, and reports `master` as the PR target. It does not require an integration branch or a Sub-task. For multi-PR setup, the skill creates or reuses the integration branch, defaulting new branches to `origin/master`. It then creates or reuses a working branch based on that integration branch and checks it out. With no Sub-tasks, or an explicit choice to work directly on the main ticket, it uses the main ticket key without offering or requiring a Sub-task. For example, you can request `integ-MER-1000-student-dashboard` and `MER-1000-student-dashboard`. When Sub-tasks exist and you have not chosen to use the main ticket, it retains the existing selection behavior: honor a selected child, use a single active child, or choose the first unstarted child by ticket number when several exist. Creating a new Sub-task requires an explicit request and approval of its draft. Setup prepares local branches; request publication separately.
 
 For syncing, the skill creates or reuses `sync/<parent-issue-key>-<summary>` with the same summary as the parent branch, incorporates the latest integration tip and `master`, and opens or updates a PR targeting the integration branch. It uses the parent ticket directly and requires no sync Sub-task. If conflicts occur, it presents this menu:
 

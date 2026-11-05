@@ -14,8 +14,8 @@ Configure required reviewers by target branch:
 
 | Target branches | Required reviewer | Required approval count |
 | --- | --- | --- |
-| Integration branches matching `integ-*`, `story/*`, `bug/*`, and `task/*` | `Simon-Initiative/torus-dev` (Development), matching all files (`*`) | One |
-| `master` | Both `Simon-Initiative/torus-dev` (Development) and `Simon-Initiative/torus-qa` (QA), each matching all files (`*`) | Two total, at least one from each team |
+| Integration branches matching `integ-*`, `story/*`, `bug/*`, and `task/*` | `Simon-Initiative/development` (Development), matching all files (`*`) | One |
+| `master` | Both `Simon-Initiative/development` (Development) and `Simon-Initiative/torus-qa` (QA), each matching all files (`*`) | Two total, at least one from each team |
 
 The integration ruleset covers both implementation and sync PRs. The master ruleset
 requires both team approvals for feature PRs and completed integration PRs.
@@ -29,7 +29,9 @@ Both rulesets must require:
 - Existing required status checks, including Elixir and TypeScript build and test.
 
 Work expected to fit in one PR uses a single feature branch targeting `master`,
-with no branch naming convention. Multi-PR work uses implementation PRs into a
+with no required feature-branch naming format. Direct-to-master branches should
+avoid the integration naming conventions listed in
+[Single-PR Work](development.md#single-pr-work). Multi-PR work uses implementation PRs into a
 protected integration branch, referencing the main ticket or optional child
 Sub-tasks. Both paths enter the `master` merge queue after Development and QA
 approvals and required checks pass. For integration work, conflict resolution
@@ -38,8 +40,10 @@ All PRs into integration branches, including implementation and sync PRs, must u
 **Create a merge commit**. Enable merge commits in repository settings and require
 this method for integration branches while allowing non-linear history.
 
-Use the appropriate child team as the required reviewer for each target. The
-parent `Simon-Initiative/torus` team does not distinguish Development from QA.
+Use the configured `Simon-Initiative/development` and `Simon-Initiative/torus-qa`
+teams for the master review requirements. `development` (Development) and
+`torus-dev` (Torus Dev) are separate teams; the Jira helper described below
+checks `torus-dev`, which does not establish membership in `development`.
 
 Both teams must have repository write permission or higher. Configure the QA team
 and its membership before enabling the rule. Prefer separate Development and QA
@@ -57,7 +61,7 @@ when a suffix can contain nested paths. Retain a pattern for flat legacy
 In the ruleset targeting **only `master`**, require both team approvals and the
 merge queue. All required master checks must report on queue events. Remove any
 requirement for **Validate master source branch** or the older integration-name
-validator: single-PR feature branches may use any valid name. Verify both delivery
+validator: single-PR feature branches need no integration prefix. Verify both delivery
 paths and the integration protection/CI prerequisites under **Rollout Requirements**
 in `guides/process/development.md`.
 
@@ -76,7 +80,11 @@ The approval automation is currently stored in
 `jira-pr-approval.yml`, it handles submitted approvals for open
 PRs from this repository, including drafts, regardless of the target branch.
 It loads its helper from the immutable PR base commit and checks the review
-author's active membership in `torus-dev` (Development), then `torus-qa` (QA).
+author's active membership in `torus-dev` (Torus Dev), then `torus-qa` (QA).
+This helper's Development classification uses `torus-dev`; it does not check the
+`development` team required by the master ruleset. An approval satisfying the
+GitHub Development requirement therefore does not necessarily trigger a Jira
+transition. The helper behavior is unchanged by the branch workflow updates.
 Membership in the parent `torus` team alone does not qualify. Team maintainers and
 inherited members qualify. Development takes precedence for reviewers in both
 teams; their approval requests only the Development transition. A QA-only reviewer

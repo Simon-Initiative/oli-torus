@@ -194,9 +194,11 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
 
 Follow `guides/process/development.md` and the `integration_branch_workflow` skill
 for branch setup. Work expected to fit in one PR uses a single feature branch
-from `master` with no required naming convention and a PR targeting `master`.
+from `master` with a PR targeting `master`. No feature-branch naming format is
+required, but direct-to-master branches should avoid integration naming conventions
+(`integ-*`, `integration/**`, `story/*`, `bug/*`, and `task/*`).
 Use integration branches for work expected to span multiple implementation PRs.
-Every PR to `master` requires one Development and one QA approval; developer
+Every PR to `master` requires one Development (`development`) and one QA (`torus-qa`) approval; developer
 review comes first by convention. Required checks and the merge queue still apply.
 
 ## UI Workflow
