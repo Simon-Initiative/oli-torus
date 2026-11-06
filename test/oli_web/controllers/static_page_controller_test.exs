@@ -116,6 +116,55 @@ defmodule OliWeb.StaticPageControllerTest do
     end
   end
 
+  describe "POST /timezone" do
+    for content_type <- ["application/json", "application/x-www-form-urlencoded"] do
+      test "rejects an empty #{content_type} body without changing the session", %{conn: conn} do
+        conn =
+          conn
+          |> Plug.Test.init_test_session(%{browser_timezone: "America/New_York"})
+          |> put_req_header("content-type", unquote(content_type))
+          |> post(
+            ~p"/timezone",
+            unquote(if content_type == "application/json", do: "{}", else: "")
+          )
+
+        assert response(conn, 422) == "Invalid browser timezone"
+        assert get_session(conn, :browser_timezone) == "America/New_York"
+      end
+    end
+
+    for timezone <- [nil, "", "Unknown/Timezone", "browser", 42, true, [], %{}],
+        existing_timezone <- [nil, "America/New_York"] do
+      test "rejects #{inspect(timezone)} with existing timezone #{inspect(existing_timezone)}", %{
+        conn: conn
+      } do
+        conn =
+          conn
+          |> Plug.Test.init_test_session(%{browser_timezone: unquote(existing_timezone)})
+          |> put_req_header("content-type", "application/json")
+          |> post(
+            ~p"/timezone",
+            Jason.encode!(%{browser_timezone: unquote(Macro.escape(timezone))})
+          )
+
+        assert response(conn, 422) == "Invalid browser timezone"
+        assert get_session(conn, :browser_timezone) == unquote(existing_timezone)
+      end
+    end
+
+    for timezone <- ["America/Montevideo", "UTC", "Etc/UTC", "US/Eastern"] do
+      test "stores supported timezone #{timezone}", %{conn: conn} do
+        conn =
+          conn
+          |> Plug.Test.init_test_session(%{browser_timezone: "America/New_York"})
+          |> post(~p"/timezone", %{browser_timezone: unquote(timezone)})
+
+        assert response(conn, 200) == "Ok"
+        assert get_session(conn, :browser_timezone) == unquote(timezone)
+      end
+    end
+  end
+
   describe "update_timezone" do
     test "updates the author timezone preference and redirects correctly", context do
       {:ok, conn: conn, author: author} = author_conn(context)
