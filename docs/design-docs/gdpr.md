@@ -52,3 +52,9 @@ and personalization are always denied. Deployment and container requirements are
   measurement disabled. A temporary `_cky_consent_storage` necessary-cookie probe
   checks cookie availability only when session storage is unavailable, and is
   removed immediately.
+- Consented measurement is limited to the low-cardinality product events in
+  `docs/features/analytics/ga-event-catalog.md`. They carry no personal or
+  pseudonymous identifiers, content, responses or scores; the only ID is the base
+  project ID of the course design. Session storage key `torus_analytics_entered`
+  remembers course entries and preview launches for the browser tab, so they count
+  once; it holds only course IDs and is written only after consent.

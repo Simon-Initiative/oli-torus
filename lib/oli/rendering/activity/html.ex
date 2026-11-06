@@ -186,6 +186,7 @@ defmodule Oli.Rendering.Activity.Html do
          %ActivitySummary{
            state: state,
            graded: graded,
+           activity_type_slug: activity_type_slug,
            aggregate_score: aggregate_score,
            aggregate_out_of: aggregate_out_of,
            aggregate_includes_current_attempt: aggregate_includes_current_attempt,
@@ -205,6 +206,7 @@ defmodule Oli.Rendering.Activity.Html do
     activity_context =
       %{
         resourceId: resource_id,
+        activityType: activity_type_slug,
         graded: graded,
         batchScoring: effective_settings && effective_settings.batch_scoring,
         oneAtATime: effective_settings && effective_settings.assessment_mode == :one_at_a_time,
