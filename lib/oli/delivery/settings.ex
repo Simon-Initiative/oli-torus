@@ -148,6 +148,12 @@ defmodule Oli.Delivery.Settings do
     |> Repo.all()
   end
 
+  @doc """
+  Combines revision defaults, section settings, and student exceptions.
+  Carries the soft-schedule removal flag for display without changing effective dates.
+  """
+  def combine(resolved_revision, section_resource, student_exception)
+
   def combine(resolved_revision, nil, student_exception) do
     combine(
       resolved_revision,
@@ -183,6 +189,9 @@ defmodule Oli.Delivery.Settings do
     %Combined{
       resource_id: resolved_revision.resource_id,
       scheduling_type: section_resource.scheduling_type,
+      removed_from_schedule: section_resource.removed_from_schedule,
+      end_date_is_exception:
+        not is_nil(student_exception) and not is_nil(student_exception.end_date),
       start_date: combine_field(:start_date, section_resource, student_exception),
       end_date: combine_field(:end_date, section_resource, student_exception),
       max_attempts: max_attempts,

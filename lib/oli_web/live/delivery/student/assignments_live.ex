@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.{Certificates, Metrics, Settings}
   alias OliWeb.Common.SessionContext
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
@@ -382,6 +383,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
     Enum.map(raw_assignments, fn assignment ->
       effective_settings = Map.get(combined_settings, assignment.resource_id, %{})
+      display_settings = Scheduling.for_display(effective_settings)
 
       %{
         id: assignment.resource_id,
@@ -401,8 +403,8 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
             _ ->
               true
           end,
-        start_date: effective_settings.start_date,
-        end_date: effective_settings.end_date,
+        start_date: display_settings.start_date,
+        end_date: display_settings.end_date,
         purpose: assignment.purpose,
         progress: progress_per_page_id[assignment.resource_id],
         raw_avg_score: raw_avg_score_per_page_id[assignment.resource_id],
