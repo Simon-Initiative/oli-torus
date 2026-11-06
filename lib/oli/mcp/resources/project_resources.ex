@@ -219,7 +219,7 @@ defmodule Oli.MCP.Resources.ProjectResources do
 
   defp get_type_from_resource_type_id(_), do: :unknown
 
-  # Resource templates that tell MCP clients about available URI patterns
+  @doc "Lists the supported project URI templates for MCP resource discovery."
   def resource_templates do
     [
       %Resource{
