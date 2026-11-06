@@ -5964,13 +5964,16 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Finds the nearest upcoming lessons in a specific section based on the current date and the lessons count.
 
+  Removed advisory end dates do not influence selection or ordering. Operative
+  deadlines, availability dates, and student date exceptions remain eligible.
+
   ## Parameters:
   - `section`: The section struct containing details about the course section.
   - `user_id`: The ID of the user.
   - `lessons_count`: The number of upcoming lessons to retrieve.
   - `opts`: Additional options to filter the lessons. The `:only_graded` option filters the lessons
     to only include graded lessons. The `:ignore_schedule` option ignores the schedule and returns
-    all upcoming lessons, no matter if they do not have any scheduled date.
+    lessons in course order, regardless of dates or soft-schedule removal.
 
   ## Returns:
   - Returns a list of maps with details of the upcoming lessons.
@@ -5989,37 +5992,65 @@ defmodule Oli.Delivery.Sections do
         true
       end
 
-    schedule_filter =
-      if opts[:ignore_schedule] do
-        true
-      else
-        dynamic(
-          [sr, _s, _spp, _pr, _rev, _ra, _r_att, se],
-          coalesce(se.start_date, se.end_date)
-          |> coalesce(sr.start_date)
-          |> coalesce(sr.end_date) >=
-            ^today
+    section_end_date =
+      dynamic(
+        [sr: sr, student_exception: se],
+        fragment(
+          """
+          CASE WHEN ? AND (? = 'read_by' OR
+            (? = 'inclass_activity' AND COALESCE(?, ?) = 'allow'))
+            THEN NULL ELSE ? END
+          """,
+          sr.removed_from_schedule,
+          sr.scheduling_type,
+          sr.scheduling_type,
+          se.late_start,
+          sr.late_start,
+          sr.end_date
         )
+      )
+
+    schedule_date =
+      dynamic(
+        [sr: sr, student_exception: se],
+        coalesce(se.start_date, se.end_date)
+        |> coalesce(sr.start_date)
+        |> coalesce(^section_end_date)
+      )
+
+    display_end_date =
+      dynamic(
+        [student_exception: se],
+        type(coalesce(se.end_date, ^section_end_date), :utc_datetime)
+      )
+
+    {schedule_filter, schedule_order} =
+      case opts[:ignore_schedule] do
+        true ->
+          {true, [asc: dynamic([sr: sr], sr.numbering_index)]}
+
+        _ ->
+          {dynamic(^schedule_date >= ^today),
+           [asc: schedule_date, asc: dynamic([sr: sr], sr.numbering_index)]}
       end
 
     from([rev: rev, sr: sr] in DeliveryResolver.section_resource_revisions(section.slug),
       left_join: ra in ResourceAccess,
-      on: ra.resource_id == rev.resource_id and ra.user_id == ^user_id,
+      on:
+        ra.resource_id == rev.resource_id and ra.user_id == ^user_id and
+          ra.section_id == ^section.id,
       left_join: r_att in ResourceAttempt,
       on: r_att.resource_access_id == ra.id,
       left_join: se in Oli.Delivery.Settings.StudentException,
+      as: :student_exception,
       on:
-        se.resource_id == ra.resource_id and se.user_id == ^user_id and
+        se.resource_id == sr.resource_id and se.user_id == ^user_id and
           se.section_id == ^section.id,
       where:
         rev.resource_type_id == ^page_resource_type_id and
           is_nil(r_att.id) and not sr.hidden,
       where: ^schedule_filter,
-      order_by: [
-        asc:
-          coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date),
-        asc: sr.numbering_index
-      ],
+      order_by: ^schedule_order,
       limit: ^lessons_count,
       select:
         map(rev, [
@@ -6035,7 +6066,6 @@ defmodule Oli.Delivery.Sections do
       select_merge: %{
         numbering_index: sr.numbering_index,
         start_date: coalesce(se.start_date, sr.start_date),
-        end_date: coalesce(se.end_date, sr.end_date),
         scheduling_type: sr.scheduling_type,
         batch_scoring: sr.batch_scoring,
         score: ra.score,
@@ -6043,6 +6073,7 @@ defmodule Oli.Delivery.Sections do
       }
     )
     |> where(^graded_filter)
+    |> select_merge(^%{end_date: display_end_date})
     |> Repo.all()
   end
 

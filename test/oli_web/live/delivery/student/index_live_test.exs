@@ -1359,6 +1359,46 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              )
     end
 
+    test "continue learning skips removed advisory dates but still resumes an opened optional page",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_1: optional,
+           page_2: scheduled
+         } do
+      stub_current_time(~U[2027-01-01 00:00:00Z])
+
+      Sections.get_section_resource(section.id, optional.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: nil,
+        end_date: ~U[2027-01-02 20:00:00Z],
+        scheduling_type: :read_by,
+        removed_from_schedule: true
+      })
+
+      Sections.get_section_resource(section.id, scheduled.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: nil,
+        end_date: ~U[2027-01-03 20:00:00Z],
+        scheduling_type: :read_by
+      })
+
+      # The home banner starts recommending lessons after the first page access.
+      %ResourceAccess{} = Core.track_access(scheduled.resource_id, section.id, user.id)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+      assert has_element?(view, "#home-continue-learning", scheduled.title)
+      refute has_element?(view, "#home-continue-learning", optional.title)
+
+      initiate_activity_attempt(optional, user, section)
+
+      {:ok, resumed_view, _html} = live(conn, ~p"/sections/#{section.slug}")
+      assert has_element?(resumed_view, "#home-continue-learning", optional.title)
+      assert has_element?(resumed_view, "#home-continue-learning", "Resume practice")
+      refute has_element?(resumed_view, "#home-continue-learning", "Jan 2, 2027")
+    end
+
     test "can see nearest upcoming page from agenda when there are no attempts in progress",
          %{conn: conn, user: user, section: section, page_1: page_1, page_2: page_2} do
       stub_current_time(~U[2023-11-02 20:00:00Z])

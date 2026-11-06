@@ -2481,6 +2481,170 @@ defmodule Oli.Delivery.SectionsTest do
 
       assert Sections.get_nearest_upcoming_lessons(section, user.id, 1) == []
     end
+
+    test "attempts in another section do not exclude this section's upcoming page", %{
+      section: section,
+      page_3: page
+    } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+      user = insert(:user)
+      other_section = insert(:section)
+      set_progress(other_section.id, page.resource_id, user.id, 0.5, page)
+
+      [upcoming] = Sections.get_nearest_upcoming_lessons(section, user.id, 1)
+      assert upcoming.resource_id == page.resource_id
+    end
+
+    for {type, policy, exception_policy, eligible?} <- [
+          {:read_by, :allow, nil, false},
+          {:inclass_activity, :allow, nil, false},
+          {:inclass_activity, :disallow, nil, true},
+          {:inclass_activity, :allow, :disallow, true},
+          {:inclass_activity, :disallow, :allow, false},
+          {:due_by, :allow, nil, true}
+        ] do
+      test "removed #{type} with #{policy} late starts and #{inspect(exception_policy)} exception has upcoming eligibility #{eligible?}",
+           %{section: section, page_2: reading, page_3: removed, page_4: assignment} do
+        stub_current_time(~U[2027-01-01 00:00:00Z])
+        user = insert(:user)
+        end_date = ~U[2027-01-02 20:00:00Z]
+
+        for {page, date, scheduling_type, removed?} <- [
+              {removed, end_date, unquote(type), true},
+              {reading, ~U[2027-01-03 20:00:00Z], :read_by, false},
+              {assignment, ~U[2027-01-04 20:00:00Z], :due_by, false}
+            ] do
+          Sections.get_section_resource(section.id, page.resource_id)
+          |> Sections.update_section_resource(%{
+            start_date: nil,
+            end_date: date,
+            scheduling_type: scheduling_type,
+            removed_from_schedule: removed?,
+            late_start: unquote(policy)
+          })
+        end
+
+        case unquote(exception_policy) do
+          nil ->
+            :ok
+
+          policy ->
+            insert(:student_exception,
+              section: section,
+              user: user,
+              resource: removed.resource,
+              late_start: policy
+            )
+        end
+
+        # Filtering happens before LIMIT, so stale removed dates cannot crowd out
+        # the next scheduled reading or graded assignment.
+        [next] = Sections.get_nearest_upcoming_lessons(section, user.id, 1)
+
+        assert next.resource_id ==
+                 if(unquote(eligible?), do: removed.resource_id, else: reading.resource_id)
+
+        [next_assignment] =
+          Sections.get_nearest_upcoming_lessons(section, user.id, 1, only_graded: true)
+
+        assert next_assignment.resource_id ==
+                 if(unquote(eligible?), do: removed.resource_id, else: assignment.resource_id)
+
+        ids =
+          Sections.get_nearest_upcoming_lessons(section, user.id, 10)
+          |> Enum.map(& &1.resource_id)
+
+        expected = [reading.resource_id, assignment.resource_id]
+        assert ids == if(unquote(eligible?), do: [removed.resource_id | expected], else: expected)
+        assert Sections.get_section_resource(section.id, removed.resource_id).end_date == end_date
+      end
+    end
+
+    for date_field <- [:start_date, :end_date] do
+      test "student #{date_field} exceptions select removed readings before first access", %{
+        section: section,
+        page_1: removed,
+        page_2: scheduled
+      } do
+        stub_current_time(~U[2027-01-01 00:00:00Z])
+        user = insert(:user)
+
+        Sections.get_section_resource(section.id, removed.resource_id)
+        |> Sections.update_section_resource(%{
+          start_date: nil,
+          end_date: ~U[2027-01-02 20:00:00Z],
+          removed_from_schedule: true
+        })
+
+        Sections.get_section_resource(section.id, scheduled.resource_id)
+        |> Sections.update_section_resource(%{
+          start_date: nil,
+          end_date: ~U[2027-01-03 20:00:00Z]
+        })
+
+        exception_date = ~U[2027-01-04 20:00:00Z]
+
+        insert(
+          :student_exception,
+          Map.merge(%{section: section, user: user, resource: removed.resource}, %{
+            unquote(date_field) => exception_date
+          })
+        )
+
+        [first, second] = Sections.get_nearest_upcoming_lessons(section, user.id, 2)
+        assert first.resource_id == scheduled.resource_id
+        assert second.resource_id == removed.resource_id
+        assert Map.fetch!(second, unquote(date_field)) == exception_date
+      end
+    end
+
+    test "removed reading availability remains eligible without its advisory completion date", %{
+      section: section,
+      page_1: removed,
+      page_2: scheduled
+    } do
+      stub_current_time(~U[2027-01-01 00:00:00Z])
+      user = insert(:user)
+
+      Sections.get_section_resource(section.id, removed.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2027-01-02 20:00:00Z],
+        end_date: ~U[2027-01-05 20:00:00Z],
+        removed_from_schedule: true
+      })
+
+      Sections.get_section_resource(section.id, scheduled.resource_id)
+      |> Sections.update_section_resource(%{start_date: nil, end_date: ~U[2027-01-03 20:00:00Z]})
+
+      [first, second] = Sections.get_nearest_upcoming_lessons(section, user.id, 2)
+      assert first.resource_id == removed.resource_id
+      assert first.start_date == ~U[2027-01-02 20:00:00Z]
+      assert first.end_date == nil
+      assert second.resource_id == scheduled.resource_id
+    end
+
+    test "ignoring the schedule follows course order despite removed items and stale dates", %{
+      section: section,
+      page_1: first,
+      page_2: second,
+      page_3: third,
+      page_4: fourth
+    } do
+      stub_current_time(~U[2027-01-01 00:00:00Z])
+
+      Sections.get_section_resource(section.id, first.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: nil,
+        end_date: ~U[2100-01-01 00:00:00Z],
+        removed_from_schedule: true
+      })
+
+      pages =
+        Sections.get_nearest_upcoming_lessons(section, insert(:user).id, 4, ignore_schedule: true)
+
+      assert Enum.map(pages, & &1.resource_id) ==
+               Enum.map([first, second, third, fourth], & &1.resource_id)
+    end
   end
 
   describe "fetch_all_modules/1" do
