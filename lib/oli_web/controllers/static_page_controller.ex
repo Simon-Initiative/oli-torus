@@ -33,10 +33,19 @@ defmodule OliWeb.StaticPageController do
     render(conn, "math_syntax.html")
   end
 
-  def timezone(conn, %{"browser_timezone" => browser_timezone}) do
-    conn
-    |> put_session("browser_timezone", browser_timezone)
-    |> send_resp(200, "Ok")
+  @doc """
+  Stores a supported browser timezone in the session, returning 422 without changing
+  the session when the timezone is missing or invalid.
+  """
+  def timezone(conn, params) do
+    with %{"browser_timezone" => browser_timezone} when is_binary(browser_timezone) <- params,
+         true <- Tzdata.zone_exists?(browser_timezone) do
+      conn
+      |> put_session("browser_timezone", browser_timezone)
+      |> send_resp(200, "Ok")
+    else
+      _ -> send_resp(conn, 422, "Invalid browser timezone")
+    end
   end
 
   def site_webmanifest(conn, _params) do
