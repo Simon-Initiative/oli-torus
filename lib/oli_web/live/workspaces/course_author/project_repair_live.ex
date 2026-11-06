@@ -156,8 +156,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
         <p class="text-muted mb-1">System administration</p>
         <h1 class="display-6">Project Repair Tool</h1>
         <p class="lead">
-          Preview Basic-page structural issues, then optionally repair only resolvable shared
-          activity references. Missing activities are reported here but are not changed.
+          Preview Basic-page structural issues, then optionally restore deleted activities and repair shared
+          activity references. Unresolved references are reported but remain unchanged.
         </p>
       </header>
 
@@ -208,14 +208,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
         </div>
 
         <button
-          :if={repairable_shared_groups?(@report) and !@confirming_repair?}
+          :if={repairable_issues?(@report) and !@confirming_repair?}
           id="project-repair-show-confirmation"
           type="button"
           class="btn btn-danger"
           phx-click="show_repair_confirmation"
           disabled={@repairing?}
         >
-          Repair shared activity references
+          Repair activity references
         </button>
       </div>
 
@@ -226,6 +226,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
       />
 
       <.summary_cards summary={@report.summary} />
+
+      <.deleted_references report={@report} project_slug={@project_slug} />
 
       <.missing_references
         references={@report.missing_activity_references}
@@ -246,44 +248,57 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
 
   defp summary_cards(assigns) do
     ~H"""
-    <ul class="row g-3 mb-4 list-unstyled">
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-scanned">
-          <div class="card-body">
+    <ul class="mb-4 list-none rounded-lg bg-white shadow-lg dark:bg-[#3e3f44]">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-scanned">
+          <div class="text-base">
             <h3 id="repair-summary-scanned" class="h6 text-muted">Basic pages scanned</h3>
             <p class="h3 mb-0">{@summary.scanned_pages_count}</p>
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-adaptive">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-adaptive">
+          <div class="text-base">
             <h3 id="repair-summary-adaptive" class="h6 text-muted">Adaptive pages skipped</h3>
             <p class="h3 mb-0">{@summary.skipped_adaptive_pages_count}</p>
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-missing">
-          <div class="card-body">
-            <h3 id="repair-summary-missing" class="h6 text-muted">Missing references</h3>
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-deleted">
+          <div class="text-base">
+            <h3 id="repair-summary-deleted" class="h6 text-muted">
+              Referenced deleted activities
+            </h3>
+            <p class="h3 mb-0">{@summary.deleted_activity_resource_count}</p>
+            <p class="text-muted mb-0">
+              {@summary.deleted_shared_activity_resource_count} also shared
+            </p>
+          </div>
+        </article>
+      </li>
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-missing">
+          <div class="text-base">
+            <h3 id="repair-summary-missing" class="h6 text-muted">Unresolved references</h3>
             <p class="h3 mb-0">{@summary.missing_activity_reference_count}</p>
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-missing-pages">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-missing-pages">
+          <div class="text-base">
             <h3 id="repair-summary-missing-pages" class="h6 text-muted">
-              Pages with missing references
+              Pages with unresolved references
             </h3>
             <p class="h3 mb-0">{@summary.missing_activity_affected_page_count}</p>
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-shared">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-shared">
+          <div class="text-base">
             <h3 id="repair-summary-shared" class="h6 text-muted">
               Repairable shared activities
             </h3>
@@ -291,9 +306,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-shared-pages">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-shared-pages">
+          <div class="text-base">
             <h3 id="repair-summary-shared-pages" class="h6 text-muted">
               Pages with repairable shared activities
             </h3>
@@ -301,11 +316,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </div>
         </article>
       </li>
-      <li class="col-md-4">
-        <article class="card h-100" aria-labelledby="repair-summary-shared-missing">
-          <div class="card-body">
+      <li>
+        <article class="p-6" aria-labelledby="repair-summary-shared-missing">
+          <div class="text-base">
             <h3 id="repair-summary-shared-missing" class="h6 text-muted">
-              Shared missing activities
+              Shared unresolved activities
             </h3>
             <p class="h3 mb-0">
               {@summary.non_repairable_shared_missing_activity_resource_count}
@@ -330,10 +345,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
       aria-describedby="project-repair-confirmation-description"
     >
       <h2 id="project-repair-confirmation-heading" class="h4">
-        Confirm shared activity repair
+        Confirm activity repair
       </h2>
       <p id="project-repair-confirmation-description">
-        This will repair {@report.summary.repairable_shared_activity_resource_count} shared activity groups affecting {@report.summary.repairable_shared_activity_affected_page_count} Basic pages. Missing activity references will remain unchanged.
+        This will restore {ngettext(
+          "%{count} deleted activity",
+          "%{count} deleted activities",
+          @report.summary.deleted_activity_resource_count
+        )} and repair {ngettext(
+          "%{count} shared activity group",
+          "%{count} shared activity groups",
+          @report.summary.repairable_shared_activity_resource_count
+        )} affecting {ngettext(
+          "%{count} Basic page",
+          "%{count} Basic pages",
+          @report.summary.repairable_shared_activity_affected_page_count
+        )}. Unresolved activity references will remain unchanged.
+      </p>
+      <p>
+        Changes affect only unpublished authoring content. Copies receive new activity ids;
+        existing learner data is not migrated. Publish and update sections separately.
       </p>
       <div class="d-flex gap-2 flex-wrap">
         <button
@@ -344,7 +375,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           phx-disable-with="Repairing..."
           disabled={@repairing?}
         >
-          Confirm repair shared activity references
+          Confirm repair activity references
         </button>
         <button
           type="button"
@@ -359,6 +390,84 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
     """
   end
 
+  attr :report, Report, required: true
+  attr :project_slug, :string, required: true
+
+  defp deleted_references(assigns) do
+    {single_page, shared} =
+      assigns.report.deleted_activity_references
+      |> Enum.sort_by(& &1.activity_resource_id)
+      |> Enum.split_with(&(&1.page_count == 1))
+
+    assigns =
+      assign(assigns, :reference_groups, [
+        {"Referenced by one page", single_page},
+        {"Also shared across pages", shared}
+      ])
+
+    ~H"""
+    <section class="mb-5" aria-labelledby="deleted-activity-heading">
+      <h2 id="deleted-activity-heading" class="h4">References to deleted activities</h2>
+      <p>
+        {ngettext(
+          "%{count} distinct deleted activity",
+          "%{count} distinct deleted activities",
+          @report.summary.deleted_activity_resource_count
+        )}; {ngettext(
+          "%{count} page/activity reference",
+          "%{count} page/activity references",
+          @report.summary.deleted_activity_reference_count
+        )} across {ngettext(
+          "%{count} Basic page",
+          "%{count} Basic pages",
+          @report.summary.deleted_activity_affected_page_count
+        )}. {ngettext(
+          "%{count} of these activities is also shared and included in the shared counts below.",
+          "%{count} of these activities are also shared and included in the shared counts below.",
+          @report.summary.deleted_shared_activity_resource_count
+        )}
+      </p>
+      <p>
+        Repair creates an active revision with the same activity id. Shared activities keep that id
+        on the lowest-id page and receive independent copies on the other pages.
+      </p>
+      <p :if={
+        @report.summary.deleted_activity_resource_count > length(@report.deleted_activity_references)
+      }>
+        Showing the first {length(@report.deleted_activity_references)} activities; counts reflect the full analysis.
+      </p>
+      <p :if={@report.summary.deleted_activity_resource_count == 0} class="alert alert-success">
+        No referenced deleted activities were found in Basic pages.
+      </p>
+      <div :for={{heading, activities} <- @reference_groups} :if={activities != []} class="mb-4">
+        <h3 class="h5">{heading}</h3>
+        <ul>
+          <li :for={group <- activities} class="mb-3 min-w-0 break-words [overflow-wrap:anywhere]">
+            <span :if={group.page_count == 1}>
+              Activity {group.activity_resource_id}:
+              <.page_editor_link page={hd(group.pages)} project_slug={@project_slug} />
+            </span>
+            <span :if={group.page_count > 1}>
+              Activity {group.activity_resource_id}, {Gettext.ngettext(
+                OliWeb.Gettext,
+                "referenced by %{count} page",
+                "referenced by %{count} pages",
+                group.page_count
+              )}:
+            </span>
+            <ul :if={group.page_count > 1} class="list-disc pl-6">
+              <li :for={page <- group.pages} class="break-words [overflow-wrap:anywhere]">
+                <.page_editor_link page={page} project_slug={@project_slug} />
+              </li>
+            </ul>
+            <span :if={group.page_count > length(group.pages)}>(page list truncated)</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+    """
+  end
+
   attr :references, :list, required: true
   attr :summary, Summary, required: true
   attr :project_slug, :string, required: true
@@ -368,20 +477,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
 
     ~H"""
     <section class="mb-5" aria-labelledby="missing-activity-heading">
-      <h2 id="missing-activity-heading" class="h4">Missing activity references</h2>
+      <h2 id="missing-activity-heading" class="h4">Unresolved activity references</h2>
       <p class="text-muted">
-        These references are report-only. This tool does not remove missing activity nodes.
+        These targets cannot be resolved as project activities in the working publication. They are report-only; reference nodes are preserved.
+      </p>
+      <p>
+        {ngettext(
+          "%{count} distinct unresolved activity target",
+          "%{count} distinct unresolved activity targets",
+          @summary.missing_activity_resource_count
+        )} (report-only).
       </p>
       <p
         :if={@summary.missing_activity_reference_count > length(@references)}
         class="text-muted"
       >
-        Showing the first {@issue_preview_limit} missing references. Summary counts above reflect
+        Showing the first {@issue_preview_limit} unresolved references. Summary counts above reflect
         the full analysis.
       </p>
 
       <p :if={Enum.empty?(@references)} class="alert alert-success">
-        No missing activity references were found in Basic pages.
+        No unresolved activity references were found in Basic pages.
       </p>
 
       <div :if={!Enum.empty?(@references)} class="table-responsive">
@@ -391,7 +507,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
           </caption>
           <thead>
             <tr>
-              <th scope="col">Missing activity resource id</th>
+              <th scope="col">Unresolved activity resource id</th>
               <th scope="col">Page</th>
               <th scope="col">Page resource id</th>
             </tr>
@@ -423,7 +539,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
       <h2 id="shared-activity-heading" class="h4">Shared activity references</h2>
       <p class="text-muted">
         Repairable groups will keep the lowest page resource id on the original activity and
-        clone that activity for each other page. Groups whose activity is missing are not repaired.
+        clone that activity for each other page. Deleted originals are restored first. Groups whose activity is unresolved are not repaired.
       </p>
       <p
         :if={
@@ -491,7 +607,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
     <section class={repair_result_alert_class(@result)} role="status" aria-live="polite">
       <h2 class="h4">{repair_result_heading(@result)}</h2>
       <p>
-        Updated {@result.updated_page_count} pages and cloned {@result.cloned_activity_count} activities. The analysis below has been refreshed from current project state.
+        Restored {ngettext(
+          "%{count} deleted activity",
+          "%{count} deleted activities",
+          @result.restored_activity_count
+        )}, updated {ngettext("%{count} page", "%{count} pages", @result.updated_page_count)} and cloned {ngettext(
+          "%{count} activity",
+          "%{count} activities",
+          @result.cloned_activity_count
+        )}. The analysis below has been refreshed from current project state.
       </p>
 
       <ul :if={!Enum.empty?(@result.failures)}>
@@ -551,7 +675,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
     # very large issue list becoming one very large LiveView diff.
     %Report{
       report
-      | missing_activity_references:
+      | deleted_activity_references:
+          report.deleted_activity_references
+          |> Enum.take(@issue_preview_limit)
+          |> Enum.map(&limit_group_pages/1),
+        missing_activity_references:
           Enum.take(report.missing_activity_references, @issue_preview_limit),
         shared_activity_references:
           report.shared_activity_references
@@ -571,12 +699,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
     %RepairResult{result | report_before_repair: nil, report_after_repair: nil}
   end
 
-  defp repairable_shared_groups?(%Report{summary: %Summary{} = summary}) do
-    summary.repairable_shared_activity_resource_count > 0
+  defp repairable_issues?(%Report{summary: %Summary{} = summary}) do
+    summary.repairable_shared_activity_resource_count > 0 or
+      summary.deleted_activity_resource_count > 0
   end
 
+  defp repairability_label(%SharedActivityReference{state: :deleted}), do: "Deleted — repairable"
   defp repairability_label(%SharedActivityReference{repairable?: true}), do: "Repairable"
-  defp repairability_label(%SharedActivityReference{repairable?: false}), do: "Missing activity"
+
+  defp repairability_label(%SharedActivityReference{repairable?: false}),
+    do: "Unresolved activity"
 
   defp repairability_badge_class(%SharedActivityReference{repairable?: true}),
     do: "text-bg-success"
