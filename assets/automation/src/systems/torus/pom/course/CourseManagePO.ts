@@ -75,6 +75,20 @@ export class CourseManagePO {
     );
   }
 
+  async openRegistrationRequiringEnrollment(sectionSlug: string) {
+    await this.page.goto(`/sections/${sectionSlug}/edit`);
+    await this.waitForInviteLiveViewReady();
+
+    const form = this.page.locator('#section-edit-form');
+    await form.getByLabel('Registration open', { exact: true }).check();
+    await form.getByLabel('Requires enrollment', { exact: true }).check();
+    // Every settings group renders its own Save button; all of them submit the whole form.
+    await form.getByRole('button', { name: 'Save', exact: true }).first().click();
+    await Verifier.expectIsVisible(
+      this.page.getByRole('alert').filter({ hasText: 'Section changes saved' }),
+    );
+  }
+
   async getCourseSectionID() {
     return this.courseSectionIDInput.inputValue();
   }

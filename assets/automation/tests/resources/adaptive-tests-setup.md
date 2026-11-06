@@ -65,6 +65,7 @@ DevOps) should upload the files using whatever access method they have available
 | `stellar-life-cycles-training.spec.ts` | `habitable_worlds-stellar_life_cycles_training/course.zip` | `habitable_worlds-stellar_life_cycles_training/answers.json` |
 | `real-chem-greenhouse-molecules.spec.ts` | `real_chem-greenhouse_molecules/course.zip` | `real_chem-greenhouse_molecules/answers.json` |
 | `real-chem-dazzling-d-orbitals.spec.ts` | `real_chem_ii-dazzling_d_orbitals/course.zip` | `real_chem_ii-dazzling_d_orbitals/answers.json` |
+| `real-chem-mobile-invitation.spec.ts` | `real_chem_ii-mobile_invitation/course.zip` | _(none — no secret answers required)_ |
 | `hw-brightness-assessment.spec.ts` | `habitable_worlds-brightness_assessment/course.zip` | _(none — no secret answers required)_ |
 | `lote-plate-tectonics.spec.ts` | `living_on_the_edge-plate_tectonics/course.zip` | `living_on_the_edge-plate_tectonics/answers.json` |
 

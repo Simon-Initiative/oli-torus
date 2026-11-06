@@ -112,6 +112,16 @@ export class StudentCoursePO {
     await this.openPage(pageName);
   }
 
+  async openFirstAvailableLesson() {
+    const startCourse = this.page.getByRole('link', { name: 'Start course', exact: true });
+
+    await Verifier.expectIsVisible(startCourse);
+    await Promise.all([
+      this.page.waitForURL((url) => isStudentLessonPath(url.pathname), { timeout: 15000 }),
+      startCourse.click(),
+    ]);
+  }
+
   /**
    * The title of an opened page. Basic pages render it as a heading. The adaptive
    * lesson header renders it as plain text after a screen-reader "Title:" prefix.
