@@ -507,18 +507,29 @@ defmodule Oli.InstructorDashboard.Recommendations do
 
           case execute_generation(context, scope, service_config, messages, opts) do
             {:ok, %{content: content, metadata: generation_metadata}} ->
+              # An empty completion cannot be persisted as ready, since its message is required.
+              outcome =
+                case String.trim(content) do
+                  "" ->
+                    %{
+                      state: :fallback,
+                      message: @fallback_message,
+                      fallback_reason: :empty_response
+                    }
+
+                  message ->
+                    %{state: :ready, message: message, fallback_reason: nil}
+                end
+
               finalize_instance(
                 generating_instance,
                 context,
                 scope,
                 input_contract,
-                %{
-                  state: :ready,
-                  message: String.trim(content),
-                  fallback_reason: nil,
+                Map.merge(outcome, %{
                   original_prompt: original_prompt,
                   generation_metadata: generation_metadata
-                },
+                }),
                 started_at_ms,
                 opts
               )
