@@ -63,6 +63,14 @@ defmodule Oli.SectionsTest do
       _gc = insert(:gating_condition, user: nil, section: sec, resource: res_4, data: data)
 
       user = insert(:user)
+      # An exception without an end date must not override the hard-schedule label.
+      insert(:student_exception,
+        user: user,
+        section: sec,
+        resource: res_2,
+        late_start: :disallow
+      )
+
       data = Map.put(dt, :end_datetime, ~U[2000-03-17 12:00:00Z])
       _gc = insert(:gating_condition, user: user, section: sec, resource: res_3, data: data)
       data = Map.put(dt, :end_datetime, ~U[2000-03-18 12:00:00Z])

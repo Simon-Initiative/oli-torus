@@ -841,6 +841,35 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   describe "removed soft schedule dates" do
     setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
 
+    for late_start <- [:allow, :disallow] do
+      test "hierarchy retains removed in-class dates only when late starts are disallowed: #{late_start}",
+           %{section: section, page_12: assignment} do
+        end_date = ~U[2024-01-15 23:59:59Z]
+
+        Sections.get_section_resource(section.id, assignment.resource_id)
+        |> Sections.update_section_resource(%{
+          scheduling_type: :inclass_activity,
+          removed_from_schedule: true,
+          late_start: unquote(late_start),
+          end_date: end_date
+        })
+
+        hierarchy = OliWeb.Delivery.Student.LearnLive.get_full_hierarchy(section, :outline, nil)
+
+        node =
+          Oli.Delivery.Hierarchy.find_in_hierarchy(
+            hierarchy,
+            &(&1["resource_id"] == assignment.resource_id)
+          )
+
+        assert node["section_resource"].end_date ==
+                 if(unquote(late_start) == :disallow, do: end_date)
+
+        assert Sections.get_section_resource(section.id, assignment.resource_id).end_date ==
+                 end_date
+      end
+    end
+
     for selected_view <- [:gallery, :outline] do
       @selected_view selected_view
       test "#{selected_view} hides removed advisory dates while preserving assignment deadlines",

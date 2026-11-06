@@ -5639,7 +5639,7 @@ defmodule Oli.Delivery.Sections do
       left_join: se in Oli.Delivery.Settings.StudentException,
       on:
         se.section_id == sr.section_id and se.resource_id == sr.resource_id and
-          se.user_id == ^student_id and not is_nil(se.end_date),
+          se.user_id == ^student_id,
       left_join: gc1 in Oli.Delivery.Gating.GatingCondition,
       on:
         gc1.section_id == sr.section_id and gc1.resource_id == sr.resource_id and
@@ -5664,7 +5664,9 @@ defmodule Oli.Delivery.Sections do
                 ?,
                 CASE WHEN ? = 'null' THEN NULL ELSE CAST(CAST(? AS text) AS timestamp) END,
                 CASE WHEN ? = 'null' THEN NULL ELSE CAST(CAST(? AS text) AS timestamp) END,
-                CASE WHEN ? AND ? != 'due_by' THEN NULL ELSE ? END
+                CASE WHEN ? AND (? = 'read_by' OR
+                  (? = 'inclass_activity' AND COALESCE(?, ?) = 'allow'))
+                  THEN NULL ELSE ? END
             )
             """,
             se.end_date,
@@ -5674,6 +5676,9 @@ defmodule Oli.Delivery.Sections do
             gc2.data["end_datetime"],
             sr.removed_from_schedule,
             sr.scheduling_type,
+            sr.scheduling_type,
+            se.late_start,
+            sr.late_start,
             sr.end_date
           )
           |> type(:utc_datetime),
@@ -5686,7 +5691,7 @@ defmodule Oli.Delivery.Sections do
               ELSE ? END
             ELSE ? END
             """,
-            se.resource_id,
+            se.end_date,
             gc1.resource_id,
             gc2.resource_id,
             sr.scheduling_type,
@@ -5760,9 +5765,16 @@ defmodule Oli.Delivery.Sections do
       slug: rev.slug,
       end_date:
         fragment(
-          "CASE WHEN ? AND ? != 'due_by' THEN ? ELSE coalesce(?, ?) END",
+          """
+          CASE WHEN ? AND (? = 'read_by' OR
+            (? = 'inclass_activity' AND COALESCE(?, ?) = 'allow'))
+            THEN ? ELSE coalesce(?, ?) END
+          """,
           sr.removed_from_schedule,
           sr.scheduling_type,
+          sr.scheduling_type,
+          ds.late_start,
+          sr.late_start,
           ds.end_date,
           ds.end_date,
           sr.end_date

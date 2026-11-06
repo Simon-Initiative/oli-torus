@@ -370,6 +370,52 @@ defmodule Oli.Delivery.SettingsTest do
     assert Oli.Delivery.Sections.Scheduling.for_display(restored).end_date == exception.end_date
   end
 
+  for {base_policy, exception_policy, visible?} <- [
+        {:allow, nil, false},
+        {:disallow, nil, true},
+        {:allow, :disallow, true},
+        {:disallow, :allow, false}
+      ] do
+    test "removed in-class date with #{base_policy} late starts and #{inspect(exception_policy)} exception has visibility #{visible?}" do
+      end_date = DateTime.add(DateTime.utc_now(), -2, :day)
+
+      resource = %SectionResource{
+        scheduling_type: :inclass_activity,
+        removed_from_schedule: true,
+        end_date: end_date,
+        late_start: unquote(base_policy)
+      }
+
+      exception =
+        case unquote(exception_policy) do
+          nil -> nil
+          policy -> %StudentException{late_start: policy}
+        end
+
+      settings = Settings.combine(%Revision{resource_id: 42}, resource, exception)
+      display = Oli.Delivery.Sections.Scheduling.for_display(settings)
+
+      assert display.end_date == if(unquote(visible?), do: end_date)
+      assert settings.end_date == end_date
+
+      assert Settings.new_attempt_allowed(settings, 0, []) ==
+               if(unquote(visible?), do: {:end_date_passed}, else: {:allowed})
+    end
+  end
+
+  test "removed in-class dates retain explicit student date exceptions even with late starts allowed" do
+    resource = %SectionResource{
+      scheduling_type: :inclass_activity,
+      removed_from_schedule: true,
+      late_start: :allow
+    }
+
+    exception = %StudentException{end_date: ~U[2100-02-01 00:00:00Z]}
+    settings = Settings.combine(%Revision{resource_id: 42}, resource, exception)
+
+    assert Oli.Delivery.Sections.Scheduling.for_display(settings).end_date == exception.end_date
+  end
+
   test "combine/3 honors student exceptions" do
     revision = %Revision{
       max_attempts: 5

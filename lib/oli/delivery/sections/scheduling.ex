@@ -27,9 +27,9 @@ defmodule Oli.Delivery.Sections.Scheduling do
   Projects resource dates or combined settings for student schedule display.
 
   Removal hides advisory container ranges and page completion dates. Assignment
-  deadlines, page availability dates, and student-specific date exceptions remain
-  visible. Stored dates and effective settings used for attempt availability and
-  submission policy are not changed.
+  deadlines, in-class dates that disallow late starts, page availability dates,
+  and student-specific date exceptions remain visible. Stored dates and effective
+  settings used for attempt availability and submission policy are not changed.
   """
   @spec for_display(map()) :: map()
   def for_display(
@@ -41,8 +41,14 @@ defmodule Oli.Delivery.Sections.Scheduling do
 
   def for_display(%{end_date_is_exception: true} = settings), do: settings
 
-  def for_display(%{removed_from_schedule: true, scheduling_type: type} = settings)
-      when type in [:read_by, :inclass_activity] do
+  def for_display(%{removed_from_schedule: true, scheduling_type: :read_by} = settings) do
+    %{settings | end_date: nil}
+  end
+
+  def for_display(
+        %{removed_from_schedule: true, scheduling_type: :inclass_activity, late_start: :allow} =
+          settings
+      ) do
     %{settings | end_date: nil}
   end
 
