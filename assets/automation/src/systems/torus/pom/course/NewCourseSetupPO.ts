@@ -18,7 +18,7 @@ export class NewCourseSetupPO {
   constructor(private readonly page: Page) {
     this.utils = new Utils(page);
     this.stepperContent = page.locator('#stepper_content');
-    this.searchInput = page.getByRole('textbox', { name: 'Search', exact: true });
+    this.searchInput = page.getByRole('textbox', { name: 'Search course sources', exact: true });
     this.courseNameInput = page.locator('#section_title');
     this.sectionNumberInput = page.locator('#section_course_section_number');
     this.nextStepButton = page.getByRole('button', { name: 'Next step' });

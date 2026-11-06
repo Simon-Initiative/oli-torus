@@ -413,7 +413,7 @@ export async function createTorusSectionFromLaunch(
   await expect(stepperContent.getByRole('heading', { name: 'Select Curriculum' })).toBeVisible({
     timeout: 30_000,
   });
-  const searchInput = stepperContent.getByRole('textbox', { name: 'Search', exact: true });
+  const searchInput = stepperContent.getByRole('textbox', { name: 'Search course sources', exact: true });
   await searchInput.fill('');
   await searchInput.pressSequentially(sourceTitle, { delay: 20 });
   await searchInput.press('Enter');
