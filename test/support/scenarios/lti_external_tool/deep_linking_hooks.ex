@@ -44,6 +44,9 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
                deep_linking_enabled: true
              })
 
+    assert {:ok, _} =
+             PlatformExternalTools.grant_project(deployment, state.projects[@project].project.id)
+
     %{state | params: Map.merge(state.params, %{platform: platform, deployment: deployment})}
   end
 

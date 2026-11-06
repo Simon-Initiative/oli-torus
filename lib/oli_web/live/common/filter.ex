@@ -20,9 +20,11 @@ defmodule OliWeb.Common.Filter do
   attr :placeholder, :string, default: "Search..."
   attr :aria_label, :string, required: true
   attr :debounce, :string, default: nil
+  attr :clear_id, :string, default: "reset_search", doc: "unique per page when it has two filters"
 
-  # `apply_icon: true` is a self-contained, single-consumer live-search variant (currently only
-  # `OliWeb.Delivery.NewCourse.SelectSource`). It renders as a real `<form>` because
+  # `apply_icon: true` is a self-contained live-search variant (used by
+  # `OliWeb.Delivery.NewCourse.SelectSource` and, twice, by `OliWeb.Admin.ExternalTools.DetailsView`,
+  # which passes a `clear_id` per filter). It renders as a real `<form>` because
   # `phx-change` only fires on every keystroke (rather than only on blur/submit) when bound to a
   # `<form>` — the same convention already used elsewhere in this codebase for live-as-you-type
   # search (e.g. `hierarchy_picker.ex`), not when bound directly to a bare `<input>`.
@@ -46,7 +48,7 @@ defmodule OliWeb.Common.Filter do
         aria_label={@aria_label}
         class="w-full"
         on_clear={if @show_reset, do: @reset}
-        clear_id="reset_search"
+        clear_id={@clear_id}
         phx-debounce={@debounce}
       />
     </form>
@@ -64,7 +66,7 @@ defmodule OliWeb.Common.Filter do
         aria_label={@aria_label}
         class="min-w-0 flex-1"
         on_clear={if @show_reset, do: @reset}
-        clear_id="reset_search"
+        clear_id={@clear_id}
         phx-change={@change}
         phx-blur={@change}
         phx-debounce={@debounce}

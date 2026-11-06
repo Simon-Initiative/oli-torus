@@ -20,6 +20,39 @@ defmodule Oli.ActivityEditingTest do
       |> Seeder.add_objective("objective 2", :obj2)
     end
 
+    test "create_bulk skips an unknown activity type and persists the valid item", %{
+      author: author,
+      project: project
+    } do
+      item = fn slug, title ->
+        %{
+          "activityTypeSlug" => slug,
+          "objectives" => [],
+          "content" => %{},
+          "title" => title,
+          "tags" => []
+        }
+      end
+
+      before_ids = Repo.all(from r in Resources.Revision, select: r.id)
+
+      result =
+        ActivityEditor.create_bulk(project.slug, author, [
+          item.("unknown_bulk_probe_type", "Unknown bulk item"),
+          item.("oli_multiple_choice", "Valid bulk item")
+        ])
+
+      persisted =
+        Repo.all(
+          from r in Resources.Revision,
+            where: r.id not in ^before_ids,
+            select: {r.title, r.resource_id}
+        )
+
+      assert {:ok, [%{activity_type_slug: "oli_multiple_choice", activity: activity}]} = result
+      assert persisted == [{"Valid bulk item", activity.resource_id}]
+    end
+
     test "create/4 creates an activity revision", %{author: author, project: project} do
       content = %{"stem" => "Hey there"}
 

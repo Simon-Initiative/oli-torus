@@ -384,17 +384,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             module={AdvancedActivityItem}
             id={"advanced-activity-item-#{activity.id}"}
             activity={activity}
-            project_id={@project.id}
+            project={@project}
+            current_author={@current_author}
           />
         <% end %>
         <button
           type="button"
           class="btn btn-primary mt-4"
           phx-click={
-            JS.push("show_modal",
-              target: "#add-activities-tools",
-              value: %{project_id: @project.id}
-            )
+            JS.push("show_modal", target: "#add-activities-tools")
             |> Modal.show_modal("add-activities-tools-modal")
           }
         >
@@ -404,7 +402,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         <.live_component
           module={OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal}
           id="add-activities-tools"
-          project_id={@project.id}
+          project={@project}
+          current_author={@current_author}
           is_admin={@is_admin}
         />
       </Overview.section>
@@ -1035,7 +1034,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     {:noreply,
      assign(socket,
        project_selected_activities:
-         Activities.selected_activities_for_project(socket.assigns.project.id)
+         Activities.selected_activities_for_project(
+           socket.assigns.project.id,
+           socket.assigns.is_admin
+         )
      )}
   end
 

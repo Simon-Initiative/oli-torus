@@ -23,6 +23,11 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
           render_fn: &render_status_column/3
         },
         %ColumnSpec{
+          name: :availability,
+          label: "Availability",
+          render_fn: &render_availability_column/3
+        },
+        %ColumnSpec{
           name: :inserted_at,
           label: "Date Added",
           render_fn: &render_date_column/3
@@ -59,6 +64,16 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
       end
     ]}>
       {String.capitalize(Atom.to_string(@status))}
+    </span>
+    """
+  end
+
+  def render_availability_column(assigns, row, _) do
+    assigns = Map.merge(assigns, %{availability: row.availability})
+
+    ~H"""
+    <span class="text-sm font-bold text-Text-text-high">
+      {String.capitalize(Atom.to_string(@availability))}
     </span>
     """
   end

@@ -1,10 +1,13 @@
 defmodule OliWeb.Components.Project.AdvancedActivityItem do
   use OliWeb, :live_component
 
+  alias Oli.Accounts
+  alias Oli.Accounts.Author
   alias Oli.Activities
 
   attr :activity, :map, required: true
-  attr :project_id, :integer, required: true
+  attr :project, :map, required: true
+  attr :current_author, :map, required: true
 
   def render(assigns) do
     ~H"""
@@ -19,10 +22,6 @@ defmodule OliWeb.Components.Project.AdvancedActivityItem do
       <div class="user-actions">
         <button
           phx-click="toggle_activity"
-          phx-value-project_id={@project_id}
-          phx-value-activity_id={@activity.id}
-          phx-value-status={@activity.project_status}
-          phx-value-title={@activity.title}
           phx-target={@myself}
           class="btn justify-start text-[#0165da] text-base font-medium"
         >
@@ -33,50 +32,47 @@ defmodule OliWeb.Components.Project.AdvancedActivityItem do
     """
   end
 
-  def handle_event(
-        "toggle_activity",
-        %{
-          "project_id" => project_id,
-          "activity_id" => activity_id,
-          "status" => "enabled",
-          "title" => title
-        },
-        socket
-      ) do
-    case Activities.disable_activity_in_project(project_id, activity_id) do
-      :ok ->
-        send(self(), {:flash_message, {:info, "Activity `#{title}` disabled successfully."}})
+  def handle_event("toggle_activity", _params, socket) do
+    %{activity: activity, project: project, current_author: current_author} = socket.assigns
 
-        {:noreply,
-         assign(socket, activity: %{socket.assigns.activity | project_status: :disabled})}
-
-      {:error, message} ->
-        send(self(), {:flash_message, {:error, message}})
-
+    with %Author{} = author <- Accounts.get_author(current_author.id),
+         true <- Accounts.can_access?(author, project) do
+      toggle(socket, activity, project)
+    else
+      _ ->
+        send(self(), {:flash_message, {:error, "You don't have access to this project."}})
         {:noreply, socket}
     end
   end
 
-  def handle_event(
-        "toggle_activity",
-        %{
-          "project_id" => project_id,
-          "activity_id" => activity_id,
-          "status" => "disabled",
-          "title" => title
-        },
-        socket
-      ) do
-    case Activities.enable_activity_in_project(project_id, activity_id) do
+  defp toggle(socket, %{project_status: :enabled} = activity, project) do
+    case Activities.disable_activity_in_project(project.id, activity.id) do
       :ok ->
-        send(self(), {:flash_message, {:info, "Activity `#{title}` enabled successfully."}})
+        send(
+          self(),
+          {:flash_message, {:info, "Activity `#{activity.title}` disabled successfully."}}
+        )
 
-        {:noreply,
-         assign(socket, activity: %{socket.assigns.activity | project_status: :enabled})}
+        {:noreply, assign(socket, activity: %{activity | project_status: :disabled})}
 
       {:error, message} ->
         send(self(), {:flash_message, {:error, message}})
+        {:noreply, socket}
+    end
+  end
 
+  defp toggle(socket, %{project_status: :disabled} = activity, project) do
+    case Activities.enable_activity_in_project(project.id, activity.id) do
+      :ok ->
+        send(
+          self(),
+          {:flash_message, {:info, "Activity `#{activity.title}` enabled successfully."}}
+        )
+
+        {:noreply, assign(socket, activity: %{activity | project_status: :enabled})}
+
+      {:error, message} ->
+        send(self(), {:flash_message, {:error, message}})
         {:noreply, socket}
     end
   end

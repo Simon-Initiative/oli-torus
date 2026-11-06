@@ -7,6 +7,7 @@ defmodule OliWeb.CognitoControllerTest do
   alias Oli.{Accounts, Groups}
   alias Oli.Authoring.{Clone, Course}
   alias Oli.Delivery.Sections
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolProjectGrant
 
   setup do
     community = insert(:community, name: "Infiniscope")
@@ -696,6 +697,43 @@ defmodule OliWeb.CognitoControllerTest do
              |> get(Routes.cognito_path(conn, :clone, "this_project_slug_does_not_exist"))
              |> html_response(302) =~
                "<html><body>You are being <a href=\"/unauthorized?error=Invalid template or project"
+    end
+  end
+
+  describe "clone by an author who does not collaborate on the project" do
+    test "gives the copy none of the project's tool grants", %{conn: conn, project: project} do
+      non_collaborator = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().author})
+
+      tool =
+        insert(:lti_external_tool_activity_deployment,
+          availability: :private,
+          activity_registration: build(:activity_registration, globally_available: false)
+        )
+
+      Oli.Repo.insert!(%LtiExternalToolProjectGrant{
+        deployment_id: tool.deployment_id,
+        project_id: project.id
+      })
+
+      conn =
+        conn
+        |> log_in_author(non_collaborator)
+        |> get(Routes.cognito_path(conn, :clone, project.slug))
+
+      "/workspaces/course_author/" <> path = redirected_to(conn)
+      copy = path |> String.split("/") |> hd() |> Course.get_project_by_slug()
+
+      assert copy.project_id == project.id
+
+      assert Oli.Repo.get_by(LtiExternalToolProjectGrant,
+               deployment_id: tool.deployment_id,
+               project_id: project.id
+             )
+
+      refute Oli.Repo.get_by(LtiExternalToolProjectGrant,
+               deployment_id: tool.deployment_id,
+               project_id: copy.id
+             )
     end
   end
 

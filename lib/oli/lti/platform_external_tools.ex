@@ -12,9 +12,12 @@ defmodule Oli.Lti.PlatformExternalTools do
   alias Oli.Activities.ActivityRegistration
   alias Oli.Delivery.Sections.{Section, SectionResource}
 
+  alias Oli.Authoring.Course.Project
+
   alias Oli.Lti.PlatformExternalTools.{
     BrowseOptions,
     LtiExternalToolActivityDeployment,
+    LtiExternalToolProjectGrant,
     LtiSectionResourceDeepLink
   }
 
@@ -168,6 +171,102 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
+  Sets a deployment's availability to `:public` (any project can add the tool) or `:private` (only projects with a
+  grant can), changing nothing else. Grants are kept in both states.
+  """
+  @spec set_availability(LtiExternalToolActivityDeployment.t(), :public | :private) ::
+          {:ok, LtiExternalToolActivityDeployment.t()} | {:error, Ecto.Changeset.t()}
+  def set_availability(%LtiExternalToolActivityDeployment{} = deployment, availability) do
+    deployment
+    |> LtiExternalToolActivityDeployment.availability_changeset(%{availability: availability})
+    |> Repo.update()
+  end
+
+  @doc """
+  Grants an active project access to a deployment, so the project can add the tool while it is Private. The grant
+  neither adds nor enables the tool in the project, and granting an already granted project changes nothing; the
+  grant returned then is not the stored row (its id is nil), so callers read the grants again instead of using it.
+  Returns `{:error, :project_not_active}` for a deleted or unknown project.
+  """
+  @spec grant_project(LtiExternalToolActivityDeployment.t(), integer()) ::
+          {:ok, LtiExternalToolProjectGrant.t()}
+          | {:error, :project_not_active}
+          | {:error, Ecto.Changeset.t()}
+  def grant_project(%LtiExternalToolActivityDeployment{deployment_id: deployment_id}, project_id) do
+    case Repo.get(Project, project_id) do
+      %Project{status: :active} ->
+        %LtiExternalToolProjectGrant{}
+        |> LtiExternalToolProjectGrant.changeset(%{
+          deployment_id: deployment_id,
+          project_id: project_id
+        })
+        |> Repo.insert(on_conflict: :nothing, conflict_target: [:deployment_id, :project_id])
+
+      _ ->
+        {:error, :project_not_active}
+    end
+  end
+
+  @doc """
+  Removes a project's grant for a deployment. Tools the project already added stay added.
+  """
+  @spec revoke_project(LtiExternalToolActivityDeployment.t(), integer()) :: :ok
+  def revoke_project(%LtiExternalToolActivityDeployment{deployment_id: deployment_id}, project_id) do
+    from(g in LtiExternalToolProjectGrant,
+      where: g.deployment_id == ^deployment_id and g.project_id == ^project_id
+    )
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  @doc """
+  Lists the projects granted access to a deployment, ordered by title.
+  """
+  @spec list_granted_projects(LtiExternalToolActivityDeployment.t()) :: [Project.t()]
+  def list_granted_projects(%LtiExternalToolActivityDeployment{deployment_id: deployment_id}) do
+    from(p in Project,
+      join: g in LtiExternalToolProjectGrant,
+      on: g.project_id == p.id,
+      where: g.deployment_id == ^deployment_id,
+      order_by: [asc: p.title, asc: p.id]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns up to `limit` active projects, ordered by title, whose title or slug contains literal `text` (case-insensitive) and
+  that are not yet granted access to the deployment.
+  """
+  @spec search_projects_to_grant(LtiExternalToolActivityDeployment.t(), String.t(), pos_integer()) ::
+          [Project.t()]
+  def search_projects_to_grant(
+        %LtiExternalToolActivityDeployment{deployment_id: deployment_id},
+        text,
+        limit
+      ) do
+    escaped_text =
+      text
+      |> String.trim()
+      |> String.replace("\\", "\\\\")
+      |> String.replace("%", "\\%")
+      |> String.replace("_", "\\_")
+
+    pattern = "%#{escaped_text}%"
+
+    from(p in Project,
+      left_join: g in LtiExternalToolProjectGrant,
+      on: g.project_id == p.id and g.deployment_id == ^deployment_id,
+      where:
+        p.status == :active and is_nil(g.id) and
+          (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern)),
+      order_by: [asc: p.title, asc: p.id],
+      limit: ^limit
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for tracking lti external tool deployment changes.
   """
   def change_lti_external_tool_activity_deployment(
@@ -228,6 +327,7 @@ defmodule Oli.Lti.PlatformExternalTools do
           description: p.description,
           inserted_at: p.inserted_at,
           status: lad.status,
+          availability: lad.availability,
           total_count: fragment("count(*) OVER()")
         }
 
@@ -236,8 +336,8 @@ defmodule Oli.Lti.PlatformExternalTools do
         field when field in [:name, :description, :inserted_at] ->
           order_by(query, [p], {^direction, field(p, ^field)})
 
-        :status ->
-          order_by(query, [_p, lad], {^direction, lad.status})
+        field when field in [:status, :availability] ->
+          order_by(query, [_p, lad], {^direction, field(lad, ^field)})
 
         _ ->
           query

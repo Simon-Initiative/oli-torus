@@ -6,6 +6,7 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsViewTest do
   import Oli.Factory
   import Oli.TestHelpers
 
+  alias Oli.Lti.PlatformExternalTools
   alias OliWeb.Admin.ExternalTools.{ExternalToolsView, TableModel}
 
   describe "External Tools LiveView" do
@@ -229,6 +230,34 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsViewTest do
       refute has_element?(view, "td", "Platform Three")
       refute has_element?(view, "td", "Platform One")
       refute has_element?(view, "td", "Platform Two")
+    end
+
+    test "shows each tool's availability and sorts by it", %{
+      conn: conn,
+      deployment2: deployment2
+    } do
+      {:ok, _} = PlatformExternalTools.set_availability(deployment2, :private)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/admin/external_tools?sort_by=availability&sort_order=asc&include_disabled=false"
+        )
+
+      assert has_element?(view, "th", "Availability")
+
+      rows =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("tbody tr")
+        |> Enum.map(fn row ->
+          row |> Floki.find("td") |> Enum.map(&(&1 |> Floki.text() |> String.trim()))
+        end)
+
+      assert [["Platform Two" | private_cells], ["Platform One" | public_cells]] = rows
+      assert "Private" in private_cells
+      assert "Public" in public_cells
     end
 
     test "updates results when toggling include_disabled checkbox", %{conn: conn} do
