@@ -7,15 +7,11 @@ defmodule Oli.GenAI.Dialogue.FallbackTest do
   test "returns an error when primary provider fails" do
     # Configure a bogus primary model that simulates a failure
     primary = %RegisteredModel{
-      provider: :open_ai,
-      model: "foo",
-      url_template: "https://api.thisserverdoesnotexist.com"
+      model: "foo"
     }
 
     backup = %RegisteredModel{
-      provider: :null,
-      model: "bar",
-      url_template: "https://api.null.com/v1/chat/completions"
+      model: "bar"
     }
 
     service_config = %ServiceConfig{primary_model: primary, backup_model: backup}

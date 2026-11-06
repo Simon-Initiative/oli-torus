@@ -2,14 +2,12 @@ defmodule Oli.GenAI.HackneyPoolTest do
   use ExUnit.Case, async: true
 
   alias Oli.GenAI.HackneyPool
-  alias Oli.GenAI.Completions.RegisteredModel
 
   describe "pool_name/0" do
     test "returns the expected pool name" do
       assert HackneyPool.pool_name() == :genai_slow_pool
       assert HackneyPool.pool_name(:slow) == :genai_slow_pool
       assert HackneyPool.pool_name(:fast) == :genai_fast_pool
-      assert HackneyPool.pool_name(%RegisteredModel{pool_class: :fast}) == :genai_fast_pool
     end
   end
 

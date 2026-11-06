@@ -109,6 +109,9 @@ defmodule OliWeb.Admin.AdminView do
         <Group.render label="GenAI Features" description="Manage and support GenAI based features">
           <ul class="link-list">
             <li>
+              <a href={~p"/admin/gen_ai/providers"}>Manage GenAI Providers and health</a>
+            </li>
+            <li>
               <a href={~p"/admin/gen_ai/registered_models"}>Manage registered LLM models</a>
             </li>
             <li>

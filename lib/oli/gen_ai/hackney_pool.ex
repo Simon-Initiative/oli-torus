@@ -24,8 +24,6 @@ defmodule Oli.GenAI.HackneyPool do
   use GenServer
   require Logger
 
-  alias Oli.GenAI.Completions.RegisteredModel
-
   @fast_pool_name :genai_fast_pool
   @slow_pool_name :genai_slow_pool
   @default_pool_size 100
@@ -41,13 +39,11 @@ defmodule Oli.GenAI.HackneyPool do
   def pool_name, do: @slow_pool_name
 
   @doc """
-  Returns the pool name for a given pool class or RegisteredModel.
+  Returns the pool name for an explicit shared pool kind.
   """
-  @spec pool_name(:fast | :slow | RegisteredModel.t()) :: atom()
+  @spec pool_name(:fast | :slow) :: atom()
   def pool_name(:fast), do: @fast_pool_name
   def pool_name(:slow), do: @slow_pool_name
-  def pool_name(%RegisteredModel{pool_class: pool_class}), do: pool_name(pool_class)
-  def pool_name(_), do: @slow_pool_name
 
   @doc """
   Returns the configured pool size for the slow pool (default).
@@ -56,7 +52,7 @@ defmodule Oli.GenAI.HackneyPool do
   def pool_size, do: pool_size(:slow)
 
   @doc """
-  Returns the configured pool size for the given pool class.
+  Returns the configured pool size for the given shared pool kind.
   """
   @spec pool_size(:fast | :slow) :: pos_integer()
   def pool_size(:fast) do
@@ -68,29 +64,29 @@ defmodule Oli.GenAI.HackneyPool do
   end
 
   @doc """
-  Returns the current max connections for the given pool class.
+  Returns the current max connections for the given shared pool kind.
   Falls back to configured pool size if the pool isn't available.
   """
   @spec max_connections(:fast | :slow) :: pos_integer()
-  def max_connections(pool_class) do
-    pool_name = pool_name(pool_class)
+  def max_connections(pool_kind) do
+    pool_name = pool_name(pool_kind)
 
     try do
       case :hackney_pool.max_connections(pool_name) do
         size when is_integer(size) -> size
-        _ -> pool_size(pool_class)
+        _ -> pool_size(pool_kind)
       end
     catch
-      :exit, _ -> pool_size(pool_class)
+      :exit, _ -> pool_size(pool_kind)
     end
   end
 
   @doc """
-  Sets the max connections for the given pool class at runtime.
+  Sets the max connections for the given shared pool kind at runtime.
   """
   @spec set_max_connections(:fast | :slow, pos_integer()) :: :ok
-  def set_max_connections(pool_class, size) when is_integer(size) and size > 0 do
-    pool_name = pool_name(pool_class)
+  def set_max_connections(pool_kind, size) when is_integer(size) and size > 0 do
+    pool_name = pool_name(pool_kind)
     :hackney_pool.set_max_connections(pool_name, size)
     :ok
   end

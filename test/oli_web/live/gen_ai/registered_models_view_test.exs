@@ -1,131 +1,170 @@
+# Acceptance coverage: AC-018.
 defmodule OliWeb.GenAI.RegisteredModelsViewTest do
   use OliWeb.ConnCase
-
   import Phoenix.LiveViewTest
-
+  alias Oli.GenAI
   alias Oli.GenAI.Completions.RegisteredModel
-  alias Oli.GenAI.HackneyPool
-  alias Oli.Repo
+  @route "/admin/gen_ai/registered_models"
 
-  @route Routes.live_path(OliWeb.Endpoint, OliWeb.GenAI.RegisteredModelsView)
+  describe "authorized model administration (AC-003, AC-018, AC-021)" do
+    setup [:admin_conn]
 
-  describe "admins can manage registered models and pool sizes" do
-    setup [:admin_conn, :create_registered_model]
-
-    test "updates pool sizes via admin form", %{conn: conn} do
-      fast_size = HackneyPool.max_connections(:fast)
-      slow_size = HackneyPool.max_connections(:slow)
-
-      on_exit(fn ->
-        HackneyPool.set_max_connections(:fast, fast_size)
-        HackneyPool.set_max_connections(:slow, slow_size)
-      end)
-
-      {:ok, view, _html} = live(conn, @route)
-
-      view
-      |> element("form#toggle_editing")
-      |> render_change(%{"toggle_editing" => "on"})
-
-      view
-      |> form("#pool-sizes-form",
-        pool_sizes: %{"fast_pool_size" => "12", "slow_pool_size" => "34"}
-      )
-      |> render_submit()
-      |> then(fn html ->
-        assert html =~ "Updated GenAI pool sizes"
-        html
-      end)
-    end
-
-    test "rejects pool sizes above configured max", %{conn: conn} do
-      previous = Application.get_env(:oli, :genai_hackney_pool_max_size, 1000)
-
-      Application.put_env(:oli, :genai_hackney_pool_max_size, 10)
-
-      on_exit(fn ->
-        Application.put_env(:oli, :genai_hackney_pool_max_size, previous)
-      end)
-
-      {:ok, view, _html} = live(conn, @route)
-
-      view
-      |> element("form#toggle_editing")
-      |> render_change(%{"toggle_editing" => "on"})
-
-      view
-      |> form("#pool-sizes-form",
-        pool_sizes: %{"fast_pool_size" => "11", "slow_pool_size" => "10"}
-      )
-      |> render_submit()
-      |> then(fn html ->
-        assert html =~ "Pool size for fast must be &lt;= 10"
-        html
-      end)
-    end
-
-    test "updates pool class and max concurrent values", %{
-      conn: conn,
-      registered_model: registered_model
+    test "edits Provider membership, designation and timeouts without legacy controls", %{
+      conn: conn
     } do
-      {:ok, view, _html} = live(conn, @route)
+      {:ok, provider} = GenAI.create_provider(%{name: "Local test", adapter: :null})
 
-      render_click(view, "select_model", %{"id" => to_string(registered_model.id)})
+      {:ok, model} =
+        GenAI.create_registered_model(%{
+          name: "Local model",
+          model: "null",
+          provider_id: provider.id
+        })
 
-      view
-      |> element("form#toggle_editing")
-      |> render_change(%{"toggle_editing" => "on"})
-
-      params = %{
-        "name" => registered_model.name,
-        "provider" => "open_ai",
-        "model" => registered_model.model,
-        "pool_class" => "fast",
-        "max_concurrent" => "25",
-        "routing_breaker_error_rate_threshold" => "0.25",
-        "routing_breaker_429_threshold" => "0.15",
-        "routing_breaker_latency_p95_ms" => "6500",
-        "routing_open_cooldown_ms" => "40000",
-        "routing_half_open_probe_count" => "4",
-        "url_template" => registered_model.url_template,
-        "api_key" => "secret",
-        "secondary_api_key" => "secret",
-        "timeout" => "8000",
-        "recv_timeout" => "60000"
-      }
+      {:ok, view, html} = live(conn, @route)
+      refute html =~ "Breaker"
+      refute html =~ "Max Concurrent"
+      refute html =~ "Fast Pool"
+      refute html =~ "API Key"
+      render_click(view, "select_model", %{"id" => to_string(model.id)})
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
 
       view
-      |> form("#registered-model-form", registered_model: params)
+      |> form("#registered-model-form",
+        registered_model: %{
+          name: "Edited",
+          model: "null-next",
+          provider_id: provider.id,
+          health_check: "true",
+          timeout: "9000",
+          recv_timeout: "120000"
+        }
+      )
       |> render_submit()
-      |> then(fn html ->
-        refute html =~ "Couldn't update registered model"
-        html
-      end)
 
-      updated = Repo.get!(RegisteredModel, registered_model.id)
-      assert updated.pool_class == :fast
-      assert updated.max_concurrent == 25
-      assert updated.routing_breaker_error_rate_threshold == 0.25
-      assert updated.routing_breaker_429_threshold == 0.15
-      assert updated.routing_breaker_latency_p95_ms == 6500
-      assert updated.routing_open_cooldown_ms == 40_000
-      assert updated.routing_half_open_probe_count == 4
+      updated = Oli.Repo.get!(RegisteredModel, model.id)
+      assert updated.name == "Edited" and updated.health_check
+      assert updated.timeout == 9000 and updated.recv_timeout == 120_000
     end
-  end
 
-  defp create_registered_model(_context) do
-    registered_model =
-      Repo.insert!(%RegisteredModel{
-        name: "Test Model",
-        provider: :open_ai,
-        model: "gpt-4-test",
-        url_template: "http://localhost",
-        api_key: "secret",
-        secondary_api_key: "secret",
-        timeout: 8000,
-        recv_timeout: 60_000
-      })
+    test "dependent configuration errors preserve model form and identify the blocked relationship",
+         %{conn: conn} do
+      {:ok, provider} = GenAI.create_provider(%{name: "Main", adapter: :null})
+      {:ok, other} = GenAI.create_provider(%{name: "Other", adapter: :null})
 
-    {:ok, registered_model: registered_model}
+      {:ok, primary} =
+        GenAI.create_registered_model(%{
+          name: "Primary",
+          model: "p",
+          provider_id: provider.id
+        })
+
+      {:ok, secondary} =
+        GenAI.create_registered_model(%{
+          name: "Secondary",
+          model: "s",
+          provider_id: provider.id
+        })
+
+      {:ok, _} =
+        GenAI.create_service_config(%{
+          name: "Dependent config",
+          primary_model_id: primary.id,
+          secondary_model_id: secondary.id
+        })
+
+      {:ok, view, _} = live(conn, @route)
+      render_click(view, "select_model", %{"id" => to_string(secondary.id)})
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
+
+      html =
+        view
+        |> form("#registered-model-form",
+          registered_model: %{
+            name: "Secondary",
+            model: "s",
+            provider_id: other.id
+          }
+        )
+        |> render_submit()
+
+      assert html =~ "Dependent config"
+      assert has_element?(view, "#registered_model_name[value=Secondary]")
+      assert Oli.Repo.get!(RegisteredModel, secondary.id).provider_id == provider.id
+
+      assert render_click(view, "delete") =~ "Model is referenced"
+      assert Oli.Repo.get!(RegisteredModel, secondary.id)
+    end
+
+    test "model transport settings follow the selected Provider", %{conn: conn} do
+      {:ok, provider} = GenAI.create_provider(%{name: "Local", adapter: :null})
+
+      {:ok, other} =
+        GenAI.create_provider(%{
+          name: "Remote",
+          adapter: :open_ai,
+          base_url: "https://example.test",
+          api_key: "dummy-key"
+        })
+
+      {:ok, model} =
+        GenAI.create_registered_model(%{
+          name: "Local model",
+          model: "null",
+          provider_id: provider.id
+        })
+
+      {:ok, view, _} = live(conn, @route)
+      render_click(view, "select_model", %{"id" => to_string(model.id)})
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
+
+      html =
+        view
+        |> form("#registered-model-form", registered_model: %{provider_id: other.id})
+        |> render_submit()
+
+      refute html =~ "Changing transport adapter requires a new model"
+      assert Oli.Repo.get!(RegisteredModel, model.id).provider_id == other.id
+    end
+
+    test "model tests run asynchronously and show only a safe result", %{conn: conn} do
+      {:ok, provider} = GenAI.create_provider(%{name: "Local diagnostics", adapter: :null})
+
+      {:ok, model} =
+        GenAI.create_registered_model(%{
+          name: "Diagnostic model",
+          model: "null",
+          provider_id: provider.id
+        })
+
+      loaded = Oli.GenAI.Configuration.runtime_configuration(reconcile_probes: false)
+      manager = start_supervised!({Oli.GenAI.PoolManager, namespace: make_ref(), poll_ms: 10})
+      tasks = start_supervised!({Task.Supervisor, max_children: 2})
+
+      runtime =
+        start_supervised!(
+          {Oli.GenAI.Runtime,
+           source: fn -> loaded end,
+           enabled: false,
+           pool_manager: manager,
+           task_supervisor: tasks,
+           probe: fn _, _ -> :ok end}
+        )
+
+      assert :ok = Oli.GenAI.Runtime.reconcile(runtime)
+      {:ok, view, _} = live(conn, @route)
+      render_click(view, "select_model", %{"id" => to_string(model.id)})
+      render_click(view, "test")
+      html = render_async(view)
+      assert html =~ "Test successful"
+      refute html =~ "No generation performed"
+    end
+
+    test "server enforces edit mode and handles new unsaved models", %{conn: conn} do
+      {:ok, view, _} = live(conn, @route)
+      assert render_click(view, "save", %{"registered_model" => %{}}) =~ "Enable editing first"
+      view |> element("form#toggle_editing") |> render_change(%{"toggle_editing" => "on"})
+      assert render_click(view, "new_model") =~ "Select a Provider"
+    end
   end
 end
