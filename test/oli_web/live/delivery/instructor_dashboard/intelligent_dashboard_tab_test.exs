@@ -4,6 +4,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
   import ExUnit.CaptureLog
   import Oli.Factory
 
+  alias Oli.Dashboard.LiveDataCoordinator
+  alias Oli.Dashboard.Oracle.Result
   alias Oli.Delivery.Sections
   alias Oli.InstructorDashboard.SummaryRecommendationAdapter
   alias Oli.Resources.ResourceType
@@ -202,6 +204,83 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                )
 
       assert socket.assigns.dashboard_inflight_oracles == MapSet.new([:unrelated])
+    end
+
+    test "a scope change queued during rapid navigation loads with its own scope once promoted" do
+      section = insert(:section)
+      user = insert(:user)
+      scope_a = %{container_type: :container, container_id: 101}
+      scope_b = %{container_type: :course, container_id: nil}
+      profile = %{required: [:oracle_instructor_scope_resources], optional: []}
+
+      context_for = fn scope ->
+        %{
+          dashboard_context_type: :section,
+          dashboard_context_id: section.id,
+          user_id: user.id,
+          scope: scope
+        }
+      end
+
+      context_a = context_for.(scope_a)
+      coordinator_opts = fn context -> [context: context, cache_opts: [inprocess_store: nil]] end
+
+      # Scope A is in flight; a second change inside the scrub window queues scope B behind it.
+      coordinator = LiveDataCoordinator.new_session(scrub_threshold: 2)
+
+      {:ok, coordinator, _actions} =
+        LiveDataCoordinator.request_scope_change(
+          coordinator,
+          scope_a,
+          profile,
+          coordinator_opts.(context_a)
+        )
+
+      {:ok, coordinator, _actions} =
+        LiveDataCoordinator.request_scope_change(
+          coordinator,
+          scope_b,
+          profile,
+          coordinator_opts.(context_for.(scope_b))
+        )
+
+      assert LiveDataCoordinator.State.queued?(coordinator)
+
+      socket =
+        %Phoenix.LiveView.Socket{
+          transport_pid: self(),
+          assigns: %{
+            __changed__: %{},
+            section: section,
+            current_user: user,
+            dashboard_scope: IntelligentDashboardTab.scope_selector(scope_b),
+            dashboard_request_token: 1,
+            dashboard_coordinator_state: coordinator,
+            dashboard_revisit_hydration: %{source: :skipped, revisit_hits: 0, revisit_misses: 0},
+            dashboard: %{}
+          }
+        }
+        |> IntelligentDashboardTab.ensure_initialized()
+
+      # The result that completes scope A's request promotes the queued scope B request.
+      {:noreply, _socket} =
+        IntelligentDashboardTab.handle_dashboard_runtime_oracle_result(
+          socket,
+          1,
+          context_a,
+          :oracle_instructor_scope_resources,
+          Result.ok(:oracle_instructor_scope_resources, %{items: []},
+            version: 1,
+            metadata: %{source: :runtime}
+          )
+        )
+
+      # Scope B's runtime loads must run with scope B's context, not with scope A's.
+      assert_receive {:dashboard_runtime_oracle_result, 2, %{scope: loaded_scope}, _oracle_key,
+                      _result},
+                     5_000
+
+      assert loaded_scope == scope_b
     end
   end
 
