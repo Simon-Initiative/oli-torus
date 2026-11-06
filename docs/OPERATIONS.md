@@ -25,6 +25,31 @@ Rollout is primarily controlled through normal deployment flow plus selective fe
 - merged `master` changes flow to the test environment through the normal deployment pipeline
 - tagged releases drive production deployment
 
+## LKT-AOA Proficiency
+
+LKT-AOA incorporates each evaluated response into the attempt count and decayed
+success/failure state before calculating the prediction added to its running
+average. The current response therefore affects proficiency immediately.
+Direct objectives require three attempts on that objective; page/container/course
+scopes require three attempts in total. Parent objectives require at least one
+sub-objective with three attempts. Once eligible, the parent's score includes all
+available sub-objective states, weighted by their attempt counts.
+
+| Environment variable | Default | Constraint |
+| --- | --- | --- |
+| `LKT_AOA_LOW_MEDIUM_CUTOFF` | `40` | Finite percentage from 0 through 100 |
+| `LKT_AOA_MEDIUM_HIGH_CUTOFF` | `70` | Finite percentage from 0 through 100, greater than the lower cutoff |
+
+These settings are loaded by `config/runtime.exs` at startup; restart the
+application after changing them. Invalid settings prevent startup. Internal
+probabilities use the corresponding 0–1 values. Low is below the lower cutoff,
+Medium includes both cutoffs, and High is above the upper cutoff. Fresh learner,
+parent, page, container, course, and class-distribution reads use these settings.
+The legacy model and confidence buckets retain their existing 0.4/0.8 boundaries.
+
+No historical recalculation is needed: this transition change precedes the first
+release of LKT-AOA.
+
 ## Proficiency Confidence
 
 LKT-AOA confidence uses the Hill curve `n^s / (n^s + m^s)`, where `n` is the

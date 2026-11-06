@@ -200,12 +200,12 @@
       section: "lkt_section"
       student: "lkt_student"
       objective: "Master fundamental concepts"
-      bucket: "Medium"
-      value: 0.65
+      bucket: "High"
+      value: 0.751934909865977
 
 - assert:
     proficiency:
       section: "lkt_section"
       objective: "Master fundamental concepts"
-      bucket: "Medium"
-      value: 0.65
+      bucket: "High"
+      value: 0.751934909865977

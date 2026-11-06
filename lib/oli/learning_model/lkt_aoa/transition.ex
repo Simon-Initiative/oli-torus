@@ -2,10 +2,9 @@ defmodule Oli.LearningModel.LktAoa.Transition do
   @moduledoc """
   Pure LKT-AOA transition logic.
 
-  The model predicts with the pre-response state, folds that prediction into
-  AOA, and only then applies the observed binary outcome to recency. That order
-  is intentional: changing it would alter the trained/runtime interpretation of
-  every opportunity.
+  Each opportunity updates practice count and recency with the observed binary
+  outcome first. The model then predicts from that updated state and folds the
+  prediction into AOA, so the current response affects proficiency immediately.
   """
 
   alias Oli.LearningModel.Config
@@ -14,6 +13,7 @@ defmodule Oli.LearningModel.LktAoa.Transition do
 
   @type state_key :: Contribution.state_key()
 
+  @doc "Predicts correctness using the supplied practice count, recency, and coefficients."
   @spec probability(LearningState.t(), %{beta_lo: float(), beta_part: float()}, Config.t()) ::
           float()
   def probability(%LearningState{} = state, contribution, %Config{} = config) do
@@ -26,31 +26,30 @@ defmodule Oli.LearningModel.LktAoa.Transition do
     logistic(logit)
   end
 
+  @doc "Applies the response, then averages the prediction from the updated learner state."
   @spec apply_proficiency(
           LearningState.t(),
           %{beta_lo: float(), beta_part: float(), correct: 0 | 1},
           Config.t()
         ) :: LearningState.t()
   def apply_proficiency(%LearningState{} = state, contribution, %Config{} = config) do
-    p_correct = probability(state, contribution, config)
-    new_attempt_count = state.attempt_count + 1
-
-    # This running-average form avoids multiplying a large historical count by
-    # AOA while preserving the same all-opportunities average.
-    new_aoa = state.aoa + (p_correct - state.aoa) / new_attempt_count
-
     correct = contribution.correct
     new_success_score = config.recency_decay * state.success_score + correct
     new_failure_score = config.recency_decay * state.failure_score + (1 - correct)
 
-    %{
+    updated_state = %{
       state
-      | attempt_count: new_attempt_count,
-        aoa: new_aoa,
+      | attempt_count: state.attempt_count + 1,
         success_score: new_success_score,
         failure_score: new_failure_score,
         recency_logit: :math.log((new_success_score + 1) / (new_failure_score + 1))
     }
+
+    p_correct = probability(updated_state, contribution, config)
+
+    # This running-average form avoids multiplying a large historical count by
+    # AOA while preserving the same all-opportunities average.
+    %{updated_state | aoa: state.aoa + (p_correct - state.aoa) / updated_state.attempt_count}
   end
 
   @doc "Increments the persisted unique-part count; confidence is derived when reading estimates."

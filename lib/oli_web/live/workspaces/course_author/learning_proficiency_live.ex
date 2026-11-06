@@ -2,16 +2,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
   @moduledoc "Author-facing explanations of learning proficiency frameworks and upgrades."
   use OliWeb, :live_view
 
+  alias Oli.Delivery.Proficiency.LktAoa
+  alias Oli.LearningModel.Config
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Components.Project.LearningProficiency
 
   @impl true
   def mount(_params, _session, socket) do
     project = socket.assigns.project
+    config = Config.fetch!()
 
     {:ok,
      assign(socket,
        page_title: "Learning Proficiency",
+       lkt_low_cutoff: format_percentage(config.low_medium_cutoff),
+       lkt_high_cutoff: format_percentage(config.medium_high_cutoff),
        resource_slug: project.slug,
        resource_title: project.title,
        breadcrumbs: [
@@ -144,8 +149,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
           Recent successes and failures carry more weight than older ones when predicting the next response.
         </p>
         <p>
-          Proficiency is the average of these predictions across all attempts, including repeated attempts.
-          For an individual LO, at least three attempts are required before a level is shown: Low (below 40%), Medium (40% through 80%), or High (above 80%).
+          Proficiency averages predictions made after incorporating each response, including repeated attempts.
+          For an individual LO, at least three attempts are required before a level is shown: Low (below {@lkt_low_cutoff}%), Medium ({@lkt_low_cutoff}% through {@lkt_high_cutoff}%), or High (above {@lkt_high_cutoff}%).
         </p>
         <.calculation_example
           id="lkt-aoa-proficiency-example"
@@ -160,14 +165,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
           </.example_entry>
           <.example_entry label="Predictions">
             <strong>40%, 60%, and 80%</strong>
-            chance of answering correctly, predicted before each attempt.
+            chance of answering correctly, predicted after incorporating each response.
           </.example_entry>
           <.example_entry label="Calculation">(0.4 + 0.6 + 0.8) / 3 = 60%</.example_entry>
-          <.example_entry label="Result"><strong>Medium</strong> proficiency.</.example_entry>
+          <.example_entry label="Result">
+            <strong>{LktAoa.proficiency_range(0.6, 3)}</strong> proficiency.
+          </.example_entry>
           <.example_entry label="Interpretation">
-            Each prediction is made before the learner's response is incorporated.
-            The response influences later predictions; the proficiency estimate is <strong>not the percentage of answers that were correct</strong>.
-            At exactly 40%, this framework reports Medium; below 40% is Low, and above 80% is High.
+            Each response updates the learner's practice count and recent performance before its prediction is added to the average; the proficiency estimate is <strong>not the percentage of answers that were correct</strong>.
+            At exactly {@lkt_low_cutoff}%, this framework reports Medium; below {@lkt_low_cutoff}% is Low, and above {@lkt_high_cutoff}% is High.
           </.example_entry>
           <.example_entry label="Note">
             These predictions are illustrative; actual values depend on the questions or answer fields and the learner's history.
@@ -186,10 +192,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
               <strong>Three evaluated attempts</strong>. This repetition counts toward the minimum of three attempts.
             </.example_entry>
             <.example_entry label="New prediction">
-              <strong>70%</strong> before the third attempt.
+              <strong>70%</strong> after incorporating the third response.
             </.example_entry>
             <.example_entry label="Calculation">(0.8 + 0.9 + 0.7) / 3 = 80%</.example_entry>
-            <.example_entry label="Result"><strong>Medium</strong> proficiency.</.example_entry>
+            <.example_entry label="Result">
+              <strong>{LktAoa.proficiency_range(0.8, 3)}</strong> proficiency.
+            </.example_entry>
             <.example_entry label="Confidence">
               Confidence does not increase because the learner has not attempted a different question or answer field.
             </.example_entry>
@@ -199,6 +207,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
           </.example_entry>
         </.calculation_example>
         <.calculation_example id="lkt-aoa-parent-example" title="Combining sub-objectives">
+          <.example_entry label="Minimum evidence">
+            A parent LO shows a proficiency level only after at least one sub-objective has three attempts.
+            Two attempts on each of two sub-objectives still gives the parent <strong>Not enough data</strong>.
+          </.example_entry>
           <.example_entry label="Scenario">
             A parent LO has <strong>two sub-objectives</strong>.
           </.example_entry>
@@ -210,8 +222,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
           </.example_entry>
           <.example_entry label="Calculation">(0.8 × 4 + 0.4 × 1) / 5 = 72%</.example_entry>
           <.example_entry label="Parent result">
-            <strong>Medium</strong>
-            proficiency. The parent has <strong>five attempts in total</strong>, so a proficiency level can be shown.
+            <strong>{LktAoa.proficiency_range(0.72, 5)}</strong>
+            proficiency. Sub-objective A has <strong>at least three attempts</strong>, so a proficiency level can be shown.
           </.example_entry>
           <.example_entry label="Sub-objective B result">
             <strong>Not enough data</strong>
@@ -242,17 +254,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
                 <strong>40%, 60%, and 80%</strong>, for illustration.
               </.example_entry>
               <.example_entry label="Calculation">(0.4 + 0.6 + 0.8) / 3 = 60%</.example_entry>
-              <.example_entry label="Result"><strong>Medium</strong> proficiency.</.example_entry>
+              <.example_entry label="Result">
+                <strong>{LktAoa.proficiency_range(0.6, 3)}</strong> proficiency.
+              </.example_entry>
             </.example_group>
             <.example_group title="After answering the same question again" heading_level={4}>
               <.example_entry label="Attempts">
                 <strong>Four attempts</strong>, still on <strong>three different questions</strong>.
               </.example_entry>
               <.example_entry label="New prediction">
-                <strong>80%</strong> before the fourth attempt, for illustration.
+                <strong>80%</strong> after incorporating the fourth response, for illustration.
               </.example_entry>
               <.example_entry label="Calculation">(0.4 + 0.6 + 0.8 + 0.8) / 4 = 65%</.example_entry>
-              <.example_entry label="Proficiency"><strong>65%, still Medium</strong>.</.example_entry>
+              <.example_entry label="Proficiency">
+                <strong>65%, {LktAoa.proficiency_range(0.65, 4)}</strong>.
+              </.example_entry>
               <.example_entry label="Confidence">
                 <strong>Unchanged</strong>, because the learner has not attempted a different question or answer field.
               </.example_entry>
@@ -279,6 +295,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningProficiencyLive do
     </article>
     """
   end
+
+  defp format_percentage(value), do: value |> Float.to_string() |> String.trim_trailing(".0")
 
   attr :id, :string, required: true
   attr :title, :string, required: true

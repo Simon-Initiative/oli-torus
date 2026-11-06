@@ -8,8 +8,8 @@ requirements:
   id: FR-001
 - title: Apply the LKT-AOA proficiency transition
   status: verified
-  description: Calculate pre-response probability, running all-opportunities average,
-    and decayed recency state using the documented binary outcome and typed coefficients.
+  description: Update practice count and decayed recency state with the current binary
+    outcome, then calculate and average the post-response probability using typed coefficients.
   id: FR-002
 - title: Track confidence from distinct activity-part evidence
   status: verified
@@ -86,7 +86,7 @@ acceptance_criteria:
   id: AC-003
 - requirement_id: FR-002
   title: Each contribution computes probability from beta_lo, beta_part, gamma times
-    log(attempt_count plus one), and rho times the pre-response recency_logit.
+    log(updated attempt_count plus one), and rho times the post-response recency_logit.
   status: verified
   verification_method: automated
   proofs:
@@ -94,8 +94,8 @@ acceptance_criteria:
   - test/oli/learning_model/lkt_aoa/transition_test.exs
   id: AC-004
 - requirement_id: FR-002
-  title: AOA incorporates the pre-response probability through the constant-work running-average
-    formula before the observed outcome changes recency state.
+  title: AOA incorporates the post-response probability through the constant-work running-average
+    formula after the observed outcome updates practice count and recency state.
   status: verified
   verification_method: automated
   proofs:

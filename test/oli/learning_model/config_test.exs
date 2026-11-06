@@ -10,13 +10,18 @@ defmodule Oli.LearningModel.ConfigTest do
     assert config == Config.defaults()
     assert config.confidence_midpoint == 5.0
     assert config.confidence_steepness == 3.0
+    assert config.low_medium_cutoff == 40.0
+    assert config.medium_high_cutoff == 70.0
+    assert Config.proficiency_cutoffs(config) == {0.4, 0.7}
 
     assert sources == %{
              gamma: :default,
              rho: :default,
              recency_decay: :default,
              confidence_midpoint: :default,
-             confidence_steepness: :default
+             confidence_steepness: :default,
+             low_medium_cutoff: :default,
+             medium_high_cutoff: :default
            }
   end
 
@@ -26,7 +31,9 @@ defmodule Oli.LearningModel.ConfigTest do
       "LKT_AOA_RHO" => "1.5",
       "LKT_AOA_RECENCY_DECAY" => "0.75",
       "PROFICIENCY_CONFIDENCE_MIDPOINT" => "4",
-      "PROFICIENCY_CONFIDENCE_STEEPNESS" => "2.5"
+      "PROFICIENCY_CONFIDENCE_STEEPNESS" => "2.5",
+      "LKT_AOA_LOW_MEDIUM_CUTOFF" => " 45.5 ",
+      "LKT_AOA_MEDIUM_HIGH_CUTOFF" => "75"
     }
 
     assert {%Config{
@@ -34,7 +41,9 @@ defmodule Oli.LearningModel.ConfigTest do
               rho: 1.5,
               recency_decay: 0.75,
               confidence_midpoint: 4.0,
-              confidence_steepness: 2.5
+              confidence_steepness: 2.5,
+              low_medium_cutoff: 45.5,
+              medium_high_cutoff: 75.0
             }, sources} = Config.load_from_env!(&Map.get(overrides, &1))
 
     assert Enum.all?(sources, fn {_key, source} -> source == :override end)
@@ -54,7 +63,9 @@ defmodule Oli.LearningModel.ConfigTest do
       rho: 1.4,
       recency_decay: 0.8,
       confidence_midpoint: 5.0,
-      confidence_steepness: 3.0
+      confidence_steepness: 3.0,
+      low_medium_cutoff: 40.0,
+      medium_high_cutoff: 70.0
     ]
 
     assert {%Config{
@@ -62,7 +73,9 @@ defmodule Oli.LearningModel.ConfigTest do
               rho: 1.4,
               recency_decay: 0.8,
               confidence_midpoint: 5.0,
-              confidence_steepness: 3.0
+              confidence_steepness: 3.0,
+              low_medium_cutoff: 40.0,
+              medium_high_cutoff: 70.0
             }, sources} = Config.load_from_env!(base, fn _name -> nil end)
 
     assert Enum.all?(sources, fn {_key, source} -> source == :default end)
@@ -149,7 +162,9 @@ defmodule Oli.LearningModel.ConfigTest do
       rho: 1.2,
       recency_decay: 0.8,
       confidence_midpoint: 4.0,
-      confidence_steepness: 2.5
+      confidence_steepness: 2.5,
+      low_medium_cutoff: 40.0,
+      medium_high_cutoff: 70.0
     )
 
     assert Config.fetch!() == %Config{
@@ -157,7 +172,9 @@ defmodule Oli.LearningModel.ConfigTest do
              rho: 1.2,
              recency_decay: 0.8,
              confidence_midpoint: 4.0,
-             confidence_steepness: 2.5
+             confidence_steepness: 2.5,
+             low_medium_cutoff: 40.0,
+             medium_high_cutoff: 70.0
            }
   end
 
@@ -177,6 +194,8 @@ defmodule Oli.LearningModel.ConfigTest do
     assert log =~ "gamma=0.1 (default)"
     assert log =~ "confidence_midpoint=5.0 (default)"
     assert log =~ "confidence_steepness=3.0 (default)"
+    assert log =~ "low_medium_cutoff=40.0 (default)"
+    assert log =~ "medium_high_cutoff=70.0 (default)"
     refute log =~ "LKT_AOA_GAMMA"
   end
 
@@ -186,18 +205,24 @@ defmodule Oli.LearningModel.ConfigTest do
     assert default_output =~ "recency_decay: 0.9"
     assert default_output =~ "confidence_midpoint: 5.0"
     assert default_output =~ "confidence_steepness: 3.0"
+    assert default_output =~ "low_medium_cutoff: 40.0"
+    assert default_output =~ "medium_high_cutoff: 70.0"
 
     assert {override_output, 0} =
              read_runtime_config(%{
                "LKT_AOA_GAMMA" => "0.35",
                "PROFICIENCY_CONFIDENCE_MIDPOINT" => "8.5",
-               "PROFICIENCY_CONFIDENCE_STEEPNESS" => "2"
+               "PROFICIENCY_CONFIDENCE_STEEPNESS" => "2",
+               "LKT_AOA_LOW_MEDIUM_CUTOFF" => "35.5",
+               "LKT_AOA_MEDIUM_HIGH_CUTOFF" => "65"
              })
 
     assert override_output =~ "gamma: 0.35"
     assert override_output =~ "rho: 1.0"
     assert override_output =~ "confidence_midpoint: 8.5"
     assert override_output =~ "confidence_steepness: 2.0"
+    assert override_output =~ "low_medium_cutoff: 35.5"
+    assert override_output =~ "medium_high_cutoff: 65.0"
   end
 
   test "runtime configuration rejects malformed environment overrides at startup" do
@@ -205,6 +230,55 @@ defmodule Oli.LearningModel.ConfigTest do
     assert exit_status != 0
     assert output =~ "LKT_AOA_RHO"
     assert output =~ "must be a finite number"
+  end
+
+  test "rejects malformed, out-of-range, and unordered proficiency cutoff percentages" do
+    for name <- ["LKT_AOA_LOW_MEDIUM_CUTOFF", "LKT_AOA_MEDIUM_HIGH_CUTOFF"],
+        invalid <- ["", "NaN", "Infinity", "abc", "40 trailing", "-1", "101"] do
+      error =
+        assert_raise ArgumentError, fn ->
+          Config.load_from_env!(fn
+            ^name -> invalid
+            _ -> nil
+          end)
+        end
+
+      assert error.message =~ name
+    end
+
+    for {low, high} <- [{"70", "70"}, {"80", "40"}] do
+      error =
+        assert_raise ArgumentError, fn ->
+          Config.load_from_env!(fn
+            "LKT_AOA_LOW_MEDIUM_CUTOFF" -> low
+            "LKT_AOA_MEDIUM_HIGH_CUTOFF" -> high
+            _ -> nil
+          end)
+        end
+
+      assert error.message =~
+               "LKT_AOA_LOW_MEDIUM_CUTOFF must be less than LKT_AOA_MEDIUM_HIGH_CUTOFF"
+    end
+
+    {config, _} =
+      Config.load_from_env!(fn
+        "LKT_AOA_LOW_MEDIUM_CUTOFF" -> "0"
+        "LKT_AOA_MEDIUM_HIGH_CUTOFF" -> "100"
+        _ -> nil
+      end)
+
+    assert Config.proficiency_cutoffs(config) == {0.0, 1.0}
+  end
+
+  test "runtime configuration rejects unordered proficiency cutoffs at startup" do
+    assert {output, status} =
+             read_runtime_config(%{
+               "LKT_AOA_LOW_MEDIUM_CUTOFF" => "75",
+               "LKT_AOA_MEDIUM_HIGH_CUTOFF" => "65"
+             })
+
+    assert status != 0
+    assert output =~ "LKT_AOA_LOW_MEDIUM_CUTOFF must be less than LKT_AOA_MEDIUM_HIGH_CUTOFF"
   end
 
   defp read_runtime_config(overrides \\ %{}) do
@@ -240,7 +314,9 @@ defmodule Oli.LearningModel.ConfigTest do
           "LKT_AOA_RHO",
           "LKT_AOA_RECENCY_DECAY",
           "PROFICIENCY_CONFIDENCE_MIDPOINT",
-          "PROFICIENCY_CONFIDENCE_STEEPNESS"
+          "PROFICIENCY_CONFIDENCE_STEEPNESS",
+          "LKT_AOA_LOW_MEDIUM_CUTOFF",
+          "LKT_AOA_MEDIUM_HIGH_CUTOFF"
         ],
         &{&1, nil}
       )

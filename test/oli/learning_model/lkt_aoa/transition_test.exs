@@ -10,11 +10,13 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
     rho: 1.0,
     recency_decay: 0.9,
     confidence_midpoint: 5.0,
-    confidence_steepness: 3.0
+    confidence_steepness: 3.0,
+    low_medium_cutoff: 40.0,
+    medium_high_cutoff: 70.0
   }
   @base_time ~U[2026-08-24 12:00:00Z]
 
-  test "first opportunity predicts from neutral state before applying the observed outcome" do
+  test "first opportunity predicts after incorporating practice count and the observed outcome" do
     state = neutral_state()
 
     result =
@@ -24,7 +26,7 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
         @config
       )
 
-    p_correct = logistic(-0.2)
+    p_correct = logistic(-0.2 + @config.gamma * :math.log(2) + :math.log(2))
 
     assert_close(result.aoa, p_correct)
     assert result.attempt_count == 1
@@ -33,7 +35,7 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
     assert_close(result.recency_logit, :math.log(2.0))
   end
 
-  test "subsequent opportunity uses stable running AOA before recency changes" do
+  test "subsequent opportunity averages the prediction after recency changes" do
     state = %LearningState{
       attempt_count: 3,
       aoa: 0.6,
@@ -51,13 +53,50 @@ defmodule Oli.LearningModel.LktAoa.TransitionTest do
       )
 
     p_correct =
-      logistic(0.25 + 0.5 + @config.gamma * :math.log(4) + @config.rho * state.recency_logit)
+      logistic(0.25 + 0.5 + @config.gamma * :math.log(5) + @config.rho * :math.log(2.8 / 2.9))
 
     assert result.attempt_count == 4
     assert_close(result.aoa, state.aoa + (p_correct - state.aoa) / 4)
     assert_close(result.success_score, 1.8)
     assert_close(result.failure_score, 1.9)
     assert_close(result.recency_logit, :math.log(2.8 / 2.9))
+  end
+
+  test "the current third response immediately changes proficiency" do
+    after_two =
+      Enum.reduce(1..2, neutral_state(), fn _, state ->
+        Transition.apply_proficiency(state, %{beta_lo: 0.0, beta_part: 0.0, correct: 1}, @config)
+      end)
+
+    correct =
+      Transition.apply_proficiency(
+        after_two,
+        %{beta_lo: 0.0, beta_part: 0.0, correct: 1},
+        @config
+      )
+
+    incorrect =
+      Transition.apply_proficiency(
+        after_two,
+        %{beta_lo: 0.0, beta_part: 0.0, correct: 0},
+        @config
+      )
+
+    assert_close(correct.aoa, 0.751934909865977)
+    assert_close(incorrect.aoa, 0.6848988453281937)
+    assert correct.attempt_count == 3
+    assert incorrect.attempt_count == 3
+  end
+
+  test "all-correct running averages include each post-response prediction" do
+    states =
+      Enum.scan(1..10, neutral_state(), fn _, state ->
+        Transition.apply_proficiency(state, %{beta_lo: 0.0, beta_part: 0.0, correct: 1}, @config)
+      end)
+
+    assert_close(Enum.at(states, 0).aoa, 0.6818879998182597)
+    assert_close(Enum.at(states, 8).aoa, 0.833839909677989)
+    assert_close(Enum.at(states, 9).aoa, 0.8409764899735278)
   end
 
   test "probability remains stable for extreme logits" do

@@ -24,7 +24,7 @@ Guardrails:
 ## Clarifications & Default Assumptions
 
 - Parent proficiency is weighted by each effective child's `attempt_count`.
-- Parent display eligibility depends on at least three total attempts across all effective children; no per-child minimum applies.
+- Parent display eligibility requires at least one effective child with three attempts; all available child states contribute to the weighted score once eligible.
 - Direct LKT-AOA objectives require three attempts on that objective.
 - Page/container/course learner scopes require three total attempts across their distinct available objective states and use an unweighted arithmetic mean of available AOA values.
 - `sections.section_resource_migration_version` is a non-null integer controlled only by `SectionResourceMigration`. Version `0` means migration is required; the implementation defines a positive current version.
@@ -67,13 +67,13 @@ Guardrails:
   - [x] Keep `raw_proficiency_per_learning_objective/2` explicitly naive-only or deprecate it; document why its tuple shape cannot represent LKT-AOA. (FR-003; AC-009)
   - [x] Implement set-based `Oli.Delivery.Proficiency.LktAoa` direct-objective reads from `learning_states` by Section, learner IDs, and objective IDs with no attempt-history or ResourceSummary access. (FR-004, FR-008; AC-010, AC-024)
   - [x] Apply direct eligibility and LKT-AOA buckets: below three attempts is not-enough-information; Low is `< 0.4`, Medium is `0.4..0.8`, High is `> 0.8`. (FR-004; AC-011)
-  - [x] Implement parent rollup from effective child SectionResources using `sum(aoa * attempt_count) / sum(attempt_count)` and the three-total-child-attempt gate; never persist or prefer a parent state row. (FR-004; AC-012)
+  - [x] Implement parent rollup from effective child SectionResources using `sum(aoa * attempt_count) / sum(attempt_count)` and a display gate requiring one child with three attempts; never persist or prefer a parent state row. (FR-004; AC-012)
   - [x] Preserve confidence and evidence fields independently from score/label without adding UI behavior. (FR-002; AC-006)
   - [x] Add bounded provider telemetry for model, operation, duration, requested/returned counts, defined/unavailable counts, and outcome without identifiers. (FR-011; AC-032)
   - [x] Add useful source comments around the intentional 0.4 boundary difference, direct versus parent evidence gates, attempt-count weighting, and why parent rows are derived rather than persisted.
 - Testing Tasks:
   - [x] Prove naive facade output remains byte-for-byte or semantically equivalent after extraction.
-  - [x] Cover missing LKT state versus a valid zero AOA, direct threshold boundaries, a child below three that does not suppress an eligible parent, total-child attempts below three, and parent weighting.
+  - [x] Cover missing LKT state versus a valid zero AOA, direct threshold boundaries, parent weighting, combined child attempts that do not qualify any single child, and children below three contributing after another child qualifies.
   - [x] Capture Ecto query telemetry to prove LKT reads do not touch attempt/summary tables and query count does not grow once per learner/objective.
   - [x] Verify telemetry metadata is bounded and contains no learner/objective/attempt identifiers.
   - Command(s): `mix test test/oli/delivery/proficiency test/oli/analytics/summary/metrics_v2_test.exs`
