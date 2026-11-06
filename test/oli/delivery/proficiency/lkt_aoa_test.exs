@@ -190,6 +190,31 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
     assert estimates[parent.id][user.id].score == 0.9
   end
 
+  test "parents with evidence only on their children still report their learners" do
+    section =
+      insert(:section,
+        learning_model_version: :lkt_aoa,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
+    user = insert(:user)
+    project = insert(:project)
+    [parent | children] = Enum.map(1..4, fn _ -> insert(:resource) end)
+    child_srs = Enum.map(children, &objective_section_resource(section, project, &1))
+    objective_section_resource(section, project, parent, children: Enum.map(child_srs, & &1.id))
+
+    Enum.each(children, &insert_state(section, user, &1, aoa: 0.67, attempt_count: 3))
+
+    assert {:ok, [user_id]} = LktAoa.user_ids_for_objectives(section, [parent.id])
+    assert user_id == user.id
+
+    assert {:ok, estimates} =
+             LktAoa.estimates_for_objectives(section, [user_id], [parent.id], [])
+
+    assert_in_delta estimates[parent.id][user.id].score, 0.67, 1.0e-12
+    assert estimates[parent.id][user.id].label == :medium
+  end
+
   test "uses one learning-state query for bulk identities and never reads attempt summaries" do
     section = insert(:section, learning_model_version: :lkt_aoa)
     users = Enum.map(1..3, fn _ -> insert(:user) end)

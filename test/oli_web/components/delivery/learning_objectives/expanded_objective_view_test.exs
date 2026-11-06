@@ -826,6 +826,102 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       assert has_element?(view, "g[aria-label^='Limited Activity, 2 students']")
     end
 
+    test "plots LKT-AOA proficiency for a parent whose evidence is only on its sub-objectives",
+         %{
+           conn: conn,
+           section: section,
+           objective: objective,
+           students: [student1, _student2, _student3],
+           instructor: instructor
+         } do
+      section =
+        section
+        |> Ecto.Changeset.change(learning_model_version: :lkt_aoa)
+        |> Oli.Repo.update!()
+
+      objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+      activity_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
+      activity = insert(:resource)
+
+      sub_objective = insert(:revision, resource_type_id: objective_type_id)
+
+      sub_objective_section_resource =
+        insert(:section_resource,
+          section: section,
+          resource_id: sub_objective.resource_id,
+          resource_type_id: objective_type_id,
+          title: sub_objective.title,
+          revision_id: sub_objective.id,
+          children: [],
+          related_activities: [activity.id]
+        )
+
+      parent_section_resource =
+        Oli.Repo.get_by!(Oli.Delivery.Sections.SectionResource,
+          section_id: section.id,
+          resource_id: objective.resource_id
+        )
+
+      # Touch the depot before wiring the hierarchy so its one-time JIT projection does not
+      # overwrite the manual parent/sub-objective link (see the denominator test above).
+      Oli.Delivery.Sections.SectionResourceDepot.get_section_resource(
+        section.id,
+        objective.resource_id
+      )
+
+      {:ok, parent_section_resource} =
+        Oli.Delivery.Sections.update_section_resource(parent_section_resource, %{
+          resource_type_id: objective_type_id,
+          children: [sub_objective_section_resource.id]
+        })
+
+      Oli.Delivery.Sections.SectionResourceDepot.update_section_resource(parent_section_resource)
+
+      Oli.Delivery.Sections.SectionResourceDepot.update_section_resource(
+        sub_objective_section_resource
+      )
+
+      # student1 has LKT-AOA state only on the sub-objective; the parent has no state row.
+      Oli.Repo.insert!(%Oli.LearningModel.LearningState{
+        section_id: section.id,
+        user_id: student1.id,
+        learning_objective_id: sub_objective.resource_id,
+        aoa: 0.65,
+        attempt_count: 3,
+        unique_activity_part_count: 3
+      })
+
+      insert(:resource_summary,
+        section_id: section.id,
+        user_id: student1.id,
+        resource_id: activity.id,
+        resource_type_id: activity_type_id,
+        num_attempts: 1
+      )
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, ExpandedObjectiveView, %{
+          id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
+          objective: %{
+            resource_id: objective.resource_id,
+            title: objective.title || "Test Objective"
+          },
+          section_id: section.id,
+          section_slug: section.slug,
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
+        })
+
+      # student1 completed every linked activity and has a Medium (65%) parent estimate
+      # derived from the sub-objective, so they land in Excelling. Without the parent's
+      # children being considered, they would be backfilled at 0% and land in Needs Support.
+      assert has_element?(view, "g[aria-label^='Excelling, 1 student']")
+      assert has_element?(view, "g[aria-label^='Needs Support, 0 students']")
+      assert has_element?(view, "g[aria-label^='Limited Activity, 2 students']")
+    end
+
     test "handles no sub-objectives case", %{
       conn: conn,
       section: section,
