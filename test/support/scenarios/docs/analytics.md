@@ -60,6 +60,38 @@ Specify exactly one target matching `resource_type`:
 Count metrics are compared exactly. `eventually_correct`, `first_attempt_correct`, and
 `relative_difficulty` use the configured tolerance.
 
+`eventually_correct` is the fraction of attempted learner-question-part
+opportunities with at least one correct submission. A learner counts once per
+section and question part; later incorrect submissions do not remove a success,
+and repeated correct submissions do not add successes. Page and objective
+rollups combine these opportunities, rather than counting learners who got any
+question in the resource correct. Separate section enrollments remain separate
+opportunities when aggregating across sections.
+
+Correctness is derived at query time from existing per-learner summary counters.
+Page and objective membership comes from historical evaluated attempts and their
+revision tags. Existing data requires no migration or analytics replay, provided
+those records are retained. `num_correct` and `num_attempts` continue to count
+submissions, and `relative_difficulty` retains its submission-based calculation.
+
+Missing learner evidence produces an unavailable Eventually Correct value,
+including when only part of a page, objective, or cross-section rollup has
+evidence. It is never replaced with submission accuracy or a measured zero.
+An observed zero still means learners attempted the question but none succeeded.
+Historical membership is filtered and deduplicated before joining learner
+summaries to avoid multiplying those summaries by retry history.
+
+Insights counts rows from aggregate summaries without reading learner or
+attempt history. Ordinary sorts paginate those summaries first, then load
+eventual correctness for the returned resource IDs. Sorting by eventual
+correctness ranks all matching candidates in one query before fetching the
+selected display rows, preserving global order across result pages. Unavailable
+rates sort after measured rates in both directions.
+
+New revision objective bindings must contain lists of positive bigint IDs.
+Legacy analytics reads ignore invalid or out-of-range IDs and tolerate malformed
+objective JSON without aborting the request.
+
 ### Activity example
 
 ```yaml
@@ -73,10 +105,11 @@ Count metrics are compared exactly. `eventually_correct`, `first_attempt_correct
       activity_virtual_id: "feedback_question"
       expected:
         num_attempts: 4
+        num_correct: 2
         num_hints: 1
         num_first_attempts: 3
         num_first_attempts_correct: 1
-        eventually_correct: 0.5
+        eventually_correct: 0.666667
         first_attempt_correct: 0.333333
         relative_difficulty: 0.683333
 ```

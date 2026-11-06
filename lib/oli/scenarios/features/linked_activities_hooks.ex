@@ -20,6 +20,10 @@ defmodule Oli.Scenarios.Features.LinkedActivitiesHooks do
   @project_name "linked_activities_project"
   @section_name "linked_activities_section"
 
+  @doc """
+  Verifies linked activity membership, submission metrics, and learner-based
+  eventual correctness across the scenario's shared pages.
+  """
   def assert_linked_activity_rows(%ExecutionState{} = state) do
     section = Map.fetch!(state.sections, @section_name)
 
@@ -91,8 +95,9 @@ defmodule Oli.Scenarios.Features.LinkedActivitiesHooks do
     state
   end
 
-  # The row totals every page the activity appears on, so the expanded pane must describe the same
-  # population: one correct answer on one page, one incorrect on the other.
+  # Both views cover the same four submissions across two pages. The row's
+  # submission accuracy differs from the pane's learner-based eventual correctness:
+  # one successful learner submitted a correct answer on both pages.
   defp assert_shared_summary_spans_both_pages(section, shared) do
     summary =
       Summaries.across_pages(
@@ -107,10 +112,19 @@ defmodule Oli.Scenarios.Features.LinkedActivitiesHooks do
     assert summary.total_attempts_count == shared.attempts,
            "pane counted #{summary.total_attempts_count} attempts while the row counted #{shared.attempts}"
 
-    assert_in_delta summary.all_attempt_pct * 100,
+    submission_correct = Enum.sum(Enum.map(summary.resource_summaries, & &1.num_correct))
+
+    assert submission_correct == 3
+
+    assert_in_delta submission_correct / summary.total_attempts_count * 100,
                     shared.percent_correct,
                     0.05,
-                    "pane reported #{summary.all_attempt_pct * 100}% while the row reported #{shared.percent_correct}%"
+                    "pane submission accuracy differs from the row's percent correct"
+
+    assert_in_delta summary.all_attempt_pct,
+                    2 / 3,
+                    1.0e-6,
+                    "two of the three learners answered correctly; repeated successes count once"
 
     # Four attempts from three students: one learner answered on both pages. A pin that used the
     # attempt count here would pass while conflating the two measures.

@@ -6,6 +6,41 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
   alias OliWeb.Delivery.ActivityHelpers
   import Phoenix.LiveViewTest
 
+  test "an unavailable percentage is distinct from a measured zero" do
+    unavailable =
+      render_component(&ActivityHelpers.percentage_bar/1,
+        id: "missing",
+        label: "Eventually Correct",
+        value: nil
+      )
+
+    measured_zero =
+      render_component(&ActivityHelpers.percentage_bar/1,
+        id: "zero",
+        label: "Eventually Correct",
+        value: 0.0
+      )
+
+    assert unavailable =~ "Unavailable"
+    refute unavailable =~ "0%"
+    assert measured_zero =~ "0%"
+    refute measured_zero =~ "Unavailable"
+  end
+
+  test "authoring tables show unavailable eventual correctness without changing other empty metrics" do
+    column = %OliWeb.Common.Table.ColumnSpec{name: :eventually_correct}
+
+    for common <- [OliWeb.Live.Insights.Common, OliWeb.Workspaces.CourseAuthor.Insights.Common] do
+      assert common.render_percentage(%{}, %{eventually_correct: nil}, column) == "Unavailable"
+      assert common.render_percentage(%{}, %{eventually_correct: 0.0}, column) == "0%"
+
+      assert common.render_percentage(%{}, %{first_attempt_correct: nil}, %{
+               column
+               | name: :first_attempt_correct
+             }) == nil
+    end
+  end
+
   describe "stage_performance_details/3 for check-all-that-apply" do
     test "marks only non-negated choices as correct and aggregates counts per choice" do
       cata_id = 1
@@ -137,6 +172,77 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
   end
 
   describe "stage_performance_details/3 for adaptive screens" do
+    test "eventual correctness combines learner-part counts independently of submission frequency" do
+      parts =
+        for id <- ["one", "two"] do
+          %{
+            "id" => id,
+            "type" => "janus-mcq",
+            "gradingApproach" => "automatic",
+            "custom" => %{
+              "correctAnswer" => [true, false],
+              "mcqItems" => [
+                %{"nodes" => [%{"text" => "Correct"}]},
+                %{"nodes" => [%{"text" => "Incorrect"}]}
+              ]
+            }
+          }
+        end
+
+      activities = [
+        %{
+          resource_id: 50,
+          revision: %{activity_type_id: 99, content: %{"partsLayout" => parts}},
+          resource_summaries: [
+            %{
+              part_id: "one",
+              num_first_attempts_correct: 1,
+              num_first_attempts: 1,
+              num_correct: 1,
+              num_attempts: 10,
+              num_eventually_correct: 1,
+              num_eventually_attempted: 1
+            },
+            %{
+              part_id: "two",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 3,
+              num_correct: 0,
+              num_attempts: 100,
+              num_eventually_correct: 0,
+              num_eventually_attempted: 3
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      [activity] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{99 => %{slug: "oli_adaptive", title: "Adaptive"}},
+          []
+        )
+
+      assert activity.all_attempt_pct == 0.25
+      assert Enum.map(activity.adaptive_input_summaries, & &1.all_attempt_pct) == [1.0, 0.0]
+
+      missing =
+        update_in(activities, [Access.at(0), :resource_summaries, Access.at(1)], fn summary ->
+          Map.merge(summary, %{num_eventually_correct: nil, num_eventually_attempted: nil})
+        end)
+
+      [activity] =
+        ActivityHelpers.stage_performance_details(
+          missing,
+          %{99 => %{slug: "oli_adaptive", title: "Adaptive"}},
+          []
+        )
+
+      assert is_nil(activity.all_attempt_pct)
+      assert Enum.map(activity.adaptive_input_summaries, & &1.all_attempt_pct) == [1.0, nil]
+    end
+
     test "adds typed aggregate summaries for adaptive parts" do
       adaptive_id = 99
 
@@ -241,7 +347,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         )
 
       assert first_attempt_pct == 0.6
-      assert all_attempt_pct == 0.6
+      assert is_nil(all_attempt_pct)
 
       assert [
                %{
@@ -256,7 +362,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                  student_count: 3,
                  attempt_count: 5,
                  first_attempt_pct: 0.6,
-                 all_attempt_pct: 0.6,
+                 all_attempt_pct: nil,
                  grading_pending: false,
                  grading_pending_message: nil,
                  outcome_buckets: [
@@ -307,7 +413,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                  student_count: 0,
                  attempt_count: 0,
                  first_attempt_pct: 0,
-                 all_attempt_pct: 0,
+                 all_attempt_pct: nil,
                  outcome_buckets: [],
                  grading_pending: true,
                  grading_pending_message:
@@ -565,7 +671,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         )
 
       assert summary.first_attempt_pct == 0.0
-      assert summary.all_attempt_pct == 1.0
+      assert is_nil(summary.all_attempt_pct)
       assert summary.visualization.kind == :response_patterns
       assert summary.visualization.fill_class == "bg-slate-400 dark:bg-slate-500"
       assert summary.visualization.native_key_note =~ "Screen rules determine correctness"
@@ -1250,7 +1356,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         |> Map.fetch!(:adaptive_input_summaries)
 
       assert summary.first_attempt_pct == 1.0
-      assert summary.all_attempt_pct == 1.0
+      assert is_nil(summary.all_attempt_pct)
       assert summary.evaluation_confidence == :inferred
       assert summary.visualization.fill_class == "bg-emerald-500 dark:bg-emerald-400"
     end
@@ -1444,7 +1550,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         |> Map.fetch!(:adaptive_input_summaries)
 
       assert summary.first_attempt_pct == 0
-      assert summary.all_attempt_pct == 2 / 3
+      assert is_nil(summary.all_attempt_pct)
 
       assert [
                %{label: "Correct on first try", count: 0, ratio: first_try_ratio},
@@ -1513,7 +1619,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         |> Map.fetch!(:adaptive_input_summaries)
 
       assert summary.first_attempt_pct == 0.25
-      assert summary.all_attempt_pct == 0.5
+      assert is_nil(summary.all_attempt_pct)
 
       assert [
                %{label: "Correct on first try", count: 1, ratio: first_try_ratio},
@@ -1583,7 +1689,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         |> Map.fetch!(:adaptive_input_summaries)
 
       assert summary.first_attempt_pct == 0
-      assert summary.all_attempt_pct == 2 / 3
+      assert is_nil(summary.all_attempt_pct)
     end
 
     test "colors manual open-ended response-pattern visualizations from manual grading outcomes" do
@@ -2044,7 +2150,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         |> hd()
 
       assert input_summary.first_attempt_pct == 1.0
-      assert input_summary.all_attempt_pct == 1.0
+      assert is_nil(input_summary.all_attempt_pct)
       refute Map.get(input_summary.visualization, :native_key_note)
       assert Enum.all?(input_summary.visualization.choices, &(&1.correctness == true))
     end
@@ -2113,10 +2219,10 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         )
 
       assert first_attempt_pct == 0
-      assert all_attempt_pct == 0
+      assert is_nil(all_attempt_pct)
 
       assert summary.first_attempt_pct == 0
-      assert summary.all_attempt_pct == 0
+      assert is_nil(summary.all_attempt_pct)
 
       assert [
                %{label: "Correct on first try", count: 0, ratio: +0.0},
@@ -2177,10 +2283,10 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         )
 
       assert first_attempt_pct == 0
-      assert all_attempt_pct == 1.0
+      assert is_nil(all_attempt_pct)
 
       assert summary.first_attempt_pct == 0
-      assert summary.all_attempt_pct == 1.0
+      assert is_nil(summary.all_attempt_pct)
       assert summary.first_attempt_total_count == 1
       assert summary.first_attempt_correct_count == 0
       assert summary.attempt_total_count == 1

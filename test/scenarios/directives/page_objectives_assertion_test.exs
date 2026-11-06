@@ -2,6 +2,7 @@ defmodule Oli.Scenarios.Directives.Assert.PageObjectivesAssertionTest do
   use Oli.DataCase
 
   alias Oli.Resources
+  alias Oli.Repo
   alias Oli.Scenarios.{DirectiveParser, Engine}
   alias Oli.Scenarios.DirectiveTypes.AssertDirective
   alias Oli.Scenarios.Directives.AttemptSupport
@@ -46,8 +47,13 @@ defmodule Oli.Scenarios.Directives.Assert.PageObjectivesAssertionTest do
     assert {:ok, page_revision} =
              AttemptSupport.get_page_revision(result.state, "objective_section", "Practice")
 
+    # An unresolved reference must still satisfy the objective ID format.
+    missing_objective_id = Repo.aggregate(Resources.Resource, :max, :id) + 1
+
     assert {:ok, _revision} =
-             Resources.update_revision(page_revision, %{objectives: %{"attached" => [-1]}})
+             Resources.update_revision(page_revision, %{
+               objectives: %{"attached" => [missing_objective_id]}
+             })
 
     directive = %AssertDirective{
       page_objectives: %{
@@ -59,7 +65,10 @@ defmodule Oli.Scenarios.Directives.Assert.PageObjectivesAssertionTest do
 
     assert {:ok, _state, verification} = PageObjectivesAssertion.assert(directive, result.state)
     refute verification.passed
-    assert verification.message =~ "Unresolved objective resource ids: [-1]"
+
+    assert verification.message =~
+             "Unresolved objective resource ids: #{inspect([missing_objective_id])}"
+
     assert verification.actual == nil
   end
 end
