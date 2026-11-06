@@ -190,6 +190,17 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
   that the ExUnit portion of a successful run has no output beyond its progress and summary.
 - Always run tests before committing
 
+## Branch Workflow
+
+Follow `guides/process/development.md` and the `integration_branch_workflow` skill
+for branch setup. Work expected to fit in one PR uses a single feature branch
+from `master` with a PR targeting `master`. No feature-branch naming format is
+required, but direct-to-master branches should avoid integration naming conventions
+(`integ-*`, `integration/**`, `story/*`, `bug/*`, and `task/*`).
+Use integration branches for work expected to span multiple implementation PRs.
+Every PR to `master` requires one Development (`development`) and one QA (`torus-qa`) approval; developer
+review comes first by convention. Required checks and the merge queue still apply.
+
 ## UI Workflow
 
 When a task includes implementing, reconciling, or validating UI against a Figma design, route the work through the repo-local `ui_workflow` skill documented at `.agents/ui-workflow/README.md`.

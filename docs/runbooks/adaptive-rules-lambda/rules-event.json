@@ -1,0 +1,12 @@
+{
+  "state": {},
+  "rules": [],
+  "scoringContext": {
+    "maxScore": 1,
+    "maxAttempt": 1,
+    "currentAttemptNumber": 1,
+    "trapStateScoreScheme": false,
+    "negativeScoreAllowed": false,
+    "isManuallyGraded": false
+  }
+}

@@ -87,6 +87,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
             >
               <SearchInput.render
                 id="assessments_search_input"
+                aria_label="Search surveys"
                 name="assessment_name"
                 text={@params.text_search}
               />

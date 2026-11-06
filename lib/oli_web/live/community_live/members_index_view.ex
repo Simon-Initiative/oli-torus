@@ -50,7 +50,13 @@ defmodule OliWeb.CommunityLive.MembersIndexView do
   def render(assigns) do
     ~H"""
     <div class="d-flex p-3 justify-content-between">
-      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
+      <Filter.render
+        change="change_search"
+        reset="reset_search"
+        apply="apply_search"
+        query={@query}
+        aria_label="Search community members"
+      />
     </div>
 
     <div class="p-4">

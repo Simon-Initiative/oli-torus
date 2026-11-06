@@ -12,6 +12,7 @@ defmodule Oli.Delivery do
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ActivityAttempt, ResourceAccess}
   alias Oli.Delivery.ResearchConsent
   alias Oli.Lti.LaunchIdentity
+  alias Oli.Lti.PlatformExternalTools
   alias Oli.Delivery.{SectionCreation, SectionCreationAuditor, SectionCreationRequest}
   alias Oli.Accounts.{Author, User}
 
@@ -178,10 +179,15 @@ defmodule Oli.Delivery do
     options
   end
 
+  # Builds a course from this exact published snapshot and initializes its tool
+  # selections (resource configurations chosen in external tools) before enrollment
+  # and post-processing. Errors propagate to the owning creation transaction.
   defp create_from_publication(actor, publication, section_params) do
     with {:ok, section} <-
            Sections.create_section_from_source(section_params, publication.project),
          {:ok, section} <- Sections.create_section_resources(section, publication),
+         {:ok, _} <-
+           PlatformExternalTools.initialize_section_deep_links(section.id, publication.id),
          {:ok, _} <- Sections.rebuild_contained_pages(section),
          {:ok, _} <- Sections.rebuild_contained_objectives(section),
          {:ok, section} <- enroll_actor(actor, section),
@@ -299,6 +305,16 @@ defmodule Oli.Delivery do
 
   defp research_consent_required?(:oli_form), do: true
   defp research_consent_required?(_), do: false
+
+  @doc """
+  Returns true when a user must answer the research consent form before accessing
+  section content. Either explicit answer completes the form; nil remains pending.
+  """
+  def user_research_consent_pending?(%User{research_opt_out: nil} = user, %Section{} = section) do
+    user_research_consent_required?(user, section)
+  end
+
+  def user_research_consent_pending?(_user, _section), do: false
 
   # ------------------------------------------------------------
   # Delivery Settings

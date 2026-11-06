@@ -1,0 +1,3 @@
+interface:
+  display_name: "Torus Branch Workflow"
+  short_description: "Set up single-PR or integration work in Torus"

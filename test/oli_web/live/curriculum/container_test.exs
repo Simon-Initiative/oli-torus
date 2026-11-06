@@ -122,14 +122,14 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       # Duplicate action is present with the right revision id
       assert view
              |> element(
-               "div[phx-value-slug='#{revision_page_one.slug}'] button[role=\"duplicate_page\"]"
+               "div[phx-value-slug='#{revision_page_one.slug}'] button[data-role=\"duplicate_page\"]"
              )
              |> render =~ "phx-value-id=\"#{revision_page_one.id}\""
 
       # Clicking on duplicate action creates a new entry with the right title name
       view
       |> element(
-        "div[phx-value-slug='#{revision_page_two.slug}'] button[role=\"duplicate_page\"]"
+        "div[phx-value-slug='#{revision_page_two.slug}'] button[data-role=\"duplicate_page\"]"
       )
       |> render_click =~
         "entry-title\">Copy of #{revision_page_two.title}</span>"
@@ -178,12 +178,12 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       assert view
              |> has_element?(
-               "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[role='duplicate_page']"
+               "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[data-role='duplicate_page']"
              )
 
       view
       |> element(
-        "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[role='duplicate_page']"
+        "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[data-role='duplicate_page']"
       )
       |> render_click() =~
         "entry-title\">Copy of #{adaptive_page_revision.title}</span>"
@@ -244,7 +244,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        "div[phx-value-slug='#{broken_page_revision.slug}'] button[role='duplicate_page']"
+        "div[phx-value-slug='#{broken_page_revision.slug}'] button[data-role='duplicate_page']"
       )
       |> render_click()
 
@@ -266,7 +266,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        "div[phx-value-slug='#{revision_page_one.slug}'] button[role=\"show_options_modal\"]"
+        "div[phx-value-slug='#{revision_page_one.slug}'] button[data-role=\"show_options_modal\"]"
       )
       |> render_click() =~ "Page Settings"
 
@@ -356,7 +356,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        "div[phx-value-slug='#{revision_page_one.slug}'] button[role=\"show_options_modal\"]"
+        "div[phx-value-slug='#{revision_page_one.slug}'] button[data-role=\"show_options_modal\"]"
       )
       |> render_click()
 
@@ -388,7 +388,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        "div[phx-value-slug='#{revision_page_one.slug}'] button[role=\"show_options_modal\"]"
+        "div[phx-value-slug='#{revision_page_one.slug}'] button[data-role=\"show_options_modal\"]"
       )
       |> render_click()
 
@@ -500,7 +500,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
+        ~s{button[data-role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
         "Settings"
       )
       |> render_click()
@@ -528,7 +528,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        ~s{button[role="show_options_modal"][phx-value-slug="#{unit.slug}"]},
+        ~s{button[data-role="show_options_modal"][phx-value-slug="#{unit.slug}"]},
         "Settings"
       )
       |> render_click()
@@ -569,7 +569,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
+        ~s{button[data-role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
         "Settings"
       )
       |> render_click()
@@ -671,7 +671,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
+        ~s{button[data-role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
         "Settings"
       )
       |> render_click()
@@ -735,7 +735,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       # open options modal
       view
       |> element(
-        ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
+        ~s{button[data-role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
         "Settings"
       )
       |> render_click()
@@ -778,7 +778,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       # open options modal again
       view
       |> element(
-        ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
+        ~s{button[data-role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
         "Settings"
       )
       |> render_click()

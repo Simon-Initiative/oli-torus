@@ -4,6 +4,7 @@ import { CaptionEditor } from 'components/editing/elements/common/settings/Capti
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { elementBorderStyle, useEditModelCallback } from 'components/editing/elements/utils';
 import { WebpageSettings } from 'components/editing/elements/webpage/WebpageSettings';
+import { webpageAriaLabel } from 'components/webpage/webpageAriaLabel';
 import * as ContentModel from 'data/content/model/elements/types';
 import { useElementSelected } from 'data/content/utils';
 
@@ -65,6 +66,7 @@ export const WebpageEditor = (props: Props) => {
           className={iframeClass}
           {...dimensions}
           src={props.model.src}
+          aria-label={webpageAriaLabel(props.model)}
           allowFullScreen
           frameBorder={0}
         />

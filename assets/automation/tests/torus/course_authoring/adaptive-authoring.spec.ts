@@ -1,4 +1,5 @@
 import { setRuntimeConfig } from '@core/runtimeConfig';
+import { configureCaptcha } from '@core/captcha';
 import { test } from '@fixture/my-fixture';
 import { BrowserContext, Page, expect } from '@playwright/test';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
@@ -84,6 +85,7 @@ test('Author creates an adaptive page with MCQ and student resolves it', async (
   setRuntimeConfig({ loginData: loginData() });
 
   const studentContext = await browser.newContext();
+  await configureCaptcha(studentContext, baseUrl);
 
   try {
     const authorPage = page;

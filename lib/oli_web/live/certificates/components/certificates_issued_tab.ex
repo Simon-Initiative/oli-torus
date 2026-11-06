@@ -26,6 +26,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
         <div class="mb-5 flex justify-between">
           <TextSearch.render
             id="text-search"
+            aria_label="Search issued credentials"
             text={@params["text_search"]}
             event_target={@myself}
             placeholder="Search credentials issued..."
