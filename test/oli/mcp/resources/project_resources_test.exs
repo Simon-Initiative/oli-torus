@@ -108,6 +108,62 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
       }
     end
 
+    test "dispatches project reads with MCP content envelopes", %{
+      project: project,
+      page_resource: page,
+      frame: auth_frame
+    } do
+      frame = %Anubis.Server.Frame{
+        assigns: auth_frame.assigns,
+        transport: %{
+          req_headers: [{"authorization", "Bearer #{auth_frame.assigns.bearer_token}"}]
+        }
+      }
+
+      for {path, mime_type, expected} <- [
+            {"", "application/vnd.torus.project+json", %{"slug" => project.slug}},
+            {"/hierarchy", "application/vnd.torus.hierarchy+json", %{"resource_id" => page.id}},
+            {"/pages/#{page.id}", "application/vnd.torus.page+json",
+             %{"resource_id" => page.id, "title" => "Test Page"}}
+          ] do
+        uri = "torus://p/#{project.slug}#{path}"
+        request = %{"method" => "resources/read", "params" => %{"uri" => uri}}
+
+        assert {:reply, %{"contents" => [content]}, _} =
+                 Oli.MCP.Server.handle_request(request, frame)
+
+        assert content["uri"] == uri
+        assert content["mimeType"] == mime_type
+        assert Map.take(Jason.decode!(content["text"]), Map.keys(expected)) == expected
+      end
+    end
+
+    test "protocol dispatch returns not-found errors for unavailable resources", %{
+      project: project,
+      page_resource: page,
+      frame: auth_frame
+    } do
+      frame = %Anubis.Server.Frame{
+        assigns: auth_frame.assigns,
+        transport: %{
+          req_headers: [{"authorization", "Bearer #{auth_frame.assigns.bearer_token}"}]
+        }
+      }
+
+      for uri <- [
+            "torus://p/missing-project",
+            "torus://p/#{project.slug}/pages/999999999",
+            "torus://p/#{project.slug}/activities/#{page.id}",
+            "torus://p/#{project.slug}/unsupported",
+            "torus://p/#{project.slug}/pages/not-an-id",
+            "unknown://resource"
+          ] do
+        request = %{"method" => "resources/read", "params" => %{"uri" => uri}}
+        assert {:error, error, _} = Oli.MCP.Server.handle_request(request, frame)
+        assert error.reason == :resource_not_found
+      end
+    end
+
     test "reads project metadata successfully", %{project: project, frame: frame} do
       uri = "torus://p/#{project.slug}"
 

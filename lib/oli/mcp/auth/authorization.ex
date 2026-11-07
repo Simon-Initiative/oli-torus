@@ -3,7 +3,7 @@ defmodule Oli.MCP.Auth.Authorization do
   Authorization helpers for MCP tools.
 
   Validates access permissions based on authentication context stored
-  in the frame assigns by the MCP server's init callback.
+  in the frame assigns by the MCP server for the current request.
   """
 
   alias Oli.Authoring.Course
@@ -12,7 +12,7 @@ defmodule Oli.MCP.Auth.Authorization do
   Validates that the authenticated user has access to the specified project.
 
   This function uses the authentication context from frame.assigns
-  (set during MCP server initialization) to validate project access.
+  (set during authentication of the current request) to validate project access.
 
   Returns {:ok, %{author_id: id, project_id: id, project: project}} on success,
   {:error, reason} on failure.
