@@ -711,7 +711,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         |> Enum.flat_map(&String.split/1)
 
       assert classes |> Enum.filter(&String.contains?(&1, "bg-")) |> Enum.sort() ==
-               ["bg-Fill-Buttons-fill-primary", "hover:bg-Fill-Buttons-fill-primary-hover"]
+               ["bg-Fill-Buttons-fill-primary-bold", "hover:bg-Fill-Buttons-fill-primary-hover"]
 
       refute Enum.any?(classes, &String.contains?(&1, "brightness-"))
     end
