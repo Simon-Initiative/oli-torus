@@ -122,57 +122,19 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       assert part.part_id == "part2"
     end
 
-    test "ordinary page and objective browsing reads history only for the selected page", %{
+    test "page and objective browsing and accuracy sorting use summary data only", %{
       project: project
     } do
       for type <- [
             Oli.Resources.ResourceType.id_for_page(),
             Oli.Resources.ResourceType.id_for_objective()
-          ] do
-        {rows, queries} =
-          capture_queries(fn ->
-            BrowseInsights.browse_insights(
-              %Oli.Repo.Paging{limit: 1, offset: 1},
-              %Oli.Repo.Sorting{direction: :asc, field: :title},
-              %Oli.Analytics.Summary.BrowseInsightsOptions{
-                project_id: project.id,
-                section_ids: [],
-                resource_type_id: type
-              }
-            )
-          end)
-
-        assert [row] = rows
-        assert row.total_count > 1
-
-        assert [{history_sql, params}] =
-                 Enum.filter(queries, fn {sql, _} -> String.contains?(sql, "part_attempts") end)
-
-        assert [row.resource_id] in params
-        refute String.contains?(history_sql, "count(*) OVER() as total_count")
-
-        assert [{count_sql, _}] =
-                 Enum.filter(queries, fn {sql, _} ->
-                   String.contains?(sql, "count(*) OVER() as total_count")
-                 end)
-
-        refute String.contains?(count_sql, "part_attempts")
-        refute String.contains?(count_sql, "resource_accesses")
-      end
-    end
-
-    test "eventual-correctness ranking reads history once and keeps counting independent", %{
-      project: project
-    } do
-      for type <- [
-            Oli.Resources.ResourceType.id_for_page(),
-            Oli.Resources.ResourceType.id_for_objective()
-          ] do
+          ],
+          field <- [:title, :eventually_correct] do
         {[row], queries} =
           capture_queries(fn ->
             BrowseInsights.browse_insights(
               %Oli.Repo.Paging{limit: 1, offset: 1},
-              %Oli.Repo.Sorting{direction: :asc, field: :eventually_correct},
+              %Oli.Repo.Sorting{direction: :asc, field: field},
               %Oli.Analytics.Summary.BrowseInsightsOptions{
                 project_id: project.id,
                 section_ids: [],
@@ -182,13 +144,20 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
           end)
 
         assert row.total_count > 1
+        assert_in_delta row.eventually_correct, row.num_correct / row.num_attempts, 0.000001
 
-        assert [{ranking_sql, _}] =
-                 Enum.filter(queries, fn {sql, _} -> String.contains?(sql, "part_attempts") end)
+        for {sql, _params} <- queries do
+          for table <- [
+                "resource_accesses",
+                "resource_attempts",
+                "activity_attempts",
+                "part_attempts"
+              ] do
+            refute String.contains?(sql, table)
+          end
 
-        assert String.contains?(ranking_sql, "LIMIT")
-        assert String.contains?(ranking_sql, "published_resources")
-        refute String.contains?(ranking_sql, "count(*) OVER() as total_count")
+          refute String.contains?(sql, "num_attempted")
+        end
       end
     end
 
@@ -708,6 +677,38 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       assert_in_delta adaptive_row.first_attempt_correct, 1 / 3, 1.0e-6
     end
 
+    test "adaptive question correctness correlates all parts per learner for display and sorting",
+         %{project: project, section: section, adaptive_activity: adaptive_activity} do
+      from(s in Oli.Analytics.Summary.ResourceSummary,
+        where:
+          s.resource_id == ^adaptive_activity.resource.id and s.user_id != -1 and
+            s.part_id == "question",
+        update: [set: [num_correct: 1 - s.num_correct]]
+      )
+      |> Repo.update_all([])
+
+      for sections <- [[], [section.id]], field <- [:title, :eventually_correct] do
+        results =
+          BrowseInsights.browse_insights(
+            %Oli.Repo.Paging{limit: 10, offset: 0},
+            %Oli.Repo.Sorting{direction: :asc, field: field},
+            %Oli.Analytics.Summary.BrowseInsightsOptions{
+              project_id: project.id,
+              section_ids: sections,
+              resource_type_id: Oli.Resources.ResourceType.id_for_activity()
+            }
+          )
+
+        row = Enum.find(results, &(&1.resource_id == adaptive_activity.resource.id))
+        assert row.eventually_correct == 0.0
+
+        case field do
+          :eventually_correct -> assert hd(results).resource_id == row.resource_id
+          _ -> :ok
+        end
+      end
+    end
+
     test "returns unaggregated rows when adaptive registration is unavailable", %{
       project: project,
       adaptive_activity: adaptive_activity
@@ -775,7 +776,12 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
         %{
           title: title,
           activity_type_id: adaptive_registration.id,
-          content: %{}
+          content: %{
+            "partsLayout" => [
+              %{"id" => "progress", "type" => "janus-input-text"},
+              %{"id" => "question", "type" => "janus-input-text"}
+            ]
+          }
         },
         map.publication,
         map.project,

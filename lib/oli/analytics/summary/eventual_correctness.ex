@@ -9,70 +9,42 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
 
   import Ecto.Query
 
+  alias Oli.Activities.AdaptiveParts
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
-  alias Oli.Resources.{ResourceType, Revision}
-  alias Oli.Resources.ObjectiveIds
-
-  require ObjectiveIds
+  alias Oli.Resources.ResourceType
 
   @doc """
-  Returns attempted and successful learner counts per resource and part.
+  Returns attempted and successful learner counts for individual activity parts.
 
-  With no section filter, counts are combined over sections using the project.
-  Explicit section IDs are intersected with the project's sections, including
-  sections using the project through a publication association. Section-only
-  callers may pass a nil project ID after authorizing access to those sections.
-  Submission counters are read without modification, so historical data needs
-  no migration or replay of the analytics pipeline.
+  Each learner counts once per section and part, regardless of retries. Missing
+  correctness counters or section-wide evidence without learner summaries produce
+  nil counts. No attempt history is read. Project scopes include sections using
+  that project; explicit section selections narrow that set. A nil project ID is
+  reserved for callers that have already authorized the supplied sections.
 
-  Page and objective rollups combine learner-question-part opportunities, not
-  learners with any success in the parent resource. Historical evaluated
-  attempts supply page membership and the objective tags used at the time.
-
-  `:resource_ids` limits the requested activity, page, or objective IDs;
-  `:part_id` optionally narrows activity parts. Historical membership is
-  deduplicated before joining learner summaries. Missing evidence in any
-  contributing section or opportunity, including a NULL correctness counter,
-  produces nil counts.
-
-  Internal ranking callers may supply a resource-ID query instead of a list,
-  keeping candidate filters within SQL rather than materializing all IDs.
+  `:resource_ids` accepts a list or resource-ID query; `:part_id` narrows the parts.
+  Page and objective response accuracy is calculated from aggregate summaries by
+  the caller, independently of eventual correctness.
   """
   def counts_query(project_id, section_ids, resource_type_id \\ nil, opts \\ []) do
-    resource_type_id = resource_type_id || ResourceType.id_for_activity()
     activity_type_id = ResourceType.id_for_activity()
-    page_type_id = ResourceType.id_for_page()
-    objective_type_id = ResourceType.id_for_objective()
+    resource_type_id = resource_type_id || activity_type_id
+    ^activity_type_id = resource_type_id
+
+    part_counts_query(project_id, section_ids, opts)
+    |> aggregate_sections(section_ids)
+  end
+
+  defp part_counts_query(project_id, section_ids, opts) do
+    resource_type_id = ResourceType.id_for_activity()
     scope = section_scope(project_id, section_ids)
-    students = student_summaries_query(scope)
 
     opportunities =
-      case resource_type_id do
-        ^activity_type_id ->
-          students
-          |> filter_resources(Keyword.get(opts, :resource_ids))
-          |> filter_part(Keyword.get(opts, :part_id))
-          |> select([s], %{
-            resource_id: s.resource_id,
-            resource_type_id: s.resource_type_id,
-            part_id: s.part_id,
-            section_id: s.section_id,
-            num_correct: s.num_correct,
-            num_attempts: s.num_attempts
-          })
-
-        ^page_type_id ->
-          scope
-          |> page_membership(Keyword.get(opts, :resource_ids))
-          |> join_student_summaries(students, page_type_id)
-
-        ^objective_type_id ->
-          scope
-          |> objective_membership(Keyword.get(opts, :resource_ids))
-          |> join_student_summaries(students, objective_type_id)
-      end
+      scope
+      |> student_summaries_query()
+      |> filter_resources(Keyword.get(opts, :resource_ids))
+      |> filter_part(Keyword.get(opts, :part_id))
 
     query =
       from(s in subquery(opportunities),
@@ -98,8 +70,10 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
         }
       )
 
-    query = include_missing_sections(query, scope, resource_type_id, opts)
+    include_missing_sections(query, scope, resource_type_id, opts)
+  end
 
+  defp aggregate_sections(query, section_ids) do
     case section_ids do
       [] ->
         from(s in subquery(query),
@@ -129,8 +103,8 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
     end
   end
 
-  # Section-wide counters identify attempted parts whose learner summaries or
-  # historical membership are entirely missing. Keep them as NULL instead of
+  # Section-wide counters identify attempted parts whose learner summaries
+  # are entirely missing. Keep them as NULL instead of
   # silently dropping that section from a project-wide denominator.
   defp include_missing_sections(counts, scope, resource_type_id, opts) do
     from(s in ResourceSummary,
@@ -222,160 +196,148 @@ defmodule Oli.Analytics.Summary.EventualCorrectness do
   defp filter_part(query, nil), do: query
   defp filter_part(query, part_id), do: where(query, [s], s.part_id == ^part_id)
 
-  # Retry history is reduced to compact membership before learner summaries are
-  # joined. Page queries do not need revision data; objective queries retain the
-  # historical revision until its tags have been expanded and deduplicated.
-  defp historical_activity_attempts(scope) do
-    from(access in ResourceAccess,
-      join: ra in ResourceAttempt,
-      on: ra.resource_access_id == access.id,
-      join: aa in ActivityAttempt,
-      on: aa.resource_attempt_id == ra.id,
-      where: ^scope
-    )
+  @doc """
+  Returns scored part IDs from the activity definition already loaded for display.
+
+  Adaptive screens use their response-summary parts, excluding state-only inputs.
+  Ordinary activities use their authored parts. Empty definitions cannot establish
+  whole-question correctness.
+  """
+  def required_part_ids(%{content: content}) when is_map(content) do
+    case Map.has_key?(content, "partsLayout") do
+      true ->
+        definitions = AdaptiveParts.merged_parts_by_id(content)
+
+        content
+        |> AdaptiveParts.response_summary_part_ids()
+        |> Enum.filter(&scored_part?(Map.get(definitions, &1)))
+
+      false ->
+        (get_in(content, ["authoring", "parts"]) || [])
+        |> Enum.filter(&scored_part?/1)
+        |> Enum.map(&Map.get(&1, "id"))
+    end
+    |> Enum.filter(&is_binary/1)
+    |> Enum.uniq()
   end
 
-  defp historical_attempts(scope) do
-    from([_access, _ra, aa] in historical_activity_attempts(scope),
-      join: pa in PartAttempt,
-      on: pa.activity_attempt_id == aa.id,
-      where: pa.lifecycle_state == :evaluated
-    )
+  def required_part_ids(_), do: []
+
+  defp scored_part?(%{"outOf" => out_of}) when is_number(out_of), do: out_of > 0
+  defp scored_part?(%{"gradingApproach" => "manual"}), do: true
+
+  defp scored_part?(%{"responses" => [_ | _] = responses}) do
+    Enum.any?(responses, fn response ->
+      case Map.get(response, "score") do
+        score when is_number(score) -> score > 0
+        _ -> false
+      end
+    end)
   end
 
-  defp page_membership(scope, resource_ids) do
-    scope
-    |> historical_attempts()
-    |> filter_resources(resource_ids)
-    |> distinct(true)
-    |> select([access, _ra, aa, pa], %{
-      resource_id: access.resource_id,
-      section_id: access.section_id,
-      user_id: access.user_id,
-      activity_id: aa.resource_id,
-      activity_part_id: pa.part_id
-    })
-  end
+  defp scored_part?(_), do: true
 
-  defp objective_membership(scope, resource_ids) do
-    activity_attempts =
-      scope
-      |> historical_activity_attempts()
-      |> restrict_objective_revisions(scope, resource_ids)
-      |> select([access, _ra, aa], %{
-        section_id: access.section_id,
-        user_id: access.user_id,
-        activity_id: aa.resource_id,
-        revision_id: aa.revision_id,
-        activity_attempt_id: aa.id
-      })
-      # Keep the filtered activity set ahead of the retry join in PostgreSQL's
-      # plan. Without this boundary the planner can materialize every retry
-      # before applying the objective-revision semi-join.
-      |> offset(0)
+  @doc """
+  Returns whole-question learner counts using only resource summaries.
 
-    attempts =
-      from(aa in subquery(activity_attempts),
-        join: pa in PartAttempt,
-        on: pa.activity_attempt_id == aa.activity_attempt_id,
-        where: pa.lifecycle_state == :evaluated,
-        distinct: true,
+  `required_parts` maps activity IDs to their scored part IDs. A learner who has
+  attempted any required part qualifies only after every required part has a
+  positive correct counter, possibly on different submissions. An unattempted
+  required part prevents success. Missing counters or missing per-learner evidence
+  for an attempted section/part make the question unavailable. Each section
+  enrollment is counted separately, matching individual-part opportunities.
+  """
+  def question_counts_query(project_id, section_ids, required_parts) do
+    pairs =
+      for {resource_id, ids} <- required_parts,
+          part_id <- Enum.uniq(ids),
+          do: {resource_id, part_id}
+
+    {resource_ids, part_ids} = Enum.unzip(pairs)
+
+    parts =
+      from(
+        p in fragment(
+          "SELECT * FROM unnest(?::bigint[], ?::text[]) AS parts(resource_id, part_id)",
+          ^resource_ids,
+          ^part_ids
+        ),
         select: %{
-          section_id: aa.section_id,
-          user_id: aa.user_id,
-          activity_id: aa.activity_id,
-          revision_id: aa.revision_id,
-          activity_part_id: pa.part_id
+          resource_id: type(p.resource_id, :integer),
+          part_id: type(p.part_id, :string),
+          num_parts: fragment("count(*) OVER (PARTITION BY ?)", p.resource_id)
         }
       )
 
-    membership =
-      from(attempt in subquery(attempts),
-        join: revision in Revision,
-        on: revision.id == attempt.revision_id,
-        join:
-          objective in fragment(
-            "jsonb_array_elements_text(CASE WHEN jsonb_typeof(?) = 'array' THEN ? WHEN jsonb_typeof(? -> ?) = 'array' THEN ? -> ? ELSE '[]'::jsonb END)",
-            revision.objectives,
-            revision.objectives,
-            revision.objectives,
-            attempt.activity_part_id,
-            revision.objectives,
-            attempt.activity_part_id
-          ),
-        on: true,
-        distinct: true,
+    students =
+      section_scope(project_id, section_ids)
+      |> student_summaries_query()
+      |> filter_resources(Enum.uniq(resource_ids))
+
+    learners =
+      from(s in students,
+        join: p in subquery(parts),
+        on: p.resource_id == s.resource_id and p.part_id == s.part_id,
+        group_by: [s.resource_id, s.section_id, s.user_id],
         select: %{
-          resource_id: type(ObjectiveIds.safe_id(objective.value), :integer),
-          section_id: attempt.section_id,
-          user_id: attempt.user_id,
-          activity_id: attempt.activity_id,
-          activity_part_id: attempt.activity_part_id
+          resource_id: s.resource_id,
+          section_id: s.section_id,
+          num_correct:
+            fragment(
+              "CASE WHEN count(?) = count(*) THEN CASE WHEN count(*) FILTER (WHERE ? > 0) = max(?) THEN 1 ELSE 0 END END",
+              s.num_correct,
+              s.num_correct,
+              p.num_parts
+            )
         }
       )
 
-    from(m in subquery(membership)) |> filter_resources(resource_ids)
-  end
-
-  defp restrict_objective_revisions(query, _scope, nil), do: query
-
-  defp restrict_objective_revisions(query, scope, resource_ids) do
-    # Narrow activity revisions before reading their retry history. Only this
-    # section/project's observed revisions are expanded, and part-specific tags
-    # are still checked by objective_membership after retries are deduplicated.
-    observed_revisions =
-      scope
-      |> historical_activity_attempts()
-      |> select([_access, _ra, aa], aa.revision_id)
-      |> distinct(true)
-
-    matching =
-      from(revision in Revision,
-        where: revision.id in subquery(observed_revisions),
-        join:
-          tags in fragment(
-            "jsonb_each(CASE WHEN jsonb_typeof(?) = 'array' THEN jsonb_build_object('_', ?) WHEN jsonb_typeof(?) = 'object' THEN ? ELSE '{}'::jsonb END)",
-            revision.objectives,
-            revision.objectives,
-            revision.objectives,
-            revision.objectives
-          ),
-        on: true,
-        join:
-          objective in fragment(
-            "jsonb_array_elements_text(CASE WHEN jsonb_typeof(?) = 'array' THEN ? ELSE '[]'::jsonb END)",
-            tags.value,
-            tags.value
-          ),
-        on: true,
+    counts =
+      from(l in subquery(learners),
+        group_by: [l.resource_id, l.section_id],
         select: %{
-          resource_id: type(ObjectiveIds.safe_id(objective.value), :integer),
-          revision_id: revision.id
+          resource_id: l.resource_id,
+          section_id: l.section_id,
+          num_attempted:
+            fragment("CASE WHEN count(?) = count(*) THEN count(*) END", l.num_correct),
+          num_correct:
+            fragment(
+              "CASE WHEN count(?) = count(*) THEN sum(?)::bigint END",
+              l.num_correct,
+              l.num_correct
+            )
         }
       )
 
-    # Filter the objective IDs inside the derived membership, before selecting
-    # revision IDs for the activity-attempt semi-join.
-    filtered = from(row in subquery(matching)) |> filter_resources(resource_ids)
-    revision_ids = from(row in subquery(filtered), select: row.revision_id, distinct: true)
+    # Anchor completeness to attempted section-wide parts. An absent learner row
+    # must not silently improve a rate by disappearing from its denominator.
+    availability =
+      from(
+        ec in subquery(
+          part_counts_query(project_id, section_ids, resource_ids: Enum.uniq(resource_ids))
+        ),
+        join: p in subquery(parts),
+        on: ec.resource_id == p.resource_id and ec.part_id == p.part_id,
+        group_by: [ec.resource_id, ec.section_id],
+        select: %{
+          resource_id: ec.resource_id,
+          section_id: ec.section_id,
+          complete: fragment("count(?) = count(*)", ec.num_attempted)
+        }
+      )
 
-    where(query, [_access, _ra, aa], aa.revision_id in subquery(revision_ids))
-  end
-
-  defp join_student_summaries(membership, students, resource_type_id) do
-    from(m in subquery(membership),
-      left_join: s in subquery(students),
-      on:
-        s.section_id == m.section_id and s.user_id == m.user_id and
-          s.resource_id == m.activity_id and s.part_id == m.activity_part_id,
+    from(a in subquery(availability),
+      left_join: c in subquery(counts),
+      on: c.resource_id == a.resource_id and c.section_id == a.section_id,
       select: %{
-        resource_id: m.resource_id,
-        resource_type_id: type(^resource_type_id, :integer),
-        part_id: "unknown",
-        section_id: m.section_id,
-        num_correct: s.num_correct,
-        num_attempts: s.num_attempts
+        resource_id: a.resource_id,
+        resource_type_id: type(^ResourceType.id_for_activity(), :integer),
+        part_id: type(^nil, :string),
+        section_id: a.section_id,
+        num_attempted: fragment("CASE WHEN ? THEN ? END", a.complete, c.num_attempted),
+        num_correct: fragment("CASE WHEN ? THEN ? END", a.complete, c.num_correct)
       }
     )
+    |> aggregate_sections(section_ids)
   end
 end

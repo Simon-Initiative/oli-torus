@@ -36,7 +36,8 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
   Retrieves descriptive insights, deriving eventual correctness from learner
   summaries while retaining submission-based counts and relative difficulty.
 
-  Counts use aggregate summaries only. Ordinary sorts select the
+  Page and objective percentages retain submission accuracy. All metrics use
+  summary tables only. Ordinary activity sorts select the
   requested page before loading its learner metrics; eventual-correctness sorts
   rank all matching resources once and place unavailable rates last.
   """
@@ -190,6 +191,12 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
        ) do
     include_eventual? = sorting.field == :eventually_correct
 
+    required_parts =
+      case include_eventual? do
+        true -> adaptive_required_parts(query, adaptive_activity_type_id)
+        false -> %{}
+      end
+
     query =
       case include_eventual? do
         true ->
@@ -204,6 +211,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       query
       |> add_activity_row_select(adaptive_activity_type_id, include_eventual?)
       |> aggregate_activity_rows()
+      |> add_question_rates(options, required_parts, adaptive_activity_type_id)
       |> select_aggregated_activity_rows()
       |> add_aggregated_activity_order_by(sorting)
       |> limit(^limit)
@@ -226,12 +234,9 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     # Counting never needs learner or historical-attempt data.
     total_count = get_total_count(query, options)
 
-    case {total_count, sorting.field} do
-      {0, _} ->
+    case total_count do
+      0 ->
         []
-
-      {_, :eventually_correct} ->
-        browse_by_eventual_correctness(query, paging, sorting, options, total_count)
 
       _ ->
         query
@@ -240,13 +245,12 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
         |> limit(^paging.limit)
         |> offset(^paging.offset)
         |> Repo.all()
-        |> add_eventual_correctness(options)
     end
   end
 
   # Ordinary sorts choose their page using only existing aggregate counters.
-  # Fetch historical membership once, bounded to the returned resource IDs.
-  defp add_eventual_correctness(rows, options, adaptive_activity_type_id \\ nil)
+  # Fetch learner counts only for returned activity IDs.
+  defp add_eventual_correctness(rows, options, adaptive_activity_type_id)
   defp add_eventual_correctness([], _options, _adaptive_activity_type_id), do: []
 
   defp add_eventual_correctness(rows, options, adaptive_activity_type_id) do
@@ -263,75 +267,110 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       |> Repo.all()
       |> Enum.group_by(& &1.resource_id)
 
+    adaptive_rows = Enum.filter(rows, &(&1.activity_type_id == adaptive_activity_type_id))
+    revision_ids = Enum.map(adaptive_rows, & &1.pr_rev)
+
+    required_parts =
+      case revision_ids do
+        [] ->
+          %{}
+
+        _ ->
+          from(rev in Revision,
+            where: rev.id in ^revision_ids,
+            select: %{resource_id: rev.resource_id, content: rev.content}
+          )
+          |> Repo.all()
+          |> Map.new(&{&1.resource_id, EventualCorrectness.required_part_ids(&1)})
+      end
+
+    question_rates =
+      case map_size(required_parts) do
+        0 ->
+          %{}
+
+        _ ->
+          EventualCorrectness.question_counts_query(
+            options.project_id,
+            options.section_ids,
+            required_parts
+          )
+          |> Repo.all()
+          |> Enum.group_by(& &1.resource_id)
+          |> Map.new(fn {id, counts} ->
+            {id, EventualCorrectness.rate(Enum.map(counts, &{&1.num_correct, &1.num_attempted}))}
+          end)
+      end
+
     Enum.map(rows, fn row ->
       counts = Map.get(counts_by_resource, row.resource_id, [])
 
-      counts =
+      rate =
         case row.activity_type_id do
-          id when not is_nil(id) and id == adaptive_activity_type_id -> counts
-          _ -> Enum.filter(counts, &(&1.part_id == row.part_id))
+          id when not is_nil(id) and id == adaptive_activity_type_id ->
+            Map.get(question_rates, row.resource_id)
+
+          _ ->
+            counts
+            |> Enum.filter(&(&1.part_id == row.part_id))
+            |> Enum.map(&{&1.num_correct, &1.num_attempted})
+            |> EventualCorrectness.rate()
         end
 
-      rate = counts |> Enum.map(&{&1.num_correct, &1.num_attempted}) |> EventualCorrectness.rate()
       Map.put(row, :eventually_correct, rate)
     end)
   end
 
+  defp adaptive_required_parts(_query, nil), do: %{}
+
+  defp adaptive_required_parts(query, adaptive_type_id) do
+    query
+    |> where([_, _, _, rev], rev.activity_type_id == ^adaptive_type_id)
+    |> select([s, _, _, rev], %{resource_id: s.resource_id, content: rev.content})
+    |> distinct(true)
+    |> Repo.all()
+    |> Map.new(&{&1.resource_id, EventualCorrectness.required_part_ids(&1)})
+  end
+
+  defp add_question_rates(query, _options, required_parts, _adaptive_type_id)
+       when map_size(required_parts) == 0, do: query
+
+  defp add_question_rates(query, options, required_parts, adaptive_type_id) do
+    rates =
+      from(
+        c in subquery(
+          EventualCorrectness.question_counts_query(
+            options.project_id,
+            options.section_ids,
+            required_parts
+          )
+        ),
+        group_by: c.resource_id,
+        select: %{
+          resource_id: c.resource_id,
+          rate: complete_rate_fragment(c.num_correct, c.num_attempted)
+        }
+      )
+
+    from(row in subquery(query),
+      left_join: q in subquery(rates),
+      on: q.resource_id == row.resource_id,
+      select: row,
+      select_merge: %{
+        eventually_correct:
+          fragment(
+            "CASE WHEN ? = ? THEN ? ELSE ? END",
+            row.activity_type_id,
+            ^adaptive_type_id,
+            q.rate,
+            row.eventually_correct
+          )
+      }
+    )
+  end
+
   defp eventual_sort_direction(:asc), do: :asc_nulls_last
   defp eventual_sort_direction(:desc), do: :desc_nulls_last
-
-  # Sorting by a derived rate must rank every matching resource. Compute just
-  # resource IDs and rates in one ranking query; fetch display rows only for
-  # the selected page. Candidate IDs apply text/deletion/resource filters before
-  # historical membership is read, and no count query repeats that read.
-  defp browse_by_eventual_correctness(query, paging, sorting, options, total_count) do
-    candidates = query |> select([s], s.resource_id) |> distinct(true)
-
-    ranked =
-      query
-      |> join_eventual_correctness(options, candidates)
-      |> group_by([s], [s.resource_id, s.part_id])
-      |> select([s, eventual_correctness: ec], %{
-        resource_id: s.resource_id,
-        part_id: s.part_id,
-        eventually_correct: complete_rate_fragment(ec.num_correct, ec.num_attempted)
-      })
-
-    direction = eventual_sort_direction(sorting.direction)
-
-    ranked_page =
-      from(row in subquery(ranked),
-        order_by: [
-          {^direction, row.eventually_correct},
-          {:asc, row.resource_id},
-          {:asc, row.part_id}
-        ],
-        limit: ^paging.limit,
-        offset: ^paging.offset
-      )
-      |> Repo.all()
-
-    case ranked_page do
-      [] ->
-        []
-
-      _ ->
-        ids = Enum.map(ranked_page, & &1.resource_id)
-
-        display_rows =
-          query
-          |> where([s], s.resource_id in ^ids)
-          |> add_non_activity_select(total_count, options)
-          |> Repo.all()
-          |> Map.new(&{{&1.resource_id, &1.part_id}, &1})
-
-        Enum.map(ranked_page, fn row ->
-          display_rows
-          |> Map.fetch!({row.resource_id, row.part_id})
-          |> Map.put(:eventually_correct, row.eventually_correct)
-        end)
-    end
-  end
 
   defp add_activity_row_select(query, adaptive_activity_type_id, include_eventual?) do
     query =
@@ -501,7 +540,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           num_hints: s.num_hints,
           num_first_attempts: s.num_first_attempts,
           num_first_attempts_correct: s.num_first_attempts_correct,
-          eventually_correct: nil,
+          eventually_correct: safe_div_fragment(s.num_correct, s.num_attempts),
           first_attempt_correct:
             safe_div_fragment(s.num_first_attempts_correct, s.num_first_attempts),
           relative_difficulty:
@@ -540,7 +579,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           num_hints: sum(s.num_hints),
           num_first_attempts: sum(s.num_first_attempts),
           num_first_attempts_correct: sum(s.num_first_attempts_correct),
-          eventually_correct: nil,
+          eventually_correct: safe_div_fragment(sum(s.num_correct), sum(s.num_attempts)),
           first_attempt_correct:
             safe_div_fragment(sum(s.num_first_attempts_correct), sum(s.num_first_attempts)),
           relative_difficulty:
@@ -577,6 +616,14 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
 
         :num_first_attempts ->
           order_by(query, [s], {^direction, s.num_first_attempts})
+
+        :eventually_correct ->
+          order_by(
+            query,
+            [s],
+            {^eventual_sort_direction(direction),
+             safe_div_fragment(s.num_correct, s.num_attempts)}
+          )
 
         :first_attempt_correct ->
           order_by(
@@ -629,6 +676,14 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
 
         :num_first_attempts ->
           order_by(query, [s], {^direction, sum(s.num_first_attempts)})
+
+        :eventually_correct ->
+          order_by(
+            query,
+            [s],
+            {^eventual_sort_direction(direction),
+             safe_div_fragment(sum(s.num_correct), sum(s.num_attempts))}
+          )
 
         :first_attempt_correct ->
           order_by(

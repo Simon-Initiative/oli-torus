@@ -41,6 +41,28 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
     end
   end
 
+  test "page and objective table headers identify response accuracy and repeated attempts" do
+    for module <- [
+          OliWeb.Insights.PageTableModel,
+          OliWeb.Workspaces.CourseAuthor.Insights.PageTableModel
+        ] do
+      {:ok, model} = module.new([], "project", %{})
+      column = Enum.find(model.column_specs, &(&1.name == :eventually_correct))
+      assert column.label == "% Correct"
+      assert column.tooltip =~ "Includes repeated attempts"
+    end
+
+    for module <- [
+          OliWeb.Insights.ObjectiveTableModel,
+          OliWeb.Workspaces.CourseAuthor.Insights.ObjectiveTableModel
+        ] do
+      {:ok, model} = module.new([], %{})
+      column = Enum.find(model.column_specs, &(&1.name == :eventually_correct))
+      assert column.label == "% Correct"
+      assert column.tooltip =~ "Includes repeated attempts"
+    end
+  end
+
   describe "stage_performance_details/3 for check-all-that-apply" do
     test "marks only non-negated choices as correct and aggregates counts per choice" do
       cata_id = 1
@@ -172,7 +194,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
   end
 
   describe "stage_performance_details/3 for adaptive screens" do
-    test "eventual correctness combines learner-part counts independently of submission frequency" do
+    test "part counters do not infer whole-question success without learner correlation" do
       parts =
         for id <- ["one", "two"] do
           %{
@@ -224,7 +246,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
           []
         )
 
-      assert activity.all_attempt_pct == 0.25
+      assert is_nil(activity.all_attempt_pct)
       assert Enum.map(activity.adaptive_input_summaries, & &1.all_attempt_pct) == [1.0, 0.0]
 
       missing =

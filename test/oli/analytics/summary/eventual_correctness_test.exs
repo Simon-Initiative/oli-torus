@@ -308,6 +308,112 @@ defmodule Oli.Analytics.Summary.EventualCorrectnessTest do
     assert insight(ctx, [ctx.section.id]).eventually_correct == 1.0
   end
 
+  test "required parts omit zero-credit and adaptive state-only parts" do
+    assert EventualCorrectness.required_part_ids(%{
+             content: %{
+               "authoring" => %{
+                 "parts" => [
+                   %{"id" => "scored", "responses" => [%{"score" => 1}, %{"score" => 0}]},
+                   %{"id" => "zero", "outOf" => 0},
+                   %{"id" => "unscored", "responses" => [%{"score" => 0}]},
+                   %{"id" => "manual", "gradingApproach" => "manual", "outOf" => 5}
+                 ]
+               }
+             }
+           }) == ["scored", "manual"]
+
+    assert EventualCorrectness.required_part_ids(%{
+             content: %{
+               "partsLayout" => [
+                 %{"id" => "scored", "type" => "janus-mcq"},
+                 %{"id" => "state", "type" => "janus-video"},
+                 %{"id" => "zero", "type" => "janus-input-text", "outOf" => 0}
+               ]
+             }
+           }) == ["scored"]
+  end
+
+  test "whole questions require all parts for the same learner in the same section", ctx do
+    summary(ctx, ctx.alice.id, 3, 5, 0)
+    summary(ctx, ctx.alice.id, 1, 4, 0, "part2")
+    summary(ctx, ctx.bob.id, 1, 3, 1)
+    summary(ctx, ctx.bob.id, 0, 2, 0, "part2")
+    aggregate_summaries(ctx, 4, 8, 1)
+    aggregate_summaries(ctx, 1, 6, 0, "part2")
+
+    second = Seeder.create_section(ctx)
+    summary(second, ctx.alice.id, 1, 2, 1)
+
+    Repo.insert!(%ResourceSummary{
+      section_id: second.section.id,
+      resource_id: ctx.question.resource.id,
+      resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+      part_id: "part1",
+      num_correct: 1,
+      num_attempts: 2
+    })
+
+    required = %{ctx.question.resource.id => ["part1", "part2"]}
+
+    [first] =
+      EventualCorrectness.question_counts_query(ctx.project.id, [ctx.section.id], required)
+      |> Repo.all()
+
+    assert {first.num_correct, first.num_attempted} == {1, 2}
+
+    [other] =
+      EventualCorrectness.question_counts_query(ctx.project.id, [second.section.id], required)
+      |> Repo.all()
+
+    assert {other.num_correct, other.num_attempted} == {0, 1}
+
+    [combined] =
+      EventualCorrectness.question_counts_query(ctx.project.id, [], required) |> Repo.all()
+
+    assert {combined.num_correct, combined.num_attempted} == {1, 3}
+
+    assert EventualCorrectness.question_counts_query(ctx.project.id, [], %{}) |> Repo.all() == []
+  end
+
+  test "a wholly unattempted required part prevents question success", ctx do
+    summary(ctx, ctx.alice.id, 1, 1, 1)
+    aggregate_summaries(ctx, 1, 1, 1)
+
+    [row] =
+      EventualCorrectness.question_counts_query(ctx.project.id, [], %{
+        ctx.question.resource.id => ["part1", "never_attempted"]
+      })
+      |> Repo.all()
+
+    assert {row.num_correct, row.num_attempted} == {0, 1}
+  end
+
+  test "missing learner evidence makes the whole question unavailable", ctx do
+    alice = summary(ctx, ctx.alice.id, 1, 2, 1)
+    aggregate_summaries(ctx, 1, 2, 1)
+    required = %{ctx.question.resource.id => ["part1", "part2"]}
+
+    alice |> Ecto.Changeset.change(num_correct: nil) |> Repo.update!()
+
+    for sections <- [[], [ctx.section.id]] do
+      [row] =
+        EventualCorrectness.question_counts_query(ctx.project.id, sections, required)
+        |> Repo.all()
+
+      assert is_nil(row.num_correct)
+      assert is_nil(row.num_attempted)
+    end
+
+    Repo.get!(ResourceSummary, alice.id)
+    |> Ecto.Changeset.change(num_correct: 1)
+    |> Repo.update!()
+
+    aggregate_summaries(ctx, 1, 2, 1, "part2")
+    [row] = EventualCorrectness.question_counts_query(ctx.project.id, [], required) |> Repo.all()
+    assert is_nil(row.num_correct)
+    assert is_nil(row.num_attempted)
+  end
+
   defp summary(ctx, user_id, correct, attempts, first_correct, part_id \\ "part1") do
     {:ok, row} =
       Summary.create_resource_summary(%{

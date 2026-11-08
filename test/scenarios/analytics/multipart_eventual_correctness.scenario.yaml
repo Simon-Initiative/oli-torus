@@ -1,0 +1,224 @@
+# Alice succeeds on different parts in separate submissions; Bob leaves one part
+# unattempted; Carol earns full credit together. Whole-question EC is 2/3 even
+# though each individual part has 100% EC among its attempted learners.
+- project:
+    name: "multipart_eventual"
+    objectives:
+      - "Multipart objective"
+    root:
+      children:
+        - page: "Multipart Practice"
+
+- create_activity:
+    project: "multipart_eventual"
+    title: "Multi Input Question"
+    virtual_id: "multi_input"
+    type: "oli_multi_input"
+    objectives:
+      - "Multipart objective"
+    content_format: "json"
+    content:
+      activityType: "oli_multi_input"
+      submitPerPart: false
+      choices: []
+      inputs:
+        - id: "1637853221"
+          inputType: "text"
+          partId: "text_part"
+        - id: "2369651067"
+          inputType: "numeric"
+          partId: "numeric_part"
+      stem:
+        id: "multi_input_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Fill in both blanks: "
+              - type: "input_ref"
+                id: "1637853221"
+                children:
+                  - text: ""
+              - text: " and "
+              - type: "input_ref"
+                id: "2369651067"
+                children:
+                  - text: ""
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "text_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "multi_input_text_correct"
+                rule: "input contains {answer}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "multi_input_text_feedback_correct"
+                  content: []
+              - id: "multi_input_text_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "multi_input_text_feedback_incorrect"
+                  content: []
+            hints: []
+          - id: "numeric_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "multi_input_numeric_correct"
+                rule: "input = {1}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "multi_input_numeric_feedback_correct"
+                  content: []
+              - id: "multi_input_numeric_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "multi_input_numeric_feedback_incorrect"
+                  content: []
+            hints: []
+
+- edit_page:
+    project: "multipart_eventual"
+    page: "Multipart Practice"
+    content: |
+      title: "Multipart Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "multi_input"
+
+- publish:
+    to: "multipart_eventual"
+
+- section:
+    name: "multipart_section"
+    from: "multipart_eventual"
+
+- user:
+    name: "alice"
+    type: "student"
+
+- enroll:
+    user: "alice"
+    section: "multipart_section"
+    role: "student"
+
+- visit_page:
+    student: "alice"
+    section: "multipart_section"
+    page: "Multipart Practice"
+
+- user:
+    name: "bob"
+    type: "student"
+
+- enroll:
+    user: "bob"
+    section: "multipart_section"
+    role: "student"
+
+- visit_page:
+    student: "bob"
+    section: "multipart_section"
+    page: "Multipart Practice"
+
+- user:
+    name: "carol"
+    type: "student"
+
+- enroll:
+    user: "carol"
+    section: "multipart_section"
+    role: "student"
+
+- visit_page:
+    student: "carol"
+    section: "multipart_section"
+    page: "Multipart Practice"
+
+- answer_question:
+    student: "alice"
+    section: "multipart_section"
+    page: "Multipart Practice"
+    activity_virtual_id: "multi_input"
+    response:
+      "1637853221": "answer"
+      "2369651067": "0"
+
+- assert:
+    activity_attempt:
+      section: "multipart_section"
+      student: "alice"
+      page: "Multipart Practice"
+      activity_virtual_id: "multi_input"
+      score: 1.0
+      out_of: 2.0
+
+- reset_activity:
+    student: "alice"
+    section: "multipart_section"
+    page: "Multipart Practice"
+    activity_virtual_id: "multi_input"
+
+- answer_question:
+    student: "alice"
+    section: "multipart_section"
+    page: "Multipart Practice"
+    activity_virtual_id: "multi_input"
+    response:
+      "1637853221": "wrong"
+      "2369651067": "1"
+
+- assert:
+    activity_attempt:
+      section: "multipart_section"
+      student: "alice"
+      page: "Multipart Practice"
+      activity_virtual_id: "multi_input"
+      score: 1.0
+      out_of: 2.0
+
+- answer_question:
+    student: "bob"
+    section: "multipart_section"
+    page: "Multipart Practice"
+    activity_virtual_id: "multi_input"
+    response:
+      "1637853221": "answer"
+
+- answer_question:
+    student: "carol"
+    section: "multipart_section"
+    page: "Multipart Practice"
+    activity_virtual_id: "multi_input"
+    response:
+      "1637853221": "answer"
+      "2369651067": "1"
+
+- assert:
+    insights:
+      project: "multipart_eventual"
+      resource_type: "activity"
+      activity_virtual_id: "multi_input"
+      part_id: "text_part"
+      expected:
+        eventually_correct: 1.0
+
+- assert:
+    insights:
+      project: "multipart_eventual"
+      resource_type: "activity"
+      activity_virtual_id: "multi_input"
+      part_id: "numeric_part"
+      expected:
+        eventually_correct: 1.0

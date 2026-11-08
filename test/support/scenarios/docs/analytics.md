@@ -60,37 +60,32 @@ Specify exactly one target matching `resource_type`:
 Count metrics are compared exactly. `eventually_correct`, `first_attempt_correct`, and
 `relative_difficulty` use the configured tolerance.
 
-`eventually_correct` is the fraction of attempted learner-question-part
-opportunities with at least one correct submission. A learner counts once per
-section and question part; later incorrect submissions do not remove a success,
-and repeated correct submissions do not add successes. Page and objective
-rollups combine these opportunities, rather than counting learners who got any
-question in the resource correct. Separate section enrollments remain separate
-opportunities when aggregating across sections.
+For individual activity parts, `eventually_correct` is the fraction of learners
+with at least one full-credit evaluation of that part. Each learner counts once
+per section and part. Later incorrect answers do not remove success, and retries
+do not add learners. Whole-question displays (including adaptive screen rows)
+require every scored part to have been correct for the same learner in the same
+section, possibly on different attempts. A required part that was never attempted
+prevents question success. The denominator includes learners who attempted any
+required part; unattempted questions do not add learners.
 
-Correctness is derived at query time from existing per-learner summary counters.
-Page and objective membership comes from historical evaluated attempts and their
-revision tags. Existing data requires no migration or analytics replay, provided
-those records are retained. `num_correct` and `num_attempts` continue to count
-submissions, and `relative_difficulty` retains its submission-based calculation.
+Pages and objectives retain their existing response-accuracy calculation,
+`num_correct / NULLIF(num_attempts, 0)`, displayed as **% Correct**. The existing
+API field `eventually_correct` is retained for these rows for compatibility. It
+counts full-credit part evaluations divided by all associated part evaluations,
+including retries; it does not measure eventual success or mastery.
 
-Missing learner evidence produces an unavailable Eventually Correct value,
-including when only part of a page, objective, or cross-section rollup has
-evidence. It is never replaced with submission accuracy or a measured zero.
-An observed zero still means learners attempted the question but none succeeded.
-Historical membership is filtered and deduplicated before joining learner
-summaries to avoid multiplying those summaries by retry history.
+All correctness calculations use existing `ResourceSummary` counters. Question
+part definitions come from content already resolved for display. There are no
+joins to resource, activity, or part attempt history, no historical objective JSON
+expansion, and no OLAP dependency, migration, or analytics replay.
 
-Insights counts rows from aggregate summaries without reading learner or
-attempt history. Ordinary sorts paginate those summaries first, then load
-eventual correctness for the returned resource IDs. Sorting by eventual
-correctness ranks all matching candidates in one query before fetching the
-selected display rows, preserving global order across result pages. Unavailable
-rates sort after measured rates in both directions.
-
-New revision objective bindings must contain lists of positive bigint IDs.
-Legacy analytics reads ignore invalid or out-of-range IDs and tolerate malformed
-objective JSON without aborting the request.
+Missing learner evidence makes part/question Eventually Correct unavailable,
+including incomplete cross-section evidence. It never falls back to submission
+accuracy or a measured zero. A measured zero requires attempted learners with no
+successes. First Attempt Correct, submission counts, and relative difficulty keep
+their existing calculations. Ordinary activity sorts page before fetching learner
+counts; sorting by Eventually Correct considers all matching activity candidates.
 
 ### Activity example
 
@@ -105,11 +100,10 @@ objective JSON without aborting the request.
       activity_virtual_id: "feedback_question"
       expected:
         num_attempts: 4
-        num_correct: 2
         num_hints: 1
         num_first_attempts: 3
         num_first_attempts_correct: 1
-        eventually_correct: 0.666667
+        eventually_correct: 0.5
         first_attempt_correct: 0.333333
         relative_difficulty: 0.683333
 ```

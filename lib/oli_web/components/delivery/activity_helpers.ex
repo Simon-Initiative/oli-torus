@@ -85,8 +85,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   `graded` and the question ordinal belong to a single page, so both come from the first revision
   given; the analytics inputs are gathered across all of them before any grouping.
 
-  Eventually Correct counts each learner once per section and question part,
-  using whether they have ever submitted a correct answer.
+  Eventually Correct counts each learner once per section and question. Every
+  scored part must have been correct at least once, possibly on different attempts.
   """
   def summarize_activities_across_pages(
         %Section{} = section,
@@ -179,6 +179,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         %{}
       end
 
+    required_parts =
+      Map.new(revisions_by_resource_id, fn {id, revision} ->
+        {id, EventualCorrectness.required_part_ids(revision)}
+      end)
+
+    question_rates =
+      EventualCorrectness.question_counts_query(nil, [section.id], required_parts)
+      |> Repo.all()
+      |> Map.new(fn counts ->
+        {counts.resource_id,
+         EventualCorrectness.rate([{counts.num_correct, counts.num_attempted}])}
+      end)
+
     # NOTE: From this point forward, we make no more DB queries
 
     # Now total up the attempt numbers across all potential parts
@@ -214,10 +227,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
       first_attempt_pct = if total > 0, do: correct / total, else: 0
 
-      all_attempt_pct =
-        Map.get(grouped_by_activity_id, activity_id, [])
-        |> Enum.map(&{&1.num_eventually_correct, &1.num_eventually_attempted})
-        |> EventualCorrectness.rate()
+      all_attempt_pct = Map.get(question_rates, activity_id)
 
       revision =
         case revisions_by_resource_id[activity_id] do
@@ -462,12 +472,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   attr :id, :string, required: true
   attr :value, :any, required: true
   attr :label, :string, required: true
+  attr :description, :string, default: nil
 
-  @doc "Renders a percentage, or an explicit unavailable state when evidence is missing."
+  @doc "Renders a percentage or unavailable state, with an optional explanatory tooltip."
   def percentage_bar(%{value: nil} = assigns) do
     ~H"""
     <div class="flex justify-start font-bold">
-      <div class="mt-2 mr-3">{@label}</div>
+      <div class="mt-2 mr-3" title={@description}>{@label}</div>
       <div class="mt-2 ml-3">Unavailable</div>
     </div>
     """
@@ -513,7 +524,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     ~H"""
     <div class="flex justify-start font-bold">
-      <div class="mt-2 mr-3">{@label}</div>
+      <div class="mt-2 mr-3" title={@description}>{@label}</div>
       <div>
         {OliWeb.Common.React.component(
           %{is_liveview: true},
@@ -1357,6 +1368,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           id={"adaptive_#{@summary.part_id}_eventually_correct"}
           value={@summary.all_attempt_pct}
           label="Eventually Correct"
+          description="Percentage of learners who answered this part correctly at least once."
         />
       </div>
     </div>
@@ -2065,7 +2077,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     activity_attempt
     |> Map.put(:adaptive_input_summaries, input_summaries)
     |> Map.put(:first_attempt_pct, aggregate_metrics.first_attempt_pct)
-    |> Map.put(:all_attempt_pct, aggregate_metrics.all_attempt_pct)
+    |> Map.put_new(:all_attempt_pct, nil)
   end
 
   defp safe_percentage(nil, _numerator_key, _denominator_key), do: 0
@@ -4232,12 +4244,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       )
 
     %{
-      first_attempt_pct: ratio(totals.first_attempt_correct, totals.first_attempt_total),
-      all_attempt_pct:
-        input_summaries
-        |> Enum.reject(&Map.get(&1, :grading_pending, false))
-        |> Enum.map(&{&1.num_eventually_correct, &1.num_eventually_attempted})
-        |> EventualCorrectness.rate()
+      first_attempt_pct: ratio(totals.first_attempt_correct, totals.first_attempt_total)
     }
   end
 

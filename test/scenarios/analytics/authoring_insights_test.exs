@@ -38,7 +38,7 @@ defmodule Oli.Scenarios.Analytics.AuthoringInsightsTest do
   for missing_evidence <- [:summary, :correctness_counter] do
     @missing_evidence missing_evidence
 
-    test "missing #{missing_evidence} makes activity and parent rollups unavailable" do
+    test "missing #{missing_evidence} makes question correctness unavailable without changing parent accuracy" do
       result = Scenarios.execute_file(@scenario_path, RuntimeOpts.build())
       assert result.errors == []
       state = result.state
@@ -87,7 +87,14 @@ defmodule Oli.Scenarios.Analytics.AuthoringInsightsTest do
             }
           )
 
-        assert is_nil(row.eventually_correct)
+        case type do
+          ^activity_type ->
+            assert is_nil(row.eventually_correct)
+
+          _ ->
+            assert_in_delta row.eventually_correct, row.num_correct / row.num_attempts, 0.000001
+        end
+
         assert row.num_attempts > 0
       end
 
@@ -109,7 +116,7 @@ defmodule Oli.Scenarios.Analytics.AuthoringInsightsTest do
     end
   end
 
-  test "page and objective pagination ranks eventual correctness across all matching resources" do
+  test "page and objective pagination ranks response accuracy across all matching resources" do
     result = Scenarios.execute_file(@scenario_path, RuntimeOpts.build())
     assert result.errors == []
 
@@ -170,7 +177,7 @@ defmodule Oli.Scenarios.Analytics.AuthoringInsightsTest do
       assert low.total_count == 2
       assert high.total_count == 2
       assert low.eventually_correct == 0.0
-      assert high.eventually_correct == 0.5
+      assert_in_delta high.eventually_correct, high.num_correct / high.num_attempts, 0.000001
       assert second.resource_id == low.resource_id
       assert second.eventually_correct == 0.0
 
@@ -183,7 +190,7 @@ defmodule Oli.Scenarios.Analytics.AuthoringInsightsTest do
 
       assert filtered.resource_id == high.resource_id
       assert filtered.total_count == 1
-      assert filtered.eventually_correct == 0.5
+      assert filtered.eventually_correct == high.eventually_correct
     end
 
     question_id =
@@ -208,96 +215,54 @@ defmodule Oli.Scenarios.Analytics.AuthoringInsightsTest do
           }
         )
 
-      assert measured.eventually_correct == 0.0
-      assert is_nil(unavailable.eventually_correct)
+      for row <- [measured, unavailable] do
+        assert_in_delta row.eventually_correct, row.num_correct / row.num_attempts, 0.000001
+      end
     end
   end
 
-  test "malformed legacy objective JSON cannot crash objective analytics" do
-    result = Scenarios.execute_file(@scenario_path, RuntimeOpts.build())
+  test "whole-question summaries require every scored part for each learner" do
+    path = Path.join(__DIR__, "multipart_eventual_correctness.scenario.yaml")
+    assert :ok = Scenarios.validate_file(path)
+    result = Scenarios.execute_file(path, RuntimeOpts.build())
     assert result.errors == []
+    assert Enum.all?(result.verifications, & &1.passed)
+
     state = result.state
-    project_id = state.projects["authoring_insights_course"].project.id
-    section_id = state.sections["analytics_section_one"].id
+    section = state.sections["multipart_section"]
+    activity_id = state.activity_virtual_ids[{"multipart_eventual", "multi_input"}].resource_id
+    [revision] = Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, [activity_id])
 
-    question_id =
-      state.activity_virtual_ids[{"authoring_insights_course", "analyzed_question"}].resource_id
+    [counts] =
+      EventualCorrectness.question_counts_query(nil, [section.id], %{
+        activity_id => EventualCorrectness.required_part_ids(revision)
+      })
+      |> Repo.all()
 
-    bindings =
+    assert {counts.num_correct, counts.num_attempted} == {2, 3}
+
+    page_id =
       Repo.one!(
-        from(r in Oli.Resources.Revision,
-          where: r.resource_id == ^question_id,
-          select: r.objectives,
-          limit: 1
+        from(s in ResourceSummary,
+          where:
+            s.section_id == ^section.id and s.user_id == -1 and
+              s.resource_type_id == ^ResourceType.id_for_page(),
+          select: s.resource_id
         )
       )
 
-    [{part_id, [objective_id]}] = Map.to_list(bindings)
+    [page] = Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, [page_id])
+    students = Oli.Delivery.Sections.enrolled_students(section.slug, [:context_learner])
 
-    mixed = [
-      objective_id,
-      "garbage",
-      "9223372036854775808",
-      9_223_372_036_854_775_807,
-      String.duplicate("9", 100),
-      "1.5",
-      true,
-      nil,
-      %{},
-      [],
-      0,
-      -1
-    ]
+    [question] =
+      OliWeb.Delivery.ActivityHelpers.summarize_activity_performance(
+        section,
+        page,
+        Map.new(Oli.Activities.list_activity_registrations(), &{&1.id, &1}),
+        students,
+        [activity_id]
+      )
 
-    corruptions = [
-      %{part_id => mixed, "malformed_part" => "not-an-array"},
-      %{part_id => [Integer.to_string(objective_id)]},
-      %{part_id => "not-an-array"},
-      mixed,
-      nil,
-      42,
-      "not-an-object"
-    ]
-
-    for objectives <- corruptions do
-      # Simulate already persisted legacy/corrupt data without bypassing the
-      # write validation for new authored content in production.
-      Repo.query!("UPDATE revisions SET objectives = $1::text::jsonb WHERE resource_id = $2", [
-        Jason.encode!(objectives),
-        question_id
-      ])
-
-      for ids <- [nil, [objective_id]] do
-        rows =
-          EventualCorrectness.counts_query(
-            project_id,
-            [section_id],
-            ResourceType.id_for_objective(),
-            resource_ids: ids
-          )
-          |> Repo.all()
-
-        assert Enum.any?(rows, &(&1.resource_id == objective_id))
-      end
-
-      [row] =
-        BrowseInsights.browse_insights(
-          %Paging{limit: 10, offset: 0},
-          %Sorting{field: :eventually_correct, direction: :desc},
-          %BrowseInsightsOptions{
-            project_id: project_id,
-            section_ids: [section_id],
-            resource_type_id: ResourceType.id_for_objective(),
-            resource_id: objective_id
-          }
-        )
-
-      assert row.resource_id == objective_id
-
-      case objectives do
-        %{^part_id => ids} when is_list(ids) -> assert row.eventually_correct == 0.5
-        _ -> :ok
-      end
-    end
+    assert_in_delta question.all_attempt_pct, 2 / 3, 0.000001
   end
 end
