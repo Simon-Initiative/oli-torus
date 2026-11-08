@@ -3,12 +3,12 @@ defmodule OliWeb.CookiePreferencesLive do
 
   alias Oli.Consent
 
+  @doc "Loads cookie preferences with analytics disabled until a current decision exists."
   def mount(params, _session, socket) do
-    # Get return_to from params or use referer as fallback
     return_to = Map.get(params, "return_to") || "/"
 
     # Get current cookie preferences from database if user is logged in
-    {functional_active, analytics_active, targeting_active, has_db_preferences} =
+    {functional_active, analytics_active, has_db_preferences} =
       get_cookie_preferences(socket)
 
     {:ok,
@@ -17,24 +17,22 @@ defmodule OliWeb.CookiePreferencesLive do
        return_to: return_to,
        functional_active: functional_active,
        analytics_active: analytics_active,
-       targeting_active: targeting_active,
        has_db_preferences: has_db_preferences,
        expanded_sections: %{
          strict_cookies: false,
          functional_cookies: false,
-         analytics_cookies: false,
-         targeting_cookies: false
+         analytics_cookies: false
        },
        expanded_cookie_tables: %{
          strict_cookies: false,
          functional_cookies: false,
-         analytics_cookies: false,
-         targeting_cookies: false
+         analytics_cookies: false
        },
        privacy_policies_url: privacy_policies_url()
      )}
   end
 
+  @doc "Renders the mobile cookie preferences page."
   def render(assigns) do
     ~H"""
     <!-- Mobile page layout (no backdrop) -->
@@ -67,7 +65,6 @@ defmodule OliWeb.CookiePreferencesLive do
                 privacy_policies_url={@privacy_policies_url}
                 functional_active={@functional_active}
                 analytics_active={@analytics_active}
-                targeting_active={@targeting_active}
                 expanded_sections={@expanded_sections}
                 expanded_cookie_tables={@expanded_cookie_tables}
               />
@@ -115,9 +112,9 @@ defmodule OliWeb.CookiePreferencesLive do
           ],
           cookies: [
             %{
-              domain: "canvas.oli.cmu.edu, proton.oli.cmu.edu, oli.cmu.edu, cmu.edu",
+              domain: OliWeb.Endpoint.host(),
               cookies:
-                "_oli_key, _cky_opt_in, _cky_opt_in_dismiss, _cky_opt_choices, _legacy_normandy_session, log_session_id, _csrf_token",
+                "_oli_key, _cky_opt_in, _cky_opt_in_dismiss, _cky_opt_choices, _cky_pending_consent, _legacy_normandy_session, log_session_id, _csrf_token",
               type: "1st Party",
               description:
                 "This cookies are usually only set in response to actions made by you which amount to a request for services, such as setting your privacy preferences, logging in or where they're essential to provide you with a service you have requested."
@@ -141,33 +138,20 @@ defmodule OliWeb.CookiePreferencesLive do
           key: :analytics_cookies,
           title: "Analytics Cookies",
           description: [
-            "These cookies are used to collect information to analyze the traffic to our website and how visitors are using our website.",
-            "For example, these cookies may track things such as how long you spend on the website or the pages you visit which helps us to understand how we can improve our website site for you.",
-            "The information collected through these tracking and performance cookies do not identify any individual visitor."
+            "With your permission, Google Analytics helps us understand how Torus is used so we can improve the learning experience.",
+            "What we measure: pages visited by type, features used, and videos started or completed, in aggregate. You can change your choice at any time."
           ],
           cookies: [
             %{
-              domain: "canvas.oli.cmu.edu, proton.oli.cmu.edu, oli.cmu.edu, cmu.edu",
-              cookies: "_gid, _ga, _ga_xxxxxxx, _utma, _utmb, _utmc, _utmz, nmstat",
+              domain: OliWeb.Endpoint.host(),
+              cookies: "_ga, _ga_<measurement-id>",
               type: "1st Party",
               description:
-                "This cookies record basic website information such as: repeat visits; page usage; country of origin for use in Google analytics and other site improvements"
+                "Google Analytics cookies distinguish visits and maintain session information after you accept analytics."
             }
           ],
           disabled: false,
           checked: assigns.analytics_active
-        },
-        %{
-          key: :targeting_cookies,
-          title: "Targeting Cookies",
-          description: [
-            "These cookies are used to show advertising that is likely to be of interest to you based on your browsing habits.",
-            "These cookies, as served by our content and/or advertising providers, may combine information they collected from our website with other information they have independently collected relating to your web browser's activities across their network of websites.",
-            "If you choose to remove or disable these targeting or advertising cookies, you will still see adverts but they may not be relevant to you."
-          ],
-          cookies: [%{domain: "None", cookies: "", type: "", description: ""}],
-          disabled: false,
-          checked: assigns.targeting_active
         }
       ])
 
@@ -204,9 +188,9 @@ defmodule OliWeb.CookiePreferencesLive do
     """
   end
 
-  attr :section, :map, required: true
-  attr :expanded_sections, :map, required: true
-  attr :expanded_cookie_tables, :map, required: true
+  attr(:section, :map, required: true)
+  attr(:expanded_sections, :map, required: true)
+  attr(:expanded_cookie_tables, :map, required: true)
 
   defp cookie_section(assigns) do
     ~H"""
@@ -221,7 +205,7 @@ defmodule OliWeb.CookiePreferencesLive do
             type="button"
             phx-click="toggle_section"
             phx-value-section={@section.key}
-            aria-expanded={@expanded_sections[@section.key]}
+            aria-expanded={to_string(@expanded_sections[@section.key])}
             aria-controls={"#{@section.key}-panel"}
           >
             {@section.title}
@@ -265,6 +249,7 @@ defmodule OliWeb.CookiePreferencesLive do
               <%= if @expanded_cookie_tables[@section.key] do %>
                 <div class="mt-2 overflow-x-auto max-w-full">
                   <table class="table table-striped w-full">
+                    <caption class="sr-only">{@section.title}</caption>
                     <thead>
                       <tr>
                         <th
@@ -316,14 +301,12 @@ defmodule OliWeb.CookiePreferencesLive do
     """
   end
 
-  defp section_key(section) when is_binary(section) do
-    String.to_existing_atom(section)
-  rescue
-    ArgumentError -> nil
-  end
-
+  defp section_key("strict_cookies"), do: :strict_cookies
+  defp section_key("functional_cookies"), do: :functional_cookies
+  defp section_key("analytics_cookies"), do: :analytics_cookies
   defp section_key(_), do: nil
 
+  @doc "Handles preference changes without granting advertising consent."
   def handle_event("toggle_section", %{"section" => section}, socket) do
     case section_key(section) do
       nil ->
@@ -365,9 +348,6 @@ defmodule OliWeb.CookiePreferencesLive do
         "analytics_cookies" ->
           assign(socket, analytics_active: checked_bool)
 
-        "targeting_cookies" ->
-          assign(socket, targeting_active: checked_bool)
-
         _ ->
           socket
       end
@@ -381,13 +361,14 @@ defmodule OliWeb.CookiePreferencesLive do
       necessary: true,
       functionality: socket.assigns.functional_active,
       analytics: socket.assigns.analytics_active,
-      targeting: socket.assigns.targeting_active
+      targeting: false,
+      version: Consent.version()
     }
 
     # Check if user is authenticated
     is_authenticated = socket.assigns[:current_user] != nil
 
-    # Send preferences to the JavaScript hook, then navigate back
+    # The shared browser hook writes cookies, persists the decision, and updates Consent Mode.
     socket =
       socket
       |> put_flash(:info, "Cookie preferences have been updated.")
@@ -403,22 +384,36 @@ defmodule OliWeb.CookiePreferencesLive do
     {:noreply, redirect(socket, to: socket.assigns.return_to)}
   end
 
-  def handle_event("browser_cookie_preferences", %{"preferences" => preferences}, socket)
+  def handle_event("browser_cookie_preferences", %{"preferences" => preferences} = params, socket)
       when is_map(preferences) do
-    # Only update from browser cookies if user doesn't have preferences in DB
-    # Priority: DB preferences > browser cookies > defaults
-    if socket.assigns.has_db_preferences do
-      # User has DB preferences, ignore browser cookies
-      {:noreply, socket}
-    else
-      # No DB preferences, use browser cookies
-      socket =
-        socket
-        |> assign(:functional_active, Map.get(preferences, "functionality", true))
-        |> assign(:analytics_active, Map.get(preferences, "analytics", true))
-        |> assign(:targeting_active, Map.get(preferences, "targeting", false))
+    preferences = Consent.normalize_preferences(preferences)
 
-      {:noreply, socket}
+    pending_withdrawal =
+      params["pending_withdrawal"] == true and Consent.current_decision?(preferences) and
+        preferences["analytics"] == false
+
+    case {socket.assigns.has_db_preferences, params["pending_withdrawal"] == true,
+          pending_withdrawal} do
+      {_, true, false} ->
+        {:noreply, socket}
+
+      {true, false, false} ->
+        # Persistence may finish after mount's database read but before the hook runs.
+        {functional_active, analytics_active, has_db_preferences} = get_cookie_preferences(socket)
+
+        {:noreply,
+         assign(socket,
+           functional_active: functional_active,
+           analytics_active: analytics_active,
+           has_db_preferences: has_db_preferences
+         )}
+
+      _ ->
+        {:noreply,
+         assign(socket,
+           functional_active: preferences["functionality"],
+           analytics_active: preferences["analytics"]
+         )}
     end
   end
 
@@ -441,36 +436,15 @@ defmodule OliWeb.CookiePreferencesLive do
   end
 
   defp get_cookie_preferences(socket) do
-    case socket.assigns[:current_user] do
-      nil ->
-        # Non-authenticated user: use defaults, browser cookies will be loaded via JS hook
-        # has_db_preferences = false means we should accept browser cookies
-        {true, true, false, false}
+    preferences =
+      case socket.assigns[:current_user] do
+        nil -> nil
+        user -> Consent.preferences_for_user(user.id)
+      end
 
-      user ->
-        cookies = Consent.retrieve_cookies(user.id)
-
-        case Enum.find(cookies, fn cookie -> cookie.name == "_cky_opt_choices" end) do
-          nil ->
-            # No existing preferences in DB, browser cookies will be loaded via JS hook
-            {true, true, false, false}
-
-          choices_cookie ->
-            case Jason.decode(choices_cookie.value) do
-              {:ok, preferences} when is_map(preferences) ->
-                # Has DB preferences, use them and ignore browser cookies
-                {
-                  Map.get(preferences, "functionality", true),
-                  Map.get(preferences, "analytics", true),
-                  Map.get(preferences, "targeting", false),
-                  true
-                }
-
-              _ ->
-                # If JSON decode fails or result is not a map, use defaults
-                {true, true, false, false}
-            end
-        end
+    case preferences do
+      nil -> {true, false, false}
+      preferences -> {preferences["functionality"], preferences["analytics"], true}
     end
   end
 end
