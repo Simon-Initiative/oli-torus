@@ -380,10 +380,15 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
-  Generates the full hierarchy of a given section, including all the attributrs required for student delivery views.
+  Generates the full hierarchy of a given section, including the attributes required for student delivery views.
+
+  The optional mapper projects each node's embedded section resource during node
+  construction. It does not alter hierarchy structure or the source resources.
   """
-  def full_hierarchy(section, section_resources) when is_list(section_resources) do
-    {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section, section_resources)
+  def full_hierarchy(section, section_resources, section_resource_mapper \\ &Function.identity/1)
+      when is_list(section_resources) and is_function(section_resource_mapper, 1) do
+    {hierarchy_nodes, root_hierarchy_node} =
+      hierarchy_nodes_by_sr_id(section, section_resources, section_resource_mapper)
 
     DisplayNumbering.decorate_hierarchy(
       section,
@@ -417,14 +422,18 @@ defmodule Oli.Delivery.Hierarchy do
     |> Enum.reduce({%{}, nil}, &add_nodes_and_root/2)
   end
 
-  defp hierarchy_nodes_by_sr_id(section, section_resources) do
+  defp hierarchy_nodes_by_sr_id(section, section_resources, section_resource_mapper) do
     labels =
       case section.customizations do
         nil -> Oli.Branding.CustomLabels.default_map()
         l -> Map.from_struct(l)
       end
 
-    hierarchy_nodes_from_srs(section.root_section_resource_id, section_resources)
+    hierarchy_nodes_from_srs(
+      section.root_section_resource_id,
+      section_resources,
+      section_resource_mapper
+    )
     |> Enum.map(&add_uuid_and_labels(&1, labels))
     |> Enum.reduce({%{}, nil}, &add_nodes_and_root/2)
   end
@@ -470,7 +479,11 @@ defmodule Oli.Delivery.Hierarchy do
     )
   end
 
-  defp hierarchy_nodes_from_srs(root_section_resource_id, section_resources) do
+  defp hierarchy_nodes_from_srs(
+         root_section_resource_id,
+         section_resources,
+         section_resource_mapper
+       ) do
     Enum.map(section_resources, fn sr ->
       %{
         "id" => sr.revision_id,
@@ -488,7 +501,7 @@ defmodule Oli.Delivery.Hierarchy do
         "duration_minutes" => sr.duration_minutes,
         "resource_scope" => Map.get(sr, :resource_scope),
         "resource_type_id" => sr.resource_type_id,
-        "section_resource" => sr,
+        "section_resource" => section_resource_mapper.(sr),
         "is_root?" => sr.id == root_section_resource_id
       }
     end)

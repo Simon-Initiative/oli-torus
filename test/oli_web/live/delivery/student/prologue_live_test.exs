@@ -1451,6 +1451,80 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       refute has_element?(view, "#page_due_terms")
     end
 
+    test "removed assignments retain operative dates on the prologue", ctx do
+      %{conn: conn, user: user, section: section, page_2: page} = ctx
+      enroll_and_mark_visited(user, section)
+      resource = Sections.get_section_resource(section.id, page.resource_id)
+      assert {:ok, _} = Sections.update_section_resource(resource, %{removed_from_schedule: true})
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page.slug))
+      assert has_element?(view, "#page_due_terms", "Available:")
+      assert render(view) =~ page.title
+      saved = Sections.get_section_resource(section.id, page.resource_id)
+      assert saved.start_date == resource.start_date
+      assert saved.end_date == resource.end_date
+    end
+
+    for {base_policy, exception_policy, visible?} <- [
+          {:allow, nil, false},
+          {:disallow, nil, true},
+          {:allow, :disallow, true},
+          {:disallow, :allow, false}
+        ] do
+      test "removed in-class assessment with #{base_policy} late starts and #{inspect(exception_policy)} exception has visible cutoff #{visible?}",
+           ctx do
+        %{conn: conn, user: user, section: section, page_2: page} = ctx
+        enroll_and_mark_visited(user, section)
+        end_date = DateTime.utc_now() |> DateTime.add(-2, :day) |> DateTime.truncate(:second)
+
+        get_and_update_section_resource(section.id, page.resource_id, %{
+          scheduling_type: :inclass_activity,
+          removed_from_schedule: true,
+          start_date: nil,
+          end_date: end_date,
+          late_start: unquote(base_policy),
+          grace_period: 0
+        })
+
+        case unquote(exception_policy) do
+          nil ->
+            :ok
+
+          policy ->
+            insert(:student_exception,
+              section: section,
+              user: user,
+              resource: Oli.Repo.get!(Oli.Resources.Resource, page.resource_id),
+              late_start: policy
+            )
+        end
+
+        {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page.slug))
+
+        assert has_element?(view, "#page_due_terms") == unquote(visible?)
+        assert has_element?(view, "#begin_attempt_button[disabled]") == unquote(visible?)
+
+        sidebar = Sections.get_resources_scheduled_dates_for_student(section.slug, user.id)
+        assert sidebar[page.resource_id].end_date == if(unquote(visible?), do: end_date)
+
+        pages =
+          Oli.Repo.all(from(p in subquery(Sections.get_student_pages(section.slug, user.id))))
+
+        display_page = Enum.find(pages, &(&1.resource_id == page.resource_id))
+        assert display_page.end_date == if(unquote(visible?), do: DateTime.to_naive(end_date))
+
+        scheduled_ids =
+          for {_, weeks} <- Sections.get_ordered_schedule(section, user.id, nil, :v2),
+              {_, groups} <- weeks,
+              group <- groups,
+              item <- group.resources,
+              do: item.resource.resource_id
+
+        assert page.resource_id in scheduled_ids == unquote(visible?)
+        assert Sections.get_section_resource(section.id, page.resource_id).end_date == end_date
+      end
+    end
+
     test "page terms render the due date when is set", ctx do
       %{conn: conn, user: user, section: section, page_2: page_2} = ctx
 
