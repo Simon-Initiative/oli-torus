@@ -31,6 +31,134 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
     end
   end
 
+  describe "verify_enrollments/3" do
+    setup do
+      section = insert(:section)
+      target_user = insert(:user)
+      source_user = insert(:user)
+
+      target_enrollment = insert(:enrollment, user: target_user, section: section)
+      source_enrollment = insert(:enrollment, user: source_user, section: section)
+
+      %{
+        section: section,
+        target_user: target_user,
+        source_user: source_user,
+        target_enrollment: target_enrollment,
+        source_enrollment: source_enrollment
+      }
+    end
+
+    test "returns the section and both enrollments with users preloaded", ctx do
+      assert {:ok, result} =
+               RestoreUserProgress.verify_enrollments(
+                 ctx.section.slug,
+                 Integer.to_string(ctx.target_user.id),
+                 Integer.to_string(ctx.source_user.id)
+               )
+
+      assert result.section.id == ctx.section.id
+      assert result.target_enrollment.id == ctx.target_enrollment.id
+      assert result.source_enrollment.id == ctx.source_enrollment.id
+      assert result.target_enrollment.user.id == ctx.target_user.id
+      assert result.source_enrollment.user.id == ctx.source_user.id
+    end
+
+    test "trims surrounding whitespace from the inputs", ctx do
+      assert {:ok, _} =
+               RestoreUserProgress.verify_enrollments(
+                 " #{ctx.section.slug} ",
+                 " #{ctx.target_user.id} ",
+                 " #{ctx.source_user.id}\n"
+               )
+    end
+
+    test "accepts enrollments that are not in the enrolled status", ctx do
+      ctx.source_enrollment
+      |> Ecto.Changeset.change(status: :suspended)
+      |> Repo.update!()
+
+      assert {:ok, %{source_enrollment: %{status: :suspended}}} =
+               RestoreUserProgress.verify_enrollments(
+                 ctx.section.slug,
+                 Integer.to_string(ctx.target_user.id),
+                 Integer.to_string(ctx.source_user.id)
+               )
+    end
+
+    test "fails when the section slug is blank", ctx do
+      assert {:error, "Set a section slug."} =
+               RestoreUserProgress.verify_enrollments(
+                 "  ",
+                 Integer.to_string(ctx.target_user.id),
+                 Integer.to_string(ctx.source_user.id)
+               )
+    end
+
+    test "fails when a user id is not a positive integer", ctx do
+      for invalid <- ["", "abc", "12abc", "0", "-3", nil] do
+        assert {:error, "Set a valid target user ID."} =
+                 RestoreUserProgress.verify_enrollments(
+                   ctx.section.slug,
+                   invalid,
+                   Integer.to_string(ctx.source_user.id)
+                 )
+
+        assert {:error, "Set a valid source user ID."} =
+                 RestoreUserProgress.verify_enrollments(
+                   ctx.section.slug,
+                   Integer.to_string(ctx.target_user.id),
+                   invalid
+                 )
+      end
+    end
+
+    test "fails when target and source are the same user", ctx do
+      user_id = Integer.to_string(ctx.target_user.id)
+
+      assert {:error, "Target and source user IDs must be different."} =
+               RestoreUserProgress.verify_enrollments(ctx.section.slug, user_id, user_id)
+    end
+
+    test "fails when the section does not exist", ctx do
+      assert {:error, "Section missing_section not found."} =
+               RestoreUserProgress.verify_enrollments(
+                 "missing_section",
+                 Integer.to_string(ctx.target_user.id),
+                 Integer.to_string(ctx.source_user.id)
+               )
+    end
+
+    test "fails when the target user is not enrolled in the section", ctx do
+      outsider = insert(:user)
+
+      expected =
+        "Target user #{outsider.id} is not enrolled in section #{ctx.section.slug}."
+
+      assert {:error, ^expected} =
+               RestoreUserProgress.verify_enrollments(
+                 ctx.section.slug,
+                 Integer.to_string(outsider.id),
+                 Integer.to_string(ctx.source_user.id)
+               )
+    end
+
+    test "fails when the source user is only enrolled in a different section", ctx do
+      outsider = insert(:user)
+      insert(:enrollment, user: outsider, section: insert(:section))
+
+      expected =
+        "Source user #{outsider.id} is not enrolled in section #{ctx.section.slug}."
+
+      assert {:error, ^expected} =
+               RestoreUserProgress.verify_enrollments(
+                 ctx.section.slug,
+                 Integer.to_string(ctx.target_user.id),
+                 Integer.to_string(outsider.id)
+               )
+    end
+  end
+
   describe "preview and commit" do
     setup [:admin_conn]
 

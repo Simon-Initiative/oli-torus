@@ -5,7 +5,8 @@ defmodule OliWeb.Admin.RestoreUserProgress do
   import Ecto.Query
   alias Oli.Repo
   alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Oli.Delivery.Sections.Enrollment
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.{Enrollment, Section}
   alias Oli.Resources.Revision
 
   def mount(_, _, socket) do
@@ -79,6 +80,82 @@ defmodule OliWeb.Admin.RestoreUserProgress do
     Enum.reduce(enrollments, %{}, fn %Enrollment{id: id, user_id: user_id}, acc ->
       Map.put(acc, user_id, id)
     end)
+  end
+
+  @doc """
+  Verifies that the target and source users are both enrolled in the section identified by
+  `section_slug`.
+
+  Inputs are the raw (string) values entered by the admin. Enrollments are matched regardless
+  of their status, so that suspended or otherwise inactive duplicate accounts can still be merged.
+
+  Returns `{:ok, %{section: section, target_enrollment: enrollment, source_enrollment: enrollment}}`
+  with the `:user` association preloaded on both enrollments, or `{:error, message}` describing
+  the first check that failed.
+  """
+  @spec verify_enrollments(term(), term(), term()) ::
+          {:ok,
+           %{
+             section: %Section{},
+             target_enrollment: %Enrollment{},
+             source_enrollment: %Enrollment{}
+           }}
+          | {:error, String.t()}
+  def verify_enrollments(section_slug, target_user_id, source_user_id) do
+    with {:ok, section_slug} <- parse_section_slug(section_slug),
+         {:ok, target_user_id} <- parse_user_id(target_user_id, "target"),
+         {:ok, source_user_id} <- parse_user_id(source_user_id, "source"),
+         :ok <- ensure_different_users(target_user_id, source_user_id),
+         {:ok, section} <- fetch_section(section_slug),
+         {:ok, target_enrollment} <- fetch_enrollment(section, target_user_id, "Target"),
+         {:ok, source_enrollment} <- fetch_enrollment(section, source_user_id, "Source") do
+      {:ok,
+       %{
+         section: section,
+         target_enrollment: target_enrollment,
+         source_enrollment: source_enrollment
+       }}
+    end
+  end
+
+  defp parse_section_slug(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> {:error, "Set a section slug."}
+      slug -> {:ok, slug}
+    end
+  end
+
+  defp parse_section_slug(_), do: {:error, "Set a section slug."}
+
+  defp parse_user_id(value, label) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {id, ""} when id > 0 -> {:ok, id}
+      _ -> {:error, "Set a valid #{label} user ID."}
+    end
+  end
+
+  defp parse_user_id(_, label), do: {:error, "Set a valid #{label} user ID."}
+
+  defp ensure_different_users(user_id, user_id),
+    do: {:error, "Target and source user IDs must be different."}
+
+  defp ensure_different_users(_, _), do: :ok
+
+  defp fetch_section(section_slug) do
+    case Sections.get_section_by(slug: section_slug) do
+      nil -> {:error, "Section #{section_slug} not found."}
+      section -> {:ok, section}
+    end
+  end
+
+  defp fetch_enrollment(%Section{slug: section_slug}, user_id, label) do
+    case Sections.get_enrollment(section_slug, user_id, filter_by_status: false) do
+      nil ->
+        {:error, "#{label} user #{user_id} is not enrolled in section #{section_slug}."}
+
+      enrollment ->
+        {:ok, Repo.preload(enrollment, :user)}
+    end
   end
 
   def render(assigns) do
