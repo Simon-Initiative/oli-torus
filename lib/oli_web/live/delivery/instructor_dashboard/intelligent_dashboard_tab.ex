@@ -886,7 +886,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         replace_summary_recommendation(socket, recommendation)
 
       _ ->
-        socket
+        show_unavailable_recommendation_after_failure(socket)
+    end
+  end
+
+  # Keeps a displayed recommendation; otherwise stops the tile from thinking forever.
+  defp show_unavailable_recommendation_after_failure(socket) do
+    case get_in(socket.assigns, [:dashboard, :summary_projection, :recommendation]) do
+      %{status: status} when status in [:ready, :beginning_course] -> socket
+      _ -> replace_summary_recommendation(socket, %{state: :unavailable})
     end
   end
 
@@ -1028,10 +1036,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       end
 
     if active_request? and current_scope == scope_selector do
-      update(socket, :dashboard, fn current ->
+      socket
+      |> update(:dashboard, fn current ->
         current = current || %{}
         Map.put(current, :summary_status, status_message)
       end)
+      |> assign(:summary_tile_state, %{summary_tile_state(socket) | regenerate_in_flight?: false})
+      |> show_unavailable_recommendation_after_failure()
     else
       socket
     end
@@ -2440,11 +2451,39 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
   defp persist_revisit_cache(_revisit_cache, _context, _scope, _oracles), do: :ok
 
+  # A batch of coordinator actions can span two requests: the oracle result that completes the
+  # active request may promote a scope change queued during rapid navigation. Actions after a
+  # `request_started`/`request_promoted` belong to that request, so they must use its context
+  # instead of the context of the request whose event produced the batch.
   defp apply_dashboard_coordinator_actions(socket, actions, context, dependency_profile) do
-    Enum.reduce(actions, socket, fn action, acc ->
-      apply_dashboard_coordinator_action(acc, action, context, dependency_profile)
-    end)
+    {socket, _context} =
+      Enum.reduce(actions, {socket, context}, fn action, {acc, current_context} ->
+        current_context = coordinator_action_context(action, current_context)
+
+        {apply_dashboard_coordinator_action(acc, action, current_context, dependency_profile),
+         current_context}
+      end)
+
+    socket
   end
+
+  defp coordinator_action_context(
+         %{type: type, context: %OracleContext{} = request_context},
+         _current_context
+       )
+       when type in [:request_started, :request_promoted] do
+    %{
+      dashboard_context_type: request_context.dashboard_context_type,
+      dashboard_context_id: request_context.dashboard_context_id,
+      user_id: request_context.user_id,
+      scope: %{
+        container_type: request_context.scope.container_type,
+        container_id: request_context.scope.container_id
+      }
+    }
+  end
+
+  defp coordinator_action_context(_action, current_context), do: current_context
 
   defp apply_dashboard_coordinator_action(
          socket,

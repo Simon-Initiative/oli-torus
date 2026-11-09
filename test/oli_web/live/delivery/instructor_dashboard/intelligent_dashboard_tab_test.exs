@@ -4,6 +4,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
   import ExUnit.CaptureLog
   import Oli.Factory
 
+  alias Oli.Dashboard.LiveDataCoordinator
+  alias Oli.Dashboard.Oracle.Result
   alias Oli.Delivery.Sections
   alias Oli.InstructorDashboard.SummaryRecommendationAdapter
   alias Oli.Resources.ResourceType
@@ -202,6 +204,83 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                )
 
       assert socket.assigns.dashboard_inflight_oracles == MapSet.new([:unrelated])
+    end
+
+    test "a scope change queued during rapid navigation loads with its own scope once promoted" do
+      section = insert(:section)
+      user = insert(:user)
+      scope_a = %{container_type: :container, container_id: 101}
+      scope_b = %{container_type: :course, container_id: nil}
+      profile = %{required: [:oracle_instructor_scope_resources], optional: []}
+
+      context_for = fn scope ->
+        %{
+          dashboard_context_type: :section,
+          dashboard_context_id: section.id,
+          user_id: user.id,
+          scope: scope
+        }
+      end
+
+      context_a = context_for.(scope_a)
+      coordinator_opts = fn context -> [context: context, cache_opts: [inprocess_store: nil]] end
+
+      # Scope A is in flight; a second change inside the scrub window queues scope B behind it.
+      coordinator = LiveDataCoordinator.new_session(scrub_threshold: 2)
+
+      {:ok, coordinator, _actions} =
+        LiveDataCoordinator.request_scope_change(
+          coordinator,
+          scope_a,
+          profile,
+          coordinator_opts.(context_a)
+        )
+
+      {:ok, coordinator, _actions} =
+        LiveDataCoordinator.request_scope_change(
+          coordinator,
+          scope_b,
+          profile,
+          coordinator_opts.(context_for.(scope_b))
+        )
+
+      assert LiveDataCoordinator.State.queued?(coordinator)
+
+      socket =
+        %Phoenix.LiveView.Socket{
+          transport_pid: self(),
+          assigns: %{
+            __changed__: %{},
+            section: section,
+            current_user: user,
+            dashboard_scope: IntelligentDashboardTab.scope_selector(scope_b),
+            dashboard_request_token: 1,
+            dashboard_coordinator_state: coordinator,
+            dashboard_revisit_hydration: %{source: :skipped, revisit_hits: 0, revisit_misses: 0},
+            dashboard: %{}
+          }
+        }
+        |> IntelligentDashboardTab.ensure_initialized()
+
+      # The result that completes scope A's request promotes the queued scope B request.
+      {:noreply, _socket} =
+        IntelligentDashboardTab.handle_dashboard_runtime_oracle_result(
+          socket,
+          1,
+          context_a,
+          :oracle_instructor_scope_resources,
+          Result.ok(:oracle_instructor_scope_resources, %{items: []},
+            version: 1,
+            metadata: %{source: :runtime}
+          )
+        )
+
+      # Scope B's runtime loads must run with scope B's context, not with scope A's.
+      assert_receive {:dashboard_runtime_oracle_result, 2, %{scope: loaded_scope}, _oracle_key,
+                      _result},
+                     5_000
+
+      assert loaded_scope == scope_b
     end
   end
 
@@ -622,6 +701,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert socket.assigns.dashboard.summary_status == "Showing latest recommendation"
     end
 
+    test "shows the recommendation as unavailable instead of thinking when the request fails" do
+      socket =
+        recommendation_result_socket(%{
+          status: :thinking,
+          recommendation_id: nil,
+          body: nil
+        })
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+                 socket,
+                 101,
+                 "course",
+                 {:error, :generation_failed}
+               )
+
+      assert socket.assigns.dashboard.summary_projection.recommendation.status == :unavailable
+      assert socket.assigns.dashboard.summary_projection_status == %{status: :ready}
+    end
+
+    test "keeps a displayed recommendation when a later recommendation request fails" do
+      displayed = %{
+        status: :ready,
+        recommendation_id: "77",
+        body: "Review Module 3 assessment performance."
+      }
+
+      socket = recommendation_result_socket(displayed)
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+                 socket,
+                 101,
+                 "course",
+                 {:error, :generation_failed}
+               )
+
+      assert socket.assigns.dashboard.summary_projection.recommendation == displayed
+    end
+
     test "ignores stale async recommendation results from an older dashboard load token" do
       socket = %Phoenix.LiveView.Socket{
         assigns: %{
@@ -952,6 +1071,86 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert updated.assigns.dashboard_summary_recommendation_request == nil
       assert updated.assigns.dashboard_summary_recommendation_job_tokens == %{}
       assert updated.assigns.dashboard_summary_recommendation_task_refs == %{}
+    end
+
+    test "shows the recommendation as unavailable instead of thinking when the load task crashes" do
+      ref = make_ref()
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard_request_token: 111,
+          dashboard_scope: "course",
+          dashboard: %{
+            summary_projection: %{
+              recommendation: %{status: :thinking, recommendation_id: nil, body: nil}
+            },
+            summary_projection_status: %{status: :loading}
+          },
+          dashboard_summary_recommendation_request: %{
+            request_token: 111,
+            scope_selector: "course",
+            status: :started
+          },
+          dashboard_summary_recommendation_task_refs: %{
+            ref => %{
+              request_token: 111,
+              scope_selector: "course",
+              action: :load,
+              recommendation_id: nil
+            }
+          }
+        }
+      }
+
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_summary_recommendation_task_down(
+                 socket,
+                 ref,
+                 :boom
+               )
+
+      assert updated.assigns.dashboard.summary_projection.recommendation.status == :unavailable
+      assert updated.assigns.dashboard.summary_projection_status == %{status: :ready}
+    end
+
+    test "stops regenerating and keeps the displayed recommendation when the regenerate task crashes" do
+      ref = make_ref()
+      displayed = %{status: :ready, recommendation_id: "77", body: "Review Module 3."}
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard_request_token: 111,
+          dashboard_scope: "course",
+          dashboard: %{summary_projection: %{recommendation: displayed}},
+          summary_tile_state:
+            summary_tile_state(%{scope_selector: "course", regenerate_in_flight?: true}),
+          dashboard_summary_recommendation_request: %{
+            request_token: 111,
+            scope_selector: "course",
+            status: :started_explicit
+          },
+          dashboard_summary_recommendation_task_refs: %{
+            ref => %{
+              request_token: 111,
+              scope_selector: "course",
+              action: :regenerate,
+              recommendation_id: "77"
+            }
+          }
+        }
+      }
+
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_summary_recommendation_task_down(
+                 socket,
+                 ref,
+                 :boom
+               )
+
+      refute updated.assigns.summary_tile_state.regenerate_in_flight?
+      assert updated.assigns.dashboard.summary_projection.recommendation == displayed
     end
 
     test "clears stale sentiment state when a sentiment task crashes for the active recommendation" do
@@ -1879,6 +2078,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
 
   defp summary_tile_state(overrides) do
     Map.merge(IntelligentDashboardTab.default_summary_tile_state(), overrides)
+  end
+
+  defp recommendation_result_socket(recommendation) do
+    %Phoenix.LiveView.Socket{
+      assigns: %{
+        __changed__: %{},
+        dashboard: %{
+          summary_recommendation: nil,
+          summary_status: "Loading recommendation",
+          summary_projection: %{recommendation: recommendation},
+          summary_projection_status: %{status: :loading}
+        },
+        dashboard_request_token: 101,
+        dashboard_scope: "course",
+        dashboard_summary_recommendation_request: %{
+          request_token: 101,
+          scope_selector: "course",
+          status: :started
+        }
+      }
+    }
   end
 
   defp restore_env(key, nil), do: Application.delete_env(:oli, key)
