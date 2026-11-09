@@ -185,19 +185,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       {:ok, view, _} = live(conn, @route)
 
-      view
-      |> element("#target_enrollment_id")
-      |> render_hook("target_enrollment", %{
-        "id" => "target_enrollment_id",
-        "value" => Integer.to_string(target_enrollment.id)
-      })
-
-      view
-      |> element("#source_enrollment_id")
-      |> render_hook("source_enrollment", %{
-        "id" => "source_enrollment_id",
-        "value" => Integer.to_string(source_enrollment.id)
-      })
+      verify(view, target_enrollment, source_enrollment)
 
       render_click(view, "preview", %{})
 
@@ -225,19 +213,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       {:ok, view, _} = live(conn, @route)
 
-      view
-      |> element("#target_enrollment_id")
-      |> render_hook("target_enrollment", %{
-        "id" => "target_enrollment_id",
-        "value" => Integer.to_string(target_enrollment.id)
-      })
-
-      view
-      |> element("#source_enrollment_id")
-      |> render_hook("source_enrollment", %{
-        "id" => "source_enrollment_id",
-        "value" => Integer.to_string(source_enrollment.id)
-      })
+      verify(view, target_enrollment, source_enrollment)
 
       render_click(view, "preview", %{})
       render_click(view, "commit", %{})
@@ -284,19 +260,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       {:ok, view, _} = live(conn, @route)
 
-      view
-      |> element("#target_enrollment_id")
-      |> render_hook("target_enrollment", %{
-        "id" => "target_enrollment_id",
-        "value" => Integer.to_string(target_enrollment.id)
-      })
-
-      view
-      |> element("#source_enrollment_id")
-      |> render_hook("source_enrollment", %{
-        "id" => "source_enrollment_id",
-        "value" => Integer.to_string(source_enrollment.id)
-      })
+      verify(view, target_enrollment, source_enrollment)
 
       render_click(view, "preview", %{})
       render_click(view, "commit", %{})
@@ -318,5 +282,111 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       assert attempts_for_from == []
     end
+  end
+
+  describe "verification step" do
+    setup [:admin_conn]
+
+    setup do
+      section = insert(:section, title: "Chemistry 101")
+
+      target_user =
+        insert(:user, given_name: "Ada", family_name: "Target", email: "ada@example.edu")
+
+      source_user =
+        insert(:user, given_name: "Bob", family_name: "Source", email: "bob@example.edu")
+
+      target_enrollment =
+        insert(:enrollment,
+          user: target_user,
+          section: section,
+          inserted_at: ~U[2026-01-15 14:30:00Z]
+        )
+
+      source_enrollment =
+        insert(:enrollment, user: source_user, section: section, status: :suspended)
+
+      %{
+        section: section,
+        target_user: target_user,
+        source_user: source_user,
+        target_enrollment: target_enrollment,
+        source_enrollment: source_enrollment
+      }
+    end
+
+    test "shows the details of both users once they are verified", ctx do
+      {:ok, view, _} = live(ctx.conn, @route)
+
+      html = verify(view, ctx.target_enrollment, ctx.source_enrollment)
+
+      assert has_element?(view, "#verified_users", "Chemistry 101 (#{ctx.section.slug})")
+
+      assert has_element?(view, "#verified_target", "Ada Target")
+      assert has_element?(view, "#verified_target", "ada@example.edu")
+      assert has_element?(view, "#verified_target", Integer.to_string(ctx.target_user.id))
+      assert has_element?(view, "#verified_target", "January 15, 2026")
+      assert has_element?(view, "#verified_target", "enrolled")
+
+      assert has_element?(view, "#verified_source", "Bob Source")
+      assert has_element?(view, "#verified_source", "bob@example.edu")
+      assert has_element?(view, "#verified_source", "suspended")
+
+      refute html =~ "not enrolled"
+    end
+
+    test "shows an error and no user details when verification fails", ctx do
+      {:ok, view, _} = live(ctx.conn, @route)
+      outsider = insert(:user)
+
+      view
+      |> form("#verify_form", %{
+        "section_slug" => ctx.section.slug,
+        "target_user_id" => Integer.to_string(ctx.target_user.id),
+        "source_user_id" => Integer.to_string(outsider.id)
+      })
+      |> render_submit()
+
+      assert has_element?(
+               view,
+               "#result",
+               "Source user #{outsider.id} is not enrolled in section #{ctx.section.slug}."
+             )
+
+      refute has_element?(view, "#verified_users")
+    end
+
+    test "editing the form after verifying clears the verified users and preview", ctx do
+      {:ok, view, _} = live(ctx.conn, @route)
+
+      verify(view, ctx.target_enrollment, ctx.source_enrollment)
+      render_click(view, "preview", %{})
+      assert has_element?(view, "#verified_users")
+
+      view
+      |> form("#verify_form", %{"source_user_id" => "999999"})
+      |> render_change()
+
+      refute has_element?(view, "#verified_users")
+      refute render(view) =~ "ada@example.edu"
+    end
+
+    test "preview requires a successful verification", ctx do
+      {:ok, view, _} = live(ctx.conn, @route)
+
+      render_click(view, "preview", %{})
+
+      assert has_element?(view, "#result", "Verify the users before previewing changes.")
+    end
+  end
+
+  defp verify(view, target_enrollment, source_enrollment) do
+    view
+    |> form("#verify_form", %{
+      "section_slug" => target_enrollment.section.slug,
+      "target_user_id" => Integer.to_string(target_enrollment.user_id),
+      "source_user_id" => Integer.to_string(source_enrollment.user_id)
+    })
+    |> render_submit()
   end
 end
