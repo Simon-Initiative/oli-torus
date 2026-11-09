@@ -187,16 +187,13 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       verify(view, target_enrollment, source_enrollment)
 
-      render_click(view, "preview", %{})
+      view |> element("#preview_button") |> render_click()
 
-      html = render(view)
-
-      assert html =~ "User Records"
-      assert html =~ Integer.to_string(true_user.id)
-      assert html =~ Integer.to_string(other_user.id)
+      assert has_element?(view, "#verified_target", Integer.to_string(true_user.id))
+      assert has_element?(view, "#verified_source", Integer.to_string(other_user.id))
 
       # Expect a proposed change referencing the other_access id (reassign to true_user)
-      assert html =~ inspect(other_access.id)
+      assert has_element?(view, "#preview_changes", inspect(other_access.id))
     end
 
     test "commit reassigns resource access to the true user when preview proposes a single id move",
@@ -215,8 +212,8 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       verify(view, target_enrollment, source_enrollment)
 
-      render_click(view, "preview", %{})
-      render_click(view, "commit", %{})
+      view |> element("#preview_button") |> render_click()
+      view |> element("#commit_button") |> render_click()
 
       reloaded = Repo.get!(ResourceAccess, access.id)
       assert reloaded.user_id == true_user.id
@@ -262,8 +259,8 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       verify(view, target_enrollment, source_enrollment)
 
-      render_click(view, "preview", %{})
-      render_click(view, "commit", %{})
+      view |> element("#preview_button") |> render_click()
+      view |> element("#commit_button") |> render_click()
 
       # Assert scores moved
       to_after = Repo.get!(ResourceAccess, access_to.id)
@@ -360,7 +357,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
       {:ok, view, _} = live(ctx.conn, @route)
 
       verify(view, ctx.target_enrollment, ctx.source_enrollment)
-      render_click(view, "preview", %{})
+      view |> element("#preview_button") |> render_click()
       assert has_element?(view, "#verified_users")
 
       view
@@ -374,9 +371,101 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
     test "preview requires a successful verification", ctx do
       {:ok, view, _} = live(ctx.conn, @route)
 
+      assert has_element?(view, "#preview_button[disabled]")
+      assert has_element?(view, "#commit_button[disabled]")
+
       render_click(view, "preview", %{})
 
       assert has_element?(view, "#result", "Verify the users before previewing changes.")
+    end
+  end
+
+  describe "preview and commit gating" do
+    setup [:admin_conn]
+
+    setup do
+      section = insert(:section)
+      target_user = insert(:user)
+      source_user = insert(:user)
+
+      %{
+        section: section,
+        target_user: target_user,
+        source_user: source_user,
+        target_enrollment: insert(:enrollment, user: target_user, section: section),
+        source_enrollment: insert(:enrollment, user: source_user, section: section)
+      }
+    end
+
+    test "enables preview after verifying and commit only after a preview with changes", ctx do
+      insert(:resource_access,
+        user: ctx.source_user,
+        section: ctx.section,
+        resource: insert(:resource)
+      )
+
+      {:ok, view, _} = live(ctx.conn, @route)
+
+      verify(view, ctx.target_enrollment, ctx.source_enrollment)
+
+      refute has_element?(view, "#preview_button[disabled]")
+      assert has_element?(view, "#commit_button[disabled]")
+
+      view |> element("#preview_button") |> render_click()
+
+      refute has_element?(view, "#commit_button[disabled]")
+
+      view |> element("#commit_button") |> render_click()
+
+      assert has_element?(view, "#result", "Success: 1 change(s) applied.")
+      assert has_element?(view, "#commit_button[disabled]", "Done!")
+      assert has_element?(view, "#preview_button[disabled]")
+
+      render_click(view, "commit", %{})
+      assert has_element?(view, "#result", "Changes have already been committed.")
+    end
+
+    test "keeps commit disabled when the preview has no changes", ctx do
+      {:ok, view, _} = live(ctx.conn, @route)
+
+      verify(view, ctx.target_enrollment, ctx.source_enrollment)
+      view |> element("#preview_button") |> render_click()
+
+      assert has_element?(view, "#preview_changes", "There is no progress to restore")
+      assert has_element?(view, "#commit_button[disabled]")
+
+      render_click(view, "commit", %{})
+      assert has_element?(view, "#result", "There are no changes to commit.")
+    end
+
+    test "commit requires a preview", ctx do
+      {:ok, view, _} = live(ctx.conn, @route)
+
+      verify(view, ctx.target_enrollment, ctx.source_enrollment)
+      render_click(view, "commit", %{})
+
+      assert has_element?(view, "#result", "Preview changes before committing.")
+    end
+
+    test "editing the form after a commit allows a new verification", ctx do
+      insert(:resource_access,
+        user: ctx.source_user,
+        section: ctx.section,
+        resource: insert(:resource)
+      )
+
+      {:ok, view, _} = live(ctx.conn, @route)
+
+      verify(view, ctx.target_enrollment, ctx.source_enrollment)
+      view |> element("#preview_button") |> render_click()
+      view |> element("#commit_button") |> render_click()
+
+      view
+      |> form("#verify_form", %{"source_user_id" => ""})
+      |> render_change()
+
+      assert has_element?(view, "#commit_button", "Commit Changes")
+      refute has_element?(view, "#result", "Success")
     end
   end
 

@@ -31,17 +31,9 @@ defmodule OliWeb.Admin.RestoreUserProgress do
       verified: nil,
       result: "",
       true_user: nil,
-      all_users: [],
       changes: [],
-      user_enrollments: %{},
       commit_done: false
     )
-  end
-
-  defp build_user_enrollment_map(enrollments) do
-    Enum.reduce(enrollments, %{}, fn %Enrollment{id: id, user_id: user_id}, acc ->
-      Map.put(acc, user_id, id)
-    end)
   end
 
   @doc """
@@ -189,6 +181,7 @@ defmodule OliWeb.Admin.RestoreUserProgress do
           <thead>
             <tr>
               <th>ROLE</th>
+              <th>ENROLLMENT ID</th>
               <th>USER ID</th>
               <th>NAME</th>
               <th>EMAIL</th>
@@ -207,6 +200,7 @@ defmodule OliWeb.Admin.RestoreUserProgress do
               id={"verified_#{String.downcase(role)}"}
             >
               <td>{role}</td>
+              <td>{enrollment.id}</td>
               <td>{enrollment.user.id}</td>
               <td>{enrollment.user.given_name} {enrollment.user.family_name}</td>
               <td>{enrollment.user.email}</td>
@@ -224,16 +218,19 @@ defmodule OliWeb.Admin.RestoreUserProgress do
       </div>
 
       <button
+        id="preview_button"
         phx-click="preview"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+        disabled={is_nil(@verified) or @commit_done}
       >
         Preview Changes
       </button>
 
       <button
+        id="commit_button"
         phx-click="commit"
         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-        disabled={@commit_done}
+        disabled={not can_commit?(assigns)}
       >
         <%= if @commit_done do %>
           Done!
@@ -244,44 +241,15 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
       <div id="result">{@result}</div>
 
-      <h3>User Records</h3>
+      <div :if={@true_user} id="preview_changes">
+        <h3>Changes</h3>
 
-      <table>
-        <thead>
-          <tr>
-            <th>TARGET</th>
-            <th>ENROLLMENT ID</th>
-            <th>ID</th>
-            <th>GIVEN NAME</th>
-            <th>FAMILY NAME</th>
-            <th>EMAIL</th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for user <- @all_users do %>
-            <tr>
-              <td>
-                {if user.id == @true_user.id do
-                  "TRUE"
-                else
-                  ""
-                end}
-              </td>
-              <td>{Map.get(@user_enrollments, user.id, "")}</td>
-              <td>{user.id}</td>
-              <td>{user.given_name}</td>
-              <td>{user.family_name}</td>
-              <td>{user.email}</td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+        <p :if={@changes == [] and not @commit_done}>
+          There is no progress to restore for these users.
+        </p>
 
-      <h3>Changes</h3>
-
-      <%= for change <- @changes do %>
-        <div>{inspect(change)}</div>
-      <% end %>
+        <div :for={change <- @changes}>{inspect(change)}</div>
+      </div>
     </div>
     """
   end
@@ -315,41 +283,46 @@ defmodule OliWeb.Admin.RestoreUserProgress do
     %{target_enrollment: target_enrollment, source_enrollment: source_enrollment} =
       socket.assigns.verified
 
-    {all_users, true_user, changes} = preview(target_enrollment, source_enrollment)
+    {_all_users, true_user, changes} = preview(target_enrollment, source_enrollment)
 
-    {:noreply,
-     assign(socket,
-       all_users: all_users,
-       true_user: true_user,
-       changes: changes,
-       user_enrollments: build_user_enrollment_map([target_enrollment, source_enrollment]),
-       result: ""
-     )}
+    {:noreply, assign(socket, true_user: true_user, changes: changes, result: "")}
   end
 
   def handle_event("commit", _, socket) do
-    if is_nil(socket.assigns.true_user) do
-      {:noreply, assign(socket, result: "Preview changes before committing.")}
-    else
-      case Repo.transaction(fn -> process(socket.assigns.true_user, socket.assigns.changes) end) do
-        {:ok, _} ->
-          {:noreply,
-           assign(socket,
-             changes: [],
-             result: "success",
-             commit_done: true
-           )}
+    case commit_blocker(socket.assigns) do
+      nil ->
+        %{true_user: true_user, changes: changes} = socket.assigns
 
-        {_, reason} ->
-          {:noreply,
-           assign(socket,
-             changes: [],
-             result: "failed: #{inspect(reason)}",
-             commit_done: false
-           )}
-      end
+        case Repo.transaction(fn -> process(true_user, changes) end) do
+          {:ok, _} ->
+            {:noreply,
+             assign(socket,
+               changes: [],
+               result: "Success: #{length(changes)} change(s) applied.",
+               commit_done: true
+             )}
+
+          {_, reason} ->
+            {:noreply,
+             assign(socket,
+               changes: [],
+               result: "Failed: #{inspect(reason)}",
+               commit_done: false
+             )}
+        end
+
+      reason ->
+        {:noreply, assign(socket, result: reason)}
     end
   end
+
+  defp can_commit?(assigns), do: is_nil(commit_blocker(assigns))
+
+  # Returns the reason why a commit is not allowed in the current state, or nil when it is.
+  defp commit_blocker(%{commit_done: true}), do: "Changes have already been committed."
+  defp commit_blocker(%{true_user: nil}), do: "Preview changes before committing."
+  defp commit_blocker(%{changes: []}), do: "There are no changes to commit."
+  defp commit_blocker(_), do: nil
 
   defp preview(
          %Enrollment{user: true_user} = target_enrollment,
