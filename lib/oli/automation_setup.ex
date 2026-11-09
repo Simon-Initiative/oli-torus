@@ -318,7 +318,7 @@ defmodule Oli.AutomationSetup do
   end
 
   defp create_learner(false, _section) do
-    {:ok, nil, nil}
+    {:ok, {nil, nil}}
   end
 
   defp create_learner(true, section) do

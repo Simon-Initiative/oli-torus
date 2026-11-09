@@ -196,6 +196,36 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       assert resource_count_before == Repo.one(from r in Resource, select: count(r.id))
     end
 
+    test "Sets up a section without a learner", %{conn: conn, api_key: api_key} do
+      setup_conn =
+        conn
+        |> put_req_header("accept", "application/json")
+        |> put_req_header("authorization", "Bearer #{api_key}")
+        |> AutomationSetupController.setup(%{
+          "create_author" => "true",
+          "create_educator" => "true",
+          "create_learner" => "false",
+          "create_section" => "true",
+          "project_archive" => %{
+            :path => "./test/oli_web/controllers/api/automation/export_unit_test_project.zip"
+          }
+        })
+
+      assert %{
+               "success" => true,
+               "learner" => nil,
+               "educator" => %{"id" => educator_id},
+               "section" => %{"id" => section_id}
+             } = Jason.decode!(setup_conn.resp_body)
+
+      assert [educator_id] ==
+               Repo.all(
+                 from e in Sections.Enrollment,
+                   where: e.section_id == ^section_id,
+                   select: e.user_id
+               )
+    end
+
     test "Can not tear down resources not created by automation api", %{
       conn: conn,
       api_key: api_key,

@@ -1,0 +1,13 @@
+# Student for the Real Chem mobile invitation flow. Created outside
+# automation_setup so it starts unenrolled; the Test Learner display name
+# satisfies the guarded automation teardown contract used by the companion spec.
+# Parameters:
+#   RUN_ID - suffix to make the student email unique.
+
+- user:
+    name: 'mobile_invitation_student'
+    type: 'student'
+    email: 'mobile-invitation-student${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Learner'
+    password: 'changeme123456'
