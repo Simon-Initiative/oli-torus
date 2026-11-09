@@ -1,12 +1,20 @@
 defmodule OliWeb.Admin.RestoreUserProgress do
-  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  @moduledoc """
+  System admin tool that merges the progress of a source user into a target user enrolled in the
+  same section.
+
+  The admin enters a section slug and both user IDs, verifies that both users are enrolled in the
+  section, previews the resource access changes, and finally commits them in a single transaction.
+  """
+
   use OliWeb, :live_view
 
   import Ecto.Query
-  alias Oli.Repo
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
+
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Enrollment, Section}
+  alias Oli.Repo
   alias Oli.Resources.Revision
   alias OliWeb.Common.{FormatDateTime, SessionContext}
 
@@ -47,14 +55,7 @@ defmodule OliWeb.Admin.RestoreUserProgress do
   with the `:user` association preloaded on both enrollments, or `{:error, message}` describing
   the first check that failed.
   """
-  @spec verify_enrollments(term(), term(), term()) ::
-          {:ok,
-           %{
-             section: %Section{},
-             target_enrollment: %Enrollment{},
-             source_enrollment: %Enrollment{}
-           }}
-          | {:error, String.t()}
+  @spec verify_enrollments(term(), term(), term()) :: {:ok, map()} | {:error, String.t()}
   def verify_enrollments(section_slug, target_user_id, source_user_id) do
     with {:ok, section_slug} <- parse_section_slug(section_slug),
          {:ok, target_user_id} <- parse_user_id(target_user_id, "target"),
@@ -134,39 +135,34 @@ defmodule OliWeb.Admin.RestoreUserProgress do
         class="flex flex-col gap-4 md:flex-row md:items-end"
       >
         <div class="flex-1">
-          <label class="block font-semibold" for={@form[:section_slug].id}>Section Slug</label>
-          <input
-            type="text"
-            id={@form[:section_slug].id}
-            name={@form[:section_slug].name}
-            value={@form[:section_slug].value}
+          <.input
+            field={@form[:section_slug]}
+            label="Section Slug"
+            label_class="font-semibold"
             class="w-full p-2 border border-gray-300 rounded"
           />
         </div>
 
         <div class="flex-1">
-          <label class="block font-semibold" for={@form[:target_user_id].id}>Target User ID</label>
-          <input
-            type="text"
-            id={@form[:target_user_id].id}
-            name={@form[:target_user_id].name}
-            value={@form[:target_user_id].value}
+          <.input
+            field={@form[:target_user_id]}
+            label="Target User ID"
+            label_class="font-semibold"
             class="w-full p-2 border border-gray-300 rounded"
           />
         </div>
 
         <div class="flex-1">
-          <label class="block font-semibold" for={@form[:source_user_id].id}>Source User ID</label>
-          <input
-            type="text"
-            id={@form[:source_user_id].id}
-            name={@form[:source_user_id].name}
-            value={@form[:source_user_id].value}
+          <.input
+            field={@form[:source_user_id]}
+            label="Source User ID"
+            label_class="font-semibold"
             class="w-full p-2 border border-gray-300 rounded"
           />
         </div>
 
         <button
+          id="verify_button"
           type="submit"
           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
@@ -290,29 +286,22 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
   def handle_event("commit", _, socket) do
     case commit_blocker(socket.assigns) do
-      nil ->
-        %{true_user: true_user, changes: changes} = socket.assigns
+      nil -> {:noreply, commit_changes(socket)}
+      reason -> {:noreply, assign(socket, result: reason)}
+    end
+  end
 
-        case Repo.transaction(fn -> process(true_user, changes) end) do
-          {:ok, _} ->
-            {:noreply,
-             assign(socket,
-               changes: [],
-               result: "Success: #{length(changes)} change(s) applied.",
-               commit_done: true
-             )}
+  defp commit_changes(%{assigns: %{true_user: true_user, changes: changes}} = socket) do
+    case Repo.transaction(fn -> process(true_user, changes) end) do
+      {:ok, _} ->
+        assign(socket,
+          changes: [],
+          result: "Success: #{length(changes)} change(s) applied.",
+          commit_done: true
+        )
 
-          {_, reason} ->
-            {:noreply,
-             assign(socket,
-               changes: [],
-               result: "Failed: #{inspect(reason)}",
-               commit_done: false
-             )}
-        end
-
-      reason ->
-        {:noreply, assign(socket, result: reason)}
+      {_, reason} ->
+        assign(socket, changes: [], result: "Failed: #{inspect(reason)}", commit_done: false)
     end
   end
 
