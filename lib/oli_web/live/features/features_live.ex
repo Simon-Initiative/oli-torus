@@ -14,6 +14,7 @@ defmodule OliWeb.Features.FeaturesLive do
   alias Oli.Features
   alias Oli.Delivery
   alias Oli.RuntimeLogOverrides
+  alias Oli.RuntimeLogOverrides.DebugRevertConfig
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.ScopedFeatureFlags
@@ -437,21 +438,14 @@ defmodule OliWeb.Features.FeaturesLive do
   end
 
   def handle_event("logging", %{"level" => level}, socket) do
-    level_atom =
-      try do
-        String.to_existing_atom(level)
-      rescue
-        ArgumentError -> nil
-      end
-
     socket =
-      case level_atom in Logger.levels() and Logger.configure(level: level_atom) do
-        :ok ->
+      case RuntimeLogOverrides.set_global_level(level) do
+        {:ok, new_level} ->
           socket
-          |> put_flash(:info, "Logging level changed to #{level}")
+          |> put_flash(:info, logging_changed_message(new_level))
           |> assign(log_level: Logger.level())
 
-        _ ->
+        {:error, _reason} ->
           socket
           |> put_flash(:error, "Logging level could not be changed to #{level}")
       end
@@ -527,4 +521,14 @@ defmodule OliWeb.Features.FeaturesLive do
     path = ~p"/admin/features?#{new_params}"
     {:noreply, push_patch(socket, to: path, replace: true)}
   end
+
+  defp logging_changed_message(:debug) do
+    "Logging level changed to debug. It will automatically revert to " <>
+      "#{DebugRevertConfig.revert_level()} in #{minutes_label(DebugRevertConfig.timeout_minutes())}"
+  end
+
+  defp logging_changed_message(level), do: "Logging level changed to #{level}"
+
+  defp minutes_label(1), do: "1 minute"
+  defp minutes_label(minutes), do: "#{minutes} minutes"
 end

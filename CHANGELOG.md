@@ -21,6 +21,8 @@ update this file accordingly.
 | MOODLE_API_TOKEN                   | No       | Moodle web service token used to create/delete/import the fixture course via API |
 | MOODLE_LTI_TOOL_NAME                | No       | Pre-registered Moodle course tool display name to select (default "Tokamak")     |
 | OBAN_QUEUE_SIZE_SNAPSHOTS          | No       | Snapshot queue concurrency per node (Default: 4)                                |
+| DEBUG_LOG_LEVEL_TIMEOUT_MINUTES    | No       | Minutes before admin-enabled debug logging is auto-reverted (Default: 30)       |
+| DEBUG_LOG_LEVEL_REVERT_LEVEL       | No       | Log level restored when debug logging times out (Default: warning)              |
 
 - `MOODLE_*` environment variables configure the Moodle-to-Torus LTI launch and grade passback
   Playwright automation. They are not required by the Torus application runtime. See
@@ -34,6 +36,11 @@ update this file accordingly.
   preview application node executes concurrently. Keep it lower than the database connection
   `POOL_SIZE` so snapshot processing leaves connections available for web requests and other
   background queues.
+
+- `DEBUG_LOG_LEVEL_TIMEOUT_MINUTES` and `DEBUG_LOG_LEVEL_REVERT_LEVEL` control the automatic revert
+  of the global log level when an admin sets it to `debug` from `/admin/features`. The revert runs
+  as a scheduled Oban job on the `default` queue and only affects the node where debug was enabled.
+  `DEBUG_LOG_LEVEL_REVERT_LEVEL` accepts any Logger level except `debug`; invalid values fail at boot.
 
 ### Infrastructure Changes
 
