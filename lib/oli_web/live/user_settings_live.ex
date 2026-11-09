@@ -402,9 +402,9 @@ defmodule OliWeb.UserSettingsLive do
       {:error, :email, changeset}
     else
       case Accounts.apply_user_email(user, current_password, user_params) do
-        {:ok, _applied_user} ->
+        {:ok, applied_user} ->
           Accounts.deliver_user_update_email_instructions(
-            user,
+            applied_user,
             user.email,
             &url(~p"/users/settings/confirm_email/#{&1}")
           )

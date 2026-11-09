@@ -237,6 +237,42 @@ defmodule OliWeb.UserSettingsLiveTest do
       assert Accounts.get_independent_user_by_email(user.email)
     end
 
+    test "sends the confirmation to the new email and its link updates the email", %{
+      conn: conn,
+      password: password,
+      user: user
+    } do
+      new_email = unique_user_email()
+
+      {:ok, lv, _html} = live(conn, ~p"/users/settings")
+
+      lv
+      |> form("#settings_form", %{
+        "user" => %{"current_password" => password, "email" => new_email}
+      })
+      |> render_submit()
+
+      email =
+        queued_email_jobs()
+        |> Enum.map(&Oli.Mailer.SendEmailWorker.deserialize_email(&1.args["email"]))
+        |> Enum.find(&(&1.subject == "Confirm your email"))
+
+      assert [{_name, ^new_email}] = email.to
+
+      [token] =
+        Regex.run(~r{/users/settings/confirm_email/([A-Za-z0-9_-]+)}, email.text_body,
+          capture: :all_but_first
+        )
+
+      {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
+
+      assert {:live_redirect, %{to: path, flash: flash}} = redirect
+      assert path == ~p"/users/settings"
+      assert %{"info" => "Email changed successfully."} = flash
+      refute Accounts.get_independent_user_by_email(user.email)
+      assert Accounts.get_independent_user_by_email(new_email)
+    end
+
     test "renders errors with invalid data (phx-change)", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/users/settings")
 
