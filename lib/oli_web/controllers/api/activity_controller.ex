@@ -281,6 +281,9 @@ defmodule OliWeb.Api.ActivityController do
       {:error, {:not_authorized}} ->
         error(conn, 403, "unauthorized")
 
+      {:error, {:invalid_request}} ->
+        error(conn, 400, "invalid request")
+
       e ->
         {_, msg} = Oli.Utils.log_error("Could not create activity", e)
         error(conn, 500, msg)

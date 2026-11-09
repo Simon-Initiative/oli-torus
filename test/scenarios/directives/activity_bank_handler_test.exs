@@ -393,4 +393,46 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
     assert result.errors == []
     assert Map.has_key?(result.state.activities, {"bank_project", "Edited By Resource String"})
   end
+
+  test "create_bulk keeps each virtual id on its own activity when an item is skipped" do
+    yaml = """
+    - project:
+        name: "bank_project"
+        title: "Bank Project"
+        root:
+          children:
+            - page: "Practice"
+
+    - activity_bank:
+        project: "bank_project"
+        ops:
+          - create_bulk:
+              activities:
+                - title: ""
+                  virtual_id: "skipped_q"
+                  type: "oli_multiple_choice"
+                  content: |
+                    stem_md: "Skipped?"
+                    choices:
+                      - id: "a"
+                        body_md: "Yes"
+                        score: 1
+                - title: "Survivor Question"
+                  virtual_id: "survivor_q"
+                  type: "oli_multiple_choice"
+                  content: |
+                    stem_md: "Survivor?"
+                    choices:
+                      - id: "a"
+                        body_md: "Yes"
+                        score: 1
+    """
+
+    result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+    virtual_ids = result.state.activity_virtual_ids
+
+    assert result.errors == []
+    assert %{title: "Survivor Question"} = virtual_ids[{"bank_project", "survivor_q"}]
+    refute Map.has_key?(virtual_ids, {"bank_project", "skipped_q"})
+  end
 end

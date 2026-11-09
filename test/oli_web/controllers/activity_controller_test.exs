@@ -551,6 +551,28 @@ defmodule OliWeb.ActivityControllerTest do
   end
 
   describe "tool creation eligibility" do
+    test "bulk answers a malformed request with 400 and creates nothing", %{
+      conn: conn,
+      project: project
+    } do
+      before_counts = creation_counts()
+
+      conn =
+        post(conn, Routes.activity_path(conn, :create_bulk, project.slug), %{
+          "bulkData" => [
+            %{
+              "activityTypeSlug" => "oli_multiple_choice",
+              "content" => %{},
+              "objectives" => [],
+              "title" => "Without tags"
+            }
+          ]
+        })
+
+      assert response(conn, 400) == "invalid request"
+      assert creation_counts() == before_counts
+    end
+
     test "bulk refuses a mixed batch without retaining an earlier eligible activity", %{
       conn: conn,
       project: project

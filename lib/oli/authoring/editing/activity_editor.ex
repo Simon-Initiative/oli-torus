@@ -24,6 +24,10 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Activities.ActivityRegistration
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.PublishedResource
+  alias Oli.Resources.Resource
+  alias Oli.Authoring.Course.ProjectResource
+  alias Oli.Utils.Database
+  alias Oli.Utils.Slug
   alias Oli.Publishing.Publications.Publication
   alias Oli.Authoring.Broadcaster
   alias Oli.Resources.ContentMigrator
@@ -1698,92 +1702,209 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   @doc """
-  Attempts to process a request to create a list of new activities.
-  LTI tools are checked for eligibility before any activity is created.
-  An eligibility refusal rejects the entire batch; other creation failures skip that item.
+  Attempts to process a request to create a list of new activities, with a number of database
+  queries that does not grow with the number of activities.
+
+  The request is refused with no writes when an item is malformed (a required key is missing,
+  its activity type slug is not a string, or it carries both an objectives list and an objective
+  map) or when a known activity type cannot be created in the project. An item of an unknown
+  activity type, or whose revision does not validate, is skipped. The accepted items are written
+  in one transaction.
 
   Returns:
 
-  .`{:ok, list({String.t(), %Revision{}})}` when the creation processes succeeds
-  .`{:error, {:not_found}}` if the project, resource, or user cannot be found
-  .`{:error, {:not_authorized}}` if the user is not authorized to create this activity
+  .`{:ok, list(%{activity_type_slug: String.t(), activity: %Revision{}, input_index: integer()})}`
+    with the created activities in input order; `input_index` is each one's position in the request
+  .`{:error, {:not_found}}` if the project cannot be found
+  .`{:error, {:not_authorized}}` if the user cannot edit the project, or an activity type cannot
+    be created in it
+  .`{:error, {:invalid_request}}` if an item is malformed
   .`{:error, {:error}}` unknown error
   """
-  @spec create_bulk(String.t(), %Author{}, %{}) ::
-          {:ok, list({String.t(), %Revision{}})}
+  @spec create_bulk(String.t(), %Author{}, list(map()), String.t()) ::
+          {:ok,
+           list(%{
+             activity_type_slug: String.t(),
+             activity: %Revision{},
+             input_index: non_neg_integer()
+           })}
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
-  def create_bulk(
-        project_slug,
-        author,
-        bulk_activity_data,
-        scope \\ "embedded"
-      ) do
+          | {:error, {:invalid_request}}
+  def create_bulk(project_slug, author, bulk_activity_data, scope \\ "embedded") do
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
-         :ok <- authorize_bulk_activity_types(bulk_activity_data, project.id, author) do
-      activities =
-        Enum.reduce(bulk_activity_data, [], fn activity_data, m ->
-          %{
-            "activityTypeSlug" => activity_type_slug,
-            "objectives" => objectives,
-            "content" => model,
-            "title" => title,
-            "tags" => tags
-          } = activity_data
-
-          objective_map =
-            Map.get(activity_data, "objectiveMap") || Map.get(activity_data, "objective_map") ||
-              %{}
-
-          case process_create_activity(
-                 project,
-                 author,
-                 publication,
-                 scope,
-                 activity_type_slug,
-                 objectives,
-                 model,
-                 title,
-                 tags,
-                 objective_map
-               ) do
-            {:ok, activity} ->
-              m ++ [%{activity_type_slug: activity_type_slug, activity: activity}]
-
-            _ ->
-              m
-          end
-        end)
-
-      {:ok, activities}
-    else
-      error -> error
+         {:ok, items} <- parse_bulk_items(bulk_activity_data),
+         {:ok, registrations} <- authorize_bulk_activity_types(items, project.id, author) do
+      items
+      |> prepare_bulk_activities(registrations, author, scope)
+      |> insert_bulk_activities(project, publication)
     end
   end
 
-  defp authorize_bulk_activity_types(activity_data, project_id, author) do
-    is_admin? = Accounts.at_least_content_admin?(author)
+  defp parse_bulk_items(bulk_activity_data) when is_list(bulk_activity_data) do
+    items = Enum.with_index(bulk_activity_data, &parse_bulk_item/2)
 
-    activity_data
-    |> Enum.map(& &1["activityTypeSlug"])
-    |> Enum.uniq()
-    |> Enum.reduce_while(:ok, fn slug, :ok ->
-      case Activities.get_registration_by_slug(slug) do
-        nil ->
-          # Unknown types retain the per-item creation failure/skip behavior.
-          {:cont, :ok}
+    case Enum.all?(items, &match?({:ok, _}, &1)) do
+      true -> {:ok, Enum.map(items, fn {:ok, item} -> item end)}
+      false -> {:error, {:invalid_request}}
+    end
+  end
 
-        registration ->
-          case Activities.can_create_activity?(registration, project_id, is_admin?) do
-            true -> {:cont, :ok}
-            false -> {:halt, {:error, {:not_authorized}}}
-          end
+  defp parse_bulk_items(_bulk_activity_data), do: {:error, {:invalid_request}}
+
+  defp parse_bulk_item(
+         %{
+           "activityTypeSlug" => activity_type_slug,
+           "objectives" => objectives,
+           "content" => model,
+           "title" => title,
+           "tags" => tags
+         } = activity_data,
+         input_index
+       )
+       when is_binary(activity_type_slug) do
+    objective_map =
+      Map.get(activity_data, "objectiveMap") || Map.get(activity_data, "objective_map") || %{}
+
+    case objective_map != %{} and objectives != [] do
+      true ->
+        :error
+
+      false ->
+        {:ok,
+         %{
+           input_index: input_index,
+           activity_type_slug: activity_type_slug,
+           objectives: objectives,
+           objective_map: objective_map,
+           model: model,
+           title: title,
+           tags: tags
+         }}
+    end
+  end
+
+  defp parse_bulk_item(_activity_data, _input_index), do: :error
+
+  defp authorize_bulk_activity_types(items, project_id, author) do
+    registrations =
+      items
+      |> Enum.map(& &1.activity_type_slug)
+      |> Enum.uniq()
+      |> Activities.get_registrations_by_slugs()
+
+    creatable_ids =
+      Activities.creatable_registration_ids(
+        registrations,
+        project_id,
+        Accounts.at_least_content_admin?(author)
+      )
+
+    case Enum.all?(registrations, &MapSet.member?(creatable_ids, &1.id)) do
+      true -> {:ok, Map.new(registrations, &{&1.slug, &1})}
+      false -> {:error, {:not_authorized}}
+    end
+  end
+
+  defp prepare_bulk_activities(items, registrations, author, scope) do
+    Enum.flat_map(items, fn item ->
+      with {:ok, registration} <- Map.fetch(registrations, item.activity_type_slug),
+           {:ok, attrs} <- activity_revision_attrs(registration, author, scope, item),
+           true <- valid_before_insert?(attrs) do
+        [Map.put(item, :attrs, attrs)]
+      else
+        _ -> []
       end
     end)
+  end
+
+  defp valid_before_insert?(attrs) do
+    %Revision{}
+    |> Revision.changeset_without_slug(attrs)
+    |> Map.fetch!(:errors)
+    |> Keyword.delete(:resource_id)
+    |> Enum.empty?()
+  end
+
+  defp insert_bulk_activities([], _project, _publication), do: {:ok, []}
+
+  defp insert_bulk_activities(prepared, project, publication) do
+    titles = Enum.map(prepared, & &1.attrs.title)
+
+    case Slug.generate("revisions", titles) do
+      slugs when length(slugs) == length(prepared) ->
+        Repo.transaction(fn -> insert_bulk_rows(prepared, slugs, project, publication) end)
+
+      _ ->
+        {:error, {:error}}
+    end
+  end
+
+  defp insert_bulk_rows(prepared, slugs, project, publication) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    timestamps = %{inserted_at: now, updated_at: now}
+
+    {_, resources} =
+      Database.batch_insert_all(
+        Resource,
+        List.duplicate(timestamps, length(prepared)),
+        returning: [:id]
+      )
+
+    revision_rows =
+      Enum.zip_with([prepared, resources, slugs], fn [item, %{id: resource_id}, slug] ->
+        item.attrs
+        |> Map.merge(%{resource_id: resource_id, slug: slug})
+        |> revision_row(timestamps)
+      end)
+
+    {_, revisions} = Database.batch_insert_all(Revision, revision_rows, returning: true)
+
+    Database.batch_insert_all(
+      ProjectResource,
+      Enum.map(resources, &Map.merge(timestamps, %{project_id: project.id, resource_id: &1.id}))
+    )
+
+    Database.batch_insert_all(
+      PublishedResource,
+      Enum.map(
+        revisions,
+        &Map.merge(timestamps, %{
+          publication_id: publication.id,
+          resource_id: &1.resource_id,
+          revision_id: &1.id
+        })
+      )
+    )
+
+    revisions_by_resource = Map.new(revisions, &{&1.resource_id, &1})
+
+    Enum.zip_with(prepared, resources, fn item, %{id: resource_id} ->
+      %{
+        activity_type_slug: item.activity_type_slug,
+        activity: Map.fetch!(revisions_by_resource, resource_id),
+        input_index: item.input_index
+      }
+    end)
+  end
+
+  defp revision_row(attrs, timestamps) do
+    case %Revision{}
+         |> Revision.changeset_without_slug(attrs)
+         |> Ecto.Changeset.apply_action(:insert) do
+      {:ok, revision} ->
+        Revision.__schema__(:fields)
+        |> List.delete(:id)
+        |> Map.new(&{&1, Map.fetch!(revision, &1)})
+        |> Map.merge(timestamps)
+
+      {:error, _changeset} ->
+        Repo.rollback({:error})
+    end
   end
 
   defp process_create_activity(
@@ -1797,7 +1918,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          title,
          tags,
          objective_map,
-         learning_model_parameters \\ nil
+         learning_model_parameters
        ) do
     Repo.transaction(fn ->
       with {:ok, activity_type} <-
@@ -1808,23 +1929,17 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                project.id,
                Accounts.at_least_content_admin?(author)
              ),
-           {:ok, model} <- prepare_creation_model(activity_type_slug, model),
-           {:ok, objectives} <- attach_objectives(model, objectives, objective_map),
+           {:ok, attrs} <-
+             activity_revision_attrs(activity_type, author, scope, %{
+               objectives: objectives,
+               objective_map: objective_map,
+               model: model,
+               title: title,
+               tags: tags,
+               learning_model_parameters: learning_model_parameters
+             }),
            {:ok, activity} <-
-             Resources.create_new(
-               %{
-                 title: title || activity_type.title,
-                 scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
-                 objectives: objectives,
-                 author_id: author.id,
-                 content: model,
-                 scope: scope,
-                 activity_type_id: activity_type.id,
-                 tags: tags,
-                 learning_model_parameters: learning_model_parameters
-               },
-               Oli.Resources.ResourceType.id_for_activity()
-             ),
+             Resources.create_new(attrs, Oli.Resources.ResourceType.id_for_activity()),
            {:ok, _} <-
              Course.create_project_resource(%{
                project_id: project.id,
@@ -1843,6 +1958,25 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         error -> Repo.rollback(error)
       end
     end)
+  end
+
+  defp activity_revision_attrs(activity_type, author, scope, item) do
+    with {:ok, model} <- prepare_creation_model(activity_type.slug, item.model),
+         {:ok, objectives} <- attach_objectives(model, item.objectives, item.objective_map) do
+      {:ok,
+       %{
+         title: item.title || activity_type.title,
+         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
+         objectives: objectives,
+         author_id: author.id,
+         content: model,
+         scope: scope,
+         activity_type_id: activity_type.id,
+         tags: item.tags,
+         learning_model_parameters: Map.get(item, :learning_model_parameters),
+         resource_type_id: Oli.Resources.ResourceType.id_for_activity()
+       }}
+    end
   end
 
   defp prepare_creation_model("oli_embedded", model) when is_map(model) do

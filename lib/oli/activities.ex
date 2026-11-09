@@ -346,6 +346,14 @@ defmodule Oli.Activities do
   end
 
   @doc """
+  Returns the activity registrations whose slugs are in `slugs`, in one query.
+  """
+  @spec get_registrations_by_slugs([String.t()]) :: [%ActivityRegistration{}]
+  def get_registrations_by_slugs(slugs) do
+    Repo.all(from p in ActivityRegistration, where: p.slug in ^slugs)
+  end
+
+  @doc """
   Returns the list of activity_registrations.
 
   ## Examples
@@ -507,35 +515,52 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Returns whether a new activity of this registration can be created in the project.
+  Returns whether a new activity of this registration can be created in the project, by the rule
+  of `creatable_registration_ids/3`.
+  """
+  @spec can_create_activity?(%ActivityRegistration{}, integer(), boolean()) :: boolean()
+  def can_create_activity?(%ActivityRegistration{id: id} = registration, project_id, is_admin?) do
+    [registration]
+    |> creatable_registration_ids(project_id, is_admin?)
+    |> MapSet.member?(id)
+  end
+
+  @doc """
+  Returns the ids of the given registrations whose new activities can be created in the project.
 
   Global registrations and non-LTI activities retain their existing creation behavior.
   Other LTI tools must pass the modal's eligibility rule, including its allowance for
-  tools already associated with the project.
+  tools already associated with the project. Checks every registration in at most one query.
   """
-  @spec can_create_activity?(%ActivityRegistration{}, integer(), boolean()) :: boolean()
-  def can_create_activity?(
-        %ActivityRegistration{globally_available: true},
-        _project_id,
-        _is_admin?
-      ),
-      do: true
+  @spec creatable_registration_ids([%ActivityRegistration{}], integer(), boolean()) ::
+          MapSet.t(integer())
+  def creatable_registration_ids(registrations, project_id, is_admin?) do
+    {global, others} = Enum.split_with(registrations, & &1.globally_available)
+    global_ids = MapSet.new(global, & &1.id)
 
-  def can_create_activity?(%ActivityRegistration{id: id}, project_id, is_admin?) do
-    selectable_ids =
-      project_id
-      |> selectable_project_registrations(is_admin?)
-      |> where([registration: ar], ar.id == ^id)
-      |> select([registration: ar], ar.id)
+    case Enum.map(others, & &1.id) do
+      [] ->
+        global_ids
 
-    from(ar in ActivityRegistration,
-      left_join: d in LtiExternalToolActivityDeployment,
-      on: d.activity_registration_id == ar.id,
-      where:
-        ar.id == ^id and
-          (is_nil(d.deployment_id) or ar.id in subquery(selectable_ids))
-    )
-    |> Repo.exists?()
+      ids ->
+        selectable_ids =
+          project_id
+          |> selectable_project_registrations(is_admin?)
+          |> where([registration: ar], ar.id in ^ids)
+          |> select([registration: ar], ar.id)
+
+        from(ar in ActivityRegistration,
+          left_join: d in LtiExternalToolActivityDeployment,
+          on: d.activity_registration_id == ar.id,
+          where:
+            ar.id in ^ids and
+              (is_nil(d.deployment_id) or ar.id in subquery(selectable_ids)),
+          select: ar.id
+        )
+        |> Repo.all()
+        |> MapSet.new()
+        |> MapSet.union(global_ids)
+    end
   end
 
   defp selectable_project_registrations(project_id, is_admin?) do
