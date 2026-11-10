@@ -69,6 +69,9 @@ test.skip(
   'Set PLAYWRIGHT_AUTOMATION_API_KEY to run this test (see setup instructions above)',
 );
 
+test.fixme(true, 'Disabled until TRIAGE-2550 is addressed (intermittent 502 on course import)');
+
+
 test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
   test.beforeAll(async ({ request }) => {
     test.setTimeout(AUTOMATION_SETUP_HOOK_TIMEOUT_MS);
