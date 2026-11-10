@@ -75,7 +75,7 @@ The existing `:related_activities` post-processing action will populate both obj
 
 - Typed wrapper for rollups and instructor payloads.
 - Contains an optional display `estimate`, an optional `numeric_score`, categorical distribution, contributing/eligible/total counts, and coverage metadata.
-- Keeps numeric aggregation, display eligibility, confidence, and coverage orthogonal. Parent display eligibility depends on total attempts across all effective children, not on a per-child minimum.
+- Keeps numeric aggregation, display eligibility, confidence, and coverage orthogonal. Parent display eligibility requires at least one effective child with three attempts; all available children contribute to the weighted score once eligible.
 
 `Oli.Delivery.Proficiency.Naive`
 
@@ -144,7 +144,7 @@ Parent-objective flow:
 2. Build the requested parent-to-effective-child map in memory.
 3. Bulk-read child learner states once.
 4. Compute `sum(child.aoa * child.attempt_count) / sum(child.attempt_count)` across available effective-child states; do not read or persist parent state.
-5. If total child attempts are fewer than three, return not-enough-information. Otherwise return the weighted parent estimate. No individual child minimum suppresses the parent result.
+5. If no effective child has at least three attempts, return not-enough-information and hide the score. Otherwise return the weighted parent estimate using all available child states. Preserve the total child attempt count as evidence metadata.
 
 Page/container/course flow:
 
@@ -327,7 +327,7 @@ Dashboard flow:
 - Missing objective SectionResources: return bounded unavailable/partial metadata and log counts; never log learner IDs or dump the requested identity lists.
 - Dashboard cache contains an old payload: oracle-version mismatch produces a miss; projection code must reject malformed new-version payloads explicitly.
 - One learner lacks evidence in a class aggregate: exclude that learner from the numeric mean but include not-enough-information in the distribution and coverage counts.
-- Parent total child attempts are fewer than three: return not-enough-information; no individual child minimum suppresses an otherwise eligible parent.
+- No parent child has at least three attempts: return not-enough-information, even if combined child attempts total three or more. Once one child qualifies, other children below three still contribute to the weighted score.
 
 ## 11. Observability
 
@@ -354,7 +354,7 @@ Dashboard flow:
   - estimate validation, label mapping, `nil` versus `0.0`, naive/LKT boundary differences, and aggregate math;
   - naive formula and legacy return-shape characterization;
   - direct LKT-AOA eligibility and confidence from persisted state;
-  - parent attempt-count weighting and the aggregate three-total-attempt display gate, including a child below three that does not suppress the parent;
+  - parent attempt-count weighting and the display gate requiring one child with three attempts, including combined totals of three or more that remain ineligible and a child below three that contributes once another child qualifies;
   - page/container/course deduplication, unweighted averaging, missing-state omission, scope-wide three-attempt gate, multi-page reuse, and class contributor counts.
 - Query/integration ExUnit tests:
   - assert LKT-AOA reads issue no attempt/ResourceSummary query;
@@ -394,7 +394,7 @@ Dashboard flow:
 - Existing Sections remain `:naive`; no migration rewrites them to LKT-AOA.
 - Existing Metrics function names and argument forms remain during migration. `%Section{}` is preferred; integer-ID forms perform one Section lookup.
 - Naive formula, minimum evidence rule, exact 0.4/0.8 boundaries, strings, maps, tuples, and student rows remain byte-for-byte or semantically equivalent.
-- LKT-AOA uses `< 0.4` Low, `0.4..0.8` Medium, and `> 0.8` High; this intentionally differs from naive at exactly 0.4.
+- LKT-AOA uses runtime percentage cutoffs `LKT_AOA_LOW_MEDIUM_CUTOFF` (default 40) and `LKT_AOA_MEDIUM_HIGH_CUTOFF` (default 70). Low is below the lower cutoff, Medium includes both cutoffs, and High is above the upper cutoff. Learner labels and parameterized SQL class distributions use the same values; naive and confidence buckets are unchanged.
 - `raw_proficiency_per_learning_objective/2` remains explicitly naive-only or deprecated; it never changes tuple meaning by Section model.
 - Existing `ContainedObjective` consumers and Authoring Insights remain unchanged.
 - The mandatory application restart clears old in-memory cache payloads, and oracle version increments prevent contract collisions. Naive dashboard numeric reconstruction may remain for compatibility, but LKT-AOA never uses it.

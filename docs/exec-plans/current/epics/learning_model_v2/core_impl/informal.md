@@ -164,56 +164,40 @@ unique_activity_part_count = 0
 confidence = 0.0
 ```
 
-The first prediction is calculated from those neutral values before the observed result is applied.
+The first response updates those neutral values before its prediction is calculated and averaged.
 
 `latest_p_correct` is not required for the model transition and should not be persisted unless a concrete consumer requires it. A singular `parameter_version_id` should also not be added without a fuller audit design: one prediction uses both an activity-part parameter and an LO parameter, and a lifetime AOA may span more than one published parameter set.
 
 ## LKT-AOA transition
 
-For the next opportunity, calculate the prediction from the pre-response state:
+For each evaluated opportunity, first apply the binary observed outcome:
+
+```text
+new_attempt_count = attempt_count + 1
+new_success_score = recency_decay * success_score + correct
+new_failure_score = recency_decay * failure_score + (1 - correct)
+new_recency_logit = log((new_success_score + 1) / (new_failure_score + 1))
+```
+
+Then calculate the probability from the updated state:
 
 ```text
 logit(P(correct)) =
   beta_lo
   + beta_part
-  + gamma * log(attempt_count + 1)
-  + rho * recency_logit
+  + gamma * log(new_attempt_count + 1)
+  + rho * new_recency_logit
+
+new_aoa = aoa + (P(correct) - aoa) / new_attempt_count
 ```
 
 The item coefficient is the difficulty value for the evaluated activity part. The same part coefficient is used for every LO targeted by that part.
 
-`gamma` and `rho` come from the single `%Oli.LearningModel.Config{}` fetched for the
-bulk operation and default to `0.1` and `1.0`, respectively.
+`gamma`, `rho`, and `recency_decay` come from the single `%Oli.LearningModel.Config{}` fetched for the bulk operation and default to `0.1`, `1.0`, and `0.9`, respectively.
 
-`attempt_count` is per learner/LO opportunity. A part targeting three LOs contributes one opportunity to each of the three corresponding states.
+`attempt_count` is per learner/LO opportunity. A part targeting three LOs contributes one opportunity to each of the three corresponding states. Persisting success and failure scores avoids reconstructing them from a derived logit.
 
-After calculating `p = P(correct)`, update the running AOA without reading prior attempts:
-
-```text
-new_attempt_count = attempt_count + 1
-new_aoa = (attempt_count * aoa + p) / new_attempt_count
-```
-
-Then apply the binary observed outcome:
-
-```text
-new_success_score = recency_decay * success_score + correct
-new_failure_score = recency_decay * failure_score + (1 - correct)
-
-new_recency_logit =
-  log((new_success_score + 1) / (new_failure_score + 1))
-```
-
-`recency_decay` comes from that same fetched configuration struct and defaults to
-`0.9`.
-
-Persisting success and failure scores avoids reconstructing them from a derived logit and keeps the implementation adaptable if decay behavior changes later.
-
-The ordering is deliberate:
-
-1. Predict using the state before the response outcome.
-2. Add that prediction to AOA.
-3. Apply the outcome to the recency state used by the next opportunity.
+The ordering makes the current response affect proficiency immediately, while retaining a constant-work average over one prediction per evaluated opportunity.
 
 For the initial implementation, a part is correct only when `score == out_of`. Partial credit is treated as incorrect because the model consumes a binary outcome. If Learning Engineering selects a different binarization rule, it must be changed explicitly and covered by training/runtime parity tests. The xAPI `success` field is not the source of correctness because the current evaluated-part statement emits it as `true`.
 

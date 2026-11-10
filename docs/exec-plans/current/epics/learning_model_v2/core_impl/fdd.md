@@ -25,8 +25,8 @@ covers `FR-001` through `FR-010` and `AC-001` through `AC-032`.
 
 - Persist one compact state per Section, learner, and directly targeted learning objective
   (`FR-001`, `AC-001` through `AC-003`).
-- Apply the documented pre-response prediction, running AOA, and post-response recency
-  transition with a binary outcome (`FR-002`, `AC-004` through `AC-007`).
+- Apply the binary outcome to practice count and recency, then average the post-response
+  prediction (`FR-002`, `AC-004` through `AC-007`).
 - Count confidence breadth from distinct activity parts, independently of attempt count and
   without duplicating evidence per learning objective (`FR-003`, `AC-008` through `AC-011`).
 - Support one response and a 500-1000-part graded assessment through the same bounded-query
@@ -262,8 +262,10 @@ Pure transition boundary:
 
 `apply_proficiency/3` uses a numerically stable logistic implementation. The running average may
 use the algebraically equivalent stable form
-`aoa + (p - aoa) / (attempt_count + 1)` to avoid multiplying a large count by AOA. Prediction and
-AOA occur before the observed outcome changes recency state.
+`aoa + (p - aoa) / new_attempt_count` to avoid multiplying a large count by AOA. Update the
+attempt count, decayed success/failure scores, and smoothed recency logit first. Then compute
+`p` from that updated state, retaining `gamma * log(new_attempt_count + 1)`, and add it to AOA.
+The current binary outcome therefore affects the displayed proficiency immediately.
 
 Typed coefficient helpers accept only the implemented structs:
 

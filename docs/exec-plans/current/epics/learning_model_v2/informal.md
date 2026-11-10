@@ -111,7 +111,7 @@ Given:
 ```text
 n       = prior attempt_count
 aoa     = prior running mean
-p       = P(correct) predicted for the new opportunity
+p       = P(correct) predicted after incorporating the new response
 ```
 
 the state update is:
@@ -123,7 +123,7 @@ new_aoa = (n * aoa + p) / new_attempt_count
 
 The record could instead retain a cumulative prediction sum and divide it by `attempt_count` when needed. Storing the running mean is currently preferred because it is the value displayed and consumed by downstream functionality. Either representation provides constant-time updates.
 
-The ordering is important: `P(correct)` for an opportunity is calculated using the pre-response state. That prediction is added to AOA, and then the observed correct/incorrect outcome updates the recency state for the next opportunity.
+For each opportunity, first increment the attempt count and apply the observed correct/incorrect outcome to the decayed recency state. Calculate `P(correct)` from that updated state, including `gamma * log(new_attempt_count + 1)`, and add the prediction to AOA. This makes the current response affect proficiency immediately.
 
 ## Confidence State
 

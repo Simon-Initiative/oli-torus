@@ -46,7 +46,8 @@ if runtime_env == :playwright do
 end
 
 # Read model overrides at release startup, including PROFICIENCY_CONFIDENCE_MIDPOINT
-# (default 5.0) and PROFICIENCY_CONFIDENCE_STEEPNESS (default 3.0).
+# (default 5.0), PROFICIENCY_CONFIDENCE_STEEPNESS (default 3.0), and the
+# LKT_AOA_LOW_MEDIUM_CUTOFF / LKT_AOA_MEDIUM_HIGH_CUTOFF percentages (40 / 70).
 {lkt_aoa_config, lkt_aoa_sources} = Oli.LearningModel.Config.load_from_env!()
 Oli.LearningModel.Config.log_effective(lkt_aoa_config, lkt_aoa_sources)
 config :oli, :lkt_aoa, Oli.LearningModel.Config.to_keyword(lkt_aoa_config)

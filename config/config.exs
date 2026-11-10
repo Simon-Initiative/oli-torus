@@ -17,7 +17,9 @@ lkt_aoa_defaults = [
   rho: 1.0,
   recency_decay: 0.9,
   confidence_midpoint: 5.0,
-  confidence_steepness: 3.0
+  confidence_steepness: 3.0,
+  low_medium_cutoff: 40.0,
+  medium_high_cutoff: 70.0
 ]
 
 # Only the fallback defaults are compile-time configuration. The effective model

@@ -131,14 +131,18 @@ acceptance_criteria:
   id: AC-010
 - requirement_id: FR-004
   title: A direct objective remains not_enough_information below three attempts and
-    otherwise uses Low below 0.4, Medium from 0.4 through 0.8, and High above 0.8.
+    otherwise uses runtime LKT_AOA_LOW_MEDIUM_CUTOFF and LKT_AOA_MEDIUM_HIGH_CUTOFF
+    percentages (defaults 40 and 70), with Medium including both cutoffs. The same
+    boundaries apply to parent/scope labels and SQL class distributions.
   status: proposed
   verification_method: automated
   id: AC-011
 - requirement_id: FR-004
   title: Parent objectives are derived from effective child objective states using
     child attempt_count as the weight and are not independently persisted; they show
-    not_enough_information only when total attempts across all effective children are fewer than three.
+    not_enough_information until at least one effective child has three attempts.
+    Once eligible, all available child states contribute to the weighted score,
+    including children with fewer than three attempts.
   status: proposed
   verification_method: automated
   id: AC-012

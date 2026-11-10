@@ -96,7 +96,7 @@ N/A
 ### Assumptions
 - The preceding data-model and core-implementation work items provide valid persisted model selection, Revision parameters, and materialized LKT-AOA state before this work is enabled.
 - Existing Metrics return shapes are compatibility contracts unless a later design explicitly deprecates them.
-- Parent-objective scores are weighted by child `attempt_count`; the parent displays not-enough-information only when total attempts across all effective children are fewer than three.
+- Parent-objective scores are weighted by child `attempt_count`; the parent displays not-enough-information until at least one effective child has three attempts. Once eligible, all available child states contribute to the weighted score, including children with fewer than three attempts.
 - A Section-level integer `section_resource_migration_version` starts below the new current version for legacy Sections and advances only after their JIT SectionResource migration commits successfully.
 - `get_objectives_and_subobjectives/2` retains its current label/distribution contract unless another in-scope consumer requires more data.
 - Confidence and coverage UI is a separate follow-up; this work adds no presentation behavior for those signals.

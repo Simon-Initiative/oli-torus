@@ -15,17 +15,37 @@ defmodule Oli.LearningModel.Config do
   @recency_decay_env "LKT_AOA_RECENCY_DECAY"
   @confidence_midpoint_env "PROFICIENCY_CONFIDENCE_MIDPOINT"
   @confidence_steepness_env "PROFICIENCY_CONFIDENCE_STEEPNESS"
+  @low_medium_cutoff_env "LKT_AOA_LOW_MEDIUM_CUTOFF"
+  @medium_high_cutoff_env "LKT_AOA_MEDIUM_HIGH_CUTOFF"
   @defaults Application.compile_env!(:oli, :lkt_aoa_defaults)
 
-  @enforce_keys [:gamma, :rho, :recency_decay, :confidence_midpoint, :confidence_steepness]
-  defstruct [:gamma, :rho, :recency_decay, :confidence_midpoint, :confidence_steepness]
+  @enforce_keys [
+    :gamma,
+    :rho,
+    :recency_decay,
+    :confidence_midpoint,
+    :confidence_steepness,
+    :low_medium_cutoff,
+    :medium_high_cutoff
+  ]
+  defstruct [
+    :gamma,
+    :rho,
+    :recency_decay,
+    :confidence_midpoint,
+    :confidence_steepness,
+    :low_medium_cutoff,
+    :medium_high_cutoff
+  ]
 
   @type t :: %__MODULE__{
           gamma: float(),
           rho: float(),
           recency_decay: float(),
           confidence_midpoint: float(),
-          confidence_steepness: float()
+          confidence_steepness: float(),
+          low_medium_cutoff: float(),
+          medium_high_cutoff: float()
         }
 
   @type source :: :default | :override
@@ -51,7 +71,9 @@ defmodule Oli.LearningModel.Config do
       {:rho, @rho_env},
       {:recency_decay, @recency_decay_env},
       {:confidence_midpoint, @confidence_midpoint_env},
-      {:confidence_steepness, @confidence_steepness_env}
+      {:confidence_steepness, @confidence_steepness_env},
+      {:low_medium_cutoff, @low_medium_cutoff_env},
+      {:medium_high_cutoff, @medium_high_cutoff_env}
     ]
 
     {values, sources} =
@@ -69,7 +91,7 @@ defmodule Oli.LearningModel.Config do
     {new!(values), sources}
   end
 
-  @doc "Builds a validated configuration; both confidence curve parameters must be finite and positive."
+  @doc "Builds a validated configuration with positive confidence parameters and ordered percentage cutoffs."
   @spec new!(map() | keyword() | t()) :: t()
   def new!(%__MODULE__{} = config), do: validate!(config)
 
@@ -81,7 +103,9 @@ defmodule Oli.LearningModel.Config do
       rho: Map.fetch!(values, :rho),
       recency_decay: Map.fetch!(values, :recency_decay),
       confidence_midpoint: Map.fetch!(values, :confidence_midpoint),
-      confidence_steepness: Map.fetch!(values, :confidence_steepness)
+      confidence_steepness: Map.fetch!(values, :confidence_steepness),
+      low_medium_cutoff: Map.fetch!(values, :low_medium_cutoff),
+      medium_high_cutoff: Map.fetch!(values, :medium_high_cutoff)
     }
     |> normalize!()
     |> validate!()
@@ -94,7 +118,7 @@ defmodule Oli.LearningModel.Config do
     |> new!()
   end
 
-  @doc "Serializes the model and confidence curve parameters for application configuration."
+  @doc "Serializes model, confidence, and proficiency cutoff parameters for application configuration."
   @spec to_keyword(t()) :: keyword(float())
   def to_keyword(%__MODULE__{} = config) do
     [
@@ -102,8 +126,16 @@ defmodule Oli.LearningModel.Config do
       rho: config.rho,
       recency_decay: config.recency_decay,
       confidence_midpoint: config.confidence_midpoint,
-      confidence_steepness: config.confidence_steepness
+      confidence_steepness: config.confidence_steepness,
+      low_medium_cutoff: config.low_medium_cutoff,
+      medium_high_cutoff: config.medium_high_cutoff
     ]
+  end
+
+  @doc "Returns the LKT-AOA proficiency cutoffs as probabilities on the internal 0–1 scale."
+  @spec proficiency_cutoffs(t()) :: {float(), float()}
+  def proficiency_cutoffs(config \\ fetch!()) do
+    {config.low_medium_cutoff / 100.0, config.medium_high_cutoff / 100.0}
   end
 
   @doc "Logs effective parameter values and whether each came from a default or override."
@@ -117,7 +149,9 @@ defmodule Oli.LearningModel.Config do
         "confidence_midpoint=#{config.confidence_midpoint} " <>
         "(#{Map.fetch!(sources, :confidence_midpoint)}), " <>
         "confidence_steepness=#{config.confidence_steepness} " <>
-        "(#{Map.fetch!(sources, :confidence_steepness)})"
+        "(#{Map.fetch!(sources, :confidence_steepness)}), " <>
+        "low_medium_cutoff=#{config.low_medium_cutoff} (#{Map.fetch!(sources, :low_medium_cutoff)}), " <>
+        "medium_high_cutoff=#{config.medium_high_cutoff} (#{Map.fetch!(sources, :medium_high_cutoff)})"
     )
   end
 
@@ -137,7 +171,9 @@ defmodule Oli.LearningModel.Config do
       rho: normalize_number!(config.rho, :rho),
       recency_decay: normalize_number!(config.recency_decay, :recency_decay),
       confidence_midpoint: normalize_number!(config.confidence_midpoint, :confidence_midpoint),
-      confidence_steepness: normalize_number!(config.confidence_steepness, :confidence_steepness)
+      confidence_steepness: normalize_number!(config.confidence_steepness, :confidence_steepness),
+      low_medium_cutoff: normalize_number!(config.low_medium_cutoff, :low_medium_cutoff),
+      medium_high_cutoff: normalize_number!(config.medium_high_cutoff, :medium_high_cutoff)
     }
   end
 
@@ -154,7 +190,17 @@ defmodule Oli.LearningModel.Config do
     validate_value!(:recency_decay, config.recency_decay, :recency_decay)
     validate_value!(:confidence_midpoint, config.confidence_midpoint, :confidence_midpoint)
     validate_value!(:confidence_steepness, config.confidence_steepness, :confidence_steepness)
-    config
+    validate_value!(:low_medium_cutoff, config.low_medium_cutoff, @low_medium_cutoff_env)
+    validate_value!(:medium_high_cutoff, config.medium_high_cutoff, @medium_high_cutoff_env)
+
+    case config.low_medium_cutoff < config.medium_high_cutoff do
+      true ->
+        config
+
+      false ->
+        raise ArgumentError,
+              "#{@low_medium_cutoff_env} must be less than #{@medium_high_cutoff_env}"
+    end
   end
 
   defp validate_value!(key, value, name) do
@@ -171,6 +217,10 @@ defmodule Oli.LearningModel.Config do
 
       key when key in [:confidence_midpoint, :confidence_steepness] and value <= 0.0 ->
         raise ArgumentError, "#{name} must be greater than 0.0"
+
+      key
+      when key in [:low_medium_cutoff, :medium_high_cutoff] and (value < 0.0 or value > 100.0) ->
+        raise ArgumentError, "#{name} must be a percentage between 0 and 100"
 
       _ ->
         value
