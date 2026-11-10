@@ -1,458 +1,81 @@
+# Acceptance coverage: AC-012.
 defmodule Oli.GenAI.ExecutionTest do
   use ExUnit.Case, async: false
-
-  import ExUnit.CaptureLog
-
-  alias Oli.GenAI.{AdmissionControl, BreakerSupervisor, Execution, HackneyPool}
+  alias Oli.GenAI.Execution
   alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig}
 
+  defmodule Completion do
+    def generate(_, _, _, opts), do: {:ok, opts}
+
+    def stream(_, _, _, handler) do
+      handler.({:tokens_received, "hello"})
+      handler.({:error, :transport_error})
+      :ok
+    end
+  end
+
+  defmodule SlowCompletion do
+    def generate(_, _, _, _), do: Process.sleep(:infinity)
+  end
+
+  defmodule BrokenCompletion do
+    def generate(_, _, _, _), do: raise("private provider response")
+  end
+
   setup do
-    ensure_started(AdmissionControl)
-    ensure_registry_started()
-    ensure_started(BreakerSupervisor)
-    clear_tables()
-    :ok
+    provider = %Oli.GenAI.Provider{id: 2, adapter: :null}
+    model = %RegisteredModel{id: 1, provider_id: provider.id, model: "local"}
+    config = %ServiceConfig{id: 1, primary_model: model, secondary_model: nil, backup_model: nil}
+    loaded = %{providers: [%{provider: provider, model: model}], service_configs: [config]}
+    manager = start_supervised!({Oli.GenAI.PoolManager, name: nil, namespace: make_ref()})
+    tasks = start_supervised!({Task.Supervisor, max_children: 1})
+
+    start_supervised!(
+      {Oli.GenAI.Runtime,
+       source: fn -> loaded end, pool_manager: manager, task_supervisor: tasks, enabled: false}
+    )
+
+    assert :ok = Oli.GenAI.Runtime.reconcile()
+    %{config: config}
   end
 
-  test "returns error when primary fails and no fallback is attempted" do
-    Process.put(:execution_test_pid, self())
-
-    service_config = build_service_config(1)
-    primary_id = service_config.primary_model.id
-    backup_id = service_config.backup_model.id
-    request_ctx = %{request_type: :generate}
-
-    assert {:error, {:http_error, 500}} =
-             Execution.generate(
-               request_ctx,
-               [],
-               [],
-               service_config,
-               completions_mod: __MODULE__.FakeCompletions
-             )
-
-    assert_received {:generate_called, ^primary_id}
-    refute_received {:generate_called, ^backup_id}
-  end
-
-  test "rejects when secondary is over capacity" do
-    service_config =
-      build_service_config(2,
-        primary_model: %RegisteredModel{
-          id: 21,
-          name: "Primary",
-          provider: :null,
-          max_concurrent: 0
-        },
-        secondary_model: %RegisteredModel{
-          id: 22,
-          name: "Secondary",
-          provider: :null,
-          max_concurrent: 0
-        }
-      )
-
-    request_ctx = %{request_type: :generate}
-
-    assert {:error, :secondary_over_capacity} =
-             Execution.generate(
-               request_ctx,
-               [],
-               [],
-               service_config,
-               completions_mod: __MODULE__.FakeCompletions
-             )
-  end
-
-  test "routes to secondary when primary breaker is open" do
-    Process.put(:execution_test_pid, self())
-
-    service_config = build_service_config(3)
-    request_ctx = %{request_type: :generate}
-
-    AdmissionControl.put_breaker_snapshot(service_config.primary_model.id, %{state: :open})
-
-    assert {:ok, _} =
-             Execution.generate(
-               request_ctx,
-               [],
-               [],
-               service_config,
-               completions_mod: __MODULE__.AlwaysOkCompletions
-             )
-
-    secondary_id = service_config.secondary_model.id
-    assert_received {:generate_called, ^secondary_id}
-  end
-
-  test "invokes on_plan callback with the selected model for generate" do
+  test "forwards generation options and actual selection metadata", c do
     parent = self()
-    Process.put(:execution_test_pid, parent)
-    service_config = build_service_config(31, secondary_model: nil, backup_model: nil)
-    request_ctx = %{request_type: :generate}
+    opts = [temperature: 0.3, response_format: %{type: "json_object"}]
 
-    assert {:ok, _} =
-             Execution.generate(
-               request_ctx,
-               [],
-               [],
-               service_config,
-               completions_mod: __MODULE__.AlwaysOkCompletions,
-               on_plan: fn plan -> send(parent, {:selected_model, plan.selected_model.id}) end
+    assert {:ok, %{content: ^opts, metadata: %{registered_model_id: 1}}} =
+             Execution.generate_with_metadata(%{}, [], [], c.config,
+               provider_opts: opts,
+               completions_mod: Completion,
+               on_plan: fn plan -> send(parent, {:selected, plan.selected_model.id}) end
              )
 
-    assert_received {:selected_model, selected_model_id}
-    assert selected_model_id == service_config.primary_model.id
+    assert_received {:selected, 1}
   end
 
-  test "invokes on_plan callback with the selected model for stream" do
+  test "a failure after output is an interrupted stream", c do
     parent = self()
-    service_config = build_service_config(32)
-    request_ctx = %{request_type: :stream}
 
-    AdmissionControl.put_breaker_snapshot(service_config.primary_model.id, %{state: :open})
-
-    assert :ok =
-             Execution.stream(
-               request_ctx,
-               [],
-               [],
-               service_config,
-               fn _chunk -> :ok end,
-               completions_mod: __MODULE__.AlwaysOkCompletions,
-               on_plan: fn plan -> send(parent, {:selected_model, plan.selected_model.id}) end
+    assert {:error, :interrupted_stream} =
+             Execution.stream(%{}, [], [], c.config, fn event -> send(parent, event) end,
+               completions_mod: Completion
              )
 
-    assert_received {:selected_model, selected_model_id}
-    assert selected_model_id == service_config.secondary_model.id
+    assert_received {:tokens_received, "hello"}
+    refute_received {:error, _}
   end
 
-  test "routes to backup when primary and secondary breakers are open" do
-    Process.put(:execution_test_pid, self())
+  test "application exceptions are safe errors and total waiting is bounded", c do
+    assert {:error, :application_error} =
+             Execution.generate(%{}, [], [], c.config, completions_mod: BrokenCompletion)
 
-    service_config = build_service_config(4)
-    request_ctx = %{request_type: :generate}
-
-    AdmissionControl.put_breaker_snapshot(service_config.primary_model.id, %{state: :open})
-    AdmissionControl.put_breaker_snapshot(service_config.secondary_model.id, %{state: :open})
-
-    assert {:ok, _} =
-             Execution.generate(
-               request_ctx,
-               [],
-               [],
-               service_config,
-               completions_mod: __MODULE__.AlwaysOkCompletions
+    assert {:error, :inference_deadline} =
+             Execution.generate(%{}, [], [], c.config,
+               completions_mod: SlowCompletion,
+               total_timeout_ms: 30
              )
 
-    backup_id = service_config.backup_model.id
-    assert_received {:generate_called, ^backup_id}
-  end
-
-  test "releases pool admission after execution completes" do
-    ensure_hackney_started()
-    HackneyPool.set_max_connections(:slow, 1)
-
-    service_config = build_service_config(5, secondary_model: nil)
-    request_ctx = %{request_type: :generate}
-    Process.put(:execution_test_pid, self())
-
-    assert {:ok, _} =
-             Execution.generate(
-               request_ctx,
-               [],
-               [],
-               service_config,
-               completions_mod: __MODULE__.AlwaysOkCompletions
-             )
-
-    assert {:ok, _} =
-             Execution.generate(
-               request_ctx,
-               [],
-               [],
-               service_config,
-               completions_mod: __MODULE__.AlwaysOkCompletions
-             )
-  end
-
-  test "opens breaker on OpenAI 429 status_code errors" do
-    model_id = 51
-    Process.put(:execution_test_pid, self())
-
-    service_config =
-      build_service_config(6,
-        primary_model: %RegisteredModel{
-          id: model_id,
-          name: "Primary",
-          provider: :null,
-          max_concurrent: nil,
-          routing_breaker_429_threshold: 0.2,
-          routing_breaker_error_rate_threshold: 1.0,
-          routing_breaker_latency_p95_ms: 10_000,
-          routing_open_cooldown_ms: 0,
-          routing_half_open_probe_count: 1
-        },
-        secondary_model: nil,
-        backup_model: nil
-      )
-
-    request_ctx = %{request_type: :generate}
-
-    Enum.each(1..5, fn _ ->
-      assert {:error, _} =
-               Execution.generate(
-                 request_ctx,
-                 [],
-                 [],
-                 service_config,
-                 completions_mod: __MODULE__.OpenAI429Completions
-               )
-
-      Process.sleep(5)
-    end)
-
-    assert eventually(fn ->
-             snapshot = AdmissionControl.get_breaker_snapshot(model_id)
-             snapshot.state == :open
-           end)
-  end
-
-  test "logs safe status and category for streaming provider failures" do
-    service_config = build_service_config(61, secondary_model: nil, backup_model: nil)
-
-    log =
-      capture_log(fn ->
-        assert {:error, %{http_status: 429, error_category: :insufficient_quota}} =
-                 Execution.stream(
-                   %{request_type: :stream},
-                   [],
-                   [],
-                   service_config,
-                   fn _ -> :ok end,
-                   completions_mod: __MODULE__.StreamingQuotaCompletions
-                 )
-      end)
-
-    assert log =~ "service_config_id=61"
-    assert log =~ "registered_model_id=#{service_config.primary_model.id}"
-    assert log =~ "http_status=429"
-    assert log =~ "error_category=insufficient_quota"
-  end
-
-  test "kill switch always uses primary and bypasses admission controls" do
-    Process.put(:execution_test_pid, self())
-
-    with_env("GENAI_ROUTING_PRIMARY_ONLY", "true", fn ->
-      service_config =
-        build_service_config(7,
-          primary_model: %RegisteredModel{
-            id: 71,
-            name: "Primary",
-            provider: :null,
-            max_concurrent: 0
-          },
-          secondary_model: nil,
-          backup_model: nil
-        )
-
-      request_ctx = %{request_type: :generate}
-      AdmissionControl.put_breaker_snapshot(service_config.primary_model.id, %{state: :open})
-
-      assert {:ok, _} =
-               Execution.generate(
-                 request_ctx,
-                 [],
-                 [],
-                 service_config,
-                 completions_mod: __MODULE__.AlwaysOkCompletions
-               )
-
-      assert {:ok, _} =
-               Execution.generate(
-                 request_ctx,
-                 [],
-                 [],
-                 service_config,
-                 completions_mod: __MODULE__.AlwaysOkCompletions
-               )
-
-      primary_id = service_config.primary_model.id
-      assert_received {:generate_called, ^primary_id}
-      assert_received {:generate_called, ^primary_id}
-      assert AdmissionControl.model_count(primary_id) == 0
-      assert AdmissionControl.pool_count(:genai_slow_pool) == 0
-    end)
-  end
-
-  defp build_service_config(id, overrides \\ %{}) do
-    primary = %RegisteredModel{id: id * 10 + 1, name: "Primary", provider: :null}
-    secondary = %RegisteredModel{id: id * 10 + 2, name: "Secondary", provider: :null}
-    backup = %RegisteredModel{id: id * 10 + 3, name: "Backup", provider: :null}
-
-    base = %ServiceConfig{
-      id: id,
-      name: "ServiceConfig #{id}",
-      primary_model: primary,
-      secondary_model: secondary,
-      backup_model: backup
-    }
-
-    struct(base, overrides)
-  end
-
-  test "forwards :provider_opts to completer.generate/4" do
-    Process.put(:execution_test_pid, self())
-
-    service_config = build_service_config(50, secondary_model: nil, backup_model: nil)
-    request_ctx = %{request_type: :generate}
-
-    provider_opts = [response_format: %{type: "json_object"}, temperature: 0.3]
-
-    assert {:ok, _} =
-             Execution.generate(
-               request_ctx,
-               [],
-               [],
-               service_config,
-               completions_mod: __MODULE__.OptsCapturingCompletions,
-               provider_opts: provider_opts
-             )
-
-    assert_received {:generate_called_with_opts, ^provider_opts}
-  end
-
-  test "defaults :provider_opts to [] when not supplied" do
-    Process.put(:execution_test_pid, self())
-
-    service_config = build_service_config(51, secondary_model: nil, backup_model: nil)
-    request_ctx = %{request_type: :generate}
-
-    assert {:ok, _} =
-             Execution.generate(
-               request_ctx,
-               [],
-               [],
-               service_config,
-               completions_mod: __MODULE__.OptsCapturingCompletions
-             )
-
-    assert_received {:generate_called_with_opts, []}
-  end
-
-  defmodule OptsCapturingCompletions do
-    def generate(_messages, _functions, %RegisteredModel{}, opts) do
-      send(Process.get(:execution_test_pid), {:generate_called_with_opts, opts})
-      {:ok, %{response: "ok"}}
-    end
-
-    def stream(_messages, _functions, _registered_model, _response_handler_fn) do
-      :ok
-    end
-  end
-
-  defmodule FakeCompletions do
-    def generate(_messages, _functions, %RegisteredModel{id: id}, _opts \\ []) do
-      send(Process.get(:execution_test_pid), {:generate_called, id})
-
-      if id |> rem(2) == 1 do
-        {:error, {:http_error, 500}}
-      else
-        {:ok, %{response: "ok"}}
-      end
-    end
-
-    def stream(_messages, _functions, _registered_model, _response_handler_fn) do
-      :ok
-    end
-  end
-
-  defmodule AlwaysOkCompletions do
-    def generate(_messages, _functions, %RegisteredModel{id: id}, _opts \\ []) do
-      send(Process.get(:execution_test_pid), {:generate_called, id})
-      {:ok, %{response: "ok"}}
-    end
-
-    def stream(_messages, _functions, _registered_model, _response_handler_fn) do
-      :ok
-    end
-  end
-
-  defmodule OpenAI429Completions do
-    def generate(_messages, _functions, %RegisteredModel{id: id}, _opts \\ []) do
-      send(Process.get(:execution_test_pid), {:generate_called, id})
-      {:error, %{status_code: 429}}
-    end
-
-    def stream(_messages, _functions, _registered_model, _response_handler_fn) do
-      :ok
-    end
-  end
-
-  defmodule StreamingQuotaCompletions do
-    def generate(_messages, _functions, _registered_model, _opts \\ []), do: :ok
-
-    def stream(_messages, _functions, _registered_model, response_handler_fn) do
-      response_handler_fn.({:error, %{http_status: 429, error_category: :insufficient_quota}})
-      :ok
-    end
-  end
-
-  defp ensure_started(mod) do
-    case Process.whereis(mod) do
-      nil -> start_supervised!(mod)
-      _pid -> :ok
-    end
-  end
-
-  defp ensure_registry_started do
-    case Process.whereis(Oli.GenAI.BreakerRegistry) do
-      nil -> start_supervised!({Registry, keys: :unique, name: Oli.GenAI.BreakerRegistry})
-      _pid -> :ok
-    end
-  end
-
-  defp ensure_hackney_started do
-    case Process.whereis(Oli.GenAI.HackneyPool) do
-      nil -> start_supervised!(Oli.GenAI.HackneyPool)
-      _pid -> :ok
-    end
-  end
-
-  defp with_env(key, value, fun) when is_function(fun, 0) do
-    previous = System.get_env(key)
-    System.put_env(key, value)
-
-    try do
-      fun.()
-    after
-      restore_env(key, previous)
-    end
-  end
-
-  defp restore_env(key, nil), do: System.delete_env(key)
-  defp restore_env(key, value), do: System.put_env(key, value)
-
-  defp clear_tables do
-    if :ets.whereis(:genai_counters) != :undefined do
-      :ets.delete_all_objects(:genai_counters)
-    end
-
-    if :ets.whereis(:genai_breaker_snapshots) != :undefined do
-      :ets.delete_all_objects(:genai_breaker_snapshots)
-    end
-  end
-
-  defp eventually(fun, attempts \\ 20)
-
-  defp eventually(_fun, 0), do: false
-
-  defp eventually(fun, attempts) do
-    if fun.() do
-      true
-    else
-      Process.sleep(10)
-      eventually(fun, attempts - 1)
-    end
+    assert {:error, :invalid_deadline} =
+             Execution.generate(%{}, [], [], c.config, total_timeout_ms: 0)
   end
 end

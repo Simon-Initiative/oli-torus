@@ -5,10 +5,26 @@ defmodule Oli.GenAI do
   """
 
   alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig}
+  alias Oli.GenAI.{Configuration, Provider}
   alias Oli.GenAI.FeatureConfig
   alias Oli.Repo
 
   import Ecto.Query, warn: false
+
+  @doc "Lists configured connection Providers."
+  defdelegate providers(), to: Configuration
+
+  @doc "Creates a Provider and publishes its committed configuration."
+  def create_provider(attrs), do: Configuration.save_provider(%Provider{}, attrs)
+
+  @doc "Updates a Provider, invalidating stale probe results on every node."
+  def update_provider(provider, attrs), do: Configuration.save_provider(provider, attrs)
+
+  @doc "Deletes an unreferenced Provider."
+  defdelegate delete_provider(provider), to: Configuration
+
+  @doc "Reconciles and returns the deterministic persisted probe model."
+  defdelegate reconcile_probe_model(provider_id), to: Configuration
 
   @doc """
   Returns a list of all registered GenAI models.
@@ -35,25 +51,21 @@ defmodule Oli.GenAI do
   Deletes a registered model.
   """
   def delete_registered_model(%RegisteredModel{} = registered_model) do
-    Repo.delete(registered_model)
+    Configuration.delete_model(registered_model)
   end
 
   @doc """
   Updates a registered model with the given attributes.
   """
   def update_registered_model(%RegisteredModel{} = registered_model, attrs) do
-    registered_model
-    |> RegisteredModel.changeset(attrs)
-    |> Repo.update()
+    Configuration.save_model(registered_model, attrs)
   end
 
   @doc """
   Creates a new registered model with the given attributes.
   """
   def create_registered_model(attrs) do
-    %RegisteredModel{}
-    |> RegisteredModel.changeset(attrs)
-    |> Repo.insert()
+    Configuration.save_model(%RegisteredModel{}, attrs)
   end
 
   @doc """
@@ -80,25 +92,21 @@ defmodule Oli.GenAI do
   Deletes a service configuration.
   """
   def delete_service_config(%ServiceConfig{} = service_config) do
-    Repo.delete(service_config)
+    Configuration.delete_service_config(service_config)
   end
 
   @doc """
   Updates a service configuration with the given attributes.
   """
   def update_service_config(%ServiceConfig{} = service_config, attrs) do
-    service_config
-    |> ServiceConfig.changeset(attrs)
-    |> Repo.update()
+    Configuration.save_service_config(service_config, attrs)
   end
 
   @doc """
   Creates a new service configuration with the given attributes.
   """
   def create_service_config(attrs) do
-    %ServiceConfig{}
-    |> ServiceConfig.changeset(attrs)
-    |> Repo.insert()
+    Configuration.save_service_config(%ServiceConfig{}, attrs)
   end
 
   @doc """

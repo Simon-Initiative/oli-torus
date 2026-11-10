@@ -44,7 +44,7 @@ Use Cases / Scenarios:
 ## 5. UX / UI Requirements
 Key Screens/States:
 - Extend the existing ServiceConfig editor to include Primary/Secondary/Backup model selection.
-- Extend the RegisteredModel editor to include pool class (fast/slow) and max concurrent cap (editable).
+- Extend the RegisteredModel editor to include max concurrent cap (editable).
 - Add a small, admin-only section at the top of the RegisteredModel view to display and update fast/slow pool sizes.
 - Minimal, targeted additions within existing ServiceConfig screens to surface read-only health signals for all three models.
 
@@ -64,12 +64,12 @@ Screenshots/Mocks:
 | FR-002 | Implement admission control using ETS-backed counters for per-RegisteredModel inflight counts and per-pool inflight counts with atomic try-admit. | P0 | Backend |
 | FR-003 | Implement per-RegisteredModel circuit breakers with closed/open/half_open states, tracking error rate, 429 rate, and latency spikes. | P0 | Backend |
 | FR-004 | Enforce three-tier routing: Primary preferred; if Primary breaker open or at cap → Secondary when configured; Backup is used when both Primary and Secondary breakers are open, or when Secondary is not configured and Primary is over capacity; Secondary over-cap rejects fast. | P0 | Backend |
-| FR-005 | RegisteredModel defines pool class (`fast`/`slow`) and optional max_concurrent cap; pool sizes are configurable via env and adjustable via admin UI. | P0 | Backend |
-| FR-006 | Emit telemetry for routing decisions/outcomes with tier, pool_class/pool_name, selected model, and outcome; routing decisions include reason codes. | P0 | Backend |
+| FR-005 | RegisteredModel defines an optional max_concurrent cap; pool sizes are configurable via env and adjustable via admin UI. | P0 | Backend |
+| FR-006 | Emit telemetry for routing decisions/outcomes with tier, pool_name, selected model, and outcome; routing decisions include reason codes. | P0 | Backend |
 | FR-007 | Preserve existing FeatureServiceConfig resolution and section overrides; routing uses the resolved ServiceConfig. | P0 | Backend |
 | FR-008 | Each RegisteredModel owns editable breaker thresholds and provider timeouts; ServiceConfig only selects Primary/Secondary/Backup models. | P0 | Backend |
 | FR-009 | Expose read-only routing health (breaker state, recent error/429/latency signals) within existing ServiceConfig UI without adding a new dashboard. | P1 | Backend |
-| FR-010 | Extend ServiceConfig editor to allow Primary/Secondary/Backup selection; extend RegisteredModel editor to allow pool_class, max_concurrent, breaker thresholds, and provider timeouts. | P1 | Backend |
+| FR-010 | Extend ServiceConfig editor to allow Primary/Secondary/Backup selection; extend RegisteredModel editor to allow max_concurrent, breaker thresholds, and provider timeouts. | P1 | Backend |
 | FR-011 | Add admin-only pool size controls (fast/slow) in the RegisteredModel view and log/telemetry for breaker/counter inspection. | P1 | Backend |
 
 ## 7. Acceptance Criteria
@@ -80,7 +80,7 @@ Screenshots/Mocks:
 - AC-004 (FR-004) — Given Secondary is healthy but at cap, When a new request arrives, Then the request is rejected with no pool wait.
 - AC-004b (FR-004) — Given Secondary is not configured and Primary is at cap, When a new request arrives, Then the router selects Backup (if healthy and under cap) and records reason `primary_over_capacity`.
 - AC-005 (FR-003) — Given a RegisteredModel returns 429s above the breaker threshold within the rolling window, When subsequent requests arrive, Then the breaker transitions to open and the router avoids that model.
-- AC-006 (FR-006) — Given any GenAI request, When it completes (success/failure), Then a telemetry event is emitted with selected model, tier, pool_class/pool_name, duration, and outcome.
+- AC-006 (FR-006) — Given any GenAI request, When it completes (success/failure), Then a telemetry event is emitted with selected model, tier, pool_name, duration, and outcome.
 - AC-007 (FR-007) — Given a section with a FeatureServiceConfig override, When a request is issued from that section, Then the router uses the resolved ServiceConfig for that section.
 - AC-008 (FR-009) — Given an Admin views an existing ServiceConfig screen, When routing health data is available, Then read-only health indicators for Primary/Secondary/Backup are shown inline and no new top-level navigation item is introduced.
 - AC-009 (FR-010) — Given an Admin edits a ServiceConfig, When they update model selection, Then the changes are saved and used by the router on subsequent requests.
@@ -107,7 +107,7 @@ Compliance:
 - WCAG 2.1 AA for any surfaced errors in existing UI.
 
 Observability:
-- AppSignal counters for routing decisions (tagged by tier and pool_class), breaker state changes, rejection count, and latency distribution.
+- AppSignal counters for routing decisions (tagged by tier), breaker state changes, rejection count, and latency distribution.
 - Structured logs for routing plan summary with reason codes.
 - Router telemetry is scoped by service_config_id and registered_model_id (no section/institution identifiers).
 
@@ -115,7 +115,7 @@ Observability:
 Ecto Schemas & Migrations:
 - ServiceConfig persists only Primary/Secondary/Backup selection; breaker thresholds and provider timeouts live on RegisteredModel. Exact schema/migration details are defined in `fdd.md`.
 - ServiceConfig includes `secondary_model_id` (nullable) between Primary and Backup.
-- RegisteredModel includes `pool_class` (`fast`/`slow`) and optional `max_concurrent` cap.
+- RegisteredModel includes an optional `max_concurrent` cap.
 
 Context Boundaries:
 - `Oli.GenAI`: Router and breaker runtime.
@@ -142,7 +142,7 @@ LTI 1.3:
 GenAI:
 - Must respect RegisteredModel and ServiceConfig model routing.
 - Use existing provider abstraction; no adapter changes required.
-- Pool assignment is based on RegisteredModel.pool_class (`fast`/`slow`).
+- HTTP transport uses shared fast/slow pools.
 - Admission control is per model and per pool (no stream/generate distinction).
 - Breaker thresholds are configured per RegisteredModel to avoid cross-config mismatch.
 
@@ -180,7 +180,7 @@ North Star / KPIs:
 - <1% rejection rate under normal traffic.
 
 Event Spec:
-- `genai_router_decision` with properties: `service_config_id`, `registered_model_id`, `tier`, `pool_class`, `pool_name`, `reason`, `request_type`, `admission_decision` (internal IDs only).
+- `genai_router_decision` with properties: `service_config_id`, `registered_model_id`, `tier`, `pool_name`, `reason`, `request_type`, `admission_decision` (internal IDs only).
 - `genai_provider_stop` with properties: `outcome`, `latency_ms`, `provider`, `model`.
 
 ## 13. Risks & Mitigations
