@@ -220,27 +220,29 @@ defmodule OliWeb.Admin.RestoreUserProgress do
         </div>
       </div>
 
-      <button
-        id="preview_button"
-        phx-click="preview"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-        disabled={is_nil(@verified) or @commit_done}
-      >
-        Preview Changes
-      </button>
+      <div class="mt-4 flex gap-2">
+        <button
+          id="preview_button"
+          phx-click="preview"
+          class="bg-blue-500 enabled:hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={is_nil(@verified) or @commit_done}
+        >
+          Preview Changes
+        </button>
 
-      <button
-        id="commit_button"
-        phx-click="commit"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-        disabled={not can_commit?(assigns)}
-      >
-        <%= if @commit_done do %>
-          Done!
-        <% else %>
-          Commit Changes
-        <% end %>
-      </button>
+        <button
+          id="commit_button"
+          phx-click="commit"
+          class="bg-blue-500 enabled:hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={not can_commit?(assigns)}
+        >
+          <%= if @commit_done do %>
+            Done!
+          <% else %>
+            Commit Changes
+          <% end %>
+        </button>
+      </div>
 
       <div :if={@true_user} id="preview_changes">
         <h3>Changes</h3>
