@@ -1038,6 +1038,20 @@ defmodule Oli.AccountsTest do
       assert Repo.get!(User, user.id).email == user.email
       assert Repo.get_by(UserToken, user_id: user.id)
     end
+
+    test "does not update another user's email with this user's token", %{
+      user: user,
+      token: token,
+      email: email
+    } do
+      old_email = user.email
+      {:ok, _} = Accounts.update_user(user, %{email: unique_user_email()})
+      other_user = user_fixture(%{email: old_email})
+
+      assert Accounts.update_user_email(other_user, token) == :error
+      assert Repo.get!(User, other_user.id).email == old_email
+      refute Repo.get_by(User, email: email)
+    end
   end
 
   describe "change_user_password/2" do

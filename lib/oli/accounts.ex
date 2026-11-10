@@ -1238,9 +1238,10 @@ defmodule Oli.Accounts do
   """
   def update_user_email(user, token) do
     context = "change:#{user.email}"
+    user_id = user.id
 
     with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
-         %UserToken{sent_to: email} <- Repo.one(query),
+         %UserToken{sent_to: email, user_id: ^user_id} <- Repo.one(query),
          {:ok, _} <- Repo.transaction(user_email_multi(user, email, context)) do
       :ok
     else
