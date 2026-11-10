@@ -346,7 +346,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       assert has_element?(
                view,
-               "#result",
+               "#live_flash_container",
                "Source user #{outsider.id} is not enrolled in section #{ctx.section.slug}."
              )
 
@@ -376,7 +376,11 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       render_click(view, "preview", %{})
 
-      assert has_element?(view, "#result", "Verify the users before previewing changes.")
+      assert has_element?(
+               view,
+               "#live_flash_container",
+               "Verify the users before previewing changes."
+             )
     end
   end
 
@@ -417,12 +421,12 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       view |> element("#commit_button") |> render_click()
 
-      assert has_element?(view, "#result", "Success: 1 change(s) applied.")
+      assert has_element?(view, "#live_flash_container", "Success: 1 change(s) applied.")
       assert has_element?(view, "#commit_button[disabled]", "Done!")
       assert has_element?(view, "#preview_button[disabled]")
 
       render_click(view, "commit", %{})
-      assert has_element?(view, "#result", "Changes have already been committed.")
+      assert has_element?(view, "#live_flash_container", "Changes have already been committed.")
     end
 
     test "keeps commit disabled when the preview has no changes", ctx do
@@ -435,7 +439,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
       assert has_element?(view, "#commit_button[disabled]")
 
       render_click(view, "commit", %{})
-      assert has_element?(view, "#result", "There are no changes to commit.")
+      assert has_element?(view, "#live_flash_container", "There are no changes to commit.")
     end
 
     test "commit requires a preview", ctx do
@@ -444,7 +448,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
       verify(view, ctx.target_enrollment, ctx.source_enrollment)
       render_click(view, "commit", %{})
 
-      assert has_element?(view, "#result", "Preview changes before committing.")
+      assert has_element?(view, "#live_flash_container", "Preview changes before committing.")
     end
 
     test "editing the form after a commit allows a new verification", ctx do
@@ -465,7 +469,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
       |> render_change()
 
       assert has_element?(view, "#commit_button", "Commit Changes")
-      refute has_element?(view, "#result", "Success")
+      refute has_element?(view, "#live_flash_container", "Success")
     end
   end
 

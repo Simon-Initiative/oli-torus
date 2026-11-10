@@ -11,6 +11,8 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
   import Ecto.Query
 
+  require Logger
+
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Enrollment, Section}
@@ -35,9 +37,10 @@ defmodule OliWeb.Admin.RestoreUserProgress do
   # Clears everything derived from a previous verification so that a preview or commit can never
   # run against users other than the ones currently entered in the form.
   defp reset_verification(socket) do
-    assign(socket,
+    socket
+    |> clear_flash()
+    |> assign(
       verified: nil,
-      result: "",
       true_user: nil,
       changes: [],
       commit_done: false
@@ -115,12 +118,12 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
   def render(assigns) do
     ~H"""
-    <div class="alert alert-danger" role="alert">
+    <div class="mb-4 border-l-4 border-red-600 bg-gray-50 p-4 text-gray-800 dark:border-red-500 dark:bg-gray-800 dark:text-gray-100">
       <strong>Warning!</strong>
       This is a developer tool and should only be used by developers.  This can result in data loss.
     </div>
 
-    <div class="alert alert-info" role="alert">
+    <div class="mb-4 border-l-4 border-gray-300 bg-gray-50 p-4 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
       This tool allows you to merge the progress of a source user into a target user enrolled in the same section.
       This is useful in scenarios where a user is incorrectly enrolled in a section from different user accounts, and you want to consolidate their progress.
       Enter the section slug and both user IDs, verify the enrollments, then preview and commit the changes.
@@ -171,46 +174,50 @@ defmodule OliWeb.Admin.RestoreUserProgress do
       </.form>
 
       <div :if={@verified} id="verified_users" class="my-4">
-        <h3>Verified Users in {@verified.section.title} ({@verified.section.slug})</h3>
+        <h3 id="verified_users_heading">
+          Verified Users in {@verified.section.title} ({@verified.section.slug})
+        </h3>
 
-        <table class="w-full text-left">
-          <thead>
-            <tr>
-              <th>ROLE</th>
-              <th>ENROLLMENT ID</th>
-              <th>USER ID</th>
-              <th>NAME</th>
-              <th>EMAIL</th>
-              <th>ENROLLED AT</th>
-              <th>ENROLLMENT STATUS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              :for={
-                {role, enrollment} <- [
-                  {"Target", @verified.target_enrollment},
-                  {"Source", @verified.source_enrollment}
-                ]
-              }
-              id={"verified_#{String.downcase(role)}"}
-            >
-              <td>{role}</td>
-              <td>{enrollment.id}</td>
-              <td>{enrollment.user.id}</td>
-              <td>{enrollment.user.given_name} {enrollment.user.family_name}</td>
-              <td>{enrollment.user.email}</td>
-              <td>
-                {FormatDateTime.date(enrollment.inserted_at,
-                  ctx: @ctx,
-                  precision: :minutes,
-                  show_timezone: true
-                )}
-              </td>
-              <td>{enrollment.status}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left" aria-labelledby="verified_users_heading">
+            <thead>
+              <tr>
+                <th scope="col">ROLE</th>
+                <th scope="col">ENROLLMENT ID</th>
+                <th scope="col">USER ID</th>
+                <th scope="col">NAME</th>
+                <th scope="col">EMAIL</th>
+                <th scope="col">ENROLLED AT</th>
+                <th scope="col">ENROLLMENT STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                :for={
+                  {role, enrollment} <- [
+                    {"Target", @verified.target_enrollment},
+                    {"Source", @verified.source_enrollment}
+                  ]
+                }
+                id={"verified_#{String.downcase(role)}"}
+              >
+                <td>{role}</td>
+                <td>{enrollment.id}</td>
+                <td>{enrollment.user.id}</td>
+                <td>{enrollment.user.given_name} {enrollment.user.family_name}</td>
+                <td>{enrollment.user.email}</td>
+                <td>
+                  {FormatDateTime.date(enrollment.inserted_at,
+                    ctx: @ctx,
+                    precision: :minutes,
+                    show_timezone: true
+                  )}
+                </td>
+                <td>{enrollment.status}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <button
@@ -234,8 +241,6 @@ defmodule OliWeb.Admin.RestoreUserProgress do
           Commit Changes
         <% end %>
       </button>
-
-      <div id="result">{@result}</div>
 
       <div :if={@true_user} id="preview_changes">
         <h3>Changes</h3>
@@ -267,12 +272,12 @@ defmodule OliWeb.Admin.RestoreUserProgress do
            params["source_user_id"]
          ) do
       {:ok, verified} -> {:noreply, assign(socket, verified: verified)}
-      {:error, reason} -> {:noreply, assign(socket, result: reason)}
+      {:error, reason} -> {:noreply, put_flash(socket, :error, reason)}
     end
   end
 
   def handle_event("preview", _, %{assigns: %{verified: nil}} = socket) do
-    {:noreply, assign(socket, result: "Verify the users before previewing changes.")}
+    {:noreply, put_flash(socket, :error, "Verify the users before previewing changes.")}
   end
 
   def handle_event("preview", _, socket) do
@@ -281,27 +286,34 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
     {_all_users, true_user, changes} = preview(target_enrollment, source_enrollment)
 
-    {:noreply, assign(socket, true_user: true_user, changes: changes, result: "")}
+    {:noreply,
+     socket
+     |> clear_flash()
+     |> assign(true_user: true_user, changes: changes)}
   end
 
   def handle_event("commit", _, socket) do
     case commit_blocker(socket.assigns) do
       nil -> {:noreply, commit_changes(socket)}
-      reason -> {:noreply, assign(socket, result: reason)}
+      reason -> {:noreply, put_flash(socket, :error, reason)}
     end
   end
 
   defp commit_changes(%{assigns: %{true_user: true_user, changes: changes}} = socket) do
     case Repo.transaction(fn -> process(true_user, changes) end) do
       {:ok, _} ->
-        assign(socket,
-          changes: [],
-          result: "Success: #{length(changes)} change(s) applied.",
-          commit_done: true
-        )
+        socket
+        |> put_flash(:info, "Success: #{length(changes)} change(s) applied.")
+        |> assign(changes: [], commit_done: true)
 
       {_, reason} ->
-        assign(socket, changes: [], result: "Failed: #{inspect(reason)}", commit_done: false)
+        Logger.error(
+          "Restore user progress commit failed for target user #{true_user.id}: #{inspect(reason)}"
+        )
+
+        socket
+        |> put_flash(:error, "Failed to restore progress. Check the server logs for details.")
+        |> assign(changes: [], commit_done: false)
     end
   end
 
