@@ -353,6 +353,33 @@ defmodule Oli.TestHelpers do
     |> Repo.update()
   end
 
+  @doc "Test fixture: deletes a user session token without an audit event."
+  def delete_user_session_token_fixture(token) do
+    Repo.delete_all(Oli.Accounts.UserToken.token_and_context_query(token, "session"))
+    :ok
+  end
+
+  @doc "Test fixture: inserts an external tool platform instance without audit events."
+  def create_platform_instance_fixture(attrs \\ %{}) do
+    %Lti_1p3.DataProviders.EctoProvider.PlatformInstance{}
+    |> Lti_1p3.DataProviders.EctoProvider.PlatformInstance.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc "Test fixture: updates an external tool platform instance without audit events."
+  def update_platform_instance_fixture(platform_instance, attrs) do
+    platform_instance
+    |> Lti_1p3.DataProviders.EctoProvider.PlatformInstance.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc "Test fixture: inserts an external tool deployment without audit events."
+  def create_tool_deployment_fixture(attrs) do
+    %Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment{}
+    |> Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment.changeset(attrs)
+    |> Repo.insert()
+  end
+
   @doc """
   Audit context of a test administrator, for audited commands whose actor does not matter to
   the test. It is built in memory; audit events keep actor IDs without a foreign key.

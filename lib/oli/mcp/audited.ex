@@ -58,36 +58,42 @@ defmodule Oli.MCP.Audited do
   @spec regenerate_token(Context.t(), pos_integer(), pos_integer(), String.t() | nil) ::
           {:ok, {%BearerToken{}, String.t()}} | {:error, term()}
   def regenerate_token(context, author_id, project_id, hint \\ nil) do
-    case Auth.get_token_by_author_and_project(author_id, project_id) do
-      nil ->
-        create_token(context, author_id, project_id, hint)
-
-      %BearerToken{status: :disabled} ->
-        {:error, :token_disabled}
-
-      %BearerToken{id: id} ->
-        plaintext = TokenGenerator.generate()
-
-        attrs = %{
-          hash: TokenGenerator.hash(plaintext),
-          hint: hint || TokenGenerator.create_hint(plaintext)
-        }
-
-        Command.run(:token, fn multi ->
-          multi
-          |> access_check(author_id, project_id)
-          |> Command.update(
-            {:token, :row},
-            context,
-            {BearerToken, id},
-            &BearerToken.changeset(&1, attrs),
-            spec(fn _token, :updated -> "rotated" end, always: true)
-          )
-          |> Multi.run(:token, fn _repo, changes ->
-            {:ok, {Map.fetch!(changes, {:token, :row}), plaintext}}
-          end)
-        end)
+    # As before, access is checked first, so an author who no longer collaborates on the project
+    # learns nothing about its token.
+    with :ok <- Auth.verify_author_can_manage_token(author_id, project_id) do
+      case Auth.get_token_by_author_and_project(author_id, project_id) do
+        nil -> create_token(context, author_id, project_id, hint)
+        %BearerToken{id: id} -> rotate(context, id, author_id, project_id, hint)
+      end
     end
+  end
+
+  # The disabled check runs on the locked row, so a token disabled concurrently is not rotated.
+  defp rotate(context, id, author_id, project_id, hint) do
+    plaintext = TokenGenerator.generate()
+
+    attrs = %{
+      hash: TokenGenerator.hash(plaintext),
+      hint: hint || TokenGenerator.create_hint(plaintext)
+    }
+
+    Command.run(:token, fn multi ->
+      multi
+      |> access_check(author_id, project_id)
+      |> Command.update(
+        {:token, :row},
+        context,
+        {BearerToken, id},
+        fn
+          %BearerToken{status: :disabled} -> {:error, :token_disabled}
+          token -> BearerToken.changeset(token, attrs)
+        end,
+        spec(fn _token, :updated -> "rotated" end, always: true)
+      )
+      |> Multi.run(:token, fn _repo, changes ->
+        {:ok, {Map.fetch!(changes, {:token, :row}), plaintext}}
+      end)
+    end)
   end
 
   @doc "Enables (`:active`) or disables the token with ID `id`."

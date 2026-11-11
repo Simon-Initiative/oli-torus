@@ -411,7 +411,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
 
           {:error, reason} ->
             socket =
-              put_flash(socket, :error, "Couldn't delete registered model: #{inspect(reason)}")
+              put_flash(socket, :error, delete_error_message(reason))
 
             {:noreply,
              assign_form(socket, RegisteredModel.changeset(socket.assigns.selected, %{}))}
@@ -451,6 +451,9 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
           {:error, %Ecto.Changeset{} = changeset} ->
             socket = put_flash(socket, :error, "Couldn't update registered model")
             {:noreply, assign_form(socket, changeset)}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, "Couldn't update registered model")}
         end
     end
   end
@@ -546,4 +549,9 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
   defp max_pool_size do
     Application.get_env(:oli, :genai_hackney_pool_max_size, 1000)
   end
+
+  defp delete_error_message(:delete_failed),
+    do: "This registered model is still in use and can't be deleted."
+
+  defp delete_error_message(_reason), do: "Couldn't delete registered model."
 end

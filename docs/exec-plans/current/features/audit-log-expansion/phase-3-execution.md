@@ -5,12 +5,12 @@ Phase: `3` (MER-6113, PR-03), design `design/pr-03-identity-and-platform-adminis
 
 ## Scope from plan.md
 - Coverage for identity and platform administration: accounts, access, provisioning, authentication and recovery, organizations and consent, LMS/SSO/LTI and external tools, AI services, API/MCP credentials, feature flags and rollouts.
-- Current authorization: checkpoint A, then pause for owner review. No commits or publication authorized.
+- Authorization: checkpoints A to F, each committed after owner review. No push or publication authorized.
 - Branch: `sub-task/MER-6113-audit-log-coverage-identity-and-platform-administration`, created from PR-02's last commit `ab1bae4434`; not pushed.
 
 ## Implementation Blocks
 - [x] Design approved by the owner on 2026-11-11, with two decisions: bulk community membership keeps per-target partial success, and declining a pending LMS registration request is audited.
-- [x] Checkpoint A implementation (2026-11-11), owner review pending:
+- [x] Checkpoint A implementation (2026-11-11):
   - `Oli.Accounts.Audited` gained `delete_author/2`, `admin_update_user/3`, `admin_update_author/3`, `lock_account/3`, `unlock_account/3`, `admin_confirm_email/2`, `sync_platform_roles/3`, and `update_own_profile/3`, each with its `*_multi/4` variant where callers compose it. Updates lock the row `FOR UPDATE`, diff before and after under the account field policy, and write one event per event type with changes, sharing the context's operation ID. A write that changes nothing writes no event.
   - `Mutations` generalized to `delete_account/1` and gained `update_account/1` and `put_platform_roles/2`.
   - `Oli.Accounts.ProtectedKeys` adds a `:protected` error for any schema field outside a command's allowlist. `User.unprotected_changeset/2` (state, `research_opt_out`, preferences) and `Author.unprotected_changeset/2` (preferences) back the restricted `Accounts.update_user/2` and `Accounts.update_author/2`.
@@ -19,7 +19,7 @@ Phase: `3` (MER-6113, PR-03), design `design/pr-03-identity-and-platform-adminis
   - Catalog: `platform_roles` pseudo key in `Fields.user_account/0` and the `User` schema source; `account_permissions_changed` admits the system actor.
   - Design reconciled: the system-admin rule for roles and the internal flag stays in the author detail view; platform roles are a `set` change of sorted URIs; `update_own_profile/3` also accepts `name`.
 - [x] Checkpoint A committed on 2026-11-11 as `c25eaae3ad` at the owner's request (without `handoff.md`).
-- [x] Checkpoint B implementation (2026-11-11), owner review pending:
+- [x] Checkpoint B implementation (2026-11-11):
   - Creation: `register_account/3` (`self_registration`), `create_guest/2` (`guest`), `invite_author/2` and `invite_users_multi/4` (`invitation`, inviter as actor), `bulk_create_users/3` (Scenario bulk setup). `Accounts.register_independent_user/1`, `register_author/1`, and `create_guest_user/1` delegate to the facade; `bulk_create_invited_users/2` and `create_invited_author/1` are removed and their callers (invite controller, collaborator invitations) pass the inviter context.
   - Acceptance: `accept_invitation_multi/3` writes the account part of the six `accept_*_invitation*` functions with the invitee as actor; enrollment and collaborator steps stay in `Accounts` in the same transaction.
   - Credentials and recovery: `change_password/4`, `create_password/3`, `reset_password/3` (password marker plus `session_revoked` with the count of session tokens deleted), `request_recovery/3`, `confirm_email/2`, `confirm_email_change/3`. A consumed confirmation or email-change token fails a second use. `Accounts.deliver_*_confirmation_instructions/3` and `deliver_*_reset_password_instructions/3` take a context first; the raw update, reset, confirm, and token-generation functions are removed. Unauthenticated forgot-password and resend pages use the new `:unauthenticated_request` system actor.
@@ -30,12 +30,12 @@ Phase: `3` (MER-6113, PR-03), design `design/pr-03-identity-and-platform-adminis
   - Owner decision on 2026-11-11: connecting or disconnecting a login provider (Google, GitHub) is account linking and is covered. `link_identity/3` and `unlink_identities/3` back Assent's `add_identity_provider/2` and `delete_identity_providers/2`, which keep their signatures; new events `account_identity_linked` and `account_identity_unlinked` record the provider name only. The rule that an account without a password keeps its last provider stays in Assent.
   - The `unauthenticated_request` system actor is documented in `Oli.Auditing.Context` with the forgot-password example, at the owner's request.
 - [x] Checkpoint B committed on 2026-11-11 as `5a077126d6`.
-- [x] Checkpoint C implementation (2026-11-11), owner review pending:
+- [x] Checkpoint C implementation (2026-11-11):
   - `issue_session/4` and `issue_session_multi/4` insert the session token and record `user_logged_in` or `author_logged_in` with `auth_method` and the token row ID; `revoke_session/2` deletes the token and records `*_logged_out` once, skipping absent tokens and technical accounts.
   - Callers: `UserAuth.log_in_user/3` and `AuthorAuth.log_in_author/3` (`:password`), new `UserAuth.create_session/3` and `AuthorAuth.create_session/3` (`:sso`, `:cognito`) for Assent, Cognito, and SSO invitation acceptance, the LTI launch and `SecureAssessments.issue_session/2` (`:lti`, composed in their transactions), and both logouts. A failed issuance sends the person back to the login page.
   - Excluded, keeping `UserAuth.create_session/2`: guest and open-and-free enrollment, the Playwright route, and template previews (which now use it instead of `log_in_user/3`).
 - [x] Checkpoint C committed on 2026-11-11 as `9746722750`.
-- [x] Checkpoint D implementation (2026-11-11), owner review pending:
+- [x] Checkpoint D implementation (2026-11-11):
   - Shared `Oli.Auditing.Command` steps (insert, lock-and-update, delete with foreign-key handling, row lock by primary key) used by four new Boundary facades, each added to the legacy `deps`: `Oli.Institutions.Audited` (institutions with their soft delete, approval of registration requests by URL, as new, or into an existing institution, decline, LTI registrations and deployments, system research-consent form), `Oli.Groups.Audited` (communities and their soft delete; members, visibilities, and institutions recorded as `members` added or removed on the community), `Oli.Inventories.Audited` (publishers, including the old and new default in one operation and the existing deletion refusals), `Oli.Lti.Audited` (tool registration, edit, enable or disable, deep-linking flag, soft delete, and the instructor's deep-link choice).
   - Raw writers removed from `Institutions`, `Inventories`, `PlatformExternalTools`, and `Delivery.update_system_research_consent_form_setting/1`; `Groups` writers take a context first and delegate. Callers migrated: institution, registration, and deployment controllers, institution admin views (approval, decline, research consent), community and publisher LiveViews, the user detail communities component (now given the admin), external tool admin views (which gain `on_mount {OliWeb.AuthorAuth, :ensure_authenticated}` so an actor exists), the features page, deep-link returns (instructor from the signed request), Cognito community membership (`provider_provisioning`), and Scenario institution and community directives (`playwright_setup`).
   - Bulk community additions keep per-target outcomes; each target commits with its own event and all share the operation ID.
@@ -43,7 +43,7 @@ Phase: `3` (MER-6113, PR-03), design `design/pr-03-identity-and-platform-adminis
   - Roster and grade passback: no supported writer exists; the `Sections.update_section/2` closure is handed over to PR-05 in `plan.md` phase 5 and `jira-subtasks.md`.
   - Boundary: compilation rejected references to each new facade until it was declared in the legacy `deps` (`forbidden reference to Oli.Institutions.Audited`, and later to `Oli.Lti.Audited` from `OliWeb`, when the formatter's multi-line `deps` had kept an earlier edit from reaching three legacy boundaries). All four are now declared; `mix compile --force --warnings-as-errors` passed in dev and `mix compile --warnings-as-errors` in test.
 - [x] Checkpoint D committed on 2026-11-11 as `70d4517395`.
-- [x] Checkpoint E implementation (2026-11-11), owner review pending:
+- [x] Checkpoint E implementation (2026-11-11):
   - `Oli.GenAI.Audited` (registered models, service configurations, feature configurations; provider keys as redaction markers; `create_multi/4` for the Scenario section directive's transaction). The three GenAI admin views gain `on_mount {OliWeb.AuthorAuth, :ensure_authenticated}` so an actor exists.
   - `Oli.Interop.Audited` (`create_key/3`, `set_key_status/3`, `update_key_settings/3`): `credential_lifecycle_changed` with the lifecycle transition and flag changes; the admin's hint goes in details; any field outside the settings form returns `:protected`, so a client-chosen field name can no longer write `hash`, `hint`, or `status`.
   - `Oli.MCP.Audited` (`create_token/4`, `regenerate_token/4`, `set_token_status/3`, `revoke_token/2`): lifecycle `created`, `rotated`, `enabled`, `disabled`, `revoked`, the owner as affected author and the project as scope; token, hash, and hint never recorded; the collaborator check runs inside the transaction. The MCP tokens admin view gains the authenticated author.
@@ -51,7 +51,18 @@ Phase: `3` (MER-6113, PR-03), design `design/pr-03-identity-and-platform-adminis
   - `Oli.Auditing.Command` gained `:record_unchanged` (a token rotation only replaces the hash) and three-argument `:changes` functions (lifecycle on top of computed changes); its `spec` type lists the optional keys.
   - The legacy adapter keeps five events: `project_published`, `google_doc_imported`, `section_created`, `resource_attempt_deleted`, `clickhouse_admin_operation_initiated`.
   - Catalog: `ai_service_settings_changed` admits the system actor (Scenario feature configs); the API key `hint` exclusion text now says it is the administrator's label.
-- [ ] Checkpoint F: final verification.
+- [x] Checkpoint E committed on 2026-11-11 as `2128b8a4df`.
+- [x] Checkpoint F (2026-11-11): `harness-review` over the whole PR, each finding reviewed with the owner and fixed:
+  - `UserAuth.create_session/3` and `AuthorAuth.create_session/3` return `{:ok, conn}` or `{:error, :session_not_issued}` instead of redirecting. Assent, Cognito, and the SSO invitation paths handle the error with a generic flash; a failed Cognito issuance no longer crashes its `with` chain. Password logins keep the previous failure redirect, including the email flash and the author link-account return.
+  - `Accounts.Audited.revoke_session/2` falls back to deleting the token directly when the audited revocation fails, logs only kind and reason, and returns `{:ok, :revoked_unaudited}`.
+  - `Command.lock/4` takes `FOR NO KEY UPDATE` for updates and `FOR UPDATE` for deletes; deletes and the pending registration decline use the delete mode; `delete` reads the schema's primary key.
+  - Identity unlinking records the providers actually deleted, so only the account's own identities appear.
+  - MCP token regeneration checks project access before reading the token, and the disabled check runs on the locked row.
+  - Deep-link replacement resets the fields the new choice omits (`type`, `url`, `title`, `text`, `custom`).
+  - LiveViews handle non-changeset errors with a flash or form error: settings and reset-password pages, user and author reset links, research consent, institution request decline (including an already handled request), GenAI updates and deletions, API keys, and external tools.
+  - Unused raw writers removed: `Accounts.insert_or_update_author/1`, `delete_user_session_token/1`, `delete_author_session_token/1`, `PlatformExternalTools.create_platform_instance/1`, `create_lti_external_tool_activity_deployment/1`, and the `PlatformInstances` create, update, and delete functions; tests use new `Oli.TestHelpers` fixtures.
+  - `Groups` doc examples and the `ScopedFeatureFlags` moduledoc example now pass a context through the facades.
+  - Caller inventory closed: no migrated writer has a raw caller left. The remaining session-token callers are the excluded, non-authenticated ones in the design (`UserAuth.create_session/2`, the seeder, and hidden preview instructors).
 
 ## Test Blocks
 - [x] Preparation on 2026-11-11: `mix deps.get` and `gleam build --target erlang` (the worktree had neither `deps` nor Gleam artifacts).
@@ -68,9 +79,13 @@ Phase: `3` (MER-6113, PR-03), design `design/pr-03-identity-and-platform-adminis
 
 - [x] Checkpoint E tests: new `test/oli/auditing/service_commands_test.exs` (AI keys redacted, API key lifecycle and settings without the key, protected API key fields, MCP lifecycle without token or hint, collaborator check, flag no-op, flag rollback on audit failure, rollout no-op and previous stage). Callers' tests moved to the facades with a script that splits call arguments; rollout tests use a real author (rollouts store `updated_by_author_id`); `Oli.TestHelpers.update_api_key_fixture/2` replaces direct key updates in API tests; the legacy adapter tests for moved events were replaced by one that checks they are rejected; the audit log list test builds deletion events through `Auditing.build/2`; a settings test still used the removed `AuthorAuth.create_session/2`. E run (flags, rollouts, GenAI, MCP, auditing, feature gate, editing, API keys, GenAI views, MCP manager, admin views, curriculum and course author views, sections, products, API controllers, all Scenarios): 6 doctests, 2,323 tests, 4 failures, all passing on `mix test --failed` (the progress simulation Scenario timed out at 60 s again, with the partition and Google import tests affected in the same run). `mix format --check-formatted`, `git diff --check`, and forced `--warnings-as-errors` compilation in dev and test passed.
 
+- [x] Checkpoint F tests: new cases for the failing Cognito session, Assent's error return, unaudited revocation, password-login failure (user flash and email, author link flow), deep-link reset, own-identity unlinking, rotation order, reset-password and author settings errors. First full `mix test`: 35 failures. Committed login events leaked by `secure_assessment_admission_test`'s `unboxed_run` broke every test that clears the append-only audit table (the cause of the cross-test pollution seen in C, D, and E); its cleanup now deletes them under the mutation guard. `auditing_test` used legacy captures removed in E. A platform instance fixture first used the changeset with `unique_constraint`, which broke a test expecting `Ecto.ConstraintError`. `lti_controller_test.exs` still called a removed writer. Final full run: 32 doctests, 10,162 tests, 8 failures, all known list tests passing on `mix test --failed`; the audit table was empty afterwards.
+- [x] Latency (local, temporary benchmark run in the full suite and then deleted): password session token p50 0.09 ms / p95 0.12 ms raw versus 0.39 / 0.45 ms audited; LTI repeat launch 0.31 / 0.38 ms raw versus 1.21 / 1.54 ms audited; bulk community membership 40.8 ms for 100 targets and 409.8 ms for 1,000. All within `max(10 ms, 20% of baseline p95)`.
+- [x] `mix format --check-formatted`, `git diff --check`, and forced `--warnings-as-errors` compilation in dev, test, and playwright passed.
+
 ## Work-Item Sync
 - `handoff.md` is untracked by policy and must not be committed without explicit approval.
 - Migrations against `oli_dev` need owner approval and a prior `pg_dump -Fc` backup under `~/db_backups/`; `oli_test` resets need neither.
 
 ## Review Loop
-- Checkpoint A: pending owner review. `harness-review` runs at checkpoint F over the whole PR, as planned.
+- Checkpoints A to E reviewed and committed by the owner. `harness-review` ran at checkpoint F over the whole PR; its findings were fixed as recorded above.

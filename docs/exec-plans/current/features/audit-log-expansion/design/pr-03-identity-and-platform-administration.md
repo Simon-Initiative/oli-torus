@@ -236,7 +236,7 @@ Domain validation failures return the domain changeset where callers render it, 
 @spec sync_platform_roles_multi(Multi.t(), Multi.name(), Context.t(), {pos_integer(), [role]}) :: Multi.t()
 ```
 
-- Every command locks the target row `FOR UPDATE`, reads the before-state from it, applies the existing changeset, and diffs it with `Changes.diff/3` under the event's field policy.
+- Every command locks the target row (`FOR NO KEY UPDATE` for updates, `FOR UPDATE` for deletes), reads the before-state from it, applies the existing changeset, and diffs it with `Changes.diff/3` under the event's field policy.
 - Only system administrators change an author's role or the internal flag. The facade does not authorize, so this rule stays with the caller: the author detail view drops `system_role_id` and `is_internal` from the submission of any other admin, as it already did for `is_internal` (the role part lived in `Accounts.admin_update_author/3`). The facade keeps the role inclusion validation.
 - `admin_update_user/3` casts only the fields the form shows. Other keys return `:protected`.
 - Lock on an already-locked account is a no-op: no event, `{:ok, account}`.
@@ -304,7 +304,7 @@ Recovery and credential rules:
 
 @spec issue_session_multi(Multi.t(), Multi.name(), Context.t(), {struct(), auth_method(), keyword()}) :: Multi.t()
 @spec issue_session(Context.t(), struct(), auth_method(), keyword()) :: {:ok, %{token: binary(), token_id: pos_integer()}} | {:error, command_error()}
-@spec revoke_session(:user | :author, binary()) :: {:ok, :revoked | :absent} | {:error, command_error()}
+@spec revoke_session(:user | :author, binary()) :: {:ok, :revoked | :absent | :revoked_unaudited}
 ```
 
 The session event:
@@ -323,6 +323,7 @@ Revocation:
 - Zero rows means `:absent`: no event, and the caller still clears the cookie, as today.
 - One row emits `user_logged_out` or `author_logged_out` (event key `session:<token_id>:revoked`) with the owner as actor. Every current caller is the account signing itself out; there is no administrator revocation of a single session to audit.
 - Sessions of guests and hidden preview instructors are deleted without an event, because their issuance is not an authentication either.
+- If the audited revocation fails, the token row is still deleted directly, the failure is logged with its kind and reason only, and the result is `{:ok, :revoked_unaudited}`. Signing out never leaves a usable session behind.
 - `UserAuth` and `AuthorAuth` then broadcast the disconnect and clear the cookie after commit, with the existing topic.
 
 Channel mapping:
@@ -330,7 +331,7 @@ Channel mapping:
 - `log_in_user/3` and `log_in_author/3` call the issuing command with `:password`, then install the returned token in the session exactly as today. Registration auto-login, the password-updated re-login, invitation acceptance, and the link-account form reach these functions after a password check, so they record `:password`.
 - `log_in_author/3` keeps linking a signed-in user after the session is issued, now through `link_accounts/3`.
 - `log_in_user/3`'s cookie-consent sync stays after the issuance, unchanged and unaudited (PR-06).
-- Assent and Cognito callbacks, and SSO invitation acceptance, call `UserAuth.create_session/3` or `AuthorAuth.create_session/3` with `:sso` or `:cognito`. `AuthorAuth.create_session/2` is removed because all its callers authenticate; `UserAuth.create_session/2` stays for the excluded callers. The template preview, which used `log_in_user/3`, now uses `create_session/2`, because a hidden preview instructor does not authenticate. If issuing the session fails, the person is sent back to the login page. Cognito's two sessions (user and author) produce two events, because two sessions are issued.
+- Assent and Cognito callbacks, and SSO invitation acceptance, call `UserAuth.create_session/3` or `AuthorAuth.create_session/3` with `:sso` or `:cognito`. `AuthorAuth.create_session/2` is removed because all its callers authenticate; `UserAuth.create_session/2` stays for the excluded callers. The template preview, which used `log_in_user/3`, now uses `create_session/2`, because a hidden preview instructor does not authenticate. `create_session/3` returns `{:ok, conn}` or `{:error, :session_not_issued}`; on failure each caller sends the person back to the login page with a generic error, and password logins keep the existing failure redirect (including the author link-account flow). Cognito's two sessions (user and author) produce two events, because two sessions are issued.
 - Assent's existing session issuance when email confirmation is still pending stays unchanged. The event records what the server did.
 - The LTI launch replaces `generate_user_session_token` with `issue_session_multi(..., {user, :lti, []})` inside its existing transaction, and `SecureAssessments.issue_session/2` composes it with `scope:` inside its admission transaction. `scope_opts` carries the secure section/resource IDs, which become the event's `section_id` scope. `install_session/3` keeps reading the committed token.
 - The excluded callers in section 2.1 keep `create_session/2` and the existing token generation unchanged.
@@ -491,7 +492,7 @@ Main flow, for every command:
 | Domain validation failure | No change, no event; existing changeset rendered |
 | Audit build or insert failure, missing partition | Mutation, token, or membership rolled back; safe `Auditing.Error`; caller's existing failure flash |
 | Lock already locked, flag already enabled, role unchanged | `{:ok, existing}`, no event |
-| Concurrent admin updates of one account | Serialized by `FOR UPDATE`; each emits only its own real diff |
+| Concurrent admin updates of one account | Serialized by the row lock; each emits only its own real diff |
 | Logout of a token already deleted | `:absent`, no event, cookie cleared |
 | Repeated or concurrent logout of one token | `DELETE ... RETURNING` lets exactly one win; one event |
 | Password reset with a reused token | Lookup fails; no change, no event |

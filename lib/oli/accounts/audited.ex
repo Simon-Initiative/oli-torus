@@ -7,10 +7,12 @@ defmodule Oli.Accounts.Audited do
   actor: callers keep their existing authorization, such as the route's administrator plug. The
   internal mutation module is not exported to callers.
 
-  Every command has a `*_multi/4` variant that adds its steps to a caller's `Ecto.Multi`, and a
-  wrapper that runs its own transaction and returns `{:error, :nested_transaction}` when called
-  inside another one. Account fields map to events as follows; one command writes one event per
-  event type that has changes, all sharing the context's operation ID:
+  Commands that other callers compose into their own transactions (deletion, administrator
+  updates, lock and unlock, platform roles, provisioning, linking, invitations, sessions) also
+  have a `*_multi` variant that adds their steps to a caller's `Ecto.Multi`. The wrappers run
+  their own transaction and return `{:error, :nested_transaction}` when called inside another
+  one. Account fields map to events as follows; one command writes one event per event type
+  that has changes, all sharing the context's operation ID:
 
     * `system_role_id` - `author_role_changed`
     * `is_internal` - `account_internal_flag_changed`
@@ -37,7 +39,7 @@ defmodule Oli.Accounts.Audited do
   alias Oli.Accounts.{Author, ProtectedKeys, SystemRole, User}
   alias Oli.Accounts.Audited.Mutations
   alias Oli.Auditing
-  alias Oli.Auditing.{Changes, Context}
+  alias Oli.Auditing.{Changes, Command, Context}
   alias Oli.Auditing.EventCatalog.Fields
   alias Oli.Repo
 
@@ -332,9 +334,10 @@ defmodule Oli.Accounts.Audited do
 
   @doc """
   Disconnects the given login-provider `identities` of `account` and records one
-  `account_identity_unlinked` per provider removed. Returns `{:ok, {count, nil}}` like
-  `Repo.delete_all/1`. `context` must belong to `account`; the caller keeps the rule that an
-  account without a password cannot remove its last provider.
+  `account_identity_unlinked` per provider whose identity was actually removed; identities of
+  other accounts are ignored. Returns `{:ok, {count, nil}}` like `Repo.delete_all/1`. `context`
+  must belong to `account`; the caller keeps the rule that an account without a password
+  cannot remove its last provider.
   """
   @spec unlink_identities(Context.t(), %User{} | %Author{}, [struct()]) ::
           {:ok, {non_neg_integer(), nil}} | {:error, command_error()}
@@ -351,9 +354,8 @@ defmodule Oli.Accounts.Audited do
             {0, _} ->
               Multi.new()
 
-            _deleted ->
-              identities
-              |> Enum.map(& &1.provider)
+            {_count, providers} ->
+              providers
               |> Enum.uniq()
               |> Enum.reduce(Multi.new(), fn provider, events ->
                 Auditing.append(events, {:identity, :event, provider}, fn _changes ->
@@ -363,7 +365,8 @@ defmodule Oli.Accounts.Audited do
           end
         end)
         |> Multi.run(:identity, fn _repo, changes ->
-          {:ok, Map.fetch!(changes, {:identity, :deleted})}
+          {count, _providers} = Map.fetch!(changes, {:identity, :deleted})
+          {:ok, {count, nil}}
         end)
       end)
     end)
@@ -444,9 +447,33 @@ defmodule Oli.Accounts.Audited do
   out, expired and removed, or revoked by a password change), so repeated or concurrent
   sign-outs record one event. Sessions of technical accounts (guests and hidden preview
   instructors), which were not issued by an authentication, are deleted without an event.
+
+  A sign-out must end the session even when its event cannot be written: if the audited
+  transaction fails, the token is deleted without an event, a warning is logged (without the
+  token), and `{:ok, :revoked_unaudited}` is returned.
   """
-  @spec revoke_session(kind(), binary()) :: {:ok, :revoked | :absent} | {:error, command_error()}
+  @spec revoke_session(kind(), binary()) ::
+          {:ok, :revoked | :absent | :revoked_unaudited} | {:error, command_error()}
   def revoke_session(kind, token) when kind in [:user, :author] and is_binary(token) do
+    case audited_revoke_session(kind, token) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, reason} ->
+        Logger.warning(
+          "Audited sign-out failed; session revoked without an event kind=#{kind} reason=#{revoke_failure(reason)}"
+        )
+
+        case Mutations.delete_session_token(kind, token) do
+          {:ok, nil} -> {:ok, :absent}
+          {:ok, _deleted} -> {:ok, :revoked_unaudited}
+        end
+    end
+  end
+
+  def revoke_session(_kind, _token), do: {:error, :invalid_request}
+
+  defp audited_revoke_session(kind, token) do
     run(:session, fn multi ->
       multi
       |> Multi.run({:session, :deleted}, fn _repo, _changes ->
@@ -479,7 +506,10 @@ defmodule Oli.Accounts.Audited do
     end)
   end
 
-  def revoke_session(_kind, _token), do: {:error, :invalid_request}
+  # Logs only error codes, never the token or event values.
+  defp revoke_failure(%Auditing.Error{code: code}), do: code
+  defp revoke_failure(reason) when is_atom(reason), do: reason
+  defp revoke_failure(_reason), do: "other"
 
   ## Deletion
 
@@ -537,7 +567,7 @@ defmodule Oli.Accounts.Audited do
        )
        when is_integer(actor_id) and is_integer(id) and id > 0 do
     multi
-    |> Multi.run({name, kind}, fn repo, _changes -> lock_row(repo, kind, id) end)
+    |> Multi.run({name, kind}, fn repo, _changes -> lock_row(repo, kind, id, :delete) end)
     |> Multi.run({name, :deleted}, fn _repo, changes ->
       changes |> Map.fetch!({name, kind}) |> delete(kind)
     end)
@@ -1101,12 +1131,10 @@ defmodule Oli.Accounts.Audited do
   defp event_for("locked_at", _account), do: :account_locked
   defp event_for(field, _account), do: Map.get(@routed_fields, field, :account_updated)
 
-  defp lock_row(repo, kind, id) do
-    case repo.one(from(a in schema(kind), where: a.id == ^id, lock: "FOR UPDATE")) do
-      nil -> {:error, :not_found}
-      account -> {:ok, account}
-    end
-  end
+  # Updates take FOR NO KEY UPDATE, so inserts that only reference the account (session tokens,
+  # enrollments, attempts) do not wait for an LTI launch; deletions take FOR UPDATE.
+  defp lock_row(repo, kind, id, mode \\ :update),
+    do: Command.lock(repo, schema(kind), id, mode)
 
   defp delete(account, kind) do
     case Mutations.delete_account(account) do

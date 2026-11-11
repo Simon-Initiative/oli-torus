@@ -94,6 +94,39 @@ defmodule Oli.Accounts.AuditedSessionsTest do
       assert event.event_key == "session:#{token_id}:revoked"
     end
 
+    test "a sign-out still revokes the token when its event cannot be written" do
+      user = insert(:user)
+
+      {:ok, %{token: token, token_id: token_id}} =
+        Audited.issue_session(Context.for_actor(user, source: :ui), user, :password)
+
+      Repo.query!("""
+      CREATE FUNCTION pg_temp.reject_logout_event() RETURNS trigger AS $$
+      BEGIN
+        IF NEW.event_type = 'user_logged_out' THEN
+          RAISE EXCEPTION 'logout event rejected by test';
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql
+      """)
+
+      Repo.query!("""
+      CREATE TRIGGER reject_logout_event BEFORE INSERT ON audit_log_events
+        FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_logout_event()
+      """)
+
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          assert {:ok, :revoked_unaudited} = Audited.revoke_session(:user, token)
+        end)
+
+      assert log =~ "session revoked without an event kind=user"
+      refute log =~ Base.encode64(token)
+      refute Repo.get(UserToken, token_id)
+      assert events(:user_logged_out) == []
+    end
+
     test "guest and hidden preview sessions are revoked without an event" do
       guest = insert(:user, guest: true)
       hidden = insert(:user, hidden: true)
@@ -158,6 +191,72 @@ defmodule Oli.Accounts.AuditedSessionsTest do
 
       UserAuth.create_session(conn, guest)
       assert events(:user_logged_in) == []
+    end
+  end
+
+  describe "password login when the session cannot be issued" do
+    setup do
+      Repo.query!("""
+      CREATE FUNCTION pg_temp.reject_login_events() RETURNS trigger AS $$
+      BEGIN
+        IF NEW.event_type IN ('user_logged_in', 'author_logged_in') THEN
+          RAISE EXCEPTION 'login event rejected by test';
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql
+      """)
+
+      Repo.query!("""
+      CREATE TRIGGER reject_login_events BEFORE INSERT ON audit_log_events
+        FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_login_events()
+      """)
+
+      :ok
+    end
+
+    test "a user sees only the sign-in error and keeps the typed email", %{conn: conn} do
+      user = user_fixture()
+
+      ExUnit.CaptureLog.capture_log(fn ->
+        conn =
+          post(conn, ~p"/users/log_in", %{
+            "user" => %{"email" => user.email, "password" => valid_user_password()}
+          })
+
+        assert redirected_to(conn) == ~p"/users/log_in"
+        refute get_session(conn, :user_token)
+        assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "We couldn't sign you in"
+        refute Phoenix.Flash.get(conn.assigns.flash, :info)
+        assert Phoenix.Flash.get(conn.assigns.flash, :email) == user.email
+      end)
+    end
+
+    test "an author linking accounts goes back to the link page without the pending link", %{
+      conn: conn
+    } do
+      user = user_fixture()
+      author = author_fixture()
+
+      ExUnit.CaptureLog.capture_log(fn ->
+        conn =
+          conn
+          |> log_in_user(user)
+          |> post(~p"/authors/log_in", %{
+            "author" => %{
+              "email" => author.email,
+              "password" => valid_author_password(),
+              "link_account_user_id" => "#{user.id}"
+            }
+          })
+
+        assert redirected_to(conn) == ~p"/users/link_account"
+        refute get_session(conn, :author_token)
+        refute get_session(conn, :link_account_user_id)
+        refute Phoenix.Flash.get(conn.assigns.flash, :info)
+      end)
+
+      refute Repo.get!(Oli.Accounts.User, user.id).author_id
     end
   end
 

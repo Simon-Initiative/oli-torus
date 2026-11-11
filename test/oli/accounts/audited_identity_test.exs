@@ -333,6 +333,27 @@ defmodule Oli.Accounts.AuditedIdentityTest do
       assert unlinked.details == %{"provider" => "google"}
     end
 
+    test "only identities of the account are removed and recorded" do
+      user = user_fixture()
+      other = user_fixture()
+
+      {:ok, own} =
+        UserAssentAuth.add_identity_provider(user, %{"provider" => "google", "uid" => "own-1"})
+
+      {:ok, foreign} =
+        UserAssentAuth.add_identity_provider(other, %{"provider" => "github", "uid" => "other-1"})
+
+      assert {:ok, {1, nil}} =
+               Audited.unlink_identities(Context.for_actor(user, source: :ui), user, [
+                 own,
+                 foreign
+               ])
+
+      assert [event] = events(:account_identity_unlinked)
+      assert event.details == %{"provider" => "google"}
+      assert Repo.get(Oli.AssentAuth.UserIdentity, foreign.id)
+    end
+
     test "the last provider of an account without a password cannot be removed" do
       user = insert(:user, password_hash: nil)
 

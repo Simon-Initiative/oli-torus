@@ -85,11 +85,15 @@ defmodule OliWeb.UserResetPasswordLive do
          |> put_flash(:info, "Password reset successfully.")
          |> redirect(to: ~p"/users/log_in")}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
          socket
          |> assign(check_errors: true)
          |> assign_form(Map.put(changeset, :action, :validate))}
+
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "We couldn't reset your password. Please request a new link.")}
     end
   end
 

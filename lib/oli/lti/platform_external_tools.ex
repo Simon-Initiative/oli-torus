@@ -48,15 +48,6 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
-  Creates a lti external tool deployment.
-  """
-  def create_lti_external_tool_activity_deployment(attrs \\ %{}) do
-    %LtiExternalToolActivityDeployment{}
-    |> LtiExternalToolActivityDeployment.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
   Returns an `%Ecto.Changeset{}` for tracking lti external tool deployment changes.
   """
   def change_lti_external_tool_activity_deployment(
@@ -147,24 +138,6 @@ defmodule Oli.Lti.PlatformExternalTools do
   def change_platform_instance(%PlatformInstance{} = platform_instance, attrs \\ %{}) do
     PlatformInstance.changeset(platform_instance, attrs)
     |> unique_constraint(:client_id)
-  end
-
-  @doc """
-  Creates a platform_instance.
-
-  ## Examples
-
-      iex> create_platform_instance(%{field: value})
-      {:ok, %PlatformInstance{}}
-
-      iex> create_platform_instance(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_platform_instance(attrs \\ %{}) do
-    %PlatformInstance{}
-    |> change_platform_instance(attrs)
-    |> Repo.insert()
   end
 
   @doc """

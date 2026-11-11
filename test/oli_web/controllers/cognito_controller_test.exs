@@ -28,6 +28,43 @@ defmodule OliWeb.CognitoControllerTest do
   import Phoenix.LiveViewTest
 
   describe "index" do
+    test "a session that cannot be issued sends the user to the error url", %{
+      conn: conn,
+      community: community,
+      email: email
+    } do
+      Oli.Repo.query!("""
+      CREATE FUNCTION pg_temp.reject_login_event() RETURNS trigger AS $$
+      BEGIN
+        IF NEW.event_type = 'user_logged_in' THEN
+          RAISE EXCEPTION 'login event rejected by test';
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql
+      """)
+
+      Oli.Repo.query!("""
+      CREATE TRIGGER reject_login_event BEFORE INSERT ON audit_log_events
+        FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_login_event()
+      """)
+
+      {id_token, jwk, issuer} = generate_token(email)
+      jwks_url = issuer <> "/.well-known/jwks.json"
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
+
+      ExUnit.CaptureLog.capture_log(fn ->
+        conn =
+          get(conn, Routes.cognito_path(conn, :index, valid_index_params(community.id, id_token)))
+
+        assert redirected_to(conn) =~ "https://www.example.com/lesson/34"
+        refute get_session(conn, :user_token)
+        refute get_session(conn, :author_token)
+      end)
+
+      assert Oli.Auditing.list_events(event_type: :author_logged_in) == []
+    end
+
     test "redirects user to my courses", %{
       conn: conn,
       community: community,

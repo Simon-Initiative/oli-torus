@@ -511,22 +511,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Returns an author if one matches given email, or creates and returns a new author
-
-  ## Examples
-      iex> insert_or_update_author(%{field: value})
-      {:ok, %Author{}}
-  """
-  def insert_or_update_author(%{email: email} = changes) do
-    case Repo.get_by(Author, email: email) do
-      nil -> %Author{}
-      author -> author
-    end
-    |> Author.noauth_changeset(changes)
-    |> Repo.insert_or_update()
-  end
-
-  @doc """
   Updates the preferences of an author. Any other author field in `attrs` returns an error
   changeset with a `:protected` error and writes nothing; those fields change only through
   `Oli.Accounts.Audited`.
@@ -1241,14 +1225,6 @@ defmodule Oli.Accounts do
     |> Repo.one()
   end
 
-  @doc """
-  Deletes the signed token with the given context.
-  """
-  def delete_user_session_token(token) do
-    Repo.delete_all(UserToken.token_and_context_query(token, "session"))
-    :ok
-  end
-
   ## Confirmation
 
   @doc ~S"""
@@ -1639,14 +1615,6 @@ defmodule Oli.Accounts do
 
     query
     |> Repo.one()
-  end
-
-  @doc """
-  Deletes the signed token with the given context.
-  """
-  def delete_author_session_token(token) do
-    Repo.delete_all(AuthorToken.token_and_context_query(token, "session"))
-    :ok
   end
 
   ## Confirmation

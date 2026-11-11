@@ -98,6 +98,25 @@ defmodule Oli.Auditing.ServiceCommandsTest do
       refute inspect(events) =~ token.hint
     end
 
+    test "rotation checks project access before the token status" do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      context = Context.for_actor(author, source: :ui)
+
+      {:ok, {token, _plaintext}} = Oli.MCP.Audited.create_token(context, author.id, project.id)
+      {:ok, _} = Oli.MCP.Audited.set_token_status(context, token.id, :disabled)
+
+      assert {:error, :token_disabled} =
+               Oli.MCP.Audited.regenerate_token(context, author.id, project.id)
+
+      Repo.delete_all(
+        from(ap in Oli.Authoring.Authors.AuthorProject, where: ap.author_id == ^author.id)
+      )
+
+      assert {:error, :unauthorized_project_access} =
+               Oli.MCP.Audited.regenerate_token(context, author.id, project.id)
+    end
+
     test "an author who no longer collaborates cannot create a token" do
       author = insert(:author)
       project = insert(:project)

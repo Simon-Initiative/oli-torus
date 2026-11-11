@@ -92,12 +92,16 @@ defmodule Oli.Accounts.Audited.Mutations do
     |> Repo.insert()
   end
 
+  # Returns the providers of the rows actually deleted, so events name only those.
   @spec delete_identities(:user | :author, pos_integer(), [pos_integer()]) ::
-          {:ok, {non_neg_integer(), nil}}
+          {:ok, {non_neg_integer(), [String.t()]}}
   def delete_identities(:user, user_id, ids) do
     {:ok,
      Repo.delete_all(
-       from(i in Oli.AssentAuth.UserIdentity, where: i.user_id == ^user_id and i.id in ^ids)
+       from(i in Oli.AssentAuth.UserIdentity,
+         where: i.user_id == ^user_id and i.id in ^ids,
+         select: i.provider
+       )
      )}
   end
 
@@ -105,7 +109,8 @@ defmodule Oli.Accounts.Audited.Mutations do
     {:ok,
      Repo.delete_all(
        from(i in Oli.AssentAuth.AuthorIdentity,
-         where: i.user_id == ^author_id and i.id in ^ids
+         where: i.user_id == ^author_id and i.id in ^ids,
+         select: i.provider
        )
      )}
   end

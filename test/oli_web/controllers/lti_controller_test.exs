@@ -1481,7 +1481,7 @@ defmodule OliWeb.LtiControllerTest do
         )
 
       {:ok, platform} =
-        Oli.Lti.PlatformInstances.update_platform_instance(deployment.platform_instance, %{
+        Oli.TestHelpers.update_platform_instance_fixture(deployment.platform_instance, %{
           client_id: client_id,
           keyset_url: keyset_url
         })

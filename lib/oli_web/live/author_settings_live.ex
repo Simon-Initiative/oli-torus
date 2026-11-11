@@ -325,8 +325,12 @@ defmodule OliWeb.AuthorSettingsLive do
 
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "We couldn't update your password. Please try again.")}
     end
   end
 
@@ -348,8 +352,12 @@ defmodule OliWeb.AuthorSettingsLive do
         {:noreply,
          assign(socket, trigger_submit: true, password_form: password_form, has_password: true)}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "We couldn't update your password. Please try again.")}
     end
   end
 

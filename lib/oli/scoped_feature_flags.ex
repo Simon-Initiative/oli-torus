@@ -30,8 +30,8 @@ defmodule Oli.ScopedFeatureFlags do
 
   ### Usage Examples
 
-      # Enable for a project (authoring context)
-      ScopedFeatureFlags.enable_feature(:mcp_authoring, project)
+      # Enable for a project (authoring context), recording the change in the audit log
+      Oli.ScopedFeatureFlags.Audited.enable_feature(context, :mcp_authoring, project)
       
       # Check if enabled
       if ScopedFeatureFlags.enabled?(:mcp_authoring, project) do

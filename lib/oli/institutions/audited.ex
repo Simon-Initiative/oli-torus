@@ -89,7 +89,7 @@ defmodule Oli.Institutions.Audited do
     Command.run(:approval, fn multi ->
       multi
       |> Multi.run({:approval, :pending}, fn repo, _changes ->
-        Command.lock(repo, PendingRegistration, pending_id)
+        Command.lock(repo, PendingRegistration, pending_id, :delete)
       end)
       |> Multi.merge(fn %{{:approval, :pending} => pending} ->
         institution_step(context, pending, institution)

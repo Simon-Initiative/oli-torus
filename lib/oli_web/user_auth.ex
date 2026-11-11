@@ -27,7 +27,7 @@ defmodule OliWeb.UserAuth do
   def log_in_user(conn, user, params \\ %{}) do
     case Accounts.Audited.issue_session(Context.for_actor(user, source: :ui), user, :password) do
       {:ok, %{token: token}} -> finish_log_in(conn, user, token, params)
-      {:error, _reason} -> log_in_failed(conn)
+      {:error, _reason} -> log_in_failed(conn, user)
     end
   end
 
@@ -113,21 +113,28 @@ defmodule OliWeb.UserAuth do
   @doc """
   Creates a new session, as `create_session/2` does, after the user authenticated with an
   identity provider (`:sso` or `:cognito`). The session is issued and recorded through
-  `Oli.Accounts.Audited.issue_session/4`; if that fails, the user is sent back to the login page.
+  `Oli.Accounts.Audited.issue_session/4`.
+
+  Returns `{:ok, conn}`, or `{:error, :session_not_issued}` with nothing written to the browser
+  session, so the caller shows its own sign-in error.
 
   `create_session/2` stays for sessions issued without an authentication: guest and
   open-and-free enrollment, template previews, and the Playwright test route.
   """
   def create_session(conn, user, auth_method) when auth_method in [:sso, :cognito] do
     case Accounts.Audited.issue_session(Context.for_actor(user, source: :ui), user, auth_method) do
-      {:ok, %{token: token}} -> install_session(conn, user, token)
-      {:error, _reason} -> log_in_failed(conn)
+      {:ok, %{token: token}} -> {:ok, install_session(conn, user, token)}
+      {:error, _reason} -> {:error, :session_not_issued}
     end
   end
 
-  defp log_in_failed(conn) do
+  # Like a wrong password: only the error and the typed email reach the login page, and no
+  # success message the caller added before signing in.
+  defp log_in_failed(conn, user) do
     conn
+    |> clear_flash()
     |> put_flash(:error, "We couldn't sign you in. Please try again.")
+    |> put_flash(:email, String.slice(user.email || "", 0, 160))
     |> redirect(to: ~p"/users/log_in")
     |> halt()
   end

@@ -508,13 +508,16 @@ defmodule OliWeb.Features.FeaturesLive do
       ) do
     research_consent_form_selection = String.to_existing_atom(research_consent_form)
 
-    {:ok, _setting} =
-      Oli.Institutions.Audited.update_system_research_consent(
-        Context.for_actor(socket.assigns.current_author, source: :ui),
-        research_consent_form_selection
-      )
+    case Oli.Institutions.Audited.update_system_research_consent(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           research_consent_form_selection
+         ) do
+      {:ok, _setting} ->
+        {:noreply, assign(socket, research_consent_form_setting: research_consent_form_selection)}
 
-    {:noreply, assign(socket, research_consent_form_setting: research_consent_form_selection)}
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "We couldn't update the research consent form.")}
+    end
   end
 
   # Handle PagedTable events using delegation pattern

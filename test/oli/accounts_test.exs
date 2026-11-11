@@ -27,8 +27,7 @@ defmodule Oli.AccountsTest do
       assert author.system_role_id == Accounts.SystemRole.role_id().author
 
       {:ok, author} =
-        Accounts.insert_or_update_author(%{
-          email: author.email,
+        Oli.TestHelpers.update_account_fixture(author, %{
           system_role_id: Accounts.SystemRole.role_id().system_admin
         })
 
@@ -44,8 +43,7 @@ defmodule Oli.AccountsTest do
       assert Accounts.is_system_admin?(author) == false
 
       {:ok, author} =
-        Accounts.insert_or_update_author(%{
-          email: author.email,
+        Oli.TestHelpers.update_account_fixture(author, %{
           system_role_id: Accounts.SystemRole.role_id().system_admin
         })
 
@@ -56,8 +54,7 @@ defmodule Oli.AccountsTest do
       assert Accounts.is_system_admin?(author) == true
 
       {:ok, author} =
-        Accounts.insert_or_update_author(%{
-          email: author.email,
+        Oli.TestHelpers.update_account_fixture(author, %{
           system_role_id: Accounts.SystemRole.role_id().account_admin
         })
 
@@ -68,8 +65,7 @@ defmodule Oli.AccountsTest do
       assert Accounts.is_system_admin?(author) == false
 
       {:ok, author} =
-        Accounts.insert_or_update_author(%{
-          email: author.email,
+        Oli.TestHelpers.update_account_fixture(author, %{
           system_role_id: Accounts.SystemRole.role_id().content_admin
         })
 
@@ -1202,15 +1198,6 @@ defmodule Oli.AccountsTest do
 
     test "does not return user for expired token", %{token: token} do
       {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      refute Accounts.get_user_by_session_token(token)
-    end
-  end
-
-  describe "delete_user_session_token/1" do
-    test "deletes the token" do
-      user = user_fixture()
-      token = Accounts.generate_user_session_token(user)
-      assert Accounts.delete_user_session_token(token) == :ok
       refute Accounts.get_user_by_session_token(token)
     end
   end

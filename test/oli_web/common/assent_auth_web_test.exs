@@ -79,6 +79,31 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       Swoosh.TestAssertions.assert_no_email_sent()
     end
 
+    test "handle_authorization_success/4 returns an error when the session cannot be issued", %{
+      conn: conn
+    } do
+      config = %{
+        author_test_config()
+        | create_session: fn _conn, _author -> {:error, :session_not_issued} end
+      }
+
+      assert {:error, {:create_session, :session_not_issued}, returned_conn} =
+               AssentAuthWeb.handle_authorization_success(
+                 conn,
+                 "google",
+                 %{
+                   "email" => "no_session@example.edu",
+                   "name" => "No Session",
+                   "sub" => "456",
+                   "email_verified" => true
+                 },
+                 config
+               )
+
+      refute returned_conn.halted
+      refute returned_conn.state == :sent
+    end
+
     test "handle_authorization_success/4 returns email_confirmation_required", %{
       conn: conn
     } do

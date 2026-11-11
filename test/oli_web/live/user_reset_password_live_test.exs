@@ -52,6 +52,27 @@ defmodule OliWeb.UserResetPasswordLiveTest do
   end
 
   describe "Reset Password" do
+    test "shows an error instead of crashing when the account is gone", %{
+      conn: conn,
+      token: token,
+      user: user
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/users/reset_password/#{token}")
+      Oli.Repo.delete!(user)
+
+      html =
+        lv
+        |> form("#reset_password_form",
+          user: %{
+            "password" => "new valid password",
+            "password_confirmation" => "new valid password"
+          }
+        )
+        |> render_submit()
+
+      assert html =~ "We couldn&#39;t reset your password. Please request a new link."
+    end
+
     test "resets password once", %{conn: conn, token: token, user: user} do
       {:ok, lv, _html} = live(conn, ~p"/users/reset_password/#{token}")
 

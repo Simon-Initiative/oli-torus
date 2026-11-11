@@ -89,10 +89,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community(%{field: new_value})
+      iex> create_community(context, %{field: new_value})
       {:ok, %Community{}}
 
-      iex> create_community(%{field: bad_value})
+      iex> create_community(context, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
@@ -115,9 +115,9 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> update_community(community, %{name: new_value})
+      iex> update_community(context, community, %{name: new_value})
       {:ok, %Community{}}
-      iex> update_community(community, %{name: bad_value})
+      iex> update_community(context, community, %{name: bad_value})
       {:error, %Ecto.Changeset{}}
   """
   def update_community(context, %Community{id: id}, attrs),
@@ -128,10 +128,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> delete_community(community)
+      iex> delete_community(context, community)
       {:ok, %Community{}}
 
-      iex> delete_community(community)
+      iex> delete_community(context, community)
       {:error, %Ecto.Changeset{}}
 
   """
@@ -159,10 +159,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> find_or_create_community_user_account(user_id, community_id)
+      iex> find_or_create_community_user_account(context, user_id, community_id)
       {:ok, %CommunityAccount{}}
 
-      iex> find_or_create_community_user_account(bad_user_id, community_id)
+      iex> find_or_create_community_user_account(context, bad_user_id, community_id)
       {:error, %Ecto.Changeset{}}
 
   """
@@ -180,10 +180,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community_account(%{field: new_value})
+      iex> create_community_account(context, %{field: new_value})
       {:ok, %CommunityAccount{}}
 
-      iex> create_community_account(%{field: bad_value})
+      iex> create_community_account(context, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
@@ -195,10 +195,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community_account_from_author_email("example@foo.com", %{field: new_value})
+      iex> create_community_account_from_author_email(context, "example@foo.com", %{field: new_value})
       {:ok, %CommunityAccount{}}
 
-      iex> create_community_account_from_author_email("example@foo.com", %{field: bad_value})
+      iex> create_community_account_from_author_email(context, "example@foo.com", %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
@@ -218,10 +218,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community_account_from_user_email("example@foo.com", %{field: new_value})
+      iex> create_community_account_from_user_email(context, "example@foo.com", %{field: new_value})
       {:ok, %CommunityAccount{}}
 
-      iex> create_community_account_from_user_email("example@foo.com", %{field: bad_value})
+      iex> create_community_account_from_user_email(context, "example@foo.com", %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
@@ -234,10 +234,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community_account_from_user_id(123 %{field: new_value})
+      iex> create_community_account_from_user_id(context, 123, %{field: new_value})
       {:ok, %CommunityAccount{}}
 
-      iex> create_community_account_from_user_id(123, %{field: bad_value})
+      iex> create_community_account_from_user_id(context, 123, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
@@ -260,10 +260,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community_account_from_email("admin", "example@foo.com", %{field: new_value})
+      iex> create_community_account_from_email(context, "admin", "example@foo.com", %{field: new_value})
       {:ok, %CommunityAccount{}}
 
-      iex> create_community_account_from_user_email("member", "example@foo.com", %{field: bad_value})
+      iex> create_community_account_from_user_email(context, "member", "example@foo.com", %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
@@ -283,10 +283,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community_accounts_from_emails("admin", ["foo@foo.com", "bar@bar.com"], %{field: new_value})
+      iex> create_community_accounts_from_emails(context, "admin", ["foo@foo.com", "bar@bar.com"], %{field: new_value})
       {:ok, [%CommunityAccount{}, %CommunityAccount{}]}
 
-      iex> create_community_accounts_from_emails("member", ["example@foo.com"], %{field: bad_value})
+      iex> create_community_accounts_from_emails(context, "member", ["example@foo.com"], %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
@@ -331,10 +331,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> delete_community_account(%{community_id: 1, author_id: 1})
+      iex> delete_community_account(context, %{community_id: 1, author_id: 1})
       {:ok, %CommunityAccount{}}
 
-      iex> delete_community_account(%{community_id: 1, author_id: bad})
+      iex> delete_community_account(context, %{community_id: 1, author_id: bad})
       nil
 
   """
@@ -404,10 +404,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community_visibility(%{field: new_value})
+      iex> create_community_visibility(context, %{field: new_value})
       {:ok, %CommunityVisibility{}}
 
-      iex> create_community_visibility(%{field: bad_value})
+      iex> create_community_visibility(context, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
@@ -431,11 +431,11 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> delete_community_visibility(%{community_id: 1, project_id: 1})
+      iex> delete_community_visibility(context, 1)
       {:ok, %CommunityVisibility{}}
 
-      iex> delete_community_visibility(%{community_id: 1, project_id: bad})
-      nil
+      iex> delete_community_visibility(context, 123)
+      {:error, :not_found}
 
   """
   def delete_community_visibility(context, id) do
@@ -671,10 +671,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community_institution(%{community_id: 1, institution_id: 2})
+      iex> create_community_institution(context, %{community_id: 1, institution_id: 2})
       {:ok, %CommunityInstitution{}}
 
-      iex> create_community_institution(%{community_id: 1, institution_id: bad_institution})
+      iex> create_community_institution(context, %{community_id: 1, institution_id: bad_institution})
       {:error, %Ecto.Changeset{}}
 
   """
@@ -686,10 +686,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community_institution_from_institution_name("My institution", %{community_id: 1})
+      iex> create_community_institution_from_institution_name(context, "My institution", %{community_id: 1})
       {:ok, %CommunityInstitution{}}
 
-      iex> create_community_institution_from_institution_name("Bad institution", %{community_id: 1})
+      iex> create_community_institution_from_institution_name(context, "Bad institution", %{community_id: 1})
       {:error, :institution_not_found}
 
   """
@@ -709,10 +709,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> create_community_institution_from_institution_id(1, %{community_id: 1})
+      iex> create_community_institution_from_institution_id(context, 1, %{community_id: 1})
       {:ok, %CommunityInstitution{}}
 
-      iex> create_community_institution_from_institution_id(0, %{community_id: 1})
+      iex> create_community_institution_from_institution_id(context, 0, %{community_id: 1})
       {:error, :institution_not_found}
 
   """
@@ -730,9 +730,9 @@ defmodule Oli.Groups do
   @doc """
   Creates community institutions from names.
   ## Examples
-      iex> create_community_institutions_from_names(["Institution 1", "Institution 2"], %{community_id: 1})
+      iex> create_community_institutions_from_names(context, ["Institution 1", "Institution 2"], %{community_id: 1})
       {:ok, [%CommunityInstitution{}, %CommunityInstitution{}]}
-      iex> create_community_institutions_from_names(["Institution 1", "Institution 2"], %{community_id: bad_value})
+      iex> create_community_institutions_from_names(context, ["Institution 1", "Institution 2"], %{community_id: bad_value})
       {:error, %Ecto.Changeset{}}
   """
 
@@ -747,9 +747,9 @@ defmodule Oli.Groups do
   @doc """
   Creates community institutions from ids.
   ## Examples
-      iex> create_community_institutions_from_ids([1], %{community_id: 1})
+      iex> create_community_institutions_from_ids(context, [1], %{community_id: 1})
       {:ok, [%CommunityInstitution{}, %CommunityInstitution{}]}
-      iex> create_community_institutions_from_ids([1], %{community_id: bad_value})
+      iex> create_community_institutions_from_ids(context, [1], %{community_id: bad_value})
       {:error, %Ecto.Changeset{}}
   """
 
@@ -781,10 +781,10 @@ defmodule Oli.Groups do
 
   ## Examples
 
-      iex> delete_community_institution(%{community_id: 1, institution_id: 1})
+      iex> delete_community_institution(context, %{community_id: 1, institution_id: 1})
       {:ok, %CommunityInstitution{}}
 
-      iex> delete_community_institution(%{community_id: 1, institution_id: bad})
+      iex> delete_community_institution(context, %{community_id: 1, institution_id: bad})
       {:error, :not_found}
 
   """

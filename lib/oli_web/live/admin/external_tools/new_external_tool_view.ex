@@ -90,6 +90,13 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
            type: flash_type,
            message: flash_message
          })}
+
+      {:error, _reason} ->
+        {:noreply,
+         assign(socket, :custom_flash, %{
+           type: :error,
+           message: "We couldn't register the tool. Please try again."
+         })}
     end
   end
 

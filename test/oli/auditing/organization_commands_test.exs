@@ -273,6 +273,46 @@ defmodule Oli.Auditing.OrganizationCommandsTest do
 
       refute inspect(created) =~ "MARKER-CUSTOM"
     end
+
+    test "a new choice without url or custom clears the previous values" do
+      section = insert(:section)
+      resource = insert(:resource)
+      context = Context.for_actor(insert(:user), source: :ui)
+
+      persist = fn attrs ->
+        Multi.new()
+        |> Oli.Lti.Audited.persist_deep_link_multi(
+          :deep_link,
+          context,
+          Map.merge(%{"section_id" => section.id, "resource_id" => resource.id}, attrs)
+        )
+        |> Repo.transaction()
+      end
+
+      {:ok, _} =
+        persist.(%{
+          "type" => "ltiResourceLink",
+          "url" => "https://tool.example.edu/old",
+          "title" => "Old",
+          "custom" => %{"token" => "old"}
+        })
+
+      {:ok, %{deep_link: link}} = persist.(%{"type" => "ltiResourceLink", "title" => "New"})
+
+      assert link.url == nil
+      assert link.custom == %{}
+      assert link.title == "New"
+
+      assert [_created, replaced] = events(:external_tool_settings_changed)
+
+      assert replaced.changes["url"] == %{
+               "operation" => "set",
+               "before" => "https://tool.example.edu/old",
+               "after" => nil
+             }
+
+      assert replaced.changes["custom"] == Oli.Auditing.Changes.secret_record()
+    end
   end
 
   defp events(event_type),

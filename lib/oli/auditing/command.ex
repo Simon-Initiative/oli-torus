@@ -127,7 +127,7 @@ defmodule Oli.Auditing.Command do
   @spec delete(Multi.t(), Multi.name(), Context.t(), {module(), term()}, spec()) :: Multi.t()
   def delete(%Multi{} = multi, name, %Context{} = context, {schema, id}, spec) do
     multi
-    |> Multi.run({name, :before}, fn repo, _changes -> lock(repo, schema, id) end)
+    |> Multi.run({name, :before}, fn repo, _changes -> lock(repo, schema, id, :delete) end)
     |> Multi.run({name, :deleted}, fn repo, changes ->
       prepare = Map.get(spec, :delete, & &1)
 
@@ -145,12 +145,24 @@ defmodule Oli.Auditing.Command do
 
   @doc """
   Locks and returns the row of `schema` whose primary key is `id`, or `{:error, :not_found}`.
-  """
-  @spec lock(Ecto.Repo.t(), module(), term()) :: {:ok, struct()} | {:error, :not_found}
-  def lock(repo, schema, id) do
-    [primary_key] = schema.__schema__(:primary_key)
 
-    case repo.one(from(r in schema, where: field(r, ^primary_key) == ^id, lock: "FOR UPDATE")) do
+  `:update` (the default) takes `FOR NO KEY UPDATE`: concurrent updates of the row wait, but
+  inserts that only reference it (foreign keys) do not. `:delete` takes `FOR UPDATE`, which also
+  blocks new references while the row is being removed.
+  """
+  @spec lock(Ecto.Repo.t(), module(), term(), :update | :delete) ::
+          {:ok, struct()} | {:error, :not_found}
+  def lock(repo, schema, id, mode \\ :update) do
+    [primary_key] = schema.__schema__(:primary_key)
+    query = from(r in schema, where: field(r, ^primary_key) == ^id)
+
+    locked =
+      case mode do
+        :update -> from(r in query, lock: "FOR NO KEY UPDATE")
+        :delete -> from(r in query, lock: "FOR UPDATE")
+      end
+
+    case repo.one(locked) do
       nil -> {:error, :not_found}
       record -> {:ok, record}
     end
@@ -184,7 +196,9 @@ defmodule Oli.Auditing.Command do
     error in Ecto.ConstraintError ->
       case error.type do
         :foreign_key ->
-          %schema{id: id} = row(record_or_changeset)
+          %schema{} = row = row(record_or_changeset)
+          [primary_key] = schema.__schema__(:primary_key)
+          id = Map.fetch!(row, primary_key)
 
           Logger.warning(
             "Audited delete failed schema=#{inspect(schema)} id=#{id} reason=referenced"

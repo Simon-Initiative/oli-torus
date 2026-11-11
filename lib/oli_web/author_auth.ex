@@ -29,7 +29,7 @@ defmodule OliWeb.AuthorAuth do
            :password
          ) do
       {:ok, %{token: token}} -> finish_log_in(conn, author, token, params)
-      {:error, _reason} -> log_in_failed(conn)
+      {:error, _reason} -> log_in_failed(conn, author, params)
     end
   end
 
@@ -64,7 +64,10 @@ defmodule OliWeb.AuthorAuth do
   @doc """
   Creates a new session for the author after it authenticated with an identity provider
   (`:sso` or `:cognito`). The session is issued and recorded through
-  `Oli.Accounts.Audited.issue_session/4`; if that fails, the author is sent back to the login page.
+  `Oli.Accounts.Audited.issue_session/4`.
+
+  Returns `{:ok, conn}`, or `{:error, :session_not_issued}` with nothing written to the browser
+  session, so the caller shows its own sign-in error.
 
   It renews the session ID and clears the whole session
   to avoid fixation attacks. See the renew_session
@@ -81,15 +84,34 @@ defmodule OliWeb.AuthorAuth do
            author,
            auth_method
          ) do
-      {:ok, %{token: token}} -> install_session(conn, author, token)
-      {:error, _reason} -> log_in_failed(conn)
+      {:ok, %{token: token}} -> {:ok, install_session(conn, author, token)}
+      {:error, _reason} -> {:error, :session_not_issued}
     end
   end
 
-  defp log_in_failed(conn) do
+  # Like a wrong password: only the error and the typed email reach the login page, and a login
+  # started from the link-account page goes back there without leaving the pending link behind.
+  defp log_in_failed(conn, author, params) do
+    {conn, redirect_to} =
+      case get_session(conn, :link_account_user_id) do
+        nil ->
+          {conn, ~p"/authors/log_in"}
+
+        _user_id ->
+          redirect_to =
+            case redirect_path(params["request_path"]) do
+              nil -> ~p"/users/link_account"
+              path -> ~p"/users/link_account?#{%{request_path: path}}"
+            end
+
+          {delete_session(conn, :link_account_user_id), redirect_to}
+      end
+
     conn
+    |> clear_flash()
     |> put_flash(:error, "We couldn't sign you in. Please try again.")
-    |> redirect(to: ~p"/authors/log_in")
+    |> put_flash(:email, String.slice(author.email || "", 0, 160))
+    |> redirect(to: redirect_to)
     |> halt()
   end
 

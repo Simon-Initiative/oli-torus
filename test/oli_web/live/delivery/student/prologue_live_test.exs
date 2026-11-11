@@ -559,7 +559,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         conn |> recycle() |> init_test_session(%{user_token: token, current_user_id: user.id})
 
       {:ok, view, _} = live(conn, Utils.prologue_live_path(section.slug, page.slug))
-      Oli.Accounts.delete_user_session_token(token)
+      Oli.TestHelpers.delete_user_session_token_fixture(token)
 
       assert {:error, {:redirect, %{to: "/secure-assessment/restricted"}}} =
                render_hook(view, "begin_attempt", %{})

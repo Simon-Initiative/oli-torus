@@ -330,15 +330,15 @@ defmodule OliWeb.Users.UsersDetailView do
 
     context = Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    {:ok, encoded_token} =
-      Accounts.Audited.request_recovery(context, {:user, user}, :admin_reset_link)
+    case Accounts.Audited.request_recovery(context, {:user, user}, :admin_reset_link) do
+      {:ok, encoded_token} ->
+        password_reset_link = url(~p"/users/reset_password/#{encoded_token}")
+        {:noreply, assign(socket, password_reset_link: password_reset_link)}
 
-    password_reset_link =
-      url(~p"/users/reset_password/#{encoded_token}")
-
-    socket = assign(socket, password_reset_link: password_reset_link)
-
-    {:noreply, socket}
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "We couldn't generate the reset link. Please try again.")}
+    end
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do

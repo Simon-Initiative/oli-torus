@@ -12,19 +12,24 @@ defmodule OliWeb.CognitoController do
   alias Oli.Delivery.Sections.Section
   alias OliWeb.{UserAuth, AuthorAuth}
 
+  @sign_in_failed "Unable to sign in. Please try again."
+
   def index(
         conn,
         %{"id_token" => _jwt, "error_url" => _error_url, "community_id" => community_id} = params
       ) do
-    case Accounts.setup_sso_user(conn.assigns.claims, community_id) do
-      {:ok, user, author} ->
-        conn
-        |> UserAuth.create_session(user, :cognito)
-        |> AuthorAuth.create_session(author, :cognito)
-        |> redirect(to: ~p"/workspaces/instructor")
-
+    with {:ok, user, author} <- Accounts.setup_sso_user(conn.assigns.claims, community_id),
+         {:ok, conn} <- create_sessions(conn, user, author) do
+      redirect(conn, to: ~p"/workspaces/instructor")
+    else
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
+
+      {:error, :session_not_issued} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
+
+      {:error, _reason} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
     end
   end
 
@@ -37,17 +42,21 @@ defmodule OliWeb.CognitoController do
         %{"id_token" => _jwt, "error_url" => _error_url, "community_id" => community_id} = params
       ) do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
-         {:ok, user, author} <- Accounts.setup_sso_user(conn.assigns.claims, community_id) do
-      conn
-      |> UserAuth.create_session(user, :cognito)
-      |> AuthorAuth.create_session(author, :cognito)
-      |> create_or_prompt(user, anchor)
+         {:ok, user, author} <- Accounts.setup_sso_user(conn.assigns.claims, community_id),
+         {:ok, conn} <- create_sessions(conn, user, author) do
+      create_or_prompt(conn, user, anchor)
     else
       nil ->
         redirect_with_error(conn, get_error_url(params), "Invalid template or project")
 
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
+
+      {:error, :session_not_issued} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
+
+      {:error, _reason} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
     end
   end
 
@@ -64,16 +73,21 @@ defmodule OliWeb.CognitoController do
         } = params
       ) do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
-         {:ok, author} <- Accounts.setup_sso_author(conn.assigns.claims, community_id) do
-      conn
-      |> AuthorAuth.create_session(author, :cognito)
-      |> clone_or_prompt(author, anchor, get_error_url(params))
+         {:ok, author} <- Accounts.setup_sso_author(conn.assigns.claims, community_id),
+         {:ok, conn} <- AuthorAuth.create_session(conn, author, :cognito) do
+      clone_or_prompt(conn, author, anchor, get_error_url(params))
     else
       nil ->
         redirect_with_error(conn, get_error_url(params), "Invalid template or project")
 
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
+
+      {:error, :session_not_issued} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
+
+      {:error, _reason} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
     end
   end
 
@@ -191,6 +205,14 @@ defmodule OliWeb.CognitoController do
 
       {:error, error} ->
         redirect_with_error(conn, error_url, snake_case_to_friendly(error))
+    end
+  end
+
+  # Issues the user session and then the author session; the author session is not issued when
+  # the user session fails.
+  defp create_sessions(conn, user, author) do
+    with {:ok, conn} <- UserAuth.create_session(conn, user, :cognito) do
+      AuthorAuth.create_session(conn, author, :cognito)
     end
   end
 end

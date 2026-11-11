@@ -338,7 +338,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
           {:error, reason} ->
             socket =
-              put_flash(socket, :error, "Couldn't delete service config: #{inspect(reason)}")
+              put_flash(socket, :error, delete_error_message(reason))
 
             {:noreply,
              socket
@@ -381,6 +381,9 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           {:error, %Ecto.Changeset{} = changeset} ->
             socket = put_flash(socket, :error, "Couldn't update service config")
             {:noreply, assign_form(socket, changeset)}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, "Couldn't update service config")}
         end
     end
   end
@@ -508,4 +511,9 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
   defp format_rate(rate) when is_float(rate), do: "#{Float.round(rate * 100, 1)}%"
   defp format_rate(_), do: "0%"
+
+  defp delete_error_message(:delete_failed),
+    do: "This service config is still in use and can't be deleted."
+
+  defp delete_error_message(_reason), do: "Couldn't delete service config."
 end

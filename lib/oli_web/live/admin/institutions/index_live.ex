@@ -609,17 +609,38 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         &(&1.id == registration_id)
       )
 
-    {:ok, _pending_registration} =
-      Institutions.Audited.decline_pending_registration(
-        Context.for_actor(socket.assigns.current_author, source: :ui),
-        pending_registration.id
-      )
+    case Institutions.Audited.decline_pending_registration(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           pending_registration.id
+         ) do
+      {:ok, _pending_registration} ->
+        notify_declined(socket.assigns[:current_author], pending_registration)
 
-    # send a Slack notification regarding the new registration approval
-    approving_admin = socket.assigns[:current_author]
+        socket
+        |> remove_pending_registration(pending_registration)
+        |> put_flash(:info, [
+          "Registration for ",
+          content_tag(:b, pending_registration.name),
+          " declined"
+        ])
+        |> hide_decline_modal()
 
+      {:error, :not_found} ->
+        socket
+        |> remove_pending_registration(pending_registration)
+        |> put_flash(:info, "This registration request was already handled.")
+        |> hide_decline_modal()
+
+      {:error, _reason} ->
+        socket
+        |> put_flash(:error, "We couldn't decline this registration request. Please try again.")
+        |> hide_decline_modal()
+    end
+  end
+
+  defp notify_declined(admin, pending_registration) do
     Slack.send(%{
-      "username" => approving_admin.name,
+      "username" => admin.name,
       "icon_emoji" => ":robot_face:",
       "blocks" => [
         %{
@@ -631,19 +652,16 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         }
       ]
     })
+  end
 
-    socket =
-      socket
-      |> assign(
-        pending_registrations:
-          Enum.filter(socket.assigns.pending_registrations, &(&1.id != pending_registration.id))
-      )
-      |> put_flash(:info, [
-        "Registration for ",
-        content_tag(:b, pending_registration.name),
-        " declined"
-      ])
+  defp remove_pending_registration(socket, pending_registration) do
+    assign(socket,
+      pending_registrations:
+        Enum.filter(socket.assigns.pending_registrations, &(&1.id != pending_registration.id))
+    )
+  end
 
+  defp hide_decline_modal(socket) do
     {:noreply,
      push_event(socket, "js-exec", %{
        to: "#decline-registration-modal-trigger",

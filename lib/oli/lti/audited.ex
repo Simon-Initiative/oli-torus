@@ -113,7 +113,7 @@ defmodule Oli.Lti.Audited do
   Updates the tool deployment whose `deployment_id` is `id` (its status or whether deep linking
   is enabled) and records the change for its tool.
   """
-  @spec update_external_tool_deployment(Context.t(), pos_integer(), map()) ::
+  @spec update_external_tool_deployment(Context.t(), Ecto.UUID.t(), map()) ::
           {:ok, %LtiExternalToolActivityDeployment{}} | {:error, term()}
   def update_external_tool_deployment(context, id, attrs) do
     Command.run(:deployment, fn multi ->
@@ -132,7 +132,7 @@ defmodule Oli.Lti.Audited do
   Soft-deletes the tool deployment whose `deployment_id` is `id` and its platform instance,
   recording the status change of each.
   """
-  @spec delete_external_tool(Context.t(), pos_integer()) :: {:ok, map()} | {:error, term()}
+  @spec delete_external_tool(Context.t(), Ecto.UUID.t()) :: {:ok, map()} | {:error, term()}
   def delete_external_tool(context, id) do
     Command.run(:tool, fn multi ->
       multi
@@ -167,7 +167,8 @@ defmodule Oli.Lti.Audited do
 
   @doc """
   Adds to `multi` the save of the deep-link choice for one section activity (insert, or
-  replace the existing one for the same section and resource), with the instructor who chose it
+  replace the existing one for the same section and resource, resetting the fields the new
+  choice does not include), with the instructor who chose it
   as `context`. Records the change with the section as scope; an identical choice writes no
   event.
   """
@@ -198,11 +199,25 @@ defmodule Oli.Lti.Audited do
             name,
             context,
             {LtiSectionResourceDeepLink, id},
-            &LtiSectionResourceDeepLink.changeset(&1, attrs),
+            &LtiSectionResourceDeepLink.changeset(&1, replacement(attrs)),
             deep_link()
           )
       end
     end)
+  end
+
+  # A new choice replaces the previous one entirely: fields the tool did not return go back to
+  # their defaults instead of keeping the old item's values (for example its custom parameters).
+  defp replacement(attrs) do
+    defaults = %{type: :ltiResourceLink, url: nil, title: nil, text: nil, custom: %{}}
+
+    case Enum.all?(Map.keys(attrs), &is_binary/1) do
+      true ->
+        Map.merge(Map.new(defaults, fn {key, value} -> {Atom.to_string(key), value} end), attrs)
+
+      false ->
+        Map.merge(defaults, attrs)
+    end
   end
 
   defp tool do

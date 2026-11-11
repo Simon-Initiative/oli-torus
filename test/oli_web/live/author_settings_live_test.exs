@@ -87,6 +87,22 @@ defmodule OliWeb.AuthorSettingsLiveTest do
       %{conn: log_in_author(conn, author), author: author, password: password}
     end
 
+    test "creating a password on an account that already has one shows an error", %{
+      conn: conn
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/authors/settings")
+
+      html =
+        render_hook(lv, "update_password", %{
+          "author" => %{
+            "password" => "another valid password",
+            "password_confirmation" => "another valid password"
+          }
+        })
+
+      assert html =~ "We couldn&#39;t update your password. Please try again."
+    end
+
     test "updates the author password", %{conn: conn, author: author, password: password} do
       new_password = valid_author_password()
 

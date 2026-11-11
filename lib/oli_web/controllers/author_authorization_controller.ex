@@ -273,10 +273,10 @@ defmodule OliWeb.AuthorAuthorizationController do
                  user_identity_params
                ),
              {:ok, author} <-
-               accept_invitation_via_sso(author, author_project, sso_attrs) do
+               accept_invitation_via_sso(author, author_project, sso_attrs),
+             {:ok, conn} <- OliWeb.AuthorAuth.create_session(conn, author, :sso) do
           # Successfully linked SSO and accepted invitation
 
-          conn = OliWeb.AuthorAuth.create_session(conn, author, :sso)
           conn = assign(conn, :current_author, author)
           conn = OliWeb.AuthorAuth.maybe_link_user_author_account(conn, author)
           # Clear all invitation session data to prevent interference with future logins
@@ -284,6 +284,11 @@ defmodule OliWeb.AuthorAuthorizationController do
 
           redirect(conn, to: redirect_to)
         else
+          {:error, :session_not_issued} ->
+            conn
+            |> put_flash(:error, "We couldn't sign you in. Please try again.")
+            |> redirect(to: redirect_to)
+
           {:error, changeset} ->
             Logger.error(
               "Failed to link SSO identity or accept invitation for invited author: #{inspect(author.email)}, error: #{inspect(changeset)}"

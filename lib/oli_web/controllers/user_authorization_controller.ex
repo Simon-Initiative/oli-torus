@@ -283,16 +283,22 @@ defmodule OliWeb.UserAuthorizationController do
                  user,
                  user_identity_params
                ),
-             {:ok, user} <- Accounts.accept_user_invitation_via_sso(user, enrollment, sso_attrs) do
+             {:ok, user} <- Accounts.accept_user_invitation_via_sso(user, enrollment, sso_attrs),
+             {:ok, conn} <- OliWeb.UserAuth.create_session(conn, user, :sso) do
           # Successfully linked SSO and accepted invitation
 
-          conn = OliWeb.UserAuth.create_session(conn, user, :sso)
           conn = assign(conn, :current_user, user)
 
           conn
           |> clear_enrollment_session_data()
           |> redirect(to: redirect_to)
         else
+          {:error, :session_not_issued} ->
+            conn
+            |> clear_enrollment_session_data()
+            |> put_flash(:error, "We couldn't sign you in. Please try again.")
+            |> redirect(to: redirect_to)
+
           {:error, changeset} ->
             Logger.error(
               "Failed to link SSO identity or accept invitation for invited user: #{inspect(user.email)}, error: #{inspect(changeset)}"

@@ -52,58 +52,6 @@ defmodule Oli.Lti.PlatformInstances do
   end
 
   @doc """
-  Creates a platform_instance.
-
-  ## Examples
-
-      iex> create_platform_instance(%{field: value})
-      {:ok, %PlatformInstance{}}
-
-      iex> create_platform_instance(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_platform_instance(attrs \\ %{}) do
-    %PlatformInstance{}
-    |> PlatformInstance.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a platform_instance.
-
-  ## Examples
-
-      iex> update_platform_instance(platform_instance, %{field: new_value})
-      {:ok, %PlatformInstance{}}
-
-      iex> update_platform_instance(platform_instance, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_platform_instance(%PlatformInstance{} = platform_instance, attrs) do
-    platform_instance
-    |> PlatformInstance.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a platform_instance.
-
-  ## Examples
-
-      iex> delete_platform_instance(platform_instance)
-      {:ok, %PlatformInstance{}}
-
-      iex> delete_platform_instance(platform_instance)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_platform_instance(%PlatformInstance{} = platform_instance) do
-    Repo.delete(platform_instance)
-  end
-
-  @doc """
   Returns an `%Ecto.Changeset{}` for tracking platform_instance changes.
 
   ## Examples

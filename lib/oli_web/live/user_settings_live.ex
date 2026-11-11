@@ -530,8 +530,8 @@ defmodule OliWeb.UserSettingsLive do
           {:ok, user} ->
             {:ok, user}
 
-          {:error, changeset} ->
-            {:error, :password_update, changeset}
+          {:error, reason} ->
+            {:error, :password_update, password_error(user, password_params, reason)}
         end
 
       # Case 3: User doesn't have password yet - create new one
@@ -544,10 +544,20 @@ defmodule OliWeb.UserSettingsLive do
           {:ok, user} ->
             {:ok, user}
 
-          {:error, changeset} ->
-            {:error, :password_update, changeset}
+          {:error, reason} ->
+            {:error, :password_update, password_error(user, password_params, reason)}
         end
     end
+  end
+
+  # Validation errors come back as changesets; any other failure (for example a password that
+  # was already created from another tab) is shown on the form instead of crashing the view.
+  defp password_error(_user, _params, %Ecto.Changeset{} = changeset), do: changeset
+
+  defp password_error(user, params, _reason) do
+    user
+    |> Accounts.change_user_password(params)
+    |> Ecto.Changeset.add_error(:password, "couldn't be updated. Please try again.")
   end
 
   defp execute_all_updates(socket, user, changes) do

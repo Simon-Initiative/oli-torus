@@ -216,36 +216,41 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
   end
 
   def handle_event("change", %{"id" => "text_" <> id, "value" => namespace}, socket) do
-    Oli.Interop.Audited.update_key_settings(
-      Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
-      String.to_integer(id),
-      %{
-        registration_namespace: namespace
-      }
-    )
-
-    {:noreply, assign(socket, keys: all_keys_sorted())}
+    socket
+    |> context()
+    |> Oli.Interop.Audited.update_key_settings(String.to_integer(id), %{
+      registration_namespace: namespace
+    })
+    |> after_key_write(socket)
   end
 
   def handle_event("toggle", %{"id" => id, "action" => action}, socket) do
-    Oli.Interop.Audited.set_key_status(
-      Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
-      String.to_integer(id),
-      to_state(action)
-    )
-
-    {:noreply, assign(socket, keys: all_keys_sorted())}
+    socket
+    |> context()
+    |> Oli.Interop.Audited.set_key_status(String.to_integer(id), to_state(action))
+    |> after_key_write(socket)
   end
 
   def handle_event("update", %{"field" => field, "id" => id, "action" => action}, socket) do
-    attrs = %{field => action == "true"}
+    socket
+    |> context()
+    |> Oli.Interop.Audited.update_key_settings(String.to_integer(id), %{
+      field => action == "true"
+    })
+    |> after_key_write(socket)
+  end
 
-    Oli.Interop.Audited.update_key_settings(
-      Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
-      String.to_integer(id),
-      attrs
-    )
+  defp context(socket),
+    do: Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    {:noreply, assign(socket, keys: all_keys_sorted())}
+  # Reloads the keys either way, so a failed toggle snaps back with a message.
+  defp after_key_write({:ok, _key}, socket),
+    do: {:noreply, assign(socket, keys: all_keys_sorted())}
+
+  defp after_key_write({:error, _reason}, socket) do
+    {:noreply,
+     socket
+     |> put_flash(:error, "We couldn't update the API key.")
+     |> assign(keys: all_keys_sorted())}
   end
 end

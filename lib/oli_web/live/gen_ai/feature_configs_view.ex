@@ -347,6 +347,9 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
           {:error, %Ecto.Changeset{} = changeset} ->
             socket = put_flash(socket, :error, "Couldn't update feature config")
             {:noreply, assign(socket, changeset: changeset)}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, "Couldn't update feature config")}
         end
     end
   end
@@ -411,7 +414,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
 
           {:error, reason} ->
             socket =
-              put_flash(socket, :error, "Couldn't delete feature config: #{inspect(reason)}")
+              put_flash(socket, :error, delete_error_message(reason))
 
             {:noreply,
              assign(socket, changeset: FeatureConfig.changeset(socket.assigns.selected, %{}))}
@@ -531,4 +534,9 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
     |> String.split("_")
     |> Enum.map_join(" ", &String.capitalize/1)
   end
+
+  defp delete_error_message(:delete_failed),
+    do: "This feature config is still in use and can't be deleted."
+
+  defp delete_error_message(_reason), do: "Couldn't delete feature config."
 end
