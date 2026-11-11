@@ -23,7 +23,7 @@ defmodule OliWeb.Common.CardListing do
     <div class="select-sources card-deck flex flex-wrap items-start gap-[22px]">
       <%= for item <- @model.rows do %>
         <%= if @preview_mode do %>
-          <article class="course-card-link group mb-2" data-preview-mode="true">
+          <article class="course-card-link group mb-2 w-[310px]" data-preview-mode="true">
             <.card_listing_card item={item} ctx={@ctx} preview_mode={true} />
           </article>
         <% else %>
@@ -61,7 +61,7 @@ defmodule OliWeb.Common.CardListing do
         do: "!border-none !bg-delivery-primary-100 shadow-inner",
         else: "border-Border-border-default bg-Specially-Tokens-Background-course-cards"
       ),
-      if(@preview_mode, do: "!aspect-auto !h-[23em] !w-[16.8em] select-none")
+      if(@preview_mode, do: "select-none")
     ]}>
       <div class="relative h-1/3 w-full shrink-0 overflow-hidden">
         <img src={cover_image(@item)} class="h-full w-full object-cover" alt="" />

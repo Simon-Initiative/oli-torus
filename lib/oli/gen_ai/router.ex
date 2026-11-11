@@ -1,348 +1,191 @@
 defmodule Oli.GenAI.Router do
-  @moduledoc """
-  Computes a RoutingPlan for GenAI requests based on ServiceConfig policy,
-  live counters, and breaker state.
-  """
-
-  require Logger
-
-  alias Oli.GenAI.AdmissionControl
-  alias Oli.GenAI.Breaker
-  alias Oli.GenAI.HackneyPool
-  alias Oli.GenAI.RoutingPlan
-  alias Oli.GenAI.Telemetry
+  @moduledoc "Best-effort tier selection using actual transport occupancy and independent Provider health."
+  alias Oli.GenAI.{PoolManager, PrimaryOnly, RoutingPlan, Runtime, Telemetry, TransportPool}
   alias Oli.GenAI.Completions.ServiceConfig
 
-  @doc """
-  Returns a RoutingPlan or a rejection reason for a request.
-
-  The decision uses ETS counters and breaker snapshots and is intended to be fast.
-  """
-  def route(request_ctx, %ServiceConfig{} = service_config) do
-    start_ms = System.monotonic_time(:millisecond)
-    request_type = Map.get(request_ctx, :request_type, :generate)
-
-    primary = normalize_model(service_config.primary_model)
-    kill_switch_enabled = primary_only_kill_switch_enabled?()
-
-    secondary =
-      normalize_secondary(service_config.secondary_model, primary, service_config.backup_model)
-
-    backup = normalize_model(service_config.backup_model)
-
-    primary_snapshot = breaker_snapshot(primary, kill_switch_enabled)
-
-    secondary_snapshot =
-      if secondary, do: breaker_snapshot(secondary, kill_switch_enabled), else: %{state: :closed}
-
-    backup_snapshot =
-      if backup, do: breaker_snapshot(backup, kill_switch_enabled), else: %{state: :closed}
-
-    primary_open = primary && breaker_open?(primary, primary_snapshot, kill_switch_enabled)
-
-    secondary_open =
-      secondary && breaker_open?(secondary, secondary_snapshot, kill_switch_enabled)
-
-    backup_open = backup && breaker_open?(backup, backup_snapshot, kill_switch_enabled)
+  @doc "Routes primary-only when overridden; otherwise observes occupancy without reserving capacity."
+  def route(ctx, %ServiceConfig{} = supplied) do
+    started = System.monotonic_time(:millisecond)
 
     result =
-      cond do
-        kill_switch_enabled ->
-          attempt_primary_only(primary, request_type)
-
-        (primary && primary_open) and (is_nil(secondary) or secondary_open) ->
-          attempt_backup(
-            backup,
-            backup_open,
-            request_type,
-            :backup_outage
-          )
-
-        primary && primary_open ->
-          attempt_secondary(
-            secondary,
-            secondary_open,
-            request_type,
-            :primary_breaker_open
-          )
-
-        true ->
-          case attempt_primary(primary, request_type) do
-            {:ok, _plan} = ok ->
-              ok
-
-            {:error, :over_capacity} ->
-              case secondary do
-                nil ->
-                  attempt_backup(
-                    backup,
-                    backup_open,
-                    request_type,
-                    :primary_over_capacity
-                  )
-
-                _ ->
-                  attempt_secondary(
-                    secondary,
-                    secondary_open,
-                    request_type,
-                    :primary_over_capacity
-                  )
-              end
-
-            {:error, reason} ->
-              {:error, reason}
-          end
+      case PrimaryOnly.enabled?() do
+        true -> PrimaryOnly.route(supplied.id, Map.get(ctx, :request_type, :generate))
+        false -> dynamic_route(ctx, supplied.id)
       end
 
-    duration_ms = System.monotonic_time(:millisecond) - start_ms
-
-    emit_telemetry(
-      result,
-      duration_ms,
-      request_type,
-      service_config
-    )
-
-    log_decision(result, request_type, service_config)
-
+    emit(result, supplied.id, ctx, started)
     result
   end
 
-  defp breaker_snapshot(_model, true), do: %{state: :closed}
-  defp breaker_snapshot(%{id: id}, false), do: Breaker.snapshot(id)
-  defp breaker_snapshot(nil, _kill_switch_enabled), do: %{state: :closed}
+  defp dynamic_route(ctx, id) do
+    with {:ok, inputs} <- inputs(ctx, id),
+         :ok <- main_configuration(inputs) do
+      provider = inputs.providers[inputs.config.primary_model.provider_id]
 
-  defp breaker_open?(_model, _snapshot, true), do: false
-  defp breaker_open?(model, _snapshot, false) when is_nil(model), do: false
+      case provider do
+        %{enabled: false} ->
+          backup_candidate(ctx, inputs, provider.id)
 
-  defp breaker_open?(model, snapshot, false) do
-    if breaker_enabled_for_model?(model) do
-      snapshot.state == :open
-    else
-      false
+        %{adapter: :null} ->
+          {:ok,
+           %Oli.GenAI.RoutingPlan{
+             selected_model: inputs.config.primary_model,
+             provider: provider,
+             tier: :primary,
+             service_config_id: id,
+             request_type: Map.get(ctx, :request_type, :generate),
+             reason: :local_adapter
+           }}
+
+        %{adapter: :open_ai} ->
+          case eligibility(inputs, provider.id) do
+            :ok -> main(ctx, inputs)
+            :unavailable -> backup_candidate(ctx, inputs, provider.id)
+            :ineligible -> {:error, :provider_ineligible}
+          end
+
+        _ ->
+          {:error, :unsupported_adapter}
+      end
     end
   end
 
-  defp build_plan(request_type, selected, tier, pool_name, reason, admission) do
-    %RoutingPlan{
-      selected_model: selected,
-      tier: tier,
-      fallback_models: [],
-      reason: reason,
-      admission: admission,
-      request_type: request_type,
-      pool_name: pool_name
-    }
+  @doc "Selects a distinct eligible backup for one pre-output failure unless primary-only is enabled."
+  def backup(ctx, config, excluded_provider_id) do
+    started = System.monotonic_time(:millisecond)
+
+    result =
+      case PrimaryOnly.enabled?() do
+        true ->
+          {:error, :primary_only}
+
+        false ->
+          with {:ok, inputs} <- inputs(ctx, config.id),
+               do: backup_candidate(ctx, inputs, excluded_provider_id)
+      end
+
+    emit(result, config.id, ctx, started)
+    result
   end
 
-  defp build_plan(request_type, selected, tier, pool_name, reason) do
-    build_plan(request_type, selected, tier, pool_name, reason, :admit)
+  defp inputs(ctx, id) do
+    Runtime.routing_configuration(id, Map.get(ctx, :runtime, Runtime))
+  catch
+    :exit, _ -> {:error, :configuration_unavailable}
   end
 
-  defp attempt_primary_only(nil, _request_type), do: {:error, :primary_unavailable}
+  defp main_configuration(%{config: config, providers: providers}) do
+    p = config.primary_model
+    s = config.secondary_model
 
-  defp attempt_primary_only(primary, request_type) do
-    {:ok,
-     build_plan(
-       request_type,
-       primary,
-       :primary,
-       HackneyPool.pool_name(primary),
-       :kill_switch_primary_only,
-       :bypass
-     )}
-  end
+    cond do
+      not is_struct(p, Oli.GenAI.Completions.RegisteredModel) or
+          not Map.has_key?(providers, p.provider_id) ->
+        {:error, :invalid_configuration}
 
-  defp breaker_enabled_for_model?(model) do
-    threshold_enabled?(model.routing_breaker_error_rate_threshold) or
-      threshold_enabled?(model.routing_breaker_429_threshold) or
-      threshold_enabled?(model.routing_breaker_latency_p95_ms)
-  end
+      is_struct(s, Ecto.Association.NotLoaded) ->
+        {:error, :invalid_configuration}
 
-  defp threshold_enabled?(threshold) when is_number(threshold), do: threshold > 0
-  defp threshold_enabled?(_), do: false
+      s != nil and (s.id == p.id or s.provider_id != p.provider_id) ->
+        {:error, :invalid_configuration}
 
-  defp primary_only_kill_switch_enabled? do
-    System.get_env("GENAI_ROUTING_PRIMARY_ONLY", "false")
-    |> String.trim()
-    |> String.downcase()
-    |> Kernel.in(["1", "true", "yes", "on"])
-  end
-
-  defp model_limit_enabled?(model) do
-    breaker_enabled_for_model?(model)
-  end
-
-  defp admit_model_if_enabled(model) do
-    if model_limit_enabled?(model) do
-      admit_model(model)
-    else
-      :ok
+      true ->
+        :ok
     end
   end
 
-  defp attempt_primary(primary, request_type) do
-    if primary do
-      attempt_candidate(primary, request_type, :primary, :primary_normal)
-    else
-      {:error, :primary_unavailable}
+  defp eligibility(inputs, id) do
+    case inputs.health[id] do
+      %{eligible: true} -> :ok
+      %{administrative_enabled: false} -> :unavailable
+      %{observed: :unavailable} -> :unavailable
+      _ -> :ineligible
     end
   end
 
-  defp attempt_secondary(nil, _secondary_open, _request_type, _reason) do
-    {:error, :secondary_unavailable}
-  end
-
-  defp attempt_secondary(_secondary, true, _request_type, _reason) do
-    {:error, :secondary_breaker_open}
-  end
-
-  defp attempt_secondary(secondary, false, request_type, reason) do
-    case attempt_candidate(secondary, request_type, :secondary, reason) do
-      {:ok, _plan} = ok -> ok
-      {:error, :over_capacity} -> {:error, :secondary_over_capacity}
-      {:error, reason} -> {:error, reason}
+  defp main(ctx, inputs) do
+    case candidate(ctx, inputs, :primary, :primary_normal) do
+      {:error, :busy} -> candidate(ctx, inputs, :secondary, :primary_full)
+      result -> result
     end
   end
 
-  defp attempt_backup(nil, _backup_open, _request_type, :primary_over_capacity) do
-    {:error, :over_capacity}
-  end
-
-  defp attempt_backup(nil, _backup_open, _request_type, _reason) do
-    {:error, :all_breakers_open}
-  end
-
-  defp attempt_backup(_backup, true, _request_type, _reason) do
-    {:error, :backup_breaker_open}
-  end
-
-  defp attempt_backup(backup, false, request_type, reason) do
-    attempt_candidate(backup, request_type, :backup, reason)
-  end
-
-  defp attempt_candidate(model, request_type, tier, reason) do
-    pool_name = HackneyPool.pool_name(model)
-    pool_limit = HackneyPool.max_connections(model.pool_class || :slow)
-
-    case AdmissionControl.try_admit_pool(pool_name, pool_limit) do
-      :ok ->
-        case admit_model_if_enabled(model) do
-          :ok ->
-            {:ok, build_plan(request_type, model, tier, pool_name, reason)}
-
-          {:error, :over_capacity} ->
-            AdmissionControl.release_pool(pool_name)
-            {:error, :over_capacity}
-
-          {:error, reason} ->
-            AdmissionControl.release_pool(pool_name)
-            {:error, reason}
+  defp backup_candidate(ctx, inputs, excluded) do
+    case inputs.config.backup_model do
+      %{provider_id: id} when not is_nil(id) and id != excluded ->
+        case eligibility(inputs, id) do
+          :ok -> candidate(ctx, inputs, :backup, :provider_unavailable)
+          _ -> {:error, :backup_unavailable}
         end
 
-      {:error, :over_capacity} ->
-        {:error, :over_capacity}
-
-      {:error, reason} ->
-        {:error, reason}
+      _ ->
+        {:error, :backup_unavailable}
     end
   end
 
-  defp admit_model(%{id: model_id, max_concurrent: nil}) do
-    AdmissionControl.increment_model(model_id)
-    :ok
-  end
+  defp candidate(ctx, inputs, tier, reason) do
+    model = Map.fetch!(inputs.config, field(tier))
+    key = {inputs.config.id, tier}
 
-  defp admit_model(%{id: model_id, max_concurrent: max_concurrent})
-       when is_integer(max_concurrent) and max_concurrent >= 0 do
-    AdmissionControl.try_admit_model(model_id, max_concurrent)
-  end
+    with %Oli.GenAI.Completions.RegisteredModel{} <- model,
+         %{adapter: :open_ai, api_key: key_value} = provider
+         when is_binary(key_value) and byte_size(key_value) > 0 <-
+           inputs.providers[model.provider_id],
+         {:ok, pool} <- PoolManager.lookup(inputs.pool_manager, key),
+         %{current: %{checked_out: occupied, capacity: capacity, name: name, queue_depth: queue}}
+         when is_integer(occupied) and is_integer(capacity) <- TransportPool.snapshot(pool) do
+      :telemetry.execute(
+        [:oli, :genai, :pool, :occupancy],
+        %{checked_out: occupied, capacity: capacity, queue_depth: queue},
+        %{service_config_id: inputs.config.id, tier: tier}
+      )
 
-  defp admit_model(_), do: {:error, :invalid_limit}
+      case occupied < capacity do
+        true ->
+          {:ok,
+           %RoutingPlan{
+             selected_model: model,
+             provider: provider,
+             pool: pool,
+             pool_name: name,
+             service_config_id: inputs.config.id,
+             tier: tier,
+             reason: reason,
+             signature: Oli.GenAI.Provider.transport_signature(provider, model),
+             request_type: Map.get(ctx, :request_type, :generate)
+           }}
 
-  defp normalize_secondary(nil, _primary, _backup), do: nil
-
-  defp normalize_secondary(%Ecto.Association.NotLoaded{}, _primary, _backup), do: nil
-
-  defp normalize_secondary(secondary, primary, backup) do
-    cond do
-      secondary.id == primary.id -> nil
-      not is_nil(backup) and secondary.id == backup.id -> nil
-      true -> secondary
+        false ->
+          {:error, :busy}
+      end
+    else
+      nil -> {:error, :busy}
+      _ -> {:error, :pool_unavailable}
     end
+  catch
+    :exit, _ -> {:error, :pool_unavailable}
   end
 
-  defp normalize_model(%Ecto.Association.NotLoaded{}), do: nil
-  defp normalize_model(model), do: model
+  defp field(:primary), do: :primary_model
+  defp field(:secondary), do: :secondary_model
+  defp field(:backup), do: :backup_model
 
-  defp emit_telemetry(
-         result,
-         duration_ms,
-         request_type,
-         service_config
-       ) do
-    {reason, selected_model_id, tier, pool_name, pool_class, admitted} =
+  defp emit(result, id, ctx, started) do
+    metadata =
       case result do
         {:ok, plan} ->
-          model_pool_class = plan.selected_model.pool_class || :slow
-          admitted = if plan.admission == :admit, do: 1, else: 0
-
-          {plan.reason, plan.selected_model.id, plan.tier, plan.pool_name, model_pool_class,
-           admitted}
+          %{reason: plan.reason, selected_model_id: plan.selected_model.id, tier: plan.tier}
 
         {:error, reason} ->
-          {reason, nil, nil, nil, nil, 0}
+          %{reason: reason}
       end
 
     Telemetry.router_decision(
-      %{duration_ms: duration_ms},
-      %{
-        service_config_id: service_config.id,
-        selected_model_id: selected_model_id,
-        reason: reason,
-        request_type: request_type,
-        tier: tier,
-        pool_name: pool_name,
-        pool_class: pool_class
-      }
-    )
-
-    Telemetry.router_admission(
-      %{admitted: admitted},
-      %{
-        service_config_id: service_config.id,
-        request_type: request_type,
-        tier: tier,
-        pool_name: pool_name,
-        pool_class: pool_class
-      }
+      %{count: 1, duration_ms: System.monotonic_time(:millisecond) - started},
+      Map.merge(
+        metadata,
+        %{service_config_id: id, request_type: Map.get(ctx, :request_type, :generate)}
+      )
     )
   end
-
-  defp log_decision(result, request_type, service_config) do
-    case result do
-      {:ok, plan} ->
-        Logger.debug("GenAI routing plan",
-          service_config_id: service_config.id,
-          selected_model_id: plan.selected_model.id,
-          tier: plan.tier,
-          pool_name: plan.pool_name,
-          reason: plan.reason,
-          request_type: request_type
-        )
-
-      {:error, reason} ->
-        Logger.warning(
-          "GenAI routing rejected service_config_id=#{service_config.id} " <>
-            "request_type=#{request_type} reason=#{routing_error_category(reason)}"
-        )
-    end
-  end
-
-  defp routing_error_category(reason)
-       when reason in [:all_breakers_open, :over_capacity, :secondary_over_capacity],
-       do: reason
-
-  defp routing_error_category(_), do: :unknown
 end

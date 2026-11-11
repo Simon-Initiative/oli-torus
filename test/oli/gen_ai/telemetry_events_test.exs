@@ -17,68 +17,13 @@ defmodule Oli.GenAI.TelemetryEventsTest do
     :ok
   end
 
-  test "router emits decision and admission events for allowed request" do
+  test "router emits a decision without application admission accounting" do
     handler_id = unique_handler_id()
     attach(handler_id, [@router_decision, @router_admission])
-
-    service_config = build_service_config(1)
-    request_ctx = %{request_type: :generate}
-
-    assert {:ok, _plan} = Router.route(request_ctx, service_config)
-
-    assert_receive {:telemetry_event, @router_decision, measurements, metadata}
-    assert is_integer(measurements.duration_ms)
-    assert metadata.reason == :primary_normal
-    assert metadata.service_config_id == service_config.id
-    assert metadata.request_type == :generate
-    assert metadata.tier == :primary
-    assert metadata.pool_class == :slow
-    assert metadata.pool_name == :genai_slow_pool
-
-    assert_receive {:telemetry_event, @router_admission, measurements, metadata}
-    assert measurements.admitted == 1
-    assert metadata.tier == :primary
-    assert metadata.pool_class == :slow
-    assert metadata.pool_name == :genai_slow_pool
-
-    detach(handler_id)
-  end
-
-  test "router emits rejection admission event when over capacity" do
-    handler_id = unique_handler_id()
-    attach(handler_id, [@router_decision, @router_admission])
-
-    service_config =
-      build_service_config(2,
-        primary_model: %RegisteredModel{
-          id: 21,
-          name: "Primary",
-          provider: :null,
-          max_concurrent: 0
-        },
-        secondary_model: %RegisteredModel{
-          id: 22,
-          name: "Secondary",
-          provider: :null,
-          max_concurrent: 0
-        }
-      )
-
-    request_ctx = %{request_type: :generate}
-
-    assert {:error, :secondary_over_capacity} = Router.route(request_ctx, service_config)
-
-    assert_receive {:telemetry_event, @router_decision, _measurements, metadata}
-    assert metadata.reason == :secondary_over_capacity
-    assert is_nil(metadata.tier)
-    assert is_nil(metadata.pool_class)
-
-    assert_receive {:telemetry_event, @router_admission, measurements, metadata}
-    assert measurements.admitted == 0
-    assert metadata.request_type == :generate
-    assert is_nil(metadata.tier)
-    assert is_nil(metadata.pool_class)
-
+    config = build_service_config(1)
+    assert {:ok, _} = Router.route(%{}, config)
+    assert_receive {:telemetry_event, @router_decision, _, %{reason: :local_adapter}}
+    refute_receive {:telemetry_event, @router_admission, _, _}
     detach(handler_id)
   end
 
@@ -105,10 +50,6 @@ defmodule Oli.GenAI.TelemetryEventsTest do
     assert metadata.service_config_id == service_config.id
     assert metadata.registered_model_id == service_config.primary_model.id
     assert metadata.tier == :primary
-    assert metadata.pool_name == :genai_slow_pool
-    assert metadata.pool_class == :slow
-    assert metadata.reason == :primary_normal
-    assert metadata.error_category == nil
 
     detach(handler_id)
   end
@@ -140,9 +81,9 @@ defmodule Oli.GenAI.TelemetryEventsTest do
   end
 
   defp build_service_config(id, overrides \\ %{}) do
-    primary = %RegisteredModel{id: id * 10 + 1, name: "Primary", provider: :null}
-    secondary = %RegisteredModel{id: id * 10 + 2, name: "Secondary", provider: :null}
-    backup = %RegisteredModel{id: id * 10 + 3, name: "Backup", provider: :null}
+    primary = %RegisteredModel{id: id * 10 + 1, name: "Primary", provider_id: 1}
+    secondary = %RegisteredModel{id: id * 10 + 2, name: "Secondary", provider_id: 1}
+    backup = %RegisteredModel{id: id * 10 + 3, name: "Backup", provider_id: 1}
 
     base = %ServiceConfig{
       id: id,
@@ -152,7 +93,24 @@ defmodule Oli.GenAI.TelemetryEventsTest do
       backup_model: backup
     }
 
-    struct(base, overrides)
+    config = struct(base, overrides)
+    provider = %Oli.GenAI.Provider{id: 1, adapter: :null}
+
+    loaded = %{
+      providers: [%{provider: provider, model: primary, models: [primary, secondary, backup]}],
+      service_configs: [config]
+    }
+
+    manager = start_supervised!({Oli.GenAI.PoolManager, name: nil, namespace: make_ref()})
+    tasks = start_supervised!({Task.Supervisor, max_children: 1})
+
+    start_supervised!(
+      {Oli.GenAI.Runtime,
+       source: fn -> loaded end, pool_manager: manager, task_supervisor: tasks, enabled: false}
+    )
+
+    assert :ok = Oli.GenAI.Runtime.reconcile()
+    config
   end
 
   defp thresholds(overrides) do

@@ -1,0 +1,70 @@
+# Seeds the Advanced Author suite.
+# Parameters:
+#   RUN_ID - suffix that keeps emails, project, and section names unique per run.
+# The Test Author/Educator/Learner display names and Automation test section title
+# satisfy the guarded automation teardown contract used by the companion spec.
+
+- user:
+    name: 'advanced_author_author'
+    type: 'author'
+    email: 'advanced-author${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Author'
+    password: 'changeme123456'
+
+- user:
+    name: 'advanced_author_instructor'
+    type: 'instructor'
+    email: 'advanced-instructor${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Educator'
+    password: 'changeme123456'
+    can_create_sections: true
+
+- user:
+    name: 'advanced_author_student'
+    type: 'student'
+    email: 'advanced-student${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Learner'
+    password: 'changeme123456'
+
+- user:
+    name: 'advanced_author_student_2'
+    type: 'student'
+    email: 'advanced-student-2${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Learner Two'
+    password: 'changeme123456'
+
+- project:
+    name: 'Advanced Author Suite${RUN_ID}'
+    title: 'Advanced Author Suite${RUN_ID}'
+    visibility: global
+    root:
+      children:
+        - page: 'Page 1'
+
+- section:
+    name: 'Advanced Author Suite${RUN_ID}'
+    title: 'Automation test section'
+    from: 'Advanced Author Suite${RUN_ID}'
+    open_and_free: true
+
+- enroll:
+    user: 'advanced_author_instructor'
+    email: 'advanced-instructor${RUN_ID}@example.com'
+    section: 'Advanced Author Suite${RUN_ID}'
+    role: instructor
+
+- enroll:
+    user: 'advanced_author_student'
+    email: 'advanced-student${RUN_ID}@example.com'
+    section: 'Advanced Author Suite${RUN_ID}'
+    role: student
+
+- enroll:
+    user: 'advanced_author_student_2'
+    email: 'advanced-student-2${RUN_ID}@example.com'
+    section: 'Advanced Author Suite${RUN_ID}'
+    role: student

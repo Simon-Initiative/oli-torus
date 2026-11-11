@@ -17,7 +17,9 @@ lkt_aoa_defaults = [
   rho: 1.0,
   recency_decay: 0.9,
   confidence_midpoint: 5.0,
-  confidence_steepness: 3.0
+  confidence_steepness: 3.0,
+  low_medium_cutoff: 40.0,
+  medium_high_cutoff: 70.0
 ]
 
 # Only the fallback defaults are compile-time configuration. The effective model
@@ -153,6 +155,10 @@ config :oli, :xapi_upload_pipeline,
   xapi_local_output_dir: System.get_env("XAPI_LOCAL_OUTPUT_DIR", "./xapi_output")
 
 config :oli, :xapi_host_name, "localhost"
+
+# Admin-enabled global debug logging is reverted to this level after this many minutes.
+# Overridden at runtime by DEBUG_LOG_LEVEL_TIMEOUT_MINUTES and DEBUG_LOG_LEVEL_REVERT_LEVEL.
+config :oli, :debug_log_level_revert, timeout_minutes: 30, revert_level: :warning
 
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do
@@ -340,7 +346,11 @@ if Mix.env() == :dev do
     clear: true
 end
 
-config :appsignal, :config, revision: build_sha
+# AppSignal 2.16.0 disabled the error backend by default; keep it enabled so crashes
+# outside instrumented contexts (e.g. GenServers, Tasks) are still reported.
+config :appsignal, :config,
+  revision: build_sha,
+  enable_error_backend: true
 
 # Configure Privacy Policies link
 config :oli, :privacy_policies,
@@ -390,6 +400,10 @@ config :oli, :datashop,
 
 config :oli, :student_sign_in,
   background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
+
+# Preserve Phoenix's default credential filters and redact captcha submissions
+# in HTTP and LiveView parameter logging in every environment.
+config :phoenix, :filter_parameters, ["password", "secret", "token", "g-recaptcha-response"]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -17,19 +17,11 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
     service_config = %ServiceConfig{
       primary_model: %RegisteredModel{
         model: "test-primary",
-        provider: :null,
-        url_template: "http://localhost",
-        api_key: "test-key",
-        secondary_api_key: "test-org",
         timeout: 8000,
         recv_timeout: 60000
       },
       backup_model: %RegisteredModel{
         model: "test-backup",
-        provider: :null,
-        url_template: "http://localhost",
-        api_key: "test-key-backup",
-        secondary_api_key: "test-org-backup",
         timeout: 8000,
         recv_timeout: 60000
       }

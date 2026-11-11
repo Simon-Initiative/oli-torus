@@ -34,6 +34,70 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
     assert estimates[high.id][user.id].label == :high
   end
 
+  test "default proficiency cutoffs include 40 and 70 in Medium" do
+    section = insert(:section, learning_model_version: :lkt_aoa)
+
+    for {score, label} <- [
+          {nil, "Not enough data"},
+          {0.0, "Low"},
+          {0.399999, "Low"},
+          {0.4, "Medium"},
+          {0.7, "Medium"},
+          {0.700001, "High"},
+          {1.0, "High"}
+        ] do
+      assert LktAoa.label_for_score(section, score, 3) == label
+      assert LktAoa.label_for_score(section, score, 2) == "Not enough data"
+    end
+  end
+
+  test "configured cutoffs apply to direct and parent estimates without changing naive or confidence buckets" do
+    section =
+      insert(:section,
+        learning_model_version: :lkt_aoa,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
+    user = insert(:user)
+    project = insert(:project)
+    [parent, child] = Enum.map(1..2, fn _ -> insert(:resource) end)
+    child_sr = objective_section_resource(section, project, child)
+    objective_section_resource(section, project, parent, children: [child_sr.id])
+    insert_state(section, user, child, aoa: 0.72, attempt_count: 3)
+
+    assert {:ok, before} =
+             LktAoa.estimates_for_objectives(section, [user.id], [child.id, parent.id], [])
+
+    assert before[child.id][user.id].label == :high
+    assert before[parent.id][user.id].label == :high
+
+    original = Application.fetch_env!(:oli, :lkt_aoa)
+    on_exit(fn -> Application.put_env(:oli, :lkt_aoa, original) end)
+
+    Application.put_env(
+      :oli,
+      :lkt_aoa,
+      Keyword.merge(original, low_medium_cutoff: 55.0, medium_high_cutoff: 85.0)
+    )
+
+    assert {:ok, after_change} =
+             LktAoa.estimates_for_objectives(section, [user.id], [child.id, parent.id], [])
+
+    for id <- [child.id, parent.id] do
+      assert after_change[id][user.id].label == :medium
+
+      assert Map.delete(after_change[id][user.id], :label) ==
+               Map.delete(before[id][user.id], :label)
+    end
+
+    naive = %{section | learning_model_version: :naive}
+
+    for {score, expected} <- [{0.4, "Low"}, {0.5, "Medium"}, {0.8, "Medium"}, {0.81, "High"}] do
+      assert Oli.Delivery.Proficiency.label_for_score(naive, score) == expected
+      assert Oli.Delivery.Metrics.confidence_label(score) == expected
+    end
+  end
+
   test "direct estimates preserve evidence but hide scores below three attempts" do
     section = insert(:section, learning_model_version: :lkt_aoa)
     user = insert(:user)
@@ -98,7 +162,7 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
            ) == state
   end
 
-  test "parents weight children by total attempt count without a per-child minimum" do
+  test "parents weight all child attempts once one child reaches three" do
     section =
       insert(:section,
         learning_model_version: :lkt_aoa,
@@ -136,7 +200,7 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
     assert estimate.label == :medium
   end
 
-  test "parents require three attempts in total and never prefer a parent state row" do
+  test "parents require three attempts on a child and never prefer a parent state row" do
     section =
       insert(:section,
         learning_model_version: :lkt_aoa,
@@ -159,6 +223,68 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
     assert estimate.score == nil
     assert estimate.attempt_count == 2
     assert estimate.label == :not_enough_information
+  end
+
+  test "parent eligibility requires one child with three attempts and governs class reporting" do
+    section =
+      insert(:section,
+        learning_model_version: :lkt_aoa,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
+    project = insert(:project)
+    parent = insert(:resource)
+    children = Enum.map(1..3, fn _ -> insert(:resource) end)
+    child_srs = Enum.map(children, &objective_section_resource(section, project, &1))
+    objective_section_resource(section, project, parent, children: Enum.map(child_srs, & &1.id))
+
+    cases = [
+      {[1, 1, 1], :not_enough_information},
+      {[2, 2, 0], :not_enough_information},
+      {[3, 0, 0], :high},
+      {[3, 2, 0], :high},
+      {[0, 0, 0], :not_enough_information}
+    ]
+
+    users =
+      Enum.map(cases, fn {counts, _label} ->
+        user = insert(:user)
+
+        for {child, count} <- Enum.zip(children, counts), count > 0 do
+          insert_state(section, user, child,
+            aoa: 0.9,
+            attempt_count: count,
+            unique_activity_part_count: count
+          )
+        end
+
+        user
+      end)
+
+    user_ids = Enum.map(users, & &1.id)
+
+    assert {:ok, estimates} =
+             LktAoa.estimates_for_objectives(section, user_ids, [parent.id], [])
+
+    for {user, {counts, expected_label}} <- Enum.zip(users, cases) do
+      estimate = estimates[parent.id][user.id]
+      assert estimate.label == expected_label
+      assert estimate.attempt_count == Enum.sum(counts)
+
+      case expected_label do
+        :not_enough_information -> assert estimate.score == nil
+        :high -> assert_in_delta estimate.score, 0.9, 1.0e-12
+      end
+    end
+
+    assert {:ok, aggregates} =
+             LktAoa.objective_aggregates(section, [parent.id], user_ids: user_ids)
+
+    aggregate = aggregates[parent.id]
+    assert aggregate.distribution == %{high: 2, not_enough_information: 3}
+    assert aggregate.contributing_count == 2
+    assert aggregate.coverage == %{defined: 2, total: 5}
+    assert_in_delta aggregate.numeric_score, 0.9, 1.0e-12
   end
 
   test "parent children prefer SectionResource IDs when resource-ID values collide" do
@@ -188,6 +314,31 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
              LktAoa.estimates_for_objectives(section, [user.id], [parent.id], [])
 
     assert estimates[parent.id][user.id].score == 0.9
+  end
+
+  test "parents with evidence only on their children still report their learners" do
+    section =
+      insert(:section,
+        learning_model_version: :lkt_aoa,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
+    user = insert(:user)
+    project = insert(:project)
+    [parent | children] = Enum.map(1..4, fn _ -> insert(:resource) end)
+    child_srs = Enum.map(children, &objective_section_resource(section, project, &1))
+    objective_section_resource(section, project, parent, children: Enum.map(child_srs, & &1.id))
+
+    Enum.each(children, &insert_state(section, user, &1, aoa: 0.67, attempt_count: 3))
+
+    assert {:ok, [user_id]} = LktAoa.user_ids_for_objectives(section, [parent.id])
+    assert user_id == user.id
+
+    assert {:ok, estimates} =
+             LktAoa.estimates_for_objectives(section, [user_id], [parent.id], [])
+
+    assert_in_delta estimates[parent.id][user.id].score, 0.67, 1.0e-12
+    assert estimates[parent.id][user.id].label == :medium
   end
 
   test "uses one learning-state query for bulk identities and never reads attempt summaries" do

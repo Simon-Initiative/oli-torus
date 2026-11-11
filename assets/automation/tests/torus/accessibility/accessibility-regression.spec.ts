@@ -1,13 +1,13 @@
-import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
-import { expect } from '@playwright/test';
-import { test } from '@fixture/my-fixture';
 import {
   expectKeyboardFocus,
   scanPageAccessibility,
   setAccessibilityTheme,
 } from '@core/accessibility';
+import { test } from '@fixture/my-fixture';
+import { expect } from '@playwright/test';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
+import path from 'node:path';
 import {
   configureStudentDeliveryRuntimeConfig,
   seedStudentDeliveryScenario,
@@ -114,13 +114,18 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await studentCourse.openPage('Coverage Page');
     await scanPageAccessibility(page, 'coverage page');
 
-    // Notes are only available when collaboration spaces are enabled for the section.
     const notesToggle = page.getByRole('button', { name: 'Toggle Notes panel' });
-    if (await notesToggle.isVisible().catch(() => false)) {
-      await notesToggle.click();
-      await expect(page.getByRole('complementary', { name: 'Notes Panel' })).toBeVisible();
-      await scanPageAccessibility(page, 'notes');
-    }
+    const notesPanel = page.getByRole('complementary', { name: 'Notes Panel' });
+    await expect(notesToggle).toBeVisible();
+    await notesToggle.focus();
+    await notesToggle.press('Enter');
+    await expect(notesPanel).toBeVisible();
+    const closeNotesButton = notesPanel.getByRole('button', { name: 'Close notes panel' }).first();
+    await expect(closeNotesButton).toBeVisible();
+    await closeNotesButton.focus();
+    await expect(closeNotesButton).toBeFocused();
+    await scanPageAccessibility(page, 'notes');
+    await expectKeyboardFocus(page, '#annotations_panel button, #annotations_panel input');
   });
 
   test('scored activity has no automated accessibility violations', async ({
@@ -136,8 +141,24 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await expect(page.locator('#student_learn')).toBeVisible();
     await expect(page.locator('[id^="outline_rows-"] button').first()).toBeVisible();
     await studentCourse.openPage('Scored Activity');
+    const beginAttemptButton = page.locator('#begin_attempt_button');
+    await expect(beginAttemptButton).toBeVisible();
+    await page.locator('#bottom-bar-wrapper').hover();
+    await expect(page.locator('#bottom-bar')).toHaveCSS('opacity', '1');
+    await beginAttemptButton.click();
+    await expect(page.locator('oli-multiple-choice-delivery')).toBeVisible();
+    await expect(page.getByText('Which option is correct?', { exact: true })).toBeVisible();
     await scanPageAccessibility(page, 'scored activity');
-    await expectKeyboardFocus(page, 'a, button, input');
+
+    const choices = page.getByRole('radio');
+    await expect(choices).toHaveCount(2);
+    await choices.first().focus();
+    await expect(choices.first()).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(choices.nth(1)).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(choices.nth(1)).toHaveAttribute('aria-checked', 'true');
+    await expectKeyboardFocus(page, '[role="radio"]');
   });
 
   test('schedule has light and dark theme accessibility coverage', async ({ page, homeTask }) => {
@@ -166,8 +187,15 @@ test.describe('accessibility regression coverage @pr @accessibility', () => {
     await page.goto(curriculumPath, {
       waitUntil: 'domcontentloaded',
     });
-    await expect(page).toHaveURL(new URL(curriculumPath, page.url()).toString());
+    await expect(page).toHaveURL(
+      new RegExp(`/workspaces/course_author/${projectSlug}/curriculum(?:\\?|$)`),
+    );
+    await expect(page.locator('#curriculum-container')).toBeVisible();
+    await expect(
+      page.getByText('Create and arrange your learning materials below.', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Curriculum', exact: true })).toBeVisible();
+    await expect(page.getByText('Coverage Page', { exact: true })).toBeVisible();
     await scanPageAccessibility(page, 'authoring curriculum');
     await expectKeyboardFocus(page, 'a, button, input');
   });

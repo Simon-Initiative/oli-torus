@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { configureCaptcha } from '@core/captcha';
 import { test as base } from '@playwright/test';
 import { Utils } from '@core/Utils';
 import { Verifier } from '@core/verify/Verifier';
@@ -7,6 +8,7 @@ import { runWorkflowFromFile } from '@core/workflow/runWorkflow';
 import { RunWorkflowOptions, WorkflowState } from '@core/workflow/types';
 import { AdministrationTask } from '@tasks/AdministrationTask';
 import { AccountLinkingTask } from '@tasks/AccountLinkingTask';
+import { AdvancedAuthorTask } from '@tasks/AdvancedAuthorTask';
 import { CurriculumTask } from '@tasks/CurriculumTask';
 import { HomeTask } from '@tasks/HomeTask';
 import { ProjectTask } from '@tasks/ProjectTask';
@@ -25,6 +27,7 @@ type MyFixtures = {
   verifier: Verifier;
   administrationTask: AdministrationTask;
   accountLinkingTask: AccountLinkingTask;
+  advancedAuthorTask: AdvancedAuthorTask;
   curriculumTask: CurriculumTask;
   homeTask: HomeTask;
   projectTask: ProjectTask;
@@ -38,6 +41,13 @@ type MyFixtures = {
 };
 
 export const test = base.extend<MyFixtures>({
+  context: async ({ context }, use, testInfo) => {
+    const baseUrl = hasRuntimeBaseUrl()
+      ? getBaseUrl()
+      : ((testInfo.project.use.baseURL as string) ?? getBaseUrl());
+    await configureCaptcha(context, baseUrl);
+    await use(context);
+  },
   forEachTest: [
     async ({ homeTask }, use, testInfo) => {
       const baseUrl = hasRuntimeBaseUrl()
@@ -71,6 +81,12 @@ export const test = base.extend<MyFixtures>({
       await use(new AccountLinkingTask(page));
     },
     { title: '🔗 Account Linking Task' },
+  ],
+  advancedAuthorTask: [
+    async ({ page }, use) => {
+      await use(new AdvancedAuthorTask(page));
+    },
+    { title: '🧠 Advanced Author Task' },
   ],
   curriculumTask: [
     async ({ page }, use) => {

@@ -75,11 +75,9 @@ defmodule Oli.Repo.Migrations.RepairInstructorEmailFeatureConfigDefaultTest do
 
   defp insert_model(name) do
     Repo.insert!(%RegisteredModel{
+      provider_id: Repo.insert!(%Oli.GenAI.Provider{name: "Email test", adapter: :null}).id,
       name: name,
-      provider: :open_ai,
       model: "gpt-4",
-      url_template: "https://api.example.com",
-      api_key: "secret",
       timeout: 8000,
       recv_timeout: 60_000
     })

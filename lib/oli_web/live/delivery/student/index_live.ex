@@ -7,11 +7,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   alias Oli.Delivery.{Attempts, Certificates, Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.Sections.Scheduling
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Common
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Components.Modal
+  alias OliWeb.Delivery.ScheduleDisplay
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
   alias OliWeb.Icons
@@ -76,7 +78,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                   )
                   |> get_in(["numbering", "index"])
 
-                Map.put(page, :module_index, page_module_index)
+                page
+                |> Map.put(:module_index, page_module_index)
+                |> Map.put(
+                  :display_end_date,
+                  Scheduling.for_display(combined_settings[page.resource_id] || page).end_date
+                )
             end
           )
         end)
@@ -465,13 +472,16 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                 </div>
               </div>
               <div
-                :if={@has_scheduled_resources?}
+                :if={
+                  @has_scheduled_resources? and
+                    not is_nil(Map.get(@suggested_page, :display_end_date, @suggested_page.end_date))
+                }
                 class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex"
               >
                 <div class="text-right text-white text-sm font-bold">Due:</div>
                 <div class="text-right text-white text-sm font-bold">
                   {format_date(
-                    @suggested_page.end_date,
+                    Map.get(@suggested_page, :display_end_date, @suggested_page.end_date),
                     @ctx,
                     "{WDshort} {Mshort} {D}, {YYYY}"
                   )}
@@ -1241,23 +1251,27 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr :ctx, :map, required: true
 
   defp lesson_details(%{upcoming: true} = assigns) do
+    assigns =
+      assign(
+        assigns,
+        :display_settings,
+        Scheduling.for_display(assigns.lesson.settings || assigns.lesson)
+      )
+
     ~H"""
     <div data-role="details" class="w-full h-full flex flex-col items-stretch gap-5 relative">
       <div class="pr-2 pl-1 self-end">
         <div class="flex items-end gap-1">
           <div
-            :if={!is_nil(@lesson.end_date)}
+            :if={not is_nil(@display_settings.end_date) or not is_nil(@display_settings.start_date)}
             class="text-right dark:text-white text-opacity-90 text-xs font-semibold"
           >
-            {if is_nil(@lesson.settings),
-              do:
-                Utils.coalesce(@lesson.end_date, @lesson.start_date)
-                |> Utils.days_difference(@lesson.scheduling_type, @ctx),
-              else:
-                Utils.coalesce(@lesson.settings.end_date, @lesson.end_date)
-                |> Utils.coalesce(@lesson.settings.start_date)
-                |> Utils.coalesce(@lesson.start_date)
-                |> Utils.days_difference(@lesson.settings.scheduling_type, @ctx)}
+            <%= case @display_settings.end_date do %>
+              <% nil -> %>
+                Available: {ScheduleDisplay.available_date(@display_settings.start_date, @ctx)}
+              <% end_date -> %>
+                {Utils.days_difference(end_date, @display_settings.scheduling_type, @ctx)}
+            <% end %>
           </div>
         </div>
       </div>

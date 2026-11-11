@@ -29,8 +29,11 @@ defmodule Oli.GenAI.Dev.LocalCodexTest do
 
       assert {:ok, first} = LocalCodex.setup(%{})
 
-      assert first.registered_model.provider == :open_ai
-      assert first.registered_model.url_template == "http://localhost:4001"
+      assert Repo.get!(Oli.GenAI.Provider, first.registered_model.provider_id).adapter == :open_ai
+
+      assert Repo.get!(Oli.GenAI.Provider, first.registered_model.provider_id).base_url ==
+               "http://localhost:4001"
+
       assert first.service_config.primary_model_id == first.registered_model.id
       assert first.feature_config.feature == :student_dialogue
       assert is_nil(first.feature_config.section_id)
@@ -55,10 +58,22 @@ defmodule Oli.GenAI.Dev.LocalCodexTest do
 
       updated_model = Repo.get!(RegisteredModel, second.registered_model.id)
       assert updated_model.model == "codex-proxy-v2"
-      assert updated_model.url_template == "http://localhost:4010"
+
+      assert Repo.get!(Oli.GenAI.Provider, updated_model.provider_id).base_url ==
+               "http://localhost:4010"
+
       assert updated_model.routing_breaker_error_rate_threshold == 0.0
       assert updated_model.routing_breaker_429_threshold == 0.0
       assert updated_model.routing_breaker_latency_p95_ms == 0
+    end
+
+    test "invalid Provider settings return a changeset without creating a model" do
+      model_count = Repo.aggregate(RegisteredModel, :count, :id)
+      provider_count = Repo.aggregate(Oli.GenAI.Provider, :count, :id)
+      assert {:error, changeset} = LocalCodex.setup(%{url: "invalid-endpoint"})
+      assert errors_on(changeset).base_url != []
+      assert Repo.aggregate(RegisteredModel, :count, :id) == model_count
+      assert Repo.aggregate(Oli.GenAI.Provider, :count, :id) == provider_count
     end
 
     test "creates a section-specific feature config when section_id is provided" do

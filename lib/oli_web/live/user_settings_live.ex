@@ -8,6 +8,7 @@ defmodule OliWeb.UserSettingsLive do
   alias Oli.AssentAuth.UserAssentAuth
   alias OliWeb.Icons
 
+  @doc "Renders the account profile, email, and password settings form."
   def render(assigns) do
     ~H"""
     <div class="bg-Background-bg-primary flex flex-col gap-4 items-center py-2 w-full">
@@ -401,9 +402,9 @@ defmodule OliWeb.UserSettingsLive do
       {:error, :email, changeset}
     else
       case Accounts.apply_user_email(user, current_password, user_params) do
-        {:ok, _applied_user} ->
+        {:ok, applied_user} ->
           Accounts.deliver_user_update_email_instructions(
-            user,
+            applied_user,
             user.email,
             &url(~p"/users/settings/confirm_email/#{&1}")
           )

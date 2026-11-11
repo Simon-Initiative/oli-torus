@@ -41,7 +41,7 @@ defmodule Mix.Tasks.GenAi.SetupLocalCodex do
       {:ok, %{registered_model: model, service_config: service, feature_config: feature_config}} ->
         Mix.shell().info("""
         Local Codex proxy configured.
-        Registered model: #{model.name} (#{model.url_template})
+        Registered model: #{model.name} (Provider #{model.provider_id})
         Service config: #{service.name}
         Feature config: #{feature_config.feature} / section_id=#{inspect(feature_config.section_id)}
         """)

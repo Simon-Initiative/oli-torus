@@ -29,6 +29,7 @@ defmodule OliWeb.LaunchController do
     end
   end
 
+  @doc "Starts guest enrollment after captcha verification (or explicit load-testing mode)."
   def auto_enroll_as_guest(conn, params) do
     g_recaptcha_response = Map.get(params, "g-recaptcha-response", "")
 
@@ -90,7 +91,7 @@ defmodule OliWeb.LaunchController do
   end
 
   defp recaptcha_verified?(g_recaptcha_response) do
-    Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
+    Oli.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 
   defp current_or_guest_user(conn, requires_enrollment) do

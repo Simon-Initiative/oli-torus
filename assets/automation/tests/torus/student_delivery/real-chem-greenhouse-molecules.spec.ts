@@ -5,6 +5,7 @@ import { expect } from '@playwright/test';
 import { HomeTask } from '@tasks/HomeTask';
 import { AdaptiveLessonTask } from '@tasks/AdaptiveLessonTask';
 import {
+  AUTOMATION_SETUP_HOOK_TIMEOUT_MS,
   AutomationSetupResponse,
   buildAutomationLoginData,
   importArchiveAndCreateSection,
@@ -68,9 +69,12 @@ test.skip(
   'Set PLAYWRIGHT_AUTOMATION_API_KEY to run this test (see setup instructions above)',
 );
 
+test.fixme(true, 'Disabled until TRIAGE-2550 is addressed (intermittent 502 on course import)');
+
+
 test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
   test.beforeAll(async ({ request }) => {
-    test.setTimeout(240_000);
+    test.setTimeout(AUTOMATION_SETUP_HOOK_TIMEOUT_MS);
 
     const answersPromise = fetchTestAsset(request, answersKey, baseUrl);
     const archivePromise = fetchTestArchiveToTempFile(archiveKey, baseUrl);

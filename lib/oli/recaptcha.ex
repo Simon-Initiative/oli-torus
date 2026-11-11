@@ -1,9 +1,14 @@
 defmodule Oli.Recaptcha do
-  @callback verify(String.t()) :: {:success, boolean()}
+  @moduledoc """
+  Compile-selected captcha boundary. Runtime configuration cannot enable the
+  Playwright verifier or alter production's Google verification behavior.
+  """
 
-  def verify(response_string) do
-    impl().verify(response_string)
-  end
+  @implementation Application.compile_env(:oli, :recaptcha_module, Oli.Utils.Recaptcha)
 
-  defp impl(), do: Application.get_env(:oli, :recaptcha_module, Oli.Utils.Recaptcha)
+  @callback verify(term()) :: {:success, boolean()}
+
+  @doc "Verifies a submitted response using the implementation selected by this build."
+  @spec verify(term()) :: {:success, boolean()}
+  def verify(response), do: @implementation.verify(response)
 end

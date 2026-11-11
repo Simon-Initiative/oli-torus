@@ -7,11 +7,9 @@ defmodule Oli.GenAI.RegisteredModelChangesetTest do
     test "defaults are present on new changeset" do
       changeset =
         RegisteredModel.changeset(%RegisteredModel{}, %{
+          provider_id: 1,
           name: "Default Model",
-          provider: :open_ai,
           model: "gpt-4",
-          url_template: "https://api.example.com",
-          api_key: "secret",
           timeout: 8000,
           recv_timeout: 60_000
         })
@@ -27,11 +25,9 @@ defmodule Oli.GenAI.RegisteredModelChangesetTest do
     test "rejects breaker thresholds outside 0..1 range" do
       changeset =
         RegisteredModel.changeset(%RegisteredModel{}, %{
+          provider_id: 1,
           name: "Invalid Threshold Model",
-          provider: :open_ai,
           model: "gpt-4",
-          url_template: "https://api.example.com",
-          api_key: "secret",
           timeout: 8000,
           recv_timeout: 60_000,
           routing_breaker_error_rate_threshold: 1.5,

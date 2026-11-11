@@ -16,10 +16,11 @@ defmodule OliWeb.InviteController do
     render_invite_page(conn, "index.html", title: "Invite")
   end
 
+  @doc "Invites an author after verifying the submitted captcha response."
   def create(conn, %{"email" => email} = params) do
     g_recaptcha_response = Map.get(params, "g-recaptcha-response", "")
 
-    case Oli.Utils.Recaptcha.verify(g_recaptcha_response) do
+    case Oli.Recaptcha.verify(g_recaptcha_response) do
       {:success, true} ->
         if is_nil(Accounts.get_author_by_email(email)) do
           invite_author(conn, email)

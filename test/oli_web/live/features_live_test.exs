@@ -2,10 +2,12 @@ defmodule OliWeb.FeaturesLiveTest do
   use ExUnit.Case, async: false
   use OliWeb.ConnCase
 
+  use Oban.Testing, repo: Oli.Repo
+
   import Phoenix.LiveViewTest
 
   alias Oli.RuntimeLogOverrides
-  alias Oli.RuntimeLogOverrides.Registry
+  alias Oli.RuntimeLogOverrides.{DebugLevelRevertWorker, Registry}
 
   defp live_view_route, do: ~p"/admin/features"
 
@@ -106,6 +108,41 @@ defmodule OliWeb.FeaturesLiveTest do
 
       assert render(view) =~ "Logging level changed to warning"
       assert Logger.level() == :warning
+      refute_enqueued(worker: DebugLevelRevertWorker)
+    end
+
+    test "setting debug schedules an automatic revert and tells the admin", %{conn: conn} do
+      {:ok, view, _html} = live(conn, live_view_route())
+
+      view
+      |> element("button[phx-click='logging'][phx-value-level='debug']")
+      |> render_click()
+
+      assert render(view) =~
+               "Logging level changed to debug. It will automatically revert to warning in 30 minutes"
+
+      assert Logger.level() == :debug
+      assert_enqueued(worker: DebugLevelRevertWorker, args: %{"node" => Atom.to_string(node())})
+    end
+
+    test "uses the singular form when the revert timeout is one minute", %{conn: conn} do
+      original_config = Application.get_env(:oli, :debug_log_level_revert)
+      on_exit(fn -> Application.put_env(:oli, :debug_log_level_revert, original_config) end)
+
+      Application.put_env(:oli, :debug_log_level_revert,
+        timeout_minutes: 1,
+        revert_level: :error
+      )
+
+      {:ok, view, _html} = live(conn, live_view_route())
+
+      view
+      |> element("button[phx-click='logging'][phx-value-level='debug']")
+      |> render_click()
+
+      html = render(view)
+      assert html =~ "It will automatically revert to error in 1 minute"
+      refute html =~ "1 minutes"
     end
   end
 end

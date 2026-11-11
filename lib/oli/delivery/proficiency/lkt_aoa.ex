@@ -3,8 +3,9 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
   Read-only proficiency provider over materialized LKT-AOA learner state.
 
   Direct objectives require three attempts on that objective. Parent objectives
-  instead derive from effective children and require three attempts in total;
-  an individual child below three never suppresses an otherwise eligible parent.
+  instead derive from effective children and require at least one child with
+  three attempts. Once eligible, all available children contribute to the
+  attempt-weighted score, including children below three attempts.
   Confidence is calculated from each persisted unique-part count using current
   configuration before any parent or scope aggregation.
   Parent rows are deliberately ignored because derived state would become stale
@@ -34,10 +35,16 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
      |> Enum.map(& &1.resource_id)}
   end
 
+  @doc "Returns learners with state on the requested objectives or their effective children."
   def user_ids_for_objectives(%Section{id: section_id}, objective_ids) do
+    source_ids =
+      section_id
+      |> objective_sources(normalize_ids(objective_ids))
+      |> source_objective_ids()
+
     ids =
       from(state in LearningState,
-        where: state.section_id == ^section_id and state.learning_objective_id in ^objective_ids,
+        where: state.section_id == ^section_id and state.learning_objective_id in ^source_ids,
         select: state.user_id,
         distinct: true
       )
@@ -75,13 +82,21 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
     end
   end
 
+  @doc "Classifies a score with the runtime LKT-AOA cutoffs and minimum attempt count."
   def label_for_score(_section, score, attempt_count),
-    do: score |> direct_label(attempt_count) |> label_string()
+    do: proficiency_range(score, attempt_count)
+
+  @doc "Returns a display label using the configured percentage cutoffs; the upper cutoff is inclusive Medium."
+  @spec proficiency_range(number() | nil, non_neg_integer()) :: String.t()
+  def proficiency_range(score, attempt_count) do
+    score |> direct_label(attempt_count, Config.proficiency_cutoffs()) |> label_string()
+  end
 
   @doc "Bulk-reads learner estimates for page, container, and course scopes."
   def estimates_for_scopes(%Section{id: section_id} = section, user_ids, scopes, _opts) do
     user_ids = normalize_ids(user_ids)
     scopes = Enum.uniq(scopes)
+    cutoffs = Config.proficiency_cutoffs()
 
     Telemetry.span(
       :lkt_aoa,
@@ -94,7 +109,7 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
 
           {estimates, counts} =
             build_estimate_map(scopes, user_ids, fn scope, user_id ->
-              scope_estimate(section_id, user_id, membership[scope], states)
+              scope_estimate(section_id, user_id, membership[scope], states, cutoffs)
             end)
 
           result = {:ok, estimates}
@@ -132,6 +147,8 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
   end
 
   defp read_scope_aggregates(section_id, user_ids, scopes, membership) do
+    {low_medium_cutoff, medium_high_cutoff} = Config.proficiency_cutoffs()
+
     scope_payload =
       scopes
       |> Enum.with_index()
@@ -170,13 +187,13 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
       requested.scope_index,
       avg(learner.score) FILTER (WHERE learner.attempt_count >= 3)::float8 AS numeric_score,
       count(learner.user_id) FILTER (
-        WHERE learner.attempt_count >= 3 AND learner.score < 0.4
+        WHERE learner.attempt_count >= 3 AND learner.score < $4::float8
       )::bigint AS low_count,
       count(learner.user_id) FILTER (
-        WHERE learner.attempt_count >= 3 AND learner.score >= 0.4 AND learner.score <= 0.8
+        WHERE learner.attempt_count >= 3 AND learner.score >= $4::float8 AND learner.score <= $5::float8
       )::bigint AS medium_count,
       count(learner.user_id) FILTER (
-        WHERE learner.attempt_count >= 3 AND learner.score > 0.8
+        WHERE learner.attempt_count >= 3 AND learner.score > $5::float8
       )::bigint AS high_count,
       count(learner.user_id) FILTER (WHERE learner.attempt_count >= 3)::bigint AS defined_count
     FROM requested_scopes AS requested
@@ -185,7 +202,13 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
     ORDER BY requested.scope_index
     """
 
-    case Repo.query(sql, [scope_payload, section_id, user_ids]) do
+    case Repo.query(sql, [
+           scope_payload,
+           section_id,
+           user_ids,
+           low_medium_cutoff,
+           medium_high_cutoff
+         ]) do
       {:ok, %{rows: rows}} ->
         total_count = length(user_ids)
         scopes_by_index = List.to_tuple(scopes)
@@ -228,6 +251,7 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
   def estimates_for_objectives(%Section{id: section_id}, user_ids, objective_ids, _opts) do
     user_ids = normalize_ids(user_ids)
     objective_ids = normalize_ids(objective_ids)
+    cutoffs = Config.proficiency_cutoffs()
 
     Telemetry.span(
       :lkt_aoa,
@@ -235,13 +259,13 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
       %{requested_user_count: length(user_ids), requested_objective_count: length(objective_ids)},
       fn ->
         objective_sources = objective_sources(section_id, objective_ids)
-        state_objective_ids = objective_sources |> Map.values() |> List.flatten() |> Enum.uniq()
+        state_objective_ids = source_objective_ids(objective_sources)
         states = read_states(section_id, user_ids, state_objective_ids)
 
         {estimates, counts} =
           build_estimate_map(objective_ids, user_ids, fn objective_id, user_id ->
             sources = Map.fetch!(objective_sources, objective_id)
-            build_estimate(section_id, user_id, objective_id, sources, states)
+            build_estimate(section_id, user_id, objective_id, sources, states, cutoffs)
           end)
 
         result = {:ok, estimates}
@@ -264,6 +288,11 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
         child_ids -> {objective_id, child_ids}
       end
     end)
+  end
+
+  # Unique LearningState objective ids read for the given objective sources.
+  defp source_objective_ids(objective_sources) do
+    objective_sources |> Map.values() |> List.flatten() |> Enum.uniq()
   end
 
   defp operation_for(objective_sources) do
@@ -311,21 +340,27 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
     end)
   end
 
-  defp build_estimate(section_id, user_id, objective_id, [objective_id], states) do
-    direct_estimate(section_id, user_id, objective_id, Map.get(states, {user_id, objective_id}))
+  defp build_estimate(section_id, user_id, objective_id, [objective_id], states, cutoffs) do
+    direct_estimate(
+      section_id,
+      user_id,
+      objective_id,
+      Map.get(states, {user_id, objective_id}),
+      cutoffs
+    )
   end
 
-  defp build_estimate(section_id, user_id, objective_id, child_ids, states) do
+  defp build_estimate(section_id, user_id, objective_id, child_ids, states, cutoffs) do
     child_states = Enum.flat_map(child_ids, &List.wrap(Map.get(states, {user_id, &1})))
-    parent_estimate(section_id, user_id, objective_id, child_states)
+    parent_estimate(section_id, user_id, objective_id, child_states, cutoffs)
   end
 
-  defp direct_estimate(section_id, user_id, objective_id, nil) do
+  defp direct_estimate(section_id, user_id, objective_id, nil, _cutoffs) do
     new_estimate!(section_id, user_id, objective_id, nil, :not_enough_information, nil, 0, 0)
   end
 
-  defp direct_estimate(section_id, user_id, objective_id, state) do
-    label = direct_label(state.aoa, state.attempt_count)
+  defp direct_estimate(section_id, user_id, objective_id, state, cutoffs) do
+    label = direct_label(state.aoa, state.attempt_count, cutoffs)
     score = if label == :not_enough_information, do: nil, else: state.aoa
 
     new_estimate!(
@@ -340,7 +375,7 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
     )
   end
 
-  defp parent_estimate(section_id, user_id, objective_id, states) do
+  defp parent_estimate(section_id, user_id, objective_id, states, cutoffs) do
     attempt_count = Enum.sum(Enum.map(states, & &1.attempt_count))
     unique_part_count = Enum.sum(Enum.map(states, & &1.unique_activity_part_count))
 
@@ -348,7 +383,13 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
     # separate and uses the same weights so it never alters proficiency itself.
     score = weighted_average(states, :aoa, attempt_count)
     confidence = weighted_average(states, :confidence, attempt_count)
-    label = parent_label(score, attempt_count)
+
+    label =
+      case Enum.any?(states, &(&1.attempt_count >= @minimum_attempts)) do
+        true -> direct_label(score, attempt_count, cutoffs)
+        false -> :not_enough_information
+      end
+
     visible_score = if label == :not_enough_information, do: nil, else: score
 
     new_estimate!(
@@ -363,7 +404,7 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
     )
   end
 
-  defp scope_estimate(section_id, user_id, objective_ids, states) do
+  defp scope_estimate(section_id, user_id, objective_ids, states, cutoffs) do
     available_states =
       objective_ids
       |> Enum.flat_map(&List.wrap(Map.get(states, {user_id, &1})))
@@ -375,7 +416,7 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
     # available LO equal weight. An unattempted LO therefore cannot suppress a scope.
     score = mean(available_states, :aoa)
     confidence = mean(available_states, :confidence)
-    label = parent_label(score, attempt_count)
+    label = direct_label(score, attempt_count, cutoffs)
     visible_score = if label == :not_enough_information, do: nil, else: score
 
     new_estimate!(
@@ -430,20 +471,14 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
     end) / total_attempts
   end
 
-  # Unlike the naive model, exactly 0.4 belongs to Medium in LKT-AOA.
-  defp direct_label(_score, attempts) when attempts < @minimum_attempts,
+  # Exactly the lower cutoff belongs to Medium; exactly the upper cutoff stays Medium.
+  defp direct_label(_score, attempts, _cutoffs) when attempts < @minimum_attempts,
     do: :not_enough_information
 
-  defp direct_label(score, _attempts), do: numeric_label(score)
-
-  defp parent_label(_score, attempts) when attempts < @minimum_attempts,
-    do: :not_enough_information
-
-  defp parent_label(score, _attempts), do: numeric_label(score)
-
-  defp numeric_label(score) when score < 0.4, do: :low
-  defp numeric_label(score) when score <= 0.8, do: :medium
-  defp numeric_label(_score), do: :high
+  defp direct_label(nil, _attempts, _cutoffs), do: :not_enough_information
+  defp direct_label(score, _attempts, {low, _high}) when score < low, do: :low
+  defp direct_label(score, _attempts, {_low, high}) when score <= high, do: :medium
+  defp direct_label(_score, _attempts, _cutoffs), do: :high
 
   defp label_string(:low), do: "Low"
   defp label_string(:medium), do: "Medium"

@@ -26,14 +26,21 @@ type AutomationOptions = {
   apiKey: string;
   strictTeardown?: boolean;
   teardownTimeoutMs?: number;
+  // An existing user to use as the learner instead of letting the API create one.
+  learner?: { email: string; password: string };
 };
+
+// Torus allows 300s idle time; nightly HAProxy allows 310s for the response.
+const AUTOMATION_SETUP_REQUEST_TIMEOUT_MS = 330_000;
+// Two request attempts plus two minutes for archive download and retry overhead.
+export const AUTOMATION_SETUP_HOOK_TIMEOUT_MS = 2 * AUTOMATION_SETUP_REQUEST_TIMEOUT_MS + 120_000;
 
 const DEFAULT_TEARDOWN_TIMEOUT_MS = 10_000;
 
 export async function importArchiveAndCreateSection(
   request: APIRequestContext,
   archivePath: string,
-  { baseUrl, apiKey }: AutomationOptions,
+  { baseUrl, apiKey, learner }: AutomationOptions,
 ): Promise<AutomationSetupResponse> {
   // The archive is downloaded outside Playwright's traced request context first;
   // this client only reads that file back for the multipart upload.
@@ -41,6 +48,7 @@ export async function importArchiveAndCreateSection(
   const response = await postAutomationSetupWithRetry(request, archivePath, archiveBuffer, {
     baseUrl,
     apiKey,
+    learner,
   });
 
   if (!response.ok()) {
@@ -55,7 +63,7 @@ export async function importArchiveAndCreateSection(
     throw new Error(`automation_setup returned unsuccessful payload: ${JSON.stringify(payload)}`);
   }
 
-  return payload;
+  return learner ? { ...payload, learner } : payload;
 }
 
 async function postAutomationSetupWithRetry(
@@ -84,7 +92,7 @@ function postAutomationSetup(
   request: APIRequestContext,
   archivePath: string,
   archiveBuffer: Buffer,
-  { baseUrl, apiKey }: AutomationOptions,
+  { baseUrl, apiKey, learner }: AutomationOptions,
 ) {
   return request.post(new URL('/api/v1/automation_setup', baseUrl).toString(), {
     headers: {
@@ -93,7 +101,7 @@ function postAutomationSetup(
     multipart: {
       create_author: 'true',
       create_educator: 'true',
-      create_learner: 'true',
+      create_learner: String(!learner),
       create_section: 'true',
       project_archive: {
         name: path.basename(archivePath),
@@ -101,7 +109,7 @@ function postAutomationSetup(
         buffer: archiveBuffer,
       },
     },
-    timeout: 180_000, // full course archives take a while to ingest
+    timeout: AUTOMATION_SETUP_REQUEST_TIMEOUT_MS,
   });
 }
 

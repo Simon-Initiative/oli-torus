@@ -191,9 +191,9 @@ defmodule Oli.LearningModel.LktAoa.Application do
   #
   # After evidence insertion returns only genuinely new rows, pure replay folds
   # claimed contributions into the locked states in deterministic order. Each
-  # contribution first calculates the pre-response P(correct), incorporates it
-  # into the running AOA proficiency value, then applies the observed binary
-  # outcome to recency state for the next opportunity. Confidence is recalculated
+  # contribution first updates practice count and recency with the observed binary
+  # outcome, then calculates P(correct) from that state and incorporates it into
+  # the running AOA proficiency value. Confidence is recalculated
   # from the updated distinct-part count. The final write persists only compact
   # learner state; no historical attempts or model coefficients are copied there.
   #

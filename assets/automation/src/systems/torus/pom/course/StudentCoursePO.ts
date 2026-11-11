@@ -112,6 +112,16 @@ export class StudentCoursePO {
     await this.openPage(pageName);
   }
 
+  async openFirstAvailableLesson() {
+    const startCourse = this.page.getByRole('link', { name: 'Start course', exact: true });
+
+    await Verifier.expectIsVisible(startCourse);
+    await Promise.all([
+      this.page.waitForURL((url) => isStudentLessonPath(url.pathname), { timeout: 15000 }),
+      startCourse.click(),
+    ]);
+  }
+
   /**
    * The title of an opened page. Basic pages render it as a heading. The adaptive
    * lesson header renders it as plain text after a screen-reader "Title:" prefix.
@@ -190,8 +200,6 @@ export class StudentCoursePO {
 
     if (!(await enrollButton.isVisible({ timeout: 5000 }).catch(() => false))) return;
 
-    await this.fillAutomationRecaptchaResponse();
-
     const currentUrl = this.page.url();
     await Promise.all([
       this.page
@@ -204,7 +212,7 @@ export class StudentCoursePO {
 
     if (await recaptchaError.isVisible({ timeout: 1000 }).catch(() => false)) {
       throw new Error(
-        'Enrollment captcha was rejected. Use the dev reCAPTCHA test keys or start Torus with LOAD_TESTING_MODE=true for automation.',
+        'Enrollment captcha was rejected. Run this suite against a MIX_ENV=playwright build.',
       );
     }
   }
@@ -260,30 +268,6 @@ export class StudentCoursePO {
     url.pathname = url.pathname.replace(/\/welcome$/, '');
     url.search = '';
     return url.toString();
-  }
-
-  private async fillAutomationRecaptchaResponse() {
-    const recaptcha = this.page.locator('.g-recaptcha').first();
-
-    if (!(await recaptcha.isVisible({ timeout: 1000 }).catch(() => false))) return;
-
-    await this.page.evaluate(() => {
-      const token = 'playwright-test-token';
-      const form = document.querySelector<HTMLFormElement>('form[action*="/enroll"]');
-      if (form == null) return;
-
-      document
-        .querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[name="g-recaptcha-response"]')
-        .forEach((response) => {
-          response.value = token;
-        });
-
-      const response = document.createElement('input');
-      response.type = 'hidden';
-      response.name = 'g-recaptcha-response';
-      response.value = token;
-      form.appendChild(response);
-    });
   }
 }
 

@@ -13,6 +13,7 @@
     "test-admin-roles-smoke": "npm run pw user-accounts.spec -- --grep @admin-roles",
     "test-simple-author": "npm run pw simple-author.spec.ts",
     "test-all": "npm run pw user-accounts.spec course-authoring.spec.ts",
+    "test-advanced-author": "npm run pw advanced-author.spec.ts",
     "show-report": "npx playwright show-report",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -44,6 +45,7 @@
   "dependencies": {
     "csv-parse": "^7.0.2",
     "eslint": "^9.27.0",
+    "json-rules-engine": "6.1.2",
     "ww-torus-e2e": "file:"
   }
 }

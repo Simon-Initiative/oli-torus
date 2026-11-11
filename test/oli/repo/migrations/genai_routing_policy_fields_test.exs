@@ -44,10 +44,9 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
   end
 
   describe "registered_models routing policy fields" do
-    test "defaults pool_class to slow and sets max_concurrent default" do
+    test "sets model concurrency and breaker policy defaults" do
       registered_model = insert_registered_model()
 
-      assert registered_model.pool_class == :slow
       assert registered_model.max_concurrent == 95
       assert registered_model.routing_breaker_error_rate_threshold == 0.2
       assert registered_model.routing_breaker_429_threshold == 0.1
@@ -59,11 +58,9 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
     test "max_concurrent must be non-negative when present" do
       assert_raise Ecto.ConstraintError, ~r/max_concurrent_non_negative/, fn ->
         Repo.insert!(%RegisteredModel{
+          provider_id: Repo.insert!(%Oli.GenAI.Provider{name: "Policy test", adapter: :null}).id,
           name: "Invalid Model",
-          provider: :open_ai,
           model: "gpt-4",
-          url_template: "https://api.example.com",
-          api_key: "secret",
           timeout: 8000,
           recv_timeout: 60_000,
           max_concurrent: -1
@@ -74,11 +71,9 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
     test "breaker error rate threshold must be between 0 and 1" do
       assert_raise Ecto.ConstraintError, ~r/routing_breaker_error_rate_threshold_range/, fn ->
         Repo.insert!(%RegisteredModel{
+          provider_id: Repo.insert!(%Oli.GenAI.Provider{name: "Policy test", adapter: :null}).id,
           name: "Invalid Error Threshold",
-          provider: :open_ai,
           model: "gpt-4",
-          url_template: "https://api.example.com",
-          api_key: "secret",
           timeout: 8000,
           recv_timeout: 60_000,
           routing_breaker_error_rate_threshold: 1.5
@@ -89,11 +84,9 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
     test "breaker 429 threshold must be between 0 and 1" do
       assert_raise Ecto.ConstraintError, ~r/routing_breaker_429_threshold_range/, fn ->
         Repo.insert!(%RegisteredModel{
+          provider_id: Repo.insert!(%Oli.GenAI.Provider{name: "Policy test", adapter: :null}).id,
           name: "Invalid 429 Threshold",
-          provider: :open_ai,
           model: "gpt-4",
-          url_template: "https://api.example.com",
-          api_key: "secret",
           timeout: 8000,
           recv_timeout: 60_000,
           routing_breaker_429_threshold: -0.1
@@ -104,11 +97,9 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
     test "breaker latency threshold must be non-negative" do
       assert_raise Ecto.ConstraintError, ~r/routing_breaker_latency_p95_ms_non_negative/, fn ->
         Repo.insert!(%RegisteredModel{
+          provider_id: Repo.insert!(%Oli.GenAI.Provider{name: "Policy test", adapter: :null}).id,
           name: "Invalid Latency Threshold",
-          provider: :open_ai,
           model: "gpt-4",
-          url_template: "https://api.example.com",
-          api_key: "secret",
           timeout: 8000,
           recv_timeout: 60_000,
           routing_breaker_latency_p95_ms: -1
@@ -119,11 +110,9 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
 
   defp insert_registered_model do
     Repo.insert!(%RegisteredModel{
+      provider_id: Repo.insert!(%Oli.GenAI.Provider{name: "Policy test", adapter: :null}).id,
       name: "Default Model",
-      provider: :open_ai,
       model: "gpt-4",
-      url_template: "https://api.example.com",
-      api_key: "secret",
       timeout: 8000,
       recv_timeout: 60_000
     })

@@ -1,8 +1,9 @@
 defmodule Oli.RuntimeLogOverridesTest do
-  use ExUnit.Case, async: false
+  use Oli.DataCase, async: false
+  use Oban.Testing, repo: Oli.Repo
 
   alias Oli.RuntimeLogOverrides
-  alias Oli.RuntimeLogOverrides.Registry
+  alias Oli.RuntimeLogOverrides.{DebugLevelRevertWorker, DebugRevertConfig, Registry}
 
   setup do
     original_level = Logger.level()
@@ -16,6 +17,54 @@ defmodule Oli.RuntimeLogOverridesTest do
     end)
 
     :ok
+  end
+
+  describe "set_global_level/1" do
+    test "schedules a revert job on the local node when setting debug" do
+      assert {:ok, :debug} = RuntimeLogOverrides.set_global_level("debug")
+      assert Logger.level() == :debug
+
+      timeout_seconds = DebugRevertConfig.timeout_minutes() * 60
+
+      assert_enqueued(
+        worker: DebugLevelRevertWorker,
+        args: %{
+          "node" => Atom.to_string(node()),
+          "revert_level" => Atom.to_string(DebugRevertConfig.revert_level())
+        },
+        scheduled_at: {DateTime.add(DateTime.utc_now(), timeout_seconds), delta: 10}
+      )
+    end
+
+    test "does not schedule a revert job for non-debug levels" do
+      for level <- [:info, "warning", :error] do
+        assert {:ok, _level} = RuntimeLogOverrides.set_global_level(level)
+      end
+
+      assert Logger.level() == :error
+      refute_enqueued(worker: DebugLevelRevertWorker)
+    end
+
+    test "restarts the timer when debug is set again" do
+      assert {:ok, :debug} = RuntimeLogOverrides.set_global_level(:debug)
+      [first_job] = all_enqueued(worker: DebugLevelRevertWorker)
+
+      assert {:ok, :debug} = RuntimeLogOverrides.set_global_level(:debug)
+
+      assert [second_job] = all_enqueued(worker: DebugLevelRevertWorker)
+      assert second_job.id != first_job.id
+      assert Repo.get!(Oban.Job, first_job.id).state == "cancelled"
+    end
+
+    test "rejects invalid levels without changing the level or scheduling a job" do
+      Logger.configure(level: :error)
+
+      assert {:error, :invalid_level} = RuntimeLogOverrides.set_global_level("verbose")
+      assert {:error, :invalid_level} = RuntimeLogOverrides.set_global_level(:not_a_level)
+
+      assert Logger.level() == :error
+      refute_enqueued(worker: DebugLevelRevertWorker)
+    end
   end
 
   describe "set_module_level/2" do

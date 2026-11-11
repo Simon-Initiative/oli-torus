@@ -6,6 +6,7 @@ import { HomeTask } from '@tasks/HomeTask';
 import { AdaptiveLessonTask } from '@tasks/AdaptiveLessonTask';
 import { AdaptiveDeckPO } from '@pom/delivery/AdaptiveDeckPO';
 import {
+  AUTOMATION_SETUP_HOOK_TIMEOUT_MS,
   AutomationSetupResponse,
   buildAutomationLoginData,
   importArchiveAndCreateSection,
@@ -57,7 +58,7 @@ test.skip(
 
 test.describe.serial('HW Stellar Life Cycles adaptive lesson', () => {
   test.beforeAll(async ({ request }) => {
-    test.setTimeout(240_000); // course archive ingest takes about a minute
+    test.setTimeout(AUTOMATION_SETUP_HOOK_TIMEOUT_MS);
 
     const [answersBuffer, archive] = await Promise.all([
       fetchTestAsset(request, answersKey, baseUrl),

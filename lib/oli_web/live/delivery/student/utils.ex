@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias Oli.Rendering.Context
   alias Oli.Delivery.LearningObjectives.PageElement, as: LearningObjectivesPageElement
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Scheduling
   alias Oli.Rendering.Page
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Modal
@@ -33,7 +34,17 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :show_assignment_marker, :boolean, default: true
   attr :show_schedule_dates, :boolean, default: true
 
+  @doc """
+  Renders the student page heading, omitting removed advisory dates while retaining deadlines.
+  """
   def page_header(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :schedule_settings,
+        Scheduling.for_display(assigns.page_context.effective_settings)
+      )
+
     ~H"""
     <div id="page_header" class="flex-col justify-start items-start gap-3 sm:gap-9 flex w-full">
       <div class="flex-col justify-start items-start gap-3 flex w-full">
@@ -114,7 +125,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
           </div>
           <div
-            :if={@show_schedule_dates and @page_context.effective_settings.start_date}
+            :if={@show_schedule_dates and @schedule_settings.start_date}
             data-role="page start schedule"
             class="justify-start items-start gap-1 flex"
           >
@@ -123,14 +134,14 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
             <div class="text-Text-text-low text-xs font-semibold">
               {FormatDateTime.to_formatted_datetime(
-                @page_context.effective_settings.start_date,
+                @schedule_settings.start_date,
                 @ctx,
                 "{WDshort} {Mshort} {D}, {YYYY}"
               )}
             </div>
           </div>
           <div
-            :if={@show_schedule_dates and @page_context.effective_settings.end_date}
+            :if={@show_schedule_dates and @schedule_settings.end_date}
             data-role="page schedule"
             class="justify-start items-start gap-1 flex"
           >
@@ -139,7 +150,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
             <div class="text-Text-text-high text-xs font-semibold">
               {FormatDateTime.to_formatted_datetime(
-                @page_context.effective_settings.end_date,
+                @schedule_settings.end_date,
                 @ctx,
                 "{WDshort} {Mshort} {D}, {YYYY}"
               )}

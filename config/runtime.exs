@@ -29,8 +29,25 @@ end
 # mutable runtime environment variable to select a different configuration.
 runtime_env = config_env()
 
+# These capabilities are selected by the build, never by runtime flags. Keep
+# secrets out of compile configuration so they can rotate without rebuilding.
+if runtime_env == :playwright do
+  required_token = fn name ->
+    case System.get_env(name) do
+      value when is_binary(value) and byte_size(value) > 0 -> value
+      _ -> raise "#{name} must be set and nonempty for the Playwright environment"
+    end
+  end
+
+  config :oli,
+    playwright_scenario_token: required_token.("PLAYWRIGHT_SCENARIO_TOKEN"),
+    playwright_captcha_token: required_token.("PLAYWRIGHT_CAPTCHA_TOKEN"),
+    playwright_assets_bucket: System.get_env("PLAYWRIGHT_ASSETS_BUCKET")
+end
+
 # Read model overrides at release startup, including PROFICIENCY_CONFIDENCE_MIDPOINT
-# (default 5.0) and PROFICIENCY_CONFIDENCE_STEEPNESS (default 3.0).
+# (default 5.0), PROFICIENCY_CONFIDENCE_STEEPNESS (default 3.0), and the
+# LKT_AOA_LOW_MEDIUM_CUTOFF / LKT_AOA_MEDIUM_HIGH_CUTOFF percentages (40 / 70).
 {lkt_aoa_config, lkt_aoa_sources} = Oli.LearningModel.Config.load_from_env!()
 Oli.LearningModel.Config.log_effective(lkt_aoa_config, lkt_aoa_sources)
 config :oli, :lkt_aoa, Oli.LearningModel.Config.to_keyword(lkt_aoa_config)
@@ -54,6 +71,11 @@ case System.get_env("LOG_LEVEL", nil) do
   log_level ->
     config :logger, level: String.to_existing_atom(log_level)
 end
+
+# Admin-enabled global debug logging is automatically reverted after a timeout
+config :oli,
+       :debug_log_level_revert,
+       Oli.RuntimeLogOverrides.DebugRevertConfig.from_env!()
 
 if get_env_as_boolean.("APPSIGNAL_ENABLE_LOGGING", "false") do
   config :oli, :appsignal_logger_backend, group: "phoenix"
@@ -320,7 +342,7 @@ if runtime_env != :test do
     host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
 end
 
-force_ssl_default = if runtime_env in [:prod, :preview], do: "true", else: "false"
+force_ssl_default = if runtime_env in [:prod, :preview, :playwright], do: "true", else: "false"
 config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", force_ssl_default)
 
 # Opt-in measurement only. See guides/deployment/transport-and-headers.md before
@@ -352,9 +374,9 @@ config :oli, :vendor_property,
   billing_descriptor: System.get_env("VENDOR_PROPERTY_BILLING_DESCRIPTOR", "CARNEGIE MELLON UNI")
 
 ######################## Release-only configurations #########################
-## Note: These configurations are applied in production and preview releases.
+## Note: These configurations are applied in production, preview and Playwright releases.
 ###############################################################################
-if runtime_env in [:prod, :preview] do
+if runtime_env in [:prod, :preview, :playwright] do
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -773,3 +795,34 @@ if runtime_env in [:prod, :preview] do
       default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!(cloak_vault_key)}
     ]
 end
+
+# Independent Provider probes determine availability; request outcomes never mutate it.
+genai_positive_env = fn name, default ->
+  case Integer.parse(System.get_env(name, default)) do
+    {value, ""} when value > 0 -> value
+    _ -> raise "#{name} must be a positive integer"
+  end
+end
+
+genai_boolean_env = fn name, default ->
+  case System.get_env(name, default)
+       |> String.trim()
+       |> String.downcase() do
+    value when value in ["false", "0", "off", "no"] -> false
+    value when value in ["true", "1", "on", "yes"] -> true
+    _ -> raise "#{name} must be a boolean"
+  end
+end
+
+config :oli,
+       :genai_routing_primary_only,
+       genai_boolean_env.("GENAI_ROUTING_PRIMARY_ONLY", "false")
+
+config :oli, :genai_health,
+  enabled: genai_boolean_env.("GENAI_HEALTH_CHECKS_ENABLED", "true"),
+  probe_interval_ms: genai_positive_env.("GENAI_PROBE_INTERVAL_MS", "180000"),
+  probe_failure_interval_ms: genai_positive_env.("GENAI_PROBE_FAILURE_INTERVAL_MS", "30000"),
+  probe_deadline_ms: genai_positive_env.("GENAI_PROBE_DEADLINE_MS", "10000"),
+  failure_threshold: genai_positive_env.("GENAI_PROBE_FAILURE_THRESHOLD", "3"),
+  recovery_threshold: genai_positive_env.("GENAI_PROBE_RECOVERY_THRESHOLD", "2"),
+  max_probes: genai_positive_env.("GENAI_MAX_CONCURRENT_PROBES", "4")

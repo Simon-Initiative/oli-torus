@@ -1,7 +1,48 @@
 defmodule Oli.MCP.ServerTest do
   use ExUnit.Case, async: true
 
+  alias Anubis.Server.Frame
   alias Oli.MCP.Server
+
+  describe "resource template discovery" do
+    test "lists all project URI templates through protocol dispatch" do
+      request = %{"method" => "resources/templates/list", "params" => %{}}
+      assert {:reply, result, _frame} = Server.handle_request(request, Frame.new())
+      result = result |> JSON.encode!() |> Jason.decode!()
+
+      assert Enum.sort(Enum.map(result["resourceTemplates"], & &1["uriTemplate"])) ==
+               Enum.sort([
+                 "torus://p/{project}",
+                 "torus://p/{project}/hierarchy",
+                 "torus://p/{project}/objectives",
+                 "torus://p/{project}/pages/{id}",
+                 "torus://p/{project}/activities/{id}",
+                 "torus://p/{project}/containers/{id}",
+                 "torus://p/{project}/objectives/{id}"
+               ])
+    end
+
+    test "paginates templates without omissions or duplicates" do
+      frame = Frame.put_pagination_limit(Frame.new(), 3)
+      request = %{"method" => "resources/templates/list", "params" => %{}}
+      assert {:reply, first, _} = Server.handle_request(request, frame)
+      assert length(first["resourceTemplates"]) == 3
+
+      request = put_in(request, ["params", "cursor"], first["nextCursor"])
+      assert {:reply, second, _} = Server.handle_request(request, frame)
+      assert length(second["resourceTemplates"]) == 3
+
+      request = put_in(request, ["params", "cursor"], second["nextCursor"])
+      assert {:reply, last, _} = Server.handle_request(request, frame)
+      assert length(last["resourceTemplates"]) == 1
+      refute Map.has_key?(last, "nextCursor")
+
+      templates =
+        first["resourceTemplates"] ++ second["resourceTemplates"] ++ last["resourceTemplates"]
+
+      assert length(Enum.uniq_by(templates, & &1.uri_template)) == 7
+    end
+  end
 
   describe "Anubis MCP Server" do
     test "server has correct server info" do

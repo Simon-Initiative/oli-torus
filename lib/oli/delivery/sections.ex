@@ -2864,6 +2864,8 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns a structured schedule of all scheduled section resources for the given section, ordered by month,
   week, date range, and container module.
+  Removed advisory dates are excluded, while operative deadlines, availability,
+  and student exceptions remain visible.
 
   This function is being used for the v1 and v2 versions of the schedule.
   In the short term when all views use the v2 version, the version param will be removed and v2 will prevale.
@@ -2927,16 +2929,7 @@ defmodule Oli.Delivery.Sections do
     #     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
 
     scheduled_section_resources =
-      Scheduling.retrieve(section, :pages)
-      # filter out unscheduled resources
-      |> Enum.filter(fn section_resource ->
-        case section_resource do
-          %SectionResource{start_date: nil, end_date: nil} -> false
-          %SectionResource{hidden: true} -> false
-          %SectionResource{removed_from_schedule: true} -> false
-          _ -> true
-        end
-      end)
+      visible_scheduled_resources(section, combined_settings_for_all_resources)
       # group items by month and year, start date take precedence over end date
       |> group_and_sort_by_month_and_year()
       |> Enum.map(fn {{month, year}, section_resources} ->
@@ -2987,16 +2980,7 @@ defmodule Oli.Delivery.Sections do
       end
 
     scheduled_section_resources =
-      Scheduling.retrieve(section, :pages)
-      # filter out unscheduled resources
-      |> Enum.filter(fn section_resource ->
-        case section_resource do
-          %SectionResource{start_date: nil, end_date: nil} -> false
-          %SectionResource{hidden: true} -> false
-          %SectionResource{removed_from_schedule: true} -> false
-          _ -> true
-        end
-      end)
+      visible_scheduled_resources(section, combined_settings_for_all_resources)
       # group items by month and year, start date take precedence over end date
       |> group_and_sort_by_month_and_year()
       |> Enum.map(fn {{month, year}, section_resources} ->
@@ -3118,6 +3102,23 @@ defmodule Oli.Delivery.Sections do
     # %{{month, year} => sorted_container_groups}
     # month and year are nil since the section is not yet scheduled
     %{{nil, nil} => sorted_container_groups}
+  end
+
+  defp visible_scheduled_resources(section, combined_settings) do
+    Scheduling.retrieve(section, :pages)
+    |> Stream.map(fn
+      %{removed_from_schedule: true} = resource ->
+        display =
+          Scheduling.for_display(Map.get(combined_settings, resource.resource_id, resource))
+
+        %{resource | start_date: display.start_date, end_date: display.end_date}
+
+      resource ->
+        resource
+    end)
+    |> Enum.reject(fn resource ->
+      resource.hidden or (is_nil(resource.start_date) and is_nil(resource.end_date))
+    end)
   end
 
   defp build_user_data_for_section_schedule(section, current_user_id) do
@@ -3301,7 +3302,8 @@ defmodule Oli.Delivery.Sections do
         progress: progress_percentage(progress_per_resource_id[sr.resource_id]),
         raw_avg_score: raw_avg_score_per_page_id[sr.resource_id],
         resource_attempt_count: user_resource_attempt_counts[sr.resource_id] || 0,
-        effective_settings: combined_settings_for_all_resources[sr.resource_id],
+        effective_settings:
+          Scheduling.for_display(combined_settings_for_all_resources[sr.resource_id]),
         end_date: sr.end_date,
         last_attempt: last_attempt_per_page_id[sr.resource_id],
         duration_minutes: sr.duration_minutes
@@ -5620,6 +5622,8 @@ defmodule Oli.Delivery.Sections do
   A Student exception takes precedence over all other end dates.
   Hard sceduled dates for a specific student take precedence over "global" hard scheduled dates.
   Global hard scheduled dates take precedence over soft scheduled dates.
+  Removed advisory dates are suppressed; assignment deadlines, student exceptions,
+  and hard-schedule restrictions retain their existing precedence and remain visible.
   """
   @spec get_resources_scheduled_dates_for_student(String.t(), integer()) ::
           list(%{
@@ -5635,7 +5639,7 @@ defmodule Oli.Delivery.Sections do
       left_join: se in Oli.Delivery.Settings.StudentException,
       on:
         se.section_id == sr.section_id and se.resource_id == sr.resource_id and
-          se.user_id == ^student_id and not is_nil(se.end_date),
+          se.user_id == ^student_id,
       left_join: gc1 in Oli.Delivery.Gating.GatingCondition,
       on:
         gc1.section_id == sr.section_id and gc1.resource_id == sr.resource_id and
@@ -5660,7 +5664,9 @@ defmodule Oli.Delivery.Sections do
                 ?,
                 CASE WHEN ? = 'null' THEN NULL ELSE CAST(CAST(? AS text) AS timestamp) END,
                 CASE WHEN ? = 'null' THEN NULL ELSE CAST(CAST(? AS text) AS timestamp) END,
-                ?
+                CASE WHEN ? AND (? = 'read_by' OR
+                  (? = 'inclass_activity' AND COALESCE(?, ?) = 'allow'))
+                  THEN NULL ELSE ? END
             )
             """,
             se.end_date,
@@ -5668,6 +5674,11 @@ defmodule Oli.Delivery.Sections do
             gc1.data["end_datetime"],
             gc2.data["end_datetime"],
             gc2.data["end_datetime"],
+            sr.removed_from_schedule,
+            sr.scheduling_type,
+            sr.scheduling_type,
+            se.late_start,
+            sr.late_start,
             sr.end_date
           )
           |> type(:utc_datetime),
@@ -5680,7 +5691,7 @@ defmodule Oli.Delivery.Sections do
               ELSE ? END
             ELSE ? END
             """,
-            se.resource_id,
+            se.end_date,
             gc1.resource_id,
             gc2.resource_id,
             sr.scheduling_type,
@@ -5723,6 +5734,10 @@ defmodule Oli.Delivery.Sections do
     Repo.all(query)
   end
 
+  @doc """
+  Builds the student page-list query, hiding removed advisory dates while preserving
+  assignment deadlines and student exceptions.
+  """
   def get_student_pages(section_slug, user_id) do
     page_type_id = ResourceType.id_for_page()
 
@@ -5750,7 +5765,17 @@ defmodule Oli.Delivery.Sections do
       slug: rev.slug,
       end_date:
         fragment(
-          "coalesce(?, ?)",
+          """
+          CASE WHEN ? AND (? = 'read_by' OR
+            (? = 'inclass_activity' AND COALESCE(?, ?) = 'allow'))
+            THEN ? ELSE coalesce(?, ?) END
+          """,
+          sr.removed_from_schedule,
+          sr.scheduling_type,
+          sr.scheduling_type,
+          ds.late_start,
+          sr.late_start,
+          ds.end_date,
           ds.end_date,
           sr.end_date
         ),
@@ -5939,13 +5964,16 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Finds the nearest upcoming lessons in a specific section based on the current date and the lessons count.
 
+  Removed advisory end dates do not influence selection or ordering. Operative
+  deadlines, availability dates, and student date exceptions remain eligible.
+
   ## Parameters:
   - `section`: The section struct containing details about the course section.
   - `user_id`: The ID of the user.
   - `lessons_count`: The number of upcoming lessons to retrieve.
   - `opts`: Additional options to filter the lessons. The `:only_graded` option filters the lessons
     to only include graded lessons. The `:ignore_schedule` option ignores the schedule and returns
-    all upcoming lessons, no matter if they do not have any scheduled date.
+    lessons in course order, regardless of dates or soft-schedule removal.
 
   ## Returns:
   - Returns a list of maps with details of the upcoming lessons.
@@ -5964,37 +5992,65 @@ defmodule Oli.Delivery.Sections do
         true
       end
 
-    schedule_filter =
-      if opts[:ignore_schedule] do
-        true
-      else
-        dynamic(
-          [sr, _s, _spp, _pr, _rev, _ra, _r_att, se],
-          coalesce(se.start_date, se.end_date)
-          |> coalesce(sr.start_date)
-          |> coalesce(sr.end_date) >=
-            ^today
+    section_end_date =
+      dynamic(
+        [sr: sr, student_exception: se],
+        fragment(
+          """
+          CASE WHEN ? AND (? = 'read_by' OR
+            (? = 'inclass_activity' AND COALESCE(?, ?) = 'allow'))
+            THEN NULL ELSE ? END
+          """,
+          sr.removed_from_schedule,
+          sr.scheduling_type,
+          sr.scheduling_type,
+          se.late_start,
+          sr.late_start,
+          sr.end_date
         )
+      )
+
+    schedule_date =
+      dynamic(
+        [sr: sr, student_exception: se],
+        coalesce(se.start_date, se.end_date)
+        |> coalesce(sr.start_date)
+        |> coalesce(^section_end_date)
+      )
+
+    display_end_date =
+      dynamic(
+        [student_exception: se],
+        type(coalesce(se.end_date, ^section_end_date), :utc_datetime)
+      )
+
+    {schedule_filter, schedule_order} =
+      case opts[:ignore_schedule] do
+        true ->
+          {true, [asc: dynamic([sr: sr], sr.numbering_index)]}
+
+        _ ->
+          {dynamic(^schedule_date >= ^today),
+           [asc: schedule_date, asc: dynamic([sr: sr], sr.numbering_index)]}
       end
 
     from([rev: rev, sr: sr] in DeliveryResolver.section_resource_revisions(section.slug),
       left_join: ra in ResourceAccess,
-      on: ra.resource_id == rev.resource_id and ra.user_id == ^user_id,
+      on:
+        ra.resource_id == rev.resource_id and ra.user_id == ^user_id and
+          ra.section_id == ^section.id,
       left_join: r_att in ResourceAttempt,
       on: r_att.resource_access_id == ra.id,
       left_join: se in Oli.Delivery.Settings.StudentException,
+      as: :student_exception,
       on:
-        se.resource_id == ra.resource_id and se.user_id == ^user_id and
+        se.resource_id == sr.resource_id and se.user_id == ^user_id and
           se.section_id == ^section.id,
       where:
         rev.resource_type_id == ^page_resource_type_id and
           is_nil(r_att.id) and not sr.hidden,
       where: ^schedule_filter,
-      order_by: [
-        asc:
-          coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date),
-        asc: sr.numbering_index
-      ],
+      order_by: ^schedule_order,
       limit: ^lessons_count,
       select:
         map(rev, [
@@ -6010,7 +6066,6 @@ defmodule Oli.Delivery.Sections do
       select_merge: %{
         numbering_index: sr.numbering_index,
         start_date: coalesce(se.start_date, sr.start_date),
-        end_date: coalesce(se.end_date, sr.end_date),
         scheduling_type: sr.scheduling_type,
         batch_scoring: sr.batch_scoring,
         score: ra.score,
@@ -6018,6 +6073,7 @@ defmodule Oli.Delivery.Sections do
       }
     )
     |> where(^graded_filter)
+    |> select_merge(^%{end_date: display_end_date})
     |> Repo.all()
   end
 
