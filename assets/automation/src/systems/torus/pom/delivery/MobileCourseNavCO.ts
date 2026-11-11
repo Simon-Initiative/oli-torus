@@ -35,7 +35,7 @@ export class MobileCourseNavCO {
     await expect(async () => {
       await this.openButton.click();
       await expect(this.menu).toBeVisible({ timeout: 2_000 });
-    }).toPass();
+    }).toPass({ timeout: 15_000 });
   }
 
   /** Also dismisses the user menu, which closes on any click outside it. */
