@@ -150,6 +150,24 @@ defmodule Oli.Auditing.EventExamples do
       changes: %{"author_id" => %{"operation" => "set", "before" => nil, "after" => 12}}
     ]
 
+  defp spec(:account_identity_linked),
+    do: [
+      actor: :learner,
+      entity: {:user, @learner},
+      affected: {:user, 77},
+      key: "account:primary:account_identity_linked:google",
+      details: %{"provider" => "google"}
+    ]
+
+  defp spec(:account_identity_unlinked),
+    do: [
+      actor: :learner,
+      entity: {:user, @learner},
+      affected: {:user, 77},
+      key: "account:primary:account_identity_unlinked:google",
+      details: %{"provider" => "google"}
+    ]
+
   defp spec(:account_permissions_changed),
     do: [
       actor: :admin,

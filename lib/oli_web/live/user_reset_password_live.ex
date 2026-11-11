@@ -4,6 +4,7 @@ defmodule OliWeb.UserResetPasswordLive do
   import OliWeb.Backgrounds
 
   alias Oli.Accounts
+  alias Oli.Auditing.Context
 
   def render(assigns) do
     ~H"""
@@ -73,7 +74,11 @@ defmodule OliWeb.UserResetPasswordLive do
   # Do not log in the user after reset password to avoid a
   # leaked token giving the user access to the account.
   def handle_event("reset_password", %{"user" => user_params}, socket) do
-    case Accounts.reset_user_password(socket.assigns.user, user_params) do
+    case Accounts.Audited.reset_password(
+           Context.for_actor(socket.assigns.user, source: :ui),
+           socket.assigns.user,
+           user_params
+         ) do
       {:ok, _} ->
         {:noreply,
          socket

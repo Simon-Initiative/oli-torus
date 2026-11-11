@@ -454,7 +454,11 @@ defmodule OliWeb.AuthorAuth do
       case conn.assigns do
         %{current_user: user = %User{id: current_user_id}}
         when current_user_id == link_account_user_id ->
-          case Accounts.link_user_author_account(user, author) do
+          case Accounts.Audited.link_accounts(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 user.id,
+                 author.id
+               ) do
             {:ok, _} ->
               author_return_to = get_session(conn, :author_return_to) || ~p"/users/settings"
 

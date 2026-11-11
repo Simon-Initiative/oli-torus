@@ -10,7 +10,11 @@ defmodule OliWeb.AuthorResetPasswordLiveTest do
 
     token =
       extract_user_token(fn url ->
-        Accounts.deliver_author_reset_password_instructions(author, url)
+        Accounts.deliver_author_reset_password_instructions(
+          Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
+          author,
+          url
+        )
       end)
 
     %{token: token, author: author}

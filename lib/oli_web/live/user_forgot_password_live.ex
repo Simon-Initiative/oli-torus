@@ -4,6 +4,7 @@ defmodule OliWeb.UserForgotPasswordLive do
   import OliWeb.Backgrounds
 
   alias Oli.Accounts
+  alias Oli.Auditing.Context
 
   def render(assigns) do
     ~H"""
@@ -42,6 +43,7 @@ defmodule OliWeb.UserForgotPasswordLive do
   def handle_event("send_email", %{"user" => %{"email" => email}}, socket) do
     if user = Accounts.get_independent_user_by_email(email) do
       Accounts.deliver_user_reset_password_instructions(
+        Context.for_system(:unauthenticated_request, source: :ui),
         user,
         &url(~p"/users/reset_password/#{&1}")
       )

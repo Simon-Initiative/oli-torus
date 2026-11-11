@@ -5,6 +5,7 @@ defmodule OliWeb.AuthorAuthorizationController do
 
   alias Phoenix.Naming
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.AssentAuth.AuthorAssentAuth
   alias OliWeb.AuthorAuth
   alias OliWeb.Common.AssentAuthWeb
@@ -363,6 +364,7 @@ defmodule OliWeb.AuthorAuthorizationController do
         create_session: &AuthorAuth.create_session(&1, &2),
         deliver_user_confirmation_instructions: fn user ->
           Accounts.deliver_author_confirmation_instructions(
+            Context.for_actor(user, source: :ui),
             user,
             &url(~p"/authors/confirm/#{&1}")
           )

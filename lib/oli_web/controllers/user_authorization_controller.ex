@@ -5,6 +5,7 @@ defmodule OliWeb.UserAuthorizationController do
 
   alias Phoenix.Naming
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.AssentAuth.UserAssentAuth
   alias OliWeb.UserAuth
   alias OliWeb.Common.AssentAuthWeb
@@ -360,7 +361,11 @@ defmodule OliWeb.UserAuthorizationController do
         get_user_by_provider_uid: &UserAssentAuth.get_user_by_provider_uid(&1, &2),
         create_session: &UserAuth.create_session(&1, &2),
         deliver_user_confirmation_instructions: fn user ->
-          Accounts.deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
+          Accounts.deliver_user_confirmation_instructions(
+            Context.for_actor(user, source: :ui),
+            user,
+            &url(~p"/users/confirm/#{&1}")
+          )
         end,
         assent_auth_module: UserAssentAuth
       }

@@ -36,9 +36,10 @@ defmodule OliWeb.LinkAccountLive do
         _params,
         socket
       ) do
-    case Accounts.link_user_author_account(
-           socket.assigns.current_user,
-           socket.assigns.current_author
+    case Accounts.Audited.link_accounts(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_user, source: :ui),
+           socket.assigns.current_user.id,
+           socket.assigns.current_author.id
          ) do
       {:ok, _} ->
         {:noreply,
@@ -59,7 +60,10 @@ defmodule OliWeb.LinkAccountLive do
         _params,
         socket
       ) do
-    case Accounts.unlink_user_author_account(socket.assigns.current_user) do
+    case Accounts.Audited.unlink_accounts(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_user, source: :ui),
+           socket.assigns.current_user.id
+         ) do
       {:ok, _} ->
         {:noreply,
          socket

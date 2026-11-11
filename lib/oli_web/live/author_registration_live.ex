@@ -4,6 +4,7 @@ defmodule OliWeb.AuthorRegistrationLive do
   import OliWeb.Backgrounds
 
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.Accounts.Author
   alias Oli.Recaptcha
 
@@ -61,6 +62,7 @@ defmodule OliWeb.AuthorRegistrationLive do
       if Accounts.author_email_verification_required?() do
         {:ok, _} =
           Accounts.deliver_author_confirmation_instructions(
+            Context.for_actor(author, source: :ui),
             author,
             &url(~p"/authors/confirm/#{&1}")
           )

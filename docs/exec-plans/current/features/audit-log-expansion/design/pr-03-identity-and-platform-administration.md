@@ -85,12 +85,13 @@ Gathered at `ab1bae4434` by following each function's callers, changesets, direc
 | `author_settings_live.ex:235`, `user_settings_live.ex:383` via `update_author/2`, `update_user/2` | Names submitted through the generic update | M: `update_own_profile/3`, names only |
 | `update_user_email/2`, `update_author_email/2` | Token-verified Multi | M: `confirm_email_change/3` |
 | `link_user_author_account/2`, `unlink_user_author_account/1` (`link_account_live.ex:39`, `:62`; `author_auth.ex:457`; SSO Multi) | `update_user(author_id)` | M/C: `link_accounts/3`, `link_accounts_multi/4`, `unlink_accounts/2` (`account_linked`) |
+| Assent `add_identity_provider/2`, `delete_identity_providers/2` (connecting or disconnecting Google or GitHub from the settings pages, and SSO invitation acceptance) | Direct insert and delete | M: `link_identity/3`, `unlink_identities/3` (`account_identity_linked`, `account_identity_unlinked`, provider name only) |
 | `update_*_password/3`, `create_*_password/2`, `reset_*_password/2` (six functions) | Multi: password and delete all tokens | M: `change_password/4`, `create_password/3`, `reset_password/3`; `account_updated` or `account_credential_recovered` plus `session_revoked` |
 | `deliver_*_reset_password_instructions/2`, `generate_*_reset_password_token/1` (self-service and admin) | Token insert, then email | M: `request_recovery/3` (`account_recovery_requested`) |
 | `deliver_*_confirmation_instructions/2`, `confirm_user/1`, `confirm_author/1` | Token insert; verify Multi | M: `request_recovery/3` (`recovery_kind: confirmation`), `confirm_email/2` |
 | `Scenarios.Directives.UserHandler` (`user_handler.ex:93`, `:133`), `Scenarios.Engine.create_default_author/…` (`engine.ex:281`), `bulk_create_enroll_users.ex:94` | Direct changeset inserts and `insert_all` | M: facade with the `playwright_setup` actor and `:scenario` source |
 | `Sections.create_hidden_instructor` (`sections.ex:140`) | Inserts a hidden technical account for previews | X: system-managed technical account, never a person |
-| `AutomationSetup` setup and teardown (`automation_setup.ex:314`-`486`) | E2E fixture accounts behind the automation API key | X: same technical-fixture classification as PR-02 section 4.5 |
+| `AutomationSetup` setup and teardown (`automation_setup.ex:314`-`486`) | E2E fixture accounts behind the automation API key | X: same technical-fixture classification as PR-02 section 4.5; setup inserts its accounts directly instead of through registration |
 | Seeders (`utils/db_seeder.ex`, `utils/seeder/*`), `instructor_dashboard.seed`, `gen_ai.setup_local_codex` | Direct writes | X: development bootstrap tooling, not supported product channels |
 | `research_opt_out` (`delivery_controller.ex:96`, `sections.ex:174`), `set_*_preference`, preference writes in authoring LiveViews | Preference writes | X here: PR-06 (W27). They keep using the restricted `update_user/2` and `update_author/2` |
 | `extrinsic_state.ex:100`, `:145` (`state`) | Derived learner state | X: derived state; stays on the restricted `update_user/2` |
@@ -244,25 +245,31 @@ Domain validation failures return the domain changeset where callers render it, 
 
 ```elixir
 @spec register_account(Context.t() | :self, :user | :author, map()) :: {:ok, struct()} | {:error, command_error()}
-@spec create_guest(map(), keyword()) :: {:ok, %User{}} | {:error, command_error()}
-@spec provision_lms_user_multi(Multi.t(), Multi.name(), Context.t(), {institution, claims}) :: Multi.t()
-@spec provision_identity_account(Context.t(), :user | :author, map()) :: {:ok, struct()} | {:error, command_error()}
-@spec sync_identity_details(Context.t(), struct(), map()) :: {:ok, struct()} | {:error, command_error()}
-@spec setup_sso_account(Context.t(), :user | :author, map()) :: {:ok, struct()} | {:error, command_error()}
-@spec invite_accounts_multi(Multi.t(), Multi.name(), Context.t(), {:user | :author, [String.t()]}) :: Multi.t()
-@spec accept_invitation_multi(Multi.t(), Multi.name(), struct(), map()) :: Multi.t()
+@spec create_guest(Context.t() | :self, map()) :: {:ok, %User{}} | {:error, command_error()}
+@spec invite_author(Context.t(), String.t()) :: {:ok, %Author{}} | {:error, command_error()}
+@spec invite_users_multi(Multi.t(), Multi.name(), Context.t(), [String.t()]) :: Multi.t()
+@spec bulk_create_users(Context.t(), [map()], String.t()) :: {:ok, non_neg_integer()} | {:error, command_error()}
+@spec accept_invitation_multi(Multi.t(), Multi.name(), {:user | :author, struct(), map(), :password | :sso}) :: Multi.t()
+@spec provision_account_multi(Multi.t(), Multi.name(), Context.t(), {:user | :author, pos_integer() | nil, changeset_or_fun, String.t()}) :: Multi.t()
+@spec provision_account(Context.t(), {:user | :author, pos_integer() | nil, changeset_or_fun, String.t()}) :: {:ok, struct()} | {:error, command_error()}
 @spec update_own_profile(Context.t(), struct(), map()) :: {:ok, struct()} | {:error, command_error()}
-@spec confirm_email_change(:user | :author, struct(), String.t()) :: {:ok, struct()} | :error
+@spec confirm_email_change(Context.t(), struct(), String.t()) :: :ok | :error
 @spec link_accounts(Context.t(), pos_integer(), pos_integer()) :: {:ok, %User{}} | {:error, command_error()}
-@spec link_accounts_multi(Multi.t(), Multi.name(), Context.t(), {pos_integer(), pos_integer()}) :: Multi.t()
+@spec link_accounts_multi(Multi.t(), Multi.name(), Context.t(), {pos_integer(), pos_integer() | nil}) :: Multi.t()
 @spec unlink_accounts(Context.t(), pos_integer()) :: {:ok, %User{}} | {:error, command_error()}
+@spec link_identity(Context.t(), struct(), map()) :: {:ok, struct()} | {:error, command_error()}
+@spec unlink_identities(Context.t(), struct(), [struct()]) :: {:ok, {non_neg_integer(), nil}} | {:error, command_error()}
 @spec change_password(Context.t(), struct(), String.t(), map()) :: {:ok, struct()} | {:error, command_error()}
 @spec create_password(Context.t(), struct(), map()) :: {:ok, struct()} | {:error, command_error()}
-@spec reset_password(:user | :author, struct(), map()) :: {:ok, struct()} | {:error, command_error()}
+@spec reset_password(Context.t(), struct(), map()) :: {:ok, struct()} | {:error, command_error()}
 @spec request_recovery(Context.t(), {:user | :author, struct()}, :password_reset | :confirmation | :admin_reset_link) ::
         {:ok, encoded_token :: String.t()} | {:error, command_error()}
 @spec confirm_email(:user | :author, String.t()) :: {:ok, struct()} | :error
 ```
+
+Every command takes a context. For token-verified actions (reset, email change) the caller passes the account the token belongs to, and the command rejects any other actor. `confirm_email/2` is the exception: the token identifies the account, so the command builds the context from it.
+
+`Accounts.register_independent_user/1`, `register_author/1`, `create_guest_user/1`, and the six `accept_*_invitation*` functions keep their signatures and delegate the account part to the facade, so their callers do not change. `Accounts.deliver_*_confirmation_instructions/3` and `deliver_*_reset_password_instructions/3` take the context first, issue the link through `request_recovery/3`, and send the email after commit. LTI (`insert_or_update_lms_user/2`), Cognito (`setup_sso_user/2`, `setup_sso_author/2`), and Assent (`create_user_with_identity/2`, `update_user_details/2`) compose `provision_account_multi/4` into the caller's transaction when there is one. Scenario handlers use `provision_account/2` and `bulk_create_users/3` with `creation_source` `scenario`.
 
 `update_own_profile/3` casts only `name`, `given_name`, and `family_name` (the author settings form submits its read-only `name`); any other field of the account returns `:protected` and changes nothing.
 
@@ -453,6 +460,8 @@ Feature flags and rollouts:
 All are extensions or tightenings of PR-01 contracts that have no production rows yet. Regenerate `docs/design-docs/audit-log-events.md` and add examples in `test/support/audit/event_examples.ex` in the same checkpoint.
 
 - **`Context`:** add the system actor `:unauthenticated_request` ("Unauthenticated request"). The database check already admits any well-formed key.
+- **Login-provider identities:** add `account_identity_linked` and `account_identity_unlinked` to the account family, with only the provider name in details; the provider's account uid is never recorded.
+- **System actor in account events:** admit `:system` in `account_updated`, `account_linked`, and `account_creation_rights_changed`, because identity-provider provisioning updates claims, links Cognito accounts, and grants Cognito users section creation.
 - **`account` family:** add the `platform_roles` pseudo key (sorted role URIs as a `set` change) to `Fields.user_account/0` and its `schema_sources/0` declaration, and admit the system actor in `account_permissions_changed`, because LTI launches sync roles under `provider_provisioning`.
 - **Integrations family:** add the event `lms_registration_declined` ("LMS registration request declined") and the entity type `:pending_registration`. Replace `required_one_of: [:institution_id, :section_id]` with scope rules per entity type: registration, pending registration, and external tool use the global scope ref; deployment uses `institution_id`; deep link uses `section_id`.
 - **Organizations family:** add `:research_consent` to the default `entity_types`.

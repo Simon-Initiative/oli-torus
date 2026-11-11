@@ -266,7 +266,11 @@ defmodule OliWeb.UserSettingsLive do
 
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Accounts.update_user_email(socket.assigns.current_user, token) do
+      case Accounts.Audited.confirm_email_change(
+             Context.for_actor(socket.assigns.current_user, source: :ui),
+             socket.assigns.current_user,
+             token
+           ) do
         :ok ->
           socket
           |> clear_flash()
@@ -517,7 +521,12 @@ defmodule OliWeb.UserSettingsLive do
 
       # Case 2: User has password and provided current password - update it
       has_password ->
-        case Accounts.update_user_password(user, current_password, password_params) do
+        case Accounts.Audited.change_password(
+               Context.for_actor(user, source: :ui),
+               user,
+               current_password,
+               password_params
+             ) do
           {:ok, user} ->
             {:ok, user}
 
@@ -527,7 +536,11 @@ defmodule OliWeb.UserSettingsLive do
 
       # Case 3: User doesn't have password yet - create new one
       true ->
-        case Accounts.create_user_password(user, password_params) do
+        case Accounts.Audited.create_password(
+               Context.for_actor(user, source: :ui),
+               user,
+               password_params
+             ) do
           {:ok, user} ->
             {:ok, user}
 

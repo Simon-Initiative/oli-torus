@@ -175,7 +175,11 @@ defmodule OliWeb.AuthorSettingsLive do
 
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Accounts.update_author_email(socket.assigns.current_author, token) do
+      case Accounts.Audited.confirm_email_change(
+             Context.for_actor(socket.assigns.current_author, source: :ui),
+             socket.assigns.current_author,
+             token
+           ) do
         :ok ->
           put_flash(socket, :info, "Email changed successfully.")
 
@@ -307,7 +311,12 @@ defmodule OliWeb.AuthorSettingsLive do
     # this handles the case where the author has a password already
     author = socket.assigns.current_author
 
-    case Accounts.update_author_password(author, current_password, author_params) do
+    case Accounts.Audited.change_password(
+           Context.for_actor(author, source: :ui),
+           author,
+           current_password,
+           author_params
+         ) do
       {:ok, author} ->
         password_form =
           author
@@ -325,7 +334,11 @@ defmodule OliWeb.AuthorSettingsLive do
     # this handles the case where the author has no password yet
     author = socket.assigns.current_author
 
-    case Accounts.create_author_password(author, author_params) do
+    case Accounts.Audited.create_password(
+           Context.for_actor(author, source: :ui),
+           author,
+           author_params
+         ) do
       {:ok, author} ->
         password_form =
           author

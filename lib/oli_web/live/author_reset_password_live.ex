@@ -4,6 +4,7 @@ defmodule OliWeb.AuthorResetPasswordLive do
   import OliWeb.Backgrounds
 
   alias Oli.Accounts
+  alias Oli.Auditing.Context
 
   def render(assigns) do
     ~H"""
@@ -73,7 +74,11 @@ defmodule OliWeb.AuthorResetPasswordLive do
   # Do not log in the author after reset password to avoid a
   # leaked token giving the author access to the account.
   def handle_event("reset_password", %{"author" => author_params}, socket) do
-    case Accounts.reset_author_password(socket.assigns.author, author_params) do
+    case Accounts.Audited.reset_password(
+           Context.for_actor(socket.assigns.author, source: :ui),
+           socket.assigns.author,
+           author_params
+         ) do
       {:ok, _} ->
         {:noreply,
          socket

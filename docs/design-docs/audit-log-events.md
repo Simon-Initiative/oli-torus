@@ -18,7 +18,7 @@ columns an event sets; omitted columns are `NULL`, `{}`, or `[]`.
 | `event_type` | What happened. One of the catalog names below. |
 | `outcome` | Result: `succeeded`, `initiated`, `failed`, `canceled`, `partial`, `unknown`. |
 | `actor_type` | Who acted: `user`, `author`, `system`; `unknown` only on migrated rows without an actor. |
-| `actor_key` | System actor key when `actor_type` is `system`: `playwright_setup`, `provider_provisioning`, `scheduled_maintenance`. |
+| `actor_key` | System actor key when `actor_type` is `system`: `playwright_setup`, `provider_provisioning`, `scheduled_maintenance`, `unauthenticated_request`. |
 | `user_id` | Acting user, when the actor is a user. |
 | `author_id` | Acting author, when the actor is an author. |
 | `actor_snapshot` | Actor identity at the time: `id`, `name`, `email` for accounts; `key`, `label` for system actors. |
@@ -48,7 +48,7 @@ columns an event sets; omitted columns are `NULL`, `{}`, or `[]`.
 | Family | Events |
 | --- | --- |
 | Authentication | `user_logged_in`, `author_logged_in`, `user_logged_out`, `author_logged_out`, `session_revoked` |
-| Account | `account_created`, `account_updated`, `account_locked`, `account_unlocked`, `account_linked`, `account_permissions_changed`, `account_creation_rights_changed`, `account_recovery_requested`, `account_credential_recovered`, `user_deleted`, `author_deleted`, `author_role_changed`, `account_internal_flag_changed` |
+| Account | `account_created`, `account_updated`, `account_locked`, `account_unlocked`, `account_linked`, `account_identity_linked`, `account_identity_unlinked`, `account_permissions_changed`, `account_creation_rights_changed`, `account_recovery_requested`, `account_credential_recovered`, `user_deleted`, `author_deleted`, `author_role_changed`, `account_internal_flag_changed` |
 | Project | `project_created`, `project_duplicated`, `project_imported`, `project_deleted`, `project_ownership_changed`, `project_collaborator_changed`, `project_published` |
 | Assessment settings | `assessment_settings_changed`, `assessment_settings_reset`, `assessment_setting_changed` |
 | Student exceptions | `student_exception_created`, `student_exception_updated`, `student_exception_deleted` |
@@ -336,7 +336,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `user`, `author` |
 | Required columns | none |
 | At least one of | none |
@@ -462,7 +462,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `user`, `author` |
 | Required columns | none |
 | At least one of | none |
@@ -496,6 +496,90 @@ Example:
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "account:primary:linked",
   "search_text": "Grace Hopper grace.hopper@example.edu katherine.author@example.edu"
+}
+```
+
+### `account_identity_linked`
+
+**Login provider connected.** A login provider (for example Google) was connected to an account, so it can sign in through that provider; the provider account identifier is not recorded.
+
+| Rule | Value |
+| --- | --- |
+| Actors | `user`, `author` |
+| Entity types | `user`, `author` |
+| Required columns | none |
+| At least one of | none |
+| Affected person | `user`, `author` (required; equals the entity) |
+| Outcomes | `succeeded` |
+| No-op policy | `lifecycle` (written without changes) |
+| Change fields | none |
+| Detail keys | `provider` |
+| Reference roles | none |
+| Status | active |
+
+Example:
+
+```json
+{
+  "inserted_at": "2026-10-29T14:05:08.123456Z",
+  "occurred_at": "2026-10-29T14:05:08.123456Z",
+  "schema_version": 2,
+  "event_type": "account_identity_linked",
+  "outcome": "succeeded",
+  "actor_type": "user",
+  "user_id": 77,
+  "actor_snapshot": {"email":"ada.student@example.edu","id":77,"name":"Ada Student"},
+  "entity_type": "user",
+  "entity_id": "77",
+  "entity_snapshot": {"email":"ada.student@example.edu","id":77,"name":"Ada Student"},
+  "affected_user_id": 77,
+  "details": {"provider":"google"},
+  "source": "ui",
+  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
+  "event_key": "account:primary:account_identity_linked:google",
+  "search_text": "Ada Student ada.student@example.edu"
+}
+```
+
+### `account_identity_unlinked`
+
+**Login provider disconnected.** A login provider was disconnected from an account.
+
+| Rule | Value |
+| --- | --- |
+| Actors | `user`, `author` |
+| Entity types | `user`, `author` |
+| Required columns | none |
+| At least one of | none |
+| Affected person | `user`, `author` (required; equals the entity) |
+| Outcomes | `succeeded` |
+| No-op policy | `lifecycle` (written without changes) |
+| Change fields | none |
+| Detail keys | `provider` |
+| Reference roles | none |
+| Status | active |
+
+Example:
+
+```json
+{
+  "inserted_at": "2026-10-29T14:05:08.123456Z",
+  "occurred_at": "2026-10-29T14:05:08.123456Z",
+  "schema_version": 2,
+  "event_type": "account_identity_unlinked",
+  "outcome": "succeeded",
+  "actor_type": "user",
+  "user_id": 77,
+  "actor_snapshot": {"email":"ada.student@example.edu","id":77,"name":"Ada Student"},
+  "entity_type": "user",
+  "entity_id": "77",
+  "entity_snapshot": {"email":"ada.student@example.edu","id":77,"name":"Ada Student"},
+  "affected_user_id": 77,
+  "details": {"provider":"google"},
+  "source": "ui",
+  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
+  "event_key": "account:primary:account_identity_unlinked:google",
+  "search_text": "Ada Student ada.student@example.edu"
 }
 ```
 
@@ -547,7 +631,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `user`, `author` |
 | Required columns | none |
 | At least one of | none |

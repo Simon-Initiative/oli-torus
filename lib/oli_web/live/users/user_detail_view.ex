@@ -327,7 +327,10 @@ defmodule OliWeb.Users.UsersDetailView do
   def handle_event("generate_reset_password_link", %{"id" => id}, socket) do
     user = user_with_preloaded_fields(id)
 
-    encoded_token = Accounts.generate_user_reset_password_token(user)
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
+
+    {:ok, encoded_token} =
+      Accounts.Audited.request_recovery(context, {:user, user}, :admin_reset_link)
 
     password_reset_link =
       url(~p"/users/reset_password/#{encoded_token}")
@@ -370,6 +373,7 @@ defmodule OliWeb.Users.UsersDetailView do
     user = user_with_preloaded_fields(id)
 
     case Accounts.deliver_user_confirmation_instructions(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
            user,
            &url(~p"/users/confirm/#{&1}")
          ) do
@@ -378,6 +382,9 @@ defmodule OliWeb.Users.UsersDetailView do
 
       {:error, :already_confirmed} ->
         {:noreply, put_flash(socket, :info, "Email is already confirmed.")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Error sending confirmation link.")}
     end
   end
 
@@ -385,14 +392,15 @@ defmodule OliWeb.Users.UsersDetailView do
     user = user_with_preloaded_fields(id)
 
     case Accounts.deliver_user_reset_password_instructions(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
            user,
            &url(~p"/users/reset_password/#{&1}")
          ) do
       {:ok, _} ->
         {:noreply, put_flash(socket, :info, "Password reset link sent.")}
 
-      {:error, error} ->
-        {:noreply, put_flash(socket, :error, "Error sending password reset link: #{error}")}
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Error sending password reset link.")}
     end
   end
 

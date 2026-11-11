@@ -205,6 +205,7 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       create_session: &AuthorAuth.create_session(&1, &2),
       deliver_user_confirmation_instructions: fn user ->
         Accounts.deliver_author_confirmation_instructions(
+          Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
           user,
           &url(~p"/authors/confirm/#{&1}")
         )
@@ -227,6 +228,7 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       create_session: &UserAuth.create_session(&1, &2),
       deliver_user_confirmation_instructions: fn user ->
         Accounts.deliver_user_confirmation_instructions(
+          Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
           user,
           &url(~p"/users/confirm/#{&1}")
         )

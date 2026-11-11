@@ -4,12 +4,13 @@ defmodule Oli.Auditing.EventCatalogTest do
   alias Oli.Auditing.{EventCatalog, Sensitive}
   alias Oli.Auditing.EventCatalog.{Contract, Fields}
 
-  # Mirrors the family contract table of the approved PR-01 design.
+  # Mirrors the family contract table of the approved PR-01 design, plus the events later
+  # coverage designs add.
   @expected %{
     authentication:
       ~w(user_logged_in author_logged_in user_logged_out author_logged_out session_revoked)a,
     account: ~w(account_created account_updated account_locked account_unlocked account_linked
-        account_permissions_changed account_creation_rights_changed account_recovery_requested
+        account_identity_linked account_identity_unlinked account_permissions_changed account_creation_rights_changed account_recovery_requested
         account_credential_recovered user_deleted author_deleted author_role_changed
         account_internal_flag_changed)a,
     project: ~w(project_created project_duplicated project_imported project_deleted
@@ -79,7 +80,7 @@ defmodule Oli.Auditing.EventCatalogTest do
       end)
 
     assert actual == @expected
-    assert length(EventCatalog.names()) == 107
+    assert length(EventCatalog.names()) == 109
     assert length(EventCatalog.families()) == 25
   end
 
