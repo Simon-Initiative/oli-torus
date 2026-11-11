@@ -101,7 +101,7 @@ export class StudentLessonPO {
       await expect(this.bottomBar).toBeInViewport({ timeout: 2_000 });
       await this.page.waitForTimeout(1_000);
       await expect(this.bottomBar).toBeInViewport({ timeout: 500 });
-    }).toPass();
+    }).toPass({ timeout: 15_000 });
   }
 
   private async expectConnected() {
