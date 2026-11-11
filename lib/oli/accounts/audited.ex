@@ -371,6 +371,116 @@ defmodule Oli.Accounts.Audited do
 
   def unlink_identities(_context, _account, _identities), do: {:error, :invalid_request}
 
+  ## Sessions
+
+  @typedoc "How the account authenticated before the session was issued."
+  @type auth_method :: :password | :sso | :cognito | :lti
+
+  @doc """
+  Issues a session token for `account` after it authenticated with `auth_method`, and records
+  `user_logged_in` or `author_logged_in` with the method and the token row ID as
+  `session_ref`; the token itself is never recorded. `context` must belong to `account`.
+
+  Options: `:scope` (a `%Oli.Delivery.SecureAssessments.Scope{}` for a secure assessment
+  session; its section becomes the event's section scope). Returns the token for the caller to
+  put in the browser session after commit.
+  """
+  @spec issue_session(Context.t(), %User{} | %Author{}, auth_method(), keyword()) ::
+          {:ok, %{token: binary(), token_id: pos_integer()}} | {:error, command_error()}
+  def issue_session(context, account, auth_method, opts \\ []),
+    do: run(:session, &issue_session_multi(&1, :session, context, {account, auth_method, opts}))
+
+  @doc "Adds the steps of `issue_session/4` to `multi`, for the LTI launch transaction."
+  @spec issue_session_multi(
+          Multi.t(),
+          Multi.name(),
+          Context.t(),
+          {%User{} | %Author{}, auth_method(), keyword()}
+        ) :: Multi.t()
+  def issue_session_multi(
+        %Multi{} = multi,
+        name,
+        %Context{} = context,
+        {%schema{id: id} = account, auth_method, opts}
+      )
+      when schema in [User, Author] and is_integer(id) and
+             auth_method in [:password, :sso, :cognito, :lti] and is_list(opts) do
+    kind = kind(schema)
+    scope = Keyword.get(opts, :scope)
+
+    case {context.actor_type, Map.get(context, :"#{kind}_id")} do
+      {^kind, ^id} ->
+        multi
+        |> Multi.run({name, :token}, fn _repo, _changes ->
+          Mutations.insert_session_token(account, scope)
+        end)
+        |> Auditing.append({name, :event}, fn changes ->
+          %{token_id: token_id} = Map.fetch!(changes, {name, :token})
+
+          Auditing.build(context, %{
+            event_type: :"#{kind}_logged_in",
+            entity: {kind, id, account},
+            affected: {kind, id},
+            scope: session_scope(scope),
+            event_key: "session:#{token_id}:issued",
+            details: %{"auth_method" => Atom.to_string(auth_method), "session_ref" => token_id}
+          })
+        end)
+        |> Multi.run(name, fn _repo, changes -> {:ok, Map.fetch!(changes, {name, :token})} end)
+
+      _other_actor ->
+        Multi.error(multi, name, :invalid_request)
+    end
+  end
+
+  def issue_session_multi(%Multi{} = multi, name, _context, _args),
+    do: Multi.error(multi, name, :invalid_request)
+
+  @doc """
+  Deletes the session `token` when the account signs out, and records `user_logged_out` or
+  `author_logged_out` with the token row ID. The token's owner is the actor.
+
+  Returns `{:ok, :absent}` without an event when the token no longer exists (already signed
+  out, expired and removed, or revoked by a password change), so repeated or concurrent
+  sign-outs record one event. Sessions of technical accounts (guests and hidden preview
+  instructors), which were not issued by an authentication, are deleted without an event.
+  """
+  @spec revoke_session(kind(), binary()) :: {:ok, :revoked | :absent} | {:error, command_error()}
+  def revoke_session(kind, token) when kind in [:user, :author] and is_binary(token) do
+    run(:session, fn multi ->
+      multi
+      |> Multi.run({:session, :deleted}, fn _repo, _changes ->
+        Mutations.delete_session_token(kind, token)
+      end)
+      |> Auditing.append({:session, :event}, fn changes ->
+        case Map.fetch!(changes, {:session, :deleted}) do
+          nil ->
+            :skip
+
+          {_token_id, %User{} = user} when user.guest or user.hidden ->
+            :skip
+
+          {token_id, account} ->
+            Auditing.build(Context.for_actor(account, source: :ui), %{
+              event_type: :"#{kind}_logged_out",
+              entity: {kind, account.id, account},
+              affected: {kind, account.id},
+              event_key: "session:#{token_id}:revoked",
+              details: %{"session_ref" => token_id}
+            })
+        end
+      end)
+      |> Multi.run(:session, fn _repo, changes ->
+        case Map.fetch!(changes, {:session, :deleted}) do
+          nil -> {:ok, :absent}
+          _deleted -> {:ok, :revoked}
+        end
+      end)
+    end)
+  end
+
+  def revoke_session(_kind, _token), do: {:error, :invalid_request}
+
   ## Deletion
 
   @doc """
@@ -1055,6 +1165,11 @@ defmodule Oli.Accounts.Audited do
       details: %{"creation_source" => creation_source}
     })
   end
+
+  defp session_scope(%{section_id: section_id}) when is_integer(section_id),
+    do: %{section_id: section_id}
+
+  defp session_scope(_scope), do: %{}
 
   defp identity_event(context, event_type, kind, account, provider) do
     Auditing.build(context, %{

@@ -110,6 +110,57 @@ defmodule Oli.Accounts.Audited.Mutations do
      )}
   end
 
+  # Inserts a session token, optionally scoped to one secure assessment, and returns the token
+  # with its row ID.
+  @spec insert_session_token(%User{} | %Author{}, struct() | nil) ::
+          {:ok, %{token: binary(), token_id: pos_integer()}} | {:error, Ecto.Changeset.t()}
+  def insert_session_token(%User{} = user, scope) do
+    {token, record} = UserToken.build_session_token(user, scope)
+
+    record
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.foreign_key_constraint(:user_id)
+    |> Ecto.Changeset.foreign_key_constraint(:secure_section_id)
+    |> Ecto.Changeset.foreign_key_constraint(:secure_resource_id)
+    |> Repo.insert()
+    |> session_result(token)
+  end
+
+  def insert_session_token(%Author{} = author, nil) do
+    {token, record} = AuthorToken.build_session_token(author)
+
+    record
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.foreign_key_constraint(:author_id)
+    |> Repo.insert()
+    |> session_result(token)
+  end
+
+  defp session_result({:ok, %{id: id}}, token), do: {:ok, %{token: token, token_id: id}}
+  defp session_result({:error, changeset}, _token), do: {:error, changeset}
+
+  # Deletes one session token and returns its row ID with its owner, or nil when it is gone.
+  @spec delete_session_token(:user | :author, binary()) ::
+          {:ok, {pos_integer(), %User{} | %Author{}} | nil}
+  def delete_session_token(kind, token) do
+    {schema, owner, owner_key} =
+      case kind do
+        :user -> {UserToken, User, :user_id}
+        :author -> {AuthorToken, Author, :author_id}
+      end
+
+    query =
+      from(t in schema,
+        where: t.token == ^token and t.context == "session",
+        select: {t.id, field(t, ^owner_key)}
+      )
+
+    case Repo.delete_all(query) do
+      {0, _} -> {:ok, nil}
+      {_count, [{id, owner_id} | _]} -> {:ok, {id, Repo.get!(owner, owner_id)}}
+    end
+  end
+
   # `roles` are platform role rows that already exist; `put_assoc` only rewrites the join rows.
   @spec put_platform_roles(%User{}, [struct()]) :: {:ok, %User{}} | {:error, Ecto.Changeset.t()}
   def put_platform_roles(%User{} = user, roles) do

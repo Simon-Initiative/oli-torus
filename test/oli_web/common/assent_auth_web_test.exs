@@ -202,7 +202,7 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       redirect_uri: fn provider -> ~p"/authors/auth/#{provider}/callback" end,
       current_user_assigns_key: :current_author,
       get_user_by_provider_uid: &AuthorAssentAuth.get_user_by_provider_uid(&1, &2),
-      create_session: &AuthorAuth.create_session(&1, &2),
+      create_session: &AuthorAuth.create_session(&1, &2, :sso),
       deliver_user_confirmation_instructions: fn user ->
         Accounts.deliver_author_confirmation_instructions(
           Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
@@ -225,7 +225,7 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       redirect_uri: fn provider -> ~p"/users/auth/#{provider}/callback" end,
       current_user_assigns_key: :current_author,
       get_user_by_provider_uid: &UserAssentAuth.get_user_by_provider_uid(&1, &2),
-      create_session: &UserAuth.create_session(&1, &2),
+      create_session: &UserAuth.create_session(&1, &2, :sso),
       deliver_user_confirmation_instructions: fn user ->
         Accounts.deliver_user_confirmation_instructions(
           Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),

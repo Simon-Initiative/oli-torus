@@ -300,11 +300,9 @@ Recovery and credential rules:
 ```elixir
 @type auth_method :: :password | :sso | :cognito | :lti
 
-@spec issue_user_session_multi(Multi.t(), Multi.name(), Context.t(), {%User{}, auth_method(), keyword()}) :: Multi.t()
-@spec issue_author_session_multi(Multi.t(), Multi.name(), Context.t(), {%Author{}, auth_method()}) :: Multi.t()
-@spec issue_user_session(Context.t(), %User{}, auth_method(), keyword()) :: {:ok, %{token: binary(), token_id: pos_integer()}} | {:error, command_error()}
-@spec issue_author_session(Context.t(), %Author{}, auth_method()) :: {:ok, %{token: binary(), token_id: pos_integer()}} | {:error, command_error()}
-@spec revoke_session(Context.t(), :user | :author, binary()) :: {:ok, :revoked | :absent} | {:error, command_error()}
+@spec issue_session_multi(Multi.t(), Multi.name(), Context.t(), {struct(), auth_method(), keyword()}) :: Multi.t()
+@spec issue_session(Context.t(), struct(), auth_method(), keyword()) :: {:ok, %{token: binary(), token_id: pos_integer()}} | {:error, command_error()}
+@spec revoke_session(:user | :author, binary()) :: {:ok, :revoked | :absent} | {:error, command_error()}
 ```
 
 The session event:
@@ -312,15 +310,17 @@ The session event:
 | Attribute | Value |
 | --- | --- |
 | Event | `user_logged_in` or `author_logged_in` |
-| Subject / affected / actor | The account |
-| Details | `auth_method`, plus `session_ref` = the token row's integer ID as a string |
+| Subject / affected / actor | The account; the context must belong to it |
+| Details | `auth_method`, plus `session_ref` = the token row's integer ID |
+| Scope | `section_id` for a secure assessment session |
 | Event key | `session:<token_id>:issued` |
 
 Revocation:
 
-- `revoke_session/3` runs `DELETE ... RETURNING id` on the token row.
+- `revoke_session/2` deletes the token row and returns its ID and owner in the same statement.
 - Zero rows means `:absent`: no event, and the caller still clears the cookie, as today.
-- One row emits `user_logged_out` or `author_logged_out` (event key `session:<token_id>:revoked`). If the actor is not the session's account, it emits `session_revoked` instead.
+- One row emits `user_logged_out` or `author_logged_out` (event key `session:<token_id>:revoked`) with the owner as actor. Every current caller is the account signing itself out; there is no administrator revocation of a single session to audit.
+- Sessions of guests and hidden preview instructors are deleted without an event, because their issuance is not an authentication either.
 - `UserAuth` and `AuthorAuth` then broadcast the disconnect and clear the cookie after commit, with the existing topic.
 
 Channel mapping:
@@ -328,9 +328,9 @@ Channel mapping:
 - `log_in_user/3` and `log_in_author/3` call the issuing command with `:password`, then install the returned token in the session exactly as today. Registration auto-login, the password-updated re-login, invitation acceptance, and the link-account form reach these functions after a password check, so they record `:password`.
 - `log_in_author/3` keeps linking a signed-in user after the session is issued, now through `link_accounts/3`.
 - `log_in_user/3`'s cookie-consent sync stays after the issuance, unchanged and unaudited (PR-06).
-- Assent and Cognito callbacks call `create_session/3` with `:sso` or `:cognito`. Cognito's two sessions (user and author) produce two events, because two sessions are issued.
+- Assent and Cognito callbacks, and SSO invitation acceptance, call `UserAuth.create_session/3` or `AuthorAuth.create_session/3` with `:sso` or `:cognito`. `AuthorAuth.create_session/2` is removed because all its callers authenticate; `UserAuth.create_session/2` stays for the excluded callers. The template preview, which used `log_in_user/3`, now uses `create_session/2`, because a hidden preview instructor does not authenticate. If issuing the session fails, the person is sent back to the login page. Cognito's two sessions (user and author) produce two events, because two sessions are issued.
 - Assent's existing session issuance when email confirmation is still pending stays unchanged. The event records what the server did.
-- The LTI launch replaces `generate_user_session_token` and `SecureAssessments.issue_session` with `issue_user_session_multi(..., {user, :lti, scope_opts})` inside its existing transaction. `scope_opts` carries the secure section/resource IDs, which become the event's `section_id` scope. `install_session/3` keeps reading the committed token.
+- The LTI launch replaces `generate_user_session_token` with `issue_session_multi(..., {user, :lti, []})` inside its existing transaction, and `SecureAssessments.issue_session/2` composes it with `scope:` inside its admission transaction. `scope_opts` carries the secure section/resource IDs, which become the event's `section_id` scope. `install_session/3` keeps reading the committed token.
 - The excluded callers in section 2.1 keep `create_session/2` and the existing token generation unchanged.
 - Failed credentials, provider errors, invalid launches, and canceled callbacks never reach the command, so they produce neither a token nor an event. A repeated provider callback that authenticates again issues a genuinely new session and a new event; there is no replay of the earlier one.
 

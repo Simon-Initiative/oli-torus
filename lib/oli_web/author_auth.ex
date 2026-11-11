@@ -5,6 +5,7 @@ defmodule OliWeb.AuthorAuth do
   import Phoenix.Controller
 
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.Accounts.{User, Author}
 
   require Logger
@@ -17,11 +18,22 @@ defmodule OliWeb.AuthorAuth do
   @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax"]
 
   @doc """
-  Logs the author in.
+  Logs the author in after a password check. The session is issued and recorded through
+  `Oli.Accounts.Audited.issue_session/4` with `:password`; if that fails, the author is sent back
+  to the login page.
   """
   def log_in_author(conn, author, params \\ %{}) do
-    token = Accounts.generate_author_session_token(author)
+    case Accounts.Audited.issue_session(
+           Context.for_actor(author, source: :ui),
+           author,
+           :password
+         ) do
+      {:ok, %{token: token}} -> finish_log_in(conn, author, token, params)
+      {:error, _reason} -> log_in_failed(conn)
+    end
+  end
 
+  defp finish_log_in(conn, author, token, params) do
     # Renew session before linking author account
     conn = renew_session(conn)
 
@@ -50,11 +62,9 @@ defmodule OliWeb.AuthorAuth do
   end
 
   @doc """
-  Creates a new session for the author.
-
-  This is a lower-level function that is used by log_in_author and
-  other LTI/OIDC authorization functions to create a new session for
-  the author.
+  Creates a new session for the author after it authenticated with an identity provider
+  (`:sso` or `:cognito`). The session is issued and recorded through
+  `Oli.Accounts.Audited.issue_session/4`; if that fails, the author is sent back to the login page.
 
   It renews the session ID and clears the whole session
   to avoid fixation attacks. See the renew_session
@@ -65,9 +75,25 @@ defmodule OliWeb.AuthorAuth do
   disconnected on log out. The line can be safely removed
   if you are not using LiveView.
   """
-  def create_session(conn, author) do
-    token = Accounts.generate_author_session_token(author)
+  def create_session(conn, author, auth_method) when auth_method in [:sso, :cognito] do
+    case Accounts.Audited.issue_session(
+           Context.for_actor(author, source: :ui),
+           author,
+           auth_method
+         ) do
+      {:ok, %{token: token}} -> install_session(conn, author, token)
+      {:error, _reason} -> log_in_failed(conn)
+    end
+  end
 
+  defp log_in_failed(conn) do
+    conn
+    |> put_flash(:error, "We couldn't sign you in. Please try again.")
+    |> redirect(to: ~p"/authors/log_in")
+    |> halt()
+  end
+
+  defp install_session(conn, author, token) do
     conn
     |> renew_session()
     |> put_token_in_session(token)
@@ -131,7 +157,7 @@ defmodule OliWeb.AuthorAuth do
   """
   def log_out_author(conn, params \\ %{}) do
     author_token = get_session(conn, :author_token)
-    author_token && Accounts.delete_author_session_token(author_token)
+    author_token && Accounts.Audited.revoke_session(:author, author_token)
 
     if author_live_socket_id = get_session(conn, :author_live_socket_id) do
       OliWeb.Endpoint.broadcast(author_live_socket_id, "disconnect", %{})

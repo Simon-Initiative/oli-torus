@@ -19,8 +19,8 @@ defmodule OliWeb.CognitoController do
     case Accounts.setup_sso_user(conn.assigns.claims, community_id) do
       {:ok, user, author} ->
         conn
-        |> UserAuth.create_session(user)
-        |> AuthorAuth.create_session(author)
+        |> UserAuth.create_session(user, :cognito)
+        |> AuthorAuth.create_session(author, :cognito)
         |> redirect(to: ~p"/workspaces/instructor")
 
       {:error, %Ecto.Changeset{}} ->
@@ -39,8 +39,8 @@ defmodule OliWeb.CognitoController do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
          {:ok, user, author} <- Accounts.setup_sso_user(conn.assigns.claims, community_id) do
       conn
-      |> UserAuth.create_session(user)
-      |> AuthorAuth.create_session(author)
+      |> UserAuth.create_session(user, :cognito)
+      |> AuthorAuth.create_session(author, :cognito)
       |> create_or_prompt(user, anchor)
     else
       nil ->
@@ -66,7 +66,7 @@ defmodule OliWeb.CognitoController do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
          {:ok, author} <- Accounts.setup_sso_author(conn.assigns.claims, community_id) do
       conn
-      |> AuthorAuth.create_session(author)
+      |> AuthorAuth.create_session(author, :cognito)
       |> clone_or_prompt(author, anchor, get_error_url(params))
     else
       nil ->

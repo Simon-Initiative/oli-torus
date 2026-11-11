@@ -286,7 +286,7 @@ defmodule OliWeb.UserAuthorizationController do
              {:ok, user} <- Accounts.accept_user_invitation_via_sso(user, enrollment, sso_attrs) do
           # Successfully linked SSO and accepted invitation
 
-          conn = OliWeb.UserAuth.create_session(conn, user)
+          conn = OliWeb.UserAuth.create_session(conn, user, :sso)
           conn = assign(conn, :current_user, user)
 
           conn
@@ -359,7 +359,7 @@ defmodule OliWeb.UserAuthorizationController do
         redirect_uri: fn provider -> ~p"/users/auth/#{provider}/callback" end,
         current_user_assigns_key: :current_user,
         get_user_by_provider_uid: &UserAssentAuth.get_user_by_provider_uid(&1, &2),
-        create_session: &UserAuth.create_session(&1, &2),
+        create_session: &UserAuth.create_session(&1, &2, :sso),
         deliver_user_confirmation_instructions: fn user ->
           Accounts.deliver_user_confirmation_instructions(
             Context.for_actor(user, source: :ui),

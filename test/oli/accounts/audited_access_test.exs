@@ -129,7 +129,7 @@ defmodule Oli.Accounts.AuditedAccessTest do
       assert {:ok, _} =
                Audited.admin_update_user(context, user.id, %{"given_name" => user.given_name})
 
-      assert all_events() == []
+      assert all_events(user) == []
     end
 
     test "a protected field is rejected without writing", %{context: context} do
@@ -144,7 +144,7 @@ defmodule Oli.Accounts.AuditedAccessTest do
       reloaded = Repo.get!(User, user.id)
       assert reloaded.given_name == user.given_name
       refute reloaded.independent_learner
-      assert all_events() == []
+      assert all_events(user) == []
     end
 
     test "validation errors return the changeset", %{context: context} do
@@ -153,7 +153,7 @@ defmodule Oli.Accounts.AuditedAccessTest do
       assert {:error, %Ecto.Changeset{valid?: false}} =
                Audited.admin_update_user(context, user.id, %{"given_name" => ""})
 
-      assert all_events() == []
+      assert all_events(user) == []
     end
 
     test "a failing audit insert rolls back the update", %{context: context} do
@@ -217,7 +217,7 @@ defmodule Oli.Accounts.AuditedAccessTest do
                Audited.admin_update_author(context, author.id, %{"system_role_id" => 99})
 
       assert Keyword.has_key?(errors, :system_role_id)
-      assert all_events() == []
+      assert all_events(author) == []
     end
 
     test "a protected field is rejected without writing", %{context: context} do
@@ -365,7 +365,7 @@ defmodule Oli.Accounts.AuditedAccessTest do
       assert Repo.get!(Author, author.id) |> Map.take([:given_name, :system_role_id, :email]) ==
                Map.take(author, [:given_name, :system_role_id, :email])
 
-      assert all_events() == []
+      assert all_events(author) == []
     end
 
     test "only the account itself can update its profile", %{context: context} do
@@ -379,7 +379,11 @@ defmodule Oli.Accounts.AuditedAccessTest do
   defp events(event_type),
     do: Repo.all(from(e in LogEvent, where: e.event_type == ^event_type, order_by: e.id))
 
-  defp all_events, do: Repo.all(LogEvent)
+  defp all_events(%Oli.Accounts.User{id: id}),
+    do: Repo.all(from(e in LogEvent, where: e.affected_user_id == ^id))
+
+  defp all_events(%Oli.Accounts.Author{id: id}),
+    do: Repo.all(from(e in LogEvent, where: e.affected_author_id == ^id))
 
   defp reject_audit_inserts do
     Repo.query!("""

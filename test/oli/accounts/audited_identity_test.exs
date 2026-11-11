@@ -120,7 +120,7 @@ defmodule Oli.Accounts.AuditedIdentityTest do
       assert {:error, %Ecto.Changeset{}} =
                Audited.change_password(context, user, "wrong password", %{password: @password})
 
-      assert all_events() == []
+      assert all_events(user) == []
       assert Repo.get_by(UserToken, user_id: user.id)
     end
 
@@ -144,7 +144,7 @@ defmodule Oli.Accounts.AuditedIdentityTest do
       assert {:error, :invalid_request} =
                Audited.create_password(context, user, %{password: @password})
 
-      assert all_events() == []
+      assert all_events(user) == []
     end
 
     test "a reset records account_credential_recovered and no token", %{user: user} do
@@ -385,7 +385,11 @@ defmodule Oli.Accounts.AuditedIdentityTest do
   defp events(event_type),
     do: Repo.all(from(e in LogEvent, where: e.event_type == ^event_type, order_by: e.id))
 
-  defp all_events, do: Repo.all(LogEvent)
+  defp all_events(%Oli.Accounts.User{id: id}),
+    do: Repo.all(from(e in LogEvent, where: e.affected_user_id == ^id))
+
+  defp all_events(%Oli.Accounts.Author{id: id}),
+    do: Repo.all(from(e in LogEvent, where: e.affected_author_id == ^id))
 
   defp refute_secret(event, secret) when is_binary(secret) do
     json =

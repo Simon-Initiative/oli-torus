@@ -216,7 +216,22 @@ defmodule OliWeb.LtiController do
     end)
   end
 
-  defp issue_launch_session(user, nil), do: {:ok, Accounts.generate_user_session_token(user)}
+  # Runs inside the launch transaction, so a later launch failure also rolls back the session
+  # and its login event.
+  defp issue_launch_session(user, nil) do
+    Ecto.Multi.new()
+    |> Accounts.Audited.issue_session_multi(
+      :session,
+      Context.for_actor(user, source: :ui),
+      {user, :lti, []}
+    )
+    |> Oli.Repo.transaction()
+    |> case do
+      {:ok, %{session: %{token: token}}} -> {:ok, token}
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
+  end
+
   defp issue_launch_session(user, admission), do: SecureAssessments.issue_session(user, admission)
 
   defp get_institution_and_registration(issuer, client_id, deployment_id) do

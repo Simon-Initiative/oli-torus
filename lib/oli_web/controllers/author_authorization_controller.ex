@@ -276,7 +276,7 @@ defmodule OliWeb.AuthorAuthorizationController do
                accept_invitation_via_sso(author, author_project, sso_attrs) do
           # Successfully linked SSO and accepted invitation
 
-          conn = OliWeb.AuthorAuth.create_session(conn, author)
+          conn = OliWeb.AuthorAuth.create_session(conn, author, :sso)
           conn = assign(conn, :current_author, author)
           conn = OliWeb.AuthorAuth.maybe_link_user_author_account(conn, author)
           # Clear all invitation session data to prevent interference with future logins
@@ -361,7 +361,7 @@ defmodule OliWeb.AuthorAuthorizationController do
         redirect_uri: fn provider -> ~p"/authors/auth/#{provider}/callback" end,
         current_user_assigns_key: :current_author,
         get_user_by_provider_uid: &AuthorAssentAuth.get_user_by_provider_uid(&1, &2),
-        create_session: &AuthorAuth.create_session(&1, &2),
+        create_session: &AuthorAuth.create_session(&1, &2, :sso),
         deliver_user_confirmation_instructions: fn user ->
           Accounts.deliver_author_confirmation_instructions(
             Context.for_actor(user, source: :ui),
