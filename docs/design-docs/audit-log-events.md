@@ -4231,7 +4231,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `ai_service` |
 | Required columns | none |
 | At least one of | none |

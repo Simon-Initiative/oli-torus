@@ -47,7 +47,13 @@ defmodule OliWeb.Admin.CanaryRolloutsLiveTest do
       conn = log_in_author(conn, admin)
 
       # Ensure default rollout is off
-      Rollouts.delete_rollout(@feature, :global, nil, admin, [])
+      Oli.ScopedFeatureFlags.Audited.delete_rollout(
+        Oli.Auditing.Context.for_actor(admin, source: :ui),
+        @feature,
+        :global,
+        nil,
+        []
+      )
 
       {:ok, conn: conn, admin: admin}
     end

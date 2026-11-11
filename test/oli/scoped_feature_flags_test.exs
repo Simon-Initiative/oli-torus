@@ -18,25 +18,53 @@ defmodule Oli.ScopedFeatureFlagsTest do
 
     test "returns true for enabled feature flag for project" do
       project = insert(:project)
-      {:ok, _} = ScopedFeatureFlags.enable_feature("mcp_authoring", project)
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
+
       assert ScopedFeatureFlags.enabled?("mcp_authoring", project)
     end
 
     test "returns false for disabled feature flag for project" do
       project = insert(:project)
-      {:ok, _} = ScopedFeatureFlags.disable_feature("mcp_authoring", project)
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
+
       refute ScopedFeatureFlags.enabled?("mcp_authoring", project)
     end
 
     test "returns true for enabled feature flag for section" do
       section = insert(:section)
-      {:ok, _} = ScopedFeatureFlags.enable_feature("test_delivery_feature", section)
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
+
       assert ScopedFeatureFlags.enabled?("test_delivery_feature", section)
     end
 
     test "returns false for disabled feature flag for section" do
       section = insert(:section)
-      {:ok, _} = ScopedFeatureFlags.disable_feature("test_delivery_feature", section)
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
+
       refute ScopedFeatureFlags.enabled?("test_delivery_feature", section)
     end
   end
@@ -46,7 +74,13 @@ defmodule Oli.ScopedFeatureFlagsTest do
       project = insert(:project)
 
       # Enable
-      {:ok, flag_state} = ScopedFeatureFlags.enable_feature("mcp_authoring", project)
+      {:ok, flag_state} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
+
       assert flag_state.feature_name == "mcp_authoring"
       assert flag_state.project_id == project.id
       refute flag_state.section_id
@@ -55,7 +89,12 @@ defmodule Oli.ScopedFeatureFlagsTest do
       assert ScopedFeatureFlags.enabled?("mcp_authoring", project)
 
       # Disable (deletes the record)
-      {:ok, _deleted_state} = ScopedFeatureFlags.disable_feature("mcp_authoring", project)
+      {:ok, _deleted_state} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
 
       # Check disabled
       refute ScopedFeatureFlags.enabled?("mcp_authoring", project)
@@ -65,7 +104,13 @@ defmodule Oli.ScopedFeatureFlagsTest do
       section = insert(:section)
 
       # Enable
-      {:ok, flag_state} = ScopedFeatureFlags.enable_feature("test_delivery_feature", section)
+      {:ok, flag_state} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
+
       assert flag_state.feature_name == "test_delivery_feature"
       assert flag_state.section_id == section.id
       refute flag_state.project_id
@@ -74,7 +119,12 @@ defmodule Oli.ScopedFeatureFlagsTest do
       assert ScopedFeatureFlags.enabled?("test_delivery_feature", section)
 
       # Disable (deletes the record)
-      {:ok, _deleted_state} = ScopedFeatureFlags.disable_feature("test_delivery_feature", section)
+      {:ok, _deleted_state} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
 
       # Check disabled
       refute ScopedFeatureFlags.enabled?("test_delivery_feature", section)
@@ -84,28 +134,72 @@ defmodule Oli.ScopedFeatureFlagsTest do
       project = insert(:project)
 
       # Enable twice - should return the same record
-      {:ok, flag1} = ScopedFeatureFlags.enable_feature("mcp_authoring", project)
-      {:ok, flag2} = ScopedFeatureFlags.enable_feature("mcp_authoring", project)
+      {:ok, flag1} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
+
+      {:ok, flag2} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
 
       assert flag1.id == flag2.id
 
       # Disable twice - first should delete record, second should return :ok with nil
-      {:ok, _deleted_state} = ScopedFeatureFlags.disable_feature("mcp_authoring", project)
-      {:ok, nil} = ScopedFeatureFlags.disable_feature("mcp_authoring", project)
+      {:ok, _deleted_state} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
+
+      {:ok, nil} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
     end
 
     test "idempotent operations for section" do
       section = insert(:section)
 
       # Enable twice - should return the same record
-      {:ok, flag1} = ScopedFeatureFlags.enable_feature("test_delivery_feature", section)
-      {:ok, flag2} = ScopedFeatureFlags.enable_feature("test_delivery_feature", section)
+      {:ok, flag1} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
+
+      {:ok, flag2} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
 
       assert flag1.id == flag2.id
 
       # Disable twice - first should delete record, second should return :ok with nil
-      {:ok, _deleted_state} = ScopedFeatureFlags.disable_feature("test_delivery_feature", section)
-      {:ok, nil} = ScopedFeatureFlags.disable_feature("test_delivery_feature", section)
+      {:ok, _deleted_state} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
+
+      {:ok, nil} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
     end
   end
 
@@ -118,9 +212,26 @@ defmodule Oli.ScopedFeatureFlagsTest do
     test "returns feature flags for project ordered by feature_name" do
       project = insert(:project)
 
-      {:ok, _} = ScopedFeatureFlags.enable_feature("z_feature", project)
-      {:ok, _} = ScopedFeatureFlags.enable_feature("a_feature", project)
-      {:ok, _} = ScopedFeatureFlags.enable_feature("m_feature", project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "z_feature",
+          project
+        )
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "a_feature",
+          project
+        )
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "m_feature",
+          project
+        )
 
       features = ScopedFeatureFlags.list_project_features(project)
       feature_names = Enum.map(features, & &1.feature_name)
@@ -138,9 +249,26 @@ defmodule Oli.ScopedFeatureFlagsTest do
     test "returns feature flags for section ordered by feature_name" do
       section = insert(:section)
 
-      {:ok, _} = ScopedFeatureFlags.enable_feature("z_feature", section)
-      {:ok, _} = ScopedFeatureFlags.enable_feature("a_feature", section)
-      {:ok, _} = ScopedFeatureFlags.enable_feature("m_feature", section)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "z_feature",
+          section
+        )
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "a_feature",
+          section
+        )
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "m_feature",
+          section
+        )
 
       features = ScopedFeatureFlags.list_section_features(section)
       feature_names = Enum.map(features, & &1.feature_name)
@@ -154,9 +282,26 @@ defmodule Oli.ScopedFeatureFlagsTest do
       project = insert(:project)
       section = insert(:section)
 
-      {:ok, _} = ScopedFeatureFlags.enable_feature("mcp_authoring", project)
-      {:ok, _} = ScopedFeatureFlags.enable_feature("test_delivery_feature", section)
-      {:ok, _} = ScopedFeatureFlags.enable_feature("feature1", project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "feature1",
+          project
+        )
 
       features = ScopedFeatureFlags.list_all_features()
 
@@ -174,33 +319,67 @@ defmodule Oli.ScopedFeatureFlagsTest do
     test "removes feature flag for project" do
       project = insert(:project)
 
-      {:ok, _} = ScopedFeatureFlags.enable_feature("mcp_authoring", project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
+
       assert ScopedFeatureFlags.enabled?("mcp_authoring", project)
 
-      {:ok, _} = ScopedFeatureFlags.remove_feature("mcp_authoring", project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.remove_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
+
       refute ScopedFeatureFlags.enabled?("mcp_authoring", project)
     end
 
     test "removes feature flag for section" do
       section = insert(:section)
 
-      {:ok, _} = ScopedFeatureFlags.enable_feature("test_delivery_feature", section)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
+
       assert ScopedFeatureFlags.enabled?("test_delivery_feature", section)
 
-      {:ok, _} = ScopedFeatureFlags.remove_feature("test_delivery_feature", section)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.remove_feature(
+          Oli.TestHelpers.audit_context(),
+          "test_delivery_feature",
+          section
+        )
+
       refute ScopedFeatureFlags.enabled?("test_delivery_feature", section)
     end
 
     test "returns error for non-existent feature flag for project" do
       project = insert(:project)
-      assert {:error, :not_found} = ScopedFeatureFlags.remove_feature("mcp_authoring", project)
+
+      assert {:error, :not_found} =
+               Oli.ScopedFeatureFlags.Audited.remove_feature(
+                 Oli.TestHelpers.audit_context(),
+                 "mcp_authoring",
+                 project
+               )
     end
 
     test "returns error for non-existent feature flag for section" do
       section = insert(:section)
 
       assert {:error, :not_found} =
-               ScopedFeatureFlags.remove_feature("test_delivery_feature", section)
+               Oli.ScopedFeatureFlags.Audited.remove_feature(
+                 Oli.TestHelpers.audit_context(),
+                 "test_delivery_feature",
+                 section
+               )
     end
   end
 
@@ -208,8 +387,19 @@ defmodule Oli.ScopedFeatureFlagsTest do
     test "batch_enabled?/2 returns correct map for projects" do
       project = insert(:project)
 
-      {:ok, _} = ScopedFeatureFlags.enable_feature("feature1", project)
-      {:ok, _} = ScopedFeatureFlags.disable_feature("feature2", project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "feature1",
+          project
+        )
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "feature2",
+          project
+        )
 
       result = ScopedFeatureFlags.batch_enabled?(["feature1", "feature2", "feature3"], project)
 
@@ -223,8 +413,19 @@ defmodule Oli.ScopedFeatureFlagsTest do
     test "batch_enabled?/2 returns correct map for sections" do
       section = insert(:section)
 
-      {:ok, _} = ScopedFeatureFlags.enable_feature("feature1", section)
-      {:ok, _} = ScopedFeatureFlags.disable_feature("feature2", section)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "feature1",
+          section
+        )
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "feature2",
+          section
+        )
 
       result = ScopedFeatureFlags.batch_enabled?(["feature1", "feature2", "feature3"], section)
 
@@ -240,8 +441,19 @@ defmodule Oli.ScopedFeatureFlagsTest do
       project2 = insert(:project)
       project3 = insert(:project)
 
-      {:ok, _} = ScopedFeatureFlags.enable_feature("mcp_authoring", project1)
-      {:ok, _} = ScopedFeatureFlags.disable_feature("mcp_authoring", project2)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project1
+        )
+
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project2
+        )
 
       result =
         ScopedFeatureFlags.batch_enabled_projects?("mcp_authoring", [
@@ -266,7 +478,12 @@ defmodule Oli.ScopedFeatureFlagsTest do
         {"feature3", true}
       ]
 
-      {:ok, results} = ScopedFeatureFlags.set_features_atomically(feature_settings, project)
+      {:ok, results} =
+        Oli.ScopedFeatureFlags.Audited.set_features_atomically(
+          Oli.TestHelpers.audit_context(),
+          feature_settings,
+          project
+        )
 
       assert length(results) == 3
       assert ScopedFeatureFlags.enabled?("feature1", project)
@@ -284,7 +501,12 @@ defmodule Oli.ScopedFeatureFlagsTest do
         {"another_feature", true}
       ]
 
-      {:error, _} = ScopedFeatureFlags.set_features_atomically(feature_settings, project)
+      {:error, _} =
+        Oli.ScopedFeatureFlags.Audited.set_features_atomically(
+          Oli.TestHelpers.audit_context(),
+          feature_settings,
+          project
+        )
 
       # None of the features should be set due to rollback
       refute ScopedFeatureFlags.enabled?("valid_feature", project)
@@ -298,29 +520,49 @@ defmodule Oli.ScopedFeatureFlagsTest do
 
       # Empty string - now caught by runtime validation
       assert_raise ArgumentError, ~r/Undefined feature flag/, fn ->
-        ScopedFeatureFlags.enable_feature("", project)
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "",
+          project
+        )
       end
 
       # Too long - now caught by runtime validation
       long_name = String.duplicate("a", 256)
 
       assert_raise ArgumentError, ~r/Undefined feature flag/, fn ->
-        ScopedFeatureFlags.enable_feature(long_name, project)
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          long_name,
+          project
+        )
       end
 
       # Invalid characters - now caught by runtime validation
       assert_raise ArgumentError, ~r/Undefined feature flag/, fn ->
-        ScopedFeatureFlags.enable_feature("feature name with spaces", project)
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "feature name with spaces",
+          project
+        )
       end
 
       # Non-string - runtime validation also catches this
       assert_raise ArgumentError, ~r/Undefined feature flag/, fn ->
-        ScopedFeatureFlags.enable_feature(:atom_name, project)
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          :atom_name,
+          project
+        )
       end
 
       # Undefined feature - now caught by runtime validation
       assert_raise ArgumentError, ~r/Undefined feature flag/, fn ->
-        ScopedFeatureFlags.enable_feature("undefined_feature", project)
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "undefined_feature",
+          project
+        )
       end
     end
 
@@ -329,11 +571,23 @@ defmodule Oli.ScopedFeatureFlagsTest do
       section = insert(:section)
 
       # Try to use mcp_authoring (authoring-only) feature on section (delivery context)
-      {:error, errors} = ScopedFeatureFlags.enable_feature("mcp_authoring", section)
+      {:error, errors} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          section
+        )
+
       assert String.contains?(hd(errors[:invalid_scope]), "does not support scope 'delivery'")
 
       # Should work for project (authoring context)
-      {:ok, _} = ScopedFeatureFlags.enable_feature("mcp_authoring", project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
+
       assert ScopedFeatureFlags.enabled?("mcp_authoring", project)
     end
 
@@ -341,7 +595,13 @@ defmodule Oli.ScopedFeatureFlagsTest do
       project = insert(:project)
 
       # Use the actual defined feature
-      {:ok, _} = ScopedFeatureFlags.enable_feature("mcp_authoring", project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "mcp_authoring",
+          project
+        )
+
       assert ScopedFeatureFlags.enabled?("mcp_authoring", project)
     end
   end
@@ -402,13 +662,25 @@ defmodule Oli.ScopedFeatureFlagsTest do
 
       # Test multiple enables - should be idempotent
       Enum.each(1..10, fn _ ->
-        {:ok, _flag_state} = ScopedFeatureFlags.enable_feature(feature_name, project)
+        {:ok, _flag_state} =
+          Oli.ScopedFeatureFlags.Audited.enable_feature(
+            Oli.TestHelpers.audit_context(),
+            feature_name,
+            project
+          )
+
         assert ScopedFeatureFlags.enabled?(feature_name, project)
       end)
 
       # Test multiple disables - first should delete record, rest should return {:ok, nil}
       Enum.each(1..10, fn _ ->
-        {:ok, _result} = ScopedFeatureFlags.disable_feature(feature_name, project)
+        {:ok, _result} =
+          Oli.ScopedFeatureFlags.Audited.disable_feature(
+            Oli.TestHelpers.audit_context(),
+            feature_name,
+            project
+          )
+
         refute ScopedFeatureFlags.enabled?(feature_name, project)
       end)
     end
@@ -427,19 +699,43 @@ defmodule Oli.ScopedFeatureFlagsTest do
           refute ScopedFeatureFlags.enabled?(feature_name, resource)
 
           # Enable
-          {:ok, _} = ScopedFeatureFlags.enable_feature(feature_name, resource)
+          {:ok, _} =
+            Oli.ScopedFeatureFlags.Audited.enable_feature(
+              Oli.TestHelpers.audit_context(),
+              feature_name,
+              resource
+            )
+
           assert ScopedFeatureFlags.enabled?(feature_name, resource)
 
           # Disable
-          {:ok, _} = ScopedFeatureFlags.disable_feature(feature_name, resource)
+          {:ok, _} =
+            Oli.ScopedFeatureFlags.Audited.disable_feature(
+              Oli.TestHelpers.audit_context(),
+              feature_name,
+              resource
+            )
+
           refute ScopedFeatureFlags.enabled?(feature_name, resource)
 
           # Enable again
-          {:ok, _} = ScopedFeatureFlags.enable_feature(feature_name, resource)
+          {:ok, _} =
+            Oli.ScopedFeatureFlags.Audited.enable_feature(
+              Oli.TestHelpers.audit_context(),
+              feature_name,
+              resource
+            )
+
           assert ScopedFeatureFlags.enabled?(feature_name, resource)
 
           # Final disable
-          {:ok, _} = ScopedFeatureFlags.disable_feature(feature_name, resource)
+          {:ok, _} =
+            Oli.ScopedFeatureFlags.Audited.disable_feature(
+              Oli.TestHelpers.audit_context(),
+              feature_name,
+              resource
+            )
+
           refute ScopedFeatureFlags.enabled?(feature_name, resource)
         end)
       end)
@@ -454,7 +750,12 @@ defmodule Oli.ScopedFeatureFlagsTest do
       feature_name = "test_feature"
 
       # Enable for project1 only
-      {:ok, _} = ScopedFeatureFlags.enable_feature(feature_name, project1)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          feature_name,
+          project1
+        )
 
       # Verify isolation
       assert ScopedFeatureFlags.enabled?(feature_name, project1)
@@ -463,7 +764,12 @@ defmodule Oli.ScopedFeatureFlagsTest do
       refute ScopedFeatureFlags.enabled?(feature_name, section2)
 
       # Enable for section2
-      {:ok, _} = ScopedFeatureFlags.enable_feature(feature_name, section2)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          feature_name,
+          section2
+        )
 
       # Verify continued isolation
       assert ScopedFeatureFlags.enabled?(feature_name, project1)
@@ -472,7 +778,12 @@ defmodule Oli.ScopedFeatureFlagsTest do
       assert ScopedFeatureFlags.enabled?(feature_name, section2)
 
       # Disable project1
-      {:ok, _} = ScopedFeatureFlags.disable_feature(feature_name, project1)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          feature_name,
+          project1
+        )
 
       # Verify section2 unaffected
       refute ScopedFeatureFlags.enabled?(feature_name, project1)
@@ -488,19 +799,34 @@ defmodule Oli.ScopedFeatureFlagsTest do
       section = insert(:section)
 
       # Enable feature1 (supports both scopes) for project only
-      {:ok, _} = ScopedFeatureFlags.enable_feature("feature1", project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "feature1",
+          project
+        )
 
       assert ScopedFeatureFlags.enabled?("feature1", project)
       refute ScopedFeatureFlags.enabled?("feature1", section)
 
       # Enable feature1 for section as well
-      {:ok, _} = ScopedFeatureFlags.enable_feature("feature1", section)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          "feature1",
+          section
+        )
 
       assert ScopedFeatureFlags.enabled?("feature1", project)
       assert ScopedFeatureFlags.enabled?("feature1", section)
 
       # Disable project feature
-      {:ok, _} = ScopedFeatureFlags.disable_feature("feature1", project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.disable_feature(
+          Oli.TestHelpers.audit_context(),
+          "feature1",
+          project
+        )
 
       refute ScopedFeatureFlags.enabled?("feature1", project)
       assert ScopedFeatureFlags.enabled?("feature1", section)

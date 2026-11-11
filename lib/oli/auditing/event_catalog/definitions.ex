@@ -468,7 +468,10 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
          {:ai_service_settings_changed, "AI service settings changed",
           "A registered AI model or service configuration was created, changed, or removed; " <>
             "API keys are never recorded.",
-          entity_types: [:ai_service], no_op: :skip, change_fields: Fields.ai_service()},
+          entity_types: [:ai_service],
+          actor_kinds: [:user, :author, :system],
+          no_op: :skip,
+          change_fields: Fields.ai_service()},
          {:credential_lifecycle_changed, "Credential lifecycle changed",
           "An API key or MCP token was created, rotated, enabled, disabled, or revoked; its " <>
             "value and hash are never recorded.",

@@ -56,8 +56,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       project = insert(:project, title: "Test Project")
       section = insert(:section, title: "Test Section")
 
-      {:ok, event1} =
-        Auditing.capture(user1, :user_deleted, insert(:user), %{"email" => user1.email})
+      {:ok, event1} = user_deleted_event(user1, insert(:user))
 
       {:ok, event2} =
         Auditing.capture(user2, :section_created, section, %{"section_title" => section.title})
@@ -65,7 +64,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       {:ok, event3} =
         Auditing.capture(author1, :project_published, project, %{"version" => "1.0"})
 
-      {:ok, event4} = Auditing.capture(user1, :user_deleted, insert(:user), %{})
+      {:ok, event4} = user_deleted_event(user1, insert(:user))
 
       conn = log_in_author(conn, admin)
 
@@ -154,7 +153,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       # Create many events to trigger pagination
       for i <- 1..30 do
         user = insert(:user, name: "User #{i}")
-        Auditing.capture(user, :user_deleted, insert(:user), %{})
+        user_deleted_event(user, insert(:user))
       end
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
@@ -301,7 +300,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
     test "shows links to users", %{conn: conn, admin: _admin} do
       user = insert(:user, name: "John Doe")
-      {:ok, _event} = Auditing.capture(user, :user_deleted, insert(:user), %{})
+      {:ok, _event} = user_deleted_event(user, insert(:user))
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
 
@@ -312,7 +311,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
     test "shows links to authors", %{conn: conn, admin: _admin} do
       author = insert(:author, name: "Jane Author")
-      {:ok, _event} = Auditing.capture(author, :author_deleted, insert(:author), %{})
+      {:ok, _event} = deleted_event(author, :author, insert(:author))
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
 
@@ -320,5 +319,21 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       assert html =~ author.name
       assert html =~ ~p"/admin/authors/#{author.id}"
     end
+  end
+
+  # Account deletions are recorded by `Oli.Accounts.Audited`; these build the same event rows.
+  defp user_deleted_event(actor, deleted), do: deleted_event(actor, :user, deleted)
+
+  defp deleted_event(actor, kind, deleted) do
+    {:ok, changeset} =
+      Auditing.build(Oli.Auditing.Context.for_actor(actor, source: :ui), %{
+        event_type: :"#{kind}_deleted",
+        entity: {kind, deleted.id, deleted},
+        affected: {kind, deleted.id},
+        event_key: "account:primary:deleted",
+        details: %{"email" => deleted.email, "name" => deleted.name}
+      })
+
+    Auditing.insert(changeset)
   end
 end

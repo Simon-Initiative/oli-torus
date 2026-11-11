@@ -14,7 +14,12 @@ defmodule Oli.MCP.AuthIntegrationTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {_token_record, token_string}} =
-        Auth.create_token(author.id, project.id, "Integration test token")
+        Oli.MCP.Audited.create_token(
+          Oli.TestHelpers.audit_context(),
+          author.id,
+          project.id,
+          "Integration test token"
+        )
 
       # Test: Simulate MCP Server init with valid Bearer token
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
@@ -39,8 +44,14 @@ defmodule Oli.MCP.AuthIntegrationTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
-      Auth.update_token_status(token_record.id, :disabled)
+      {:ok, {token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
+
+      Oli.MCP.Audited.set_token_status(
+        Oli.TestHelpers.audit_context(),
+        token_record.id,
+        :disabled
+      )
 
       # Test: Simulate MCP Server init with disabled token
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
@@ -54,7 +65,8 @@ defmodule Oli.MCP.AuthIntegrationTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {_token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Delete the project
       Oli.Repo.update!(Oli.Authoring.Course.Project.changeset(project, %{status: :deleted}))
@@ -71,7 +83,8 @@ defmodule Oli.MCP.AuthIntegrationTest do
       project = insert(:project)
       author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {_token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Remove author from project
       Oli.Repo.delete!(author_project)
@@ -88,7 +101,8 @@ defmodule Oli.MCP.AuthIntegrationTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Verify initial state
       assert token_record.last_used_at == nil
@@ -108,7 +122,8 @@ defmodule Oli.MCP.AuthIntegrationTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {_token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Simulate concurrent requests
       tasks =
@@ -175,7 +190,8 @@ defmodule Oli.MCP.AuthIntegrationTest do
       _author_project2 = insert(:author_project, author_id: author.id, project_id: project2.id)
 
       # Create token for project1
-      {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project1.id)
+      {:ok, {_token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project1.id)
 
       # Validate token through MCP Server init
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
@@ -195,8 +211,11 @@ defmodule Oli.MCP.AuthIntegrationTest do
       _author_project2 = insert(:author_project, author_id: author2.id, project_id: project.id)
 
       # Both authors create tokens for the same project
-      {:ok, {_token1, token_string1}} = Auth.create_token(author1.id, project.id)
-      {:ok, {_token2, token_string2}} = Auth.create_token(author2.id, project.id)
+      {:ok, {_token1, token_string1}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author1.id, project.id)
+
+      {:ok, {_token2, token_string2}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author2.id, project.id)
 
       # Both tokens should be valid
       frame1 = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string1}"}]}}

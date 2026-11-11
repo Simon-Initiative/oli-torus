@@ -475,8 +475,10 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
     # Create an API key we can use to call the api endpoint with
     code = UUID.uuid4()
 
-    {:ok, api_key} = Oli.Interop.create_key(code, "Unit Test Key")
-    Oli.Interop.update_key(api_key, %{automation_setup_enabled: true})
+    {:ok, api_key} =
+      Oli.Interop.Audited.create_key(Oli.TestHelpers.audit_context(), code, "Unit Test Key")
+
+    Oli.TestHelpers.update_api_key_fixture(api_key, %{automation_setup_enabled: true})
 
     {:ok,
      %{

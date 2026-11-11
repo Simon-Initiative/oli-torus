@@ -12,7 +12,6 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
   alias Oli.Repo
   alias Oli.Resources
   alias Oli.Resources.Revision
-  alias Oli.ScopedFeatureFlags.Rollouts
   alias Oli.Seeder
 
   describe "extract_adaptive_screen_refs/1" do
@@ -259,7 +258,14 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
       author: author,
       container: %{revision: container_revision}
     } do
-      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :adaptive_duplication,
+          :global,
+          nil,
+          :full
+        )
 
       %{resource: adaptive_page_resource} =
         Seeder.create_page(
@@ -292,7 +298,14 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
            author: author,
            container: %{revision: container_revision}
          } do
-      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :adaptive_duplication,
+          :global,
+          nil,
+          :full
+        )
 
       %{revision: screen_two_revision} =
         Seeder.create_activity(

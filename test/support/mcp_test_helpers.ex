@@ -3,8 +3,6 @@ defmodule Oli.MCPTestHelpers do
   Test helpers for MCP authentication and tools testing.
   """
 
-  alias Oli.MCP.Auth
-
   @doc """
   Creates a test frame with authentication context for MCP tool tests.
 
@@ -15,7 +13,13 @@ defmodule Oli.MCPTestHelpers do
   """
   def create_authenticated_frame(author_id, project_id) do
     # Create a Bearer token for the author and project
-    {:ok, {_bearer_token, token_string}} = Auth.create_token(author_id, project_id, "Test token")
+    {:ok, {_bearer_token, token_string}} =
+      Oli.MCP.Audited.create_token(
+        Oli.TestHelpers.audit_context(),
+        author_id,
+        project_id,
+        "Test token"
+      )
 
     # Create a frame with authentication context in assigns
     frame = %{

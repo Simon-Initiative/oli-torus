@@ -18,91 +18,12 @@ defmodule Oli.MCP.Auth do
   alias Oli.Authoring.Authors.AuthorProject
 
   @doc """
-  Creates a new bearer token for the given author and project.
-
-  Returns {:ok, {%BearerToken{}, token_string}} on success,
-  {:error, changeset} on failure.
-
-  The token_string is only returned once and should be displayed
-  to the user immediately as it cannot be retrieved again.
-  """
-  def create_token(author_id, project_id, hint \\ nil) do
-    # Verify author has access to the project before creating token
-    with :ok <- verify_author_project_access(author_id, project_id) do
-      token = TokenGenerator.generate()
-      hash = TokenGenerator.hash(token)
-
-      # Auto-generate hint if not provided
-      hint = hint || TokenGenerator.create_hint(token)
-
-      %BearerToken{}
-      |> BearerToken.changeset(%{
-        author_id: author_id,
-        project_id: project_id,
-        hash: hash,
-        hint: hint
-      })
-      |> Repo.insert()
-      |> case do
-        {:ok, bearer_token} -> {:ok, {bearer_token, token}}
-        {:error, changeset} -> {:error, changeset}
-      end
-    end
-  end
-
-  @doc """
   Gets the bearer token for a specific author and project combination.
 
   Returns the BearerToken struct or nil if not found.
   """
   def get_token_by_author_and_project(author_id, project_id) do
     Repo.get_by(BearerToken, author_id: author_id, project_id: project_id)
-  end
-
-  @doc """
-  Regenerates the token for an existing author/project combination.
-
-  Replaces the existing token with a new one. Returns the same format
-  as create_token/3.
-
-  Only allows regeneration if the current token is active.
-  """
-  def regenerate_token(author_id, project_id, hint \\ nil) do
-    # Verify author has access to the project before regenerating
-    with :ok <- verify_author_project_access(author_id, project_id) do
-      case get_token_by_author_and_project(author_id, project_id) do
-        nil ->
-          create_token(author_id, project_id, hint)
-
-        %BearerToken{status: :disabled} ->
-          {:error, :token_disabled}
-
-        existing_token ->
-          token = TokenGenerator.generate()
-          hash = TokenGenerator.hash(token)
-
-          # Auto-generate hint if not provided
-          hint = hint || TokenGenerator.create_hint(token)
-
-          existing_token
-          |> BearerToken.changeset(%{hash: hash, hint: hint})
-          |> Repo.update()
-          |> case do
-            {:ok, bearer_token} -> {:ok, {bearer_token, token}}
-            {:error, changeset} -> {:error, changeset}
-          end
-      end
-    end
-  end
-
-  @doc """
-  Deletes a bearer token by its ID.
-  """
-  def delete_token(id) do
-    case Repo.get(BearerToken, id) do
-      nil -> {:error, :not_found}
-      token -> Repo.delete(token)
-    end
   end
 
   @doc """
@@ -181,21 +102,6 @@ defmodule Oli.MCP.Auth do
         preload: [:author],
         order_by: [desc: bt.updated_at]
     )
-  end
-
-  @doc """
-  Updates the status of a bearer token (active/disabled).
-  """
-  def update_token_status(token_id, status) when status in [:active, :disabled] do
-    case Repo.get(BearerToken, token_id) do
-      nil ->
-        {:error, :not_found}
-
-      token ->
-        token
-        |> BearerToken.changeset(%{status: status})
-        |> Repo.update()
-    end
   end
 
   @doc """

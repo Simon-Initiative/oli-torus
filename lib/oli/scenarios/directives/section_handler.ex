@@ -10,7 +10,6 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Blueprint, PostProcessing}
-  alias Oli.GenAI
   alias Oli.GenAI.Completions.ServiceConfig
   alias Oli.Publishing
   alias Oli.Repo
@@ -207,9 +206,19 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       service_config_id: service_config_id
     }
 
-    case GenAI.create_feature_config(attrs) do
-      {:ok, _feature_config} -> section
-      {:error, changeset} -> Repo.rollback({:assistant_configuration_failed, changeset})
+    Ecto.Multi.new()
+    |> Oli.GenAI.Audited.create_multi(
+      :feature_config,
+      Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+      {:feature_config, attrs}
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, _changes} ->
+        section
+
+      {:error, _step, reason, _changes} ->
+        Repo.rollback({:assistant_configuration_failed, reason})
     end
   end
 

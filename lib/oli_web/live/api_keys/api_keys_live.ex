@@ -201,7 +201,11 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
   def handle_event("create", _, socket) do
     created_key = UUID.uuid4()
 
-    case Oli.Interop.create_key(created_key, socket.assigns.hint) do
+    case Oli.Interop.Audited.create_key(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           created_key,
+           socket.assigns.hint
+         ) do
       {:ok, _} ->
         {:noreply, assign(socket, created_key: created_key, keys: all_keys_sorted())}
 
@@ -212,33 +216,35 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
   end
 
   def handle_event("change", %{"id" => "text_" <> id, "value" => namespace}, socket) do
-    Oli.Interop.get_key(id)
-    |> Oli.Interop.update_key(%{registration_namespace: namespace})
+    Oli.Interop.Audited.update_key_settings(
+      Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+      String.to_integer(id),
+      %{
+        registration_namespace: namespace
+      }
+    )
 
     {:noreply, assign(socket, keys: all_keys_sorted())}
   end
 
   def handle_event("toggle", %{"id" => id, "action" => action}, socket) do
-    Oli.Interop.get_key(id)
-    |> Oli.Interop.update_key(%{status: to_state(action)})
+    Oli.Interop.Audited.set_key_status(
+      Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+      String.to_integer(id),
+      to_state(action)
+    )
 
     {:noreply, assign(socket, keys: all_keys_sorted())}
   end
 
   def handle_event("update", %{"field" => field, "id" => id, "action" => action}, socket) do
-    attrs =
-      Map.put(
-        %{},
-        String.to_existing_atom(field),
-        if action == "true" do
-          true
-        else
-          false
-        end
-      )
+    attrs = %{field => action == "true"}
 
-    Oli.Interop.get_key(id)
-    |> Oli.Interop.update_key(attrs)
+    Oli.Interop.Audited.update_key_settings(
+      Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+      String.to_integer(id),
+      attrs
+    )
 
     {:noreply, assign(socket, keys: all_keys_sorted())}
   end

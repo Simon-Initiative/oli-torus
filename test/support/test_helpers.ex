@@ -346,6 +346,13 @@ defmodule Oli.TestHelpers do
   def delete_deep_link_fixture(%LtiSectionResourceDeepLink{} = deep_link),
     do: Repo.delete(deep_link)
 
+  @doc "Test fixture: updates an API key's fields directly, without audit events."
+  def update_api_key_fixture(%Oli.Interop.ApiKey{} = key, attrs) do
+    key
+    |> Oli.Interop.ApiKey.changeset(attrs)
+    |> Repo.update()
+  end
+
   @doc """
   Audit context of a test administrator, for audited commands whose actor does not matter to
   the test. It is built in memory; audit events keep actor IDs without a foreign key.

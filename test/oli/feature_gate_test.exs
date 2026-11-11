@@ -4,19 +4,18 @@ defmodule Oli.FeatureGateTest do
   import Oli.Factory
 
   alias Oli.FeatureGate
-  alias Oli.ScopedFeatureFlags.Rollouts
 
   describe "stage/3" do
     test "returns rollout stage for a project" do
       project = insert(:project)
 
       {:ok, _} =
-        Rollouts.upsert_rollout(
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(Oli.Factory.insert(:author), source: :ui),
           :canary_test_feature,
           :project,
           project.id,
           :five_percent,
-          nil,
           []
         )
 
@@ -28,12 +27,12 @@ defmodule Oli.FeatureGateTest do
       section = insert(:section, base_project: project, publisher: project.publisher)
 
       {:ok, _} =
-        Rollouts.upsert_rollout(
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(Oli.Factory.insert(:author), source: :ui),
           :canary_test_feature,
           :section,
           section.id,
           :fifty_percent,
-          nil,
           []
         )
 
@@ -46,12 +45,12 @@ defmodule Oli.FeatureGateTest do
       project = insert(:project)
 
       {:ok, _} =
-        Rollouts.upsert_rollout(
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(Oli.Factory.insert(:author), source: :ui),
           :canary_test_feature,
           :project,
           project.id,
           :internal_only,
-          nil,
           []
         )
 

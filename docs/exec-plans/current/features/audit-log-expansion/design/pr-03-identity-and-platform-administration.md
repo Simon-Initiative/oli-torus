@@ -48,7 +48,7 @@ These are design mappings, not implementation proof. `requirements.yml` keeps it
 | FR-026 / AC-063 | `GenAI.Audited` commands for models, service configs, and feature configs; API keys only as redaction markers |
 | FR-026 / AC-064 | API key and MCP token lifecycle (`created`, `rotated`, `enabled`, `disabled`, `revoked`) with credential row IDs, owner, and project scope; no value, hash, or MCP hint |
 | FR-026 / AC-065 | Flags and rollouts captured in the domain transaction; no-op writes no longer emit events; cache invalidation and PubSub stay after commit |
-| FR-029 / AC-069, AC-070 | This PR's part: `author_deleted`, `author_role_changed`, `account_internal_flag_changed`, and the seven flag and rollout events keep their names and gain in-transaction atomicity. Existing audit integration tests are adapted, not deleted. The adapter keeps only the PR-04 to PR-06 events |
+| FR-029 / AC-069, AC-070 | This PR's part: `author_deleted`, `author_role_changed`, `account_internal_flag_changed`, and the seven flag and rollout events keep their names and gain in-transaction atomicity. Existing audit integration tests are adapted, not deleted. The adapter keeps only the five PR-04 to PR-06 events |
 | FR-030 / AC-072 to AC-074 | Marker secrets for passwords, reset/confirm/session tokens, API keys, MCP tokens, AI keys, custom params, and PEM values; scans of events, search text, safe logs, and job arguments |
 | FR-035 / AC-092 | Commands add no permission checks. Checks that live inside migrated domain functions (MCP project access) move into the command. Existing route plugs and LiveView guards stay |
 | FR-036 | Each new facade is an independent Boundary with private `Mutations`, added to the legacy `deps`, as decided in PR-02 |
@@ -164,7 +164,7 @@ Each facade declares:
 use Boundary, top_level?: true, exports: [], check: [out: false]
 ```
 
-The organization, integration, AI, credential, and flag facades write plain changesets, so instead of a private `Mutations` module each one uses the shared `Oli.Auditing.Command` steps (row lock by primary key, before and after state, change records under the event's field policy, foreign-key failures as `:delete_failed`) and describes its events. The domain contexts lose their raw writers: `Institutions`, `Inventories`, and `PlatformExternalTools` no longer expose them, and `Groups` keeps its email and name helpers but takes the context and writes through the facade.
+The organization, integration, AI, and credential facades write plain changesets, so instead of a private `Mutations` module each one uses the shared `Oli.Auditing.Command` steps (row lock by primary key, before and after state, change records under the event's field policy, foreign-key failures as `:delete_failed`) and describes its events. `Oli.ScopedFeatureFlags.Audited` keeps a private `Mutations` module, because flag, rollout, and exemption writes have their own lookups, locks, and inserts. The domain contexts lose their raw writers: `Institutions`, `Inventories`, and `PlatformExternalTools` no longer expose them, and `Groups` keeps its email and name helpers but takes the context and writes through the facade.
 
 The legacy boundaries (`Oli`, `OliWeb`, `Oli.Constellation`, `LiveComponentTests`) add each facade to `deps`. No `Mutations` module is exported, and no outgoing check is disabled on a legacy boundary. Research-consent configuration lives in `Institutions.Audited` because it is organization and consent configuration, even though its schema is `Oli.Delivery.ResearchConsent`.
 
@@ -473,7 +473,7 @@ All are extensions or tightenings of PR-01 contracts that have no production row
 - **`fields.ex` secrets:** classify `custom_params` and the deep link's `custom` as `:secret` markers, because they are free-form and can carry tool credentials. Leave the `private_key` pseudo key as a never-produced key, with corrected documentation; the change-fields rule forbids removing it.
 - **Released names:** no event is renamed or removed. `released_event_names.txt` is unchanged.
 
-The legacy adapter keeps only the six events owned by PR-04 to PR-06. Its moduledoc and `@events` list are updated, and its tests for the ten removed mappings move to the new command tests.
+The legacy adapter keeps only the five events owned by PR-04 to PR-06 (`project_published`, `google_doc_imported`, `section_created`, `resource_attempt_deleted`, `clickhouse_admin_operation_initiated`). Its moduledoc and `@events` list are updated, and its tests for the ten removed mappings move to the new command tests.
 
 ## 5. Data Flow & Edge Cases
 
@@ -568,7 +568,7 @@ Each checkpoint pauses for owner review, keeps `phase-3-execution.md` current, a
 2. **B — Provisioning, profile, linking, recovery, Scenarios.** Catalog and `Context` changes; registration, guest, invitation, LTI, Assent, Cognito, settings, link, password and recovery commands; Scenario handlers under `playwright_setup`; nested-transaction composition test.
 3. **C — Sessions.** Issuance and revocation commands for password, SSO/OAuth, and LTI login and for logout.
 4. **D — Organizations, consent, integrations.** Four facades; pending-registration decline; field-policy declarations and secret classification; integrations scope rules; deep-link composition; PR-05 handoff note for roster and grade passback in `plan.md`.
-5. **E — AI services, credentials, flags.** Three facades plus the flag facade; GenAI actor `on_mount`; API key settings allowlist; MCP access check inside the transaction; flag and rollout migration; legacy adapter trimmed to the six remaining events.
+5. **E — AI services, credentials, flags.** Three facades plus the flag facade; GenAI actor `on_mount`; API key settings allowlist; MCP access check inside the transaction; flag and rollout migration; legacy adapter trimmed to the five remaining events.
 6. **F — Final verification.** Format, `mix compile --warnings-as-errors` in dev, test, and playwright; affected and full suites; latency evidence; `harness-review` (security, performance, Elixir, UI for the LiveView changes); work-item validation; regenerate the event reference; caller inventory closed against the diff.
 
 No commit, push, PR, Jira change, or change to `handoff.md` is part of this design. PR-03's draft base is `sub-task/MER-6112-boundary-and-ci-with-audited-user-deletion-pilot`, opened with the caution block copied from #7025.

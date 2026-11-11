@@ -622,7 +622,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       conn =
         conn
         |> OliWeb.UserAuth.clear_all_session_data()
-        |> OliWeb.AuthorAuth.create_session(admin)
+        |> log_in_author(admin)
 
       {:ok, view, html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 

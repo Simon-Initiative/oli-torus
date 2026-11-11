@@ -64,7 +64,7 @@ defmodule OliWeb.PublisherControllerTest do
     } do
       conn = Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> Base.encode64(api_key))
 
-      Oli.Interop.update_key(key, %{products_enabled: false})
+      Oli.TestHelpers.update_api_key_fixture(key, %{products_enabled: false})
 
       conn = get(conn, Routes.publisher_path(conn, :show, publisher.id))
 
@@ -79,7 +79,7 @@ defmodule OliWeb.PublisherControllerTest do
     } do
       conn = Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> Base.encode64(api_key))
 
-      Oli.Interop.update_key(key, %{status: :disabled})
+      Oli.TestHelpers.update_api_key_fixture(key, %{status: :disabled})
 
       conn = get(conn, Routes.publisher_path(conn, :show, publisher.id))
 
@@ -180,7 +180,7 @@ defmodule OliWeb.PublisherControllerTest do
     } do
       conn = Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> Base.encode64(api_key))
 
-      Oli.Interop.update_key(key, %{products_enabled: false})
+      Oli.TestHelpers.update_api_key_fixture(key, %{products_enabled: false})
 
       conn = get(conn, Routes.publisher_path(conn, :index))
 
@@ -194,7 +194,7 @@ defmodule OliWeb.PublisherControllerTest do
     } do
       conn = Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> Base.encode64(api_key))
 
-      Oli.Interop.update_key(key, %{status: :disabled})
+      Oli.TestHelpers.update_api_key_fixture(key, %{status: :disabled})
 
       conn = get(conn, Routes.publisher_path(conn, :index))
 
@@ -208,7 +208,7 @@ defmodule OliWeb.PublisherControllerTest do
     conn = Plug.Test.init_test_session(conn, lti_session: nil)
 
     api_key = UUID.uuid4()
-    {:ok, key} = Oli.Interop.create_key(api_key, "hint")
+    {:ok, key} = Oli.Interop.Audited.create_key(Oli.TestHelpers.audit_context(), api_key, "hint")
 
     {:ok, conn: conn, publisher: publisher, api_key: api_key, key: key}
   end

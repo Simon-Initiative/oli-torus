@@ -17,7 +17,10 @@ defmodule Oli.Auditing.Command do
       `:details`); `operation` is `:created`, `:updated`, or `:deleted`
     * `:changes` (optional) - a function `(record, operation) -> map` that replaces the
       computed field changes, for rows recorded as a change of another entity (for example a
-      membership recorded as `members` of its community)
+      membership recorded as `members` of its community), or `(record, operation, computed)`
+      to extend them (for example with a credential's lifecycle transition)
+    * `:record_unchanged` (optional) - `true` to record an update even when no audited field
+      changed, for transitions that only replace a secret (a token rotation)
     * `:delete` (optional) - a function `(record) -> record | Ecto.Changeset.t() | {:error, term()}`
       that prepares the deletion, for schemas that check associations or refuse some rows
 
@@ -33,10 +36,16 @@ defmodule Oli.Auditing.Command do
   alias Oli.Auditing.{Changes, Context}
   alias Oli.Repo
 
+  @type operation :: :created | :updated | :deleted
+
   @type spec :: %{
-          event_type: atom(),
-          policy: Changes.field_spec(),
-          proposal: (struct(), :created | :updated | :deleted -> map())
+          required(:event_type) => atom(),
+          required(:policy) => Changes.field_spec(),
+          required(:proposal) => (struct(), operation() -> map()),
+          optional(:changes) =>
+            (struct(), operation() -> map()) | (struct(), operation(), map() -> map()),
+          optional(:record_unchanged) => boolean(),
+          optional(:delete) => (struct() -> struct() | Ecto.Changeset.t() | {:error, term()})
         }
 
   @doc """
@@ -100,9 +109,11 @@ defmodule Oli.Auditing.Command do
       before = Map.fetch!(changes, {name, :before})
       updated = Map.fetch!(changes, {name, :after})
 
-      case Changes.diff(before, updated, spec.policy) do
-        empty when map_size(empty) == 0 -> :skip
-        diff -> event(context, spec, updated, :updated, diff)
+      diff = Changes.diff(before, updated, spec.policy)
+
+      case map_size(diff) == 0 and not Map.get(spec, :record_unchanged, false) do
+        true -> :skip
+        false -> event(context, spec, updated, :updated, diff)
       end
     end)
     |> Multi.run(name, fn _repo, changes -> {:ok, Map.fetch!(changes, {name, :after})} end)
@@ -151,7 +162,8 @@ defmodule Oli.Auditing.Command do
   def event(context, spec, record, operation, changes) do
     changes =
       case Map.fetch(spec, :changes) do
-        {:ok, changes_fun} -> changes_fun.(record, operation)
+        {:ok, fun} when is_function(fun, 3) -> fun.(record, operation, changes)
+        {:ok, fun} -> fun.(record, operation)
         :error -> changes
       end
 

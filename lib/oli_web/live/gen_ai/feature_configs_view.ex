@@ -8,6 +8,8 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
 
   use OliWeb, :live_view
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   require Logger
 
   alias Oli.GenAI
@@ -323,7 +325,12 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
          assign(socket, changeset: FeatureConfig.changeset(socket.assigns.selected, %{}))}
 
       selected ->
-        case GenAI.update_feature_config(selected, params) do
+        case Oli.GenAI.Audited.update(
+               Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+               :feature_config,
+               selected.id,
+               params
+             ) do
           {:ok, feature_config} ->
             all = all(socket.assigns.show_defaults_only?)
 
@@ -385,7 +392,11 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
       item ->
         socket = clear_flash(socket)
 
-        case GenAI.delete_feature_config(item) do
+        case Oli.GenAI.Audited.delete(
+               Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+               :feature_config,
+               item.id
+             ) do
           {:ok, _} ->
             all = all(socket.assigns.show_defaults_only?)
             selected = Enum.at(all, 0)
@@ -442,11 +453,15 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
   end
 
   defp create_feature_config(feature, socket) do
-    case GenAI.create_feature_config(%{
-           feature: feature,
-           service_config_id: socket.assigns.selected_service_config |> elem(1),
-           section_id: socket.assigns.section.id
-         }) do
+    case Oli.GenAI.Audited.create(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           :feature_config,
+           %{
+             feature: feature,
+             service_config_id: socket.assigns.selected_service_config |> elem(1),
+             section_id: socket.assigns.section.id
+           }
+         ) do
       {:ok, feature_config} ->
         # Preload the associations to avoid crashes when rendering
         feature_config = Oli.Repo.preload(feature_config, [:service_config, :section])

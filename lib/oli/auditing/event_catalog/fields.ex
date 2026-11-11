@@ -624,7 +624,7 @@ defmodule Oli.Auditing.EventCatalog.Fields do
           row(:api_key)
           |> Map.merge(%{
             hash: "credential hash, never recorded",
-            hint: "partial key hint; recorded in details"
+            hint: "label the administrator typed for the key; recorded in details"
           }),
         pseudo_keys: %{lifecycle: "created, rotated, enabled, disabled, or revoked"}
       ),

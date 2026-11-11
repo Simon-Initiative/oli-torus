@@ -90,13 +90,35 @@ defmodule Oli.ScopedFeatureFlags.CompileTimeValidationTest do
     end
 
     test "enable_feature works with defined features", %{project: project} do
-      assert {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project)
-      assert {:ok, _} = ScopedFeatureFlags.enable_feature("mcp_authoring", project)
+      assert {:ok, _} =
+               Oli.ScopedFeatureFlags.Audited.enable_feature(
+                 Oli.TestHelpers.audit_context(),
+                 :mcp_authoring,
+                 project
+               )
+
+      assert {:ok, _} =
+               Oli.ScopedFeatureFlags.Audited.enable_feature(
+                 Oli.TestHelpers.audit_context(),
+                 "mcp_authoring",
+                 project
+               )
     end
 
     test "disable_feature works with defined features", %{project: project} do
-      assert {:ok, _} = ScopedFeatureFlags.disable_feature(:mcp_authoring, project)
-      assert {:ok, _} = ScopedFeatureFlags.disable_feature("mcp_authoring", project)
+      assert {:ok, _} =
+               Oli.ScopedFeatureFlags.Audited.disable_feature(
+                 Oli.TestHelpers.audit_context(),
+                 :mcp_authoring,
+                 project
+               )
+
+      assert {:ok, _} =
+               Oli.ScopedFeatureFlags.Audited.disable_feature(
+                 Oli.TestHelpers.audit_context(),
+                 "mcp_authoring",
+                 project
+               )
     end
   end
 end
