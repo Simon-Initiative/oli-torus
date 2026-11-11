@@ -62,7 +62,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> hd()
         |> Map.get(:id, 1)
 
-      {:ok, _user} = Accounts.update_user(instructor, %{author_id: author_id})
+      {:ok, _user} = Oli.TestHelpers.update_account_fixture(instructor, %{author_id: author_id})
 
       conn =
         conn

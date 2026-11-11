@@ -58,7 +58,7 @@ defmodule Oli.Auditing.EventCatalog.Fields do
     values(~w(email email_confirmed_at invitation_accepted_at name given_name family_name
       middle_name nickname preferred_username picture locale guest independent_learner
       research_opt_out locked_at can_create_sections age_verified hidden is_internal
-      author_id lti_institution_id)a)
+      author_id lti_institution_id platform_roles)a)
     |> Map.merge(secrets(~w(password email_confirmation)a))
   end
 
@@ -279,7 +279,11 @@ defmodule Oli.Auditing.EventCatalog.Fields do
             state: "LTI launch state maintained by the system",
             invited_by_id: "set once with the invitation; recorded by invitation_created",
             preferences: "recorded through its subfields (see Oli.Accounts.UserPreferences)"
-          })
+          }),
+        pseudo_keys: %{
+          platform_roles:
+            "institution roles held through users_platform_roles, as sorted role URIs"
+        }
       ),
       source(Oli.Accounts.Author, [:author_account, :preferences],
         excluded:

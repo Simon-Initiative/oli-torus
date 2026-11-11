@@ -313,6 +313,37 @@ defmodule Oli.TestHelpers do
     {:ok, conn: conn, user: user}
   end
 
+  @doc """
+  Test fixture: writes account fields directly with the account's `noauth_changeset/2`, without
+  audit events. Product code changes protected fields only through `Oli.Accounts.Audited`.
+  """
+  def update_account_fixture(%Oli.Accounts.User{} = user, attrs) do
+    user
+    |> Oli.Accounts.User.noauth_changeset(attrs)
+    |> Repo.update()
+  end
+
+  def update_account_fixture(%Oli.Accounts.Author{} = author, attrs) do
+    author
+    |> Oli.Accounts.Author.noauth_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Test fixture: replaces a user's platform roles (`Lti_1p3.Roles.PlatformRole` structs) without
+  audit events.
+  """
+  def put_platform_roles_fixture(%Oli.Accounts.User{} = user, roles) do
+    user
+    |> Repo.preload(:platform_roles, force: true)
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.put_assoc(
+      :platform_roles,
+      Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)
+    )
+    |> Repo.update()
+  end
+
   def guest_conn(%{conn: conn}) do
     guest = user_fixture(%{guest: true})
     conn = log_in_user(conn, guest)
@@ -324,7 +355,7 @@ defmodule Oli.TestHelpers do
     instructor = user_fixture(%{can_create_sections: true})
 
     {:ok, instructor} =
-      Accounts.update_user_platform_roles(
+      put_platform_roles_fixture(
         instructor,
         [Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)]
       )

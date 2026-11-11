@@ -287,16 +287,18 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Updates a user.
+  Updates the unprotected fields of a user: the LTI launch `state`, `research_opt_out`, and
+  `preferences`. Any other user field in `attrs` returns an error changeset with a `:protected`
+  error and writes nothing; those fields change only through `Oli.Accounts.Audited`.
   ## Examples
-      iex> update_user(user, %{field: new_value})
+      iex> update_user(user, %{research_opt_out: true})
       {:ok, %User{}}
-      iex> update_user(user, %{field: bad_value})
+      iex> update_user(user, %{can_create_sections: true})
       {:error, %Ecto.Changeset{}}
   """
   def update_user(%User{} = user, attrs) do
     user
-    |> User.noauth_changeset(attrs)
+    |> User.unprotected_changeset(attrs)
     |> Repo.update()
   end
 
@@ -419,25 +421,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Updates the platform roles associated with a user
-  ## Examples
-      iex> update_user_platform_roles(user, roles)
-      {:ok, user}       -> # Updated with success
-
-      iex> update_user_platform_roles(user, roles)
-      {:error, changeset} -> # Something went wrong
-  """
-  def update_user_platform_roles(%User{} = user, roles) do
-    roles = Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)
-
-    user
-    |> Repo.preload([:platform_roles])
-    |> User.noauth_changeset()
-    |> Ecto.Changeset.put_assoc(:platform_roles, roles)
-    |> Repo.update()
-  end
-
-  @doc """
     Updates the context role for a specific enrollment.
   """
 
@@ -488,11 +471,15 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def link_user_author_account(user, author) do
-    update_user(user, %{author_id: author.id})
+    user
+    |> User.noauth_changeset(%{author_id: author.id})
+    |> Repo.update()
   end
 
   def unlink_user_author_account(user) do
-    update_user(user, %{author_id: nil})
+    user
+    |> User.noauth_changeset(%{author_id: nil})
+    |> Repo.update()
   end
 
   @doc """
@@ -586,16 +573,18 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Updates an author.
+  Updates the preferences of an author. Any other author field in `attrs` returns an error
+  changeset with a `:protected` error and writes nothing; those fields change only through
+  `Oli.Accounts.Audited`.
   ## Examples
-      iex> update_author(author, %{field: new_value})
+      iex> update_author(author, %{preferences: %{editor: "markdown"}})
       {:ok, %Author{}}
-      iex> update_author(author, %{field: bad_value})
+      iex> update_author(author, %{system_role_id: 2})
       {:error, %Ecto.Changeset{}}
   """
   def update_author(%Author{} = author, attrs) do
     author
-    |> Author.noauth_changeset(attrs)
+    |> Author.unprotected_changeset(attrs)
     |> Repo.update()
   end
 
@@ -659,18 +648,6 @@ defmodule Oli.Accounts do
       }
     )
     |> Repo.one()
-  end
-
-  @doc """
-  Deletes an author.
-  ## Examples
-      iex> delete_author(author)
-      {:ok, %Author{}}
-      iex> delete_author(author)
-      {:error, %Ecto.Changeset{}}
-  """
-  def delete_author(%Author{} = author) do
-    Repo.delete(author)
   end
 
   @doc """
@@ -1455,15 +1432,6 @@ defmodule Oli.Accounts do
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
   end
 
-  @doc """
-  Confirms a user as an admin.
-  """
-  def admin_confirm_user(user) do
-    user
-    |> User.confirm_changeset()
-    |> Repo.update()
-  end
-
   ## Reset password
 
   @doc ~S"""
@@ -1571,24 +1539,6 @@ defmodule Oli.Accounts do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
     end
-  end
-
-  @doc """
-  Locks a user account preventing them from logging in.
-  """
-  def lock_user(user) do
-    user
-    |> User.lock_account_changeset(true)
-    |> Repo.update()
-  end
-
-  @doc """
-  Unlocks a user account.
-  """
-  def unlock_user(user) do
-    user
-    |> User.lock_account_changeset(false)
-    |> Repo.update()
   end
 
   @doc """
@@ -1916,52 +1866,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Updates an author on behalf of an admin. Role changes are restricted to system
-  admins and recorded atomically with the update, including identity snapshots.
-  Reloads and locks the author so the audit reflects the persisted previous role.
-  """
-  def admin_update_author(%Author{} = author, attrs, %Author{} = admin) do
-    Repo.transaction(fn ->
-      previous = Repo.one!(from a in Author, where: a.id == ^author.id, lock: "FOR UPDATE")
-
-      changeset =
-        previous
-        |> Author.noauth_changeset(attrs)
-        |> Ecto.Changeset.validate_inclusion(:system_role_id, Map.values(SystemRole.role_id()))
-
-      changeset =
-        case is_system_admin?(admin) do
-          true -> changeset
-          false -> Ecto.Changeset.delete_change(changeset, :system_role_id)
-        end
-
-      with {:ok, updated} <- Repo.update(changeset),
-           {:ok, _event} <- audit_author_role_change(admin, previous, updated) do
-        updated
-      else
-        {:error, error} -> Repo.rollback(error)
-      end
-    end)
-  end
-
-  defp audit_author_role_change(_admin, %{system_role_id: role}, %{system_role_id: role}),
-    do: {:ok, nil}
-
-  defp audit_author_role_change(admin, previous, updated) do
-    Oli.Auditing.log_admin_action(admin, :author_role_changed, updated, %{
-      "actor_name" => admin.name,
-      "actor_email" => admin.email,
-      "author_id" => updated.id,
-      "author_name" => updated.name,
-      "author_email" => updated.email,
-      "previous_role_id" => previous.system_role_id,
-      "new_role_id" => updated.system_role_id,
-      "previous_role" => SystemRole.label(previous.system_role_id),
-      "new_role" => SystemRole.label(updated.system_role_id)
-    })
-  end
-
-  @doc """
   Adds an author password. Used for accounts initially created by a login provider. This function
   should only run when the author has no password set.
 
@@ -2067,15 +1971,6 @@ defmodule Oli.Accounts do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:author, Author.confirm_changeset(author))
     |> Ecto.Multi.delete_all(:tokens, AuthorToken.author_and_contexts_query(author, ["confirm"]))
-  end
-
-  @doc """
-  Confirms an author as an admin.
-  """
-  def admin_confirm_author(author) do
-    author
-    |> Author.confirm_changeset()
-    |> Repo.update()
   end
 
   ## Reset password
@@ -2194,24 +2089,6 @@ defmodule Oli.Accounts do
       {:ok, %{author: author}} -> {:ok, author}
       {:error, :author, changeset, _} -> {:error, changeset}
     end
-  end
-
-  @doc """
-  Locks an author account preventing them from logging in.
-  """
-  def lock_author(author) do
-    author
-    |> Author.lock_account_changeset(true)
-    |> Repo.update()
-  end
-
-  @doc """
-  Unlocks an author account.
-  """
-  def unlock_author(author) do
-    author
-    |> Author.lock_account_changeset(false)
-    |> Repo.update()
   end
 
   @doc """

@@ -6,6 +6,7 @@ defmodule OliWeb.AuthorSettingsLive do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.AssentAuth.AuthorAssentAuth
+  alias Oli.Auditing.Context
   alias OliWeb.Common.Properties.{Groups, Group}
 
   def render(assigns) do
@@ -232,7 +233,9 @@ defmodule OliWeb.AuthorSettingsLive do
     %{"author" => author_params} = params
     author = socket.assigns.current_author
 
-    case Accounts.update_author(author, author_params) do
+    context = Context.for_actor(author, source: :ui)
+
+    case Accounts.Audited.update_own_profile(context, author, author_params) do
       {:ok, author} ->
         author_form =
           author
@@ -244,8 +247,11 @@ defmodule OliWeb.AuthorSettingsLive do
          |> put_flash(:info, "Account details successfully updated.")
          |> assign(author_form: author_form)}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, author_form: to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Account details couldn't be updated.")}
     end
   end
 

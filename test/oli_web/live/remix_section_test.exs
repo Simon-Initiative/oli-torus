@@ -10,7 +10,6 @@ defmodule OliWeb.RemixSectionLiveTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResource
-  alias Oli.Accounts
   alias Oli.Authoring.Course
   alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Oli.Publishing
@@ -2082,7 +2081,7 @@ defmodule OliWeb.RemixSectionLiveTest do
     map = Seeder.base_project_with_resource4()
 
     {:ok, instructor} =
-      Accounts.update_user_platform_roles(
+      Oli.TestHelpers.put_platform_roles_fixture(
         user_fixture(%{can_create_sections: true, independent_learner: true}),
         [
           Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)

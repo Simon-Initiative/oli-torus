@@ -4,6 +4,7 @@ defmodule OliWeb.LaunchController do
 
   alias Oli.{Accounts, Repo}
   alias Oli.Accounts.User
+  alias Oli.Auditing.Context
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver
@@ -49,8 +50,9 @@ defmodule OliWeb.LaunchController do
           Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
           Sections.mark_section_visited_for_student(section, user)
 
-          Accounts.update_user_platform_roles(
-            user,
+          Accounts.Audited.sync_platform_roles(
+            Context.for_actor(user, source: :ui),
+            user.id,
             Marshaler.from(user.platform_roles)
             |> MapSet.new()
             |> MapSet.put(PlatformRoles.get_role(:institution_learner))

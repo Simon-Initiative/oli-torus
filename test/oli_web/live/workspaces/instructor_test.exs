@@ -263,7 +263,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
       conn: conn,
       user: user
     } do
-      Accounts.update_user(user, %{can_create_sections: true})
+      Oli.TestHelpers.update_account_fixture(user, %{can_create_sections: true})
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
@@ -292,7 +292,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
       conn: conn,
       user: user
     } do
-      Accounts.update_user(user, %{can_create_sections: true})
+      Oli.TestHelpers.update_account_fixture(user, %{can_create_sections: true})
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor?sidebar_expanded=true")
 

@@ -249,11 +249,9 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       target = automation_author()
 
       {:ok, _} =
-        Accounts.admin_update_author(
-          target,
-          %{"system_role_id" => SystemRole.role_id().system_admin},
-          grantor
-        )
+        Oli.TestHelpers.update_account_fixture(target, %{
+          "system_role_id" => SystemRole.role_id().system_admin
+        })
 
       response =
         teardown(conn, api_key, project, [

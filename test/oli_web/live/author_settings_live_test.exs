@@ -331,4 +331,49 @@ defmodule OliWeb.AuthorSettingsLiveTest do
       assert result =~ "Account details successfully updated."
     end
   end
+
+  describe "audited name update" do
+    test "records the author's own name change", %{conn: conn} do
+      author = author_fixture(%{given_name: "John", family_name: "Doe"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_author(author)
+        |> live(~p"/authors/settings")
+
+      lv
+      |> form("#author_form", %{"author" => %{"given_name" => "Jane", "family_name" => "Doe"}})
+      |> render_submit()
+
+      assert Accounts.get_author!(author.id).given_name == "Jane"
+
+      assert [event] = Oli.Auditing.list_events(event_type: :account_updated)
+      assert event.author_id == author.id
+      assert event.affected_author_id == author.id
+    end
+
+    test "a submitted protected field changes nothing", %{conn: conn} do
+      author = author_fixture(%{given_name: "John", family_name: "Doe"})
+      system_admin = Accounts.SystemRole.role_id().system_admin
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_author(author)
+        |> live(~p"/authors/settings")
+
+      render_hook(lv, "update_author", %{
+        "author" => %{
+          "given_name" => "John",
+          "family_name" => "Doe",
+          "system_role_id" => to_string(system_admin),
+          "is_internal" => "true"
+        }
+      })
+
+      reloaded = Accounts.get_author!(author.id)
+      assert reloaded.system_role_id == author.system_role_id
+      refute reloaded.is_internal
+      assert Oli.Auditing.list_events(event_type: :account_updated) == []
+    end
+  end
 end

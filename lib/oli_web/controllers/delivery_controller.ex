@@ -4,6 +4,7 @@ defmodule OliWeb.DeliveryController do
 
   alias Lti_1p3.Roles.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.Accounts.User
   alias Oli.Authoring.Course
   alias Oli.Analytics.DataTables.DataTable
@@ -178,8 +179,9 @@ defmodule OliWeb.DeliveryController do
         else
           Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-          Accounts.update_user_platform_roles(
-            user,
+          Accounts.Audited.sync_platform_roles(
+            Context.for_actor(user, source: :ui),
+            user.id,
             Lti_1p3.DataProviders.EctoProvider.Marshaler.from(user.platform_roles)
             |> MapSet.new()
             |> MapSet.put(PlatformRoles.get_role(:institution_learner))

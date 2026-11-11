@@ -2,6 +2,7 @@ defmodule OliWeb.CollaboratorControllerTest do
   use OliWeb.ConnCase
 
   import ExUnit.CaptureLog
+  import Oli.Factory
 
   alias Oli.Accounts
 
@@ -157,6 +158,25 @@ defmodule OliWeb.CollaboratorControllerTest do
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do
       conn = delete(conn, Routes.collaborator_path(conn, :delete, project, @invalid_email))
       assert html_response(conn, 302) =~ "/workspaces/course_author/#{project.slug}/overview"
+    end
+
+    test "removing a pending invitee deletes the author and records author_deleted", %{
+      conn: conn,
+      author: author,
+      project: project
+    } do
+      invitee = insert(:author, email: @invite_email, password_hash: nil)
+      {:ok, _} = Oli.Authoring.Collaborators.add_collaborator(@invite_email, project.slug)
+
+      conn = delete(conn, Routes.collaborator_path(conn, :delete, project, @invite_email))
+
+      assert html_response(conn, 302) =~ "/workspaces/course_author/#{project.slug}/overview"
+      refute Oli.Repo.get(Oli.Accounts.Author, invitee.id)
+
+      assert [event] = Oli.Auditing.list_events(event_type: :author_deleted)
+      assert event.author_id == author.id
+      assert event.affected_author_id == invitee.id
+      assert event.details["email"] == @invite_email
     end
   end
 end

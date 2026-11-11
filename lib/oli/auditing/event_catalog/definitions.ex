@@ -68,8 +68,8 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
           "A user account was linked to an author account (or the link was removed).",
           ref_roles: [:linked], change_fields: %{author_id: :value}},
          {:account_permissions_changed, "Account permissions changed",
-          "Access flags of an account, such as independent learner or hidden, were changed.",
-          no_op: :skip},
+          "Access flags or institution roles of an account, such as independent learner or " <>
+            "hidden, were changed.", actor_kinds: [:user, :author, :system], no_op: :skip},
          {:account_creation_rights_changed, "Section creation rights changed",
           "The right of a user to create course sections was granted or removed.",
           no_op: :skip, change_fields: %{can_create_sections: :value}},

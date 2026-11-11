@@ -3,6 +3,7 @@ defmodule OliWeb.CollaboratorController do
 
   import Oli.Utils
 
+  alias Oli.Auditing.Context
   alias Oli.Authoring.Collaborators
 
   require Logger
@@ -143,29 +144,34 @@ defmodule OliWeb.CollaboratorController do
     |> Ecto.Multi.run(:remove_author_from_project, fn _repo, _changes ->
       Collaborators.remove_collaborator(author_email, project_slug)
     end)
-    |> Ecto.Multi.run(:remove_invitation, fn _repo, %{author: author} ->
+    |> Ecto.Multi.merge(fn %{author: author} ->
       case author.password_hash do
         nil ->
           # the author was invited but still did not accept the invitation
           # We then delete the author and the correponding author_token will be deleted automatically (on delete cascade)
-          Oli.Accounts.delete_author(author)
+          context = Context.for_actor(conn.assigns.current_author, source: :ui)
+
+          Ecto.Multi.new()
+          |> Oli.Accounts.Audited.delete_author_multi(:remove_invitation, context, author.id)
 
         _some_hashed_password ->
           # the author is already a member of Torus
           # so we must manually delete the author_token created when the invitation was sent
+          Ecto.Multi.new()
+          |> Ecto.Multi.run(:remove_invitation, fn _repo, _changes ->
+            Oli.Accounts.AuthorToken.author_and_contexts_query(
+              author,
+              ["collaborator_invitation:#{project_slug}"]
+            )
+            |> Oli.Repo.one()
+            |> case do
+              nil ->
+                {:ok, "Author token already deleted"}
 
-          Oli.Accounts.AuthorToken.author_and_contexts_query(
-            author,
-            ["collaborator_invitation:#{project_slug}"]
-          )
-          |> Oli.Repo.one()
-          |> case do
-            nil ->
-              {:ok, "Author token already deleted"}
-
-            author_token ->
-              Oli.Repo.delete(author_token)
-          end
+              author_token ->
+                Oli.Repo.delete(author_token)
+            end
+          end)
       end
     end)
     |> Oli.Repo.transaction()

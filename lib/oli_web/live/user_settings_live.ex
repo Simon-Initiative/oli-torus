@@ -6,6 +6,7 @@ defmodule OliWeb.UserSettingsLive do
   alias Oli.Accounts
   alias Oli.Accounts.User
   alias Oli.AssentAuth.UserAssentAuth
+  alias Oli.Auditing.Context
   alias OliWeb.Icons
 
   @doc "Renders the account profile, email, and password settings form."
@@ -380,12 +381,17 @@ defmodule OliWeb.UserSettingsLive do
 
   # Private functions to handle individual update operations
   defp execute_user_update(user, user_params) do
-    case Accounts.update_user(user, user_params) do
+    context = Context.for_actor(user, source: :ui)
+
+    case Accounts.Audited.update_own_profile(context, user, user_params) do
       {:ok, updated_user} ->
         {:ok, updated_user, "Account details updated"}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:error, :user, changeset}
+
+      {:error, _reason} ->
+        {:error, :user, Accounts.change_user_details(user, user_params)}
     end
   end
 

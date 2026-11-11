@@ -3,7 +3,6 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
   import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
 
-  alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Repo
   alias Oli.Authoring.Editing.ActivityEditor
@@ -249,7 +248,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
   test "revoked accepted collaboration prevents every outstanding save", ctx do
     assert {:ok, author} =
-             Accounts.update_author(ctx.author, %{
+             Oli.TestHelpers.update_account_fixture(ctx.author, %{
                system_role_id: Oli.Accounts.SystemRole.role_id().author
              })
 

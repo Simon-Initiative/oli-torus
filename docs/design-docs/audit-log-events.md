@@ -300,7 +300,7 @@ Example:
 | Affected person | `user`, `author` (required; equals the entity) |
 | Outcomes | `succeeded` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `preferred_username`, `research_opt_out`, `system_role_id` |
+| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `platform_roles`, `preferred_username`, `research_opt_out`, `system_role_id` |
 | Detail keys | `creation_source` |
 | Reference roles | none |
 | Status | active |
@@ -343,7 +343,7 @@ Example:
 | Affected person | `user`, `author` (required; equals the entity) |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `preferred_username`, `research_opt_out`, `system_role_id` |
+| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `platform_roles`, `preferred_username`, `research_opt_out`, `system_role_id` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -501,18 +501,18 @@ Example:
 
 ### `account_permissions_changed`
 
-**Account permissions changed.** Access flags of an account, such as independent learner or hidden, were changed.
+**Account permissions changed.** Access flags or institution roles of an account, such as independent learner or hidden, were changed.
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `user`, `author` |
 | Required columns | none |
 | At least one of | none |
 | Affected person | `user`, `author` (required; equals the entity) |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `preferred_username`, `research_opt_out`, `system_role_id` |
+| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `platform_roles`, `preferred_username`, `research_opt_out`, `system_role_id` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |

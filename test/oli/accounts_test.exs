@@ -35,33 +35,6 @@ defmodule Oli.AccountsTest do
       assert author.system_role_id == Accounts.SystemRole.role_id().system_admin
     end
 
-    test "admin_update_author/3 only lets a system admin change the system role" do
-      system_admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().system_admin})
-
-      account_admin =
-        author_fixture(%{system_role_id: Accounts.SystemRole.role_id().account_admin})
-
-      author = author_fixture()
-      admin_role = Accounts.SystemRole.role_id().system_admin
-
-      {:ok, refused} =
-        Accounts.admin_update_author(
-          author,
-          %{"system_role_id" => admin_role, "given_name" => "Renamed"},
-          account_admin
-        )
-
-      assert refused.given_name == "Renamed"
-      assert refused.system_role_id == Accounts.SystemRole.role_id().author
-      assert Oli.Auditing.list_events(event_type: :author_role_changed) == []
-
-      {:ok, granted} =
-        Accounts.admin_update_author(author, %{"system_role_id" => admin_role}, system_admin)
-
-      assert granted.system_role_id == admin_role
-      assert [_event] = Oli.Auditing.list_events(event_type: :author_role_changed)
-    end
-
     test "admin helper hierarchy matches the system role levels" do
       author = author_fixture()
 
@@ -166,10 +139,29 @@ defmodule Oli.AccountsTest do
         "given_name" => "new given name"
       }
 
-      assert {:ok, author = %Author{}} = Accounts.update_author(author, attrs)
-      assert author.email == attrs["email"]
-      assert author.family_name == attrs["family_name"]
-      assert author.given_name == attrs["given_name"]
+      assert {:error, changeset} = Accounts.update_author(author, attrs)
+
+      assert Keyword.keys(changeset.errors) |> Enum.sort() == [
+               :current_password,
+               :email,
+               :family_name,
+               :given_name
+             ]
+
+      assert Enum.all?(changeset.errors, fn {_field, {_msg, meta}} ->
+               meta[:validation] == :protected
+             end)
+
+      assert Accounts.get_author!(author.id).email == author.email
+    end
+
+    test "update_author/2 still updates preferences" do
+      author = insert(:author)
+
+      assert {:ok, %Author{} = updated} =
+               Accounts.update_author(author, %{preferences: %{editor: "markdown"}})
+
+      assert updated.preferences.editor == "markdown"
     end
 
     test "update author data with an email used by another author fails" do
@@ -183,7 +175,15 @@ defmodule Oli.AccountsTest do
         "password_confirmation" => "password_2"
       }
 
-      assert {:error, changeset = %Ecto.Changeset{}} = Accounts.update_author(author_2, attrs)
+      context = Oli.Auditing.Context.for_actor(insert(:author), source: :ui)
+
+      assert {:error, changeset = %Ecto.Changeset{}} =
+               Accounts.Audited.admin_update_author(
+                 context,
+                 author_2.id,
+                 Map.take(attrs, ["email"])
+               )
+
       assert changeset.valid? == false
 
       assert changeset.errors == [
@@ -267,41 +267,30 @@ defmodule Oli.AccountsTest do
                )
     end
 
-    test "update_user/2 with valid data updates the user", %{user: user} do
-      assert {:ok, %User{} = user} = Accounts.update_user(user, @update_attrs)
-      assert user.email == "some_updated_email@example.com"
-      assert user.given_name == "some updated given_name"
-      assert user.family_name == "some updated family_name"
-      assert user.sub == "some updated sub"
-      assert user.picture == "some updated picture"
+    test "update_user/2 updates the unprotected fields", %{user: user} do
+      assert {:ok, %User{} = user} =
+               Accounts.update_user(user, %{research_opt_out: true, state: %{"k" => "v"}})
+
+      assert user.research_opt_out == true
+      assert user.state == %{"k" => "v"}
+    end
+
+    test "update_user/2 rejects protected fields and writes nothing", %{user: user} do
+      assert {:error, changeset} =
+               Accounts.update_user(user, Map.put(@update_attrs, :research_opt_out, true))
+
+      refute changeset.valid?
+      assert {_message, [validation: :protected]} = changeset.errors[:email]
+      assert {_message, [validation: :protected]} = changeset.errors[:sub]
+
+      reloaded = Accounts.get_user!(user.id)
+      assert reloaded.email == user.email
+      assert reloaded.research_opt_out == user.research_opt_out
     end
 
     test "update_user/2 with invalid data returns error changeset", %{user: user} do
       assert {:error, %Ecto.Changeset{}} = Accounts.update_user(user, @invalid_attrs)
       assert user.email == Accounts.get_user!(user.id).email
-    end
-
-    test "update_user_platform_roles/2 updates a users platform roles", %{user: user} do
-      user = Repo.preload(user, [:platform_roles])
-      assert user.platform_roles == []
-
-      updated_roles = [
-        Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
-        Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
-      ]
-
-      {:ok, _user} = Accounts.update_user_platform_roles(user, updated_roles)
-
-      user = Accounts.get_user!(user.id, preload: [:platform_roles])
-
-      assert Lti_1p3.Roles.PlatformRoles.has_roles?(
-               user,
-               [
-                 Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
-                 Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
-               ],
-               :all
-             )
     end
 
     test "get_author_with_community_admin_count/1 returns the author with the community_admin_count as zero" do
@@ -543,10 +532,9 @@ defmodule Oli.AccountsTest do
         "given_name" => "new given name"
       }
 
-      assert {:ok, user = %User{}} = Accounts.update_user(user, attrs)
-      assert user.email == attrs["email"]
-      assert user.family_name == attrs["family_name"]
-      assert user.given_name == attrs["given_name"]
+      assert {:error, changeset} = Accounts.update_user(user, attrs)
+      assert {_message, [validation: :protected]} = changeset.errors[:email]
+      assert Accounts.get_user!(user.id).email == user.email
     end
 
     test "update user password fails when the new password is less than 8 characters long" do
@@ -578,7 +566,11 @@ defmodule Oli.AccountsTest do
         "password_confirmation" => "password_2"
       }
 
-      assert {:error, changeset = %Ecto.Changeset{}} = Accounts.update_user(user_2, attrs)
+      context = Oli.Auditing.Context.for_actor(insert(:author), source: :ui)
+
+      assert {:error, changeset = %Ecto.Changeset{}} =
+               Accounts.Audited.admin_update_user(context, user_2.id, Map.take(attrs, ["email"]))
+
       assert changeset.valid? == false
 
       assert changeset.errors == [
@@ -606,21 +598,21 @@ defmodule Oli.AccountsTest do
       # returns false when the user is an LTI student
       {:ok, user} =
         insert(:user, %{independent_learner: false, can_create_sections: false})
-        |> Accounts.update_user_platform_roles([PlatformRoles.get_role(:institution_student)])
+        |> put_platform_roles_fixture([PlatformRoles.get_role(:institution_student)])
 
       refute Accounts.can_manage_linked_account?(user)
 
       # returns true when user is an institution instructor
       {:ok, user} =
         insert(:user)
-        |> Accounts.update_user_platform_roles([PlatformRoles.get_role(:institution_instructor)])
+        |> put_platform_roles_fixture([PlatformRoles.get_role(:institution_instructor)])
 
       assert Accounts.can_manage_linked_account?(user)
 
       # returns true when user is an institution admin
       {:ok, user} =
         insert(:user)
-        |> Accounts.update_user_platform_roles([
+        |> put_platform_roles_fixture([
           PlatformRoles.get_role(:system_administrator),
           PlatformRoles.get_role(:institution_administrator)
         ])
@@ -717,7 +709,7 @@ defmodule Oli.AccountsTest do
         Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
       ])
 
-      Accounts.update_user_platform_roles(user, [
+      put_platform_roles_fixture(user, [
         Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor),
         Lti_1p3.Roles.PlatformRoles.get_role(:institution_student)
       ])

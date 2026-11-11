@@ -330,6 +330,18 @@ defmodule Oli.Accounts.Author do
   end
 
   @doc """
+  Changeset for the generic `Oli.Accounts.update_author/2`: casts only preferences. Any other
+  author field in `attrs` adds a `:protected` error, because only the audited account commands
+  may write it.
+  """
+  def unprotected_changeset(author, attrs) do
+    author
+    |> cast(attrs, [])
+    |> cast_embed(:preferences)
+    |> Oli.Accounts.ProtectedKeys.validate(attrs, [:preferences])
+  end
+
+  @doc """
   Creates a changeset that can be used by the seed script to bootstrap the admin user.
   This changeset should only be used in seed scripts or tests.
   """
