@@ -2,6 +2,7 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
+  alias Oli.Auditing.Context
   alias Oli.Authoring.Course
   alias Oli.Groups
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
@@ -110,7 +111,10 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
         end
       )
 
-    case Groups.create_community_visibility(attrs) do
+    case Groups.create_community_visibility(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           attrs
+         ) do
       {:ok, _community_visibility} ->
         sources = retrieve_all_sources(socket.assigns.community_id)
         {:ok, table_model} = TableModel.new(sources, socket.assigns.ctx)

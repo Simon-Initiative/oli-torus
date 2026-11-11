@@ -11,12 +11,14 @@ defmodule Oli.Scenarios.Directives.CommunityHandler do
         },
         state
       ) do
+    context = Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario)
+
     with :ok <- validate_association_count(users, products),
-         {:ok, community} <- Groups.create_community(%{name: name}),
+         {:ok, community} <- Groups.create_community(context, %{name: name}),
          {:ok, institution} <-
            fetch(state.institutions, institution_name || "default", "institution") do
       {:ok, _} =
-        Groups.create_community_institution(%{
+        Groups.create_community_institution(context, %{
           community_id: community.id,
           institution_id: institution.id
         })
@@ -25,14 +27,14 @@ defmodule Oli.Scenarios.Directives.CommunityHandler do
         {:ok, user} = fetch(state.users, user_name, "user")
 
         {:ok, _} =
-          Groups.create_community_account(%{community_id: community.id, user_id: user.id})
+          Groups.create_community_account(context, %{community_id: community.id, user_id: user.id})
       end)
 
       Enum.each(products, fn product_name ->
         {:ok, product} = fetch(state.products, product_name, "product")
 
         {:ok, _} =
-          Groups.create_community_visibility(%{
+          Groups.create_community_visibility(context, %{
             community_id: community.id,
             section_id: product.id
           })

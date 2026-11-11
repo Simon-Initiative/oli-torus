@@ -415,6 +415,7 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
       {:organizations, "Organizations",
        [
          entity_types: [:institution, :community, :publisher],
+         actor_kinds: [:user, :author, :system],
          no_op: :skip,
          change_fields: Fields.organization()
        ],
@@ -432,7 +433,6 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
       {:integrations, "Integrations",
        [
          entity_types: [:registration, :deployment, :external_tool, :institution, :section],
-         required_one_of: [:institution_id, :section_id],
          no_op: :skip,
          change_fields: Fields.integration(),
          ref_roles: [:provider]
@@ -440,6 +440,13 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        [
          {:lms_settings_changed, "LMS settings changed",
           "LMS registration or deployment settings were changed.", []},
+         {:lms_registration_declined, "LMS registration request declined",
+          "An administrator declined an institution's LTI registration request; the request's " <>
+            "identifying fields are kept, never its contact email.",
+          entity_types: [:pending_registration],
+          no_op: :lifecycle,
+          change_fields: %{},
+          detail_keys: ~w(institution_url country_code issuer client_id deployment_id)},
          {:sso_settings_changed, "SSO settings changed",
           "Single sign-on configuration was changed; keys are never recorded.", []},
          {:lti_settings_changed, "LTI settings changed", "LTI 1.3 tool settings were changed.",
@@ -447,9 +454,10 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
          {:external_tool_settings_changed, "External tool settings changed",
           "An external LTI tool was registered, enabled, disabled, or reconfigured.", []},
          {:roster_settings_changed, "Roster settings changed",
-          "Roster synchronization (NRPS) settings of a section were changed.", []},
+          "Roster synchronization (NRPS) settings of a section were changed.",
+          required: [:section_id]},
          {:grade_passback_settings_changed, "Grade passback settings changed",
-          "Grade passback settings of a section were changed.", []}
+          "Grade passback settings of a section were changed.", required: [:section_id]}
        ]},
       {:ai_credentials, "AI and credentials",
        [

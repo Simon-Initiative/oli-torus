@@ -308,12 +308,15 @@ defmodule Oli.Scenarios.Engine do
 
   defp create_default_institution do
     {:ok, institution} =
-      Oli.Institutions.create_institution(%{
-        name: "Default Institution #{System.unique_integer([:positive])}",
-        institution_email: "admin@institution.edu",
-        country_code: "US",
-        institution_url: "http://institution.edu"
-      })
+      Oli.Institutions.Audited.create_institution(
+        Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+        %{
+          name: "Default Institution #{System.unique_integer([:positive])}",
+          institution_email: "admin@institution.edu",
+          country_code: "US",
+          institution_url: "http://institution.edu"
+        }
+      )
 
     institution
   end

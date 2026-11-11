@@ -222,8 +222,9 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
     token = AuthoringLaunch.result_token(started.request, selection())
 
     assert {:ok, _} =
-             Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity_deployment(
-               started.deployment,
+             Oli.Lti.Audited.update_external_tool_deployment(
+               Oli.TestHelpers.audit_context(),
+               started.deployment.deployment_id,
                %{deep_linking_enabled: false}
              )
 

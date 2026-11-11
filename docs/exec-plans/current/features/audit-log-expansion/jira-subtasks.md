@@ -203,6 +203,7 @@ Requirements: FR-009, FR-010, FR-011, FR-012, FR-018, FR-020, FR-021, FR-022, FR
 
 Implementation:
 
+- [ ] Close the roster and grade-passback fields of `Sections.update_section/2` (`nrps_enabled`, `grade_passback_enabled`, `line_items_service_url`, `nrps_context_memberships_url`): `OliWeb.Sections.EditView` passes form params that the section changeset casts. Reject them from the generic path or route them to `roster_settings_changed` and `grade_passback_settings_changed` (both now require `section_id`). Handed over from PR-03.
 - [ ] Move single/bulk/reset writes into audited composition; derive diffs from locked persisted values and preserve secure-delivery/adaptive/already-started rules.
 - [ ] Keep auto-submit changes in the transaction and cache invalidation after commit. Replace historical writes and test readers with central events.
 - [ ] Migrate safe source rows with provenance/new IDs and explicit unknowns; sanitize password history, verify external consumers and rollback redaction, then retire settings_changes in this slice.

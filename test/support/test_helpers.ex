@@ -113,7 +113,8 @@ defmodule Oli.TestHelpers do
         name: "Example Institution"
       })
 
-    {:ok, institution} = Institutions.create_institution(params)
+    {:ok, institution} =
+      Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), params)
 
     institution
   end
@@ -153,7 +154,8 @@ defmodule Oli.TestHelpers do
         line_items_service_domain: "some line_items_service_domain"
       })
 
-    {:ok, registration} = Institutions.create_registration(params)
+    {:ok, registration} =
+      Institutions.Audited.create_registration(Oli.TestHelpers.audit_context(), params)
 
     registration
   end
@@ -165,7 +167,8 @@ defmodule Oli.TestHelpers do
         deployment_id: "1"
       })
 
-    {:ok, deployment} = Institutions.create_deployment(params)
+    {:ok, deployment} =
+      Institutions.Audited.create_deployment(Oli.TestHelpers.audit_context(), params)
 
     deployment
   end
@@ -311,6 +314,47 @@ defmodule Oli.TestHelpers do
     conn = log_in_user(conn, user)
 
     {:ok, conn: conn, user: user}
+  end
+
+  alias Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
+
+  @doc "Test fixture: inserts a section deep link without audit events."
+  def create_deep_link_fixture(attrs) do
+    %LtiSectionResourceDeepLink{}
+    |> LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc "Test fixture: inserts or replaces the deep link of a section resource without audit events."
+  def upsert_deep_link_fixture(attrs) do
+    %LtiSectionResourceDeepLink{}
+    |> LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.insert(
+      on_conflict: {:replace_all_except, [:id, :inserted_at]},
+      conflict_target: [:section_id, :resource_id]
+    )
+  end
+
+  @doc "Test fixture: updates a section deep link without audit events."
+  def update_deep_link_fixture(%LtiSectionResourceDeepLink{} = deep_link, attrs) do
+    deep_link
+    |> LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc "Test fixture: deletes a section deep link without audit events."
+  def delete_deep_link_fixture(%LtiSectionResourceDeepLink{} = deep_link),
+    do: Repo.delete(deep_link)
+
+  @doc """
+  Audit context of a test administrator, for audited commands whose actor does not matter to
+  the test. It is built in memory; audit events keep actor IDs without a foreign key.
+  """
+  def audit_context do
+    Oli.Auditing.Context.for_actor(
+      %Oli.Accounts.Author{id: 1, name: "Test Admin", email: "test.admin@example.edu"},
+      source: :ui
+    )
   end
 
   @doc """

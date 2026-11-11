@@ -2,6 +2,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
   use OliWeb, :live_view
   require Logger
 
+  alias Oli.Auditing.Context
   alias Oli.Institutions
   alias Oli.Predefined
   alias Oli.Slack
@@ -522,6 +523,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                ),
              {:ok, {institution, registration, _deployment}} <-
                approve_pending_registration(
+                 socket.assigns.current_author,
                  registration["institution_id"],
                  pending_registration
                ) do
@@ -607,7 +609,11 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         &(&1.id == registration_id)
       )
 
-    {:ok, _pending_registration} = Institutions.delete_pending_registration(pending_registration)
+    {:ok, _pending_registration} =
+      Institutions.Audited.decline_pending_registration(
+        Context.for_actor(socket.assigns.current_author, source: :ui),
+        pending_registration.id
+      )
 
     # send a Slack notification regarding the new registration approval
     approving_admin = socket.assigns[:current_author]
@@ -645,15 +651,21 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
      })}
   end
 
-  # handle the case where the creation of a new institution was required (when institution_id == "")
-  defp approve_pending_registration("", pending_registration),
-    do: Institutions.approve_pending_registration_as_new_institution(pending_registration)
+  # An empty institution_id asks for a new institution; none reuses one with the same URL.
+  defp approve_pending_registration(admin, institution_id, pending_registration) do
+    institution =
+      case institution_id do
+        "" -> :new
+        nil -> :by_url
+        id -> id
+      end
 
-  defp approve_pending_registration(nil, pending_registration),
-    do: Institutions.approve_pending_registration(pending_registration)
-
-  defp approve_pending_registration(institution_id, pending_registration),
-    do: Institutions.approve_pending_registration(pending_registration, institution_id)
+    Institutions.Audited.approve_pending_registration(
+      Context.for_actor(admin, source: :ui),
+      pending_registration.id,
+      institution
+    )
+  end
 
   defp root_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb() ++

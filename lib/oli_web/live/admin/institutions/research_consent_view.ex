@@ -1,6 +1,7 @@
 defmodule OliWeb.Admin.Institutions.ResearchConsentView do
   use OliWeb, :live_view
 
+  alias Oli.Auditing.Context
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias OliWeb.Common.{Breadcrumb, FormContainer}
@@ -90,7 +91,9 @@ defmodule OliWeb.Admin.Institutions.ResearchConsentView do
   def handle_event("save", %{"institution" => params}, socket) do
     socket = clear_flash(socket)
 
-    case Institutions.update_institution(socket.assigns.institution, params) do
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
+
+    case Institutions.Audited.update_institution(context, socket.assigns.institution.id, params) do
       {:ok, %Institution{id: institution_id}} ->
         {:noreply,
          socket

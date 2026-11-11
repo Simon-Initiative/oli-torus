@@ -4,7 +4,6 @@ defmodule Oli.Lti.PlatformInstancesTest do
   import Oli.Factory
 
   alias Oli.Lti.PlatformInstances
-  alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
 
@@ -237,11 +236,12 @@ defmodule Oli.Lti.PlatformInstancesTest do
       # Soft delete both the deployment and platform instance
       assert {:ok,
               %{
-                soft_delete_activity_deployment: updated_deployment,
-                soft_delete_platform_instance: updated_platform_instance
+                deployment: updated_deployment,
+                platform_instance: updated_platform_instance
               }} =
-               PlatformExternalTools.soft_delete_activity_deployment_and_platform_instance(
-                 deployment
+               Oli.Lti.Audited.delete_external_tool(
+                 Oli.TestHelpers.audit_context(),
+                 deployment.deployment_id
                )
 
       # Verify the deployment was soft deleted

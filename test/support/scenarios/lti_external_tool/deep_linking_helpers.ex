@@ -72,7 +72,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers do
   @doc "Stores a section-local selection through the normal persistence context."
   def put_selection(section, id, selected) do
     assert {:ok, _} =
-             PlatformExternalTools.upsert_section_resource_deep_link(
+             Oli.TestHelpers.upsert_deep_link_fixture(
                Map.merge(selected, %{"section_id" => section.id, "resource_id" => id})
              )
   end

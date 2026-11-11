@@ -17,12 +17,15 @@ defmodule Oli.Scenarios.Directives.InstitutionHandler do
       ) do
     try do
       {:ok, institution} =
-        Oli.Institutions.create_institution(%{
-          name: name,
-          country_code: country_code,
-          institution_email: inst_email,
-          institution_url: inst_url
-        })
+        Oli.Institutions.Audited.create_institution(
+          Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+          %{
+            name: name,
+            country_code: country_code,
+            institution_email: inst_email,
+            institution_url: inst_url
+          }
+        )
 
       # Store institution in state
       new_state = Engine.put_institution(state, name, institution)

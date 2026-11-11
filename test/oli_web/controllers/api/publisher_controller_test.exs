@@ -135,7 +135,9 @@ defmodule OliWeb.PublisherControllerTest do
       publisher: publisher
     } do
       {:ok, unavailable_publisher} =
-        Inventories.update_publisher(publisher, %{available_via_api: false})
+        Inventories.Audited.update_publisher(Oli.TestHelpers.audit_context(), publisher.id, %{
+          available_via_api: false
+        })
 
       conn =
         conn

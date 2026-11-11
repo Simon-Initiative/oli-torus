@@ -164,6 +164,8 @@ Each facade declares:
 use Boundary, top_level?: true, exports: [], check: [out: false]
 ```
 
+The organization, integration, AI, credential, and flag facades write plain changesets, so instead of a private `Mutations` module each one uses the shared `Oli.Auditing.Command` steps (row lock by primary key, before and after state, change records under the event's field policy, foreign-key failures as `:delete_failed`) and describes its events. The domain contexts lose their raw writers: `Institutions`, `Inventories`, and `PlatformExternalTools` no longer expose them, and `Groups` keeps its email and name helpers but takes the context and writes through the facade.
+
 The legacy boundaries (`Oli`, `OliWeb`, `Oli.Constellation`, `LiveComponentTests`) add each facade to `deps`. No `Mutations` module is exported, and no outgoing check is disabled on a legacy boundary. Research-consent configuration lives in `Institutions.Audited` because it is organization and consent configuration, even though its schema is `Oli.Delivery.ResearchConsent`.
 
 At checkpoint A, verify the topology once with a temporary forbidden reference per new facade. The pattern is the PR-02 fixtures recoverable from `8fc4be1a9c`, run as a manual check and not committed. Record the results in the execution record.
@@ -463,9 +465,11 @@ All are extensions or tightenings of PR-01 contracts that have no production row
 - **Login-provider identities:** add `account_identity_linked` and `account_identity_unlinked` to the account family, with only the provider name in details; the provider's account uid is never recorded.
 - **System actor in account events:** admit `:system` in `account_updated`, `account_linked`, and `account_creation_rights_changed`, because identity-provider provisioning updates claims, links Cognito accounts, and grants Cognito users section creation.
 - **`account` family:** add the `platform_roles` pseudo key (sorted role URIs as a `set` change) to `Fields.user_account/0` and its `schema_sources/0` declaration, and admit the system actor in `account_permissions_changed`, because LTI launches sync roles under `provider_provisioning`.
-- **Integrations family:** add the event `lms_registration_declined` ("LMS registration request declined") and the entity type `:pending_registration`. Replace `required_one_of: [:institution_id, :section_id]` with scope rules per entity type: registration, pending registration, and external tool use the global scope ref; deployment uses `institution_id`; deep link uses `section_id`.
+- **Organizations family:** admit the system actor, because Scenario bootstrap creates institutions and communities under `playwright_setup`.
+- **Integrations family:** add `lms_registration_declined` ("LMS registration request declined", entity type `:pending_registration`, a lifecycle event without change fields). Drop the family's `required_one_of: [:institution_id, :section_id]`, which registrations and system-wide tools cannot satisfy: the facades set `institution_id` for deployments and `section_id` for deep links, registrations and tools carry no scope column, and `roster_settings_changed` and `grade_passback_settings_changed` require `section_id`.
 - **Organizations family:** add `:research_consent` to the default `entity_types`.
 - **`fields.ex` sources:** declare `CommunityAccount`, `CommunityInstitution`, `CommunityVisibility`, `Oli.Delivery.ResearchConsent`, `PendingRegistration` (snapshot fields as in section 4.4; `institution_email` and the endpoint URLs excluded), `LtiSectionResourceDeepLink`, `ActivityRegistration` (title, description, petite label for tools), `SsoJwk`, and the `Lti_1p3` JWK schema (`pem` excluded as a secret, never recorded). The drift test then covers them.
+- **`fields.ex` deep links:** declare `LtiSectionResourceDeepLink` with `url`, `title`, and `text` audited, `custom` as a secret, and `type` excluded (its name collides with `Section.type`, which the integration policy also reads).
 - **`fields.ex` secrets:** classify `custom_params` and the deep link's `custom` as `:secret` markers, because they are free-form and can carry tool credentials. Leave the `private_key` pseudo key as a never-produced key, with corrected documentation; the change-fields rule forbids removing it.
 - **Released names:** no event is renamed or removed. `released_event_names.txt` is unchanged.
 

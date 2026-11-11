@@ -87,12 +87,16 @@ defmodule Oli.Scenarios.LtiExternalTool.Hooks do
         })
 
       deployment ->
-        PlatformExternalTools.update_lti_external_tool_activity_deployment(deployment, %{
-          platform_instance_id: platform_instance.id,
-          activity_registration_id: activity_registration.id,
-          status: :enabled,
-          deep_linking_enabled: false
-        })
+        Oli.Lti.Audited.update_external_tool_deployment(
+          Oli.TestHelpers.audit_context(),
+          deployment.deployment_id,
+          %{
+            platform_instance_id: platform_instance.id,
+            activity_registration_id: activity_registration.id,
+            status: :enabled,
+            deep_linking_enabled: false
+          }
+        )
     end
   end
 

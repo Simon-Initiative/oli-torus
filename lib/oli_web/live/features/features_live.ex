@@ -8,6 +8,7 @@ defmodule OliWeb.Features.FeaturesLive do
   import Ecto.Query
   import OliWeb.DelegatedEvents
 
+  alias Oli.Auditing.Context
   alias OliWeb.Common.{Breadcrumb, PagedTable, Params}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Features.EnabledScopedFeaturesTableModel
@@ -507,7 +508,11 @@ defmodule OliWeb.Features.FeaturesLive do
       ) do
     research_consent_form_selection = String.to_existing_atom(research_consent_form)
 
-    Delivery.update_system_research_consent_form_setting(research_consent_form_selection)
+    {:ok, _setting} =
+      Oli.Institutions.Audited.update_system_research_consent(
+        Context.for_actor(socket.assigns.current_author, source: :ui),
+        research_consent_form_selection
+      )
 
     {:noreply, assign(socket, research_consent_form_setting: research_consent_form_selection)}
   end

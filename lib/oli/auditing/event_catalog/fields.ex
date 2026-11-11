@@ -223,10 +223,10 @@ defmodule Oli.Auditing.EventCatalog.Fields do
   def integration do
     values(~w(issuer client_id key_set_url auth_token_url auth_login_url auth_server
       line_items_service_domain tool_jwk_id deployment_id institution_id status name
-      description target_link_uri login_url keyset_url redirect_uris custom_params
-      deep_linking_enabled grade_passback_enabled line_items_service_url nrps_enabled
-      nrps_context_memberships_url)a)
-    |> Map.merge(secrets([:private_key]))
+      description target_link_uri login_url keyset_url redirect_uris deep_linking_enabled
+      grade_passback_enabled line_items_service_url nrps_enabled nrps_context_memberships_url
+      url title text)a)
+    |> Map.merge(secrets(~w(private_key custom_params custom)a))
   end
 
   @doc "AI service configuration (`RegisteredModel`, `ServiceConfig`, `FeatureConfig`)."
@@ -607,6 +607,12 @@ defmodule Oli.Auditing.EventCatalog.Fields do
               "links fixed when the tool is registered"
             )
           )
+      ),
+      source(Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink, [:integration],
+        excluded:
+          row(:deep_link)
+          |> Map.merge(scope([:section_id, :resource_id]))
+          |> Map.merge(%{type: "kind of link the tool returned; the url records the choice"})
       ),
       source(Oli.GenAI.Completions.RegisteredModel, [:ai_service], excluded: row(:ai_service)),
       source(Oli.GenAI.Completions.ServiceConfig, [:ai_service], excluded: row(:ai_service)),

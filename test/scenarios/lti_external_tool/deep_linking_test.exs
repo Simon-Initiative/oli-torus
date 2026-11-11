@@ -69,7 +69,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     override = Map.put(draft, "url", "https://tool.example/instructor-task")
 
     assert {:ok, _} =
-             PlatformExternalTools.upsert_section_resource_deep_link(
+             Oli.TestHelpers.upsert_deep_link_fixture(
                Map.merge(override, %{
                  "section_id" => draft_section.id,
                  "resource_id" => resource_id

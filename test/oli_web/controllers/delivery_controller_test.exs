@@ -212,7 +212,11 @@ defmodule OliWeb.DeliveryControllerTest do
 
   describe "show_research_consent" do
     setup %{conn: conn} do
-      Oli.Delivery.update_system_research_consent_form_setting(:oli_form)
+      Oli.Institutions.Audited.update_system_research_consent(
+        Oli.TestHelpers.audit_context(),
+        :oli_form
+      )
+
       user = insert(:user, independent_learner: true, research_opt_out: nil)
       {:ok, conn: log_in_user(conn, user), user: user}
     end

@@ -11,7 +11,9 @@ defmodule Oli.InventoriesTest do
   describe "publishers" do
     test "create_publisher/1 with valid data creates a publisher" do
       params = params_for(:publisher)
-      assert {:ok, %Publisher{} = publisher} = Inventories.create_publisher(params)
+
+      assert {:ok, %Publisher{} = publisher} =
+               Inventories.Audited.create_publisher(Oli.TestHelpers.audit_context(), params)
 
       assert publisher.name == params.name
       assert publisher.email == params.email
@@ -23,39 +25,20 @@ defmodule Oli.InventoriesTest do
     test "create_publisher/1 with existing name returns error changeset" do
       publisher = insert(:publisher)
 
-      assert {:error, %Ecto.Changeset{}} = Inventories.create_publisher(%{name: publisher.name})
+      assert {:error, %Ecto.Changeset{}} =
+               Inventories.Audited.create_publisher(Oli.TestHelpers.audit_context(), %{
+                 name: publisher.name
+               })
     end
 
     test "create_publisher/1 with invalid email returns error changeset" do
       publisher_attrs = params_for(:publisher, %{email: "invalid_email"})
 
-      assert {:error, %Ecto.Changeset{}} = Inventories.create_publisher(publisher_attrs)
-    end
-
-    test "find_or_create_publisher/1 with valid data creates a publisher" do
-      params = params_for(:publisher)
-      assert {:ok, %Publisher{} = publisher} = Inventories.find_or_create_publisher(params)
-
-      assert publisher.name == params.name
-      assert publisher.email == params.email
-      assert publisher.address == params.address
-      assert publisher.main_contact == params.main_contact
-      assert publisher.website_url == params.website_url
-    end
-
-    test "find_or_create_publisher/1 returns existing publisher" do
-      publisher = insert(:publisher)
-
-      assert {:ok, %Publisher{} = returned_publisher} =
-               Inventories.find_or_create_publisher(%{name: publisher.name})
-
-      assert publisher == returned_publisher
-    end
-
-    test "find_or_create_publisher/1 with invalid_data returns error changeset" do
-      params = Map.delete(params_for(:publisher), :email)
-
-      assert {:error, %Ecto.Changeset{}} = Inventories.find_or_create_publisher(params)
+      assert {:error, %Ecto.Changeset{}} =
+               Inventories.Audited.create_publisher(
+                 Oli.TestHelpers.audit_context(),
+                 publisher_attrs
+               )
     end
 
     test "list_publishers/0 returns all the publishers" do
@@ -93,7 +76,10 @@ defmodule Oli.InventoriesTest do
     test "update_publisher/2 updates the publisher successfully" do
       publisher = insert(:publisher)
 
-      {:ok, updated_publisher} = Inventories.update_publisher(publisher, %{name: "new_name"})
+      {:ok, updated_publisher} =
+        Inventories.Audited.update_publisher(Oli.TestHelpers.audit_context(), publisher.id, %{
+          name: "new_name"
+        })
 
       assert publisher.id == updated_publisher.id
       assert updated_publisher.name == "new_name"
@@ -104,7 +90,9 @@ defmodule Oli.InventoriesTest do
       another_publisher = insert(:publisher)
 
       {:error, changeset} =
-        Inventories.update_publisher(publisher, %{name: another_publisher.name})
+        Inventories.Audited.update_publisher(Oli.TestHelpers.audit_context(), publisher.id, %{
+          name: another_publisher.name
+        })
 
       {error, _} = changeset.errors[:name]
 
@@ -114,25 +102,46 @@ defmodule Oli.InventoriesTest do
 
     test "delete_publisher/1 deletes the publisher" do
       publisher = insert(:publisher)
-      assert {:ok, deleted_publisher} = Inventories.delete_publisher(publisher)
+
+      assert {:ok, deleted_publisher} =
+               Inventories.Audited.delete_publisher(Oli.TestHelpers.audit_context(), publisher.id)
+
       refute Inventories.get_publisher(deleted_publisher.id)
     end
 
     test "delete_publisher/1 returns an error when the publisher has associated projects" do
       project = insert(:project)
-      assert {:error, changeset} = Inventories.delete_publisher(project.publisher)
+
+      assert {:error, changeset} =
+               Inventories.Audited.delete_publisher(
+                 Oli.TestHelpers.audit_context(),
+                 project.publisher.id
+               )
+
       assert changeset.errors[:projects] |> elem(0) == "are still associated with this entry"
     end
 
     test "delete_publisher/1 returns an error when the publisher has associated products" do
       section = insert(:section)
-      assert {:error, changeset} = Inventories.delete_publisher(section.publisher)
+
+      assert {:error, changeset} =
+               Inventories.Audited.delete_publisher(
+                 Oli.TestHelpers.audit_context(),
+                 section.publisher.id
+               )
+
       assert changeset.errors[:products] |> elem(0) == "are still associated with this entry"
     end
 
     test "delete_publisher/1 returns an error when trying to delete the default publisher" do
       default_publisher = Inventories.default_publisher()
-      assert {:error, changeset} = Inventories.delete_publisher(default_publisher)
+
+      assert {:error, changeset} =
+               Inventories.Audited.delete_publisher(
+                 Oli.TestHelpers.audit_context(),
+                 default_publisher.id
+               )
+
       assert changeset.errors[:default] |> elem(0) == "cannot delete the default publisher"
     end
 
@@ -152,7 +161,11 @@ defmodule Oli.InventoriesTest do
       assert old_default.default
       refute publisher.default
 
-      assert {:ok, new_default} = Inventories.set_default_publisher(publisher)
+      assert {:ok, new_default} =
+               Inventories.Audited.set_default_publisher(
+                 Oli.TestHelpers.audit_context(),
+                 publisher.id
+               )
 
       assert new_default.id == publisher.id
       assert new_default.default

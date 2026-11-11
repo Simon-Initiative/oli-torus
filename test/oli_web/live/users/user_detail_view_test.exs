@@ -504,7 +504,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       community = insert(:community, name: "Test Community")
 
       {:ok, _} =
-        Oli.Groups.create_community_account(%{
+        Oli.Groups.create_community_account(Oli.TestHelpers.audit_context(), %{
           user_id: independent_student.id,
           community_id: community.id
         })
@@ -531,7 +531,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       # Link community to institution
       {:ok, _} =
-        Oli.Groups.create_community_institution(%{
+        Oli.Groups.create_community_institution(Oli.TestHelpers.audit_context(), %{
           institution_id: institution.id,
           community_id: community.id
         })

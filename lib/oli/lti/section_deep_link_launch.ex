@@ -154,7 +154,8 @@ defmodule Oli.Lti.SectionDeepLinkLaunch do
              true <- pending?(section.id, resource_id, request["request_id"]),
              :ok <- consume_request(request["request_id"]),
              {:ok, _} <-
-               PlatformExternalTools.upsert_section_resource_deep_link(
+               persist_deep_link(
+                 load_actor(request),
                  Map.merge(selection, %{"section_id" => section.id, "resource_id" => resource_id})
                ) do
           delete_pending(section.id, resource_id, request["request_id"])
@@ -257,6 +258,22 @@ defmodule Oli.Lti.SectionDeepLinkLaunch do
       :ok
     else
       _ -> {:error, :invalid_section_return}
+    end
+  end
+
+  # Saves the choice as the instructor who started the request, inside the caller's
+  # transaction, so the audit event commits or rolls back with the configuration.
+  defp persist_deep_link(actor, attrs) do
+    Ecto.Multi.new()
+    |> Oli.Lti.Audited.persist_deep_link_multi(
+      :deep_link,
+      Oli.Auditing.Context.for_actor(actor, source: :ui),
+      attrs
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{deep_link: deep_link}} -> {:ok, deep_link}
+      {:error, _step, reason, _changes} -> {:error, reason}
     end
   end
 

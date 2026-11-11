@@ -976,7 +976,11 @@ defmodule Oli.Accounts do
   end
 
   defp create_community_account(_repo, %{user: %User{id: user_id}}, community_id) do
-    Groups.find_or_create_community_user_account(user_id, community_id)
+    Groups.find_or_create_community_user_account(
+      Oli.Auditing.Context.for_system(:provider_provisioning),
+      user_id,
+      community_id
+    )
   end
 
   @doc """

@@ -49,7 +49,8 @@ defmodule Oli.Auditing.EventCatalogTest do
     organizations:
       ~w(institution_settings_changed community_settings_changed publisher_settings_changed
         research_consent_settings_changed)a,
-    integrations: ~w(lms_settings_changed sso_settings_changed lti_settings_changed
+    integrations:
+      ~w(lms_settings_changed lms_registration_declined sso_settings_changed lti_settings_changed
         external_tool_settings_changed roster_settings_changed grade_passback_settings_changed)a,
     ai_credentials: ~w(ai_service_settings_changed credential_lifecycle_changed)a,
     feature_flags: ~w(feature_flag_enabled feature_flag_disabled feature_flag_removed
@@ -80,7 +81,7 @@ defmodule Oli.Auditing.EventCatalogTest do
       end)
 
     assert actual == @expected
-    assert length(EventCatalog.names()) == 109
+    assert length(EventCatalog.names()) == 110
     assert length(EventCatalog.families()) == 25
   end
 

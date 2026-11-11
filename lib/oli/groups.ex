@@ -10,7 +10,15 @@ defmodule Oli.Groups do
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
-  alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
+
+  alias Oli.Groups.{
+    Audited,
+    Community,
+    CommunityAccount,
+    CommunityInstitution,
+    CommunityVisibility
+  }
+
   alias Oli.Institutions.Institution
   alias Oli.Publishing.Publications.Publication
 
@@ -88,11 +96,7 @@ defmodule Oli.Groups do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_community(attrs \\ %{}) do
-    %Community{}
-    |> Community.changeset(attrs)
-    |> Repo.insert()
-  end
+  def create_community(context, attrs \\ %{}), do: Audited.create_community(context, attrs)
 
   @doc """
   Gets a community by id.
@@ -116,11 +120,8 @@ defmodule Oli.Groups do
       iex> update_community(community, %{name: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_community(%Community{} = community, attrs) do
-    community
-    |> Community.changeset(attrs)
-    |> Repo.update()
-  end
+  def update_community(context, %Community{id: id}, attrs),
+    do: Audited.update_community(context, id, attrs)
 
   @doc """
   Deletes a community.
@@ -134,9 +135,7 @@ defmodule Oli.Groups do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_community(%Community{} = community) do
-    update_community(community, %{status: :deleted})
-  end
+  def delete_community(context, %Community{id: id}), do: Audited.delete_community(context, id)
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking community changes.
@@ -167,29 +166,14 @@ defmodule Oli.Groups do
       {:error, %Ecto.Changeset{}}
 
   """
-  def find_or_create_community_user_account(user_id, community_id) do
+  def find_or_create_community_user_account(context, user_id, community_id) do
     clauses = %{user_id: user_id, community_id: community_id}
 
-    res =
-      Multi.new()
-      |> Multi.run(:community_account, fn _, _ -> {:ok, get_community_account_by!(clauses)} end)
-      |> Multi.run(:new_community_account, &maybe_create_community_account(&1, &2, clauses))
-      |> Repo.transaction()
-
-    case res do
-      {:ok, %{new_community_account: community_account}} ->
-        {:ok, community_account}
-
-      {:error, _, changeset, _} ->
-        {:error, changeset}
+    case get_community_account_by!(clauses) do
+      nil -> create_community_account(context, clauses)
+      community_account -> {:ok, community_account}
     end
   end
-
-  defp maybe_create_community_account(_repo, %{community_account: nil}, clauses),
-    do: create_community_account(clauses)
-
-  defp maybe_create_community_account(_repo, %{community_account: community_account}, _clauses),
-    do: {:ok, community_account}
 
   @doc """
   Creates a community account.
@@ -203,11 +187,8 @@ defmodule Oli.Groups do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_community_account(attrs \\ %{}) do
-    %CommunityAccount{}
-    |> CommunityAccount.changeset(attrs)
-    |> Repo.insert()
-  end
+  def create_community_account(context, attrs \\ %{}),
+    do: audited(&Audited.add_association_multi(&1, :row, context, {:account, attrs}))
 
   @doc """
   Creates a community account from an author email (gets the author first).
@@ -222,10 +203,10 @@ defmodule Oli.Groups do
 
   """
 
-  def create_community_account_from_author_email(email, attrs \\ %{}) do
+  def create_community_account_from_author_email(context, email, attrs \\ %{}) do
     case Accounts.get_author_by_email(email) do
       %Author{id: id} ->
-        attrs |> Map.put(:author_id, id) |> create_community_account()
+        create_community_account(context, Map.put(attrs, :author_id, id))
 
       nil ->
         {:error, :author_not_found}
@@ -245,8 +226,8 @@ defmodule Oli.Groups do
 
   """
 
-  def create_community_account_from_user_email(email, attrs \\ %{}),
-    do: create_community_account_user(:email, email, attrs)
+  def create_community_account_from_user_email(context, email, attrs \\ %{}),
+    do: create_community_account_user(context, :email, email, attrs)
 
   @doc """
   Creates a community account from a user id (gets the user first).
@@ -261,13 +242,13 @@ defmodule Oli.Groups do
 
   """
 
-  def create_community_account_from_user_id(id, attrs \\ %{}),
-    do: create_community_account_user(:id, id, attrs)
+  def create_community_account_from_user_id(context, id, attrs \\ %{}),
+    do: create_community_account_user(context, :id, id, attrs)
 
-  defp create_community_account_user(field, value, attrs) do
+  defp create_community_account_user(context, field, value, attrs) do
     case Accounts.get_user_by(Map.put(%{}, field, value)) do
       %User{id: id} ->
-        attrs |> Map.put(:user_id, id) |> create_community_account()
+        create_community_account(context, Map.put(attrs, :user_id, id))
 
       nil ->
         {:error, :user_not_found}
@@ -287,14 +268,14 @@ defmodule Oli.Groups do
 
   """
 
-  def create_community_account_from_email(user_type, email, attrs \\ %{})
+  def create_community_account_from_email(context, user_type, email, attrs \\ %{})
 
-  def create_community_account_from_email("admin", email, attrs) do
-    create_community_account_from_author_email(email, attrs)
+  def create_community_account_from_email(context, "admin", email, attrs) do
+    create_community_account_from_author_email(context, email, attrs)
   end
 
-  def create_community_account_from_email("member", email, attrs) do
-    create_community_account_from_user_email(email, attrs)
+  def create_community_account_from_email(context, "member", email, attrs) do
+    create_community_account_from_user_email(context, email, attrs)
   end
 
   @doc """
@@ -310,12 +291,12 @@ defmodule Oli.Groups do
 
   """
 
-  def create_community_accounts_from_emails(user_type, emails, attrs),
+  def create_community_accounts_from_emails(context, user_type, emails, attrs),
     do:
       create_community_associations_from_fields(
         emails,
         attrs,
-        &create_community_account_from_email(user_type, &1, &2)
+        &create_community_account_from_email(context, user_type, &1, &2)
       )
 
   @doc """
@@ -357,10 +338,15 @@ defmodule Oli.Groups do
       nil
 
   """
-  def delete_community_account(clauses) do
+  def delete_community_account(context, clauses) do
     case get_community_account_by!(clauses) do
-      nil -> {:error, :not_found}
-      community_account -> Repo.delete(community_account)
+      nil ->
+        {:error, :not_found}
+
+      community_account ->
+        audited(
+          &Audited.remove_association_multi(&1, :row, context, {:account, community_account.id})
+        )
     end
   end
 
@@ -425,11 +411,8 @@ defmodule Oli.Groups do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_community_visibility(attrs \\ %{}) do
-    %CommunityVisibility{}
-    |> CommunityVisibility.changeset(attrs)
-    |> Repo.insert()
-  end
+  def create_community_visibility(context, attrs \\ %{}),
+    do: audited(&Audited.add_association_multi(&1, :row, context, {:visibility, attrs}))
 
   @doc """
   Gets a community visibility by id.
@@ -455,10 +438,20 @@ defmodule Oli.Groups do
       nil
 
   """
-  def delete_community_visibility(id) do
+  def delete_community_visibility(context, id) do
     case get_community_visibility(id) do
-      nil -> {:error, :not_found}
-      community_visibility -> Repo.delete(community_visibility)
+      nil ->
+        {:error, :not_found}
+
+      community_visibility ->
+        audited(
+          &Audited.remove_association_multi(
+            &1,
+            :row,
+            context,
+            {:visibility, community_visibility.id}
+          )
+        )
     end
   end
 
@@ -685,11 +678,8 @@ defmodule Oli.Groups do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_community_institution(attrs) do
-    %CommunityInstitution{}
-    |> CommunityInstitution.changeset(attrs)
-    |> Repo.insert()
-  end
+  def create_community_institution(context, attrs),
+    do: audited(&Audited.add_association_multi(&1, :row, context, {:institution, attrs}))
 
   @doc """
   Creates a community institution from an institution name (gets the institution first).
@@ -704,10 +694,10 @@ defmodule Oli.Groups do
 
   """
 
-  def create_community_institution_from_institution_name(institution_name, attrs \\ %{}) do
+  def create_community_institution_from_institution_name(context, institution_name, attrs \\ %{}) do
     case Institutions.get_institution_by!(%{name: institution_name}) do
       %Institution{id: id} ->
-        attrs |> Map.put(:institution_id, id) |> create_community_institution()
+        create_community_institution(context, Map.put(attrs, :institution_id, id))
 
       nil ->
         {:error, :institution_not_found}
@@ -727,10 +717,10 @@ defmodule Oli.Groups do
 
   """
 
-  def create_community_institution_from_institution_id(institution_id, attrs \\ %{}) do
+  def create_community_institution_from_institution_id(context, institution_id, attrs \\ %{}) do
     case Institutions.get_institution_by!(%{id: institution_id}) do
       %Institution{} ->
-        attrs |> Map.put(:institution_id, institution_id) |> create_community_institution()
+        create_community_institution(context, Map.put(attrs, :institution_id, institution_id))
 
       nil ->
         {:error, :institution_not_found}
@@ -746,12 +736,12 @@ defmodule Oli.Groups do
       {:error, %Ecto.Changeset{}}
   """
 
-  def create_community_institutions_from_names(names, attrs),
+  def create_community_institutions_from_names(context, names, attrs),
     do:
       create_community_associations_from_fields(
         names,
         attrs,
-        &create_community_institution_from_institution_name/2
+        &create_community_institution_from_institution_name(context, &1, &2)
       )
 
   @doc """
@@ -763,12 +753,12 @@ defmodule Oli.Groups do
       {:error, %Ecto.Changeset{}}
   """
 
-  def create_community_institutions_from_ids(ids, attrs),
+  def create_community_institutions_from_ids(context, ids, attrs),
     do:
       create_community_associations_from_fields(
         ids,
         attrs,
-        &create_community_institution_from_institution_id/2
+        &create_community_institution_from_institution_id(context, &1, &2)
       )
 
   @doc """
@@ -798,10 +788,33 @@ defmodule Oli.Groups do
       {:error, :not_found}
 
   """
-  def delete_community_institution(clauses) do
+  def delete_community_institution(context, clauses) do
     case get_community_institution_by!(clauses) do
-      nil -> {:error, :not_found}
-      community_institution -> Repo.delete(community_institution)
+      nil ->
+        {:error, :not_found}
+
+      community_institution ->
+        audited(
+          &Audited.remove_association_multi(
+            &1,
+            :row,
+            context,
+            {:institution, community_institution.id}
+          )
+        )
+    end
+  end
+
+  # Runs one audited association change. It composes into the caller's transaction when there
+  # is one (Cognito provisioning), and each target of a bulk add commits on its own, so one
+  # invalid email does not undo the others, as before.
+  defp audited(build) do
+    Multi.new()
+    |> build.()
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{row: row}} -> {:ok, row}
+      {:error, _step, reason, _changes} -> {:error, reason}
     end
   end
 
