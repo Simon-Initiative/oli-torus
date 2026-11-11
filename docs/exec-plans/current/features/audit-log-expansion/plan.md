@@ -46,7 +46,7 @@ Every domain PR below inherits these tasks and gates; they are not deferred to f
 5. Migrate each affected Scenario directive in its owning domain PR. Use the build_scenario skill for actual scenario authoring and extend_scenario only if required capability is missing. Setup PW is the explicit bootstrap actor; publishing/section/enrollment use the represented author/instructor. Do not create a global Scenario bypass. Changes to shared test support/configuration require the full clean-output suite.
 6. Add meaningful success/failure/authorization/no-op/audit-failure rollback and duplicate/retry tests at application and supported transport boundaries, not just mocks of `capture`. Record tested revision and commands. Force Boundary checks, format, and run targeted tests before broader risk-driven checks. Full integration QA remains additive.
 7. Follow repository review policy before merge: security/performance reviews always, Elixir for backend, UI where relevant, requirements when PRD changes. Dedicated reviewer orchestration is governed by `docs/CODEREVIEW.md`; no formal implementation review has been performed during planning.
-8. Merge only after developer review and required CI into integration using a merge commit. Keep source/field inventory and actual proof references current. `verified_plan` records planned coverage, not implementation proof or owner acceptance; `proofs` stay empty until evidence exists.
+8. Merge only after developer review and required CI into integration using a merge commit. Keep source/field inventory and actual proof references current. `requirements.yml` holds no status; add a criterion's `evidence` entries only when real evidence exists, never invented.
 
 ### Command safety and verification conventions
 

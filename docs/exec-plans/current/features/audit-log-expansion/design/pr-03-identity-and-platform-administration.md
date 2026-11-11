@@ -32,7 +32,7 @@ Out of scope:
 
 ## 2. Requirements Coverage
 
-These are design mappings, not implementation proof. `requirements.yml` keeps its `verified_plan` statuses and empty proofs until evidence exists. Code and tests carry no requirement or ticket codes.
+These are design mappings, not implementation proof. `requirements.yml` gains no evidence entries until real evidence exists. Code and tests carry no requirement or ticket codes.
 
 | Requirement / criteria | This slice's responsibility and planned proof |
 | --- | --- |

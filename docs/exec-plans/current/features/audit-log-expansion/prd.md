@@ -85,7 +85,7 @@ The owner selected Oban plus central audit events for asynchronous execution and
 
 Generate migrations with `mix ecto.gen.migration` and explicit `up/0` and `down/0`. Run Mix commands with the permissions required by `AGENTS.md`. Verify isolated database configuration before tests or migration rehearsals; do not reset or migrate the shared database during analysis. Use `run-server` on port 4000 when a server is required later.
 
-Traceability uses the documented nested FR/AC format already present in this repository. The installed requirements script currently inspects a top-level AC list, so its structural success alone does not validate nested criteria. Supplement its required gates with checks for nested IDs, statuses, methods, proofs, and coverage; later FDD/plan verification must account for the same limitation.
+Traceability uses the nested FR/AC format. The work-item validator checks structure and evidence file existence only; coverage is assessed by the implementing agent and the final reviewer.
 
 ## 11. Feature Flagging, Rollout & Migration
 
@@ -153,7 +153,7 @@ Manual acceptance on the final integration preview should trace representative a
 ## 16. Definition of Done
 
 - [x] PRD follows the required section structure and distinguishes proposals, assumptions, and unresolved architecture decisions.
-- [x] Detailed requirements and criteria are captured in `requirements.yml`; traceability status records the completed document stage and no implementation proof is invented.
+- [x] Detailed requirements and criteria are captured in `requirements.yml`; no implementation evidence is invented.
 - [x] Required PRD/requirements validators and supplementary nested-format checks pass.
 - [x] The work-item owner accepted proceeding to architecture and explicitly confirmed search dimensions, administrator-only access, and no-op/cancellation/authentication-failure scope. Technical design and implementation planning still require their own review.
 - [ ] Feature completion is established later through FDD/plan traceability, implementation evidence for all criteria, migration/performance validation, and QA of the complete integration.

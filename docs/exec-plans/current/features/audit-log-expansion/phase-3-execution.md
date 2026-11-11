@@ -84,6 +84,7 @@ Phase: `3` (MER-6113, PR-03), design `design/pr-03-identity-and-platform-adminis
 - [x] `mix format --check-formatted`, `git diff --check`, and forced `--warnings-as-errors` compilation in dev, test, and playwright passed.
 
 ## Work-Item Sync
+- `requirements.yml` migrated on 2026-11-11 to the current harness schema: `feature`, `generated_from`, `status`, `verification_method`, and the empty `proofs` lists removed; the 40 requirements and 105 criteria keep their IDs and titles. `plan.md`, `prd.md`, and this phase's design no longer describe statuses or proofs. `validate_work_item.py` passes for requirements, PRD, FDD, plan, this design, and the feature workflow.
 - `handoff.md` is untracked by policy and must not be committed without explicit approval.
 - Migrations against `oli_dev` need owner approval and a prior `pg_dump -Fc` backup under `~/db_backups/`; `oli_test` resets need neither.
 
