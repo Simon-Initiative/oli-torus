@@ -88,7 +88,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
       key: 'analyticsCookies',
       title: 'Analytics Cookies',
       description: [
-        'With your permission, Google Analytics cookies help us understand how Torus is used and improve it.',
+        'With your permission, Google Analytics cookies help us understand how Torus is used and to improve it.',
         'What we measure: pages visited by type, features used, and videos started or completed, in aggregate.',
         'Analytics is off until you accept. You can change your choice at any time.',
       ],
