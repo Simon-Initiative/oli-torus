@@ -71,6 +71,21 @@ defmodule Oli.Auditing.LogEvent do
 
   @entity_types EventCatalog.contracts() |> Enum.flat_map(& &1.entity_types) |> Enum.uniq()
 
+  # The named CHECK constraints on audit_log_events, keyed by the column the error is reported
+  # on. Declaring them turns a database rejection into a changeset error instead of an
+  # Ecto.ConstraintError.
+  @check_constraints [
+    schema_version: "audit_events_schema_version_check",
+    event_type: "audit_events_event_type_format_check",
+    details: "audit_events_json_shape_check",
+    schema_version: "audit_events_v1_provenance_check",
+    entity_id: "audit_events_v2_envelope_check",
+    actor_type: "audit_events_v2_actor_check",
+    affected_user_id: "audit_events_v2_learner_check",
+    affected_user_id: "audit_events_v2_progress_restore_check",
+    event_type: "audit_events_v1_only_names_check"
+  ]
+
   @v2_fields [
     :inserted_at,
     :occurred_at,
@@ -156,6 +171,19 @@ defmodule Oli.Auditing.LogEvent do
     |> cast(attrs, @v2_fields)
     |> put_change(:schema_version, 2)
     |> validate_contract()
+    |> declare_check_constraints()
+  end
+
+  @doc """
+  Returns the names of the database CHECK constraints that `v2_changeset/2` declares.
+  """
+  @spec check_constraint_names() :: [String.t()]
+  def check_constraint_names, do: Keyword.values(@check_constraints)
+
+  defp declare_check_constraints(changeset) do
+    Enum.reduce(@check_constraints, changeset, fn {field, name}, acc ->
+      check_constraint(acc, field, name: name, message: "violates #{name}")
+    end)
   end
 
   defp validate_contract(changeset) do
