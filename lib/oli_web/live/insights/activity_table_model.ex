@@ -39,6 +39,8 @@ defmodule OliWeb.Insights.ActivityTableModel do
         %ColumnSpec{
           name: :eventually_correct,
           label: "Eventually Correct%",
+          tooltip:
+            "Percentage of learners who answered this part correctly at least once. For adaptive screens, every scored part must have been correct, possibly on different attempts.",
           render_fn: &render_percentage/3
         },
         %ColumnSpec{

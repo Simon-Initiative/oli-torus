@@ -5,6 +5,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Insights.ObjectiveTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
+  @doc "Builds the objective analytics table, labeling part-evaluation accuracy as % Correct."
   def new(rows, ctx) do
     SortableTableModel.new(
       rows: rows,
@@ -29,7 +30,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Insights.ObjectiveTableModel do
         },
         %ColumnSpec{
           name: :eventually_correct,
-          label: "Eventually Correct%",
+          label: "% Correct",
+          tooltip:
+            "Percentage of evaluated question-part responses that earned full credit. Includes repeated attempts.",
           render_fn: &render_percentage/3
         },
         %ColumnSpec{
