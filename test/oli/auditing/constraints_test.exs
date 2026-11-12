@@ -6,7 +6,10 @@ defmodule Oli.Auditing.ConstraintsTest do
 
   use Oli.DataCase
 
-  alias Oli.Auditing.{EventCatalog, EventExamples, LogEvent}
+  import ExUnit.CaptureLog
+
+  alias Oli.Auditing
+  alias Oli.Auditing.{Error, EventCatalog, EventExamples, LogEvent}
 
   test "every writable example inserts and reads back unchanged" do
     for name <- EventCatalog.names(), name != :assessment_setting_changed do
@@ -92,6 +95,84 @@ defmodule Oli.Auditing.ConstraintsTest do
           Repo.insert_all(LogEvent, [%{row | inserted_at: ~U[1990-01-01 00:00:00.000000Z]}])
         end)
       end
+    end
+  end
+
+  describe "database rejections through the changeset" do
+    test "the changeset declares every CHECK constraint on the table" do
+      %{rows: rows} =
+        Repo.query!("""
+        SELECT conname FROM pg_constraint
+        WHERE conrelid = 'audit_log_events'::regclass AND contype = 'c'
+        """)
+
+      assert Enum.sort(List.flatten(rows)) == Enum.sort(LogEvent.check_constraint_names())
+    end
+
+    test "a row only the database rejects returns a safe error, logs once, and emits telemetry" do
+      ref = :telemetry_test.attach_event_handlers(self(), [[:oli, :auditing, :append, :error]])
+
+      changeset =
+        %LogEvent{}
+        |> LogEvent.v2_changeset(EventExamples.example(:project_published))
+        |> Ecto.Changeset.force_change(:schema_version, 3)
+
+      assert changeset.valid?
+
+      log =
+        capture_log(fn ->
+          assert {:error, %Error{code: :invalid_event, event_type: :project_published} = error} =
+                   Auditing.insert(changeset)
+
+          send(self(), {:error, error})
+        end)
+
+      assert_received {:error, %Error{correlation_id: correlation_id}}
+
+      assert_received {[:oli, :auditing, :append, :error], ^ref, %{count: 1},
+                       %{code: :invalid_event}}
+
+      assert log =~ "correlation_id=#{correlation_id}"
+      refute log =~ "Intro Biology"
+    end
+
+    test "a database rejection inside a multi rolls back with an error" do
+      multi =
+        Ecto.Multi.new()
+        |> Auditing.append(:audit, fn _changes ->
+          changeset =
+            %LogEvent{}
+            |> LogEvent.v2_changeset(EventExamples.example(:project_published))
+            |> Ecto.Changeset.force_change(:schema_version, 3)
+
+          {:ok, changeset}
+        end)
+
+      capture_log(fn ->
+        assert {:error, :audit, %Error{code: :invalid_event}, %{}} = Repo.transaction(multi)
+      end)
+    end
+
+    test "an entity id is measured in code points, as the database measures it" do
+      # 200 graphemes, each an "e" plus a combining accent: 400 code points.
+      entity_id = String.duplicate("é", 200)
+      assert String.length(entity_id) == 200
+
+      changeset =
+        LogEvent.v2_changeset(%LogEvent{}, %{
+          EventExamples.example(:project_published)
+          | entity_id: entity_id
+        })
+
+      assert {"must be 1 to 255 characters", _} = changeset.errors[:entity_id]
+
+      at_limit = String.duplicate("é", 127) <> "e"
+
+      assert %{valid?: true} =
+               LogEvent.v2_changeset(%LogEvent{}, %{
+                 EventExamples.example(:project_published)
+                 | entity_id: at_limit
+               })
     end
   end
 
