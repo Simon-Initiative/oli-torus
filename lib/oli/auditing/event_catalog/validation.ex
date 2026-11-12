@@ -179,7 +179,7 @@ defmodule Oli.Auditing.EventCatalog.Validation do
         "is not allowed for this event"
       ),
       check(
-        Snapshot.valid_text?(entity_id) and entity_id != "",
+        valid_entity_id?(entity_id),
         :entity_id,
         "must be 1 to 255 characters"
       ),
@@ -382,6 +382,13 @@ defmodule Oli.Auditing.EventCatalog.Validation do
 
   defp event_key?(key),
     do: is_binary(key) and byte_size(key) in 1..200 and Regex.match?(@event_key, key)
+
+  # Counts code points, as PostgreSQL length() does in the envelope check; String.length/1
+  # counts graphemes and would accept ids the database rejects.
+  defp valid_entity_id?(id) when is_binary(id) and id != "",
+    do: String.valid?(id) and length(String.codepoints(id)) <= 255
+
+  defp valid_entity_id?(_id), do: false
 
   defp uuid?(value), do: match?({:ok, _}, Ecto.UUID.cast(value))
 
