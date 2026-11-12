@@ -21,6 +21,7 @@ defmodule Oli.Authoring.ProjectRepair.Report do
           skipped_adaptive_pages_count: non_neg_integer(),
           missing_activity_references: [MissingActivityReference.t()],
           shared_activity_references: [SharedActivityReference.t()],
+          deleted_activity_references: [SharedActivityReference.t()],
           summary: Summary.t()
         }
 
@@ -31,5 +32,6 @@ defmodule Oli.Authoring.ProjectRepair.Report do
             skipped_adaptive_pages_count: 0,
             missing_activity_references: [],
             shared_activity_references: [],
+            deleted_activity_references: [],
             summary: %Summary{}
 end

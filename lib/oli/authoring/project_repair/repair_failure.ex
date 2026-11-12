@@ -8,7 +8,8 @@ defmodule Oli.Authoring.ProjectRepair.RepairFailure do
   """
 
   @typedoc "The normalized stage at which a repair failed."
-  @type stage :: :lock | :stale_plan | :activity_copy | :page_update | :cleanup
+  @type stage ::
+          :lock | :stale_plan | :activity_copy | :activity_restore | :page_update | :cleanup
 
   @typedoc """
   A content-free failure code approved to cross the context boundary.
@@ -19,6 +20,7 @@ defmodule Oli.Authoring.ProjectRepair.RepairFailure do
   @type reason ::
           :lock_not_acquired
           | :stale_project_state
+          | :activity_restore_failed
           | :activity_copy_failed
           | :page_update_failed
           | :lock_update_failed

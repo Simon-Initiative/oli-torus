@@ -35,6 +35,53 @@ defmodule OliWeb.ProjectRepairRouteTest do
       assert has_element?(view, "h2", "Current analysis")
       assert has_element?(view, "h3", "Basic pages scanned")
       assert has_element?(view, "h3", "Pages with repairable shared activities")
+
+      assert has_element?(
+               view,
+               "[aria-labelledby='deleted-activity-heading'] .alert-success",
+               "No referenced deleted activities were found in Basic pages."
+             )
+    end
+
+    test "deleted-only repair is available and shows restored count", %{conn: conn} = seed do
+      activity =
+        Seeder.create_activity(
+          %{title: "Deleted activity"},
+          seed.publication,
+          seed.project,
+          seed.author
+        )
+
+      {:ok, _} =
+        Oli.Publishing.ChangeTracker.track_revision(seed.project.slug, activity.revision, %{
+          deleted: true
+        })
+
+      Seeder.create_page(
+        "Deleted reference page",
+        seed.publication,
+        seed.project,
+        seed.author,
+        activity_reference_content(activity.resource.id)
+      )
+
+      conn = log_in_author(conn, seed.system_admin)
+      {:ok, view, _} = live(conn, repair_tool_path(seed.project.slug))
+      html = render_async(view, 5_000)
+      assert html =~ "References to deleted activities"
+      assert html =~ "1 distinct deleted activity"
+      assert html =~ "1 page/activity reference across 1 Basic page."
+      assert html =~ "0 of these activities are also shared"
+      refute has_element?(view, "[aria-labelledby='deleted-activity-heading'] .alert-success")
+      assert has_element?(view, "#project-repair-show-confirmation")
+      view |> element("#project-repair-show-confirmation") |> render_click()
+      assert render(view) =~ "This will restore 1 deleted activity"
+      view |> element("#project-repair-confirm-make-changes") |> render_click()
+      html = render_async(view, 5_000)
+      assert html =~ "Repair completed"
+      assert html =~ "Restored 1 deleted activity"
+      assert has_element?(view, "[aria-labelledby='deleted-activity-heading'] .alert-success")
+      refute AuthoringResolver.from_resource_id(seed.project.slug, activity.resource.id).deleted
     end
 
     test "requires confirmation before invoking repair and renders the async result", %{
@@ -72,8 +119,8 @@ defmodule OliWeb.ProjectRepairRouteTest do
       {:ok, view, _html} = live(conn, repair_tool_path(project.slug))
       html = render_async(view, 5_000)
 
-      assert html =~ "Repair shared activity references"
-      refute html =~ "Confirm shared activity repair"
+      assert html =~ "Repair activity references"
+      refute html =~ "Confirm activity repair"
 
       # AC-002/AC-015: confirmation is enforced by the server handler, not only by
       # the button visibility. A forged direct event before confirmation is ignored.
@@ -90,6 +137,7 @@ defmodule OliWeb.ProjectRepairRouteTest do
       |> render_click()
 
       assert has_element?(view, "#project-repair-confirmation")
+      assert render(view) =~ "1 shared activity group affecting 2 Basic pages."
 
       view
       |> element("#project-repair-confirm-make-changes")
@@ -98,7 +146,7 @@ defmodule OliWeb.ProjectRepairRouteTest do
       html = render_async(view, 10_000)
 
       assert html =~ "Repair completed"
-      assert html =~ "Updated 1 pages and cloned 1 activities"
+      assert html =~ "updated 1 page and cloned 1 activity"
 
       assert {:ok, report} =
                Oli.Authoring.ProjectRepair.analyze_project(project, system_admin)

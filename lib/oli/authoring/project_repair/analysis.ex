@@ -26,7 +26,6 @@ defmodule Oli.Authoring.ProjectRepair.Analysis do
     Summary
   }
 
-  alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.PublishedResource
   alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
@@ -60,14 +59,14 @@ defmodule Oli.Authoring.ProjectRepair.Analysis do
         } = options
       ) do
     with {:ok, relationships} <- stream_relationships(publication.id, stream_max_rows) do
-      resolved_activity_ids =
+      activity_states =
         resolve_activity_ids(
-          project.slug,
+          publication.id,
           Map.keys(relationships.activity_to_pages),
           resolution_batch_size
         )
 
-      {:ok, build_report(project, relationships, resolved_activity_ids, options)}
+      {:ok, build_report(project, relationships, activity_states, options)}
     end
   end
 
@@ -214,24 +213,31 @@ defmodule Oli.Authoring.ProjectRepair.Analysis do
     }
   end
 
-  defp resolve_activity_ids(_project_slug, [], _batch_size), do: MapSet.new()
+  defp resolve_activity_ids(publication_id, activity_ids, batch_size) do
+    activity_type = ResourceType.id_for_activity()
 
-  defp resolve_activity_ids(project_slug, activity_ids, batch_size) do
     activity_ids
     |> Enum.sort()
     |> Enum.chunk_every(batch_size)
-    |> Enum.reduce(MapSet.new(), fn activity_id_batch, resolved_ids ->
-      # The resolver's activity-id projection executes one parameterized query for
-      # the chunk and selects no revision JSON. Besides avoiding a relationship N+1,
-      # this type-checks clone candidates and prevents large activity bodies from
-      # replacing the page stream's bounded-memory win.
-      project_slug
-      |> AuthoringResolver.existing_activity_resource_ids(activity_id_batch)
-      |> Enum.reduce(resolved_ids, &MapSet.put(&2, &1))
+    |> Enum.reduce(%{}, fn ids, resolved ->
+      # Include deleted revisions, but never fall back to another project's history.
+      # No authored JSON is loaded during classification.
+      from(mapping in PublishedResource,
+        join: revision in Revision,
+        on: revision.id == mapping.revision_id and revision.resource_id == mapping.resource_id,
+        where: mapping.publication_id == ^publication_id and mapping.resource_id in ^ids,
+        where:
+          revision.resource_type_id == ^activity_type and revision.resource_scope == :project,
+        select: {mapping.resource_id, %{revision_id: revision.id, deleted: revision.deleted}}
+      )
+      |> Repo.all()
+      |> Map.new()
+      |> then(&Map.merge(resolved, &1))
     end)
   end
 
-  defp build_report(project, relationships, resolved_activity_ids, options) do
+  defp build_report(project, relationships, activity_states, options) do
+    resolved_activity_ids = MapSet.new(Map.keys(activity_states))
     issue_limit = Map.get(options, :preview_issue_limit)
     group_page_limit = Map.get(options, :preview_group_page_limit)
 
@@ -241,12 +247,38 @@ defmodule Oli.Authoring.ProjectRepair.Analysis do
     shared_activity_references =
       build_shared_activity_references(
         relationships,
-        resolved_activity_ids,
+        activity_states,
         issue_limit,
         group_page_limit
       )
 
+    deleted_groups =
+      relationships.activity_to_pages
+      |> Enum.filter(fn {id, _pages} ->
+        match?(%{deleted: true}, Map.get(activity_states, id))
+      end)
+      |> Enum.map(fn {id, page_ids} ->
+        activity_group(id, page_ids, relationships, activity_states, group_page_limit)
+      end)
+      |> Enum.sort_by(& &1.activity_resource_id)
+
     summary = build_summary(relationships, resolved_activity_ids)
+
+    summary = %{
+      summary
+      | missing_activity_resource_count:
+          map_size(relationships.activity_to_pages) - map_size(activity_states),
+        deleted_activity_resource_count: length(deleted_groups),
+        deleted_activity_reference_count: Enum.sum(Enum.map(deleted_groups, & &1.page_count)),
+        deleted_activity_affected_page_count:
+          deleted_groups
+          |> Enum.flat_map(fn g ->
+            Map.fetch!(relationships.activity_to_pages, g.activity_resource_id) |> Enum.to_list()
+          end)
+          |> MapSet.new()
+          |> MapSet.size(),
+        deleted_shared_activity_resource_count: Enum.count(deleted_groups, &(&1.page_count > 1))
+    }
 
     %Report{
       project_id: project.id,
@@ -255,6 +287,7 @@ defmodule Oli.Authoring.ProjectRepair.Analysis do
       skipped_adaptive_pages_count: relationships.skipped_adaptive_pages_count,
       missing_activity_references: missing_activity_references,
       shared_activity_references: shared_activity_references,
+      deleted_activity_references: maybe_take(deleted_groups, issue_limit),
       summary: summary
     }
   end
@@ -279,27 +312,40 @@ defmodule Oli.Authoring.ProjectRepair.Analysis do
 
   defp build_shared_activity_references(
          relationships,
-         resolved_activity_ids,
+         activity_states,
          issue_limit,
          group_page_limit
        ) do
     relationships.activity_to_pages
-    |> Enum.filter(fn {_activity_resource_id, page_ids} -> MapSet.size(page_ids) > 1 end)
-    |> Enum.map(fn {activity_resource_id, page_ids} ->
-      pages =
-        page_ids
-        |> Enum.map(&Map.fetch!(relationships.pages, &1))
-        |> Enum.sort_by(& &1.resource_id)
-
-      %SharedActivityReference{
-        activity_resource_id: activity_resource_id,
-        pages: maybe_take(pages, group_page_limit),
-        page_count: length(pages),
-        repairable?: MapSet.member?(resolved_activity_ids, activity_resource_id)
-      }
+    |> Enum.filter(fn {_id, page_ids} -> MapSet.size(page_ids) > 1 end)
+    |> Enum.map(fn {id, page_ids} ->
+      activity_group(id, page_ids, relationships, activity_states, group_page_limit)
     end)
     |> Enum.sort_by(& &1.activity_resource_id)
     |> maybe_take(issue_limit)
+  end
+
+  defp activity_group(id, page_ids, relationships, activity_states, page_limit) do
+    pages =
+      page_ids |> Enum.map(&Map.fetch!(relationships.pages, &1)) |> Enum.sort_by(& &1.resource_id)
+
+    activity = Map.get(activity_states, id)
+
+    state =
+      case activity do
+        nil -> :unresolved
+        %{deleted: true} -> :deleted
+        _ -> :active
+      end
+
+    %SharedActivityReference{
+      activity_resource_id: id,
+      revision_id: activity && activity.revision_id,
+      state: state,
+      pages: maybe_take(pages, page_limit),
+      page_count: length(pages),
+      repairable?: state != :unresolved
+    }
   end
 
   defp build_summary(relationships, resolved_activity_ids) do

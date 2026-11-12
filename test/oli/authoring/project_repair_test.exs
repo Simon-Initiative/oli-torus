@@ -23,6 +23,11 @@ defmodule Oli.Authoring.ProjectRepairTest do
     Summary
   }
 
+  alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt}
+  alias Oli.Publishing.ChangeTracker
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
@@ -1050,8 +1055,17 @@ defmodule Oli.Authoring.ProjectRepairTest do
 
       :telemetry.attach(
         handler_id,
-        [:oli, :resolvers, :authoring],
-        fn _event, _measurements, _metadata, test_pid -> send(test_pid, :resolver_batch) end,
+        [:oli, :repo, :query],
+        fn _event, _measurements, metadata, test_pid ->
+          projection = metadata.query |> String.split(" FROM ") |> hd()
+
+          case metadata.source == "published_resources" and
+                 String.starts_with?(projection, "SELECT") and
+                 String.contains?(projection, "\"deleted\"") do
+            true -> send(test_pid, :resolver_batch)
+            false -> :ok
+          end
+        end,
         self()
       )
 
@@ -1126,6 +1140,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       assert report.summary == %Summary{
                scanned_pages_count: 6,
                skipped_adaptive_pages_count: 1,
+               missing_activity_resource_count: 2,
                missing_activity_reference_count: 3,
                missing_activity_affected_page_count: 3,
                repairable_shared_activity_resource_count: 2,
@@ -1328,6 +1343,360 @@ defmodule Oli.Authoring.ProjectRepairTest do
                activity.revision.id
 
       assert AuthoringResolver.from_resource_id(seed.project.slug, missing_activity_id) == nil
+    end
+  end
+
+  describe "referenced deleted activities" do
+    test "classifies deleted, shared-deleted, and unresolved references independently", seed do
+      activity = activity_fixture(seed, "Deleted shared source")
+
+      {:ok, deleted} =
+        Oli.Publishing.ChangeTracker.track_revision(seed.project.slug, activity.revision, %{
+          deleted: true
+        })
+
+      missing_id = missing_activity_resource_id()
+
+      first =
+        page_fixture(
+          seed,
+          "First",
+          activity_reference_content([activity.resource.id, activity.resource.id, missing_id])
+        )
+
+      second = page_fixture(seed, "Second", nested_reference_content(activity.resource.id))
+      before_analysis = storage_snapshot(seed)
+
+      assert {:ok, report} =
+               ProjectRepair.analyze_project(seed.project, seed.system_admin,
+                 resolution_batch_size: 1,
+                 stream_max_rows: 1
+               )
+
+      assert report.summary.deleted_activity_resource_count == 1
+      assert report.summary.deleted_activity_reference_count == 2
+      assert report.summary.deleted_activity_affected_page_count == 2
+      assert report.summary.deleted_shared_activity_resource_count == 1
+      assert report.summary.missing_activity_reference_count == 1
+      assert report.summary.missing_activity_resource_count == 1
+
+      assert [
+               %{
+                 activity_resource_id: id,
+                 revision_id: revision_id,
+                 state: :deleted,
+                 page_count: 2
+               }
+             ] = report.deleted_activity_references
+
+      assert id == activity.resource.id
+      assert revision_id == deleted.id
+      assert [%{state: :deleted, repairable?: true}] = report.shared_activity_references
+
+      assert Enum.map(hd(report.deleted_activity_references).pages, & &1.resource_id) == [
+               first.resource.id,
+               second.resource.id
+             ]
+
+      assert storage_snapshot(seed) == before_analysis
+    end
+
+    test "restores a single-page activity without changing the page or old revision", seed do
+      activity = activity_fixture(seed, "Single deleted source")
+
+      {:ok, deleted} =
+        Oli.Publishing.ChangeTracker.track_revision(seed.project.slug, activity.revision, %{
+          deleted: true
+        })
+
+      page = page_fixture(seed, "Single page", nested_reference_content(activity.resource.id))
+
+      assert {:ok, result} = ProjectRepair.repair_project(seed.project, seed.system_admin)
+      assert result.status == :completed
+      assert result.restored_activity_count == 1
+      assert result.updated_page_count == 0
+      assert result.cloned_activity_count == 0
+      restored = current_revision(seed, activity)
+      assert restored.deleted == false
+      assert restored.id != deleted.id
+      assert restored.previous_revision_id == deleted.id
+      assert restored.resource_id == deleted.resource_id
+
+      for field <-
+            Revision.__schema__(:fields) --
+              [:id, :deleted, :author_id, :previous_revision_id, :inserted_at, :updated_at] do
+        assert Map.get(restored, field) == Map.get(deleted, field),
+               "changed #{field} during restore"
+      end
+
+      assert Repo.get!(Revision, deleted.id).deleted
+      assert current_revision(seed, page).id == page.revision.id
+      assert result.report_after_repair.deleted_activity_references == []
+      assert_locks_released(seed, [activity.resource.id, page.resource.id])
+      before_rerun = storage_snapshot(seed)
+      assert {:ok, rerun} = ProjectRepair.repair_project(seed.project, seed.system_admin)
+      assert rerun.restored_activity_count == 0
+      assert storage_snapshot(seed) == before_rerun
+    end
+
+    test "restores a shared original and isolates all other pages including alternative branches",
+         seed do
+      activity = activity_fixture(seed, "Shared deleted source")
+
+      {:ok, deleted} =
+        Oli.Publishing.ChangeTracker.track_revision(seed.project.slug, activity.revision, %{
+          deleted: true
+        })
+
+      first = page_fixture(seed, "Keeper", nested_reference_content(activity.resource.id))
+
+      content = %{
+        "model" => [
+          %{
+            "id" => "alternatives",
+            "type" => "alternatives",
+            "children" => [
+              %{"id" => "branch-one", "type" => "alternative", "children" => []},
+              %{
+                "id" => "branch-two",
+                "type" => "alternative",
+                "children" => nested_reference_content(activity.resource.id)["model"]
+              }
+            ]
+          }
+        ]
+      }
+
+      second = page_fixture(seed, "Hidden branch", content)
+      third = page_fixture(seed, "Third", nested_reference_content(activity.resource.id))
+
+      assert {:ok, result} =
+               ProjectRepair.repair_project(seed.project, seed.system_admin,
+                 preview_issue_limit: 1,
+                 preview_group_page_limit: 1
+               )
+
+      assert result.status == :completed
+      assert result.restored_activity_count == 1
+      assert result.cloned_activity_count == 2
+      assert result.updated_page_count == 2
+      assert current_revision(seed, first).id == first.revision.id
+
+      assert referenced_activity_ids(current_revision(seed, first)) ==
+               MapSet.new([activity.resource.id])
+
+      ids =
+        for page <- [second, third] do
+          [id] = referenced_activity_ids(current_revision(seed, page)) |> Enum.to_list()
+          clone = AuthoringResolver.from_resource_id(seed.project.slug, id)
+          refute clone.deleted
+          assert clone.content == deleted.content
+          assert clone.objectives == deleted.objectives
+          refute id == activity.resource.id
+          id
+        end
+
+      assert Enum.uniq(ids) == ids
+      assert result.report_after_repair.shared_activity_references == []
+      assert result.report_after_repair.deleted_activity_references == []
+      before_rerun = storage_snapshot(seed)
+      assert {:ok, rerun} = ProjectRepair.repair_project(seed.project, seed.system_admin)
+      assert rerun.cloned_activity_count == 0
+      assert rerun.restored_activity_count == 0
+      assert storage_snapshot(seed) == before_rerun
+    end
+
+    test "published repair reaches delivery without changing existing learner attempts", seed do
+      activity = activity_fixture(seed, "Delivery source")
+
+      {:ok, page} =
+        ChangeTracker.track_revision(seed.project.slug, seed.revision1, %{
+          content: nested_reference_content(activity.resource.id),
+          activity_refs: [activity.resource.id]
+        })
+
+      {:ok, _initial} =
+        Publishing.publish_project(seed.project, "Initial active content", seed.author.id)
+
+      seed =
+        Seeder.create_section(seed)
+        |> Seeder.create_section_resources()
+        |> Seeder.add_user(%{}, :existing_learner)
+        |> Seeder.add_user(%{}, :fresh_learner)
+
+      for user <- [seed.existing_learner, seed.fresh_learner] do
+        Sections.enroll(user.id, seed.section.id, [ContextRoles.get_role(:context_learner)])
+      end
+
+      initial_context =
+        PageContext.create_for_visit(seed.section, page.slug, seed.existing_learner, UUID.uuid4())
+
+      assert Map.has_key?(initial_context.activities, activity.resource.id)
+
+      {:ok, _} =
+        ChangeTracker.track_revision(seed.project.slug, activity.revision, %{deleted: true})
+
+      {:ok, deleted_publication} =
+        Publishing.publish_project(
+          seed.project,
+          "Deleted target still referenced",
+          seed.author.id
+        )
+
+      assert {:ok, _} =
+               Sections.Updates.apply_publication_update(seed.section, deleted_publication.id)
+
+      assert Oli.Publishing.DeliveryResolver.from_resource_id(
+               seed.section.slug,
+               activity.resource.id
+             ) == nil
+
+      old_activity_attempts = Repo.all(ActivityAttempt)
+      old_page_attempts = Repo.all(ResourceAttempt)
+      old_section = Sections.get_section!(seed.section.id)
+      old_mappings = Publishing.get_published_resources_by_publication(deleted_publication.id)
+
+      assert {:ok, result} = ProjectRepair.repair_project(seed.project, seed.system_admin)
+      assert result.restored_activity_count == 1
+      assert Repo.all(ActivityAttempt) == old_activity_attempts
+      assert Repo.all(ResourceAttempt) == old_page_attempts
+      assert Sections.get_section!(seed.section.id) == old_section
+
+      assert Publishing.get_published_resources_by_publication(deleted_publication.id) ==
+               old_mappings
+
+      assert Oli.Publishing.DeliveryResolver.from_resource_id(
+               seed.section.slug,
+               activity.resource.id
+             ) == nil
+
+      {:ok, repaired_publication} =
+        Publishing.publish_project(seed.project, "Restore referenced target", seed.author.id)
+
+      assert {:ok, _} =
+               Sections.Updates.apply_publication_update(seed.section, repaired_publication.id)
+
+      resolved =
+        Oli.Publishing.DeliveryResolver.from_resource_id(seed.section.slug, activity.resource.id)
+
+      refute resolved.deleted
+
+      fresh_context =
+        PageContext.create_for_visit(seed.section, page.slug, seed.fresh_learner, UUID.uuid4())
+
+      assert Map.has_key?(fresh_context.activities, activity.resource.id)
+
+      existing_context =
+        PageContext.create_for_visit(seed.section, page.slug, seed.existing_learner, UUID.uuid4())
+
+      assert Map.has_key?(existing_context.activities, activity.resource.id)
+      for old <- old_activity_attempts, do: assert(Repo.get!(ActivityAttempt, old.id) == old)
+      for old <- old_page_attempts, do: assert(Repo.get!(ResourceAttempt, old.id) == old)
+    end
+
+    test "a locked participant prevents a deleted activity from being restored", seed do
+      activity = activity_fixture(seed, "Locked deleted activity")
+
+      {:ok, deleted} =
+        ChangeTracker.track_revision(seed.project.slug, activity.revision, %{deleted: true})
+
+      page =
+        page_fixture(
+          seed,
+          "Locked referring page",
+          nested_reference_content(activity.resource.id)
+        )
+
+      {:acquired} =
+        Locks.acquire(seed.project.slug, seed.publication.id, page.resource.id, seed.author2.id)
+
+      before = storage_snapshot(seed)
+      assert {:ok, result} = ProjectRepair.repair_project(seed.project, seed.system_admin)
+      assert result.status == :failed
+      assert result.restored_activity_count == 0
+      assert current_revision(seed, activity).id == deleted.id
+      assert storage_snapshot(seed) == before
+    end
+
+    test "a deleted activity from another project remains unresolved and is never restored",
+         seed do
+      other = Seeder.base_project_with_resource2()
+      activity = activity_fixture(other, "Foreign deleted activity")
+
+      {:ok, deleted} =
+        ChangeTracker.track_revision(other.project.slug, activity.revision, %{deleted: true})
+
+      page_fixture(seed, "Foreign reference", nested_reference_content(activity.resource.id))
+      assert {:ok, result} = ProjectRepair.repair_project(seed.project, seed.system_admin)
+      assert result.status == :completed
+      assert result.restored_activity_count == 0
+      assert result.report_after_repair.summary.deleted_activity_resource_count == 0
+      assert result.report_after_repair.summary.missing_activity_resource_count == 1
+
+      assert AuthoringResolver.from_resource_id(other.project.slug, activity.resource.id).id ==
+               deleted.id
+    end
+
+    test "a changed activity revision invalidates the plan before restoration", seed do
+      activity = activity_fixture(seed, "Stale deleted source")
+
+      {:ok, deleted} =
+        Oli.Publishing.ChangeTracker.track_revision(seed.project.slug, activity.revision, %{
+          deleted: true
+        })
+
+      page_fixture(seed, "Stale participant", nested_reference_content(activity.resource.id))
+
+      hook = fn ->
+        {:ok, _} =
+          Oli.Publishing.ChangeTracker.track_revision(seed.project.slug, deleted, %{
+            title: "Changed concurrently"
+          })
+      end
+
+      assert {:ok, result} =
+               ProjectRepair.repair_project(seed.project, seed.system_admin,
+                 after_lock_acquisition: hook
+               )
+
+      assert result.status == :failed
+      assert result.restored_activity_count == 0
+      assert [%{reason: :stale_project_state}] = result.failures
+      assert current_revision(seed, activity).deleted
+    end
+
+    test "restoration followed by copy failure reports partial completion and retries safely",
+         seed do
+      activity = activity_fixture(seed, "Uncopyable deleted source")
+
+      {:ok, _} =
+        Oli.Publishing.ChangeTracker.track_revision(seed.project.slug, activity.revision, %{
+          deleted: true,
+          activity_type_id: nil
+        })
+
+      {first, second} = shared_page_fixtures(seed, activity.resource.id)
+      assert {:ok, result} = ProjectRepair.repair_project(seed.project, seed.system_admin)
+      assert result.status == :partial
+      assert result.restored_activity_count == 1
+      assert result.cloned_activity_count == 0
+      assert result.updated_page_count == 0
+      assert result.report_after_repair.deleted_activity_references == []
+      assert [%{state: :active}] = result.report_after_repair.shared_activity_references
+      assert_locks_released(seed, [activity.resource.id, first.resource.id, second.resource.id])
+
+      {:ok, _} =
+        Oli.Publishing.ChangeTracker.track_revision(
+          seed.project.slug,
+          current_revision(seed, activity),
+          %{activity_type_id: activity.revision.activity_type_id}
+        )
+
+      assert {:ok, retry} = ProjectRepair.repair_project(seed.project, seed.system_admin)
+      assert retry.status == :completed
+      assert retry.restored_activity_count == 0
+      assert retry.cloned_activity_count == 1
+      assert retry.report_after_repair.shared_activity_references == []
     end
   end
 
