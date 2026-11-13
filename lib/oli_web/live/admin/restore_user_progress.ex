@@ -1,249 +1,331 @@
 defmodule OliWeb.Admin.RestoreUserProgress do
-  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  @moduledoc """
+  System admin tool that merges the progress of a source user into a target user enrolled in the
+  same section.
+
+  The admin enters a section slug and both user IDs, verifies that both users are enrolled in the
+  section, previews the resource access changes, and finally commits them in a single transaction.
+  """
+
   use OliWeb, :live_view
 
   import Ecto.Query
+
+  require Logger
+
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.{Enrollment, Section}
   alias Oli.Repo
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Oli.Delivery.Sections.Enrollment
   alias Oli.Resources.Revision
+  alias OliWeb.Common.{FormatDateTime, SessionContext}
 
-  def mount(_, _, socket) do
+  def mount(_, session, socket) do
     {:ok,
-     assign(socket,
-       title: "Restore User Progress",
-       target_enrollment_id: nil,
-       source_enrollment_id: nil,
-       result: "",
-       true_user: nil,
-       all_users: [],
-       changes: [],
-       user_enrollments: %{},
-       commit_done: false
-     )}
+     socket
+     |> assign(title: "Restore User Progress")
+     |> assign_new(:ctx, fn -> SessionContext.init(socket, session, is_liveview: true) end)
+     |> assign_form(%{"section_slug" => "", "target_user_id" => "", "source_user_id" => ""})
+     |> reset_verification()}
   end
 
-  defp parse_enrollment_id(value) when is_binary(value) do
-    case String.trim(value) do
-      "" ->
-        nil
+  defp assign_form(socket, params), do: assign(socket, form: to_form(params))
 
-      trimmed ->
-        case Integer.parse(trimmed) do
-          {id, ""} -> id
-          _ -> nil
-        end
-    end
+  defp form_params(params),
+    do: Map.take(params, ["section_slug", "target_user_id", "source_user_id"])
+
+  # Clears everything derived from a previous verification so that a preview or commit can never
+  # run against users other than the ones currently entered in the form.
+  defp reset_verification(socket) do
+    socket
+    |> clear_flash()
+    |> assign(
+      verified: nil,
+      true_user: nil,
+      changes: [],
+      commit_done: false
+    )
   end
 
-  defp parse_enrollment_id(_), do: nil
+  @doc """
+  Verifies that the target and source users are both enrolled in the section identified by
+  `section_slug`.
 
-  defp build_preview(nil, _), do: {:error, "Set a target enrollment ID."}
-  defp build_preview(_, nil), do: {:error, "Set a source enrollment ID."}
+  Inputs are the raw (string) values entered by the admin. Enrollments are matched regardless
+  of their status, so that suspended or otherwise inactive duplicate accounts can still be merged.
 
-  defp build_preview(target_enrollment_id, source_enrollment_id) do
-    with {:ok, target_enrollment} <- fetch_enrollment_with_user(target_enrollment_id),
-         {:ok, source_enrollment} <- fetch_enrollment_with_user(source_enrollment_id),
-         :ok <- ensure_same_section(target_enrollment, source_enrollment) do
-      {all_users, true_user, changes} = preview(target_enrollment, source_enrollment)
-
+  Returns `{:ok, %{section: section, target_enrollment: enrollment, source_enrollment: enrollment}}`
+  with the `:user` association preloaded on both enrollments, or `{:error, message}` describing
+  the first check that failed.
+  """
+  @spec verify_enrollments(term(), term(), term()) :: {:ok, map()} | {:error, String.t()}
+  def verify_enrollments(section_slug, target_user_id, source_user_id) do
+    with {:ok, section_slug} <- parse_section_slug(section_slug),
+         {:ok, target_user_id} <- parse_user_id(target_user_id, "target"),
+         {:ok, source_user_id} <- parse_user_id(source_user_id, "source"),
+         :ok <- ensure_different_users(target_user_id, source_user_id),
+         {:ok, section} <- fetch_section(section_slug),
+         {:ok, target_enrollment} <- fetch_enrollment(section, target_user_id, "Target"),
+         {:ok, source_enrollment} <- fetch_enrollment(section, source_user_id, "Source") do
       {:ok,
        %{
-         all_users: all_users,
-         true_user: true_user,
-         changes: changes,
-         user_enrollments: build_user_enrollment_map([target_enrollment, source_enrollment])
+         section: section,
+         target_enrollment: target_enrollment,
+         source_enrollment: source_enrollment
        }}
-    else
-      {:error, reason} -> {:error, reason}
     end
   end
 
-  defp ensure_same_section(%Enrollment{section_id: section_id}, %Enrollment{
-         section_id: section_id
-       }),
-       do: :ok
-
-  defp ensure_same_section(_, _),
-    do: {:error, "Target and source enrollments must belong to the same section."}
-
-  defp fetch_enrollment_with_user(enrollment_id) do
-    case Repo.get(Enrollment, enrollment_id) |> Repo.preload(:user) do
-      nil -> {:error, "Enrollment #{enrollment_id} not found."}
-      %Enrollment{user: nil} -> {:error, "Enrollment #{enrollment_id} is missing a user."}
-      enrollment -> {:ok, enrollment}
+  defp parse_section_slug(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> {:error, "Set a section slug."}
+      slug -> {:ok, slug}
     end
   end
 
-  defp build_user_enrollment_map(enrollments) do
-    Enum.reduce(enrollments, %{}, fn %Enrollment{id: id, user_id: user_id}, acc ->
-      Map.put(acc, user_id, id)
-    end)
+  defp parse_section_slug(_), do: {:error, "Set a section slug."}
+
+  defp parse_user_id(value, label) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {id, ""} when id > 0 -> {:ok, id}
+      _ -> {:error, "Set a valid #{label} user ID."}
+    end
+  end
+
+  defp parse_user_id(_, label), do: {:error, "Set a valid #{label} user ID."}
+
+  defp ensure_different_users(user_id, user_id),
+    do: {:error, "Target and source user IDs must be different."}
+
+  defp ensure_different_users(_, _), do: :ok
+
+  defp fetch_section(section_slug) do
+    case Sections.get_section_by(slug: section_slug) do
+      nil -> {:error, "Section #{section_slug} not found."}
+      section -> {:ok, section}
+    end
+  end
+
+  defp fetch_enrollment(%Section{slug: section_slug}, user_id, label) do
+    case Sections.get_enrollment(section_slug, user_id, filter_by_status: false) do
+      nil ->
+        {:error, "#{label} user #{user_id} is not enrolled in section #{section_slug}."}
+
+      enrollment ->
+        {:ok, Repo.preload(enrollment, :user)}
+    end
   end
 
   def render(assigns) do
     ~H"""
-    <div class="alert alert-danger" role="alert">
+    <div class="mb-4 border-l-4 border-red-600 bg-gray-50 p-4 text-gray-800 dark:border-red-500 dark:bg-gray-800 dark:text-gray-100">
       <strong>Warning!</strong>
       This is a developer tool and should only be used by developers.  This can result in data loss.
     </div>
 
-    <div class="alert alert-info" role="alert">
-      This tool allows you to merge user progress across multiple enrollments into a single, target enrollment.
-      This is useful in scenarios where a user is incorrectly enrolled multiple times in a section from different user accounts, and you want to consolidate their progress.
+    <div class="mb-4 border-l-4 border-gray-300 bg-gray-50 p-4 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+      This tool allows you to merge the progress of a source user into a target user enrolled in the same section.
+      This is useful in scenarios where a user is incorrectly enrolled in a section from different user accounts, and you want to consolidate their progress.
+      Enter the section slug and both user IDs, verify the enrollments, then preview and commit the changes.
     </div>
 
     <div>
-      <div class="flex flex-col gap-4 md:flex-row">
+      <.form
+        for={@form}
+        id="verify_form"
+        phx-change="validate"
+        phx-submit="verify"
+        class="flex flex-col gap-4 md:flex-row md:items-end"
+      >
         <div class="flex-1">
-          <label class="block font-semibold" for="target_enrollment_id">Target Enrollment ID</label>
-          <input
-            type="text"
-            id="target_enrollment_id"
-            value={@target_enrollment_id || ""}
-            phx-hook="TextInputListener"
-            phx-value-change="target_enrollment"
+          <.input
+            field={@form[:section_slug]}
+            label="Section Slug"
+            label_class="font-semibold"
             class="w-full p-2 border border-gray-300 rounded"
           />
         </div>
 
         <div class="flex-1">
-          <label class="block font-semibold" for="source_enrollment_id">Source Enrollment ID</label>
-          <input
-            type="text"
-            id="source_enrollment_id"
-            value={@source_enrollment_id || ""}
-            phx-hook="TextInputListener"
-            phx-value-change="source_enrollment"
+          <.input
+            field={@form[:target_user_id]}
+            label="Target User ID"
+            label_class="font-semibold"
             class="w-full p-2 border border-gray-300 rounded"
           />
+        </div>
+
+        <div class="flex-1">
+          <.input
+            field={@form[:source_user_id]}
+            label="Source User ID"
+            label_class="font-semibold"
+            class="w-full p-2 border border-gray-300 rounded"
+          />
+        </div>
+
+        <button
+          id="verify_button"
+          type="submit"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Verify
+        </button>
+      </.form>
+
+      <div :if={@verified} id="verified_users" class="my-4">
+        <h3 id="verified_users_heading">
+          Verified Users in {@verified.section.title} ({@verified.section.slug})
+        </h3>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left" aria-labelledby="verified_users_heading">
+            <thead>
+              <tr>
+                <th scope="col">ROLE</th>
+                <th scope="col">ENROLLMENT ID</th>
+                <th scope="col">USER ID</th>
+                <th scope="col">NAME</th>
+                <th scope="col">EMAIL</th>
+                <th scope="col">ENROLLED AT</th>
+                <th scope="col">ENROLLMENT STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                :for={
+                  {role, enrollment} <- [
+                    {"Target", @verified.target_enrollment},
+                    {"Source", @verified.source_enrollment}
+                  ]
+                }
+                id={"verified_#{String.downcase(role)}"}
+              >
+                <td>{role}</td>
+                <td>{enrollment.id}</td>
+                <td>{enrollment.user.id}</td>
+                <td>{enrollment.user.given_name} {enrollment.user.family_name}</td>
+                <td>{enrollment.user.email}</td>
+                <td>
+                  {FormatDateTime.date(enrollment.inserted_at,
+                    ctx: @ctx,
+                    precision: :minutes,
+                    show_timezone: true
+                  )}
+                </td>
+                <td>{enrollment.status}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <button
-        phx-click="preview"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      >
-        Preview Changes
-      </button>
+      <div class="mt-4 flex gap-2">
+        <button
+          id="preview_button"
+          phx-click="preview"
+          class="bg-blue-500 enabled:hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={is_nil(@verified) or @commit_done}
+        >
+          Preview Changes
+        </button>
 
-      <button
-        phx-click="commit"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-        disabled={@commit_done}
-      >
-        <%= if @commit_done do %>
-          Done!
-        <% else %>
-          Commit Changes
-        <% end %>
-      </button>
-
-      <div>{@result}</div>
-
-      <h3>User Records</h3>
-
-      <table>
-        <thead>
-          <tr>
-            <th>TARGET</th>
-            <th>ENROLLMENT ID</th>
-            <th>ID</th>
-            <th>GIVEN NAME</th>
-            <th>FAMILY NAME</th>
-            <th>EMAIL</th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for user <- @all_users do %>
-            <tr>
-              <td>
-                {if user.id == @true_user.id do
-                  "TRUE"
-                else
-                  ""
-                end}
-              </td>
-              <td>{Map.get(@user_enrollments, user.id, "")}</td>
-              <td>{user.id}</td>
-              <td>{user.given_name}</td>
-              <td>{user.family_name}</td>
-              <td>{user.email}</td>
-            </tr>
+        <button
+          id="commit_button"
+          phx-click="commit"
+          class="bg-blue-500 enabled:hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={not can_commit?(assigns)}
+        >
+          <%= if @commit_done do %>
+            Done!
+          <% else %>
+            Commit Changes
           <% end %>
-        </tbody>
-      </table>
+        </button>
+      </div>
 
-      <h3>Changes</h3>
+      <div :if={@true_user} id="preview_changes">
+        <h3>Changes</h3>
 
-      <%= for change <- @changes do %>
-        <div>{inspect(change)}</div>
-      <% end %>
+        <p :if={@changes == [] and not @commit_done}>
+          There is no progress to restore for these users.
+        </p>
+
+        <div :for={change <- @changes}>{inspect(change)}</div>
+      </div>
     </div>
     """
   end
 
-  def handle_event("target_enrollment", %{"value" => value}, socket) do
-    {:noreply, assign(socket, target_enrollment_id: parse_enrollment_id(value))}
+  def handle_event("validate", params, socket) do
+    {:noreply,
+     socket
+     |> assign_form(form_params(params))
+     |> reset_verification()}
   end
 
-  def handle_event("source_enrollment", %{"value" => value}, socket) do
-    {:noreply, assign(socket, source_enrollment_id: parse_enrollment_id(value))}
+  def handle_event("verify", params, socket) do
+    params = form_params(params)
+    socket = socket |> assign_form(params) |> reset_verification()
+
+    case verify_enrollments(
+           params["section_slug"],
+           params["target_user_id"],
+           params["source_user_id"]
+         ) do
+      {:ok, verified} -> {:noreply, assign(socket, verified: verified)}
+      {:error, reason} -> {:noreply, put_flash(socket, :error, reason)}
+    end
+  end
+
+  def handle_event("preview", _, %{assigns: %{verified: nil}} = socket) do
+    {:noreply, put_flash(socket, :error, "Verify the users before previewing changes.")}
   end
 
   def handle_event("preview", _, socket) do
-    case build_preview(socket.assigns.target_enrollment_id, socket.assigns.source_enrollment_id) do
-      {:ok,
-       %{
-         all_users: all_users,
-         true_user: true_user,
-         changes: changes,
-         user_enrollments: user_enrollments
-       }} ->
-        {:noreply,
-         assign(socket,
-           all_users: all_users,
-           true_user: true_user,
-           changes: changes,
-           user_enrollments: user_enrollments,
-           result: ""
-         )}
+    %{target_enrollment: target_enrollment, source_enrollment: source_enrollment} =
+      socket.assigns.verified
 
-      {:error, reason} ->
-        {:noreply,
-         assign(socket,
-           result: reason,
-           changes: [],
-           all_users: [],
-           true_user: nil,
-           user_enrollments: %{}
-         )}
-    end
+    {_all_users, true_user, changes} = preview(target_enrollment, source_enrollment)
+
+    {:noreply,
+     socket
+     |> clear_flash()
+     |> assign(true_user: true_user, changes: changes)}
   end
 
   def handle_event("commit", _, socket) do
-    if is_nil(socket.assigns.true_user) do
-      {:noreply, assign(socket, result: "Preview changes before committing.")}
-    else
-      case Repo.transaction(fn -> process(socket.assigns.true_user, socket.assigns.changes) end) do
-        {:ok, _} ->
-          {:noreply,
-           assign(socket,
-             changes: [],
-             result: "success",
-             commit_done: true
-           )}
-
-        {_, reason} ->
-          {:noreply,
-           assign(socket,
-             changes: [],
-             result: "failed: #{inspect(reason)}",
-             commit_done: false
-           )}
-      end
+    case commit_blocker(socket.assigns) do
+      nil -> {:noreply, commit_changes(socket)}
+      reason -> {:noreply, put_flash(socket, :error, reason)}
     end
   end
+
+  defp commit_changes(%{assigns: %{true_user: true_user, changes: changes}} = socket) do
+    case Repo.transaction(fn -> process(true_user, changes) end) do
+      {:ok, _} ->
+        socket
+        |> put_flash(:info, "Success: #{length(changes)} change(s) applied.")
+        |> assign(changes: [], commit_done: true)
+
+      {_, reason} ->
+        Logger.error(
+          "Restore user progress commit failed for target user #{true_user.id}: #{inspect(reason)}"
+        )
+
+        socket
+        |> put_flash(:error, "Failed to restore progress. Check the server logs for details.")
+        |> assign(changes: [], commit_done: false)
+    end
+  end
+
+  defp can_commit?(assigns), do: is_nil(commit_blocker(assigns))
+
+  # Returns the reason why a commit is not allowed in the current state, or nil when it is.
+  defp commit_blocker(%{commit_done: true}), do: "Changes have already been committed."
+  defp commit_blocker(%{true_user: nil}), do: "Preview changes before committing."
+  defp commit_blocker(%{changes: []}), do: "There are no changes to commit."
+  defp commit_blocker(_), do: nil
 
   defp preview(
          %Enrollment{user: true_user} = target_enrollment,
