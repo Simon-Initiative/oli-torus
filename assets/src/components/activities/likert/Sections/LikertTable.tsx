@@ -45,82 +45,88 @@ export const LikertTable: React.FC<Props> = ({
             {showItemColumn && (
               <th className="w-[36%] border border-Border-border-default bg-Surface-surface-primary px-5 py-4 text-left align-middle font-medium" />
             )}
-            {choices.map((choice, i) => (
-              <th
-                key={choice.id}
-                className="border border-Border-border-default bg-Surface-surface-primary px-4 py-4 text-center align-middle text-[15px] font-semibold leading-6 text-Text-text-medium"
-              >
-                <div
-                  id={hasNameableContent(choice.content) ? choiceLabelId(choice.id) : undefined}
-                  className="[&_.content_p]:my-0"
+            {choices.map((choice, i) => {
+              const isNamedByContent = hasNameableContent(choice.content);
+              return (
+                <th
+                  key={choice.id}
+                  className="border border-Border-border-default bg-Surface-surface-primary px-4 py-4 text-center align-middle text-[15px] font-semibold leading-6 text-Text-text-medium"
                 >
-                  <HtmlContentModelRenderer
-                    direction={choice.textDirection}
-                    content={choice.content}
-                    context={context}
-                  />
-                  {/* Columns without nameable content still need a name for their radios */}
-                  {!hasNameableContent(choice.content) && (
-                    <span id={choiceLabelId(choice.id)} className="sr-only">
-                      {`Choice ${i + 1}`}
-                    </span>
-                  )}
-                </div>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, itemIndex) => (
-            <tr key={item.id}>
-              {showItemColumn && (
-                <td className="border border-Border-border-default bg-Surface-surface-secondary-muted px-5 py-4 align-top text-base text-Text-text-high">
                   <div
-                    id={hasNameableContent(item.content) ? itemLabelId(item.id) : undefined}
-                    className="leading-7 [&_.content_p]:my-0"
+                    id={isNamedByContent ? choiceLabelId(choice.id) : undefined}
+                    className="[&_.content_p]:my-0"
                   >
                     <HtmlContentModelRenderer
-                      direction={item.textDirection}
-                      content={item.content}
+                      direction={choice.textDirection}
+                      content={choice.content}
                       context={context}
                     />
-                    {/* Rows without nameable content still need a name to tell their radios apart */}
-                    {!hasNameableContent(item.content) && (
-                      <span id={itemLabelId(item.id)} className="sr-only">
-                        {`Item ${itemIndex + 1}`}
+                    {/* Columns without nameable content still need a name for their radios */}
+                    {!isNamedByContent && (
+                      <span id={choiceLabelId(choice.id)} className="sr-only">
+                        {`Choice ${i + 1}`}
                       </span>
                     )}
                   </div>
-                </td>
-              )}
-              {choices.map((choice) => (
-                <td
-                  key={item.id + '-' + choice.id}
-                  className="h-20 border border-Border-border-default bg-Surface-surface-secondary-muted px-4 py-4 text-center align-middle"
-                >
-                  <input
-                    type="radio"
-                    name={itemLabelId(item.id)}
-                    aria-labelledby={
-                      showItemColumn
-                        ? `${itemLabelId(item.id)} ${choiceLabelId(choice.id)}`
-                        : choiceLabelId(choice.id)
-                    }
-                    className={classNames('oli-radio', !interactive && 'pointer-events-none')}
-                    checked={isSelected(item.id, choice.id)}
-                    disabled={disabled}
-                    readOnly={!interactive}
-                    tabIndex={interactive ? 0 : -1}
-                    onChange={() => {
-                      if (interactive) {
-                        onSelect(item.id, choice.id);
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item, itemIndex) => {
+            const isItemNamedByContent = hasNameableContent(item.content);
+            return (
+              <tr key={item.id}>
+                {showItemColumn && (
+                  <td className="border border-Border-border-default bg-Surface-surface-secondary-muted px-5 py-4 align-top text-base text-Text-text-high">
+                    <div
+                      id={isItemNamedByContent ? itemLabelId(item.id) : undefined}
+                      className="leading-7 [&_.content_p]:my-0"
+                    >
+                      <HtmlContentModelRenderer
+                        direction={item.textDirection}
+                        content={item.content}
+                        context={context}
+                      />
+                      {/* Rows without nameable content still need a name to tell their radios apart */}
+                      {!isItemNamedByContent && (
+                        <span id={itemLabelId(item.id)} className="sr-only">
+                          {`Item ${itemIndex + 1}`}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                )}
+                {choices.map((choice) => (
+                  <td
+                    key={item.id + '-' + choice.id}
+                    className="h-20 border border-Border-border-default bg-Surface-surface-secondary-muted px-4 py-4 text-center align-middle"
+                  >
+                    <input
+                      type="radio"
+                      name={itemLabelId(item.id)}
+                      aria-labelledby={
+                        showItemColumn
+                          ? `${itemLabelId(item.id)} ${choiceLabelId(choice.id)}`
+                          : choiceLabelId(choice.id)
                       }
-                    }}
-                  />
-                </td>
-              ))}
-            </tr>
-          ))}
+                      className={classNames('oli-radio', !interactive && 'pointer-events-none')}
+                      checked={isSelected(item.id, choice.id)}
+                      disabled={disabled}
+                      readOnly={!interactive}
+                      tabIndex={interactive ? 0 : -1}
+                      onChange={() => {
+                        if (interactive) {
+                          onSelect(item.id, choice.id);
+                        }
+                      }}
+                    />
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
         {/* footer row with choice values. Use th cells to match header style */}
         <tfoot>

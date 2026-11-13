@@ -164,8 +164,9 @@ describe('ChoicesDelivery', () => {
     titledChoice.content = [
       { ...Model.webpage('https://example.com/sim'), title: 'Solar system simulation' },
     ];
+    // Webpages do not render their alt text, so it cannot name the choice
     const untitledChoice = makeChoice('', 'choice-b');
-    untitledChoice.content = [Model.webpage('https://example.com/other')];
+    untitledChoice.content = [{ ...Model.webpage('https://example.com/other'), alt: 'Unused alt' }];
 
     render(
       <ChoicesDelivery
@@ -184,6 +185,28 @@ describe('ChoicesDelivery', () => {
     expect(titledRadio).toHaveAttribute('aria-labelledby');
     expect(titledRadio).not.toHaveAttribute('aria-label');
     expect(screen.getByRole('radio', { name: 'Choice 2' })).not.toHaveAttribute('aria-labelledby');
+  });
+
+  it('names code block choices by their code', () => {
+    const codeChoice = makeChoice('', 'choice-a');
+    codeChoice.content = [Model.code('print("hello")')];
+
+    render(
+      <ChoicesDelivery
+        choices={[codeChoice]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={jest.fn()}
+        isEvaluated={false}
+        unselectedIcon={<Radio.Unchecked />}
+        selectedIcon={<Radio.Checked />}
+      />,
+    );
+
+    const radio = screen.getByRole('radio', { name: 'print("hello")' });
+
+    expect(radio).toHaveAttribute('aria-labelledby');
+    expect(radio).not.toHaveAttribute('aria-label');
   });
 
   it('keeps the whole row as the checkbox control', () => {

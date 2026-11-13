@@ -195,27 +195,30 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 const isNonBlankString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim() !== '';
 
-// Webpage titles are rendered as the iframe's aria-label, which content-based names include
+// Webpages (iframes) render their title as the aria-label and ignore alt, so only the title names
+// them. Code blocks render their `code` string as visible text.
 const isNameableNode = ({
   text,
   type,
   alt,
   title,
+  code,
   caption,
   children,
 }: Record<string, unknown>): boolean =>
   isNonBlankString(text) ||
-  isNonBlankString(alt) ||
+  (type === 'iframe' ? isNonBlankString(title) : isNonBlankString(alt)) ||
+  (type === 'code' && isNonBlankString(code)) ||
   isNonBlankString(caption) ||
-  (type === 'iframe' && isNonBlankString(title)) ||
   SELF_NAMED_ELEMENT_TYPES.has(type) ||
   hasNameableContent(caption) ||
   hasNameableContent(children);
 
 /**
  * hasNameableContent([nodes]) Returns true if the content renders something that can serve as
- * the accessible name of a control (text, image alt text, captions or formulas). Content made
- * only of media (e.g. an audio clip) has nothing to reference, so it needs a fallback name.
+ * the accessible name of a control (text, code, media alt text, webpage titles, captions or
+ * formulas). Content made only of media without alt text (e.g. an audio clip) has nothing to
+ * reference, so it needs a fallback name.
  */
 export const hasNameableContent = (nodes: unknown): boolean =>
   Array.isArray(nodes) && nodes.some((node) => isObject(node) && isNameableNode(node));

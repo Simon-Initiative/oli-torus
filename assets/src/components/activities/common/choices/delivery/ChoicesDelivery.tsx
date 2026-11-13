@@ -18,6 +18,9 @@ const INTERACTIVE_SELECTOR = [
   '[data-stop-choice-select="true"]',
 ].join(', ');
 
+const FOCUS_OUTLINE_CLASSES =
+  'rounded outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary';
+
 interface Props {
   choices: Choice[];
   selected: ChoiceId[];
@@ -158,8 +161,6 @@ export const ChoicesDelivery: React.FC<Props> = ({
       {choices.map((choice, index) => {
         const choiceContentId = `${idPrefix}-choice-${choice.id}`;
         const isNamedByContent = hasNameableContent(choice.content);
-        const focusOutlineClasses =
-          'rounded outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary';
         const controlProps = {
           ref: (el: HTMLDivElement | null) => (choiceRefs.current[index] = el),
           role: itemRole,
@@ -181,7 +182,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
             {...(multiSelect ? { ...controlProps, 'aria-labelledby': choiceContentId } : {})}
             onClick={disabled ? undefined : onClicked(choice.id, index)}
             className={classNames(
-              multiSelect ? focusOutlineClasses : '',
+              multiSelect ? FOCUS_OUTLINE_CLASSES : '',
               isSelected(choice.id) ? 'selected' : '',
               disabled ? 'disabled' : '',
             )}
@@ -199,7 +200,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
                       // 24px target (WCAG 2.5.8) with negative margins so the layout matches the bare icon
                       className={classNames(
                         '-m-1 flex h-6 w-6 shrink-0 items-center justify-center',
-                        focusOutlineClasses,
+                        FOCUS_OUTLINE_CLASSES,
                       )}
                     >
                       {renderIcon(isSelected(choice.id) ? selectedIcon : unselectedIcon)}
