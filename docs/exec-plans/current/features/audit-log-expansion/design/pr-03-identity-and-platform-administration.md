@@ -16,7 +16,7 @@ Make every supported identity and platform-administration write an audited comma
 
 In scope (internal blocks, implemented in this order):
 
-1. **Access administration and author deletion (W05).** Lock/unlock, role, internal flag, section-creation rights, admin profile edits, author deletion (detail view and collaborator-invitation cleanup), and the restriction of `Accounts.update_user/2` and `Accounts.update_author/2` to unprotected fields.
+1. **Access administration and author deletion (W05).** Lock/unlock, role, internal flag, section-creation rights, admin profile edits, author deletion (detail view), and the restriction of `Accounts.update_user/2` and `Accounts.update_author/2` to unprotected fields.
 2. **Provisioning, profile, linking, and recovery (W06, part of W07).** Registration, invitation, SSO, LTI, and guest account creation; self-service profile and email changes; link/unlink; password creation/change/reset; confirmation; Scenario account bootstrap under the `playwright_setup` system actor.
 3. **Authentication (W07).** One audited session issuance and one revocation per account kind, used by password, SSO/OAuth, and LTI login, by logout, and by the password operations that invalidate sessions.
 4. **Organizations, consent, and integrations (W23, W24).** Institutions, pending-registration approval, communities and memberships, publishers, research-consent configuration, LMS registrations/deployments, external tools, and the instructor's section deep-link choice.
@@ -41,7 +41,7 @@ These are design mappings, not implementation proof. `requirements.yml` gains no
 | FR-006 / AC-021 | Failed credentials, failed or canceled provider callbacks, invalid LTI launches, and repeated callbacks issue no token and write no event. Already-absent tokens on logout write nothing. Token-insert and audit failures roll each other back |
 | FR-007 / AC-022 | Creation (every provisioning channel), deletion, profile, lock/unlock, role, internal flag, permission flags, and section-creation rights through `Accounts.Audited`; generic updates reject protected fields |
 | FR-007 / AC-023 | Link/unlink, recovery request, credential recovery, and confirmation events; secret fields only as redaction markers; actor distinct from the affected account when an admin or system acts |
-| FR-007 / AC-024 | `author_deleted` keeps ID, name, and email in the snapshot for both the detail-view and collaborator-cleanup callers |
+| FR-007 / AC-024 | `author_deleted` keeps ID, name, and email in the snapshot for the detail-view caller |
 | FR-025 / AC-060 | Institution, community and membership, publisher, and research-consent commands with typed entities, scope, and safe before/after |
 | FR-025 / AC-061 | Registration, deployment, external-tool, and deep-link commands, plus the decline of a pending LMS registration request; `custom_params`, deep-link `custom`, PEM keys, and launch payloads never recorded |
 | FR-025 / AC-062 | No supported configuration writer exists for roster or grade passback (section 4.4). LTI launch sync stays routine and unaudited. PR-05 routes the section fields when it closes `update_section/2` |
@@ -521,7 +521,7 @@ The test policy is the one clarified in PR-02. Unrelated fixtures and factories 
   - Field-policy drift test passing with the newly declared schemas; secret classification for `custom_params`, deep link `custom`, `pem`, AI keys.
   - Marker-secret scans: plant marker values in passwords, reset/confirm tokens, session tokens, API keys, MCP tokens, AI keys, and custom params; assert they are absent from events (changes, details, snapshots, search text) and captured logs.
 - Integration tests (per block, at the application boundary and the supported transport):
-  - **Access:** each command's success, no-op, invalid context, audit-insert failure rollback, and concurrent update. Author deletion from the detail view and from collaborator cleanup, with event-time identity after deletion and outer-Multi rollback. Role change by an account admin (dropped) versus a system admin (recorded). Removed manual captures leave exactly one event of each kind.
+  - **Access:** each command's success, no-op, invalid context, audit-insert failure rollback, and concurrent update. Author deletion from the detail view, with event-time identity after deletion and outer-Multi rollback. Role change by an account admin (dropped) versus a system admin (recorded). Removed manual captures leave exactly one event of each kind.
   - **Provisioning and profile:** registration, guest, invitation (bulk and single), LTI first launch and claim sync (event only on change), Assent and Cognito provisioning, link/unlink, email change confirmation, invitation acceptance. The settings pages change only names; a submitted protected key changes nothing.
   - **Recovery:** requests (self, unauthenticated, admin), reset with a valid token, reused and expired tokens, confirmation, and password change producing `account_updated` + `session_revoked` + re-login event.
   - **Sessions:** one event per password, SSO/OAuth, and LTI channel. Wrong credentials, failed callback, invalid launch, and canceled flows emit nothing. Repeated logout, concurrent logout of one token, token-insert failure versus audit failure each rolling back the other, LTI launch failure after issuance, Cognito double session. Excluded session callers emit nothing and keep working.
@@ -535,7 +535,7 @@ The test policy is the one clarified in PR-02. Unrelated fixtures and factories 
   - Latency and query counts at checkpoint F: LTI launch and password login with and without the audited issuance, bulk membership of 100 and 1,000 targets. Review threshold `max(10 ms, 20% of baseline p95)`, not an SLA.
   - Full `mix test` at the final gate, because shared test support (Scenario handlers) changes. Clean ExUnit output; known list-test flakiness rerun with `--failed` and recorded.
 
-Database safety: every `mix test` run needs owner approval and a prior `pg_dump -Fc` of `oli_test` under `~/db_backups/`. Verify `DATABASE_URL` is unset and the target is `oli_test` first.
+Database safety: every `mix test` run targets `oli_test`, which needs no backup. Verify `DATABASE_URL` is unset first.
 
 ## 7. Risks & Open Questions
 
