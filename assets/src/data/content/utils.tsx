@@ -187,7 +187,21 @@ export const isEmptyContent = (content: (AllModelElements | Text)[]): boolean =>
 };
 
 // Element types whose rendered output provides an accessible name on its own
-const SELF_NAMED_ELEMENT_TYPES = new Set(['formula', 'formula_inline']);
+const SELF_NAMED_ELEMENT_TYPES = new Set<unknown>(['formula', 'formula_inline']);
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isNonBlankString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim() !== '';
+
+const isNameableNode = ({ text, type, alt, caption, children }: Record<string, unknown>): boolean =>
+  isNonBlankString(text) ||
+  isNonBlankString(alt) ||
+  isNonBlankString(caption) ||
+  SELF_NAMED_ELEMENT_TYPES.has(type) ||
+  hasNameableContent(caption) ||
+  hasNameableContent(children);
 
 /**
  * hasNameableContent([nodes]) Returns true if the content renders something that can serve as
@@ -195,14 +209,7 @@ const SELF_NAMED_ELEMENT_TYPES = new Set(['formula', 'formula_inline']);
  * only of media (e.g. an audio clip) has nothing to reference, so it needs a fallback name.
  */
 export const hasNameableContent = (nodes: unknown): boolean =>
-  Array.isArray(nodes) &&
-  nodes.some((node: any) => {
-    if (typeof node?.text === 'string') return node.text.trim() !== '';
-    if (SELF_NAMED_ELEMENT_TYPES.has(node?.type)) return true;
-    if (typeof node?.alt === 'string' && node.alt.trim() !== '') return true;
-    if (typeof node?.caption === 'string' && node.caption.trim() !== '') return true;
-    return hasNameableContent(node?.caption) || hasNameableContent(node?.children);
-  });
+  Array.isArray(nodes) && nodes.some((node) => isObject(node) && isNameableNode(node));
 
 export interface PointMarkerContext {
   renderPointMarkers: boolean;
