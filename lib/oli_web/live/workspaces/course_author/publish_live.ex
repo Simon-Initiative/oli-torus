@@ -10,6 +10,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
   alias Oli.Publishing
   alias Oli.Publishing.Publications.PublicationDiff
   alias Oli.Search.Embeddings
+  alias OliWeb.Analytics
   alias OliWeb.Common.{Confirm, Listing}
 
   alias OliWeb.Workspaces.CourseAuthor.Publish.{
@@ -263,11 +264,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
     end
 
     {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
+     socket
+     |> Analytics.track("feature_used", %{feature_name: "author_publish_clicked"})
+     |> show_modal(modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("cancel_update_sections", _params, socket) do

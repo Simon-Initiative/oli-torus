@@ -303,6 +303,33 @@ defmodule Oli.Content.Activity.HtmlTest do
       assert rendered_html_string =~ "&quot;showMathPreviews&quot;:false"
     end
 
+    test "includes the activity registration slug in delivery context", %{author: author} do
+      activity_map = %{
+        1 => %ActivitySummary{
+          id: 1,
+          graded: false,
+          state: "{ \"active\": true }",
+          model: "{ \"stem\": \"test\" }",
+          delivery_element: "oli-response-multi-input-delivery",
+          authoring_element: "oli-response-multi-input-authoring",
+          activity_type_slug: "oli_response_multi",
+          script: "./delivery-entry.ts",
+          attempt_guid: "activity-guid-789",
+          lifecycle_state: :active
+        }
+      }
+
+      rendered_html =
+        Activity.render(
+          %Context{user: author, activity_map: activity_map},
+          %{"activity_id" => 1, "purpose" => "none"},
+          Activity.Html
+        )
+
+      assert Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string() =~
+               "&quot;activityType&quot;:&quot;oli_response_multi&quot;"
+    end
+
     test "includes score-as-you-go reset messaging state in delivery context", %{author: author} do
       activity_map = %{
         1 => %ActivitySummary{
