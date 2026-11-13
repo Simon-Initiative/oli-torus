@@ -9,7 +9,7 @@ import {
 } from 'components/cookies/consent';
 
 const choiceClass =
-  'rounded-md border border-Border-border-bold bg-Background-bg-primary px-6 py-3 font-semibold text-Text-text-button focus-visible:outline focus-visible:outline-2';
+  'inline-flex w-28 items-center justify-center rounded-md border px-6 py-3 font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary';
 
 /** Offers explicit analytics choices without blocking access to the platform. */
 export const CookieConsent = (props: CookiePreferencesProps & { onDismiss?: () => void }) => {
@@ -63,7 +63,7 @@ export const CookieConsent = (props: CookiePreferencesProps & { onDismiss?: () =
         </div>
         <p id="cookie-consent-description">
           With your permission, we use Google Analytics cookies to understand how Torus is used and
-          improve it. We measure pages visited by type, features used, and videos started or
+          to improve it. We measure pages visited by type, features used, and videos started or
           completed in aggregate. Analytics is off until you accept. You can change your choice in
           Cookie Preferences at any time.
         </p>
@@ -74,10 +74,18 @@ export const CookieConsent = (props: CookiePreferencesProps & { onDismiss?: () =
           Privacy Notice
         </a>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button type="button" className={choiceClass} onClick={() => choose(true)}>
+          <button
+            type="button"
+            className={`${choiceClass} border-transparent bg-Fill-Buttons-fill-primary text-Text-text-white hover:bg-Fill-Buttons-fill-primary-hover hover:text-Specially-Tokens-Text-text-button-primary-hover`}
+            onClick={() => choose(true)}
+          >
             Accept
           </button>
-          <button type="button" className={choiceClass} onClick={() => choose(false)}>
+          <button
+            type="button"
+            className={`${choiceClass} border-Border-border-bold bg-Surface-surface-background text-Specially-Tokens-Text-text-button-secondary hover:border-Border-border-bold-hover hover:bg-Surface-surface-secondary-hover hover:text-Specially-Tokens-Text-text-button-secondary-hover`}
+            onClick={() => choose(false)}
+          >
             Reject
           </button>
           <a
