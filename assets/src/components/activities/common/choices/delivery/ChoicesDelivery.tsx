@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Choice, ChoiceId } from 'components/activities/types';
+import { hasNameableContent } from 'data/content/utils';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { classNames } from 'utils/classNames';
@@ -16,6 +17,9 @@ const INTERACTIVE_SELECTOR = [
   '[role="link"]',
   '[data-stop-choice-select="true"]',
 ].join(', ');
+
+const FOCUS_OUTLINE_CLASSES =
+  'rounded outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary';
 
 interface Props {
   choices: Choice[];
@@ -92,10 +96,11 @@ export const ChoicesDelivery: React.FC<Props> = ({
       }
       if (!isEvaluated && !disabled) {
         setFocusedIndex(index);
+        if (!multiSelect) choiceRefs.current[index]?.focus();
         onSelect(choiceId);
       }
     },
-    [isEvaluated, disabled, onSelect],
+    [isEvaluated, disabled, multiSelect, onSelect],
   );
 
   const onKeyDown = useCallback(
@@ -155,20 +160,29 @@ export const ChoicesDelivery: React.FC<Props> = ({
     <div className={styles.choicesContainer} role={containerRole} aria-label="answer choices">
       {choices.map((choice, index) => {
         const choiceContentId = `${idPrefix}-choice-${choice.id}`;
+        const isNamedByContent = hasNameableContent(choice.content);
+        const controlProps = {
+          ref: (el: HTMLDivElement | null) => (choiceRefs.current[index] = el),
+          role: itemRole,
+          'aria-checked': isSelected(choice.id),
+          'aria-disabled': disabled,
+          tabIndex: getTabIndex(index),
+          onKeyDown: disabled ? undefined : onKeyDown(choice.id, index),
+        };
+        // Radios sit on the icon so interactive choice content is not nested inside them, and
+        // fall back to an ordinal name when the content has nothing to name them with.
+        // Checkboxes keep the whole row as the control.
+        const radioNameProps = isNamedByContent
+          ? { 'aria-labelledby': choiceContentId }
+          : { 'aria-label': `Choice ${index + 1}` };
 
         return (
           <div
             key={choice.id}
-            ref={(el) => (choiceRefs.current[index] = el)}
-            role={itemRole}
-            aria-checked={isSelected(choice.id)}
-            aria-disabled={disabled}
-            aria-labelledby={choiceContentId}
-            tabIndex={getTabIndex(index)}
+            {...(multiSelect ? { ...controlProps, 'aria-labelledby': choiceContentId } : {})}
             onClick={disabled ? undefined : onClicked(choice.id, index)}
-            onKeyDown={disabled ? undefined : onKeyDown(choice.id, index)}
             className={classNames(
-              'rounded outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary',
+              multiSelect ? FOCUS_OUTLINE_CLASSES : '',
               isSelected(choice.id) ? 'selected' : '',
               disabled ? 'disabled' : '',
             )}
@@ -177,7 +191,21 @@ export const ChoicesDelivery: React.FC<Props> = ({
             <div className={styles.choicesChoiceWrapper} dir={choice.textDirection}>
               <div className={styles.choicesChoiceLabel}>
                 <div className="d-flex align-items-center col">
-                  {renderIcon(isSelected(choice.id) ? selectedIcon : unselectedIcon)}
+                  {multiSelect ? (
+                    renderIcon(isSelected(choice.id) ? selectedIcon : unselectedIcon)
+                  ) : (
+                    <div
+                      {...controlProps}
+                      {...radioNameProps}
+                      // 24px target (WCAG 2.5.8) with negative margins so the layout matches the bare icon
+                      className={classNames(
+                        '-m-1 flex h-6 w-6 shrink-0 items-center justify-center',
+                        FOCUS_OUTLINE_CLASSES,
+                      )}
+                    >
+                      {renderIcon(isSelected(choice.id) ? selectedIcon : unselectedIcon)}
+                    </div>
+                  )}
                   <div
                     id={choiceContentId}
                     className={classNames('content', styles.choicesChoiceContent)}
