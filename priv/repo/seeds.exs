@@ -115,7 +115,8 @@ Oli.Registrar.register_local_activities(
     "oli_multiple_choice",
     "oli_check_all_that_apply",
     "oli_short_answer",
-    "oli_ordering"
+    "oli_ordering",
+    "oli_interactive"
   ])
 )
 

@@ -1,0 +1,25 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Interactive</title></head>
+<body><p role="status">Loading interactive…</p><script>
+(async function () {
+  const runtime = new URL(location.href);
+  const build = runtime.searchParams.get('bundle');
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(build || '')) throw new Error('Invalid bundle');
+  // Both documents and their assets stay on the media origin. No cross-origin fetch or credentials.
+  const entry = new URL('../../' + build + '/index.html', runtime);
+  const response = await fetch(entry.href, { credentials: 'omit' });
+  if (!response.ok) throw new Error('Unable to load the interactive');
+  const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+  doc.querySelectorAll('base').forEach(node => node.remove());
+  doc.querySelectorAll('script[src]').forEach(node => {
+    if (new URL(node.getAttribute('src'), entry).pathname.split('/').pop() === 'torus.js') node.remove();
+  });
+  const base = doc.createElement('base'); base.href = entry.href;
+  const sdk = doc.createElement('script'); sdk.src = new URL('torus.js', runtime).href;
+  doc.head.prepend(base, sdk);
+  history.replaceState(null, '', entry.href);
+  document.open(); document.write('<!doctype html>\n' + doc.documentElement.outerHTML); document.close();
+})().catch(() => {
+  document.body.textContent = 'Unable to load this interactive. Reload the Torus page to try again.';
+});
+</script></body></html>

@@ -258,6 +258,11 @@ defmodule OliWeb.Router do
 
   ## Authentication routes
 
+  # Public platform assets, like /js: the redirected frame stays isolated on the media origin.
+  scope "/interactives/runtime", OliWeb do
+    get("/:build_id", InteractiveRuntimeController, :show)
+  end
+
   # allow access to non-authenticated users or guest users for sign in and account creation
   scope "/", OliWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated_and_not_guest]
@@ -489,6 +494,14 @@ defmodule OliWeb.Router do
     post("/export", LegacySuperactivityController, :export_package)
     post("/import", LegacySuperactivityController, :import_package)
     post("/repair", LegacySuperactivityController, :repair_bundle)
+  end
+
+  scope "/api/v1/interactives", OliWeb do
+    pipe_through([:api, :authoring_protected])
+    post("/:project/:activity/builds", Api.InteractiveBuildController, :create)
+    get("/:project/:activity/builds", Api.InteractiveBuildController, :show)
+    get("/:project/:activity/builds/:build_id/events", Api.InteractiveBuildController, :events)
+    post("/:project/:activity/builds/:build_id/cancel", Api.InteractiveBuildController, :cancel)
   end
 
   scope "/", OliWeb do
@@ -928,6 +941,9 @@ defmodule OliWeb.Router do
     pipe_through([:api, :require_section, :delivery_protected])
 
     post("/", Api.AttemptController, :bulk_retrieve)
+
+    get("/:activity_attempt_guid/interactive", Api.InteractiveDeliveryController, :read)
+    post("/:activity_attempt_guid/interactive", Api.InteractiveDeliveryController, :execute)
 
     post("/:activity_attempt_guid", Api.AttemptController, :new_activity)
     put("/:activity_attempt_guid", Api.AttemptController, :submit_activity)

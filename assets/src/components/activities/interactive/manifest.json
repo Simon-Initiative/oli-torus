@@ -1,0 +1,16 @@
+{
+  "id": "oli_interactive",
+  "friendlyName": "Interactive",
+  "petiteLabel": "Interactive",
+  "description": "Create a learning experience from a prompt and selected skills.",
+  "icon": "wand-magic-sparkles",
+  "allowClientEvaluation": true,
+  "authoring": {
+    "element": "oli-interactive-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "delivery": {
+    "element": "oli-interactive-delivery",
+    "entry": "./delivery-entry.ts"
+  }
+}

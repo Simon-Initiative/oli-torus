@@ -34,6 +34,7 @@ export interface ActivityEditorProps extends ActivityEditContext {
   onDuplicate?: () => void;
   responsiveLayout?: boolean;
   loWellFormed?: boolean;
+  lockId?: number;
 }
 
 // This is the state of our activity editing that is undoable
@@ -116,6 +117,15 @@ export class InlineActivityEditor extends React.Component<
 
       const { payload, continuation } = e.detail;
 
+      if (
+        this.props.typeSlug === 'oli_interactive' &&
+        payload?.eventName === 'interactiveBuildCompleted'
+      ) {
+        this.update({ content: payload.payload.model, objectives: payload.payload.objectives });
+        continuation?.(true);
+        return;
+      }
+
       if (payload?.eventName === 'refreshActivity') {
         this.setState({ pendingRefresh: true }, () => continuation?.(true));
         return;
@@ -171,7 +181,7 @@ export class InlineActivityEditor extends React.Component<
   // Parts can be added or removed in multi-part activities
   syncObjectivesWithParts(update: Partial<EditorUpdate>) {
     if (update.content !== undefined) {
-      const objectives = this.props.objectives;
+      const objectives = { ...(update.objectives ?? this.props.objectives) };
       const parts = valueOr(update.content.authoring.parts, []);
       const partIds = parts
         .map((p: any) => valueOr(String(p.id), ''))
@@ -224,6 +234,12 @@ export class InlineActivityEditor extends React.Component<
         supportsLtiConfiguration: this.props.supportsLtiConfiguration === true,
         variables,
         optionalContentTypes: this.props.optionalContentTypes,
+        ...(this.props.typeSlug === 'oli_interactive'
+          ? {
+              allObjectives: this.props.allObjectives,
+              lockId: this.props.lockId ?? this.props.activityId,
+            }
+          : {}),
       }),
     };
 
@@ -294,16 +310,18 @@ export class InlineActivityEditor extends React.Component<
             />
           </div>
         </div>
-        <ActivityLOs
-          partIds={partIds}
-          editMode={this.props.editMode}
-          projectSlug={webComponentProps.projectslug}
-          objectives={this.props.objectives}
-          allObjectives={this.props.allObjectives}
-          loWellFormed={this.props.loWellFormed}
-          onRegisterNewObjective={this.props.onRegisterNewObjective}
-          onEdit={(objectives) => this.update({ objectives })}
-        />
+        {this.props.typeSlug !== 'oli_interactive' && (
+          <ActivityLOs
+            partIds={partIds}
+            editMode={this.props.editMode}
+            projectSlug={webComponentProps.projectslug}
+            objectives={this.props.objectives}
+            allObjectives={this.props.allObjectives}
+            loWellFormed={this.props.loWellFormed}
+            onRegisterNewObjective={this.props.onRegisterNewObjective}
+            onEdit={(objectives) => this.update({ objectives })}
+          />
+        )}
         {maybeTags}
         <div ref={this.ref}>{React.createElement(authoringElement, webComponentProps as any)}</div>
       </div>

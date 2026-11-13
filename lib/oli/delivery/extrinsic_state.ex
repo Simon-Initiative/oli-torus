@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.ExtrinsicState do
   @moduledoc """
-  Enables arbitrary key-value pair storage that is extrinsic to any specific activity attempt.
+  Enables arbitrary key-value pair storage scoped to users, enrollments, page attempts,
+  and activity attempts.
 
   Extrinsic state exists either truly global for a user, or scoped to a course section for
   a user. Leveraging this, activities can be built that share state across pages in a course, and
@@ -127,6 +128,28 @@ defmodule Oli.Delivery.ExtrinsicState do
           e ->
             e
         end
+    end
+  end
+
+  @doc "Reads named values from an activity attempt. Authorization belongs to the caller."
+  def read_activity(attempt_guid, keys \\ nil) do
+    case Attempts.get_activity_attempt_by(attempt_guid: attempt_guid) do
+      nil -> {:error, {:not_found}}
+      attempt -> {:ok, filter_keys(attempt.state, keys)}
+    end
+  end
+
+  @doc "Merges named values into an activity attempt. Callers serialize concurrent writes."
+  def upsert_activity(attempt_guid, key_values) do
+    with %{} = attempt <- Attempts.get_activity_attempt_by(attempt_guid: attempt_guid),
+         {:ok, updated} <-
+           Attempts.update_activity_attempt(attempt, %{
+             state: Map.merge(attempt.state, key_values)
+           }) do
+      {:ok, updated.state}
+    else
+      nil -> {:error, {:not_found}}
+      error -> error
     end
   end
 

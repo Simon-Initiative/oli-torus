@@ -58,6 +58,7 @@ export const ActivityEditor = ({
           allTags={allTags}
           activityId={activity.activityId}
           title={activity.title}
+          lockId={resourceContext.resourceId}
           banked={false}
           revisionHistoryLink={false}
           contentBreaksExist={contentBreaksExist}
