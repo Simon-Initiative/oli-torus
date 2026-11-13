@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Xapi.ValidateSchema do
+  use Boundary, classify_to: Oli
+
   @moduledoc """
   Validate JSONL xAPI statement files against the Torus xAPI reference schema.
 

@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.CreateContainedObjectives do
+  use Boundary, classify_to: Oli
+
   @shortdoc """
   Create contained objectives for all sections that have not yet been migrated.
   Use --all to drop existing objectives and create contained objectives for all sections.

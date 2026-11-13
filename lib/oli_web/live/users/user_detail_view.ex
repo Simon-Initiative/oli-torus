@@ -8,6 +8,7 @@ defmodule OliWeb.Users.UsersDetailView do
   alias Oli.Accounts
   alias Oli.Accounts.User
   alias Oli.Auditing
+  alias Oli.Auditing.Context
   alias Oli.Delivery.{Metrics, Paywall, Sections}
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
@@ -471,30 +472,15 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("delete_account", %{"id" => id}, socket) do
-    user = user_with_preloaded_fields(id)
-    admin = socket.assigns.current_author
-
-    case Accounts.delete_user(user) do
-      {:ok, deleted_user} ->
-        # Log the deletion
-        Oli.Auditing.log_admin_action(
-          admin,
-          :user_deleted,
-          deleted_user,
-          %{
-            "email" => deleted_user.email,
-            "name" => deleted_user.name,
-            "deleted_by" => admin.email
-          }
-        )
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "User successfully deleted.")
-         |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView))}
-
-      {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "User couldn't be deleted.")}
+    with true <- id == to_string(socket.assigns.user.id),
+         context = Context.for_actor(socket.assigns.current_author, source: :ui),
+         {:ok, _result} <- Accounts.Audited.delete_user(context, socket.assigns.user.id) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "User successfully deleted.")
+       |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView))}
+    else
+      _error -> {:noreply, put_flash(socket, :error, "User couldn't be deleted.")}
     end
   end
 

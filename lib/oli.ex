@@ -1,4 +1,8 @@
 defmodule Oli do
+  # Incoming legacy calls stay unrestricted. Never disable outgoing checks: they keep
+  # the internals of audited boundaries private.
+  use Boundary, deps: [Oli.Accounts.Audited], check: [in: false]
+
   @moduledoc """
   Oli keeps the contexts that define your domain
   and business logic.

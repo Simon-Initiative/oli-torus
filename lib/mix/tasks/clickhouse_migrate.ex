@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Clickhouse.Migrate do
+  use Boundary, classify_to: Oli
+
   @moduledoc """
   Manage ClickHouse migrations using goose.
 

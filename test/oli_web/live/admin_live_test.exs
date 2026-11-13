@@ -2,6 +2,7 @@ defmodule OliWeb.AdminLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
+  import Ecto.Query, only: [from: 2]
   import Phoenix.LiveViewTest
   import Oli.Factory
   import OliWeb.Common.Properties.Utils
@@ -9,6 +10,7 @@ defmodule OliWeb.AdminLiveTest do
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
+  alias Oli.Auditing.LogEvent
   alias OliWeb.Common.Utils
 
   @live_view_route Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)
@@ -706,8 +708,9 @@ defmodule OliWeb.AdminLiveTest do
                "Delete Account"
     end
 
-    test "deletes the user and redirects to the index page", %{
+    test "deletes the user, records one audit event, and redirects to the index page", %{
       conn: conn,
+      admin: admin,
       user: %User{id: id}
     } do
       {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
@@ -726,6 +729,27 @@ defmodule OliWeb.AdminLiveTest do
       assert_raise Ecto.NoResultsError,
                    ~r/^expected at least one result but got none in query/,
                    fn -> Accounts.get_user!(id) end
+
+      assert [%LogEvent{actor_type: :author, author_id: author_id, source: :ui}] =
+               user_deleted_events(id)
+
+      assert author_id == admin.id
+    end
+
+    test "does not delete when the submitted id is not the displayed user", %{
+      conn: conn,
+      user: %User{id: id}
+    } do
+      other_user = insert(:user)
+      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
+
+      assert render_click(view, "delete_account", %{"id" => to_string(other_user.id)}) =~
+               "User couldn&#39;t be deleted."
+
+      assert Accounts.get_user!(id)
+      assert Accounts.get_user!(other_user.id)
+      assert user_deleted_events(id) == []
+      assert user_deleted_events(other_user.id) == []
     end
 
     test "locks the user", %{
@@ -1282,5 +1306,11 @@ defmodule OliWeb.AdminLiveTest do
       assert html =~ "Please enter a First Name"
       assert html =~ "Please enter a Last Name"
     end
+  end
+
+  defp user_deleted_events(user_id) do
+    Oli.Repo.all(
+      from(e in LogEvent, where: e.event_type == :user_deleted and e.affected_user_id == ^user_id)
+    )
   end
 end
