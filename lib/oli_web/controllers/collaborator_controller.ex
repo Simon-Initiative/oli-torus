@@ -3,6 +3,7 @@ defmodule OliWeb.CollaboratorController do
 
   import Oli.Utils
 
+  alias Oli.Auditing.Context
   alias Oli.Authoring.Collaborators
 
   require Logger
@@ -171,6 +172,7 @@ defmodule OliWeb.CollaboratorController do
     current_author = conn.assigns.current_author
 
     case Collaborators.invite_collaborator(
+           Context.for_actor(current_author, source: :ui),
            current_author.name,
            current_author.email,
            email,

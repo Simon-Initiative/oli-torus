@@ -2,6 +2,7 @@ defmodule OliWeb.InstitutionController do
   use OliWeb, :controller
   use OliWeb, :verified_routes
 
+  alias Oli.Auditing.Context
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Predefined
@@ -75,7 +76,10 @@ defmodule OliWeb.InstitutionController do
       institution_params
       |> Map.put("author_id", author_id)
 
-    case Institutions.create_institution(institution_params) do
+    case Institutions.Audited.create_institution(
+           Context.for_actor(conn.assigns.current_author, source: :ui),
+           institution_params
+         ) do
       {:ok, _institution} ->
         conn
         |> put_flash(:info, "Institution created")
@@ -115,8 +119,9 @@ defmodule OliWeb.InstitutionController do
 
   def update(conn, %{"id" => id, "institution" => institution_params}) do
     institution = Institutions.get_institution!(id)
+    context = Context.for_actor(conn.assigns.current_author, source: :ui)
 
-    case Institutions.update_institution(institution, institution_params) do
+    case Institutions.Audited.update_institution(context, institution.id, institution_params) do
       {:ok, institution} ->
         conn
         |> put_flash(:info, "Institution updated")
@@ -153,7 +158,12 @@ defmodule OliWeb.InstitutionController do
 
       true ->
         institution = Institutions.get_institution!(id)
-        {:ok, _institution} = Institutions.update_institution(institution, %{status: :deleted})
+
+        {:ok, _institution} =
+          Institutions.Audited.delete_institution(
+            Context.for_actor(conn.assigns.current_author, source: :ui),
+            institution.id
+          )
 
         conn
         |> put_flash(:info, "Institution deleted")

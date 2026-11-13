@@ -20,7 +20,7 @@ defmodule Oli.Accounts.SecureSessionTest do
     assert {:ok, %{scope: ^second_scope, token_id: second_id}} = Accounts.get_user_session(second)
     refute first_id == second_id
     assert Accounts.get_user_by_session_token(ordinary).id == user.id
-    Accounts.delete_user_session_token(secure)
+    Oli.TestHelpers.delete_user_session_token_fixture(secure)
     assert {:error, :unauthenticated} = Accounts.get_user_session(secure)
     assert {:ok, %{scope: nil}} = Accounts.get_user_session(ordinary)
     assert {:ok, %{scope: ^second_scope}} = Accounts.get_user_session(second)

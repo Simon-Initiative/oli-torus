@@ -37,7 +37,7 @@ defmodule OliWeb.WorkspaceControllerTest do
     test "login fails if author is deleted", %{conn: conn} do
       {:ok, conn: conn, author: author} = author_conn(%{conn: conn})
 
-      {:ok, _} = Oli.Accounts.delete_author(author)
+      Oli.Repo.delete!(author)
 
       conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
       assert html_response(conn, 302) =~ "You are being <a href=\"/authors/log_in"
@@ -46,7 +46,7 @@ defmodule OliWeb.WorkspaceControllerTest do
     test "can still access the projects page if an author is deleted", %{conn: conn} do
       %{author: author, author2: author2} = Seeder.base_project_with_resource2()
 
-      {:ok, _} = Oli.Accounts.delete_author(author)
+      Oli.Repo.delete!(author)
 
       conn =
         log_in_author(conn, author2)

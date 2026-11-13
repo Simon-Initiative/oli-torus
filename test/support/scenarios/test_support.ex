@@ -14,7 +14,7 @@ defmodule Oli.Scenarios.TestSupport do
     author = AccountsFixtures.author_fixture()
 
     {:ok, institution} =
-      Oli.Institutions.create_institution(%{
+      Oli.Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), %{
         name: "Test Institution #{System.unique_integer([:positive])}",
         institution_email: "test@institution.edu",
         country_code: "US",
@@ -32,7 +32,7 @@ defmodule Oli.Scenarios.TestSupport do
     author = AccountsFixtures.author_fixture()
 
     {:ok, institution} =
-      Oli.Institutions.create_institution(%{
+      Oli.Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), %{
         name: "Test Institution #{System.unique_integer([:positive])}",
         institution_email: "test@institution.edu",
         country_code: "US",

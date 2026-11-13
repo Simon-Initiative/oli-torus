@@ -58,7 +58,8 @@ defmodule Oli.MCP.SecurityTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {_token_record, valid_token}} = Auth.create_token(author.id, project.id)
+      {:ok, {_token_record, valid_token}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       malformed_tokens = [
         "short",
@@ -155,7 +156,11 @@ defmodule Oli.MCP.SecurityTest do
         insert(:author_project, author_id: other_author.id, project_id: project.id)
 
       assert {:error, :unauthorized_project_access} =
-               Auth.create_token(author.id, project.id)
+               Oli.MCP.Audited.create_token(
+                 Oli.TestHelpers.audit_context(),
+                 author.id,
+                 project.id
+               )
     end
 
     test "token becomes invalid when author loses project access" do
@@ -164,7 +169,8 @@ defmodule Oli.MCP.SecurityTest do
       author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       # Create token while author has access
-      {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {_token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Verify token works
       assert {:ok, _} = Auth.validate_token(token_string)
@@ -181,7 +187,8 @@ defmodule Oli.MCP.SecurityTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {_token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Verify token works
       assert {:ok, _} = Auth.validate_token(token_string)
@@ -198,7 +205,8 @@ defmodule Oli.MCP.SecurityTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Verify token exists and works
       assert Auth.get_token_by_author_and_project(author.id, project.id) != nil
@@ -220,7 +228,8 @@ defmodule Oli.MCP.SecurityTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Verify token exists and works
       assert Auth.get_token_by_author_and_project(author.id, project.id) != nil
@@ -248,10 +257,21 @@ defmodule Oli.MCP.SecurityTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       # Create first token
-      assert {:ok, _} = Auth.create_token(author.id, project.id)
+      assert {:ok, _} =
+               Oli.MCP.Audited.create_token(
+                 Oli.TestHelpers.audit_context(),
+                 author.id,
+                 project.id
+               )
 
       # Attempt to create second token should fail with constraint error
-      assert {:error, changeset} = Auth.create_token(author.id, project.id)
+      assert {:error, changeset} =
+               Oli.MCP.Audited.create_token(
+                 Oli.TestHelpers.audit_context(),
+                 author.id,
+                 project.id
+               )
+
       assert %{author_id: ["Author can only have one token per project"]} = errors_on(changeset)
     end
   end
@@ -263,13 +283,15 @@ defmodule Oli.MCP.SecurityTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       # Create initial token
-      {:ok, {_token1, token_string1}} = Auth.create_token(author.id, project.id)
+      {:ok, {_token1, token_string1}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Verify it works
       assert {:ok, _} = Auth.validate_token(token_string1)
 
       # Regenerate token
-      {:ok, {_token2, token_string2}} = Auth.regenerate_token(author.id, project.id)
+      {:ok, {_token2, token_string2}} =
+        Oli.MCP.Audited.regenerate_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Old token should no longer work
       assert {:error, :invalid_token} = Auth.validate_token(token_string1)
@@ -283,13 +305,18 @@ defmodule Oli.MCP.SecurityTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Verify token works initially
       assert {:ok, _} = Auth.validate_token(token_string)
 
       # Disable token
-      Auth.update_token_status(token_record.id, :disabled)
+      Oli.MCP.Audited.set_token_status(
+        Oli.TestHelpers.audit_context(),
+        token_record.id,
+        :disabled
+      )
 
       # Token should no longer work
       assert {:error, :token_disabled} = Auth.validate_token(token_string)
@@ -301,14 +328,20 @@ defmodule Oli.MCP.SecurityTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {token_record, token_string}} =
-        Auth.create_token(author.id, project.id, "My secret token")
+        Oli.MCP.Audited.create_token(
+          Oli.TestHelpers.audit_context(),
+          author.id,
+          project.id,
+          "My secret token"
+        )
 
       # Hint should be the description, not contain the actual token
       assert token_record.hint == "My secret token"
       refute String.contains?(token_record.hint, token_string)
 
       # Auto-generated hints should be safe
-      {:ok, {token_record2, token_string2}} = Auth.regenerate_token(author.id, project.id)
+      {:ok, {token_record2, token_string2}} =
+        Oli.MCP.Audited.regenerate_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Auto-generated hint should contain masked version, not full token
       assert String.contains?(token_record2.hint, "****")
@@ -324,7 +357,8 @@ defmodule Oli.MCP.SecurityTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Check that token is not stored in any field
       refute token_record.hash == token_string
@@ -368,7 +402,8 @@ defmodule Oli.MCP.SecurityTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
+      {:ok, {_token_record, token_string}} =
+        Oli.MCP.Audited.create_token(Oli.TestHelpers.audit_context(), author.id, project.id)
 
       # Validation should complete quickly (under 100ms)
       {time_microseconds, {:ok, _}} = :timer.tc(fn -> Auth.validate_token(token_string) end)

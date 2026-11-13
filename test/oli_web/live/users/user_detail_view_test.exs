@@ -170,8 +170,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
           "can_create_sections" => "false",
           "email" => "@test.com",
           "family_name" => "",
-          "given_name" => "",
-          "independent_learner" => "false"
+          "given_name" => ""
         }
       }
 
@@ -189,7 +188,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert has_element?(view, "[type='submit'][disabled]")
 
       {:ok, instructor_2} =
-        Accounts.update_user_platform_roles(
+        Oli.TestHelpers.put_platform_roles_fixture(
           user_fixture(%{can_create_sections: true, independent_learner: true}),
           [@role_institution_instructor]
         )
@@ -200,8 +199,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
           "can_create_sections" => "false",
           "email" => "#{instructor_2.email}",
           "family_name" => "John",
-          "given_name" => "Doe",
-          "independent_learner" => "true"
+          "given_name" => "Doe"
         }
       }
 
@@ -506,7 +504,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       community = insert(:community, name: "Test Community")
 
       {:ok, _} =
-        Oli.Groups.create_community_account(%{
+        Oli.Groups.create_community_account(Oli.TestHelpers.audit_context(), %{
           user_id: independent_student.id,
           community_id: community.id
         })
@@ -533,7 +531,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       # Link community to institution
       {:ok, _} =
-        Oli.Groups.create_community_institution(%{
+        Oli.Groups.create_community_institution(Oli.TestHelpers.audit_context(), %{
           institution_id: institution.id,
           community_id: community.id
         })
@@ -909,7 +907,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     map = Seeder.base_project_with_resource4()
 
     {:ok, instructor} =
-      Accounts.update_user_platform_roles(
+      Oli.TestHelpers.put_platform_roles_fixture(
         user_fixture(%{can_create_sections: true, independent_learner: true}),
         [
           Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
@@ -917,7 +915,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       )
 
     {:ok, independent_student} =
-      Accounts.update_user_platform_roles(
+      Oli.TestHelpers.put_platform_roles_fixture(
         user_fixture(%{independent_learner: true}),
         [
           Lti_1p3.Roles.PlatformRoles.get_role(:institution_student)
@@ -925,7 +923,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       )
 
     {:ok, lms_student} =
-      Accounts.update_user_platform_roles(
+      Oli.TestHelpers.put_platform_roles_fixture(
         user_fixture(%{independent_learner: false}),
         [
           Lti_1p3.Roles.PlatformRoles.get_role(:institution_student)

@@ -5,6 +5,7 @@ defmodule OliWeb.AuthorAuth do
   import Phoenix.Controller
 
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.Accounts.{User, Author}
 
   require Logger
@@ -17,11 +18,22 @@ defmodule OliWeb.AuthorAuth do
   @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax"]
 
   @doc """
-  Logs the author in.
+  Logs the author in after a password check. The session is issued and recorded through
+  `Oli.Accounts.Audited.issue_session/4` with `:password`; if that fails, the author is sent back
+  to the login page.
   """
   def log_in_author(conn, author, params \\ %{}) do
-    token = Accounts.generate_author_session_token(author)
+    case Accounts.Audited.issue_session(
+           Context.for_actor(author, source: :ui),
+           author,
+           :password
+         ) do
+      {:ok, %{token: token}} -> finish_log_in(conn, author, token, params)
+      {:error, _reason} -> log_in_failed(conn, author, params)
+    end
+  end
 
+  defp finish_log_in(conn, author, token, params) do
     # Renew session before linking author account
     conn = renew_session(conn)
 
@@ -50,11 +62,12 @@ defmodule OliWeb.AuthorAuth do
   end
 
   @doc """
-  Creates a new session for the author.
+  Creates a new session for the author after it authenticated with an identity provider
+  (`:sso` or `:cognito`). The session is issued and recorded through
+  `Oli.Accounts.Audited.issue_session/4`.
 
-  This is a lower-level function that is used by log_in_author and
-  other LTI/OIDC authorization functions to create a new session for
-  the author.
+  Returns `{:ok, conn}`, or `{:error, :session_not_issued}` with nothing written to the browser
+  session, so the caller shows its own sign-in error.
 
   It renews the session ID and clears the whole session
   to avoid fixation attacks. See the renew_session
@@ -65,9 +78,44 @@ defmodule OliWeb.AuthorAuth do
   disconnected on log out. The line can be safely removed
   if you are not using LiveView.
   """
-  def create_session(conn, author) do
-    token = Accounts.generate_author_session_token(author)
+  def create_session(conn, author, auth_method) when auth_method in [:sso, :cognito] do
+    case Accounts.Audited.issue_session(
+           Context.for_actor(author, source: :ui),
+           author,
+           auth_method
+         ) do
+      {:ok, %{token: token}} -> {:ok, install_session(conn, author, token)}
+      {:error, _reason} -> {:error, :session_not_issued}
+    end
+  end
 
+  # Like a wrong password: only the error and the typed email reach the login page, and a login
+  # started from the link-account page goes back there without leaving the pending link behind.
+  defp log_in_failed(conn, author, params) do
+    {conn, redirect_to} =
+      case get_session(conn, :link_account_user_id) do
+        nil ->
+          {conn, ~p"/authors/log_in"}
+
+        _user_id ->
+          redirect_to =
+            case redirect_path(params["request_path"]) do
+              nil -> ~p"/users/link_account"
+              path -> ~p"/users/link_account?#{%{request_path: path}}"
+            end
+
+          {delete_session(conn, :link_account_user_id), redirect_to}
+      end
+
+    conn
+    |> clear_flash()
+    |> put_flash(:error, "We couldn't sign you in. Please try again.")
+    |> put_flash(:email, String.slice(author.email || "", 0, 160))
+    |> redirect(to: redirect_to)
+    |> halt()
+  end
+
+  defp install_session(conn, author, token) do
     conn
     |> renew_session()
     |> put_token_in_session(token)
@@ -131,7 +179,7 @@ defmodule OliWeb.AuthorAuth do
   """
   def log_out_author(conn, params \\ %{}) do
     author_token = get_session(conn, :author_token)
-    author_token && Accounts.delete_author_session_token(author_token)
+    author_token && Accounts.Audited.revoke_session(:author, author_token)
 
     if author_live_socket_id = get_session(conn, :author_live_socket_id) do
       OliWeb.Endpoint.broadcast(author_live_socket_id, "disconnect", %{})
@@ -454,7 +502,11 @@ defmodule OliWeb.AuthorAuth do
       case conn.assigns do
         %{current_user: user = %User{id: current_user_id}}
         when current_user_id == link_account_user_id ->
-          case Accounts.link_user_author_account(user, author) do
+          case Accounts.Audited.link_accounts(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 user.id,
+                 author.id
+               ) do
             {:ok, _} ->
               author_return_to = get_session(conn, :author_return_to) || ~p"/users/settings"
 

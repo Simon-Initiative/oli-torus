@@ -266,7 +266,8 @@ defmodule OliWeb.LtiControllerTest do
       registration: registration,
       deployment: deployment
     } do
-      {:ok, _} = Institutions.delete_deployment(deployment)
+      {:ok, _} =
+        Institutions.Audited.delete_deployment(Oli.TestHelpers.audit_context(), deployment.id)
 
       platform_jwk = jwk_fixture()
 
@@ -1043,7 +1044,7 @@ defmodule OliWeb.LtiControllerTest do
       lti_message_hint = "some-lti-message-hint"
 
       {:ok, {_, _, _}} =
-        PlatformExternalTools.register_lti_external_tool_activity(%{
+        Oli.Lti.Audited.register_external_tool(Oli.TestHelpers.audit_context(), %{
           "name" => "some-platform",
           "description" => "some-description",
           "target_link_uri" => "target_link_uri",
@@ -1097,7 +1098,7 @@ defmodule OliWeb.LtiControllerTest do
       lti_message_hint = "some-lti-message-hint"
 
       {:ok, {_, _, _}} =
-        PlatformExternalTools.register_lti_external_tool_activity(%{
+        Oli.Lti.Audited.register_external_tool(Oli.TestHelpers.audit_context(), %{
           "name" => "some-platform",
           "description" => "some-description",
           "target_link_uri" => "target_link_uri",
@@ -1142,7 +1143,7 @@ defmodule OliWeb.LtiControllerTest do
       lti_message_hint = "some-lti-message-hint"
 
       {:ok, {_, activity_registration, _}} =
-        PlatformExternalTools.register_lti_external_tool_activity(%{
+        Oli.Lti.Audited.register_external_tool(Oli.TestHelpers.audit_context(), %{
           "name" => "some-platform",
           "description" => "some-description",
           "target_link_uri" => "target_link_uri",
@@ -1206,7 +1207,7 @@ defmodule OliWeb.LtiControllerTest do
       lti_message_hint = "some-lti-message-hint"
 
       {:ok, {_, activity_registration, _}} =
-        PlatformExternalTools.register_lti_external_tool_activity(%{
+        Oli.Lti.Audited.register_external_tool(Oli.TestHelpers.audit_context(), %{
           "name" => "some-platform",
           "description" => "some-description",
           "target_link_uri" => "target_link_uri",
@@ -1480,15 +1481,19 @@ defmodule OliWeb.LtiControllerTest do
         )
 
       {:ok, platform} =
-        Oli.Lti.PlatformInstances.update_platform_instance(deployment.platform_instance, %{
+        Oli.TestHelpers.update_platform_instance_fixture(deployment.platform_instance, %{
           client_id: client_id,
           keyset_url: keyset_url
         })
 
       {:ok, deployment} =
-        PlatformExternalTools.update_lti_external_tool_activity_deployment(deployment, %{
-          deep_linking_enabled: true
-        })
+        Oli.Lti.Audited.update_external_tool_deployment(
+          Oli.TestHelpers.audit_context(),
+          deployment.deployment_id,
+          %{
+            deep_linking_enabled: true
+          }
+        )
 
       {:ok, _} =
         Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
@@ -1931,7 +1936,7 @@ defmodule OliWeb.LtiControllerTest do
       "target_link_uri" => "some target_link_uri"
     }
 
-    PlatformExternalTools.register_lti_external_tool_activity(attrs)
+    Oli.Lti.Audited.register_external_tool(Oli.TestHelpers.audit_context(), attrs)
   end
 
   def setup_section(%{conn: conn}) do

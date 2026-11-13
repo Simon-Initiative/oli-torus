@@ -6,8 +6,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
   alias Oli.Scenarios.DirectiveTypes.UserDirective
   alias Oli.Scenarios.Engine
   alias Oli.Scenarios.DemoAccounts
-  alias Oli.Accounts.{User, Author, SystemRole}
-  alias Oli.Repo
+  alias Oli.Accounts.{Audited, User, Author, SystemRole}
   require Bcrypt
 
   @default_password "temporarypassword123"
@@ -109,7 +108,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
       |> Map.get(system_role) ||
         raise("Invalid system_role #{inspect(system_role)} for author directive")
 
-    {:ok, %Author{} = author} =
+    changeset =
       %Author{}
       |> Author.registration_changeset(%{
         email: attrs.email,
@@ -126,7 +125,12 @@ defmodule Oli.Scenarios.Directives.UserHandler do
         email_confirmed_at: email_confirmed_at
       })
       |> DemoAccounts.apply_defaults(defaults)
-      |> Repo.insert()
+
+    {:ok, %Author{} = author} =
+      Audited.provision_account(
+        Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+        {:author, nil, changeset, "scenario"}
+      )
 
     %Author{author | email_verified: email_verified}
   end
@@ -153,7 +157,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
           %User{} |> Ecto.Changeset.cast(%{password: password}, [:password]) |> hash_password()
       end
 
-    {:ok, user} =
+    changeset =
       credentials
       |> User.noauth_changeset(%{
         email: attrs.email,
@@ -167,7 +171,12 @@ defmodule Oli.Scenarios.Directives.UserHandler do
         can_create_sections: can_create_sections
       })
       |> DemoAccounts.apply_defaults(defaults)
-      |> Repo.insert()
+
+    {:ok, user} =
+      Audited.provision_account(
+        Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+        {:user, nil, changeset, "scenario"}
+      )
 
     user
   end

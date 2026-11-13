@@ -74,7 +74,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
          {:ok, email_confirmation_required?} <-
            maybe_require_email_confirmation(user, config),
          # Create a session for the user
-         conn <- create_session(conn, user, config),
+         {:ok, conn} <- create_session(conn, user, config),
          conn <- assign_current_user(conn, user, config) do
       if email_confirmation_required? do
         {:email_confirmation_required, status, conn}
@@ -230,10 +230,15 @@ defmodule OliWeb.Common.AssentAuthWeb do
     Map.get(config, :current_user_assigns_key, :current_user)
   end
 
+  # The configured function returns `{:ok, conn}` or `{:error, :session_not_issued}`; the error
+  # reaches the controller's generic sign-in failure branch.
   defp create_session(conn, user, %AssentAuthWeb.Config{
          create_session: create_session
        }) do
-    create_session.(conn, user)
+    case create_session.(conn, user) do
+      {:ok, conn} -> {:ok, conn}
+      {:error, reason} -> {:error, {:create_session, reason}}
+    end
   end
 
   defp get_user_by_provider_uid(provider, uid, config) do

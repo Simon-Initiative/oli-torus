@@ -14,7 +14,11 @@ defmodule Oli.DeliveryTest do
 
   describe "user_research_consent_required?/2" do
     setup do
-      Delivery.update_system_research_consent_form_setting(:oli_form)
+      Oli.Institutions.Audited.update_system_research_consent(
+        Oli.TestHelpers.audit_context(),
+        :oli_form
+      )
+
       :ok
     end
 
@@ -39,7 +43,11 @@ defmodule Oli.DeliveryTest do
     end
 
     test "section institution is authoritative over the global setting" do
-      Delivery.update_system_research_consent_form_setting(:no_form)
+      Oli.Institutions.Audited.update_system_research_consent(
+        Oli.TestHelpers.audit_context(),
+        :no_form
+      )
+
       institution = insert(:institution, research_consent: :oli_form)
 
       section =
@@ -68,7 +76,11 @@ defmodule Oli.DeliveryTest do
 
       assert Delivery.user_research_consent_required?(user, section)
 
-      Delivery.update_system_research_consent_form_setting(:no_form)
+      Oli.Institutions.Audited.update_system_research_consent(
+        Oli.TestHelpers.audit_context(),
+        :no_form
+      )
+
       refute Delivery.user_research_consent_required?(user, section)
     end
 
@@ -77,7 +89,11 @@ defmodule Oli.DeliveryTest do
 
       assert Delivery.user_research_consent_required?(user)
 
-      Delivery.update_system_research_consent_form_setting(:no_form)
+      Oli.Institutions.Audited.update_system_research_consent(
+        Oli.TestHelpers.audit_context(),
+        :no_form
+      )
+
       refute Delivery.user_research_consent_required?(user)
     end
 
@@ -112,7 +128,11 @@ defmodule Oli.DeliveryTest do
 
       assert Delivery.user_research_consent_required_for_slug?(user, section.slug)
 
-      Delivery.update_system_research_consent_form_setting(:no_form)
+      Oli.Institutions.Audited.update_system_research_consent(
+        Oli.TestHelpers.audit_context(),
+        :no_form
+      )
+
       refute Delivery.user_research_consent_required_for_slug?(user, section.slug)
     end
 
@@ -136,7 +156,11 @@ defmodule Oli.DeliveryTest do
       assert Delivery.user_research_consent_required_for_slug?(user, "does-not-exist")
       assert Delivery.user_research_consent_required_for_slug?(user, nil)
 
-      Delivery.update_system_research_consent_form_setting(:no_form)
+      Oli.Institutions.Audited.update_system_research_consent(
+        Oli.TestHelpers.audit_context(),
+        :no_form
+      )
+
       refute Delivery.user_research_consent_required_for_slug?(user, "does-not-exist")
       refute Delivery.user_research_consent_required_for_slug?(user, nil)
     end

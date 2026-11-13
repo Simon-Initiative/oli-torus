@@ -186,7 +186,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       system_admin: stale_system_admin
     } do
       {:ok, persisted_author} =
-        Accounts.update_author(stale_system_admin, %{
+        Oli.TestHelpers.update_account_fixture(stale_system_admin, %{
           system_role_id: SystemRole.role_id().author
         })
 

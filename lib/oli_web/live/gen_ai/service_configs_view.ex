@@ -1,6 +1,8 @@
 defmodule OliWeb.GenAI.ServiceConfigsView do
   use OliWeb, :live_view
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   require Logger
 
   alias Oli.GenAI
@@ -319,7 +321,11 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
       item ->
         socket = clear_flash(socket)
 
-        case GenAI.delete_service_config(item) do
+        case Oli.GenAI.Audited.delete(
+               Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+               :service_config,
+               item.id
+             ) do
           {:ok, _} ->
             all = all()
             selected = Enum.at(all, 0)
@@ -332,7 +338,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
           {:error, reason} ->
             socket =
-              put_flash(socket, :error, "Couldn't delete service config: #{inspect(reason)}")
+              put_flash(socket, :error, delete_error_message(reason))
 
             {:noreply,
              socket
@@ -356,7 +362,12 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
          |> assign_health(socket.assigns.selected)}
 
       selected ->
-        case GenAI.update_service_config(selected, params) do
+        case Oli.GenAI.Audited.update(
+               Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+               :service_config,
+               selected.id,
+               params
+             ) do
           {:ok, service_config} ->
             all = all()
             selected = Enum.find(all, &(&1.id == service_config.id)) || service_config
@@ -370,16 +381,23 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           {:error, %Ecto.Changeset{} = changeset} ->
             socket = put_flash(socket, :error, "Couldn't update service config")
             {:noreply, assign_form(socket, changeset)}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, "Couldn't update service config")}
         end
     end
   end
 
   def handle_event("new", _, socket) do
-    case GenAI.create_service_config(%{
-           name: "New Service Config",
-           primary_model_id: socket.assigns.registered_models |> List.first() |> elem(1),
-           backup_model_id: nil
-         }) do
+    case Oli.GenAI.Audited.create(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           :service_config,
+           %{
+             name: "New Service Config",
+             primary_model_id: socket.assigns.registered_models |> List.first() |> elem(1),
+             backup_model_id: nil
+           }
+         ) do
       {:ok, service_config} ->
         all = all()
         selected = Enum.find(all, &(&1.id == service_config.id))
@@ -493,4 +511,9 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
   defp format_rate(rate) when is_float(rate), do: "#{Float.round(rate * 100, 1)}%"
   defp format_rate(_), do: "0%"
+
+  defp delete_error_message(:delete_failed),
+    do: "This service config is still in use and can't be deleted."
+
+  defp delete_error_message(_reason), do: "Couldn't delete service config."
 end

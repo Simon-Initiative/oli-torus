@@ -8,6 +8,8 @@ account_updated
 account_locked
 account_unlocked
 account_linked
+account_identity_linked
+account_identity_unlinked
 account_permissions_changed
 account_creation_rights_changed
 account_recovery_requested
@@ -87,6 +89,7 @@ community_settings_changed
 publisher_settings_changed
 research_consent_settings_changed
 lms_settings_changed
+lms_registration_declined
 sso_settings_changed
 lti_settings_changed
 external_tool_settings_changed

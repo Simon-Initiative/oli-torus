@@ -58,8 +58,9 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
           %{deep_linking_enabled: true, status: :disabled}
         ] do
       assert {:ok, _} =
-               PlatformExternalTools.update_lti_external_tool_activity_deployment(
-                 state.params.deployment,
+               Oli.Lti.Audited.update_external_tool_deployment(
+                 Oli.TestHelpers.audit_context(),
+                 state.params.deployment.deployment_id,
                  attrs
                )
 
@@ -333,7 +334,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     }
 
     assert {:ok, saved} =
-             PlatformExternalTools.upsert_section_resource_deep_link(%{
+             Oli.TestHelpers.upsert_deep_link_fixture(%{
                "section_id" => section.id,
                "resource_id" => id,
                "type" => "ltiResourceLink",
@@ -369,7 +370,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     unconfigured_id = Hooks.activity(state, "unconfigured").resource_id
 
     assert {:ok, saved} =
-             PlatformExternalTools.upsert_section_resource_deep_link(%{
+             Oli.TestHelpers.upsert_deep_link_fixture(%{
                "section_id" => section.id,
                "resource_id" => id,
                "type" => "ltiResourceLink",
@@ -395,7 +396,7 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     assert selection(section, unconfigured_id) == nil
     assert selection(section, id) == saved
 
-    assert {:ok, _} = PlatformExternalTools.delete_section_resource_deep_link(saved)
+    assert {:ok, _} = Oli.TestHelpers.delete_deep_link_fixture(saved)
     assert Hooks.activity(state).content["deepLink"] == state.params.review
     conn = build_conn() |> log_in_user(state.users["instructor"])
     details = conn |> same_origin() |> post(details_path(section, id)) |> json_response(200)
@@ -486,8 +487,9 @@ defmodule Oli.Scenarios.LtiExternalTool.SectionConfigurationTest do
     {_details, settings} = configuration_launch(state, section, id)
 
     assert {:ok, _} =
-             PlatformExternalTools.update_lti_external_tool_activity_deployment(
-               state.params.deployment,
+             Oli.Lti.Audited.update_external_tool_deployment(
+               Oli.TestHelpers.audit_context(),
+               state.params.deployment.deployment_id,
                %{deep_linking_enabled: false}
              )
 

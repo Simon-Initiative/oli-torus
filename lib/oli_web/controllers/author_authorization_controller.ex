@@ -5,6 +5,7 @@ defmodule OliWeb.AuthorAuthorizationController do
 
   alias Phoenix.Naming
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.AssentAuth.AuthorAssentAuth
   alias OliWeb.AuthorAuth
   alias OliWeb.Common.AssentAuthWeb
@@ -272,10 +273,10 @@ defmodule OliWeb.AuthorAuthorizationController do
                  user_identity_params
                ),
              {:ok, author} <-
-               accept_invitation_via_sso(author, author_project, sso_attrs) do
+               accept_invitation_via_sso(author, author_project, sso_attrs),
+             {:ok, conn} <- OliWeb.AuthorAuth.create_session(conn, author, :sso) do
           # Successfully linked SSO and accepted invitation
 
-          conn = OliWeb.AuthorAuth.create_session(conn, author)
           conn = assign(conn, :current_author, author)
           conn = OliWeb.AuthorAuth.maybe_link_user_author_account(conn, author)
           # Clear all invitation session data to prevent interference with future logins
@@ -283,6 +284,11 @@ defmodule OliWeb.AuthorAuthorizationController do
 
           redirect(conn, to: redirect_to)
         else
+          {:error, :session_not_issued} ->
+            conn
+            |> put_flash(:error, "We couldn't sign you in. Please try again.")
+            |> redirect(to: redirect_to)
+
           {:error, changeset} ->
             Logger.error(
               "Failed to link SSO identity or accept invitation for invited author: #{inspect(author.email)}, error: #{inspect(changeset)}"
@@ -360,9 +366,10 @@ defmodule OliWeb.AuthorAuthorizationController do
         redirect_uri: fn provider -> ~p"/authors/auth/#{provider}/callback" end,
         current_user_assigns_key: :current_author,
         get_user_by_provider_uid: &AuthorAssentAuth.get_user_by_provider_uid(&1, &2),
-        create_session: &AuthorAuth.create_session(&1, &2),
+        create_session: &AuthorAuth.create_session(&1, &2, :sso),
         deliver_user_confirmation_instructions: fn user ->
           Accounts.deliver_author_confirmation_instructions(
+            Context.for_actor(user, source: :ui),
             user,
             &url(~p"/authors/confirm/#{&1}")
           )

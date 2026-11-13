@@ -187,7 +187,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
 
   test "template missing/cleared choices never recover publication defaults", ctx do
     assert {:ok, _} =
-             PlatformExternalTools.delete_section_resource_deep_link(link(ctx.template, ctx.id))
+             Oli.TestHelpers.delete_deep_link_fixture(link(ctx.template, ctx.id))
 
     assert {:ok, _} = Remix.save(add_template(ctx), ctx.state.current_author)
     assert links(ctx.destination) == []
@@ -253,9 +253,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
     assert {:ok, _} = Remix.save(add(ctx, :project), ctx.state.current_author)
 
     assert {:ok, _} =
-             PlatformExternalTools.delete_section_resource_deep_link(
-               link(ctx.destination, ctx.id)
-             )
+             Oli.TestHelpers.delete_deep_link_fixture(link(ctx.destination, ctx.id))
 
     assert {:ok, remix} = Remix.init(ctx.destination, ctx.state.current_author)
     assert {:ok, remix} = Remix.reorder(remix, 0, 1)

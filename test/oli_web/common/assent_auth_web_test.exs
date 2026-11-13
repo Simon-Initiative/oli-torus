@@ -79,6 +79,31 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       Swoosh.TestAssertions.assert_no_email_sent()
     end
 
+    test "handle_authorization_success/4 returns an error when the session cannot be issued", %{
+      conn: conn
+    } do
+      config = %{
+        author_test_config()
+        | create_session: fn _conn, _author -> {:error, :session_not_issued} end
+      }
+
+      assert {:error, {:create_session, :session_not_issued}, returned_conn} =
+               AssentAuthWeb.handle_authorization_success(
+                 conn,
+                 "google",
+                 %{
+                   "email" => "no_session@example.edu",
+                   "name" => "No Session",
+                   "sub" => "456",
+                   "email_verified" => true
+                 },
+                 config
+               )
+
+      refute returned_conn.halted
+      refute returned_conn.state == :sent
+    end
+
     test "handle_authorization_success/4 returns email_confirmation_required", %{
       conn: conn
     } do
@@ -202,9 +227,10 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       redirect_uri: fn provider -> ~p"/authors/auth/#{provider}/callback" end,
       current_user_assigns_key: :current_author,
       get_user_by_provider_uid: &AuthorAssentAuth.get_user_by_provider_uid(&1, &2),
-      create_session: &AuthorAuth.create_session(&1, &2),
+      create_session: &AuthorAuth.create_session(&1, &2, :sso),
       deliver_user_confirmation_instructions: fn user ->
         Accounts.deliver_author_confirmation_instructions(
+          Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
           user,
           &url(~p"/authors/confirm/#{&1}")
         )
@@ -224,9 +250,10 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       redirect_uri: fn provider -> ~p"/users/auth/#{provider}/callback" end,
       current_user_assigns_key: :current_author,
       get_user_by_provider_uid: &UserAssentAuth.get_user_by_provider_uid(&1, &2),
-      create_session: &UserAuth.create_session(&1, &2),
+      create_session: &UserAuth.create_session(&1, &2, :sso),
       deliver_user_confirmation_instructions: fn user ->
         Accounts.deliver_user_confirmation_instructions(
+          Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
           user,
           &url(~p"/users/confirm/#{&1}")
         )

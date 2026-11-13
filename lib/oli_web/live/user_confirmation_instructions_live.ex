@@ -4,6 +4,7 @@ defmodule OliWeb.UserConfirmationInstructionsLive do
   import OliWeb.Backgrounds
 
   alias Oli.Accounts
+  alias Oli.Auditing.Context
 
   def render(assigns) do
     ~H"""
@@ -64,6 +65,7 @@ defmodule OliWeb.UserConfirmationInstructionsLive do
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do
     if user = Accounts.get_independent_user_by_email(email) do
       Accounts.deliver_user_confirmation_instructions(
+        Context.for_system(:unauthenticated_request, source: :ui),
         user,
         &url(~p"/users/confirm/#{&1}")
       )

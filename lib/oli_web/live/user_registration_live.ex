@@ -4,6 +4,7 @@ defmodule OliWeb.UserRegistrationLive do
   import OliWeb.Backgrounds
 
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.Accounts.User
   alias Oli.Recaptcha
 
@@ -86,6 +87,7 @@ defmodule OliWeb.UserRegistrationLive do
       if Accounts.user_email_verification_required?() do
         {:ok, _} =
           Accounts.deliver_user_confirmation_instructions(
+            Context.for_actor(user, source: :ui),
             user,
             &url(~p"/users/confirm/#{&1}?#{maybe_section_param(user_params["section"])}")
           )

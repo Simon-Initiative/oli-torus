@@ -18,7 +18,7 @@ defmodule Oli.GenAITest do
   describe "registered models" do
     test "registered models crud" do
       {:ok, model} =
-        GenAI.create_registered_model(%{
+        Oli.GenAI.Audited.create(Oli.TestHelpers.audit_context(), :registered_model, %{
           name: "Test Model",
           provider: :open_ai,
           model: "gpt-3.5-turbo",
@@ -63,7 +63,7 @@ defmodule Oli.GenAITest do
       assert m.service_config_count == 0
 
       {:ok, service_config} =
-        GenAI.create_service_config(%{
+        Oli.GenAI.Audited.create(Oli.TestHelpers.audit_context(), :service_config, %{
           name: "Test Service Config",
           primary_model_id: model.id,
           backup_model_id: nil
@@ -82,14 +82,24 @@ defmodule Oli.GenAITest do
       assert sc1.backup_model_id == nil
       assert sc1.secondary_model_id == nil
 
-      GenAI.delete_service_config(sc)
+      Oli.GenAI.Audited.delete(Oli.TestHelpers.audit_context(), :service_config, sc.id)
       assert Oli.Repo.get(Oli.GenAI.Completions.ServiceConfig, sc.id) == nil
 
-      {:ok, updated_model} = GenAI.update_registered_model(model, %{name: "Updated Model"})
+      {:ok, updated_model} =
+        Oli.GenAI.Audited.update(Oli.TestHelpers.audit_context(), :registered_model, model.id, %{
+          name: "Updated Model"
+        })
+
       updated_model = Oli.Repo.get(Oli.GenAI.Completions.RegisteredModel, updated_model.id)
       assert updated_model.name == "Updated Model"
 
-      {:ok, _} = GenAI.delete_registered_model(updated_model)
+      {:ok, _} =
+        Oli.GenAI.Audited.delete(
+          Oli.TestHelpers.audit_context(),
+          :registered_model,
+          updated_model.id
+        )
+
       assert Oli.Repo.get(Oli.GenAI.Completions.RegisteredModel, updated_model.id) == nil
     end
   end
@@ -119,7 +129,7 @@ defmodule Oli.GenAITest do
 
     test "feature config crud", %{section: section, section2: section2} do
       {:ok, model} =
-        GenAI.create_registered_model(%{
+        Oli.GenAI.Audited.create(Oli.TestHelpers.audit_context(), :registered_model, %{
           name: "Test Model",
           provider: :open_ai,
           model: "gpt-3.5-turbo",
@@ -130,14 +140,14 @@ defmodule Oli.GenAITest do
         })
 
       {:ok, service_config} =
-        GenAI.create_service_config(%{
+        Oli.GenAI.Audited.create(Oli.TestHelpers.audit_context(), :service_config, %{
           name: "Test Service Config",
           primary_model_id: model.id,
           backup_model_id: nil
         })
 
       {:ok, feature_config} =
-        GenAI.create_feature_config(%{
+        Oli.GenAI.Audited.create(Oli.TestHelpers.audit_context(), :feature_config, %{
           feature: :student_dialogue,
           service_config_id: service_config.id,
           section_id: section.id
@@ -162,9 +172,14 @@ defmodule Oli.GenAITest do
 
       # But an edit makes that section specific config no longer valid
       {:ok, updated_feature_config} =
-        GenAI.update_feature_config(feature_config, %{
-          feature: :instructor_dashboard_recommendation
-        })
+        Oli.GenAI.Audited.update(
+          Oli.TestHelpers.audit_context(),
+          :feature_config,
+          feature_config.id,
+          %{
+            feature: :instructor_dashboard_recommendation
+          }
+        )
 
       assert updated_feature_config.feature == :instructor_dashboard_recommendation
 
@@ -173,7 +188,13 @@ defmodule Oli.GenAITest do
       assert {:ok, fallback} = FeatureConfig.load_for(section.id, :student_dialogue)
       assert fallback.name == "standard-no-backup"
 
-      {:ok, _} = GenAI.delete_feature_config(updated_feature_config)
+      {:ok, _} =
+        Oli.GenAI.Audited.delete(
+          Oli.TestHelpers.audit_context(),
+          :feature_config,
+          updated_feature_config.id
+        )
+
       assert Oli.Repo.get(Oli.GenAI.FeatureConfig, updated_feature_config.id) == nil
     end
   end

@@ -64,7 +64,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest.ScopedFeatures do
 
     test "handles feature toggle success messages", %{conn: conn, project: project, admin: admin} do
       # Enable a feature first
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, admin)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.Auditing.Context.for_actor(admin, source: :ui),
+          :mcp_authoring,
+          project
+        )
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
 
@@ -91,7 +96,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest.ScopedFeatures do
 
     test "component shows correct feature states", %{conn: conn, project: project, admin: admin} do
       # Enable mcp_authoring feature
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, admin)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.Auditing.Context.for_actor(admin, source: :ui),
+          :mcp_authoring,
+          project
+        )
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
 

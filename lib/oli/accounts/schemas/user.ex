@@ -417,6 +417,20 @@ defmodule Oli.Accounts.User do
     |> maybe_name_from_given_and_family()
   end
 
+  @unprotected_fields [:state, :research_opt_out]
+
+  @doc """
+  Changeset for the generic `Oli.Accounts.update_user/2`: casts only the LTI launch state,
+  `research_opt_out`, and preferences. Any other user field in `attrs` adds a `:protected`
+  error, because only the audited account commands may write it.
+  """
+  def unprotected_changeset(user, attrs) do
+    user
+    |> cast(attrs, @unprotected_fields)
+    |> cast_embed(:preferences)
+    |> Oli.Accounts.ProtectedKeys.validate(attrs, [:preferences | @unprotected_fields])
+  end
+
   defp validate_email_if(changeset, condition) do
     if condition.(changeset) do
       validate_email(changeset, [])

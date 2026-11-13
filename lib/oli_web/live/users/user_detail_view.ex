@@ -7,7 +7,6 @@ defmodule OliWeb.Users.UsersDetailView do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
-  alias Oli.Auditing
   alias Oli.Auditing.Context
   alias Oli.Delivery.{Metrics, Paywall, Sections}
   alias Oli.Institutions
@@ -168,6 +167,7 @@ defmodule OliWeb.Users.UsersDetailView do
                       module={CommunitiesSelectComponent}
                       id={"communities-user-#{@user.id}"}
                       user_id={@user.id}
+                      current_author={@current_author}
                       institution={@institution}
                       disabled_edit={@disabled_edit}
                     />
@@ -328,14 +328,17 @@ defmodule OliWeb.Users.UsersDetailView do
   def handle_event("generate_reset_password_link", %{"id" => id}, socket) do
     user = user_with_preloaded_fields(id)
 
-    encoded_token = Accounts.generate_user_reset_password_token(user)
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    password_reset_link =
-      url(~p"/users/reset_password/#{encoded_token}")
+    case Accounts.Audited.request_recovery(context, {:user, user}, :admin_reset_link) do
+      {:ok, encoded_token} ->
+        password_reset_link = url(~p"/users/reset_password/#{encoded_token}")
+        {:noreply, assign(socket, password_reset_link: password_reset_link)}
 
-    socket = assign(socket, password_reset_link: password_reset_link)
-
-    {:noreply, socket}
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "We couldn't generate the reset link. Please try again.")}
+    end
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do
@@ -353,11 +356,13 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("confirm_email", _, socket) do
-    case Accounts.admin_confirm_user(socket.assigns.user) do
-      {:ok, user} ->
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
+
+    case Accounts.Audited.admin_confirm_email(context, {:user, socket.assigns.user.id}) do
+      {:ok, _user} ->
         {:noreply,
          socket
-         |> assign(user: user)
+         |> assign(user: user_with_preloaded_fields(socket.assigns.user.id))
          |> hide_modal(modal_assigns: nil)}
 
       {:error, _error} ->
@@ -369,6 +374,7 @@ defmodule OliWeb.Users.UsersDetailView do
     user = user_with_preloaded_fields(id)
 
     case Accounts.deliver_user_confirmation_instructions(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
            user,
            &url(~p"/users/confirm/#{&1}")
          ) do
@@ -377,6 +383,9 @@ defmodule OliWeb.Users.UsersDetailView do
 
       {:error, :already_confirmed} ->
         {:noreply, put_flash(socket, :info, "Email is already confirmed.")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Error sending confirmation link.")}
     end
   end
 
@@ -384,14 +393,15 @@ defmodule OliWeb.Users.UsersDetailView do
     user = user_with_preloaded_fields(id)
 
     case Accounts.deliver_user_reset_password_instructions(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
            user,
            &url(~p"/users/reset_password/#{&1}")
          ) do
       {:ok, _} ->
         {:noreply, put_flash(socket, :info, "Password reset link sent.")}
 
-      {:error, error} ->
-        {:noreply, put_flash(socket, :error, "Error sending password reset link: #{error}")}
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Error sending password reset link.")}
     end
   end
 
@@ -408,9 +418,9 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("lock_account", %{"id" => id}, socket) do
-    user = user_with_preloaded_fields(id)
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    case Accounts.lock_user(user) do
+    case Accounts.Audited.lock_account(context, :user, String.to_integer(id)) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -440,9 +450,9 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("unlock_account", %{"id" => id}, socket) do
-    user = user_with_preloaded_fields(id)
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    case Accounts.unlock_user(user) do
+    case Accounts.Audited.unlock_account(context, :user, String.to_integer(id)) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -503,12 +513,12 @@ defmodule OliWeb.Users.UsersDetailView do
   def handle_event("submit", %{"user" => params}, socket) do
     admin? = Accounts.is_system_admin?(socket.assigns.current_author)
     filtered_params = if admin?, do: params, else: Map.delete(params, "is_internal")
-    previous_user = socket.assigns.user
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    case Accounts.update_user(previous_user, filtered_params) do
-      {:ok, user} ->
+    case Accounts.Audited.admin_update_user(context, socket.assigns.user.id, filtered_params) do
+      {:ok, _user} ->
+        user = user_with_preloaded_fields(socket.assigns.user.id)
         updated_form = user_form(user, params)
-        maybe_audit_internal_toggle(socket.assigns.current_author, :user, previous_user, user)
 
         {:noreply,
          socket
@@ -519,43 +529,21 @@ defmodule OliWeb.Users.UsersDetailView do
          |> assign(user_name: combined_user_name(updated_form, user))
          |> assign(user_header_name: combined_header_name_from_form(updated_form, user))}
 
-      {:error, error} ->
+      {:error, %Ecto.Changeset{} = error} ->
         form = to_form(error)
 
         {:noreply,
          socket
          |> assign(form: form)
          |> assign(disabled_submit: !Enum.empty?(form.errors))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "User couldn't be updated.")}
     end
   end
 
   def handle_event("start_edit", _, socket) do
     {:noreply, socket |> assign(disabled_edit: false)}
-  end
-
-  defp maybe_audit_internal_toggle(admin, :user, %User{} = previous, %User{} = updated) do
-    cond do
-      is_nil(admin) ->
-        :ok
-
-      previous.is_internal == updated.is_internal ->
-        :ok
-
-      true ->
-        Auditing.capture(
-          admin,
-          :account_internal_flag_changed,
-          updated,
-          %{
-            "account_type" => "user",
-            "user_id" => updated.id,
-            "previous" => previous.is_internal,
-            "is_internal" => updated.is_internal
-          }
-        )
-
-        :ok
-    end
   end
 
   defp combined_user_name(form, fallback_user) do

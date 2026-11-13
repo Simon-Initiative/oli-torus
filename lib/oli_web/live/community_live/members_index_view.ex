@@ -2,6 +2,7 @@ defmodule OliWeb.CommunityLive.MembersIndexView do
   use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
+  alias Oli.Auditing.Context
   alias Oli.Groups
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.CommunityLive.{ShowView, MembersTableModel}
@@ -77,10 +78,13 @@ defmodule OliWeb.CommunityLive.MembersIndexView do
   def handle_event("remove", %{"id" => id}, socket) do
     socket = clear_flash(socket)
 
-    case Groups.delete_community_account(%{
-           community_id: socket.assigns.community_id,
-           user_id: id
-         }) do
+    case Groups.delete_community_account(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           %{
+             community_id: socket.assigns.community_id,
+             user_id: id
+           }
+         ) do
       {:ok, _community_account} ->
         members = Groups.list_community_members(socket.assigns.community_id)
         {:ok, table_model} = MembersTableModel.new(members)

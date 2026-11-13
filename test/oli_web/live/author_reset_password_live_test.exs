@@ -10,7 +10,11 @@ defmodule OliWeb.AuthorResetPasswordLiveTest do
 
     token =
       extract_user_token(fn url ->
-        Accounts.deliver_author_reset_password_instructions(author, url)
+        Accounts.deliver_author_reset_password_instructions(
+          Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
+          author,
+          url
+        )
       end)
 
     %{token: token, author: author}
@@ -48,6 +52,27 @@ defmodule OliWeb.AuthorResetPasswordLiveTest do
   end
 
   describe "Reset Password" do
+    test "shows an error instead of crashing when the account is gone", %{
+      conn: conn,
+      token: token,
+      author: author
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/authors/reset_password/#{token}")
+      Oli.Repo.delete!(author)
+
+      html =
+        lv
+        |> form("#reset_password_form",
+          author: %{
+            "password" => "new valid password",
+            "password_confirmation" => "new valid password"
+          }
+        )
+        |> render_submit()
+
+      assert html =~ "We couldn&#39;t reset your password. Please request a new link."
+    end
+
     test "resets password once", %{conn: conn, token: token, author: author} do
       {:ok, lv, _html} = live(conn, ~p"/authors/reset_password/#{token}")
 

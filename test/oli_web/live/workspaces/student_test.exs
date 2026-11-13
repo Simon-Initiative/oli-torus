@@ -7,7 +7,6 @@ defmodule OliWeb.Workspaces.StudentTest do
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
-  alias Oli.Accounts
   alias OliWeb.Common.SessionContext
   alias OliWeb.Workspaces.Student
 
@@ -39,10 +38,10 @@ defmodule OliWeb.Workspaces.StudentTest do
     } do
       # Lock the user
       {:ok, date, _timezone} = DateTime.from_iso8601("2019-05-22 20:30:00Z")
-      {:ok, user} = Accounts.update_user(user, %{locked_at: date})
+      {:ok, user} = Oli.TestHelpers.update_account_fixture(user, %{locked_at: date})
 
       # Unlock the user
-      Accounts.unlock_user(user)
+      user |> Oli.Accounts.User.lock_account_changeset(false) |> Oli.Repo.update!()
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
@@ -271,7 +270,7 @@ defmodule OliWeb.Workspaces.StudentTest do
       conn: conn,
       user: user
     } do
-      {:ok, user} = Accounts.update_user(user, %{email_confirmed_at: nil})
+      {:ok, user} = Oli.TestHelpers.update_account_fixture(user, %{email_confirmed_at: nil})
 
       section = insert(:section, open_and_free: true, skip_email_verification: false)
 
@@ -282,7 +281,7 @@ defmodule OliWeb.Workspaces.StudentTest do
 
     test "can access student workspace when user is enrolled in any section that omits email verification",
          %{conn: conn, user: user} do
-      {:ok, user} = Accounts.update_user(user, %{email_confirmed_at: nil})
+      {:ok, user} = Oli.TestHelpers.update_account_fixture(user, %{email_confirmed_at: nil})
 
       section = insert(:section, open_and_free: true, skip_email_verification: true)
 

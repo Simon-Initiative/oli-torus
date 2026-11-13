@@ -6,6 +6,7 @@ defmodule OliWeb.UserSettingsLive do
   alias Oli.Accounts
   alias Oli.Accounts.User
   alias Oli.AssentAuth.UserAssentAuth
+  alias Oli.Auditing.Context
   alias OliWeb.Icons
 
   @doc "Renders the account profile, email, and password settings form."
@@ -265,7 +266,11 @@ defmodule OliWeb.UserSettingsLive do
 
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Accounts.update_user_email(socket.assigns.current_user, token) do
+      case Accounts.Audited.confirm_email_change(
+             Context.for_actor(socket.assigns.current_user, source: :ui),
+             socket.assigns.current_user,
+             token
+           ) do
         :ok ->
           socket
           |> clear_flash()
@@ -380,12 +385,17 @@ defmodule OliWeb.UserSettingsLive do
 
   # Private functions to handle individual update operations
   defp execute_user_update(user, user_params) do
-    case Accounts.update_user(user, user_params) do
+    context = Context.for_actor(user, source: :ui)
+
+    case Accounts.Audited.update_own_profile(context, user, user_params) do
       {:ok, updated_user} ->
         {:ok, updated_user, "Account details updated"}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:error, :user, changeset}
+
+      {:error, _reason} ->
+        {:error, :user, Accounts.change_user_details(user, user_params)}
     end
   end
 
@@ -511,24 +521,43 @@ defmodule OliWeb.UserSettingsLive do
 
       # Case 2: User has password and provided current password - update it
       has_password ->
-        case Accounts.update_user_password(user, current_password, password_params) do
+        case Accounts.Audited.change_password(
+               Context.for_actor(user, source: :ui),
+               user,
+               current_password,
+               password_params
+             ) do
           {:ok, user} ->
             {:ok, user}
 
-          {:error, changeset} ->
-            {:error, :password_update, changeset}
+          {:error, reason} ->
+            {:error, :password_update, password_error(user, password_params, reason)}
         end
 
       # Case 3: User doesn't have password yet - create new one
       true ->
-        case Accounts.create_user_password(user, password_params) do
+        case Accounts.Audited.create_password(
+               Context.for_actor(user, source: :ui),
+               user,
+               password_params
+             ) do
           {:ok, user} ->
             {:ok, user}
 
-          {:error, changeset} ->
-            {:error, :password_update, changeset}
+          {:error, reason} ->
+            {:error, :password_update, password_error(user, password_params, reason)}
         end
     end
+  end
+
+  # Validation errors come back as changesets; any other failure (for example a password that
+  # was already created from another tab) is shown on the form instead of crashing the view.
+  defp password_error(_user, _params, %Ecto.Changeset{} = changeset), do: changeset
+
+  defp password_error(user, params, _reason) do
+    user
+    |> Accounts.change_user_password(params)
+    |> Ecto.Changeset.add_error(:password, "couldn't be updated. Please try again.")
   end
 
   defp execute_all_updates(socket, user, changes) do

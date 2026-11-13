@@ -781,7 +781,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     # Create a new authoring account and make it an admin
     author = insert(:author)
 
-    {:ok, updated_author} = Oli.Accounts.update_author(author, %{system_role_id: system_role_id})
+    {:ok, updated_author} =
+      Oli.TestHelpers.update_account_fixture(author, %{system_role_id: system_role_id})
 
     conn = log_in_author(conn, updated_author)
 

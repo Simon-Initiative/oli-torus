@@ -186,10 +186,11 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       deployment_2: deployment_2
     } do
       # Soft delete platform_2 tool
-      PlatformExternalTools.update_lti_external_tool_activity_deployment(
-        deployment_2,
-        %{"status" => :deleted}
-      )
+      deployment_2
+      |> Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment.changeset(%{
+        "status" => :deleted
+      })
+      |> Repo.update!()
 
       # Should NOT include deleted tool by default
       results =
@@ -217,12 +218,12 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
     end
   end
 
-  describe "update_lti_external_tool_activity/2" do
+  describe "Oli.Lti.Audited.update_external_tool/3" do
     setup do
       institution = insert(:institution)
 
       {:ok, {pi, ar, _}} =
-        Oli.Lti.PlatformExternalTools.register_lti_external_tool_activity(%{
+        Oli.Lti.Audited.register_external_tool(Oli.TestHelpers.audit_context(), %{
           "name" => "Original Tool",
           "description" => "A test tool",
           "target_link_uri" => "https://example.com/launch",
@@ -236,63 +237,50 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       %{institution: institution, platform_instance: pi, activity_registration: ar}
     end
 
-    test "successfully updates the tool", %{platform_instance: pi} do
-      attrs = %{
-        "name" => "Updated Tool Name",
-        "description" => "Updated description"
-      }
+    test "updates the tool and its activity", %{platform_instance: pi, activity_registration: ar} do
+      attrs = %{"name" => "Updated Tool Name", "description" => "Updated description"}
 
-      assert {:ok, result} =
-               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity(pi.id, attrs)
+      assert {:ok, updated} =
+               Oli.Lti.Audited.update_external_tool(Oli.TestHelpers.audit_context(), pi.id, attrs)
 
-      assert result.updated_platform_instance.name == "Updated Tool Name"
-      assert result.updated_activity_registration.description == "Updated description"
+      assert updated.name == "Updated Tool Name"
+
+      assert Repo.get!(Oli.Activities.ActivityRegistration, ar.id).description ==
+               "Updated description"
     end
 
-    test "fails when platform_instance is not found" do
-      attrs = %{"name" => "Any", "description" => "Some"}
-
-      assert {:error, :platform_instance, {:not_found}, %{}} ==
-               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity(-1, attrs)
+    test "fails when the platform instance is not found" do
+      assert {:error, :not_found} =
+               Oli.Lti.Audited.update_external_tool(Oli.TestHelpers.audit_context(), -1, %{
+                 "name" => "Any"
+               })
     end
 
-    test "fails updating platform_instance due to missing required field", %{
-      platform_instance: pi
-    } do
-      attrs = %{
-        "description" => "Only description, name is missing",
-        "name" => nil
-        # name is missing
-      }
-
-      assert {:error, :updated_platform_instance, changeset, _} =
-               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity(pi.id, attrs)
+    test "fails on a missing required field", %{platform_instance: pi} do
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Oli.Lti.Audited.update_external_tool(Oli.TestHelpers.audit_context(), pi.id, %{
+                 "description" => "Only description",
+                 "name" => nil
+               })
 
       assert changeset.errors[:name]
     end
 
-    test "fails when activity_registration is not found", %{platform_instance: pi} do
+    test "fails when the activity registration is not found", %{platform_instance: pi} do
       Repo.delete_all(from(d in Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment))
 
-      attrs = %{
-        "name" => "New name",
-        "description" => "New description"
-      }
-
-      assert {:error, :activity_registration, {:not_found}, %{}} =
-               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity(pi.id, attrs)
+      assert {:error, :not_found} =
+               Oli.Lti.Audited.update_external_tool(Oli.TestHelpers.audit_context(), pi.id, %{
+                 "name" => "New name",
+                 "description" => "New description"
+               })
     end
 
-    test "fails updating activity_registration due to missing description", %{
-      platform_instance: pi
-    } do
-      attrs = %{
-        "name" => "Valid name"
-        # description is missing
-      }
-
-      assert {:error, :updated_activity_registration, %Ecto.Changeset{} = changeset, _} =
-               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity(pi.id, attrs)
+    test "fails when the activity description is missing", %{platform_instance: pi} do
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Oli.Lti.Audited.update_external_tool(Oli.TestHelpers.audit_context(), pi.id, %{
+                 "name" => "Valid name"
+               })
 
       assert changeset.errors[:description]
     end
@@ -584,33 +572,29 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
     end
   end
 
-  describe "update_lti_external_tool_activity_deployment/2" do
+  describe "Oli.Lti.Audited.update_external_tool_deployment/3" do
     setup do
       deployment = insert(:lti_external_tool_activity_deployment)
       %{deployment: deployment}
     end
 
-    test "successfully updates the deployment", %{deployment: deployment} do
-      updated_attrs = %{
-        status: :disabled
-      }
-
+    test "updates the deployment", %{deployment: deployment} do
       assert {:ok, updated} =
-               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity_deployment(
-                 deployment,
-                 updated_attrs
+               Oli.Lti.Audited.update_external_tool_deployment(
+                 Oli.TestHelpers.audit_context(),
+                 deployment.deployment_id,
+                 %{status: :disabled}
                )
 
-      assert updated.status == updated_attrs.status
+      assert updated.status == :disabled
     end
 
-    test "returns error changeset when given invalid attrs", %{deployment: deployment} do
-      invalid_attrs = %{status: :invalid_status}
-
+    test "returns an error changeset for invalid attrs", %{deployment: deployment} do
       assert {:error, changeset} =
-               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity_deployment(
-                 deployment,
-                 invalid_attrs
+               Oli.Lti.Audited.update_external_tool_deployment(
+                 Oli.TestHelpers.audit_context(),
+                 deployment.deployment_id,
+                 %{status: :invalid_status}
                )
 
       refute changeset.valid?
@@ -668,7 +652,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
     test "creates a deep link with valid attributes", %{valid_attrs: valid_attrs} do
       assert {:ok, deep_link} =
-               PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+               Oli.TestHelpers.create_deep_link_fixture(valid_attrs)
 
       assert deep_link.type == :ltiResourceLink
       assert deep_link.url == "https://example.com/resource"
@@ -687,7 +671,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
           text: String.duplicate("<p>Detailed writing instructions.</p>", 100)
         })
 
-      assert {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(attrs)
+      assert {:ok, deep_link} = Oli.TestHelpers.create_deep_link_fixture(attrs)
       saved = PlatformExternalTools.get_section_resource_deep_link_by(id: deep_link.id)
 
       assert saved.url == attrs.url
@@ -707,7 +691,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       }
 
       assert {:ok, deep_link} =
-               PlatformExternalTools.create_section_resource_deep_link(minimal_attrs)
+               Oli.TestHelpers.create_deep_link_fixture(minimal_attrs)
 
       assert deep_link.type == :ltiLink
       assert deep_link.section_id == section.id
@@ -726,7 +710,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       }
 
       assert {:error, changeset} =
-               PlatformExternalTools.create_section_resource_deep_link(invalid_attrs)
+               Oli.TestHelpers.create_deep_link_fixture(invalid_attrs)
 
       refute changeset.valid?
       # type has a default value, so only section_id and resource_id should have errors
@@ -742,7 +726,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       }
 
       assert {:error, changeset} =
-               PlatformExternalTools.create_section_resource_deep_link(invalid_attrs)
+               Oli.TestHelpers.create_deep_link_fixture(invalid_attrs)
 
       refute changeset.valid?
       assert changeset.errors[:type]
@@ -754,7 +738,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
     test "creates a new deep link when none exists", %{valid_attrs: valid_attrs} do
       assert {:ok, deep_link} =
-               PlatformExternalTools.upsert_section_resource_deep_link(valid_attrs)
+               Oli.TestHelpers.upsert_deep_link_fixture(valid_attrs)
 
       assert deep_link.type == :ltiResourceLink
       assert deep_link.url == "https://example.com/resource"
@@ -764,7 +748,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
     test "updates existing deep link when one exists", %{valid_attrs: valid_attrs} do
       # Create initial deep link
       {:ok, initial_deep_link} =
-        PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+        Oli.TestHelpers.create_deep_link_fixture(valid_attrs)
 
       # Upsert with updated attributes
       updated_attrs =
@@ -775,7 +759,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
         })
 
       assert {:ok, updated_deep_link} =
-               PlatformExternalTools.upsert_section_resource_deep_link(updated_attrs)
+               Oli.TestHelpers.upsert_deep_link_fixture(updated_attrs)
 
       # Should have same ID (updated, not created new)
       assert updated_deep_link.id == initial_deep_link.id
@@ -812,11 +796,11 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
       # Create first record
       {:ok, first_deep_link} =
-        PlatformExternalTools.upsert_section_resource_deep_link(attrs1)
+        Oli.TestHelpers.upsert_deep_link_fixture(attrs1)
 
       # Upsert second record with same section_id and resource_id
       {:ok, second_deep_link} =
-        PlatformExternalTools.upsert_section_resource_deep_link(attrs2)
+        Oli.TestHelpers.upsert_deep_link_fixture(attrs2)
 
       # Should be same record ID (updated)
       assert first_deep_link.id == second_deep_link.id
@@ -831,7 +815,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
     test "returns deep link when found", %{valid_attrs: valid_attrs} do
       {:ok, created_deep_link} =
-        PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+        Oli.TestHelpers.create_deep_link_fixture(valid_attrs)
 
       result =
         PlatformExternalTools.get_section_resource_deep_link_by(
@@ -856,7 +840,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
     test "can search by different attributes", %{valid_attrs: valid_attrs} do
       {:ok, created_deep_link} =
-        PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+        Oli.TestHelpers.create_deep_link_fixture(valid_attrs)
 
       # Search by ID
       result =
@@ -884,7 +868,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
     setup [:create_section_resource]
 
     test "successfully updates deep link", %{valid_attrs: valid_attrs} do
-      {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+      {:ok, deep_link} = Oli.TestHelpers.create_deep_link_fixture(valid_attrs)
 
       update_attrs = %{
         type: :ltiAssignmentAndGradeServices,
@@ -895,7 +879,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       }
 
       assert {:ok, updated_deep_link} =
-               PlatformExternalTools.update_section_resource_deep_link(deep_link, update_attrs)
+               Oli.TestHelpers.update_deep_link_fixture(deep_link, update_attrs)
 
       assert updated_deep_link.id == deep_link.id
       assert updated_deep_link.type == :ltiAssignmentAndGradeServices
@@ -906,28 +890,28 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
     end
 
     test "returns error changeset for invalid updates", %{valid_attrs: valid_attrs} do
-      {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+      {:ok, deep_link} = Oli.TestHelpers.create_deep_link_fixture(valid_attrs)
 
       invalid_attrs = %{
         type: :invalidType
       }
 
       assert {:error, changeset} =
-               PlatformExternalTools.update_section_resource_deep_link(deep_link, invalid_attrs)
+               Oli.TestHelpers.update_deep_link_fixture(deep_link, invalid_attrs)
 
       refute changeset.valid?
       assert changeset.errors[:type]
     end
 
     test "can partially update fields", %{valid_attrs: valid_attrs} do
-      {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+      {:ok, deep_link} = Oli.TestHelpers.create_deep_link_fixture(valid_attrs)
 
       update_attrs = %{
         title: "Only Title Updated"
       }
 
       assert {:ok, updated_deep_link} =
-               PlatformExternalTools.update_section_resource_deep_link(deep_link, update_attrs)
+               Oli.TestHelpers.update_deep_link_fixture(deep_link, update_attrs)
 
       # Only title should be updated
       assert updated_deep_link.title == "Only Title Updated"
@@ -943,10 +927,10 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
     setup [:create_section_resource]
 
     test "successfully deletes deep link", %{valid_attrs: valid_attrs} do
-      {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+      {:ok, deep_link} = Oli.TestHelpers.create_deep_link_fixture(valid_attrs)
 
       assert {:ok, deleted_deep_link} =
-               PlatformExternalTools.delete_section_resource_deep_link(deep_link)
+               Oli.TestHelpers.delete_deep_link_fixture(deep_link)
 
       assert deleted_deep_link.id == deep_link.id
 
@@ -961,17 +945,17 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
     } do
       # Create and delete a deep link first
       {:ok, deep_link} =
-        PlatformExternalTools.create_section_resource_deep_link(%{
+        Oli.TestHelpers.create_deep_link_fixture(%{
           type: :ltiResourceLink,
           section_id: section.id,
           resource_id: resource.id
         })
 
-      {:ok, _} = PlatformExternalTools.delete_section_resource_deep_link(deep_link)
+      {:ok, _} = Oli.TestHelpers.delete_deep_link_fixture(deep_link)
 
       # Try to delete the same record again - this should raise a stale entry error
       assert_raise Ecto.StaleEntryError, fn ->
-        PlatformExternalTools.delete_section_resource_deep_link(deep_link)
+        Oli.TestHelpers.delete_deep_link_fixture(deep_link)
       end
     end
   end
@@ -992,7 +976,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
         resource_id: resource.id
       }
 
-      {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(attrs)
+      {:ok, deep_link} = Oli.TestHelpers.create_deep_link_fixture(attrs)
       assert deep_link.title == "Original Title"
 
       # Read
@@ -1001,14 +985,14 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
       # Update
       {:ok, updated} =
-        PlatformExternalTools.update_section_resource_deep_link(deep_link, %{
+        Oli.TestHelpers.update_deep_link_fixture(deep_link, %{
           title: "Updated Title"
         })
 
       assert updated.title == "Updated Title"
 
       # Delete
-      {:ok, _} = PlatformExternalTools.delete_section_resource_deep_link(updated)
+      {:ok, _} = Oli.TestHelpers.delete_deep_link_fixture(updated)
 
       # Verify deletion
       refute PlatformExternalTools.get_section_resource_deep_link_by(id: deep_link.id)
@@ -1026,11 +1010,11 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       }
 
       # First upsert creates
-      {:ok, first} = PlatformExternalTools.upsert_section_resource_deep_link(attrs)
+      {:ok, first} = Oli.TestHelpers.upsert_deep_link_fixture(attrs)
 
       # Second upsert updates
       updated_attrs = Map.put(attrs, :title, "Updated")
-      {:ok, second} = PlatformExternalTools.upsert_section_resource_deep_link(updated_attrs)
+      {:ok, second} = Oli.TestHelpers.upsert_deep_link_fixture(updated_attrs)
 
       # Should be same record
       assert first.id == second.id

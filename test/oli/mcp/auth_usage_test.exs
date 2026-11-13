@@ -12,7 +12,12 @@ defmodule Oli.MCP.AuthUsageTest do
       project = project_result.project
 
       {:ok, {bearer_token, _token_string}} =
-        Auth.create_token(author.id, project.id, "test-hint")
+        Oli.MCP.Audited.create_token(
+          Oli.TestHelpers.audit_context(),
+          author.id,
+          project.id,
+          "test-hint"
+        )
 
       %{
         author: author,
@@ -56,7 +61,11 @@ defmodule Oli.MCP.AuthUsageTest do
     test "track_usage_by_token/3 works with token string", %{bearer_token: bearer_token} do
       # Need to generate a token string for this test
       {:ok, {_bearer_token, token_string}} =
-        Auth.regenerate_token(bearer_token.author_id, bearer_token.project_id)
+        Oli.MCP.Audited.regenerate_token(
+          Oli.TestHelpers.audit_context(),
+          bearer_token.author_id,
+          bearer_token.project_id
+        )
 
       assert {:ok, usage} =
                Auth.track_usage_by_token(token_string, "init", status: "success")

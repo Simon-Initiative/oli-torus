@@ -6,7 +6,6 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
   alias Oli.Seeder
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
-  alias Oli.ScopedFeatureFlags.Rollouts
   alias Oli.Resources.ResourceType
 
   import Oli.Factory
@@ -143,7 +142,14 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       project: project,
       adaptive_page_revision: adaptive_page_revision
     } do
-      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :off, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :adaptive_duplication,
+          :global,
+          nil,
+          :off
+        )
 
       conn =
         recycle(conn)
@@ -167,7 +173,14 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       project: project,
       adaptive_page_revision: adaptive_page_revision
     } do
-      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :adaptive_duplication,
+          :global,
+          nil,
+          :full
+        )
 
       conn =
         recycle(conn)
@@ -197,7 +210,14 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       project: project,
       map: map
     } do
-      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :adaptive_duplication,
+          :global,
+          nil,
+          :full
+        )
 
       %{resource: broken_page_resource, revision: broken_page_revision} =
         Seeder.create_page(

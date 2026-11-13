@@ -3,7 +3,6 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
   import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
 
-  alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Repo
   alias Oli.Authoring.Editing.ActivityEditor
@@ -223,8 +222,9 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
     token = AuthoringLaunch.result_token(started.request, selection())
 
     assert {:ok, _} =
-             Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity_deployment(
-               started.deployment,
+             Oli.Lti.Audited.update_external_tool_deployment(
+               Oli.TestHelpers.audit_context(),
+               started.deployment.deployment_id,
                %{deep_linking_enabled: false}
              )
 
@@ -249,7 +249,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
   test "revoked accepted collaboration prevents every outstanding save", ctx do
     assert {:ok, author} =
-             Accounts.update_author(ctx.author, %{
+             Oli.TestHelpers.update_account_fixture(ctx.author, %{
                system_role_id: Oli.Accounts.SystemRole.role_id().author
              })
 

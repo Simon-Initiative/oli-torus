@@ -11,7 +11,9 @@ defmodule Oli.InstitutionsTest do
   describe "institutions" do
     test "create_institution/1 with valid data creates a institution" do
       params = params_with_assocs(:institution)
-      assert {:ok, %Institution{} = institution} = Institutions.create_institution(params)
+
+      assert {:ok, %Institution{} = institution} =
+               Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), params)
 
       assert institution.name == params.name
       assert institution.institution_email == params.institution_email
@@ -20,7 +22,9 @@ defmodule Oli.InstitutionsTest do
 
     test "create_institution/1 with invalid research consent returns error changeset" do
       params = params_for(:institution, %{research_consent: "testing"})
-      assert {:error, %Ecto.Changeset{}} = Institutions.create_institution(params)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), params)
     end
 
     test "list_institutions/0 returns ok when there are no institutions" do
@@ -69,7 +73,11 @@ defmodule Oli.InstitutionsTest do
       institution = insert(:institution)
 
       {:ok, updated_institution} =
-        Institutions.update_institution(institution, %{name: "new_name"})
+        Institutions.Audited.update_institution(
+          Oli.TestHelpers.audit_context(),
+          institution.id,
+          %{name: "new_name"}
+        )
 
       assert institution.id == updated_institution.id
       assert updated_institution.name == "new_name"
@@ -79,7 +87,11 @@ defmodule Oli.InstitutionsTest do
       institution = insert(:institution)
 
       {:error, changeset} =
-        Institutions.update_institution(institution, %{research_consent: "invalid"})
+        Institutions.Audited.update_institution(
+          Oli.TestHelpers.audit_context(),
+          institution.id,
+          %{research_consent: "invalid"}
+        )
 
       {error, _} = changeset.errors[:research_consent]
 
@@ -147,7 +159,8 @@ defmodule Oli.InstitutionsTest do
       jwk: jwk
     } do
       assert {:ok, %Registration{} = registration} =
-               Institutions.create_registration(
+               Institutions.Audited.create_registration(
+                 Oli.TestHelpers.audit_context(),
                  Enum.into(
                    %{
                      institution_id: institution.id,
@@ -168,14 +181,22 @@ defmodule Oli.InstitutionsTest do
     end
 
     test "create_registration/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Institutions.create_registration(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} =
+               Institutions.Audited.create_registration(
+                 Oli.TestHelpers.audit_context(),
+                 @invalid_attrs
+               )
     end
 
     test "update_registration/2 with valid data updates the registration", %{
       registration: registration
     } do
       assert {:ok, %Registration{} = registration} =
-               Institutions.update_registration(registration, @update_attrs)
+               Institutions.Audited.update_registration(
+                 Oli.TestHelpers.audit_context(),
+                 registration.id,
+                 @update_attrs
+               )
 
       assert registration.auth_login_url == "some updated auth_login_url"
       assert registration.auth_server == "some updated auth_server"
@@ -196,7 +217,11 @@ defmodule Oli.InstitutionsTest do
         |> Enum.into(%{})
 
       assert {:ok, %Registration{} = registration} =
-               Institutions.update_registration(registration, non_normalized_attrs)
+               Institutions.Audited.update_registration(
+                 Oli.TestHelpers.audit_context(),
+                 registration.id,
+                 non_normalized_attrs
+               )
 
       assert registration.auth_login_url == "some updated auth_login_url"
       assert registration.auth_server == "some updated auth_server"
@@ -211,13 +236,22 @@ defmodule Oli.InstitutionsTest do
       registration: registration
     } do
       assert {:error, %Ecto.Changeset{}} =
-               Institutions.update_registration(registration, @invalid_attrs)
+               Institutions.Audited.update_registration(
+                 Oli.TestHelpers.audit_context(),
+                 registration.id,
+                 @invalid_attrs
+               )
 
       assert registration == Institutions.get_registration!(registration.id)
     end
 
     test "delete_registration/1 deletes the registration", %{registration: registration} do
-      assert {:ok, %Registration{}} = Institutions.delete_registration(registration)
+      assert {:ok, %Registration{}} =
+               Institutions.Audited.delete_registration(
+                 Oli.TestHelpers.audit_context(),
+                 registration.id
+               )
+
       assert_raise Ecto.NoResultsError, fn -> Institutions.get_registration!(registration.id) end
     end
 
@@ -259,7 +293,8 @@ defmodule Oli.InstitutionsTest do
       registration: registration
     } do
       assert {:ok, %Deployment{} = deployment} =
-               Institutions.create_deployment(
+               Institutions.Audited.create_deployment(
+                 Oli.TestHelpers.audit_context(),
                  @valid_attrs
                  |> Enum.into(%{institution_id: institution.id, registration_id: registration.id})
                )
@@ -268,12 +303,20 @@ defmodule Oli.InstitutionsTest do
     end
 
     test "create_deployment/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Institutions.create_deployment(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} =
+               Institutions.Audited.create_deployment(
+                 Oli.TestHelpers.audit_context(),
+                 @invalid_attrs
+               )
     end
 
     test "update_deployment/2 with valid data updates the deployment", %{deployment: deployment} do
       assert {:ok, %Deployment{} = deployment} =
-               Institutions.update_deployment(deployment, @update_attrs)
+               Institutions.Audited.update_deployment(
+                 Oli.TestHelpers.audit_context(),
+                 deployment.id,
+                 @update_attrs
+               )
 
       assert deployment.deployment_id == "some updated deployment_id"
     end
@@ -282,13 +325,22 @@ defmodule Oli.InstitutionsTest do
       deployment: deployment
     } do
       assert {:error, %Ecto.Changeset{}} =
-               Institutions.update_deployment(deployment, @invalid_attrs)
+               Institutions.Audited.update_deployment(
+                 Oli.TestHelpers.audit_context(),
+                 deployment.id,
+                 @invalid_attrs
+               )
 
       assert deployment == Institutions.get_deployment!(deployment.id)
     end
 
     test "delete_deployment/1 deletes the deployment", %{deployment: deployment} do
-      assert {:ok, %Deployment{}} = Institutions.delete_deployment(deployment)
+      assert {:ok, %Deployment{}} =
+               Institutions.Audited.delete_deployment(
+                 Oli.TestHelpers.audit_context(),
+                 deployment.id
+               )
+
       assert_raise Ecto.NoResultsError, fn -> Institutions.get_deployment!(deployment.id) end
     end
 
@@ -417,7 +469,10 @@ defmodule Oli.InstitutionsTest do
       pending_registration: pending_registration
     } do
       assert {:ok, %PendingRegistration{}} =
-               Institutions.delete_pending_registration(pending_registration)
+               Institutions.Audited.decline_pending_registration(
+                 Oli.TestHelpers.audit_context(),
+                 pending_registration.id
+               )
 
       assert_raise Ecto.NoResultsError, fn ->
         Institutions.get_pending_registration!(pending_registration.id)
@@ -430,67 +485,28 @@ defmodule Oli.InstitutionsTest do
       assert %Ecto.Changeset{} = Institutions.change_pending_registration(pending_registration)
     end
 
-    test "find_or_create_institution_by_normalized_url/1 find an institution with a similar url",
+    test "find_active_institution_by_normalized_url/1 ignores scheme, trailing slash, and case",
          %{institution: institution} do
-      {:ok, same_institution} =
-        Institutions.find_or_create_institution_by_normalized_url(%{
-          country_code: "US",
-          institution_email: "institution@example.edu",
-          institution_url: "https://institution.example.edu/",
-          name: "Example Institution"
-        })
+      for url <- [
+            "https://institution.example.edu/",
+            "http://institution.example.edu",
+            "https://institution.ExAmPle.EDU/"
+          ] do
+        assert Institutions.find_active_institution_by_normalized_url(url).id == institution.id
+      end
 
-      assert same_institution.id == institution.id
-
-      {:ok, same_institution} =
-        Institutions.find_or_create_institution_by_normalized_url(%{
-          country_code: "US",
-          institution_email: "institution@example.edu",
-          institution_url: "http://institution.example.edu",
-          name: "Example Institution"
-        })
-
-      assert same_institution.id == institution.id
-
-      {:ok, different_institution} =
-        Institutions.find_or_create_institution_by_normalized_url(%{
-          country_code: "US",
-          institution_email: "institution@example.edu",
-          institution_url: "http://different.example.edu",
-          name: "Example Institution"
-        })
-
-      assert different_institution.id != institution.id
+      refute Institutions.find_active_institution_by_normalized_url(
+               "http://different.example.edu"
+             )
     end
 
-    test "find_or_create_institution_by_normalized_url/1 uses the first existing institution if multiple institutions with similar urls exist",
+    test "find_active_institution_by_normalized_url/1 returns the first of several matches",
          %{institution: first_institution} do
       _second_institution = institution_fixture()
 
-      {:ok, result_institution} =
-        Institutions.find_or_create_institution_by_normalized_url(%{
-          country_code: "US",
-          institution_email: "institution@example.edu",
-          institution_url: "https://institution.example.edu/",
-          name: "Example Institution"
-        })
-
-      assert result_institution.id == first_institution.id
-    end
-
-    test "find_or_create_institution_by_normalized_url/1 finds existing institution if mixed casing is used",
-         %{institution: first_institution} do
-      _second_institution = institution_fixture()
-
-      {:ok, result_institution} =
-        Institutions.find_or_create_institution_by_normalized_url(%{
-          country_code: "US",
-          institution_email: "institution@example.edu",
-          institution_url: "https://institution.ExAmPle.EDU/",
-          name: "Example Institution"
-        })
-
-      assert result_institution.id == first_institution.id
+      assert Institutions.find_active_institution_by_normalized_url(
+               "https://institution.example.edu/"
+             ).id == first_institution.id
     end
 
     test "approve_pending_registration_as_new_institution/1 creates a new institution and registration and removes pending registration" do
@@ -508,7 +524,11 @@ defmodule Oli.InstitutionsTest do
              |> Enum.find(fn r -> r.issuer == "new issuer" end) == nil
 
       {:ok, {%Institution{}, %Registration{}, _deployment}} =
-        Institutions.approve_pending_registration_as_new_institution(pending_registration)
+        Institutions.Audited.approve_pending_registration(
+          Oli.TestHelpers.audit_context(),
+          pending_registration.id,
+          :new
+        )
 
       assert Institutions.list_institutions()
              |> Enum.find(fn i -> i.institution_url == "https://www.something.com" end) !=
@@ -541,7 +561,11 @@ defmodule Oli.InstitutionsTest do
         })
 
       {:ok, {%Institution{}, %Registration{}, _deployment}} =
-        Institutions.approve_pending_registration(pending_registration)
+        Institutions.Audited.approve_pending_registration(
+          Oli.TestHelpers.audit_context(),
+          pending_registration.id,
+          :by_url
+        )
 
       assert Institutions.list_institutions()
              |> Enum.find(fn i -> i.institution_url == "http://new.example.edu" end) != nil
@@ -573,7 +597,11 @@ defmodule Oli.InstitutionsTest do
         })
 
       {:ok, {%Institution{}, %Registration{}, _deployment}} =
-        Institutions.approve_pending_registration(pending_registration)
+        Institutions.Audited.approve_pending_registration(
+          Oli.TestHelpers.audit_context(),
+          pending_registration.id,
+          :by_url
+        )
 
       assert Institutions.list_institutions() |> Enum.count() == 1
 
@@ -602,7 +630,11 @@ defmodule Oli.InstitutionsTest do
       count_before = length(Institutions.list_institutions())
 
       {:ok, {institution, registration, deployment}} =
-        Institutions.approve_pending_registration(pending_registration, existing_institution.id)
+        Institutions.Audited.approve_pending_registration(
+          Oli.TestHelpers.audit_context(),
+          pending_registration.id,
+          existing_institution.id
+        )
 
       assert institution.id == existing_institution.id
       assert registration.id != nil

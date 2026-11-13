@@ -5,10 +5,8 @@ defmodule Oli.Lti.PlatformExternalTools do
 
   import Ecto.Query, warn: false
   import Ecto.Changeset
-  import Oli.Utils, only: [trap_nil: 1]
 
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
-  alias Oli.Activities
   alias Oli.Activities.ActivityRegistration
   alias Oli.Delivery.Sections.{Section, SectionResource}
 
@@ -47,124 +45,6 @@ defmodule Oli.Lti.PlatformExternalTools do
     |> where(^attrs)
     |> preload(:platform_instance)
     |> Repo.one()
-  end
-
-  @doc """
-  Creates a lti external tool deployment.
-  """
-  def create_lti_external_tool_activity_deployment(attrs \\ %{}) do
-    %LtiExternalToolActivityDeployment{}
-    |> LtiExternalToolActivityDeployment.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Creates a lti external tool platform instance, deployment and registers the activity.
-  """
-  def register_lti_external_tool_activity(platform_instance_params) do
-    Repo.transaction(fn ->
-      with {:ok, platform_instance} <-
-             create_platform_instance(platform_instance_params),
-           {:ok, activity_registration} <-
-             Activities.register_lti_external_tool_activity(
-               platform_instance_params["name"],
-               platform_instance_params["name"],
-               platform_instance_params["description"]
-             ),
-           {:ok, deployment} <-
-             create_lti_external_tool_activity_deployment(%{
-               platform_instance_id: platform_instance.id,
-               activity_registration_id: activity_registration.id
-             }) do
-        {platform_instance, activity_registration, deployment}
-      else
-        {:error, error} -> Repo.rollback(error)
-      end
-    end)
-  end
-
-  @doc """
-  Updates a LTI external tool activity.
-
-  ## Examples
-
-      iex> update_lti_external_tool_activity(1, %{field: new_value})
-      {:ok, %{platform_instance: %PlatformInstance{}, activity_registration: %ActivityRegistration{}}}
-
-      iex> update_lti_external_tool_activity(456, %{field: bad_value})
-      {:error, :updated_platform_instance, %Ecto.Changeset{}, %{}}
-
-  """
-  @spec update_lti_external_tool_activity(
-          integer(),
-          map()
-        ) :: {:ok, map()} | {:error, atom(), Ecto.Changeset.t(), map()}
-  def update_lti_external_tool_activity(platform_instance_id, attrs) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.run(:platform_instance, fn _, _ ->
-      platform_instance_id
-      |> get_platform_instance()
-      |> trap_nil()
-    end)
-    |> Ecto.Multi.update(:updated_platform_instance, fn %{platform_instance: platform_instance} ->
-      change_platform_instance(platform_instance, attrs)
-    end)
-    |> Ecto.Multi.run(:activity_registration, fn repo, _ ->
-      from(
-        a in ActivityRegistration,
-        join: etad in LtiExternalToolActivityDeployment,
-        on: etad.activity_registration_id == a.id,
-        where: etad.platform_instance_id == ^platform_instance_id
-      )
-      |> repo.one()
-      |> trap_nil()
-    end)
-    |> Ecto.Multi.update(:updated_activity_registration, fn %{
-                                                              activity_registration:
-                                                                activity_registration
-                                                            } ->
-      activity_attrs = %{
-        title: attrs["name"],
-        petite_label: attrs["name"],
-        description: attrs["description"]
-      }
-
-      ActivityRegistration.changeset(activity_registration, activity_attrs)
-    end)
-    |> Repo.transaction()
-  end
-
-  @doc """
-  Updates a lti external tool deployment.
-
-  ## Examples
-
-      iex> update_lti_external_tool_activity_deployment(lti_external_tool_activity_deployment, %{field: new_value})
-      {:ok, %LtiExternalToolActivityDeployment{}}
-
-      iex> update_lti_external_tool_activity_deployment(lti_external_tool_activity_deployment, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  @spec update_lti_external_tool_activity_deployment(
-          LtiExternalToolActivityDeployment.t(),
-          map()
-        ) :: {:ok, LtiExternalToolActivityDeployment.t()} | {:error, Ecto.Changeset.t()}
-  def update_lti_external_tool_activity_deployment(
-        %LtiExternalToolActivityDeployment{} = lti_external_tool_activity_deployment,
-        attrs
-      ) do
-    lti_external_tool_activity_deployment
-    |> LtiExternalToolActivityDeployment.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a lti external tool deployment.
-  """
-  def delete_lti_external_tool_activity_deployment(
-        %LtiExternalToolActivityDeployment{} = lti_external_tool_activity_deployment
-      ) do
-    Repo.delete(lti_external_tool_activity_deployment)
   end
 
   @doc """
@@ -258,24 +138,6 @@ defmodule Oli.Lti.PlatformExternalTools do
   def change_platform_instance(%PlatformInstance{} = platform_instance, attrs \\ %{}) do
     PlatformInstance.changeset(platform_instance, attrs)
     |> unique_constraint(:client_id)
-  end
-
-  @doc """
-  Creates a platform_instance.
-
-  ## Examples
-
-      iex> create_platform_instance(%{field: value})
-      {:ok, %PlatformInstance{}}
-
-      iex> create_platform_instance(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_platform_instance(attrs \\ %{}) do
-    %PlatformInstance{}
-    |> change_platform_instance(attrs)
-    |> Repo.insert()
   end
 
   @doc """
@@ -609,81 +471,11 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
-  Creates a new LtiSectionResourceDeepLink record.
-  This function is used to store deep link resources associated with a particular section resource.
-  """
-  def create_section_resource_deep_link(attrs) do
-    %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{}
-    |> Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Upserts a LtiSectionResourceDeepLink record.
-  If a record with the same section_id and resource_id exists, it will be updated.
-  If it does not exist, a new record will be created.
-  """
-  def upsert_section_resource_deep_link(attrs) do
-    %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{}
-    |> Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink.changeset(attrs)
-    |> Repo.insert(
-      on_conflict: {:replace_all_except, [:id, :inserted_at]},
-      conflict_target: [:section_id, :resource_id]
-    )
-  end
-
-  @doc """
   Retrieves a LtiSectionResourceDeepLink by its attributes.
   """
   def get_section_resource_deep_link_by(attrs) do
     Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
     |> where(^attrs)
     |> Repo.one()
-  end
-
-  @doc """
-  Updates an existing LtiSectionResourceDeepLink record.
-  """
-  def update_section_resource_deep_link(
-        %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{} = deep_link,
-        attrs
-      ) do
-    deep_link
-    |> Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a LtiSectionResourceDeepLink record.
-  """
-  def delete_section_resource_deep_link(
-        %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{} = deep_link
-      ) do
-    Repo.delete(deep_link)
-  end
-
-  @doc """
-  Soft delete a Deployment and its related Platform Instance.
-  In the current iteration there is not expected to ever be more than one deployment per platform instance.
-  See: https://eliterate.atlassian.net/browse/MER-4745
-  """
-
-  @spec soft_delete_activity_deployment_and_platform_instance(
-          LtiExternalToolActivityDeployment.t()
-        ) :: {:ok, LtiExternalToolActivityDeployment.t()} | {:error, Ecto.Changeset.t()}
-  def soft_delete_activity_deployment_and_platform_instance(
-        %LtiExternalToolActivityDeployment{} = deployment
-      ) do
-    deployment = Repo.preload(deployment, :platform_instance)
-
-    Ecto.Multi.new()
-    |> Ecto.Multi.run(:soft_delete_activity_deployment, fn _, _ ->
-      update_lti_external_tool_activity_deployment(deployment, %{status: :deleted})
-    end)
-    |> Ecto.Multi.update(
-      :soft_delete_platform_instance,
-      change_platform_instance(deployment.platform_instance, %{status: :deleted})
-    )
-    |> Repo.transaction()
   end
 end

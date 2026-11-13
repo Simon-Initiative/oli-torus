@@ -58,7 +58,7 @@ defmodule Oli.Auditing.EventCatalog.Fields do
     values(~w(email email_confirmed_at invitation_accepted_at name given_name family_name
       middle_name nickname preferred_username picture locale guest independent_learner
       research_opt_out locked_at can_create_sections age_verified hidden is_internal
-      author_id lti_institution_id)a)
+      author_id lti_institution_id platform_roles)a)
     |> Map.merge(secrets(~w(password email_confirmation)a))
   end
 
@@ -223,10 +223,10 @@ defmodule Oli.Auditing.EventCatalog.Fields do
   def integration do
     values(~w(issuer client_id key_set_url auth_token_url auth_login_url auth_server
       line_items_service_domain tool_jwk_id deployment_id institution_id status name
-      description target_link_uri login_url keyset_url redirect_uris custom_params
-      deep_linking_enabled grade_passback_enabled line_items_service_url nrps_enabled
-      nrps_context_memberships_url)a)
-    |> Map.merge(secrets([:private_key]))
+      description target_link_uri login_url keyset_url redirect_uris deep_linking_enabled
+      grade_passback_enabled line_items_service_url nrps_enabled nrps_context_memberships_url
+      url title text)a)
+    |> Map.merge(secrets(~w(private_key custom_params custom)a))
   end
 
   @doc "AI service configuration (`RegisteredModel`, `ServiceConfig`, `FeatureConfig`)."
@@ -279,7 +279,11 @@ defmodule Oli.Auditing.EventCatalog.Fields do
             state: "LTI launch state maintained by the system",
             invited_by_id: "set once with the invitation; recorded by invitation_created",
             preferences: "recorded through its subfields (see Oli.Accounts.UserPreferences)"
-          })
+          }),
+        pseudo_keys: %{
+          platform_roles:
+            "institution roles held through users_platform_roles, as sorted role URIs"
+        }
       ),
       source(Oli.Accounts.Author, [:author_account, :preferences],
         excluded:
@@ -604,6 +608,12 @@ defmodule Oli.Auditing.EventCatalog.Fields do
             )
           )
       ),
+      source(Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink, [:integration],
+        excluded:
+          row(:deep_link)
+          |> Map.merge(scope([:section_id, :resource_id]))
+          |> Map.merge(%{type: "kind of link the tool returned; the url records the choice"})
+      ),
       source(Oli.GenAI.Completions.RegisteredModel, [:ai_service], excluded: row(:ai_service)),
       source(Oli.GenAI.Completions.ServiceConfig, [:ai_service], excluded: row(:ai_service)),
       source(Oli.GenAI.FeatureConfig, [:ai_service, :dot_activation],
@@ -614,7 +624,7 @@ defmodule Oli.Auditing.EventCatalog.Fields do
           row(:api_key)
           |> Map.merge(%{
             hash: "credential hash, never recorded",
-            hint: "partial key hint; recorded in details"
+            hint: "label the administrator typed for the key; recorded in details"
           }),
         pseudo_keys: %{lifecycle: "created, rotated, enabled, disabled, or revoked"}
       ),

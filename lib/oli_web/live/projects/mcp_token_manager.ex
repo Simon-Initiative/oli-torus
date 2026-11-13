@@ -271,7 +271,12 @@ defmodule OliWeb.Projects.MCPTokenManager do
   def handle_event("generate_token", %{"bearer_token" => params}, socket) do
     hint = Map.get(params, "hint")
 
-    case Auth.create_token(socket.assigns.current_author.id, socket.assigns.project.id, hint) do
+    case Oli.MCP.Audited.create_token(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.current_author.id,
+           socket.assigns.project.id,
+           hint
+         ) do
       {:ok, {token, token_string}} ->
         {:noreply,
          socket
@@ -290,7 +295,8 @@ defmodule OliWeb.Projects.MCPTokenManager do
   def handle_event("regenerate_token", %{"bearer_token" => params}, socket) do
     hint = Map.get(params, "hint")
 
-    case Auth.regenerate_token(
+    case Oli.MCP.Audited.regenerate_token(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
            socket.assigns.current_author.id,
            socket.assigns.project.id,
            hint

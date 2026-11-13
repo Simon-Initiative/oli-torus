@@ -191,9 +191,13 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
       )
 
     {:ok, _} =
-      PlatformExternalTools.update_lti_external_tool_activity_deployment(deployment, %{
-        deep_linking_enabled: true
-      })
+      Oli.Lti.Audited.update_external_tool_deployment(
+        Oli.TestHelpers.audit_context(),
+        deployment.deployment_id,
+        %{
+          deep_linking_enabled: true
+        }
+      )
   end
 
   defp create_lti_external_tool_activity() do
@@ -211,7 +215,7 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
       "target_link_uri" => "some target_link_uri"
     }
 
-    PlatformExternalTools.register_lti_external_tool_activity(attrs)
+    Oli.Lti.Audited.register_external_tool(Oli.TestHelpers.audit_context(), attrs)
   end
 
   def setup_section(%{conn: conn}) do

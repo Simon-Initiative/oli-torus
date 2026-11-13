@@ -11,36 +11,10 @@ defmodule Oli.Interop do
   end
 
   @doc """
-  Create a new api key, with the given code and hint.
-  """
-  def create_key(code, hint) do
-    %ApiKey{}
-    |> ApiKey.changeset(%{
-      hash: :crypto.hash(:md5, code) |> Base.encode16(),
-      hint: hint
-    })
-    |> Repo.insert()
-  end
-
-  @doc """
   Retrieve a key by its id.
   """
   def get_key(id) do
     Repo.get!(ApiKey, id)
-  end
-
-  @doc """
-  Updates an api key.
-  ## Examples
-      iex> update_key(key, %{field: new_value})
-      {:ok, %ApiKey{}}
-      iex> update_key(key, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def update_key(%ApiKey{} = key, attrs) do
-    key
-    |> ApiKey.changeset(attrs)
-    |> Repo.update()
   end
 
   @doc """

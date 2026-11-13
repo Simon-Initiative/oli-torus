@@ -39,7 +39,7 @@ defmodule Oli.Delivery.SecureAssessmentAdmissionTest do
 
     assert section == c.section.id
     assert resource == c.sr.resource_id
-    Accounts.delete_user_session_token(first)
+    Oli.TestHelpers.delete_user_session_token_fixture(first)
     assert {:ok, %{scope: nil}} = Accounts.get_user_session(ordinary)
     assert {:ok, _} = Accounts.get_user_session(second)
   end
@@ -116,6 +116,7 @@ defmodule Oli.Delivery.SecureAssessmentAdmissionTest do
 
     on_exit(fn ->
       Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+        delete_login_events(user)
         Repo.delete_all(from t in UserToken, where: t.user_id == ^user.id)
         Enum.each([enrollment, sr, section, revision], &Repo.delete!/1)
         Repo.delete!(Oli.Resources.Resource |> Repo.get!(revision.resource_id))
@@ -231,6 +232,7 @@ defmodule Oli.Delivery.SecureAssessmentAdmissionTest do
 
     on_exit(fn ->
       Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+        delete_login_events(user)
         Repo.delete_all(from t in UserToken, where: t.user_id == ^user.id)
         Enum.each([enrollment, sr, section, resource, user], &Repo.delete!/1)
       end)
@@ -274,5 +276,14 @@ defmodule Oli.Delivery.SecureAssessmentAdmissionTest do
     send(editor.pid, :commit)
     assert {:ok, :ok} = Task.await(editor)
     assert {:error, :secure_target_invalid} = Task.await(entrant)
+  end
+
+  # Secure launches record the learner's login; the audit table is append-only, so committed
+  # events from the unboxed launches are removed with the mutation guard turned off.
+  defp delete_login_events(user) do
+    Repo.transaction(fn ->
+      Repo.query!("SET LOCAL oli.audit_log_allow_mutation = 'on'")
+      Repo.delete_all(from(e in Oli.Auditing.LogEvent, where: e.affected_user_id == ^user.id))
+    end)
   end
 end

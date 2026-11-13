@@ -73,7 +73,7 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
         id = Hooks.activity(ctx.state).resource_id
 
         assert {:ok, _} =
-                 PlatformExternalTools.delete_section_resource_deep_link(link(ctx.section, id))
+                 Oli.TestHelpers.delete_deep_link_fixture(link(ctx.section, id))
 
         before = snapshot(ctx.section)
 
@@ -131,7 +131,7 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
       id = Hooks.activity(ctx.state).resource_id
 
       assert {:ok, _} =
-               PlatformExternalTools.upsert_section_resource_deep_link(%{
+               Oli.TestHelpers.upsert_deep_link_fixture(%{
                  "section_id" => ctx.section.id,
                  "resource_id" => id,
                  "type" => "ltiResourceLink",

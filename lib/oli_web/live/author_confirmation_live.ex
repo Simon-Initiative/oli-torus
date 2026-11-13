@@ -43,7 +43,7 @@ defmodule OliWeb.AuthorConfirmationLive do
   # Do not log in the author after confirmation to avoid a
   # leaked token giving the author access to the account.
   def handle_event("confirm_account", %{"author" => %{"token" => token}}, socket) do
-    case Accounts.confirm_author(token) do
+    case Accounts.Audited.confirm_email(:author, token) do
       {:ok, _} ->
         {:noreply,
          socket

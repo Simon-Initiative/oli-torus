@@ -347,7 +347,12 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
     test "fails when no authors exist", %{project: project, author: author} do
       # Create Bearer token before deleting authors
       {:ok, {_bearer_token, token_string}} =
-        Oli.MCP.Auth.create_token(author.id, project.id, "Test token")
+        Oli.MCP.Audited.create_token(
+          Oli.TestHelpers.audit_context(),
+          author.id,
+          project.id,
+          "Test token"
+        )
 
       # Delete all authors (making the Bearer token invalid)
       Oli.Repo.delete_all(Oli.Accounts.Author)

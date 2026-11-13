@@ -2,6 +2,7 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
+  alias Oli.Auditing.Context
   alias Oli.Groups
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.CommunityLive.ShowView
@@ -86,7 +87,10 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   def handle_event("remove", %{"id" => id}, socket) do
     clear_flash(socket)
 
-    case Groups.delete_community_visibility(id) do
+    case Groups.delete_community_visibility(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           id
+         ) do
       {:ok, _community_visibility} ->
         associations = Groups.list_community_visibilities(socket.assigns.community_id)
         {:ok, table_model} = TableModel.new(associations, socket.assigns.ctx, :id, "remove")

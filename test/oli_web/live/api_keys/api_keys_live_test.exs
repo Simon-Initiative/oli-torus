@@ -65,10 +65,15 @@ defmodule OliWeb.ApiKeys.ApiKeysLiveTest do
 
     test "toggles fields and status and updates registration namespace", %{conn: conn} do
       # Arrange: create a key and make it enabled to exercise toggle
-      {:ok, key} = Oli.Interop.create_key(Ecto.UUID.generate(), "Hint A")
+      {:ok, key} =
+        Oli.Interop.Audited.create_key(
+          Oli.TestHelpers.audit_context(),
+          Ecto.UUID.generate(),
+          "Hint A"
+        )
 
       {:ok, key} =
-        Oli.Interop.update_key(key, %{
+        Oli.TestHelpers.update_api_key_fixture(key, %{
           status: :enabled,
           products_enabled: true,
           payments_enabled: true,

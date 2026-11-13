@@ -2,6 +2,7 @@ defmodule OliWeb.CommunityLive.ShowView do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  alias Oli.Auditing.Context
   alias Oli.Accounts
   alias Oli.Accounts.{AuthorBrowseOptions, UserBrowseOptions}
   alias Oli.Groups
@@ -167,7 +168,11 @@ defmodule OliWeb.CommunityLive.ShowView do
   def handle_event("save", %{"community" => params}, socket) do
     socket = clear_flash(socket)
 
-    case Groups.update_community(socket.assigns.community, Params.trim(params)) do
+    case Groups.update_community(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.community,
+           Params.trim(params)
+         ) do
       {:ok, community} ->
         socket = put_flash(socket, :info, "Community successfully updated.")
 
@@ -190,7 +195,10 @@ defmodule OliWeb.CommunityLive.ShowView do
     socket = clear_flash(socket)
 
     socket =
-      case Groups.delete_community(socket.assigns.community) do
+      case Groups.delete_community(
+             Context.for_actor(socket.assigns.current_author, source: :ui),
+             socket.assigns.community
+           ) do
         {:ok, _community} ->
           socket
           |> put_flash(:info, "Community successfully deleted.")
@@ -259,7 +267,12 @@ defmodule OliWeb.CommunityLive.ShowView do
       |> Enum.map(&String.trim(&1))
 
     socket =
-      case Groups.create_community_accounts_from_emails("admin", emails, attrs) do
+      case Groups.create_community_accounts_from_emails(
+             Context.for_actor(socket.assigns.current_author, source: :ui),
+             "admin",
+             emails,
+             attrs
+           ) do
         {:ok, _community_accounts} ->
           updated_assigns = community_accounts_assigns("admin", attrs.community_id)
 
@@ -283,7 +296,11 @@ defmodule OliWeb.CommunityLive.ShowView do
     attrs = %{community_id: socket.assigns.community.id}
 
     socket =
-      case Groups.create_community_account_from_user_id(collaborator_id, attrs) do
+      case Groups.create_community_account_from_user_id(
+             Context.for_actor(socket.assigns.current_author, source: :ui),
+             collaborator_id,
+             attrs
+           ) do
         {:ok, _community_account} ->
           updated_assigns = community_accounts_assigns("member", attrs.community_id)
 
@@ -326,7 +343,12 @@ defmodule OliWeb.CommunityLive.ShowView do
 
         show_modal(socket, modal, modal_assigns: modal_assigns)
       else
-        case Groups.create_community_account_from_email("member", String.trim(email), attrs) do
+        case Groups.create_community_account_from_email(
+               Context.for_actor(socket.assigns.current_author, source: :ui),
+               "member",
+               String.trim(email),
+               attrs
+             ) do
           {:ok, _community_account} ->
             updated_assigns = community_accounts_assigns("member", attrs.community_id)
 
@@ -371,9 +393,13 @@ defmodule OliWeb.CommunityLive.ShowView do
       {:noreply, socket}
     else
       socket =
-        case Groups.create_community_institutions_from_ids([institution_id], %{
-               community_id: community_id
-             }) do
+        case Groups.create_community_institutions_from_ids(
+               Context.for_actor(socket.assigns.current_author, source: :ui),
+               [institution_id],
+               %{
+                 community_id: community_id
+               }
+             ) do
           {:ok, _community_institutions} ->
             put_flash(socket, :info, "Community institution(s) successfully added.")
 
@@ -400,7 +426,10 @@ defmodule OliWeb.CommunityLive.ShowView do
       institution_id: institution_id
     }
 
-    case Groups.delete_community_institution(attrs) do
+    case Groups.delete_community_institution(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           attrs
+         ) do
       {:ok, _community_institution} ->
         socket = put_flash(socket, :info, "Community institution successfully removed.")
 
@@ -426,7 +455,10 @@ defmodule OliWeb.CommunityLive.ShowView do
         end
       )
 
-    case Groups.delete_community_account(attrs) do
+    case Groups.delete_community_account(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           attrs
+         ) do
       {:ok, _community_account} ->
         socket = put_flash(socket, :info, "Community #{user_type} successfully removed.")
         updated_assigns = community_accounts_assigns(user_type, attrs.community_id)

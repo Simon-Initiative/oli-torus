@@ -4,7 +4,6 @@ defmodule Oli.ScopedFeatureFlags.RolloutsTest do
   import Oli.Factory
 
   alias Oli.Auditing
-  alias Oli.ScopedFeatureFlags.Rollouts
 
   @feature :canary_test_feature
 
@@ -24,7 +23,12 @@ defmodule Oli.ScopedFeatureFlags.RolloutsTest do
       project_id = project.id
 
       assert {:ok, rollout} =
-               Rollouts.upsert_rollout(@feature, :project, project.id, :internal_only, author,
+               Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 @feature,
+                 :project,
+                 project.id,
+                 :internal_only,
                  note: "initial"
                )
 
@@ -41,7 +45,12 @@ defmodule Oli.ScopedFeatureFlags.RolloutsTest do
                       %{to_stage: :internal_only}}
 
       assert {:ok, rollout} =
-               Rollouts.upsert_rollout(@feature, :project, project.id, :five_percent, author,
+               Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 @feature,
+                 :project,
+                 project.id,
+                 :five_percent,
                  note: "promote"
                )
 
@@ -58,12 +67,24 @@ defmodule Oli.ScopedFeatureFlags.RolloutsTest do
       project_id = project.id
 
       {:ok, _} =
-        Rollouts.upsert_rollout(@feature, :project, project.id, :internal_only, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          :project,
+          project.id,
+          :internal_only
+        )
 
       handler = attach_telemetry([[:torus, :feature_flag, :rollout_stage_deleted]])
 
       assert :ok =
-               Rollouts.delete_rollout(@feature, :project, project.id, author, note: "cleanup")
+               Oli.ScopedFeatureFlags.Audited.delete_rollout(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 @feature,
+                 :project,
+                 project.id,
+                 note: "cleanup"
+               )
 
       assert_received {:stage_invalidated, "canary_test_feature", :project, ^project_id}
 
@@ -88,7 +109,13 @@ defmodule Oli.ScopedFeatureFlags.RolloutsTest do
       publisher_id = publisher.id
 
       assert {:ok, exemption} =
-               Rollouts.upsert_exemption(@feature, publisher.id, :deny, author, note: "contract")
+               Oli.ScopedFeatureFlags.Audited.upsert_exemption(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 @feature,
+                 publisher.id,
+                 :deny,
+                 note: "contract"
+               )
 
       assert exemption.effect == :deny
       assert_received {:exemption_invalidated, "canary_test_feature", ^publisher_id}
@@ -99,7 +126,11 @@ defmodule Oli.ScopedFeatureFlags.RolloutsTest do
       assert Enum.count(events) == 1
 
       assert {:ok, exemption} =
-               Rollouts.upsert_exemption(@feature, publisher.id, :force_enable, author,
+               Oli.ScopedFeatureFlags.Audited.upsert_exemption(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 @feature,
+                 publisher.id,
+                 :force_enable,
                  note: "override"
                )
 
@@ -114,11 +145,22 @@ defmodule Oli.ScopedFeatureFlags.RolloutsTest do
       publisher_id = publisher.id
 
       {:ok, _} =
-        Rollouts.upsert_exemption(@feature, publisher.id, :deny, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_exemption(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          publisher.id,
+          :deny
+        )
 
       handler = attach_telemetry([[:torus, :feature_flag, :rollout_exemption_deleted]])
 
-      assert :ok = Rollouts.delete_exemption(@feature, publisher.id, author, note: "resolved")
+      assert :ok =
+               Oli.ScopedFeatureFlags.Audited.delete_exemption(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 @feature,
+                 publisher.id,
+                 note: "resolved"
+               )
 
       assert_received {:exemption_invalidated, "canary_test_feature", ^publisher_id}
 

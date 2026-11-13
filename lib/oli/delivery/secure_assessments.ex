@@ -89,25 +89,38 @@ defmodule Oli.Delivery.SecureAssessments do
 
   defp admit_in_transaction(_, _), do: {:error, :secure_target_invalid}
 
-  @doc "Atomically rechecks generic admission and inserts one independently scoped session token."
+  @doc """
+  Atomically rechecks generic admission and inserts one independently scoped session token. The
+  session is issued through `Oli.Accounts.Audited.issue_session_multi/4` as an LTI login, so its
+  `user_logged_in` event commits or rolls back with it.
+  """
   @spec issue_session(%Oli.Accounts.User{}, Admission.t()) :: {:ok, binary()} | {:error, term()}
   def issue_session(user, %Admission{} = admission) do
     Repo.transaction(fn ->
       with {:ok, scope} <- admit(user, admission),
-           {token, record} <- Oli.Accounts.UserToken.build_session_token(user, scope),
-           {:ok, _} <-
-             record
-             |> Ecto.Changeset.change()
-             |> Ecto.Changeset.foreign_key_constraint(:user_id)
-             |> Ecto.Changeset.foreign_key_constraint(:secure_section_id)
-             |> Ecto.Changeset.foreign_key_constraint(:secure_resource_id)
-             |> Repo.insert() do
+           {:ok, %{session: %{token: token}}} <- insert_session(user, scope) do
         token
       else
-        {:error, %Ecto.Changeset{}} -> Repo.rollback(:secure_session_persistence_failed)
-        {:error, reason} -> Repo.rollback(reason)
+        {:error, {:session, :token}, %Ecto.Changeset{}, _changes} ->
+          Repo.rollback(:secure_session_persistence_failed)
+
+        {:error, _step, reason, _changes} ->
+          Repo.rollback(reason)
+
+        {:error, reason} ->
+          Repo.rollback(reason)
       end
     end)
+  end
+
+  defp insert_session(user, scope) do
+    Ecto.Multi.new()
+    |> Oli.Accounts.Audited.issue_session_multi(
+      :session,
+      Oli.Auditing.Context.for_actor(user, source: :ui),
+      {user, :lti, [scope: scope]}
+    )
+    |> Repo.transaction()
   end
 
   @doc "Resolves a section page without constructing delivery context or recording a visit."

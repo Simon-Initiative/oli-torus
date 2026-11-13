@@ -281,9 +281,8 @@ defmodule Oli.Scenarios.Engine do
   defp create_default_author do
     # Use production API to create an author
     alias Oli.Accounts.Author
-    alias Oli.Repo
 
-    {:ok, author} =
+    changeset =
       %Author{}
       |> Author.registration_changeset(%{
         email: "author_#{System.unique_integer([:positive])}@example.com",
@@ -297,19 +296,27 @@ defmodule Oli.Scenarios.Engine do
         given_name: "Default",
         family_name: "Author"
       })
-      |> Repo.insert()
+
+    {:ok, author} =
+      Oli.Accounts.Audited.provision_account(
+        Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+        {:author, nil, changeset, "scenario"}
+      )
 
     author
   end
 
   defp create_default_institution do
     {:ok, institution} =
-      Oli.Institutions.create_institution(%{
-        name: "Default Institution #{System.unique_integer([:positive])}",
-        institution_email: "admin@institution.edu",
-        country_code: "US",
-        institution_url: "http://institution.edu"
-      })
+      Oli.Institutions.Audited.create_institution(
+        Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+        %{
+          name: "Default Institution #{System.unique_integer([:positive])}",
+          institution_email: "admin@institution.edu",
+          country_code: "US",
+          institution_url: "http://institution.edu"
+        }
+      )
 
     institution
   end

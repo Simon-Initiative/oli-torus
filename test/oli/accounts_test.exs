@@ -27,39 +27,11 @@ defmodule Oli.AccountsTest do
       assert author.system_role_id == Accounts.SystemRole.role_id().author
 
       {:ok, author} =
-        Accounts.insert_or_update_author(%{
-          email: author.email,
+        Oli.TestHelpers.update_account_fixture(author, %{
           system_role_id: Accounts.SystemRole.role_id().system_admin
         })
 
       assert author.system_role_id == Accounts.SystemRole.role_id().system_admin
-    end
-
-    test "admin_update_author/3 only lets a system admin change the system role" do
-      system_admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().system_admin})
-
-      account_admin =
-        author_fixture(%{system_role_id: Accounts.SystemRole.role_id().account_admin})
-
-      author = author_fixture()
-      admin_role = Accounts.SystemRole.role_id().system_admin
-
-      {:ok, refused} =
-        Accounts.admin_update_author(
-          author,
-          %{"system_role_id" => admin_role, "given_name" => "Renamed"},
-          account_admin
-        )
-
-      assert refused.given_name == "Renamed"
-      assert refused.system_role_id == Accounts.SystemRole.role_id().author
-      assert Oli.Auditing.list_events(event_type: :author_role_changed) == []
-
-      {:ok, granted} =
-        Accounts.admin_update_author(author, %{"system_role_id" => admin_role}, system_admin)
-
-      assert granted.system_role_id == admin_role
-      assert [_event] = Oli.Auditing.list_events(event_type: :author_role_changed)
     end
 
     test "admin helper hierarchy matches the system role levels" do
@@ -71,8 +43,7 @@ defmodule Oli.AccountsTest do
       assert Accounts.is_system_admin?(author) == false
 
       {:ok, author} =
-        Accounts.insert_or_update_author(%{
-          email: author.email,
+        Oli.TestHelpers.update_account_fixture(author, %{
           system_role_id: Accounts.SystemRole.role_id().system_admin
         })
 
@@ -83,8 +54,7 @@ defmodule Oli.AccountsTest do
       assert Accounts.is_system_admin?(author) == true
 
       {:ok, author} =
-        Accounts.insert_or_update_author(%{
-          email: author.email,
+        Oli.TestHelpers.update_account_fixture(author, %{
           system_role_id: Accounts.SystemRole.role_id().account_admin
         })
 
@@ -95,8 +65,7 @@ defmodule Oli.AccountsTest do
       assert Accounts.is_system_admin?(author) == false
 
       {:ok, author} =
-        Accounts.insert_or_update_author(%{
-          email: author.email,
+        Oli.TestHelpers.update_account_fixture(author, %{
           system_role_id: Accounts.SystemRole.role_id().content_admin
         })
 
@@ -166,10 +135,29 @@ defmodule Oli.AccountsTest do
         "given_name" => "new given name"
       }
 
-      assert {:ok, author = %Author{}} = Accounts.update_author(author, attrs)
-      assert author.email == attrs["email"]
-      assert author.family_name == attrs["family_name"]
-      assert author.given_name == attrs["given_name"]
+      assert {:error, changeset} = Accounts.update_author(author, attrs)
+
+      assert Keyword.keys(changeset.errors) |> Enum.sort() == [
+               :current_password,
+               :email,
+               :family_name,
+               :given_name
+             ]
+
+      assert Enum.all?(changeset.errors, fn {_field, {_msg, meta}} ->
+               meta[:validation] == :protected
+             end)
+
+      assert Accounts.get_author!(author.id).email == author.email
+    end
+
+    test "update_author/2 still updates preferences" do
+      author = insert(:author)
+
+      assert {:ok, %Author{} = updated} =
+               Accounts.update_author(author, %{preferences: %{editor: "markdown"}})
+
+      assert updated.preferences.editor == "markdown"
     end
 
     test "update author data with an email used by another author fails" do
@@ -183,7 +171,15 @@ defmodule Oli.AccountsTest do
         "password_confirmation" => "password_2"
       }
 
-      assert {:error, changeset = %Ecto.Changeset{}} = Accounts.update_author(author_2, attrs)
+      context = Oli.Auditing.Context.for_actor(insert(:author), source: :ui)
+
+      assert {:error, changeset = %Ecto.Changeset{}} =
+               Accounts.Audited.admin_update_author(
+                 context,
+                 author_2.id,
+                 Map.take(attrs, ["email"])
+               )
+
       assert changeset.valid? == false
 
       assert changeset.errors == [
@@ -267,41 +263,30 @@ defmodule Oli.AccountsTest do
                )
     end
 
-    test "update_user/2 with valid data updates the user", %{user: user} do
-      assert {:ok, %User{} = user} = Accounts.update_user(user, @update_attrs)
-      assert user.email == "some_updated_email@example.com"
-      assert user.given_name == "some updated given_name"
-      assert user.family_name == "some updated family_name"
-      assert user.sub == "some updated sub"
-      assert user.picture == "some updated picture"
+    test "update_user/2 updates the unprotected fields", %{user: user} do
+      assert {:ok, %User{} = user} =
+               Accounts.update_user(user, %{research_opt_out: true, state: %{"k" => "v"}})
+
+      assert user.research_opt_out == true
+      assert user.state == %{"k" => "v"}
+    end
+
+    test "update_user/2 rejects protected fields and writes nothing", %{user: user} do
+      assert {:error, changeset} =
+               Accounts.update_user(user, Map.put(@update_attrs, :research_opt_out, true))
+
+      refute changeset.valid?
+      assert {_message, [validation: :protected]} = changeset.errors[:email]
+      assert {_message, [validation: :protected]} = changeset.errors[:sub]
+
+      reloaded = Accounts.get_user!(user.id)
+      assert reloaded.email == user.email
+      assert reloaded.research_opt_out == user.research_opt_out
     end
 
     test "update_user/2 with invalid data returns error changeset", %{user: user} do
       assert {:error, %Ecto.Changeset{}} = Accounts.update_user(user, @invalid_attrs)
       assert user.email == Accounts.get_user!(user.id).email
-    end
-
-    test "update_user_platform_roles/2 updates a users platform roles", %{user: user} do
-      user = Repo.preload(user, [:platform_roles])
-      assert user.platform_roles == []
-
-      updated_roles = [
-        Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
-        Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
-      ]
-
-      {:ok, _user} = Accounts.update_user_platform_roles(user, updated_roles)
-
-      user = Accounts.get_user!(user.id, preload: [:platform_roles])
-
-      assert Lti_1p3.Roles.PlatformRoles.has_roles?(
-               user,
-               [
-                 Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
-                 Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
-               ],
-               :all
-             )
     end
 
     test "get_author_with_community_admin_count/1 returns the author with the community_admin_count as zero" do
@@ -516,14 +501,18 @@ defmodule Oli.AccountsTest do
              ]
     end
 
-    test "bulk_create_invited_users/2" do
+    test "invite_users_multi/4 creates the invited users" do
       inviter_author = insert(:author)
       invited_users = ["non_existant_user_1@test.com", "non_existant_user_2@test.com"]
 
-      Accounts.bulk_create_invited_users(
-        ["non_existant_user_1@test.com", "non_existant_user_2@test.com"],
-        inviter_author
-      )
+      {:ok, %{invited: {2, _created}}} =
+        Ecto.Multi.new()
+        |> Accounts.Audited.invite_users_multi(
+          :invited,
+          Oli.Auditing.Context.for_actor(inviter_author, source: :ui),
+          invited_users
+        )
+        |> Repo.transaction()
 
       users =
         User
@@ -543,10 +532,9 @@ defmodule Oli.AccountsTest do
         "given_name" => "new given name"
       }
 
-      assert {:ok, user = %User{}} = Accounts.update_user(user, attrs)
-      assert user.email == attrs["email"]
-      assert user.family_name == attrs["family_name"]
-      assert user.given_name == attrs["given_name"]
+      assert {:error, changeset} = Accounts.update_user(user, attrs)
+      assert {_message, [validation: :protected]} = changeset.errors[:email]
+      assert Accounts.get_user!(user.id).email == user.email
     end
 
     test "update user password fails when the new password is less than 8 characters long" do
@@ -578,7 +566,11 @@ defmodule Oli.AccountsTest do
         "password_confirmation" => "password_2"
       }
 
-      assert {:error, changeset = %Ecto.Changeset{}} = Accounts.update_user(user_2, attrs)
+      context = Oli.Auditing.Context.for_actor(insert(:author), source: :ui)
+
+      assert {:error, changeset = %Ecto.Changeset{}} =
+               Accounts.Audited.admin_update_user(context, user_2.id, Map.take(attrs, ["email"]))
+
       assert changeset.valid? == false
 
       assert changeset.errors == [
@@ -606,21 +598,21 @@ defmodule Oli.AccountsTest do
       # returns false when the user is an LTI student
       {:ok, user} =
         insert(:user, %{independent_learner: false, can_create_sections: false})
-        |> Accounts.update_user_platform_roles([PlatformRoles.get_role(:institution_student)])
+        |> put_platform_roles_fixture([PlatformRoles.get_role(:institution_student)])
 
       refute Accounts.can_manage_linked_account?(user)
 
       # returns true when user is an institution instructor
       {:ok, user} =
         insert(:user)
-        |> Accounts.update_user_platform_roles([PlatformRoles.get_role(:institution_instructor)])
+        |> put_platform_roles_fixture([PlatformRoles.get_role(:institution_instructor)])
 
       assert Accounts.can_manage_linked_account?(user)
 
       # returns true when user is an institution admin
       {:ok, user} =
         insert(:user)
-        |> Accounts.update_user_platform_roles([
+        |> put_platform_roles_fixture([
           PlatformRoles.get_role(:system_administrator),
           PlatformRoles.get_role(:institution_administrator)
         ])
@@ -717,7 +709,7 @@ defmodule Oli.AccountsTest do
         Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
       ])
 
-      Accounts.update_user_platform_roles(user, [
+      put_platform_roles_fixture(user, [
         Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor),
         Lti_1p3.Roles.PlatformRoles.get_role(:institution_student)
       ])
@@ -1007,7 +999,12 @@ defmodule Oli.AccountsTest do
     end
 
     test "updates the email with a valid token", %{user: user, token: token, email: email} do
-      assert Accounts.update_user_email(user, token) == :ok
+      assert Accounts.Audited.confirm_email_change(
+               Oli.Auditing.Context.for_actor(user, source: :ui),
+               user,
+               token
+             ) == :ok
+
       changed_user = Repo.get!(User, user.id)
       assert changed_user.email != user.email
       assert changed_user.email == email
@@ -1016,20 +1013,36 @@ defmodule Oli.AccountsTest do
     end
 
     test "does not update email with invalid token", %{user: user} do
-      assert Accounts.update_user_email(user, "oops") == :error
+      assert Accounts.Audited.confirm_email_change(
+               Oli.Auditing.Context.for_actor(user, source: :ui),
+               user,
+               "oops"
+             ) == :error
+
       assert Repo.get!(User, user.id).email == user.email
       assert Repo.get_by(UserToken, user_id: user.id)
     end
 
     test "does not update email if user email changed", %{user: user, token: token} do
-      assert Accounts.update_user_email(%{user | email: "current@example.com"}, token) == :error
+      assert Accounts.Audited.confirm_email_change(
+               Oli.Auditing.Context.for_actor(user, source: :ui),
+               %{user | email: "current@example.com"},
+               token
+             ) == :error
+
       assert Repo.get!(User, user.id).email == user.email
       assert Repo.get_by(UserToken, user_id: user.id)
     end
 
     test "does not update email if token expired", %{user: user, token: token} do
       {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      assert Accounts.update_user_email(user, token) == :error
+
+      assert Accounts.Audited.confirm_email_change(
+               Oli.Auditing.Context.for_actor(user, source: :ui),
+               user,
+               token
+             ) == :error
+
       assert Repo.get!(User, user.id).email == user.email
       assert Repo.get_by(UserToken, user_id: user.id)
     end
@@ -1062,10 +1075,15 @@ defmodule Oli.AccountsTest do
 
     test "validates password", %{user: user} do
       {:error, changeset} =
-        Accounts.update_user_password(user, valid_user_password(), %{
-          password: "not valid",
-          password_confirmation: "another"
-        })
+        Accounts.Audited.change_password(
+          Oli.Auditing.Context.for_actor(user, source: :ui),
+          user,
+          valid_user_password(),
+          %{
+            password: "not valid",
+            password_confirmation: "another"
+          }
+        )
 
       assert %{
                password: ["should be at least 12 character(s)"],
@@ -1077,7 +1095,12 @@ defmodule Oli.AccountsTest do
       too_long = String.duplicate("db", 100)
 
       {:error, changeset} =
-        Accounts.update_user_password(user, valid_user_password(), %{password: too_long})
+        Accounts.Audited.change_password(
+          Oli.Auditing.Context.for_actor(user, source: :ui),
+          user,
+          valid_user_password(),
+          %{password: too_long}
+        )
 
       assert "should be at most 72 character(s)" in errors_on(changeset).password
     end
@@ -1086,22 +1109,32 @@ defmodule Oli.AccountsTest do
       invalid_current_password = "invalid"
 
       {:error, changeset} =
-        Accounts.update_user_password(user, invalid_current_password, %{
-          current_password: invalid_current_password,
-          password: "new_valid_password",
-          password_confirmation: "new_valid_password"
-        })
+        Accounts.Audited.change_password(
+          Oli.Auditing.Context.for_actor(user, source: :ui),
+          user,
+          invalid_current_password,
+          %{
+            current_password: invalid_current_password,
+            password: "new_valid_password",
+            password_confirmation: "new_valid_password"
+          }
+        )
 
       assert %{current_password: ["is not valid"]} = errors_on(changeset)
     end
 
     test "updates the password", %{user: user} do
       {:ok, user} =
-        Accounts.update_user_password(user, valid_user_password(), %{
-          current_password: valid_user_password(),
-          password: "new valid password",
-          password_confirmation: "new valid password"
-        })
+        Accounts.Audited.change_password(
+          Oli.Auditing.Context.for_actor(user, source: :ui),
+          user,
+          valid_user_password(),
+          %{
+            current_password: valid_user_password(),
+            password: "new valid password",
+            password_confirmation: "new valid password"
+          }
+        )
 
       assert is_nil(user.password)
       assert Accounts.get_independent_user_by_email_and_password(user.email, "new valid password")
@@ -1111,11 +1144,16 @@ defmodule Oli.AccountsTest do
       _ = Accounts.generate_user_session_token(user)
 
       {:ok, _} =
-        Accounts.update_user_password(user, valid_user_password(), %{
-          current_password: valid_user_password(),
-          password: "new valid password",
-          password_confirmation: "new valid password"
-        })
+        Accounts.Audited.change_password(
+          Oli.Auditing.Context.for_actor(user, source: :ui),
+          user,
+          valid_user_password(),
+          %{
+            current_password: valid_user_password(),
+            password: "new valid password",
+            password_confirmation: "new valid password"
+          }
+        )
 
       refute Repo.get_by(UserToken, user_id: user.id)
     end
@@ -1164,15 +1202,6 @@ defmodule Oli.AccountsTest do
     end
   end
 
-  describe "delete_user_session_token/1" do
-    test "deletes the token" do
-      user = user_fixture()
-      token = Accounts.generate_user_session_token(user)
-      assert Accounts.delete_user_session_token(token) == :ok
-      refute Accounts.get_user_by_session_token(token)
-    end
-  end
-
   describe "deliver_user_confirmation_instructions/2" do
     setup do
       %{
@@ -1187,7 +1216,11 @@ defmodule Oli.AccountsTest do
     test "sends token through notification", %{user: user} do
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
+          Accounts.deliver_user_confirmation_instructions(
+            Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
+            user,
+            url
+          )
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
@@ -1204,14 +1237,18 @@ defmodule Oli.AccountsTest do
 
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
+          Accounts.deliver_user_confirmation_instructions(
+            Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
+            user,
+            url
+          )
         end)
 
       %{user: user, token: token}
     end
 
     test "confirms the email with a valid token", %{user: user, token: token} do
-      assert {:ok, confirmed_user} = Accounts.confirm_user(token)
+      assert {:ok, confirmed_user} = Accounts.Audited.confirm_email(:user, token)
       assert confirmed_user.email_confirmed_at
       assert confirmed_user.email_confirmed_at != user.email_confirmed_at
       assert Repo.get!(User, user.id).email_confirmed_at
@@ -1219,14 +1256,14 @@ defmodule Oli.AccountsTest do
     end
 
     test "does not confirm with invalid token", %{user: user} do
-      assert Accounts.confirm_user("oops") == :error
+      assert Accounts.Audited.confirm_email(:user, "oops") == :error
       refute Repo.get!(User, user.id).email_confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)
     end
 
     test "does not confirm email if token expired", %{user: user, token: token} do
       {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      assert Accounts.confirm_user(token) == :error
+      assert Accounts.Audited.confirm_email(:user, token) == :error
       refute Repo.get!(User, user.id).email_confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)
     end
@@ -1240,7 +1277,11 @@ defmodule Oli.AccountsTest do
     test "sends token through notification", %{user: user} do
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_reset_password_instructions(user, url)
+          Accounts.deliver_user_reset_password_instructions(
+            Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
+            user,
+            url
+          )
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
@@ -1257,7 +1298,11 @@ defmodule Oli.AccountsTest do
 
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_reset_password_instructions(user, url)
+          Accounts.deliver_user_reset_password_instructions(
+            Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
+            user,
+            url
+          )
         end)
 
       %{user: user, token: token}
@@ -1287,10 +1332,14 @@ defmodule Oli.AccountsTest do
 
     test "validates password", %{user: user} do
       {:error, changeset} =
-        Accounts.reset_user_password(user, %{
-          password: "not valid",
-          password_confirmation: "another"
-        })
+        Accounts.Audited.reset_password(
+          Oli.Auditing.Context.for_actor(user, source: :ui),
+          user,
+          %{
+            password: "not valid",
+            password_confirmation: "another"
+          }
+        )
 
       assert %{
                password: ["should be at least 12 character(s)"],
@@ -1300,19 +1349,39 @@ defmodule Oli.AccountsTest do
 
     test "validates maximum values for password for security", %{user: user} do
       too_long = String.duplicate("db", 100)
-      {:error, changeset} = Accounts.reset_user_password(user, %{password: too_long})
+
+      {:error, changeset} =
+        Accounts.Audited.reset_password(
+          Oli.Auditing.Context.for_actor(user, source: :ui),
+          user,
+          %{password: too_long}
+        )
+
       assert "should be at most 72 character(s)" in errors_on(changeset).password
     end
 
     test "updates the password", %{user: user} do
-      {:ok, updated_user} = Accounts.reset_user_password(user, %{password: "new valid password"})
+      {:ok, updated_user} =
+        Accounts.Audited.reset_password(
+          Oli.Auditing.Context.for_actor(user, source: :ui),
+          user,
+          %{password: "new valid password"}
+        )
+
       assert is_nil(updated_user.password)
       assert Accounts.get_independent_user_by_email_and_password(user.email, "new valid password")
     end
 
     test "deletes all tokens for the given user", %{user: user} do
       _ = Accounts.generate_user_session_token(user)
-      {:ok, _} = Accounts.reset_user_password(user, %{password: "new valid password"})
+
+      {:ok, _} =
+        Accounts.Audited.reset_password(
+          Oli.Auditing.Context.for_actor(user, source: :ui),
+          user,
+          %{password: "new valid password"}
+        )
+
       refute Repo.get_by(UserToken, user_id: user.id)
     end
   end

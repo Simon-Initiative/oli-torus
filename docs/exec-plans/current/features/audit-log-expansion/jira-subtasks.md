@@ -99,7 +99,7 @@ Implementation:
 - [ ] Classify every generic account write by persisted field. Extract audited creation/profile/link operations while preserving provider, invitation and verification behavior.
 - [ ] Make technical provisioning/Setup PW attribution explicit; subsequent represented actions retain their actual human actor. Migrate supported Scenario and provider entry points, including bootstrap helpers.
 - [ ] Preserve domain validation and safe response shapes; do not serialize password/email-verification inputs as arbitrary audit details.
-- [ ] Map every session entry point, including the lower-level create/install helpers and Playwright session setup, to one semantic issuance/revocation boundary.
+- [ ] Map every password, SSO/OAuth and LTI login, logout and session-invalidating password path, including the lower-level create/install helpers, to one semantic issuance/revocation boundary.
 - [ ] Compose account linking and necessary profile/preferences writes without recapturing login. Define token persistence versus cookie delivery and server-side revocation semantics.
 - [ ] Audit recovery lifecycle without storing tokens or credential hashes; document retry behavior (a reused one-time token fails and records no new success) and secret-bearing response limits.
 - [ ] Introduce typed organization scopes and migrate settings/association writers, including bulk community membership and publisher defaults.
@@ -203,6 +203,7 @@ Requirements: FR-009, FR-010, FR-011, FR-012, FR-018, FR-020, FR-021, FR-022, FR
 
 Implementation:
 
+- [ ] Close the roster and grade-passback fields of `Sections.update_section/2` (`nrps_enabled`, `grade_passback_enabled`, `line_items_service_url`, `nrps_context_memberships_url`): `OliWeb.Sections.EditView` passes form params that the section changeset casts. Reject them from the generic path or route them to `roster_settings_changed` and `grade_passback_settings_changed` (both now require `section_id`). Handed over from PR-03.
 - [ ] Move single/bulk/reset writes into audited composition; derive diffs from locked persisted values and preserve secure-delivery/adaptive/already-started rules.
 - [ ] Keep auto-submit changes in the transaction and cache invalidation after commit. Replace historical writes and test readers with central events.
 - [ ] Migrate safe source rows with provenance/new IDs and explicit unknowns; sanitize password history, verify external consumers and rollback redaction, then retire settings_changes in this slice.

@@ -10,7 +10,9 @@ defmodule Oli.GroupsTest do
   describe "community" do
     test "create_community/1 with valid data creates a community" do
       params = params_with_assocs(:community)
-      assert {:ok, %Community{} = community} = Groups.create_community(params)
+
+      assert {:ok, %Community{} = community} =
+               Groups.create_community(Oli.TestHelpers.audit_context(), params)
 
       assert community.name == params.name
       assert community.description == params.description
@@ -21,7 +23,8 @@ defmodule Oli.GroupsTest do
     test "create_community/1 with existing name returns error changeset" do
       insert(:community, %{name: "Testing"})
 
-      assert {:error, %Ecto.Changeset{}} = Groups.create_community(%{name: "Testing"})
+      assert {:error, %Ecto.Changeset{}} =
+               Groups.create_community(Oli.TestHelpers.audit_context(), %{name: "Testing"})
     end
 
     test "list_communities/0 returns ok when there are no communities" do
@@ -56,7 +59,8 @@ defmodule Oli.GroupsTest do
     test "update_community/2 updates the community successfully" do
       community = insert(:community)
 
-      {:ok, updated_community} = Groups.update_community(community, %{name: "new_name"})
+      {:ok, updated_community} =
+        Groups.update_community(Oli.TestHelpers.audit_context(), community, %{name: "new_name"})
 
       assert community.id == updated_community.id
       assert updated_community.name == "new_name"
@@ -66,7 +70,11 @@ defmodule Oli.GroupsTest do
       community = insert(:community)
       another_community = insert(:community)
 
-      {:error, changeset} = Groups.update_community(community, %{name: another_community.name})
+      {:error, changeset} =
+        Groups.update_community(Oli.TestHelpers.audit_context(), community, %{
+          name: another_community.name
+        })
+
       {error, _} = changeset.errors[:name]
 
       refute changeset.valid?
@@ -75,7 +83,10 @@ defmodule Oli.GroupsTest do
 
     test "delete_community/1 marks the community as deleted" do
       community = insert(:community)
-      assert {:ok, deleted_community} = Groups.delete_community(community)
+
+      assert {:ok, deleted_community} =
+               Groups.delete_community(Oli.TestHelpers.audit_context(), community)
+
       assert deleted_community.status == :deleted
     end
 
@@ -104,6 +115,7 @@ defmodule Oli.GroupsTest do
 
       {:ok, account} =
         Groups.find_or_create_community_user_account(
+          Oli.TestHelpers.audit_context(),
           existing_account.user_id,
           existing_account.community_id
         )
@@ -117,6 +129,7 @@ defmodule Oli.GroupsTest do
 
       {:ok, account} =
         Groups.find_or_create_community_user_account(
+          Oli.TestHelpers.audit_context(),
           existing_account.user_id,
           community.id
         )
@@ -129,7 +142,7 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
-               Groups.create_community_account(params)
+               Groups.create_community_account(Oli.TestHelpers.audit_context(), params)
 
       assert community_account.author_id == params.author_id
       assert community_account.community_id == params.community_id
@@ -142,7 +155,10 @@ defmodule Oli.GroupsTest do
       insert(:community_admin_account, %{author: author, community: community})
 
       assert {:error, %Ecto.Changeset{}} =
-               Groups.create_community_account(%{author: author, community: community})
+               Groups.create_community_account(Oli.TestHelpers.audit_context(), %{
+                 author: author,
+                 community: community
+               })
     end
 
     test "create_community_account_from_author_email/2 with valid data creates a community account" do
@@ -150,7 +166,11 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
-               Groups.create_community_account_from_author_email(author.email, params)
+               Groups.create_community_account_from_author_email(
+                 Oli.TestHelpers.audit_context(),
+                 author.email,
+                 params
+               )
 
       assert community_account.author_id == author.id
       assert community_account.community_id == params.community_id
@@ -161,7 +181,11 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_account)
 
       assert {:error, :author_not_found} =
-               Groups.create_community_account_from_author_email("testing@email.com", params)
+               Groups.create_community_account_from_author_email(
+                 Oli.TestHelpers.audit_context(),
+                 "testing@email.com",
+                 params
+               )
     end
 
     test "create_community_account_from_author_email/2 for existing author and community returns error changeset" do
@@ -170,10 +194,14 @@ defmodule Oli.GroupsTest do
       insert(:community_admin_account, %{author: author, community: community})
 
       assert {:error, %Ecto.Changeset{}} =
-               Groups.create_community_account_from_author_email(author.email, %{
-                 author: author,
-                 community: community
-               })
+               Groups.create_community_account_from_author_email(
+                 Oli.TestHelpers.audit_context(),
+                 author.email,
+                 %{
+                   author: author,
+                   community: community
+                 }
+               )
     end
 
     test "create_community_account_from_user_email/2 with valid data creates a community account" do
@@ -181,7 +209,11 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_member_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
-               Groups.create_community_account_from_user_email(user.email, params)
+               Groups.create_community_account_from_user_email(
+                 Oli.TestHelpers.audit_context(),
+                 user.email,
+                 params
+               )
 
       assert community_account.user_id == user.id
       assert community_account.community_id == params.community_id
@@ -192,7 +224,11 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_account)
 
       assert {:error, :user_not_found} =
-               Groups.create_community_account_from_user_email("testing@email.com", params)
+               Groups.create_community_account_from_user_email(
+                 Oli.TestHelpers.audit_context(),
+                 "testing@email.com",
+                 params
+               )
     end
 
     test "create_community_account_from_user_email/2 for existing user and community returns error changeset" do
@@ -201,10 +237,14 @@ defmodule Oli.GroupsTest do
       insert(:community_member_account, %{user: user, community: community})
 
       assert {:error, %Ecto.Changeset{}} =
-               Groups.create_community_account_from_user_email(user.email, %{
-                 user: user,
-                 community: community
-               })
+               Groups.create_community_account_from_user_email(
+                 Oli.TestHelpers.audit_context(),
+                 user.email,
+                 %{
+                   user: user,
+                   community: community
+                 }
+               )
     end
 
     test "create_community_account_from_user_id/2 with valid data creates a community account" do
@@ -212,7 +252,11 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_member_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
-               Groups.create_community_account_from_user_id(user.id, params)
+               Groups.create_community_account_from_user_id(
+                 Oli.TestHelpers.audit_context(),
+                 user.id,
+                 params
+               )
 
       assert community_account.user_id == user.id
       assert community_account.community_id == params.community_id
@@ -223,7 +267,11 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_account)
 
       assert {:error, :user_not_found} =
-               Groups.create_community_account_from_user_id(-12345, params)
+               Groups.create_community_account_from_user_id(
+                 Oli.TestHelpers.audit_context(),
+                 -12345,
+                 params
+               )
     end
 
     test "create_community_account_from_user_id/2 for existing user and community returns error changeset" do
@@ -232,10 +280,14 @@ defmodule Oli.GroupsTest do
       insert(:community_member_account, %{user: user, community: community})
 
       assert {:error, %Ecto.Changeset{}} =
-               Groups.create_community_account_from_user_id(user.id, %{
-                 user: user,
-                 community: community
-               })
+               Groups.create_community_account_from_user_id(
+                 Oli.TestHelpers.audit_context(),
+                 user.id,
+                 %{
+                   user: user,
+                   community: community
+                 }
+               )
     end
 
     test "create_community_account_from_email/3 with valid data creates a community admin account" do
@@ -243,7 +295,12 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_admin_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
-               Groups.create_community_account_from_email("admin", author.email, params)
+               Groups.create_community_account_from_email(
+                 Oli.TestHelpers.audit_context(),
+                 "admin",
+                 author.email,
+                 params
+               )
 
       assert community_account.author_id == author.id
       assert community_account.community_id == params.community_id
@@ -255,7 +312,12 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_member_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
-               Groups.create_community_account_from_email("member", user.email, params)
+               Groups.create_community_account_from_email(
+                 Oli.TestHelpers.audit_context(),
+                 "member",
+                 user.email,
+                 params
+               )
 
       assert community_account.user_id == user.id
       assert community_account.community_id == params.community_id
@@ -268,7 +330,12 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_member_account)
 
       assert {:ok, accounts} =
-               Groups.create_community_accounts_from_emails("member", emails, params)
+               Groups.create_community_accounts_from_emails(
+                 Oli.TestHelpers.audit_context(),
+                 "member",
+                 emails,
+                 params
+               )
 
       assert 2 == length(accounts)
 
@@ -287,6 +354,7 @@ defmodule Oli.GroupsTest do
 
       assert {:error, :user_not_found} =
                Groups.create_community_accounts_from_emails(
+                 Oli.TestHelpers.audit_context(),
                  "member",
                  [user.email, "invalid_email"],
                  params
@@ -317,7 +385,7 @@ defmodule Oli.GroupsTest do
       community_account = insert(:community_account)
 
       assert {:ok, %CommunityAccount{}} =
-               Groups.delete_community_account(%{
+               Groups.delete_community_account(Oli.TestHelpers.audit_context(), %{
                  community_id: community_account.community_id,
                  author_id: community_account.author_id
                })
@@ -329,7 +397,7 @@ defmodule Oli.GroupsTest do
       community_account = insert(:community_account)
 
       assert {:error, :not_found} =
-               Groups.delete_community_account(%{
+               Groups.delete_community_account(Oli.TestHelpers.audit_context(), %{
                  community_id: 12345
                })
 
@@ -404,7 +472,7 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_visibility)
 
       assert {:ok, %CommunityVisibility{} = community_visibility} =
-               Groups.create_community_visibility(params)
+               Groups.create_community_visibility(Oli.TestHelpers.audit_context(), params)
 
       assert community_visibility.project_id == params.project_id
       assert community_visibility.community_id == params.community_id
@@ -416,7 +484,10 @@ defmodule Oli.GroupsTest do
       insert(:community_visibility, %{project: project, community: community})
 
       assert {:error, %Ecto.Changeset{}} =
-               Groups.create_community_visibility(%{project: project, community: community})
+               Groups.create_community_visibility(Oli.TestHelpers.audit_context(), %{
+                 project: project,
+                 community: community
+               })
     end
 
     test "get_community_visibility/1 returns a community visibility when the id exists" do
@@ -437,7 +508,10 @@ defmodule Oli.GroupsTest do
       community_visibility = insert(:community_visibility)
 
       assert {:ok, %CommunityVisibility{}} =
-               Groups.delete_community_visibility(community_visibility.id)
+               Groups.delete_community_visibility(
+                 Oli.TestHelpers.audit_context(),
+                 community_visibility.id
+               )
 
       refute Groups.get_community_visibility(community_visibility.id)
     end
@@ -445,7 +519,8 @@ defmodule Oli.GroupsTest do
     test "delete_community_visibility/1 fails when the community visibility does not exist" do
       community_visibility = insert(:community_visibility)
 
-      assert {:error, :not_found} = Groups.delete_community_visibility(12345)
+      assert {:error, :not_found} =
+               Groups.delete_community_visibility(Oli.TestHelpers.audit_context(), 12345)
 
       assert Groups.get_community_visibility(community_visibility.id)
     end
@@ -479,13 +554,22 @@ defmodule Oli.GroupsTest do
 
       # Add communities with different timestamps (simulate order by manipulating inserted_at)
       {:ok, ca1} =
-        Groups.create_community_account(%{user_id: user.id, community_id: community1.id})
+        Groups.create_community_account(Oli.TestHelpers.audit_context(), %{
+          user_id: user.id,
+          community_id: community1.id
+        })
 
       {:ok, ca2} =
-        Groups.create_community_account(%{user_id: user.id, community_id: community2.id})
+        Groups.create_community_account(Oli.TestHelpers.audit_context(), %{
+          user_id: user.id,
+          community_id: community2.id
+        })
 
       {:ok, _ca3} =
-        Groups.create_community_account(%{user_id: user.id, community_id: community3.id})
+        Groups.create_community_account(Oli.TestHelpers.audit_context(), %{
+          user_id: user.id,
+          community_id: community3.id
+        })
 
       # Update inserted_at to ensure proper ordering
       Oli.Repo.update_all(
@@ -529,19 +613,19 @@ defmodule Oli.GroupsTest do
 
       # Add communities with different timestamps
       {:ok, ci1} =
-        Groups.create_community_institution(%{
+        Groups.create_community_institution(Oli.TestHelpers.audit_context(), %{
           institution_id: institution.id,
           community_id: community1.id
         })
 
       {:ok, ci2} =
-        Groups.create_community_institution(%{
+        Groups.create_community_institution(Oli.TestHelpers.audit_context(), %{
           institution_id: institution.id,
           community_id: community2.id
         })
 
       {:ok, _ci3} =
-        Groups.create_community_institution(%{
+        Groups.create_community_institution(Oli.TestHelpers.audit_context(), %{
           institution_id: institution.id,
           community_id: community3.id
         })
@@ -650,7 +734,7 @@ defmodule Oli.GroupsTest do
       params = params_with_assocs(:community_institution)
 
       assert {:ok, %CommunityInstitution{} = community_institution} =
-               Groups.create_community_institution(params)
+               Groups.create_community_institution(Oli.TestHelpers.audit_context(), params)
 
       assert community_institution.community_id == params.community_id
       assert community_institution.institution_id == params.institution_id
@@ -662,7 +746,7 @@ defmodule Oli.GroupsTest do
       insert(:community_institution, %{institution: institution, community: community})
 
       assert {:error, %Ecto.Changeset{}} =
-               Groups.create_community_institution(%{
+               Groups.create_community_institution(Oli.TestHelpers.audit_context(), %{
                  institution: institution,
                  community: community
                })
@@ -673,9 +757,13 @@ defmodule Oli.GroupsTest do
       community_id = insert(:community).id
 
       assert {:ok, %CommunityInstitution{} = community_institution} =
-               Groups.create_community_institution_from_institution_name(institution.name, %{
-                 community_id: community_id
-               })
+               Groups.create_community_institution_from_institution_name(
+                 Oli.TestHelpers.audit_context(),
+                 institution.name,
+                 %{
+                   community_id: community_id
+                 }
+               )
 
       assert community_institution.community_id == community_id
       assert community_institution.institution_id == institution.id
@@ -685,9 +773,13 @@ defmodule Oli.GroupsTest do
       community_id = insert(:community).id
 
       assert {:error, :institution_not_found} ==
-               Groups.create_community_institution_from_institution_name("invalid_name", %{
-                 community_id: community_id
-               })
+               Groups.create_community_institution_from_institution_name(
+                 Oli.TestHelpers.audit_context(),
+                 "invalid_name",
+                 %{
+                   community_id: community_id
+                 }
+               )
     end
 
     test "get_community_institution_by!/1 returns a community institution when meets the clauses" do
@@ -733,14 +825,15 @@ defmodule Oli.GroupsTest do
         institution_id: community_institution.institution_id
       }
 
-      assert {:ok, %CommunityInstitution{}} = Groups.delete_community_institution(args)
+      assert {:ok, %CommunityInstitution{}} =
+               Groups.delete_community_institution(Oli.TestHelpers.audit_context(), args)
 
       refute Groups.get_community_institution_by!(args)
     end
 
     test "delete_community_institution/1 fails when the community institution does not exist" do
       assert {:error, :not_found} =
-               Groups.delete_community_institution(%{
+               Groups.delete_community_institution(Oli.TestHelpers.audit_context(), %{
                  community_id: 12345
                })
     end

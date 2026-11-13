@@ -150,6 +150,24 @@ defmodule Oli.Auditing.EventExamples do
       changes: %{"author_id" => %{"operation" => "set", "before" => nil, "after" => 12}}
     ]
 
+  defp spec(:account_identity_linked),
+    do: [
+      actor: :learner,
+      entity: {:user, @learner},
+      affected: {:user, 77},
+      key: "account:primary:account_identity_linked:google",
+      details: %{"provider" => "google"}
+    ]
+
+  defp spec(:account_identity_unlinked),
+    do: [
+      actor: :learner,
+      entity: {:user, @learner},
+      affected: {:user, 77},
+      key: "account:primary:account_identity_unlinked:google",
+      details: %{"provider" => "google"}
+    ]
+
   defp spec(:account_permissions_changed),
     do: [
       actor: :admin,
@@ -1056,6 +1074,20 @@ defmodule Oli.Auditing.EventExamples do
     ]
 
   # Integrations
+
+  defp spec(:lms_registration_declined),
+    do: [
+      actor: :admin,
+      entity: {:pending_registration, %{id: 23, name: "Example State University"}},
+      key: "pending_registration:23:declined",
+      details: %{
+        "institution_url" => "https://example.edu",
+        "country_code" => "US",
+        "issuer" => "https://lms.example.edu",
+        "client_id" => "10000000000042",
+        "deployment_id" => "1:abc"
+      }
+    ]
 
   defp spec(:lms_settings_changed),
     do: [

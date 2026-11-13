@@ -1,6 +1,8 @@
 defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
   use OliWeb, :live_view
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Oli.Lti.PlatformExternalTools
   alias OliWeb.Common.Breadcrumb
@@ -57,7 +59,10 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
   end
 
   def handle_event("create_tool", %{"tool_form" => params}, socket) do
-    case PlatformExternalTools.register_lti_external_tool_activity(params) do
+    case Oli.Lti.Audited.register_external_tool(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           params
+         ) do
       {:ok, {platform_instance, _activity_registration, _deployment}} ->
         {:noreply,
          socket
@@ -84,6 +89,13 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
          |> assign(:custom_flash, %{
            type: flash_type,
            message: flash_message
+         })}
+
+      {:error, _reason} ->
+        {:noreply,
+         assign(socket, :custom_flash, %{
+           type: :error,
+           message: "We couldn't register the tool. Please try again."
          })}
     end
   end
