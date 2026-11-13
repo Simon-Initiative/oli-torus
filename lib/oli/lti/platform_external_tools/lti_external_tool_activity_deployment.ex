@@ -3,6 +3,7 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
   import Ecto.Changeset
 
   @status_values [:enabled, :disabled, :deleted]
+  @availability_values [:public, :private]
 
   # the primary key 'id' is the same as the LTI 1.3 deployment ID
   @primary_key {:deployment_id, Ecto.UUID, autogenerate: true}
@@ -20,6 +21,8 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
 
     field :deep_linking_enabled, :boolean, default: false
 
+    field :availability, Ecto.Enum, values: @availability_values, default: :private
+
     timestamps(type: :utc_datetime)
   end
 
@@ -33,6 +36,15 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
     ])
     |> validate_required([:activity_registration_id, :platform_instance_id])
     |> validate_inclusion(:status, @status_values)
+  end
+
+  @doc """
+  Casts and requires `availability` only, so changing it leaves every other field as it is.
+  """
+  def availability_changeset(lti_external_tool_deployment, attrs) do
+    lti_external_tool_deployment
+    |> cast(attrs, [:availability])
+    |> validate_required([:availability])
   end
 
   def status_values, do: @status_values

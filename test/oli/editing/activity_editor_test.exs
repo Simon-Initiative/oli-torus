@@ -2,6 +2,7 @@ defmodule Oli.ActivityEditingTest do
   use Oli.DataCase
 
   import Mox
+  import Oli.Factory
 
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor, ObjectiveEditor}
@@ -18,6 +19,206 @@ defmodule Oli.ActivityEditingTest do
       Seeder.base_project_with_resource2()
       |> Seeder.add_objective("objective 1", :obj1)
       |> Seeder.add_objective("objective 2", :obj2)
+    end
+
+    test "create_bulk skips an unknown activity type and persists the valid item", %{
+      author: author,
+      project: project
+    } do
+      item = fn slug, title ->
+        %{
+          "activityTypeSlug" => slug,
+          "objectives" => [],
+          "content" => %{},
+          "title" => title,
+          "tags" => []
+        }
+      end
+
+      before_ids = Repo.all(from r in Resources.Revision, select: r.id)
+
+      result =
+        ActivityEditor.create_bulk(project.slug, author, [
+          item.("unknown_bulk_probe_type", "Unknown bulk item"),
+          item.("oli_multiple_choice", "Valid bulk item")
+        ])
+
+      persisted =
+        Repo.all(
+          from r in Resources.Revision,
+            where: r.id not in ^before_ids,
+            select: {r.title, r.resource_id}
+        )
+
+      assert {:ok, [%{activity_type_slug: "oli_multiple_choice", activity: activity}]} = result
+      assert persisted == [{"Valid bulk item", activity.resource_id}]
+    end
+
+    test "create_bulk issues the same number of queries for one activity as for many", %{
+      author: author,
+      project: project
+    } do
+      [first_tool | _] = tools = Enum.map(1..3, fn _ -> granted_private_tool(project) end)
+
+      item = fn tool, title ->
+        %{
+          "activityTypeSlug" => tool.slug,
+          "objectives" => [],
+          "content" => %{"authoring" => %{"parts" => []}},
+          "title" => title,
+          "tags" => []
+        }
+      end
+
+      {{:ok, [_]}, single_item_queries} =
+        count_queries(fn ->
+          ActivityEditor.create_bulk(project.slug, author, [item.(first_tool, "Single item")])
+        end)
+
+      batch =
+        tools
+        |> Enum.flat_map(&[&1, &1])
+        |> Enum.with_index(1)
+        |> Enum.map(fn {tool, n} -> item.(tool, "Batch item #{n}") end)
+
+      {{:ok, created}, batch_queries} =
+        count_queries(fn -> ActivityEditor.create_bulk(project.slug, author, batch) end)
+
+      assert length(created) == 6
+      assert single_item_queries > 0
+      assert batch_queries == single_item_queries
+    end
+
+    for {case_name, malformed} <- [
+          {"an item without its tags",
+           %{
+             "activityTypeSlug" => "oli_multiple_choice",
+             "objectives" => [],
+             "content" => %{},
+             "title" => "Malformed"
+           }},
+          {"an item with both an objectives list and an objective map",
+           %{
+             "activityTypeSlug" => "oli_multiple_choice",
+             "objectives" => [1],
+             "objectiveMap" => %{"1" => [1]},
+             "content" => %{},
+             "title" => "Malformed",
+             "tags" => []
+           }}
+        ] do
+      @malformed malformed
+
+      test "create_bulk refuses a request with #{case_name} and writes nothing", %{
+        author: author,
+        project: project
+      } do
+        valid = %{
+          "activityTypeSlug" => "oli_multiple_choice",
+          "objectives" => [],
+          "content" => %{},
+          "title" => "Valid before malformed",
+          "tags" => []
+        }
+
+        before_counts = creation_counts()
+
+        assert ActivityEditor.create_bulk(project.slug, author, [valid, @malformed]) ==
+                 {:error, {:invalid_request}}
+
+        assert creation_counts() == before_counts
+      end
+    end
+
+    test "create_bulk skips an invalid item and keeps its valid siblings", %{
+      author: author,
+      project: project
+    } do
+      item = fn title ->
+        %{
+          "activityTypeSlug" => "oli_multiple_choice",
+          "objectives" => [],
+          "content" => %{},
+          "title" => title,
+          "tags" => []
+        }
+      end
+
+      before_ids = Repo.all(from r in Resources.Revision, select: r.id)
+
+      assert {:ok, created} =
+               ActivityEditor.create_bulk(project.slug, author, [
+                 item.("First survivor"),
+                 item.(""),
+                 item.("Second survivor")
+               ])
+
+      persisted =
+        Repo.all(
+          from r in Resources.Revision,
+            where: r.id not in ^before_ids,
+            order_by: r.title,
+            select: r.title
+        )
+
+      assert Enum.map(created, & &1.activity.title) == ["First survivor", "Second survivor"]
+      assert persisted == ["First survivor", "Second survivor"]
+    end
+
+    test "create_bulk persists the same revision as create for the same input", %{
+      author: author,
+      project: project,
+      obj1: obj1
+    } do
+      content = activity_content(["1", "2"])
+      objectives = [obj1.resource.id]
+      tags = [obj1.resource.id]
+
+      {:ok, {single, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_multiple_choice",
+          author,
+          content,
+          objectives,
+          "banked",
+          "Parity activity",
+          %{},
+          tags
+        )
+
+      {:ok, [%{activity: bulk}]} =
+        ActivityEditor.create_bulk(
+          project.slug,
+          author,
+          [
+            %{
+              "activityTypeSlug" => "oli_multiple_choice",
+              "objectives" => objectives,
+              "content" => content,
+              "title" => "Parity activity",
+              "tags" => tags
+            }
+          ],
+          "banked"
+        )
+
+      identity = [:__meta__, :id, :slug, :resource_id, :inserted_at, :updated_at]
+
+      persisted = fn id ->
+        Repo.get!(Resources.Revision, id) |> Map.from_struct() |> Map.drop(identity)
+      end
+
+      assert persisted.(single.id)[:objectives] == %{"1" => objectives, "2" => objectives}
+      assert persisted.(bulk.id) == persisted.(single.id)
+
+      assert Repo.get_by(Oli.Authoring.Course.ProjectResource,
+               project_id: project.id,
+               resource_id: bulk.resource_id
+             )
+
+      assert Publishing.AuthoringResolver.from_resource_id(project.slug, bulk.resource_id).id ==
+               bulk.id
     end
 
     test "create/4 creates an activity revision", %{author: author, project: project} do
@@ -1811,6 +2012,64 @@ defmodule Oli.ActivityEditingTest do
       )
 
     handler_id
+  end
+
+  defp granted_private_tool(project) do
+    tool = insert(:activity_registration, globally_available: false, globally_visible: true)
+
+    deployment =
+      insert(:lti_external_tool_activity_deployment,
+        activity_registration: tool,
+        availability: :private,
+        status: :enabled
+      )
+
+    {:ok, _} = Oli.Lti.PlatformExternalTools.grant_project(deployment, project.id)
+    tool
+  end
+
+  defp count_queries(fun) do
+    handler_id = "bulk-creation-queries-#{System.unique_integer([:positive])}"
+
+    :ok =
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _event, _measurements, _metadata, owner ->
+          case self() == owner do
+            true -> send(owner, :repo_query)
+            false -> :ok
+          end
+        end,
+        self()
+      )
+
+    try do
+      result = fun.()
+      {result, count_repo_queries(0)}
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp count_repo_queries(count) do
+    receive do
+      :repo_query -> count_repo_queries(count + 1)
+    after
+      0 -> count
+    end
+  end
+
+  defp creation_counts do
+    Enum.map(
+      [
+        Oli.Resources.Resource,
+        Resources.Revision,
+        Oli.Authoring.Course.ProjectResource,
+        Oli.Publishing.PublishedResource
+      ],
+      &Repo.aggregate(&1, :count)
+    )
   end
 
   defp activity_content(part_ids) do

@@ -1,6 +1,8 @@
 defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
   use OliWeb, :live_component
 
+  alias Oli.Accounts
+  alias Oli.Accounts.Author
   alias Oli.Activities
   alias OliWeb.Components.Common
   alias OliWeb.Components.Delivery.Utils
@@ -21,9 +23,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
     {:ok, socket}
   end
 
-  def handle_event("show_modal", %{"project_id" => project_id}, socket) do
+  def handle_event("show_modal", _params, socket) do
     selectable_items =
-      Activities.selectable_activities_for_project(project_id, socket.assigns.is_admin)
+      Activities.selectable_activities_for_project(
+        socket.assigns.project.id,
+        socket.assigns.is_admin
+      )
 
     {activities, tools} =
       Enum.split_with(selectable_items, fn item ->
@@ -51,7 +56,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
        activities: activities,
        initial_selected_item_ids: selected_activity_ids,
        current_selected_item_ids: selected_activity_ids,
-       project_id: project_id,
        show_modal?: true
      )
      |> reset_modal(show_modal?: true)}
@@ -128,19 +132,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
   end
 
   def handle_event("save_selections", _params, socket) do
-    %{pending_changes: pending_changes, project_id: project_id} = socket.assigns
+    %{project: project, current_author: current_author} = socket.assigns
 
-    to_add = pending_changes.activities_to_add ++ pending_changes.tools_to_add
-    to_remove = pending_changes.activities_to_remove ++ pending_changes.tools_to_remove
-
-    case Activities.bulk_update_project_activities(project_id, to_add, to_remove) do
-      :ok ->
-        send(self(), {:flash_message, {:info, "Activities and tools updated successfully."}})
-        send(self(), {:refresh_tools_and_activities})
-        {:noreply, reset_modal(socket, show_modal?: false)}
-
-      {:error, message} ->
-        send(self(), {:flash_message, {:error, message}})
+    with %Author{} = author <- Accounts.get_author(current_author.id),
+         true <- Accounts.can_access?(author, project) do
+      save_selections(socket, project, Accounts.at_least_content_admin?(author))
+    else
+      _ ->
+        send(self(), {:flash_message, {:error, "You don't have access to this project."}})
         {:noreply, socket}
     end
   end
@@ -161,7 +160,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
         class="hidden"
         phx-click="show_modal"
         phx-target={@myself}
-        phx-value-project_id={@project_id}
       >
         Test Show Modal
       </button>
@@ -334,7 +332,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
                 No External Tools
               </h3>
               <p class="text-sm text-gray-500">
-                No external tools have been configured at the system level.
+                No external tools are currently available for this project.
               </p>
             </div>
           </div>
@@ -456,6 +454,37 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
       end)
 
     {tools, activities}
+  end
+
+  defp save_selections(socket, project, is_admin?) do
+    %{pending_changes: pending_changes} = socket.assigns
+
+    to_add = pending_changes.activities_to_add ++ pending_changes.tools_to_add
+    to_remove = pending_changes.activities_to_remove ++ pending_changes.tools_to_remove
+
+    case Activities.bulk_update_project_activities(project.id, to_add, to_remove, is_admin?) do
+      :ok ->
+        send(self(), {:flash_message, {:info, "Activities and tools updated successfully."}})
+        send(self(), {:refresh_tools_and_activities})
+        {:noreply, reset_modal(socket, show_modal?: false)}
+
+      {:error, {:not_addable, titles}} ->
+        send(self(), {:flash_message, {:error, not_available_message(titles)}})
+        {:noreply, socket}
+
+      {:error, message} ->
+        send(self(), {:flash_message, {:error, message}})
+        {:noreply, socket}
+    end
+  end
+
+  defp not_available_message([title]),
+    do: "#{title} is not available for this project. No changes were applied."
+
+  defp not_available_message(titles) do
+    {last, rest} = List.pop_at(titles, -1)
+
+    "#{Enum.join(rest, ", ")} and #{last} are not available for this project. No changes were applied."
   end
 
   defp calculate_pending_changes(

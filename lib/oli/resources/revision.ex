@@ -109,6 +109,16 @@ defmodule Oli.Resources.Revision do
   @doc false
   def changeset(resource_revision, attrs \\ %{}) do
     resource_revision
+    |> changeset_without_slug(attrs)
+    |> Slug.update_on_change("revisions")
+  end
+
+  @doc """
+  Casts and validates a revision exactly like `changeset/2`, without generating its slug. For
+  callers that assign slugs themselves through `Oli.Utils.Slug.generate/2`.
+  """
+  def changeset_without_slug(resource_revision, attrs \\ %{}) do
+    resource_revision
     |> cast(attrs, [
       :title,
       :slug,
@@ -152,7 +162,6 @@ defmodule Oli.Resources.Revision do
     |> cast_embed(:collab_space_config)
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])
     |> validate_learning_model_parameters()
-    |> Slug.update_on_change("revisions")
   end
 
   defp validate_learning_model_parameters(changeset) do

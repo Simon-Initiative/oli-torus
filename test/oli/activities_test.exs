@@ -3,6 +3,8 @@ defmodule Oli.ActivitiesTest do
   import ExUnit.Assertions
   import Oli.Factory
   alias Oli.Activities
+  alias Oli.Activities.ActivityRegistrationProject
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolProjectGrant
 
   setup [:author_project_fixture]
 
@@ -11,7 +13,7 @@ defmodule Oli.ActivitiesTest do
       custom_activity = Activities.get_registration_by_slug("oli_image_coding")
 
       # Add and enable the activity using bulk operation
-      Activities.bulk_update_project_activities(project.id, [custom_activity.id], [])
+      Activities.bulk_update_project_activities(project.id, [custom_activity.id], [], false)
       project_activities = Activities.activities_for_project(project)
 
       assert project_activities
@@ -36,7 +38,7 @@ defmodule Oli.ActivitiesTest do
       custom_activity = Activities.get_registration_by_slug("oli_image_coding")
 
       # First add the activity to the project
-      Activities.bulk_update_project_activities(project.id, [custom_activity.id], [])
+      Activities.bulk_update_project_activities(project.id, [custom_activity.id], [], false)
       # Then disable it
       Activities.disable_activity_in_project(project.id, custom_activity.id)
 
@@ -71,7 +73,7 @@ defmodule Oli.ActivitiesTest do
       custom_activity = Activities.get_registration_by_slug("oli_image_coding")
 
       # Add and enable the activity using bulk operation
-      Activities.bulk_update_project_activities(project.id, [custom_activity.id], [])
+      Activities.bulk_update_project_activities(project.id, [custom_activity.id], [], false)
       editor_menu_items = Activities.create_registered_activity_map(project.slug)
 
       image_coding = Map.get(editor_menu_items, "oli_image_coding")
@@ -79,7 +81,7 @@ defmodule Oli.ActivitiesTest do
     end
   end
 
-  describe "bulk_update_project_activities/3" do
+  describe "bulk_update_project_activities/4" do
     test "bulk add and remove activities efficiently", %{project: project} do
       # Create some test activities (must be advanced activities)
       activity1 =
@@ -104,7 +106,12 @@ defmodule Oli.ActivitiesTest do
         })
 
       # Initially add activity1 and activity2 to the project
-      Activities.bulk_update_project_activities(project.id, [activity1.id, activity2.id], [])
+      Activities.bulk_update_project_activities(
+        project.id,
+        [activity1.id, activity2.id],
+        [],
+        false
+      )
 
       # Verify they are in the project
       selected_activities = Activities.selected_activities_for_project(project.id)
@@ -120,7 +127,8 @@ defmodule Oli.ActivitiesTest do
           # add
           [activity3.id],
           # remove
-          [activity1.id]
+          [activity1.id],
+          false
         )
 
       assert result == :ok
@@ -135,7 +143,7 @@ defmodule Oli.ActivitiesTest do
 
     test "bulk operation with empty lists", %{project: project} do
       # Should handle empty lists gracefully
-      result = Activities.bulk_update_project_activities(project.id, [], [])
+      result = Activities.bulk_update_project_activities(project.id, [], [], false)
       assert result == :ok
     end
   end
@@ -664,7 +672,7 @@ defmodule Oli.ActivitiesTest do
         insert(:activity_registration, %{title: "Test Activity", globally_available: false})
 
       # Add activity to project
-      Activities.bulk_update_project_activities(project.id, [activity.id], [])
+      Activities.bulk_update_project_activities(project.id, [activity.id], [], false)
 
       result = Activities.create_registered_activity_map(project.slug)
       activity_entry = Map.get(result, activity.slug)
@@ -677,7 +685,7 @@ defmodule Oli.ActivitiesTest do
         insert(:activity_registration, %{title: "Test Activity", globally_available: false})
 
       # Add activity to project
-      Activities.bulk_update_project_activities(project.id, [activity.id], [])
+      Activities.bulk_update_project_activities(project.id, [activity.id], [], false)
       # Disable it
       Activities.disable_activity_in_project(project.id, activity.id)
 
@@ -713,10 +721,11 @@ defmodule Oli.ActivitiesTest do
     end
 
     test "correctly identifies enabled activities", %{project: project} do
-      activity = insert(:activity_registration, %{title: "Test Activity"})
+      activity =
+        insert(:activity_registration, %{title: "Test Activity", globally_available: false})
 
       # Add activity to project
-      Activities.bulk_update_project_activities(project.id, [activity.id], [])
+      Activities.bulk_update_project_activities(project.id, [activity.id], [], false)
 
       result = Activities.activities_for_project(project)
       activity_result = Enum.find(result, &(&1.id == activity.id))
@@ -729,7 +738,7 @@ defmodule Oli.ActivitiesTest do
         insert(:activity_registration, %{title: "Test Activity", globally_available: false})
 
       # Add activity to project
-      Activities.bulk_update_project_activities(project.id, [activity.id], [])
+      Activities.bulk_update_project_activities(project.id, [activity.id], [], false)
       # Disable it
       Activities.disable_activity_in_project(project.id, activity.id)
 
@@ -841,5 +850,260 @@ defmodule Oli.ActivitiesTest do
       result = Oli.Activities.list_lti_activity_registrations([-1])
       assert result == []
     end
+  end
+
+  describe "LTI external tool eligibility for a project" do
+    test "a project can add a public tool, a private tool granted to it and an advanced activity",
+         %{project: project} do
+      public = lti_tool("Public Tool", %{availability: :public})
+      granted = lti_tool("Granted Tool", %{availability: :private})
+      grant(granted, project)
+      advanced = insert(:activity_registration, %{title: "Advanced", globally_available: false})
+
+      ids = selectable_ids(project, false)
+      assert public.registration.id in ids
+      assert granted.registration.id in ids
+      assert advanced.id in ids
+
+      assert :ok ==
+               Activities.bulk_update_project_activities(
+                 project.id,
+                 [public.registration.id, granted.registration.id, advanced.id],
+                 [],
+                 false
+               )
+
+      assert associated?(public.registration, project)
+      assert associated?(granted.registration, project)
+      assert associated?(advanced, project)
+    end
+
+    test "a private tool without a grant for the project is neither offered nor added",
+         %{project: project} do
+      ungranted = lti_tool("Ungranted Tool", %{availability: :private})
+      grant(ungranted, insert(:project))
+      granted = lti_tool("Granted Tool", %{availability: :private})
+      grant(granted, project)
+      public = lti_tool("Public Tool", %{availability: :public})
+
+      for is_admin? <- [false, true] do
+        ids = selectable_ids(project, is_admin?)
+        assert public.registration.id in ids
+        assert granted.registration.id in ids
+        refute ungranted.registration.id in ids
+
+        assert {:error, {:not_addable, ["Ungranted Tool"]}} ==
+                 Activities.bulk_update_project_activities(
+                   project.id,
+                   [ungranted.registration.id],
+                   [],
+                   is_admin?
+                 )
+      end
+
+      refute associated?(ungranted.registration, project)
+    end
+
+    test "a disabled tool is neither offered nor added, even when public or granted",
+         %{project: project} do
+      disabled_public = lti_tool("Disabled Public", %{availability: :public, status: :disabled})
+
+      disabled_granted =
+        lti_tool("Disabled Granted", %{availability: :private, status: :disabled})
+
+      grant(disabled_granted, project)
+      enabled = lti_tool("Enabled Public", %{availability: :public})
+
+      ids = selectable_ids(project, false)
+      assert enabled.registration.id in ids
+      refute disabled_public.registration.id in ids
+      refute disabled_granted.registration.id in ids
+
+      assert {:error, {:not_addable, ["Disabled Granted", "Disabled Public"]}} ==
+               Activities.bulk_update_project_activities(
+                 project.id,
+                 [disabled_public.registration.id, disabled_granted.registration.id],
+                 [],
+                 false
+               )
+
+      assert :ok ==
+               Activities.bulk_update_project_activities(
+                 project.id,
+                 [enabled.registration.id],
+                 [],
+                 false
+               )
+
+      refute associated?(disabled_public.registration, project)
+      refute associated?(disabled_granted.registration, project)
+      assert associated?(enabled.registration, project)
+    end
+
+    test "an admin cannot add a private tool without a grant either", %{project: project} do
+      ungranted = lti_tool("Ungranted Tool", %{availability: :private})
+
+      admin_only =
+        lti_tool("Admin Only Tool", %{availability: :public}, %{globally_visible: false})
+
+      assert admin_only.registration.id in selectable_ids(project, true)
+      refute admin_only.registration.id in selectable_ids(project, false)
+      refute ungranted.registration.id in selectable_ids(project, true)
+
+      assert {:error, {:not_addable, ["Ungranted Tool"]}} ==
+               Activities.bulk_update_project_activities(
+                 project.id,
+                 [ungranted.registration.id],
+                 [],
+                 true
+               )
+
+      assert {:error, {:not_addable, ["Admin Only Tool"]}} ==
+               Activities.bulk_update_project_activities(
+                 project.id,
+                 [admin_only.registration.id],
+                 [],
+                 false
+               )
+
+      refute associated?(admin_only.registration, project)
+
+      assert :ok ==
+               Activities.bulk_update_project_activities(
+                 project.id,
+                 [admin_only.registration.id],
+                 [],
+                 true
+               )
+
+      assert associated?(admin_only.registration, project)
+      refute associated?(ungranted.registration, project)
+    end
+
+    test "a private tool added before it lost its grant stays listed, can be removed and cannot be added again",
+         %{project: project} do
+      kept_enabled = lti_tool("Kept Enabled", %{availability: :private})
+      kept_disabled = lti_tool("Kept Disabled", %{availability: :private})
+      associate(kept_enabled, project, :enabled)
+      associate(kept_disabled, project, :disabled)
+
+      listed =
+        project.id
+        |> Activities.selectable_activities_for_project(false)
+        |> Map.new(&{&1.id, &1.project_status})
+
+      assert listed[kept_enabled.registration.id] == :enabled
+      assert listed[kept_disabled.registration.id] == :disabled
+
+      assert :ok ==
+               Activities.bulk_update_project_activities(
+                 project.id,
+                 [],
+                 [kept_enabled.registration.id, kept_disabled.registration.id],
+                 false
+               )
+
+      refute associated?(kept_enabled.registration, project)
+      refute associated?(kept_disabled.registration, project)
+      refute kept_enabled.registration.id in selectable_ids(project, false)
+
+      assert {:error, {:not_addable, ["Kept Enabled"]}} ==
+               Activities.bulk_update_project_activities(
+                 project.id,
+                 [kept_enabled.registration.id],
+                 [],
+                 false
+               )
+
+      refute associated?(kept_enabled.registration, project)
+    end
+
+    test "a batch with one tool that cannot be added changes nothing", %{project: project} do
+      ungranted = lti_tool("Ungranted Tool", %{availability: :private})
+      public = lti_tool("Public Tool", %{availability: :public})
+      existing = lti_tool("Existing Tool", %{availability: :public})
+      associate(existing, project, :enabled)
+
+      assert {:error, {:not_addable, ["Ungranted Tool"]}} ==
+               Activities.bulk_update_project_activities(
+                 project.id,
+                 [ungranted.registration.id, public.registration.id],
+                 [existing.registration.id],
+                 false
+               )
+
+      refute associated?(ungranted.registration, project)
+      refute associated?(public.registration, project)
+      assert associated?(existing.registration, project)
+    end
+  end
+
+  describe "can_create_activity?/3" do
+    test "a hidden public LTI tool is creatable only by an admin", %{project: project} do
+      tool =
+        lti_tool("Admin Only Tool", %{availability: :public}, %{globally_visible: false})
+
+      refute Activities.can_create_activity?(tool.registration, project.id, false)
+      assert Activities.can_create_activity?(tool.registration, project.id, true)
+    end
+
+    test "a hidden non-global registration without an LTI deployment remains creatable", %{
+      project: project
+    } do
+      registration =
+        insert(:activity_registration, globally_available: false, globally_visible: false)
+
+      assert Activities.can_create_activity?(registration, project.id, false)
+      assert Activities.can_create_activity?(registration, project.id, true)
+    end
+  end
+
+  defp lti_tool(title, deployment_attrs, registration_attrs \\ %{}) do
+    registration =
+      insert(
+        :activity_registration,
+        Map.merge(
+          %{title: title, globally_visible: true, globally_available: false},
+          registration_attrs
+        )
+      )
+
+    deployment =
+      insert(
+        :lti_external_tool_activity_deployment,
+        Map.put(deployment_attrs, :activity_registration, registration)
+      )
+
+    %{registration: registration, deployment: deployment}
+  end
+
+  defp grant(%{deployment: deployment}, project) do
+    Repo.insert!(%LtiExternalToolProjectGrant{
+      deployment_id: deployment.deployment_id,
+      project_id: project.id
+    })
+  end
+
+  defp associate(%{registration: registration}, project, status) do
+    insert(:activity_registration_project, %{
+      activity_registration_id: registration.id,
+      project_id: project.id,
+      status: status
+    })
+  end
+
+  defp selectable_ids(project, is_admin?) do
+    project.id
+    |> Activities.selectable_activities_for_project(is_admin?)
+    |> MapSet.new(& &1.id)
+  end
+
+  defp associated?(registration, project) do
+    not is_nil(
+      Repo.get_by(ActivityRegistrationProject,
+        activity_registration_id: registration.id,
+        project_id: project.id
+      )
+    )
   end
 end
