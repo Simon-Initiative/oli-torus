@@ -247,7 +247,8 @@ config :oli, Oban,
     {
       Oban.Plugins.Cron,
       crontab: [
-        {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
+        {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default},
+        {"0 8 1 * *", Oli.Auditing.PartitionMaintenanceWorker, queue: :default}
       ]
     }
   ],

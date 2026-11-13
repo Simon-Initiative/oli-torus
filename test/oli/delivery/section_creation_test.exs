@@ -4,7 +4,7 @@ defmodule Oli.Delivery.SectionCreationTest.FailingAuditor do
 
   @impl true
   def capture(_actor, _event_type, _resource, _details),
-    do: {:error, Oli.Auditing.LogEvent.changeset(%Oli.Auditing.LogEvent{}, %{})}
+    do: {:error, Oli.Auditing.Error.new(:insert_failed, :section_created)}
 end
 
 defmodule Oli.Delivery.SectionCreationTest do
@@ -1636,15 +1636,23 @@ defmodule Oli.Delivery.SectionCreationTest do
   end
 
   # Non-zero row counts for every table in the schema with a section_id column.
+  #
+  # Partitions are skipped: each partition is its own table with the parent's columns, and
+  # counting the parent already includes its partitions' rows, so listing both would count
+  # the same rows twice (for example audit_log_events and audit_log_events_y2026h2).
   defp section_row_counts(section_id) do
     {:ok, %{rows: tables}} =
       Ecto.Adapters.SQL.query(
         Repo,
         """
-        select table_name
+        select columns.table_name
         from information_schema.columns
-        where column_name = 'section_id' and table_schema = 'public'
-        order by table_name
+        join pg_class
+          on pg_class.relname = columns.table_name
+          and pg_class.relnamespace = 'public'::regnamespace
+          and not pg_class.relispartition
+        where columns.column_name = 'section_id' and columns.table_schema = 'public'
+        order by columns.table_name
         """,
         []
       )

@@ -12,7 +12,7 @@ defmodule Oli.Delivery.SectionCreationAuditor do
               event_type :: atom(),
               resource :: struct() | nil,
               details :: map()
-            ) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
+            ) :: {:ok, struct()} | {:error, Ecto.Changeset.t() | Oli.Auditing.Error.t()}
 
   def capture(actor, event_type, resource, details),
     do: impl().capture(actor, event_type, resource, details)

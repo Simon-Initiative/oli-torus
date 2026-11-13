@@ -753,6 +753,7 @@ if runtime_env in [:prod, :preview, :playwright] do
         Oban.Plugins.Cron,
         crontab: [
           {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default},
+          {"0 8 1 * *", Oli.Auditing.PartitionMaintenanceWorker, queue: :default},
           {"*/30 * * * *", Oli.Lti.KeysetRefreshWorker,
            args: %{refresh_all: true}, queue: :default}
         ]

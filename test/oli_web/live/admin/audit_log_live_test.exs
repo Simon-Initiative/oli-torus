@@ -6,6 +6,8 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
   import ExUnit.CaptureLog
 
   alias Oli.Auditing
+  alias Oli.Auditing.{EventCatalog, EventExamples, LogEvent}
+  alias Oli.Repo
 
   describe "mount/3" do
     test "redirects if user is not authenticated", %{conn: conn} do
@@ -60,15 +62,16 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       project = insert(:project, title: "Test Project")
       section = insert(:section, title: "Test Section")
 
-      {:ok, event1} = Auditing.capture(user1, :user_deleted, nil, %{"email" => user1.email})
+      {:ok, event1} =
+        Auditing.capture(user1, :user_deleted, insert(:user), %{"email" => user1.email})
 
       {:ok, event2} =
-        Auditing.capture(user2, :section_created, section, %{"title" => section.title})
+        Auditing.capture(user2, :section_created, section, %{"section_title" => section.title})
 
       {:ok, event3} =
         Auditing.capture(author1, :project_published, project, %{"version" => "1.0"})
 
-      {:ok, event4} = Auditing.capture(user1, :user_deleted, nil, %{"page" => "test.html"})
+      {:ok, event4} = Auditing.capture(user1, :user_deleted, insert(:user), %{})
 
       conn = log_in_author(conn, admin)
 
@@ -157,7 +160,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       # Create many events to trigger pagination
       for i <- 1..30 do
         user = insert(:user, name: "User #{i}")
-        Auditing.capture(user, :user_deleted, nil, %{"index" => i})
+        Auditing.capture(user, :user_deleted, insert(:user), %{})
       end
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
@@ -206,6 +209,72 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
     end
   end
 
+  describe "catalog and migrated rows" do
+    setup %{conn: conn} do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().system_admin)
+      {:ok, %{conn: log_in_author(conn, admin)}}
+    end
+
+    test "renders one event of every catalog family, a system actor, and a migrated row", %{
+      conn: conn
+    } do
+      # Reversed so the account family, whose example has a system actor, is on the first page.
+      for family <- Enum.reverse(EventCatalog.families()) do
+        [name | _] = EventCatalog.family_events(family)
+
+        %LogEvent{}
+        |> LogEvent.v2_changeset(EventExamples.example(name))
+        |> Repo.insert!()
+      end
+
+      Repo.insert_all(LogEvent, [
+        %{
+          inserted_at: DateTime.utc_now(),
+          schema_version: 1,
+          event_type: :project_published,
+          actor_type: :unknown,
+          legacy_source: :audit_log_events,
+          legacy_id: 1,
+          details: %{"password" => %{"redacted" => true}}
+        }
+      ])
+
+      {:ok, view, html} =
+        live(conn, ~p"/admin/audit_log?sort_by=inserted_at&sort_order=desc")
+
+      assert html =~ "Unknown"
+      assert html =~ "System"
+      refute html =~ "schema_version"
+
+      html = render_change(view, "change_event_type", %{"event_type" => "account_created"})
+      assert html =~ "account_created"
+
+      {:ok, _view, html} = live(conn, ~p"/admin/audit_log?offset=25")
+      refute html =~ "schema_version"
+    end
+
+    test "renders a migrated role change without an affected author as plain text", %{
+      conn: conn
+    } do
+      Repo.insert_all(LogEvent, [
+        %{
+          inserted_at: DateTime.utc_now(),
+          schema_version: 1,
+          event_type: :author_role_changed,
+          actor_type: :unknown,
+          legacy_source: :audit_log_events,
+          legacy_id: 2,
+          details: %{"author_name" => "Former Author"}
+        }
+      ])
+
+      {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
+
+      assert html =~ "Former Author"
+      refute html =~ ~s(href="/admin/authors/")
+    end
+  end
+
   describe "resource links" do
     setup %{conn: conn} do
       admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().system_admin)
@@ -238,7 +307,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
     test "shows links to users", %{conn: conn, admin: _admin} do
       user = insert(:user, name: "John Doe")
-      {:ok, _event} = Auditing.capture(user, :user_deleted, nil, %{})
+      {:ok, _event} = Auditing.capture(user, :user_deleted, insert(:user), %{})
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
 
@@ -249,7 +318,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
     test "shows links to authors", %{conn: conn, admin: _admin} do
       author = insert(:author, name: "Jane Author")
-      {:ok, _event} = Auditing.capture(author, :author_deleted, nil, %{})
+      {:ok, _event} = Auditing.capture(author, :author_deleted, insert(:author), %{})
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
 
