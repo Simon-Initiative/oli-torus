@@ -159,6 +159,33 @@ describe('ChoicesDelivery', () => {
     expect(radio).not.toHaveAttribute('aria-label');
   });
 
+  it('names webpage choices by their title and falls back when the title is missing', () => {
+    const titledChoice = makeChoice('', 'choice-a');
+    titledChoice.content = [
+      { ...Model.webpage('https://example.com/sim'), title: 'Solar system simulation' },
+    ];
+    const untitledChoice = makeChoice('', 'choice-b');
+    untitledChoice.content = [Model.webpage('https://example.com/other')];
+
+    render(
+      <ChoicesDelivery
+        choices={[titledChoice, untitledChoice]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={jest.fn()}
+        isEvaluated={false}
+        unselectedIcon={<Radio.Unchecked />}
+        selectedIcon={<Radio.Checked />}
+      />,
+    );
+
+    const titledRadio = screen.getByRole('radio', { name: 'Solar system simulation' });
+
+    expect(titledRadio).toHaveAttribute('aria-labelledby');
+    expect(titledRadio).not.toHaveAttribute('aria-label');
+    expect(screen.getByRole('radio', { name: 'Choice 2' })).not.toHaveAttribute('aria-labelledby');
+  });
+
   it('keeps the whole row as the checkbox control', () => {
     const onSelect = jest.fn();
 

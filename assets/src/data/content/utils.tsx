@@ -195,10 +195,19 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 const isNonBlankString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim() !== '';
 
-const isNameableNode = ({ text, type, alt, caption, children }: Record<string, unknown>): boolean =>
+// Webpage titles are rendered as the iframe's aria-label, which content-based names include
+const isNameableNode = ({
+  text,
+  type,
+  alt,
+  title,
+  caption,
+  children,
+}: Record<string, unknown>): boolean =>
   isNonBlankString(text) ||
   isNonBlankString(alt) ||
   isNonBlankString(caption) ||
+  (type === 'iframe' && isNonBlankString(title)) ||
   SELF_NAMED_ELEMENT_TYPES.has(type) ||
   hasNameableContent(caption) ||
   hasNameableContent(children);
