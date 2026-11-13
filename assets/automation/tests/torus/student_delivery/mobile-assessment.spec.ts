@@ -3,7 +3,6 @@ import { test } from '@fixture/my-fixture';
 import { expect } from '@playwright/test';
 import { BasicAssessmentPO } from '@pom/course/BasicAssessmentPO';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
-import { LoginPO } from '@pom/home/LoginPO';
 import { randomUUID } from 'node:crypto';
 import { buildLoginRecord } from './support/common';
 
@@ -45,7 +44,6 @@ for (const viewport of [
         const section = outputs.sections?.mobile_assessment_section;
         expect(section, 'seeded mobile assessment section').toBeTruthy();
         await homeTask.login('student');
-        await new LoginPO(page).acceptCookies();
         await page.goto(`/sections/${section}`);
         const course = new StudentCoursePO(page);
         await course.goToCourseIfPrompted();
