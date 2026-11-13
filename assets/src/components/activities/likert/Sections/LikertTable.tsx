@@ -71,16 +71,25 @@ export const LikertTable: React.FC<Props> = ({
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
+          {items.map((item, itemIndex) => (
             <tr key={item.id}>
               {showItemColumn && (
                 <td className="border border-Border-border-default bg-Surface-surface-secondary-muted px-5 py-4 align-top text-base text-Text-text-high">
-                  <div id={itemLabelId(item.id)} className="leading-7 [&_.content_p]:my-0">
+                  <div
+                    id={hasNameableContent(item.content) ? itemLabelId(item.id) : undefined}
+                    className="leading-7 [&_.content_p]:my-0"
+                  >
                     <HtmlContentModelRenderer
                       direction={item.textDirection}
                       content={item.content}
                       context={context}
                     />
+                    {/* Rows without nameable content still need a name to tell their radios apart */}
+                    {!hasNameableContent(item.content) && (
+                      <span id={itemLabelId(item.id)} className="sr-only">
+                        {`Item ${itemIndex + 1}`}
+                      </span>
+                    )}
                   </div>
                 </td>
               )}

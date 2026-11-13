@@ -68,4 +68,17 @@ describe('LikertTable', () => {
     expect(screen.getByRole('radio', { name: 'Agree' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Choice 2' })).toBeInTheDocument();
   });
+
+  it('falls back to an ordinal name for items without nameable content', () => {
+    const model = defaultLikertModel();
+    const audioItem = makeLikertItem('');
+    audioItem.content = [Model.audio('https://example.com/clip.mp3')];
+    model.items = [makeLikertItem('I enjoy chemistry'), audioItem];
+
+    renderTable(model);
+
+    expect(screen.getByRole('radio', { name: 'I enjoy chemistry Agree' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Item 2 Agree' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Item 2 Disagree' })).toBeInTheDocument();
+  });
 });
