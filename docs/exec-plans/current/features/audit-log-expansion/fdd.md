@@ -63,7 +63,7 @@ Boundary is not installed. A text waypoint search finds `OliWeb` references in 3
 | Component | Responsibility and public boundary |
 | --- | --- |
 | Existing domain context, e.g. `Oli.Accounts` | Queries and existing not-yet-migrated operations during development; remove unaudited public shortcuts for every migrated operation |
-| `Oli.Accounts.Audited` and domain equivalents | Public application commands and composable Multi builders; authorization orchestration, persisted before-state, mutations, event proposals, and transaction ownership |
+| `Oli.Accounts.Audited` and domain equivalents | Public application commands and composable Multi builders; preserved existing authorization, persisted before-state, mutations, event proposals, and transaction ownership |
 | `Oli.Accounts.Audited.Mutations` | Internal domain writes; no audit insert or event construction; preserve domain validation and locking behavior |
 | `Oli.Auditing.Context` | Trusted actor, source, operation identity, and correlation value object; no process dictionary or user-supplied actor override |
 | `Oli.Auditing.EventCatalog` and family builders | Enumerated event contracts, safe-field projection, identity normalization, change semantics, and validation |
@@ -79,33 +79,30 @@ Boundary exports modules, automatically exposes a boundary root, and permits a p
 
 Select a small boundary around each audited facade and its internal implementation. `Accounts.Audited.Mutations` is an ordinary unexported module inside the `Accounts.Audited` boundary, not a separate boundary root. Keep `Accounts` outside that boundary. This changes the illustrative mutation namespace, not the three responsibilities or ticket's decoupling requirement.
 
-Proposed pilot configuration, to compile and verify before expanding:
+Pilot configuration narrowed by the owner on 2026-11-03 to protect audited account internals only, without policing existing context relationships:
 
 ```elixir
-# Existing umbrella: explicit transitional exports; no mutation internals exported.
-# :all can be used for existing compatibility only if the pilot proves that it
-# does not expose unexported modules owned by the new child boundaries.
 defmodule Oli do
-  use Boundary, exports: :all
+  use Boundary, deps: [Oli.Accounts.Audited], check: [in: false]
 end
 
 defmodule OliWeb do
-  use Boundary, deps: [Oli], exports: :all
+  use Boundary, deps: [Oli.Accounts.Audited], check: [in: false]
 end
 
 defmodule Oli.Accounts.Audited do
-  use Boundary, deps: [Oli], exports: []
+  use Boundary, top_level?: true, exports: []
 end
 
-# No `use Boundary` here: this module belongs to Accounts.Audited.
+# Ordinary private module inside the audited boundary, not a boundary root.
 defmodule Oli.Accounts.Audited.Mutations do
   # Domain writes only.
 end
 ```
 
-This is a topology sketch, not drop-in configuration for the entire application. Classify application startup and Mix tasks explicitly, resolve dependency cycles, and inventory generated/protocol/test-support modules. If legacy cross-layer references require temporary `dirty_xrefs`, enumerate exact existing modules with reasons; never list protected mutation modules. No production caller boundary may disable outgoing checks, and no audited boundary may disable incoming checks. Do not silently install a broad ignore configuration to make CI green.
+Legacy boundaries permit incoming calls but retain outgoing checks. The audited boundary is independent, keeps incoming checks enabled, and exports only its root. Its outgoing checks are off because it calls `Oli`, which depends on it, and Boundary rejects dependency cycles; this does not expose its internals. Therefore the legacy incoming compatibility setting cannot expose private audited modules. Classify Mix tasks and standalone namespaces with the same compatibility settings, preserving compiled test-support checks. Do not disable outgoing checks on callers or incoming checks on audited boundaries. No legacy `dirty_xrefs` list or cross-context refactoring is required for this pilot. See the PR-02 detailed design and execution record for compiler proof and coverage limits.
 
-Compile a controlled forbidden-call fixture from the read context, a LiveView/controller boundary, and a Scenario caller; verify that allowed facade calls succeed. Enable the Boundary compiler ahead of the existing compiler list and use forced compilation with warnings as errors in CI. Establish behavior in both relevant dev/test builds without running a database reset. [Boundary compiler documentation](https://boundary.hexdocs.pm/Mix.Tasks.Compile.Boundary.html)
+Prove the configuration once by compiling controlled forbidden-call fixtures from the read context, a LiveView/controller boundary, and a Scenario caller, and by verifying that allowed facade calls succeed. Enable the Boundary compiler ahead of the existing compiler list and keep CI compilation with warnings as errors, so a forbidden reference fails the build. Boundary rechecks stored references on every compile, so cached incremental builds need no `--force`. The fixtures are a one-time proof and are not kept in CI. Establish behavior in both relevant dev/test builds without running a database reset. [Boundary compiler documentation](https://boundary.hexdocs.pm/Mix.Tasks.Compile.Boundary.html)
 
 Only trusted internals of an audited boundary can call its raw mutations. Boundary cannot prove event correctness or detect every dynamic call/direct SQL write. The pilot must document those limits and reject the design if ordinary static consumers can bypass it. Keeping exact sibling names would require additional boundary extraction and dependency changes; prefer the smaller private namespace unless review requires otherwise.
 
@@ -119,7 +116,7 @@ sequenceDiagram
     participant Raw as Audited.Mutations
     participant Audit as Oli.Auditing
     Entry->>App: command(trusted context, target, input)
-    App->>DB: begin; authorize and lock state; check replay where applicable
+    App->>DB: begin; lock state; check replay where applicable
     App->>Raw: domain mutation
     Raw->>DB: write domain state
     Raw-->>App: persisted result
@@ -142,8 +139,8 @@ For nested domain work, compose Multi builders under one transaction and context
 ### 4.3 Lifecycle & Ownership
 
 - The authenticated adapter constructs actor/source context; the domain coordinator reloads/authorizes the target. Source is a fixed code value, not a client assertion.
-- Operation IDs are allocated once per logical command and retained through retries. UI forms/live state retain them until completion; API/MCP retries reuse their documented authenticated request identity where supported; jobs persist the ID. Bind reuse to actor, command, and target, rejecting mismatches. Different commands receive new IDs.
-- Correlation IDs alone do not enforce idempotency. Each retryable command defines its serialization, completion evidence, and safe replay response using domain state and retained central events where sufficient. There is no universal stored-response replay API; credential creation cannot replay the original secret from audit storage.
+- Operation IDs are allocated once per logical command and correlate its events. Jobs persist the ID so worker retries reuse it. Synchronous UI/API/MCP commands allocate one per execution and do not rely on it to detect retries. Where an asynchronous workflow checks a reused ID, bind it to actor, command, and target, rejecting mismatches. Different commands receive new IDs.
+- Correlation IDs alone do not enforce idempotency. Synchronous commands avoid duplicate evidence through their transaction and target row locks (section 7.1). Each asynchronous or external workflow defines its serialization, completion evidence, and safe replay response using domain state and retained central events where sufficient. There is no universal stored-response replay API; credential creation cannot replay the original secret from audit storage.
 - Raw mutations return domain values/errors. Builders return validated event proposals. Only the transaction owner commits and executes post-commit effects.
 - Events are append-only application evidence. Oban owns job execution state; historical outcomes survive job pruning in the central log. Outcome corrections append evidence instead of rewriting earlier events.
 - Schema/event registry changes belong to the audited domain owner and central auditing contract tests. Unknown event names and unsafe fields are rejected.
@@ -373,15 +370,17 @@ The maintenance-window approach remains a proposal pending size/window evidence.
 
 ## 7. Consistency & Transactions
 
-### 7.1 Local commands and replay
+### 7.1 Local commands and retries
 
-The outer domain coordinator creates one Multi: validate authorization, lock/read domain state, run mutation, construct and append safe events, commit. Retryable commands include their replay check before mutation. Lock target rows in stable ID order for bulk updates. Maintain existing optimistic/editing locks as well; database row locks do not replace authoring permissions or document locks.
+The outer domain coordinator creates one Multi: lock/read domain state, run mutation, construct and append safe events, commit. Each action keeps its existing authorization where it already lives (route plug, LiveView check, or domain function); a check that lived in the migrated domain function moves with it into the coordinator, but coordinators add no new permission checks (owner decision, 2026-11-03). Lock target rows in stable ID order for bulk updates. Maintain existing optimistic/editing locks as well; database row locks do not replace authoring permissions or document locks.
 
-Specify replay behavior per action rather than promising a universal persisted response. Reuse domain constraints/state where they prove completion. Where retained events provide the completion evidence, serialize attempts for the same authenticated logical command before checking those events and keep that serialization through the mutation/event commit. A transaction-scoped PostgreSQL advisory lock keyed from the operation identity is a candidate when no persistent domain row can be locked, such as after deletion; prove the protocol in the pilot before relying on it. All callers for the command must use the same protocol. A standalone check-then-insert, a correlation UUID, or Oban uniqueness is insufficient.
+Synchronous commands need no replay protocol. Locking the target row serializes concurrent attempts, and a repeated attempt finds the target already deleted (not found, no event), the value already applied (a no-op, no event), or creates a genuinely separate entity with its own truthful event. A repeated attempt never records a second success for the same change. Owner decision, 2026-11-03: MER-6066 requires no duplicate events, not retry receipts, so the user-deletion pilot implements no replay.
+
+Replay applies to asynchronous jobs and external effects, where Oban's at-least-once execution or a crash after an external effect can rerun committed work. Specify replay behavior per workflow rather than promising a universal persisted response. Reuse domain constraints/state where they prove completion. Where retained events provide the completion evidence, serialize attempts for the same authenticated logical command before checking those events and keep that serialization through the mutation/event commit. A transaction-scoped PostgreSQL advisory lock keyed from the operation identity is a candidate when no persistent domain row can be locked; prove the protocol in the first asynchronous coverage workflow (PR-04) before relying on it. All callers for the workflow must use the same protocol. A standalone check-then-insert, a correlation UUID, or Oban uniqueness is insufficient.
 
 Under that serialization, verify actor/command/target binding and look for the same semantic event slot across retained partitions, not just the current date interval. An existing completed slot prevents rerunning the corresponding mutation; the command returns its documented safe already-applied response or domain result where still available. Do not infer completion merely from an initiation event or recreate deleted records to reconstruct an old response. Reject incompatible reuse where binding can be checked; preserve existing authorization and never return another actor's evidence. Failure rolls back domain changes and events. No-op requests have no generic replay receipt: each action must define its precondition/version behavior or identify a concrete storage gap before claiming stable no-op replay semantics.
 
-Generate stable event keys from semantic slots, such as `account:primary:deleted`, `assessment:<resource-id>:settings`, or `remix:<entry-id>:saved`, not random values per attempt. Reuse existing completed evidence without inserting a new timestamped copy. New async phases get new times and distinct keys. Test retries across a partition boundary and concurrent attempts; the partitioned unique index does not enforce this protocol globally.
+Generate stable event keys from semantic slots, such as `account:primary:deleted`, `assessment:<resource-id>:settings`, or `remix:<entry-id>:saved`, not random values per attempt. Reuse existing completed evidence without inserting a new timestamped copy. New async phases get new times and distinct keys. For asynchronous workflows, test retries across a partition boundary and concurrent attempts; the partitioned unique index does not enforce this protocol globally.
 
 Do not let nested public coordinators allocate independent identities or publish side effects before the outer commit. Compose Multi builders with shared context. Any capture failure rolls back the owning transaction; a bare returned error tuple inside a transaction callback is insufficient unless translated to rollback.
 
@@ -440,7 +439,8 @@ Migration preflight records source sizes, temporary-copy/archive capacity, durat
 | Domain validation/authorization failure | No domain change or successful event; existing caller error behavior preserved |
 | Event validation/insert failure | Roll back local mutation and associated events/job enqueue; return safe failure code |
 | Missing partition or DDL privilege | Fail local write safely; signal readiness/maintenance error; repair coverage before retry |
-| Retry/repeated callback | Match operation binding; return existing result or continue known incomplete step; no new success copy |
+| Repeated synchronous request | Target row lock serializes; the repeat returns not found or a no-op; no new success copy |
+| Retried job/repeated callback | Match operation binding; return existing result or continue known incomplete step; no new success copy |
 | Nested legacy capture | Regression/pilot test fails expected cardinality; remove the redundant producer |
 | Crash before async dispatch | Transactional Oban enqueue retains accepted work or rolls everything back |
 | Job finishes/exhausts/cancels before outcome capture | Recover confirmed outcome from retained evidence; prove capture/pruning ordering and do not infer success from missing job state |
@@ -461,7 +461,7 @@ Existing feature flags and rollout controls are audited subjects. No new feature
 
 ## 12. Security & Privacy
 
-Preserve the administrator-only route and validate authorization in the application entry point that owns each command. Actor construction uses authenticated principals or explicitly authorized internal system identities. Replay checks and job/outcome lookups must not expose another actor's result through a guessed correlation UUID.
+Preserve the administrator-only route and each action's existing authorization where it already lives; audited coordinators do not add permission checks, and callers authorize before calling them. Actor construction uses authenticated principals or explicitly authorized internal system identities. Replay checks and job/outcome lookups must not expose another actor's result through a guessed correlation UUID.
 
 Allowlist payload fields recursively. Keep passwords, raw/hashed tokens, credential material, invitation secrets, private keys, payment instruments, and signed authentication payloads out of events, search text, errors, and job arguments. For lifecycle records, use database credential IDs or separate opaque references, not secret-derived identifiers. Test marker secrets across every persisted/serialized sink.
 
@@ -475,7 +475,7 @@ Historical unknowns stay distinguishable from explicit system actions. Scenarios
 
 1. Catalog tests instantiate every event contract with valid factory data and reject missing/unsafe combinations. Cover direct database constraint failures as well as changeset errors. Use representative multi-field, reset, deleted-target, system, bulk, and async payloads before broad instrumentation.
 2. A real pilot command proves allowed/forbidden Boundary references, correct authorization, persisted old/new values, domain failure rollback, audit failure rollback, and exactly the intended semantic event count. Do not assert only that `capture` was called.
-3. Each domain group maps all supported caller paths and existing captures to shared coordinators. Preserve functional tests, then add meaningful audit assertions at application/transport boundaries. Exercise direct writes, no-ops, concurrency, nested operations, and replay across partition boundaries. Async cases cover enqueue rollback/conflict, crash after mutation/event commit but before job acknowledgement, retry exhaustion, cancellation outside the worker, recovery outages, and pruning before/after outcome capture. Completed historical evidence remains available after the job is deleted.
+3. Each domain group maps all supported caller paths and existing captures to shared coordinators. Preserve functional tests, then add meaningful audit assertions at application/transport boundaries. Exercise direct writes, no-ops, concurrency, nested operations, and, for asynchronous workflows, replay across partition boundaries. Async cases cover enqueue rollback/conflict, crash after mutation/event commit but before job acknowledgement, retry exhaustion, cancellation outside the worker, recovery outages, and pruning before/after outcome capture. Completed historical evidence remains available after the job is deleted.
 4. Migration rehearsals on isolated databases cover both sources, secrets, old actor ambiguities, interval boundaries, sequences/ID lookups, duplicate backfill prevention, future-partition provisioning, batch checkpoint/restart behavior, short cutover locks, concurrent-index recovery where used, immediate rollback, post-write rollback, and roll-forward from archives.
 5. UI/query tests exercise approved search dimensions, deleted identity, legacy/current labels, system actors, empty pages, sort stability, UTC/local date boundaries, access denial, and safe details. Benchmark with reproducible workloads.
 6. Real Scenarios verify setup actor followed by author publishing and instructor section/invitation work. Student answers produce no added administrative event. Existing setup events are scoped out by entity/operation or a post-setup baseline, not suppressed globally.
@@ -491,7 +491,7 @@ The table below is design traceability and planned verification, not implementat
 | FR-001 | AC-001, AC-002, AC-003, AC-004 | Sections 6.1–6.3 and 7.1: envelope, subject distinction, authoritative diffs; insert and concurrent-update tests |
 | FR-002 | AC-005, AC-006, AC-007 | Sections 5.2 and 6.3: complete registry and direct-insert invariants; catalog cases and plan caller inventory |
 | FR-003 | AC-008, AC-009, AC-010 | Sections 4.2 and 7.1: shared transaction/no-op semantics; injected mutation/audit failures |
-| FR-004 | AC-011, AC-012, AC-013, AC-014 | Sections 4.2–4.3 and 7.1–7.2: operation ownership, per-target bulk events, replay; caller/nested/retry tests |
+| FR-004 | AC-011, AC-012, AC-013, AC-014 | Sections 4.2–4.3 and 7.1–7.2: operation ownership, per-target bulk events, row-lock serialization, async replay; caller/nested/retry tests |
 | FR-005 | AC-015, AC-016, AC-017, AC-018 | Sections 6.4 and 7.4: durable queue/outcomes and reconciliation; crash-boundary/partial-result tests |
 | FR-006 | AC-019, AC-020, AC-021 | Sections 5.2 and 7.3: shared session boundaries and explicit revocation; provider/callback failure tests |
 | FR-007 | AC-022, AC-023, AC-024 | Account catalog and sections 6.2/12: creation/profile/access/link/recovery/deletion; actor/secret/history tests |
@@ -545,7 +545,7 @@ Review seven planned implementation PRs into `story/MER-6066-audit-log-expansion
 | --- | --- |
 | Private namespace proposal differs from illustrative names | Review explicitly; prove compiled boundary behavior before broad moves; preserve responsibilities |
 | Broad existing cross-layer dependencies | Inventory compiler output, classify roots, and allow only exact reviewed legacy debt; never ignore protected mutation calls |
-| Removing the registry leaves assumed replay guarantees | Prove per-action domain/event serialization and retry behavior; operation IDs and Oban uniqueness are not execution guarantees |
+| Removing the registry leaves assumed replay guarantees | Synchronous commands rely on transaction and row locks; prove asynchronous serialization and retry behavior in the first async workflow; operation IDs and Oban uniqueness are not execution guarantees |
 | Oban pruning races terminal audit capture | Verify durable capture/recovery ordering before enabling each async flow; fixed retention or telemetry alone is insufficient |
 | Event contracts miss a setting/channel | Full family catalog plus exhaustive action/caller inventory and registry coverage tests before each PR is closed |
 | Actor bootstrap conflicts with authorization | Explicit trusted system identities and represented human actors; no arbitrary first-author fallback |
@@ -566,7 +566,7 @@ The design is concrete enough to review and plan; these are explicit gates with 
 4. **Storage implementation/operations:** obtain target versions, source sizes, privileges, permitted maintenance window, backup/rollback capacity, and partition-maintenance ownership. Rehearse the selected migration before accepting production readiness.
 5. **Performance review:** accept or revise the explicit proposed latency/query budgets using benchmark evidence. The estimates in section 9 are not test results.
 6. **Assessment owner/operations:** confirm known external consumers and rollback release redaction handling before retiring `settings_changes`.
-7. **Async/auth detailed design:** enumerate adapter-specific idempotency/reconciliation and session boundaries, including provider callback reuse, ClickHouse operations, import/repair partial results, and credential-replay behavior. Prove terminal capture versus Oban pruning and replay serialization without a registry. Record any concrete multi-job, external-recovery, or replay-horizon gap before proposing additional storage; no new table is currently justified. No universal external exactly-once guarantee is assumed.
+7. **Async/auth detailed design:** enumerate adapter-specific idempotency/reconciliation and session boundaries, including provider callback reuse, ClickHouse operations, import/repair partial results, and one-time credential responses. Prove terminal capture versus Oban pruning and replay serialization without a registry. Record any concrete multi-job, external-recovery, or replay-horizon gap before proposing additional storage; no new table is currently justified. No universal external exactly-once guarantee is assumed.
 
 ## 17. References
 

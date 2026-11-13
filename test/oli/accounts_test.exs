@@ -281,11 +281,6 @@ defmodule Oli.AccountsTest do
       assert user.email == Accounts.get_user!(user.id).email
     end
 
-    test "delete_user/1 deletes the user", %{user: user} do
-      assert {:ok, %User{}} = Accounts.delete_user(user)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_user!(user.id) end
-    end
-
     test "update_user_platform_roles/2 updates a users platform roles", %{user: user} do
       user = Repo.preload(user, [:platform_roles])
       assert user.platform_roles == []

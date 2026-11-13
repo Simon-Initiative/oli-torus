@@ -61,18 +61,18 @@ Implementation:
 
 - [ ] Install/configure Boundary and extract only the selected user-deletion mutation. Implement the actor-aware coordinator, historical identity capture and shared transaction; remove duplicate manual capture.
 - [ ] Inventory compiler dependencies and exact legacy exceptions. Prove read-context, web and Scenario callers cannot statically call the private mutation; no broad outgoing/incoming-check disable.
-- [ ] Add forced compilation with warnings as errors to relevant CI builds. Demonstrate per-operation replay serialization, including deletion after the target no longer exists, without a coordination table.
+- [ ] Enable the Boundary compiler in the existing warnings-as-errors CI builds (no `--force`: Boundary rechecks stored references on every compile). Serialize concurrent deletions with a lock on the target user row; a repeated attempt finds no user and appends nothing. No replay protocol in this pilot (owner decision, 2026-11-03): replay is designed in the first asynchronous workflow (PR-04).
 
 Validation:
 
-- [ ] Prove real delete + event, authorization denial, mutation failure and injected audit failure rollback; concurrent retry emits one semantic success even across a partition boundary.
+- [ ] Prove real delete + event, unchanged route authorization, mutation failure and injected audit failure rollback; concurrent deletions of the same user commit exactly one semantic success.
 - [ ] Run allowed and intentionally forbidden compilation fixtures; document .exs/test-support checking limits and direct SQL/dynamic invocation limits.
 - [ ] Apply the common actor/privacy/authorization/atomicity/cardinality and supported-entry tests throughout the PR; update actual proof references.
 - Existing regression command (only after isolated DB verification): `mix test test/oli/accounts_test.exs test/oli_web/live/users`. Add the new audit tests for each internal block.
 
 Completion gate:
 
-- Compiled allowed/forbidden examples and real transaction/replay tests pass before broad Boundary replication.
+- Compiled allowed/forbidden examples and real transaction tests pass before broad Boundary replication.
 
 Risk: Boundary topology must be compiled and proved; field-level/direct-SQL/dynamic bypasses need tests and inspection.
 
@@ -101,14 +101,14 @@ Implementation:
 - [ ] Preserve domain validation and safe response shapes; do not serialize password/email-verification inputs as arbitrary audit details.
 - [ ] Map every session entry point, including the lower-level create/install helpers and Playwright session setup, to one semantic issuance/revocation boundary.
 - [ ] Compose account linking and necessary profile/preferences writes without recapturing login. Define token persistence versus cookie delivery and server-side revocation semantics.
-- [ ] Audit recovery lifecycle without storing tokens or credential hashes; document authenticated replay behavior and secret-bearing response limits.
+- [ ] Audit recovery lifecycle without storing tokens or credential hashes; document retry behavior (a reused one-time token fails and records no new success) and secret-bearing response limits.
 - [ ] Introduce typed organization scopes and migrate settings/association writers, including bulk community membership and publisher defaults.
 - [ ] Audit research-consent configuration separately from an individual accepting consent or saving preferences.
 - [ ] Map organization/platform/section configuration inputs and safe-field policies; never capture JWKS secrets, signed launches or external credentials.
 - [ ] Coordinate registration/deployment and external-tool relationship changes, preserving existing provisioning and deep-link flows; compose with remix/publication operations without duplicates.
 - [ ] Explicitly locate roster synchronization and grade-passback policy writers, distinguishing them from routine synchronization/reporting.
 - [ ] Implement provider/configuration safe projections and credential lifecycle builders using stable non-secret IDs.
-- [ ] Route admin and project credential callers with actor/owner separation; preserve one-time credential responses without putting their values or hashes into audit/replay data.
+- [ ] Route admin and project credential callers with actor/owner separation; preserve one-time credential responses without putting their values or hashes into audit data.
 - [ ] Move existing capture ownership to shared audited coordinators while preserving the seven event names and typed scope.
 - [ ] Keep atomic feature-group behavior and post-commit cache invalidation; update all helper callers rather than layering a second capture.
 - [ ] Implement the account/access/provisioning and auth work first, then organization/integration/service/credential/flag configuration within this same PR. Do not turn these internal blocks into separate PRs.
@@ -211,7 +211,7 @@ Implementation:
 - [ ] Enumerate persisted DOT/activation keys at all three scopes, including revision content edits; migrate configuration writers and safe prompt projections.
 - [ ] Audit toggles and saved instructor prompts through section coordination. Treat trigger-point invocation as an exclusion/control case: its API invokes runtime behavior, not a settings mutation.
 - [ ] Audit the committed diff at Remix.save, preserving the existing transaction across hierarchy, materialization and external-tool deep-link mappings.
-- [ ] Coordinate manual and worker publication updates with initiator/system attribution and replay semantics; audit auto-update policy changes independently.
+- [ ] Coordinate manual and worker publication updates with initiator/system attribution, and replay semantics for the worker path; audit auto-update policy changes independently.
 - [ ] Compare persisted before/after curriculum per semantic entry; do not capture each intermediate in-memory drag or helper call.
 - [ ] Reuse the existing section-creation transactional sink pattern and consolidate all manual captures, including Scenario creation.
 - [ ] Classify the entity type and lifecycle/status transition; route API, author workspace, instructor creation and source-copy paths with correct actor.

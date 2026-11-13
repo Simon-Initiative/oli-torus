@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.InstructorDashboard.Seed do
+  use Boundary, classify_to: Oli
+
   @moduledoc """
   Seeds a local-only intelligent dashboard fixture for manual testing.
 
