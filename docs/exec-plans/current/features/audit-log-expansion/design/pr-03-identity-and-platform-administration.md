@@ -64,7 +64,7 @@ Gathered at `ab1bae4434` by following each function's callers, changesets, direc
 | Current path | Today | Class |
 | --- | --- | --- |
 | `Accounts.delete_author/1` (`lib/oli/accounts.ex:672`) via `author_detail_view.ex:435` | Plain delete; `log_admin_action` after commit, result ignored | M: `Accounts.Audited.delete_author/2`; remove `delete_author/1` and the manual capture |
-| `collaborator_controller.ex:151` invitation cleanup | Deletes a pending invitee (no password) inside an open Multi; no audit | C: `delete_author_multi/4` in the controller's Multi |
+| `collaborator_controller.ex` invitation cleanup | Removes only the project's invitation tokens; since MER-5995 it no longer deletes pending invitees | No author deletion to audit; collaborator changes stay with PR-04 |
 | `Accounts.admin_update_author/3` (`accounts.ex:1923`) via `author_detail_view.ex:481` | Transaction with `FOR UPDATE`; `author_role_changed` logged inside; `account_internal_flag_changed` captured outside afterwards | M: `admin_update_author/3` in the facade; both events and `account_updated` from one transaction |
 | `user_detail_view.ex:503` submit via `Accounts.update_user/2` | Only `is_internal` audited, after commit | M: `admin_update_user/3`, casting only the form's fields (given/family name, email, `can_create_sections`, `is_internal`) |
 | `lock_user/1`, `unlock_user/1`, `lock_author/1`, `unlock_author/1` (`accounts.ex:1579`, `:1588`, `:2202`, `:2211`) | Plain update; no audit | M: `lock_account/3`, `unlock_account/3` |
@@ -241,7 +241,7 @@ Domain validation failures return the domain changeset where callers render it, 
 - `admin_update_user/3` casts only the fields the form shows. Other keys return `:protected`.
 - Lock on an already-locked account is a no-op: no event, `{:ok, account}`.
 - `delete_author*` mirrors `delete_user*`: `FOR UPDATE`, delete, `author_deleted` with `email`, `name`, and `deleted_by` details, event key `account:primary:deleted`, and foreign-key failures as `:delete_failed` with key-only logs.
-- The collaborator controller adds `delete_author_multi` to its Multi only for pending invitees, as today. Its actor is the authenticated project author. The `remove_collaborator` step stays unaudited until PR-04 audits collaborator changes.
+- The collaborator controller no longer deletes accounts: MER-5995, merged into master before the story was created, keeps pending invitees and removes only the project's invitation tokens. Its `remove_collaborator` step stays unaudited until PR-04 audits collaborator changes.
 
 ### 4.2 Accounts: provisioning, profile, linking, recovery
 
@@ -500,7 +500,6 @@ Main flow, for every command:
 | Login with wrong password, failed provider callback, invalid LTI JWT | No token, no event |
 | Token commit succeeds, response or cookie delivery fails | The event stands: the server issued the session (FDD 7.3) |
 | LTI launch fails after session issuance inside its transaction | Whole launch, token, and login event rolled back |
-| Collaborator cleanup fails after `delete_author_multi` | Author deletion and its event rolled back with the outer Multi |
 | Generic `update_user/2` or `update_author/2` with a protected key | `{:error, changeset}` with a `:protected` error; nothing written |
 | Bulk membership with some invalid emails | Valid targets committed with one event each, invalid ones reported as today, shared operation ID |
 | API key settings update with a field outside the edited set | `:protected`; nothing written |

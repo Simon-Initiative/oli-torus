@@ -25,21 +25,17 @@ defmodule OliWeb.ManualGrading.RenderedActivity do
     """
   end
 
+  # Two copies of one rendered activity on a page would repeat its own ids; each copy prefixes
+  # them with its component id. `Html.activity` returns iodata, adaptive previews a string.
   defp namespace_inner_ids(rendered_activity, id)
-       when is_binary(rendered_activity) and is_binary(id) do
-    marker = ~s(id="adaptive-screen-preview-)
+       when is_binary(id) and (is_binary(rendered_activity) or is_list(rendered_activity)) do
+    id = String.replace(id, ~r/[^A-Za-z0-9_-]/, "-")
 
-    if String.contains?(rendered_activity, marker) do
-      id = String.replace(id, ~r/[^A-Za-z0-9_-]/, "-")
-
-      String.replace(
-        rendered_activity,
-        marker,
-        ~s(id="#{id}-adaptive-screen-preview-)
-      )
-    else
-      rendered_activity
-    end
+    Enum.reduce(
+      ["jump-question-", "adaptive-screen-preview-"],
+      IO.iodata_to_binary(rendered_activity),
+      &String.replace(&2, ~s(id="#{&1}), ~s(id="#{id}-#{&1}))
+    )
   end
 
   defp namespace_inner_ids(rendered_activity, _id), do: rendered_activity

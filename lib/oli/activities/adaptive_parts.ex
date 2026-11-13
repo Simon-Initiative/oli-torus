@@ -294,7 +294,11 @@ defmodule Oli.Activities.AdaptiveParts do
 
   def persisted_part_grading_approach(_content, part), do: grading_approach(part)
 
-  defp ordered_part_ids(content) when is_map(content) do
+  @doc """
+  Part ids in authored order: the screen layout's (`partsLayout`) first, then any other
+  `authoring.parts`; `[]` when the content has neither.
+  """
+  def ordered_part_ids(content) when is_map(content) do
     layout_ids =
       content
       |> Map.get("partsLayout", [])
@@ -311,7 +315,7 @@ defmodule Oli.Activities.AdaptiveParts do
     Enum.uniq(layout_ids ++ authored_ids)
   end
 
-  defp ordered_part_ids(_), do: []
+  def ordered_part_ids(_), do: []
 
   defp manual_persisted_part_ids(content) when is_map(content) do
     content
