@@ -290,7 +290,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "<div data-react-class=\"Components.Delivery\" data-react-props=\""
     end
 
-    test "adaptive fullscreen mounts DOT for true chromeless adaptive delivery", %{
+    test "adaptive fullscreen does not mount DOT for chromeless adaptive delivery", %{
       conn: conn
     } do
       %{section: section, page_revision: page_revision} = section_with_adaptive_screen_revision()
@@ -307,7 +307,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       html = html_response(conn, 200)
 
       assert html =~ "data-react-class=\"Components.Delivery\""
-      assert html =~ "data-phx-session="
+      refute html =~ "data-phx-session="
     end
 
     test "adaptive fullscreen does not mount a second DOT instance when rendered inside torus chrome",
@@ -329,6 +329,26 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html =~ "data-react-class=\"Components.Delivery\""
       refute html =~ "data-phx-session="
+    end
+
+    test "adaptive fullscreen disables idle timeout", %{conn: conn} do
+      %{section: section, page_revision: page_revision} = section_with_adaptive_screen_revision()
+      user = user_fixture(%{independent_learner: false})
+
+      enroll_as_student(%{section: section, user: user})
+      create_attempt(user, section, page_revision, %{lifecycle_state: :active})
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(~p"/sections/#{section.slug}/page_fullscreen/#{page_revision.slug}")
+
+      html = html_response(conn, 200)
+
+      # screenIdleTimeOutInSeconds should be 0 (disabled)
+      assert html =~ "screenIdleTimeOutInSeconds&quot;:0"
+      # signoutUrl should not be present when idle timeout is disabled (would be null or missing)
+      refute html =~ "signoutUrl&quot;:&quot;/users/log_out&quot;"
     end
 
     test "handles student page access by a non enrolled student", %{

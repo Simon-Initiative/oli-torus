@@ -4277,6 +4277,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Verify it redirects to the adaptive route
       assert redirect_path =~ "/adaptive_lesson/"
     end
+
+    # Note: Idle timeout is disabled for adaptive pages via lib/oli_web/live_session_plugs/init_page.ex
+    # The InitPage plug sets screen_idle_timeout_enabled? = false for all adaptive pages.
+    # This is verified in test/oli_web/controllers/page_delivery_controller_test.exs for the controller path.
+    # Both rendering paths (controller and LiveView) use the same disabled timeout configuration.
   end
 
   describe "one at a time question selection" do
