@@ -17,7 +17,7 @@ Reproduce any symbol with `rg -n 'SYMBOL\s*\(' lib test`, escaping regex punctua
 - Assessment single-setting updates use transaction composition, while bulk operations and separate history have distinct write paths. Keep settings-history migration with that domain, after storage and Boundary, and exceptions in the next focused slice.
 - `Remix.save` already commits hierarchy/materialization/publication/deep-link work together. Audit the persisted save diff, not each transient UI operation or nested helper.
 - `lib/oli_web/live/admin/restore_user_progress.ex` contains direct Repo updates. Learner intervention work includes extracting orchestration, not merely adding a call around an existing context function.
-- ClickHouse administration uses Task.start and an initiation capture, while terminal outcomes are progress/telemetry messages. Prove Oban plus terminal-event preservation versus pruning inside the first actual async coverage workflow; ClickHouse is handled in PR-06. The checked-in Pruner configuration is not itself a historical-outcome solution.
+- ClickHouse administration uses Task.start and an initiation capture, while terminal outcomes are progress/telemetry messages. Prove Oban plus terminal-event preservation versus pruning inside the first coverage workflow that runs as a durable job; ClickHouse is handled in PR-06. The checked-in Pruner configuration is not itself a historical-outcome solution.
 - `lib/oli_web/controllers/api/trigger_point_controller.ex` invokes runtime triggers; it is an exclusion test anchor, not a configuration writer. Instructor recommendation settings are written by the section component through Sections.update_section. Content/project configuration also needs field-level revision/experiment inspection.
 - Project/section/account creation has substantial test/Scenario fan-out. Migrate represented actors in each domain slice; factories for unrelated setup need not simulate a whole audited workflow.
 
@@ -142,7 +142,7 @@ Reproduce any symbol with `rg -n 'SYMBOL\s*\(' lib test`, escaping regex punctua
 - Entry-point anchors: `lib/oli_web/live/workspaces/course_author/project_repair_live.ex`, `lib/oli_web/controllers`, `lib/oli/mcp/tools`.
 - Existing test anchors: `test/oli/google_docs/import_test.exs`, `test/oli/interop/ingest_test.exs`, `test/oli/authoring/project_repair_test.exs`.
 - Lexical matching files: 4 lib / 0 test; symbols: `create_project_from_archive`, `google_doc_imported`, `Repair.repair`. Counts are not runtime calls or exact change sizes.
-- Implementation risk: External fetch/storage effects and partially committed repairs cannot be made globally atomic with one PostgreSQL transaction.
+- Implementation risk: Archive ingest commits in one transaction, Google Doc import commits the page after uploading media, and repair commits page by page. Each committed unit records its own event; media uploads are detail of the committed import, not a separate outcome.
 
 ### W12: Learner-record interventions
 
@@ -331,7 +331,7 @@ Reproduce any symbol with `rg -n 'SYMBOL\s*\(' lib test`, escaping regex punctua
 - Lexical matching files: 2 lib / 1 test; symbols: `browse_events`, `get_event!`. Counts are not runtime calls or exact change sizes.
 - Implementation risk: Search touches historical joins and pagination totals; measure counts and all-history queries rather than assuming partitioning makes them fast.
 
-Project/content DOT policy is also owned by PR-04; W13 in PR-05 extends it to delivery. Discussion/notes configuration belongs to PR-05, while W15 in PR-06 handles moderation. Async foundations belong inside actual PR-04 import/repair implementation; W08 applies them to ClickHouse in PR-06. These shared areas do not create extra PRs.
+Project/content DOT policy is also owned by PR-04; W13 in PR-05 extends it to delivery. Discussion/notes configuration belongs to PR-05, while W15 in PR-06 handles moderation. Durable-job foundations belong to the first coverage workflow that runs as a durable job; W08 applies them to ClickHouse in PR-06. These shared areas do not create extra PRs.
 
 ## Original-event ownership
 

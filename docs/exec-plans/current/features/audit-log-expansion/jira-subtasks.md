@@ -61,7 +61,7 @@ Implementation:
 
 - [ ] Install/configure Boundary and extract only the selected user-deletion mutation. Implement the actor-aware coordinator, historical identity capture and shared transaction; remove duplicate manual capture.
 - [ ] Inventory compiler dependencies and exact legacy exceptions. Prove read-context, web and Scenario callers cannot statically call the private mutation; no broad outgoing/incoming-check disable.
-- [ ] Enable the Boundary compiler in the existing warnings-as-errors CI builds (no `--force`: Boundary rechecks stored references on every compile). Serialize concurrent deletions with a lock on the target user row; a repeated attempt finds no user and appends nothing. No replay protocol in this pilot (owner decision, 2026-11-03): replay is designed in the first asynchronous workflow (PR-04).
+- [ ] Enable the Boundary compiler in the existing warnings-as-errors CI builds (no `--force`: Boundary rechecks stored references on every compile). Serialize concurrent deletions with a lock on the target user row; a repeated attempt finds no user and appends nothing. No replay protocol in this pilot (owner decision, 2026-11-03): replay is designed in the first coverage workflow that runs as a durable job.
 
 Validation:
 
@@ -149,31 +149,30 @@ Scope: Project lifecycle, duplication/import, publishing, ownership/collaborator
 
 Dependencies: PR-03 (MER-6113) and transitive prerequisites.
 
-Requirements: FR-005, FR-008, FR-011, FR-013, FR-016, FR-017, FR-027, FR-029, FR-037. Criteria: AC-015, AC-016, AC-017, AC-018, AC-025, AC-026, AC-027, AC-033, AC-034, AC-037, AC-038, AC-043, AC-044, AC-045, AC-046, AC-066, AC-067, AC-069, AC-070, AC-071, AC-096, AC-097, AC-098. Common invariants also apply.
+Requirements: FR-005, FR-008, FR-011, FR-013, FR-016, FR-017, FR-027, FR-029, FR-037. Criteria: AC-018, AC-025, AC-026, AC-027, AC-033, AC-034, AC-037, AC-038, AC-043, AC-044, AC-045, AC-046, AC-066, AC-069, AC-070, AC-071, AC-096, AC-097, AC-098. Common invariants also apply.
 
 Implementation:
 
 - [ ] Create composable lifecycle/relationship operations and route UI/controller/Scenario callers; classify deletion/status and ownership keys in update_project.
 - [ ] Relocate project_published capture into the invocation coordinator; distinguish pending publication bookkeeping from actual publication.
-- [ ] Define the boundary used by later import workers: project creation is a committed lifecycle event, but it is not proof that the whole import completed.
+- [ ] Record archive import as a committed lifecycle event inside the ingest transaction that creates the project.
 - [ ] Move destructive orchestration to protected authoring boundaries, including generic resource edits and page-content rewrites that remove embedded activities.
 - [ ] Preserve resource/revision IDs, editing locks and relevant relationship changes; propagate actor through API/MCP/Scenario entry points where supported.
-- [ ] Classify metadata soft-deletion separately from any external object deletion; use the async protocol if a destructive external step is actually supported.
-- [ ] Migrate import/repair entry points and workers through audited orchestration, carrying initiator and stable operation identity across dispatch.
-- [ ] Preserve google_doc_imported coverage, inspect RepairResult status, and emit confirmed per-target and aggregate outcomes for committed chunks.
+- [ ] Record media deletion, a metadata soft-delete with no external object removal, in the same transaction.
+- [ ] Route import/repair entry points through audited orchestration, passing the initiating author explicitly into the task that runs each flow.
+- [ ] Record each import/repair outcome inside the transaction that commits its work: archive ingest in its single transaction, Google Doc import in the page-creation transaction (moving google_doc_imported there), and repair once per committed page. Classify RepairResult by status, not by the ok tuple: a partial repair records exactly the committed pages, and a rolled-back or failed operation records nothing.
 - [ ] Inventory administrative replacement/removal entry points outside the named modules, assigning each to this slice, learner restoration or ClickHouse; no unowned catch-all.
 - [ ] Complete the project-setting key map, composing with lifecycle/DOT policies already migrated; protect generic update_project and relationship writers.
 - [ ] Capture safe experiment/alternative, activity/tool availability and required-survey diffs, excluding transient UI and runtime experiment assignments.
 - [ ] Enumerate configuration changes inside revision/content structures and route API, authoring workspace, MCP and supported Scenario writers.
 - [ ] Capture objective relationships, bank rules and defaults while retaining edit locks and immutable publication semantics; reuse destructive events from PR-04 without recapture.
-- [ ] Establish Oban initiation, confirmed outcome, retry/reconciliation and pruning safeguards when implementing the first actual asynchronous import/repair flow in this PR. This is internal work, not an infrastructure or ClickHouse pilot PR. Local-only operations do not need jobs.
 - [ ] Implement project/content DOT configuration through a reusable field policy and document the interface that PR-05 will extend for section/recommendation settings. Do not defer an unaudited project configuration path after this PR claims it is migrated.
 
 Validation:
 
 - [ ] Preserve create/duplicate/publish assertions and publication immutability; assert rollback, collaborator cleanup composition and original author attribution in Scenarios.
 - [ ] Exercise each target kind plus bulk partial/failed inputs, deleted identity, nested delete cardinality and edit-lock rejection. Add API/MCP entry tests rather than testing only builders.
-- [ ] Test full success, partial repair, failed result inside an ok tuple, crash between chunks and safe resume; assert no repeated target successes or secret source URLs.
+- [ ] Test full success, partial repair, failed result inside an ok tuple and rollback of a failed import; assert no event for uncommitted work, no repeated target successes and no secret source URLs.
 - [ ] Test each admitted settings family and mixed-field updates; preserve publication/version behavior and exclude analytics/export cache URL updates.
 - [ ] Verify defaults versus delivery overrides, nested objective deletion/attachment, bank rule changes, curriculum edits and failed lock checks. Include representative MCP and real Scenario coverage.
 - [ ] Apply the common actor/privacy/authorization/atomicity/cardinality and supported-entry tests throughout the PR; update actual proof references.
@@ -181,9 +180,9 @@ Validation:
 
 Completion gate:
 
-- Authoring semantics, imports and repairs are covered. Before relying on async auditing, prove retry/terminal capture/pruning and external reconciliation inside this PR; no separate ClickHouse gate PR.
+- Authoring semantics, imports and repairs are covered; each import/repair outcome commits with its work, and google_doc_imported is recorded inside the import transaction.
 
-Risk: Revision-based deletion, composed publishing and partially committed/external imports; async recovery must be proved with the actual workflows.
+Risk: Revision-based deletion, composed publishing, and repairs that commit page by page; Google Doc media uploads happen before the page transaction.
 
 Data impact: Use the shared event model. No generic operation registry or new domain schema is assumed.
 
@@ -222,7 +221,7 @@ Implementation:
 - [ ] Coordinate conditions and their derived indexes in one transaction, with one event per semantic condition or changed scheduled resource.
 - [ ] Migrate scheduling update/clear APIs, preserving effective dates and post-commit depot invalidation.
 - [ ] Migrate and sanitize settings_changes, change its writers/readers and retire it with assessment-settings work in this PR; do not move this second history into PR-01.
-- [ ] Own discussion/notes/support configuration here; PR-06 owns post/thread moderation. Reuse PR-03 integration configuration and PR-04 project/content DOT and async policies rather than duplicating their events.
+- [ ] Own discussion/notes/support configuration here; PR-06 owns post/thread moderation. Reuse PR-03 integration configuration and PR-04 project/content DOT policies rather than duplicating their events.
 
 Validation:
 
