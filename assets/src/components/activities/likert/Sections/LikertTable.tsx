@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChoiceId, PartId } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
+import { hasNameableContent } from 'data/content/utils';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { classNames } from 'utils/classNames';
+import guid from 'utils/guid';
 import { LikertItem, LikertModelSchema } from '../schema';
 import { getChoiceValue } from '../utils';
 
@@ -31,6 +33,9 @@ export const LikertTable: React.FC<Props> = ({
 }) => {
   const { choices, items } = model;
   const showItemColumn = needItemColumn(items);
+  const [idPrefix] = useState(() => `likert-${guid()}`);
+  const choiceLabelId = (choiceId: ChoiceId) => `${idPrefix}-choice-${choiceId}`;
+  const itemLabelId = (itemId: PartId) => `${idPrefix}-item-${itemId}`;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -40,17 +45,26 @@ export const LikertTable: React.FC<Props> = ({
             {showItemColumn && (
               <th className="w-[36%] border border-Border-border-default bg-Surface-surface-primary px-5 py-4 text-left align-middle font-medium" />
             )}
-            {choices.map((choice) => (
+            {choices.map((choice, i) => (
               <th
                 key={choice.id}
                 className="border border-Border-border-default bg-Surface-surface-primary px-4 py-4 text-center align-middle text-[15px] font-semibold leading-6 text-Text-text-medium"
               >
-                <div className="[&_.content_p]:my-0">
+                <div
+                  id={hasNameableContent(choice.content) ? choiceLabelId(choice.id) : undefined}
+                  className="[&_.content_p]:my-0"
+                >
                   <HtmlContentModelRenderer
                     direction={choice.textDirection}
                     content={choice.content}
                     context={context}
                   />
+                  {/* Columns without nameable content still need a name for their radios */}
+                  {!hasNameableContent(choice.content) && (
+                    <span id={choiceLabelId(choice.id)} className="sr-only">
+                      {`Choice ${i + 1}`}
+                    </span>
+                  )}
                 </div>
               </th>
             ))}
@@ -61,7 +75,7 @@ export const LikertTable: React.FC<Props> = ({
             <tr key={item.id}>
               {showItemColumn && (
                 <td className="border border-Border-border-default bg-Surface-surface-secondary-muted px-5 py-4 align-top text-base text-Text-text-high">
-                  <div className="leading-7 [&_.content_p]:my-0">
+                  <div id={itemLabelId(item.id)} className="leading-7 [&_.content_p]:my-0">
                     <HtmlContentModelRenderer
                       direction={item.textDirection}
                       content={item.content}
@@ -77,6 +91,12 @@ export const LikertTable: React.FC<Props> = ({
                 >
                   <input
                     type="radio"
+                    name={itemLabelId(item.id)}
+                    aria-labelledby={
+                      showItemColumn
+                        ? `${itemLabelId(item.id)} ${choiceLabelId(choice.id)}`
+                        : choiceLabelId(choice.id)
+                    }
                     className={classNames('oli-radio', !interactive && 'pointer-events-none')}
                     checked={isSelected(item.id, choice.id)}
                     disabled={disabled}
