@@ -89,6 +89,10 @@ defmodule OliWeb.Router do
   ### PIPELINE EXTENSIONS ###
   # Extend the base pipelines specific routes
 
+  pipeline :consent_csrf do
+    plug(:protect_from_forgery)
+  end
+
   pipeline :authoring do
     # Disable caching of resources in authoring
     plug(Oli.Plugs.NoCache)
@@ -514,11 +518,16 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
+    pipe_through([:api, :consent_csrf])
+
+    post("/consent/cookie", CookieConsentController, :persist_cookies)
+  end
+
+  scope "/", OliWeb do
     pipe_through([:api])
 
     get("/api/v1/legacy_support", LegacySupportController, :index)
 
-    post("/consent/cookie", CookieConsentController, :persist_cookies)
     get("/consent/cookie", CookieConsentController, :retrieve)
 
     get("/site.webmanifest", StaticPageController, :site_webmanifest)
