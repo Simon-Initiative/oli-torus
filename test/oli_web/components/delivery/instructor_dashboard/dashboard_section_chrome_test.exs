@@ -63,7 +63,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChromeT
 
       assert html =~ ~s(aria-expanded="false")
       assert html =~ ~s(phx-value-expanded="true")
-      refute html =~ ~s(id="learning-dashboard-content-group-content")
+      assert html =~ ~s(aria-controls="learning-dashboard-content-group-content")
+
+      assert [_content] =
+               html
+               |> Floki.parse_fragment!()
+               |> Floki.find("#learning-dashboard-content-group-content.hidden")
+
       refute html =~ "Hidden content"
     end
 

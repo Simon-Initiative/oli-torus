@@ -41,6 +41,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AssessmentsTileTest do
       assert has_element?(component, "a", "Review Questions")
       assert has_element?(component, "span", "Status: 4/20 Students Completed")
       assert has_element?(component, "button[aria-label='Collapse assessment Quiz 2']")
+
+      assert has_element?(
+               component,
+               "button[aria-controls='assessment-details-2'][aria-expanded='true']"
+             )
+
+      assert has_element?(component, "#assessment-details-2:not(.hidden)")
       assert has_element?(component, "#learning-dashboard-assessment-card-2")
 
       assert has_element?(
@@ -57,6 +64,27 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AssessmentsTileTest do
       html = render(component)
       assert html =~ "border-Icon-icon-danger bg-Fill-fill-danger"
       assert html =~ "border-Fill-Accent-fill-accent-green-bold bg-Fill-Chip-Green"
+    end
+
+    test "keeps assessment details targets in the DOM when collapsed", %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(conn, AssessmentsTile, %{
+          id: "assessments_tile",
+          ctx: ctx(),
+          projection: projection(),
+          status: "Loading..."
+        })
+
+      for assessment_id <- [1, 2] do
+        assert has_element?(
+                 component,
+                 "button[aria-controls='assessment-details-#{assessment_id}'][aria-expanded='false']"
+               )
+
+        assert has_element?(component, "#assessment-details-#{assessment_id}.hidden")
+        # Collapsed details stay empty so the histogram and metrics only render when expanded.
+        refute has_element?(component, "#assessment-details-#{assessment_id} *")
+      end
     end
 
     test "renders the assessment scores navigation when section slug is present", %{conn: conn} do
