@@ -44,16 +44,21 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
     %{
       "activity_validation" => %{
         name: "activity_validation",
-        desc: "Validate activity JSON content against schema requirements",
+        desc:
+          "Validate an activity by exact type: JSON schema followed by separate domain checks",
         schema: %{
           "type" => "object",
           "properties" => %{
+            "activity_type_slug" => %{
+              "type" => "string",
+              "description" => "Exact Basic Page activity manifest slug (Adaptive is excluded)"
+            },
             "activity_json" => %{
               "type" => "string",
               "description" => "JSON string containing the activity to validate"
             }
           },
-          "required" => ["activity_json"]
+          "required" => ["activity_json", "activity_type_slug"]
         }
       },
       "activity_test_eval" => %{

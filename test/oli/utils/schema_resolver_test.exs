@@ -3,43 +3,43 @@ defmodule Oli.Utils.SchemaResolverTest do
 
   describe "schema resolver" do
     test "activity-bank-selection schema", _ do
-      %ExJsonSchema.Schema.Root{} =
+      %Oli.Utils.JSONValidation{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/activity-bank-selection.schema.json"
         |> File.read!()
         |> Jason.decode!()
-        |> ExJsonSchema.Schema.resolve()
+        |> Oli.Utils.JSONValidation.build!()
     end
 
     test "activity-reference schema", _ do
-      %ExJsonSchema.Schema.Root{} =
+      %Oli.Utils.JSONValidation{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/activity-reference.schema.json"
         |> File.read!()
         |> Jason.decode!()
-        |> ExJsonSchema.Schema.resolve()
+        |> Oli.Utils.JSONValidation.build!()
     end
 
     test "content-group schema", _ do
-      %ExJsonSchema.Schema.Root{} =
+      %Oli.Utils.JSONValidation{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/content-group.schema.json"
         |> File.read!()
         |> Jason.decode!()
-        |> ExJsonSchema.Schema.resolve()
+        |> Oli.Utils.JSONValidation.build!()
     end
 
     test "content-element schema", _ do
-      %ExJsonSchema.Schema.Root{} =
+      %Oli.Utils.JSONValidation{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/content-element.schema.json"
         |> File.read!()
         |> Jason.decode!()
-        |> ExJsonSchema.Schema.resolve()
+        |> Oli.Utils.JSONValidation.build!()
     end
 
     test "page schema", _ do
-      %ExJsonSchema.Schema.Root{} =
+      %Oli.Utils.JSONValidation{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/page.schema.json"
         |> File.read!()
         |> Jason.decode!()
-        |> ExJsonSchema.Schema.resolve()
+        |> Oli.Utils.JSONValidation.build!()
     end
 
     test "Alternatives are valid in ordinary containers but invalid within Alternatives", _ do
@@ -53,7 +53,7 @@ defmodule Oli.Utils.SchemaResolverTest do
       }
 
       assert :ok ==
-               ExJsonSchema.Validator.validate(schema, %{
+               Oli.Utils.JSONValidation.validate(schema, %{
                  "version" => "0.1.0",
                  "model" => [alternatives]
                })
@@ -65,32 +65,32 @@ defmodule Oli.Utils.SchemaResolverTest do
             "unknown-legacy"
           ] do
         assert :ok ==
-                 ExJsonSchema.Validator.validate(schema, %{
+                 Oli.Utils.JSONValidation.validate(schema, %{
                    "version" => "0.1.0",
                    "model" => [Map.put(alternatives, "strategy", strategy)]
                  })
       end
 
       assert {:error, _errors} =
-               ExJsonSchema.Validator.validate(schema, %{
+               Oli.Utils.JSONValidation.validate(schema, %{
                  "version" => "0.1.0",
                  "model" => [Map.delete(alternatives, "alternatives_id")]
                })
 
       assert {:error, _errors} =
-               ExJsonSchema.Validator.validate(schema, %{
+               Oli.Utils.JSONValidation.validate(schema, %{
                  "version" => "0.1.0",
                  "model" => [Map.put(alternatives, "alternatives_id", "42")]
                })
 
       assert {:error, _errors} =
-               ExJsonSchema.Validator.validate(schema, %{
+               Oli.Utils.JSONValidation.validate(schema, %{
                  "version" => "0.1.0",
                  "model" => [Map.put(alternatives, "alternatives_id", 0)]
                })
 
       assert :ok ==
-               ExJsonSchema.Validator.validate(schema, %{
+               Oli.Utils.JSONValidation.validate(schema, %{
                  "version" => "0.1.0",
                  "model" => [
                    %{
@@ -128,34 +128,34 @@ defmodule Oli.Utils.SchemaResolverTest do
       }
 
       assert {:error, _errors} =
-               ExJsonSchema.Validator.validate(schema, %{
+               Oli.Utils.JSONValidation.validate(schema, %{
                  "version" => "0.1.0",
                  "model" => [outer]
                })
     end
 
     test "selection schema", _ do
-      %ExJsonSchema.Schema.Root{} =
+      %Oli.Utils.JSONValidation{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/selection.schema.json"
         |> File.read!()
         |> Jason.decode!()
-        |> ExJsonSchema.Schema.resolve()
+        |> Oli.Utils.JSONValidation.build!()
     end
 
     test "content-block schema", _ do
-      %ExJsonSchema.Schema.Root{} =
+      %Oli.Utils.JSONValidation{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/content-block.schema.json"
         |> File.read!()
         |> Jason.decode!()
-        |> ExJsonSchema.Schema.resolve()
+        |> Oli.Utils.JSONValidation.build!()
     end
 
     test "learning-objectives schema", _ do
-      %ExJsonSchema.Schema.Root{} =
+      %Oli.Utils.JSONValidation{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/learning-objectives.schema.json"
         |> File.read!()
         |> Jason.decode!()
-        |> ExJsonSchema.Schema.resolve()
+        |> Oli.Utils.JSONValidation.build!()
     end
 
     test "page content schema accepts learning objectives only at the top level", _ do
@@ -295,31 +295,33 @@ defmodule Oli.Utils.SchemaResolverTest do
         ]
       }
 
-      assert :ok = ExJsonSchema.Validator.validate(schema, valid_content)
-      assert :ok = ExJsonSchema.Validator.validate(schema, existing_content)
-      assert {:error, _} = ExJsonSchema.Validator.validate(schema, content_with_children)
-      assert {:error, _} = ExJsonSchema.Validator.validate(schema, nested_content)
-      assert {:error, _} = ExJsonSchema.Validator.validate(schema, invalid_mode_content)
-      assert {:error, _} = ExJsonSchema.Validator.validate(schema, missing_config_field_content)
-      assert {:error, _} = ExJsonSchema.Validator.validate(schema, extra_config_field_content)
-      assert {:error, _} = ExJsonSchema.Validator.validate(schema, invalid_id_content)
-      assert {:error, _} = ExJsonSchema.Validator.validate(schema, invalid_recommendation_content)
+      assert :ok = Oli.Utils.JSONValidation.validate(schema, valid_content)
+      assert :ok = Oli.Utils.JSONValidation.validate(schema, existing_content)
+      assert {:error, _} = Oli.Utils.JSONValidation.validate(schema, content_with_children)
+      assert {:error, _} = Oli.Utils.JSONValidation.validate(schema, nested_content)
+      assert {:error, _} = Oli.Utils.JSONValidation.validate(schema, invalid_mode_content)
+      assert {:error, _} = Oli.Utils.JSONValidation.validate(schema, missing_config_field_content)
+      assert {:error, _} = Oli.Utils.JSONValidation.validate(schema, extra_config_field_content)
+      assert {:error, _} = Oli.Utils.JSONValidation.validate(schema, invalid_id_content)
+
+      assert {:error, _} =
+               Oli.Utils.JSONValidation.validate(schema, invalid_recommendation_content)
     end
 
     test "adaptive-activity schema", _ do
-      %ExJsonSchema.Schema.Root{} =
+      %Oli.Utils.JSONValidation{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/adaptive-activity.schema.json"
         |> File.read!()
         |> Jason.decode!()
-        |> ExJsonSchema.Schema.resolve()
+        |> Oli.Utils.JSONValidation.build!()
     end
 
     test "activity schema", _ do
-      %ExJsonSchema.Schema.Root{} =
+      %Oli.Utils.JSONValidation{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/activity.schema.json"
         |> File.read!()
         |> Jason.decode!()
-        |> ExJsonSchema.Schema.resolve()
+        |> Oli.Utils.JSONValidation.build!()
     end
   end
 end

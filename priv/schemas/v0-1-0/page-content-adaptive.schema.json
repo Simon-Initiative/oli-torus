@@ -2,7 +2,7 @@
   "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/page-content-adaptive.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Adaptive Page Content",
-  "description": "Adaptive Page Content",
+  "description": "Persisted Adaptive Page content and authoring wire content: deck groups, sequence references, and lesson settings.",
   "type": "object",
   "properties": {
     "advancedAuthoring": {
@@ -12,7 +12,10 @@
       "const": true
     },
     "model": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/adaptive-page-components.schema.json#/$defs/deck-group"
+      }
     },
     "additionalStylesheets": {
       "type": "array",
@@ -21,7 +24,7 @@
       }
     },
     "custom": {
-      "type": "object"
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/adaptive-page-components.schema.json#/$defs/lesson-custom"
     },
     "customCss": {
       "type": "string"
@@ -31,11 +34,15 @@
     },
     "displayApplicationChrome": {
       "type": "boolean"
+    },
+    "version": {
+      "const": "0.1.0"
     }
   },
   "required": [
     "advancedAuthoring",
     "advancedDelivery",
     "model"
-  ]
+  ],
+  "additionalProperties": false
 }

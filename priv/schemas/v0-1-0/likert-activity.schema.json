@@ -1,0 +1,34 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/likert-activity.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Likert Activity export",
+  "description": "An Activity export composed with the strict authored Likert model.",
+  "allOf": [
+    {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity.schema.json"
+    },
+    {
+      "properties": {
+        "subType": {
+          "const": "oli_likert"
+        },
+        "content": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/likert.schema.json"
+        }
+      }
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "id": {},
+    "type": {},
+    "subType": {},
+    "content": {},
+    "objectives": {},
+    "originalFile": {},
+    "tags": {},
+    "title": {},
+    "unresolvedReferences": {}
+  },
+  "additionalProperties": false
+}

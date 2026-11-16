@@ -1,0 +1,42 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-report.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Report",
+  "description": "A Basic Page report placement; the referenced activity model is outside this schema.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "report"
+    },
+    "id": {
+      "type": [
+        "string",
+        "integer"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
+      }
+    },
+    "activityId": {
+      "type": [
+        "string",
+        "integer"
+      ]
+    },
+    "reportType": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "type",
+    "id",
+    "activityId",
+    "children"
+  ]
+}

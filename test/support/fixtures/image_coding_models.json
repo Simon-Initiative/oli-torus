@@ -1,0 +1,253 @@
+{
+  "initial": {
+    "stem": {
+      "id": "image-coding-1",
+      "content": [
+        {
+          "id": "image-coding-2",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "isExample": false,
+    "starterCode": "Sample Starter Code",
+    "solutionCode": "Sample Solution Code",
+    "resourceURLs": [],
+    "tolerance": 1,
+    "regex": "",
+    "feedback": [
+      {
+        "id": "image-coding-3",
+        "content": [
+          {
+            "id": "image-coding-4",
+            "children": [
+              {
+                "text": "Incorrect"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      },
+      {
+        "id": "image-coding-5",
+        "content": [
+          {
+            "id": "image-coding-6",
+            "children": [
+              {
+                "text": "Correct"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ],
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "scoringStrategy": "average",
+          "responses": [],
+          "hints": [
+            {
+              "id": "image-coding-7",
+              "content": [
+                {
+                  "id": "image-coding-8",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "image-coding-9",
+              "content": [
+                {
+                  "id": "image-coding-10",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "image-coding-11",
+              "content": [
+                {
+                  "id": "image-coding-12",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ]
+        }
+      ],
+      "previewText": ""
+    }
+  },
+  "edited": {
+    "stem": {
+      "id": "image-coding-1",
+      "content": [
+        {
+          "type": "p",
+          "children": [
+            {
+              "text": "Modify the image."
+            }
+          ]
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "isExample": true,
+    "starterCode": "const image = new SimpleImage(\"image.png\");",
+    "solutionCode": "print(image);",
+    "resourceURLs": [
+      "/media/image.png"
+    ],
+    "tolerance": 2.5,
+    "regex": "^result$",
+    "feedback": [
+      {
+        "id": "image-coding-3",
+        "content": [
+          {
+            "type": "p",
+            "children": [
+              {
+                "text": "Try again."
+              }
+            ]
+          }
+        ],
+        "editor": "markdown",
+        "textDirection": "rtl"
+      },
+      {
+        "id": "image-coding-5",
+        "content": [
+          {
+            "id": "image-coding-6",
+            "children": [
+              {
+                "text": "Correct"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ],
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "scoringStrategy": "average",
+          "responses": [],
+          "hints": [
+            {
+              "id": "image-coding-7",
+              "content": [
+                {
+                  "type": "p",
+                  "children": [
+                    {
+                      "text": "Inspect each pixel."
+                    }
+                  ]
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "image-coding-13",
+              "content": [
+                {
+                  "id": "image-coding-14",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "image-coding-11",
+              "content": [
+                {
+                  "id": "image-coding-12",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "explanation": {
+            "id": "image-coding-15",
+            "content": [
+              {
+                "id": "image-coding-16",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ],
+      "previewText": "Modify the image."
+    }
+  }
+}

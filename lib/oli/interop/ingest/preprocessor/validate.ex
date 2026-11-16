@@ -30,7 +30,7 @@ defmodule Oli.Interop.Ingest.Preprocessor.Validate do
             attr -> Map.get(resource, attr)
           end
 
-        case ExJsonSchema.Validator.validate(schema, content) do
+        case Oli.Utils.JSONValidation.validate(schema, content) do
           :ok ->
             all_errors
 

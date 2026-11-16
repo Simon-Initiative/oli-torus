@@ -1,0 +1,34 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/multi-input-activity.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Multi Input Activity export",
+  "description": "Activity export envelope composed with the strict Multi Input model.",
+  "allOf": [
+    {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity.schema.json"
+    },
+    {
+      "properties": {
+        "subType": {
+          "const": "oli_multi_input"
+        },
+        "content": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/multi-input.schema.json"
+        }
+      }
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "id": {},
+    "type": {},
+    "subType": {},
+    "content": {},
+    "objectives": {},
+    "originalFile": {},
+    "tags": {},
+    "title": {},
+    "unresolvedReferences": {}
+  },
+  "additionalProperties": false
+}

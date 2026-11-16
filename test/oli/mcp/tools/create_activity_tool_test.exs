@@ -7,6 +7,8 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
   import Oli.Factory
   import Oli.MCPTestHelpers
 
+  @factory "test/support/fixtures/multiple_choice_model.json" |> File.read!() |> Jason.decode!()
+
   setup do
     # Ensure system roles exist before creating authors
     Oli.TestHelpers.ensure_system_roles()
@@ -162,6 +164,41 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
       assert Map.has_key?(activity, "title")
     end
 
+    test "schema/domain failures expose stages and create no revisions", %{
+      project: project,
+      author: author
+    } do
+      {frame, _} = create_authenticated_frame(author.id, project.id)
+      count = Oli.Repo.aggregate(Oli.Resources.Revision, :count)
+      path = ["authoring", "parts", Access.at(0), "responses", Access.at(0), "rule"]
+      duplicate = put_in(@factory, ["choices", Access.at(0), "id"], @factory["stem"]["id"])
+
+      no_fallback =
+        update_in(@factory, ["authoring", "parts", Access.at(0), "responses"], &Enum.drop(&1, -1))
+
+      for {stage, model} <- [
+            {"schema", Map.delete(@factory, "stem")},
+            {"domain", put_in(@factory, path, "not a rule")},
+            {"domain", duplicate},
+            {"domain", no_fallback}
+          ] do
+        assert {:reply, response, ^frame} =
+                 CreateActivityTool.execute(
+                   %{
+                     project_slug: project.slug,
+                     activity_json: Jason.encode!(model),
+                     activity_type_slug: "oli_multiple_choice"
+                   },
+                   frame
+                 )
+
+        assert response.isError
+        assert response.structured_content.stage == stage
+        assert response.structured_content.errors != []
+        assert Oli.Repo.aggregate(Oli.Resources.Revision, :count) == count
+      end
+    end
+
     test "returns error for invalid JSON", %{project: project, author: author} do
       invalid_json = "{ invalid json"
 
@@ -254,25 +291,8 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
     end
 
     test "extracts title from preview text", %{project: project, author: author} do
-      activity_with_preview = %{
-        "stem" => %{
-          "id" => "stem_1",
-          "content" => [
-            %{
-              "type" => "p",
-              "children" => [%{"text" => "Some question"}]
-            }
-          ],
-          "editor" => "slate",
-          "textDirection" => "ltr"
-        },
-        "authoring" => %{
-          "version" => 2,
-          "parts" => [],
-          "transformations" => [],
-          "previewText" => "Custom Preview Title"
-        }
-      }
+      activity_with_preview =
+        put_in(@factory, ["authoring", "previewText"], "Custom Preview Title")
 
       activity_json = Jason.encode!(activity_with_preview)
 
@@ -300,25 +320,12 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
       project: project,
       author: author
     } do
-      activity_without_preview = %{
-        "stem" => %{
-          "id" => "stem_1",
-          "content" => [
-            %{
-              "type" => "p",
-              "children" => [%{"text" => "What is the meaning of life?"}]
-            }
-          ],
-          "editor" => "slate",
-          "textDirection" => "ltr"
-        },
-        "authoring" => %{
-          "version" => 2,
-          "parts" => [],
-          "transformations" => [],
-          "previewText" => ""
-        }
-      }
+      activity_without_preview = put_in(@factory, ["authoring", "previewText"], "")
+
+      activity_without_preview =
+        put_in(activity_without_preview, ["stem", "content"], [
+          %{"type" => "p", "children" => [%{"text" => "What is the meaning of life?"}]}
+        ])
 
       activity_json = Jason.encode!(activity_without_preview)
 

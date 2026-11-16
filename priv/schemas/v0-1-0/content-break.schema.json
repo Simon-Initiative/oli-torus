@@ -6,7 +6,10 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": "string"
+      "type": [
+        "string",
+        "integer"
+      ]
     },
     "type": {
       "const": "break"

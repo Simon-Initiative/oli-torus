@@ -1,0 +1,105 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/short-answer.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Short Answer activity model",
+  "description": "Strict authored Short Answer / Single Response model; the response matchConfig.math object is an opaque leaf.",
+  "type": "object",
+  "properties": {
+    "stem": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content"
+    },
+    "inputType": {
+      "enum": [
+        "text",
+        "numeric",
+        "textarea",
+        "math",
+        "math_expression",
+        "vlabvalue"
+      ]
+    },
+    "itemConfig": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/short-answer-config.schema.json#/$defs/item-config"
+    },
+    "submitAndCompare": {
+      "type": "boolean"
+    },
+    "responses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "users",
+          "text"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "authoring": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config"
+          },
+          "minItems": 1,
+          "maxItems": 1
+        },
+        "transformations": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/transformation"
+          }
+        },
+        "previewText": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "parts",
+        "transformations",
+        "previewText"
+      ],
+      "additionalProperties": false
+    },
+    "id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/id"
+    },
+    "activity_id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activity_id"
+    },
+    "resourceId": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/resourceId"
+    },
+    "learningLanguage": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/learningLanguage"
+    },
+    "bibrefs": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/bibrefs"
+    },
+    "activityType": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activityType"
+    },
+    "content": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/content"
+    }
+  },
+  "required": [
+    "stem",
+    "inputType",
+    "authoring"
+  ],
+  "additionalProperties": false
+}

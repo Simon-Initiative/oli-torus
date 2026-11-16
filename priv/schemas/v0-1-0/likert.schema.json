@@ -1,0 +1,96 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/likert.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Likert activity model",
+  "type": "object",
+  "properties": {
+    "stem": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content"
+    },
+    "choices": {
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/likert-choice"
+      },
+      "minItems": 1
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/likert-item"
+      },
+      "minItems": 1
+    },
+    "orderDescending": {
+      "type": "boolean"
+    },
+    "activityTitle": {
+      "type": "string"
+    },
+    "authoring": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part"
+          },
+          "minItems": 1
+        },
+        "transformations": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/transformation"
+          }
+        },
+        "previewText": {
+          "type": "string"
+        },
+        "targeted": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice-response-association"
+          }
+        }
+      },
+      "required": [
+        "parts",
+        "transformations",
+        "previewText",
+        "targeted"
+      ],
+      "additionalProperties": false
+    },
+    "id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/id"
+    },
+    "activity_id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activity_id"
+    },
+    "resourceId": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/resourceId"
+    },
+    "learningLanguage": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/learningLanguage"
+    },
+    "bibrefs": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/bibrefs"
+    },
+    "activityType": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activityType"
+    },
+    "content": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/content"
+    }
+  },
+  "required": [
+    "stem",
+    "choices",
+    "items",
+    "orderDescending",
+    "activityTitle",
+    "authoring"
+  ],
+  "additionalProperties": false,
+  "description": "Strict multipart Likert model, including serialized tsmonad Maybe fields and content wrappers shared with Basic Pages."
+}

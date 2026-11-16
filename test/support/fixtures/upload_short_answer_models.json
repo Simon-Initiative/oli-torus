@@ -1,0 +1,500 @@
+{
+  "file-upload": {
+    "stem": {
+      "id": "file-upload-1",
+      "content": [
+        {
+          "id": "file-upload-2",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "fileSpec": {
+      "maxCount": 1,
+      "accept": "",
+      "maxSizeInBytes": 10240000
+    },
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "scoringStrategy": "average",
+          "gradingApproach": "manual",
+          "responses": [
+            {
+              "id": "file-upload-3",
+              "rule": "input contains {answer}",
+              "score": 1,
+              "feedback": {
+                "id": "file-upload-4",
+                "content": [
+                  {
+                    "id": "file-upload-5",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "file-upload-6",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "file-upload-7",
+                "content": [
+                  {
+                    "id": "file-upload-8",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "file-upload-9",
+              "content": [
+                {
+                  "id": "file-upload-10",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "file-upload-11",
+              "content": [
+                {
+                  "id": "file-upload-12",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "file-upload-13",
+              "content": [
+                {
+                  "id": "file-upload-14",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "explanation": {
+            "id": "file-upload-15",
+            "content": [
+              {
+                "id": "file-upload-16",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ],
+      "transformations": [],
+      "previewText": ""
+    }
+  },
+  "short-answer": {
+    "stem": {
+      "id": "short-answer-1",
+      "content": [
+        {
+          "id": "short-answer-2",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "inputType": "text",
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "short-answer-3",
+              "rule": "input contains {answer}",
+              "score": 1,
+              "feedback": {
+                "id": "short-answer-4",
+                "content": [
+                  {
+                    "id": "short-answer-5",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "short-answer-6",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "short-answer-7",
+                "content": [
+                  {
+                    "id": "short-answer-8",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "short-answer-9",
+              "content": [
+                {
+                  "id": "short-answer-10",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "short-answer-11",
+              "content": [
+                {
+                  "id": "short-answer-12",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "short-answer-13",
+              "content": [
+                {
+                  "id": "short-answer-14",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "explanation": {
+            "id": "short-answer-15",
+            "content": [
+              {
+                "id": "short-answer-16",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ],
+      "transformations": [],
+      "previewText": ""
+    }
+  },
+  "math-expression": {
+    "stem": {
+      "id": "math-expression-1",
+      "content": [
+        {
+          "id": "math-expression-2",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "inputType": "math_expression",
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "math-expression-15",
+              "rule": "",
+              "score": 1,
+              "feedback": {
+                "id": "math-expression-16",
+                "content": [
+                  {
+                    "id": "math-expression-17",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true,
+              "matchConfig": {
+                "version": 1,
+                "type": "math_expression",
+                "math": {
+                  "mode": "algebraic_equivalence",
+                  "expected": "",
+                  "validation": {
+                    "allowedVariables": [
+                      "x"
+                    ],
+                    "domains": [
+                      {
+                        "name": "x",
+                        "lower": {
+                          "value": -10,
+                          "inclusive": true
+                        },
+                        "upper": {
+                          "value": 10,
+                          "inclusive": true
+                        },
+                        "exclusions": [],
+                        "integerOnly": false,
+                        "preferredValues": []
+                      }
+                    ]
+                  },
+                  "sampling": {
+                    "seed": 42,
+                    "desiredCount": 8,
+                    "maxAttempts": 64,
+                    "includeSpecialPoints": true
+                  }
+                }
+              }
+            },
+            {
+              "id": "math-expression-18",
+              "rule": "",
+              "score": 0,
+              "feedback": {
+                "id": "math-expression-19",
+                "content": [
+                  {
+                    "id": "math-expression-20",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "matchConfig": {
+                "version": 1,
+                "type": "always"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "math-expression-9",
+              "content": [
+                {
+                  "id": "math-expression-10",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "math-expression-11",
+              "content": [
+                {
+                  "id": "math-expression-12",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "math-expression-13",
+              "content": [
+                {
+                  "id": "math-expression-14",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "explanation": {
+            "id": "math-expression-21",
+            "content": [
+              {
+                "id": "math-expression-22",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ],
+      "transformations": [],
+      "previewText": ""
+    },
+    "itemConfig": {
+      "version": 1,
+      "type": "math_expression",
+      "subtype": "algebraic",
+      "config": {
+        "validation": {
+          "allowedVariables": [
+            "x"
+          ],
+          "domains": [
+            {
+              "name": "x",
+              "lower": {
+                "value": -10,
+                "inclusive": true
+              },
+              "upper": {
+                "value": 10,
+                "inclusive": true
+              },
+              "exclusions": [],
+              "integerOnly": false,
+              "preferredValues": []
+            }
+          ]
+        },
+        "sampling": {
+          "seed": 42,
+          "desiredCount": 8,
+          "maxAttempts": 64,
+          "includeSpecialPoints": true
+        }
+      }
+    }
+  }
+}

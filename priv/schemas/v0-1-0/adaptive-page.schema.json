@@ -1,0 +1,53 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/adaptive-page.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Adaptive Page export",
+  "description": "Closed Adaptive Page export envelope reusing the generic Page contract and its Adaptive content dispatcher.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/page.schema.json"
+    },
+    {
+      "properties": {
+        "content": {
+          "required": [
+            "advancedAuthoring"
+          ],
+          "properties": {
+            "advancedAuthoring": {
+              "const": true
+            }
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "type": {},
+    "id": {},
+    "content": {},
+    "isGraded": {},
+    "objectives": {},
+    "originalFile": {},
+    "tags": {},
+    "title": {},
+    "unresolvedReferences": {},
+    "aiEnabled": {},
+    "purpose": {},
+    "relatesTo": {},
+    "introContent": {},
+    "introVideo": {},
+    "posterImage": {},
+    "scoringStrategyId": {},
+    "maxAttempts": {},
+    "recommendedAttempts": {},
+    "durationMinutes": {},
+    "fullProgressPct": {},
+    "retakeMode": {},
+    "assessmentMode": {},
+    "collabSpace": {},
+    "explanationStrategy": {}
+  },
+  "additionalProperties": false
+}

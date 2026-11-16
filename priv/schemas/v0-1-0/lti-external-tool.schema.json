@@ -1,0 +1,84 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/lti-external-tool.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "LTI External Tool activity model",
+  "description": "Authored LTI External Tool structure with shared content. Domain evaluation and readiness checks are separate.",
+  "type": "object",
+  "properties": {
+    "openInNewTab": {
+      "type": "boolean"
+    },
+    "height": {
+      "type": "number"
+    },
+    "deepLink": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "ltiResourceLink"
+        },
+        "url": {
+          "type": "string"
+        },
+        "custom": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "title": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "authoring": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config"
+          }
+        },
+        "previewText": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "parts"
+      ],
+      "additionalProperties": false
+    },
+    "id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/id"
+    },
+    "activity_id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activity_id"
+    },
+    "resourceId": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/resourceId"
+    },
+    "learningLanguage": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/learningLanguage"
+    },
+    "bibrefs": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/bibrefs"
+    },
+    "activityType": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activityType"
+    },
+    "content": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/content"
+    }
+  },
+  "required": [
+    "openInNewTab",
+    "authoring"
+  ],
+  "additionalProperties": false
+}

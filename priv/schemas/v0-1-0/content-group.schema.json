@@ -35,6 +35,29 @@
     },
     "children": {
       "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/elements.schema.json"
+    },
+    "trigger": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "trigger"
+        },
+        "id": {
+          "type": "string"
+        },
+        "trigger_type": {
+          "const": "group"
+        },
+        "prompt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "trigger_type",
+        "prompt"
+      ]
     }
   },
   "required": [

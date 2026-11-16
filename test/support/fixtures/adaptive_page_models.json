@@ -1,0 +1,218 @@
+{
+  "empty": {
+    "model": [],
+    "advancedAuthoring": true,
+    "advancedDelivery": true,
+    "displayApplicationChrome": false,
+    "custom": {
+      "totalScore": 0
+    },
+    "customCss": "",
+    "customScript": "",
+    "additionalStylesheets": []
+  },
+  "authoring": {
+    "model": [
+      {
+        "id": 123456789,
+        "type": "group",
+        "layout": "deck",
+        "children": [
+          {
+            "type": "activity-reference",
+            "activitySlug": "revision-1",
+            "custom": {
+              "sequenceId": "1",
+              "sequenceName": "Screen 1",
+              "isLayer": true
+            }
+          },
+          {
+            "type": "activity-reference",
+            "activitySlug": "revision-2",
+            "custom": {
+              "sequenceId": "2",
+              "sequenceName": "Screen 2",
+              "isBank": true,
+              "bankShowCount": 2,
+              "bankEndTarget": "next"
+            }
+          },
+          {
+            "type": "activity-reference",
+            "activitySlug": "revision-3",
+            "custom": {
+              "sequenceId": "3",
+              "sequenceName": "Screen 3",
+              "layerRef": "2",
+              "isLayer": false,
+              "isBank": false
+            }
+          },
+          {
+            "type": "activity-reference",
+            "activitySlug": "revision-4",
+            "custom": {
+              "sequenceId": "4",
+              "sequenceName": "Screen 4",
+              "layerRef": null
+            }
+          }
+        ]
+      }
+    ],
+    "advancedAuthoring": true,
+    "advancedDelivery": true,
+    "displayApplicationChrome": false,
+    "custom": {
+      "advancedAuthoring": false,
+      "allowBeagle": false,
+      "allowTreeNavigation": false,
+      "autoApplyInit": false,
+      "backgroundGradientBottom": 0,
+      "backgroundGradientTop": 0,
+      "backgroundImageMaintainAspectRatio": false,
+      "backgroundImageScaleContent": false,
+      "backgroundImageURL": "",
+      "chromelessFlag": false,
+      "customCssUrl": "https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/styles/style_season.css",
+      "defaultScreenHeight": 500,
+      "defaultScreenWidth": 1000,
+      "defaultTextStyle": 0,
+      "enableHistory": true,
+      "enableLessonMax": true,
+      "globalActivities": [],
+      "globalNumberFormat": "",
+      "headingStyleType": "",
+      "hideOptionsMenu": false,
+      "logoutMessage": "",
+      "logoutPanelImageURL": "",
+      "renderAccessibleOrderedList": false,
+      "scoreFixed": false,
+      "showScore": false,
+      "stageMaskContent": false,
+      "stageVerticalAlign": "",
+      "themeId": "spr-theme-light",
+      "totalNumberOfQuestions": 0,
+      "totalScore": 0,
+      "variables": [],
+      "viewerSkin": "default",
+      "displayRefreshWarningPopup": true,
+      "darkModeSetting": false,
+      "responsiveLayout": false,
+      "grid": false,
+      "centerpoint": false,
+      "columnGuides": false,
+      "rowGuides": false,
+      "contentMode": "expert"
+    },
+    "customCss": "",
+    "customScript": "",
+    "additionalStylesheets": [
+      "default",
+      "https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/styles/style_season.css"
+    ]
+  },
+  "persisted": {
+    "model": [
+      {
+        "id": 123456789,
+        "type": "group",
+        "layout": "deck",
+        "children": [
+          {
+            "type": "activity-reference",
+            "custom": {
+              "sequenceId": "1",
+              "sequenceName": "Screen 1",
+              "isLayer": true
+            },
+            "activity_id": 1
+          },
+          {
+            "type": "activity-reference",
+            "custom": {
+              "sequenceId": "2",
+              "sequenceName": "Screen 2",
+              "isBank": true,
+              "bankShowCount": 2,
+              "bankEndTarget": "next"
+            },
+            "activity_id": 2
+          },
+          {
+            "type": "activity-reference",
+            "custom": {
+              "sequenceId": "3",
+              "sequenceName": "Screen 3",
+              "layerRef": "2",
+              "isLayer": false,
+              "isBank": false
+            },
+            "activity_id": 3
+          },
+          {
+            "type": "activity-reference",
+            "custom": {
+              "sequenceId": "4",
+              "sequenceName": "Screen 4",
+              "layerRef": null
+            },
+            "activity_id": 4
+          }
+        ]
+      }
+    ],
+    "advancedAuthoring": true,
+    "advancedDelivery": true,
+    "displayApplicationChrome": false,
+    "custom": {
+      "advancedAuthoring": false,
+      "allowBeagle": false,
+      "allowTreeNavigation": false,
+      "autoApplyInit": false,
+      "backgroundGradientBottom": 0,
+      "backgroundGradientTop": 0,
+      "backgroundImageMaintainAspectRatio": false,
+      "backgroundImageScaleContent": false,
+      "backgroundImageURL": "",
+      "chromelessFlag": false,
+      "customCssUrl": "https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/styles/style_season.css",
+      "defaultScreenHeight": 500,
+      "defaultScreenWidth": 1000,
+      "defaultTextStyle": 0,
+      "enableHistory": true,
+      "enableLessonMax": true,
+      "globalActivities": [],
+      "globalNumberFormat": "",
+      "headingStyleType": "",
+      "hideOptionsMenu": false,
+      "logoutMessage": "",
+      "logoutPanelImageURL": "",
+      "renderAccessibleOrderedList": false,
+      "scoreFixed": false,
+      "showScore": false,
+      "stageMaskContent": false,
+      "stageVerticalAlign": "",
+      "themeId": "spr-theme-light",
+      "totalNumberOfQuestions": 0,
+      "totalScore": 0,
+      "variables": [],
+      "viewerSkin": "default",
+      "displayRefreshWarningPopup": true,
+      "darkModeSetting": false,
+      "responsiveLayout": false,
+      "grid": false,
+      "centerpoint": false,
+      "columnGuides": false,
+      "rowGuides": false,
+      "contentMode": "expert"
+    },
+    "customCss": "",
+    "customScript": "",
+    "additionalStylesheets": [
+      "default",
+      "https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/styles/style_season.css"
+    ]
+  }
+}

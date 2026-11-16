@@ -1,0 +1,1310 @@
+{
+  "image-hotspot": {
+    "stem": {
+      "id": "remaining-9",
+      "content": [
+        {
+          "id": "remaining-10",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "choices": [
+      {
+        "id": "remaining-1",
+        "content": [
+          {
+            "id": "remaining-2",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "coords": [
+          50,
+          50,
+          40
+        ]
+      }
+    ],
+    "multiple": false,
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "remaining-3",
+              "rule": "input like {remaining-1}",
+              "score": 1,
+              "feedback": {
+                "id": "remaining-4",
+                "content": [
+                  {
+                    "id": "remaining-5",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "remaining-6",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "remaining-7",
+                "content": [
+                  {
+                    "id": "remaining-8",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "remaining-11",
+              "content": [
+                {
+                  "id": "remaining-12",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "remaining-13",
+              "content": [
+                {
+                  "id": "remaining-14",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "remaining-15",
+              "content": [
+                {
+                  "id": "remaining-16",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        }
+      ],
+      "correct": [
+        [],
+        ""
+      ],
+      "transformations": [],
+      "targeted": [],
+      "previewText": ""
+    }
+  },
+  "image-hotspot-edited": {
+    "stem": {
+      "id": "remaining-9",
+      "content": [
+        {
+          "id": "remaining-10",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "choices": [
+      {
+        "id": "remaining-1",
+        "content": [
+          {
+            "id": "remaining-2",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "coords": [
+          0,
+          0,
+          50,
+          50
+        ]
+      },
+      {
+        "id": "remaining-19",
+        "content": [
+          {
+            "id": "remaining-20",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "coords": [
+          0,
+          0,
+          10,
+          0,
+          10,
+          10
+        ]
+      }
+    ],
+    "multiple": true,
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "remaining-21",
+              "rule": "input like {remaining-1}",
+              "score": 1,
+              "feedback": {
+                "id": "remaining-22",
+                "content": [
+                  {
+                    "id": "remaining-23",
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "remaining-24",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "remaining-25",
+                "content": [
+                  {
+                    "id": "remaining-26",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "remaining-11",
+              "content": [
+                {
+                  "id": "remaining-12",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "remaining-13",
+              "content": [
+                {
+                  "id": "remaining-14",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "remaining-15",
+              "content": [
+                {
+                  "id": "remaining-16",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        }
+      ],
+      "correct": [
+        [
+          "remaining-1"
+        ],
+        "remaining-21"
+      ],
+      "transformations": [],
+      "targeted": [],
+      "previewText": ""
+    },
+    "imageURL": "/media/image.png",
+    "height": 400,
+    "width": 600
+  },
+  "oli-embedded": {
+    "base": "embedded",
+    "src": "index.html",
+    "modelXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n    <embed_activity id=\"custom_side\" width=\"670\" height=\"300\">\n        <title>Custom Activity</title>\n        <source>webcontent/custom_activity/customactivity.js</source>\n        <assets>\n            <asset name=\"layout\">webcontent/custom_activity/layout.html</asset>\n            <asset name=\"controls\">webcontent/custom_activity/controls.html</asset>\n            <asset name=\"styles\">webcontent/custom_activity/styles.css</asset>\n            <asset name=\"questions\">webcontent/custom_activity/questions.xml</asset>\n        </assets>\n    </embed_activity>",
+    "resourceBase": "remaining-27",
+    "resourceURLs": [],
+    "resourceVerification": {},
+    "stem": {
+      "id": "remaining-28",
+      "content": [
+        {
+          "id": "remaining-29",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "title": "Embedded activity",
+    "authoring": {
+      "parts": [
+        {
+          "id": "remaining-30",
+          "scoringStrategy": "average",
+          "responses": [],
+          "hints": []
+        },
+        {
+          "id": "remaining-31",
+          "scoringStrategy": "average",
+          "responses": [],
+          "hints": []
+        }
+      ],
+      "previewText": ""
+    }
+  },
+  "oli-embedded-edited": {
+    "base": "embedded",
+    "src": "index.html",
+    "modelXml": "<embed_activity />",
+    "resourceBase": "remaining-27",
+    "resourceURLs": [
+      "/media/image.png"
+    ],
+    "resourceVerification": {
+      "image.png": "verified",
+      "missing.png": "missing"
+    },
+    "stem": {
+      "id": "remaining-28",
+      "content": [
+        {
+          "id": "remaining-29",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "title": "Embedded activity",
+    "authoring": {
+      "parts": [
+        {
+          "id": "remaining-30",
+          "scoringStrategy": "average",
+          "responses": [],
+          "hints": []
+        },
+        {
+          "id": "remaining-31",
+          "scoringStrategy": "average",
+          "responses": [],
+          "hints": []
+        },
+        {
+          "id": "remaining-32",
+          "scoringStrategy": "average",
+          "responses": [],
+          "hints": []
+        }
+      ],
+      "previewText": ""
+    },
+    "suppressReviewInteraction": true,
+    "bundleStatus": {
+      "code": "ready",
+      "message": "Ready"
+    }
+  },
+  "lti-external-tool": {
+    "openInNewTab": true,
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "scoringStrategy": "average",
+          "responses": [],
+          "hints": []
+        }
+      ],
+      "previewText": ""
+    }
+  },
+  "lti-external-tool-edited": {
+    "openInNewTab": true,
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "scoringStrategy": "average",
+          "responses": [],
+          "hints": []
+        }
+      ],
+      "previewText": ""
+    },
+    "height": 600,
+    "deepLink": {
+      "type": "ltiResourceLink",
+      "url": "/launch",
+      "custom": {
+        "nested": [
+          null,
+          {
+            "any": true
+          }
+        ]
+      },
+      "title": "Tool",
+      "text": "Description"
+    }
+  },
+  "logic-lab": {
+    "activity": "",
+    "context": {
+      "title": "Logic exercise"
+    },
+    "authoring": {
+      "version": 1,
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "best",
+          "responses": [],
+          "hints": [
+            {
+              "id": "remaining-33",
+              "content": [
+                {
+                  "id": "remaining-34",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "remaining-35",
+              "content": [
+                {
+                  "id": "remaining-36",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "remaining-37",
+              "content": [
+                {
+                  "id": "remaining-38",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        }
+      ],
+      "transformations": [],
+      "previewText": ""
+    },
+    "feedback": [
+      {
+        "id": "remaining-39",
+        "content": [
+          {
+            "id": "remaining-40",
+            "children": [
+              {
+                "text": "incomplete"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      },
+      {
+        "id": "remaining-41",
+        "content": [
+          {
+            "id": "remaining-42",
+            "children": [
+              {
+                "text": "complete"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ]
+  },
+  "logic-lab-edited": {
+    "activity": {
+      "id": "lab",
+      "title": "Example derivation",
+      "version": "1",
+      "keywords": [
+        "logic"
+      ],
+      "spec": {
+        "type": "derivation",
+        "objectives": [
+          {
+            "category": "proof",
+            "required": "required",
+            "mode": "novice"
+          }
+        ],
+        "maximumScore": 3,
+        "preview": null,
+        "opaqueExtension": {
+          "future": [
+            null,
+            true
+          ]
+        }
+      }
+    },
+    "context": {
+      "title": "Logic exercise"
+    },
+    "authoring": {
+      "version": 1,
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "best",
+          "responses": [],
+          "hints": [
+            {
+              "id": "remaining-33",
+              "content": [
+                {
+                  "id": "remaining-34",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "remaining-35",
+              "content": [
+                {
+                  "id": "remaining-36",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "remaining-37",
+              "content": [
+                {
+                  "id": "remaining-38",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        }
+      ],
+      "transformations": [],
+      "previewText": "",
+      "source": "<activity />"
+    },
+    "feedback": [
+      {
+        "id": "remaining-39",
+        "content": [
+          {
+            "id": "remaining-40",
+            "children": [
+              {
+                "text": "incomplete"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      },
+      {
+        "id": "remaining-41",
+        "content": [
+          {
+            "id": "remaining-42",
+            "children": [
+              {
+                "text": "complete"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ]
+  },
+  "vlab": {
+    "stem": {
+      "id": "remaining-44",
+      "content": [
+        {
+          "type": "p",
+          "id": "remaining-45",
+          "children": [
+            {
+              "text": "Example question with a fill in the blank "
+            },
+            {
+              "id": "remaining-43",
+              "children": [
+                {
+                  "text": ""
+                }
+              ],
+              "type": "input_ref"
+            },
+            {
+              "text": "."
+            }
+          ]
+        }
+      ]
+    },
+    "choices": [],
+    "inputs": [
+      {
+        "inputType": "numeric",
+        "id": "remaining-43",
+        "partId": "1"
+      }
+    ],
+    "assignmentSource": "builtIn",
+    "assignmentPath": "default",
+    "assignment": "{ \"assignmentText\": \"Assignment name\" }",
+    "configuration": "\n{\n  \"title\": \"Stoichiometric Ratios\",\n  \"solutionViewers\": [\n    {\n      \"id\": \"solutionProperties\",\n      \"displayDefault\": true,\n      \"args\": {\n        \"honorSignificantFigures\": false\n      }\n    },\n    {\n      \"id\": \"aqueous\",\n      \"displayDefault\": true,\n      \"args\": {\n        \"unitsToggleEnabled\": true\n      }\n    },\n    {\n      \"id\": \"solid\",\n      \"displayDefault\": false,\n      \"args\": {\n        \"unitsToggleEnabled\": true\n      }\n    },\n    {\n      \"id\": \"spectrometer\",\n      \"displayDefault\": false\n    },\n    {\n      \"id\": \"particleView\",\n      \"displayDefault\": true\n    },\n    {\n      \"id\": \"thermometer\",\n      \"displayDefault\": true\n    },\n    {\n      \"id\": \"pH\",\n      \"displayDefault\": true\n    },\n    {\n      \"id\": \"vesselTrackingControl\",\n      \"displayDefault\": false\n    }\n  ],\n  \"transfer\": [\"precise\", \"significantFigures\", \"realistic\"]\n}\n",
+    "reactions": "\n{\n  \"REACTIONS\": {\n    \"REACTION\": [\n      {\n        \"SPECIES_REF\": [\n          {\n            \"id\": \"0\",\n            \"coefficient\": \"1\"\n          },\n          {\n            \"id\": \"1\",\n            \"coefficient\": \"-1\"\n          },\n          {\n            \"id\": \"2\",\n            \"coefficient\": \"-1\"\n          }\n        ]\n      },\n      {\n        \"SPECIES_REF\": [\n          {\n            \"id\": \"5\",\n            \"coefficient\": \"1\"\n          },\n          {\n            \"id\": \"3\",\n            \"coefficient\": \"-1\"\n          },\n          {\n            \"id\": \"4\",\n            \"coefficient\": \"-1\"\n          }\n        ]\n      }\n    ]\n  }\n}\n",
+    "solutions": "\n{\n  \"FILESYSTEM\": {\n    \"DIRECTORY\": [\n     {\n        \"name\": \"stockroom\",\n        \"SOLUTION\": [\n          {\n            \"name\": \"Distilled H<sub>2</sub>O\",\n            \"description\": \"Distilled Water\",\n            \"volume\": \"3.0\",\n            \"vessel\": \"3LCarboy\",\n            \"species\": [\n               {\n                  \"id\": \"0\"\n               }\n            ]\n          },\n          {\n            \"name\": \"0.154 M NaCl\",\n            \"description\": \"Sodium Chloride\",\n            \"volume\": \"0.2\",\n            \"species\": [\n               {\n                  \"id\": \"0\"\n               },\n               {\n                  \"id\": \"3\",\n                  \"amount\": \"0.0308\"\n               },\n               {\n                  \"id\": \"4\",\n                  \"amount\": \"0.0308\"\n               }\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}\n",
+    "species": "\n{\n \"SPECIES_LIST\": {\n  \"SPECIES\": [\n      {\n        \"id\": \"0\",\n        \"name\": \"H<sub>2</sub>O\",\n        \"enthalpy\": \"-285.83\",\n        \"entropy\": \"69.91\",\n        \"state\": \"l\",\n        \"molecularWeight\": \"18.016\"\n      },\n      {\n        \"id\": \"1\",\n        \"name\": \"H<sup>+</sup>\",\n        \"enthalpy\": \"0.0\",\n        \"entropy\": \"0.0\",\n        \"molecularWeight\": \"1.008\"\n      },\n      {\n        \"id\": \"2\",\n        \"name\": \"OH<sup>-</sup>\",\n        \"enthalpy\": \"-229.99\",\n        \"entropy\": \"-10.75\",\n        \"molecularWeight\": \"17.008\"\n      },\n      {\n        \"id\": \"3\",\n        \"name\": \"Na<sup>+</sup>\",\n        \"enthalpy\": \"-240.12\",\n        \"entropy\": \"59.0\",\n        \"molecularWeight\": \"22.99\"\n      },\n      {\n        \"id\": \"4\",\n        \"name\": \"Cl<sup>-</sup>\",\n        \"enthalpy\": \"-167.58999999999997\",\n        \"entropy\": \"56.5\",\n        \"molecularWeight\": \"35.45\"\n      },\n      {\n        \"id\": \"5\",\n        \"name\": \"NaCl\",\n        \"enthalpy\": \"-411.2\",\n        \"entropy\": \"72.1\",\n        \"state\": \"s\",\n        \"molecularWeight\": \"58.44\",\n        \"density\": \"2.16\"\n     }\n    ]\n  }\n}\n",
+    "spectra": "{ \"SPECTRA_LIST\": { \"SPECIES\": [] } }",
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "remaining-46",
+              "rule": "input = {1}",
+              "score": 1,
+              "feedback": {
+                "id": "remaining-47",
+                "content": [
+                  {
+                    "id": "remaining-48",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "remaining-49",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "remaining-50",
+                "content": [
+                  {
+                    "id": "remaining-51",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "remaining-52",
+              "content": [
+                {
+                  "id": "remaining-53",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        }
+      ],
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "remaining-54",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        }
+      ],
+      "previewText": "Example question with a fill in the blank"
+    }
+  },
+  "vlab-edited": {
+    "stem": {
+      "id": "remaining-44",
+      "content": [
+        {
+          "type": "p",
+          "id": "remaining-45",
+          "children": [
+            {
+              "text": "Example question with a fill in the blank "
+            },
+            {
+              "id": "remaining-43",
+              "children": [
+                {
+                  "text": ""
+                }
+              ],
+              "type": "input_ref"
+            },
+            {
+              "text": "."
+            }
+          ]
+        }
+      ]
+    },
+    "choices": [
+      {
+        "id": "remaining-55",
+        "content": [
+          {
+            "id": "remaining-56",
+            "children": [
+              {
+                "text": "Choice A"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      },
+      {
+        "id": "remaining-57",
+        "content": [
+          {
+            "id": "remaining-58",
+            "children": [
+              {
+                "text": "Choice B"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ],
+    "inputs": [
+      {
+        "inputType": "dropdown",
+        "id": "remaining-43",
+        "partId": "1",
+        "choiceIds": [
+          "remaining-55",
+          "remaining-57"
+        ]
+      },
+      {
+        "inputType": "text",
+        "partId": "remaining-97",
+        "id": "input-text"
+      },
+      {
+        "inputType": "numeric",
+        "partId": "remaining-106",
+        "id": "input-numeric"
+      },
+      {
+        "inputType": "math",
+        "partId": "remaining-149",
+        "id": "input-math"
+      },
+      {
+        "inputType": "vlabvalue",
+        "partId": "remaining-192",
+        "id": "input-vlabvalue",
+        "parameter": "concentration",
+        "species": "Na+"
+      }
+    ],
+    "assignmentSource": "builtIn",
+    "assignmentPath": "default",
+    "assignment": "{ \"assignmentText\": \"Assignment name\" }",
+    "configuration": "\n{\n  \"title\": \"Stoichiometric Ratios\",\n  \"solutionViewers\": [\n    {\n      \"id\": \"solutionProperties\",\n      \"displayDefault\": true,\n      \"args\": {\n        \"honorSignificantFigures\": false\n      }\n    },\n    {\n      \"id\": \"aqueous\",\n      \"displayDefault\": true,\n      \"args\": {\n        \"unitsToggleEnabled\": true\n      }\n    },\n    {\n      \"id\": \"solid\",\n      \"displayDefault\": false,\n      \"args\": {\n        \"unitsToggleEnabled\": true\n      }\n    },\n    {\n      \"id\": \"spectrometer\",\n      \"displayDefault\": false\n    },\n    {\n      \"id\": \"particleView\",\n      \"displayDefault\": true\n    },\n    {\n      \"id\": \"thermometer\",\n      \"displayDefault\": true\n    },\n    {\n      \"id\": \"pH\",\n      \"displayDefault\": true\n    },\n    {\n      \"id\": \"vesselTrackingControl\",\n      \"displayDefault\": false\n    }\n  ],\n  \"transfer\": [\"precise\", \"significantFigures\", \"realistic\"]\n}\n",
+    "reactions": "\n{\n  \"REACTIONS\": {\n    \"REACTION\": [\n      {\n        \"SPECIES_REF\": [\n          {\n            \"id\": \"0\",\n            \"coefficient\": \"1\"\n          },\n          {\n            \"id\": \"1\",\n            \"coefficient\": \"-1\"\n          },\n          {\n            \"id\": \"2\",\n            \"coefficient\": \"-1\"\n          }\n        ]\n      },\n      {\n        \"SPECIES_REF\": [\n          {\n            \"id\": \"5\",\n            \"coefficient\": \"1\"\n          },\n          {\n            \"id\": \"3\",\n            \"coefficient\": \"-1\"\n          },\n          {\n            \"id\": \"4\",\n            \"coefficient\": \"-1\"\n          }\n        ]\n      }\n    ]\n  }\n}\n",
+    "solutions": "\n{\n  \"FILESYSTEM\": {\n    \"DIRECTORY\": [\n     {\n        \"name\": \"stockroom\",\n        \"SOLUTION\": [\n          {\n            \"name\": \"Distilled H<sub>2</sub>O\",\n            \"description\": \"Distilled Water\",\n            \"volume\": \"3.0\",\n            \"vessel\": \"3LCarboy\",\n            \"species\": [\n               {\n                  \"id\": \"0\"\n               }\n            ]\n          },\n          {\n            \"name\": \"0.154 M NaCl\",\n            \"description\": \"Sodium Chloride\",\n            \"volume\": \"0.2\",\n            \"species\": [\n               {\n                  \"id\": \"0\"\n               },\n               {\n                  \"id\": \"3\",\n                  \"amount\": \"0.0308\"\n               },\n               {\n                  \"id\": \"4\",\n                  \"amount\": \"0.0308\"\n               }\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}\n",
+    "species": "\n{\n \"SPECIES_LIST\": {\n  \"SPECIES\": [\n      {\n        \"id\": \"0\",\n        \"name\": \"H<sub>2</sub>O\",\n        \"enthalpy\": \"-285.83\",\n        \"entropy\": \"69.91\",\n        \"state\": \"l\",\n        \"molecularWeight\": \"18.016\"\n      },\n      {\n        \"id\": \"1\",\n        \"name\": \"H<sup>+</sup>\",\n        \"enthalpy\": \"0.0\",\n        \"entropy\": \"0.0\",\n        \"molecularWeight\": \"1.008\"\n      },\n      {\n        \"id\": \"2\",\n        \"name\": \"OH<sup>-</sup>\",\n        \"enthalpy\": \"-229.99\",\n        \"entropy\": \"-10.75\",\n        \"molecularWeight\": \"17.008\"\n      },\n      {\n        \"id\": \"3\",\n        \"name\": \"Na<sup>+</sup>\",\n        \"enthalpy\": \"-240.12\",\n        \"entropy\": \"59.0\",\n        \"molecularWeight\": \"22.99\"\n      },\n      {\n        \"id\": \"4\",\n        \"name\": \"Cl<sup>-</sup>\",\n        \"enthalpy\": \"-167.58999999999997\",\n        \"entropy\": \"56.5\",\n        \"molecularWeight\": \"35.45\"\n      },\n      {\n        \"id\": \"5\",\n        \"name\": \"NaCl\",\n        \"enthalpy\": \"-411.2\",\n        \"entropy\": \"72.1\",\n        \"state\": \"s\",\n        \"molecularWeight\": \"58.44\",\n        \"density\": \"2.16\"\n     }\n    ]\n  }\n}\n",
+    "spectra": "{ \"SPECTRA_LIST\": { \"SPECIES\": [] } }",
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "remaining-59",
+              "rule": "input like {remaining-55}",
+              "score": 1,
+              "feedback": {
+                "id": "remaining-60",
+                "content": [
+                  {
+                    "id": "remaining-61",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "remaining-62",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "remaining-63",
+                "content": [
+                  {
+                    "id": "remaining-64",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "remaining-52",
+              "content": [
+                {
+                  "id": "remaining-53",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        },
+        {
+          "id": "remaining-97",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "remaining-89",
+              "rule": "input contains {answer}",
+              "score": 1,
+              "feedback": {
+                "id": "remaining-90",
+                "content": [
+                  {
+                    "id": "remaining-91",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "remaining-92",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "remaining-93",
+                "content": [
+                  {
+                    "id": "remaining-94",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "remaining-95",
+              "content": [
+                {
+                  "id": "remaining-96",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        },
+        {
+          "id": "remaining-106",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "remaining-123",
+              "rule": "input = {1}",
+              "score": 1,
+              "feedback": {
+                "id": "remaining-124",
+                "content": [
+                  {
+                    "id": "remaining-125",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "remaining-126",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "remaining-127",
+                "content": [
+                  {
+                    "id": "remaining-128",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "remaining-104",
+              "content": [
+                {
+                  "id": "remaining-105",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        },
+        {
+          "id": "remaining-149",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "remaining-178",
+              "rule": "input equals {}",
+              "score": 1,
+              "feedback": {
+                "id": "remaining-179",
+                "content": [
+                  {
+                    "id": "remaining-180",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "remaining-181",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "remaining-182",
+                "content": [
+                  {
+                    "id": "remaining-183",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "remaining-147",
+              "content": [
+                {
+                  "id": "remaining-148",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        },
+        {
+          "id": "remaining-192",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "remaining-215",
+              "rule": "input = {1}",
+              "score": 1,
+              "feedback": {
+                "id": "remaining-216",
+                "content": [
+                  {
+                    "id": "remaining-217",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "remaining-218",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "remaining-219",
+                "content": [
+                  {
+                    "id": "remaining-220",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "remaining-190",
+              "content": [
+                {
+                  "id": "remaining-191",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        }
+      ],
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "remaining-54",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        }
+      ],
+      "previewText": "Example question with a fill in the blank"
+    }
+  }
+}

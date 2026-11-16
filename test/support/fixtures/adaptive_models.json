@@ -1,0 +1,736 @@
+{
+  "initial": {
+    "content": {},
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "scoringStrategy": "average",
+          "responses": [],
+          "outcomes": [
+            {
+              "id": "outcome1",
+              "rule": [],
+              "actions": [
+                {
+                  "id": "action1",
+                  "type": "StateUpdateActionDesc",
+                  "update": {}
+                }
+              ]
+            }
+          ],
+          "hints": [
+            {
+              "id": "adaptive-1",
+              "content": [
+                {
+                  "id": "adaptive-2",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "adaptive-3",
+              "content": [
+                {
+                  "id": "adaptive-4",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "adaptive-5",
+              "content": [
+                {
+                  "id": "adaptive-6",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ]
+        }
+      ],
+      "transformations": [],
+      "previewText": ""
+    }
+  },
+  "generic": {
+    "content": {
+      "custom": {
+        "future": {
+          "expression": [
+            null,
+            true
+          ]
+        }
+      },
+      "partsLayout": [
+        {
+          "id": "text_adaptive-9",
+          "type": "janus-text-flow",
+          "custom": {
+            "nodes": [
+              {
+                "tag": "p",
+                "children": [
+                  {
+                    "tag": "span",
+                    "style": {
+                      "fontSize": "1rem"
+                    },
+                    "children": [
+                      {
+                        "tag": "text",
+                        "text": "Nested content",
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "x": 10,
+            "y": 10,
+            "z": 0,
+            "width": 330,
+            "height": 22,
+            "palette": {
+              "fillColor": 16777215,
+              "fillAlpha": 0,
+              "lineColor": 16777215,
+              "lineAlpha": 0,
+              "lineThickness": 0.1,
+              "lineStyle": 0
+            },
+            "customCssClass": ""
+          }
+        }
+      ]
+    },
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "scoringStrategy": "average",
+          "responses": [],
+          "outcomes": [
+            {
+              "id": "outcome1",
+              "rule": [],
+              "actions": [
+                {
+                  "id": "action1",
+                  "type": "StateUpdateActionDesc",
+                  "update": {}
+                }
+              ]
+            }
+          ],
+          "hints": [
+            {
+              "id": "adaptive-1",
+              "content": [
+                {
+                  "id": "adaptive-2",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "adaptive-3",
+              "content": [
+                {
+                  "id": "adaptive-4",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "adaptive-5",
+              "content": [
+                {
+                  "id": "adaptive-6",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "explanation": {
+            "id": "adaptive-7",
+            "content": [
+              {
+                "id": "adaptive-8",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ],
+      "transformations": [],
+      "previewText": ""
+    }
+  },
+  "advanced": {
+    "authoring": {
+      "parts": [
+        {
+          "id": "__default",
+          "type": "janus-text-flow",
+          "owner": "self",
+          "inherited": false
+        }
+      ],
+      "rules": [
+        {
+          "id": "r:adaptive-11.Correct",
+          "name": "Correct",
+          "priority": 1,
+          "event": {
+            "type": "r:adaptive-12.Correct",
+            "params": {
+              "actions": [
+                {
+                  "type": "navigation",
+                  "params": {
+                    "target": "next"
+                  }
+                },
+                {
+                  "type": "feedback",
+                  "params": {
+                    "id": "",
+                    "feedback": {
+                      "custom": {
+                        "facts": [],
+                        "rules": [],
+                        "width": 350,
+                        "height": 100,
+                        "palette": {
+                          "fillAlpha": 0,
+                          "fillColor": 16777215,
+                          "lineAlpha": 0,
+                          "lineColor": 16777215,
+                          "lineStyle": 0,
+                          "lineThickness": 0.1
+                        },
+                        "applyBtnFlag": false,
+                        "mainBtnLabel": "Next",
+                        "applyBtnLabel": "Show Solution",
+                        "lockCanvasSize": true,
+                        "panelTitleColor": 16777215,
+                        "panelHeaderColor": 10027008
+                      },
+                      "partsLayout": [
+                        {
+                          "id": "",
+                          "type": "janus-text-flow",
+                          "custom": {
+                            "x": 4,
+                            "y": 5,
+                            "z": 0,
+                            "nodes": [
+                              {
+                                "tag": "p",
+                                "style": {
+                                  "textAlign": "center"
+                                },
+                                "children": [
+                                  {
+                                    "tag": "span",
+                                    "style": {},
+                                    "children": [
+                                      {
+                                        "tag": "text",
+                                        "text": "Feedback",
+                                        "style": {},
+                                        "children": []
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ],
+                            "width": 340,
+                            "height": 91,
+                            "palette": {
+                              "borderColor": "rgba(255,255,255,0)",
+                              "borderStyle": "solid",
+                              "borderWidth": "0.1px",
+                              "borderRadius": 0,
+                              "useHtmlProps": true,
+                              "backgroundColor": "rgba(255,255,255,0)"
+                            },
+                            "visible": true,
+                            "maxScore": 1,
+                            "overrideWidth": true,
+                            "customCssClass": "",
+                            "overrideHeight": false,
+                            "requiresManualGrading": false
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "id": "adaptive-14"
+                }
+              ]
+            }
+          },
+          "correct": true,
+          "default": false,
+          "disabled": false,
+          "conditions": {
+            "all": [
+              {
+                "fact": "stage.value",
+                "id": "condition",
+                "operator": "equal",
+                "type": 1,
+                "value": "1"
+              }
+            ]
+          },
+          "forceProgress": false,
+          "additionalScore": 0
+        },
+        {
+          "id": "r:adaptive-16.default",
+          "name": "default",
+          "priority": 1,
+          "event": {
+            "type": "r:adaptive-17.default",
+            "params": {
+              "actions": [
+                {
+                  "type": "navigation",
+                  "params": {
+                    "target": "next"
+                  }
+                }
+              ]
+            }
+          },
+          "correct": true,
+          "default": true,
+          "disabled": false,
+          "conditions": {
+            "id": "b:adaptive-18",
+            "all": []
+          },
+          "forceProgress": false,
+          "additionalScore": 0
+        }
+      ]
+    },
+    "custom": {
+      "applyBtnFlag": false,
+      "applyBtnLabel": "",
+      "checkButtonLabel": "Next",
+      "combineFeedback": false,
+      "customCssClass": "",
+      "facts": [],
+      "lockCanvasSize": false,
+      "mainBtnLabel": "",
+      "maxAttempt": 0,
+      "maxScore": 0,
+      "negativeScoreAllowed": false,
+      "palette": {
+        "backgroundColor": "rgba(255,255,255,0)",
+        "borderColor": "#000000",
+        "borderRadius": "10px",
+        "borderStyle": "solid",
+        "borderWidth": "1px",
+        "useHtmlProps": true
+      },
+      "panelHeaderColor": 0,
+      "panelTitleColor": 0,
+      "showCheckBtn": true,
+      "trapStateScoreScheme": false,
+      "width": 1000,
+      "height": 540,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "partsLayout": [
+      {
+        "id": "text_adaptive-10",
+        "type": "janus-text-flow",
+        "custom": {
+          "nodes": [
+            {
+              "tag": "p",
+              "children": [
+                {
+                  "tag": "span",
+                  "style": {
+                    "fontSize": "1rem"
+                  },
+                  "children": [
+                    {
+                      "tag": "text",
+                      "text": "Advanced content",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "x": 10,
+          "y": 10,
+          "z": 0,
+          "width": 330,
+          "height": 22,
+          "palette": {
+            "fillColor": 16777215,
+            "fillAlpha": 0,
+            "lineColor": 16777215,
+            "lineAlpha": 0,
+            "lineThickness": 0.1,
+            "lineStyle": 0
+          },
+          "customCssClass": ""
+        }
+      }
+    ]
+  },
+  "flowchart": {
+    "authoring": {
+      "parts": [
+        {
+          "id": "__default",
+          "type": "janus-text-flow",
+          "owner": "self",
+          "inherited": false
+        }
+      ],
+      "rules": [
+        {
+          "id": "r:adaptive-11.Correct",
+          "name": "Correct",
+          "priority": 1,
+          "event": {
+            "type": "r:adaptive-12.Correct",
+            "params": {
+              "actions": [
+                {
+                  "type": "navigation",
+                  "params": {
+                    "target": "next"
+                  }
+                },
+                {
+                  "type": "feedback",
+                  "params": {
+                    "id": "",
+                    "feedback": {
+                      "custom": {
+                        "facts": [],
+                        "rules": [],
+                        "width": 350,
+                        "height": 100,
+                        "palette": {
+                          "fillAlpha": 0,
+                          "fillColor": 16777215,
+                          "lineAlpha": 0,
+                          "lineColor": 16777215,
+                          "lineStyle": 0,
+                          "lineThickness": 0.1
+                        },
+                        "applyBtnFlag": false,
+                        "mainBtnLabel": "Next",
+                        "applyBtnLabel": "Show Solution",
+                        "lockCanvasSize": true,
+                        "panelTitleColor": 16777215,
+                        "panelHeaderColor": 10027008
+                      },
+                      "partsLayout": [
+                        {
+                          "id": "",
+                          "type": "janus-text-flow",
+                          "custom": {
+                            "x": 4,
+                            "y": 5,
+                            "z": 0,
+                            "nodes": [
+                              {
+                                "tag": "p",
+                                "style": {
+                                  "textAlign": "center"
+                                },
+                                "children": [
+                                  {
+                                    "tag": "span",
+                                    "style": {},
+                                    "children": [
+                                      {
+                                        "tag": "text",
+                                        "text": "Feedback",
+                                        "style": {},
+                                        "children": []
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ],
+                            "width": 340,
+                            "height": 91,
+                            "palette": {
+                              "borderColor": "rgba(255,255,255,0)",
+                              "borderStyle": "solid",
+                              "borderWidth": "0.1px",
+                              "borderRadius": 0,
+                              "useHtmlProps": true,
+                              "backgroundColor": "rgba(255,255,255,0)"
+                            },
+                            "visible": true,
+                            "maxScore": 1,
+                            "overrideWidth": true,
+                            "customCssClass": "",
+                            "overrideHeight": false,
+                            "requiresManualGrading": false
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "id": "adaptive-14"
+                }
+              ]
+            }
+          },
+          "correct": true,
+          "default": false,
+          "disabled": false,
+          "conditions": {
+            "all": [
+              {
+                "fact": "stage.value",
+                "id": "condition",
+                "operator": "equal",
+                "type": 1,
+                "value": "1"
+              }
+            ]
+          },
+          "forceProgress": false,
+          "additionalScore": 0
+        },
+        {
+          "id": "r:adaptive-16.default",
+          "name": "default",
+          "priority": 1,
+          "event": {
+            "type": "r:adaptive-17.default",
+            "params": {
+              "actions": [
+                {
+                  "type": "navigation",
+                  "params": {
+                    "target": "next"
+                  }
+                }
+              ]
+            }
+          },
+          "correct": true,
+          "default": true,
+          "disabled": false,
+          "conditions": {
+            "id": "b:adaptive-18",
+            "all": []
+          },
+          "forceProgress": false,
+          "additionalScore": 0
+        }
+      ],
+      "flowchart": {
+        "screenType": "blank_screen",
+        "templateApplied": true,
+        "paths": [
+          {
+            "id": "correct",
+            "ruleId": null,
+            "destinationScreenId": null,
+            "completed": false,
+            "type": "correct",
+            "componentId": "component",
+            "label": "Correct",
+            "priority": 8
+          },
+          {
+            "id": "incorrect",
+            "ruleId": null,
+            "destinationScreenId": null,
+            "completed": false,
+            "type": "incorrect",
+            "componentId": "component",
+            "label": "Any Incorrect",
+            "priority": 8
+          },
+          {
+            "type": "always-go-to",
+            "id": "always-go-to",
+            "ruleId": null,
+            "destinationScreenId": null,
+            "completed": false,
+            "label": "Always",
+            "priority": 12
+          },
+          {
+            "type": "end-of-activity",
+            "id": "end-of-activity",
+            "ruleId": null,
+            "completed": false,
+            "label": "Go To End Screen",
+            "priority": 16
+          },
+          {
+            "type": "exit-activity",
+            "id": "exit-activity",
+            "ruleId": null,
+            "completed": true,
+            "label": "Exit Activity",
+            "priority": 20
+          },
+          {
+            "type": "unknown-reason-path",
+            "id": "adaptive-19",
+            "ruleId": null,
+            "destinationScreenId": null,
+            "completed": false,
+            "label": "Unknown Rule",
+            "priority": 20
+          }
+        ]
+      },
+      "variablesRequiredForEvaluation": [
+        "stage.value"
+      ]
+    },
+    "custom": {
+      "applyBtnFlag": false,
+      "applyBtnLabel": "",
+      "checkButtonLabel": "Next",
+      "combineFeedback": false,
+      "customCssClass": "",
+      "facts": [],
+      "lockCanvasSize": false,
+      "mainBtnLabel": "",
+      "maxAttempt": 0,
+      "maxScore": 0,
+      "negativeScoreAllowed": false,
+      "palette": {
+        "backgroundColor": "rgba(255,255,255,0)",
+        "borderColor": "#000000",
+        "borderRadius": "10px",
+        "borderStyle": "solid",
+        "borderWidth": "1px",
+        "useHtmlProps": true
+      },
+      "panelHeaderColor": 0,
+      "panelTitleColor": 0,
+      "showCheckBtn": true,
+      "trapStateScoreScheme": false,
+      "width": 1000,
+      "height": 540,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "partsLayout": [
+      {
+        "id": "text_adaptive-10",
+        "type": "janus-text-flow",
+        "custom": {
+          "nodes": [
+            {
+              "tag": "p",
+              "children": [
+                {
+                  "tag": "span",
+                  "style": {
+                    "fontSize": "1rem"
+                  },
+                  "children": [
+                    {
+                      "tag": "text",
+                      "text": "Advanced content",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "x": 10,
+          "y": 10,
+          "z": 0,
+          "width": 330,
+          "height": 22,
+          "palette": {
+            "fillColor": 16777215,
+            "fillAlpha": 0,
+            "lineColor": 16777215,
+            "lineAlpha": 0,
+            "lineThickness": 0.1,
+            "lineStyle": 0
+          },
+          "customCssClass": ""
+        }
+      }
+    ]
+  }
+}

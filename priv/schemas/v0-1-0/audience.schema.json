@@ -1,5 +1,5 @@
 {
-  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/audience-type.schema.json",
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/audience.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Audience",
   "description": "Content audience specifies an intended audience for some content",

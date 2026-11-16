@@ -6,16 +6,28 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": "string"
+      "type": [
+        "string",
+        "integer"
+      ]
     },
     "type": {
       "const": "content"
     },
     "children": {
-      "type": "array",
-      "items": {
-        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json"
-      }
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json#/$defs/rich-text"
+    },
+    "editor": {
+      "enum": [
+        "slate",
+        "markdown"
+      ]
+    },
+    "textDirection": {
+      "enum": [
+        "ltr",
+        "rtl"
+      ]
     }
   },
   "required": [

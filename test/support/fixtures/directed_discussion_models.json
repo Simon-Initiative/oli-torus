@@ -1,0 +1,248 @@
+{
+  "initial": {
+    "stem": {
+      "id": "directed-discussion-1",
+      "content": [
+        {
+          "id": "directed-discussion-2",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "maxWords": 0,
+    "participation": {
+      "maxPosts": 0,
+      "maxReplies": 0,
+      "minPosts": 0,
+      "minReplies": 0,
+      "maxWordLength": 0
+    },
+    "authoring": {
+      "version": 1,
+      "transformations": [],
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "directed-discussion-3",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "directed-discussion-4",
+                "content": [
+                  {
+                    "id": "directed-discussion-5",
+                    "children": [
+                      {
+                        "text": "Default Part"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "directed-discussion-6",
+              "content": [
+                {
+                  "id": "directed-discussion-7",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "directed-discussion-8",
+              "content": [
+                {
+                  "id": "directed-discussion-9",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "directed-discussion-10",
+              "content": [
+                {
+                  "id": "directed-discussion-11",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        }
+      ]
+    }
+  },
+  "edited": {
+    "stem": {
+      "id": "directed-discussion-1",
+      "content": [
+        {
+          "type": "p",
+          "children": [
+            {
+              "text": "Discuss the evidence."
+            }
+          ]
+        }
+      ],
+      "editor": "markdown",
+      "textDirection": "rtl"
+    },
+    "maxWords": 0,
+    "participation": {
+      "minPosts": 2,
+      "minReplies": 3,
+      "maxWordLength": 250,
+      "maxPosts": 4,
+      "maxReplies": 6
+    },
+    "authoring": {
+      "version": 1,
+      "transformations": [
+        {
+          "id": "directed-discussion-14",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        }
+      ],
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "directed-discussion-3",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "directed-discussion-4",
+                "content": [
+                  {
+                    "id": "directed-discussion-5",
+                    "children": [
+                      {
+                        "text": "Default Part"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "directed-discussion-6",
+              "content": [
+                {
+                  "id": "directed-discussion-7",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "directed-discussion-8",
+              "content": [
+                {
+                  "id": "directed-discussion-9",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "directed-discussion-10",
+              "content": [
+                {
+                  "id": "directed-discussion-11",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [],
+          "explanation": {
+            "id": "directed-discussion-12",
+            "content": [
+              {
+                "id": "directed-discussion-13",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ]
+    }
+  }
+}

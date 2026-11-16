@@ -1,0 +1,832 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/adaptive.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Adaptive activity model",
+  "description": "Strict adaptive authored wrappers, generic factory and advanced screen authoring profiles. Component custom payloads and expression values remain opaque.",
+  "type": "object",
+  "properties": {
+    "custom": {
+      "type": "object",
+      "description": "Open client Record<string, any> payload; nested component, expression and script values are opaque."
+    },
+    "partsLayout": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    },
+    "content": {
+      "$ref": "#/$defs/screen-content"
+    },
+    "authoring": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/part"
+          }
+        },
+        "transformations": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/transformation"
+          }
+        },
+        "previewText": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule"
+          }
+        },
+        "flowchart": {
+          "$ref": "#/$defs/flowchart"
+        },
+        "variablesRequiredForEvaluation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "parts"
+      ],
+      "additionalProperties": false,
+      "if": {
+        "required": [
+          "rules"
+        ]
+      },
+      "else": {
+        "required": [
+          "transformations",
+          "previewText"
+        ]
+      }
+    },
+    "id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/id"
+    },
+    "activity_id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activity_id"
+    },
+    "resourceId": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/resourceId"
+    },
+    "learningLanguage": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/learningLanguage"
+    },
+    "bibrefs": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/bibrefs"
+    },
+    "activityType": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activityType"
+    }
+  },
+  "required": [
+    "authoring"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "component": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "custom": {
+          "type": "object",
+          "description": "Open client Record<string, any> payload; nested component, expression and script values are opaque."
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "custom"
+      ],
+      "additionalProperties": false
+    },
+    "screen-content": {
+      "type": "object",
+      "properties": {
+        "custom": {
+          "type": "object",
+          "description": "Open client Record<string, any> payload; nested component, expression and script values are opaque."
+        },
+        "partsLayout": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/component"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "generic-part": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config/properties/id"
+        },
+        "responses": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config/properties/responses"
+        },
+        "hints": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config/properties/hints"
+        },
+        "explanation": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config/properties/explanation"
+        },
+        "scoringStrategy": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config/properties/scoringStrategy"
+        },
+        "gradingApproach": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config/properties/gradingApproach"
+        },
+        "outOf": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config/properties/outOf"
+        },
+        "incorrectScore": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config/properties/incorrectScore"
+        },
+        "targets": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config/properties/targets"
+        },
+        "triggers": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config/properties/triggers"
+        },
+        "outcomes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "rule": {
+                "type": "array",
+                "items": {}
+              },
+              "actions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "const": "StateUpdateActionDesc"
+                    },
+                    "update": {
+                      "type": "object",
+                      "description": "Open client Record<string, any> payload; nested component, expression and script values are opaque."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "update"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "rule",
+              "actions"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "id",
+        "responses",
+        "hints",
+        "scoringStrategy"
+      ],
+      "additionalProperties": false
+    },
+    "part-identifier": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "inherited": {
+          "type": "boolean"
+        },
+        "gradingApproach": {
+          "enum": [
+            "automatic",
+            "manual"
+          ]
+        },
+        "outOf": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "owner",
+        "inherited"
+      ],
+      "additionalProperties": false
+    },
+    "part": {
+      "if": {
+        "required": [
+          "responses"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/generic-part"
+      },
+      "else": {
+        "$ref": "#/$defs/part-identifier"
+      }
+    },
+    "condition": {
+      "type": "object",
+      "properties": {
+        "fact": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "value": {},
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "number"
+        },
+        "path": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "number"
+        },
+        "params": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "fact",
+        "operator",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "condition-group": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "all": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nested-condition"
+          }
+        },
+        "any": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nested-condition"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "all"
+          ]
+        },
+        {
+          "required": [
+            "any"
+          ]
+        }
+      ]
+    },
+    "nested-condition": {
+      "if": {
+        "required": [
+          "fact"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/condition"
+      },
+      "else": {
+        "$ref": "#/$defs/condition-group"
+      }
+    },
+    "feedback-screen": {
+      "type": "object",
+      "properties": {
+        "custom": {
+          "type": "object",
+          "description": "Open client Record<string, any> payload; nested component, expression and script values are opaque."
+        },
+        "partsLayout": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/component"
+          }
+        }
+      },
+      "required": [
+        "custom",
+        "partsLayout"
+      ],
+      "additionalProperties": false
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "navigation",
+            "mutateState",
+            "feedback",
+            "activationPoint"
+          ]
+        },
+        "params": {},
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "params"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "navigation"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "properties": {
+                  "target": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "target"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "mutateState"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "properties": {
+                  "target": {
+                    "type": "string"
+                  },
+                  "targetType": {
+                    "type": "number"
+                  },
+                  "operator": {
+                    "type": "string"
+                  },
+                  "value": {}
+                },
+                "required": [
+                  "target",
+                  "targetType",
+                  "operator",
+                  "value"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "feedback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "feedback": {
+                    "$ref": "#/$defs/feedback-screen"
+                  }
+                },
+                "required": [
+                  "feedback"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "activationPoint"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "properties": {
+                  "prompt": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": [
+                      "dot",
+                      "feedback"
+                    ]
+                  }
+                },
+                "required": [
+                  "prompt"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "feedback"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "id": false
+            }
+          }
+        }
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "number"
+        },
+        "disabled": {
+          "type": "boolean"
+        },
+        "default": {
+          "type": "boolean"
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "additionalScore": {
+          "type": "number"
+        },
+        "forceProgress": {
+          "type": "boolean"
+        },
+        "conditions": {
+          "$ref": "#/$defs/condition-group"
+        },
+        "event": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "actions": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/action"
+                  }
+                }
+              },
+              "required": [
+                "actions"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type",
+            "params"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "disabled",
+        "default",
+        "correct",
+        "conditions",
+        "event"
+      ],
+      "additionalProperties": false
+    },
+    "path": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "unknown-reason-path",
+            "always-go-to",
+            "correct",
+            "incorrect",
+            "numeric-common-error",
+            "option-common-error",
+            "option-specific",
+            "end-of-activity",
+            "exit-activity"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "ruleId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "number"
+        },
+        "destinationScreenId": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "componentId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "feedbackIndex": {
+          "type": "number"
+        },
+        "selectedOption": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "ruleId",
+        "completed",
+        "label",
+        "priority"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "unknown-reason-path",
+                  "always-go-to",
+                  "correct",
+                  "incorrect",
+                  "numeric-common-error",
+                  "option-common-error",
+                  "option-specific"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "destinationScreenId"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "correct",
+                  "incorrect",
+                  "numeric-common-error",
+                  "option-common-error",
+                  "option-specific"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "componentId"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "numeric-common-error"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "feedbackIndex"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "option-common-error",
+                  "option-specific"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "selectedOption"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "unknown-reason-path",
+                  "always-go-to",
+                  "correct",
+                  "incorrect",
+                  "numeric-common-error",
+                  "option-common-error",
+                  "option-specific"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "destinationScreenId": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "correct",
+                  "incorrect",
+                  "numeric-common-error",
+                  "option-common-error",
+                  "option-specific"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "componentId": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "numeric-common-error"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "feedbackIndex": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "option-common-error",
+                  "option-specific"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "selectedOption": false
+            }
+          }
+        }
+      ]
+    },
+    "flowchart": {
+      "type": "object",
+      "properties": {
+        "screenType": {
+          "type": "string"
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/path"
+          }
+        },
+        "templateApplied": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "screenType",
+        "paths",
+        "templateApplied"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

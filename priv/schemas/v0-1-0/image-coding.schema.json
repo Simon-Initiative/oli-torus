@@ -1,0 +1,91 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/image-coding.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Image Coding activity model",
+  "description": "Strict authored Image Coding configuration. Code, regex, resource policies and evaluation semantics remain domain concerns.",
+  "type": "object",
+  "properties": {
+    "stem": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content"
+    },
+    "isExample": {
+      "type": "boolean"
+    },
+    "starterCode": {
+      "type": "string"
+    },
+    "solutionCode": {
+      "type": "string"
+    },
+    "resourceURLs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tolerance": {
+      "type": "number"
+    },
+    "regex": {
+      "type": "string"
+    },
+    "feedback": {
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content"
+      }
+    },
+    "authoring": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config"
+          }
+        },
+        "previewText": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "parts",
+        "previewText"
+      ],
+      "additionalProperties": false
+    },
+    "id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/id"
+    },
+    "activity_id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activity_id"
+    },
+    "resourceId": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/resourceId"
+    },
+    "learningLanguage": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/learningLanguage"
+    },
+    "bibrefs": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/bibrefs"
+    },
+    "activityType": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activityType"
+    },
+    "content": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/content"
+    }
+  },
+  "required": [
+    "stem",
+    "isExample",
+    "starterCode",
+    "solutionCode",
+    "resourceURLs",
+    "tolerance",
+    "regex",
+    "feedback",
+    "authoring"
+  ],
+  "additionalProperties": false
+}

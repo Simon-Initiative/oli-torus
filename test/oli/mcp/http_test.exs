@@ -195,13 +195,53 @@ defmodule Oli.MCP.HTTPTest do
     conn =
       rpc(token, session, "tools/call", %{
         "name" => "activity_validation_tool",
-        "arguments" => %{"activity_json" => "invalid JSON"}
+        "arguments" => %{
+          "activity_json" => "invalid JSON",
+          "activity_type_slug" => "oli_multiple_choice"
+        }
       })
 
     assert %{"result" => %{"isError" => true, "content" => [%{"text" => text}]}} =
              json_response(conn, 200)
 
     assert text =~ "Validation failed"
+
+    model = "test/support/fixtures/multiple_choice_model.json" |> File.read!() |> Jason.decode!()
+
+    bad =
+      put_in(
+        model,
+        ["authoring", "parts", Access.at(0), "responses", Access.at(0), "rule"],
+        "invalid rule"
+      )
+
+    revision_count = Oli.Repo.aggregate(Oli.Resources.Revision, :count)
+
+    for tool <- ["activity_validation_tool", "create_activity_tool"] do
+      conn =
+        rpc(token, session, "tools/call", %{
+          "name" => tool,
+          "arguments" => %{
+            "project_slug" => project.slug,
+            "activity_type_slug" => "oli_multiple_choice",
+            "activity_json" => Jason.encode!(bad)
+          }
+        })
+
+      assert %{
+               "result" => %{
+                 "isError" => true,
+                 "structuredContent" => %{
+                   "stage" => "domain",
+                   "errors" => [
+                     %{"code" => "invalid_rule", "path" => "/authoring/parts/0/responses/0/rule"}
+                   ]
+                 }
+               }
+             } = json_response(conn, 200)
+
+      assert Oli.Repo.aggregate(Oli.Resources.Revision, :count) == revision_count
+    end
   end
 
   defp create_activity_params(project) do
@@ -210,21 +250,7 @@ defmodule Oli.MCP.HTTPTest do
       "arguments" => %{
         "project_slug" => project.slug,
         "activity_type_slug" => "oli_multiple_choice",
-        "activity_json" =>
-          Jason.encode!(%{
-            "stem" => %{
-              "id" => "stem_1",
-              "content" => [%{"type" => "p", "children" => [%{"text" => "Test question"}]}],
-              "editor" => "slate",
-              "textDirection" => "ltr"
-            },
-            "authoring" => %{
-              "version" => 2,
-              "parts" => [],
-              "transformations" => [],
-              "previewText" => "Test question"
-            }
-          })
+        "activity_json" => "test/support/fixtures/multiple_choice_model.json" |> File.read!()
       }
     }
   end

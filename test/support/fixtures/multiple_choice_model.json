@@ -1,0 +1,185 @@
+{
+  "stem": {
+    "id": "mcq-fixture-5",
+    "content": [
+      {
+        "id": "mcq-fixture-6",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "p"
+      }
+    ],
+    "editor": "slate",
+    "textDirection": "ltr"
+  },
+  "choices": [
+    {
+      "id": "mcq-fixture-1",
+      "content": [
+        {
+          "id": "mcq-fixture-2",
+          "children": [
+            {
+              "text": "Choice A"
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    {
+      "id": "mcq-fixture-3",
+      "content": [
+        {
+          "id": "mcq-fixture-4",
+          "children": [
+            {
+              "text": "Choice B"
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    }
+  ],
+  "authoring": {
+    "version": 2,
+    "parts": [
+      {
+        "id": "1",
+        "gradingApproach": "automatic",
+        "outOf": null,
+        "scoringStrategy": "average",
+        "responses": [
+          {
+            "id": "mcq-fixture-7",
+            "rule": "input like {mcq-fixture-1}",
+            "score": 1,
+            "feedback": {
+              "id": "mcq-fixture-8",
+              "content": [
+                {
+                  "id": "mcq-fixture-9",
+                  "children": [
+                    {
+                      "text": "Correct"
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            "correct": true
+          },
+          {
+            "id": "mcq-fixture-10",
+            "rule": "input like {.*}",
+            "score": 0,
+            "feedback": {
+              "id": "mcq-fixture-11",
+              "content": [
+                {
+                  "id": "mcq-fixture-12",
+                  "children": [
+                    {
+                      "text": "Incorrect"
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          }
+        ],
+        "hints": [
+          {
+            "id": "mcq-fixture-13",
+            "content": [
+              {
+                "id": "mcq-fixture-14",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          },
+          {
+            "id": "mcq-fixture-15",
+            "content": [
+              {
+                "id": "mcq-fixture-16",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          },
+          {
+            "id": "mcq-fixture-17",
+            "content": [
+              {
+                "id": "mcq-fixture-18",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        ],
+        "targets": [],
+        "explanation": {
+          "id": "mcq-fixture-20",
+          "content": [
+            {
+              "id": "mcq-fixture-21",
+              "children": [
+                {
+                  "text": "Explanation"
+                }
+              ],
+              "type": "p"
+            }
+          ],
+          "editor": "slate",
+          "textDirection": "ltr"
+        }
+      }
+    ],
+    "targeted": [],
+    "transformations": [
+      {
+        "id": "mcq-fixture-19",
+        "path": "choices",
+        "operation": "shuffle",
+        "firstAttemptOnly": true
+      }
+    ],
+    "previewText": ""
+  }
+}

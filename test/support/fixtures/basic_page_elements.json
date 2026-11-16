@@ -1,0 +1,850 @@
+{
+  "paragraph": {
+    "id": "311203059",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "p"
+  },
+  "paragraphImage": {
+    "id": "916028076",
+    "children": [
+      {
+        "id": "1030157757",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "img",
+        "src": "image.png",
+        "display": "block"
+      }
+    ],
+    "type": "p"
+  },
+  "h1": {
+    "id": "2825658128",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "h1"
+  },
+  "h2": {
+    "id": "2980087643",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "h2"
+  },
+  "orderedList": {
+    "id": "3559509337",
+    "children": [
+      {
+        "id": "1662087102",
+        "children": [
+          {
+            "id": "169689661",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "type": "li"
+      }
+    ],
+    "type": "ol"
+  },
+  "unorderedList": {
+    "id": "1055091993",
+    "children": [
+      {
+        "id": "2052225015",
+        "children": [
+          {
+            "id": "161832755",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "type": "li"
+      }
+    ],
+    "type": "ul"
+  },
+  "descriptionList": {
+    "id": "2960245788",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "dl",
+    "title": [
+      {
+        "id": "1847087355",
+        "children": [
+          {
+            "text": "Description Title"
+          }
+        ],
+        "type": "p"
+      }
+    ],
+    "items": [
+      {
+        "id": "1849393727",
+        "children": [
+          {
+            "id": "655164303",
+            "children": [
+              {
+                "text": "A term"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "type": "dt"
+      },
+      {
+        "id": "1774079187",
+        "children": [
+          {
+            "id": "1215308755",
+            "children": [
+              {
+                "text": "A definition"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "type": "dd"
+      }
+    ]
+  },
+  "table": {
+    "id": "2339564978",
+    "children": [
+      {
+        "id": "1363977944",
+        "children": [
+          {
+            "id": "4203927771",
+            "children": [
+              {
+                "id": "1129825242",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "type": "th"
+          },
+          {
+            "id": "174647667",
+            "children": [
+              {
+                "id": "1010014316",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "type": "td"
+          },
+          {
+            "id": "2925059788",
+            "children": [
+              {
+                "id": "3409239829",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "type": "tc"
+          }
+        ],
+        "type": "tr"
+      }
+    ],
+    "type": "table"
+  },
+  "image": {
+    "id": "3965136472",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "img",
+    "display": "block"
+  },
+  "inlineImage": {
+    "id": "2807182251",
+    "children": [
+      {
+        "id": "2869982860",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "img_inline"
+      }
+    ],
+    "type": "p"
+  },
+  "youtube": {
+    "id": "244708257",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "youtube"
+  },
+  "video": {
+    "id": "1107757041",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "video",
+    "src": []
+  },
+  "audio": {
+    "id": "1634080918",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "audio"
+  },
+  "iframe": {
+    "id": "698906659",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "iframe"
+  },
+  "callout": {
+    "id": "3637496433",
+    "children": [
+      {
+        "id": "922168589",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "p"
+      }
+    ],
+    "type": "callout"
+  },
+  "inlineCallout": {
+    "id": "2841037644",
+    "children": [
+      {
+        "id": "3968592797",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "callout_inline"
+      }
+    ],
+    "type": "p"
+  },
+  "conjugation": {
+    "id": "1318712760",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "conjugation",
+    "verb": "",
+    "title": "",
+    "table": {
+      "id": "3953468663",
+      "children": [
+        {
+          "id": "2265452672",
+          "children": [
+            {
+              "id": "2407965076",
+              "children": [
+                {
+                  "id": "2507263532",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "th"
+            },
+            {
+              "id": "170578161",
+              "children": [
+                {
+                  "id": "67762747",
+                  "children": [
+                    {
+                      "text": "Singular"
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "th"
+            },
+            {
+              "id": "992808364",
+              "children": [
+                {
+                  "id": "2029499396",
+                  "children": [
+                    {
+                      "text": "Plural"
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "th"
+            }
+          ],
+          "type": "tr"
+        },
+        {
+          "id": "1725028226",
+          "children": [
+            {
+              "id": "2539373862",
+              "children": [
+                {
+                  "id": "2068417208",
+                  "children": [
+                    {
+                      "text": "1st Person"
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "th"
+            },
+            {
+              "id": "1514505237",
+              "children": [
+                {
+                  "id": "944760376",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "tc"
+            },
+            {
+              "id": "2570646198",
+              "children": [
+                {
+                  "id": "3779244227",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "tc"
+            }
+          ],
+          "type": "tr"
+        },
+        {
+          "id": "3096466017",
+          "children": [
+            {
+              "id": "1321464291",
+              "children": [
+                {
+                  "id": "2224424435",
+                  "children": [
+                    {
+                      "text": "2nd Person"
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "th"
+            },
+            {
+              "id": "4188737075",
+              "children": [
+                {
+                  "id": "3343089653",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "tc"
+            },
+            {
+              "id": "2944384476",
+              "children": [
+                {
+                  "id": "1533434238",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "tc"
+            }
+          ],
+          "type": "tr"
+        },
+        {
+          "id": "1412913860",
+          "children": [
+            {
+              "id": "2592254975",
+              "children": [
+                {
+                  "id": "1061375988",
+                  "children": [
+                    {
+                      "text": "3rd Person"
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "th"
+            },
+            {
+              "id": "2967568467",
+              "children": [
+                {
+                  "id": "3475148101",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "tc"
+            },
+            {
+              "id": "303647398",
+              "children": [
+                {
+                  "id": "3455981433",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "type": "tc"
+            }
+          ],
+          "type": "tr"
+        }
+      ],
+      "type": "table"
+    }
+  },
+  "dialog": {
+    "id": "3502704637",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "dialog",
+    "title": "",
+    "lines": [
+      {
+        "id": "2907590103",
+        "children": [
+          {
+            "id": "3595864454",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "type": "dialog_line",
+        "speaker": "speaker"
+      }
+    ],
+    "speakers": [
+      {
+        "name": "Speaker #1",
+        "image": "",
+        "id": "4041061352"
+      },
+      {
+        "name": "Speaker #2",
+        "image": "",
+        "id": "1030947900"
+      }
+    ]
+  },
+  "figure": {
+    "id": "3304855408",
+    "children": [
+      {
+        "id": "2994262895",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "p"
+      }
+    ],
+    "type": "figure",
+    "title": [
+      {
+        "id": "1540819258",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "p"
+      }
+    ]
+  },
+  "foreign": {
+    "id": "2194657708",
+    "children": [
+      {
+        "id": "4091447129",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "foreign"
+      }
+    ],
+    "type": "p"
+  },
+  "formula": {
+    "id": "1394596262",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "formula",
+    "src": "1 + 2 = 3",
+    "subtype": "latex"
+  },
+  "inlineFormula": {
+    "id": "4227037449",
+    "children": [
+      {
+        "id": "1993024951",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "formula_inline",
+        "src": "1 + 2 = 3",
+        "subtype": "latex"
+      }
+    ],
+    "type": "p"
+  },
+  "link": {
+    "id": "108692699",
+    "children": [
+      {
+        "id": "467374237",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "a",
+        "href": "https://example.com",
+        "target": "self"
+      }
+    ],
+    "type": "p"
+  },
+  "commandButton": {
+    "id": "90489706",
+    "children": [
+      {
+        "id": "2129071372",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "command_button",
+        "style": "button"
+      }
+    ],
+    "type": "p"
+  },
+  "pageLink": {
+    "id": "1571838762",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "page_link",
+    "idref": 1,
+    "purpose": "none"
+  },
+  "citation": {
+    "id": "80180154",
+    "children": [
+      {
+        "id": "3271018468",
+        "children": [
+          {
+            "text": "citation"
+          }
+        ],
+        "type": "cite",
+        "bibref": 1
+      }
+    ],
+    "type": "p"
+  },
+  "blockquote": {
+    "id": "317363408",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "blockquote"
+  },
+  "codeV1": {
+    "id": "2198175852",
+    "children": [
+      {
+        "id": "2453842888",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "code_line"
+      }
+    ],
+    "type": "code",
+    "language": "Text"
+  },
+  "codeV2": {
+    "id": "3278455971",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "code",
+    "code": "",
+    "language": "Text"
+  },
+  "ecl": {
+    "id": "3285795531",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "ecl",
+    "code": ""
+  },
+  "popup": {
+    "id": "540547712",
+    "children": [
+      {
+        "id": "599762957",
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "popup",
+        "trigger": "hover",
+        "content": [
+          {
+            "id": "1566610824",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "type": "p"
+          }
+        ]
+      }
+    ],
+    "type": "p"
+  },
+  "definition": {
+    "id": "2703137373",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "definition",
+    "term": "Term",
+    "meanings": [
+      {
+        "id": "2638495538",
+        "children": [
+          {
+            "id": "3405386960",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "type": "meaning"
+      }
+    ],
+    "translations": [
+      {
+        "id": "1333422162",
+        "children": [
+          {
+            "id": "3034940421",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "type": "translation"
+      }
+    ],
+    "pronunciation": {
+      "id": "3276394744",
+      "children": [
+        {
+          "id": "2981963446",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "type": "pronunciation"
+    }
+  },
+  "definitionDraft": {
+    "id": "1309649406",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "definition",
+    "term": "Term",
+    "meanings": [
+      {
+        "id": "410732589",
+        "children": [
+          {
+            "id": "843444543",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "type": "meaning"
+      }
+    ],
+    "translations": []
+  },
+  "trigger": {
+    "id": "1337820261",
+    "children": [
+      {
+        "text": ""
+      }
+    ],
+    "type": "trigger",
+    "trigger_type": "content",
+    "prompt": ""
+  }
+}
