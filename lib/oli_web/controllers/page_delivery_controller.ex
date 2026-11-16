@@ -839,7 +839,7 @@ defmodule OliWeb.PageDeliveryController do
       graded: context.page.graded,
       latest_attempts: %{},
       mount_dialogue_window?:
-        !screen_idle_timeout_disabled? and
+        !Map.get(context.page.content, "displayApplicationChrome", false) and
           not (context.review_mode and section_resource.secure_delivery),
       next_page: next,
       current_page: current,

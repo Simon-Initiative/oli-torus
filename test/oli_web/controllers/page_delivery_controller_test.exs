@@ -290,7 +290,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "<div data-react-class=\"Components.Delivery\" data-react-props=\""
     end
 
-    test "adaptive fullscreen does not mount DOT for chromeless adaptive delivery", %{
+    test "adaptive fullscreen mounts DOT for true chromeless adaptive delivery", %{
       conn: conn
     } do
       %{section: section, page_revision: page_revision} = section_with_adaptive_screen_revision()
@@ -307,7 +307,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       html = html_response(conn, 200)
 
       assert html =~ "data-react-class=\"Components.Delivery\""
-      refute html =~ "data-phx-session="
+      assert html =~ "data-phx-session="
     end
 
     test "adaptive fullscreen does not mount a second DOT instance when rendered inside torus chrome",
