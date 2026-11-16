@@ -1,7 +1,7 @@
 import { step } from '@core/decoration/step';
 import { expect, Locator, Page } from '@playwright/test';
 
-export type CookieCategory = 'Functionality Cookies' | 'Analytics Cookies' | 'Targeting Cookies';
+export type CookieCategory = 'Functionality Cookies' | 'Analytics Cookies';
 
 /**
  * The cookie preferences page (/cookie-preferences). For a signed-in user the choices are

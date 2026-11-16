@@ -118,11 +118,11 @@ test.describe('Mobile profile settings and course navigation', () => {
     await nav.openUserMenu();
     await userMenu.goToCookiePreferences();
     await cookies.expectLoaded();
-    await cookies.setCategory('Targeting Cookies', true);
+    await cookies.setCategory('Functionality Cookies', false);
     await cookies.save();
     await page.reload();
     await cookies.expectLoaded();
-    await cookies.expectCategory('Targeting Cookies', true);
+    await cookies.expectCategory('Functionality Cookies', false);
   });
 
   test('email and password changes persist @nightly', async ({ page, request }) => {
