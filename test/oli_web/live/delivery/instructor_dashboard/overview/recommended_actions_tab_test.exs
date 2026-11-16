@@ -75,6 +75,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
 
       assert has_element?(view, "h4", "Scheduling")
       assert has_element?(view, "span", "You have not defined a schedule for your course content")
+
+      # the icon is decorative (the card already has a visible title), so it is hidden from AT
+      assert has_element?(
+               view,
+               "#recommended_actions a span[aria-hidden=\"true\"] > i.fa-calendar"
+             )
+
+      # the card link uses the design-system link token so it meets contrast in dark mode
+      assert has_element?(view, "#recommended_actions a.text-Text-text-link")
     end
 
     test "renders the \"pending approval posts\" action when necessary", %{
