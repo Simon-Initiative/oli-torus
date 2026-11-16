@@ -221,6 +221,87 @@ defmodule OliWeb.AuthorAuthTest do
     end
   end
 
+  describe "on_mount: admin role hooks" do
+    # {hook, roles allowed to mount, flash shown to a logged-in author without the role}
+    @role_hooks [
+      {:ensure_admin, [:content_admin, :account_admin, :system_admin],
+       "You are not authorized to access this page."},
+      {:ensure_account_admin, [:account_admin, :system_admin],
+       "You must be an account admin to access this page."},
+      {:ensure_system_admin, [:system_admin], "You must be a system admin to access this page."}
+    ]
+
+    @roles [:author, :content_admin, :account_admin, :system_admin]
+
+    for {hook, allowed_roles, message} <- @role_hooks do
+      for role <- @roles do
+        if role in allowed_roles do
+          test "#{hook} lets a #{role} mount", %{conn: conn} do
+            author = author_with_role(unquote(role))
+
+            assert {:cont, updated_socket} =
+                     AuthorAuth.on_mount(
+                       unquote(hook),
+                       %{},
+                       session_for(conn, author),
+                       role_hook_socket()
+                     )
+
+            assert updated_socket.assigns.current_author.id == author.id
+          end
+        else
+          test "#{hook} redirects a #{role} to the course author workspace", %{conn: conn} do
+            author = author_with_role(unquote(role))
+
+            assert {:halt, updated_socket} =
+                     AuthorAuth.on_mount(
+                       unquote(hook),
+                       %{},
+                       session_for(conn, author),
+                       role_hook_socket()
+                     )
+
+            assert {:redirect, %{to: "/workspaces/course_author"}} =
+                     updated_socket.redirected
+
+            assert updated_socket.assigns.flash["error"] == unquote(message)
+          end
+        end
+      end
+
+      test "#{hook} redirects to the login page if there isn't an author_token", %{conn: conn} do
+        assert {:halt, updated_socket} =
+                 AuthorAuth.on_mount(
+                   unquote(hook),
+                   %{},
+                   get_session(conn),
+                   role_hook_socket()
+                 )
+
+        assert {:redirect, %{to: "/authors/log_in"}} = updated_socket.redirected
+        assert updated_socket.assigns.current_author == nil
+      end
+    end
+
+    defp author_with_role(:author), do: Oli.Utils.Seeder.AccountsFixtures.author_fixture()
+
+    defp author_with_role(role) do
+      Oli.Utils.Seeder.AccountsFixtures.author_fixture(%{
+        system_role_id: Map.fetch!(Accounts.SystemRole.role_id(), role)
+      })
+    end
+
+    defp session_for(conn, author) do
+      conn
+      |> put_session(:author_token, Accounts.generate_author_session_token(author))
+      |> get_session()
+    end
+
+    defp role_hook_socket do
+      %LiveView.Socket{endpoint: OliWeb.Endpoint, assigns: %{__changed__: %{}, flash: %{}}}
+    end
+  end
+
   describe "redirect_if_author_is_authenticated/2" do
     test "redirects if author is authenticated", %{conn: conn, author: author} do
       conn =

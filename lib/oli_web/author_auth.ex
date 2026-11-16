@@ -210,6 +210,13 @@ defmodule OliWeb.AuthorAuth do
     * `:redirect_if_author_is_authenticated` - Authenticates the author from the session.
       Redirects to signed_in_path if there's a logged author.
 
+    * `:ensure_admin`, `:ensure_account_admin`, `:ensure_system_admin` - Behave like
+      `:ensure_authenticated` and additionally require the author to hold the given
+      admin role, mirroring the `require_admin/2`, `require_account_admin/2` and
+      `require_system_admin/2` plugs. Unlike the plugs, they also run on live
+      navigation, so role-restricted LiveViews must use them.
+      Redirects to the course author workspace if the author lacks the role.
+
   ## Examples
 
   Use the `on_mount` lifecycle macro in LiveViews to mount or authenticate
@@ -254,6 +261,53 @@ defmodule OliWeb.AuthorAuth do
       {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
     else
       {:cont, socket}
+    end
+  end
+
+  def on_mount(:ensure_admin, params, session, socket) do
+    ensure_role(
+      params,
+      session,
+      socket,
+      &Accounts.is_admin?/1,
+      "You are not authorized to access this page."
+    )
+  end
+
+  def on_mount(:ensure_account_admin, params, session, socket) do
+    ensure_role(
+      params,
+      session,
+      socket,
+      &Accounts.at_least_account_admin?/1,
+      "You must be an account admin to access this page."
+    )
+  end
+
+  def on_mount(:ensure_system_admin, params, session, socket) do
+    ensure_role(
+      params,
+      session,
+      socket,
+      &Accounts.is_system_admin?/1,
+      "You must be a system admin to access this page."
+    )
+  end
+
+  defp ensure_role(params, session, socket, authorized?, message) do
+    with {:cont, socket} <- on_mount(:ensure_authenticated, params, session, socket) do
+      case authorized?.(socket.assigns.current_author) do
+        true ->
+          {:cont, socket}
+
+        false ->
+          socket =
+            socket
+            |> Phoenix.LiveView.put_flash(:error, message)
+            |> Phoenix.LiveView.redirect(to: ~p"/workspaces/course_author")
+
+          {:halt, socket}
+      end
     end
   end
 
