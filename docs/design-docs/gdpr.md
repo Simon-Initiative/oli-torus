@@ -10,13 +10,45 @@
 
 The Cookie Law does not require that records of consent be kept but instead, indicates that you should be able to prove that consent occurred — even if that consent has been withdrawn.
 
-To comply with the requirements, our approach needed to ensure that an opportunity for the user to provide consent is presented even in cases where a user never logins into our system. That consideration, combined with not having to maintain records of consent, meant that an approach that makes use of long-lived cookies to keep track of consent works fine in our use case. The approach works as follows.
+## Analytics consent implementation
 
-- Each page on our site is instrumented with some cookie consent management scripts
-- The scripts run every time any page is loaded on the browser
-- The script first checks to see if a cookie with the name “\_cky_opt_in” is present and that its value is “true”. This cookie is used to track whether the consent pop-up has been launched in that particular browser before. If not a new one is created with a value “false” and an expiration value of 365 days (Compliant with GDPR).
-- A cookie named “\_cky_opt_in_dismiss” with a duration of 1hr is also created whenever the cookie above is created. This cookie allows our website to re-prompt the user with the cookie consent pop-up every hour if they simply dismissed the pop-up without providing consent
-- If the user agrees to allow cookies, a cookie named “\_cky_opt_choices” is created. Its duration is 365 days and the value is the consent preferences agreed to by the user. The value of the cookie “\_cky_opt_in” is updated to true.
-- Note that after 365 days, our system will prompt the user for a new consent
-- The cookie consent pop-up also presents the user with the option to modifly cookie preferences. The preferences dialog simply updates the values store in the “\_cky_opt_choices” cookie or creates one if one is not already present.
-- Each page on our site has a footer containing a link that will directly launch the preferences dialog any time the user wishes to adjust their cookie preferences.
+Covered root layouts initialize consent before analytics, including chromeless lessons
+without a footer. Analytics uses Basic Consent Mode: the GTM container and behavioral
+events are blocked until explicit analytics acceptance. Advertising storage, user data
+and personalization are always denied. Deployment and container requirements are in
+`docs/runbooks/google-analytics.md`.
+
+- A nonblocking banner names Google Analytics, links the configured Privacy Notice,
+  and offers equally prominent Accept and Reject buttons plus Manage preferences.
+- Both acceptance and rejection store a version-2 decision in `_cky_opt_choices` for
+  365 days. `_cky_opt_in` records that a choice was made; it does not grant analytics.
+- Missing, malformed, expired or older-version decisions deny analytics and prompt
+  again. Existing functional preferences are preserved when analytics needs re-consent.
+- Closing without choosing only sets the session cookie `_cky_opt_in_dismiss` for
+  this policy version. It grants nothing and the banner can return in a later session.
+- Desktop Cookie Preferences and the mobile `/cookie-preferences` page use the same
+  browser storage, persistence and Consent Mode update path. Unsaved changes grant
+  nothing. Saving updates the current page immediately without a reload.
+- Signed-in withdrawals create an unacknowledged-denial marker in
+  `_cky_pending_consent`, with session storage as a fallback when iframe cookies are
+  blocked. That marker keeps measurement denied across navigation until the matching
+  decision is confirmed by the server. Normal database precedence resumes afterwards.
+  Failed saves expose an unsaved status and Retry action without enabling tracking.
+- Manage preferences opens the detailed UI without dismissing an undecided banner.
+  Cancelling returns to that banner; Close explicitly dismisses it for the session.
+- Signed-in user choices are also stored in `consent_cookies`, with expiration and
+  an updated audit timestamp. The database decision is authoritative at page load,
+  including in LMS iframes that block third-party cookies. At login, a current browser
+  decision replaces an outdated database decision; between current decisions the
+  database wins. Author-only accounts use browser storage.
+- Withdrawal blocks behavioral events immediately, disables configured GA4 measurement
+  IDs and removes host-only and current-host `_ga` / `_ga_*` cookies. Parent-domain
+  cookies remain intact because they may belong to sibling applications; legacy
+  parent-domain cleanup requires an explicit, reviewed ownership allowlist. Necessary
+  cookies remain enabled; no targeting choice or advertising use is offered.
+- A blank `PRIVACY_POLICIES_URL` keeps measurement disabled. The default notice is
+  the CMU Privacy Notice; deployments must review its applicability before rollout.
+- Signed-in browsers that cannot retain either cookies or session storage keep
+  measurement disabled. A temporary `_cky_consent_storage` necessary-cookie probe
+  checks cookie availability only when session storage is unavailable, and is
+  removed immediately.

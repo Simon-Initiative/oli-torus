@@ -79,6 +79,7 @@ defmodule OliWeb do
       # after the specified on_mounts, and therefore should be included
       # in the live_session on_mount if needed before other on_mount plugs
       on_mount OliWeb.LiveSessionPlugs.SetToken
+      on_mount OliWeb.LiveSessionPlugs.AnalyticsPageView
 
       unquote(socket_helpers())
       unquote(html_helpers())

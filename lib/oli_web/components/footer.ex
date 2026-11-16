@@ -19,7 +19,6 @@ defmodule OliWeb.Components.Footer do
           {OliWeb.LayoutView.render_license(@license)}
         <% end %>
       </div>
-      <.retrieve_cookies />
     </footer>
     """
   end
@@ -35,7 +34,6 @@ defmodule OliWeb.Components.Footer do
           <.version />
         </div>
       </div>
-      <.retrieve_cookies />
     </footer>
     """
   end
@@ -51,7 +49,6 @@ defmodule OliWeb.Components.Footer do
           <.version />
         </div>
       </div>
-      <.retrieve_cookies />
     </footer>
     """
   end
@@ -142,24 +139,6 @@ defmodule OliWeb.Components.Footer do
         </a>
       <% end %>
     </div>
-    """
-  end
-
-  defp retrieve_cookies(assigns) do
-    assigns = assign(assigns, privacy_policies_url: privacy_policies_url())
-
-    ~H"""
-    <%= if not_blank?(@privacy_policies_url) do %>
-      <script>
-        // Set device information for consistent mobile/tablet vs desktop detection
-        window.isMobileOrTablet = <%= case assigns do
-          %{conn: conn} -> OliWeb.Common.DeviceDetection.is_mobile_or_tablet?(conn)
-          %{socket: socket} -> OliWeb.Common.DeviceDetection.is_mobile_or_tablet?(socket)
-          _ -> "false"
-        end %>;
-        OLI.onReady(() => OLI.retrieveCookies('<%= ~p"/consent/cookie" %>', {privacyPoliciesUrl: '<%= @privacy_policies_url %>'}));
-      </script>
-    <% end %>
     """
   end
 

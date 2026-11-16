@@ -12,6 +12,8 @@
 # General application configuration
 import Config
 
+config :oli, :analytics, gtm_container_id: nil
+
 lkt_aoa_defaults = [
   gamma: 0.1,
   rho: 1.0,
