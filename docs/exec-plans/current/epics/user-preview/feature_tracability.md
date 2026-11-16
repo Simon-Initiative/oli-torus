@@ -163,3 +163,33 @@ All items are direct children of their owning Feature/requirement Story. Former 
 - Migrated full technical contracts and analysis once under each primary owner; flattened former sub-tasks receive necessary parent context and bounded owned scope.
 - Verified all 21 Blocks links, description text/structure/URLs, attachment bytes, and parent relationships. New work items are unassigned and retain project-default status/priority; no labels, components, versions, or estimates were added.
 - Retained one active set of ticket documents. Repository changes remain local; pushing is explicitly on hold.
+
+## Ticket description cleanup
+
+Completed and verified: all 31 Jira descriptions match the cleaned F-/T- documents. Preserve requirements, acceptance outcomes, technical constraints, design links, screenshots, parents, sub-tasks, and existing Blocks links. Remove ticket-authoring and migration narrative, source readiness/placeholders, requirement-number references and Requirements analysis, redundant sub-task inventories, and Related implementation lists. The Story descriptions are the requirements; the historical requirement mapping remains local for traceability. Use native Jira relationships for those inventories. Repository publishing remains on hold.
+
+The following 21 Relates links are verified in Linked work items; the 21 existing Blocks links and all parent/sub-task relationships are preserved:
+
+| Work item | Related work item |
+| --- | --- |
+| F-001 / MER-6211 | F-002 / MER-6212 |
+| F-001 / MER-6211 | F-007 / MER-6217 |
+| F-001 / MER-6211 | F-008 / MER-6218 |
+| F-001 / MER-6211 | F-009 / MER-6219 |
+| F-001 / MER-6211 | F-010 / MER-6220 |
+| F-001 / MER-6211 | F-011 / MER-6221 |
+| F-002 / MER-6212 | F-003 / MER-6213 |
+| F-002 / MER-6212 | F-009 / MER-6219 |
+| F-003 / MER-6213 | F-009 / MER-6219 |
+| F-004 / MER-6214 | F-005 / MER-6215 |
+| F-004 / MER-6214 | F-006 / MER-6216 |
+| F-004 / MER-6214 | F-009 / MER-6219 |
+| F-005 / MER-6215 | F-009 / MER-6219 |
+| F-006 / MER-6216 | F-009 / MER-6219 |
+| F-007 / MER-6217 | F-009 / MER-6219 |
+| F-007 / MER-6217 | F-010 / MER-6220 |
+| F-007 / MER-6217 | F-011 / MER-6221 |
+| F-008 / MER-6218 | F-009 / MER-6219 |
+| F-009 / MER-6219 | F-010 / MER-6220 |
+| F-009 / MER-6219 | F-011 / MER-6221 |
+| F-010 / MER-6220 | F-011 / MER-6221 |

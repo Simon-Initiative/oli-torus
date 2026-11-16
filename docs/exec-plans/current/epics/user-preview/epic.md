@@ -351,6 +351,8 @@ No product decision remains open. The scope, Q10 interpretation, account reset, 
 
 - 2026-11-13 — Closure-based replacement completed: The operator replaced deletion with the existing Closed Won’t Do workflow status and instructed holding all repository pushes. All 29 old issues retain their descriptions and history; the 16 old Stories are removed from MER-6158. Create and verify 11 replacement Stories, 20 sub-tasks, 17 byte-identical embedded screenshots, and 21 implementation-level Blocks links. Preserve the epic’s exact five-node rich-text prefix and recording, removing the Technical Approach tail. Migrate each old implementation once under its primary owner and cross-link shared requirements. Remove the old active S-*.md documents after verification; historical source remains in Git and the closed issues. The migration table records every old-to-new Jira URL. Further development is separate.
 
+- 2026-11-16 — Ticket cleanup approved and verified: Clean all 31 descriptions to describe the work directly, removing migration/flattening narrative, source labels, requirement references, and Requirements analysis. Story descriptions are the requirements. Keep technical behavior, acceptance outcomes, design links, and all 17 screenshots; represent sub-tasks through the Jira hierarchy and related work through 21 Relates links. Preserve all 21 Blocks links. Repository pushing remains on hold.
+
 ## Child work items
 
 The eight handoff Features each have one Story, with three additional Stories for R-008, R-010, and R-011. Technical implementation has one primary owner; related Features cross-link that work. Full source requirements, original design links, screenshots, and migrated technical guidance are in the linked documents. Each Description is the verified Jira description; metadata above it stays local. Proposed implementation details remain provisional within approved behavior, scope, acceptance criteria, and binding constraints.
@@ -504,15 +506,17 @@ flowchart TB
   A ~~~ B ~~~ C ~~~ D
 ```
 
-No feature flag is introduced. User-facing switching and Full Course Preview entry remain gated by the concrete prerequisite handoffs recorded in the tickets. Sizes in inherited parent contexts are not calendar commitments or estimates for individual flattened tasks.
+No feature flag is introduced. User-facing switching and Full Course Preview entry remain gated by the concrete prerequisite handoffs recorded in the tickets. Story sizes are not calendar commitments or estimates for individual sub-tasks.
 
 ## Jira filing and next work
+
+All 31 ticket descriptions are cleaned and verified. Story descriptions are the requirements; tickets omit requirement-number references, Requirements analysis, authoring history, and relationship inventories. The 21 Relates links are recorded in feature_tracability.md and verified in Jira Linked work items. Existing Blocks links, parent/sub-task relationships, and all 17 screenshots are preserved.
 
 Filing is complete and verified. [MER-6158](https://eliterate.atlassian.net/browse/MER-6158) contains exactly 11 replacement Story child work items: the eight handoff Features plus R-008, R-010, and R-011. Their 20 direct sub-tasks retain the migrated implementation detail and inherited context. All 21 Blocks links have the approved direction; related Feature acceptance is cross-linked without duplicate implementation tickets.
 
 The 29 old issues are Closed Won’t Do, with descriptions and history retained; the 16 old Stories are no longer epic children. The [migration table](docs/exec-plans/current/epics/user-preview/feature_tracability.md#ticket-recreation-migration) records every old identifier, corresponding new Jira URL, and verified migration state.
 
-The epic’s Technical Approach section and everything below it are removed. Its five preceding rich-text nodes, original source/design/prototype references, and embedded recording are preserved exactly. No replacement overview summary is added to Jira. Each Feature Story contains the verbatim handoff section, original links, and original screenshots embedded as Jira attachments. There are 17 byte-verified screenshots. Links to replacement work items resolve to their Jira URLs; repository evidence links resolve to the existing published source commit. No link depends on unpublished repository changes.
+The epic’s Technical Approach section and everything below it are removed. Its five preceding rich-text nodes, original source/design/prototype references, and embedded recording are preserved exactly. No replacement overview summary is added to Jira. Each Feature Story contains the requirements and acceptance criteria, relevant technical guidance, original design links, and original screenshots embedded as Jira attachments. There are 17 byte-verified screenshots. Links to replacement work items resolve to their Jira URLs; repository evidence links resolve to the existing published source commit. No link depends on unpublished repository changes.
 
 The Jira CLI performed issue transitions, epic removal, creation, description edits, dependency linking, and every plain read-back. The permitted API fallback handled only attachment upload/embedding and the epic trim because the CLI lacks attachment uploads and cannot preserve existing embedded media. Description verification compares text, headings, tables, nested lists, and URL targets; attachment verification compares original bytes. No implementation or runtime feature verification is claimed.
 
