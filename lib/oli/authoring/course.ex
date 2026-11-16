@@ -3,7 +3,7 @@ defmodule Oli.Authoring.Course do
 
   alias Oli.Accounts.Author
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
-  alias Oli.Authoring.{Collaborators, ProjectSearch}
+  alias Oli.Authoring.ProjectSearch
 
   alias Oli.Authoring.Course.{
     Project,
@@ -16,8 +16,6 @@ defmodule Oli.Authoring.Course do
   alias Oli.Tags.ProjectTag
 
   alias Oli.Groups.CommunityVisibility
-  alias Oli.Inventories
-  alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.{Accounts, Repo}
@@ -1063,127 +1061,6 @@ defmodule Oli.Authoring.Course do
     create_and_attach_resource(project, attrs)
   end
 
-  @doc "Creates a new project using the latest learning proficiency framework."
-  def create_project(attrs) do
-    %Project{}
-    |> Project.changeset(attrs)
-    |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
-    |> Repo.insert()
-  end
-
-  @doc """
-  Creates a Project whose trusted compatibility state is copied from a source Project.
-
-  Source values take precedence over any values present in `attrs`.
-  """
-  def create_project_from_source(attrs, %Project{} = source_project) do
-    %Project{}
-    |> Project.changeset(attrs)
-    |> Project.trusted_learning_model_changeset(%{
-      learning_model_version: source_project.learning_model_version
-    })
-    |> Project.trusted_lo_well_formed_changeset(%{
-      lo_well_formed: source_project.lo_well_formed
-    })
-    |> Repo.insert()
-  end
-
-  @doc "Creates a new project and its initial content using LKT-AOA by default."
-  def create_project(title, author, additional_attrs \\ %{}) do
-    do_create_project(title, author, additional_attrs, :lkt_aoa, :use_default)
-  end
-
-  @doc """
-  Creates a Project from a validated archive learning-model selection.
-
-  This is a trusted import boundary; ordinary Project creation remains pinned to
-  the application default and ignores learning-model attributes.
-  """
-  def create_project_from_archive(title, author, learning_model_version, additional_attrs \\ %{})
-      when learning_model_version in [:naive, :lkt_aoa] do
-    do_create_project(
-      title,
-      author,
-      Map.delete(additional_attrs, :lo_well_formed),
-      learning_model_version,
-      Map.get(additional_attrs, :lo_well_formed)
-    )
-  end
-
-  defp do_create_project(
-         title,
-         author,
-         additional_attrs,
-         learning_model_version,
-         lo_well_formed
-       ) do
-    Repo.transaction(fn ->
-      with {:ok, project_family} <- create_family(default_family(title)),
-           {:ok, project} <-
-             create_project_with_trusted_state(
-               default_project(title, project_family, additional_attrs),
-               learning_model_version,
-               lo_well_formed
-             ),
-           {:ok, collaborator} <- Collaborators.add_collaborator(author, project),
-           {:ok, %{resource: resource, revision: resource_revision}} <-
-             initial_resource_setup(author, project),
-           {:ok, %{publication: publication, published_resource: published_resource}} <-
-             Publishing.initial_publication_setup(project, resource, resource_revision) do
-        %{
-          project_family: project_family,
-          project: project,
-          author_project: collaborator,
-          resource: resource,
-          resource_revision: resource_revision,
-          publication: publication,
-          published_resource: published_resource
-        }
-      else
-        {:error, error} -> Repo.rollback(error)
-      end
-    end)
-  end
-
-  defp create_project_with_trusted_state(attrs, learning_model_version, lo_well_formed) do
-    %Project{}
-    |> Project.changeset(attrs)
-    |> maybe_set_learning_model(learning_model_version)
-    |> maybe_set_lo_well_formed(lo_well_formed)
-    |> Repo.insert()
-  end
-
-  defp maybe_set_learning_model(changeset, nil), do: changeset
-
-  defp maybe_set_learning_model(changeset, learning_model_version) do
-    Project.trusted_learning_model_changeset(changeset, %{
-      learning_model_version: learning_model_version
-    })
-  end
-
-  defp maybe_set_lo_well_formed(changeset, :use_default), do: changeset
-
-  defp maybe_set_lo_well_formed(changeset, lo_well_formed) do
-    Project.trusted_lo_well_formed_changeset(changeset, %{
-      lo_well_formed: lo_well_formed
-    })
-  end
-
-  defp default_project(title, family, additional_attrs) do
-    default_publisher = Inventories.default_publisher()
-
-    Map.merge(
-      %{
-        title: title,
-        version: "1.0.0",
-        family_id: family.id,
-        publisher_id: default_publisher.id,
-        analytics_version: :v2
-      },
-      additional_attrs
-    )
-  end
-
   def update_project(%Project{} = project, attrs) do
     project
     |> Project.changeset(attrs)
@@ -1301,13 +1178,6 @@ defmodule Oli.Authoring.Course do
     %Family{}
     |> Family.changeset(attrs)
     |> Repo.insert()
-  end
-
-  defp default_family(title) do
-    %{
-      title: title,
-      description: "New family from project creation"
-    }
   end
 
   defp project_has_survey?(project_id) do
@@ -1468,15 +1338,6 @@ defmodule Oli.Authoring.Course do
       )
 
     Repo.one(query)
-  end
-
-  @doc """
-  Updates the author_project.
-  """
-  def update_author_project(%AuthorProject{} = ap, attrs) do
-    ap
-    |> AuthorProject.changeset(attrs)
-    |> Repo.update()
   end
 
   defp project_search_patterns(nil), do: []

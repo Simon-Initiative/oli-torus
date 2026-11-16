@@ -295,7 +295,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
     # The scenario builder gives roots model content; the production creation API
     # is needed here to exercise the ordinary empty-content root.
     assert {:ok, %{project: project, resource_revision: root}} =
-             Oli.Authoring.Course.create_project(
+             Oli.TestHelpers.create_project_fixture(
                "Empty container source",
                ctx.state.current_author
              )
@@ -303,7 +303,11 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
     assert root.content == %{}
 
     assert {:ok, pub} =
-             Publishing.publish_project(project, "Empty root", ctx.state.current_author.id)
+             Oli.TestHelpers.publish_project_fixture(
+               project,
+               "Empty root",
+               ctx.state.current_author.id
+             )
 
     assert {:ok, remix} = Remix.init(ctx.destination, ctx.state.current_author)
     assert {:ok, remix} = Remix.add_materials(remix, [{pub.id, pub.root_resource_id}])

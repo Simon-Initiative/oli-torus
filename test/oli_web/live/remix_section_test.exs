@@ -2287,7 +2287,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       Course.update_project(restricted_project.project, %{visibility: :selected})
 
     {:ok, _publication} =
-      Publishing.publish_project(
+      Oli.TestHelpers.publish_project_fixture(
         restricted_project.project,
         "publish restricted remix source",
         unrelated_author.id

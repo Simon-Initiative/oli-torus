@@ -803,6 +803,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
 
     test "shows info message when a publication is generated successfully", %{
       conn: conn,
+      admin: admin,
       project: project
     } do
       insert(:publication, project: project, published: yesterday())
@@ -818,6 +819,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
 
       flash = assert_redirected(view, live_view_publish_route(project.slug))
       assert flash["info"] == "Publish Successful!"
+
+      assert_audited(:project_published, project_id: project.id, actor: admin, source: :ui)
     end
 
     test "enques an embedding Oban job for each PAGE revision when publishing if the calculate_embeddings_on_publish attribute is enabled",

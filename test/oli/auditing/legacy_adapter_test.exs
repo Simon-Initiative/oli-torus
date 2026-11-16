@@ -14,7 +14,7 @@ defmodule Oli.Auditing.LegacyAdapterTest do
     events = LegacyAdapter.events()
 
     assert Enum.sort(events) ==
-             Enum.sort(~w(project_published section_created google_doc_imported
+             Enum.sort(~w(section_created google_doc_imported
                clickhouse_admin_operation_initiated resource_attempt_deleted)a)
 
     assert events -- EventCatalog.names() == []
@@ -22,28 +22,15 @@ defmodule Oli.Auditing.LegacyAdapterTest do
 
   test "events whose producers moved to audited facades are rejected", %{admin: admin} do
     for event <- ~w(user_deleted author_deleted author_role_changed account_internal_flag_changed
-                    feature_flag_enabled feature_rollout_stage_changed)a do
+                    feature_flag_enabled feature_rollout_stage_changed project_published)a do
       assert {:error, %Error{code: :invalid_event}} = Auditing.capture(admin, event, admin, %{})
     end
   end
 
-  test "project events record the project and the imported page", %{
+  test "Google Doc imports record the project and the imported page", %{
     admin: admin,
     project: project
   } do
-    assert {:ok, published} =
-             Auditing.capture(admin, :project_published, project, %{
-               "publication_id" => 12,
-               "version" => "1.2.0"
-             })
-
-    assert {published.project_id, published.entity_type, published.event_key} ==
-             {project.id, :project, "project:#{project.id}:published"}
-
-    assert published.refs == [
-             %{"role" => "resulting", "type" => "publication", "id" => 12, "label" => "1.2.0"}
-           ]
-
     assert {:ok, imported} =
              Auditing.capture(admin, :google_doc_imported, project, %{"page_resource_id" => 45})
 
@@ -95,22 +82,24 @@ defmodule Oli.Auditing.LegacyAdapterTest do
   end
 
   test "every legacy event is written as an application event with a new operation", %{
-    admin: admin,
-    project: project
+    admin: admin
   } do
-    assert {:ok, first} = Auditing.capture(admin, :project_published, project, %{})
-    assert {:ok, second} = Auditing.capture(admin, :project_published, project, %{})
+    section = insert(:section)
+    assert {:ok, first} = Auditing.capture(admin, :section_created, section, %{})
+    assert {:ok, second} = Auditing.capture(admin, :section_created, section, %{})
 
     assert first.source == :application
     assert first.schema_version == 2
     assert first.operation_id != second.operation_id
   end
 
-  test "rejects a nil actor and shapes it cannot map", %{project: project, admin: admin} do
-    assert {:error, %Error{code: :invalid_event}} =
-             Auditing.capture(nil, :project_published, project, %{})
+  test "rejects a nil actor and shapes it cannot map", %{admin: admin} do
+    section = insert(:section)
 
     assert {:error, %Error{code: :invalid_event}} =
-             Auditing.capture(admin, :project_published, nil, %{})
+             Auditing.capture(nil, :section_created, section, %{})
+
+    assert {:error, %Error{code: :invalid_event}} =
+             Auditing.capture(admin, :section_created, nil, %{})
   end
 end

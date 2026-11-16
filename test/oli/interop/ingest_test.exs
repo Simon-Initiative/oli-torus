@@ -58,7 +58,7 @@ defmodule Oli.Interop.IngestTest do
     test "ingest/1 and then export/1 works end to end", %{author: author} do
       {:ok, project} =
         simulate_unzipping()
-        |> Ingest.process(author)
+        |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       Export.export(project)
       |> unzip_to_memory()
@@ -70,7 +70,7 @@ defmodule Oli.Interop.IngestTest do
     } do
       {:ok, p} =
         simulate_unzipping()
-        |> Ingest.process(author)
+        |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       # verify project
       project = Repo.get(Oli.Authoring.Course.Project, p.id)
@@ -268,7 +268,7 @@ defmodule Oli.Interop.IngestTest do
                  objective,
                  summary_page | recommendation_pages
                ])
-               |> Ingest.process(author)
+               |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       [imported_objective] =
         Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "objective")
@@ -295,7 +295,7 @@ defmodule Oli.Interop.IngestTest do
 
       assert {:ok, project} =
                minimal_digest(%{"title" => "Legacy project", "description" => description})
-               |> Ingest.process(author)
+               |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       assert project.description == description
     end
@@ -320,7 +320,7 @@ defmodule Oli.Interop.IngestTest do
           end)
           |> Map.update!("children", &(&1 ++ [missing_item]))
         end)
-        |> Ingest.process(author)
+        |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       root = AuthoringResolver.root_container(project.slug)
       [unit_id] = root.children
@@ -344,7 +344,7 @@ defmodule Oli.Interop.IngestTest do
             Map.update!(unit, "children", &[nil | &1])
           end)
         end)
-        |> Ingest.process(author)
+        |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       root = AuthoringResolver.root_container(project.slug)
       [unit_id] = root.children
@@ -359,7 +359,7 @@ defmodule Oli.Interop.IngestTest do
     } do
       {:ok, project} =
         simulate_unzipping()
-        |> Ingest.process(author)
+        |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       root = AuthoringResolver.root_container(project.slug)
       [unit_id] = root.children
@@ -387,7 +387,7 @@ defmodule Oli.Interop.IngestTest do
       assert Enum.map(exported_items, & &1["idref"]) ==
                Enum.map(remaining_ids, &Integer.to_string/1)
 
-      assert {:ok, reimported} = Ingest.process(entries, author)
+      assert {:ok, reimported} = Ingest.process(entries, author, Oli.TestHelpers.audit_context())
 
       reimported_root = AuthoringResolver.root_container(reimported.slug)
       [reimported_unit_id] = reimported_root.children
@@ -408,7 +408,7 @@ defmodule Oli.Interop.IngestTest do
         minimal_digest(%{"title" => "Legacy missing model"}, [
           %{"id" => "_product-legacy", "type" => "Product", "title" => "Legacy Product"}
         ])
-        |> Ingest.process(author)
+        |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       assert legacy_project.learning_model_version == :naive
 
@@ -427,7 +427,7 @@ defmodule Oli.Interop.IngestTest do
             %{"id" => "_product-inherit", "type" => "Product", "title" => "Inherited Product"}
           ]
         )
-        |> Ingest.process(author)
+        |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       assert inherited_project.learning_model_version == :lkt_aoa
 
@@ -451,7 +451,7 @@ defmodule Oli.Interop.IngestTest do
             }
           ]
         )
-        |> Ingest.process(author)
+        |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       assert null_project.learning_model_version == :naive
 
@@ -473,7 +473,7 @@ defmodule Oli.Interop.IngestTest do
             }
           ]
         )
-        |> Ingest.process(author)
+        |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       assert null_product_project.learning_model_version == :lkt_aoa
 
@@ -503,7 +503,7 @@ defmodule Oli.Interop.IngestTest do
       Enum.each(invalid_archives, fn {digest, expected_file} ->
         before_count = Repo.aggregate(Project, :count)
 
-        assert {:error, error} = Ingest.process(digest, author)
+        assert {:error, error} = Ingest.process(digest, author, Oli.TestHelpers.audit_context())
         assert error =~ "Invalid learningModelVersion"
         assert error =~ expected_file
         assert Repo.aggregate(Project, :count) == before_count
@@ -533,7 +533,7 @@ defmodule Oli.Interop.IngestTest do
 
       assert {:ok, project} =
                minimal_digest(%{"title" => "Parameter separation"}, [], [objective, activity])
-               |> Ingest.process(author)
+               |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
       [imported_objective] =
         Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "objective")
@@ -621,7 +621,7 @@ defmodule Oli.Interop.IngestTest do
 
         assert {:error, error} =
                  minimal_digest(%{"title" => "Invalid #{label}"}, [], [resource])
-                 |> Ingest.process(author)
+                 |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
         assert error =~ expected_file
         assert error =~ "learningModelParameters"
@@ -642,7 +642,7 @@ defmodule Oli.Interop.IngestTest do
             "title" => "Explicit LO compatibility #{lo_well_formed}",
             "loWellFormed" => lo_well_formed
           })
-          |> Ingest.process(author)
+          |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
         assert project.lo_well_formed == lo_well_formed
       end)
@@ -655,7 +655,9 @@ defmodule Oli.Interop.IngestTest do
           %{"title" => "Missing LO compatibility"}
         ],
         fn project_details ->
-          {:ok, project} = minimal_digest(project_details) |> Ingest.process(author)
+          {:ok, project} =
+            minimal_digest(project_details)
+            |> Ingest.process(author, Oli.TestHelpers.audit_context())
 
           assert is_nil(project.lo_well_formed)
         end

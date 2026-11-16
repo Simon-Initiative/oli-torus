@@ -120,6 +120,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       |> follow_redirect(conn, "/workspaces/course_author")
 
       assert Course.get_project_by_slug(project.slug).status == :deleted
+      assert_audited(:project_deleted, project_id: project.id, actor: author, source: :ui)
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
       assert has_element?(view, "button#button-new-project")
       refute has_element?(view, "a", project.title)
@@ -1089,7 +1090,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
     } do
       project = create_project_with_author(admin)
 
-      Oli.Publishing.publish_project(
+      Oli.TestHelpers.publish_project_fixture(
         project,
         "Datashop test",
         admin.id

@@ -112,7 +112,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest.ScopedFeatures do
 
   defp create_project(%{admin: admin}) do
     # Use Course.create_project to ensure proper publication and root container setup
-    {:ok, %{project: project}} = Oli.Authoring.Course.create_project("Test Project", admin)
+    {:ok, %{project: project}} = Oli.TestHelpers.create_project_fixture("Test Project", admin)
     {:ok, project: project}
   end
 end

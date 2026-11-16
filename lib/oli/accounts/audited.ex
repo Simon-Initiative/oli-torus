@@ -131,6 +131,21 @@ defmodule Oli.Accounts.Audited do
   def invite_author(_context, _email), do: {:error, :invalid_request}
 
   @doc """
+  Adds to `multi` the creation of an invited author for `email`, as `invite_author/2` does, for
+  callers that create the author inside their own transaction (collaborator invitations). The
+  result under `name` is the author.
+  """
+  @spec invite_author_multi(Multi.t(), Multi.name(), Context.t(), String.t()) :: Multi.t()
+  def invite_author_multi(%Multi{} = multi, name, %Context{} = context, email)
+      when is_binary(email) do
+    changeset = Author.invite_changeset(%Author{}, %{email: email})
+    create_multi(multi, name, context, :author, changeset, "invitation")
+  end
+
+  def invite_author_multi(%Multi{} = multi, name, _context, _email),
+    do: Multi.error(multi, name, :invalid_request)
+
+  @doc """
   Adds to `multi` the creation of one invited user per email, with `context` (the inviter) as
   actor. Records one `account_created` event per created user. The result under `name` is
   `{count, users}`.

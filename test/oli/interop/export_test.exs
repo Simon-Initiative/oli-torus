@@ -210,7 +210,9 @@ defmodule Oli.Interop.ExportTest do
                "beta_difficulty"
              ] == 0.0
 
-      assert {:ok, imported_project} = Oli.Interop.Ingest.process(entries, author)
+      assert {:ok, imported_project} =
+               Oli.Interop.Ingest.process(entries, author, Oli.TestHelpers.audit_context())
+
       assert imported_project.learning_model_version == :lkt_aoa
       refute imported_project.lo_well_formed
 
@@ -295,7 +297,7 @@ defmodule Oli.Interop.ExportTest do
         project
         |> Export.export()
         |> unzip_to_memory()
-        |> Oli.Interop.Ingest.process(author)
+        |> Oli.Interop.Ingest.process(author, Oli.TestHelpers.audit_context())
 
       imported_product =
         Sections.get_section_by(base_project_id: project_id) |> Oli.Repo.preload(:certificate)
@@ -463,7 +465,8 @@ defmodule Oli.Interop.ExportTest do
       assert exported_tag_condition["value"] == [original_tag_id]
 
       # Import the project back
-      {:ok, imported_project} = Oli.Interop.Ingest.process(export, author)
+      {:ok, imported_project} =
+        Oli.Interop.Ingest.process(export, author, Oli.TestHelpers.audit_context())
 
       # Find the imported page by title
       imported_page =
@@ -715,7 +718,8 @@ defmodule Oli.Interop.ExportTest do
       assert exported_second_expr["value"] == [original_objective2_id]
 
       # Import the project back
-      {:ok, imported_project} = Oli.Interop.Ingest.process(export, author)
+      {:ok, imported_project} =
+        Oli.Interop.Ingest.process(export, author, Oli.TestHelpers.audit_context())
 
       # Find the imported page by title
       imported_page =
@@ -1028,7 +1032,7 @@ defmodule Oli.Interop.ExportTest do
         project
         |> Export.export()
         |> unzip_to_memory()
-        |> Oli.Interop.Ingest.process(author)
+        |> Oli.Interop.Ingest.process(author, Oli.TestHelpers.audit_context())
 
       imported_product =
         Sections.get_section_by(base_project_id: project_id) |> Oli.Repo.preload(:certificate)
@@ -1057,7 +1061,8 @@ defmodule Oli.Interop.ExportTest do
         ~c"_media-manifest.json" => media_manifest_json
       }
 
-      {:ok, imported_project} = Oli.Interop.Ingest.process(digest, author)
+      {:ok, imported_project} =
+        Oli.Interop.Ingest.process(digest, author, Oli.TestHelpers.audit_context())
 
       imported_product =
         Sections.get_section_by(base_project_id: imported_project.id, type: :blueprint)
@@ -1109,7 +1114,8 @@ defmodule Oli.Interop.ExportTest do
           ~c"_media-manifest.json" => media_manifest_json
         }
 
-        {:ok, imported_project} = Oli.Interop.Ingest.process(digest, author)
+        {:ok, imported_project} =
+          Oli.Interop.Ingest.process(digest, author, Oli.TestHelpers.audit_context())
 
         imported_product =
           Sections.get_section_by(base_project_id: imported_project.id, type: :blueprint)

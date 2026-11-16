@@ -945,7 +945,8 @@ defmodule Oli.SectionsTest do
       container: %{resource: container_resource, revision: container_revision},
       institution: institution
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -980,7 +981,8 @@ defmodule Oli.SectionsTest do
           working_pub
         )
 
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, latest_publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # verify project published changes show up in list of updates
       available_updates = Sections.check_for_available_publication_updates(section)
@@ -999,7 +1001,8 @@ defmodule Oli.SectionsTest do
       revision2: revision2,
       institution: institution
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -1090,7 +1093,8 @@ defmodule Oli.SectionsTest do
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, latest_publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # queue the publication update and immediately check for updates in progress
       %{"section_slug" => section.slug, "publication_id" => latest_publication.id}
@@ -1114,7 +1118,8 @@ defmodule Oli.SectionsTest do
       revision2: revision2,
       institution: institution
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -1205,7 +1210,8 @@ defmodule Oli.SectionsTest do
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, latest_publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the section
       Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
@@ -1278,7 +1284,8 @@ defmodule Oli.SectionsTest do
           working_publication
         )
 
-      {:ok, initial_publication} = Publishing.publish_project(project, "initial", author.id)
+      {:ok, initial_publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "initial", author.id)
 
       {:ok, section} =
         Sections.create_section(%{
@@ -1303,7 +1310,7 @@ defmodule Oli.SectionsTest do
       {:ok, _} = ContainerEditor.move_to(revision2, root_container, nil, author, project)
 
       {:ok, page_removed_publication} =
-        Publishing.publish_project(project, "remove page from curriculum", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "remove page from curriculum", author.id)
 
       Oli.Delivery.Sections.Updates.apply_publication_update(section, page_removed_publication.id)
 
@@ -1338,7 +1345,7 @@ defmodule Oli.SectionsTest do
         )
 
       {:ok, page_reintroduced_publication} =
-        Publishing.publish_project(project, "restore page to curriculum", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "restore page to curriculum", author.id)
 
       Oli.Delivery.Sections.Updates.apply_publication_update(
         section,
@@ -1364,7 +1371,8 @@ defmodule Oli.SectionsTest do
            page2: page2,
            institution: institution
          } do
-      {:ok, initial_publication} = Publishing.publish_project(project, "initial", author.id)
+      {:ok, initial_publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "initial", author.id)
 
       {:ok, section} =
         Sections.create_section(%{
@@ -1402,7 +1410,7 @@ defmodule Oli.SectionsTest do
         )
 
       {:ok, latest_publication} =
-        Publishing.publish_project(project, "add unrelated page", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "add unrelated page", author.id)
 
       Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
@@ -1428,7 +1436,8 @@ defmodule Oli.SectionsTest do
            page2: page2,
            institution: institution
          } = map do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", map.author.id)
+      {:ok, initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", map.author.id)
 
       # create a course section using the initial publication
       {:ok, section} =
@@ -1527,7 +1536,7 @@ defmodule Oli.SectionsTest do
 
       # publish changes
       {:ok, latest_publication} =
-        Publishing.publish_project(project, "some changes", map.author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", map.author.id)
 
       # verify the publication is a minor update
       assert latest_publication.edition == 0
@@ -1582,7 +1591,7 @@ defmodule Oli.SectionsTest do
       page2: page2,
       revision2: revision2
     } do
-      {:ok, _pr} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, _pr} = Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       %{product: product, section: section} =
         %{}
@@ -1716,7 +1725,8 @@ defmodule Oli.SectionsTest do
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, latest_publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the product
       Oli.Delivery.Sections.Updates.apply_publication_update(product, latest_publication.id)
@@ -1835,7 +1845,8 @@ defmodule Oli.SectionsTest do
            page2: page2,
            revision2: revision2
          } do
-      {:ok, _initial_pub} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, _initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       seeds =
         %{product: product} =
@@ -1973,7 +1984,8 @@ defmodule Oli.SectionsTest do
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, latest_publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the section
       Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
@@ -2060,7 +2072,8 @@ defmodule Oli.SectionsTest do
            page2: page2,
            revision2: revision2
          } do
-      {:ok, _initial_pub} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, _initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       seeds =
         %{product: product} =
@@ -2197,7 +2210,8 @@ defmodule Oli.SectionsTest do
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, latest_publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the section
       Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)

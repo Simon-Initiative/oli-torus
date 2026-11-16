@@ -62,16 +62,38 @@ defmodule OliWeb.ProjectControllerTest do
   end
 
   describe "create project" do
-    test "redirects to page index when data is valid", %{conn: conn} do
+    test "redirects to page index when data is valid", %{conn: conn, author: author} do
       conn = post(conn, Routes.project_path(conn, :create), project: @valid_attrs)
 
       assert html_response(conn, 302) =~
                "/workspaces/course_author/#{@valid_attrs.slug}/overview"
+
+      project = Oli.Authoring.Course.get_project_by_slug(@valid_attrs.slug)
+      assert_audited(:project_created, project_id: project.id, actor: author, source: :ui)
     end
 
     test "redirects back to workspace when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.project_path(conn, :create), project: @invalid_attrs)
       assert html_response(conn, 302) =~ "/workspaces/course_author"
+    end
+  end
+
+  describe "duplicate project" do
+    test "redirects to the copy and records the duplication", %{
+      conn: conn,
+      author: author,
+      project: project
+    } do
+      conn = post(conn, ~p"/authoring/project/#{project.slug}/duplicate")
+
+      assert "/workspaces/course_author/" <> rest = redirected_to(conn)
+
+      copy =
+        Oli.Authoring.Course.get_project_by_slug(String.replace_suffix(rest, "/overview", ""))
+
+      assert copy.id != project.id
+
+      assert_audited(:project_duplicated, project_id: copy.id, actor: author, source: :ui)
     end
   end
 

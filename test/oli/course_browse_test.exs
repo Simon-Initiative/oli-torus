@@ -4,7 +4,7 @@ defmodule Oli.CourseBrowseTest do
   alias Oli.Course
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
-  alias Oli.Authoring.{Collaborators, Course}
+  alias Oli.Authoring.Course
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   import Oli.Factory
@@ -12,7 +12,9 @@ defmodule Oli.CourseBrowseTest do
   def make_projects(prefix, n, author) do
     65..(65 + (n - 1))
     |> Enum.map(fn value -> List.to_string([value]) end)
-    |> Enum.map(fn value -> Course.create_project("#{prefix}-#{value}", author) end)
+    |> Enum.map(fn value ->
+      Oli.TestHelpers.create_project_fixture("#{prefix}-#{value}", author)
+    end)
     |> Enum.map(fn {:ok, %{project: project}} -> project end)
   end
 
@@ -88,9 +90,11 @@ defmodule Oli.CourseBrowseTest do
       collaborator = insert(:author, name: "Collaborator Search", email: "collab@oli.org")
 
       {:ok, %{project: project}} =
-        Course.create_project("Search Meta Project", admin, %{slug: "search-meta-project"})
+        Oli.TestHelpers.create_project_fixture("Search Meta Project", admin, %{
+          slug: "search-meta-project"
+        })
 
-      {:ok, _} = Collaborators.add_collaborator(collaborator, project)
+      {:ok, _} = Oli.TestHelpers.add_collaborator_fixture(collaborator, project)
 
       result_titles =
         browse(admin, 0, 50, :title, :asc, false, "collaborator")

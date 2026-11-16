@@ -262,6 +262,7 @@ defmodule Oli.Auditing.EventExamples do
       actor: :author,
       entity: {:project, @project},
       scope: [project_id: 88],
+      affected: {:author, 31},
       key: "project:88:created",
       details: %{"project_title" => "Intro Biology"}
     ]
@@ -271,6 +272,7 @@ defmodule Oli.Auditing.EventExamples do
       actor: :author,
       entity: {:project, %{id: 93, title: "Copy of Intro Biology", slug: "copy_intro_biology"}},
       scope: [project_id: 93],
+      affected: {:author, 31},
       key: "project:93:duplicated",
       refs: [ref(:source, :project, 88, "Intro Biology")],
       details: %{"source_project_id" => 88}
@@ -281,8 +283,8 @@ defmodule Oli.Auditing.EventExamples do
       actor: :admin,
       entity: {:project, @project},
       scope: [project_id: 88],
+      affected: {:author, 31},
       key: "project:88:imported",
-      outcome: :partial,
       details: %{"project_title" => "Intro Biology"}
     ]
 
@@ -292,15 +294,6 @@ defmodule Oli.Auditing.EventExamples do
       entity: {:project, @project},
       scope: [project_id: 88],
       key: "project:88:deleted"
-    ]
-
-  defp spec(:project_ownership_changed),
-    do: [
-      actor: :admin,
-      entity: {:project, @project},
-      scope: [project_id: 88],
-      affected: {:author, 12},
-      key: "project:88:ownership_changed:author:12"
     ]
 
   defp spec(:project_collaborator_changed),

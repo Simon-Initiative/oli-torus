@@ -166,7 +166,11 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     assert Map.delete(saved.content, "deepLink") == Map.delete(revision.content, "deepLink")
 
     {:ok, publication} =
-      Publishing.publish_project(Hooks.project(state), "Saved selection", state.current_author.id)
+      Oli.TestHelpers.publish_project_fixture(
+        Hooks.project(state),
+        "Saved selection",
+        state.current_author.id
+      )
 
     state = Hooks.create_section(state, "selected_section", publication)
     section = state.sections["selected_section"]
@@ -257,7 +261,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
              })
 
     {:ok, publication} =
-      Publishing.publish_project(
+      Oli.TestHelpers.publish_project_fixture(
         Hooks.project(state),
         "Invalid selection",
         state.current_author.id

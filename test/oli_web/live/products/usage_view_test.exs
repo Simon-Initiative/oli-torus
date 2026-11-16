@@ -124,7 +124,9 @@ defmodule OliWeb.Products.UsageViewTest do
   end
 
   defp publish_project(ctx) do
-    {:ok, _publication} = Publishing.publish_project(ctx.project, "Datashop test", ctx.author.id)
+    {:ok, _publication} =
+      Oli.TestHelpers.publish_project_fixture(ctx.project, "Datashop test", ctx.author.id)
+
     ctx
   end
 

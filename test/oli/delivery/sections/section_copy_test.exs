@@ -670,7 +670,9 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
          %{project: project, author: author} do
       survey = Oli.Authoring.Course.create_project_survey(project, author.id)
       project = Oli.Authoring.Course.get_project!(project.id)
-      {:ok, publication} = Oli.Publishing.publish_project(project, "With survey", author.id)
+
+      {:ok, publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "With survey", author.id)
 
       {:ok, source} =
         Sections.create_section(%{
@@ -696,7 +698,9 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
     test "copying an older publication does not require a subsequently authored survey",
          %{source: source, project: project, author: author} do
       # The source keeps this publication while later authoring uses a new working publication.
-      {:ok, _publication} = Oli.Publishing.publish_project(project, "Source snapshot", author.id)
+      {:ok, _publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "Source snapshot", author.id)
+
       survey = Oli.Authoring.Course.create_project_survey(project, author.id)
 
       assert survey.resource_id
@@ -754,7 +758,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       update_page_settings(source, page1, %{ai_enabled: override})
 
       {:ok, _publication} =
-        Oli.Publishing.publish_project(project, "Course copy source", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "Course copy source", author.id)
 
       {:ok, options} = CopyOptions.for_previous_section([:content, :ai_settings])
       instructor = insert(:user, author: author)

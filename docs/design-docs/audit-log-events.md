@@ -49,7 +49,7 @@ columns an event sets; omitted columns are `NULL`, `{}`, or `[]`.
 | --- | --- |
 | Authentication | `user_logged_in`, `author_logged_in`, `user_logged_out`, `author_logged_out`, `session_revoked` |
 | Account | `account_created`, `account_updated`, `account_locked`, `account_unlocked`, `account_linked`, `account_identity_linked`, `account_identity_unlinked`, `account_permissions_changed`, `account_creation_rights_changed`, `account_recovery_requested`, `account_credential_recovered`, `user_deleted`, `author_deleted`, `author_role_changed`, `account_internal_flag_changed` |
-| Project | `project_created`, `project_duplicated`, `project_imported`, `project_deleted`, `project_ownership_changed`, `project_collaborator_changed`, `project_published` |
+| Project | `project_created`, `project_duplicated`, `project_imported`, `project_deleted`, `project_collaborator_changed`, `project_published` |
 | Assessment settings | `assessment_settings_changed`, `assessment_settings_reset`, `assessment_setting_changed` |
 | Student exceptions | `student_exception_created`, `student_exception_updated`, `student_exception_deleted` |
 | DOT and activation points | `dot_settings_changed`, `activation_settings_changed`, `instructor_ai_recommendation_changed` |
@@ -925,15 +925,15 @@ Example:
 
 ### `project_created`
 
-**Project created.** A new authoring project was created.
+**Project created.** A new authoring project was created; its creator is the owner.
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
-| Affected person | none |
+| Affected person | `author` (required) |
 | Outcomes | `succeeded` |
 | No-op policy | `lifecycle` (written without changes) |
 | Change fields | none |
@@ -956,6 +956,7 @@ Example:
   "entity_type": "project",
   "entity_id": "88",
   "entity_snapshot": {"id":88,"slug":"intro_biology","title":"Intro Biology"},
+  "affected_author_id": 31,
   "project_id": 88,
   "details": {"project_title":"Intro Biology"},
   "source": "ui",
@@ -967,15 +968,15 @@ Example:
 
 ### `project_duplicated`
 
-**Project duplicated.** A project was created as a copy of another project.
+**Project duplicated.** A project was created as a copy of another project; the author who copied it is the owner.
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
-| Affected person | none |
+| Affected person | `author` (required) |
 | Outcomes | `succeeded` |
 | No-op policy | `lifecycle` (written without changes) |
 | Change fields | none |
@@ -998,6 +999,7 @@ Example:
   "entity_type": "project",
   "entity_id": "93",
   "entity_snapshot": {"id":93,"slug":"copy_intro_biology","title":"Copy of Intro Biology"},
+  "affected_author_id": 31,
   "project_id": 93,
   "refs": [{"id":88,"label":"Intro Biology","role":"source","type":"project"}],
   "details": {"source_project_id":88},
@@ -1010,16 +1012,16 @@ Example:
 
 ### `project_imported`
 
-**Project imported.** A project was created from an imported course archive.
+**Project imported.** A project was created from an imported course archive; the importing author is the owner.
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
-| Affected person | none |
-| Outcomes | `succeeded`, `partial`, `failed` |
+| Affected person | `author` (required) |
+| Outcomes | `succeeded` |
 | No-op policy | `lifecycle` (written without changes) |
 | Change fields | none |
 | Detail keys | `project_title`, `publication_id`, `version`, `description`, `source_project_id` |
@@ -1034,13 +1036,14 @@ Example:
   "occurred_at": "2026-10-29T14:05:08.123456Z",
   "schema_version": 2,
   "event_type": "project_imported",
-  "outcome": "partial",
+  "outcome": "succeeded",
   "actor_type": "author",
   "author_id": 5,
   "actor_snapshot": {"email":"alan.admin@example.edu","id":5,"name":"Alan Admin"},
   "entity_type": "project",
   "entity_id": "88",
   "entity_snapshot": {"id":88,"slug":"intro_biology","title":"Intro Biology"},
+  "affected_author_id": 31,
   "project_id": 88,
   "details": {"project_title":"Intro Biology"},
   "source": "ui",
@@ -1056,7 +1059,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
@@ -1091,55 +1094,13 @@ Example:
 }
 ```
 
-### `project_ownership_changed`
-
-**Project ownership changed.** Ownership of a project was transferred to another author.
-
-| Rule | Value |
-| --- | --- |
-| Actors | `user`, `author` |
-| Entity types | `project` |
-| Required columns | `project_id` |
-| At least one of | none |
-| Affected person | `author` (required) |
-| Outcomes | `succeeded` |
-| No-op policy | `lifecycle` (written without changes) |
-| Change fields | none |
-| Detail keys | `project_title`, `publication_id`, `version`, `description`, `source_project_id` |
-| Reference roles | none |
-| Status | active |
-
-Example:
-
-```json
-{
-  "inserted_at": "2026-10-29T14:05:08.123456Z",
-  "occurred_at": "2026-10-29T14:05:08.123456Z",
-  "schema_version": 2,
-  "event_type": "project_ownership_changed",
-  "outcome": "succeeded",
-  "actor_type": "author",
-  "author_id": 5,
-  "actor_snapshot": {"email":"alan.admin@example.edu","id":5,"name":"Alan Admin"},
-  "entity_type": "project",
-  "entity_id": "88",
-  "entity_snapshot": {"id":88,"slug":"intro_biology","title":"Intro Biology"},
-  "affected_author_id": 12,
-  "project_id": 88,
-  "source": "ui",
-  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "project:88:ownership_changed:author:12",
-  "search_text": "Alan Admin alan.admin@example.edu Intro Biology intro_biology"
-}
-```
-
 ### `project_collaborator_changed`
 
 **Project collaborator changed.** An author was added, removed, or changed as a project collaborator.
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
@@ -1182,7 +1143,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |

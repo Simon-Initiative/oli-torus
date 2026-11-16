@@ -189,7 +189,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
          {:ok} <- check_active_publication_id(project.slug, active_publication_id),
          previous_publication <-
            Publishing.get_latest_published_publication_by_slug(project.slug),
-         {:ok, new_publication} <- Publishing.publish_project(project, description, author.id) do
+         {:ok, new_publication} <-
+           Oli.Publishing.Audited.publish_project(
+             Oli.Auditing.Context.for_actor(author, source: :ui),
+             project,
+             description,
+             author.id
+           ) do
       if Map.get(publication, "auto_push_update") == "true" do
         Publishing.push_publication_update_to_sections(
           project,

@@ -65,13 +65,16 @@ defmodule Oli.Scenarios.Builder do
         author,
         _institution
       ) do
-    # Use the standard Oli.Authoring.Course.create_project infrastructure
-    # that the UI uses when creating projects
+    # Use the same audited project creation that the UI uses, with the represented author
     {:ok, project_setup} =
-      Course.create_project_from_archive(
+      Oli.Authoring.Audited.create_project(
+        Oli.Auditing.Context.for_actor(author, source: :scenario),
         title || "Test Project",
         author,
-        learning_model_version || :naive
+        %{},
+        learning_model_version: learning_model_version || :naive,
+        # Archive-style creation left the flag unset; keep that for Scenario projects
+        lo_well_formed: nil
       )
 
     %{

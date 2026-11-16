@@ -384,12 +384,14 @@ defmodule OliWeb.LearningProficiencyTest do
   end
 
   test "fresh creation defaults to latest while copies preserve a legacy source", s do
-    attrs = Map.take(s.project, [:version, :family_id, :publisher_id]) |> Map.put(:title, "Fresh")
-    assert {:ok, fresh} = Course.create_project(Map.put(attrs, :learning_model_version, :naive))
+    assert {:ok, %{project: fresh}} =
+             Oli.TestHelpers.create_project_fixture("Fresh", s.author, %{
+               learning_model_version: :naive
+             })
+
     assert fresh.learning_model_version == :lkt_aoa
 
-    assert {:ok, copy} =
-             Course.create_project_from_source(Map.put(attrs, :title, "Copy"), s.project)
+    assert {:ok, copy} = Oli.TestHelpers.duplicate_project_fixture(s.project.slug, s.author)
 
     assert copy.learning_model_version == :naive
   end

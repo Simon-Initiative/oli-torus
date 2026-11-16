@@ -1413,7 +1413,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     map = Seeder.add_page(map, second_page_attrs, :container, :next_page)
 
     {:ok, publication} =
-      Oli.Publishing.publish_project(map.project, "preview lesson", map.author.id)
+      Oli.TestHelpers.publish_project_fixture(map.project, "preview lesson", map.author.id)
 
     map =
       map
@@ -1640,7 +1640,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     map = Seeder.add_page(map, page_attrs, :container, :page)
 
     {:ok, publication} =
-      Oli.Publishing.publish_project(map.project, "mixed preview page", map.author.id)
+      Oli.TestHelpers.publish_project_fixture(map.project, "mixed preview page", map.author.id)
 
     map =
       map
@@ -1727,7 +1727,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     map = Seeder.add_page(map, page_attrs, :container, :page)
 
     {:ok, publication} =
-      Oli.Publishing.publish_project(map.project, "jump preview page", map.author.id)
+      Oli.TestHelpers.publish_project_fixture(map.project, "jump preview page", map.author.id)
 
     map =
       map
@@ -1834,7 +1834,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     map = Seeder.add_page(map, page_attrs, :container, :page)
 
     {:ok, publication} =
-      Oli.Publishing.publish_project(map.project, "bank coverage preview", map.author.id)
+      Oli.TestHelpers.publish_project_fixture(map.project, "bank coverage preview", map.author.id)
 
     map =
       map
@@ -2017,7 +2017,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     map = Seeder.add_page(map, page_attrs, :container, :page)
 
     {:ok, publication} =
-      Oli.Publishing.publish_project(map.project, "lo preview test", map.author.id)
+      Oli.TestHelpers.publish_project_fixture(map.project, "lo preview test", map.author.id)
 
     map =
       map

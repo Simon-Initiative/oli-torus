@@ -6,7 +6,7 @@ defmodule Oli.TorusDoc do
   such as cloning projects.
   """
 
-  alias Oli.Authoring.Clone
+  alias Oli.Auditing.Context
   alias Oli.TorusDoc.PageParser
   alias Oli.TorusDoc.PageConverter
 
@@ -88,7 +88,9 @@ defmodule Oli.TorusDoc do
         {:error, "Clone directive requires author context"}
 
       true ->
-        case Clone.clone_project(from, author) do
+        context = Context.for_actor(author, source: :application)
+
+        case Oli.Authoring.Audited.duplicate_project(context, from, author) do
           {:ok, cloned_project} ->
             {:ok,
              %{

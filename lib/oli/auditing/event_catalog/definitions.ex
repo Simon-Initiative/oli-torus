@@ -16,6 +16,8 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
   @admin [:user, :author]
   @lifecycle_outcomes [:succeeded]
   @job_outcomes [:succeeded, :partial, :failed]
+  # Ownership is assigned once, to the author who creates, copies, or imports the project.
+  @project_owner [affected_kinds: [:author], affected_required: true]
 
   @doc "Returns `[{family, label, defaults, [{name, label, description, overrides}]}]`."
   @spec families() :: [{atom(), String.t(), keyword(), [tuple()]}]
@@ -117,20 +119,23 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
       {:project, "Project",
        [
          entity_types: [:project],
+         # The system actor covers technical setup (end-to-end fixtures) that creates, imports,
+         # and publishes projects.
+         actor_kinds: [:user, :author, :system],
          required: [:project_id],
          detail_keys: ~w(project_title publication_id version description source_project_id)
        ],
        [
-         {:project_created, "Project created", "A new authoring project was created.", []},
+         {:project_created, "Project created",
+          "A new authoring project was created; its creator is the owner.", @project_owner},
          {:project_duplicated, "Project duplicated",
-          "A project was created as a copy of another project.", ref_roles: [:source]},
+          "A project was created as a copy of another project; the author who copied it is the owner.",
+          [ref_roles: [:source]] ++ @project_owner},
          {:project_imported, "Project imported",
-          "A project was created from an imported course archive.", outcomes: @job_outcomes},
+          "A project was created from an imported course archive; the importing author is the owner.",
+          @project_owner},
          {:project_deleted, "Project deleted",
           "A project was marked deleted and hidden from authors.", []},
-         {:project_ownership_changed, "Project ownership changed",
-          "Ownership of a project was transferred to another author.",
-          affected_kinds: [:author], affected_required: true},
          {:project_collaborator_changed, "Project collaborator changed",
           "An author was added, removed, or changed as a project collaborator.",
           affected_kinds: [:author],

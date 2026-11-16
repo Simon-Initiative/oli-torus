@@ -37,7 +37,7 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "imports google doc with youtube and mcq custom elements" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Docs Import Project", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Docs Import Project", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
@@ -94,7 +94,7 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "imports check all that apply and short answer custom elements" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Activities Import", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Activities Import", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
@@ -135,7 +135,7 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "returns error when file guard is already in progress" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Guarded Project", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Guarded Project", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
@@ -154,7 +154,7 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "falls back to table when MCQ builder fails" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Fallback Project", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Fallback Project", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
@@ -197,7 +197,7 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "records media upload warnings and retains original URLs on failure" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Media Project", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Media Project", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
@@ -227,7 +227,9 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "preserves inline markup spacing across block types" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Inline Markup Project", author)
+      {:ok, project_info} =
+        Oli.TestHelpers.create_project_fixture("Inline Markup Project", author)
+
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
@@ -305,7 +307,7 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "surfaces redirect warning when Google Docs responds with redirect" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Redirect Project", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Redirect Project", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 

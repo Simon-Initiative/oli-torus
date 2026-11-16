@@ -38,6 +38,12 @@ defmodule Oli.TorusDocTest do
       # Verify the project was actually cloned
       clones = Clone.existing_clones(project.slug, author)
       assert length(clones) > 0
+
+      assert_audited(:project_duplicated,
+        project_id: result.cloned_project.id,
+        actor: author,
+        source: :application
+      )
     end
 
     test "fails clone directive without author context", %{project: project} do

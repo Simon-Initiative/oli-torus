@@ -103,7 +103,7 @@ defmodule Oli.GradingTest do
       revision2 = Oli.Seeder.revise_page(page2_changes, page2, revision2, working_pub)
 
       {:ok, latest_publication} =
-        Publishing.publish_project(project, "some changes", map.author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", map.author.id)
 
       map = Map.put(map, :publication, latest_publication)
 

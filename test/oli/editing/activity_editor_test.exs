@@ -928,7 +928,7 @@ defmodule Oli.ActivityEditingTest do
         )
 
       {:ok, _published} =
-        Publishing.publish_project(project, "publish trained activity", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "publish trained activity", author.id)
 
       before_edit =
         Publishing.AuthoringResolver.from_resource_id(project.slug, activity_revision.resource_id)

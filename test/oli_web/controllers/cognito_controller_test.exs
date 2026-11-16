@@ -561,7 +561,8 @@ defmodule OliWeb.CognitoControllerTest do
       assert author
       assert author.id == Accounts.get_user_by(%{email: email}).author_id
 
-      assert length(Clone.existing_clones(project.slug, author)) == 1
+      assert [copy] = Clone.existing_clones(project.slug, author)
+      assert_audited(:project_duplicated, project_id: copy.id, actor: author, source: :ui)
     end
 
     test "properly redirects to an intermediate page to prompt if they really want to clone again",
@@ -576,7 +577,7 @@ defmodule OliWeb.CognitoControllerTest do
 
       expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
 
-      Clone.clone_project(project.slug, author)
+      Oli.TestHelpers.duplicate_project_fixture(project.slug, author)
 
       params =
         community.id
@@ -745,7 +746,7 @@ defmodule OliWeb.CognitoControllerTest do
            project: project,
            admin: admin
          } do
-      {:ok, duplicated} = Clone.clone_project(project.slug, admin)
+      {:ok, duplicated} = Oli.TestHelpers.duplicate_project_fixture(project.slug, admin)
 
       html =
         conn

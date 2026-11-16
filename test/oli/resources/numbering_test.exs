@@ -82,7 +82,7 @@ defmodule Oli.Resources.NumberingTest do
 
     test "path_from_root_to/2", %{project: project, institution: institution, author: author} do
       # Publish the current state of our test project
-      {:ok, pub1} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, pub1} = Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       {:ok, section} =
         Sections.create_section(%{
@@ -112,7 +112,7 @@ defmodule Oli.Resources.NumberingTest do
 
     test "renumber_hierarchy/1", %{project: project, institution: institution, author: author} do
       # Publish the current state of our test project
-      {:ok, pub1} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, pub1} = Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       {:ok, section} =
         Sections.create_section(%{
@@ -272,7 +272,7 @@ defmodule Oli.Resources.NumberingTest do
       custom_labels = %{"unit" => "Volume", "module" => "Chapter", "section" => "Lesson"}
       {:ok, project} = Course.update_project(project, %{customizations: custom_labels})
 
-      {:ok, pub1} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, pub1} = Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       {:ok, section} =
         Sections.create_section(%{

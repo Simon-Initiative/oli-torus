@@ -35,7 +35,7 @@ defmodule OliWeb.ProductsLiveTest do
     hierarchy = DbSeeder.base_project_with_larger_hierarchy()
 
     {:ok, publication} =
-      Publishing.publish_project(
+      Oli.TestHelpers.publish_project_fixture(
         hierarchy.project,
         "create template with units",
         hierarchy.author.id
@@ -97,13 +97,13 @@ defmodule OliWeb.ProductsLiveTest do
     })
 
     {:ok, _initial_publication} =
-      Oli.Publishing.publish_project(project, "initial publication", admin.id)
+      Oli.TestHelpers.publish_project_fixture(project, "initial publication", admin.id)
 
     {:ok, product_with_updates} =
       Blueprint.create_blueprint(project.slug, "Updated Template", nil)
 
     {:ok, _follow_up_publication} =
-      Oli.Publishing.publish_project(project, "follow-up publication", admin.id)
+      Oli.TestHelpers.publish_project_fixture(project, "follow-up publication", admin.id)
 
     {:ok, product_without_updates} =
       Blueprint.create_blueprint(project.slug, "Current Template", nil)

@@ -63,7 +63,10 @@ defmodule Oli.LearningModel.SchemaIntegrationTest do
       assert %Section{}.learning_model_version == :naive
 
       author = insert(:author)
-      assert {:ok, %{project: project}} = Course.create_project("New project", author)
+
+      assert {:ok, %{project: project}} =
+               Oli.TestHelpers.create_project_fixture("New project", author)
+
       assert project.learning_model_version == :lkt_aoa
     end
   end

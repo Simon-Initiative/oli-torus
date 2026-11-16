@@ -932,7 +932,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   def handle_event("delete", _params, socket) do
     project = socket.assigns.project
 
-    case Course.update_project(project, %{status: :deleted}) do
+    context = Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui)
+
+    case Oli.Authoring.Audited.delete_project(context, project.id) do
       {:ok, _project} ->
         {:noreply,
          redirect(socket,
@@ -946,6 +948,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           |> put_flash(:error, "Project could not be deleted.")
 
         {:noreply, socket}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Project could not be deleted.")}
     end
   end
 

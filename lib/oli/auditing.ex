@@ -236,7 +236,7 @@ defmodule Oli.Auditing do
 
   ## Examples
 
-      iex> capture(author, :project_published, project, %{"project_title" => "Biology"})
+      iex> capture(user, :section_created, section, %{"section_title" => "Biology 101"})
       {:ok, %LogEvent{}}
   """
   @spec capture(%User{} | %Author{} | nil, atom(), struct() | nil, map()) ::

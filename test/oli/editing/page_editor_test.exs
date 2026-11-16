@@ -431,7 +431,7 @@ defmodule Oli.EditingTest do
       PageEditor.release_lock(project.slug, revision1.slug, author.email)
 
       # Now create a duplicate project, and make an edit in that page that removes the activity
-      {:ok, cloned_project} = Oli.Authoring.Clone.clone_project(project.slug, author)
+      {:ok, cloned_project} = Oli.TestHelpers.duplicate_project_fixture(project.slug, author)
 
       PageEditor.acquire_lock(cloned_project.slug, revision1.slug, author.email)
 

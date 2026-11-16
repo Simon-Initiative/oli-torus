@@ -40,12 +40,7 @@ defmodule Oli.CourseTest do
 
     test "create_project/2 with invalid data returns error changeset" do
       empty_title = ""
-      assert {:error, _} = Course.create_project(empty_title, author_fixture())
-    end
-
-    test "create_project/1 with invalid data returns error changeset" do
-      project_params = Map.delete(params_for(:project), :publisher_id)
-      assert {:error, _} = Course.create_project(project_params)
+      assert {:error, _} = Oli.TestHelpers.create_project_fixture(empty_title, author_fixture())
     end
 
     test "create_empty_project/1 with valid data creates a project", %{valid_attrs: valid_attrs} do
@@ -177,7 +172,7 @@ defmodule Oli.CourseTest do
   describe "project creation with associations" do
     setup do
       author = author_fixture()
-      {:ok, results} = Course.create_project("test project", author)
+      {:ok, results} = Oli.TestHelpers.create_project_fixture("test project", author)
       {:ok, Map.put(results, :author, author)}
     end
 

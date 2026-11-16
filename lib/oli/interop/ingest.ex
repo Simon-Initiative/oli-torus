@@ -5,13 +5,14 @@ defmodule Oli.Interop.Ingest do
   alias Oli.Interop.Ingest
 
   @doc """
-  ingest project from file for author
+  ingest project from file for author, recording the audit events under `context`
   Returns {:ok, project} on success and {:error, first_error_string} on failure
   """
-  def ingest(file, as_author) do
+  def ingest(file, as_author, %Oli.Auditing.Context{} = context) do
     %{
       Ingest.State.new()
       | author: as_author,
+        context: context,
         force_rollback: true
     }
     |> Ingest.ScalableIngest.unzip(file)
@@ -19,14 +20,15 @@ defmodule Oli.Interop.Ingest do
   end
 
   @doc """
-  ingest project from unzipped entry list for author
+  ingest project from unzipped entry list for author, recording the audit events under `context`
   Returns {:ok, project} on success and {:error, first_error_string} on failure
   """
-  def process(entries, author) do
+  def process(entries, author, %Oli.Auditing.Context{} = context) do
     %{
       Ingest.State.new()
       | entries: entries,
         author: author,
+        context: context,
         force_rollback: true
     }
     |> do_ingest()

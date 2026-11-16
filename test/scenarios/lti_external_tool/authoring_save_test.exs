@@ -190,7 +190,11 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
   test "published revisions stay frozen when a later configuration is saved", ctx do
     assert {:ok, published} =
-             Publishing.publish_project(ctx.project, "Frozen selection", ctx.author.id)
+             Oli.TestHelpers.publish_project_fixture(
+               ctx.project,
+               "Frozen selection",
+               ctx.author.id
+             )
 
     assert {:acquired} =
              Locks.acquire(

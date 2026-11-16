@@ -192,7 +192,8 @@ defmodule OliWeb.SchedulingControllerTest do
       )
       |> Seeder.add_user(%{}, :someone_else)
 
-    {:ok, initial_pub} = Publishing.publish_project(map.project, "some changes", map.author.id)
+    {:ok, initial_pub} =
+      Oli.TestHelpers.publish_project_fixture(map.project, "some changes", map.author.id)
 
     {:ok, section} =
       Sections.create_section(%{

@@ -1942,7 +1942,8 @@ defmodule OliWeb.LtiControllerTest do
   def setup_section(%{conn: conn}) do
     {:ok, seeds} = setup_project(%{conn: conn})
 
-    {:ok, pub1} = Publishing.publish_project(seeds.project, "some changes", seeds.author.id)
+    {:ok, pub1} =
+      Oli.TestHelpers.publish_project_fixture(seeds.project, "some changes", seeds.author.id)
 
     {:ok, section} =
       Sections.create_section(%{

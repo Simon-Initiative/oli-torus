@@ -25,16 +25,15 @@ defmodule Oli.AuditingTest do
       project = insert(:project, authors: [author])
 
       assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(author, :project_published, project, %{
-                 "version" => "1.0.0",
-                 "description" => "Initial release"
+               Auditing.capture(author, :google_doc_imported, project, %{
+                 "page_title" => "Week 1"
                })
 
       assert event.author_id == author.id
       assert event.project_id == project.id
       assert event.entity_type == :project
-      assert event.event_type == :project_published
-      assert event.details["version"] == "1.0.0"
+      assert event.event_type == :google_doc_imported
+      assert event.details["page_title"] == "Week 1"
     end
 
     test "records a section resource in the section column" do
@@ -54,15 +53,15 @@ defmodule Oli.AuditingTest do
 
     test "drops detail keys outside the event contract" do
       admin = insert(:author)
-      project = insert(:project)
+      section = insert(:section)
 
       assert {:ok, event} =
-               Auditing.log_admin_action(admin, :project_published, project, %{
-                 "version" => "1.0",
+               Auditing.log_admin_action(admin, :section_created, section, %{
+                 "section_title" => "Biology",
                  "setting" => "maintenance_mode"
                })
 
-      assert event.details == %{"version" => "1.0"}
+      assert event.details == %{"section_title" => "Biology"}
     end
 
     test "rejects event types outside the legacy producers" do
@@ -226,7 +225,7 @@ defmodule Oli.AuditingTest do
       section = insert(:section)
 
       {:ok, event1} = user_deleted_event(admin, insert(:user))
-      {:ok, event2} = Auditing.capture(author, :project_published, project, %{})
+      {:ok, event2} = project_published_event(author, project)
       {:ok, event3} = Auditing.capture(user, :section_created, section, %{})
 
       %{
@@ -430,6 +429,18 @@ defmodule Oli.AuditingTest do
         affected: {:user, deleted.id},
         event_key: "account:primary:deleted",
         details: %{"email" => deleted.email, "name" => deleted.name}
+      })
+
+    Auditing.insert(changeset)
+  end
+
+  defp project_published_event(author, project) do
+    {:ok, changeset} =
+      Auditing.build(Context.for_actor(author, source: :ui), %{
+        event_type: :project_published,
+        entity: {:project, project.id, project},
+        scope: %{project_id: project.id},
+        event_key: "project:#{project.id}:published"
       })
 
     Auditing.insert(changeset)

@@ -63,7 +63,9 @@ defmodule Oli.Resources.PageBrowseTest do
         })
         |> Repo.insert()
 
-      {:ok, %{project: project, publication: publication}} = Course.create_project("test", author)
+      {:ok, %{project: project, publication: publication}} =
+        Oli.TestHelpers.create_project_fixture("test", author)
+
       pages = make_pages(project, publication, author, 20)
 
       %{project: project, pages: pages, author: author, publication: publication}

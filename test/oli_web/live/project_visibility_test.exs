@@ -53,7 +53,7 @@ defmodule OliWeb.ProjectVisibilityTest do
       available_publications = Publishing.available_publications(admin, institution)
       assert Enum.count(available_publications) == 0
 
-      Publishing.publish_project(project, "some changes", admin.id)
+      Oli.TestHelpers.publish_project_fixture(project, "some changes", admin.id)
 
       available_publications = Publishing.available_publications(admin, institution)
 

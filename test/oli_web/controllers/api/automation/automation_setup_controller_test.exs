@@ -96,6 +96,10 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       {:ok, project} =
         Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil("Project not found")
 
+      setup_actor = [actor: {:system, :playwright_setup}, source: :api, project_id: project.id]
+      assert_audited(:project_imported, setup_actor)
+      assert [_ | _] = audit_events(:project_published, setup_actor)
+
       section = Oli.Delivery.Sections.get_section_by(slug: section_slug)
       assert section.id == section_id
       assert section.title == "Automation test section"

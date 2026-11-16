@@ -22,7 +22,7 @@ defmodule Oli.Scenarios.Directives.BibliographyHandlerTest do
 
   test "adds bibliography entry" do
     author = insert(:author)
-    {:ok, %{project: project}} = Course.create_project("bib test", author)
+    {:ok, %{project: project}} = Oli.TestHelpers.create_project_fixture("bib test", author)
 
     state = %ExecutionState{
       current_author: author,

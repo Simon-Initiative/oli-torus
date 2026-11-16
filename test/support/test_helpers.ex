@@ -195,9 +195,28 @@ defmodule Oli.TestHelpers do
   end
 
   def project_fixture(author, title \\ "test project") do
-    {:ok, project} = Course.create_project(title, author)
+    {:ok, project} = create_project_fixture(title, author)
     project
   end
+
+  @doc """
+  Test fixture: creates a project owned by `author` through `Oli.Authoring.Audited` with the
+  in-memory admin context, for tests that only need a project as setup.
+  """
+  def create_project_fixture(title, author, attrs \\ %{}),
+    do: Oli.Authoring.Audited.create_project(audit_context(), title, author, attrs)
+
+  @doc "Test fixture: publishes `project` through `Oli.Publishing.Audited`; `author_id` owns the locks."
+  def publish_project_fixture(project, description, author_id),
+    do: Oli.Publishing.Audited.publish_project(audit_context(), project, description, author_id)
+
+  @doc "Test fixture: copies the project with `project_slug` for `author`."
+  def duplicate_project_fixture(project_slug, author, opts \\ []),
+    do: Oli.Authoring.Audited.duplicate_project(audit_context(), project_slug, author, opts)
+
+  @doc "Test fixture: adds `author` to `project` as an accepted collaborator."
+  def add_collaborator_fixture(author, project),
+    do: Oli.Authoring.Audited.add_collaborator(audit_context(), author, project)
 
   def objective_fixture(project, author) do
     {:ok, %{resource: objective, revision: revision}} =
@@ -236,7 +255,7 @@ defmodule Oli.TestHelpers do
 
   def make_n_projects(n, author) do
     1..n
-    |> Enum.map(fn _ -> Course.create_project("test project", author) end)
+    |> Enum.map(fn _ -> create_project_fixture("test project", author) end)
     |> Enum.map(fn {:ok, %{project: project}} -> project end)
   end
 
@@ -390,6 +409,50 @@ defmodule Oli.TestHelpers do
       source: :ui
     )
   end
+
+  @doc """
+  Asserts that exactly one audit event of `event_type` matches `filters`, and returns it.
+  Filters are those of `audit_events/2`.
+  """
+  def assert_audited(event_type, filters \\ []) do
+    case audit_events(event_type, filters) do
+      [event] ->
+        event
+
+      events ->
+        ExUnit.Assertions.flunk("""
+        expected exactly one #{event_type} audit event matching #{inspect(filters)}, \
+        found #{length(events)}
+        """)
+    end
+  end
+
+  @doc """
+  Returns the audit events of `event_type` that match `filters`, oldest first.
+
+  Filters are audit event fields compared for equality, such as `project_id: 7` or
+  `source: :ui`. `actor:` takes an `Oli.Accounts.Author` or `Oli.Accounts.User` and matches the
+  actor type and ID, or `{:system, key}` and matches the system actor key.
+  """
+  def audit_events(event_type, filters \\ []) do
+    {actor, filters} = Keyword.pop(filters, :actor)
+    filters = actor_filters(actor) ++ filters
+
+    Repo.all(
+      from(e in Oli.Auditing.LogEvent,
+        where: e.event_type == ^event_type,
+        where: ^filters,
+        order_by: e.id
+      )
+    )
+  end
+
+  defp actor_filters(nil), do: []
+  defp actor_filters(%Oli.Accounts.Author{id: id}), do: [actor_type: :author, author_id: id]
+  defp actor_filters(%Oli.Accounts.User{id: id}), do: [actor_type: :user, user_id: id]
+
+  defp actor_filters({:system, key}),
+    do: [actor_type: :system, actor_key: Atom.to_string(key)]
 
   @doc """
   Test fixture: writes account fields directly with the account's `noauth_changeset/2`, without
