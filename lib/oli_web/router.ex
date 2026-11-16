@@ -1961,160 +1961,173 @@ defmodule OliWeb.Router do
       :workspace
     ])
 
-    # General
-    get("/confidence.html", ConfidenceController, :index)
-    live("/", Admin.AdminView)
-    live("/vr_user_agents", Admin.VrUserAgentsView)
-    live("/products", Products.ProductsView)
-    live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
-    live("/agent_monitor", Admin.AgentMonitorView)
-    live("/intelligent_dashboard", Admin.IntelligentDashboardLive)
+    live_session :admin, on_mount: [{OliWeb.AuthorAuth, :ensure_admin}] do
+      # General
+      get("/confidence.html", ConfidenceController, :index)
+      live("/", Admin.AdminView)
+      live("/vr_user_agents", Admin.VrUserAgentsView)
+      live("/products", Products.ProductsView)
+      live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
+      live("/agent_monitor", Admin.AgentMonitorView)
+      live("/intelligent_dashboard", Admin.IntelligentDashboardLive)
 
-    # Gen AI
-    live("/gen_ai/providers", GenAI.ProvidersView)
-    live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
-    live("/gen_ai/service_configs", GenAI.ServiceConfigsView)
-    live("/gen_ai/feature_configs", GenAI.FeatureConfigsView)
+      # Gen AI
+      live("/gen_ai/providers", GenAI.ProvidersView)
+      live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
+      live("/gen_ai/service_configs", GenAI.ServiceConfigsView)
+      live("/gen_ai/feature_configs", GenAI.FeatureConfigsView)
 
-    live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
-
-    live(
-      "/products/:product_id/discounts/new",
-      Products.Payments.Discounts.ShowView,
-      :product_new,
-      as: :discount
-    )
-
-    live(
-      "/products/:product_id/discounts/:discount_id",
-      Products.Payments.Discounts.ShowView,
-      :product,
-      as: :discount
-    )
-
-    # Section Management (+ Open and Free)
-    get("/sections/export", SectionsController, :export_csv)
-    live("/sections", Sections.SectionsView)
-    live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)
-
-    live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
-
-    # Publishers
-    live("/publishers", PublisherLive.IndexView)
-    live("/publishers/new", PublisherLive.NewView)
-    live("/publishers/:publisher_id", PublisherLive.ShowView)
-
-    # Course Ingestion
-    get("/ingest/upload", IngestController, :index)
-    post("/ingest/ingest", IngestController, :upload)
-
-    get("/:project_slug/import/index", IngestController, :index_csv)
-    post("/:project_slug/import/upload_csv", IngestController, :upload_csv)
-    get("/:project_slug/import/download", IngestController, :download_current)
-    live("/:project_slug/import/csv", Import.CSVImportView)
-
-    live("/ingest/process", Admin.IngestV2)
-
-    # Branding
-    resources("/brands", BrandController)
-
-    # Account admin
-    scope "/" do
-      pipe_through([:require_authenticated_account_admin])
-      # Admin Author/User Account Management
-      live("/users", Users.UsersView)
-      live("/users/:user_id", Users.UsersDetailView)
-
-      live("/authors", Users.AuthorsView)
-      live("/authors/:author_id", Users.AuthorsDetailView)
-
-      # Institutions, LTI Registrations and Deployments
-      resources("/institutions", InstitutionController, except: [:index])
-      put("/approve_registration", InstitutionController, :approve_registration)
-      live("/institutions/", Admin.Institutions.IndexLive)
+      live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
 
       live(
-        "/institutions/:institution_id/discount",
+        "/products/:product_id/discounts/new",
         Products.Payments.Discounts.ShowView,
-        :institution,
+        :product_new,
         as: :discount
       )
 
       live(
-        "/institutions/:institution_id/research_consent",
-        Admin.Institutions.ResearchConsentView,
-        as: :institution
+        "/products/:product_id/discounts/:discount_id",
+        Products.Payments.Discounts.ShowView,
+        :product,
+        as: :discount
       )
 
-      live(
-        "/institutions/:institution_id/sections_and_students/:selected_tab",
-        Admin.Institutions.SectionsAndStudentsView
-      )
+      # Section Management (+ Open and Free)
+      get("/sections/export", SectionsController, :export_csv)
+      live("/sections", Sections.SectionsView)
+      live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)
 
-      get("/invite", InviteController, :index)
-      post("/invite", InviteController, :create)
+      live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
-      # Communities
-      live("/communities/new", CommunityLive.NewView)
+      # Publishers
+      live("/publishers", PublisherLive.IndexView)
+      live("/publishers/new", PublisherLive.NewView)
+      live("/publishers/:publisher_id", PublisherLive.ShowView)
 
-      live("/registrations", Admin.RegistrationsView)
+      # Course Ingestion
+      get("/ingest/upload", IngestController, :index)
+      post("/ingest/ingest", IngestController, :upload)
 
-      resources("/registrations", RegistrationController, except: [:index]) do
-        resources("/deployments", DeploymentController, except: [:index, :show])
+      get("/:project_slug/import/index", IngestController, :index_csv)
+      post("/:project_slug/import/upload_csv", IngestController, :upload_csv)
+      get("/:project_slug/import/download", IngestController, :download_current)
+      live("/:project_slug/import/csv", Import.CSVImportView)
+
+      live("/ingest/process", Admin.IngestV2)
+
+      # Branding
+      resources("/brands", BrandController)
+    end
+
+    # Account admin
+    scope "/" do
+      pipe_through([:require_authenticated_account_admin])
+
+      live_session :account_admin, on_mount: [{OliWeb.AuthorAuth, :ensure_account_admin}] do
+        # Admin Author/User Account Management
+        live("/users", Users.UsersView)
+        live("/users/:user_id", Users.UsersDetailView)
+
+        live("/authors", Users.AuthorsView)
+        live("/authors/:author_id", Users.AuthorsDetailView)
+
+        # Institutions, LTI Registrations and Deployments
+        resources("/institutions", InstitutionController, except: [:index])
+        put("/approve_registration", InstitutionController, :approve_registration)
+        live("/institutions/", Admin.Institutions.IndexLive)
+
+        live(
+          "/institutions/:institution_id/discount",
+          Products.Payments.Discounts.ShowView,
+          :institution,
+          as: :discount
+        )
+
+        live(
+          "/institutions/:institution_id/research_consent",
+          Admin.Institutions.ResearchConsentView,
+          as: :institution
+        )
+
+        live(
+          "/institutions/:institution_id/sections_and_students/:selected_tab",
+          Admin.Institutions.SectionsAndStudentsView
+        )
+
+        get("/invite", InviteController, :index)
+        post("/invite", InviteController, :create)
+
+        # Communities
+        live("/communities/new", CommunityLive.NewView)
+
+        live("/registrations", Admin.RegistrationsView)
+
+        resources("/registrations", RegistrationController, except: [:index]) do
+          resources("/deployments", DeploymentController, except: [:index, :show])
+        end
+
+        # External tools
+        live("/external_tools", Admin.ExternalTools.ExternalToolsView)
+        live("/external_tools/new", Admin.ExternalTools.NewExternalToolView)
+        live("/external_tools/:platform_instance_id/details", Admin.ExternalTools.DetailsView)
+        live("/external_tools/:platform_instance_id/usage", Admin.ExternalTools.UsageView)
+
+        # MCP Bearer Tokens
+        live("/mcp_tokens", Admin.MCPTokens.MCPTokensView)
       end
-
-      # External tools
-      live("/external_tools", Admin.ExternalTools.ExternalToolsView)
-      live("/external_tools/new", Admin.ExternalTools.NewExternalToolView)
-      live("/external_tools/:platform_instance_id/details", Admin.ExternalTools.DetailsView)
-      live("/external_tools/:platform_instance_id/usage", Admin.ExternalTools.UsageView)
-
-      # MCP Bearer Tokens
-      live("/mcp_tokens", Admin.MCPTokens.MCPTokensView)
     end
 
     # System admin
     scope "/" do
       pipe_through([:require_authenticated_system_admin])
-      live("/audit_log", Admin.AuditLogLive)
-      live("/ai_recommendation_feedback", Admin.RecommendationFeedbackLive)
-      get("/activity_review", ActivityReviewController, :index)
 
-      live("/restore_progress", Admin.RestoreUserProgress)
+      live_session :system_admin, on_mount: [{OliWeb.AuthorAuth, :ensure_system_admin}] do
+        live("/audit_log", Admin.AuditLogLive)
+        live("/ai_recommendation_feedback", Admin.RecommendationFeedbackLive)
+        get("/activity_review", ActivityReviewController, :index)
 
-      live("/xapi", Admin.UploadPipelineView)
-      live("/clickhouse/backfill", Admin.ClickhouseBackfillLive)
-      live("/clickhouse", Admin.ClickHouseAnalyticsView)
-      get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
+        live("/restore_progress", Admin.RestoreUserProgress)
 
-      # Authoring Activity Management
-      get("/manage_activities", ActivityManageController, :index)
-      put("/manage_activities/make_global/:activity_slug", ActivityManageController, :make_global)
+        live("/xapi", Admin.UploadPipelineView)
+        live("/clickhouse/backfill", Admin.ClickhouseBackfillLive)
+        live("/clickhouse", Admin.ClickHouseAnalyticsView)
+        get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
 
-      put(
-        "/manage_activities/make_private/:activity_slug",
-        ActivityManageController,
-        :make_private
-      )
+        # Authoring Activity Management
+        get("/manage_activities", ActivityManageController, :index)
 
-      put(
-        "/manage_activities/make_globally_visible/:activity_slug",
-        ActivityManageController,
-        :make_globally_visible
-      )
+        put(
+          "/manage_activities/make_global/:activity_slug",
+          ActivityManageController,
+          :make_global
+        )
 
-      put(
-        "/manage_activities/make_admin_visible/:activity_slug",
-        ActivityManageController,
-        :make_admin_visible
-      )
+        put(
+          "/manage_activities/make_private/:activity_slug",
+          ActivityManageController,
+          :make_private
+        )
 
-      # System Message Banner
-      live("/system_messages", SystemMessageLive.IndexView)
+        put(
+          "/manage_activities/make_globally_visible/:activity_slug",
+          ActivityManageController,
+          :make_globally_visible
+        )
 
-      live("/features", Features.FeaturesLive)
-      live("/canary_rollouts", Admin.CanaryRolloutsLive)
-      live("/api_keys", ApiKeys.ApiKeysLive)
+        put(
+          "/manage_activities/make_admin_visible/:activity_slug",
+          ActivityManageController,
+          :make_admin_visible
+        )
+
+        # System Message Banner
+        live("/system_messages", SystemMessageLive.IndexView)
+
+        live("/features", Features.FeaturesLive)
+        live("/canary_rollouts", Admin.CanaryRolloutsLive)
+        live("/api_keys", ApiKeys.ApiKeysLive)
+      end
     end
   end
 
