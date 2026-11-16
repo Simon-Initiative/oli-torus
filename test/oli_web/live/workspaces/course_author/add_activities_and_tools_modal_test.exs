@@ -61,14 +61,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
       ]
     end
 
-    test "mounts correctly in loading state", %{conn: conn, project: project} do
+    test "mounts correctly in loading state", %{conn: conn, author: author, project: project} do
       {:ok, _lcd, html} =
         live_component_isolated(
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
           project_id: project.id,
-          is_admin: true
+          is_admin: true,
+          author: author
         )
 
       assert html =~ "Add Advanced Activities &amp; External Tools"
@@ -77,6 +78,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
 
     test "shows modal content when loading is complete", %{
       conn: conn,
+      author: author,
       project: project,
       activity1: activity1
     } do
@@ -93,7 +95,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
           project_id: project.id,
-          is_admin: true
+          is_admin: true,
+          author: author
         )
 
       # Trigger the show_modal event to load data and exit loading state
@@ -114,6 +117,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
 
     test "filters activities by search term", %{
       conn: conn,
+      author: author,
       project: project,
       activity1: activity1,
       activity2: activity2
@@ -137,7 +141,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
           project_id: project.id,
-          is_admin: true
+          is_admin: true,
+          author: author
         )
 
       # Trigger the show_modal event to load data and exit loading state
@@ -159,6 +164,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
 
     test "clears search when clear_search is triggered", %{
       conn: conn,
+      author: author,
       project: project,
       activity1: activity1,
       activity2: activity2
@@ -182,7 +188,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
           project_id: project.id,
-          is_admin: true
+          is_admin: true,
+          author: author
         )
 
       # Trigger the show_modal event to load data and exit loading state
@@ -209,6 +216,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
 
     test "switches between activities and tools tabs", %{
       conn: conn,
+      author: author,
       project: project,
       activity1: activity1,
       lti_tool: lti_tool
@@ -232,7 +240,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
           project_id: project.id,
-          is_admin: true
+          is_admin: true,
+          author: author
         )
 
       # Trigger the show_modal event to load data and exit loading state
@@ -278,7 +287,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
                "data-selected=\"false\""
     end
 
-    test "toggles activity selection", %{conn: conn, project: project, activity1: activity1} do
+    test "toggles activity selection", %{
+      conn: conn,
+      author: author,
+      project: project,
+      activity1: activity1
+    } do
       # Add activity to project
       insert(:activity_registration_project, %{
         activity_registration_id: activity1.id,
@@ -292,7 +306,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
           project_id: project.id,
-          is_admin: true
+          is_admin: true,
+          author: author
         )
 
       # Trigger the show_modal event to load data and exit loading state
@@ -332,6 +347,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
 
     test "shows pending changes summary", %{
       conn: conn,
+      author: author,
       project: project,
       activity1: activity1,
       activity2: activity2,
@@ -364,7 +380,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
           project_id: project.id,
-          is_admin: true
+          is_admin: true,
+          author: author
         )
 
       # Trigger the show_modal event to load data and exit loading state
@@ -408,6 +425,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
 
     test "saves selections successfully", %{
       conn: conn,
+      author: author,
       project: project,
       activity1: activity1
     } do
@@ -426,7 +444,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           %{
             id: "test-modal",
             project_id: project.id,
-            is_admin: true
+            is_admin: true,
+            author: author
           }
         )
 
@@ -482,10 +501,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
                activity_registration_id: activity1.id,
                project_id: project.id
              )
+
+      removed =
+        assert_audited(:project_settings_changed,
+          project_id: project.id,
+          actor: author,
+          source: :ui
+        )
+
+      assert removed.changes["enabled_activities"]["before"] == [
+               %{"activity_registration_id" => activity1.id, "title" => activity1.title}
+             ]
     end
 
     test "shows no results message when search yields no results", %{
       conn: conn,
+      author: author,
       project: project,
       activity1: activity1
     } do
@@ -502,7 +533,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
           project_id: project.id,
-          is_admin: true
+          is_admin: true,
+          author: author
         )
 
       # Trigger the show_modal event to load data and exit loading state
@@ -534,6 +566,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
 
     test "handles LTI tools correctly", %{
       conn: conn,
+      author: author,
       project: project,
       lti_tool: lti_tool
     } do
@@ -552,7 +585,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           %{
             id: "test-modal",
             project_id: project.id,
-            is_admin: true
+            is_admin: true,
+            author: author
           }
         )
 
@@ -591,14 +625,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
              |> render() =~ "checked"
     end
 
-    test "disables apply button when no changes", %{conn: conn, project: project} do
+    test "disables apply button when no changes", %{conn: conn, author: author, project: project} do
       {:ok, lcd, _html} =
         live_component_isolated(
           conn,
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
           project_id: project.id,
-          is_admin: true
+          is_admin: true,
+          author: author
         )
 
       # Trigger the show_modal event to load data and exit loading state
@@ -611,6 +646,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
 
     test "enables apply button when changes are made", %{
       conn: conn,
+      author: author,
       project: project,
       activity1: activity1
     } do
@@ -627,7 +663,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModalTest do
           OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal,
           id: "test-modal",
           project_id: project.id,
-          is_admin: true
+          is_admin: true,
+          author: author
         )
 
       # Trigger the show_modal event to load data and exit loading state

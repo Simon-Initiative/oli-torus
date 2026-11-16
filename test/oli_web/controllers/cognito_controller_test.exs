@@ -608,7 +608,7 @@ defmodule OliWeb.CognitoControllerTest do
         |> valid_params(id_token)
         |> Map.put("project_slug", project.slug)
 
-      Course.update_project(project, %{allow_duplication: false})
+      Oli.TestHelpers.update_project_fixture(project, %{allow_duplication: false})
 
       assert conn
              |> get(Routes.project_clone_path(conn, :launch_clone, project.slug, params))
@@ -712,7 +712,7 @@ defmodule OliWeb.CognitoControllerTest do
            conn: conn,
            project: project
          } do
-      Course.update_project(project, %{allow_duplication: false})
+      Oli.TestHelpers.update_project_fixture(project, %{allow_duplication: false})
 
       assert conn
              |> get(Routes.cognito_path(conn, :clone, project.slug))

@@ -48,7 +48,7 @@ defmodule OliWeb.ProjectControllerTest do
   end
 
   describe "triggers" do
-    test "enables triggers", %{conn: conn, project: project} do
+    test "enables triggers", %{conn: conn, author: author, project: project} do
       refute project.allow_triggers
 
       conn = post(conn, Routes.project_path(conn, :enable_triggers, project.slug))
@@ -58,6 +58,12 @@ defmodule OliWeb.ProjectControllerTest do
 
       updated_project = Oli.Authoring.Course.get_project!(project.id)
       assert updated_project.allow_triggers
+
+      assert_audited(:activation_settings_changed,
+        project_id: project.id,
+        actor: author,
+        source: :ui
+      )
     end
   end
 

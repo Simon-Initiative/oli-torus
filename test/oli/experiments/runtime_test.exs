@@ -4,6 +4,7 @@ defmodule Oli.Experiments.RuntimeTest do
   import Oli.Factory
 
   alias Oli.Experiments
+  alias Oli.Experiments.Audited, as: ExperimentsAudited
   alias Oli.Experiments.AssignmentIdentity
 
   alias Oli.Experiments.{
@@ -169,7 +170,8 @@ defmodule Oli.Experiments.RuntimeTest do
       }
 
       assert {:ok, _conditions} =
-               Experiments.update_condition_availabilities(
+               ExperimentsAudited.update_condition_availabilities(
+                 author_audit_context(),
                  experiment.id,
                  [%{id: condition.id, active: true, weight: 9.0}],
                  authoring_scope
@@ -1254,14 +1256,19 @@ defmodule Oli.Experiments.RuntimeTest do
         active_experiment_with_conditions(algorithm: :thompson_sampling)
 
       assert {:ok, _paused} =
-               Experiments.pause_experiment(definition.id, %LifecycleRequest{
-                 scope: %{
-                   scope
-                   | section_id: nil,
-                     user_id: nil,
-                     enrollment_id: nil
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 definition.id,
+                 :pause,
+                 %LifecycleRequest{
+                   scope: %{
+                     scope
+                     | section_id: nil,
+                       user_id: nil,
+                       enrollment_id: nil
+                   }
                  }
-               })
+               )
 
       assert {:ok, %AssignmentDecision{status: :no_experiment}} =
                Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))

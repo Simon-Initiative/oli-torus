@@ -2,6 +2,7 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
   alias Oli.Interop.Ingest.State
   import Oli.Interop.Ingest.Processor.Common
   alias Oli.Publishing.ChangeTracker
+  alias Oli.Repo
 
   @doc """
   We cannot (easily) bulk allocate containers, because of how many
@@ -57,8 +58,20 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
         _ -> labels
       end
 
-    {:ok, updated_project} =
-      Oli.Authoring.Course.update_project(project, %{customizations: custom_labels})
+    # The labels are known only after reading the hierarchy; the import event covers them.
+    updated_project =
+      case Oli.Authoring.Audited.complete_import(state.context, project, %{
+             customizations: custom_labels
+           }) do
+        {:ok, updated_project} ->
+          updated_project
+
+        {:error, _reason} ->
+          Repo.rollback(%{
+            state
+            | errors: ["The custom labels could not be saved" | state.errors]
+          })
+      end
 
     # wire those newly created top-level containers into the root resource
     ChangeTracker.track_revision(project.slug, root_revision, %{children: children})

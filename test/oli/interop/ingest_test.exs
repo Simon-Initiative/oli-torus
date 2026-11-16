@@ -50,6 +50,13 @@ defmodule Oli.Interop.IngestTest do
     |> Enum.map(fn {f, {:ok, contents}} -> {f, contents} end)
   end
 
+  defp update_json(entries, name, fun) do
+    Enum.map(entries, fn
+      {^name, contents} -> {name, contents |> Jason.decode!() |> fun.() |> Jason.encode!()}
+      entry -> entry
+    end)
+  end
+
   describe "course project ingest" do
     setup do
       Oli.Seeder.base_project_with_resource2()
@@ -63,6 +70,23 @@ defmodule Oli.Interop.IngestTest do
       Export.export(project)
       |> unzip_to_memory()
       |> verify_export()
+    end
+
+    test "an archive's labels and survey are part of the import event", %{author: author} do
+      context = Oli.Auditing.Context.for_actor(author, source: :ui)
+
+      {:ok, project} =
+        simulate_unzipping()
+        |> update_json(~c"_project.json", &Map.put(&1, "required_student_survey", "1074"))
+        |> Ingest.process(author, context)
+
+      # The digest's hierarchy names units "Volume"
+      persisted = Oli.Authoring.Course.get_project!(project.id)
+      assert persisted.customizations.unit == "Volume"
+      assert persisted.required_survey_resource_id
+
+      assert_audited(:project_imported, project_id: project.id, actor: author, source: :ui)
+      assert audit_events(:project_settings_changed, project_id: project.id) == []
     end
 
     test "ingest/1 processes the digest files and creates a course and a product", %{

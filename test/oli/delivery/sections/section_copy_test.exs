@@ -668,7 +668,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   describe "required survey snapshot" do
     test "an existing required survey is retained and resolves from copied publication pins",
          %{project: project, author: author} do
-      survey = Oli.Authoring.Course.create_project_survey(project, author.id)
+      survey = Oli.TestHelpers.create_project_survey_fixture(project, author)
       project = Oli.Authoring.Course.get_project!(project.id)
 
       {:ok, publication} =
@@ -701,7 +701,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       {:ok, _publication} =
         Oli.TestHelpers.publish_project_fixture(project, "Source snapshot", author.id)
 
-      survey = Oli.Authoring.Course.create_project_survey(project, author.id)
+      survey = Oli.TestHelpers.create_project_survey_fixture(project, author)
 
       assert survey.resource_id
       assert is_nil(source.required_survey_resource_id)

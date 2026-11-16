@@ -447,13 +447,34 @@ defmodule Oli.Scenarios.Ops do
       end)
       |> Enum.into(%{})
 
-    # Update the project using standard changeset
-    case Oli.Authoring.Course.update_project(project, change_params) do
-      {:ok, updated_project} ->
-        %{dest | project: updated_project}
+    # Change the settings through the audited commands, as the author who built the project.
+    # Activation points can only be enabled, through their own command.
+    context = Oli.Auditing.Context.for_actor(dest.root.author, source: :scenario)
+    {allow_triggers, settings} = Map.pop(change_params, :allow_triggers)
 
-      {:error, changeset} ->
+    with {:ok, updated_project} <-
+           Oli.Authoring.Audited.update_project_settings(
+             context,
+             project.id,
+             settings,
+             Oli.Authoring.Audited.project_settings_fields()
+           ),
+         {:ok, updated_project} <- maybe_enable_triggers(context, updated_project, allow_triggers) do
+      %{dest | project: updated_project}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
         raise "Failed to change project settings: #{inspect(changeset.errors)}"
+
+      {:error, reason} ->
+        raise "Failed to change project settings: #{inspect(reason)}"
     end
   end
+
+  defp maybe_enable_triggers(_context, project, nil), do: {:ok, project}
+
+  defp maybe_enable_triggers(context, project, true),
+    do: Oli.Authoring.Audited.enable_triggers(context, project.id)
+
+  defp maybe_enable_triggers(_context, _project, _value),
+    do: {:error, "activation points can only be enabled"}
 end

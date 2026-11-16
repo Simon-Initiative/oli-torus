@@ -1,4 +1,4 @@
-defmodule Oli.Experiments.ConfigurationPersistence do
+defmodule Oli.Experiments.Audited.ConfigurationPersistence do
   @moduledoc """
   Persists an experiment definition and its owned configuration atomically.
   """

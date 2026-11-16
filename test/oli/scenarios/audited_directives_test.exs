@@ -21,9 +21,17 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
     - project:
         name: published
         title: Published
+        visibility: global
         root:
           children:
             - page: "Page"
+
+    - manipulate:
+        to: published
+        ops:
+          - change:
+              description: "Changed by a Scenario"
+              allow_triggers: true
 
     - publish:
         to: published
@@ -101,6 +109,28 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
     end
 
     assert_audited(:project_duplicated, [project_id: project_id.("copy")] ++ scenario)
+
+    # Visibility set at creation is part of project_created; the change directive and the copy's
+    # title are settings changes
+    assert Engine.get_project(state, "published").project.visibility == :global
+
+    changed =
+      assert_audited(
+        :project_settings_changed,
+        [project_id: project_id.("published")] ++ scenario
+      )
+
+    assert Map.keys(changed.changes) == ["description"]
+
+    assert_audited(
+      :activation_settings_changed,
+      [project_id: project_id.("published")] ++ scenario
+    )
+
+    retitled =
+      assert_audited(:project_settings_changed, [project_id: project_id.("copy")] ++ scenario)
+
+    assert retitled.changes["title"]["after"] == "Copy"
 
     # The author user directive made the collaborator the represented author.
     collaborator = Oli.Accounts.get_author_by_email("collaborator@example.com")

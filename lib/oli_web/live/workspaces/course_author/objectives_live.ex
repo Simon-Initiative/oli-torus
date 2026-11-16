@@ -9,7 +9,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   require Logger
 
   alias Oli.Accounts
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.ProjectAttributes
   alias Oli.Authoring.ObjectiveCoverage
   alias Oli.Authoring.ObjectiveCoverage.Issues
@@ -1566,10 +1565,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   defp persist_coverage_thresholds(socket, attrs) do
-    case Course.update_project_attributes(socket.assigns.project, attrs) do
+    %{project: project, current_author: author} = socket.assigns
+    context = Oli.Auditing.Context.for_actor(author, source: :ui)
+
+    case Oli.Authoring.Audited.update_project_settings(
+           context,
+           project.id,
+           %{attributes: attrs},
+           [:attributes]
+         ) do
       {:ok, updated_project} ->
         socket
-        |> assign(project: updated_project)
+        |> assign(project: %{updated_project | required_survey: project.required_survey})
         |> reclassify_coverage_issues()
         |> refresh_table_state()
 

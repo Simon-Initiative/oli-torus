@@ -95,7 +95,7 @@ Gathered at `456d235388` from the callers, changesets, direct `Repo` writes, and
 | Alternatives groups through `ResourceEditor.create/edit` and `AlternativesOptionEditor` via `alternatives_live.ex` | Alternatives revisions | M (pseudo key `alternatives_groups`); deletion in block 3 |
 | `update_project_latest_*` (`course.ex:1259-1283`) via `ProjectExportWorker` | Export and snapshot URLs | X: system-maintained; stays on the restricted `update_project/2` |
 | `Activities.set_global_status/visibility` | Global registration | X: platform administration, not a project setting |
-| Ingest `hierarchy.ex:61`, `common.ex:36`; clone copies | Settings set at creation | C: part of import or duplication |
+| Ingest `hierarchy.ex:61`, `common.ex:36`; clone copies | Settings set at creation | C: part of import or duplication; the ingest writes its late labels and survey link through `complete_import/3` |
 
 #### Destructive content and media
 
@@ -189,7 +189,7 @@ At checkpoint A, verify the topology with a temporary forbidden reference per ne
 | --- | --- |
 | `status` (to `:deleted`) | `project_deleted` |
 | `allow_triggers` | `activation_settings_changed` (project scope) |
-| Every other `Fields.project_settings()` field, `attributes` subfields, and the pseudo keys `visibility_grants`, `enabled_activities`, `alternatives_groups`, `experiment_status`, `experiment_conditions` | `project_settings_changed` |
+| Every other `Fields.project_settings()` field, `attributes` subfields, and the pseudo keys `visibility_grants`, `enabled_activities`, `alternatives_groups`, `experiment_status`, `experiment_conditions`, `experiment_definition` | `project_settings_changed` |
 | `slug`, `version`, `family_id`, `project_id`, `legacy_svn_root`, `lo_well_formed`, timestamps | Not writable after creation through any command; already excluded in `Fields` |
 
 `analytics_version` stays in the policy as declared by PR-01; no current UI writes it.
@@ -240,20 +240,33 @@ Commands follow the PR-02 shape: a `*_multi/4` builder for callers that compose,
 @spec upgrade_learning_model(Context.t(), pos_integer()) :: {:ok, Project.t()} | {:error, command_error()}
 @spec create_project_survey(Context.t(), pos_integer()) :: {:ok, Project.t()} | {:error, command_error()}
 @spec delete_project_survey(Context.t(), pos_integer()) :: {:ok, Project.t()} | {:error, command_error()}
-@spec update_alternatives_group(Context.t(), pos_integer(), pos_integer() | nil, map()) :: {:ok, Revision.t()} | {:error, command_error()}
+@spec complete_import(Context.t(), Project.t(), map()) :: {:ok, Project.t()} | {:error, command_error()}
+@spec create_alternatives_group(Context.t(), String.t(), Author.t(), map()) :: {:ok, Revision.t()} | {:error, command_error()}
+@spec edit_alternatives_group(Context.t(), String.t(), pos_integer(), Author.t(), map()) :: {:ok, Revision.t()} | {:error, command_error()}
+@spec move_alternatives_option(Context.t(), String.t(), Author.t(), [map()], term(), String.t(), term()) :: {:ok, [map()], map()} | {:ok, :unchanged} | {:error, command_error()}
 
 # Oli.Activities.Audited
-@spec set_project_activities(Context.t(), pos_integer(), [activity_ref], keyword()) :: {:ok, term()} | {:error, command_error()}
+@spec update_project_activities(Context.t(), pos_integer(), %{add: [pos_integer()], remove: [pos_integer()]}) :: :ok | {:error, command_error()}
+@spec set_project_activity_status(Context.t(), pos_integer(), pos_integer(), :enabled | :disabled) :: :ok | {:error, command_error()}
 
 # Oli.Experiments.Audited
-@spec create_experiment(Context.t(), pos_integer(), map()) :: {:ok, term()} | {:error, command_error()}
-@spec update_experiment(Context.t(), pos_integer(), map()) :: {:ok, term()} | {:error, command_error()}
-@spec transition_experiment(Context.t(), pos_integer(), atom()) :: {:ok, term()} | {:error, command_error()}
+@spec create_experiment(Context.t(), CreateExperimentRequest.t()) :: {:ok, term()} | {:error, command_error()}
+@spec update_experiment(Context.t(), pos_integer(), UpdateExperimentRequest.t()) :: {:ok, term()} | {:error, command_error()}
+@spec update_condition_availabilities(Context.t(), pos_integer(), [map()], Scope.t()) :: {:ok, term()} | {:error, command_error()}
+@spec transition_experiment(Context.t(), pos_integer(), :activate | :pause | :complete | :archive, LifecycleRequest.t()) :: {:ok, term()} | {:error, command_error()}
+@spec update_condition_availability(Context.t(), pos_integer(), pos_integer(), boolean(), Scope.t()) :: {:ok, term()} | {:error, command_error()}
+@spec update_section_participation(Context.t(), pos_integer(), Scope.t(), [pos_integer()]) :: {:ok, term()} | {:error, command_error()}
+@spec remove_condition(Context.t(), pos_integer(), pos_integer(), Scope.t()) :: {:ok, term()} | {:error, command_error()}
+@spec remove_intervention(Context.t(), pos_integer(), pos_integer(), Scope.t()) :: {:ok, term()} | {:error, command_error()}
+@spec remove_assessment_binding(Context.t(), pos_integer(), pos_integer(), Scope.t()) :: {:ok, term()} | {:error, command_error()}
 ```
 
 - `update_project_settings` takes the caller's field allowlist (the overview form, the visibility component, customizations, and so on). Keys outside it return `:protected`. Attributes are diffed field by field against the persisted embed, since the changeset replaces the whole embed.
 - `auto_update_sections` writes and emits only when the value changes.
 - The learning-model upgrade records the project change with the number of updated blueprints in details; blueprint section events belong to PR-05.
+- `complete_import/3` writes only `customizations` and `required_survey_resource_id`, which an archive defines after the project exists, and only inside the import that recorded `project_imported` for that project under the same context (`operation_id`); `project_imported` covers them, so it records no event. The import's creation runs as a savepoint, so the check uses the operation, not the transaction ID.
+- Experiments record `experiment_status`, `experiment_conditions`, and `experiment_definition`, with `experiment_id` in details. `experiment_definition` holds every other definition setting, the interventions with their assessment bindings, and the participating sections. Values are compared by IDs, without row IDs or timestamps; recorded values add page, alternatives, and section titles. The before state is read after locking the definition, in the same transaction. The experiment configuration writers, with the persistence and lifecycle modules they use, move into the private `Oli.Experiments.Audited.Writes`, `Oli.Experiments.Audited.ConfigurationPersistence`, and `Oli.Experiments.Audited.Lifecycle`, so the Boundary blocks any caller that skips the facade. The validation and read helpers they share with the queries move to the internal `Oli.Experiments.Support`; none of them writes configuration. Runtime writes (assignments, exposures, rewards) are delivery activity, not configuration, and stay in `Oli.Experiments`.
+- Alternatives groups are recorded as `alternatives_groups` (`added` on creation, `set` on edits) with resource ID, title, strategy, and options, and `alternatives_group_id` in details. The editor writers move behind the facade with the other editors in block 3.
 
 ### 4.3 Destructive content and media
 
@@ -325,7 +338,7 @@ Every task receives the `Context` built in the LiveView before the task starts; 
 - Remove `project_ownership_changed` from `definitions.ex`, `event_examples.ex`, and `released_event_names.txt` (section 3.4).
 - `project_created`, `project_duplicated`, `project_imported`: `affected_kinds: [:author]`, `affected_required: true` (the owner). `project_imported` and the `destructive_content` family allow only `:succeeded`. The project family admits the system actor for technical setup (end-to-end fixtures, seeding).
 - Detail keys: `destructive_content` gains `removed_activity_ids`, `reason`, `remapped_activity_count`; `project_settings` gains `blueprint_count`, `experiment_id`, `alternatives_group_id`.
-- Pseudo keys: `visibility_grants`, `enabled_activities`, `alternatives_groups`, `experiment_status`, `experiment_conditions` (project settings); `selection_rules` (authoring configuration); `triggers` (DOT). Each is declared in `Fields.schema_sources/0` with what it stands for; the field-policy drift test classifies any new schema involved (`ProjectVisibility`, `ActivityRegistrationProject`, experiment tables).
+- Pseudo keys: `visibility_grants`, `enabled_activities`, `alternatives_groups`, `experiment_status`, `experiment_conditions`, `experiment_definition` (project settings); `selection_rules` (authoring configuration); `triggers` (DOT). Each is declared in `Fields.schema_sources/0` with what it stands for; the field-policy drift test classifies any new schema involved (`ProjectVisibility`, `ActivityRegistrationProject`, experiment tables).
 - The legacy adapter drops `project_published` and `google_doc_imported`.
 - No new system actor: Scenarios and Automation use `playwright_setup`; seeders use it too, as technical setup.
 - Regenerate `docs/design-docs/audit-log-events.md` at every checkpoint that changes the catalog.
@@ -399,6 +412,10 @@ Database safety: every `mix test` run targets `oli_test`, which needs no backup.
   - `project_ownership_changed` is removed; ownership is recorded at creation (section 3.4).
   - Prompts are recorded up to 2,000 characters with a truncation marker (section 4.4).
   - The media authorization gap goes entirely to TRIAGE-2622; PR-04 does not change media behavior.
+- Owner decisions (2026-11-16):
+  - Archive imports write their late labels and survey link through `complete_import/3`, with no event of their own (section 4.2).
+  - Experiment edits record `experiment_definition` under `project_settings_changed`, including participating sections, rather than a separate event family (section 4.2).
+  - The experiment configuration writers move behind the Boundary, like the other writers in this PR, rather than staying public in `Oli.Experiments` (section 4.2).
 
 ## 8. Definition of Done
 

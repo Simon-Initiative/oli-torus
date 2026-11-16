@@ -428,6 +428,14 @@ defmodule Oli.TestHelpers do
   end
 
   @doc """
+  Returns an audit context for a new author, for tests of audited commands that do not check
+  who made the change.
+  """
+  def author_audit_context do
+    Oli.Auditing.Context.for_actor(insert(:author), source: :ui)
+  end
+
+  @doc """
   Returns the audit events of `event_type` that match `filters`, oldest first.
 
   Filters are audit event fields compared for equality, such as `project_id: 7` or
@@ -453,6 +461,50 @@ defmodule Oli.TestHelpers do
 
   defp actor_filters({:system, key}),
     do: [actor_type: :system, actor_key: Atom.to_string(key)]
+
+  @doc """
+  Test fixture: writes project fields directly with `Project.changeset/2`, without audit events.
+  Product code changes project settings only through `Oli.Authoring.Audited`.
+  """
+  def update_project_fixture(%Oli.Authoring.Course.Project{} = project, attrs) do
+    project
+    |> Oli.Authoring.Course.Project.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Test fixture: merges `attrs` into the project's embedded attributes, keeping omitted fields,
+  without audit events.
+  """
+  def update_project_attributes_fixture(%Oli.Authoring.Course.Project{} = project, attrs) do
+    attributes = project.attributes || %Oli.Authoring.Course.ProjectAttributes{}
+
+    project
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.put_embed(
+      :attributes,
+      Oli.Authoring.Course.ProjectAttributes.changeset(attributes, attrs)
+    )
+    |> Repo.update()
+  end
+
+  @doc "Test fixture: creates the project's survey page as `author` and returns its revision."
+  def create_project_survey_fixture(%Oli.Authoring.Course.Project{} = project, author) do
+    {:ok, revision} =
+      Oli.Authoring.Audited.create_project_survey(
+        Oli.Auditing.Context.for_actor(author, source: :ui),
+        project.id
+      )
+
+    revision
+  end
+
+  @doc "Test fixture: grants an author or institution access to a restricted project."
+  def insert_visibility_fixture(attrs) do
+    %Oli.Authoring.Course.ProjectVisibility{}
+    |> Oli.Authoring.Course.ProjectVisibility.changeset(attrs)
+    |> Repo.insert()
+  end
 
   @doc """
   Test fixture: writes account fields directly with the account's `noauth_changeset/2`, without

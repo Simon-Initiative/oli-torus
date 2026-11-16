@@ -9,7 +9,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.Delivery.Sections.Browse
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Authoring.Course.{CreativeCommons, Project, ProjectAttributes}
+  alias Oli.Authoring.Course.{CreativeCommons, Project}
   alias Oli.LanguageCodesIso639
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
@@ -24,6 +24,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias OliWeb.Workspaces.CourseAuthor.OverviewSectionsTableModel
 
   @course_sections_limit 10
+
+  # Fields the project details form edits.
+  @settings_form_fields ~w(title description welcome_title encouraging_subtitle publisher_id
+    allow_ecl_content_type attributes)a
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -318,7 +322,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       <Overview.section title="Project Labels" description="Project wide customization of labels.">
         {live_render(@socket, OliWeb.Projects.CustomizationLive,
           id: "project_customizations",
-          session: %{"project_slug" => @project.slug}
+          session: %{"project_slug" => @project.slug, "author_id" => @current_author.id}
         )}
       </Overview.section>
 
@@ -385,6 +389,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             id={"advanced-activity-item-#{activity.id}"}
             activity={activity}
             project_id={@project.id}
+            author={@current_author}
           />
         <% end %>
         <button
@@ -406,6 +411,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           id="add-activities-tools"
           project_id={@project.id}
           is_admin={@is_admin}
+          author={@current_author}
         />
       </Overview.section>
 
@@ -491,7 +497,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           module={RequiredSurvey}
           id="required-survey-section"
           project={@project}
-          author_id={@current_author.id}
+          author={@current_author}
           enabled={@project.required_survey_resource_id}
           required_survey={@project.required_survey}
         />
@@ -505,6 +511,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           module={TransferPaymentCodes}
           id="transfer-payment-codes-section"
           project={@project}
+          author={@current_author}
         />
       </Overview.section>
 
@@ -867,7 +874,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         %{"confirmation" => "Update Framework"},
         %{assigns: %{confirming_framework_upgrade: true}} = socket
       ) do
-    case Course.upgrade_learning_model(socket.assigns.project, socket.assigns.current_author) do
+    context = Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui)
+
+    case Oli.Authoring.Audited.upgrade_learning_model(context, socket.assigns.project.id) do
       {:ok, updated} ->
         project = %{
           socket.assigns.project
@@ -900,19 +909,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   end
 
   def handle_event("update", %{"project" => project_params}, socket) do
+    # Attributes the form omits, such as the coverage thresholds that Objectives edits, keep
+    # their persisted values.
     project_params =
       project_params
-      |> add_custom_license_details()
+      |> Map.reject(fn {key, _value} -> String.starts_with?(key, "_") end)
       |> decode_welcome_title()
 
-    # Use the persisted thresholds rather than the values the Overview form
-    # mounted with, so this form cannot overwrite changes from Objectives.
-    project = socket.assigns.project
-    current_attributes = Course.get_project!(project.id).attributes
-    project_params = preserve_coverage_thresholds(project_params, current_attributes)
-
     socket =
-      case Course.update_project(project, project_params) do
+      case update_settings(socket, project_params, @settings_form_fields) do
         {:ok, project} ->
           socket
           |> assign(:project, project)
@@ -924,6 +929,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           socket
           |> assign(:changeset, changeset)
           |> put_flash(:error, "Project could not be updated.")
+
+        {:error, _reason} ->
+          put_flash(socket, :error, "Project could not be updated.")
       end
 
     {:noreply, socket}
@@ -1151,7 +1159,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   defp toggle_authoring_feature(socket, field) do
     project = socket.assigns.project
 
-    case Course.update_project(project, %{field => !Map.fetch!(project, field)}) do
+    case update_settings(socket, %{field => !Map.fetch!(project, field)}, [field]) do
       {:ok, project} ->
         {:noreply,
          socket
@@ -1163,6 +1171,44 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
          socket
          |> assign(:changeset, changeset)
          |> put_flash(:error, "Project could not be updated.")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Project could not be updated.")}
+    end
+  end
+
+  # The assigned project carries associations and virtual fields loaded on mount (communities,
+  # the survey revision, the owner); the updated project keeps them.
+  defp update_settings(socket, attrs, fields) do
+    %{project: project, current_author: author} = socket.assigns
+    context = Oli.Auditing.Context.for_actor(author, source: :ui)
+
+    case Oli.Authoring.Audited.update_project_settings(context, project.id, attrs, fields) do
+      {:ok, updated} -> {:ok, keep_loaded(updated, project)}
+      error -> error
+    end
+  end
+
+  # A belongs_to association is kept only while its key is unchanged.
+  defp keep_loaded(updated, previous) do
+    loaded = Project.__schema__(:associations) ++ Project.__schema__(:virtual_fields)
+
+    Enum.reduce(loaded, updated, fn field, acc ->
+      case {Map.fetch!(previous, field), same_owner?(field, previous, updated)} do
+        {%Ecto.Association.NotLoaded{}, _} -> acc
+        {value, true} -> Map.put(acc, field, value)
+        {_value, false} -> acc
+      end
+    end)
+  end
+
+  defp same_owner?(field, previous, updated) do
+    case Project.__schema__(:association, field) do
+      %Ecto.Association.BelongsTo{owner_key: key} ->
+        Map.fetch!(previous, key) == Map.fetch!(updated, key)
+
+      _other ->
+        true
     end
   end
 
@@ -1178,16 +1224,4 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   defp decode_welcome_title(project_params),
     do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
-
-  defp preserve_coverage_thresholds(project_params, current_attributes) do
-    thresholds = ProjectAttributes.coverage_thresholds(current_attributes)
-
-    attributes =
-      project_params
-      |> Map.get("attributes", %{})
-      |> Map.put("coverage_formative_threshold", thresholds.formative)
-      |> Map.put("coverage_summative_threshold", thresholds.summative)
-
-    Map.put(project_params, "attributes", attributes)
-  end
 end

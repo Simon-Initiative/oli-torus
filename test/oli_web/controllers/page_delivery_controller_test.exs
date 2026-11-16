@@ -689,7 +689,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: project
     } do
       {:ok, _project_with_license} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           attributes: %{
             license: %{license_type: :custom, custom_license_details: "This is a custom license"}
           }
@@ -717,7 +717,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: project
     } do
       {:ok, _project_with_license} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           attributes: %{
             license: %{license_type: :none, custom_license_details: ""}
           }
@@ -745,7 +745,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: project
     } do
       {:ok, _project_with_license} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           attributes: %{
             license: %{license_type: :custom, custom_license_details: "This is a custom license"}
           }
@@ -773,7 +773,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: project
     } do
       {:ok, _project_with_license} =
-        Course.update_project(project, %{attributes: %{license: %{license_type: :cc_by}}})
+        Oli.TestHelpers.update_project_fixture(project, %{
+          attributes: %{license: %{license_type: :cc_by}}
+        })
 
       enroll_as_student(%{section: section, user: user})
 

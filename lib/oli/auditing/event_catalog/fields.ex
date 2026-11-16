@@ -130,7 +130,8 @@ defmodule Oli.Auditing.EventCatalog.Fields do
       required_survey_resource_id allow_transfer_payment_codes welcome_title encouraging_subtitle
       auto_update_sections learning_model_version customizations learning_language
       calculate_embeddings_on_publish coverage_formative_threshold coverage_summative_threshold
-      license_type custom_license_details)a)
+      license_type custom_license_details visibility_grants enabled_activities alternatives_groups
+      experiment_status experiment_conditions experiment_definition)a)
   end
 
   @doc "Authoring configuration: page settings, objectives, and curriculum structure."
@@ -402,7 +403,16 @@ defmodule Oli.Auditing.EventCatalog.Fields do
             project_id: "source project of a duplicate; recorded by project_duplicated",
             family_id: "project family link, fixed at creation",
             attributes: "recorded through its subfields (see ProjectAttributes)"
-          })
+          }),
+        pseudo_keys: %{
+          visibility_grants: "authors and institutions granted access through ProjectVisibility",
+          enabled_activities: "activities and tools enabled through ActivityRegistrationProject",
+          alternatives_groups: "alternatives group definitions, stored as revisions",
+          experiment_status: "lifecycle state of an experiment definition",
+          experiment_conditions: "conditions of an experiment definition",
+          experiment_definition:
+            "other settings of an experiment definition, with its interventions, assessment bindings, and sections"
+        }
       ),
       source(Oli.Authoring.Course.ProjectAttributes, [:project_settings],
         excluded: %{license: "recorded through license_type and custom_license_details"},

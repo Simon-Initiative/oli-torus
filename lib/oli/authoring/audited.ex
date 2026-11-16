@@ -1,6 +1,7 @@
 defmodule Oli.Authoring.Audited do
   @moduledoc """
-  Application boundary for audited authoring commands: project lifecycle and collaborators.
+  Application boundary for audited authoring commands: project lifecycle, collaborators, and
+  project settings.
 
   Each command writes its change and its events in one transaction. A project's owner is the
   author who creates, copies, or imports it, and is recorded as the affected author of the
@@ -8,8 +9,13 @@ defmodule Oli.Authoring.Audited do
   `project_collaborator_changed` with the collaborator as the affected author and the `status`
   and `role` before and after.
 
+  Project settings commands record `project_settings_changed` with the fields that changed, and
+  record nothing when no field changed. Each settings form passes the fields it edits; any other
+  key returns `{:error, :protected}`. The trigger switch records `activation_settings_changed`.
+
   Commands do not authorize the actor; callers keep their existing authorization. Checks that
-  lived in the migrated functions (the owner cannot be removed) run inside the transaction.
+  lived in the migrated functions (the owner cannot be removed, only project authors upgrade
+  the learning model) run inside the transaction.
   """
 
   # This configuration is what makes CI fail when a caller bypasses this facade.
@@ -17,12 +23,15 @@ defmodule Oli.Authoring.Audited do
   # because this boundary calls into Oli, which depends on it; incoming checks stay on.
   use Boundary, top_level?: true, exports: [], check: [out: false]
 
+  import Ecto.Query, only: [from: 2]
+
   alias Ecto.Multi
   alias Oli.Accounts
   alias Oli.Accounts.{Author, AuthorToken}
   alias Oli.Auditing
-  alias Oli.Auditing.{Changes, Context}
-  alias Oli.Authoring.Audited.Projects
+  alias Oli.Auditing.{Changes, Context, LogEvent}
+  alias Oli.Auditing.EventCatalog.Fields
+  alias Oli.Authoring.Audited.{Projects, Settings}
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Authoring.{Collaborators, Course}
   alias Oli.Authoring.Course.Project
@@ -30,7 +39,8 @@ defmodule Oli.Authoring.Audited do
 
   @collaborator_fields %{status: :value, role: :value}
 
-  @type command_error :: :invalid_request | :not_found | :nested_transaction | term()
+  @type command_error ::
+          :invalid_request | :not_found | :nested_transaction | :protected | term()
 
   ## Projects
 
@@ -188,6 +198,359 @@ defmodule Oli.Authoring.Audited do
     proposal
     |> Map.put(:refs, [%{role: :source, type: :project, id: source.id, label: source.title}])
     |> Map.update!(:details, &Map.put(&1, :source_project_id, source.id))
+  end
+
+  ## Project settings
+
+  @doc """
+  Updates the settings of the project with ID `project_id` from `attrs` and records
+  `project_settings_changed` with the fields that changed.
+
+  `allowed` lists the fields the calling form edits; a key of `attrs` outside it returns
+  `{:error, :protected}` and writes nothing. Keys may be atoms or strings, as forms send them.
+  `attributes` is merged into the persisted embed, so omitted attribute fields keep their
+  values. An update that changes nothing records no event.
+  """
+  @spec update_project_settings(Context.t(), pos_integer(), map(), [atom()]) ::
+          {:ok, %Project{}} | {:error, command_error()}
+  def update_project_settings(%Context{} = context, project_id, attrs, allowed)
+      when is_integer(project_id) and is_map(attrs) and is_list(allowed) do
+    case allowed -- Settings.settings_fields() do
+      [] -> :ok
+      fields -> raise ArgumentError, "not project settings fields: #{inspect(fields)}"
+    end
+
+    with :ok <- Settings.check_keys(attrs, allowed) do
+      change_settings(context, project_id, fn project ->
+        project |> Settings.changeset(attrs) |> Repo.update()
+      end)
+    end
+  end
+
+  def update_project_settings(_context, _project_id, _attrs, _allowed),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Returns every project field a settings command may write, for callers that edit any setting
+  (Scenario directives).
+  """
+  @spec project_settings_fields() :: [atom()]
+  def project_settings_fields, do: Settings.settings_fields()
+
+  @doc """
+  Enables activation points (triggers) for the project with ID `project_id` and records
+  `activation_settings_changed`. A project that already allows them records nothing.
+  """
+  @spec enable_triggers(Context.t(), pos_integer()) ::
+          {:ok, %Project{}} | {:error, command_error()}
+  def enable_triggers(%Context{} = context, project_id) when is_integer(project_id) do
+    change_settings(
+      context,
+      project_id,
+      fn project ->
+        project |> Project.changeset(%{allow_triggers: true}) |> Repo.update()
+      end,
+      event: :activation_settings_changed
+    )
+  end
+
+  def enable_triggers(_context, _project_id), do: {:error, :invalid_request}
+
+  @doc """
+  Moves the project with ID `project_id` and its product templates from the legacy learning model
+  to LKT-AOA, and records the change with the number of templates in `blueprint_count`.
+
+  Only an author with access to the project may upgrade (`:not_authorized`); a project that is
+  not active or already upgraded returns `:not_upgradable`. Course sections, content, and learner
+  proficiency are unchanged.
+  """
+  @spec upgrade_learning_model(Context.t(), pos_integer()) ::
+          {:ok, %Project{}} | {:error, command_error()}
+  def upgrade_learning_model(%Context{} = context, project_id) when is_integer(project_id) do
+    change_settings(context, project_id, fn project ->
+      with :ok <- project_author(context, project),
+           {:ok, {upgraded, blueprint_count}} <- Settings.upgrade_learning_model(project) do
+        {:ok, upgraded, %{blueprint_count: blueprint_count}}
+      end
+    end)
+  end
+
+  def upgrade_learning_model(_context, _project_id), do: {:error, :invalid_request}
+
+  @doc """
+  Creates the survey page that students take before starting the course, links it to the
+  project with ID `project_id`, and records the change. Returns the survey revision, or an
+  error message when the project already has a survey.
+  """
+  @spec create_project_survey(Context.t(), pos_integer()) ::
+          {:ok, Oli.Resources.Revision.t()} | {:error, command_error()}
+  def create_project_survey(%Context{author_id: author_id} = context, project_id)
+      when is_integer(project_id) and is_integer(author_id) do
+    Repo.transaction(fn ->
+      with {:ok, before} <- Projects.lock_project(project_id),
+           {:ok, {updated, revision}} <- Settings.create_survey(before, author_id),
+           :ok <- record_settings(context, :project_settings_changed, before, updated, %{}) do
+        revision
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  def create_project_survey(_context, _project_id), do: {:error, :invalid_request}
+
+  @doc """
+  Unlinks and deletes the survey page of the project with ID `project_id`, and records the
+  change. Returns an error message when the project has no survey.
+  """
+  @spec delete_project_survey(Context.t(), pos_integer()) ::
+          {:ok, %Project{}} | {:error, command_error()}
+  def delete_project_survey(%Context{} = context, project_id) when is_integer(project_id) do
+    change_settings(context, project_id, &Settings.delete_survey/1)
+  end
+
+  def delete_project_survey(_context, _project_id), do: {:error, :invalid_request}
+
+  @doc """
+  Writes the settings an archive import learns only after creating the project: its custom
+  labels and its survey page. The import's `project_imported` event covers them, so no event is
+  recorded.
+
+  Accepts only `customizations` and `required_survey_resource_id` (`:protected` otherwise), and
+  only inside the transaction of the import that recorded `project_imported` for this project
+  under `context` (`:not_importing` otherwise).
+  """
+  @spec complete_import(Context.t(), %Project{}, map()) ::
+          {:ok, %Project{}} | {:error, command_error()}
+  def complete_import(%Context{} = context, %Project{} = project, attrs) when is_map(attrs) do
+    with :ok <- Settings.check_keys(attrs, Settings.import_fields()),
+         :ok <- importing(context, project.id) do
+      project |> Project.changeset(attrs) |> Repo.update()
+    end
+  end
+
+  def complete_import(_context, _project, _attrs), do: {:error, :invalid_request}
+
+  # The ingest builds one context per import, so its operation ID identifies the import that
+  # created the project; an earlier import of the same archive has another operation ID.
+  defp importing(%Context{operation_id: operation_id}, project_id) do
+    query =
+      from(e in LogEvent,
+        where:
+          e.project_id == ^project_id and e.event_type == :project_imported and
+            e.operation_id == ^operation_id
+      )
+
+    case Repo.in_transaction?() and Repo.exists?(query) do
+      true -> :ok
+      false -> {:error, :not_importing}
+    end
+  end
+
+  # Locks the project, applies `change`, and records the settings that changed. `change` returns
+  # `{:ok, project}`, `{:ok, project, details}`, or `{:error, reason}`.
+  defp change_settings(context, project_id, change, opts \\ []) do
+    event_type = Keyword.get(opts, :event, :project_settings_changed)
+
+    Repo.transaction(fn ->
+      with {:ok, before} <- Projects.lock_project(project_id),
+           {:ok, updated, details} <- with_details(change.(before)),
+           :ok <- record_settings(context, event_type, before, updated, details) do
+        updated
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp with_details({:ok, updated}), do: {:ok, updated, %{}}
+  defp with_details({:ok, _updated, _details} = result), do: result
+  defp with_details({:error, _reason} = error), do: error
+
+  defp record_settings(context, event_type, before, updated, details) do
+    {policy, key} =
+      case event_type do
+        :project_settings_changed -> {Fields.project_settings(), "settings_changed"}
+        :activation_settings_changed -> {%{allow_triggers: :value}, "activation_settings_changed"}
+      end
+
+    case Changes.diff(Settings.view(before), Settings.view(updated), policy) do
+      changes when map_size(changes) == 0 ->
+        :ok
+
+      changes ->
+        record(context, %{
+          event_type: event_type,
+          entity: {:project, updated.id, updated},
+          scope: %{project_id: updated.id},
+          event_key: "project:#{updated.id}:#{key}",
+          changes: changes,
+          details: details
+        })
+    end
+  end
+
+  defp project_author(%Context{actor_type: :author, author_id: author_id}, project) do
+    case Repo.get(Author, author_id) do
+      %Author{} = author ->
+        case Accounts.can_access?(author, project) do
+          true -> :ok
+          false -> {:error, :not_authorized}
+        end
+
+      nil ->
+        {:error, :not_authorized}
+    end
+  end
+
+  defp project_author(_context, _project), do: {:error, :not_authorized}
+
+  ## Alternatives groups
+
+  @alternatives_type_id Oli.Resources.ResourceType.id_for_alternatives()
+
+  @doc """
+  Creates an alternatives group in the project with slug `project_slug` and records it as added
+  to `alternatives_groups`. `attrs` are the revision attributes (`title`, `content`). Returns the
+  group's revision or the editor's error, as before.
+  """
+  @spec create_alternatives_group(Context.t(), String.t(), %Author{}, map()) ::
+          {:ok, Oli.Resources.Revision.t()} | {:error, term()}
+  def create_alternatives_group(%Context{} = context, project_slug, %Author{} = author, attrs) do
+    Repo.transaction(fn ->
+      with {:ok, group} <-
+             Oli.Authoring.Editing.ResourceEditor.create(
+               project_slug,
+               author,
+               @alternatives_type_id,
+               attrs
+             ),
+           :ok <- record_group(context, project_slug, group, nil, group) do
+        group
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  @doc """
+  Applies `update` to the alternatives group with resource ID `resource_id` and records the
+  group's title, strategy, and options before and after. An update that changes none of them
+  records nothing. Returns the new revision or the editor's error, as before.
+  """
+  @spec edit_alternatives_group(Context.t(), String.t(), pos_integer(), %Author{}, map()) ::
+          {:ok, Oli.Resources.Revision.t()} | {:error, term()}
+  def edit_alternatives_group(%Context{} = context, project_slug, resource_id, author, update) do
+    Repo.transaction(fn ->
+      before = Oli.Publishing.AuthoringResolver.from_resource_id(project_slug, resource_id)
+
+      with {:ok, group} <-
+             Oli.Authoring.Editing.ResourceEditor.edit(project_slug, resource_id, author, update),
+           :ok <- record_group(context, project_slug, group, before, group) do
+        group
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  @doc """
+  Moves option `option_id` of the group with resource ID `resource_id` (found in `groups`) to
+  `drop_index`, and records the new option order. Returns what
+  `Oli.Authoring.Editing.AlternativesOptionEditor.move_to/6` returns, as before.
+  """
+  @spec move_alternatives_option(
+          Context.t(),
+          String.t(),
+          %Author{},
+          [map()],
+          integer() | String.t(),
+          String.t(),
+          integer() | String.t()
+        ) :: {:ok, [map()], map()} | {:ok, :unchanged} | {:error, term()}
+  def move_alternatives_option(
+        %Context{} = context,
+        project_slug,
+        author,
+        groups,
+        resource_id,
+        option_id,
+        drop_index
+      ) do
+    Repo.transaction(fn ->
+      case Oli.Authoring.Editing.AlternativesOptionEditor.move_to(
+             project_slug,
+             author,
+             groups,
+             resource_id,
+             option_id,
+             drop_index
+           ) do
+        {:ok, :unchanged} ->
+          :unchanged
+
+        {:ok, updated_groups, group} ->
+          before = Enum.find(groups, &(&1.resource_id == group.resource_id))
+
+          case record_group(context, project_slug, group, before, group) do
+            :ok -> {updated_groups, group}
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+    |> case do
+      {:ok, :unchanged} -> {:ok, :unchanged}
+      {:ok, {updated_groups, group}} -> {:ok, updated_groups, group}
+      error -> error
+    end
+  end
+
+  defp record_group(context, project_slug, group, before, after_group) do
+    old = before && group_summary(before)
+    new = group_summary(after_group)
+
+    changes =
+      case old do
+        nil ->
+          %{"alternatives_groups" => %{"operation" => "added", "after" => [new]}}
+
+        ^new ->
+          %{}
+
+        old ->
+          %{"alternatives_groups" => %{"operation" => "set", "before" => [old], "after" => [new]}}
+      end
+
+    case map_size(changes) do
+      0 ->
+        :ok
+
+      _ ->
+        project = Course.get_project_by_slug(project_slug)
+
+        record(context, %{
+          event_type: :project_settings_changed,
+          entity: {:project, project.id, project},
+          scope: %{project_id: project.id},
+          event_key: "project:#{project.id}:settings_changed",
+          changes: changes,
+          details: %{alternatives_group_id: group.resource_id}
+        })
+    end
+  end
+
+  defp group_summary(group) do
+    content = group.content || %{}
+
+    %{
+      "resource_id" => group.resource_id,
+      "title" => group.title,
+      "strategy" => content["strategy"],
+      "options" => Enum.map(content["options"] || [], &%{"id" => &1["id"], "name" => &1["name"]})
+    }
   end
 
   ## Collaborators

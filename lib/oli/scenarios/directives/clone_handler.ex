@@ -26,7 +26,12 @@ defmodule Oli.Scenarios.Directives.CloneHandler do
             cloned_project =
               if title do
                 {:ok, updated_project} =
-                  Oli.Authoring.Course.update_project(cloned_project, %{title: title})
+                  Oli.Authoring.Audited.update_project_settings(
+                    Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
+                    cloned_project.id,
+                    %{title: title},
+                    [:title]
+                  )
 
                 updated_project
               else

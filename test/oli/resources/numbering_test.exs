@@ -270,7 +270,9 @@ defmodule Oli.Resources.NumberingTest do
 
     test "custom labels", %{project: project, institution: institution, author: author} do
       custom_labels = %{"unit" => "Volume", "module" => "Chapter", "section" => "Lesson"}
-      {:ok, project} = Course.update_project(project, %{customizations: custom_labels})
+
+      {:ok, project} =
+        Oli.TestHelpers.update_project_fixture(project, %{customizations: custom_labels})
 
       {:ok, pub1} = Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 

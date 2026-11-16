@@ -2284,7 +2284,7 @@ defmodule OliWeb.RemixSectionLiveTest do
     restricted_project = Seeder.another_project(unrelated_author, institution, title)
 
     {:ok, _project} =
-      Course.update_project(restricted_project.project, %{visibility: :selected})
+      Oli.TestHelpers.update_project_fixture(restricted_project.project, %{visibility: :selected})
 
     {:ok, _publication} =
       Oli.TestHelpers.publish_project_fixture(

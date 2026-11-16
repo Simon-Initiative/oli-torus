@@ -1,10 +1,9 @@
 defmodule OliWeb.Components.Project.AdvancedActivityItem do
   use OliWeb, :live_component
 
-  alias Oli.Activities
-
   attr :activity, :map, required: true
   attr :project_id, :integer, required: true
+  attr :author, :map, required: true, doc: "the author changing the project's activities"
 
   def render(assigns) do
     ~H"""
@@ -43,15 +42,15 @@ defmodule OliWeb.Components.Project.AdvancedActivityItem do
         },
         socket
       ) do
-    case Activities.disable_activity_in_project(project_id, activity_id) do
+    case set_status(socket, project_id, activity_id, :disabled) do
       :ok ->
         send(self(), {:flash_message, {:info, "Activity `#{title}` disabled successfully."}})
 
         {:noreply,
          assign(socket, activity: %{socket.assigns.activity | project_status: :disabled})}
 
-      {:error, message} ->
-        send(self(), {:flash_message, {:error, message}})
+      {:error, reason} ->
+        send(self(), {:flash_message, {:error, error_message(reason)}})
 
         {:noreply, socket}
     end
@@ -67,17 +66,33 @@ defmodule OliWeb.Components.Project.AdvancedActivityItem do
         },
         socket
       ) do
-    case Activities.enable_activity_in_project(project_id, activity_id) do
+    case set_status(socket, project_id, activity_id, :enabled) do
       :ok ->
         send(self(), {:flash_message, {:info, "Activity `#{title}` enabled successfully."}})
 
         {:noreply,
          assign(socket, activity: %{socket.assigns.activity | project_status: :enabled})}
 
-      {:error, message} ->
-        send(self(), {:flash_message, {:error, message}})
+      {:error, reason} ->
+        send(self(), {:flash_message, {:error, error_message(reason)}})
 
         {:noreply, socket}
     end
   end
+
+  # The IDs arrive as strings from the page.
+  defp set_status(socket, project_id, activity_id, status) do
+    Oli.Activities.Audited.set_project_activity_status(
+      Oli.Auditing.Context.for_actor(socket.assigns.author, source: :ui),
+      to_integer(project_id),
+      to_integer(activity_id),
+      status
+    )
+  end
+
+  defp to_integer(id) when is_integer(id), do: id
+  defp to_integer(id) when is_binary(id), do: String.to_integer(id)
+
+  defp error_message(message) when is_binary(message), do: message
+  defp error_message(_reason), do: "The activity could not be updated."
 end

@@ -7,6 +7,9 @@ defmodule Oli.Publishing.Audited do
   bookkeeping around it (the new working publication, unique-ID marking, and copied mappings) is
   part of the same publication and records nothing on its own.
 
+  `update_visibility_grants/3` records the authors and institutions granted or denied access to
+  a restricted project as `visibility_grants` added or removed in `project_settings_changed`.
+
   Commands do not authorize the actor; callers keep their existing authorization.
   """
 
@@ -15,10 +18,12 @@ defmodule Oli.Publishing.Audited do
   # because this boundary calls into Oli, which depends on it; incoming checks stay on.
   use Boundary, top_level?: true, exports: [], check: [out: false]
 
+  import Ecto.Query, only: [from: 2]
+
   alias Oli.Auditing
   alias Oli.Auditing.Context
   alias Oli.Authoring.{Clone, Locks}
-  alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course.{Project, ProjectVisibility}
   alias Oli.Publishing
   alias Oli.Publishing.Publications.{Publication, PublicationDiff}
   alias Oli.Repo
@@ -148,6 +153,120 @@ defmodule Oli.Publishing.Audited do
     }
 
     with {:ok, changeset} <- Auditing.build(context, proposal),
+         {:ok, _event} <- Auditing.insert(changeset) do
+      :ok
+    end
+  end
+
+  @typedoc "An author or institution that may see a restricted project."
+  @type grant :: {:author, pos_integer()} | {:institution, pos_integer()}
+
+  @doc """
+  Grants access to the project with ID `project_id` to the authors and institutions in `:add`,
+  and removes the grants in `:remove`, in one transaction. Grants that already exist (when
+  adding) or do not exist (when removing) are skipped. Records one `project_settings_changed`
+  for the added grants and one for the removed grants; a call that changes nothing records no
+  event. Returns the project's grants afterwards.
+  """
+  @spec update_visibility_grants(Context.t(), pos_integer(), %{
+          optional(:add) => [grant()],
+          optional(:remove) => [grant()]
+        }) :: {:ok, [%ProjectVisibility{}]} | {:error, term()}
+  def update_visibility_grants(%Context{} = context, project_id, changes)
+      when is_integer(project_id) and is_map(changes) do
+    to_add = Map.get(changes, :add, [])
+    to_remove = Map.get(changes, :remove, [])
+
+    with :ok <- valid_grants(to_add ++ to_remove) do
+      Repo.transaction(fn ->
+        with {:ok, project} <- lock_project(project_id),
+             current = project_grants(project_id),
+             {:ok, added} <- add_grants(project_id, Enum.uniq(to_add) -- Map.keys(current)),
+             {:ok, removed} <- remove_grants(Map.take(current, Enum.uniq(to_remove))),
+             :ok <- record_grants(context, project, "added", added),
+             :ok <- record_grants(context, project, "removed", removed) do
+          Repo.all(from(v in ProjectVisibility, where: v.project_id == ^project_id))
+        else
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+    end
+  end
+
+  def update_visibility_grants(_context, _project_id, _changes), do: {:error, :invalid_request}
+
+  defp valid_grants(grants) do
+    case Enum.all?(
+           grants,
+           &match?({kind, id} when kind in [:author, :institution] and is_integer(id), &1)
+         ) do
+      true -> :ok
+      false -> {:error, :invalid_request}
+    end
+  end
+
+  defp lock_project(project_id) do
+    case Repo.one(from(p in Project, where: p.id == ^project_id, lock: "FOR NO KEY UPDATE")) do
+      nil -> {:error, :not_found}
+      project -> {:ok, project}
+    end
+  end
+
+  defp project_grants(project_id) do
+    from(v in ProjectVisibility, where: v.project_id == ^project_id)
+    |> Repo.all()
+    |> Enum.flat_map(fn
+      %ProjectVisibility{author_id: id} = row when is_integer(id) ->
+        [{{:author, id}, row}]
+
+      %ProjectVisibility{institution_id: id} = row when is_integer(id) ->
+        [{{:institution, id}, row}]
+
+      _row ->
+        []
+    end)
+    |> Map.new()
+  end
+
+  defp add_grants(project_id, grants) do
+    Enum.reduce_while(grants, {:ok, []}, fn {kind, id} = grant, {:ok, added} ->
+      attrs = %{project_id: project_id} |> Map.put(:"#{kind}_id", id)
+
+      case %ProjectVisibility{} |> ProjectVisibility.changeset(attrs) |> Repo.insert() do
+        {:ok, _row} -> {:cont, {:ok, [grant | added]}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp remove_grants(rows) do
+    Enum.reduce_while(rows, {:ok, []}, fn {grant, row}, {:ok, removed} ->
+      case Repo.delete(row) do
+        {:ok, _row} -> {:cont, {:ok, [grant | removed]}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp record_grants(_context, _project, _operation, []), do: :ok
+
+  defp record_grants(context, project, operation, grants) do
+    side =
+      case operation do
+        "added" -> "after"
+        "removed" -> "before"
+      end
+
+    values = grants |> Enum.sort() |> Enum.map(fn {kind, id} -> %{"#{kind}_id" => id} end)
+
+    with {:ok, changeset} <-
+           Auditing.build(context, %{
+             event_type: :project_settings_changed,
+             entity: {:project, project.id, project},
+             scope: %{project_id: project.id},
+             event_key: "project:#{project.id}:settings_changed",
+             changes: %{"visibility_grants" => %{"operation" => operation, side => values}}
+           }),
          {:ok, _event} <- Auditing.insert(changeset) do
       :ok
     end

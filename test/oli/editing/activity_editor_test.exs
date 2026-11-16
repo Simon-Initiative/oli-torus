@@ -1132,7 +1132,7 @@ defmodule Oli.ActivityEditingTest do
       project: project,
       revision1: revision
     } do
-      {:ok, _project} = Oli.Authoring.Course.update_project(project, %{allow_triggers: true})
+      {:ok, _project} = Oli.TestHelpers.update_project_fixture(project, %{allow_triggers: true})
 
       {:ok, {%{resource_id: resource_id, content: content}, _}} =
         ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])

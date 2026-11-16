@@ -58,17 +58,18 @@ defmodule OliWeb.ProjectController do
   end
 
   def enable_triggers(conn, _project_params) do
-    case Oli.Authoring.Course.update_project(conn.assigns.project, %{allow_triggers: true}) do
+    context = Context.for_actor(conn.assigns.current_author, source: :ui)
+    project = conn.assigns.project
+
+    case Oli.Authoring.Audited.enable_triggers(context, project.id) do
       {:ok, project} ->
         conn
         |> put_flash(:info, "AI Activation Points enabled.")
         |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
 
-      {:error, message} ->
-        project = conn.assigns.project
-
+      {:error, _reason} ->
         conn
-        |> put_flash(:error, "Project could not be edited: " <> message)
+        |> put_flash(:error, "Project could not be edited.")
         |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
     end
   end

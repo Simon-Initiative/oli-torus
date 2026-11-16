@@ -2191,8 +2191,8 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `allow_duplication`, `allow_ecl_content_type`, `allow_transfer_payment_codes`, `allow_triggers`, `alternatives_enabled`, `analytics_version`, `auto_update_sections`, `calculate_embeddings_on_publish`, `coverage_formative_threshold`, `coverage_summative_threshold`, `custom_license_details`, `customizations`, `description`, `encouraging_subtitle`, `experiments_enabled`, `learning_language`, `learning_model_version`, `license_type`, `publisher_id`, `required_survey_resource_id`, `status`, `title`, `visibility`, `welcome_title` |
-| Detail keys | none |
+| Change fields | `allow_duplication`, `allow_ecl_content_type`, `allow_transfer_payment_codes`, `allow_triggers`, `alternatives_enabled`, `alternatives_groups`, `analytics_version`, `auto_update_sections`, `calculate_embeddings_on_publish`, `coverage_formative_threshold`, `coverage_summative_threshold`, `custom_license_details`, `customizations`, `description`, `enabled_activities`, `encouraging_subtitle`, `experiment_conditions`, `experiment_definition`, `experiment_status`, `experiments_enabled`, `learning_language`, `learning_model_version`, `license_type`, `publisher_id`, `required_survey_resource_id`, `status`, `title`, `visibility`, `visibility_grants`, `welcome_title` |
+| Detail keys | `blueprint_count`, `experiment_id`, `alternatives_group_id` |
 | Reference roles | none |
 | Status | active |
 

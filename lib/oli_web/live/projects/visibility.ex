@@ -2,6 +2,7 @@ defmodule OliWeb.Projects.VisibilityLive do
   use Phoenix.LiveView
   alias Oli.Authoring.Course
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.Institutions
   alias Oli.Publishing
   use Phoenix.HTML
@@ -26,7 +27,8 @@ defmodule OliWeb.Projects.VisibilityLive do
        user_emails: [],
        institution_names: [],
        tab: :users,
-       is_admin: is_admin?
+       is_admin: is_admin?,
+       current_author: current_author
      )}
   end
 
@@ -347,14 +349,12 @@ defmodule OliWeb.Projects.VisibilityLive do
     if !socket.assigns.is_admin do
       {:noreply, socket}
     else
-      {:ok, project} = Course.update_project(socket.assigns.project, %{visibility: option})
-      {:noreply, assign(socket, :project, project)}
+      update_setting(socket, %{visibility: option}, :visibility)
     end
   end
 
   def handle_event("duplication", %{"duplication" => %{"allow_duplication" => value}}, socket) do
-    {:ok, project} = Course.update_project(socket.assigns.project, %{allow_duplication: value})
-    {:noreply, assign(socket, :project, project)}
+    update_setting(socket, %{allow_duplication: value}, :allow_duplication)
   end
 
   def handle_event("selected_email", %{"multi" => %{"emails" => emails}}, socket) do
@@ -362,22 +362,12 @@ defmodule OliWeb.Projects.VisibilityLive do
     if !socket.assigns.is_admin do
       {:noreply, socket}
     else
-      emails
-      |> Enum.each(fn e ->
-        {id, _} = Integer.parse(e)
+      grants = Enum.map(emails, fn e -> {:author, elem(Integer.parse(e), 0)} end)
 
-        f =
-          Enum.find(socket.assigns.project_visibilities, fn x ->
-            x.author != nil && x.author.id == id
-          end)
-
-        if f == nil do
-          Publishing.insert_visibility(%{project_id: socket.assigns.project.id, author_id: id})
-        end
-      end)
-
-      project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
-      {:noreply, assign(socket, project_visibilities: project_visibilities, user_emails: [])}
+      socket
+      |> update_grants(%{add: grants})
+      |> assign(user_emails: [])
+      |> then(&{:noreply, &1})
     end
   end
 
@@ -390,27 +380,12 @@ defmodule OliWeb.Projects.VisibilityLive do
     if !socket.assigns.is_admin do
       {:noreply, socket}
     else
-      institutions
-      |> Enum.each(fn e ->
-        {id, _} = Integer.parse(e)
+      grants = Enum.map(institutions, fn e -> {:institution, elem(Integer.parse(e), 0)} end)
 
-        f =
-          Enum.find(socket.assigns.project_visibilities, fn x ->
-            x.institution != nil && x.institution.id == id
-          end)
-
-        if f == nil do
-          Publishing.insert_visibility(%{
-            project_id: socket.assigns.project.id,
-            institution_id: id
-          })
-        end
-      end)
-
-      project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
-
-      {:noreply,
-       assign(socket, project_visibilities: project_visibilities, institution_names: [])}
+      socket
+      |> update_grants(%{add: grants})
+      |> assign(institution_names: [])
+      |> then(&{:noreply, &1})
     end
   end
 
@@ -439,17 +414,41 @@ defmodule OliWeb.Projects.VisibilityLive do
     else
       {id, _} = Integer.parse(visibility_id)
 
-      v =
-        Enum.find(socket.assigns.project_visibilities, fn x ->
-          x.visibility != nil && x.visibility.id == id
-        end)
+      grants =
+        socket.assigns.project_visibilities
+        |> Enum.filter(&(&1.visibility != nil && &1.visibility.id == id))
+        |> Enum.map(&grant/1)
 
-      if v != nil do
-        Publishing.remove_visibility(v.visibility)
+      {:noreply, update_grants(socket, %{remove: grants})}
+    end
+  end
+
+  defp grant(%{visibility: %{author_id: id}}) when is_integer(id), do: {:author, id}
+  defp grant(%{visibility: %{institution_id: id}}), do: {:institution, id}
+
+  defp update_grants(socket, changes) do
+    %{project: project, current_author: author} = socket.assigns
+    context = Context.for_actor(author, source: :ui)
+
+    socket =
+      case Oli.Publishing.Audited.update_visibility_grants(context, project.id, changes) do
+        {:ok, _grants} -> socket
+        {:error, _reason} -> put_flash(socket, :error, "The access list could not be updated.")
       end
 
-      project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
-      {:noreply, assign(socket, project_visibilities: project_visibilities)}
+    assign(socket, project_visibilities: Publishing.get_all_project_visibilities(project.id))
+  end
+
+  defp update_setting(socket, attrs, field) do
+    %{project: project, current_author: author} = socket.assigns
+    context = Context.for_actor(author, source: :ui)
+
+    case Oli.Authoring.Audited.update_project_settings(context, project.id, attrs, [field]) do
+      {:ok, project} ->
+        {:noreply, assign(socket, :project, project)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "The setting could not be saved.")}
     end
   end
 end

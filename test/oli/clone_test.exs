@@ -39,7 +39,9 @@ defmodule Oli.CloneTest do
   describe "project duplication" do
     setup do
       project_map = Oli.Seeder.base_project_with_resource2()
-      _survey_revision = Course.create_project_survey(project_map.project, project_map.author.id)
+
+      _survey_revision =
+        Oli.TestHelpers.create_project_survey_fixture(project_map.project, project_map.author)
 
       project =
         Repo.get!(Oli.Authoring.Course.Project, project_map.project.id)

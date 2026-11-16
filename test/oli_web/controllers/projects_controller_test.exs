@@ -31,7 +31,7 @@ defmodule OliWeb.ProjectsControllerTest do
       {:ok, %{project: deleted_project}} =
         Oli.TestHelpers.create_project_fixture("Deleted Project", author)
 
-      Course.update_project(deleted_project, %{status: :deleted})
+      Oli.TestHelpers.update_project_fixture(deleted_project, %{status: :deleted})
 
       %{
         admin: admin,

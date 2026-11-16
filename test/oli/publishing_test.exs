@@ -1246,22 +1246,32 @@ defmodule Oli.PublishingTest do
       assert Publishing.available_publications(author3, nil) |> length == 0
 
       # setting them to global
-      {:ok, project} = Course.update_project(project, %{visibility: :global})
-      Course.update_project(second.project, %{visibility: :global})
+      {:ok, project} = Oli.TestHelpers.update_project_fixture(project, %{visibility: :global})
+      Oli.TestHelpers.update_project_fixture(second.project, %{visibility: :global})
 
       assert Publishing.available_publications(nil, nil) |> length == 2
       assert Publishing.available_publications(author2, nil) |> length == 2
       assert Publishing.available_publications(author3, nil) |> length == 2
 
       # setting one to specific authors
-      {:ok, project} = Course.update_project(project, %{visibility: :authors})
-      Course.update_project(second.project, %{visibility: :selected})
-      Publishing.insert_visibility(%{project_id: second.project.id, author_id: author3.id})
+      {:ok, project} = Oli.TestHelpers.update_project_fixture(project, %{visibility: :authors})
+      Oli.TestHelpers.update_project_fixture(second.project, %{visibility: :selected})
+
+      Oli.TestHelpers.insert_visibility_fixture(%{
+        project_id: second.project.id,
+        author_id: author3.id
+      })
+
       assert Publishing.available_publications(author3, nil) |> length == 1
 
       # setting one to specific author and other to specific institution
-      Course.update_project(project, %{visibility: :selected})
-      Publishing.insert_visibility(%{project_id: project.id, institution_id: institution.id})
+      Oli.TestHelpers.update_project_fixture(project, %{visibility: :selected})
+
+      Oli.TestHelpers.insert_visibility_fixture(%{
+        project_id: project.id,
+        institution_id: institution.id
+      })
+
       assert Publishing.available_publications(author3, institution) |> length == 2
       assert Publishing.available_publications(author2, institution) |> length == 2
     end

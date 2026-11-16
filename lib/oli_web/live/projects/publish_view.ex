@@ -198,7 +198,7 @@ defmodule OliWeb.Projects.PublishView do
     include_out_of_date_sections = include_out_of_date_sections?(socket, publication)
     constrain_to_latest = !include_out_of_date_sections
 
-    Course.update_project(project, %{auto_update_sections: auto_update_sections})
+    socket = save_auto_update_sections(socket, project, auto_update_sections)
 
     {:noreply,
      assign(socket,
@@ -383,5 +383,20 @@ defmodule OliWeb.Projects.PublishView do
     (changed_page_revision_ids ++ page_revision_ids_without_embeddings)
     |> Enum.uniq()
     |> Embeddings.update_by_revision_ids(publication_id)
+  end
+
+  # Unchanged values write nothing and record nothing.
+  defp save_auto_update_sections(socket, project, auto_update_sections) do
+    context = Oli.Auditing.Context.for_actor(socket.assigns.ctx.author, source: :ui)
+
+    case Oli.Authoring.Audited.update_project_settings(
+           context,
+           project.id,
+           %{auto_update_sections: auto_update_sections},
+           [:auto_update_sections]
+         ) do
+      {:ok, _project} -> socket
+      {:error, _reason} -> put_flash(socket, :error, "The update setting could not be saved.")
+    end
   end
 end

@@ -3,7 +3,6 @@ defmodule Oli.Scenarios.Builder do
   Builds Torus project structures from Scenarios definitions.
   """
   alias Oli.Scenarios.Types.{ProjectSpec, Node, BuiltProject}
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.ResourceEditor
@@ -65,13 +64,20 @@ defmodule Oli.Scenarios.Builder do
         author,
         _institution
       ) do
+    # A slug or visibility from the spec is part of the creation; the slug cannot change later
+    create_attrs =
+      []
+      |> maybe_put(:slug, slug)
+      |> maybe_put(:visibility, visibility)
+      |> Map.new()
+
     # Use the same audited project creation that the UI uses, with the represented author
     {:ok, project_setup} =
       Oli.Authoring.Audited.create_project(
         Oli.Auditing.Context.for_actor(author, source: :scenario),
         title || "Test Project",
         author,
-        %{},
+        create_attrs,
         learning_model_version: learning_model_version || :naive,
         # Archive-style creation left the flag unset; keep that for Scenario projects
         lo_well_formed: nil
@@ -83,21 +89,6 @@ defmodule Oli.Scenarios.Builder do
       resource_revision: root_revision,
       publication: publication
     } = project_setup
-
-    update_attrs =
-      []
-      |> maybe_put(:slug, slug)
-      |> maybe_put(:visibility, visibility)
-
-    project =
-      case update_attrs do
-        [] ->
-          project
-
-        attrs ->
-          {:ok, updated_project} = Course.update_project(project, Map.new(attrs))
-          updated_project
-      end
 
     # Update the root revision title to match the spec
     # The standard infrastructure creates "Curriculum" but we want the title from the spec

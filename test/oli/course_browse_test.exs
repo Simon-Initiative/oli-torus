@@ -55,7 +55,7 @@ defmodule Oli.CourseBrowseTest do
       make_projects("admin", 10, admin)
       make_projects("author", 11, author)
       [project] = make_projects("deleted", 1, author)
-      Course.update_project(project, %{status: :deleted})
+      Oli.TestHelpers.update_project_fixture(project, %{status: :deleted})
 
       %{admin: admin, author: author}
     end

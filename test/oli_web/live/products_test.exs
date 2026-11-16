@@ -796,7 +796,7 @@ defmodule OliWeb.ProductsLiveTest do
   end
 
   defp allow_transfer_payment_codes(project) do
-    Course.update_project(project, %{
+    Oli.TestHelpers.update_project_fixture(project, %{
       allow_transfer_payment_codes: true
     })
   end

@@ -157,7 +157,7 @@ defmodule OliWeb.Api.ResourceControllerTest do
       page_1: page
     } do
       {:ok, project} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           alternatives_enabled: false,
           experiments_enabled: true
         })

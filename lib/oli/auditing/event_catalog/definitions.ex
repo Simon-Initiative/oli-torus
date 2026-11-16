@@ -284,7 +284,8 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        ],
        [
          {:project_settings_changed, "Project settings changed",
-          "Persisted settings of a project, such as visibility or duplication, were changed.", []}
+          "Persisted settings of a project, such as visibility or duplication, were changed.",
+          detail_keys: ~w(blueprint_count experiment_id alternatives_group_id)}
        ]},
       {:authoring_configuration, "Authoring configuration",
        [

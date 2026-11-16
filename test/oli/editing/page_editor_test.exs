@@ -70,7 +70,7 @@ defmodule Oli.EditingTest do
       project: project
     } do
       {:ok, project} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           alternatives_enabled: true,
           experiments_enabled: false
         })
@@ -92,7 +92,9 @@ defmodule Oli.EditingTest do
              revision1: revision1,
              project: project
            } do
-        {:ok, project} = Course.update_project(project, unquote(Macro.escape(project_settings)))
+        {:ok, project} =
+          Oli.TestHelpers.update_project_fixture(project, unquote(Macro.escape(project_settings)))
+
         group = create_alternatives_group(project, author, unquote(strategy))
 
         content = %{
@@ -123,7 +125,7 @@ defmodule Oli.EditingTest do
       project: project
     } do
       {:ok, project} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           alternatives_enabled: false,
           experiments_enabled: true
         })
@@ -159,7 +161,7 @@ defmodule Oli.EditingTest do
       project: project
     } do
       {:ok, project} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           alternatives_enabled: false,
           experiments_enabled: true
         })
@@ -199,7 +201,7 @@ defmodule Oli.EditingTest do
       project: project
     } do
       {:ok, project} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           alternatives_enabled: true,
           experiments_enabled: false
         })
@@ -226,7 +228,8 @@ defmodule Oli.EditingTest do
                  "content" => content
                })
 
-      {:ok, _project} = Course.update_project(project, %{alternatives_enabled: false})
+      {:ok, _project} =
+        Oli.TestHelpers.update_project_fixture(project, %{alternatives_enabled: false})
 
       assert {:ok, _revision} =
                PageEditor.edit(project.slug, revision.slug, author.email, %{

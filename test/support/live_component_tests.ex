@@ -4,7 +4,9 @@ defmodule LiveComponentTests do
   use Boundary,
     deps: [
       Oli.Accounts.Audited,
+      Oli.Activities.Audited,
       Oli.Authoring.Audited,
+      Oli.Experiments.Audited,
       Oli.GenAI.Audited,
       Oli.Groups.Audited,
       Oli.Institutions.Audited,

@@ -50,6 +50,15 @@ defmodule OliWeb.ProjectVisibilityTest do
       updated_project = Course.get_project!(project.id)
       assert updated_project.visibility == :global
 
+      event =
+        assert_audited(:project_settings_changed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.changes["visibility"]["after"] == "global"
+
       available_publications = Publishing.available_publications(admin, institution)
       assert Enum.count(available_publications) == 0
 
@@ -97,6 +106,58 @@ defmodule OliWeb.ProjectVisibilityTest do
     end
   end
 
+  describe "visibility grants" do
+    setup [:setup_session_admin]
+
+    test "admin grants and removes access to authors and institutions", %{
+      conn: conn,
+      project: project,
+      admin: admin,
+      institution: institution
+    } do
+      grantee = insert(:author)
+
+      {:ok, view, _} =
+        live_isolated(conn, OliWeb.Projects.VisibilityLive,
+          session: %{"project_slug" => project.slug, "current_author_id" => admin.id}
+        )
+
+      render_change(view, "selected_email", %{"multi" => %{"emails" => ["#{grantee.id}"]}})
+
+      render_change(view, "selected_institution", %{
+        "multi" => %{"institutions" => ["#{institution.id}"]}
+      })
+
+      [author_grant] =
+        project.id
+        |> Publishing.get_all_project_visibilities()
+        |> Enum.filter(&(&1.author && &1.author.id == grantee.id))
+
+      render_change(view, "delete_visibility", %{"id" => "#{author_grant.visibility.id}"})
+
+      assert [author_added, institution_added, author_removed] =
+               audit_events(:project_settings_changed,
+                 project_id: project.id,
+                 actor: admin,
+                 source: :ui
+               )
+
+      assert author_added.changes["visibility_grants"] == %{
+               "operation" => "added",
+               "after" => [%{"author_id" => grantee.id}]
+             }
+
+      assert institution_added.changes["visibility_grants"]["after"] == [
+               %{"institution_id" => institution.id}
+             ]
+
+      assert author_removed.changes["visibility_grants"] == %{
+               "operation" => "removed",
+               "before" => [%{"author_id" => grantee.id}]
+             }
+    end
+  end
+
   describe "visibility live test for non-admin" do
     setup [:setup_session]
 
@@ -137,6 +198,12 @@ defmodule OliWeb.ProjectVisibilityTest do
 
       updated_project = Course.get_project!(project.id)
       assert updated_project.allow_duplication
+
+      assert_audited(:project_settings_changed,
+        project_id: project.id,
+        actor: author,
+        source: :ui
+      )
     end
 
     test "non-admin cannot change visibility via direct event call", %{
@@ -155,6 +222,7 @@ defmodule OliWeb.ProjectVisibilityTest do
       # Visibility should NOT have changed
       updated_project = Course.get_project!(project.id)
       refute updated_project.visibility == :global
+      assert audit_events(:project_settings_changed, project_id: project.id) == []
     end
 
     test "non-admin cannot add restricted visibility via direct event call", %{
@@ -186,10 +254,10 @@ defmodule OliWeb.ProjectVisibilityTest do
       author: author
     } do
       # Set up a visibility restriction
-      {:ok, _project} = Course.update_project(project, %{visibility: :selected})
+      {:ok, _project} = Oli.TestHelpers.update_project_fixture(project, %{visibility: :selected})
 
       {:ok, visibility} =
-        Publishing.insert_visibility(%{project_id: project.id, author_id: author.id})
+        Oli.TestHelpers.insert_visibility_fixture(%{project_id: project.id, author_id: author.id})
 
       {:ok, view, _} =
         live_isolated(conn, OliWeb.Projects.VisibilityLive,

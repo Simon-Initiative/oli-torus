@@ -6,7 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   alias OliWeb.Workspaces.CourseAuthor.AlternativesGroupManager
 
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Authoring.Editing.{AlternativesOptionEditor, ResourceEditor}
+  alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Experiments, as: ABExperiments
   alias Oli.Experiments.{CreateExperimentRequest, Scope}
   alias Oli.Experiments.Policies.ThompsonSampling
@@ -460,7 +460,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     with {:ok, candidate} <- selected_candidate(socket.assigns.decision_point_candidates, params),
          {:ok, request} <- create_request(scope, candidate, params),
-         {:ok, _definition} <- ABExperiments.create_experiment(request) do
+         {:ok, _definition} <-
+           Oli.Experiments.Audited.create_experiment(
+             Oli.Auditing.Context.for_actor(socket.assigns.ctx.author, source: :ui),
+             request
+           ) do
       {:noreply,
        socket
        |> assign(show_create_experiment: false)
@@ -490,6 +494,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
            experiment_field_errors: field_errors,
            experiment_params: params,
            experiment_slug_suggestion: suggested_experiment_slug(params["name"])
+         )}
+
+      {:error, _reason} ->
+        {:noreply,
+         assign(socket,
+           experiment_error: "The experiment could not be created.",
+           experiment_success: nil,
+           experiment_params: params
          )}
     end
   end
@@ -555,7 +567,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     with {:ok, experiment_id} <- parse_positive_integer(params["experiment_id"]),
          {:ok, section_ids} <- parse_section_ids(params["section_ids"]),
          {:ok, _participation} <-
-           ABExperiments.update_section_participation(
+           Oli.Experiments.Audited.update_section_participation(
+             Oli.Auditing.Context.for_actor(socket.assigns.ctx.author, source: :ui),
              experiment_id,
              authoring_scope(socket),
              section_ids
@@ -570,8 +583,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       {:error, %Oli.Experiments.ExperimentError{} = error} ->
         {:noreply, assign(socket, experiment_error: error.message, experiment_success: nil)}
 
-      {:error, message} ->
+      {:error, message} when is_binary(message) ->
         {:noreply, assign(socket, experiment_error: message, experiment_success: nil)}
+
+      {:error, _reason} ->
+        {:noreply,
+         assign(socket,
+           experiment_error: "The participating sections could not be updated.",
+           experiment_success: nil
+         )}
     end
   end
 
@@ -599,10 +619,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   def handle_event("create_decision_point", %{"params" => %{"name" => name}}, socket) do
     %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
 
-    case ResourceEditor.create(
+    case Oli.Authoring.Audited.create_alternatives_group(
+           Oli.Auditing.Context.for_actor(ctx.author, source: :ui),
            project.slug,
            ctx.author,
-           @alternatives_type_id,
            %{title: name, content: %{"options" => [], "strategy" => "experiment_controlled"}}
          ) do
       {:ok, decision_point} ->
@@ -736,7 +756,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       ) do
     %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
 
-    case AlternativesOptionEditor.move_to(
+    case Oli.Authoring.Audited.move_alternatives_option(
+           Oli.Auditing.Context.for_actor(ctx.author, source: :ui),
            project.slug,
            ctx.author,
            decision_points,
@@ -1444,9 +1465,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          resource_id,
          title
        ) do
-    case ResourceEditor.edit(project_slug, resource_id, author, %{
-           title: title
-         }) do
+    case Oli.Authoring.Audited.edit_alternatives_group(
+           Oli.Auditing.Context.for_actor(author, source: :ui),
+           project_slug,
+           resource_id,
+           author,
+           %{
+             title: title
+           }
+         ) do
       {:ok, updated_group} ->
         # update groups list to reflect latest update
         alternatives =
@@ -1475,9 +1502,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
        ) do
     with :ok <- check_duplicated_options(updated_options),
          {:ok, updated_group} <-
-           ResourceEditor.edit(project_slug, resource_id, author, %{
-             content: %{content | "options" => updated_options}
-           }) do
+           Oli.Authoring.Audited.edit_alternatives_group(
+             Oli.Auditing.Context.for_actor(author, source: :ui),
+             project_slug,
+             resource_id,
+             author,
+             %{
+               content: %{content | "options" => updated_options}
+             }
+           ) do
       # update groups list to reflect latest update
       alternatives =
         Enum.map(alternatives, fn g ->

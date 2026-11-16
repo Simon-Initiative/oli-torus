@@ -98,7 +98,7 @@ defmodule OliWeb.DeliveryControllerTest do
     } do
       Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
-      Oli.Authoring.Course.update_project(project, %{status: :deleted})
+      Oli.TestHelpers.update_project_fixture(project, %{status: :deleted})
 
       available_publications = Publishing.available_publications(author, institution)
       assert available_publications == []

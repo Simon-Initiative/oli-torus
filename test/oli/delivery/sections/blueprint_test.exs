@@ -1025,7 +1025,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       # We then change the other project to be global visibility, but project
       # does not yet have a publication, so the product created from it is not
       # visible.
-      Course.update_project(another.project, %{visibility: :global})
+      Oli.TestHelpers.update_project_fixture(another.project, %{visibility: :global})
       available = Blueprint.available_products(author, institution)
       assert length(available) == 2
 

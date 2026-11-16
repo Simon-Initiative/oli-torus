@@ -261,7 +261,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       project: project
     } do
       {:ok, _updated_project} =
-        Course.update_project_attributes(project, %{
+        Oli.TestHelpers.update_project_attributes_fixture(project, %{
           coverage_formative_threshold: 7,
           coverage_summative_threshold: 9
         })
@@ -2559,7 +2559,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     end
 
     test "incrementing the formative threshold persists it and re-flags an objective at the boundary",
-         %{conn: conn, project: project, publication: publication} do
+         %{conn: conn, admin: admin, project: project, publication: publication} do
       {:ok, boundary} =
         create_objective(project, publication, "boundary_obj", "Boundary Objective")
 
@@ -2582,6 +2582,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       persisted = Course.get_project!(project.id)
       assert persisted.attributes.coverage_formative_threshold == 4
+
+      event =
+        assert_audited(:project_settings_changed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.changes == %{
+               "coverage_formative_threshold" => %{
+                 "operation" => "set",
+                 "before" => 3,
+                 "after" => 4
+               }
+             }
     end
 
     test "changing summative after formative keeps both thresholds", %{

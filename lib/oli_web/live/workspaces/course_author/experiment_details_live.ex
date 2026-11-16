@@ -935,7 +935,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          true <- Enum.any?(socket.assigns.participation.eligible_sections, &(&1.id == section_id)),
          selected_ids <- toggle_id(socket.assigns.participation.selected_ids, section_id),
          {:ok, participation} <-
-           ABExperiments.update_section_participation(
+           Oli.Experiments.Audited.update_section_participation(
+             audit_context(socket),
              socket.assigns.experiment.id,
              authoring_scope(socket),
              selected_ids
@@ -947,7 +948,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          participation_error: nil
        )}
     else
-      {:error, error} when is_struct(error) ->
+      {:error, %Oli.Experiments.ExperimentError{} = error} ->
         {:noreply, assign(socket, participation_error: error.message, participation_success: nil)}
 
       _ ->
@@ -1151,13 +1152,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp transition_experiment(socket, action) do
     request = %LifecycleRequest{scope: authoring_scope(socket)}
 
-    result =
+    audited_action =
       case action do
-        :start -> ABExperiments.activate_experiment(socket.assigns.experiment.id, request)
-        :pause -> ABExperiments.pause_experiment(socket.assigns.experiment.id, request)
-        :complete -> ABExperiments.complete_experiment(socket.assigns.experiment.id, request)
-        :archive -> ABExperiments.archive_experiment(socket.assigns.experiment.id, request)
+        :start -> :activate
+        other -> other
       end
+
+    result =
+      Oli.Experiments.Audited.transition_experiment(
+        audit_context(socket),
+        socket.assigns.experiment.id,
+        audited_action,
+        request
+      )
 
     case result do
       {:ok, experiment} ->
@@ -1181,6 +1188,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         {:noreply,
          assign(socket,
            experiment_action_error: error.message,
+           experiment_action_success: nil
+         )}
+
+      {:error, _reason} ->
+        {:noreply,
+         assign(socket,
+           experiment_action_error: "The experiment could not be updated.",
            experiment_action_success: nil
          )}
     end
@@ -1677,7 +1691,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     with :draft <- socket.assigns.experiment.state,
          {:ok, request} <- configuration_request(socket, params),
          {:ok, experiment} <-
-           ABExperiments.update_experiment(socket.assigns.experiment.id, request),
+           Oli.Experiments.Audited.update_experiment(
+             audit_context(socket),
+             socket.assigns.experiment.id,
+             request
+           ),
          {:ok, authoring_view} <-
            ABExperiments.get_experiment_authoring_view(experiment.id, authoring_scope(socket)) do
       {:noreply,
@@ -1737,7 +1755,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       Enum.map(current_configuration(socket).conditions, &Map.take(&1, condition_fields))
 
     with {:ok, _conditions} <-
-           ABExperiments.update_condition_availabilities(
+           Oli.Experiments.Audited.update_condition_availabilities(
+             audit_context(socket),
              socket.assigns.experiment.id,
              availabilities,
              scope
@@ -1759,6 +1778,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         {:noreply,
          assign(socket,
            configuration_error: error.message,
+           configuration_success: nil
+         )}
+
+      {:error, _reason} ->
+        {:noreply,
+         assign(socket,
+           configuration_error: "The experiment configuration could not be saved.",
            configuration_success: nil
          )}
     end
@@ -2128,6 +2154,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   defp format_snapshot_datetime(nil), do: "—"
   defp format_snapshot_datetime(value), do: Calendar.strftime(value, "%Y-%m-%d %H:%M UTC")
+
+  defp audit_context(socket),
+    do: Oli.Auditing.Context.for_actor(socket.assigns.ctx.author, source: :ui)
 
   defp authoring_scope(socket) do
     %Scope{
