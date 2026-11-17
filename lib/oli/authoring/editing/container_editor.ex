@@ -15,7 +15,6 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.ChangeTracker
   alias Oli.ScopedFeatureFlags
-  alias Oli.Authoring.Editing.PageEditor
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Editing.AdaptiveDuplication
@@ -319,58 +318,6 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   def broadcast_update(resource_id, project_slug) do
     updated_container = AuthoringResolver.from_resource_id(project_slug, resource_id)
     Broadcaster.broadcast_revision(updated_container, project_slug)
-  end
-
-  @doc """
-  Removes a child from a container, and marks that child as deleted by default.
-  """
-  def remove_child(container, project, author, revision_slug) do
-    with {:ok, %{id: resource_id}} <-
-           Resources.get_resource_from_slug(revision_slug) |> trap_nil() do
-      children = Enum.filter(container.children, fn id -> id !== resource_id end)
-
-      # Create a change that removes the child
-      removal = %{
-        children: children,
-        author_id: author.id
-      }
-
-      # Create a change to mark the child as deleted
-      deletion = %{
-        deleted: true,
-        author_id: author.id
-      }
-
-      # Atomically apply the changes
-      result =
-        Repo.transaction(fn ->
-          # It is important to edit the page via PageEditor, since it will ensure
-          # that a lock can be acquired before editing. This will not allow the deletion
-          # to occur if another user is editing. It *will* allow deletion to occur if
-          # this current user is editing this page (like in another tab). This is due
-          # to the re-entrant natures of our locks.
-
-          with {:acquired} <- PageEditor.acquire_lock(project.slug, revision_slug, author.email),
-               {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
-               _ <- PageEditor.release_lock(project.slug, revision_slug, author.email),
-               {:ok, revision} = ChangeTracker.track_revision(project.slug, container, removal) do
-            revision
-          else
-            {:lock_not_acquired, value} -> Repo.rollback({:lock_not_acquired, value})
-            {:error, e} -> Repo.rollback(e)
-          end
-        end)
-
-      {status, _} = result
-
-      if status == :ok do
-        broadcast_update(container.resource_id, project.slug)
-      end
-
-      result
-    else
-      _ -> {:error, :not_found}
-    end
   end
 
   def reorder_child(container, project, author, source, index) do

@@ -1631,7 +1631,7 @@ Example:
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
 | Change fields | `deleted`, `revision_id`, `title` |
-| Detail keys | none |
+| Detail keys | `removed_activity_ids` |
 | Reference roles | `previous`, `resulting` |
 | Status | active |
 
@@ -1652,7 +1652,9 @@ Example:
   "entity_snapshot": {"id":4512,"title":"Unit 1 Quiz"},
   "project_id": 88,
   "resource_id": 4512,
+  "refs": [{"id":90311,"label":"Unit 1 Quiz","role":"previous","type":"revision"},{"id":90342,"label":"Unit 1 Quiz","role":"resulting","type":"revision"}],
   "changes": {"deleted":{"after":true,"before":false,"operation":"set"}},
+  "details": {"removed_activity_ids":[5120,5121]},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "resource:4512:removed",
@@ -1738,6 +1740,8 @@ Example:
   "entity_snapshot": {"id":5120,"title":"Cell membrane question"},
   "project_id": 88,
   "resource_id": 5120,
+  "refs": [{"id":90120,"label":"Cell membrane question","role":"previous","type":"revision"},{"id":90343,"label":"Cell membrane question","role":"resulting","type":"revision"}],
+  "changes": {"deleted":{"after":true,"before":false,"operation":"set"}},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "resource:5120:removed",
@@ -1779,6 +1783,7 @@ Example:
   "entity_id": "703",
   "entity_snapshot": {"id":703,"title":"mitosis.png"},
   "project_id": 88,
+  "changes": {"deleted":{"after":true,"before":false,"operation":"set"}},
   "details": {"file_name":"mitosis.png","mime_type":"image/png"},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",

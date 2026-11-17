@@ -129,8 +129,4 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
       [] -> {:error, :not_found}
     end
   end
-
-  def delete(project_slug, resource_id, author) do
-    edit(project_slug, resource_id, author, %{deleted: true})
-  end
 end

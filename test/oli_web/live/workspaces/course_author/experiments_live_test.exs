@@ -439,6 +439,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> render_click()
 
       refute has_element?(view, ".alternatives-group", decision_point.title)
+
+      event =
+        assert_audited(:authoring_content_removed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.resource_id == decision_point.resource_id
     end
 
     test "uses the shared modal for deleting a condition", %{

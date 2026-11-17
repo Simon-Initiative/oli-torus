@@ -219,7 +219,8 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        ],
        [
          {:authoring_content_removed, "Content removed",
-          "A page, activity, or container was deleted from a project.", []},
+          "A page, activity, or container was deleted from a project.",
+          detail_keys: ~w(removed_activity_ids)},
          {:authoring_content_replaced, "Content replaced",
           "The content of a resource was replaced wholesale, for example by a repair or import.",
           []},

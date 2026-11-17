@@ -99,6 +99,7 @@ defmodule OliWeb.ActivityControllerTest do
   describe "create and then delete a secondary resource" do
     test "succeeds when attempting to delete an activity primary document", %{
       conn: conn,
+      author: author,
       project: project,
       activity_id: activity_id,
       revision1: revision
@@ -112,6 +113,15 @@ defmodule OliWeb.ActivityControllerTest do
         )
 
       assert response(conn, 200)
+
+      event =
+        assert_audited(:authoring_content_removed,
+          project_id: project.id,
+          actor: author,
+          source: :api
+        )
+
+      assert event.resource_id == activity_id
     end
 
     test "creates a secondary resource for an activity", %{
@@ -156,6 +166,7 @@ defmodule OliWeb.ActivityControllerTest do
 
   test "bulk create and then bulk delete activities", %{
     conn: conn,
+    author: author,
     project: project
   } do
     original_conn = conn
@@ -212,6 +223,19 @@ defmodule OliWeb.ActivityControllerTest do
 
     r2 = AuthoringResolver.from_resource_id(project.slug, hd(tl(revisions))["resourceId"])
     assert r2.deleted == true
+
+    events =
+      audit_events(:authoring_content_removed,
+        project_id: project.id,
+        actor: author,
+        source: :api
+      )
+
+    assert Enum.sort(Enum.map(events, & &1.resource_id)) ==
+             Enum.sort(Enum.map(revisions, & &1["resourceId"]))
+
+    assert [operation_id] = events |> Enum.map(& &1.operation_id) |> Enum.uniq()
+    assert is_binary(operation_id)
   end
 
   test "create returns persisted embedded content", %{conn: conn, project: project} do

@@ -119,8 +119,15 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
     with {:ok, revision} <- resolve_activity(data, project_name, built_project, state),
          {:ok, _lock} <-
            ensure_activity_lock(built_project.project.slug, author, revision.resource_id),
+         {:ok, revision} <- validate_banked_activity(revision),
          {:ok, _deleted_revision} <-
-           ActivityBank.delete(built_project.project.slug, author, revision.resource_id) do
+           Oli.Authoring.Audited.delete_activity(
+             Oli.Auditing.Context.for_actor(author, source: :scenario),
+             built_project.project.slug,
+             revision.resource_id,
+             revision.resource_id,
+             author
+           ) do
       {:ok, remove_activity(state, project_name, revision, data)}
     end
   end

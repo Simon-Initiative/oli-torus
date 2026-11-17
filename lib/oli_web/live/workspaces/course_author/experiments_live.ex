@@ -833,7 +833,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     with [] <- Publishing.find_alternatives_group_references_in_pages(resource_id, publication_id),
          {:ok, false} <-
            ABExperiments.experiment_group_in_use?(resource_id, authoring_scope(socket)),
-         {:ok, deleted} <- ResourceEditor.delete(project.slug, resource_id, ctx.author) do
+         {:ok, deleted} <-
+           Oli.Authoring.Audited.delete_alternatives_group(
+             Oli.Auditing.Context.for_actor(ctx.author, source: :ui),
+             project.slug,
+             resource_id,
+             ctx.author
+           ) do
       Subscriber.unsubscribe_to_new_revisions_in_project(resource_id, project.slug)
 
       {:noreply,

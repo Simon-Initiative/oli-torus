@@ -166,15 +166,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
 
     case container do
       nil ->
-        result =
-          Oli.Repo.transaction(fn ->
-            revision =
-              Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, revision.slug)
+        context = Oli.Auditing.Context.for_actor(author, source: :ui)
 
-            Oli.Publishing.ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
-          end)
-
-        case result do
+        case Oli.Authoring.Audited.delete_unattached_page(context, project, revision.slug) do
           {:ok, _} ->
             {:noreply,
              socket
@@ -196,7 +190,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
         end
 
       container ->
-        case ContainerEditor.remove_child(container, project, author, slug) do
+        case Oli.Authoring.Audited.remove_from_curriculum(
+               Oli.Auditing.Context.for_actor(author, source: :ui),
+               container,
+               project,
+               author,
+               slug
+             ) do
           {:ok, _} ->
             {:noreply,
              socket

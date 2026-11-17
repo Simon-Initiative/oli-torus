@@ -2,6 +2,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
+  import Ecto.Query, only: [from: 2]
   import Oli.Factory
   import Phoenix.LiveViewTest
 
@@ -78,6 +79,40 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
     })
 
     adaptive_page_revision
+  end
+
+  defp release_lock(revision) do
+    Oli.Repo.update_all(
+      from(mapping in Oli.Publishing.PublishedResource,
+        where: mapping.resource_id == ^revision.resource_id
+      ),
+      set: [locked_by_id: nil, lock_updated_at: nil]
+    )
+  end
+
+  defp insert_unattached_page(project, publication, author) do
+    page =
+      insert(:revision, %{
+        objectives: %{"attached" => []},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Unattached page",
+        author_id: author.id
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page.resource_id})
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page.resource,
+      revision: page,
+      author: author
+    })
+
+    page
   end
 
   defp create_project(_) do
@@ -765,6 +800,54 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
              )
              |> render() =~
                new_page.title
+    end
+
+    test "deleting a page in a unit removes it from the curriculum and records the removal", %{
+      conn: conn,
+      admin: admin,
+      project: project,
+      nested_page_revision: page
+    } do
+      # The fixture leaves every page locked by its author; deleting needs the page lock
+      release_lock(page)
+      {:ok, view, _html} = live(conn, live_view_all_pages_route(project.slug))
+
+      render_click(view, "show_delete_modal", %{"slug" => page.slug})
+      render_click(view, "DeleteModal.delete", %{"slug" => page.slug})
+
+      event =
+        assert_audited(:authoring_content_removed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.resource_id == page.resource_id
+    end
+
+    test "deleting a page outside the curriculum records the removal", %{
+      conn: conn,
+      admin: admin,
+      project: project,
+      publication: publication,
+      author_1: author
+    } do
+      page = insert_unattached_page(project, publication, author)
+      {:ok, view, _html} = live(conn, live_view_all_pages_route(project.slug))
+
+      render_click(view, "show_delete_modal", %{"slug" => page.slug})
+      render_click(view, "DeleteModal.delete", %{"slug" => page.slug})
+
+      event =
+        assert_audited(:authoring_content_removed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.resource_id == page.resource_id
+
+      assert Oli.Publishing.AuthoringResolver.from_resource_id(project.slug, page.resource_id).deleted
     end
   end
 end

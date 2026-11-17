@@ -458,7 +458,12 @@ defmodule Oli.Auditing.EventExamples do
       entity: {:resource, @resource},
       scope: [project_id: 88, resource_id: 4512],
       key: "resource:4512:removed",
-      changes: %{"deleted" => %{"operation" => "set", "before" => false, "after" => true}}
+      refs: [
+        ref(:previous, :revision, 90311, "Unit 1 Quiz"),
+        ref(:resulting, :revision, 90342, "Unit 1 Quiz")
+      ],
+      changes: %{"deleted" => %{"operation" => "set", "before" => false, "after" => true}},
+      details: %{"removed_activity_ids" => [5120, 5121]}
     ]
 
   defp spec(:authoring_content_replaced),
@@ -475,7 +480,12 @@ defmodule Oli.Auditing.EventExamples do
       actor: :author,
       entity: {:resource, %{id: 5120, title: "Cell membrane question"}},
       scope: [project_id: 88, resource_id: 5120],
-      key: "resource:5120:removed"
+      key: "resource:5120:removed",
+      refs: [
+        ref(:previous, :revision, 90120, "Cell membrane question"),
+        ref(:resulting, :revision, 90343, "Cell membrane question")
+      ],
+      changes: %{"deleted" => %{"operation" => "set", "before" => false, "after" => true}}
     ]
 
   defp spec(:media_deleted),
@@ -484,6 +494,7 @@ defmodule Oli.Auditing.EventExamples do
       entity: {:media_item, %{id: 703, title: "mitosis.png"}},
       scope: [project_id: 88],
       key: "media:703:deleted",
+      changes: %{"deleted" => %{"operation" => "set", "before" => false, "after" => true}},
       details: %{"file_name" => "mitosis.png", "mime_type" => "image/png"}
     ]
 

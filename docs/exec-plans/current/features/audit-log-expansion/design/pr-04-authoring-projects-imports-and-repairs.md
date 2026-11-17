@@ -105,10 +105,10 @@ Gathered at `456d235388` from the callers, changesets, direct `Repo` writes, and
 | Unattached page delete copied in four LiveViews (`curriculum_live.ex:429`, `pages_live.ex:174`, `container_live.ex:386`, `pages_view.ex:390`) | `track_revision(deleted: true)` without lock check or cascade | M: `delete_unattached_page/3`; keeps today's behavior (no new lock check or cascade) |
 | `PageEditor.edit/4` (`page_editor.ex:64`) via `resource_controller.ex:101`, `editor_live.ex:481,878` | Transaction and lock; cascades removed activity references (`page_editor.ex:628`) | M: `edit_page/5` (block 4); removed references produce `authoring_content_removed` |
 | `ActivityEditor.delete/4`, `delete_bulk/3` via `activity_controller.ex:753,778` | Transaction and lock | M: `bank_question_deleted` for bank activities, `authoring_content_removed` otherwise; one event per activity |
-| `ActivityBank.delete/…`, `delete_bulk/…` (`activity_bank.ex:218,228`) and Scenario `activity_bank_handler.ex:123` | Delegates to `ActivityEditor` | C: same commands |
+| `ActivityBank.delete/…`, `delete_bulk/…` (`activity_bank.ex:218,228`) and Scenario `activity_bank_handler.ex:123` | Delegates to `ActivityEditor` | C: the Scenario checks the banked scope and calls `delete_activity/5`; `ActivityBank` has no other product caller |
 | `MediaLibrary.delete_media_items/2` (`media_library.ex:91`) via `media_controller.ex:288` | `update_all deleted: true` by media ID only; S3 untouched | M: `delete_media/3`; one event per row with the row's own `project_id` (section 7) |
 | `MediaLibrary.restore_item/1` inside `MediaLibrary.add/3` on duplicate upload | Undelete as upload deduplication | X: side effect of an upload, not a restoration action |
-| `ObjectiveEditor.delete/…` (`objective_editor.ex:193`) via `objectives_live.ex:1288`, `objectives.ex:452`; `delete_sub_objective` (`:311`) | Transaction; detachment from pages runs first in separate transactions | M: `learning_objectives_changed` (block 4); detachments are their own page and activity edits |
+| `ObjectiveEditor.delete/…` (`objective_editor.ex:193`) via `objectives_live.ex:1288`, `objectives.ex:452`; `delete_sub_objective` (`:311`) | Transaction; detachment from pages runs first in separate transactions | M in block 4 with the other objective writers (owner decision 2026-11-16): `learning_objectives_changed`; detachments are their own page and activity edits |
 | `ResourceEditor.delete/…` via `alternatives_live.ex:318`, `experiments_live.ex:815` | `track_revision(deleted: true)`, no transaction | M: `authoring_content_removed` |
 | `BibEntryEditor.delete/…` via `bib_entry_controller.ex:107` | Transaction | M: `authoring_content_removed` |
 | `Course.delete_project_survey/2` | Survey page deletion | C: inside the survey command |
@@ -159,11 +159,12 @@ Each new facade declares `use Boundary, top_level?: true, exports: [], check: [o
 | Module | Moves into the facade | Stays public |
 | --- | --- | --- |
 | `PageEditor` | `edit/4` and its private helpers | `create_context`, `acquire_lock`, `release_lock`, reads |
-| `ContainerEditor` | `remove_child`, `move_to`, `reorder_child`, `edit_page` | `add_new`, `duplicate_page`, reads |
-| `ActivityEditor` | `edit`, `bulk_edit`, `delete`, `delete_bulk` | `create*`, reads |
-| `ActivityBank` | `delete`, `delete_bulk` | reads, `create` |
-| `ObjectiveEditor` | every writer | reads |
-| `ResourceEditor`, `AlternativesOptionEditor`, `BibEntryEditor` | writers | reads |
+| `ContainerEditor` | `remove_child` (block 3); `move_to`, `reorder_child`, `edit_page` (block 4) | `add_new`, `duplicate_page`, reads |
+| `ActivityEditor` | `edit`, `bulk_edit`, `delete`, `delete_bulk` (block 4: the deletes share the revision writer with the edits; block 3 audits them through the facade) | `create*`, reads |
+| `ActivityBank` | `delete`, `delete_bulk`, `update` (block 4, with `ActivityEditor`) | reads, `create` |
+| `ObjectiveEditor` | every writer (block 4) | reads |
+| `ResourceEditor`, `BibEntryEditor` | `delete` | reads, `create`, `edit`, `get_or_create_tag`: creating and editing tags, bibliography entries, and other resources is ordinary content editing (owner decision 2026-11-16) |
+| `MediaLibrary` | `delete_media_items`, `delete_items` | reads, uploads |
 | `Course` | `create_project/3`, `create_project_from_archive/4`, `delete`, settings writers, survey writers, `upgrade_learning_model`, `update_author_project` | reads; `update_project/2` restricted (section 3.3) |
 | `Clone`, `Collaborators` | writers | reads, email helpers |
 | `ProjectRepair.Repair`, `ParameterCsv` writes | the module, renamed under the facade | `ProjectRepair.analyze_project` |
@@ -266,22 +267,25 @@ Commands follow the PR-02 shape: a `*_multi/4` builder for callers that compose,
 - The learning-model upgrade records the project change with the number of updated blueprints in details; blueprint section events belong to PR-05.
 - `complete_import/3` writes only `customizations` and `required_survey_resource_id`, which an archive defines after the project exists, and only inside the import that recorded `project_imported` for that project under the same context (`operation_id`); `project_imported` covers them, so it records no event. The import's creation runs as a savepoint, so the check uses the operation, not the transaction ID.
 - Experiments record `experiment_status`, `experiment_conditions`, and `experiment_definition`, with `experiment_id` in details. `experiment_definition` holds every other definition setting, the interventions with their assessment bindings, and the participating sections. Values are compared by IDs, without row IDs or timestamps; recorded values add page, alternatives, and section titles. The before state is read after locking the definition, in the same transaction. The experiment configuration writers, with the persistence and lifecycle modules they use, move into the private `Oli.Experiments.Audited.Writes`, `Oli.Experiments.Audited.ConfigurationPersistence`, and `Oli.Experiments.Audited.Lifecycle`, so the Boundary blocks any caller that skips the facade. The validation and read helpers they share with the queries move to the internal `Oli.Experiments.Support`; none of them writes configuration. Runtime writes (assignments, exposures, rewards) are delivery activity, not configuration, and stay in `Oli.Experiments`.
-- Alternatives groups are recorded as `alternatives_groups` (`added` on creation, `set` on edits) with resource ID, title, strategy, and options, and `alternatives_group_id` in details. The editor writers move behind the facade with the other editors in block 3.
+- Alternatives groups are recorded as `alternatives_groups` (`added` on creation, `set` on edits) with resource ID, title, strategy, and options, and `alternatives_group_id` in details. `ResourceEditor.create` and `edit` and `AlternativesOptionEditor` stay public as generic resource writers (owner decision 2026-11-16); the final caller inventory checks that only the facade uses them for alternatives groups.
 
 ### 4.3 Destructive content and media
 
 ```elixir
-@spec remove_from_curriculum(Context.t(), Project.t(), String.t(), Author.t()) :: {:ok, term()} | {:error, command_error()}
+@spec remove_from_curriculum(Context.t(), Revision.t(), Project.t(), Author.t(), String.t()) :: {:ok, Revision.t()} | {:error, command_error()}
 @spec delete_unattached_page(Context.t(), Project.t(), String.t()) :: {:ok, Revision.t()} | {:error, command_error()}
-@spec delete_activities(Context.t(), Project.t(), [{pos_integer(), String.t() | nil}]) :: {:ok, term()} | {:error, command_error()}
-@spec delete_media(Context.t(), String.t(), [pos_integer()]) :: {:ok, non_neg_integer()} | {:error, command_error()}
-@spec delete_resource(Context.t(), Project.t(), pos_integer(), :alternatives_group | :bib_entry) :: {:ok, Revision.t()} | {:error, command_error()}
+@spec delete_activity(Context.t(), String.t(), term(), term(), Author.t()) :: {:ok, Revision.t()} | {:error, command_error()}
+@spec delete_activities(Context.t(), String.t(), [term()], Author.t()) :: {:ok, term()} | {:error, command_error()}
+@spec delete_alternatives_group(Context.t(), String.t(), pos_integer(), Author.t()) :: {:ok, Revision.t()} | {:error, command_error()}
+@spec delete_bib_entry(Context.t(), String.t(), term(), Author.t()) :: {:ok, Revision.t()} | {:error, command_error()}
+@spec delete_media(Context.t(), String.t(), [term()]) :: {:ok, non_neg_integer()} | {:error, command_error()}
 ```
 
-- Events reference the resource, the deleted revision, and the previous revision; `changes` record `deleted: false → true` and the title; details list cascaded `removed_activity_ids`.
+- Events reference the resource, the deleted revision, and the previous revision; `changes` record `deleted: false → true`, and the entity snapshot keeps the title; details list cascaded `removed_activity_ids`. Each command locks the working-publication mappings of its resources (`FOR UPDATE`) before reading the before-state. Content that was already deleted, or that the write did not delete, records nothing. The commands keep each caller's results and errors; the curriculum broadcast runs after commit.
 - Bank questions (activities with the banked scope) record `bank_question_deleted`; embedded activities `authoring_content_removed`. Bulk deletion emits one event per activity, sharing the operation ID, inside the existing all-or-nothing transaction.
 - `delete_media` keeps today's query and response. It selects the rows with `FOR UPDATE` before the update and records one `media_deleted` per row that actually changed, using each row's own `project_id`, `file_name`, and `mime_type`. Already-deleted rows emit nothing.
-- When an activity delete updates the working revision in place (lock result `:updated`), the event references the revision ID with the before-state taken under the lock.
+- When an activity delete updates the working revision in place (lock result `:updated`), the previous and resulting references carry the same revision ID, with the before-state taken under the lock.
+- Alternatives groups and bibliography entries record `authoring_content_removed`, as section 2.1 lists; their creation and edits are not removal.
 
 ### 4.4 Authoring configuration and the DOT field policy
 
@@ -386,7 +390,7 @@ Same policy as PR-03: unrelated fixtures need no audit; each command gets tests 
   - **Projects:** create, duplicate, delete, publish (including publish inside ingest and inside an outer Multi), working-publication bookkeeping without events, owner as affected author, rollback on audit failure. The existing `project_published` assertions in `test/oli/auditing_test.exs` and `legacy_adapter_test.exs` adapted.
   - **Collaborators:** invitation (new and existing author), acceptance by both paths, rejection, removal, owner refusal, partial failure rollback.
   - **Settings:** each settings caller, no-op writes, attributes embed diffs, grants add and remove, activity availability, experiment transitions, alternatives create, edit, and delete, survey create and delete, learning-model upgrade with blueprints, trigger switch.
-  - **Destructive:** curriculum removal with cascade, unattached delete from each LiveView, activity and bank delete (single, bulk, in-place lock path), media delete including another project's IDs and already-deleted rows, alternatives, bibliography, and objective deletion.
+  - **Destructive:** curriculum removal with cascade, unattached delete from each LiveView, activity and bank delete (single, bulk, in-place lock path), media delete including another project's IDs and already-deleted rows, alternatives and bibliography deletion. Objective deletion is tested with the other objective operations in block 4.
   - **Configuration:** page options, React editor saves through `resource_controller.ex`, adaptive saves, activity edits with triggers and objectives, objective operations from the LiveView and API, curriculum moves.
   - **Imports and replacements:** ingest success and failure, Google Doc success and page failure, repair completed, partial, failed, and nothing-to-fix, history restore, JSON edit, attribute edit, both CSV imports with failing rows; marker scans for Google file IDs and URLs.
   - **Scenarios:** project, publish, clone, collaborator, objectives, bank, and page directives with the represented author; bootstrap under `playwright_setup`.
@@ -416,6 +420,8 @@ Database safety: every `mix test` run targets `oli_test`, which needs no backup.
   - Archive imports write their late labels and survey link through `complete_import/3`, with no event of their own (section 4.2).
   - Experiment edits record `experiment_definition` under `project_settings_changed`, including participating sections, rather than a separate event family (section 4.2).
   - The experiment configuration writers move behind the Boundary, like the other writers in this PR, rather than staying public in `Oli.Experiments` (section 4.2).
+  - Objective deletion moves to block 4 with the other objective writers, since they share `learning_objectives_changed` and `ObjectiveEditor` (section 2.1).
+  - Only the `delete` writers of `ResourceEditor` and `BibEntryEditor` move behind the facade; creating and editing tags, bibliography entries, and other resources is ordinary content editing, which this PR does not audit (section 3.1).
 
 ## 8. Definition of Done
 
@@ -434,8 +440,8 @@ Each checkpoint pauses for owner review, keeps `phase-4-execution.md` current, a
 
 1. **A — Projects, publishing, collaborators.** Catalog changes; `Oli.Authoring.Audited` and `Oli.Publishing.Audited` with the Boundary check; project create, duplicate, delete, import creation; publication; collaborators; legacy adapter without `project_published`.
 2. **B — Project settings and project DOT.** `Oli.Activities.Audited` and `Oli.Experiments.Audited`; settings commands and allowlists with the `update_project/2` restriction; grants, activity availability, experiments, alternatives, survey, learning model, trigger switch.
-3. **C — Destructive content and media.** Editor writers moved; curriculum removal, unattached delete, activity and bank deletion, media, alternatives, bibliography, and objective deletion.
-4. **D — Authoring configuration and content DOT.** `edit_page` and `edit_activity` classification, `DotPolicy`, page options, objectives, curriculum moves; DOT interface note in `plan.md` phase 5.
+3. **C — Destructive content and media.** Removal writers moved; curriculum removal, unattached delete, activity and bank deletion, media, alternatives, and bibliography deletion.
+4. **D — Authoring configuration and content DOT.** `edit_page` and `edit_activity` classification, `DotPolicy`, page options, objectives (including deletion), curriculum moves; the `PageEditor`, `ActivityEditor`, `ActivityBank`, and `ObjectiveEditor` writers move behind the facade; DOT interface note in `plan.md` phase 5.
 5. **E — Imports, repairs, replacements.** Ingest, Google Doc import (legacy adapter without `google_doc_imported`), repair, history, both CSV imports.
 6. **F — Final verification.** Format; `mix compile --warnings-as-errors` in dev, test, and playwright; affected and full suites; latency evidence; `harness-review` (security, performance, Elixir, UI); work-item validation; event reference regenerated; caller inventory closed against the diff.
 

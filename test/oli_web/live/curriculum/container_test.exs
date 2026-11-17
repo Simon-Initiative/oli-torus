@@ -446,6 +446,27 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       refute render(view) =~ "View revision history"
     end
+
+    test "deleting a page removes it from the curriculum and records the removal", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision1: page
+    } do
+      {:ok, view, _html} = live(conn, Routes.container_path(@endpoint, :index, project.slug))
+
+      render_click(view, "show_delete_modal", %{"slug" => page.slug})
+      render_click(view, "DeleteModal.delete", %{"slug" => page.slug})
+
+      event =
+        assert_audited(:authoring_content_removed,
+          project_id: project.id,
+          actor: author,
+          source: :ui
+        )
+
+      assert event.resource_id == page.resource_id
+    end
   end
 
   describe "container live test (as admin)" do

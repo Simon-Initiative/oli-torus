@@ -74,7 +74,13 @@ defmodule Oli.Authoring.MediaLibraryTest do
           url_filter: "3"
         })
 
-      {:ok, changes_count} = MediaLibrary.delete_media_items(project1.slug, [item1.id, item2.id])
+      {:ok, changes_count} =
+        Oli.Authoring.Audited.delete_media(
+          author_audit_context(),
+          project1.slug,
+          [item1.id, item2.id]
+        )
+
       assert changes_count == 2
       assert {:ok, 7} == MediaLibrary.size(project1.slug)
     end

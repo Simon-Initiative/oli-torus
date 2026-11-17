@@ -1,7 +1,7 @@
 defmodule Oli.Authoring.Audited do
   @moduledoc """
-  Application boundary for audited authoring commands: project lifecycle, collaborators, and
-  project settings.
+  Application boundary for audited authoring commands: project lifecycle, collaborators,
+  project settings, and content and media removal.
 
   Each command writes its change and its events in one transaction. A project's owner is the
   author who creates, copies, or imports it, and is recorded as the affected author of the
@@ -12,6 +12,11 @@ defmodule Oli.Authoring.Audited do
   Project settings commands record `project_settings_changed` with the fields that changed, and
   record nothing when no field changed. Each settings form passes the fields it edits; any other
   key returns `{:error, :protected}`. The trigger switch records `activation_settings_changed`.
+
+  Removing a page, container, activity, alternatives group, or bibliography entry records
+  `authoring_content_removed` (`bank_question_deleted` for a banked activity) with the previous
+  and resulting revisions; deleting media records `media_deleted` per item. Content that was
+  already deleted records nothing.
 
   Commands do not authorize the actor; callers keep their existing authorization. Checks that
   lived in the migrated functions (the owner cannot be removed, only project authors upgrade
@@ -31,11 +36,16 @@ defmodule Oli.Authoring.Audited do
   alias Oli.Auditing
   alias Oli.Auditing.{Changes, Context, LogEvent}
   alias Oli.Auditing.EventCatalog.Fields
-  alias Oli.Authoring.Audited.{Projects, Settings}
+  alias Oli.Authoring.Audited.{Content, Projects, Settings}
   alias Oli.Authoring.Authors.AuthorProject
-  alias Oli.Authoring.{Collaborators, Course}
+  alias Oli.Authoring.{Collaborators, Course, Editing}
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Editing.{ActivityEditor, ContainerEditor}
+  alias Oli.Authoring.MediaLibrary.MediaItem
+  alias Oli.Publishing.{AuthoringResolver, PublishedResource}
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
+  alias Oli.Resources.Revision
 
   @collaborator_fields %{status: :value, role: :value}
 
@@ -551,6 +561,302 @@ defmodule Oli.Authoring.Audited do
       "strategy" => content["strategy"],
       "options" => Enum.map(content["options"] || [], &%{"id" => &1["id"], "name" => &1["name"]})
     }
+  end
+
+  ## Content and media removal
+
+  @doc """
+  Removes a page or container from `container` and marks it as deleted, with the activities it
+  embeds, and records `authoring_content_removed` with the IDs of those activities. Fails while
+  another author holds the page's lock. Broadcasts the container after commit.
+  """
+  @spec remove_from_curriculum(Context.t(), Revision.t(), Project.t(), Author.t(), String.t()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def remove_from_curriculum(
+        %Context{} = context,
+        %Revision{} = container,
+        %Project{} = project,
+        %Author{} = author,
+        revision_slug
+      )
+      when is_binary(revision_slug) do
+    resource_ids = resource_ids_for_slug(revision_slug)
+
+    project
+    |> removing(context, resource_ids, [cascade: true], fn ->
+      Content.remove_child(container, project, author, revision_slug)
+    end)
+    |> tap(fn
+      {:ok, _} -> ContainerEditor.broadcast_update(container.resource_id, project.slug)
+      _error -> :ok
+    end)
+  end
+
+  def remove_from_curriculum(_context, _container, _project, _author, _revision_slug),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Marks a page that belongs to no container as deleted and records `authoring_content_removed`.
+  Takes no lock and leaves the page's activities as they are, as before.
+  """
+  @spec delete_unattached_page(Context.t(), Project.t(), String.t()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def delete_unattached_page(%Context{} = context, %Project{} = project, revision_slug)
+      when is_binary(revision_slug) do
+    removing(project, context, resource_ids_for_slug(revision_slug), [], fn ->
+      Content.delete_unattached(project.slug, revision_slug)
+    end)
+  end
+
+  def delete_unattached_page(_context, _project, _revision_slug), do: {:error, :invalid_request}
+
+  @doc """
+  Deletes an activity within the lock of `lock_id` and records `bank_question_deleted` for a
+  banked activity or `authoring_content_removed` otherwise. Keeps the activity editor's
+  results and errors.
+  """
+  @spec delete_activity(Context.t(), String.t(), term(), term(), Author.t()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def delete_activity(
+        %Context{} = context,
+        project_slug,
+        lock_id,
+        activity_id,
+        %Author{} = author
+      )
+      when is_binary(project_slug) do
+    removing(project_slug, context, resource_ids([activity_id]), [], fn ->
+      ActivityEditor.delete(project_slug, lock_id, activity_id, author)
+    end)
+  end
+
+  def delete_activity(_context, _project_slug, _lock_id, _activity_id, _author),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Deletes several activities all or nothing, and records one event per activity as
+  `delete_activity/5` does, under the same operation.
+  """
+  @spec delete_activities(Context.t(), String.t(), [term()], Author.t()) ::
+          {:ok, term()} | {:error, command_error()}
+  def delete_activities(%Context{} = context, project_slug, activity_ids, %Author{} = author)
+      when is_binary(project_slug) and is_list(activity_ids) do
+    removing(project_slug, context, resource_ids(activity_ids), [], fn ->
+      ActivityEditor.delete_bulk(project_slug, activity_ids, author)
+    end)
+  end
+
+  def delete_activities(_context, _project_slug, _activity_ids, _author),
+    do: {:error, :invalid_request}
+
+  @doc "Deletes an alternatives group and records `authoring_content_removed`."
+  @spec delete_alternatives_group(Context.t(), String.t(), pos_integer(), Author.t()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def delete_alternatives_group(%Context{} = context, project_slug, resource_id, author)
+      when is_binary(project_slug) do
+    removing(project_slug, context, resource_ids([resource_id]), [], fn ->
+      Content.delete_alternatives_group(project_slug, resource_id, author)
+    end)
+  end
+
+  def delete_alternatives_group(_context, _project_slug, _resource_id, _author),
+    do: {:error, :invalid_request}
+
+  @doc "Deletes a bibliography entry and records `authoring_content_removed`."
+  @spec delete_bib_entry(Context.t(), String.t(), term(), Author.t()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def delete_bib_entry(%Context{} = context, project_slug, resource_id, author)
+      when is_binary(project_slug) do
+    removing(project_slug, context, resource_ids([resource_id]), [], fn ->
+      Content.delete_bib_entry(project_slug, resource_id, author)
+    end)
+  end
+
+  def delete_bib_entry(_context, _project_slug, _resource_id, _author),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Marks media items as deleted and records one `media_deleted` per item that was not deleted
+  yet, scoped to the item's own project. Items are selected by ID only, as before; the stored
+  files are kept. Returns the number of selected items.
+  """
+  @spec delete_media(Context.t(), String.t(), [term()]) ::
+          {:ok, non_neg_integer()} | {:error, command_error()}
+  def delete_media(%Context{} = context, project_slug, media_ids)
+      when is_binary(project_slug) and is_list(media_ids) do
+    Repo.transaction(fn ->
+      with {:ok, items} <- Content.delete_media(project_slug, media_ids),
+           :ok <- record_all(items, &record_media_deleted(context, &1)) do
+        length(items)
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  def delete_media(_context, _project_slug, _media_ids), do: {:error, :invalid_request}
+
+  # Locks the working-publication mappings of `resource_ids`, reads their revisions, runs
+  # `write`, and records a removal for each resource that `write` deleted. With `cascade: true`,
+  # the event also lists the embedded activities that the write deleted.
+  defp removing(project_slug, context, resource_ids, opts, write) when is_binary(project_slug) do
+    case Course.get_project_by_slug(project_slug) do
+      # The write reports a missing project with its usual error
+      nil -> write.()
+      project -> removing(project, context, resource_ids, opts, write)
+    end
+  end
+
+  defp removing(%Project{} = project, context, resource_ids, opts, write) do
+    Repo.transaction(fn ->
+      lock_working_mappings(project, resource_ids)
+      before = latest_revisions(project, resource_ids)
+      embedded = if opts[:cascade], do: embedded_activities(project, before), else: %{}
+
+      with {:ok, result} <- write.(),
+           after_state = latest_revisions(project, resource_ids),
+           removed_embedded = removed(embedded, latest_revisions(project, Map.keys(embedded))),
+           :ok <-
+             record_all(resource_ids, fn id ->
+               record_removal(context, project, before[id], after_state[id], removed_embedded)
+             end) do
+        result
+      else
+        {:error, reason} -> Repo.rollback(reason)
+        other -> Repo.rollback(other)
+      end
+    end)
+  end
+
+  defp resource_ids_for_slug(revision_slug) do
+    case Oli.Resources.get_resource_from_slug(revision_slug) do
+      nil -> []
+      resource -> [resource.id]
+    end
+  end
+
+  # Client IDs arrive as integers or strings; anything else is left to the write to reject.
+  defp resource_ids(ids) do
+    Enum.flat_map(ids, fn
+      id when is_integer(id) ->
+        [id]
+
+      id when is_binary(id) ->
+        case Integer.parse(id) do
+          {id, ""} -> [id]
+          _ -> []
+        end
+
+      _ ->
+        []
+    end)
+  end
+
+  defp lock_working_mappings(_project, []), do: :ok
+
+  defp lock_working_mappings(project, resource_ids) do
+    from(mapping in PublishedResource,
+      join: publication in Publication,
+      on: publication.id == mapping.publication_id,
+      where:
+        publication.project_id == ^project.id and is_nil(publication.published) and
+          mapping.resource_id in ^resource_ids,
+      order_by: mapping.resource_id,
+      lock: "FOR UPDATE OF p0"
+    )
+    |> Repo.all()
+
+    :ok
+  end
+
+  defp latest_revisions(_project, []), do: %{}
+
+  defp latest_revisions(project, resource_ids) do
+    project.slug
+    |> AuthoringResolver.from_resource_id(resource_ids)
+    |> Enum.reject(&is_nil/1)
+    |> Map.new(&{&1.resource_id, &1})
+  end
+
+  # Activities embedded in the pages about to be removed, with their current revisions.
+  defp embedded_activities(project, revisions) do
+    ids =
+      revisions
+      |> Map.values()
+      |> Enum.flat_map(&(&1.content |> Editing.Utils.activity_references() |> MapSet.to_list()))
+      |> Enum.uniq()
+
+    latest_revisions(project, ids)
+  end
+
+  defp removed(before, after_state) do
+    before
+    |> Enum.filter(fn {id, revision} ->
+      not revision.deleted and match?(%Revision{deleted: true}, after_state[id])
+    end)
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.sort()
+  end
+
+  defp record_removal(context, project, %Revision{deleted: false} = before, after_rev, embedded)
+       when is_struct(after_rev, Revision) and after_rev.deleted do
+    removed_activity_ids =
+      before.content
+      |> Editing.Utils.activity_references()
+      |> MapSet.to_list()
+      |> Enum.filter(&(&1 in embedded))
+      |> Enum.sort()
+
+    record(context, %{
+      event_type: removal_event_type(before),
+      entity: {:resource, before.resource_id, %{title: before.title, slug: before.slug}},
+      scope: %{project_id: project.id, resource_id: before.resource_id},
+      refs: [
+        %{role: :previous, type: :revision, id: before.id, label: before.title},
+        %{role: :resulting, type: :revision, id: after_rev.id, label: after_rev.title}
+      ],
+      changes: Changes.diff(%{deleted: false}, %{deleted: true}, Fields.authoring_content()),
+      details:
+        case removed_activity_ids do
+          [] -> %{}
+          ids -> %{removed_activity_ids: ids}
+        end,
+      event_key: "resource:#{before.resource_id}:removed"
+    })
+  end
+
+  # Missing, already deleted, or not deleted by the write: nothing to record
+  defp record_removal(_context, _project, _before, _after, _embedded), do: :ok
+
+  defp removal_event_type(%Revision{scope: :banked, resource_type_id: type_id}) do
+    case type_id == Oli.Resources.ResourceType.id_for_activity() do
+      true -> :bank_question_deleted
+      false -> :authoring_content_removed
+    end
+  end
+
+  defp removal_event_type(_revision), do: :authoring_content_removed
+
+  defp record_media_deleted(_context, %MediaItem{deleted: true}), do: :ok
+
+  defp record_media_deleted(context, %MediaItem{} = item) do
+    record(context, %{
+      event_type: :media_deleted,
+      entity: {:media_item, item.id, %{title: item.file_name}},
+      scope: %{project_id: item.project_id},
+      changes: Changes.diff(%{deleted: false}, %{deleted: true}, Fields.authoring_content()),
+      details: %{file_name: item.file_name, mime_type: item.mime_type},
+      event_key: "media:#{item.id}:deleted"
+    })
+  end
+
+  defp record_all(items, record_one) do
+    Enum.reduce_while(items, :ok, fn item, :ok ->
+      case record_one.(item) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
   end
 
   ## Collaborators

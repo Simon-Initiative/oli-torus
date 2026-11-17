@@ -128,6 +128,17 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
     refute Map.has_key?(result.state.activity_virtual_ids, {"bank_project", "original_q"})
     assert Map.has_key?(result.state.activity_virtual_ids, {"bank_project", "copy_q"})
     assert result.state.activity_virtual_ids[{"bank_project", "copy_q"}].title == "Edited Copy"
+
+    project = Engine.get_project(result.state, "bank_project").project
+
+    event =
+      assert_audited(:bank_question_deleted,
+        project_id: project.id,
+        actor: result.state.current_author,
+        source: :scenario
+      )
+
+    assert event.entity_snapshot["title"] == "Original Question"
   end
 
   test "reports failed expectations as verification failures" do

@@ -215,7 +215,8 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       assert Enum.count(revisions) == 3
       assert revisions |> Enum.map(& &1.title) |> Enum.sort() == ["Alt 1", "Alt 2", "Alt 3"]
 
-      {:ok, _deleted} = ResourceEditor.delete(project.slug, alt_group2.resource_id, author)
+      {:ok, _deleted} =
+        ResourceEditor.edit(project.slug, alt_group2.resource_id, author, %{deleted: true})
 
       revisions =
         AuthoringResolver.revisions_of_type(
@@ -716,7 +717,8 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       assert hd(revisions).resource_id == tag.resource_id
 
       # Delete the tag
-      {:ok, _deleted} = ResourceEditor.delete(project.slug, tag.resource_id, author)
+      {:ok, _deleted} =
+        ResourceEditor.edit(project.slug, tag.resource_id, author, %{deleted: true})
 
       # Should not find deleted tag
       revisions =

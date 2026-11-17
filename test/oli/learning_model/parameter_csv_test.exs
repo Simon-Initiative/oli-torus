@@ -151,7 +151,7 @@ defmodule Oli.LearningModel.ParameterCsvTest do
         content: %{}
       })
 
-    ResourceEditor.delete(s.project.slug, s.objective.resource_id, s.admin)
+    ResourceEditor.edit(s.project.slug, s.objective.resource_id, s.admin, %{deleted: true})
     rows = export_rows(s)
     assert length(rows) == 2
 

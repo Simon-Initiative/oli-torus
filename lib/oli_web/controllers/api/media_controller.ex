@@ -286,7 +286,9 @@ defmodule OliWeb.Api.MediaController do
             OliWeb.Api.MediaController.MediaItemsDeleteResponse}
        }
   def delete(conn, %{"project" => project_slug, "mediaItemIds" => media_item_ids}) do
-    case MediaLibrary.delete_media_items(project_slug, media_item_ids) do
+    context = Oli.Auditing.Context.for_actor(conn.assigns[:current_author], source: :api)
+
+    case Oli.Authoring.Audited.delete_media(context, project_slug, media_item_ids) do
       {:ok, count} ->
         json(conn, %{type: "success", count: count})
 

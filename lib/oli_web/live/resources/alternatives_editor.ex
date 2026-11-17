@@ -393,14 +393,26 @@ defmodule OliWeb.Resources.AlternativesEditor do
   def handle_event("delete_group", %{"resource-id" => resource_id}, socket) do
     %{project: project, author: author, alternatives: alternatives} = socket.assigns
 
-    {:ok, deleted} = ResourceEditor.delete(project.slug, resource_id, author)
+    context = Oli.Auditing.Context.for_actor(author, source: :ui)
 
-    alternatives = Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
+    case Oli.Authoring.Audited.delete_alternatives_group(
+           context,
+           project.slug,
+           resource_id,
+           author
+         ) do
+      {:ok, deleted} ->
+        alternatives =
+          Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
 
-    {:noreply,
-     socket
-     |> hide_modal()
-     |> assign(alternatives: alternatives)}
+        {:noreply,
+         socket
+         |> hide_modal()
+         |> assign(alternatives: alternatives)}
+
+      {:error, _} ->
+        show_error(socket)
+    end
   end
 
   def handle_event(

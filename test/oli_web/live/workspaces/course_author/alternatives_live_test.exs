@@ -56,6 +56,34 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
              }
     end
 
+    test "deleting a group removes it and records the removal", %{
+      conn: conn,
+      project: project,
+      admin: admin
+    } do
+      {:ok, view, _html} = live(conn, live_view_alternatives_route(project.slug))
+
+      render_click(view, "show_create_modal")
+      render_submit(view, "create_group", %{"params" => %{"name" => "Reading Preference"}})
+      [created] = group_events(project, admin)
+      [%{"resource_id" => resource_id}] = created.changes["alternatives_groups"]["after"]
+
+      render_click(view, "show_delete_group_modal", %{"resource-id" => "#{resource_id}"})
+      render_click(view, "delete_group", %{"resource-id" => "#{resource_id}"})
+
+      refute has_element?(view, ".alternatives-group", "Reading Preference")
+
+      event =
+        assert_audited(:authoring_content_removed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.resource_id == resource_id
+      assert event.entity_snapshot["title"] == "Reading Preference"
+    end
+
     test "reorders options, preserves their ids, and keeps the order after reload", %{
       conn: conn,
       project: project,
