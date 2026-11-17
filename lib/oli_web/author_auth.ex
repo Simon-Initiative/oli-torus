@@ -16,6 +16,12 @@ defmodule OliWeb.AuthorAuth do
   @remember_me_cookie "_oli_web_author_remember_me"
   @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax"]
 
+  # Shared by the role plugs and their on_mount counterparts so both entry points
+  # show the same message.
+  @admin_required_message "You are not authorized to access this page."
+  @account_admin_required_message "You must be an account admin to access this page."
+  @system_admin_required_message "You must be a system admin to access this page."
+
   @doc """
   Logs the author in.
   """
@@ -270,7 +276,7 @@ defmodule OliWeb.AuthorAuth do
       session,
       socket,
       &Accounts.is_admin?/1,
-      "You are not authorized to access this page."
+      @admin_required_message
     )
   end
 
@@ -280,7 +286,7 @@ defmodule OliWeb.AuthorAuth do
       session,
       socket,
       &Accounts.at_least_account_admin?/1,
-      "You must be an account admin to access this page."
+      @account_admin_required_message
     )
   end
 
@@ -290,7 +296,7 @@ defmodule OliWeb.AuthorAuth do
       session,
       socket,
       &Accounts.is_system_admin?/1,
-      "You must be a system admin to access this page."
+      @system_admin_required_message
     )
   end
 
@@ -410,7 +416,7 @@ defmodule OliWeb.AuthorAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You are not authorized to access this page.")
+      |> put_flash(:error, @admin_required_message)
       |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
@@ -421,7 +427,7 @@ defmodule OliWeb.AuthorAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You must be an account admin to access this page.")
+      |> put_flash(:error, @account_admin_required_message)
       |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
@@ -443,7 +449,7 @@ defmodule OliWeb.AuthorAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You must be a system admin to access this page.")
+      |> put_flash(:error, @system_admin_required_message)
       |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end

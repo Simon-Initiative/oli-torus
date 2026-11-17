@@ -282,24 +282,6 @@ defmodule OliWeb.AuthorAuthTest do
         assert updated_socket.assigns.current_author == nil
       end
     end
-
-    defp author_with_role(:author), do: Oli.Utils.Seeder.AccountsFixtures.author_fixture()
-
-    defp author_with_role(role) do
-      Oli.Utils.Seeder.AccountsFixtures.author_fixture(%{
-        system_role_id: Map.fetch!(Accounts.SystemRole.role_id(), role)
-      })
-    end
-
-    defp session_for(conn, author) do
-      conn
-      |> put_session(:author_token, Accounts.generate_author_session_token(author))
-      |> get_session()
-    end
-
-    defp role_hook_socket do
-      %LiveView.Socket{endpoint: OliWeb.Endpoint, assigns: %{__changed__: %{}, flash: %{}}}
-    end
   end
 
   describe "redirect_if_author_is_authenticated/2" do
@@ -364,5 +346,23 @@ defmodule OliWeb.AuthorAuthTest do
       refute conn.halted
       refute conn.status
     end
+  end
+
+  defp author_with_role(:author), do: Oli.Utils.Seeder.AccountsFixtures.author_fixture()
+
+  defp author_with_role(role) do
+    Oli.Utils.Seeder.AccountsFixtures.author_fixture(%{
+      system_role_id: Map.fetch!(Accounts.SystemRole.role_id(), role)
+    })
+  end
+
+  defp session_for(conn, author) do
+    conn
+    |> put_session(:author_token, Accounts.generate_author_session_token(author))
+    |> get_session()
+  end
+
+  defp role_hook_socket do
+    %LiveView.Socket{endpoint: OliWeb.Endpoint, assigns: %{__changed__: %{}, flash: %{}}}
   end
 end
