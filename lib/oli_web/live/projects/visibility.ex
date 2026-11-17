@@ -6,6 +6,7 @@ defmodule OliWeb.Projects.VisibilityLive do
   alias Oli.Institutions
   alias Oli.Publishing
   use Phoenix.HTML
+  alias Phoenix.LiveView.JS
 
   def mount(
         _params,
@@ -29,7 +30,8 @@ defmodule OliWeb.Projects.VisibilityLive do
        tab: :users,
        is_admin: is_admin?,
        current_author: current_author,
-       revert_count: 0
+       duplication_revert_count: 0,
+       visibility_revert_count: 0
      )}
   end
 
@@ -45,7 +47,11 @@ defmodule OliWeb.Projects.VisibilityLive do
       <div class="md:col-span-8">
         <form phx-change="duplication" id="duplication_option">
           <%!-- A new id after a failed save renders the inputs again from the saved state --%>
-          <div class="form-check" id={"duplication_inputs-#{@revert_count}"}>
+          <div
+            class="form-check"
+            id={"duplication_inputs-#{@duplication_revert_count}"}
+            phx-mounted={@duplication_revert_count > 0 && JS.focus(to: "#dupe_check")}
+          >
             <%= label class: "form-check-label" do %>
               {checkbox(:duplication, :allow_duplication,
                 id: "dupe_check",
@@ -70,7 +76,14 @@ defmodule OliWeb.Projects.VisibilityLive do
       <div class="md:col-span-8">
         <%= if @is_admin do %>
           <form phx-change="option" id="visibility_option">
-            <div class="form-check" id={"visibility_inputs-#{@revert_count}"}>
+            <div
+              class="form-check"
+              id={"visibility_inputs-#{@visibility_revert_count}"}
+              phx-mounted={
+                @visibility_revert_count > 0 &&
+                  JS.focus(to: "#visibility_inputs-#{@visibility_revert_count} input:checked")
+              }
+            >
               <div class="form-group mb-2">
                 <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
                   {radio_button(:visibility, :option, "authors",
@@ -458,10 +471,14 @@ defmodule OliWeb.Projects.VisibilityLive do
       {:error, _reason} ->
         socket
         |> flash_error("The setting could not be saved.")
-        |> update(:revert_count, &(&1 + 1))
+        |> update(revert_key(field), &(&1 + 1))
         |> then(&{:noreply, &1})
     end
   end
+
+  # A failed save renders the control again from the saved value and gives it back the focus
+  defp revert_key(:allow_duplication), do: :duplication_revert_count
+  defp revert_key(:visibility), do: :visibility_revert_count
 
   # This view is rendered inside the project overview, which shows its flash messages
   defp flash_error(socket, message) do

@@ -1,6 +1,7 @@
 defmodule OliWeb.Projects.TransferPaymentCodes do
   use Phoenix.LiveComponent
   alias Oli.Auditing.Context
+  alias Phoenix.LiveView.JS
 
   attr :project, :map, required: true
   attr :author, :map, required: true, doc: "the author changing the setting"
@@ -14,7 +15,11 @@ defmodule OliWeb.Projects.TransferPaymentCodes do
     <div class="flex items-center h-full">
       <form phx-change="set_allow_transfer" phx-target={@myself}>
         <%!-- A new id after a failed save renders the checkbox again from the saved state --%>
-        <div class="form-check" id={"transfer_payment_codes_wrapper-#{@revert_count}"}>
+        <div
+          class="form-check"
+          id={"transfer_payment_codes_wrapper-#{@revert_count}"}
+          phx-mounted={@revert_count > 0 && JS.focus(to: "#transfer_payment_codes")}
+        >
           <label class="form-check-label">
             <input
               id="transfer_payment_codes"

@@ -397,6 +397,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       project = create_project_with_author(author)
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
       assert has_element?(view, "#transfer_payment_codes_wrapper-0")
+      # On the first render the checkbox does not take the focus
+      refute has_element?(view, "#transfer_payment_codes_wrapper-0[phx-mounted]")
 
       reject_audit_inserts()
 
@@ -407,6 +409,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       assert render(view) =~ "The setting could not be saved."
       assert has_element?(view, "#transfer_payment_codes_wrapper-1")
+
+      # The checkbox rendered again gets the keyboard focus back
+      assert has_element?(
+               view,
+               ~s(#transfer_payment_codes_wrapper-1[phx-mounted*="focus"][phx-mounted*="#transfer_payment_codes"])
+             )
+
       refute has_element?(view, "#transfer_payment_codes[checked]")
       refute Course.get_project!(project.id).allow_transfer_payment_codes
     end

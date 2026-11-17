@@ -4,6 +4,7 @@ defmodule OliWeb.Projects.RequiredSurvey do
 
   alias Oli.Auditing.Context
   alias Oli.Delivery.Sections
+  alias Phoenix.LiveView.JS
 
   attr :project, :map, required: true
   attr :author, :map, required: false, doc: "the author editing a project's survey"
@@ -20,7 +21,11 @@ defmodule OliWeb.Projects.RequiredSurvey do
     <div class="flex items-center h-full">
       <form phx-change="set-required-survey" phx-target={@myself}>
         <%!-- A new id after a failed save renders the checkbox again from the saved state --%>
-        <div class="form-check" id={"survey_check_wrapper-#{@revert_count}"}>
+        <div
+          class="form-check"
+          id={"survey_check_wrapper-#{@revert_count}"}
+          phx-mounted={@revert_count > 0 && JS.focus(to: "#survey_check")}
+        >
           <label class="form-check-label">
             <input
               name="survey"

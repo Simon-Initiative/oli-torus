@@ -2,6 +2,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.VersioningDetails do
   use OliWeb, :html
 
   alias OliWeb.Common.Utils
+  alias Phoenix.LiveView.JS
 
   attr(:active_publication, :any, required: true)
   attr(:active_publication_changes, :any, required: true)
@@ -122,7 +123,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.VersioningDetails do
         <% end %>
 
         <%= if @active_publication_changes do %>
-          <div id={"auto_push_update_wrapper-#{@revert_count}"}>
+          <div
+            id={"auto_push_update_wrapper-#{@revert_count}"}
+            phx-mounted={
+              @revert_count > 0 &&
+                JS.focus(to: "##{@changeset[:auto_push_update].id}_checkbox")
+            }
+          >
             <.toggle_switch
               id={@changeset[:auto_push_update].id}
               class="my-3"
