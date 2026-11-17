@@ -3,7 +3,6 @@ defmodule Oli.Scenarios.Ops do
   Operations that can be applied to course structures.
   """
   alias Oli.{Publishing}
-  alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Scenarios.Builder
 
@@ -150,7 +149,14 @@ defmodule Oli.Scenarios.Ops do
 
         # Use ContainerEditor.move_to to handle the move
         {:ok, _} =
-          ContainerEditor.move_to(source_rev, old_parent_rev, new_parent_rev, author, proj)
+          Oli.Authoring.Audited.move_curriculum_entry(
+            Oli.Auditing.Context.for_actor(author, source: :scenario),
+            source_rev,
+            old_parent_rev,
+            new_parent_rev,
+            author,
+            proj
+          )
 
         # Get updated parent revisions
         updated_new_parent =
@@ -242,7 +248,14 @@ defmodule Oli.Scenarios.Ops do
         if target_index do
           # Use ContainerEditor.reorder_child for the actual reordering
           {:ok, _} =
-            ContainerEditor.reorder_child(parent_rev, proj, author, source_rev.slug, target_index)
+            Oli.Authoring.Audited.reorder_curriculum_entry(
+              Oli.Auditing.Context.for_actor(author, source: :scenario),
+              parent_rev,
+              proj,
+              author,
+              source_rev.slug,
+              target_index
+            )
 
           # Get updated parent revision
           parent_title =
@@ -335,7 +348,15 @@ defmodule Oli.Scenarios.Ops do
     with rev when not is_nil(rev) <- dest.rev_by_title[target],
          author_id <- extract_author_id(dest),
          revision_params <- build_revision_params(set_params, author_id),
-         {:ok, _} <- ContainerEditor.edit_page(proj, rev.slug, revision_params),
+         {:ok, _} <-
+           Oli.Authoring.Audited.update_page_options(
+             Oli.Auditing.Context.for_actor(Oli.Accounts.get_author!(author_id),
+               source: :scenario
+             ),
+             proj,
+             rev.slug,
+             revision_params
+           ),
          updated_rev <- AuthoringResolver.from_resource_id(proj.slug, rev.resource_id) do
       update_destination_state(dest, target, set_params, rev, updated_rev)
     else

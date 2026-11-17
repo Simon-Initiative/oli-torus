@@ -11,13 +11,12 @@ defmodule Oli.Authoring.Audited.Objectives do
   import Ecto.Query, warn: false
   import Oli.Utils
 
-  import Oli.Authoring.Audited.Support,
-    only: [latest_revisions: 2, lock_working_mappings: 2, record: 2, record_all: 2]
+  import Oli.Authoring.Audited.Support, only: [record: 2]
 
   alias Oli.Accounts.Author
   alias Oli.Auditing.Changes
   alias Oli.Authoring.{Broadcaster, Course}
-  alias Oli.Authoring.Audited.{Activities, Pages}
+  alias Oli.Authoring.Audited.{Activities, Pages, Support}
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Editing.{ActivityEditor, ObjectiveEditor, PageEditor}
   alias Oli.Publishing
@@ -122,33 +121,14 @@ defmodule Oli.Authoring.Audited.Objectives do
     end
   end
 
-  # Locks the objectives' working mappings, reads them, runs `write`, and records each objective
-  # that changed, including the ones `created` returns from the result.
   defp changing(project, context, resource_ids, write, created \\ fn _result -> [] end) do
-    Repo.transaction(fn ->
-      lock_working_mappings(project, resource_ids)
-      before = latest_revisions(project, resource_ids)
-
-      case write.() do
-        {:ok, result} ->
-          resource_ids = Enum.uniq(resource_ids ++ created.(result))
-          after_state = latest_revisions(project, resource_ids)
-
-          case record_all(
-                 resource_ids,
-                 &record_objective(context, project, before[&1], after_state[&1])
-               ) do
-            :ok -> result
-            {:error, reason} -> Repo.rollback(reason)
-          end
-
-        {:error, reason} ->
-          Repo.rollback(reason)
-
-        other ->
-          Repo.rollback(other)
-      end
-    end)
+    Support.changing(
+      project,
+      resource_ids,
+      write,
+      &record_objective(context, project, &1, &2),
+      created: created
+    )
   end
 
   defp record_objective(_context, _project, _before, nil), do: :ok

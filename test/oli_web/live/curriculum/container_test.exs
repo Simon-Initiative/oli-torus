@@ -467,6 +467,39 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       assert event.resource_id == page.resource_id
     end
+
+    test "removing an entry through the move modal records the container's children", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision1: page
+    } do
+      {:ok, view, _html} = live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      render_hook(view, "show_move_modal", %{"slug" => page.slug})
+      view |> element(~s{button[phx-click="MoveModal.remove"]}) |> render_click()
+
+      event =
+        assert_audited(:curriculum_changed, project_id: project.id, actor: author, source: :ui)
+
+      assert event.entity_type == :container
+      refute page.resource_id in event.changes["children"]["after"]
+    end
+
+    test "reordering an entry records the container's children", %{
+      conn: conn,
+      author: author,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      event =
+        assert_audited(:curriculum_changed, project_id: project.id, actor: author, source: :ui)
+
+      assert event.changes["children"]["before"] != event.changes["children"]["after"]
+    end
   end
 
   describe "container live test (as admin)" do
@@ -585,7 +618,8 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
          %{
            conn: conn,
            project: project,
-           page_2: page_2
+           page_2: page_2,
+           admin: admin
          } do
       {:ok, view, _html} =
         live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
@@ -681,6 +715,15 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
                  project.slug,
                  page_2.slug
                )
+
+      event =
+        assert_audited(:authoring_settings_changed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.changes["max_attempts"]["after"] == 10
     end
 
     test "updates a revision data when a `save-options` event is handled after submitting the options modal with no intro content defined (when submitting a page, for instance)",

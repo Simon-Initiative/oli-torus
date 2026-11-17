@@ -119,22 +119,58 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       {:ok, revision} = ContainerEditor.add_new(container, page, author, project)
 
       # we now have three pages to reorder with:
-      {:ok, _} = ContainerEditor.reorder_child(container, project, author, revision.slug, 2)
+      {:ok, _} =
+        Oli.Authoring.Audited.reorder_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          container,
+          project,
+          author,
+          revision.slug,
+          2
+        )
+
       container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
-      {:ok, _} = ContainerEditor.reorder_child(container, project, author, revision.slug, 3)
+      {:ok, _} =
+        Oli.Authoring.Audited.reorder_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          container,
+          project,
+          author,
+          revision.slug,
+          3
+        )
+
       container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
-      {:ok, _} = ContainerEditor.reorder_child(container, project, author, revision.slug, 100)
+      {:ok, _} =
+        Oli.Authoring.Audited.reorder_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          container,
+          project,
+          author,
+          revision.slug,
+          100
+        )
+
       container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
-      {:ok, _} = ContainerEditor.reorder_child(container, project, author, revision.slug, 0)
+      {:ok, _} =
+        Oli.Authoring.Audited.reorder_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          container,
+          project,
+          author,
+          revision.slug,
+          0
+        )
+
       container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 0
@@ -156,7 +192,14 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       assert length(root_container.children) == 3
 
       {:ok, _} =
-        ContainerEditor.move_to(page1_revision, root_container, unit1_container, author, project)
+        Oli.Authoring.Audited.move_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          page1_revision,
+          root_container,
+          unit1_container,
+          author,
+          project
+        )
 
       root_container =
         AuthoringResolver.from_resource_id(project.slug, root_container.resource_id)

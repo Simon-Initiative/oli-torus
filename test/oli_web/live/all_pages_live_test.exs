@@ -265,6 +265,23 @@ defmodule OliWeb.AllPagesLiveTest do
   describe "all pages view" do
     setup [:admin_conn, :create_project]
 
+    test "removing a page from its container through the move modal records the container", %{
+      conn: conn,
+      admin: admin,
+      project: project,
+      nested_page_revision: page
+    } do
+      {:ok, view, _html} = live(conn, live_view_all_pages_route(project.slug))
+
+      render_hook(view, "show_move_modal", %{"slug" => page.slug})
+      view |> element(~s{button[phx-click="MoveModal.remove"]}) |> render_click()
+
+      event =
+        assert_audited(:curriculum_changed, project_id: project.id, actor: admin, source: :ui)
+
+      refute page.resource_id in event.changes["children"]["after"]
+    end
+
     test "loads all pages view correctly", %{
       conn: conn,
       project: project,
@@ -530,7 +547,8 @@ defmodule OliWeb.AllPagesLiveTest do
          %{
            conn: conn,
            project: project,
-           nested_page_revision: nested_page_revision
+           nested_page_revision: nested_page_revision,
+           admin: admin
          } do
       {:ok, view, _html} =
         live(conn, live_view_all_pages_route(project.slug))
@@ -605,6 +623,15 @@ defmodule OliWeb.AllPagesLiveTest do
                  project.slug,
                  nested_page_revision.slug
                )
+
+      event =
+        assert_audited(:authoring_settings_changed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.changes["max_attempts"]["after"] == 10
     end
 
     test "deleting a page in a unit removes it from the curriculum and records the removal", %{

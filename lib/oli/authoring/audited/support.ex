@@ -6,9 +6,23 @@ defmodule Oli.Authoring.Audited.Support do
   import Ecto.Query, only: [from: 2]
 
   alias Oli.Auditing
+  alias Oli.Auditing.EventCatalog.Fields
   alias Oli.Publishing.{AuthoringResolver, PublishedResource}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
+  alias Oli.Resources.ResourceType
+
+  @container_type_id ResourceType.id_for_container()
+
+  # Page settings recorded by authoring_settings_changed; objectives have their own event, and
+  # children, parent objectives, and deletion do not belong to page settings.
+  @page_settings Map.drop(Fields.authoring_configuration(), [
+                   :objectives,
+                   :children,
+                   :parent_objective_id,
+                   :selection_rules,
+                   :deleted
+                 ])
 
   @doc "Builds the event from `proposal` and inserts it in the current transaction."
   def record(context, proposal) do
@@ -28,9 +42,45 @@ defmodule Oli.Authoring.Audited.Support do
     end)
   end
 
+  @doc "The page and container settings policy of `authoring_settings_changed`."
+  def page_settings, do: @page_settings
+
+  @doc """
+  Locks the working mappings of `resource_ids`, reads them, runs `write`, and calls
+  `record_one.(before, after)` for each resource, all in one transaction. `write` returns
+  `{:ok, result}` or `{:error, reason}`; `:created` returns the IDs of resources the write
+  created from its result, which are recorded with a `nil` before-state.
+  """
+  def changing(project, resource_ids, write, record_one, opts \\ []) do
+    created = Keyword.get(opts, :created, fn _result -> [] end)
+
+    Repo.transaction(fn ->
+      lock_working_mappings(project, resource_ids)
+      before = latest_revisions(project, resource_ids)
+
+      case write.() do
+        {:ok, result} ->
+          resource_ids = Enum.uniq(resource_ids ++ created.(result))
+          after_state = latest_revisions(project, resource_ids)
+
+          case record_all(resource_ids, &record_one.(before[&1], after_state[&1])) do
+            :ok -> result
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+
+        other ->
+          Repo.rollback(other)
+      end
+    end)
+  end
+
   @doc """
   Records `changes` of an authored resource (`revision`) as `event_type`, or nothing when there
-  are no changes.
+  are no changes. Containers are recorded as `:container` entities, other resources as
+  `:resource`.
   """
   def record_resource_change(_context, _project, _revision, _event_type, changes)
       when map_size(changes) == 0,
@@ -39,7 +89,9 @@ defmodule Oli.Authoring.Audited.Support do
   def record_resource_change(context, project, revision, event_type, changes) do
     record(context, %{
       event_type: event_type,
-      entity: {:resource, revision.resource_id, %{title: revision.title, slug: revision.slug}},
+      entity:
+        {entity_type(revision), revision.resource_id,
+         %{title: revision.title, slug: revision.slug}},
       scope: %{project_id: project.id, resource_id: revision.resource_id},
       event_key: "resource:#{revision.resource_id}:#{event_type}",
       changes: changes
@@ -93,4 +145,7 @@ defmodule Oli.Authoring.Audited.Support do
         []
     end)
   end
+
+  defp entity_type(%{resource_type_id: @container_type_id}), do: :container
+  defp entity_type(_revision), do: :resource
 end

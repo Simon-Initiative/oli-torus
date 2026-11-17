@@ -19,7 +19,8 @@ defmodule Oli.Authoring.Audited do
   Page saves record the settings, objectives, DOT settings, and triggers they change, and the
   activities whose references they remove; activity saves record their objectives and triggers.
   Saving only content text records nothing. Learning objective commands record
-  `learning_objectives_changed` for each objective they create, edit, delete, or relink.
+  `learning_objectives_changed` for each objective they create, edit, delete, or relink. Page
+  options record their settings; curriculum moves record `curriculum_changed` per container.
 
   Removing a page, container, activity, alternatives group, or bibliography entry records
   `authoring_content_removed` (`bank_question_deleted` for a banked activity) with the previous
@@ -48,6 +49,7 @@ defmodule Oli.Authoring.Audited do
     Alternatives,
     Collaborators,
     Content,
+    Curriculum,
     Objectives,
     Pages,
     Projects,
@@ -622,6 +624,92 @@ defmodule Oli.Authoring.Audited do
       do: Objectives.detach_objective(context, objective_id, project, author)
 
   def detach_objective(_context, _objective_id, _project, _author), do: {:error, :invalid_request}
+
+  ## Page options and curriculum
+
+  @doc """
+  Saves the options of the page or container with `revision_slug` from the curriculum options
+  modal, as `Oli.Authoring.Editing.ContainerEditor` did: content and objectives are never
+  changed, and a page made practice gets no attempt limit. Records `authoring_settings_changed`
+  for the settings and `dot_settings_changed` for `ai_enabled`. Broadcasts after commit.
+  """
+  @spec update_page_options(Context.t(), Project.t(), String.t(), map()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def update_page_options(%Context{} = context, %Project{} = project, revision_slug, change)
+      when is_binary(revision_slug) and is_map(change),
+      do: Curriculum.update_page_options(context, project, revision_slug, change)
+
+  def update_page_options(_context, _project, _revision_slug, _change),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Moves `revision` from `old_container` to `new_container` (either may be `nil`, to take it out
+  of or put it into the curriculum), all or nothing, and records `curriculum_changed` with the
+  children before and after for each container. Moving a deleted page into a container restores
+  it, as before. Broadcasts the containers after commit.
+  """
+  @spec move_curriculum_entry(
+          Context.t(),
+          Revision.t(),
+          Revision.t() | nil,
+          Revision.t() | nil,
+          Author.t(),
+          Project.t()
+        ) :: {:ok, Revision.t()} | {:error, command_error()}
+  def move_curriculum_entry(
+        %Context{} = context,
+        %Revision{} = revision,
+        old_container,
+        new_container,
+        %Author{} = author,
+        %Project{} = project
+      ),
+      do:
+        Curriculum.move_curriculum_entry(
+          context,
+          revision,
+          old_container,
+          new_container,
+          author,
+          project
+        )
+
+  def move_curriculum_entry(_context, _revision, _old, _new, _author, _project),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Moves the entry with `source_slug` to position `index` of `container` and records the
+  container's children before and after. Returns the container's new revision, as before.
+  """
+  @spec reorder_curriculum_entry(
+          Context.t(),
+          Revision.t(),
+          Project.t(),
+          Author.t(),
+          String.t(),
+          integer()
+        ) :: {:ok, Revision.t()} | {:error, command_error()}
+  def reorder_curriculum_entry(
+        %Context{} = context,
+        %Revision{} = container,
+        %Project{} = project,
+        %Author{} = author,
+        source_slug,
+        index
+      )
+      when is_binary(source_slug) and is_integer(index),
+      do:
+        Curriculum.reorder_curriculum_entry(
+          context,
+          container,
+          project,
+          author,
+          source_slug,
+          index
+        )
+
+  def reorder_curriculum_entry(_context, _container, _project, _author, _source_slug, _index),
+    do: {:error, :invalid_request}
 
   ## Collaborators
 

@@ -94,7 +94,8 @@ defmodule Oli.Scenarios.Builder do
     root_title = root_node.title || "root"
 
     {:ok, _} =
-      ContainerEditor.edit_page(
+      Oli.Authoring.Audited.update_page_options(
+        Oli.Auditing.Context.for_actor(author, source: :scenario),
         project,
         root_revision.slug,
         %{"title" => root_title, "author_id" => author.id}

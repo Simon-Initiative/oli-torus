@@ -15,7 +15,6 @@ defmodule Oli.SectionsTest do
   alias Oli.Delivery.Remix
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Transfer
-  alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.AuthoringResolver
 
@@ -1307,7 +1306,16 @@ defmodule Oli.SectionsTest do
              ]
 
       root_container = AuthoringResolver.root_container(project.slug)
-      {:ok, _} = ContainerEditor.move_to(revision2, root_container, nil, author, project)
+
+      {:ok, _} =
+        Oli.Authoring.Audited.move_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          revision2,
+          root_container,
+          nil,
+          author,
+          project
+        )
 
       {:ok, page_removed_publication} =
         Oli.TestHelpers.publish_project_fixture(project, "remove page from curriculum", author.id)
@@ -1330,13 +1338,21 @@ defmodule Oli.SectionsTest do
       restored_page_revision = AuthoringResolver.from_resource_id(project.slug, page2.id)
 
       {:ok, _} =
-        ContainerEditor.move_to(restored_page_revision, nil, root_container, author, project)
+        Oli.Authoring.Audited.move_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          restored_page_revision,
+          nil,
+          root_container,
+          author,
+          project
+        )
 
       root_container = AuthoringResolver.root_container(project.slug)
       restored_page_revision = AuthoringResolver.from_resource_id(project.slug, page2.id)
 
       {:ok, _} =
-        ContainerEditor.reorder_child(
+        Oli.Authoring.Audited.reorder_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
           root_container,
           project,
           author,

@@ -159,7 +159,7 @@ Each new facade declares `use Boundary, top_level?: true, exports: [], check: [o
 | Module | Moves into the facade | Stays public |
 | --- | --- | --- |
 | `PageEditor` | `edit/4` and its private helpers | `create_context`, `acquire_lock`, `release_lock`, reads |
-| `ContainerEditor` | `remove_child` (block 3); `move_to`, `reorder_child`, `edit_page` (block 4) | `add_new`, `duplicate_page`, reads |
+| `ContainerEditor` | `remove_child` (block 3); `move_to`, `reorder_child`, `edit_page` (block 4) | `add_new`, `duplicate_page`, reads; the private module keeps a copy of the child-append helper, which `add_new` still uses |
 | `ActivityEditor` | `edit`, `bulk_edit`, `delete`, `delete_bulk` and their helpers (block 4: the deletes share the revision writer with the edits; block 3 audits them through the facade) | `create*`, reads, bundle repair, and `validate_request/1`, which creation shares |
 | `ActivityBank` | nothing: `update`, `delete`, and `delete_bulk` keep their bank checks and reference resolution, take a `Context`, and call the facade, so no write path bypasses it | reads, `create` |
 | `ObjectiveEditor` | every writer (block 4); `add_new_parent_for_objective/4`, which had no caller, is removed | reads, the detachment preview, and the association checks the reads share |
@@ -294,7 +294,8 @@ Commands follow the PR-02 shape: a `*_multi/4` builder for callers that compose,
 @spec edit_activity(Context.t(), String.t(), term(), term(), String.t(), map()) :: {:ok, Revision.t()} | {:error, command_error()}
 @spec edit_activities(Context.t(), String.t(), term(), String.t(), [map()]) :: {:ok, [Revision.t()]} | {:error, command_error()}
 @spec update_page_options(Context.t(), Project.t(), String.t(), map()) :: {:ok, Revision.t()} | {:error, command_error()}
-@spec move_curriculum_entry(Context.t(), Project.t(), map()) :: {:ok, term()} | {:error, command_error()}
+@spec move_curriculum_entry(Context.t(), Revision.t(), Revision.t() | nil, Revision.t() | nil, Author.t(), Project.t()) :: {:ok, Revision.t()} | {:error, command_error()}
+@spec reorder_curriculum_entry(Context.t(), Revision.t(), Project.t(), Author.t(), String.t(), integer()) :: {:ok, Revision.t()} | {:error, command_error()}
 # create_objective/5, link_sub_objective/5, edit_objective/5, delete_objective/5,
 # unlink_sub_objective/5, delete_sub_objective/5, detach_objective/4: the editor's arguments
 # after a Context, returning the editor's results

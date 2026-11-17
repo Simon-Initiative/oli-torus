@@ -13,9 +13,7 @@ defmodule Oli.Authoring.Audited.Activities do
 
   import Oli.Authoring.Audited.Support,
     only: [
-      latest_revisions: 2,
-      lock_working_mappings: 2,
-      record_all: 2,
+      changing: 4,
       record_resource_change: 5,
       resource_ids: 1
     ]
@@ -70,8 +68,6 @@ defmodule Oli.Authoring.Audited.Activities do
     end)
   end
 
-  # Locks the working mappings of the edited activities, reads them, runs `write`, and records
-  # what changed for each one.
   defp editing(project_slug, context, resource_ids, write) do
     case Course.get_project_by_slug(project_slug) do
       # The write reports a missing project with its usual error
@@ -79,22 +75,7 @@ defmodule Oli.Authoring.Audited.Activities do
         write.()
 
       project ->
-        Repo.transaction(fn ->
-          lock_working_mappings(project, resource_ids)
-          before = latest_revisions(project, resource_ids)
-
-          with {:ok, result} <- write.(),
-               after_state = latest_revisions(project, resource_ids),
-               :ok <-
-                 record_all(resource_ids, fn id ->
-                   record_activity(context, project, before[id], after_state[id])
-                 end) do
-            result
-          else
-            {:error, reason} -> Repo.rollback(reason)
-            other -> Repo.rollback(other)
-          end
-        end)
+        changing(project, resource_ids, write, &record_activity(context, project, &1, &2))
     end
   end
 

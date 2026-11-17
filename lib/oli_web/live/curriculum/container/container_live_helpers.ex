@@ -82,7 +82,14 @@ defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
       |> Map.put("author_id", author.id)
       |> decode_revision_params()
 
-    case Oli.Authoring.Editing.ContainerEditor.edit_page(project, revision.slug, revision_params) do
+    context = Oli.Auditing.Context.for_actor(author, source: :ui)
+
+    case Oli.Authoring.Audited.update_page_options(
+           context,
+           project,
+           revision.slug,
+           revision_params
+         ) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -94,6 +101,9 @@ defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Could not save the options")}
     end
   end
 

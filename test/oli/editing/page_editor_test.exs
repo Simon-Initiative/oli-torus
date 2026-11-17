@@ -9,7 +9,6 @@ defmodule Oli.EditingTest do
   alias Oli.Accounts.SystemRole
   alias Oli.Utils.Time
   alias Oli.Authoring.Locks
-  alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
 
   describe "editing" do
@@ -311,10 +310,15 @@ defmodule Oli.EditingTest do
       assert author1_edit_revision.content == some_new_content["content"]
 
       # With author 1 still in an active editing session, author 2 makes container_editor driven edit:
-      ContainerEditor.edit_page(project, author1_edit_revision.slug, %{
-        graded: true,
-        author_id: author2.id
-      })
+      Oli.Authoring.Audited.update_page_options(
+        Oli.TestHelpers.author_audit_context(),
+        project,
+        author1_edit_revision.slug,
+        %{
+          graded: true,
+          author_id: author2.id
+        }
+      )
 
       author2_edit_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
       # Verify this edit created a new revision.

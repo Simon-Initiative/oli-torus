@@ -297,6 +297,8 @@ All Mix commands require scoped escalated permissions on the first attempt under
 - [ ] Migrate and sanitize settings_changes, change its writers/readers and retire it with assessment-settings work in this PR; do not move this second history into PR-01.
 - [ ] Own discussion/notes/support configuration here; PR-06 owns post/thread moderation. Reuse PR-03 integration configuration and PR-04 project/content DOT policies rather than duplicating their events.
 
+**DOT interface from PR-04.** `Oli.Auditing.DotPolicy` (`lib/oli/auditing/dot_policy.ex`) projects the triggers authored in page and activity content: `triggers/1` returns `%{"path", "trigger_type", "prompt"}` entries by location (`page`, `group:<id>`, `content:<id>`, `part:<part>:<trigger>`, `part:<part>` for adaptive trigger parts, `rule:<rule>:<index>` for activation points), with prompts cut at 2,000 characters and marked `prompt_truncated`; `changes/2` records only the triggers added, removed, or changed under the `triggers` pseudo key. PR-04 records project `allow_triggers`, page `ai_enabled`, and content triggers with `dot_settings_changed` and `activation_settings_changed`. Section and recommendation settings reuse `Fields.dot_activation/0`: add their keys to that policy, and new trigger locations to `DotPolicy`, instead of defining another one.
+
 ### Testing Tasks
 
 - [ ] Verify every supported setting, mixed changed/unchanged bulk targets, default removal/effective values and rollback of auto-submit changes.

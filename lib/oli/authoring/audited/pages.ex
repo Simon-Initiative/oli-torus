@@ -8,12 +8,11 @@ defmodule Oli.Authoring.Audited.Pages do
   # keeps the lock, context, and rendering functions.
 
   import Ecto.Query, only: [from: 2]
-  import Oli.Authoring.Audited.Support, only: [record_resource_change: 5]
+  import Oli.Authoring.Audited.Support, only: [page_settings: 0, record_resource_change: 5]
   import Oli.Authoring.Editing.Utils
 
   alias Oli.Accounts
   alias Oli.Auditing.{Changes, DotPolicy}
-  alias Oli.Auditing.EventCatalog.Fields
   alias Oli.Authoring.{Broadcaster, Course, Locks}
   alias Oli.Authoring.Audited.Content
   alias Oli.Authoring.Editing.PageEditor
@@ -25,15 +24,6 @@ defmodule Oli.Authoring.Audited.Pages do
 
   @page_id ResourceType.id_for_page()
   @alternatives_type_id ResourceType.id_for_alternatives()
-
-  # Page settings recorded by authoring_settings_changed; objectives have their own event and
-  # children and parent objectives do not belong to pages.
-  @page_settings Map.drop(Fields.authoring_configuration(), [
-                   :objectives,
-                   :children,
-                   :parent_objective_id,
-                   :selection_rules
-                 ])
 
   ## Commands
 
@@ -81,7 +71,7 @@ defmodule Oli.Authoring.Audited.Pages do
              page,
              :authoring_settings_changed,
              Map.merge(
-               Changes.diff(before, page, @page_settings),
+               Changes.diff(before, page, page_settings()),
                selection_changes(before, page)
              )
            ),

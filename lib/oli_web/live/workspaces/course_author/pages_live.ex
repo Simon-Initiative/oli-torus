@@ -333,7 +333,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
 
     %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
 
-    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+    socket = move_entry(socket, revision, from_container, to_container, author, project)
 
     hide_modal(socket, modal_assigns: nil)
     |> patch_with(%{})
@@ -350,7 +350,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
     %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
     to_container = nil
 
-    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+    socket = move_entry(socket, revision, from_container, to_container, author, project)
 
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
@@ -702,4 +702,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
   defp limit, do: @default_limit
   defp graded_opts, do: [{true, "Scored"}, {false, "Practice"}]
   defp type_opts, do: [{true, "Regular"}, {false, "Adaptive"}]
+
+  # Moves a curriculum entry through the audited command and flashes an error if it fails.
+  defp move_entry(socket, revision, from_container, to_container, author, project) do
+    case Oli.Authoring.Audited.move_curriculum_entry(
+           Oli.Auditing.Context.for_actor(author, source: :ui),
+           revision,
+           from_container,
+           to_container,
+           author,
+           project
+         ) do
+      {:ok, _} -> socket
+      {:error, _} -> put_flash(socket, :error, "Could not move the item")
+    end
+  end
 end
