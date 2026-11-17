@@ -244,7 +244,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1"}]}}
       }
 
-      ActivityEditor.edit(
+      Oli.Authoring.Audited.edit_activity(
+        Oli.TestHelpers.author_audit_context(),
         project.slug,
         revision.resource_id,
         activity_id,
@@ -258,6 +259,15 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert updated_activity.objectives == %{"1" => []}
+
+      detached =
+        assert_audited(:learning_objectives_changed,
+          actor: author,
+          source: :ui,
+          resource_id: activity_id
+        )
+
+      assert detached.changes["objectives"]["after"] == %{"1" => []}
     end
 
     test "detach_objective/3 removes an objective from a banked activity", %{
@@ -280,7 +290,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1"}]}}
       }
 
-      ActivityEditor.edit(
+      Oli.Authoring.Audited.edit_activity(
+        Oli.TestHelpers.author_audit_context(),
         project.slug,
         activity_id,
         activity_id,
@@ -316,7 +327,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1"}]}}
       }
 
-      ActivityEditor.edit(
+      Oli.Authoring.Audited.edit_activity(
+        Oli.TestHelpers.author_audit_context(),
         project.slug,
         activity_id,
         activity_id,
@@ -373,7 +385,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1"}]}}
       }
 
-      ActivityEditor.edit(
+      Oli.Authoring.Audited.edit_activity(
+        Oli.TestHelpers.author_audit_context(),
         project.slug,
         revision.resource_id,
         activity_id,
@@ -712,7 +725,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1"}]}}
       }
 
-      ActivityEditor.edit(
+      Oli.Authoring.Audited.edit_activity(
+        Oli.TestHelpers.author_audit_context(),
         project.slug,
         activity_id,
         activity_id,

@@ -506,7 +506,15 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
             end)
         }
 
-        ActivityEditor.edit(project_slug, page_id, activity_id, author.email, update)
+        Oli.Authoring.Audited.edit_activity(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          project_slug,
+          page_id,
+          activity_id,
+          author.email,
+          update
+        )
+
         PageEditor.release_lock(project_slug, page_slug, author.email)
     end
   end
@@ -529,7 +537,15 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
             end)
         }
 
-        ActivityEditor.edit(project_slug, activity_id, activity_id, author.email, update)
+        Oli.Authoring.Audited.edit_activity(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          project_slug,
+          activity_id,
+          activity_id,
+          author.email,
+          update
+        )
+
         PageEditor.release_lock(project_slug, activity_slug, author.email)
     end
   end

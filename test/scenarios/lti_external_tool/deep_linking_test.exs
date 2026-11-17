@@ -165,6 +165,10 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     assert saved.resource_id == revision.resource_id
     assert Map.delete(saved.content, "deepLink") == Map.delete(revision.content, "deepLink")
 
+    # The saved selection is activity content, which the audit log does not record
+    assert audit_events(:learning_objectives_changed, project_id: Hooks.project(state).id) == []
+    assert audit_events(:activation_settings_changed, project_id: Hooks.project(state).id) == []
+
     {:ok, publication} =
       Oli.TestHelpers.publish_project_fixture(
         Hooks.project(state),

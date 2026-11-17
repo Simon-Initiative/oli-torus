@@ -5,7 +5,6 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
   alias Oli.Authoring.Course
   alias Oli.Repo
-  alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Authoring.Locks
   alias Oli.Lti.AuthoringLaunch
   alias Oli.Publishing
@@ -54,9 +53,15 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
     }
 
     assert {:ok, [second]} =
-             ActivityEditor.bulk_edit(ctx.project.slug, ctx.page.resource_id, ctx.author.email, [
-               update
-             ])
+             Oli.Authoring.Audited.edit_activities(
+               Oli.TestHelpers.author_audit_context(),
+               ctx.project.slug,
+               ctx.page.resource_id,
+               ctx.author.email,
+               [
+                 update
+               ]
+             )
 
     assert second.id == first.id
     assert second.content["deepLink"] == ctx.activity.content["deepLink"]
@@ -69,6 +74,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:ok, saved} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -86,6 +92,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:error, _} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -103,6 +110,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:error, _} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -131,6 +139,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:error, _} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -146,10 +155,17 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
     other_id = Hooks.activity(ctx.state, "unconfigured").resource_id
 
     assert {:error, _} =
-             AuthoringLaunch.save_result(ctx.author, ctx.project.slug, other_id, token)
+             AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
+               ctx.author,
+               ctx.project.slug,
+               other_id,
+               token
+             )
 
     assert {:error, _} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -166,6 +182,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:error, _} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -210,6 +227,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:ok, saved} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -242,6 +260,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:error, _} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -266,6 +285,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:error, _} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -285,6 +305,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:error, :save_failed} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -306,6 +327,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:ok, saved} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -373,9 +395,15 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
     assert {:error, {:invalid_update_field}} = edit(ctx, nil)
 
     assert {:error, {:invalid_update_field}} =
-             ActivityEditor.bulk_edit(ctx.project.slug, ctx.page.resource_id, ctx.author.email, [
-               %{"resource_id" => ctx.activity.resource_id, "content" => nil}
-             ])
+             Oli.Authoring.Audited.edit_activities(
+               Oli.TestHelpers.author_audit_context(),
+               ctx.project.slug,
+               ctx.page.resource_id,
+               ctx.author.email,
+               [
+                 %{"resource_id" => ctx.activity.resource_id, "content" => nil}
+               ]
+             )
 
     assert Hooks.activity(ctx.state).id == ctx.activity.id
     assert Hooks.activity(ctx.state).content == ctx.activity.content
@@ -470,6 +498,7 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
     assert {:error, _} =
              AuthoringLaunch.save_result(
+               Oli.TestHelpers.author_audit_context(),
                ctx.author,
                ctx.project.slug,
                ctx.activity.resource_id,
@@ -490,7 +519,8 @@ defmodule Oli.Scenarios.LtiExternalTool.AuthoringSaveTest do
 
   defp edit(ctx, content),
     do:
-      ActivityEditor.edit(
+      Oli.Authoring.Audited.edit_activity(
+        Oli.TestHelpers.author_audit_context(),
         ctx.project.slug,
         ctx.page.resource_id,
         ctx.activity.resource_id,

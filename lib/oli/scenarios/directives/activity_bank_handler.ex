@@ -106,6 +106,7 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
            ensure_activity_lock(built_project.project.slug, author, revision.resource_id),
          {:ok, updated_revision} <-
            ActivityBank.update(
+             Oli.Auditing.Context.for_actor(author, source: :scenario),
              built_project.project.slug,
              author,
              revision.resource_id,

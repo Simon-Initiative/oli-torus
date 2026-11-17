@@ -8,7 +8,7 @@ defmodule Oli.Authoring.Audited.Pages do
   # keeps the lock, context, and rendering functions.
 
   import Ecto.Query, only: [from: 2]
-  import Oli.Authoring.Audited.Support, only: [record: 2]
+  import Oli.Authoring.Audited.Support, only: [record_resource_change: 5]
   import Oli.Authoring.Editing.Utils
 
   alias Oli.Accounts
@@ -75,7 +75,7 @@ defmodule Oli.Authoring.Audited.Pages do
   defp record_page(context, project, %{before: before, revision: page} = result) do
     with :ok <- record_activity_removals(context, project, result),
          :ok <-
-           record_change(
+           record_resource_change(
              context,
              project,
              page,
@@ -86,7 +86,7 @@ defmodule Oli.Authoring.Audited.Pages do
              )
            ),
          :ok <-
-           record_change(
+           record_resource_change(
              context,
              project,
              page,
@@ -94,14 +94,14 @@ defmodule Oli.Authoring.Audited.Pages do
              Changes.diff(before, page, %{objectives: :value})
            ),
          :ok <-
-           record_change(
+           record_resource_change(
              context,
              project,
              page,
              :dot_settings_changed,
              Changes.diff(before, page, %{ai_enabled: :value})
            ) do
-      record_change(
+      record_resource_change(
         context,
         project,
         page,
@@ -128,20 +128,6 @@ defmodule Oli.Authoring.Audited.Pages do
     result.activities
     |> Enum.filter(&(&1.deleted and match?(%Revision{deleted: false}, before[&1.resource_id])))
     |> Enum.map(& &1.resource_id)
-  end
-
-  defp record_change(_context, _project, _page, _event_type, changes)
-       when map_size(changes) == 0,
-       do: :ok
-
-  defp record_change(context, project, page, event_type, changes) do
-    record(context, %{
-      event_type: event_type,
-      entity: {:resource, page.resource_id, %{title: page.title, slug: page.slug}},
-      scope: %{project_id: project.id, resource_id: page.resource_id},
-      event_key: "resource:#{page.resource_id}:#{event_type}",
-      changes: changes
-    })
   end
 
   # Bank selections, compared by ID: only the selections added, removed, or changed are recorded.

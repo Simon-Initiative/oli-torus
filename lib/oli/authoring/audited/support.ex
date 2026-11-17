@@ -1,8 +1,14 @@
 defmodule Oli.Authoring.Audited.Support do
   @moduledoc false
-  # Event recording shared by the private modules of `Oli.Authoring.Audited`.
+  # Event recording and before/after reads shared by the private modules of
+  # `Oli.Authoring.Audited`.
+
+  import Ecto.Query, only: [from: 2]
 
   alias Oli.Auditing
+  alias Oli.Publishing.{AuthoringResolver, PublishedResource}
+  alias Oli.Publishing.Publications.Publication
+  alias Oli.Repo
 
   @doc "Builds the event from `proposal` and inserts it in the current transaction."
   def record(context, proposal) do
@@ -10,5 +16,81 @@ defmodule Oli.Authoring.Audited.Support do
          {:ok, _event} <- Auditing.insert(changeset) do
       :ok
     end
+  end
+
+  @doc "Records each of `items` with `record_one`, stopping at the first error."
+  def record_all(items, record_one) do
+    Enum.reduce_while(items, :ok, fn item, :ok ->
+      case record_one.(item) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
+  @doc """
+  Records `changes` of an authored resource (`revision`) as `event_type`, or nothing when there
+  are no changes.
+  """
+  def record_resource_change(_context, _project, _revision, _event_type, changes)
+      when map_size(changes) == 0,
+      do: :ok
+
+  def record_resource_change(context, project, revision, event_type, changes) do
+    record(context, %{
+      event_type: event_type,
+      entity: {:resource, revision.resource_id, %{title: revision.title, slug: revision.slug}},
+      scope: %{project_id: project.id, resource_id: revision.resource_id},
+      event_key: "resource:#{revision.resource_id}:#{event_type}",
+      changes: changes
+    })
+  end
+
+  @doc """
+  Locks the working-publication mappings of `resource_ids`, so that their revisions read next
+  are the before-state of the write that follows in the same transaction.
+  """
+  def lock_working_mappings(_project, []), do: :ok
+
+  def lock_working_mappings(project, resource_ids) do
+    from(mapping in PublishedResource,
+      join: publication in Publication,
+      on: publication.id == mapping.publication_id,
+      where:
+        publication.project_id == ^project.id and is_nil(publication.published) and
+          mapping.resource_id in ^resource_ids,
+      order_by: mapping.resource_id,
+      lock: "FOR UPDATE OF p0"
+    )
+    |> Repo.all()
+
+    :ok
+  end
+
+  @doc "Returns the working revisions of `resource_ids` that exist, by resource ID."
+  def latest_revisions(_project, []), do: %{}
+
+  def latest_revisions(project, resource_ids) do
+    project.slug
+    |> AuthoringResolver.from_resource_id(resource_ids)
+    |> Enum.reject(&is_nil/1)
+    |> Map.new(&{&1.resource_id, &1})
+  end
+
+  @doc "Parses client resource IDs (integers or strings); anything else is left to the write."
+  def resource_ids(ids) do
+    Enum.flat_map(ids, fn
+      id when is_integer(id) ->
+        [id]
+
+      id when is_binary(id) ->
+        case Integer.parse(id) do
+          {id, ""} -> [id]
+          _ -> []
+        end
+
+      _ ->
+        []
+    end)
   end
 end

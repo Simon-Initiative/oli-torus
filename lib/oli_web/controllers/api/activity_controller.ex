@@ -600,7 +600,16 @@ defmodule OliWeb.Api.ActivityController do
 
     update = conn.body_params
 
-    case ActivityEditor.edit(project_slug, lock_id, activity_id, author.email, update) do
+    context = Oli.Auditing.Context.for_actor(author, source: :api)
+
+    case Oli.Authoring.Audited.edit_activity(
+           context,
+           project_slug,
+           lock_id,
+           activity_id,
+           author.email,
+           update
+         ) do
       {:ok, _} ->
         json(conn, %{"result" => "success"})
 
@@ -662,7 +671,15 @@ defmodule OliWeb.Api.ActivityController do
 
     updates = conn.body_params["updates"]
 
-    case ActivityEditor.bulk_edit(project_slug, lock_id, author.email, updates) do
+    context = Oli.Auditing.Context.for_actor(author, source: :api)
+
+    case Oli.Authoring.Audited.edit_activities(
+           context,
+           project_slug,
+           lock_id,
+           author.email,
+           updates
+         ) do
       {:ok, _} ->
         json(conn, %{"result" => "success"})
 

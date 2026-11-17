@@ -844,7 +844,8 @@ defmodule Oli.Interop.ExportTest do
       PageEditor.acquire_lock(project.slug, target_page.slug, author.email)
 
       assert {:ok, _updated_revision} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  target_page.resource_id,
                  activity_resource_id,

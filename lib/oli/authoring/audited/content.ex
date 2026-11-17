@@ -7,7 +7,16 @@ defmodule Oli.Authoring.Audited.Content do
   # `MediaLibrary`, except that broadcasts run after commit.
 
   import Ecto.Query, only: [from: 2]
-  import Oli.Authoring.Audited.Support, only: [record: 2]
+
+  import Oli.Authoring.Audited.Support,
+    only: [
+      latest_revisions: 2,
+      lock_working_mappings: 2,
+      record: 2,
+      record_all: 2,
+      resource_ids: 1
+    ]
+
   import Oli.Authoring.Editing.Utils, only: [authorize_user: 2, trap_nil: 1]
 
   alias Oli.Auditing.Changes
@@ -15,11 +24,10 @@ defmodule Oli.Authoring.Audited.Content do
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Editing
-  alias Oli.Authoring.Audited.Pages
-  alias Oli.Authoring.Editing.{ActivityEditor, ContainerEditor, PageEditor, ResourceEditor}
+  alias Oli.Authoring.Audited.{Activities, Pages}
+  alias Oli.Authoring.Editing.{ContainerEditor, PageEditor, ResourceEditor}
   alias Oli.Authoring.MediaLibrary.MediaItem
-  alias Oli.Publishing.{AuthoringResolver, ChangeTracker, PublishedResource}
-  alias Oli.Publishing.Publications.Publication
+  alias Oli.Publishing.{AuthoringResolver, ChangeTracker}
   alias Oli.Repo
   alias Oli.Resources
   alias Oli.Resources.Revision
@@ -47,13 +55,13 @@ defmodule Oli.Authoring.Audited.Content do
 
   def delete_activity(context, project_slug, lock_id, activity_id, author) do
     removing(project_slug, context, resource_ids([activity_id]), [], fn ->
-      ActivityEditor.delete(project_slug, lock_id, activity_id, author)
+      Activities.delete(project_slug, lock_id, activity_id, author)
     end)
   end
 
   def delete_activities(context, project_slug, activity_ids, author) do
     removing(project_slug, context, resource_ids(activity_ids), [], fn ->
-      ActivityEditor.delete_bulk(project_slug, activity_ids, author)
+      Activities.delete_bulk(project_slug, activity_ids, author)
     end)
   end
 
@@ -117,49 +125,6 @@ defmodule Oli.Authoring.Audited.Content do
       nil -> []
       resource -> [resource.id]
     end
-  end
-
-  # Client IDs arrive as integers or strings; anything else is left to the write to reject.
-  defp resource_ids(ids) do
-    Enum.flat_map(ids, fn
-      id when is_integer(id) ->
-        [id]
-
-      id when is_binary(id) ->
-        case Integer.parse(id) do
-          {id, ""} -> [id]
-          _ -> []
-        end
-
-      _ ->
-        []
-    end)
-  end
-
-  defp lock_working_mappings(_project, []), do: :ok
-
-  defp lock_working_mappings(project, resource_ids) do
-    from(mapping in PublishedResource,
-      join: publication in Publication,
-      on: publication.id == mapping.publication_id,
-      where:
-        publication.project_id == ^project.id and is_nil(publication.published) and
-          mapping.resource_id in ^resource_ids,
-      order_by: mapping.resource_id,
-      lock: "FOR UPDATE OF p0"
-    )
-    |> Repo.all()
-
-    :ok
-  end
-
-  defp latest_revisions(_project, []), do: %{}
-
-  defp latest_revisions(project, resource_ids) do
-    project.slug
-    |> AuthoringResolver.from_resource_id(resource_ids)
-    |> Enum.reject(&is_nil/1)
-    |> Map.new(&{&1.resource_id, &1})
   end
 
   # Activities embedded in the pages about to be removed, with their current revisions.
@@ -236,15 +201,6 @@ defmodule Oli.Authoring.Audited.Content do
       details: %{file_name: item.file_name, mime_type: item.mime_type},
       event_key: "media:#{item.id}:deleted"
     })
-  end
-
-  defp record_all(items, record_one) do
-    Enum.reduce_while(items, :ok, fn item, :ok ->
-      case record_one.(item) do
-        :ok -> {:cont, :ok}
-        error -> {:halt, error}
-      end
-    end)
   end
 
   ## Writes

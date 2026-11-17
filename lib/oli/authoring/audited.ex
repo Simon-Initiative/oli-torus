@@ -17,7 +17,8 @@ defmodule Oli.Authoring.Audited do
   and options before and after.
 
   Page saves record the settings, objectives, DOT settings, and triggers they change, and the
-  activities whose references they remove; saving only content text records nothing.
+  activities whose references they remove; activity saves record their objectives and triggers.
+  Saving only content text records nothing.
 
   Removing a page, container, activity, alternatives group, or bibliography entry records
   `authoring_content_removed` (`bank_question_deleted` for a banked activity) with the previous
@@ -40,7 +41,17 @@ defmodule Oli.Authoring.Audited do
   alias Ecto.Multi
   alias Oli.Accounts.Author
   alias Oli.Auditing.Context
-  alias Oli.Authoring.Audited.{Alternatives, Collaborators, Content, Pages, Projects, Settings}
+
+  alias Oli.Authoring.Audited.{
+    Activities,
+    Alternatives,
+    Collaborators,
+    Content,
+    Pages,
+    Projects,
+    Settings
+  }
+
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Authoring.Course.Project
   alias Oli.Repo
@@ -411,6 +422,57 @@ defmodule Oli.Authoring.Audited do
       do: Pages.edit_page(context, project_slug, revision_slug, author_email, update)
 
   def edit_page(_context, _project_slug, _revision_slug, _author_email, _update),
+    do: {:error, :invalid_request}
+
+  ## Activity editing
+
+  @doc """
+  Saves an edit of the activity with `activity_id`, within the lock `lock_id` (the page that
+  embeds it, or the activity itself in the bank) held by the author with `author_email`, as
+  `Oli.Authoring.Editing.ActivityEditor` did, including signed LTI selection saves.
+
+  Records what the save changed, compared with the revision read before it:
+  `learning_objectives_changed` for the objectives of its parts, `activation_settings_changed`
+  for its triggers (`triggers`, see `Oli.Auditing.DotPolicy`). Other content changes record
+  nothing. Broadcasts the activity after
+  commit. Returns the revision or the editor's error, as before.
+  """
+  @spec edit_activity(Context.t(), String.t(), term(), term(), String.t(), map()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def edit_activity(
+        %Context{} = context,
+        project_slug,
+        lock_id,
+        activity_id,
+        author_email,
+        update
+      )
+      when is_binary(project_slug) and is_binary(author_email) and is_map(update),
+      do:
+        Activities.edit_activity(
+          context,
+          project_slug,
+          lock_id,
+          activity_id,
+          author_email,
+          update
+        )
+
+  def edit_activity(_context, _project_slug, _lock_id, _activity_id, _author_email, _update),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Saves several activity edits within the lock `lock_id`, all or nothing, and records each
+  activity's changes as `edit_activity/6` does, under the same operation. Each update names its
+  activity in `"resource_id"`.
+  """
+  @spec edit_activities(Context.t(), String.t(), term(), String.t(), [map()]) ::
+          {:ok, [Revision.t()]} | {:error, command_error()}
+  def edit_activities(%Context{} = context, project_slug, lock_id, author_email, updates)
+      when is_binary(project_slug) and is_binary(author_email) and is_list(updates),
+      do: Activities.edit_activities(context, project_slug, lock_id, author_email, updates)
+
+  def edit_activities(_context, _project_slug, _lock_id, _author_email, _updates),
     do: {:error, :invalid_request}
 
   ## Collaborators

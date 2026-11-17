@@ -437,6 +437,59 @@ defmodule OliWeb.ActivityControllerTest do
       assert length(r.content["authoring"]["parts"]) == 1
     end
 
+    test "records objective changes for the author, one event per activity", %{
+      conn: conn,
+      author: author,
+      project: project,
+      activity_id: activity_id,
+      activity_id2: activity_id2,
+      revision1: revision
+    } do
+      conn =
+        put(
+          conn,
+          Routes.activity_path(conn, :update, project.slug, activity_id, %{
+            "lock" => revision.resource_id
+          }),
+          %{"objectives" => %{"1" => [4700]}}
+        )
+
+      assert %{"result" => "success"} = json_response(conn, 200)
+
+      event =
+        assert_audited(:learning_objectives_changed,
+          project_id: project.id,
+          actor: author,
+          source: :api
+        )
+
+      assert event.resource_id == activity_id
+
+      conn =
+        put(
+          conn,
+          Routes.activity_path(conn, :bulk_update, project.slug, %{
+            "lock" => revision.resource_id
+          }),
+          %{
+            "updates" => [
+              %{"resource_id" => activity_id, "objectives" => %{"1" => [4701]}},
+              %{"resource_id" => activity_id2, "objectives" => %{"1" => [4701]}}
+            ]
+          }
+        )
+
+      assert %{"result" => "success"} = json_response(conn, 200)
+
+      [_single | bulk] = audit_events(:learning_objectives_changed, project_id: project.id)
+
+      assert Enum.map(bulk, & &1.resource_id) |> Enum.sort() ==
+               Enum.sort([activity_id, activity_id2])
+
+      assert [operation_id] = bulk |> Enum.map(& &1.operation_id) |> Enum.uniq()
+      assert is_binary(operation_id)
+    end
+
     test "bulk update", %{
       conn: conn,
       project: project,

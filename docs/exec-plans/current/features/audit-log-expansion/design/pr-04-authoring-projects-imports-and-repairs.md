@@ -120,7 +120,7 @@ Gathered at `456d235388` from the callers, changesets, direct `Repo` writes, and
 | --- | --- |
 | `ContainerEditor.edit_page/3` (`container_editor.ex:56`) via `container_live_helpers.ex:85` (curriculum, pages, container, pages view) and Scenario `ops.ex:338`, `builder.ex:104` | M: `update_page_options/4` (`authoring_settings_changed`, `dot_settings_changed` for `ai_enabled`) |
 | `PageEditor.edit/4` saves from the React editors and `editor_live.ex` | M: `edit_page/5` diffs configuration fields, selection rules, objectives, and triggers against the locked before-state; ordinary content changes emit nothing |
-| `ActivityEditor.edit/…`, `bulk_edit/…` via `activity_controller.ex:603,665`, `activity_bank.ex:86`, `authoring_launch.ex:161` | M: `edit_activity/5` diffs `objectives` and part triggers |
+| `ActivityEditor.edit/…`, `bulk_edit/…` via `activity_controller.ex:603,665`, `activity_bank.ex:86`, `authoring_launch.ex:161` | M: `edit_activity/6` and `edit_activities/5` (bulk) diff `objectives` and triggers per activity |
 | `ObjectiveEditor` add, edit, parent and sub-objective operations, detach (`objective_editor.ex:22-398`) via `objectives_live.ex`, `objectives.ex`, `objectives_controller.ex:155,227`, `resource_controller.ex:127`, Scenario `objectives_handler.ex` | M: `learning_objectives_changed` per objective or attachment change |
 | `ContainerEditor.move_to/…`, `reorder_child/…` via the curriculum LiveViews and Scenario `ops.ex:153,245` | M: `curriculum_changed` |
 | `ContainerEditor.add_new/4`, `duplicate_page/…`, `ActivityEditor.create*`, MCP `create_activity_tool.ex:125` | X: creation is not audited; `add_new` stays public and is composed by the Google Doc import |
@@ -160,8 +160,8 @@ Each new facade declares `use Boundary, top_level?: true, exports: [], check: [o
 | --- | --- | --- |
 | `PageEditor` | `edit/4` and its private helpers | `create_context`, `acquire_lock`, `release_lock`, reads |
 | `ContainerEditor` | `remove_child` (block 3); `move_to`, `reorder_child`, `edit_page` (block 4) | `add_new`, `duplicate_page`, reads |
-| `ActivityEditor` | `edit`, `bulk_edit`, `delete`, `delete_bulk` (block 4: the deletes share the revision writer with the edits; block 3 audits them through the facade) | `create*`, reads |
-| `ActivityBank` | `delete`, `delete_bulk`, `update` (block 4, with `ActivityEditor`) | reads, `create` |
+| `ActivityEditor` | `edit`, `bulk_edit`, `delete`, `delete_bulk` and their helpers (block 4: the deletes share the revision writer with the edits; block 3 audits them through the facade) | `create*`, reads, bundle repair, and `validate_request/1`, which creation shares |
+| `ActivityBank` | nothing: `update`, `delete`, and `delete_bulk` keep their bank checks and reference resolution, take a `Context`, and call the facade, so no write path bypasses it | reads, `create` |
 | `ObjectiveEditor` | every writer (block 4) | reads |
 | `ResourceEditor`, `BibEntryEditor` | `delete` | reads, `create`, `edit`, `get_or_create_tag`: creating and editing tags, bibliography entries, and other resources is ordinary content editing (owner decision 2026-11-16) |
 | `MediaLibrary` | `delete_media_items`, `delete_items` | reads, uploads |
@@ -291,7 +291,8 @@ Commands follow the PR-02 shape: a `*_multi/4` builder for callers that compose,
 
 ```elixir
 @spec edit_page(Context.t(), String.t(), String.t(), String.t(), map()) :: {:ok, Revision.t()} | {:error, command_error()}
-@spec edit_activity(Context.t(), String.t(), String.t(), String.t(), map()) :: {:ok, term()} | {:error, command_error()}
+@spec edit_activity(Context.t(), String.t(), term(), term(), String.t(), map()) :: {:ok, Revision.t()} | {:error, command_error()}
+@spec edit_activities(Context.t(), String.t(), term(), String.t(), [map()]) :: {:ok, [Revision.t()]} | {:error, command_error()}
 @spec update_page_options(Context.t(), Project.t(), String.t(), map()) :: {:ok, Revision.t()} | {:error, command_error()}
 @spec move_curriculum_entry(Context.t(), Project.t(), map()) :: {:ok, term()} | {:error, command_error()}
 @spec objective_command(Context.t(), Project.t(), objective_op()) :: {:ok, term()} | {:error, command_error()}

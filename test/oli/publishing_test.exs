@@ -40,7 +40,8 @@ defmodule Oli.PublishingTest do
     update = %{"objectives" => objectives}
 
     {:ok, revision} =
-      ActivityEditor.edit(
+      Oli.Authoring.Audited.edit_activity(
+        Oli.TestHelpers.author_audit_context(),
         project.slug,
         page_revision.resource_id,
         revision.resource_id,

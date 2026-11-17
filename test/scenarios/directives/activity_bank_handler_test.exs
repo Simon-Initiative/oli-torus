@@ -320,6 +320,15 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
     assert result.state.activities[{"bank_project", "Mapped Question"}].objectives == %{
              part_id => [objective_id]
            }
+
+    event =
+      assert_audited(:learning_objectives_changed,
+        project_id: result.state.projects["bank_project"].project.id,
+        actor: result.state.current_author,
+        source: :scenario
+      )
+
+    assert event.changes["objectives"]["after"] == %{part_id => [objective_id]}
   end
 
   test "invalid list expectation shapes fail assertions without crashing" do
