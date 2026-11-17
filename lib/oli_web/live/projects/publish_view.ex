@@ -114,6 +114,7 @@ defmodule OliWeb.Projects.PublishView do
        table_model: table_model,
        version_change: version_change,
        auto_update_sections: project.auto_update_sections,
+       revert_count: 0,
        include_out_of_date_sections: false,
        limit: 10
      )}
@@ -150,6 +151,7 @@ defmodule OliWeb.Projects.PublishView do
               active_publication={@active_publication}
               active_publication_changes={@active_publication_changes}
               auto_update_sections={@auto_update_sections}
+              revert_count={@revert_count}
               include_out_of_date_sections={@include_out_of_date_sections}
               is_admin={@is_admin}
               description={@description}
@@ -198,7 +200,8 @@ defmodule OliWeb.Projects.PublishView do
     include_out_of_date_sections = include_out_of_date_sections?(socket, publication)
     constrain_to_latest = !include_out_of_date_sections
 
-    Course.update_project(project, %{auto_update_sections: auto_update_sections})
+    {socket, auto_update_sections} =
+      save_auto_update_sections(socket, project, auto_update_sections)
 
     {:noreply,
      assign(socket,
@@ -223,7 +226,13 @@ defmodule OliWeb.Projects.PublishView do
          {:ok} <- check_active_publication_id(project.slug, active_publication_id),
          previous_publication <-
            Publishing.get_latest_published_publication_by_slug(project.slug),
-         {:ok, new_publication} <- Publishing.publish_project(project, description, user_id) do
+         {:ok, new_publication} <-
+           Oli.Publishing.Audited.publish_project(
+             Oli.Auditing.Context.for_actor(socket.assigns.ctx.author, source: :ui),
+             project,
+             description,
+             user_id
+           ) do
       if Map.get(publication, "auto_push_update") == "true" do
         Publishing.push_publication_update_to_sections(
           project,
@@ -377,5 +386,34 @@ defmodule OliWeb.Projects.PublishView do
     (changed_page_revision_ids ++ page_revision_ids_without_embeddings)
     |> Enum.uniq()
     |> Embeddings.update_by_revision_ids(publication_id)
+  end
+
+  # Unchanged values write nothing and record nothing.
+  # Saves the switch only when it changed. A failed save keeps the saved value and renders the
+  # switch again from it.
+  defp save_auto_update_sections(socket, project, auto_update_sections) do
+    case auto_update_sections == socket.assigns.auto_update_sections do
+      true ->
+        {socket, auto_update_sections}
+
+      false ->
+        context = Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui)
+
+        case Oli.Authoring.Audited.update_project_settings(
+               context,
+               project.id,
+               %{auto_update_sections: auto_update_sections},
+               [:auto_update_sections]
+             ) do
+          {:ok, _project} ->
+            {socket, auto_update_sections}
+
+          {:error, _reason} ->
+            socket
+            |> put_flash(:error, "The update setting could not be saved.")
+            |> update(:revert_count, &(&1 + 1))
+            |> then(&{&1, socket.assigns.auto_update_sections})
+        end
+    end
   end
 end

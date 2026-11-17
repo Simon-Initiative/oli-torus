@@ -26,6 +26,64 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
       assert has_element?(view, ".alternatives-group", "Legacy Alternative")
     end
 
+    test "creates and renames a group, recording each change", %{
+      conn: conn,
+      project: project,
+      admin: admin
+    } do
+      {:ok, view, _html} = live(conn, live_view_alternatives_route(project.slug))
+
+      render_click(view, "show_create_modal")
+      render_submit(view, "create_group", %{"params" => %{"name" => "Reading Preference"}})
+      assert has_element?(view, ".alternatives-group", "Reading Preference")
+
+      assert [created] = group_events(project, admin)
+
+      assert [%{"title" => "Reading Preference", "options" => []} = summary] =
+               created.changes["alternatives_groups"]["after"]
+
+      render_submit(view, "edit_group", %{
+        "params" => %{"resource_id" => "#{summary["resource_id"]}", "title" => "Reading Mode"}
+      })
+
+      assert has_element?(view, ".alternatives-group", "Reading Mode")
+      assert [_created, renamed] = group_events(project, admin)
+
+      assert renamed.changes["alternatives_groups"] == %{
+               "operation" => "set",
+               "before" => [summary],
+               "after" => [%{summary | "title" => "Reading Mode"}]
+             }
+    end
+
+    test "deleting a group removes it and records the removal", %{
+      conn: conn,
+      project: project,
+      admin: admin
+    } do
+      {:ok, view, _html} = live(conn, live_view_alternatives_route(project.slug))
+
+      render_click(view, "show_create_modal")
+      render_submit(view, "create_group", %{"params" => %{"name" => "Reading Preference"}})
+      [created] = group_events(project, admin)
+      [%{"resource_id" => resource_id}] = created.changes["alternatives_groups"]["after"]
+
+      render_click(view, "show_delete_group_modal", %{"resource-id" => "#{resource_id}"})
+      render_click(view, "delete_group", %{"resource-id" => "#{resource_id}"})
+
+      refute has_element?(view, ".alternatives-group", "Reading Preference")
+
+      event =
+        assert_audited(:authoring_content_removed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.resource_id == resource_id
+      assert event.entity_snapshot["title"] == "Reading Preference"
+    end
+
     test "reorders options, preserves their ids, and keeps the order after reload", %{
       conn: conn,
       project: project,
@@ -81,6 +139,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
       })
 
       assert_before(render(view), "First", "Second")
+
+      # The keyboard move and the final drag change the order; the drag that keeps it records nothing
+      assert [moved, restored] = group_events(project, admin)
+      assert moved.details == %{"alternatives_group_id" => group.resource_id}
+      assert [%{"options" => [^second, ^first]}] = moved.changes["alternatives_groups"]["after"]
+
+      assert [%{"options" => [^first, ^second]}] =
+               restored.changes["alternatives_groups"]["after"]
 
       render_hook(view, "reorder_option", %{
         "resourceId" => group.resource_id + 99_999,
@@ -160,5 +226,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
     {first_position, _} = :binary.match(html, first)
     {second_position, _} = :binary.match(html, second)
     assert first_position < second_position
+  end
+
+  defp group_events(project, author) do
+    audit_events(:project_settings_changed, project_id: project.id, actor: author, source: :ui)
   end
 end

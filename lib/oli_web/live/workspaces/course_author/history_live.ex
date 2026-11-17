@@ -7,7 +7,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
 
   alias Oli.Accounts
   alias Oli.Accounts.Author
-  alias Oli.Authoring.Broadcaster
+  alias Oli.Authoring.Audited
+  alias OliWeb.RevisionHistory.Replacements
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
@@ -85,12 +86,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
               |> Jason.decode!()}
            end),
          :ok <- ExJsonSchema.Validator.validate(resource_schema, uploaded_content) do
-      latest_revision = fetch_revision(hd(socket.assigns.revisions).id)
-
-      {:noreply,
-       socket
-       |> mimic_edit(latest_revision, hd(uploaded_content))
-       |> assign(upload_errors: [])}
+      case Replacements.replace_content(socket, hd(uploaded_content)) do
+        {:ok, socket} -> {:noreply, assign(socket, upload_errors: [])}
+        {:error, socket} -> {:noreply, socket}
+      end
     else
       {:error, errors} ->
         {:noreply, assign(socket, upload_errors: flatten_validation_errors(errors))}
@@ -105,7 +104,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
     {:noreply,
      socket
      |> hide_modal(modal_assigns: nil)
-     |> mimic_edit(selected, selected.content)}
+     |> Replacements.restore(selected)
+     |> elem(1)}
   end
 
   @impl Phoenix.LiveView
@@ -175,20 +175,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
         %{"value" => value, "meta" => %{"action" => "save"}},
         socket
       ) do
-    %{revisions: revisions} = socket.assigns
+    case Jason.decode(value) do
+      # The editor stays editable, with the edit, when the save fails
+      {:ok, edited} ->
+        case Replacements.replace_content(socket, edited) do
+          {:ok, socket} -> {:noreply, reset_editor(socket, value)}
+          {:error, socket} -> {:noreply, socket}
+        end
 
-    with {:ok, edited} <- Jason.decode(value),
-         latest_revision <- fetch_revision(hd(revisions).id) do
-      {:noreply,
-       socket
-       |> reset_editor(value)
-       |> mimic_edit(latest_revision, edited)}
-    else
       {:error, %Jason.DecodeError{}} ->
         {:noreply, assign(socket, edit_errors: ["Invalid JSON"])}
-
-      {:error, errors} ->
-        {:noreply, assign(socket, edit_errors: flatten_validation_errors(errors))}
     end
   end
 
@@ -234,9 +230,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
 
     with {:ok, decoded_value} <- Jason.decode(value),
          {:ok, revision} <-
-           Oli.Resources.update_revision(
-             revision_being_edited,
-             Map.put(%{}, key_being_edited, decoded_value)
+           Audited.update_revision_attribute(
+             Replacements.audit_context(socket),
+             socket.assigns.project,
+             revision_being_edited.id,
+             key_being_edited,
+             decoded_value
            ) do
       {:noreply,
        socket
@@ -246,9 +245,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
       {:error, %Jason.DecodeError{}} ->
         {:noreply, put_flash(socket, :error, "Could not update revision: Invalid JSON format")}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
          put_flash(socket, :error, "Could not update revision: #{inspect(changeset.errors)}")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Could not update revision")}
     end
   end
 
@@ -619,49 +621,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
       1 -> nil
       _ -> Enum.at(all, 1)
     end
-  end
-
-  defp mimic_edit(socket, base_revision, content) do
-    project_slug = socket.assigns.project.slug
-    resource_id = socket.assigns.resource_id
-
-    # First clear any lock that might be present on this resource.  Clearing the lock
-    # is necessary to prevent an active editing session from stomping on what is about
-    # to be restored
-    publication = Publishing.project_working_publication(project_slug)
-
-    Publishing.get_published_resource!(publication.id, resource_id)
-    |> Publishing.update_published_resource(%{lock_updated_at: nil, locked_by_id: nil})
-
-    # Now create and track the new revision, based on the current head for this project but
-    # restoring the content, title and objectives and other settigns from the selected revision
-    %Revision{
-      title: title,
-      objectives: objectives,
-      scoring_strategy_id: scoring_strategy_id,
-      graded: graded,
-      max_attempts: max_attempts,
-      author_id: author_id
-    } = base_revision
-
-    {:ok, revision} =
-      AuthoringResolver.from_resource_id(project_slug, resource_id)
-      |> Resources.create_revision_from_previous(%{
-        author_id: author_id,
-        content: content,
-        title: title,
-        objectives: objectives,
-        scoring_strategy_id: scoring_strategy_id,
-        graded: graded,
-        max_attempts: max_attempts
-      })
-
-    Oli.Publishing.ChangeTracker.track_revision(project_slug, revision)
-
-    Broadcaster.broadcast_revision(revision, project_slug)
-
-    socket
-    |> assign(selected: revision)
   end
 
   defp reset_editor(socket, default_value) do

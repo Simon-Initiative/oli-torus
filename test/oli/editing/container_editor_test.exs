@@ -53,13 +53,13 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
     end
 
-    test "remove_child/4 removes correctly", %{
+    test "remove_from_curriculum/5 removes correctly", %{
       author: author,
       project: project,
       revision1: revision1
     } do
       container = AuthoringResolver.root_container(project.slug)
-      {:ok, _} = ContainerEditor.remove_child(container, project, author, revision1.slug)
+      {:ok, _} = remove_child(container, project, author, revision1.slug)
 
       # Verify we have removed it from the container
       container = AuthoringResolver.root_container(project.slug)
@@ -71,7 +71,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       assert updated.deleted == true
     end
 
-    test "remove_child/4 fails when target resource is locked", %{
+    test "remove_from_curriculum/5 fails when target resource is locked", %{
       publication: publication,
       author2: author2,
       author: author,
@@ -83,13 +83,13 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       {:acquired} = Locks.acquire(project.slug, publication.id, page1.id, author2.id)
 
       # Verify that the remove failed due to the lock
-      case ContainerEditor.remove_child(container, project, author, revision1.slug) do
+      case remove_child(container, project, author, revision1.slug) do
         {:ok, _} -> assert false
         {:error, {:lock_not_acquired, _}} -> assert true
       end
     end
 
-    test "remove_child/4 succeeds when target resource is locked by same user", %{
+    test "remove_from_curriculum/5 succeeds when target resource is locked by same user", %{
       publication: publication,
       author: author,
       project: project,
@@ -99,7 +99,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       container = AuthoringResolver.root_container(project.slug)
       {:acquired} = Locks.acquire(project.slug, publication.id, page1.id, author.id)
 
-      case ContainerEditor.remove_child(container, project, author, revision1.slug) do
+      case remove_child(container, project, author, revision1.slug) do
         {:ok, _} -> assert true
         {:error, {:lock_not_acquired, _}} -> assert false
       end
@@ -119,22 +119,58 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       {:ok, revision} = ContainerEditor.add_new(container, page, author, project)
 
       # we now have three pages to reorder with:
-      {:ok, _} = ContainerEditor.reorder_child(container, project, author, revision.slug, 2)
+      {:ok, _} =
+        Oli.Authoring.Audited.reorder_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          container,
+          project,
+          author,
+          revision.slug,
+          2
+        )
+
       container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
-      {:ok, _} = ContainerEditor.reorder_child(container, project, author, revision.slug, 3)
+      {:ok, _} =
+        Oli.Authoring.Audited.reorder_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          container,
+          project,
+          author,
+          revision.slug,
+          3
+        )
+
       container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
-      {:ok, _} = ContainerEditor.reorder_child(container, project, author, revision.slug, 100)
+      {:ok, _} =
+        Oli.Authoring.Audited.reorder_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          container,
+          project,
+          author,
+          revision.slug,
+          100
+        )
+
       container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
-      {:ok, _} = ContainerEditor.reorder_child(container, project, author, revision.slug, 0)
+      {:ok, _} =
+        Oli.Authoring.Audited.reorder_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          container,
+          project,
+          author,
+          revision.slug,
+          0
+        )
+
       container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 0
@@ -156,7 +192,14 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       assert length(root_container.children) == 3
 
       {:ok, _} =
-        ContainerEditor.move_to(page1_revision, root_container, unit1_container, author, project)
+        Oli.Authoring.Audited.move_curriculum_entry(
+          Oli.TestHelpers.author_audit_context(),
+          page1_revision,
+          root_container,
+          unit1_container,
+          author,
+          project
+        )
 
       root_container =
         AuthoringResolver.from_resource_id(project.slug, root_container.resource_id)
@@ -595,5 +638,15 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         parts: %{part_id => %PartParameters{beta_difficulty: beta_difficulty}}
       }
     }
+  end
+
+  defp remove_child(container, project, author, slug) do
+    Oli.Authoring.Audited.remove_from_curriculum(
+      Oli.Auditing.Context.for_actor(author, source: :ui),
+      container,
+      project,
+      author,
+      slug
+    )
   end
 end

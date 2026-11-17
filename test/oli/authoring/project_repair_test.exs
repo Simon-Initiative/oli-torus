@@ -11,6 +11,8 @@ defmodule Oli.Authoring.ProjectRepairTest do
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Authoring.Editing.Utils
   alias Oli.Authoring.Locks
+  alias Oli.Auditing.Context
+  alias Oli.Authoring.Audited
   alias Oli.Authoring.ProjectRepair
 
   alias Oli.Authoring.ProjectRepair.{
@@ -123,7 +125,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       system_admin: system_admin
     } do
       assert {:ok, %RepairResult{status: :completed} = result} =
-               ProjectRepair.repair_project(project.slug, system_admin)
+               Audited.repair_project(audit_context(), project.slug, system_admin)
 
       assert result.cloned_activity_count == 0
       assert result.updated_page_count == 0
@@ -157,7 +159,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
                ProjectRepair.analyze_project(project, system_admin)
 
       assert {:error, :working_publication_not_found} =
-               ProjectRepair.repair_project(project.slug, system_admin)
+               Audited.repair_project(audit_context(), project.slug, system_admin)
     end
 
     test "non-system-admin and malformed actors are rejected before project probing", %{
@@ -172,13 +174,13 @@ defmodule Oli.Authoring.ProjectRepairTest do
                )
 
       assert {:error, :not_authorized} =
-               ProjectRepair.repair_project("private-project", author,
+               Audited.repair_project(audit_context(), "private-project", author,
                  stream_max_rows: 0,
                  unknown: :option
                )
 
       assert {:error, :not_authorized} =
-               ProjectRepair.repair_project("private-project", nil)
+               Audited.repair_project(audit_context(), "private-project", nil)
     end
 
     test "authorization uses current persisted role state rather than the caller struct", %{
@@ -199,7 +201,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
                ProjectRepair.analyze_project(project, stale_system_admin)
 
       assert {:error, :not_authorized} =
-               ProjectRepair.repair_project(project, stale_system_admin)
+               Audited.repair_project(audit_context(), project, stale_system_admin)
     end
 
     test "a hand-built author with no persisted account is rejected", %{project: project} do
@@ -212,7 +214,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
                ProjectRepair.analyze_project(project, nonexistent_actor)
 
       assert {:error, :not_authorized} =
-               ProjectRepair.repair_project(project, nonexistent_actor)
+               Audited.repair_project(audit_context(), project, nonexistent_actor)
     end
 
     test "processing options are restricted to positive bounded batch sizes", %{
@@ -263,7 +265,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       before_repair = storage_snapshot(seed)
 
       assert {:ok, %RepairResult{status: :completed} = result} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin)
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
       assert result.cloned_activity_count == 0
       assert result.updated_page_count == 0
@@ -278,6 +280,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
                second_page.revision.content
 
       assert storage_snapshot(seed) == before_repair
+      assert audit_events(:authoring_content_replaced, project_id: seed.project.id) == []
     end
 
     test "repairs a shared activity deterministically and preserves missing references", seed do
@@ -320,7 +323,10 @@ defmodule Oli.Authoring.ProjectRepairTest do
         )
 
       assert {:ok, %RepairResult{status: :completed} = result} =
-               ProjectRepair.repair_project(seed.project.slug, seed.system_admin,
+               Audited.repair_project(
+                 Context.for_actor(seed.system_admin, source: :ui),
+                 seed.project.slug,
+                 seed.system_admin,
                  stream_max_rows: 1,
                  resolution_batch_size: 1
                )
@@ -378,6 +384,25 @@ defmodule Oli.Authoring.ProjectRepairTest do
       assert result.report_after_repair.summary.repairable_shared_activity_resource_count == 0
       assert result.report_after_repair.summary.missing_activity_reference_count == 2
 
+      # One event per repaired page, with the revisions it replaced and the copies it made
+      events =
+        audit_events(:authoring_content_replaced,
+          project_id: seed.project.id,
+          actor: seed.system_admin,
+          source: :ui
+        )
+
+      assert events |> Enum.map(& &1.resource_id) |> Enum.sort() ==
+               Enum.sort([second_page.resource.id, third_page.resource.id])
+
+      second_event = Enum.find(events, &(&1.resource_id == second_page.resource.id))
+      assert second_event.details == %{"reason" => "repair", "remapped_activity_count" => 1}
+
+      assert Enum.map(second_event.refs, &{&1["role"], &1["id"]}) == [
+               {"previous", second_page.revision.id},
+               {"resulting", current_second.id}
+             ]
+
       assert_locks_released(seed, [
         source_activity.resource.id,
         keeper_page.resource.id,
@@ -387,11 +412,15 @@ defmodule Oli.Authoring.ProjectRepairTest do
 
       # AC-022: rerunning is idempotent because repaired relationships no longer
       # produce work, while unresolved references remain report-only.
-      assert {:ok, rerun} = ProjectRepair.repair_project(seed.project, seed.system_admin)
+      assert {:ok, rerun} =
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
+
       assert rerun.status == :completed
       assert rerun.cloned_activity_count == 0
       assert rerun.updated_page_count == 0
       assert rerun.report_after_repair.summary.missing_activity_reference_count == 2
+
+      assert length(audit_events(:authoring_content_replaced, project_id: seed.project.id)) == 2
     end
 
     test "several shared groups affecting one page create one page revision", seed do
@@ -425,7 +454,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       revision_count_before = Repo.aggregate(Revision, :count, :id)
 
       assert {:ok, %RepairResult{status: :completed} = result} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin)
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
       assert result.cloned_activity_count == 2
       assert result.updated_page_count == 1
@@ -472,7 +501,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
         )
 
       assert {:ok, %RepairResult{status: :completed} = result} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin)
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
       assert result.cloned_activity_count == 2
       assert result.updated_page_count == 2
@@ -517,7 +546,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       end
 
       assert {:ok, %RepairResult{status: :failed} = result} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin,
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin,
                  after_lock_acquisition: hook
                )
 
@@ -564,7 +593,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       revision_count_before = Repo.aggregate(Revision, :count, :id)
 
       assert {:ok, %RepairResult{status: :failed} = result} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin)
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
       assert result.cloned_activity_count == 0
       assert result.updated_page_count == 0
@@ -614,7 +643,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
         )
 
       assert {:ok, %RepairResult{status: :failed} = result} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin)
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
       assert result.cloned_activity_count == 0
       assert result.updated_page_count == 0
@@ -668,7 +697,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       revision_count_before = Repo.aggregate(Revision, :count, :id)
 
       assert {:ok, %RepairResult{status: :partial} = result} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin)
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
       assert result.cloned_activity_count == 1
       assert result.updated_page_count == 1
@@ -689,6 +718,10 @@ defmodule Oli.Authoring.ProjectRepairTest do
       assert Repo.aggregate(Resource, :count, :id) == resource_count_before + 1
       assert Repo.aggregate(Revision, :count, :id) == revision_count_before + 2
 
+      # Only the committed page records its replacement
+      assert [event] = audit_events(:authoring_content_replaced, project_id: seed.project.id)
+      assert event.resource_id == successful_page.resource.id
+
       assert result.report_after_repair.summary.repairable_shared_activity_resource_count == 2
 
       assert_locks_released(seed, [
@@ -706,13 +739,41 @@ defmodule Oli.Authoring.ProjectRepairTest do
         Resources.update_revision(current_invalid, %{activity_type_id: original_activity_type_id})
 
       assert {:ok, %RepairResult{status: :completed} = retry_result} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin)
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
       assert retry_result.cloned_activity_count == 2
       assert retry_result.updated_page_count == 1
 
       assert retry_result.report_after_repair.summary.repairable_shared_activity_resource_count ==
                0
+    end
+
+    test "a page whose event cannot be recorded is not repaired", seed do
+      source_activity = activity_fixture(seed, "Audit failure source")
+
+      _keeper_page =
+        page_fixture(
+          seed,
+          "Audit keeper",
+          activity_reference_content([source_activity.resource.id])
+        )
+
+      failed_page =
+        page_fixture(
+          seed,
+          "Audit failed page",
+          activity_reference_content([source_activity.resource.id])
+        )
+
+      resource_count_before = Repo.aggregate(Resource, :count, :id)
+      reject_audit_inserts()
+
+      assert {:ok, %RepairResult{status: :failed} = result} =
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
+
+      assert [%RepairFailure{stage: :page_update, reason: :page_update_failed}] = result.failures
+      assert Repo.aggregate(Resource, :count, :id) == resource_count_before
+      assert current_revision(seed, failed_page).id == failed_page.revision.id
     end
 
     test "a page revision failure rolls back cloned activities and is retryable", seed do
@@ -745,7 +806,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       revision_count_before = Repo.aggregate(Revision, :count, :id)
 
       assert {:ok, %RepairResult{status: :failed} = result} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin)
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
       assert result.cloned_activity_count == 0
       assert result.updated_page_count == 0
@@ -753,6 +814,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       assert Repo.aggregate(Resource, :count, :id) == resource_count_before
       assert Repo.aggregate(Revision, :count, :id) == revision_count_before
       assert current_revision(seed, failed_page).id == failed_page.revision.id
+      assert audit_events(:authoring_content_replaced, project_id: seed.project.id) == []
 
       assert_locks_released(seed, [
         source_activity.resource.id,
@@ -766,7 +828,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
       |> Repo.update_all(set: [title: failed_page.revision.title])
 
       assert {:ok, %RepairResult{status: :completed} = retry_result} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin)
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
       assert retry_result.cloned_activity_count == 1
       assert retry_result.updated_page_count == 1
@@ -820,7 +882,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
         attach_project_repair_telemetry([[:oli, :authoring, :project_repair, :repair, :stop]])
 
       assert {:ok, %RepairResult{status: :completed}} =
-               ProjectRepair.repair_project(seed.project, seed.system_admin)
+               Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
       assert_repair_telemetry(:completed, nil, nil)
 
@@ -850,7 +912,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
 
       capture_log(fn ->
         assert {:ok, %RepairResult{status: :failed}} =
-                 ProjectRepair.repair_project(seed.project, seed.system_admin,
+                 Audited.repair_project(audit_context(), seed.project, seed.system_admin,
                    after_lock_acquisition: stale_hook
                  )
       end)
@@ -888,7 +950,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
 
       capture_log(fn ->
         assert {:ok, %RepairResult{status: :failed}} =
-                 ProjectRepair.repair_project(seed.project, seed.system_admin)
+                 Audited.repair_project(audit_context(), seed.project, seed.system_admin)
       end)
 
       assert_repair_telemetry(:failed, :lock, :lock_not_acquired)
@@ -927,7 +989,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
 
       capture_log(fn ->
         assert {:ok, %RepairResult{status: :partial}} =
-                 ProjectRepair.repair_project(seed.project, seed.system_admin)
+                 Audited.repair_project(audit_context(), seed.project, seed.system_admin)
       end)
 
       assert_repair_telemetry(:partial, :activity_copy, :activity_copy_failed)
@@ -939,7 +1001,7 @@ defmodule Oli.Authoring.ProjectRepairTest do
 
       capture_log(fn ->
         assert {:error, {:invalid_page_content, resource_id}} =
-                 ProjectRepair.repair_project(seed.project, seed.system_admin)
+                 Audited.repair_project(audit_context(), seed.project, seed.system_admin)
 
         assert resource_id == malformed_page.resource.id
       end)
@@ -1572,5 +1634,20 @@ defmodule Oli.Authoring.ProjectRepairTest do
     candidate = 1_000_000_000 + System.unique_integer([:positive])
     assert Repo.get(Resource, candidate) == nil
     candidate
+  end
+
+  defp reject_audit_inserts do
+    Repo.query!("""
+    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'audit insert rejected by test';
+    END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Repo.query!("""
+    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
+      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
+    """)
   end
 end

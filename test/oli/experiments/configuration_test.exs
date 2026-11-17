@@ -5,6 +5,7 @@ defmodule Oli.Experiments.ConfigurationTest do
 
   alias Oli.Authoring.Course.Project
   alias Oli.Experiments
+  alias Oli.Experiments.Audited, as: ExperimentsAudited
 
   alias Oli.Experiments.{
     ActivationValidator,
@@ -23,7 +24,8 @@ defmodule Oli.Experiments.ConfigurationTest do
     page_a = page_revision(scope.project_id, "Intervention A", false)
 
     assert {:ok, definition} =
-             Experiments.create_experiment(
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
                graph_request(scope, [point(group_a, page_a, "placement-a")])
              )
 
@@ -58,14 +60,21 @@ defmodule Oli.Experiments.ConfigurationTest do
       interventions: [%{page_resource_id: page_a.resource_id, content_element_id: "placement-a"}]
     }
 
-    assert {:ok, _updated} = Experiments.update_experiment(definition.id, update)
+    assert {:ok, _updated} =
+             ExperimentsAudited.update_experiment(author_audit_context(), definition.id, update)
+
     assert {:ok, updated_view} = Experiments.get_experiment_authoring_view(definition.id, scope)
 
     assert Enum.map(updated_view.conditions, &{&1.id, &1.condition_code}) ==
              [{control.id, "control"}, {variant.id, "control-2"}]
 
     assert {:ok, active} =
-             Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
+             ExperimentsAudited.transition_experiment(
+               author_audit_context(),
+               definition.id,
+               :activate,
+               %LifecycleRequest{scope: scope}
+             )
 
     assert active.state == :active
   end
@@ -77,16 +86,17 @@ defmodule Oli.Experiments.ConfigurationTest do
     request = graph_request(scope, [point(group, page, "assignment-scope")])
 
     assert {:ok, %{assignment_scope: :section_enrollment} = default_definition} =
-             Experiments.create_experiment(request)
+             ExperimentsAudited.create_experiment(author_audit_context(), request)
 
     assert {:ok, %{assignment_scope: :intervention} = definition} =
              request
              |> Map.put(:slug, "section-scope-#{System.unique_integer([:positive])}")
              |> Map.put(:assignment_scope, :intervention)
-             |> Experiments.create_experiment()
+             |> then(&ExperimentsAudited.create_experiment(author_audit_context(), &1))
 
     assert {:ok, %{assignment_scope: :section_enrollment}} =
-             Experiments.update_experiment(
+             ExperimentsAudited.update_experiment(
+               author_audit_context(),
                definition.id,
                %Oli.Experiments.UpdateExperimentRequest{
                  scope: scope,
@@ -97,7 +107,8 @@ defmodule Oli.Experiments.ConfigurationTest do
     unauthorized_scope = %{scope | author_id: nil}
 
     assert {:error, %ExperimentError{type: :invalid_scope}} =
-             Experiments.update_experiment(
+             ExperimentsAudited.update_experiment(
+               author_audit_context(),
                definition.id,
                %Oli.Experiments.UpdateExperimentRequest{
                  scope: unauthorized_scope,
@@ -106,12 +117,18 @@ defmodule Oli.Experiments.ConfigurationTest do
              )
 
     assert {:ok, %{state: :active}} =
-             Experiments.activate_experiment(default_definition.id, %LifecycleRequest{
-               scope: scope
-             })
+             ExperimentsAudited.transition_experiment(
+               author_audit_context(),
+               default_definition.id,
+               :activate,
+               %LifecycleRequest{
+                 scope: scope
+               }
+             )
 
     assert {:error, %ExperimentError{type: :invalid_state}} =
-             Experiments.update_experiment(
+             ExperimentsAudited.update_experiment(
+               author_audit_context(),
                default_definition.id,
                %Oli.Experiments.UpdateExperimentRequest{
                  scope: scope,
@@ -131,14 +148,20 @@ defmodule Oli.Experiments.ConfigurationTest do
               message: "assignment scope must be intervention or section_enrollment",
               details: %{field: :assignment_scope}
             }} =
-             Experiments.create_experiment(%{request | assignment_scope: :unknown})
+             ExperimentsAudited.create_experiment(author_audit_context(), %{
+               request
+               | assignment_scope: :unknown
+             })
 
     assert {:error,
             %ExperimentError{
               message: "assignment scope must be intervention or section_enrollment",
               details: %{field: :assignment_scope}
             }} =
-             Experiments.create_experiment(%{request | assignment_scope: false})
+             ExperimentsAudited.create_experiment(author_audit_context(), %{
+               request
+               | assignment_scope: false
+             })
 
     assert {:error,
             %ExperimentError{
@@ -146,7 +169,7 @@ defmodule Oli.Experiments.ConfigurationTest do
                 "section-and-enrollment scope is available only for weighted random experiments",
               details: %{field: :assignment_scope}
             }} =
-             Experiments.create_experiment(%{
+             ExperimentsAudited.create_experiment(author_audit_context(), %{
                request
                | algorithm: :thompson_sampling,
                  assignment_scope: :section_enrollment
@@ -177,13 +200,14 @@ defmodule Oli.Experiments.ConfigurationTest do
              scope
              |> graph_request([point(group, page, "assigned-scope")])
              |> Map.put(:assignment_scope, :intervention)
-             |> Experiments.create_experiment()
+             |> then(&ExperimentsAudited.create_experiment(author_audit_context(), &1))
 
     assert {:error,
             %ExperimentError{
               message: "assignment scope must be intervention or section_enrollment"
             }} =
-             Experiments.update_experiment(
+             ExperimentsAudited.update_experiment(
+               author_audit_context(),
                definition.id,
                %Oli.Experiments.UpdateExperimentRequest{
                  scope: scope,
@@ -192,7 +216,8 @@ defmodule Oli.Experiments.ConfigurationTest do
              )
 
     assert {:ok, %{assignment_scope: :intervention}} =
-             Experiments.update_experiment(
+             ExperimentsAudited.update_experiment(
+               author_audit_context(),
                definition.id,
                %Oli.Experiments.UpdateExperimentRequest{
                  scope: scope,
@@ -201,7 +226,8 @@ defmodule Oli.Experiments.ConfigurationTest do
              )
 
     assert {:ok, %{assignment_scope: :section_enrollment}} =
-             Experiments.update_experiment(
+             ExperimentsAudited.update_experiment(
+               author_audit_context(),
                definition.id,
                %Oli.Experiments.UpdateExperimentRequest{
                  scope: scope,
@@ -221,7 +247,10 @@ defmodule Oli.Experiments.ConfigurationTest do
       |> put_in([:mappings], [%{condition_ref: "control", option_id: "alt-a"}])
 
     assert {:error, %ExperimentError{message: message}} =
-             Experiments.create_experiment(graph_request(scope, [incomplete]))
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
+               graph_request(scope, [incomplete])
+             )
 
     assert message == "condition mappings must use every group alternative exactly once"
 
@@ -230,7 +259,10 @@ defmodule Oli.Experiments.ConfigurationTest do
       |> put_in([:mappings, Access.at(0), :weight], "heavy")
 
     assert {:error, %ExperimentError{message: weight_message}} =
-             Experiments.create_experiment(graph_request(scope, [malformed_weight]))
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
+               graph_request(scope, [malformed_weight])
+             )
 
     assert weight_message == "condition weights must be numeric"
 
@@ -245,7 +277,7 @@ defmodule Oli.Experiments.ConfigurationTest do
     adaptive_request = %{graph_request(scope, [adaptive]) | algorithm: :thompson_sampling}
 
     assert {:error, %ExperimentError{message: adaptive_message}} =
-             Experiments.create_experiment(adaptive_request)
+             ExperimentsAudited.create_experiment(author_audit_context(), adaptive_request)
 
     assert adaptive_message == "assessment binding must reference a compatible scored page"
   end
@@ -278,7 +310,10 @@ defmodule Oli.Experiments.ConfigurationTest do
     |> Repo.update!()
 
     assert {:ok, _definition} =
-             Experiments.create_experiment(graph_request(scope, [decision_point]))
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
+               graph_request(scope, [decision_point])
+             )
   end
 
   test "rejects an Alternatives placement nested within another Alternatives placement" do
@@ -323,7 +358,10 @@ defmodule Oli.Experiments.ConfigurationTest do
     |> Repo.update!()
 
     assert {:error, %ExperimentError{message: message}} =
-             Experiments.create_experiment(graph_request(scope, [decision_point]))
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
+               graph_request(scope, [decision_point])
+             )
 
     assert message == "Alternatives placements cannot be nested within another Alternatives"
   end
@@ -338,7 +376,10 @@ defmodule Oli.Experiments.ConfigurationTest do
     ensure_root_placement!(page, other_group.resource_id, "placement")
 
     assert {:error, %ExperimentError{message: message}} =
-             Experiments.create_experiment(graph_request(scope, [decision_point]))
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
+               graph_request(scope, [decision_point])
+             )
 
     assert message ==
              "intervention placement must reference the experiment Alternatives Group"
@@ -358,7 +399,10 @@ defmodule Oli.Experiments.ConfigurationTest do
       )
 
     assert {:error, %ExperimentError{message: message}} =
-             Experiments.create_experiment(graph_request(scope, [decision_point]))
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
+               graph_request(scope, [decision_point])
+             )
 
     assert message == "intervention placement was not found on the selected page"
   end
@@ -369,7 +413,8 @@ defmodule Oli.Experiments.ConfigurationTest do
     page = page_revision(scope.project_id, "Intervention", false)
 
     assert {:ok, definition} =
-             Experiments.create_experiment(
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
                graph_request(scope, [point(group, page, "placement")])
              )
 
@@ -384,7 +429,12 @@ defmodule Oli.Experiments.ConfigurationTest do
     assert intervention_id == intervention.id
 
     assert {:ok, _deleted} =
-             Experiments.remove_intervention(definition.id, intervention.id, scope)
+             ExperimentsAudited.remove_intervention(
+               author_audit_context(),
+               definition.id,
+               intervention.id,
+               scope
+             )
 
     assert {:ok, view} = Experiments.get_experiment_authoring_view(definition.id, scope)
     assert view.interventions == []
@@ -414,15 +464,27 @@ defmodule Oli.Experiments.ConfigurationTest do
       interventions: [%{page_resource_id: page.resource_id, content_element_id: "placement"}]
     }
 
-    assert {:ok, _definition} = Experiments.update_experiment(definition.id, update)
+    assert {:ok, _definition} =
+             ExperimentsAudited.update_experiment(author_audit_context(), definition.id, update)
+
     assert {:ok, view} = Experiments.get_experiment_authoring_view(definition.id, scope)
     [intervention] = view.interventions
 
     assert {:ok, _active} =
-             Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
+             ExperimentsAudited.transition_experiment(
+               author_audit_context(),
+               definition.id,
+               :activate,
+               %LifecycleRequest{scope: scope}
+             )
 
     assert {:error, %ExperimentError{type: :invalid_state}} =
-             Experiments.remove_intervention(definition.id, intervention.id, scope)
+             ExperimentsAudited.remove_intervention(
+               author_audit_context(),
+               definition.id,
+               intervention.id,
+               scope
+             )
   end
 
   test "denies dependency reads and mutations without project author access" do
@@ -431,7 +493,8 @@ defmodule Oli.Experiments.ConfigurationTest do
     page = page_revision(scope.project_id, "Intervention", false)
 
     assert {:ok, definition} =
-             Experiments.create_experiment(
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
                graph_request(scope, [point(group, page, "placement")])
              )
 
@@ -443,7 +506,8 @@ defmodule Oli.Experiments.ConfigurationTest do
              Experiments.configuration_dependencies(page.resource_id, unauthorized_scope)
 
     assert {:error, %ExperimentError{type: :invalid_scope}} =
-             Experiments.remove_intervention(
+             ExperimentsAudited.remove_intervention(
+               author_audit_context(),
                definition.id,
                intervention.id,
                unauthorized_scope
@@ -460,26 +524,48 @@ defmodule Oli.Experiments.ConfigurationTest do
     second_page = page_revision(scope.project_id, "Second", false)
 
     assert {:ok, first} =
-             Experiments.create_experiment(
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
                graph_request(scope, [point(group, first_page, "first")])
              )
 
     assert {:ok, second} =
-             Experiments.create_experiment(
+             ExperimentsAudited.create_experiment(
+               author_audit_context(),
                graph_request(scope, [point(group, second_page, "second")])
              )
 
     assert {:ok, _active} =
-             Experiments.activate_experiment(first.id, %LifecycleRequest{scope: scope})
+             ExperimentsAudited.transition_experiment(
+               author_audit_context(),
+               first.id,
+               :activate,
+               %LifecycleRequest{scope: scope}
+             )
 
     assert {:error, %ExperimentError{type: :conflict}} =
-             Experiments.activate_experiment(second.id, %LifecycleRequest{scope: scope})
+             ExperimentsAudited.transition_experiment(
+               author_audit_context(),
+               second.id,
+               :activate,
+               %LifecycleRequest{scope: scope}
+             )
 
     assert {:ok, _paused} =
-             Experiments.pause_experiment(first.id, %LifecycleRequest{scope: scope})
+             ExperimentsAudited.transition_experiment(
+               author_audit_context(),
+               first.id,
+               :pause,
+               %LifecycleRequest{scope: scope}
+             )
 
     assert {:ok, _active} =
-             Experiments.activate_experiment(second.id, %LifecycleRequest{scope: scope})
+             ExperimentsAudited.transition_experiment(
+               author_audit_context(),
+               second.id,
+               :activate,
+               %LifecycleRequest{scope: scope}
+             )
   end
 
   test "persists inclusive Thompson thresholds at both boundaries" do
@@ -504,7 +590,9 @@ defmodule Oli.Experiments.ConfigurationTest do
     configuration = %{first | interventions: first.interventions ++ second.interventions}
     request = %{graph_request(scope, [configuration]) | algorithm: :thompson_sampling}
 
-    assert {:ok, definition} = Experiments.create_experiment(request)
+    assert {:ok, definition} =
+             ExperimentsAudited.create_experiment(author_audit_context(), request)
+
     assert definition.assignment_scope == :intervention
     assert {:ok, view} = Experiments.get_experiment_authoring_view(definition.id, scope)
 
@@ -518,7 +606,8 @@ defmodule Oli.Experiments.ConfigurationTest do
               message:
                 "section-and-enrollment scope is available only for weighted random experiments"
             }} =
-             Experiments.update_experiment(
+             ExperimentsAudited.update_experiment(
+               author_audit_context(),
                definition.id,
                %Oli.Experiments.UpdateExperimentRequest{
                  scope: scope,
@@ -527,7 +616,12 @@ defmodule Oli.Experiments.ConfigurationTest do
              )
 
     assert {:ok, %{state: :active}} =
-             Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
+             ExperimentsAudited.transition_experiment(
+               author_audit_context(),
+               definition.id,
+               :activate,
+               %LifecycleRequest{scope: scope}
+             )
   end
 
   defp graph_request(scope, [configuration]) do

@@ -56,6 +56,32 @@ defmodule Oli.Seeding.CLITest do
     assert result.status == 0
   end
 
+  test "project ingestion records the import under the setup system actor" do
+    author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
+    archive = File.read!("test/oli_web/controllers/api/automation/export_unit_test_project.zip")
+
+    result =
+      CLI.dispatch(
+        [
+          "projects",
+          "ingest",
+          "--url",
+          "https://example.test/archive.zip",
+          "--author",
+          "email:#{author.email}"
+        ],
+        request_fun: fn _url, _opts -> {:ok, {:download, 200, [archive]}} end,
+        temp_root: temp_directory()
+      )
+
+    assert result.status == 0
+
+    imported =
+      assert_audited(:project_imported, actor: {:system, :playwright_setup}, source: :scenario)
+
+    assert imported.affected_author_id == author.id
+  end
+
   test "project ingestion downloads bounded content, calls the existing ingest boundary, and cleans up" do
     author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
     temp_root = temp_directory()

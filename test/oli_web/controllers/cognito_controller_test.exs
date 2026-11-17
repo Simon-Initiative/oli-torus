@@ -5,7 +5,7 @@ defmodule OliWeb.CognitoControllerTest do
   import Mox
 
   alias Oli.{Accounts, Groups}
-  alias Oli.Authoring.{Clone, Course}
+  alias Oli.Authoring.Clone
   alias Oli.Delivery.Sections
 
   setup do
@@ -561,7 +561,8 @@ defmodule OliWeb.CognitoControllerTest do
       assert author
       assert author.id == Accounts.get_user_by(%{email: email}).author_id
 
-      assert length(Clone.existing_clones(project.slug, author)) == 1
+      assert [copy] = Clone.existing_clones(project.slug, author)
+      assert_audited(:project_duplicated, project_id: copy.id, actor: author, source: :ui)
     end
 
     test "properly redirects to an intermediate page to prompt if they really want to clone again",
@@ -576,7 +577,7 @@ defmodule OliWeb.CognitoControllerTest do
 
       expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
 
-      Clone.clone_project(project.slug, author)
+      Oli.TestHelpers.duplicate_project_fixture(project.slug, author)
 
       params =
         community.id
@@ -607,7 +608,7 @@ defmodule OliWeb.CognitoControllerTest do
         |> valid_params(id_token)
         |> Map.put("project_slug", project.slug)
 
-      Course.update_project(project, %{allow_duplication: false})
+      Oli.TestHelpers.update_project_fixture(project, %{allow_duplication: false})
 
       assert conn
              |> get(Routes.project_clone_path(conn, :launch_clone, project.slug, params))
@@ -711,7 +712,7 @@ defmodule OliWeb.CognitoControllerTest do
            conn: conn,
            project: project
          } do
-      Course.update_project(project, %{allow_duplication: false})
+      Oli.TestHelpers.update_project_fixture(project, %{allow_duplication: false})
 
       assert conn
              |> get(Routes.cognito_path(conn, :clone, project.slug))
@@ -745,7 +746,7 @@ defmodule OliWeb.CognitoControllerTest do
            project: project,
            admin: admin
          } do
-      {:ok, duplicated} = Clone.clone_project(project.slug, admin)
+      {:ok, duplicated} = Oli.TestHelpers.duplicate_project_fixture(project.slug, admin)
 
       html =
         conn

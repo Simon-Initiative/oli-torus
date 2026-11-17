@@ -4,6 +4,7 @@ defmodule Oli.Experiments.ContextTest do
   import Oli.Factory
 
   alias Oli.Experiments
+  alias Oli.Experiments.Audited, as: ExperimentsAudited
 
   alias Oli.Experiments.{
     CreateExperimentRequest,
@@ -22,6 +23,182 @@ defmodule Oli.Experiments.ContextTest do
   alias Oli.Repo
   alias Oli.Resources.ResourceType
 
+  describe "audited commands" do
+    setup do
+      scope = project_scope()
+      author = Repo.get!(Oli.Accounts.Author, scope.author_id)
+
+      %{
+        scope: scope,
+        author: author,
+        context: Oli.Auditing.Context.for_actor(author, source: :ui)
+      }
+    end
+
+    test "creation records the status, conditions, and settings of the new experiment", %{
+      scope: scope,
+      author: author,
+      context: context
+    } do
+      alternatives = alternatives_revision(scope.project_id)
+
+      assert {:ok, %ExperimentDefinition{} = definition} =
+               Oli.Experiments.Audited.create_experiment(
+                 context,
+                 graph_request(scope, alternatives)
+               )
+
+      event =
+        assert_audited(:project_settings_changed, project_id: scope.project_id, actor: author)
+
+      assert event.details == %{"experiment_id" => definition.id}
+      assert event.changes["experiment_status"] == %{"operation" => "set", "after" => "draft"}
+
+      assert [%{"label" => "A", "active" => true}, %{"label" => "B"}] =
+               event.changes["experiment_conditions"]["after"]
+
+      settings = event.changes["experiment_definition"]["after"]
+      refute Map.has_key?(event.changes["experiment_definition"], "before")
+      assert settings["name"] == "A/B Test"
+      assert settings["algorithm"] == "weighted_random"
+      assert settings["alternatives_title"] == "Decision Point"
+      assert settings["sections"] == []
+
+      assert [%{"page_title" => "Experiment placement", "content_element_id" => "placement"}] =
+               settings["interventions"]
+    end
+
+    test "an edit records only the definition settings that changed, and a repeat records nothing",
+         %{scope: scope, context: context} do
+      {:ok, definition} =
+        Oli.Experiments.Audited.create_experiment(
+          context,
+          graph_request(scope, alternatives_revision(scope.project_id))
+        )
+
+      request = %UpdateExperimentRequest{
+        scope: %Scope{author_id: scope.author_id, project_id: scope.project_id},
+        name: "Video vs. text"
+      }
+
+      assert {:ok, _} = Oli.Experiments.Audited.update_experiment(context, definition.id, request)
+      assert {:ok, _} = Oli.Experiments.Audited.update_experiment(context, definition.id, request)
+
+      assert [_created, edited] =
+               audit_events(:project_settings_changed, project_id: scope.project_id)
+
+      assert Map.keys(edited.changes) == ["experiment_definition"]
+      assert edited.changes["experiment_definition"]["before"]["name"] == "A/B Test"
+      assert edited.changes["experiment_definition"]["after"]["name"] == "Video vs. text"
+    end
+
+    test "condition availability and lifecycle changes record their own keys", %{
+      scope: scope,
+      context: context
+    } do
+      {:ok, definition} =
+        Oli.Experiments.Audited.create_experiment(
+          context,
+          graph_request(scope, alternatives_revision(scope.project_id))
+        )
+
+      condition = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "a")
+
+      assert {:ok, _} =
+               Oli.Experiments.Audited.update_condition_availabilities(
+                 context,
+                 definition.id,
+                 [%{id: condition.id, active: true, weight: 3.0}],
+                 scope
+               )
+
+      assert {:ok, %ExperimentDefinition{state: :active}} =
+               Oli.Experiments.Audited.transition_experiment(
+                 context,
+                 definition.id,
+                 :activate,
+                 lifecycle(scope)
+               )
+
+      assert [_created, weighted, activated] =
+               audit_events(:project_settings_changed, project_id: scope.project_id)
+
+      assert Map.keys(weighted.changes) == ["experiment_conditions"]
+      assert hd(weighted.changes["experiment_conditions"]["after"])["weight"] == 3.0
+
+      assert activated.changes == %{
+               "experiment_status" => %{
+                 "operation" => "set",
+                 "before" => "draft",
+                 "after" => "active"
+               }
+             }
+    end
+
+    test "removing draft configuration records the conditions and definition that changed", %{
+      scope: scope,
+      context: context
+    } do
+      {:ok, definition} =
+        Oli.Experiments.Audited.create_experiment(
+          context,
+          graph_request(scope, alternatives_revision(scope.project_id))
+        )
+
+      [intervention] = Repo.all(from i in Intervention, where: i.experiment_id == ^definition.id)
+      condition = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "b")
+
+      assert {:ok, _} =
+               Oli.Experiments.Audited.remove_intervention(
+                 context,
+                 definition.id,
+                 intervention.id,
+                 scope
+               )
+
+      assert {:ok, _} =
+               Oli.Experiments.Audited.remove_condition(
+                 context,
+                 definition.id,
+                 condition.id,
+                 scope
+               )
+
+      assert [_created, without_intervention, without_condition] =
+               audit_events(:project_settings_changed, project_id: scope.project_id)
+
+      assert Map.keys(without_intervention.changes) == ["experiment_definition"]
+
+      assert [_] =
+               without_intervention.changes["experiment_definition"]["before"]["interventions"]
+
+      assert without_intervention.changes["experiment_definition"]["after"]["interventions"] == []
+
+      assert Map.keys(without_condition.changes) == ["experiment_conditions"]
+      assert [%{"label" => "A"}] = without_condition.changes["experiment_conditions"]["after"]
+    end
+
+    test "a rejected change keeps its error and records nothing", %{
+      scope: scope,
+      context: context
+    } do
+      {:ok, definition} =
+        Oli.Experiments.Audited.create_experiment(
+          context,
+          graph_request(scope, alternatives_revision(scope.project_id))
+        )
+
+      assert {:error, %ExperimentError{}} =
+               Oli.Experiments.Audited.update_experiment(
+                 context,
+                 definition.id,
+                 %UpdateExperimentRequest{scope: scope, algorithm: :thompson_sampling}
+               )
+
+      assert [_created] = audit_events(:project_settings_changed, project_id: scope.project_id)
+    end
+  end
+
   describe "create_experiment/1" do
     test "creates an experiment through the public context boundary" do
       scope = valid_scope()
@@ -31,7 +208,7 @@ defmodule Oli.Experiments.ContextTest do
                scope
                |> graph_request(alternatives)
                |> Map.put(:description, "An A/B test")
-               |> Experiments.create_experiment()
+               |> then(&ExperimentsAudited.create_experiment(author_audit_context(), &1))
 
       assert definition.id
       assert definition.uuid
@@ -46,12 +223,15 @@ defmodule Oli.Experiments.ContextTest do
       other_publication = insert(:publication)
 
       assert {:error, %ExperimentError{type: :invalid_scope, message: message}} =
-               Experiments.create_experiment(%CreateExperimentRequest{
-                 scope: %{scope | publication_id: other_publication.id},
-                 slug: "ab-test",
-                 name: "A/B Test",
-                 algorithm: :weighted_random
-               })
+               ExperimentsAudited.create_experiment(
+                 author_audit_context(),
+                 %CreateExperimentRequest{
+                   scope: %{scope | publication_id: other_publication.id},
+                   slug: "ab-test",
+                   name: "A/B Test",
+                   algorithm: :weighted_random
+                 }
+               )
 
       assert message == "publication does not belong to project"
     end
@@ -61,12 +241,15 @@ defmodule Oli.Experiments.ContextTest do
       other_section = insert(:section)
 
       assert {:error, %ExperimentError{type: :invalid_scope, message: message}} =
-               Experiments.create_experiment(%CreateExperimentRequest{
-                 scope: %{scope | section_id: other_section.id},
-                 slug: "ab-test",
-                 name: "A/B Test",
-                 algorithm: :weighted_random
-               })
+               ExperimentsAudited.create_experiment(
+                 author_audit_context(),
+                 %CreateExperimentRequest{
+                   scope: %{scope | section_id: other_section.id},
+                   slug: "ab-test",
+                   name: "A/B Test",
+                   algorithm: :weighted_random
+                 }
+               )
 
       assert message in [
                "section does not belong to institution",
@@ -76,12 +259,15 @@ defmodule Oli.Experiments.ContextTest do
       other_enrollment = insert(:enrollment)
 
       assert {:error, %ExperimentError{type: :invalid_scope, message: message}} =
-               Experiments.create_experiment(%CreateExperimentRequest{
-                 scope: %{scope | enrollment_id: other_enrollment.id},
-                 slug: "ab-test",
-                 name: "A/B Test",
-                 algorithm: :weighted_random
-               })
+               ExperimentsAudited.create_experiment(
+                 author_audit_context(),
+                 %CreateExperimentRequest{
+                   scope: %{scope | enrollment_id: other_enrollment.id},
+                   slug: "ab-test",
+                   name: "A/B Test",
+                   algorithm: :weighted_random
+                 }
+               )
 
       assert message in [
                "enrollment does not belong to section",
@@ -98,7 +284,7 @@ defmodule Oli.Experiments.ContextTest do
                request
                |> Map.put(:slug, "")
                |> Map.put(:name, "")
-               |> Experiments.create_experiment()
+               |> then(&ExperimentsAudited.create_experiment(author_audit_context(), &1))
 
       assert %{
                slug: ["can't be blank"],
@@ -112,7 +298,13 @@ defmodule Oli.Experiments.ContextTest do
     test "rejects authoring graph and Alternatives discovery for non-collaborators" do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
-      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      {:ok, definition} =
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
+          graph_request(scope, alternatives)
+        )
+
       outsider = insert(:author)
       outsider_scope = %{scope | author_id: outsider.id}
 
@@ -137,7 +329,7 @@ defmodule Oli.Experiments.ContextTest do
       request = %{graph_request(scope, alternatives) | interventions: []}
 
       assert {:ok, %ExperimentDefinition{} = definition} =
-               Experiments.create_experiment(request)
+               ExperimentsAudited.create_experiment(author_audit_context(), request)
 
       assert Experiments.project_has_experiments?(scope.project_id)
 
@@ -158,10 +350,20 @@ defmodule Oli.Experiments.ContextTest do
       assert view.assignment_counts == %{}
 
       assert {:ok, %ExperimentDefinition{state: :active}} =
-               Experiments.activate_experiment(definition.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 definition.id,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert {:ok, %ExperimentDefinition{state: :archived}} =
-               Experiments.archive_experiment(definition.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 definition.id,
+                 :archive,
+                 lifecycle(scope)
+               )
 
       refute Experiments.project_has_experiments?(scope.project_id)
     end
@@ -171,7 +373,10 @@ defmodule Oli.Experiments.ContextTest do
       alternatives = alternatives_revision(scope.project_id)
 
       assert {:ok, %ExperimentDefinition{} = definition} =
-               Experiments.create_experiment(graph_request(scope, alternatives))
+               ExperimentsAudited.create_experiment(
+                 author_audit_context(),
+                 graph_request(scope, alternatives)
+               )
 
       assert definition.section_ids == [scope.section_id]
     end
@@ -183,10 +388,14 @@ defmodule Oli.Experiments.ContextTest do
       selected_alternatives = alternatives_revision(scope.project_id)
 
       {:ok, unselected} =
-        Experiments.create_experiment(graph_request(scope, alternatives))
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
+          graph_request(scope, alternatives)
+        )
 
       {:ok, selected} =
-        Experiments.create_experiment(
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
           scope
           |> graph_request(selected_alternatives)
           |> Map.put(:section_ids, [delivery_scope.section_id])
@@ -227,7 +436,7 @@ defmodule Oli.Experiments.ContextTest do
         |> Map.put(:section_ids, [scope.section_id, other_section.id])
 
       assert {:ok, %ExperimentDefinition{} = definition} =
-               Experiments.create_experiment(request)
+               ExperimentsAudited.create_experiment(author_audit_context(), request)
 
       assert Enum.sort(definition.section_ids) ==
                Enum.sort([scope.section_id, other_section.id])
@@ -253,7 +462,7 @@ defmodule Oli.Experiments.ContextTest do
         ])
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
-               Experiments.create_experiment(request)
+               ExperimentsAudited.create_experiment(author_audit_context(), request)
 
       assert message == "active condition weights must have a positive total"
     end
@@ -261,13 +470,22 @@ defmodule Oli.Experiments.ContextTest do
     test "rejects changing the assignment policy after creation" do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
-      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      {:ok, definition} =
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
+          graph_request(scope, alternatives)
+        )
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
-               Experiments.update_experiment(definition.id, %UpdateExperimentRequest{
-                 scope: scope,
-                 algorithm: :thompson_sampling
-               })
+               ExperimentsAudited.update_experiment(
+                 author_audit_context(),
+                 definition.id,
+                 %UpdateExperimentRequest{
+                   scope: scope,
+                   algorithm: :thompson_sampling
+                 }
+               )
 
       assert message == "assignment policy cannot be changed after experiment creation"
     end
@@ -277,7 +495,10 @@ defmodule Oli.Experiments.ContextTest do
       alternatives = learner_preference_alternatives_revision(scope.project_id)
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
-               Experiments.create_experiment(graph_request(scope, alternatives))
+               ExperimentsAudited.create_experiment(
+                 author_audit_context(),
+                 graph_request(scope, alternatives)
+               )
 
       assert message == "selected Alternatives Group is not experiment-controlled"
     end
@@ -299,7 +520,8 @@ defmodule Oli.Experiments.ContextTest do
           ]
         end)
 
-      assert {:ok, %ExperimentDefinition{} = definition} = Experiments.create_experiment(request)
+      assert {:ok, %ExperimentDefinition{} = definition} =
+               ExperimentsAudited.create_experiment(author_audit_context(), request)
 
       assert definition.algorithm == :thompson_sampling
 
@@ -318,7 +540,12 @@ defmodule Oli.Experiments.ContextTest do
       assert {:ok, []} = Experiments.policy_snapshot(definition.id, scope)
 
       assert {:ok, %ExperimentDefinition{state: :active}} =
-               Experiments.activate_experiment(definition.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 definition.id,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert {:ok, snapshot} = Experiments.policy_snapshot(definition.id, scope)
       assert Enum.map(snapshot, & &1.condition_code) == ["a", "b"]
@@ -349,7 +576,7 @@ defmodule Oli.Experiments.ContextTest do
         |> Map.put(:prior_alpha, 0.0)
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
-               Experiments.create_experiment(invalid_prior)
+               ExperimentsAudited.create_experiment(author_audit_context(), invalid_prior)
 
       assert message == "Thompson Sampling prior alpha must be between 0.0001 and 1000"
 
@@ -358,7 +585,7 @@ defmodule Oli.Experiments.ContextTest do
         |> Map.put(:max_condition_share, 2.0)
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
-               Experiments.create_experiment(invalid_guardrail)
+               ExperimentsAudited.create_experiment(author_audit_context(), invalid_guardrail)
 
       assert message ==
                "Thompson Sampling max condition share must be greater than 0 and at most 1"
@@ -392,15 +619,23 @@ defmodule Oli.Experiments.ContextTest do
         scope
         |> graph_request(alternatives, conditions)
         |> Map.put(:assignment_scope, :intervention)
-        |> Experiments.create_experiment()
+        |> then(&ExperimentsAudited.create_experiment(author_audit_context(), &1))
 
-      {:ok, _active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
+      {:ok, _active} =
+        ExperimentsAudited.transition_experiment(
+          author_audit_context(),
+          definition.id,
+          :activate,
+          lifecycle(scope)
+        )
+
       condition = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "a")
       intervention = Repo.get_by!(Intervention, experiment_id: definition.id)
       runtime_scope = runtime_scope(scope)
 
       assert {:ok, _conditions} =
-               Experiments.update_condition_availabilities(
+               ExperimentsAudited.update_condition_availabilities(
+                 author_audit_context(),
                  definition.id,
                  [%{id: condition.id, active: true, weight: 3.0}],
                  scope
@@ -424,7 +659,8 @@ defmodule Oli.Experiments.ContextTest do
       |> Repo.insert!()
 
       assert {:ok, %{active: false}} =
-               Experiments.update_condition_availability(
+               ExperimentsAudited.update_condition_availability(
+                 author_audit_context(),
                  definition.id,
                  condition.id,
                  false,
@@ -436,7 +672,8 @@ defmodule Oli.Experiments.ContextTest do
       second = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "b")
 
       assert {:ok, %{active: false}} =
-               Experiments.update_condition_availability(
+               ExperimentsAudited.update_condition_availability(
+                 author_audit_context(),
                  definition.id,
                  second.id,
                  false,
@@ -446,7 +683,8 @@ defmodule Oli.Experiments.ContextTest do
       third = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "c")
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
-               Experiments.update_condition_availability(
+               ExperimentsAudited.update_condition_availability(
+                 author_audit_context(),
                  definition.id,
                  third.id,
                  false,
@@ -455,10 +693,17 @@ defmodule Oli.Experiments.ContextTest do
 
       assert message == "experiments require at least one active condition"
 
-      {:ok, _completed} = Experiments.complete_experiment(definition.id, lifecycle(scope))
+      {:ok, _completed} =
+        ExperimentsAudited.transition_experiment(
+          author_audit_context(),
+          definition.id,
+          :complete,
+          lifecycle(scope)
+        )
 
       assert {:error, %ExperimentError{type: :invalid_state}} =
-               Experiments.update_condition_availability(
+               ExperimentsAudited.update_condition_availability(
+                 author_audit_context(),
                  definition.id,
                  condition.id,
                  true,
@@ -514,7 +759,8 @@ defmodule Oli.Experiments.ContextTest do
         |> graph_request(alternatives_revision(project.id))
         |> Map.put(:section_ids, [remix.id])
 
-      assert {:ok, %{section_ids: [^remix_id]}} = Experiments.create_experiment(request)
+      assert {:ok, %{section_ids: [^remix_id]}} =
+               ExperimentsAudited.create_experiment(author_audit_context(), request)
     end
 
     test "excludes inactive, removed-remix, unrelated, and cross-institution sections" do
@@ -597,15 +843,26 @@ defmodule Oli.Experiments.ContextTest do
       alternatives = alternatives_revision(scope.project_id)
       second_alternatives = alternatives_revision(scope.project_id)
 
-      {:ok, first} = Experiments.create_experiment(graph_request(scope, alternatives))
-      {:ok, second} = Experiments.create_experiment(graph_request(scope, second_alternatives))
+      {:ok, first} =
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
+          graph_request(scope, alternatives)
+        )
+
+      {:ok, second} =
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
+          graph_request(scope, second_alternatives)
+        )
+
       authoring_scope = %{scope | author_id: author.id}
 
       assert {:ok, %ExperimentSectionParticipation{selected_ids: []}} =
                Experiments.get_section_participation(first.id, authoring_scope)
 
       assert {:ok, %ExperimentSectionParticipation{selected_ids: selected_ids}} =
-               Experiments.update_section_participation(
+               ExperimentsAudited.update_section_participation(
+                 author_audit_context(),
                  first.id,
                  authoring_scope,
                  [second_section.section_id, first_section.section_id, first_section.section_id]
@@ -617,7 +874,12 @@ defmodule Oli.Experiments.ContextTest do
                Experiments.get_section_participation(second.id, authoring_scope)
 
       assert {:ok, %ExperimentSectionParticipation{selected_ids: []}} =
-               Experiments.update_section_participation(first.id, authoring_scope, [])
+               ExperimentsAudited.update_section_participation(
+                 author_audit_context(),
+                 first.id,
+                 authoring_scope,
+                 []
+               )
     end
 
     test "shows stale selections and rejects forged IDs without partial mutation" do
@@ -627,7 +889,8 @@ defmodule Oli.Experiments.ContextTest do
       authoring_scope = %{scope | author_id: author.id}
 
       {:ok, definition} =
-        Experiments.create_experiment(
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
           scope
           |> graph_request(alternatives)
           |> Map.put(:section_ids, [delivery_scope.section_id])
@@ -645,7 +908,8 @@ defmodule Oli.Experiments.ContextTest do
       assert stale_id == delivery_scope.section_id
 
       assert {:error, %ExperimentError{type: :invalid_scope}} =
-               Experiments.update_section_participation(
+               ExperimentsAudited.update_section_participation(
+                 author_audit_context(),
                  definition.id,
                  authoring_scope,
                  [delivery_scope.section_id, -1]
@@ -655,25 +919,64 @@ defmodule Oli.Experiments.ContextTest do
                Experiments.get_section_participation(definition.id, authoring_scope)
 
       assert {:ok, %ExperimentSectionParticipation{stale_sections: []}} =
-               Experiments.update_section_participation(definition.id, authoring_scope, [])
+               ExperimentsAudited.update_section_participation(
+                 author_audit_context(),
+                 definition.id,
+                 authoring_scope,
+                 []
+               )
     end
 
     test "rejects completed and archived experiments" do
       {scope, author} = authorized_project_scope()
       alternatives = alternatives_revision(scope.project_id)
       authoring_scope = %{scope | author_id: author.id}
-      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
 
-      {:ok, active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
-      {:ok, completed} = Experiments.complete_experiment(active.id, lifecycle(scope))
+      {:ok, definition} =
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
+          graph_request(scope, alternatives)
+        )
+
+      {:ok, active} =
+        ExperimentsAudited.transition_experiment(
+          author_audit_context(),
+          definition.id,
+          :activate,
+          lifecycle(scope)
+        )
+
+      {:ok, completed} =
+        ExperimentsAudited.transition_experiment(
+          author_audit_context(),
+          active.id,
+          :complete,
+          lifecycle(scope)
+        )
 
       assert {:error, %ExperimentError{type: :invalid_state}} =
-               Experiments.update_section_participation(completed.id, authoring_scope, [])
+               ExperimentsAudited.update_section_participation(
+                 author_audit_context(),
+                 completed.id,
+                 authoring_scope,
+                 []
+               )
 
-      {:ok, archived} = Experiments.archive_experiment(completed.id, lifecycle(scope))
+      {:ok, archived} =
+        ExperimentsAudited.transition_experiment(
+          author_audit_context(),
+          completed.id,
+          :archive,
+          lifecycle(scope)
+        )
 
       assert {:error, %ExperimentError{type: :invalid_state}} =
-               Experiments.update_section_participation(archived.id, authoring_scope, [])
+               ExperimentsAudited.update_section_participation(
+                 author_audit_context(),
+                 archived.id,
+                 authoring_scope,
+                 []
+               )
     end
 
     test "emits privacy-safe update and validation telemetry" do
@@ -682,10 +985,16 @@ defmodule Oli.Experiments.ContextTest do
       section_scope = runtime_scope(scope)
       alternatives = alternatives_revision(scope.project_id)
       authoring_scope = %{scope | author_id: author.id}
-      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      {:ok, definition} =
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
+          graph_request(scope, alternatives)
+        )
 
       assert {:ok, _} =
-               Experiments.update_section_participation(
+               ExperimentsAudited.update_section_participation(
+                 author_audit_context(),
                  definition.id,
                  authoring_scope,
                  [section_scope.section_id]
@@ -696,7 +1005,12 @@ defmodule Oli.Experiments.ContextTest do
       refute Map.has_key?(metadata, :user_id)
 
       assert {:error, _} =
-               Experiments.update_section_participation(definition.id, authoring_scope, [-1])
+               ExperimentsAudited.update_section_participation(
+                 author_audit_context(),
+                 definition.id,
+                 authoring_scope,
+                 [-1]
+               )
 
       assert_receive {:participation_telemetry, :validation_failed, failed_metadata}
       assert failed_metadata.requested_count == 1
@@ -709,13 +1023,19 @@ defmodule Oli.Experiments.ContextTest do
       second_section = runtime_scope(scope)
       alternatives = alternatives_revision(scope.project_id)
       authoring_scope = %{scope | author_id: author.id}
-      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      {:ok, definition} =
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
+          graph_request(scope, alternatives)
+        )
 
       results =
         [[first_section.section_id], [second_section.section_id]]
         |> Enum.map(fn section_ids ->
           Task.async(fn ->
-            Experiments.update_section_participation(
+            ExperimentsAudited.update_section_participation(
+              author_audit_context(),
               definition.id,
               authoring_scope,
               section_ids
@@ -739,7 +1059,8 @@ defmodule Oli.Experiments.ContextTest do
       definition = create_definition!(scope)
 
       assert {:ok, %ExperimentDefinition{} = updated} =
-               Experiments.update_experiment(
+               ExperimentsAudited.update_experiment(
+                 author_audit_context(),
                  definition.id,
                  %UpdateExperimentRequest{
                    scope: %Scope{author_id: scope.author_id, project_id: scope.project_id},
@@ -759,7 +1080,8 @@ defmodule Oli.Experiments.ContextTest do
       other_project = insert(:project)
 
       assert {:error, %ExperimentError{type: :invalid_scope, message: message}} =
-               Experiments.update_experiment(
+               ExperimentsAudited.update_experiment(
+                 author_audit_context(),
                  definition.id,
                  %UpdateExperimentRequest{
                    scope: %{scope | project_id: other_project.id},
@@ -776,10 +1098,18 @@ defmodule Oli.Experiments.ContextTest do
     test "rejects updates once the experiment is active" do
       scope = valid_scope()
       definition = create_definition!(scope)
-      assert {:ok, _active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
+
+      assert {:ok, _active} =
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 definition.id,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert {:error, %ExperimentError{type: :invalid_state}} =
-               Experiments.update_experiment(
+               ExperimentsAudited.update_experiment(
+                 author_audit_context(),
                  definition.id,
                  %UpdateExperimentRequest{
                    scope: %Scope{author_id: scope.author_id, project_id: scope.project_id},
@@ -795,36 +1125,85 @@ defmodule Oli.Experiments.ContextTest do
       definition = create_definition!(scope)
 
       assert {:ok, %ExperimentDefinition{state: :active, started_at: started_at} = active} =
-               Experiments.activate_experiment(definition.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 definition.id,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert started_at
 
       assert {:ok, %ExperimentDefinition{state: :paused}} =
-               Experiments.pause_experiment(active.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 active.id,
+                 :pause,
+                 lifecycle(scope)
+               )
 
       assert {:ok, %ExperimentDefinition{state: :active}} =
-               Experiments.activate_experiment(active.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 active.id,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert {:ok, %ExperimentDefinition{state: :completed, ended_at: ended_at} = completed} =
-               Experiments.complete_experiment(active.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 active.id,
+                 :complete,
+                 lifecycle(scope)
+               )
 
       assert ended_at
 
       assert {:ok, %ExperimentDefinition{state: :archived}} =
-               Experiments.archive_experiment(completed.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 completed.id,
+                 :archive,
+                 lifecycle(scope)
+               )
     end
 
     test "resumes a paused legacy experiment without revalidating immutable interventions" do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
-      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
-      {:ok, active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
-      {:ok, paused} = Experiments.pause_experiment(active.id, lifecycle(scope))
+
+      {:ok, definition} =
+        ExperimentsAudited.create_experiment(
+          author_audit_context(),
+          graph_request(scope, alternatives)
+        )
+
+      {:ok, active} =
+        ExperimentsAudited.transition_experiment(
+          author_audit_context(),
+          definition.id,
+          :activate,
+          lifecycle(scope)
+        )
+
+      {:ok, paused} =
+        ExperimentsAudited.transition_experiment(
+          author_audit_context(),
+          active.id,
+          :pause,
+          lifecycle(scope)
+        )
 
       Repo.delete_all(Ecto.Query.where(Intervention, experiment_id: ^definition.id))
 
       assert {:ok, %ExperimentDefinition{state: :active}} =
-               Experiments.activate_experiment(paused.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 paused.id,
+                 :activate,
+                 lifecycle(scope)
+               )
     end
 
     test "rejects invalid lifecycle transitions" do
@@ -832,7 +1211,12 @@ defmodule Oli.Experiments.ContextTest do
       definition = create_definition!(scope)
 
       assert {:error, %ExperimentError{type: :invalid_state, message: message}} =
-               Experiments.pause_experiment(definition.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 definition.id,
+                 :pause,
+                 lifecycle(scope)
+               )
 
       assert message == "experiment cannot transition from draft to paused"
     end
@@ -843,13 +1227,26 @@ defmodule Oli.Experiments.ContextTest do
       alternatives = alternatives_revision(other_scope.project_id)
 
       assert {:ok, foreign_experiment} =
-               Experiments.create_experiment(graph_request(other_scope, alternatives))
+               ExperimentsAudited.create_experiment(
+                 author_audit_context(),
+                 graph_request(other_scope, alternatives)
+               )
 
       assert {:error, %ExperimentError{type: :not_found, message: foreign_message}} =
-               Experiments.activate_experiment(foreign_experiment.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 foreign_experiment.id,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert {:error, %ExperimentError{type: :not_found, message: missing_message}} =
-               Experiments.activate_experiment(-1, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 -1,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert foreign_message == missing_message
     end
@@ -865,39 +1262,79 @@ defmodule Oli.Experiments.ContextTest do
         |> graph_request(alternatives)
         |> Map.put(:section_ids, [first_section.section_id])
 
-      assert {:ok, first} = Experiments.create_experiment(request)
+      assert {:ok, first} = ExperimentsAudited.create_experiment(author_audit_context(), request)
 
       second_request =
         Map.put(request, :slug, "second-draft-#{System.unique_integer([:positive])}")
 
-      assert {:ok, second} = Experiments.create_experiment(second_request)
+      assert {:ok, second} =
+               ExperimentsAudited.create_experiment(author_audit_context(), second_request)
 
       assert {:ok, different} =
-               Experiments.create_experiment(graph_request(scope, other_alternatives))
+               ExperimentsAudited.create_experiment(
+                 author_audit_context(),
+                 graph_request(scope, other_alternatives)
+               )
 
       assert {:ok, %{state: :active}} =
-               Experiments.activate_experiment(first.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 first.id,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert {:error,
               %ExperimentError{
                 type: :conflict,
                 message: "Decision Point is already used by an active experiment"
-              }} = Experiments.activate_experiment(second.id, lifecycle(scope))
+              }} =
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 second.id,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert {:ok, %{state: :active}} =
-               Experiments.activate_experiment(different.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 different.id,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert {:ok, %{state: :paused}} =
-               Experiments.pause_experiment(first.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 first.id,
+                 :pause,
+                 lifecycle(scope)
+               )
 
       assert {:ok, %{state: :active}} =
-               Experiments.activate_experiment(second.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 second.id,
+                 :activate,
+                 lifecycle(scope)
+               )
 
       assert {:ok, %{state: :paused}} =
-               Experiments.pause_experiment(second.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 second.id,
+                 :pause,
+                 lifecycle(scope)
+               )
 
       assert {:ok, %{state: :active}} =
-               Experiments.activate_experiment(first.id, lifecycle(scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 first.id,
+                 :activate,
+                 lifecycle(scope)
+               )
     end
 
     test "rejects competing activation requests for the same stable decision point" do
@@ -914,14 +1351,23 @@ defmodule Oli.Experiments.ContextTest do
             |> Map.put(:slug, "competing-activation-#{index}")
             |> Map.put(:section_ids, [section.section_id])
 
-          assert {:ok, experiment} = Experiments.create_experiment(request)
+          assert {:ok, experiment} =
+                   ExperimentsAudited.create_experiment(author_audit_context(), request)
+
           experiment
         end)
 
       results =
         experiments
         |> Enum.map(fn experiment ->
-          Task.async(fn -> Experiments.activate_experiment(experiment.id, lifecycle(scope)) end)
+          Task.async(fn ->
+            ExperimentsAudited.transition_experiment(
+              author_audit_context(),
+              experiment.id,
+              :activate,
+              lifecycle(scope)
+            )
+          end)
         end)
         |> Enum.map(&Task.await(&1, 5_000))
 
@@ -952,17 +1398,31 @@ defmodule Oli.Experiments.ContextTest do
         |> graph_request(alternatives)
         |> Map.put(:slug, "shared-resource-other-project")
 
-      assert {:ok, first} = Experiments.create_experiment(first_request)
-      assert {:ok, second} = Experiments.create_experiment(second_request)
+      assert {:ok, first} =
+               ExperimentsAudited.create_experiment(author_audit_context(), first_request)
+
+      assert {:ok, second} =
+               ExperimentsAudited.create_experiment(author_audit_context(), second_request)
 
       assert {:ok, %{state: :active}} =
-               Experiments.activate_experiment(first.id, lifecycle(first_scope))
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 first.id,
+                 :activate,
+                 lifecycle(first_scope)
+               )
 
       assert {:error,
               %ExperimentError{
                 type: :conflict,
                 details: %{alternatives_resource_id: resource_id}
-              }} = Experiments.activate_experiment(second.id, lifecycle(second_scope))
+              }} =
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 second.id,
+                 :activate,
+                 lifecycle(second_scope)
+               )
 
       assert resource_id == alternatives.resource_id
     end
@@ -974,7 +1434,8 @@ defmodule Oli.Experiments.ContextTest do
       definition = create_definition!(scope)
 
       {:ok, updated} =
-        Experiments.update_experiment(
+        ExperimentsAudited.update_experiment(
+          author_audit_context(),
           definition.id,
           %UpdateExperimentRequest{
             scope: %Scope{author_id: scope.author_id, project_id: scope.project_id},
@@ -982,7 +1443,13 @@ defmodule Oli.Experiments.ContextTest do
           }
         )
 
-      {:ok, active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
+      {:ok, active} =
+        ExperimentsAudited.transition_experiment(
+          author_audit_context(),
+          definition.id,
+          :activate,
+          lifecycle(scope)
+        )
 
       refute private_schema?(definition)
       refute private_schema?(updated)
@@ -1234,7 +1701,7 @@ defmodule Oli.Experiments.ContextTest do
       |> Map.put(:section_ids, if(scope.section_id, do: [scope.section_id], else: []))
 
     assert {:ok, definition} =
-             Experiments.create_experiment(request)
+             ExperimentsAudited.create_experiment(author_audit_context(), request)
 
     definition
   end

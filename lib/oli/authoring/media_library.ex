@@ -87,28 +87,6 @@ defmodule Oli.Authoring.MediaLibrary do
     end
   end
 
-  @spec delete_media_items(String.t(), any) :: {:ok, any} | {:error, any}
-  def delete_media_items(project_slug, media_ids) do
-    project = Oli.Authoring.Course.get_project_by_slug(project_slug)
-
-    if project != nil do
-      case delete_items(media_ids) do
-        {changes_count, nil} when is_integer(changes_count) ->
-          {:ok, changes_count}
-
-        error ->
-          {:error, error}
-      end
-    else
-      {:error, {:not_found}}
-    end
-  end
-
-  def delete_items(media_ids) do
-    from(m in MediaItem, where: m.id in ^media_ids)
-    |> Repo.update_all(set: [deleted: true])
-  end
-
   def restore_item(media_id) do
     from(m in MediaItem, where: m.id == ^media_id)
     |> Repo.update_all(set: [deleted: false])

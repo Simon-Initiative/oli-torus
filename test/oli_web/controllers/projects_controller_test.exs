@@ -4,12 +4,13 @@ defmodule OliWeb.ProjectsControllerTest do
   import Oli.TestHelpers
 
   alias Oli.Accounts.SystemRole
-  alias Oli.Authoring.Course
 
   defp create_projects(prefix, count, author) do
     1..count
     |> Enum.map(fn i ->
-      {:ok, %{project: project}} = Course.create_project("#{prefix} Project #{i}", author)
+      {:ok, %{project: project}} =
+        Oli.TestHelpers.create_project_fixture("#{prefix} Project #{i}", author)
+
       project
     end)
   end
@@ -26,8 +27,10 @@ defmodule OliWeb.ProjectsControllerTest do
       author_projects = create_projects("Author", 2, author)
 
       # Create a deleted project
-      {:ok, %{project: deleted_project}} = Course.create_project("Deleted Project", author)
-      Course.update_project(deleted_project, %{status: :deleted})
+      {:ok, %{project: deleted_project}} =
+        Oli.TestHelpers.create_project_fixture("Deleted Project", author)
+
+      Oli.TestHelpers.update_project_fixture(deleted_project, %{status: :deleted})
 
       %{
         admin: admin,
@@ -152,7 +155,7 @@ defmodule OliWeb.ProjectsControllerTest do
     test "CSV properly escapes special characters", %{conn: conn, admin: admin} do
       # Create project with special characters
       {:ok, %{project: _project}} =
-        Course.create_project("Project, with \"quotes\" and\nnewlines", admin)
+        Oli.TestHelpers.create_project_fixture("Project, with \"quotes\" and\nnewlines", admin)
 
       conn = log_in_author(conn, admin)
       conn = get(conn, ~p"/authoring/projects/export?text_search=quotes")

@@ -19,7 +19,12 @@ defmodule Oli.Interop.Ingest.Processor.Products do
 
         _ ->
           # Products can only be created with the project published, so do that first
-          Oli.Publishing.publish_project(project, "Initial publication", state.author.id)
+          Oli.Publishing.Audited.publish_project(
+            state.context,
+            project,
+            "Initial publication",
+            state.author.id
+          )
 
           # Create each product, all the while tracking any newly created containers in the container map
           Enum.reduce_while(products, {:ok, state}, fn {archive_id, product}, {:ok, state} ->
@@ -63,7 +68,8 @@ defmodule Oli.Interop.Ingest.Processor.Products do
            legacy_to_resource_id_map: legacy_to_resource_id_map,
            container_id_map: container_id_map,
            project: project,
-           author: author
+           author: author,
+           context: context
          } = state,
          product,
          learning_model_version
@@ -93,7 +99,12 @@ defmodule Oli.Interop.Ingest.Processor.Products do
     # If any new containers were created, we have to publish again so that the product can pin
     # a published version of this new container as a section resource
     if Map.keys(container_id_map) |> Enum.count() != original_container_count do
-      Oli.Publishing.publish_project(project, "New containers for product", author.id)
+      Oli.Publishing.Audited.publish_project(
+        context,
+        project,
+        "New containers for product",
+        author.id
+      )
     end
 
     labels =

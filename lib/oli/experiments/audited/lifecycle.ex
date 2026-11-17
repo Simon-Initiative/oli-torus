@@ -1,4 +1,4 @@
-defmodule Oli.Experiments.Lifecycle do
+defmodule Oli.Experiments.Audited.Lifecycle do
   @moduledoc """
   Executes experiment lifecycle transitions and serializes active Decision Point ownership.
   """

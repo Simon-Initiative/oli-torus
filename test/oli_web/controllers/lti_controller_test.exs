@@ -8,7 +8,6 @@ defmodule OliWeb.LtiControllerTest do
   alias Oli.Delivery.Sections
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Authoring.Editing.{ActivityEditor, PageEditor}
-  alias Oli.Publishing
   alias Oli.Test.MockHTTP
 
   import Mox
@@ -1942,7 +1941,8 @@ defmodule OliWeb.LtiControllerTest do
   def setup_section(%{conn: conn}) do
     {:ok, seeds} = setup_project(%{conn: conn})
 
-    {:ok, pub1} = Publishing.publish_project(seeds.project, "some changes", seeds.author.id)
+    {:ok, pub1} =
+      Oli.TestHelpers.publish_project_fixture(seeds.project, "some changes", seeds.author.id)
 
     {:ok, section} =
       Sections.create_section(%{
@@ -2021,7 +2021,15 @@ defmodule OliWeb.LtiControllerTest do
     }
 
     PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-    assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+    assert {:ok, _} =
+             Oli.Authoring.Audited.edit_page(
+               author_audit_context(),
+               project.slug,
+               revision.slug,
+               author.email,
+               update
+             )
 
     conn =
       log_in_author(

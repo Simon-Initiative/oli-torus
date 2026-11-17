@@ -15,6 +15,16 @@ defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
 
   defp collaborators_invite_url(token), do: ~p"/collaborators/invite/#{token}"
 
+  # The invitee answers the invitation, so they are the actor and the affected author.
+  defp assert_answer_recorded(project, invitee) do
+    assert_audited(:project_collaborator_changed,
+      project_id: project.id,
+      affected_author_id: invitee.id,
+      actor: invitee,
+      source: :ui
+    )
+  end
+
   defp non_existing_author() do
     # non existing authors are inserted in the DB with no password
     # (password is set by the author in the invitation redemption process)
@@ -180,6 +190,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
       assert just_created_author.email_confirmed_at == ~U[2024-12-20 20:00:00Z]
 
       assert updated_author_project.status == :accepted
+      assert_answer_recorded(project, just_created_author)
     end
 
     for {description, password, confirmation, error_message} <- [
@@ -256,6 +267,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
         Course.get_author_project(project.slug, existing_author.id, filter_by_status: false)
 
       assert updated_author_project.status == :accepted
+      assert_answer_recorded(project, existing_author)
     end
 
     test "a non existing author can reject an invitation", %{conn: conn, project: project} do
@@ -280,6 +292,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
         Course.get_author_project(project.slug, non_existing_author.id, filter_by_status: false)
 
       assert updated_author_project.status == :rejected
+      assert_answer_recorded(project, non_existing_author)
     end
 
     test "a logged in existing author gets redirected to the project as soon as the invitation is accepted",
@@ -307,6 +320,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
         Course.get_author_project(project.slug, existing_author.id, filter_by_status: false)
 
       assert updated_author_project.status == :accepted
+      assert_answer_recorded(project, existing_author)
 
       assert_redirect(view, ~p"/workspaces/course_author/#{project.slug}/overview")
     end
@@ -336,6 +350,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
         Course.get_author_project(project.slug, existing_author.id, filter_by_status: false)
 
       assert updated_author_project.status == :accepted
+      assert_answer_recorded(project, existing_author)
 
       assert_redirect(view, ~p"/workspaces/course_author/#{project.slug}/overview")
     end
@@ -377,6 +392,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
         Course.get_author_project(project.slug, existing_author.id, filter_by_status: false)
 
       assert updated_author_project.status == :accepted
+      assert_answer_recorded(project, existing_author)
     end
 
     test "SSO URLs are constructed with invitation parameters", %{conn: conn, project: project} do

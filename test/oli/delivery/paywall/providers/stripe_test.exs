@@ -5,7 +5,6 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
   import Mox
 
   alias Lti_1p3.Roles.ContextRoles
-  alias Oli.Publishing
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Paywall.Providers.Stripe
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
@@ -247,7 +246,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
   defp setup_conn(_conn) do
     map = Seeder.base_project_with_resource2()
 
-    {:ok, _} = Publishing.publish_project(map.project, "some changes", map.author.id)
+    {:ok, _} = Oli.TestHelpers.publish_project_fixture(map.project, "some changes", map.author.id)
 
     # Create a product using the initial publication
     {:ok, product} =

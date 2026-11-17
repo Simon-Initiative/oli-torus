@@ -2,20 +2,30 @@ defmodule OliWeb.Projects.RequiredSurvey do
   use Phoenix.LiveComponent
   use OliWeb, :verified_routes
 
-  alias Oli.Authoring.Course
+  alias Oli.Auditing.Context
   alias Oli.Delivery.Sections
+  alias Phoenix.LiveView.JS
 
   attr :project, :map, required: true
-  attr :author_id, :integer, required: false
+  attr :author, :map, required: false, doc: "the author editing a project's survey"
   attr :enabled, :boolean, required: true
   attr :is_section, :boolean, default: false
   attr :required_survey, :map, default: nil
+
+  attr :revert_count, :integer,
+    default: 0,
+    doc: "changes after a failed save, so the checkbox renders again from the saved state"
 
   def render(assigns) do
     ~H"""
     <div class="flex items-center h-full">
       <form phx-change="set-required-survey" phx-target={@myself}>
-        <div class="form-check">
+        <%!-- A new id after a failed save renders the checkbox again from the saved state --%>
+        <div
+          class="form-check"
+          id={"survey_check_wrapper-#{@revert_count}"}
+          phx-mounted={@revert_count > 0 && JS.focus(to: "#survey_check")}
+        >
           <label class="form-check-label">
             <input
               name="survey"
@@ -71,17 +81,32 @@ defmodule OliWeb.Projects.RequiredSurvey do
   end
 
   def handle_event("set-required-survey", params, socket) do
-    %{project: project, author_id: author_id} = socket.assigns
-    allow_survey = Map.has_key?(params, "survey") and String.length(params["survey"]) > 0
+    %{project: project, author: author} = socket.assigns
+    context = Context.for_actor(author, source: :ui)
 
-    required_survey =
-      if allow_survey do
-        Course.create_project_survey(project, author_id)
-      else
-        Course.delete_project_survey(project)
-        nil
-      end
+    case Map.get(params, "survey", "") do
+      "" ->
+        case Oli.Authoring.Audited.delete_project_survey(context, project.id) do
+          {:ok, _project} ->
+            {:noreply, assign(socket, enabled: false, required_survey: nil)}
 
-    {:noreply, assign(socket, enabled: allow_survey, required_survey: required_survey)}
+          {:error, _reason} ->
+            survey_error(socket, "The survey could not be disabled.")
+        end
+
+      _ ->
+        case Oli.Authoring.Audited.create_project_survey(context, project.id) do
+          {:ok, revision} ->
+            {:noreply, assign(socket, enabled: true, required_survey: revision)}
+
+          {:error, _reason} ->
+            survey_error(socket, "The survey could not be enabled.")
+        end
+    end
+  end
+
+  defp survey_error(socket, message) do
+    send(self(), {:flash_message, {:error, message}})
+    {:noreply, assign(socket, revert_count: Map.get(socket.assigns, :revert_count, 0) + 1)}
   end
 end

@@ -4,7 +4,7 @@ defmodule Oli.ActivityEditingTest do
   import Mox
 
   alias Oli.Authoring.Course.Project
-  alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor, ObjectiveEditor}
+  alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor}
   alias Oli.LearningModel.Parameters
   alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
   alias Oli.Publishing
@@ -503,7 +503,8 @@ defmodule Oli.ActivityEditingTest do
       update = %{"title" => "edited title"}
 
       {:ok, _} =
-        ActivityEditor.edit(
+        Oli.Authoring.Audited.edit_activity(
+          Oli.TestHelpers.author_audit_context(),
           project.slug,
           revision1.resource_id,
           resource_id,
@@ -514,7 +515,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
 
       result =
-        ActivityEditor.edit(
+        Oli.Authoring.Audited.edit_activity(
+          Oli.TestHelpers.author_audit_context(),
           project.slug,
           revision1.resource_id,
           resource_id,
@@ -540,7 +542,8 @@ defmodule Oli.ActivityEditingTest do
       update = %{"title" => "edited title", "releaseLock" => true}
 
       {:ok, _} =
-        ActivityEditor.edit(
+        Oli.Authoring.Audited.edit_activity(
+          Oli.TestHelpers.author_audit_context(),
           project.slug,
           revision1.resource_id,
           resource_id,
@@ -551,7 +554,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
 
       result =
-        ActivityEditor.edit(
+        Oli.Authoring.Audited.edit_activity(
+          Oli.TestHelpers.author_audit_context(),
           project.slug,
           revision1.resource_id,
           resource_id,
@@ -589,10 +593,25 @@ defmodule Oli.ActivityEditingTest do
       }
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       {:ok, first} =
-        ActivityEditor.edit(project.slug, revision.resource_id, resource_id, author.email, update)
+        Oli.Authoring.Audited.edit_activity(
+          Oli.TestHelpers.author_audit_context(),
+          project.slug,
+          revision.resource_id,
+          resource_id,
+          author.email,
+          update
+        )
 
       actual = Resources.get_revision!(first.id)
       assert actual.scoring_strategy_id == Oli.Resources.ScoringStrategy.get_id_by_type("best")
@@ -624,10 +643,25 @@ defmodule Oli.ActivityEditingTest do
       }
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       {:ok, first} =
-        ActivityEditor.edit(project.slug, revision.resource_id, resource_id, author.email, update)
+        Oli.Authoring.Audited.edit_activity(
+          Oli.TestHelpers.author_audit_context(),
+          project.slug,
+          revision.resource_id,
+          resource_id,
+          author.email,
+          update
+        )
 
       actual = Resources.get_revision!(first.id)
       assert actual.scoring_strategy_id == Oli.Resources.ScoringStrategy.get_id_by_type("total")
@@ -660,7 +694,13 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, updated_revision} =
-               PageEditor.edit(project.slug, revision.slug, author.email, update)
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       # Verify that the slug was translated to the correct activity id
       activity_ref = hd(Map.get(updated_revision.content, "model"))
@@ -720,12 +760,27 @@ defmodule Oli.ActivityEditingTest do
       }
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       update = %{"title" => "edited title"}
 
       {:ok, first} =
-        ActivityEditor.edit(project.slug, revision.resource_id, resource_id, author.email, update)
+        Oli.Authoring.Audited.edit_activity(
+          Oli.TestHelpers.author_audit_context(),
+          project.slug,
+          revision.resource_id,
+          resource_id,
+          author.email,
+          update
+        )
 
       actual = Resources.get_revision!(first.id)
       assert actual.title == "edited title"
@@ -734,7 +789,14 @@ defmodule Oli.ActivityEditingTest do
       update = %{"title" => "edited title"}
 
       {:ok, _} =
-        ActivityEditor.edit(project.slug, revision.resource_id, resource_id, author.email, update)
+        Oli.Authoring.Audited.edit_activity(
+          Oli.TestHelpers.author_audit_context(),
+          project.slug,
+          revision.resource_id,
+          resource_id,
+          author.email,
+          update
+        )
 
       actual2 = Resources.get_revision!(first.id)
 
@@ -763,7 +825,13 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, %{slug: revision_slug}} =
-               PageEditor.edit(project.slug, revision.slug, author.email, update)
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       project
       |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: nil})
@@ -824,15 +892,31 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:error, :not_found} =
-               PageEditor.edit(project.slug, revision.slug, author.email, update)
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
     end
 
     test "can sync objectives to parts", %{author: author, project: project} do
       {:ok, %{revision: ob1}} =
-        ObjectiveEditor.add_new(%{title: "this is an objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "this is an objective"},
+          author,
+          project
+        )
 
       {:ok, %{revision: ob2}} =
-        ObjectiveEditor.add_new(%{title: "this is another objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "this is another objective"},
+          author,
+          project
+        )
 
       # Create a two part activity where each part is tied to one of the objectives above
       content = %{
@@ -854,7 +938,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       {:ok, updated} =
-        ActivityEditor.edit(
+        Oli.Authoring.Audited.edit_activity(
+          Oli.TestHelpers.author_audit_context(),
           project.slug,
           revision.resource_id,
           revision.resource_id,
@@ -872,10 +957,20 @@ defmodule Oli.ActivityEditingTest do
       revision1: revision1
     } do
       {:ok, %{revision: ob1}} =
-        ObjectiveEditor.add_new(%{title: "this is an objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "this is an objective"},
+          author,
+          project
+        )
 
       {:ok, %{revision: ob2}} =
-        ObjectiveEditor.add_new(%{title: "this is another objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "this is another objective"},
+          author,
+          project
+        )
 
       content = %{
         "content" => %{"authoring" => %{"parts" => ["1", "2"]}}
@@ -892,7 +987,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       {:ok, updated} =
-        ActivityEditor.edit(
+        Oli.Authoring.Audited.edit_activity(
+          Oli.TestHelpers.author_audit_context(),
           project.slug,
           revision1.resource_id,
           revision.resource_id,
@@ -928,7 +1024,7 @@ defmodule Oli.ActivityEditingTest do
         )
 
       {:ok, _published} =
-        Publishing.publish_project(project, "publish trained activity", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "publish trained activity", author.id)
 
       before_edit =
         Publishing.AuthoringResolver.from_resource_id(project.slug, activity_revision.resource_id)
@@ -936,7 +1032,8 @@ defmodule Oli.ActivityEditingTest do
       {:acquired} = PageEditor.acquire_lock(project.slug, page_revision.slug, author.email)
 
       assert {:ok, updated} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  page_revision.resource_id,
                  activity_revision.resource_id,
@@ -1001,7 +1098,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, _} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  resource_id,
@@ -1044,7 +1142,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:error, {:invalid_update_field}} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  resource_id,
@@ -1081,7 +1180,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:error, {:invalid_update_field}} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  resource_id,
@@ -1118,7 +1218,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:error, {:invalid_update_field}} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  resource_id,
@@ -1132,7 +1233,7 @@ defmodule Oli.ActivityEditingTest do
       project: project,
       revision1: revision
     } do
-      {:ok, _project} = Oli.Authoring.Course.update_project(project, %{allow_triggers: true})
+      {:ok, _project} = Oli.TestHelpers.update_project_fixture(project, %{allow_triggers: true})
 
       {:ok, {%{resource_id: resource_id, content: content}, _}} =
         ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
@@ -1164,7 +1265,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, _updated_revision} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  resource_id,
@@ -1213,7 +1315,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:error, {:invalid_update_field}} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  resource_id,
@@ -1262,7 +1365,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, updated_revision} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  resource_id,
@@ -1320,7 +1424,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, updated_revision} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  activity_resource_id,
@@ -1377,7 +1482,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, updated_revision} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  activity_resource_id,
@@ -1419,7 +1525,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, updated_revision} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  activity_resource_id,
@@ -1474,7 +1581,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, _} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  resource_id,
@@ -1523,7 +1631,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, _} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  resource_id,
@@ -1583,7 +1692,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:error, {:invalid_update_field}} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  resource_id,
@@ -1620,7 +1730,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, _updated_revision} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  activity_resource_id,
@@ -1657,7 +1768,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, updated_revision} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  activity_resource_id,
@@ -1700,7 +1812,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:error, {:invalid_update_field}} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  activity_resource_id,
@@ -1739,7 +1852,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:error, {:invalid_update_field}} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  activity_resource_id,
@@ -1775,7 +1889,8 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, updated_revision} =
-               ActivityEditor.edit(
+               Oli.Authoring.Audited.edit_activity(
+                 Oli.TestHelpers.author_audit_context(),
                  project.slug,
                  revision.resource_id,
                  activity_resource_id,

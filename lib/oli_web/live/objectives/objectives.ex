@@ -267,7 +267,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     project = socket.assigns.project
 
     flash_fn =
-      case ObjectiveEditor.add_new(
+      case Oli.Authoring.Audited.create_objective(
+             audit_context(socket.assigns.author),
              %{title: title},
              socket.assigns.author,
              project,
@@ -316,7 +317,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     project = socket.assigns.project
 
     flash_fn =
-      case ObjectiveEditor.edit(
+      case Oli.Authoring.Audited.edit_objective(
+             audit_context(socket.assigns.author),
              slug,
              %{title: title},
              socket.assigns.author,
@@ -431,7 +433,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     %{project: project, author: author, objectives: objectives} = socket.assigns
     %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
 
-    ObjectiveEditor.detach_objective(resource_id, project, author)
+    Oli.Authoring.Audited.detach_objective(audit_context(author), resource_id, project, author)
 
     {parents, parent_to_detach_slug} =
       Enum.reduce(objectives, {[], ""}, fn objective, {parents, parent_to_detach_slug} ->
@@ -449,7 +451,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     delete_fn =
       if length(parents) <= 1 do
         fn ->
-          ObjectiveEditor.delete(
+          Oli.Authoring.Audited.delete_objective(
+            audit_context(author),
             slug,
             author,
             project,
@@ -458,7 +461,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
         end
       else
         fn ->
-          ObjectiveEditor.remove_sub_objective_from_parent(
+          Oli.Authoring.Audited.unlink_sub_objective(
+            audit_context(author),
             slug,
             author,
             project,
@@ -489,7 +493,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     %{project: project, author: author} = socket.assigns
 
     flash_fn =
-      case ObjectiveEditor.add_new_parent_for_sub_objective(
+      case Oli.Authoring.Audited.link_sub_objective(
+             audit_context(author),
              slug,
              parent_slug,
              project.slug,
@@ -568,4 +573,6 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
   # needed to ignore results of Task invocation
   def handle_info(_, socket), do: {:noreply, socket}
+
+  defp audit_context(author), do: Oli.Auditing.Context.for_actor(author, source: :ui)
 end

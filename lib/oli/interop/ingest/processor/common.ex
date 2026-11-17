@@ -2,7 +2,6 @@ defmodule Oli.Interop.Ingest.Processor.Common do
   alias Oli.Interop.Ingest.State
   alias Oli.Resources.Revision
   alias Oli.Repo
-  alias Oli.Authoring.Course
   alias Oli.LearningModel.Parameters
   alias Oli.LearningModel.Parameters.Validation, as: ParameterValidation
 
@@ -32,8 +31,7 @@ defmodule Oli.Interop.Ingest.Processor.Common do
     payload_result =
       Enum.zip(ids, resources)
       |> Enum.reduce_while({:ok, []}, fn {resource_id, {id, resource}}, {:ok, payload} ->
-        if id == required_survey_resource_id,
-          do: Course.update_project(state.project, %{required_survey_resource_id: resource_id})
+        if id == required_survey_resource_id, do: link_survey(state, resource_id)
 
         case mapper_fn.(state, resource_id, resource) do
           {:ok, row} ->
@@ -157,5 +155,18 @@ defmodule Oli.Interop.Ingest.Processor.Common do
       end
     end)
     |> Enum.filter(fn id -> !is_nil(id) end)
+  end
+
+  # The survey page is known only once its revision exists; the import event covers the link.
+  defp link_survey(%State{context: context, project: project} = state, resource_id) do
+    case Oli.Authoring.Audited.complete_import(context, project, %{
+           required_survey_resource_id: resource_id
+         }) do
+      {:ok, _project} ->
+        :ok
+
+      {:error, _reason} ->
+        Repo.rollback(%{state | errors: ["The course survey could not be linked" | state.errors]})
+    end
   end
 end

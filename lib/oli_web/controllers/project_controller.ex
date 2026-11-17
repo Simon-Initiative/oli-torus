@@ -1,9 +1,8 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
 
-  alias Oli.Authoring.Course
+  alias Oli.Auditing.Context
   alias Oli.Qa
-  alias Oli.Authoring.Clone
 
   def unpublished(pub), do: pub.published == nil
 
@@ -20,7 +19,13 @@ defmodule OliWeb.ProjectController do
   end
 
   def create(conn, %{"project" => %{"title" => title} = _project_params}) do
-    case Course.create_project(title, conn.assigns.current_author) do
+    author = conn.assigns.current_author
+
+    case Oli.Authoring.Audited.create_project(
+           Context.for_actor(author, source: :ui),
+           title,
+           author
+         ) do
       {:ok, %{project: project}} ->
         redirect(conn,
           to: ~p"/workspaces/course_author/#{project.slug}/overview"
@@ -34,34 +39,41 @@ defmodule OliWeb.ProjectController do
   end
 
   def clone_project(conn, _project_params) do
-    case Clone.clone_project(conn.assigns.project.slug, conn.assigns.current_author) do
+    author = conn.assigns.current_author
+    context = Context.for_actor(author, source: :ui)
+
+    case Oli.Authoring.Audited.duplicate_project(context, conn.assigns.project.slug, author) do
       {:ok, project} ->
         conn
         |> put_flash(:info, "Project duplicated. You've been redirected to your new project.")
         |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
 
-      {:error, message} ->
+      {:error, reason} ->
         project = conn.assigns.project
 
         conn
-        |> put_flash(:error, "Project could not be copied: " <> message)
+        |> put_flash(:error, "Project could not be copied: " <> copy_error(reason))
         |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
     end
   end
 
   def enable_triggers(conn, _project_params) do
-    case Oli.Authoring.Course.update_project(conn.assigns.project, %{allow_triggers: true}) do
+    context = Context.for_actor(conn.assigns.current_author, source: :ui)
+    project = conn.assigns.project
+
+    case Oli.Authoring.Audited.enable_triggers(context, project.id) do
       {:ok, project} ->
         conn
         |> put_flash(:info, "AI Activation Points enabled.")
         |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
 
-      {:error, message} ->
-        project = conn.assigns.project
-
+      {:error, _reason} ->
         conn
-        |> put_flash(:error, "Project could not be edited: " <> message)
+        |> put_flash(:error, "Project could not be edited.")
         |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
     end
   end
+
+  defp copy_error(message) when is_binary(message), do: message
+  defp copy_error(_reason), do: "please try again"
 end

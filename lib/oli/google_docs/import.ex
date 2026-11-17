@@ -2,15 +2,16 @@ defmodule Oli.GoogleDocs.Import do
   @moduledoc """
   Orchestrates the Google Docs import pipeline by composing download, parsing,
   media ingestion, custom element conversion, activity creation, and page
-  persistence steps. Also enforces single-flight guarantees per FILE_ID, emits
-  telemetry, and captures audit events.
+  persistence steps. Also enforces single-flight guarantees per FILE_ID and emits
+  telemetry. The page is created through `Oli.Authoring.Audited.import_google_doc_page/6`,
+  which records `google_doc_imported` in the same transaction.
   """
 
   require Logger
 
-  alias Oli.Auditing
+  alias Oli.Auditing.Context
+  alias Oli.Authoring.Audited
   alias Oli.Authoring.Course
-  alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Editing.Utils
   alias Oli.GoogleDocs.CustomElements
   alias Oli.GoogleDocs.MarkdownParser
@@ -35,23 +36,31 @@ defmodule Oli.GoogleDocs.Import do
   @telemetry_event [:oli, :google_docs_import]
 
   @doc """
-  Imports a Google Doc identified by `file_id` into the project/container context.
+  Imports a Google Doc identified by `file_id` into the project/container context, recording
+  `google_doc_imported` under `context` when the page is created.
 
   On success returns `{:ok, revision, warnings}` where `revision` is the newly
   created page revision and `warnings` is a list of warning maps collected during
   the pipeline. On failure returns `{:error, reason, warnings}`.
   """
-  @spec import(String.t(), String.t() | nil, String.t(), Oli.Accounts.Author.t()) ::
+  @spec import(
+          Context.t(),
+          String.t(),
+          String.t() | nil,
+          String.t(),
+          Oli.Accounts.Author.t(),
+          keyword()
+        ) ::
           {:ok, Oli.Resources.Revision.t(), list(map())}
           | {:error, term(), list(map())}
-  def import(project_slug, container_slug, file_id, author) do
-    import(project_slug, container_slug, file_id, author, [])
-  end
-
-  @spec import(String.t(), String.t() | nil, String.t(), Oli.Accounts.Author.t(), keyword()) ::
-          {:ok, Oli.Resources.Revision.t(), list(map())}
-          | {:error, term(), list(map())}
-  def import(project_slug, container_slug, file_id, author, opts) do
+  def import(
+        %Context{} = audit_context,
+        project_slug,
+        container_slug,
+        file_id,
+        author,
+        opts \\ []
+      ) do
     config = build_config(opts)
 
     with {:ok, project} <- fetch_project(project_slug),
@@ -62,6 +71,7 @@ defmodule Oli.GoogleDocs.Import do
          :ok <- acquire_guard(guard_key) do
       try do
         context = %{
+          audit_context: audit_context,
           project: project,
           container: container,
           author: author,
@@ -93,7 +103,7 @@ defmodule Oli.GoogleDocs.Import do
       :telemetry.span(@telemetry_event, span_metadata, fn ->
         started_at = System.monotonic_time()
 
-        outcome = perform_import(ctx)
+        outcome = perform_import(Map.put(ctx, :started_at, started_at))
 
         finished_at = System.monotonic_time()
 
@@ -154,7 +164,17 @@ defmodule Oli.GoogleDocs.Import do
 
       attrs = build_page_attrs(title, content_model)
 
-      case ContainerEditor.add_new(container, attrs, author, project) do
+      details =
+        &import_details(ctx, &1, warnings, download.bytes, media_result, title)
+
+      case Audited.import_google_doc_page(
+             ctx.audit_context,
+             project,
+             container,
+             author,
+             attrs,
+             details
+           ) do
         {:ok, revision} ->
           {:ok,
            %{
@@ -895,27 +915,12 @@ defmodule Oli.GoogleDocs.Import do
   defp attach_duration({:error, reason, data}, duration_ms),
     do: {:error, reason, Map.put(data, :duration_ms, duration_ms)}
 
-  defp handle_success(%{project: project, author: author, file_id_hash: hash}, %{
+  defp handle_success(%{project: project, file_id_hash: hash}, %{
          revision: revision,
          warnings: warnings,
-         download_bytes: download_bytes,
-         media: media,
-         duration_ms: duration_ms,
-         title: title
+         duration_ms: duration_ms
        }) do
     log_success(project.slug, hash, duration_ms, warnings)
-
-    capture_audit(
-      author,
-      project,
-      hash,
-      revision,
-      warnings,
-      duration_ms,
-      download_bytes,
-      media,
-      title
-    )
 
     {:ok, revision, warnings}
   end
@@ -938,17 +943,12 @@ defmodule Oli.GoogleDocs.Import do
     end)
   end
 
-  defp capture_audit(
-         author,
-         project,
-         file_hash,
-         revision,
-         warnings,
-         duration_ms,
-         download_bytes,
-         media,
-         title
-       ) do
+  # The details of `google_doc_imported`, recorded with the page; the duration runs until the
+  # page is created.
+  defp import_details(ctx, revision, warnings, download_bytes, media, title) do
+    duration_ms =
+      System.convert_time_unit(System.monotonic_time() - ctx.started_at, :native, :millisecond)
+
     warning_codes =
       warnings
       |> Enum.map(& &1.code)
@@ -956,8 +956,8 @@ defmodule Oli.GoogleDocs.Import do
         Map.update(acc, to_string(code), 1, &(&1 + 1))
       end)
 
-    details = %{
-      "file_id_hash" => file_hash,
+    %{
+      "file_id_hash" => ctx.file_id_hash,
       "page_revision_id" => revision.id,
       "page_resource_id" => revision.resource_id,
       "page_title" => title,
@@ -972,14 +972,6 @@ defmodule Oli.GoogleDocs.Import do
       "skipped_media_count" => media.skipped_count,
       "media_bytes_uploaded" => media.bytes_uploaded
     }
-
-    case Auditing.capture(author, :google_doc_imported, project, details) do
-      {:ok, _} ->
-        :ok
-
-      {:error, changeset} ->
-        Logger.warning("Failed to record Google Docs import audit event: #{inspect(changeset)}")
-    end
   end
 
   defp duration_bucket(duration_ms) when duration_ms <= 6_000, do: "<=6s"

@@ -1,70 +1,12 @@
 defmodule Oli.Authoring.Clone do
   import Ecto.Query, warn: false
-  import Oli.Authoring.Editing.Utils
-  alias Oli.Authoring.Editing.Blueprint
-  alias Oli.Publishing
-  alias Oli.Publishing.{AuthoringResolver}
-  alias Oli.Authoring.{Collaborators, Locks}
   alias Oli.Repo
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Delivery.Sections.Blueprint
 
   def clone_blueprints(blueprints, cloned_from_project_publication_ids) do
     Enum.map(blueprints, &Blueprint.duplicate(&1, %{}, cloned_from_project_publication_ids))
-  end
-
-  def clone_project(project_slug, author, opts \\ []) do
-    new_project_title_suffix =
-      if opts[:author_in_project_title], do: " <#{author.email}>", else: " Copy"
-
-    Repo.transaction(fn ->
-      with {:ok, base_project} <-
-             Course.get_project_by_slug(project_slug) |> Repo.preload(:family) |> trap_nil(),
-           {:ok, cloned_family} <-
-             Course.create_family(%{
-               title: base_project.family.title <> " Copy",
-               description: base_project.family.description
-             }),
-           {:ok, customizations, attributes} <- copy_attributes(base_project),
-           {:ok, cloned_project} <-
-             Course.create_project_from_source(
-               %{
-                 title: base_project.title <> new_project_title_suffix,
-                 version: "1.0.0",
-                 family_id: cloned_family.id,
-                 project_id: base_project.id,
-                 publisher_id: base_project.publisher_id,
-                 required_survey_resource_id: base_project.required_survey_resource_id,
-                 customizations: customizations,
-                 attributes: attributes,
-                 analytics_version: :v2,
-                 learning_model_version: base_project.learning_model_version
-               },
-               base_project
-             ),
-           {:ok, _} <- Collaborators.add_collaborator(author, cloned_project),
-           base_root_container <- AuthoringResolver.root_container(base_project.slug),
-           {:ok, cloned_publication} <-
-             Publishing.create_publication(%{
-               project_id: cloned_project.id,
-               root_resource_id: base_root_container.resource_id
-             }),
-           base_publication <- Publishing.project_working_publication(base_project.slug),
-           _ <- Locks.release_all(base_publication.id),
-           _ <- clone_all_published_resources(base_publication.id, cloned_publication.id),
-           _ <- clone_all_project_resources(base_project.id, cloned_project.id),
-           _ <- clone_all_media_items(base_project.id, cloned_project.id),
-           _ <- clone_all_project_activity_registrations(base_project.id, cloned_project.id),
-           Blueprint.get_blueprint_by_base_project(base_project)
-           |> Enum.map(fn blueprint -> %{blueprint | base_project_id: cloned_project.id} end)
-           |> clone_blueprints({base_project.id, cloned_publication.id}) do
-        cloned_project
-      else
-        {:error, error} -> Repo.rollback(error)
-      end
-    end)
   end
 
   def clone_all_project_resources(base_project_id, cloned_project_id) do
@@ -138,30 +80,4 @@ defmodule Oli.Authoring.Clone do
     |> existing_clones(author)
     |> Enum.count() > 0
   end
-
-  defp copy_attributes(base_project) do
-    customizations =
-      case base_project.customizations do
-        nil -> nil
-        labels -> Map.from_struct(labels)
-      end
-
-    attributes =
-      case base_project.attributes do
-        nil -> nil
-        base_attributes -> from_struct(base_attributes)
-      end
-
-    {:ok, customizations, attributes}
-  end
-
-  defp from_struct(attribute) when is_map(attribute) do
-    Map.from_struct(attribute)
-    |> Map.keys()
-    |> Enum.reduce(%{}, fn key, acc ->
-      Map.put(acc, key, from_struct(Map.get(attribute, key)))
-    end)
-  end
-
-  defp from_struct(attribute), do: attribute
 end

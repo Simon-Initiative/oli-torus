@@ -10,9 +10,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResource
-  alias Oli.Authoring.Course
   alias OliWeb.Delivery.Instructor.PreviewRoutes
-  alias Oli.Publishing
 
   describe "remix section as admin" do
     setup [:setup_admin_session]
@@ -2284,10 +2282,10 @@ defmodule OliWeb.RemixSectionLiveTest do
     restricted_project = Seeder.another_project(unrelated_author, institution, title)
 
     {:ok, _project} =
-      Course.update_project(restricted_project.project, %{visibility: :selected})
+      Oli.TestHelpers.update_project_fixture(restricted_project.project, %{visibility: :selected})
 
     {:ok, _publication} =
-      Publishing.publish_project(
+      Oli.TestHelpers.publish_project_fixture(
         restricted_project.project,
         "publish restricted remix source",
         unrelated_author.id

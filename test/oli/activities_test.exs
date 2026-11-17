@@ -11,7 +11,7 @@ defmodule Oli.ActivitiesTest do
       custom_activity = Activities.get_registration_by_slug("oli_image_coding")
 
       # Add and enable the activity using bulk operation
-      Activities.bulk_update_project_activities(project.id, [custom_activity.id], [])
+      update_activities(project.id, [custom_activity.id], [])
       project_activities = Activities.activities_for_project(project)
 
       assert project_activities
@@ -36,9 +36,9 @@ defmodule Oli.ActivitiesTest do
       custom_activity = Activities.get_registration_by_slug("oli_image_coding")
 
       # First add the activity to the project
-      Activities.bulk_update_project_activities(project.id, [custom_activity.id], [])
+      update_activities(project.id, [custom_activity.id], [])
       # Then disable it
-      Activities.disable_activity_in_project(project.id, custom_activity.id)
+      set_status(project.id, custom_activity.id, :disabled)
 
       project_activities = Activities.activities_for_project(project)
 
@@ -71,7 +71,7 @@ defmodule Oli.ActivitiesTest do
       custom_activity = Activities.get_registration_by_slug("oli_image_coding")
 
       # Add and enable the activity using bulk operation
-      Activities.bulk_update_project_activities(project.id, [custom_activity.id], [])
+      update_activities(project.id, [custom_activity.id], [])
       editor_menu_items = Activities.create_registered_activity_map(project.slug)
 
       image_coding = Map.get(editor_menu_items, "oli_image_coding")
@@ -79,7 +79,7 @@ defmodule Oli.ActivitiesTest do
     end
   end
 
-  describe "bulk_update_project_activities/3" do
+  describe "update_project_activities/3" do
     test "bulk add and remove activities efficiently", %{project: project} do
       # Create some test activities (must be advanced activities)
       activity1 =
@@ -104,7 +104,7 @@ defmodule Oli.ActivitiesTest do
         })
 
       # Initially add activity1 and activity2 to the project
-      Activities.bulk_update_project_activities(project.id, [activity1.id, activity2.id], [])
+      update_activities(project.id, [activity1.id, activity2.id], [])
 
       # Verify they are in the project
       selected_activities = Activities.selected_activities_for_project(project.id)
@@ -115,7 +115,7 @@ defmodule Oli.ActivitiesTest do
 
       # Use bulk operation to: add activity3, remove activity1, keep activity2
       result =
-        Activities.bulk_update_project_activities(
+        update_activities(
           project.id,
           # add
           [activity3.id],
@@ -124,6 +124,28 @@ defmodule Oli.ActivitiesTest do
         )
 
       assert result == :ok
+
+      # The second call records activity3 added and activity1 removed, one event each
+      assert [_first_add, added, removed] =
+               audit_events(:project_settings_changed, project_id: project.id)
+
+      assert added.changes == %{
+               "enabled_activities" => %{
+                 "operation" => "added",
+                 "after" => [
+                   %{"activity_registration_id" => activity3.id, "title" => "Test Activity 3"}
+                 ]
+               }
+             }
+
+      assert removed.changes == %{
+               "enabled_activities" => %{
+                 "operation" => "removed",
+                 "before" => [
+                   %{"activity_registration_id" => activity1.id, "title" => "Test Activity 1"}
+                 ]
+               }
+             }
 
       # Verify the changes
       selected_activities_after = Activities.selected_activities_for_project(project.id)
@@ -135,8 +157,9 @@ defmodule Oli.ActivitiesTest do
 
     test "bulk operation with empty lists", %{project: project} do
       # Should handle empty lists gracefully
-      result = Activities.bulk_update_project_activities(project.id, [], [])
+      result = update_activities(project.id, [], [])
       assert result == :ok
+      assert audit_events(:project_settings_changed, project_id: project.id) == []
     end
   end
 
@@ -581,7 +604,7 @@ defmodule Oli.ActivitiesTest do
     end
   end
 
-  describe "enable_activity_in_project/2" do
+  describe "set_project_activity_status/4 enabling" do
     test "enables an existing activity in project", %{project: project} do
       activity =
         insert(:activity_registration, %{title: "Test Activity", globally_available: false})
@@ -593,7 +616,7 @@ defmodule Oli.ActivitiesTest do
         status: :disabled
       })
 
-      result = Activities.enable_activity_in_project(project.id, activity.id)
+      result = set_status(project.id, activity.id, :enabled)
 
       assert result == :ok
 
@@ -601,19 +624,22 @@ defmodule Oli.ActivitiesTest do
       selected_activities = Activities.selected_activities_for_project(project.id)
       activity_result = Enum.find(selected_activities, &(&1.id == activity.id))
       assert activity_result.project_status == :enabled
+
+      event = assert_audited(:project_settings_changed, project_id: project.id)
+      assert event.changes["enabled_activities"]["operation"] == "added"
     end
 
     test "returns error for non-existent activity in project", %{project: project} do
       activity =
         insert(:activity_registration, %{title: "Test Activity", globally_available: false})
 
-      result = Activities.enable_activity_in_project(project.id, activity.id)
+      result = set_status(project.id, activity.id, :enabled)
 
       assert result == {:error, "No ActivityRegistrationProject found"}
     end
   end
 
-  describe "disable_activity_in_project/2" do
+  describe "set_project_activity_status/4 disabling" do
     test "disables an existing activity in project", %{project: project} do
       activity =
         insert(:activity_registration, %{title: "Test Activity", globally_available: false})
@@ -625,7 +651,7 @@ defmodule Oli.ActivitiesTest do
         status: :enabled
       })
 
-      result = Activities.disable_activity_in_project(project.id, activity.id)
+      result = set_status(project.id, activity.id, :disabled)
 
       assert result == :ok
 
@@ -633,13 +659,16 @@ defmodule Oli.ActivitiesTest do
       selected_activities = Activities.selected_activities_for_project(project.id)
       activity_result = Enum.find(selected_activities, &(&1.id == activity.id))
       assert activity_result.project_status == :disabled
+
+      event = assert_audited(:project_settings_changed, project_id: project.id)
+      assert event.changes["enabled_activities"]["operation"] == "removed"
     end
 
     test "returns error for non-existent activity in project", %{project: project} do
       activity =
         insert(:activity_registration, %{title: "Test Activity", globally_available: false})
 
-      result = Activities.disable_activity_in_project(project.id, activity.id)
+      result = set_status(project.id, activity.id, :disabled)
 
       assert result == {:error, "No ActivityRegistrationProject found"}
     end
@@ -664,7 +693,7 @@ defmodule Oli.ActivitiesTest do
         insert(:activity_registration, %{title: "Test Activity", globally_available: false})
 
       # Add activity to project
-      Activities.bulk_update_project_activities(project.id, [activity.id], [])
+      update_activities(project.id, [activity.id], [])
 
       result = Activities.create_registered_activity_map(project.slug)
       activity_entry = Map.get(result, activity.slug)
@@ -677,9 +706,9 @@ defmodule Oli.ActivitiesTest do
         insert(:activity_registration, %{title: "Test Activity", globally_available: false})
 
       # Add activity to project
-      Activities.bulk_update_project_activities(project.id, [activity.id], [])
+      update_activities(project.id, [activity.id], [])
       # Disable it
-      Activities.disable_activity_in_project(project.id, activity.id)
+      set_status(project.id, activity.id, :disabled)
 
       result = Activities.create_registered_activity_map(project.slug)
       activity_entry = Map.get(result, activity.slug)
@@ -716,7 +745,7 @@ defmodule Oli.ActivitiesTest do
       activity = insert(:activity_registration, %{title: "Test Activity"})
 
       # Add activity to project
-      Activities.bulk_update_project_activities(project.id, [activity.id], [])
+      update_activities(project.id, [activity.id], [])
 
       result = Activities.activities_for_project(project)
       activity_result = Enum.find(result, &(&1.id == activity.id))
@@ -729,9 +758,9 @@ defmodule Oli.ActivitiesTest do
         insert(:activity_registration, %{title: "Test Activity", globally_available: false})
 
       # Add activity to project
-      Activities.bulk_update_project_activities(project.id, [activity.id], [])
+      update_activities(project.id, [activity.id], [])
       # Disable it
-      Activities.disable_activity_in_project(project.id, activity.id)
+      set_status(project.id, activity.id, :disabled)
 
       result = Activities.activities_for_project(project)
       activity_result = Enum.find(result, &(&1.id == activity.id))
@@ -841,5 +870,21 @@ defmodule Oli.ActivitiesTest do
       result = Oli.Activities.list_lti_activity_registrations([-1])
       assert result == []
     end
+  end
+
+  defp update_activities(project_id, to_add, to_remove) do
+    Oli.Activities.Audited.update_project_activities(audit_context(), project_id, %{
+      add: to_add,
+      remove: to_remove
+    })
+  end
+
+  defp set_status(project_id, activity_id, status) do
+    Oli.Activities.Audited.set_project_activity_status(
+      audit_context(),
+      project_id,
+      activity_id,
+      status
+    )
   end
 end

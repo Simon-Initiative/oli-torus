@@ -40,9 +40,10 @@ defmodule OliWeb.Import.CSVImportView do
 
     if File.exists?(ingest_file) do
       pid = self()
+      context = Oli.Auditing.Context.for_actor(author, source: :ui)
 
       Task.async(fn ->
-        process_rows(pid, project_slug, ingest_file)
+        process_rows(pid, context, project, ingest_file)
         send(pid, {:finished})
       end)
 
@@ -80,7 +81,7 @@ defmodule OliWeb.Import.CSVImportView do
     {:noreply, assign(socket, show_feature_overview: false)}
   end
 
-  defp process_rows(pid, project_slug, ingest_file) do
+  defp process_rows(pid, context, project, ingest_file) do
     to_content = fn content ->
       # if content is valid JSON, parse it and return the parsed content
       # otherwise, content is treated as plain text and converted to a paragraph
@@ -108,58 +109,50 @@ defmodule OliWeb.Import.CSVImportView do
                        intro_content
                      ]}, row_num} ->
       if row_num > 0 do
-        case Oli.Publishing.AuthoringResolver.from_revision_slug(project_slug, slug) do
-          nil ->
-            send(pid, {:update, row_num, :failure})
+        has_change? =
+          duration_minutes != "" or poster_image != "" or intro_video != "" or
+            intro_content != ""
 
-          revision ->
-            has_change? =
-              duration_minutes != "" or poster_image != "" or intro_video != "" or
-                intro_content != ""
+        case has_change? do
+          # A row without values still reports an unknown slug, as before
+          false ->
+            case Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, slug) do
+              nil -> send(pid, {:update, row_num, :failure})
+              _revision -> :ok
+            end
 
-            if has_change? do
-              change = %{
-                duration_minutes:
-                  if duration_minutes != "" do
-                    String.to_integer(duration_minutes)
-                  else
-                    nil
-                  end,
-                poster_image:
-                  if poster_image != "" do
-                    poster_image
-                  else
-                    nil
-                  end,
-                intro_video:
-                  if intro_video != "" do
-                    intro_video
-                  else
-                    nil
-                  end,
-                intro_content:
-                  if intro_content != "" do
-                    to_content.(intro_content)
-                  else
-                    nil
-                  end
-              }
-
-              needs_change? =
-                revision.duration_minutes != change.duration_minutes or
-                  revision.poster_image != change.poster_image or
-                  revision.intro_video != change.intro_video or
-                  revision.intro_content != change.intro_content
-
-              if needs_change? do
-                case Oli.Resources.update_revision(revision, change) do
-                  {:ok, _} ->
-                    send(pid, {:update, row_num, :success})
-
-                  {:error, _} ->
-                    send(pid, {:update, row_num, :failure})
+          true ->
+            change = %{
+              duration_minutes:
+                if duration_minutes != "" do
+                  String.to_integer(duration_minutes)
+                else
+                  nil
+                end,
+              poster_image:
+                if poster_image != "" do
+                  poster_image
+                else
+                  nil
+                end,
+              intro_video:
+                if intro_video != "" do
+                  intro_video
+                else
+                  nil
+                end,
+              intro_content:
+                if intro_content != "" do
+                  to_content.(intro_content)
+                else
+                  nil
                 end
-              end
+            }
+
+            case Oli.Authoring.Audited.import_metadata_row(context, project, slug, change) do
+              {:ok, :unchanged} -> :ok
+              {:ok, _revision} -> send(pid, {:update, row_num, :success})
+              {:error, _reason} -> send(pid, {:update, row_num, :failure})
             end
         end
       end

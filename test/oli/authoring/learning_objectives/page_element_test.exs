@@ -225,9 +225,15 @@ defmodule Oli.Authoring.LearningObjectives.PageElementTest do
       }
 
       assert {:ok, updated_revision} =
-               PageEditor.edit(project.slug, revisions.page_revision_2.slug, author.email, %{
-                 "content" => content
-               })
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revisions.page_revision_2.slug,
+                 author.email,
+                 %{
+                   "content" => content
+                 }
+               )
 
       [element | _activity_references] = updated_revision.content["model"]
       [config] = element["learning_objectives"]
@@ -259,9 +265,15 @@ defmodule Oli.Authoring.LearningObjectives.PageElementTest do
       }
 
       assert {:ok, updated_revision} =
-               PageEditor.edit(project.slug, revisions.page_revision_2.slug, author.email, %{
-                 "content" => content
-               })
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revisions.page_revision_2.slug,
+                 author.email,
+                 %{
+                   "content" => content
+                 }
+               )
 
       [element | _activity_references] = updated_revision.content["model"]
 
@@ -298,9 +310,15 @@ defmodule Oli.Authoring.LearningObjectives.PageElementTest do
       }
 
       assert {:ok, updated_revision} =
-               PageEditor.edit(project.slug, revisions.page_revision_2.slug, author.email, %{
-                 "content" => content
-               })
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revisions.page_revision_2.slug,
+                 author.email,
+                 %{
+                   "content" => content
+                 }
+               )
 
       [element | _activity_references] = updated_revision.content["model"]
       [config] = element["learning_objectives"]

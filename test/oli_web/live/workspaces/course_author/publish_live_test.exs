@@ -801,8 +801,43 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
              |> render() =~ section1.title
     end
 
+    test "changing the update option records it once and skips unchanged values", %{
+      conn: conn,
+      admin: admin,
+      project: project
+    } do
+      insert(:publication, project: project, published: yesterday())
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      for _attempt <- 1..2 do
+        view
+        |> element("form#versioning-details-form")
+        |> render_change(%{
+          "publication" => %{"auto_push_update" => "false", "description" => ""}
+        })
+      end
+
+      refute Oli.Authoring.Course.get_project!(project.id).auto_update_sections
+
+      assert [event] =
+               audit_events(:project_settings_changed,
+                 project_id: project.id,
+                 actor: admin,
+                 source: :ui
+               )
+
+      assert event.changes == %{
+               "auto_update_sections" => %{
+                 "operation" => "set",
+                 "before" => true,
+                 "after" => false
+               }
+             }
+    end
+
     test "shows info message when a publication is generated successfully", %{
       conn: conn,
+      admin: admin,
       project: project
     } do
       insert(:publication, project: project, published: yesterday())
@@ -818,6 +853,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
 
       flash = assert_redirected(view, live_view_publish_route(project.slug))
       assert flash["info"] == "Publish Successful!"
+
+      assert_audited(:project_published, project_id: project.id, actor: admin, source: :ui)
     end
 
     test "enques an embedding Oban job for each PAGE revision when publishing if the calculate_embeddings_on_publish attribute is enabled",
@@ -828,7 +865,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
            page_revision: page_revision,
            page_2_revision: page_2_revision
          } do
-      Oli.Authoring.Course.update_project(project, %{
+      Oli.TestHelpers.update_project_fixture(project, %{
         attributes: %{calculate_embeddings_on_publish: true}
       })
 
@@ -866,7 +903,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
            page_revision: page_revision,
            page_2_revision: page_2_revision
          } do
-      Oli.Authoring.Course.update_project(project, %{
+      Oli.TestHelpers.update_project_fixture(project, %{
         attributes: %{calculate_embeddings_on_publish: false}
       })
 

@@ -6,8 +6,6 @@ defmodule OliWeb.ProductsLiveTest do
   import Oli.Factory
   import Mox
 
-  alias Oli.Authoring.Course
-  alias Oli.Publishing
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Router.Helpers, as: Routes
@@ -35,7 +33,7 @@ defmodule OliWeb.ProductsLiveTest do
     hierarchy = DbSeeder.base_project_with_larger_hierarchy()
 
     {:ok, publication} =
-      Publishing.publish_project(
+      Oli.TestHelpers.publish_project_fixture(
         hierarchy.project,
         "create template with units",
         hierarchy.author.id
@@ -97,13 +95,13 @@ defmodule OliWeb.ProductsLiveTest do
     })
 
     {:ok, _initial_publication} =
-      Oli.Publishing.publish_project(project, "initial publication", admin.id)
+      Oli.TestHelpers.publish_project_fixture(project, "initial publication", admin.id)
 
     {:ok, product_with_updates} =
       Blueprint.create_blueprint(project.slug, "Updated Template", nil)
 
     {:ok, _follow_up_publication} =
-      Oli.Publishing.publish_project(project, "follow-up publication", admin.id)
+      Oli.TestHelpers.publish_project_fixture(project, "follow-up publication", admin.id)
 
     {:ok, product_without_updates} =
       Blueprint.create_blueprint(project.slug, "Current Template", nil)
@@ -796,7 +794,7 @@ defmodule OliWeb.ProductsLiveTest do
   end
 
   defp allow_transfer_payment_codes(project) do
-    Course.update_project(project, %{
+    Oli.TestHelpers.update_project_fixture(project, %{
       allow_transfer_payment_codes: true
     })
   end

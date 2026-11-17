@@ -6,7 +6,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
   import Oli.Utils.Seeder.Utils
   import Phoenix.LiveViewTest
 
-  alias Oli.Authoring.Course
   alias Oli.Seeder
   alias Oli.Accounts
   alias Oli.Activities
@@ -689,7 +688,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: project
     } do
       {:ok, _project_with_license} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           attributes: %{
             license: %{license_type: :custom, custom_license_details: "This is a custom license"}
           }
@@ -717,7 +716,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: project
     } do
       {:ok, _project_with_license} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           attributes: %{
             license: %{license_type: :none, custom_license_details: ""}
           }
@@ -745,7 +744,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: project
     } do
       {:ok, _project_with_license} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           attributes: %{
             license: %{license_type: :custom, custom_license_details: "This is a custom license"}
           }
@@ -773,7 +772,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: project
     } do
       {:ok, _project_with_license} =
-        Course.update_project(project, %{attributes: %{license: %{license_type: :cc_by}}})
+        Oli.TestHelpers.update_project_fixture(project, %{
+          attributes: %{license: %{license_type: :cc_by}}
+        })
 
       enroll_as_student(%{section: section, user: user})
 
@@ -972,7 +973,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Authoring.Editing.PageEditor.edit(
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
         project.slug,
         page_revision.slug,
         map.author.email,
@@ -985,7 +987,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      {:ok, pub} = Oli.Publishing.publish_project(project, "some changes", map.author.id)
+      {:ok, pub} = Oli.TestHelpers.publish_project_fixture(project, "some changes", map.author.id)
       Sections.update_section_project_publication(section, project.id, pub.id)
       Oli.Delivery.Sections.rebuild_section_resources(section: section, publication: pub)
 
@@ -1050,7 +1052,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Authoring.Editing.PageEditor.edit(
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
         project.slug,
         page_revision.slug,
         map.author.email,
@@ -1063,7 +1066,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      {:ok, pub} = Oli.Publishing.publish_project(project, "some changes", map.author.id)
+      {:ok, pub} = Oli.TestHelpers.publish_project_fixture(project, "some changes", map.author.id)
       Sections.update_section_project_publication(section, project.id, pub.id)
       Oli.Delivery.Sections.rebuild_section_resources(section: section, publication: pub)
 
@@ -1081,7 +1084,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Authoring.Editing.PageEditor.edit(
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
         project.slug,
         page_revision.slug,
         map.author.email,
@@ -1094,7 +1098,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      {:ok, latest_pub} = Oli.Publishing.publish_project(project, "some changes", map.author.id)
+      {:ok, latest_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", map.author.id)
 
       Sections.update_section_project_publication(section, project.id, latest_pub.id)
       Sections.rebuild_section_resources(section: section, publication: latest_pub)
@@ -1216,7 +1221,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Authoring.Editing.PageEditor.edit(
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
         project.slug,
         page_revision.slug,
         map.author.email,
@@ -1230,7 +1236,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       )
 
       {:ok, pub} =
-        Oli.Publishing.publish_project(project, "add some content breaks", map.author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "add some content breaks", map.author.id)
 
       Sections.update_section_project_publication(section, project.id, pub.id)
       Oli.Delivery.Sections.rebuild_section_resources(section: section, publication: pub)
@@ -3361,7 +3367,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     map = Seeder.add_page(map, exploration_page_2, :container, :exploration_page_2)
 
     {:ok, publication} =
-      Oli.Publishing.publish_project(map.project, "some changes", map.author.id)
+      Oli.TestHelpers.publish_project_fixture(map.project, "some changes", map.author.id)
 
     map = Map.merge(map, %{publication: publication, contains_explorations: true})
 
@@ -3477,7 +3483,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     map = Seeder.add_page(map, page_attrs, :container, :page)
 
     {:ok, publication} =
-      Oli.Publishing.publish_project(map.project, "mixed preview page", map.author.id)
+      Oli.TestHelpers.publish_project_fixture(map.project, "mixed preview page", map.author.id)
 
     map =
       Map.merge(map, %{publication: publication})
@@ -3495,7 +3501,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
     %{project: project} = insert_project_with_resource(author)
     institution = insert(:institution, institution_email: author.email)
 
-    {:ok, publication} = Oli.Publishing.publish_project(project, "some changes", author.id)
+    {:ok, publication} =
+      Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
     section =
       section_fixture(%{

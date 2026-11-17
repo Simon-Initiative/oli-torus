@@ -339,12 +339,15 @@ defmodule OliWeb.AuthorAuthorizationController do
           clear_invitation_session_data(conn)
 
         author_project ->
-          case Oli.Authoring.Course.update_author_project(author_project, %{status: :accepted}) do
+          case Oli.Authoring.Audited.respond_to_invitation(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 {author_project.author_id, author_project.project_id, :accepted}
+               ) do
             {:ok, _} ->
               clear_invitation_session_data(conn)
 
-            {:error, changeset} ->
-              Logger.error("Failed to accept collaborator invitation: #{inspect(changeset)}")
+            {:error, reason} ->
+              Logger.error("Failed to accept collaborator invitation: #{inspect(reason)}")
               conn
           end
       end

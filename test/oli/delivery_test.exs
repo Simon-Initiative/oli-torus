@@ -228,7 +228,11 @@ defmodule Oli.DeliveryTest do
 
       # Publish the publication so it can be found by get_latest_published_publication_by_slug
       {:ok, _published} =
-        Oli.Publishing.publish_project(map.project, "ensure published", project_author.id)
+        Oli.TestHelpers.publish_project_fixture(
+          map.project,
+          "ensure published",
+          project_author.id
+        )
 
       institution = insert(:institution)
       user = insert(:user, independent_learner: false)

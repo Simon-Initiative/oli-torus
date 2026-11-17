@@ -9,7 +9,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Publishing.Publications.PublicationDiff
   alias Oli.Accounts.{SystemRole, Author}
   alias Oli.Authoring.{Course, Locks}
-  alias Oli.Authoring.Editing.{PageEditor, ObjectiveEditor, ActivityEditor}
+  alias Oli.Authoring.Editing.{PageEditor, ActivityEditor}
   alias Oli.Activities
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
@@ -40,7 +40,8 @@ defmodule Oli.PublishingTest do
     update = %{"objectives" => objectives}
 
     {:ok, revision} =
-      ActivityEditor.edit(
+      Oli.Authoring.Audited.edit_activity(
+        Oli.TestHelpers.author_audit_context(),
         project.slug,
         page_revision.resource_id,
         revision.resource_id,
@@ -378,7 +379,11 @@ defmodule Oli.PublishingTest do
         )
 
       assert {:ok, published_publication} =
-               Publishing.publish_project(project, "parameterized publication", author.id)
+               Oli.TestHelpers.publish_project_fixture(
+                 project,
+                 "parameterized publication",
+                 author.id
+               )
 
       assert {:ok, section} =
                Sections.create_section_from_source(
@@ -750,12 +755,37 @@ defmodule Oli.PublishingTest do
       publication: publication,
       revision1: revision
     } do
-      {:ok, %{revision: obj1}} = ObjectiveEditor.add_new(%{title: "one"}, author, project)
-      {:ok, %{revision: obj2}} = ObjectiveEditor.add_new(%{title: "two"}, author, project)
-      {:ok, %{revision: obj3}} = ObjectiveEditor.add_new(%{title: "three"}, author, project)
+      {:ok, %{revision: obj1}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "one"},
+          author,
+          project
+        )
+
+      {:ok, %{revision: obj2}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "two"},
+          author,
+          project
+        )
+
+      {:ok, %{revision: obj3}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "three"},
+          author,
+          project
+        )
 
       {:ok, %{revision: page_only_objective}} =
-        ObjectiveEditor.add_new(%{title: "page only"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "page only"},
+          author,
+          project
+        )
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
@@ -822,12 +852,25 @@ defmodule Oli.PublishingTest do
         }
       }
 
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       PageEditor.acquire_lock(project.slug, activity3.slug, author.email)
 
       assert {:ok, _} =
-               PageEditor.edit(project.slug, activity3.slug, author.email, %{deleted: true})
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 activity3.slug,
+                 author.email,
+                 %{deleted: true}
+               )
 
       PageEditor.release_lock(project.slug, activity3.slug, author.email)
 
@@ -839,7 +882,12 @@ defmodule Oli.PublishingTest do
       assert Publishing.objective_referenced?(page_only_objective.resource_id, publication.id)
 
       {:ok, %{revision: untagged_objective}} =
-        ObjectiveEditor.add_new(%{title: "untagged"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "untagged"},
+          author,
+          project
+        )
 
       refute Publishing.objective_referenced?(untagged_objective.resource_id, publication.id)
 
@@ -874,9 +922,29 @@ defmodule Oli.PublishingTest do
            publication: publication,
            revision1: revision
          } do
-      {:ok, %{revision: obj1}} = ObjectiveEditor.add_new(%{title: "one"}, author, project)
-      {:ok, %{revision: obj2}} = ObjectiveEditor.add_new(%{title: "two"}, author, project)
-      {:ok, %{revision: obj3}} = ObjectiveEditor.add_new(%{title: "three"}, author, project)
+      {:ok, %{revision: obj1}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "one"},
+          author,
+          project
+        )
+
+      {:ok, %{revision: obj2}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "two"},
+          author,
+          project
+        )
+
+      {:ok, %{revision: obj3}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "three"},
+          author,
+          project
+        )
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
@@ -941,7 +1009,14 @@ defmodule Oli.PublishingTest do
         }
       }
 
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       {:ok, %{revision: deleted_page}} =
         Course.create_and_attach_resource(project, %{
@@ -958,7 +1033,13 @@ defmodule Oli.PublishingTest do
       PageEditor.acquire_lock(project.slug, deleted_page.slug, author.email)
 
       assert {:ok, _} =
-               PageEditor.edit(project.slug, deleted_page.slug, author.email, %{deleted: true})
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 deleted_page.slug,
+                 author.email,
+                 %{deleted: true}
+               )
 
       PageEditor.release_lock(project.slug, deleted_page.slug, author.email)
 
@@ -1000,7 +1081,7 @@ defmodule Oli.PublishingTest do
     test "publish_project/1 publishes the active unpublished publication and creates a new working unpublished publication for a project",
          %{publication: publication, project: project, author: author} do
       {:ok, %Publication{} = published} =
-        Publishing.publish_project(project, "some changes", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # original publication should now be published
       assert published.id == publication.id
@@ -1010,7 +1091,7 @@ defmodule Oli.PublishingTest do
     test "publish_project/1 creates a new working unpublished publication for a project",
          %{publication: unpublished_publication, project: project, author: author} do
       {:ok, %Publication{} = published_publication} =
-        Publishing.publish_project(project, "some changes", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # The published publication should match the original unpublished publication
       assert unpublished_publication.id == published_publication.id
@@ -1047,7 +1128,13 @@ defmodule Oli.PublishingTest do
       {:acquired} = PageEditor.acquire_lock(project.slug, original_revision.slug, author.email)
 
       # lock an activity
-      {:ok, %{revision: obj}} = ObjectiveEditor.add_new(%{title: "one"}, author, project)
+      {:ok, %{revision: obj}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "one"},
+          author,
+          project
+        )
 
       revision_with_activity =
         create_activity(
@@ -1062,7 +1149,7 @@ defmodule Oli.PublishingTest do
 
       # Publish the project
       {:ok, %Publication{} = published_publication} =
-        Publishing.publish_project(project, "some changes", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # publication should succeed even if a resource is "locked"
       new_unpublished_publication = Publishing.project_working_publication(project.slug)
@@ -1082,12 +1169,24 @@ defmodule Oli.PublishingTest do
 
       # The page should not be able to be edited without re-acquiring the lock
       {:error, {:lock_not_acquired, _}} =
-        PageEditor.edit(project.slug, original_revision.slug, author.email, page_content)
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          original_revision.slug,
+          author.email,
+          page_content
+        )
 
       {:acquired} = PageEditor.acquire_lock(project.slug, original_revision.slug, author.email)
 
       {:ok, updated_page_revision} =
-        PageEditor.edit(project.slug, original_revision.slug, author.email, page_content)
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          original_revision.slug,
+          author.email,
+          page_content
+        )
 
       # The updates should occur on the new revision
       assert original_revision.id != updated_page_revision.id
@@ -1107,7 +1206,7 @@ defmodule Oli.PublishingTest do
     test "publish_project/1 updates revision_part with published information", %{author: author} do
       %{activity: %{revision: revision}, project: project} = project_with_activity()
 
-      Publishing.publish_project(project, "Some description", author.id)
+      Oli.TestHelpers.publish_project_fixture(project, "Some description", author.id)
 
       assert Repo.all(
                from pm in "revision_parts",
@@ -1121,7 +1220,10 @@ defmodule Oli.PublishingTest do
       author: author
     } do
       Oli.Authoring.Broadcaster.Subscriber.subscribe_to_new_publications(project.slug)
-      {:ok, publication} = Publishing.publish_project(project, "some changes", author.id)
+
+      {:ok, publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
+
       {:messages, [{:new_publication, pub, project_slug}]} = Process.info(self(), :messages)
       assert pub.id == publication.id
       assert project.slug == project_slug
@@ -1154,7 +1256,8 @@ defmodule Oli.PublishingTest do
       Publishing.upsert_published_resource(publication, r3_revision)
 
       # create first publication
-      {:ok, %Publication{} = p1} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, %Publication{} = p1} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # make some edits
       content = %{
@@ -1165,7 +1268,13 @@ defmodule Oli.PublishingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       {:ok, _updated_revision} =
-        PageEditor.edit(project.slug, revision.slug, author.email, %{content: content})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision.slug,
+          author.email,
+          %{content: content}
+        )
 
       # add another resource
       {:ok, %{revision: r4_revision}} =
@@ -1185,7 +1294,13 @@ defmodule Oli.PublishingTest do
       PageEditor.acquire_lock(project.slug, r3_revision.slug, author.email)
 
       {:ok, _updated_revision} =
-        PageEditor.edit(project.slug, r3_revision.slug, author.email, %{deleted: true})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          r3_revision.slug,
+          author.email,
+          %{deleted: true}
+        )
 
       # generate diff
       %PublicationDiff{
@@ -1222,11 +1337,15 @@ defmodule Oli.PublishingTest do
         |> Repo.insert()
 
       # create first publication
-      {:ok, _} = Publishing.publish_project(project, "some changes", author2.id)
+      {:ok, _} = Oli.TestHelpers.publish_project_fixture(project, "some changes", author2.id)
 
       second = Oli.Seeder.another_project(author2, institution, "second one")
-      {:ok, _} = Publishing.publish_project(second.project, "some changes", author2.id)
-      {:ok, _} = Publishing.publish_project(second.project, "some changes", author2.id)
+
+      {:ok, _} =
+        Oli.TestHelpers.publish_project_fixture(second.project, "some changes", author2.id)
+
+      {:ok, _} =
+        Oli.TestHelpers.publish_project_fixture(second.project, "some changes", author2.id)
 
       # by default, these projects are set to "private"
       assert Publishing.available_publications(nil, nil) |> length == 0
@@ -1234,22 +1353,32 @@ defmodule Oli.PublishingTest do
       assert Publishing.available_publications(author3, nil) |> length == 0
 
       # setting them to global
-      {:ok, project} = Course.update_project(project, %{visibility: :global})
-      Course.update_project(second.project, %{visibility: :global})
+      {:ok, project} = Oli.TestHelpers.update_project_fixture(project, %{visibility: :global})
+      Oli.TestHelpers.update_project_fixture(second.project, %{visibility: :global})
 
       assert Publishing.available_publications(nil, nil) |> length == 2
       assert Publishing.available_publications(author2, nil) |> length == 2
       assert Publishing.available_publications(author3, nil) |> length == 2
 
       # setting one to specific authors
-      {:ok, project} = Course.update_project(project, %{visibility: :authors})
-      Course.update_project(second.project, %{visibility: :selected})
-      Publishing.insert_visibility(%{project_id: second.project.id, author_id: author3.id})
+      {:ok, project} = Oli.TestHelpers.update_project_fixture(project, %{visibility: :authors})
+      Oli.TestHelpers.update_project_fixture(second.project, %{visibility: :selected})
+
+      Oli.TestHelpers.insert_visibility_fixture(%{
+        project_id: second.project.id,
+        author_id: author3.id
+      })
+
       assert Publishing.available_publications(author3, nil) |> length == 1
 
       # setting one to specific author and other to specific institution
-      Course.update_project(project, %{visibility: :selected})
-      Publishing.insert_visibility(%{project_id: project.id, institution_id: institution.id})
+      Oli.TestHelpers.update_project_fixture(project, %{visibility: :selected})
+
+      Oli.TestHelpers.insert_visibility_fixture(%{
+        project_id: project.id,
+        institution_id: institution.id
+      })
+
       assert Publishing.available_publications(author3, institution) |> length == 2
       assert Publishing.available_publications(author2, institution) |> length == 2
     end

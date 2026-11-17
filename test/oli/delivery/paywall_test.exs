@@ -7,7 +7,6 @@ defmodule Oli.Delivery.PaywallTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.{Sections, Paywall}
   alias Oli.Delivery.Paywall.{AccessSummary, Payment, Discount}
-  alias Oli.Publishing
   alias Oli.Repo.{Paging, Sorting}
 
   def last_week() do
@@ -25,7 +24,8 @@ defmodule Oli.Delivery.PaywallTest do
       stub_real_current_time()
       map = Seeder.base_project_with_resource2()
 
-      {:ok, _} = Publishing.publish_project(map.project, "some changes", map.author.id)
+      {:ok, _} =
+        Oli.TestHelpers.publish_project_fixture(map.project, "some changes", map.author.id)
 
       # Create a product using the initial publication
       {:ok, product} =
@@ -205,7 +205,8 @@ defmodule Oli.Delivery.PaywallTest do
       stub_real_current_time()
       map = Seeder.base_project_with_resource2()
 
-      {:ok, _} = Publishing.publish_project(map.project, "some changes", map.author.id)
+      {:ok, _} =
+        Oli.TestHelpers.publish_project_fixture(map.project, "some changes", map.author.id)
 
       # Create a product using the initial publication
       {:ok, product} =
@@ -403,7 +404,8 @@ defmodule Oli.Delivery.PaywallTest do
     setup do
       map = Seeder.base_project_with_resource2()
 
-      {:ok, _} = Publishing.publish_project(map.project, "some changes", map.author.id)
+      {:ok, _} =
+        Oli.TestHelpers.publish_project_fixture(map.project, "some changes", map.author.id)
 
       # Create a product using the initial publication
       {:ok, paid} =

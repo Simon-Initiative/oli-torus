@@ -107,7 +107,9 @@ defmodule OliWeb.Api.BibEntryController do
   def delete(conn, %{"project" => project_slug, "entry" => entry_id}) do
     author = conn.assigns[:current_author]
 
-    case BibEntryEditor.delete(project_slug, entry_id, author) do
+    context = Oli.Auditing.Context.for_actor(author, source: :api)
+
+    case Oli.Authoring.Audited.delete_bib_entry(context, project_slug, entry_id, author) do
       {:ok, _} ->
         json(conn, %{"result" => "success"})
 

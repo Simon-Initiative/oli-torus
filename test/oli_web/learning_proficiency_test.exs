@@ -80,6 +80,13 @@ defmodule OliWeb.LearningProficiencyTest do
     assert has_element?(view, "#confirm-framework-upgrade:not([disabled])")
     view |> form("#framework-upgrade-form", confirmation: "Update Framework") |> render_submit()
     assert Repo.get!(Project, s.project.id).learning_model_version == :lkt_aoa
+
+    assert_audited(:project_settings_changed,
+      project_id: s.project.id,
+      actor: s.author,
+      source: :ui
+    )
+
     refute has_element?(view, "#framework-upgrade-modal")
     assert has_element?(view, "#upgrade-learning-framework[disabled]")
     assert has_element?(view, "#learning-proficiency-settings", "v0.2.0")
@@ -94,6 +101,7 @@ defmodule OliWeb.LearningProficiencyTest do
     {:ok, view, _} = live(log_in_author(s.conn, s.author), path(s.project))
     render_submit(view, "upgrade_framework", %{"confirmation" => "Update Framework"})
     assert Repo.get!(Project, s.project.id).learning_model_version == :naive
+    assert audit_events(:project_settings_changed, project_id: s.project.id) == []
     render_click(view, "show_framework_upgrade")
     view |> form("#framework-upgrade-form", confirmation: "Update Framework") |> render_change()
     render_click(view, "cancel_framework_upgrade")
@@ -133,7 +141,7 @@ defmodule OliWeb.LearningProficiencyTest do
         ] do
       case model do
         :naive -> :ok
-        :lkt_aoa -> assert {:ok, _} = Course.upgrade_learning_model(s.project, s.author)
+        :lkt_aoa -> assert {:ok, _} = upgrade(s.project, s.author)
       end
 
       {:ok, view, _} = live(conn, docs)
@@ -293,14 +301,17 @@ defmodule OliWeb.LearningProficiencyTest do
 
     section = Repo.get!(Oli.Delivery.Sections.Section, section.id)
     revisions = Repo.all(Oli.Resources.Revision)
-    assert {:error, :not_authorized} = Course.upgrade_learning_model(s.project, author_fixture())
-    assert {:ok, upgraded} = Course.upgrade_learning_model(s.project, s.author)
+    assert {:error, :not_authorized} = upgrade(s.project, author_fixture())
+    assert {:ok, upgraded} = upgrade(s.project, s.author)
     assert upgraded.learning_model_version == :lkt_aoa
     assert Repo.get!(Oli.Delivery.Sections.Section, section.id) == section
     assert Repo.all(Oli.Resources.Revision) == revisions
-    assert {:error, :not_upgradable} = Course.upgrade_learning_model(s.project, s.author)
-    assert {:ok, unchanged} = Course.update_project(upgraded, %{learning_model_version: :naive})
-    assert unchanged.learning_model_version == :lkt_aoa
+    assert {:error, :not_upgradable} = upgrade(s.project, s.author)
+
+    assert {:error, :protected} =
+             Course.update_project(upgraded, %{learning_model_version: :naive})
+
+    assert Repo.reload!(upgraded).learning_model_version == :lkt_aoa
   end
 
   test "new sections inherit the upgraded framework from both project and existing templates",
@@ -316,7 +327,7 @@ defmodule OliWeb.LearningProficiencyTest do
                s.project
              )
 
-    assert {:ok, upgraded} = Course.upgrade_learning_model(s.project, s.author)
+    assert {:ok, upgraded} = upgrade(s.project, s.author)
     template = Repo.reload!(template)
     assert template.learning_model_version == :lkt_aoa
 
@@ -353,7 +364,7 @@ defmodule OliWeb.LearningProficiencyTest do
     other_template = Repo.reload!(other_template)
     existing_section = Repo.reload!(existing_section)
 
-    assert {:error, :not_authorized} = Course.upgrade_learning_model(s.project, author_fixture())
+    assert {:error, :not_authorized} = upgrade(s.project, author_fixture())
     assert Enum.all?(templates, &(Repo.reload!(&1).learning_model_version == :naive))
 
     handler = {__MODULE__, make_ref()}
@@ -374,22 +385,42 @@ defmodule OliWeb.LearningProficiencyTest do
 
     on_exit(fn -> :telemetry.detach(handler) end)
 
-    assert {:ok, upgraded} = Course.upgrade_learning_model(s.project, s.author)
+    assert {:ok, upgraded} = upgrade(s.project, s.author)
     assert upgraded.learning_model_version == :lkt_aoa
     assert_receive {^handler, :template_update}
     refute_received {^handler, :template_update}
     assert Enum.all?(templates, &(Repo.reload!(&1).learning_model_version == :lkt_aoa))
+
+    upgrade_event =
+      assert_audited(:project_settings_changed,
+        project_id: s.project.id,
+        actor: s.author,
+        source: :ui
+      )
+
+    assert upgrade_event.details == %{"blueprint_count" => 15}
+
+    assert upgrade_event.changes == %{
+             "learning_model_version" => %{
+               "operation" => "set",
+               "before" => "naive",
+               "after" => "lkt_aoa"
+             }
+           }
+
     assert Repo.get!(Section, other_template.id) == other_template
     assert Repo.get!(Section, existing_section.id) == existing_section
   end
 
   test "fresh creation defaults to latest while copies preserve a legacy source", s do
-    attrs = Map.take(s.project, [:version, :family_id, :publisher_id]) |> Map.put(:title, "Fresh")
-    assert {:ok, fresh} = Course.create_project(Map.put(attrs, :learning_model_version, :naive))
+    assert {:ok, %{project: fresh}} =
+             Oli.TestHelpers.create_project_fixture("Fresh", s.author, %{
+               learning_model_version: :naive
+             })
+
     assert fresh.learning_model_version == :lkt_aoa
 
-    assert {:ok, copy} =
-             Course.create_project_from_source(Map.put(attrs, :title, "Copy"), s.project)
+    assert {:ok, copy} = Oli.TestHelpers.duplicate_project_fixture(s.project.slug, s.author)
 
     assert copy.learning_model_version == :naive
   end
@@ -403,4 +434,11 @@ defmodule OliWeb.LearningProficiencyTest do
   end
 
   defp path(project), do: "/workspaces/course_author/#{project.slug}/overview"
+
+  defp upgrade(project, author) do
+    Oli.Authoring.Audited.upgrade_learning_model(
+      Oli.Auditing.Context.for_actor(author, source: :ui),
+      project.id
+    )
+  end
 end

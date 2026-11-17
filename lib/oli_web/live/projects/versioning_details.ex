@@ -2,10 +2,17 @@ defmodule OliWeb.Projects.VersioningDetails do
   use OliWeb, :html
 
   alias OliWeb.Common.Utils
+  alias Phoenix.LiveView.JS
 
   attr(:active_publication, :any, required: true)
   attr(:active_publication_changes, :any, required: true)
   attr(:auto_update_sections, :boolean, default: true)
+
+  attr(:revert_count, :integer,
+    default: 0,
+    doc: "changes after a failed save, so the switch renders again from the saved state"
+  )
+
   attr(:changeset, :any, required: true)
   attr(:has_changes, :boolean, required: true)
   attr(:include_out_of_date_sections, :boolean, default: false)
@@ -116,14 +123,22 @@ defmodule OliWeb.Projects.VersioningDetails do
         <% end %>
 
         <%= if @active_publication_changes do %>
-          <.toggle_switch
-            id={@changeset[:auto_push_update].id}
-            class="my-3"
-            form={false}
-            checked={@auto_update_sections}
-            name={@changeset[:auto_push_update].name}
-            label="Automatically push this publication update to all templates and sections"
-          />
+          <div
+            id={"auto_push_update_wrapper-#{@revert_count}"}
+            phx-mounted={
+              @revert_count > 0 &&
+                JS.focus(to: "##{@changeset[:auto_push_update].id}_checkbox")
+            }
+          >
+            <.toggle_switch
+              id={@changeset[:auto_push_update].id}
+              class="my-3"
+              form={false}
+              checked={@auto_update_sections}
+              name={@changeset[:auto_push_update].name}
+              label="Automatically push this publication update to all templates and sections"
+            />
+          </div>
           <.toggle_switch
             :if={@is_admin}
             id={@changeset[:include_out_of_date_sections].id}

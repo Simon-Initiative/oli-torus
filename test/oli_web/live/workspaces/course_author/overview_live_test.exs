@@ -92,6 +92,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert updated_project.experiments_enabled
       assert updated_project.alternatives_enabled
       assert Repo.reload!(section).updated_at == original_section_updated_at
+
+      assert ["experiments_enabled", "alternatives_enabled"] =
+               Enum.flat_map(settings_events(project, author), &Map.keys(&1.changes))
     end
 
     test "renders collaborator invite reCAPTCHA with the LiveView hook", %{
@@ -120,6 +123,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       |> follow_redirect(conn, "/workspaces/course_author")
 
       assert Course.get_project_by_slug(project.slug).status == :deleted
+      assert_audited(:project_deleted, project_id: project.id, actor: author, source: :ui)
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
       assert has_element?(view, "button#button-new-project")
       refute has_element?(view, "a", project.title)
@@ -168,6 +172,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       |> Floki.find(~s{div[data-live-react-class="Components.RichTextEditor"]})
       |> Floki.attribute("data-live-react-props")
       |> hd() =~ "Welcome Title"
+
+      assert [event] = settings_events(project, author)
+
+      assert Map.keys(event.changes) |> Enum.sort() ==
+               ["description", "encouraging_subtitle", "title", "welcome_title"]
     end
 
     test "preserves coverage thresholds changed after the Overview form mounted", %{
@@ -178,7 +187,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       {:ok, _updated_project} =
-        Course.update_project_attributes(project, %{
+        Oli.TestHelpers.update_project_attributes_fixture(project, %{
           coverage_formative_threshold: 7,
           coverage_summative_threshold: 9
         })
@@ -315,11 +324,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert updated_project.required_survey_resource_id != nil
       assert has_element?(view, "input[name=\"survey\"][checked]")
       assert has_element?(view, "a", "Edit survey")
+
+      assert [event] = settings_events(project, author)
+      assert event.changes["required_survey_resource_id"]["before"] == nil
     end
 
     test "project can disable required surveys", %{conn: conn, author: author} do
       project = create_project_with_author(author)
-      Course.create_project_survey(project, author.id)
+      Oli.TestHelpers.create_project_survey_fixture(project, author)
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
@@ -332,6 +344,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert updated_project.required_survey_resource_id == nil
       refute has_element?(view, "input[name='survey'][checked]")
       refute has_element?(view, "a", "Edit survey")
+
+      # The fixture's creation and the page's removal
+      assert [_created, removed] = settings_events(project, author)
+      assert removed.changes["required_survey_resource_id"]["after"] == nil
     end
 
     test "edit survey button redirects well to edit survey page", %{
@@ -369,12 +385,46 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       |> render_change(%{})
 
       assert Course.get_project!(project.id).allow_transfer_payment_codes
+
+      assert [event] = settings_events(project, author)
+      assert event.changes["allow_transfer_payment_codes"]["after"] == true
+    end
+
+    test "a setting that cannot be saved shows an error and renders the checkbox again", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      assert has_element?(view, "#transfer_payment_codes_wrapper-0")
+      # On the first render the checkbox does not take the focus
+      refute has_element?(view, "#transfer_payment_codes_wrapper-0[phx-mounted]")
+
+      reject_audit_inserts()
+
+      ExUnit.CaptureLog.capture_log(fn ->
+        element(view, "form[phx-change='set_allow_transfer']")
+        |> render_change(%{})
+      end)
+
+      assert render(view) =~ "The setting could not be saved."
+      assert has_element?(view, "#transfer_payment_codes_wrapper-1")
+
+      # The checkbox rendered again gets the keyboard focus back
+      assert has_element?(
+               view,
+               ~s(#transfer_payment_codes_wrapper-1[phx-mounted*="focus"][phx-mounted*="#transfer_payment_codes"])
+             )
+
+      refute has_element?(view, "#transfer_payment_codes[checked]")
+      refute Course.get_project!(project.id).allow_transfer_payment_codes
     end
 
     test "project can disable transfer payment codes", %{conn: conn, author: author} do
       project = create_project_with_author(author)
 
-      {:ok, project} = Course.update_project(project, %{allow_transfer_payment_codes: true})
+      {:ok, project} =
+        Oli.TestHelpers.update_project_fixture(project, %{allow_transfer_payment_codes: true})
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
@@ -1089,7 +1139,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
     } do
       project = create_project_with_author(admin)
 
-      Oli.Publishing.publish_project(
+      Oli.TestHelpers.publish_project_fixture(
         project,
         "Datashop test",
         admin.id
@@ -1307,5 +1357,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       zebra_index = :binary.match(html, "Zebra") |> elem(0)
       assert apple_index < zebra_index
     end
+  end
+
+  defp settings_events(project, author) do
+    audit_events(:project_settings_changed, project_id: project.id, actor: author, source: :ui)
+  end
+
+  defp reject_audit_inserts do
+    Oli.Repo.query!("""
+    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'audit insert rejected by test';
+    END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Oli.Repo.query!("""
+    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
+      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
+    """)
   end
 end

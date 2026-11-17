@@ -52,6 +52,7 @@ defmodule OliWeb.ObjectivesControllerTest do
     test "creates an objective as a child objective", %{
       conn: conn,
       project: project,
+      author: author,
       child1: child1
     } do
       conn =
@@ -67,6 +68,25 @@ defmodule OliWeb.ObjectivesControllerTest do
 
       rev = AuthoringResolver.from_resource_id(project.slug, id)
       assert rev.title == "new one"
+
+      created =
+        assert_audited(:learning_objectives_changed,
+          project_id: project.id,
+          actor: author,
+          source: :api,
+          resource_id: id
+        )
+
+      assert created.changes["title"]["after"] == "new one"
+
+      parent =
+        assert_audited(:learning_objectives_changed,
+          actor: author,
+          source: :api,
+          resource_id: child1.resource.id
+        )
+
+      assert parent.changes["children"]["after"] == [id]
     end
 
     test "creates a top-level objective", %{conn: conn, project: project} do
@@ -106,7 +126,12 @@ defmodule OliWeb.ObjectivesControllerTest do
   end
 
   describe "PUT operation to update an objective" do
-    test "updates the title of an objective", %{conn: conn, project: project, child1: child1} do
+    test "updates the title of an objective", %{
+      conn: conn,
+      project: project,
+      author: author,
+      child1: child1
+    } do
       conn =
         put(conn, Routes.objectives_path(conn, :update, project.slug, child1.resource.id), %{
           "title" => "new title"
@@ -116,6 +141,15 @@ defmodule OliWeb.ObjectivesControllerTest do
 
       rev = AuthoringResolver.from_resource_id(project.slug, child1.resource.id)
       assert rev.title == "new title"
+
+      event =
+        assert_audited(:learning_objectives_changed,
+          project_id: project.id,
+          actor: author,
+          source: :api
+        )
+
+      assert event.changes["title"]["after"] == "new title"
     end
 
     test "update fails when author has no access to project", %{

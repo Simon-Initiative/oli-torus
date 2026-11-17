@@ -215,7 +215,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
         Blueprint.create_blueprint(project.slug, "Updated Template", nil)
 
       {:ok, _follow_up_publication} =
-        Oli.Publishing.publish_project(project, "fresh update", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "fresh update", author.id)
 
       {:ok, product_without_updates} =
         Blueprint.create_blueprint(project.slug, "Current Template", nil)
@@ -235,7 +235,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
         Blueprint.create_blueprint(project.slug, "Archived Template", nil)
 
       {:ok, _follow_up_publication} =
-        Oli.Publishing.publish_project(project, "fresh update", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "fresh update", author.id)
 
       Oli.Delivery.Sections.update_section!(archived_product, %{status: :archived})
 
@@ -251,7 +251,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
   alias Oli.Resources.ResourceType
 
   defp publish_project(context) do
-    Oli.Publishing.publish_project(context.project, "Datashop test", context.author.id)
+    Oli.TestHelpers.publish_project_fixture(context.project, "Datashop test", context.author.id)
     {:ok, %{}}
   end
 

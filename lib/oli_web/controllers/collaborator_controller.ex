@@ -4,7 +4,6 @@ defmodule OliWeb.CollaboratorController do
   import Oli.Utils
 
   alias Oli.Auditing.Context
-  alias Oli.Authoring.Collaborators
 
   require Logger
 
@@ -144,9 +143,11 @@ defmodule OliWeb.CollaboratorController do
         author -> {:ok, author}
       end
     end)
-    |> Ecto.Multi.run(:remove_author_from_project, fn _repo, _changes ->
-      Collaborators.remove_collaborator(author_email, project_slug)
-    end)
+    |> Oli.Authoring.Audited.remove_collaborator_multi(
+      :remove_author_from_project,
+      Context.for_actor(conn.assigns.current_author, source: :ui),
+      {author_email, project_slug}
+    )
     |> Ecto.Multi.delete_all(:remove_invitation, fn %{author: author} ->
       # Passwordless authors may already use SSO or have other project invitations.
       Oli.Accounts.AuthorToken.author_and_contexts_query(
@@ -171,7 +172,7 @@ defmodule OliWeb.CollaboratorController do
   defp invite_collaborator(conn, email, project_id, failures) do
     current_author = conn.assigns.current_author
 
-    case Collaborators.invite_collaborator(
+    case Oli.Authoring.Audited.invite_collaborator(
            Context.for_actor(current_author, source: :ui),
            current_author.name,
            current_author.email,

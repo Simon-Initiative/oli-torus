@@ -7,7 +7,6 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
 
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Authoring.Editing.{ActivityEditor, PageEditor}
-  alias Oli.Publishing
   alias Oli.Delivery.Sections
 
   defp accept_json(%{conn: conn}) do
@@ -221,7 +220,8 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
   def setup_section(%{conn: conn}) do
     {:ok, seeds} = setup_project(%{conn: conn})
 
-    {:ok, pub1} = Publishing.publish_project(seeds.project, "some changes", seeds.author.id)
+    {:ok, pub1} =
+      Oli.TestHelpers.publish_project_fixture(seeds.project, "some changes", seeds.author.id)
 
     {:ok, section} =
       Sections.create_section(%{
@@ -300,7 +300,15 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
     }
 
     PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-    assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+    assert {:ok, _} =
+             Oli.Authoring.Audited.edit_page(
+               author_audit_context(),
+               project.slug,
+               revision.slug,
+               author.email,
+               update
+             )
 
     conn =
       log_in_author(

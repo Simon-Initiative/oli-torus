@@ -68,7 +68,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
         Auditing.capture(user2, :section_created, section, %{"section_title" => section.title})
 
       {:ok, event3} =
-        Auditing.capture(author1, :project_published, project, %{"version" => "1.0"})
+        published_event(author1, project, "1.0")
 
       {:ok, event4} = user_deleted_event(user1, insert(:user))
 
@@ -105,7 +105,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
         )
 
       {:ok, _event} =
-        Auditing.capture(author1, :project_published, project2, %{"version" => "2.0"})
+        published_event(author1, project2, "2.0")
 
       # Navigate directly to the filtered URL to trigger handle_params
       {:ok, view, _html} = live(conn, ~p"/admin/audit_log")
@@ -141,7 +141,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
     test "text search filters events", %{conn: conn, admin: admin} do
       # Create a unique project to search for
       unique_project = insert(:project, slug: "unique-search-#{System.unique_integer()}")
-      {:ok, _event} = Auditing.capture(admin, :project_published, unique_project, %{})
+      {:ok, _event} = published_event(admin, unique_project, "1.0")
 
       # Navigate to the page
       {:ok, view, _html} = live(conn, ~p"/admin/audit_log")
@@ -284,7 +284,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
     test "shows links to projects", %{conn: conn, admin: admin} do
       project = insert(:project, title: "My Project", authors: [admin])
-      {:ok, _event} = Auditing.capture(admin, :project_published, project, %{})
+      {:ok, _event} = published_event(admin, project, "1.0")
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
 
@@ -328,6 +328,19 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
   end
 
   # Account deletions are recorded by `Oli.Accounts.Audited`; these build the same event rows.
+  defp published_event(actor, project, version) do
+    {:ok, changeset} =
+      Auditing.build(Oli.Auditing.Context.for_actor(actor, source: :ui), %{
+        event_type: :project_published,
+        entity: {:project, project.id, project},
+        scope: %{project_id: project.id},
+        event_key: "project:#{project.id}:published",
+        details: %{"project_title" => project.title, "version" => version}
+      })
+
+    Auditing.insert(changeset)
+  end
+
   defp user_deleted_event(actor, deleted), do: deleted_event(actor, :user, deleted)
 
   defp deleted_event(actor, kind, deleted) do

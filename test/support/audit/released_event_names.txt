@@ -22,7 +22,6 @@ project_created
 project_duplicated
 project_imported
 project_deleted
-project_ownership_changed
 project_collaborator_changed
 project_published
 assessment_settings_changed

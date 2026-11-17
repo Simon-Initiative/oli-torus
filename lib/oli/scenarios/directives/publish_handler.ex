@@ -5,7 +5,6 @@ defmodule Oli.Scenarios.Directives.PublishHandler do
 
   alias Oli.Scenarios.DirectiveTypes.PublishDirective
   alias Oli.Scenarios.Engine
-  alias Oli.Publishing
 
   def handle(%PublishDirective{to: to_name, description: description}, state) do
     try do
@@ -18,7 +17,8 @@ defmodule Oli.Scenarios.Directives.PublishHandler do
       pub_description = description || "Publishing changes"
 
       {:ok, _publication} =
-        Publishing.publish_project(
+        Oli.Publishing.Audited.publish_project(
+          Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
           built_project.project,
           pub_description,
           state.current_author.id

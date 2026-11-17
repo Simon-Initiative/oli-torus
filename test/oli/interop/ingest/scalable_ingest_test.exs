@@ -60,7 +60,7 @@ defmodule Oli.Interop.Ingest.ScalableIngestTest do
       entries = simulate_unzipping()
 
       {:ok, state} =
-        %State{author: author, entries: entries}
+        %State{author: author, context: Oli.TestHelpers.audit_context(), entries: entries}
         |> Preprocessor.preprocess()
         |> Processor.process()
 

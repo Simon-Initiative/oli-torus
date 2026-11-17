@@ -4,6 +4,9 @@ defmodule OliWeb do
   use Boundary,
     deps: [
       Oli.Accounts.Audited,
+      Oli.Activities.Audited,
+      Oli.Authoring.Audited,
+      Oli.Experiments.Audited,
       Oli.GenAI.Audited,
       Oli.Groups.Audited,
       Oli.Institutions.Audited,
@@ -11,6 +14,7 @@ defmodule OliWeb do
       Oli.Inventories.Audited,
       Oli.Lti.Audited,
       Oli.MCP.Audited,
+      Oli.Publishing.Audited,
       Oli.ScopedFeatureFlags.Audited
     ],
     check: [in: false]

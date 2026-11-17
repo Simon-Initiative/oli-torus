@@ -318,7 +318,7 @@ defmodule OliWeb.ObjectivesLiveTest do
     end
 
     @tag :flaky
-    test "new objective", %{conn: conn, project: project} do
+    test "new objective", %{conn: conn, project: project, admin: admin} do
       title = "New Objective"
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
@@ -342,6 +342,15 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       assert has_element?(view, "##{revision.slug}")
       assert has_element?(view, "button[phx-value-slug=#{revision.slug}]", "#{revision.title}")
+
+      event =
+        assert_audited(:learning_objectives_changed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.resource_id == revision.resource_id
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}

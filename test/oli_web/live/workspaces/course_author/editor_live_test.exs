@@ -333,6 +333,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
         graded: true
       })
 
+      event =
+        assert_audited(:authoring_settings_changed,
+          project_id: project.id,
+          actor: author,
+          source: :ui
+        )
+
+      assert event.resource_id == revision.resource_id
+      assert event.changes["max_attempts"]["after"] == 7
+      assert event.changes["title"]["after"] == "Options Renamed Page"
+
       assert %Oli.Resources.Revision{
                title: "Options Renamed Page",
                duration_minutes: 12,
@@ -501,6 +512,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
 
       assert_patch(view, live_view_route(project.slug, "renamed_basic_page"))
       assert html =~ "Renamed Basic Page"
+
+      event =
+        assert_audited(:authoring_settings_changed,
+          project_id: project.id,
+          actor: author,
+          source: :ui
+        )
+
+      assert event.changes["title"]["after"] == "Renamed Basic Page"
     end
 
     test "shows a direct lock conflict message when another author holds the edit lock", %{

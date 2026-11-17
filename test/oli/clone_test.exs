@@ -8,7 +8,6 @@ defmodule Oli.CloneTest do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Locks
   alias Oli.Authoring.MediaLibrary
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.Family
   alias Oli.Authoring.Clone
@@ -31,7 +30,7 @@ defmodule Oli.CloneTest do
     } do
       refute Oli.Publishing.needs_new_revision_for_edit?(project.slug, revision1.id)
 
-      {:ok, _} = Clone.clone_project(project.slug, author2)
+      {:ok, _} = Oli.TestHelpers.duplicate_project_fixture(project.slug, author2)
       assert Oli.Publishing.needs_new_revision_for_edit?(project.slug, revision1.id)
     end
   end
@@ -39,7 +38,9 @@ defmodule Oli.CloneTest do
   describe "project duplication" do
     setup do
       project_map = Oli.Seeder.base_project_with_resource2()
-      _survey_revision = Course.create_project_survey(project_map.project, project_map.author.id)
+
+      _survey_revision =
+        Oli.TestHelpers.create_project_survey_fixture(project_map.project, project_map.author)
 
       project =
         Repo.get!(Oli.Authoring.Course.Project, project_map.project.id)
@@ -53,7 +54,7 @@ defmodule Oli.CloneTest do
       )
 
       {:ok, duplicated_project} =
-        Clone.clone_project(project.slug, project_map.author2)
+        Oli.TestHelpers.duplicate_project_fixture(project.slug, project_map.author2)
 
       Map.put(
         Map.put(project_map, :project, project),
@@ -89,7 +90,7 @@ defmodule Oli.CloneTest do
              )
 
       # Clone the project
-      {:ok, duplicated_project} = Clone.clone_project(project.slug, author2)
+      {:ok, duplicated_project} = Oli.TestHelpers.duplicate_project_fixture(project.slug, author2)
 
       duplicated_publication =
         Publishing.project_working_publication(duplicated_project.slug)
@@ -145,14 +146,14 @@ defmodule Oli.CloneTest do
       refute Clone.already_has_clone?(project.slug, author)
 
       # Clone the project again for author2
-      Clone.clone_project(project.slug, author2)
+      Oli.TestHelpers.duplicate_project_fixture(project.slug, author2)
       assert Clone.already_has_clone?(project.slug, author2)
       refute Clone.already_has_clone?(project.slug, author)
 
       assert Clone.existing_clones(project.slug, author2) |> Enum.count() == 2
 
       # Now clone it for the original author
-      {:ok, %{id: id}} = Clone.clone_project(project.slug, author)
+      {:ok, %{id: id}} = Oli.TestHelpers.duplicate_project_fixture(project.slug, author)
       assert Clone.already_has_clone?(project.slug, author)
 
       assert [%{id: ^id}] = Clone.existing_clones(project.slug, author)
@@ -182,7 +183,7 @@ defmodule Oli.CloneTest do
         |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
         |> Repo.update!()
 
-      assert {:ok, duplicated} = Clone.clone_project(project.slug, author2)
+      assert {:ok, duplicated} = Oli.TestHelpers.duplicate_project_fixture(project.slug, author2)
       assert duplicated.learning_model_version == :lkt_aoa
     end
 
@@ -196,7 +197,9 @@ defmodule Oli.CloneTest do
           |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: lo_well_formed})
           |> Repo.update!()
 
-        assert {:ok, duplicated} = Clone.clone_project(project.slug, author2)
+        assert {:ok, duplicated} =
+                 Oli.TestHelpers.duplicate_project_fixture(project.slug, author2)
+
         assert duplicated.lo_well_formed == lo_well_formed
       end)
     end
@@ -221,7 +224,8 @@ defmodule Oli.CloneTest do
           author
         )
 
-      assert {:ok, duplicated_project} = Clone.clone_project(project.slug, author2)
+      assert {:ok, duplicated_project} =
+               Oli.TestHelpers.duplicate_project_fixture(project.slug, author2)
 
       duplicated_publication =
         Publishing.project_working_publication(duplicated_project.slug)
@@ -307,7 +311,9 @@ defmodule Oli.CloneTest do
     test "clone_project/2 creates a new project with the author email in the name when optional field is passed in",
          %{project: project, author2: author2} do
       {:ok, duplicated} =
-        Clone.clone_project(project.slug, author2, author_in_project_title: true)
+        Oli.TestHelpers.duplicate_project_fixture(project.slug, author2,
+          author_in_project_title: true
+        )
 
       assert project.title <> " <#{author2.email}>" == duplicated.title
     end
@@ -355,7 +361,13 @@ defmodule Oli.CloneTest do
         }
       }
 
-      PageEditor.edit(project.slug, base_revision.slug, author1.email, some_new_content)
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
+        project.slug,
+        base_revision.slug,
+        author1.email,
+        some_new_content
+      )
 
       author1_edit_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
       # Verify that editing created a new revision
@@ -385,7 +397,13 @@ defmodule Oli.CloneTest do
         }
       }
 
-      PageEditor.edit(duplicated.slug, duplicated_revision.slug, author2.email, some_new_content)
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
+        duplicated.slug,
+        duplicated_revision.slug,
+        author2.email,
+        some_new_content
+      )
 
       author2_edit_revision =
         AuthoringResolver.from_resource_id(duplicated.slug, duplicated_revision.resource_id)

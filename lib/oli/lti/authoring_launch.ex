@@ -4,7 +4,6 @@ defmodule Oli.Lti.AuthoringLaunch do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course
-  alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Authoring.Editing.Utils
   alias Oli.Authoring.Locks
   alias Oli.Lti.PlatformExternalTools
@@ -152,15 +151,27 @@ defmodule Oli.Lti.AuthoringLaunch do
 
   @doc """
   Submits a signed selection (the resource configuration chosen in the external tool)
-  through the existing editor transaction, lock and revision lifecycle.
+  through the audited activity edit, with its transaction, lock and revision lifecycle.
+  `context` identifies who saves it for the audit log.
   """
-  @spec save_result(%Author{} | nil, String.t(), pos_integer() | String.t(), String.t()) ::
+  @spec save_result(
+          Oli.Auditing.Context.t() | nil,
+          %Author{} | nil,
+          String.t(),
+          pos_integer() | String.t(),
+          String.t()
+        ) ::
           {:ok, %Revision{}} | {:error, term()}
-  def save_result(author, project, activity, token) do
+  def save_result(context, author, project, activity, token) do
     with {:ok, request, _} <- validate_result(author, project, activity, token) do
-      ActivityEditor.edit(project, request["lock_id"], activity, author.email, %{
-        "deep_link_result" => token
-      })
+      Oli.Authoring.Audited.edit_activity(
+        context,
+        project,
+        request["lock_id"],
+        activity,
+        author.email,
+        %{"deep_link_result" => token}
+      )
     end
   rescue
     _error in [Ecto.ConstraintError, Postgrex.Error] -> {:error, :save_failed}

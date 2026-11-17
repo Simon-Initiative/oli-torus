@@ -10,7 +10,6 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
 
   import ExUnit.Assertions
 
-  alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Authoring.Locks
   alias Oli.Delivery
   alias Oli.Delivery.SectionCreationRequest
@@ -182,7 +181,8 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
     selection = content["deepLink"]
 
     with {:ok, revision} <-
-           ActivityEditor.edit(
+           Oli.Authoring.Audited.edit_activity(
+             Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
              project,
              page.resource_id,
              current.resource_id,
@@ -205,6 +205,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
               token = Oli.Lti.AuthoringLaunch.result_token(started.request, selection)
 
               Oli.Lti.AuthoringLaunch.save_result(
+                Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
                 state.current_author,
                 project,
                 current.resource_id,

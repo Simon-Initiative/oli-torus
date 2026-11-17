@@ -261,7 +261,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       project: project
     } do
       {:ok, _updated_project} =
-        Course.update_project_attributes(project, %{
+        Oli.TestHelpers.update_project_attributes_fixture(project, %{
           coverage_formative_threshold: 7,
           coverage_summative_threshold: 9
         })
@@ -1141,7 +1141,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
              )
     end
 
-    test "new objective", %{conn: conn, project: project} do
+    test "new objective", %{conn: conn, project: project, admin: admin} do
       title = "New Objective"
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
@@ -1163,13 +1163,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       [%{revision: revision} | _tail] = ObjectiveEditor.fetch_objective_mappings(project)
 
+      assert objective_event(project, admin, revision.resource_id).changes["title"]["after"] ==
+               title
+
       assert has_element?(view, "##{revision.slug}")
       assert has_element?(view, "button[phx-value-slug=#{revision.slug}]", "#{revision.title}")
 
       wait_for_coverage(view)
     end
 
-    test "edit objective", %{conn: conn, project: project, publication: publication} do
+    test "edit objective", %{
+      conn: conn,
+      project: project,
+      publication: publication,
+      admin: admin
+    } do
       title = "New title"
       {:ok, obj} = create_objective(project, publication, "obj", "Objective")
 
@@ -1193,13 +1201,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       [%{revision: new_obj} | _tail] = ObjectiveEditor.fetch_objective_mappings(project)
 
+      assert objective_event(project, admin, obj.resource_id).changes["title"] == %{
+               "operation" => "set",
+               "before" => obj.title,
+               "after" => title
+             }
+
       refute has_element?(view, "button[phx-value-slug=#{obj.slug}]", "#{obj.title}")
       assert has_element?(view, "button[phx-value-slug=#{new_obj.slug}]", "#{title}")
 
       wait_for_coverage(view)
     end
 
-    test "remove objective", %{conn: conn, project: project, publication: publication} do
+    test "remove objective", %{
+      conn: conn,
+      project: project,
+      publication: publication,
+      admin: admin
+    } do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
 
       {:ok, obj_a} =
@@ -1272,6 +1291,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
              |> render() =~
                "Objective successfully removed"
 
+      assert objective_event(project, admin, obj_c.resource_id).changes["deleted"]["after"]
+
       assert 3 ==
                project
                |> ObjectiveEditor.fetch_objective_mappings()
@@ -1326,7 +1347,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
              |> Enum.member?(obj.resource_id)
     end
 
-    test "add existing sub objective", %{conn: conn, project: project, publication: publication} do
+    test "add existing sub objective", %{
+      conn: conn,
+      project: project,
+      publication: publication,
+      admin: admin
+    } do
       {:ok, sub_obj_a} = create_objective(project, publication, "sub_obj_a", "Sub Objective A")
 
       {:ok, sub_obj_b} =
@@ -1439,6 +1465,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
              |> render() =~
                "Sub-objective successfully added"
 
+      assert sub_obj_b.resource_id in objective_event(project, admin, first_obj.resource_id).changes[
+               "children"
+             ]["after"]
+
       assert 5 ==
                project
                |> ObjectiveEditor.fetch_objective_mappings()
@@ -1447,7 +1477,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       wait_for_coverage(view)
     end
 
-    test "new sub objective", %{conn: conn, project: project, publication: publication} do
+    test "new sub objective", %{
+      conn: conn,
+      project: project,
+      publication: publication,
+      admin: admin
+    } do
       title = "Sub Objective"
       {:ok, obj} = create_objective(project, publication, "obj", "Objective")
 
@@ -1483,6 +1518,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert Enum.any?(ObjectiveEditor.fetch_objective_mappings(project), fn mapping ->
                mapping.revision.title == title
              end)
+
+      [parent_event] =
+        audit_events(:learning_objectives_changed, actor: admin, resource_id: obj.resource_id)
+
+      assert [_new_child] = parent_event.changes["children"]["after"]
 
       wait_for_coverage(view)
     end
@@ -1533,7 +1573,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     end
 
     test "final association requires confirmation, can be canceled, and is deleted only on confirmation",
-         %{conn: conn, project: project, publication: publication} do
+         %{conn: conn, project: project, publication: publication, admin: admin} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
 
       {:ok, obj} =
@@ -1597,6 +1637,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert AuthoringResolver.from_resource_id(project.slug, sub_obj.resource_id).deleted
       assert AuthoringResolver.from_resource_id(project.slug, obj.resource_id).children == []
       assert length(ObjectiveEditor.fetch_objective_mappings(project)) == 1
+      assert objective_event(project, admin, sub_obj.resource_id).changes["deleted"]["after"]
+      assert objective_event(project, admin, obj.resource_id).changes["children"]["after"] == []
       refute has_element?(view, "##{sub_obj.slug}")
 
       view
@@ -1609,7 +1651,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     end
 
     test "shared unlink preserves course content and other parents and updates the remaining action",
-         %{conn: conn, project: project, publication: publication} do
+         %{conn: conn, project: project, publication: publication, admin: admin} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
 
       {:ok, obj_a} =
@@ -1651,6 +1693,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
                page.objectives
 
       assert AuthoringResolver.from_resource_id(project.slug, obj_a.resource_id).children == []
+      assert objective_event(project, admin, obj_a.resource_id).changes["children"]["after"] == []
 
       assert sub_obj.resource_id in AuthoringResolver.from_resource_id(
                project.slug,
@@ -2559,7 +2602,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     end
 
     test "incrementing the formative threshold persists it and re-flags an objective at the boundary",
-         %{conn: conn, project: project, publication: publication} do
+         %{conn: conn, admin: admin, project: project, publication: publication} do
       {:ok, boundary} =
         create_objective(project, publication, "boundary_obj", "Boundary Objective")
 
@@ -2582,6 +2625,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       persisted = Course.get_project!(project.id)
       assert persisted.attributes.coverage_formative_threshold == 4
+
+      event =
+        assert_audited(:project_settings_changed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.changes == %{
+               "coverage_formative_threshold" => %{
+                 "operation" => "set",
+                 "before" => 3,
+                 "after" => 4
+               }
+             }
     end
 
     test "changing summative after formative keeps both thresholds", %{
@@ -2658,5 +2716,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert persisted.attributes.coverage_formative_threshold == 3
       assert persisted.attributes.coverage_summative_threshold == 3
     end
+  end
+
+  defp objective_event(project, admin, resource_id) do
+    assert [event] =
+             audit_events(:learning_objectives_changed,
+               project_id: project.id,
+               actor: admin,
+               source: :ui,
+               resource_id: resource_id
+             )
+
+    event
   end
 end

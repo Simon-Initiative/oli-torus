@@ -5,7 +5,6 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
 
   import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
 
-  alias Oli.Authoring.Clone
   alias Oli.Delivery
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.SectionCreationRequest
@@ -181,7 +180,10 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
     assert {:ok, _} = put_selection(ctx.template, id, selection("template-local"))
 
     assert {:ok, project} =
-             Clone.clone_project(Hooks.project(ctx.state).slug, ctx.state.current_author)
+             Oli.TestHelpers.duplicate_project_fixture(
+               Hooks.project(ctx.state).slug,
+               ctx.state.current_author
+             )
 
     [copy] = Blueprint.get_blueprint_by_base_project(project)
     assert copy.type == :blueprint
