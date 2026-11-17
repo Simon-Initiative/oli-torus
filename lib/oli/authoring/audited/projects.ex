@@ -1,20 +1,123 @@
 defmodule Oli.Authoring.Audited.Projects do
   @moduledoc false
-  # Raw project creation, duplication, and collaborator writes, used only by
-  # `Oli.Authoring.Audited`, which owns the transaction and records the events.
+  # Project lifecycle commands of `Oli.Authoring.Audited`, which validates their arguments, and
+  # the project writes they run.
 
   import Ecto.Query, only: [from: 2]
+  import Oli.Authoring.Audited.Support, only: [record: 2]
   import Oli.Authoring.Editing.Utils, only: [trap_nil: 1]
 
   alias Oli.Accounts.Author
-  alias Oli.Authoring.{Clone, Collaborators, Course, Locks}
-  alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
+  alias Oli.Authoring.Audited.Collaborators
+  alias Oli.Authoring.{Clone, Course, Locks}
+  alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Inventories
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Repo
+
+  ## Commands
+
+  def create_project(context, title, author, attrs, opts) do
+    learning_model_version = Keyword.get(opts, :learning_model_version, :lkt_aoa)
+    lo_well_formed = Keyword.get(opts, :lo_well_formed, :use_default)
+
+    record_creation(context, :project_created, fn ->
+      create(title, author, attrs, learning_model_version, lo_well_formed)
+    end)
+  end
+
+  def import_project(context, title, author, learning_model_version, attrs) do
+    lo_well_formed = Map.get(attrs, :lo_well_formed)
+    attrs = Map.delete(attrs, :lo_well_formed)
+
+    record_creation(context, :project_imported, fn ->
+      create(title, author, attrs, learning_model_version, lo_well_formed)
+    end)
+  end
+
+  def duplicate_project(context, project_slug, author, opts) do
+    Repo.transaction(fn ->
+      with {:ok, {base_project, project}} <- duplicate(project_slug, author, opts),
+           :ok <-
+             record(context, project_event(:project_duplicated, project, author, base_project)) do
+        project
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  def delete_project(context, project_id) do
+    Repo.transaction(fn ->
+      with {:ok, project} <- lock_project(project_id),
+           {:ok, deleted} <- delete_once(context, project) do
+        deleted
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp delete_once(_context, %Project{status: :deleted} = project), do: {:ok, project}
+
+  defp delete_once(context, project) do
+    with {:ok, deleted} <- mark_deleted(project),
+         :ok <- record(context, project_event(:project_deleted, deleted, nil, nil)) do
+      {:ok, deleted}
+    end
+  end
+
+  # Function-style transactions (the creation steps use them) compose as savepoints of an
+  # enclosing transaction, so the archive ingest can call `import_project/5` inside its own.
+  defp record_creation(context, event_type, build) do
+    Repo.transaction(fn ->
+      with {:ok, %{project: project, author_project: owner} = created} <- build.(),
+           :ok <- record(context, project_event(event_type, project, owner, nil)) do
+        created
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp project_event(event_type, %Project{} = project, owner, source) do
+    key =
+      case event_type do
+        :project_created -> "created"
+        :project_imported -> "imported"
+        :project_duplicated -> "duplicated"
+        :project_deleted -> "deleted"
+      end
+
+    %{
+      event_type: event_type,
+      entity: {:project, project.id, project},
+      scope: %{project_id: project.id},
+      event_key: "project:#{project.id}:#{key}",
+      details: %{project_title: project.title}
+    }
+    |> put_owner(owner)
+    |> put_source(source)
+  end
+
+  defp put_owner(proposal, nil), do: proposal
+  defp put_owner(proposal, %Author{id: id}), do: Map.put(proposal, :affected, {:author, id})
+
+  defp put_owner(proposal, %AuthorProject{author_id: id}),
+    do: Map.put(proposal, :affected, {:author, id})
+
+  defp put_source(proposal, nil), do: proposal
+
+  defp put_source(proposal, %Project{} = source) do
+    proposal
+    |> Map.put(:refs, [%{role: :source, type: :project, id: source.id, label: source.title}])
+    |> Map.update!(:details, &Map.put(&1, :source_project_id, source.id))
+  end
+
+  ## Writes
 
   @doc """
   Creates the project, its family, the owner collaboration, the root container, and the initial
@@ -28,7 +131,7 @@ defmodule Oli.Authoring.Audited.Projects do
              learning_model_version,
              lo_well_formed
            ),
-         {:ok, collaborator} <- insert_collaborator(author, project, :accepted),
+         {:ok, collaborator} <- Collaborators.insert_collaborator(author, project, :accepted),
          {:ok, %{resource: resource, revision: resource_revision}} <-
            Course.initial_resource_setup(author, project),
          {:ok, %{publication: publication, published_resource: published_resource}} <-
@@ -82,7 +185,7 @@ defmodule Oli.Authoring.Audited.Projects do
              lo_well_formed: base_project.lo_well_formed
            })
            |> Repo.insert(),
-         {:ok, _} <- insert_collaborator(author, cloned_project, :accepted),
+         {:ok, _} <- Collaborators.insert_collaborator(author, cloned_project, :accepted),
          base_root_container <- AuthoringResolver.root_container(base_project.slug),
          {:ok, cloned_publication} <-
            Publishing.create_publication(%{
@@ -102,46 +205,6 @@ defmodule Oli.Authoring.Audited.Projects do
       {:ok, {base_project, cloned_project}}
     end
   end
-
-  @doc """
-  Inserts the collaboration of `author` on `project` with `status`. The first collaborator of a
-  project is its owner; everyone else is a contributor.
-  """
-  def insert_collaborator(%Author{} = author, %Project{} = project, status) do
-    case Collaborators.change_collaborator(author.email, project.slug, status) do
-      %Ecto.Changeset{} = changeset -> Repo.insert(changeset)
-      {:error, message} -> {:error, message}
-    end
-  end
-
-  @doc "Locks the collaboration of `author_id` on `project_id` and returns it with its role."
-  def lock_collaborator(author_id, project_id) do
-    from(ap in AuthorProject,
-      where: ap.author_id == ^author_id and ap.project_id == ^project_id,
-      lock: "FOR UPDATE"
-    )
-    |> Repo.one()
-    |> case do
-      nil -> {:error, :not_found}
-      author_project -> {:ok, Repo.preload(author_project, :project_role)}
-    end
-  end
-
-  @doc "Updates the status of a collaboration."
-  def update_collaborator_status(%AuthorProject{} = author_project, status) do
-    author_project
-    |> AuthorProject.changeset(%{status: status})
-    |> Repo.update()
-  end
-
-  @doc "Deletes a collaboration."
-  def delete_collaborator(%AuthorProject{} = author_project), do: Repo.delete(author_project)
-
-  @doc "Returns the role type (`owner` or `contributor`) of a collaboration."
-  def role_type(%AuthorProject{project_role: %ProjectRole{type: type}}), do: type
-
-  def role_type(%AuthorProject{} = author_project),
-    do: author_project |> Repo.preload(:project_role) |> role_type()
 
   @doc "Locks the project row and returns it."
   def lock_project(project_id) do

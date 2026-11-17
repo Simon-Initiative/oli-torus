@@ -178,7 +178,7 @@ At checkpoint A, verify the topology with a temporary forbidden reference per ne
 ### 3.2 Responsibilities
 
 - **Facade:** owns the transaction (or composes into the caller's), locks, the before-state read, the diff, event construction, and safe errors. Adds no authorization; moves into the transaction any check that already lived in the migrated function.
-- **Private implementation modules:** the moved editor and domain writes, unchanged except for taking the transaction from the facade.
+- **Private implementation modules:** the moved editor and domain writes, unchanged except for taking the transaction from the facade. In `Oli.Authoring.Audited`, the public module holds each command's documentation, spec, argument guards, and `:invalid_request` fallback; one private module per area (`Projects`, `Settings`, `Alternatives`, `Content`, `Collaborators`, and later `Editing` and `Repair`) holds the command bodies, their event construction, and the writes they run, with event recording shared in `Support`.
 - **Domain modules:** reads, locks, creation paths, and unaudited system writes.
 - **Transport (LiveViews, controllers, tasks):** builds the `Context`, calls the facade, and runs broadcasts, lock release, cache invalidation, emails, and redirects after commit. Every LiveView that now calls a facade handles non-changeset errors with a flash instead of `{:ok, _} =` matches.
 

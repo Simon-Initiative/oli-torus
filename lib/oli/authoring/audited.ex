@@ -13,6 +13,9 @@ defmodule Oli.Authoring.Audited do
   record nothing when no field changed. Each settings form passes the fields it edits; any other
   key returns `{:error, :protected}`. The trigger switch records `activation_settings_changed`.
 
+  Alternatives group changes record `project_settings_changed` with the group's title, strategy,
+  and options before and after.
+
   Removing a page, container, activity, alternatives group, or bibliography entry records
   `authoring_content_removed` (`bank_question_deleted` for a banked activity) with the previous
   and resulting revisions; deleting media records `media_deleted` per item. Content that was
@@ -21,6 +24,9 @@ defmodule Oli.Authoring.Audited do
   Commands do not authorize the actor; callers keep their existing authorization. Checks that
   lived in the migrated functions (the owner cannot be removed, only project authors upgrade
   the learning model) run inside the transaction.
+
+  This module validates arguments and documents each command; the private modules under
+  `Oli.Authoring.Audited` implement them, one per section below.
   """
 
   # This configuration is what makes CI fail when a caller bypasses this facade.
@@ -28,26 +34,14 @@ defmodule Oli.Authoring.Audited do
   # because this boundary calls into Oli, which depends on it; incoming checks stay on.
   use Boundary, top_level?: true, exports: [], check: [out: false]
 
-  import Ecto.Query, only: [from: 2]
-
   alias Ecto.Multi
-  alias Oli.Accounts
-  alias Oli.Accounts.{Author, AuthorToken}
-  alias Oli.Auditing
-  alias Oli.Auditing.{Changes, Context, LogEvent}
-  alias Oli.Auditing.EventCatalog.Fields
-  alias Oli.Authoring.Audited.{Content, Projects, Settings}
+  alias Oli.Accounts.Author
+  alias Oli.Auditing.Context
+  alias Oli.Authoring.Audited.{Alternatives, Collaborators, Content, Projects, Settings}
   alias Oli.Authoring.Authors.AuthorProject
-  alias Oli.Authoring.{Collaborators, Course, Editing}
   alias Oli.Authoring.Course.Project
-  alias Oli.Authoring.Editing.{ActivityEditor, ContainerEditor}
-  alias Oli.Authoring.MediaLibrary.MediaItem
-  alias Oli.Publishing.{AuthoringResolver, PublishedResource}
-  alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
   alias Oli.Resources.Revision
-
-  @collaborator_fields %{status: :value, role: :value}
 
   @type command_error ::
           :invalid_request | :not_found | :nested_transaction | :protected | term()
@@ -73,12 +67,7 @@ defmodule Oli.Authoring.Audited do
 
   def create_project(%Context{} = context, title, %Author{} = author, attrs, opts)
       when is_map(attrs) do
-    learning_model_version = Keyword.get(opts, :learning_model_version, :lkt_aoa)
-    lo_well_formed = Keyword.get(opts, :lo_well_formed, :use_default)
-
-    create(context, :project_created, fn ->
-      Projects.create(title, author, attrs, learning_model_version, lo_well_formed)
-    end)
+    Projects.create_project(context, title, author, attrs, opts)
   end
 
   def create_project(_context, _title, _author, _attrs, _opts), do: {:error, :invalid_request}
@@ -98,12 +87,7 @@ defmodule Oli.Authoring.Audited do
         attrs
       )
       when learning_model_version in [:naive, :lkt_aoa] and is_map(attrs) do
-    lo_well_formed = Map.get(attrs, :lo_well_formed)
-    attrs = Map.delete(attrs, :lo_well_formed)
-
-    create(context, :project_imported, fn ->
-      Projects.create(title, author, attrs, learning_model_version, lo_well_formed)
-    end)
+    Projects.import_project(context, title, author, learning_model_version, attrs)
   end
 
   def import_project(_context, _title, _author, _learning_model_version, _attrs),
@@ -122,15 +106,7 @@ defmodule Oli.Authoring.Audited do
 
   def duplicate_project(%Context{} = context, project_slug, %Author{} = author, opts)
       when is_binary(project_slug) do
-    Repo.transaction(fn ->
-      with {:ok, {base_project, project}} <- Projects.duplicate(project_slug, author, opts),
-           :ok <-
-             record(context, project_event(:project_duplicated, project, author, base_project)) do
-        project
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
+    Projects.duplicate_project(context, project_slug, author, opts)
   end
 
   def duplicate_project(_context, _project_slug, _author, _opts), do: {:error, :invalid_request}
@@ -141,74 +117,10 @@ defmodule Oli.Authoring.Audited do
   """
   @spec delete_project(Context.t(), pos_integer()) ::
           {:ok, %Project{}} | {:error, command_error()}
-  def delete_project(%Context{} = context, project_id) when is_integer(project_id) do
-    Repo.transaction(fn ->
-      with {:ok, project} <- Projects.lock_project(project_id),
-           {:ok, deleted} <- delete_once(context, project) do
-        deleted
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
+  def delete_project(%Context{} = context, project_id) when is_integer(project_id),
+    do: Projects.delete_project(context, project_id)
 
   def delete_project(_context, _project_id), do: {:error, :invalid_request}
-
-  defp delete_once(_context, %Project{status: :deleted} = project), do: {:ok, project}
-
-  defp delete_once(context, project) do
-    with {:ok, deleted} <- Projects.mark_deleted(project),
-         :ok <- record(context, project_event(:project_deleted, deleted, nil, nil)) do
-      {:ok, deleted}
-    end
-  end
-
-  # Function-style transactions (the creation steps use them) compose as savepoints of an
-  # enclosing transaction, so the archive ingest can call `import_project/5` inside its own.
-  defp create(context, event_type, build) do
-    Repo.transaction(fn ->
-      with {:ok, %{project: project, author_project: owner} = created} <- build.(),
-           :ok <- record(context, project_event(event_type, project, owner, nil)) do
-        created
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
-
-  defp project_event(event_type, %Project{} = project, owner, source) do
-    key =
-      case event_type do
-        :project_created -> "created"
-        :project_imported -> "imported"
-        :project_duplicated -> "duplicated"
-        :project_deleted -> "deleted"
-      end
-
-    %{
-      event_type: event_type,
-      entity: {:project, project.id, project},
-      scope: %{project_id: project.id},
-      event_key: "project:#{project.id}:#{key}",
-      details: %{project_title: project.title}
-    }
-    |> put_owner(owner)
-    |> put_source(source)
-  end
-
-  defp put_owner(proposal, nil), do: proposal
-  defp put_owner(proposal, %Author{id: id}), do: Map.put(proposal, :affected, {:author, id})
-
-  defp put_owner(proposal, %AuthorProject{author_id: id}),
-    do: Map.put(proposal, :affected, {:author, id})
-
-  defp put_source(proposal, nil), do: proposal
-
-  defp put_source(proposal, %Project{} = source) do
-    proposal
-    |> Map.put(:refs, [%{role: :source, type: :project, id: source.id, label: source.title}])
-    |> Map.update!(:details, &Map.put(&1, :source_project_id, source.id))
-  end
 
   ## Project settings
 
@@ -225,16 +137,7 @@ defmodule Oli.Authoring.Audited do
           {:ok, %Project{}} | {:error, command_error()}
   def update_project_settings(%Context{} = context, project_id, attrs, allowed)
       when is_integer(project_id) and is_map(attrs) and is_list(allowed) do
-    case allowed -- Settings.settings_fields() do
-      [] -> :ok
-      fields -> raise ArgumentError, "not project settings fields: #{inspect(fields)}"
-    end
-
-    with :ok <- Settings.check_keys(attrs, allowed) do
-      change_settings(context, project_id, fn project ->
-        project |> Settings.changeset(attrs) |> Repo.update()
-      end)
-    end
+    Settings.update_project_settings(context, project_id, attrs, allowed)
   end
 
   def update_project_settings(_context, _project_id, _attrs, _allowed),
@@ -253,16 +156,8 @@ defmodule Oli.Authoring.Audited do
   """
   @spec enable_triggers(Context.t(), pos_integer()) ::
           {:ok, %Project{}} | {:error, command_error()}
-  def enable_triggers(%Context{} = context, project_id) when is_integer(project_id) do
-    change_settings(
-      context,
-      project_id,
-      fn project ->
-        project |> Project.changeset(%{allow_triggers: true}) |> Repo.update()
-      end,
-      event: :activation_settings_changed
-    )
-  end
+  def enable_triggers(%Context{} = context, project_id) when is_integer(project_id),
+    do: Settings.enable_triggers(context, project_id)
 
   def enable_triggers(_context, _project_id), do: {:error, :invalid_request}
 
@@ -276,14 +171,8 @@ defmodule Oli.Authoring.Audited do
   """
   @spec upgrade_learning_model(Context.t(), pos_integer()) ::
           {:ok, %Project{}} | {:error, command_error()}
-  def upgrade_learning_model(%Context{} = context, project_id) when is_integer(project_id) do
-    change_settings(context, project_id, fn project ->
-      with :ok <- project_author(context, project),
-           {:ok, {upgraded, blueprint_count}} <- Settings.upgrade_learning_model(project) do
-        {:ok, upgraded, %{blueprint_count: blueprint_count}}
-      end
-    end)
-  end
+  def upgrade_learning_model(%Context{} = context, project_id) when is_integer(project_id),
+    do: Settings.upgrade_learning_model(context, project_id)
 
   def upgrade_learning_model(_context, _project_id), do: {:error, :invalid_request}
 
@@ -296,15 +185,7 @@ defmodule Oli.Authoring.Audited do
           {:ok, Oli.Resources.Revision.t()} | {:error, command_error()}
   def create_project_survey(%Context{author_id: author_id} = context, project_id)
       when is_integer(project_id) and is_integer(author_id) do
-    Repo.transaction(fn ->
-      with {:ok, before} <- Projects.lock_project(project_id),
-           {:ok, {updated, revision}} <- Settings.create_survey(before, author_id),
-           :ok <- record_settings(context, :project_settings_changed, before, updated, %{}) do
-        revision
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
+    Settings.create_project_survey(context, project_id)
   end
 
   def create_project_survey(_context, _project_id), do: {:error, :invalid_request}
@@ -315,9 +196,8 @@ defmodule Oli.Authoring.Audited do
   """
   @spec delete_project_survey(Context.t(), pos_integer()) ::
           {:ok, %Project{}} | {:error, command_error()}
-  def delete_project_survey(%Context{} = context, project_id) when is_integer(project_id) do
-    change_settings(context, project_id, &Settings.delete_survey/1)
-  end
+  def delete_project_survey(%Context{} = context, project_id) when is_integer(project_id),
+    do: Settings.delete_project_survey(context, project_id)
 
   def delete_project_survey(_context, _project_id), do: {:error, :invalid_request}
 
@@ -332,92 +212,12 @@ defmodule Oli.Authoring.Audited do
   """
   @spec complete_import(Context.t(), %Project{}, map()) ::
           {:ok, %Project{}} | {:error, command_error()}
-  def complete_import(%Context{} = context, %Project{} = project, attrs) when is_map(attrs) do
-    with :ok <- Settings.check_keys(attrs, Settings.import_fields()),
-         :ok <- importing(context, project.id) do
-      project |> Project.changeset(attrs) |> Repo.update()
-    end
-  end
+  def complete_import(%Context{} = context, %Project{} = project, attrs) when is_map(attrs),
+    do: Settings.complete_import(context, project, attrs)
 
   def complete_import(_context, _project, _attrs), do: {:error, :invalid_request}
 
-  # The ingest builds one context per import, so its operation ID identifies the import that
-  # created the project; an earlier import of the same archive has another operation ID.
-  defp importing(%Context{operation_id: operation_id}, project_id) do
-    query =
-      from(e in LogEvent,
-        where:
-          e.project_id == ^project_id and e.event_type == :project_imported and
-            e.operation_id == ^operation_id
-      )
-
-    case Repo.in_transaction?() and Repo.exists?(query) do
-      true -> :ok
-      false -> {:error, :not_importing}
-    end
-  end
-
-  # Locks the project, applies `change`, and records the settings that changed. `change` returns
-  # `{:ok, project}`, `{:ok, project, details}`, or `{:error, reason}`.
-  defp change_settings(context, project_id, change, opts \\ []) do
-    event_type = Keyword.get(opts, :event, :project_settings_changed)
-
-    Repo.transaction(fn ->
-      with {:ok, before} <- Projects.lock_project(project_id),
-           {:ok, updated, details} <- with_details(change.(before)),
-           :ok <- record_settings(context, event_type, before, updated, details) do
-        updated
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
-
-  defp with_details({:ok, updated}), do: {:ok, updated, %{}}
-  defp with_details({:ok, _updated, _details} = result), do: result
-  defp with_details({:error, _reason} = error), do: error
-
-  defp record_settings(context, event_type, before, updated, details) do
-    {policy, key} =
-      case event_type do
-        :project_settings_changed -> {Fields.project_settings(), "settings_changed"}
-        :activation_settings_changed -> {%{allow_triggers: :value}, "activation_settings_changed"}
-      end
-
-    case Changes.diff(Settings.view(before), Settings.view(updated), policy) do
-      changes when map_size(changes) == 0 ->
-        :ok
-
-      changes ->
-        record(context, %{
-          event_type: event_type,
-          entity: {:project, updated.id, updated},
-          scope: %{project_id: updated.id},
-          event_key: "project:#{updated.id}:#{key}",
-          changes: changes,
-          details: details
-        })
-    end
-  end
-
-  defp project_author(%Context{actor_type: :author, author_id: author_id}, project) do
-    case Repo.get(Author, author_id) do
-      %Author{} = author ->
-        case Accounts.can_access?(author, project) do
-          true -> :ok
-          false -> {:error, :not_authorized}
-        end
-
-      nil ->
-        {:error, :not_authorized}
-    end
-  end
-
-  defp project_author(_context, _project), do: {:error, :not_authorized}
-
   ## Alternatives groups
-
-  @alternatives_type_id Oli.Resources.ResourceType.id_for_alternatives()
 
   @doc """
   Creates an alternatives group in the project with slug `project_slug` and records it as added
@@ -426,22 +226,8 @@ defmodule Oli.Authoring.Audited do
   """
   @spec create_alternatives_group(Context.t(), String.t(), %Author{}, map()) ::
           {:ok, Oli.Resources.Revision.t()} | {:error, term()}
-  def create_alternatives_group(%Context{} = context, project_slug, %Author{} = author, attrs) do
-    Repo.transaction(fn ->
-      with {:ok, group} <-
-             Oli.Authoring.Editing.ResourceEditor.create(
-               project_slug,
-               author,
-               @alternatives_type_id,
-               attrs
-             ),
-           :ok <- record_group(context, project_slug, group, nil, group) do
-        group
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
+  def create_alternatives_group(%Context{} = context, project_slug, %Author{} = author, attrs),
+    do: Alternatives.create_alternatives_group(context, project_slug, author, attrs)
 
   @doc """
   Applies `update` to the alternatives group with resource ID `resource_id` and records the
@@ -450,19 +236,8 @@ defmodule Oli.Authoring.Audited do
   """
   @spec edit_alternatives_group(Context.t(), String.t(), pos_integer(), %Author{}, map()) ::
           {:ok, Oli.Resources.Revision.t()} | {:error, term()}
-  def edit_alternatives_group(%Context{} = context, project_slug, resource_id, author, update) do
-    Repo.transaction(fn ->
-      before = Oli.Publishing.AuthoringResolver.from_resource_id(project_slug, resource_id)
-
-      with {:ok, group} <-
-             Oli.Authoring.Editing.ResourceEditor.edit(project_slug, resource_id, author, update),
-           :ok <- record_group(context, project_slug, group, before, group) do
-        group
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
+  def edit_alternatives_group(%Context{} = context, project_slug, resource_id, author, update),
+    do: Alternatives.edit_alternatives_group(context, project_slug, resource_id, author, update)
 
   @doc """
   Moves option `option_id` of the group with resource ID `resource_id` (found in `groups`) to
@@ -487,80 +262,15 @@ defmodule Oli.Authoring.Audited do
         option_id,
         drop_index
       ) do
-    Repo.transaction(fn ->
-      case Oli.Authoring.Editing.AlternativesOptionEditor.move_to(
-             project_slug,
-             author,
-             groups,
-             resource_id,
-             option_id,
-             drop_index
-           ) do
-        {:ok, :unchanged} ->
-          :unchanged
-
-        {:ok, updated_groups, group} ->
-          before = Enum.find(groups, &(&1.resource_id == group.resource_id))
-
-          case record_group(context, project_slug, group, before, group) do
-            :ok -> {updated_groups, group}
-            {:error, reason} -> Repo.rollback(reason)
-          end
-
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
-    |> case do
-      {:ok, :unchanged} -> {:ok, :unchanged}
-      {:ok, {updated_groups, group}} -> {:ok, updated_groups, group}
-      error -> error
-    end
-  end
-
-  defp record_group(context, project_slug, group, before, after_group) do
-    old = before && group_summary(before)
-    new = group_summary(after_group)
-
-    changes =
-      case old do
-        nil ->
-          %{"alternatives_groups" => %{"operation" => "added", "after" => [new]}}
-
-        ^new ->
-          %{}
-
-        old ->
-          %{"alternatives_groups" => %{"operation" => "set", "before" => [old], "after" => [new]}}
-      end
-
-    case map_size(changes) do
-      0 ->
-        :ok
-
-      _ ->
-        project = Course.get_project_by_slug(project_slug)
-
-        record(context, %{
-          event_type: :project_settings_changed,
-          entity: {:project, project.id, project},
-          scope: %{project_id: project.id},
-          event_key: "project:#{project.id}:settings_changed",
-          changes: changes,
-          details: %{alternatives_group_id: group.resource_id}
-        })
-    end
-  end
-
-  defp group_summary(group) do
-    content = group.content || %{}
-
-    %{
-      "resource_id" => group.resource_id,
-      "title" => group.title,
-      "strategy" => content["strategy"],
-      "options" => Enum.map(content["options"] || [], &%{"id" => &1["id"], "name" => &1["name"]})
-    }
+    Alternatives.move_alternatives_option(
+      context,
+      project_slug,
+      author,
+      groups,
+      resource_id,
+      option_id,
+      drop_index
+    )
   end
 
   ## Content and media removal
@@ -580,16 +290,7 @@ defmodule Oli.Authoring.Audited do
         revision_slug
       )
       when is_binary(revision_slug) do
-    resource_ids = resource_ids_for_slug(revision_slug)
-
-    project
-    |> removing(context, resource_ids, [cascade: true], fn ->
-      Content.remove_child(container, project, author, revision_slug)
-    end)
-    |> tap(fn
-      {:ok, _} -> ContainerEditor.broadcast_update(container.resource_id, project.slug)
-      _error -> :ok
-    end)
+    Content.remove_from_curriculum(context, container, project, author, revision_slug)
   end
 
   def remove_from_curriculum(_context, _container, _project, _author, _revision_slug),
@@ -603,9 +304,7 @@ defmodule Oli.Authoring.Audited do
           {:ok, Revision.t()} | {:error, command_error()}
   def delete_unattached_page(%Context{} = context, %Project{} = project, revision_slug)
       when is_binary(revision_slug) do
-    removing(project, context, resource_ids_for_slug(revision_slug), [], fn ->
-      Content.delete_unattached(project.slug, revision_slug)
-    end)
+    Content.delete_unattached_page(context, project, revision_slug)
   end
 
   def delete_unattached_page(_context, _project, _revision_slug), do: {:error, :invalid_request}
@@ -625,9 +324,7 @@ defmodule Oli.Authoring.Audited do
         %Author{} = author
       )
       when is_binary(project_slug) do
-    removing(project_slug, context, resource_ids([activity_id]), [], fn ->
-      ActivityEditor.delete(project_slug, lock_id, activity_id, author)
-    end)
+    Content.delete_activity(context, project_slug, lock_id, activity_id, author)
   end
 
   def delete_activity(_context, _project_slug, _lock_id, _activity_id, _author),
@@ -641,9 +338,7 @@ defmodule Oli.Authoring.Audited do
           {:ok, term()} | {:error, command_error()}
   def delete_activities(%Context{} = context, project_slug, activity_ids, %Author{} = author)
       when is_binary(project_slug) and is_list(activity_ids) do
-    removing(project_slug, context, resource_ids(activity_ids), [], fn ->
-      ActivityEditor.delete_bulk(project_slug, activity_ids, author)
-    end)
+    Content.delete_activities(context, project_slug, activity_ids, author)
   end
 
   def delete_activities(_context, _project_slug, _activity_ids, _author),
@@ -654,9 +349,7 @@ defmodule Oli.Authoring.Audited do
           {:ok, Revision.t()} | {:error, command_error()}
   def delete_alternatives_group(%Context{} = context, project_slug, resource_id, author)
       when is_binary(project_slug) do
-    removing(project_slug, context, resource_ids([resource_id]), [], fn ->
-      Content.delete_alternatives_group(project_slug, resource_id, author)
-    end)
+    Content.delete_alternatives_group(context, project_slug, resource_id, author)
   end
 
   def delete_alternatives_group(_context, _project_slug, _resource_id, _author),
@@ -667,9 +360,7 @@ defmodule Oli.Authoring.Audited do
           {:ok, Revision.t()} | {:error, command_error()}
   def delete_bib_entry(%Context{} = context, project_slug, resource_id, author)
       when is_binary(project_slug) do
-    removing(project_slug, context, resource_ids([resource_id]), [], fn ->
-      Content.delete_bib_entry(project_slug, resource_id, author)
-    end)
+    Content.delete_bib_entry(context, project_slug, resource_id, author)
   end
 
   def delete_bib_entry(_context, _project_slug, _resource_id, _author),
@@ -684,180 +375,10 @@ defmodule Oli.Authoring.Audited do
           {:ok, non_neg_integer()} | {:error, command_error()}
   def delete_media(%Context{} = context, project_slug, media_ids)
       when is_binary(project_slug) and is_list(media_ids) do
-    Repo.transaction(fn ->
-      with {:ok, items} <- Content.delete_media(project_slug, media_ids),
-           :ok <- record_all(items, &record_media_deleted(context, &1)) do
-        length(items)
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
+    Content.delete_media(context, project_slug, media_ids)
   end
 
   def delete_media(_context, _project_slug, _media_ids), do: {:error, :invalid_request}
-
-  # Locks the working-publication mappings of `resource_ids`, reads their revisions, runs
-  # `write`, and records a removal for each resource that `write` deleted. With `cascade: true`,
-  # the event also lists the embedded activities that the write deleted.
-  defp removing(project_slug, context, resource_ids, opts, write) when is_binary(project_slug) do
-    case Course.get_project_by_slug(project_slug) do
-      # The write reports a missing project with its usual error
-      nil -> write.()
-      project -> removing(project, context, resource_ids, opts, write)
-    end
-  end
-
-  defp removing(%Project{} = project, context, resource_ids, opts, write) do
-    Repo.transaction(fn ->
-      lock_working_mappings(project, resource_ids)
-      before = latest_revisions(project, resource_ids)
-      embedded = if opts[:cascade], do: embedded_activities(project, before), else: %{}
-
-      with {:ok, result} <- write.(),
-           after_state = latest_revisions(project, resource_ids),
-           removed_embedded = removed(embedded, latest_revisions(project, Map.keys(embedded))),
-           :ok <-
-             record_all(resource_ids, fn id ->
-               record_removal(context, project, before[id], after_state[id], removed_embedded)
-             end) do
-        result
-      else
-        {:error, reason} -> Repo.rollback(reason)
-        other -> Repo.rollback(other)
-      end
-    end)
-  end
-
-  defp resource_ids_for_slug(revision_slug) do
-    case Oli.Resources.get_resource_from_slug(revision_slug) do
-      nil -> []
-      resource -> [resource.id]
-    end
-  end
-
-  # Client IDs arrive as integers or strings; anything else is left to the write to reject.
-  defp resource_ids(ids) do
-    Enum.flat_map(ids, fn
-      id when is_integer(id) ->
-        [id]
-
-      id when is_binary(id) ->
-        case Integer.parse(id) do
-          {id, ""} -> [id]
-          _ -> []
-        end
-
-      _ ->
-        []
-    end)
-  end
-
-  defp lock_working_mappings(_project, []), do: :ok
-
-  defp lock_working_mappings(project, resource_ids) do
-    from(mapping in PublishedResource,
-      join: publication in Publication,
-      on: publication.id == mapping.publication_id,
-      where:
-        publication.project_id == ^project.id and is_nil(publication.published) and
-          mapping.resource_id in ^resource_ids,
-      order_by: mapping.resource_id,
-      lock: "FOR UPDATE OF p0"
-    )
-    |> Repo.all()
-
-    :ok
-  end
-
-  defp latest_revisions(_project, []), do: %{}
-
-  defp latest_revisions(project, resource_ids) do
-    project.slug
-    |> AuthoringResolver.from_resource_id(resource_ids)
-    |> Enum.reject(&is_nil/1)
-    |> Map.new(&{&1.resource_id, &1})
-  end
-
-  # Activities embedded in the pages about to be removed, with their current revisions.
-  defp embedded_activities(project, revisions) do
-    ids =
-      revisions
-      |> Map.values()
-      |> Enum.flat_map(&(&1.content |> Editing.Utils.activity_references() |> MapSet.to_list()))
-      |> Enum.uniq()
-
-    latest_revisions(project, ids)
-  end
-
-  defp removed(before, after_state) do
-    before
-    |> Enum.filter(fn {id, revision} ->
-      not revision.deleted and match?(%Revision{deleted: true}, after_state[id])
-    end)
-    |> Enum.map(&elem(&1, 0))
-    |> Enum.sort()
-  end
-
-  defp record_removal(context, project, %Revision{deleted: false} = before, after_rev, embedded)
-       when is_struct(after_rev, Revision) and after_rev.deleted do
-    removed_activity_ids =
-      before.content
-      |> Editing.Utils.activity_references()
-      |> MapSet.to_list()
-      |> Enum.filter(&(&1 in embedded))
-      |> Enum.sort()
-
-    record(context, %{
-      event_type: removal_event_type(before),
-      entity: {:resource, before.resource_id, %{title: before.title, slug: before.slug}},
-      scope: %{project_id: project.id, resource_id: before.resource_id},
-      refs: [
-        %{role: :previous, type: :revision, id: before.id, label: before.title},
-        %{role: :resulting, type: :revision, id: after_rev.id, label: after_rev.title}
-      ],
-      changes: Changes.diff(%{deleted: false}, %{deleted: true}, Fields.authoring_content()),
-      details:
-        case removed_activity_ids do
-          [] -> %{}
-          ids -> %{removed_activity_ids: ids}
-        end,
-      event_key: "resource:#{before.resource_id}:removed"
-    })
-  end
-
-  # Missing, already deleted, or not deleted by the write: nothing to record
-  defp record_removal(_context, _project, _before, _after, _embedded), do: :ok
-
-  defp removal_event_type(%Revision{scope: :banked, resource_type_id: type_id}) do
-    case type_id == Oli.Resources.ResourceType.id_for_activity() do
-      true -> :bank_question_deleted
-      false -> :authoring_content_removed
-    end
-  end
-
-  defp removal_event_type(_revision), do: :authoring_content_removed
-
-  defp record_media_deleted(_context, %MediaItem{deleted: true}), do: :ok
-
-  defp record_media_deleted(context, %MediaItem{} = item) do
-    record(context, %{
-      event_type: :media_deleted,
-      entity: {:media_item, item.id, %{title: item.file_name}},
-      scope: %{project_id: item.project_id},
-      changes: Changes.diff(%{deleted: false}, %{deleted: true}, Fields.authoring_content()),
-      details: %{file_name: item.file_name, mime_type: item.mime_type},
-      event_key: "media:#{item.id}:deleted"
-    })
-  end
-
-  defp record_all(items, record_one) do
-    Enum.reduce_while(items, :ok, fn item, :ok ->
-      case record_one.(item) do
-        :ok -> {:cont, :ok}
-        error -> {:halt, error}
-      end
-    end)
-  end
 
   ## Collaborators
 
@@ -868,14 +389,7 @@ defmodule Oli.Authoring.Audited do
   @spec add_collaborator(Context.t(), %Author{}, %Project{}) ::
           {:ok, %AuthorProject{}} | {:error, command_error()}
   def add_collaborator(%Context{} = context, %Author{} = author, %Project{} = project) do
-    Repo.transaction(fn ->
-      with {:ok, author_project} <- Projects.insert_collaborator(author, project, :accepted),
-           :ok <- record_collaborator(context, project, author_project, nil) do
-        author_project
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
+    Collaborators.add_collaborator(context, author, project)
   end
 
   def add_collaborator(_context, _author, _project), do: {:error, :invalid_request}
@@ -892,57 +406,7 @@ defmodule Oli.Authoring.Audited do
   @spec invite_collaborator(Context.t(), String.t(), String.t(), String.t(), String.t()) ::
           {:ok, %AuthorProject{}} | {:error, term()}
   def invite_collaborator(%Context{} = context, inviter_name, inviter_email, email, project_slug) do
-    result =
-      Repo.transaction(fn ->
-        with {:ok, project} <-
-               project_slug |> Course.get_project_by_slug() |> found("The project was not found."),
-             {:ok, author} <- invited_author(context, email),
-             {:ok, author_project} <-
-               Projects.insert_collaborator(author, project, :pending_confirmation),
-             :ok <- record_collaborator(context, project, author_project, nil),
-             {:ok, email_data} <- insert_invitation_token(author, project_slug) do
-          {author_project, email_data, project}
-        else
-          {:error, reason} -> Repo.rollback(reason)
-        end
-      end)
-
-    with {:ok, {author_project, email_data, project}} <- result,
-         {:ok, _mail} <-
-           Collaborators.send_email_invitation(
-             email_data,
-             inviter_name,
-             inviter_email,
-             project.title
-           ) do
-      {:ok, author_project}
-    end
-  end
-
-  defp invited_author(context, email) do
-    case Accounts.get_author_by_email(email) do
-      nil ->
-        case Accounts.Audited.invite_author_multi(Multi.new(), :author, context, email)
-             |> Repo.transaction() do
-          {:ok, %{author: author}} ->
-            {:ok, author}
-
-          {:error, _step, _reason, _changes} ->
-            {:error, "Unable to create invitation for new author"}
-        end
-
-      author ->
-        {:ok, author}
-    end
-  end
-
-  defp insert_invitation_token(author, project_slug) do
-    {token, author_token} =
-      AuthorToken.build_email_token(author, "collaborator_invitation:#{project_slug}")
-
-    with {:ok, _} <- Repo.insert(author_token) do
-      {:ok, %{sent_to: author_token.sent_to, token: token}}
-    end
+    Collaborators.invite_collaborator(context, inviter_name, inviter_email, email, project_slug)
   end
 
   @doc """
@@ -965,7 +429,7 @@ defmodule Oli.Authoring.Audited do
       )
       when status in [:accepted, :rejected] do
     Multi.run(multi, name, fn _repo, _changes ->
-      respond(context, author_id, project_id, status)
+      Collaborators.respond_to_invitation(context, author_id, project_id, status)
     end)
   end
 
@@ -985,22 +449,6 @@ defmodule Oli.Authoring.Audited do
     end
   end
 
-  defp respond(context, author_id, project_id, status) do
-    with {:ok, author_project} <- Projects.lock_collaborator(author_id, project_id) do
-      case author_project.status do
-        :pending_confirmation ->
-          with {:ok, updated} <- Projects.update_collaborator_status(author_project, status),
-               project <- Repo.get!(Project, project_id),
-               :ok <- record_collaborator(context, project, updated, author_project) do
-            {:ok, updated}
-          end
-
-        _other ->
-          {:ok, author_project}
-      end
-    end
-  end
-
   @doc """
   Adds to `multi` the removal of the author with `author_email` from the project with
   `project_slug` and records `project_collaborator_changed`. The owner cannot be removed, as
@@ -1016,72 +464,10 @@ defmodule Oli.Authoring.Audited do
       )
       when is_binary(author_email) and is_binary(project_slug) do
     Multi.run(multi, name, fn _repo, _changes ->
-      with {:ok, author} <-
-             author_email
-             |> Accounts.get_author_by_email()
-             |> found("An author with that email was not found."),
-           {:ok, project} <-
-             project_slug |> Course.get_project_by_slug() |> found("The project was not found."),
-           {:ok, author_project} <- locked_collaborator(author.id, project.id),
-           :ok <- not_owner(author_project),
-           {:ok, _deleted} <- Projects.delete_collaborator(author_project),
-           :ok <- record_collaborator(context, project, nil, author_project) do
-        {:ok, author_project}
-      end
+      Collaborators.remove_collaborator(context, author_email, project_slug)
     end)
   end
 
   def remove_collaborator_multi(%Multi{} = multi, name, _context, _args),
     do: Multi.error(multi, name, :invalid_request)
-
-  defp locked_collaborator(author_id, project_id) do
-    case Projects.lock_collaborator(author_id, project_id) do
-      {:ok, author_project} -> {:ok, author_project}
-      {:error, :not_found} -> {:error, "The author is not a collaborator on the project."}
-    end
-  end
-
-  defp not_owner(author_project) do
-    case Projects.role_type(author_project) do
-      "owner" -> {:error, "That author is the project owner."}
-      _ -> :ok
-    end
-  end
-
-  defp record_collaborator(context, project, after_state, before_state) do
-    author_id = (after_state || before_state).author_id
-
-    changes =
-      Changes.diff(
-        collaborator_state(before_state),
-        collaborator_state(after_state),
-        @collaborator_fields
-      )
-
-    record(context, %{
-      event_type: :project_collaborator_changed,
-      entity: {:project, project.id, project},
-      scope: %{project_id: project.id},
-      affected: {:author, author_id},
-      event_key: "project:#{project.id}:collaborator:#{author_id}:changed",
-      changes: changes
-    })
-  end
-
-  defp collaborator_state(nil), do: nil
-
-  defp collaborator_state(%AuthorProject{} = author_project),
-    do: %{status: author_project.status, role: Projects.role_type(author_project)}
-
-  ## Shared
-
-  defp found(nil, message), do: {:error, message}
-  defp found(value, _message), do: {:ok, value}
-
-  defp record(context, proposal) do
-    with {:ok, changeset} <- Auditing.build(context, proposal),
-         {:ok, _event} <- Auditing.insert(changeset) do
-      :ok
-    end
-  end
 end

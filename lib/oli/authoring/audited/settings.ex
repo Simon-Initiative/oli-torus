@@ -1,10 +1,16 @@
 defmodule Oli.Authoring.Audited.Settings do
   @moduledoc false
-  # Raw project settings writes, used only by `Oli.Authoring.Audited`, which owns the
-  # transaction and records the events.
+  # Project settings commands of `Oli.Authoring.Audited`, which validates their arguments, and
+  # the settings writes they run.
 
   import Ecto.Query, only: [from: 2]
+  import Oli.Authoring.Audited.Support, only: [record: 2]
 
+  alias Oli.Accounts
+  alias Oli.Accounts.Author
+  alias Oli.Auditing.{Changes, Context, LogEvent}
+  alias Oli.Auditing.EventCatalog.Fields
+  alias Oli.Authoring.Audited.Projects
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.{Project, ProjectAttributes}
   alias Oli.Delivery.Sections.Section
@@ -21,11 +27,141 @@ defmodule Oli.Authoring.Audited.Settings do
   # Fields an archive import fills in after the project exists.
   @import_fields ~w(customizations required_survey_resource_id)a
 
+  ## Commands
+
+  def update_project_settings(context, project_id, attrs, allowed) do
+    case allowed -- @settings_fields do
+      [] -> :ok
+      fields -> raise ArgumentError, "not project settings fields: #{inspect(fields)}"
+    end
+
+    with :ok <- check_keys(attrs, allowed) do
+      change_settings(context, project_id, fn project ->
+        project |> changeset(attrs) |> Repo.update()
+      end)
+    end
+  end
+
+  def enable_triggers(context, project_id) do
+    change_settings(
+      context,
+      project_id,
+      fn project ->
+        project |> Project.changeset(%{allow_triggers: true}) |> Repo.update()
+      end,
+      event: :activation_settings_changed
+    )
+  end
+
+  def upgrade_learning_model(context, project_id) do
+    change_settings(context, project_id, fn project ->
+      with :ok <- project_author(context, project),
+           {:ok, {upgraded, blueprint_count}} <- upgrade_model(project) do
+        {:ok, upgraded, %{blueprint_count: blueprint_count}}
+      end
+    end)
+  end
+
+  def create_project_survey(%Context{author_id: author_id} = context, project_id) do
+    Repo.transaction(fn ->
+      with {:ok, before} <- Projects.lock_project(project_id),
+           {:ok, {updated, revision}} <- create_survey(before, author_id),
+           :ok <- record_settings(context, :project_settings_changed, before, updated, %{}) do
+        revision
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  def delete_project_survey(context, project_id),
+    do: change_settings(context, project_id, &delete_survey/1)
+
+  def complete_import(context, project, attrs) do
+    with :ok <- check_keys(attrs, @import_fields),
+         :ok <- importing(context, project.id) do
+      project |> Project.changeset(attrs) |> Repo.update()
+    end
+  end
+
+  # The ingest builds one context per import, so its operation ID identifies the import that
+  # created the project; an earlier import of the same archive has another operation ID.
+  defp importing(%Context{operation_id: operation_id}, project_id) do
+    query =
+      from(e in LogEvent,
+        where:
+          e.project_id == ^project_id and e.event_type == :project_imported and
+            e.operation_id == ^operation_id
+      )
+
+    case Repo.in_transaction?() and Repo.exists?(query) do
+      true -> :ok
+      false -> {:error, :not_importing}
+    end
+  end
+
+  # Locks the project, applies `change`, and records the settings that changed. `change` returns
+  # `{:ok, project}`, `{:ok, project, details}`, or `{:error, reason}`.
+  defp change_settings(context, project_id, change, opts \\ []) do
+    event_type = Keyword.get(opts, :event, :project_settings_changed)
+
+    Repo.transaction(fn ->
+      with {:ok, before} <- Projects.lock_project(project_id),
+           {:ok, updated, details} <- with_details(change.(before)),
+           :ok <- record_settings(context, event_type, before, updated, details) do
+        updated
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp with_details({:ok, updated}), do: {:ok, updated, %{}}
+  defp with_details({:ok, _updated, _details} = result), do: result
+  defp with_details({:error, _reason} = error), do: error
+
+  defp record_settings(context, event_type, before, updated, details) do
+    {policy, key} =
+      case event_type do
+        :project_settings_changed -> {Fields.project_settings(), "settings_changed"}
+        :activation_settings_changed -> {%{allow_triggers: :value}, "activation_settings_changed"}
+      end
+
+    case Changes.diff(view(before), view(updated), policy) do
+      changes when map_size(changes) == 0 ->
+        :ok
+
+      changes ->
+        record(context, %{
+          event_type: event_type,
+          entity: {:project, updated.id, updated},
+          scope: %{project_id: updated.id},
+          event_key: "project:#{updated.id}:#{key}",
+          changes: changes,
+          details: details
+        })
+    end
+  end
+
+  defp project_author(%Context{actor_type: :author, author_id: author_id}, project) do
+    case Repo.get(Author, author_id) do
+      %Author{} = author ->
+        case Accounts.can_access?(author, project) do
+          true -> :ok
+          false -> {:error, :not_authorized}
+        end
+
+      nil ->
+        {:error, :not_authorized}
+    end
+  end
+
+  defp project_author(_context, _project), do: {:error, :not_authorized}
+
+  ## Writes
+
   @doc "Project fields a settings command may write."
   def settings_fields, do: @settings_fields
-
-  @doc "Fields an archive import fills in after creating the project."
-  def import_fields, do: @import_fields
 
   @doc """
   Returns `:ok` when every key of `attrs` names one of `allowed`, or `{:error, :protected}`.
@@ -122,7 +258,7 @@ defmodule Oli.Authoring.Audited.Settings do
   Returns the updated project and the number of templates, or `:not_upgradable` when the project
   is not an active project on the legacy model. Must run inside a transaction.
   """
-  def upgrade_learning_model(%Project{} = project) do
+  def upgrade_model(%Project{} = project) do
     updates = [
       learning_model_version: :lkt_aoa,
       updated_at: DateTime.utc_now() |> DateTime.truncate(:second)
