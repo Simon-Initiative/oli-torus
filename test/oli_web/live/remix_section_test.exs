@@ -10,9 +10,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResource
-  alias Oli.Authoring.Course
   alias OliWeb.Delivery.Instructor.PreviewRoutes
-  alias Oli.Publishing
 
   describe "remix section as admin" do
     setup [:setup_admin_session]

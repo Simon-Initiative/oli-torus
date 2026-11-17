@@ -5,7 +5,6 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Scheduling
-  alias Oli.Publishing
 
   describe "scheduling operations" do
     setup do

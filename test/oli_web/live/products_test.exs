@@ -6,8 +6,6 @@ defmodule OliWeb.ProductsLiveTest do
   import Oli.Factory
   import Mox
 
-  alias Oli.Authoring.Course
-  alias Oli.Publishing
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Router.Helpers, as: Routes

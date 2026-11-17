@@ -10,7 +10,6 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
-  alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Scenarios.LtiExternalTool.DeepLinkingHooks, as: Hooks
 

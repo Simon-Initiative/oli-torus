@@ -7,7 +7,6 @@ defmodule OliWeb.Api.LtiControllerTest do
   setup :verify_on_exit!
 
   alias Oli.Authoring.Editing.{ActivityEditor, PageEditor}
-  alias Oli.Publishing
   alias Oli.Delivery.Sections
   alias Oli.Test.MockHTTP
 
@@ -384,7 +383,15 @@ defmodule OliWeb.Api.LtiControllerTest do
     }
 
     PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-    assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+    assert {:ok, _} =
+             Oli.Authoring.Audited.edit_page(
+               author_audit_context(),
+               project.slug,
+               revision.slug,
+               author.email,
+               update
+             )
 
     conn =
       log_in_author(

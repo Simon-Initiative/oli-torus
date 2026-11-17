@@ -1456,7 +1456,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers_enabled` |
+| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers`, `triggers_enabled` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -1498,7 +1498,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers_enabled` |
+| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers`, `triggers_enabled` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -1540,7 +1540,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers_enabled` |
+| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers`, `triggers_enabled` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -2240,7 +2240,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `time_limit`, `title` |
+| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -2262,7 +2262,7 @@ Example:
   "entity_snapshot": {"id":4512,"title":"Unit 1 Quiz"},
   "project_id": 88,
   "resource_id": 4512,
-  "changes": {"graded":{"after":true,"before":false,"operation":"set"}},
+  "changes": {"graded":{"after":true,"before":false,"operation":"set"},"selection_rules":{"after":[{"count":3,"id":"s1","logic":{"conditions":null}}],"before":[{"count":2,"id":"s1","logic":{"conditions":null}}],"operation":"set"}},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "resource:4512:authoring_settings_changed",
@@ -2283,7 +2283,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `time_limit`, `title` |
+| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -2326,7 +2326,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `time_limit`, `title` |
+| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |

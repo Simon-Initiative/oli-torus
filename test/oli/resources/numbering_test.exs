@@ -4,10 +4,8 @@ defmodule Oli.Resources.NumberingTest do
   alias Oli.Resources.Numbering
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Delivery.Sections
-  alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Hierarchy
-  alias Oli.Authoring.Course
   alias OliWeb.Common.Breadcrumb
 
   describe "container numbering" do

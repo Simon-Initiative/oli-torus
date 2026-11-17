@@ -6,7 +6,6 @@ defmodule OliWeb.Products.UsageViewTest do
 
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Accounts.SystemRole
-  alias Oli.Publishing
   alias Oli.Resources.ResourceType
 
   defp usage_route(product_slug, params \\ %{}),

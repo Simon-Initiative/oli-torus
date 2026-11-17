@@ -16,6 +16,9 @@ defmodule Oli.Authoring.Audited do
   Alternatives group changes record `project_settings_changed` with the group's title, strategy,
   and options before and after.
 
+  Page saves record the settings, objectives, DOT settings, and triggers they change, and the
+  activities whose references they remove; saving only content text records nothing.
+
   Removing a page, container, activity, alternatives group, or bibliography entry records
   `authoring_content_removed` (`bank_question_deleted` for a banked activity) with the previous
   and resulting revisions; deleting media records `media_deleted` per item. Content that was
@@ -37,7 +40,7 @@ defmodule Oli.Authoring.Audited do
   alias Ecto.Multi
   alias Oli.Accounts.Author
   alias Oli.Auditing.Context
-  alias Oli.Authoring.Audited.{Alternatives, Collaborators, Content, Projects, Settings}
+  alias Oli.Authoring.Audited.{Alternatives, Collaborators, Content, Pages, Projects, Settings}
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Authoring.Course.Project
   alias Oli.Repo
@@ -379,6 +382,36 @@ defmodule Oli.Authoring.Audited do
   end
 
   def delete_media(_context, _project_slug, _media_ids), do: {:error, :invalid_request}
+
+  ## Page editing
+
+  @doc """
+  Saves an edit of the page with `revision_slug` by the author with `author_email`, within the
+  lock that author holds, as `Oli.Authoring.Editing.PageEditor` did: `update` holds revision
+  attributes as the editors send them (activity references by slug, `"releaseLock"`).
+
+  Records what the save changed, compared with the revision read under the lock:
+
+    * `authoring_content_removed` for each activity whose reference was removed (or for the page,
+      listing those activities, when the save deletes it);
+    * `authoring_settings_changed` for page settings and bank selections (`selection_rules`);
+    * `learning_objectives_changed` for attached objectives;
+    * `dot_settings_changed` for `ai_enabled`;
+    * `activation_settings_changed` for triggers (`triggers`, see `Oli.Auditing.DotPolicy`).
+
+  A save that changes only content text records nothing. Broadcasts the page and the activities
+  whose deleted flag changed after commit. Returns the page revision or the editor's error, as
+  before.
+  """
+  @spec edit_page(Context.t(), String.t(), String.t(), String.t(), map()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def edit_page(%Context{} = context, project_slug, revision_slug, author_email, update)
+      when is_binary(project_slug) and is_binary(revision_slug) and is_binary(author_email) and
+             is_map(update),
+      do: Pages.edit_page(context, project_slug, revision_slug, author_email, update)
+
+  def edit_page(_context, _project_slug, _revision_slug, _author_email, _update),
+    do: {:error, :invalid_request}
 
   ## Collaborators
 

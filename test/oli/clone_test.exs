@@ -8,7 +8,6 @@ defmodule Oli.CloneTest do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Locks
   alias Oli.Authoring.MediaLibrary
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.Family
   alias Oli.Authoring.Clone
@@ -362,7 +361,13 @@ defmodule Oli.CloneTest do
         }
       }
 
-      PageEditor.edit(project.slug, base_revision.slug, author1.email, some_new_content)
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
+        project.slug,
+        base_revision.slug,
+        author1.email,
+        some_new_content
+      )
 
       author1_edit_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
       # Verify that editing created a new revision
@@ -392,7 +397,13 @@ defmodule Oli.CloneTest do
         }
       }
 
-      PageEditor.edit(duplicated.slug, duplicated_revision.slug, author2.email, some_new_content)
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
+        duplicated.slug,
+        duplicated_revision.slug,
+        author2.email,
+        some_new_content
+      )
 
       author2_edit_revision =
         AuthoringResolver.from_resource_id(duplicated.slug, duplicated_revision.resource_id)

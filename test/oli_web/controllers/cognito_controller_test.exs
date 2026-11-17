@@ -5,7 +5,7 @@ defmodule OliWeb.CognitoControllerTest do
   import Mox
 
   alias Oli.{Accounts, Groups}
-  alias Oli.Authoring.{Clone, Course}
+  alias Oli.Authoring.Clone
   alias Oli.Delivery.Sections
 
   setup do

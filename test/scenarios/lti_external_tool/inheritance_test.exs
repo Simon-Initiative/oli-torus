@@ -5,7 +5,6 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
 
   import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
 
-  alias Oli.Authoring.Clone
   alias Oli.Delivery
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.SectionCreationRequest

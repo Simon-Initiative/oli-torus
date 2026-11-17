@@ -462,7 +462,13 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
             }
 
             result =
-              case PageEditor.edit(project_slug, page_slug, author.email, update) do
+              case Oli.Authoring.Audited.edit_page(
+                     Oli.Auditing.Context.for_actor(author, source: :ui),
+                     project_slug,
+                     page_slug,
+                     author.email,
+                     update
+                   ) do
                 {:ok, _} -> true
                 _ -> false
               end

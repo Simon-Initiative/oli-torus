@@ -5,7 +5,6 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
   import Mox
 
   alias Lti_1p3.Roles.ContextRoles
-  alias Oli.Publishing
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Paywall.Providers.Stripe
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}

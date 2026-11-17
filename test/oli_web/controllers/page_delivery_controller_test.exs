@@ -6,7 +6,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
   import Oli.Utils.Seeder.Utils
   import Phoenix.LiveViewTest
 
-  alias Oli.Authoring.Course
   alias Oli.Seeder
   alias Oli.Accounts
   alias Oli.Activities
@@ -974,7 +973,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Authoring.Editing.PageEditor.edit(
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
         project.slug,
         page_revision.slug,
         map.author.email,
@@ -1052,7 +1052,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Authoring.Editing.PageEditor.edit(
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
         project.slug,
         page_revision.slug,
         map.author.email,
@@ -1083,7 +1084,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Authoring.Editing.PageEditor.edit(
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
         project.slug,
         page_revision.slug,
         map.author.email,
@@ -1219,7 +1221,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Authoring.Editing.PageEditor.edit(
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
         project.slug,
         page_revision.slug,
         map.author.email,

@@ -826,12 +826,25 @@ defmodule Oli.PublishingTest do
         }
       }
 
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       PageEditor.acquire_lock(project.slug, activity3.slug, author.email)
 
       assert {:ok, _} =
-               PageEditor.edit(project.slug, activity3.slug, author.email, %{deleted: true})
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 activity3.slug,
+                 author.email,
+                 %{deleted: true}
+               )
 
       PageEditor.release_lock(project.slug, activity3.slug, author.email)
 
@@ -945,7 +958,14 @@ defmodule Oli.PublishingTest do
         }
       }
 
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       {:ok, %{revision: deleted_page}} =
         Course.create_and_attach_resource(project, %{
@@ -962,7 +982,13 @@ defmodule Oli.PublishingTest do
       PageEditor.acquire_lock(project.slug, deleted_page.slug, author.email)
 
       assert {:ok, _} =
-               PageEditor.edit(project.slug, deleted_page.slug, author.email, %{deleted: true})
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 deleted_page.slug,
+                 author.email,
+                 %{deleted: true}
+               )
 
       PageEditor.release_lock(project.slug, deleted_page.slug, author.email)
 
@@ -1086,12 +1112,24 @@ defmodule Oli.PublishingTest do
 
       # The page should not be able to be edited without re-acquiring the lock
       {:error, {:lock_not_acquired, _}} =
-        PageEditor.edit(project.slug, original_revision.slug, author.email, page_content)
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          original_revision.slug,
+          author.email,
+          page_content
+        )
 
       {:acquired} = PageEditor.acquire_lock(project.slug, original_revision.slug, author.email)
 
       {:ok, updated_page_revision} =
-        PageEditor.edit(project.slug, original_revision.slug, author.email, page_content)
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          original_revision.slug,
+          author.email,
+          page_content
+        )
 
       # The updates should occur on the new revision
       assert original_revision.id != updated_page_revision.id
@@ -1173,7 +1211,13 @@ defmodule Oli.PublishingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       {:ok, _updated_revision} =
-        PageEditor.edit(project.slug, revision.slug, author.email, %{content: content})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision.slug,
+          author.email,
+          %{content: content}
+        )
 
       # add another resource
       {:ok, %{revision: r4_revision}} =
@@ -1193,7 +1237,13 @@ defmodule Oli.PublishingTest do
       PageEditor.acquire_lock(project.slug, r3_revision.slug, author.email)
 
       {:ok, _updated_revision} =
-        PageEditor.edit(project.slug, r3_revision.slug, author.email, %{deleted: true})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          r3_revision.slug,
+          author.email,
+          %{deleted: true}
+        )
 
       # generate diff
       %PublicationDiff{

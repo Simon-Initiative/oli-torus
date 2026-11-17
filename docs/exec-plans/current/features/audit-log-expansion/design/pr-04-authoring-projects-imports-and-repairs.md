@@ -178,7 +178,7 @@ At checkpoint A, verify the topology with a temporary forbidden reference per ne
 ### 3.2 Responsibilities
 
 - **Facade:** owns the transaction (or composes into the caller's), locks, the before-state read, the diff, event construction, and safe errors. Adds no authorization; moves into the transaction any check that already lived in the migrated function.
-- **Private implementation modules:** the moved editor and domain writes, unchanged except for taking the transaction from the facade. In `Oli.Authoring.Audited`, the public module holds each command's documentation, spec, argument guards, and `:invalid_request` fallback; one private module per area (`Projects`, `Settings`, `Alternatives`, `Content`, `Collaborators`, and later `Editing` and `Repair`) holds the command bodies, their event construction, and the writes they run, with event recording shared in `Support`.
+- **Private implementation modules:** the moved editor and domain writes, unchanged except for taking the transaction from the facade. In `Oli.Authoring.Audited`, the public module holds each command's documentation, spec, argument guards, and `:invalid_request` fallback; one private module per area (`Projects`, `Settings`, `Alternatives`, `Content`, `Collaborators`, `Pages`, `Activities`, `Objectives`, `Curriculum`, and later `Repair`) holds the command bodies, their event construction, and the writes they run, with event recording shared in `Support`. Each module's header names the editor each moved write came from (owner decision 2026-11-17).
 - **Domain modules:** reads, locks, creation paths, and unaudited system writes.
 - **Transport (LiveViews, controllers, tasks):** builds the `Context`, calls the facade, and runs broadcasts, lock release, cache invalidation, emails, and redirects after commit. Every LiveView that now calls a facade handles non-changeset errors with a flash instead of `{:ok, _} =` matches.
 
@@ -301,14 +301,14 @@ A content save produces events only for what changed between the locked before-s
 
 | Change detected | Event | Data |
 | --- | --- | --- |
-| Activity references removed (`Utils.diff_activity_references/2`) | `authoring_content_removed` | Removed activity IDs and the page |
+| Activity references removed (`Utils.diff_activity_references/2`) | `authoring_content_removed` | One event per removed activity, with its previous and resulting revisions; a save that deletes the page records the page instead, with `removed_activity_ids` |
 | `Fields.authoring_configuration()` fields | `authoring_settings_changed` | Field diff |
 | Bank selection rules (`selection` elements: ID, count, logic) | `authoring_settings_changed` | Pseudo key `selection_rules` |
 | `objectives` | `learning_objectives_changed` | Attached and detached objective IDs |
 | `ai_enabled` | `dot_settings_changed` | Field diff |
 | Triggers | `activation_settings_changed` | Pseudo key `triggers` |
 
-**Trigger projection (the DOT interface PR-05 extends).** `Oli.Auditing.DotPolicy.triggers(content)` returns a list of `%{"path" => location, "trigger_type" => type, "prompt" => text}` for page triggers, group and content-block triggers, activity part triggers, adaptive `janus-ai-trigger` parts, and `activationPoint` rule actions. Prompts are recorded up to 2,000 characters, with `"prompt_truncated" => true` when cut (owner decision 2026-11-13). The diff compares the lists by `path`. PR-05 reuses `DotPolicy` and `Fields.dot_activation()` for section and recommendation settings; it adds keys to that policy instead of defining a second one. The interface is documented in the module and in `plan.md` phase 5 at checkpoint D.
+**Trigger projection (the DOT interface PR-05 extends).** `Oli.Auditing.DotPolicy.triggers(content)` returns a list of `%{"path" => location, "trigger_type" => type, "prompt" => text}` for page triggers, group and content-block triggers, activity part triggers, adaptive `janus-ai-trigger` parts, and `activationPoint` rule actions. Prompts are recorded up to 2,000 characters, with `"prompt_truncated" => true` when cut (owner decision 2026-11-13). The diff compares the lists by `path` and records only the triggers added, removed, or changed. Paths: `page`, `group:<id>`, `content:<id>`, `part:<part id>:<trigger id>`, `part:<part id>` for adaptive trigger parts, and `rule:<rule>:<index>` for activation points. Bank selections are compared the same way, by selection ID, under `selection_rules`. Restoring a removed activity reference (undo) restores the activity without an event. PR-05 reuses `DotPolicy` and `Fields.dot_activation()` for section and recommendation settings; it adds keys to that policy instead of defining a second one. The interface is documented in the module and in `plan.md` phase 5 at checkpoint D.
 
 In-lock saves that update the same working revision in place still diff against the before-state read under the lock, so autosaves with no configuration change emit nothing. Curriculum moves record `children` before and after for each affected container; a move between containers emits one event per container.
 
@@ -356,7 +356,7 @@ Main flow: the transport builds `Context.for_actor(author, source: :ui | :api | 
 | Domain validation or lock failure | No change, no event; the existing error reaches the UI |
 | Audit insert failure, missing partition | Mutation rolled back; safe error and flash; the editor keeps its unsaved state |
 | Autosave with only text changes | Revision saved, no event |
-| Autosave removing an activity reference | One `authoring_content_removed` for the removed activities |
+| Autosave removing an activity reference | One `authoring_content_removed` per removed activity |
 | Publish form change without a value change | No write, no event |
 | Overview form with a key outside its allowlist | `:protected`; nothing written |
 | Concurrent publication | Existing lock check; only the committed publication records an event |
@@ -422,6 +422,9 @@ Database safety: every `mix test` run targets `oli_test`, which needs no backup.
   - The experiment configuration writers move behind the Boundary, like the other writers in this PR, rather than staying public in `Oli.Experiments` (section 4.2).
   - Objective deletion moves to block 4 with the other objective writers, since they share `learning_objectives_changed` and `ObjectiveEditor` (section 2.1).
   - Only the `delete` writers of `ResourceEditor` and `BibEntryEditor` move behind the facade; creating and editing tags, bibliography entries, and other resources is ordinary content editing, which this PR does not audit (section 3.1).
+- Owner decisions (2026-11-17):
+  - `Oli.Authoring.Audited` keeps one facade; its private modules are split by area, with the page, activity, objective, and curriculum writes in `Pages`, `Activities`, `Objectives`, and `Curriculum` (section 3.2).
+  - A save that removes activity references records one `authoring_content_removed` per activity (section 4.4).
 
 ## 8. Definition of Done
 
@@ -441,7 +444,7 @@ Each checkpoint pauses for owner review, keeps `phase-4-execution.md` current, a
 1. **A — Projects, publishing, collaborators.** Catalog changes; `Oli.Authoring.Audited` and `Oli.Publishing.Audited` with the Boundary check; project create, duplicate, delete, import creation; publication; collaborators; legacy adapter without `project_published`.
 2. **B — Project settings and project DOT.** `Oli.Activities.Audited` and `Oli.Experiments.Audited`; settings commands and allowlists with the `update_project/2` restriction; grants, activity availability, experiments, alternatives, survey, learning model, trigger switch.
 3. **C — Destructive content and media.** Removal writers moved; curriculum removal, unattached delete, activity and bank deletion, media, alternatives, and bibliography deletion.
-4. **D — Authoring configuration and content DOT.** `edit_page` and `edit_activity` classification, `DotPolicy`, page options, objectives (including deletion), curriculum moves; the `PageEditor`, `ActivityEditor`, `ActivityBank`, and `ObjectiveEditor` writers move behind the facade; DOT interface note in `plan.md` phase 5.
+4. **D — Authoring configuration and content DOT**, reviewed in four steps: D1 `DotPolicy` and `edit_page`; D2 `edit_activity` with the `ActivityEditor` and `ActivityBank` writers; D3 objectives (including deletion); D4 page options and curriculum moves, with the DOT interface note in `plan.md` phase 5. The `PageEditor`, `ActivityEditor`, `ActivityBank`, and `ObjectiveEditor` writers move behind the facade.
 5. **E — Imports, repairs, replacements.** Ingest, Google Doc import (legacy adapter without `google_doc_imported`), repair, history, both CSV imports.
 6. **F — Final verification.** Format; `mix compile --warnings-as-errors` in dev, test, and playwright; affected and full suites; latency evidence; `harness-review` (security, performance, Elixir, UI); work-item validation; event reference regenerated; caller inventory closed against the diff.
 

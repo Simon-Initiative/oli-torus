@@ -589,7 +589,15 @@ defmodule Oli.ActivityEditingTest do
       }
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       {:ok, first} =
         ActivityEditor.edit(project.slug, revision.resource_id, resource_id, author.email, update)
@@ -624,7 +632,15 @@ defmodule Oli.ActivityEditingTest do
       }
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       {:ok, first} =
         ActivityEditor.edit(project.slug, revision.resource_id, resource_id, author.email, update)
@@ -660,7 +676,13 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, updated_revision} =
-               PageEditor.edit(project.slug, revision.slug, author.email, update)
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       # Verify that the slug was translated to the correct activity id
       activity_ref = hd(Map.get(updated_revision.content, "model"))
@@ -720,7 +742,15 @@ defmodule Oli.ActivityEditingTest do
       }
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       update = %{"title" => "edited title"}
 
@@ -763,7 +793,13 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, %{slug: revision_slug}} =
-               PageEditor.edit(project.slug, revision.slug, author.email, update)
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       project
       |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: nil})
@@ -824,7 +860,13 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:error, :not_found} =
-               PageEditor.edit(project.slug, revision.slug, author.email, update)
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
     end
 
     test "can sync objectives to parts", %{author: author, project: project} do

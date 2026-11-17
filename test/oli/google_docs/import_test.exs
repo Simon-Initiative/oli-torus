@@ -10,7 +10,6 @@ defmodule Oli.GoogleDocs.ImportTest do
   alias Oli.Resources.Revision
   alias Oli.Auditing.LogEvent
   alias Oli.Publishing.AuthoringResolver
-  alias Oli.Authoring.Course
   alias Oli.Activities
 
   alias __MODULE__.StubClient

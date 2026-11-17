@@ -7,7 +7,6 @@ defmodule Oli.Delivery.PaywallTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.{Sections, Paywall}
   alias Oli.Delivery.Paywall.{AccessSummary, Payment, Discount}
-  alias Oli.Publishing
   alias Oli.Repo.{Paging, Sorting}
 
   def last_week() do

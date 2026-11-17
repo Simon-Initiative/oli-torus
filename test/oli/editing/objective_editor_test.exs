@@ -108,7 +108,13 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       {:ok, updated_revision} =
-        PageEditor.edit(project.slug, revision.slug, author.email, %{"objectives" => objectives})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision.slug,
+          author.email,
+          %{"objectives" => objectives}
+        )
 
       PageEditor.release_lock(project.slug, revision.slug, author.email)
 
@@ -118,6 +124,10 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
         AuthoringResolver.from_resource_id(project.slug, updated_revision.resource_id)
 
       assert updated_page.objectives == %{"attached" => []}
+
+      detached = assert_audited(:learning_objectives_changed, actor: author, source: :ui)
+      assert detached.resource_id == revision.resource_id
+      assert detached.changes["objectives"]["after"] == %{"attached" => []}
     end
 
     test "detach_objective/3 skips stale deleted page attachments", %{
@@ -132,14 +142,26 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       {:ok, _updated_revision} =
-        PageEditor.edit(project.slug, revision.slug, author.email, %{"objectives" => objectives})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision.slug,
+          author.email,
+          %{"objectives" => objectives}
+        )
 
       PageEditor.release_lock(project.slug, revision.slug, author.email)
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, _} =
-               PageEditor.edit(project.slug, revision.slug, author.email, %{deleted: true})
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 %{deleted: true}
+               )
 
       PageEditor.release_lock(project.slug, revision.slug, author.email)
 
@@ -163,7 +185,13 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       {:ok, updated_revision} =
-        PageEditor.edit(project.slug, revision.slug, author.email, %{"objectives" => objectives})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision.slug,
+          author.email,
+          %{"objectives" => objectives}
+        )
 
       ObjectiveEditor.detach_objective(objective.resource_id, project, author)
 
@@ -201,7 +229,15 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       }
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       attachment = %{
         "objectives" => %{"1" => [objective.resource_id]},
@@ -322,7 +358,15 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       }
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      assert {:ok, _} =
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 update
+               )
 
       attachment = %{
         "objectives" => %{"1" => [objective.slug]},

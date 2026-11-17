@@ -15,6 +15,7 @@ defmodule Oli.Authoring.Audited.Content do
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Editing
+  alias Oli.Authoring.Audited.Pages
   alias Oli.Authoring.Editing.{ActivityEditor, ContainerEditor, PageEditor, ResourceEditor}
   alias Oli.Authoring.MediaLibrary.MediaItem
   alias Oli.Publishing.{AuthoringResolver, ChangeTracker, PublishedResource}
@@ -181,8 +182,12 @@ defmodule Oli.Authoring.Audited.Content do
     |> Enum.sort()
   end
 
-  defp record_removal(context, project, %Revision{deleted: false} = before, after_rev, embedded)
-       when is_struct(after_rev, Revision) and after_rev.deleted do
+  @doc """
+  Records the removal of a resource when `before` was not deleted and `after_rev` is; records
+  nothing otherwise. `embedded` lists the activity IDs the removal deleted with it.
+  """
+  def record_removal(context, project, %Revision{deleted: false} = before, after_rev, embedded)
+      when is_struct(after_rev, Revision) and after_rev.deleted do
     removed_activity_ids =
       before.content
       |> Editing.Utils.activity_references()
@@ -209,7 +214,7 @@ defmodule Oli.Authoring.Audited.Content do
   end
 
   # Missing, already deleted, or not deleted by the write: nothing to record
-  defp record_removal(_context, _project, _before, _after, _embedded), do: :ok
+  def record_removal(_context, _project, _before, _after, _embedded), do: :ok
 
   defp removal_event_type(%Revision{scope: :banked, resource_type_id: type_id}) do
     case type_id == Oli.Resources.ResourceType.id_for_activity() do
@@ -260,7 +265,8 @@ defmodule Oli.Authoring.Audited.Content do
         # Locks are re-entrant: the deletion goes ahead when this author is editing the page
         # (in another tab, for example), and fails when another author is.
         with {:acquired} <- PageEditor.acquire_lock(project.slug, revision_slug, author.email),
-             {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
+             {:ok, edited} <- Pages.edit(project.slug, revision_slug, author.email, deletion),
+             _ <- Pages.broadcast(edited, project.slug),
              _ <- PageEditor.release_lock(project.slug, revision_slug, author.email),
              {:ok, revision} <- ChangeTracker.track_revision(project.slug, container, removal) do
           revision

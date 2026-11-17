@@ -4,7 +4,6 @@ defmodule OliWeb.ProjectsControllerTest do
   import Oli.TestHelpers
 
   alias Oli.Accounts.SystemRole
-  alias Oli.Authoring.Course
 
   defp create_projects(prefix, count, author) do
     1..count

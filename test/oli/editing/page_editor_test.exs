@@ -9,7 +9,6 @@ defmodule Oli.EditingTest do
   alias Oli.Accounts.SystemRole
   alias Oli.Utils.Time
   alias Oli.Authoring.Locks
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
 
@@ -59,7 +58,13 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       {:ok, updated_revision} =
-        PageEditor.edit(project.slug, revision1.slug, author.email, %{"content" => content})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision1.slug,
+          author.email,
+          %{"content" => content}
+        )
 
       assert revision1.id != updated_revision.id
     end
@@ -113,9 +118,15 @@ defmodule Oli.EditingTest do
                  PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
         assert {:error, {:feature_disabled, unquote(feature)}} =
-                 PageEditor.edit(project.slug, revision1.slug, author.email, %{
-                   "content" => content
-                 })
+                 Oli.Authoring.Audited.edit_page(
+                   author_audit_context(),
+                   project.slug,
+                   revision1.slug,
+                   author.email,
+                   %{
+                     "content" => content
+                   }
+                 )
       end
     end
 
@@ -148,9 +159,15 @@ defmodule Oli.EditingTest do
                PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       assert {:ok, updated_revision} =
-               PageEditor.edit(project.slug, revision1.slug, author.email, %{
-                 "content" => content
-               })
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision1.slug,
+                 author.email,
+                 %{
+                   "content" => content
+                 }
+               )
 
       refute get_in(updated_revision.content, ["model", Access.at(0), "strategy"])
     end
@@ -190,9 +207,15 @@ defmodule Oli.EditingTest do
                PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       assert {:error, {:feature_disabled, :alternatives}} =
-               PageEditor.edit(project.slug, revision1.slug, author.email, %{
-                 "content" => content
-               })
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision1.slug,
+                 author.email,
+                 %{
+                   "content" => content
+                 }
+               )
     end
 
     test "edit/4 allows unchanged gated content after its project feature is disabled", %{
@@ -224,17 +247,29 @@ defmodule Oli.EditingTest do
                PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       assert {:ok, revision} =
-               PageEditor.edit(project.slug, revision1.slug, author.email, %{
-                 "content" => content
-               })
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision1.slug,
+                 author.email,
+                 %{
+                   "content" => content
+                 }
+               )
 
       {:ok, _project} =
         Oli.TestHelpers.update_project_fixture(project, %{alternatives_enabled: false})
 
       assert {:ok, _revision} =
-               PageEditor.edit(project.slug, revision.slug, author.email, %{
-                 "content" => content
-               })
+               Oli.Authoring.Audited.edit_page(
+                 author_audit_context(),
+                 project.slug,
+                 revision.slug,
+                 author.email,
+                 %{
+                   "content" => content
+                 }
+               )
     end
 
     test "editing page settings works when a second author edits a page that a first author is editing",
@@ -262,7 +297,13 @@ defmodule Oli.EditingTest do
         }
       }
 
-      PageEditor.edit(project.slug, revision1.slug, author1.email, some_new_content)
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
+        project.slug,
+        revision1.slug,
+        author1.email,
+        some_new_content
+      )
 
       author1_edit_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
       # Verify that editing created a new revision
@@ -294,7 +335,14 @@ defmodule Oli.EditingTest do
         }
       }
 
-      PageEditor.edit(project.slug, revision1.slug, author1.email, another_content)
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
+        project.slug,
+        revision1.slug,
+        author1.email,
+        another_content
+      )
+
       # Verify we get the same revision and all changes are present.
       author1_edit_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
       assert author1_edit_revision.id == author2_edit_revision.id
@@ -331,10 +379,23 @@ defmodule Oli.EditingTest do
         ]
       }
 
-      PageEditor.edit(project.slug, revision1.slug, author.email, %{"content" => page_content})
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
+        project.slug,
+        revision1.slug,
+        author.email,
+        %{"content" => page_content}
+      )
 
       deletion = %{deleted: true, author_id: author.id}
-      PageEditor.edit(project.slug, revision1.slug, author.email, deletion)
+
+      Oli.Authoring.Audited.edit_page(
+        author_audit_context(),
+        project.slug,
+        revision1.slug,
+        author.email,
+        deletion
+      )
 
       publication = Publishing.get_unpublished_publication_id!(project.id)
       latest_revision = ActivityEditor.get_latest_revision(publication, revision.resource_id)
@@ -360,10 +421,16 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       {:ok, updated_revision} =
-        PageEditor.edit(project.slug, revision1.slug, author.email, %{
-          "title" => title,
-          "content" => content
-        })
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision1.slug,
+          author.email,
+          %{
+            "title" => title,
+            "content" => content
+          }
+        )
 
       # read it back from the db and verify both edits were made
       from_db = Resources.get_revision!(updated_revision.id)
@@ -427,9 +494,15 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       {:ok, updated_revision} =
-        PageEditor.edit(project.slug, revision1.slug, author.email, %{
-          "content" => content
-        })
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision1.slug,
+          author.email,
+          %{
+            "content" => content
+          }
+        )
 
       PageEditor.release_lock(project.slug, revision1.slug, author.email)
 
@@ -439,12 +512,18 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(cloned_project.slug, revision1.slug, author.email)
 
       {:ok, updated_revision2} =
-        PageEditor.edit(cloned_project.slug, revision1.slug, author.email, %{
-          "content" => %{
-            "version" => "0.1.0",
-            "model" => []
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          cloned_project.slug,
+          revision1.slug,
+          author.email,
+          %{
+            "content" => %{
+              "version" => "0.1.0",
+              "model" => []
+            }
           }
-        })
+        )
 
       refute updated_revision.id == updated_revision2.id
 
@@ -461,7 +540,13 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       {:ok, updated_revision} =
-        PageEditor.edit(project.slug, revision1.slug, author.email, %{"title" => title})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision1.slug,
+          author.email,
+          %{"title" => title}
+        )
 
       # read it back from the db and verify both edits were made
       from_db = Resources.get_revision!(updated_revision.id)
@@ -494,7 +579,13 @@ defmodule Oli.EditingTest do
       }
 
       {:ok, updated_revision} =
-        PageEditor.edit(project.slug, revision1.slug, author.email, %{"content" => content})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision1.slug,
+          author.email,
+          %{"content" => content}
+        )
 
       assert revision1.id == updated_revision.id
     end
@@ -524,7 +615,13 @@ defmodule Oli.EditingTest do
       }
 
       {:ok, updated_revision} =
-        PageEditor.edit(project.slug, revision1.slug, author.email, %{"content" => content})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision1.slug,
+          author.email,
+          %{"content" => content}
+        )
 
       assert revision1.id != updated_revision.id
     end
@@ -554,7 +651,13 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       result =
-        PageEditor.edit(project.slug, revision1.slug, author.email, %{"content" => content})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision1.slug,
+          author.email,
+          %{"content" => content}
+        )
 
       email = author2.email
       assert {:error, {:lock_not_acquired, {^email, _}}} = result
@@ -579,17 +682,29 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       result =
-        PageEditor.edit(project.slug, revision1.slug, author.email, %{
-          "content" => content,
-          "releaseLock" => true
-        })
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision1.slug,
+          author.email,
+          %{
+            "content" => content,
+            "releaseLock" => true
+          }
+        )
 
       assert {:ok, _} = result
 
       PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
 
       result =
-        PageEditor.edit(project.slug, revision1.slug, author2.email, %{"content" => content})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision1.slug,
+          author2.email,
+          %{"content" => content}
+        )
 
       assert {:ok, _} = result
     end
@@ -604,7 +719,13 @@ defmodule Oli.EditingTest do
       ]
 
       result =
-        PageEditor.edit(project.slug, "some_missing_slug", author.email, %{"content" => content})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          "some_missing_slug",
+          author.email,
+          %{"content" => content}
+        )
 
       assert {:error, {:not_found}} = result
     end
@@ -621,7 +742,13 @@ defmodule Oli.EditingTest do
       }
 
       result =
-        PageEditor.edit("some_missing_slug", revision1.slug, author.email, %{"content" => content})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          "some_missing_slug",
+          revision1.slug,
+          author.email,
+          %{"content" => content}
+        )
 
       assert {:error, {:not_found}} = result
     end
@@ -651,7 +778,13 @@ defmodule Oli.EditingTest do
         |> Repo.insert()
 
       result =
-        PageEditor.edit(project.slug, revision1.slug, author2.email, %{"content" => content})
+        Oli.Authoring.Audited.edit_page(
+          author_audit_context(),
+          project.slug,
+          revision1.slug,
+          author2.email,
+          %{"content" => content}
+        )
 
       assert {:error, {:not_authorized}} = result
     end

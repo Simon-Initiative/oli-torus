@@ -98,7 +98,15 @@ defmodule OliWeb.Api.ResourceController do
   def update(conn, %{"project" => project_slug, "resource" => resource_slug, "update" => update}) do
     author = conn.assigns[:current_author]
 
-    case PageEditor.edit(project_slug, resource_slug, author.email, update) do
+    context = Oli.Auditing.Context.for_actor(author, source: :api)
+
+    case Oli.Authoring.Audited.edit_page(
+           context,
+           project_slug,
+           resource_slug,
+           author.email,
+           update
+         ) do
       {:ok, revision} ->
         json(conn, %{"type" => "success", "revision_slug" => revision.slug})
 

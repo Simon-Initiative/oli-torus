@@ -2,7 +2,6 @@ defmodule Oli.Scenarios.Directives.BibliographyHandlerTest do
   use Oli.DataCase, async: true
 
   import Oli.Factory
-  alias Oli.Authoring.Course
 
   alias Oli.Scenarios.Directives.BibliographyHandler
   alias Oli.Scenarios.DirectiveTypes.{BibliographyDirective, ExecutionState}

@@ -103,7 +103,7 @@ defmodule Oli.Auditing.EventCatalog.Fields do
   def dot_activation do
     values(~w(assistant_enabled triggers_enabled instructor_recommendations_enabled
       instructor_recommendation_prompt_template page_prompt_template ai_enabled allow_triggers
-      service_config_id)a)
+      service_config_id triggers)a)
   end
 
   @doc "Curriculum entry fields rewritten by a saved remix."
@@ -140,7 +140,7 @@ defmodule Oli.Auditing.EventCatalog.Fields do
     values(~w(title graded purpose max_attempts recommended_attempts time_limit
       scoring_strategy_id retake_mode assessment_mode batch_scoring replacement_strategy
       explanation_strategy full_progress_pct duration_minutes learning_model_parameters
-      objectives children parent_objective_id)a)
+      objectives children parent_objective_id selection_rules)a)
   end
 
   @doc "Section, product, and blueprint settings (`Oli.Delivery.Sections.Section`)."
@@ -454,7 +454,10 @@ defmodule Oli.Auditing.EventCatalog.Fields do
           }),
         pseudo_keys: %{
           revision_id: "revision replaced or created by a destructive operation",
-          parent_objective_id: "objective that contains a sub-objective"
+          parent_objective_id: "objective that contains a sub-objective",
+          selection_rules:
+            "activity bank selections of the page content (ID, count, and logic), by ID",
+          triggers: "DOT activation points of the content, projected by Oli.Auditing.DotPolicy"
         }
       ),
       source(Oli.Delivery.Attempts.Core.ResourceAttempt, [:learner_record],

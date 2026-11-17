@@ -4,7 +4,6 @@ defmodule OliWeb.SchedulingControllerTest do
 
   alias Oli.Seeder
   alias Oli.Delivery.Sections
-  alias Oli.Publishing
   alias OliWeb.Router.Helpers, as: Routes
 
   defp again(conn, user) do

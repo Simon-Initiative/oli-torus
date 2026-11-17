@@ -434,7 +434,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
 
   ##### HELPER FUNCTIONS #####
   alias Oli.Delivery.Sections.Blueprint
-  alias Oli.Publishing
   alias Oli.Resources.ResourceType
 
   defp response_to_map({:ok, list}) do

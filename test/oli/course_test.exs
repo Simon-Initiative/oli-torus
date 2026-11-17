@@ -4,9 +4,8 @@ defmodule Oli.CourseTest do
   import Oli.Factory
 
   alias Oli.Authoring.Course
-  alias Oli.Authoring.Course.{Family, Project}
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
-  alias Oli.Inventories
 
   describe "projects basic" do
     @valid_attrs %{description: "some description", version: "1", title: "some title"}

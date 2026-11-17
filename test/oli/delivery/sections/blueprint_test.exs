@@ -4,14 +4,12 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
   import Oli.Factory
   import Ecto.Query, warn: false
 
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Delivery.Gating
-  alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Publishing.DeliveryResolver

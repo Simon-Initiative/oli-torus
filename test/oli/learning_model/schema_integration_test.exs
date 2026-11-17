@@ -3,7 +3,6 @@ defmodule Oli.LearningModel.SchemaIntegrationTest do
 
   import Oli.Factory
 
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.LearningModel.Parameters

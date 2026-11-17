@@ -4,7 +4,6 @@ defmodule OliWeb.Api.ResourceControllerTest do
   import Oli.Factory
 
   alias Oli.Resources
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Publishing
   alias Oli.Utils.Time
@@ -199,6 +198,44 @@ defmodule OliWeb.Api.ResourceControllerTest do
         })
 
       assert response(conn, 403) == "alternatives authoring is not enabled for this project"
+      assert audit_events(:authoring_settings_changed, project_id: project.id) == []
+    end
+
+    test "records the page settings an editor save changes for the author", %{
+      author: author,
+      conn: conn,
+      project: project,
+      page_1: page
+    } do
+      project.slug
+      |> Publishing.project_working_publication()
+      |> then(&Publishing.get_published_resource!(&1.id, page.resource_id))
+      |> Publishing.update_published_resource(%{
+        lock_updated_at: Time.now(),
+        locked_by_id: author.id
+      })
+
+      conn =
+        put(conn, "/api/v1/project/#{project.slug}/resource/#{page.slug}", %{
+          "update" => %{"title" => "Renamed Page", "releaseLock" => false}
+        })
+
+      assert %{"type" => "success"} = json_response(conn, 200)
+
+      event =
+        assert_audited(:authoring_settings_changed,
+          project_id: project.id,
+          actor: author,
+          source: :api
+        )
+
+      assert event.resource_id == page.resource_id
+
+      assert event.changes["title"] == %{
+               "operation" => "set",
+               "before" => "First Page",
+               "after" => "Renamed Page"
+             }
     end
   end
 

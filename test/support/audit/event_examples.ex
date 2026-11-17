@@ -630,7 +630,14 @@ defmodule Oli.Auditing.EventExamples do
       entity: {:resource, @resource},
       scope: [project_id: 88, resource_id: 4512],
       key: "resource:4512:authoring_settings_changed",
-      changes: %{"graded" => %{"operation" => "set", "before" => false, "after" => true}}
+      changes: %{
+        "graded" => %{"operation" => "set", "before" => false, "after" => true},
+        "selection_rules" => %{
+          "operation" => "set",
+          "before" => [%{"id" => "s1", "count" => 2, "logic" => %{"conditions" => nil}}],
+          "after" => [%{"id" => "s1", "count" => 3, "logic" => %{"conditions" => nil}}]
+        }
+      }
     ]
 
   defp spec(:learning_objectives_changed),
