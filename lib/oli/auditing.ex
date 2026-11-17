@@ -177,6 +177,43 @@ defmodule Oli.Auditing do
 
   def insert(%Changeset{} = changeset), do: {:error, report(invalid_error(changeset))}
 
+  @doc """
+  Inserts the changesets built by `build/2` in one statement, for commands that record many
+  events at once (a batch of imported resources). Errors are reported as `insert/1` reports
+  them; an invalid changeset inserts nothing.
+
+  A database failure aborts the surrounding transaction, if any, so a caller inside
+  `Repo.transaction/1` must roll back on `{:error, _}` instead of issuing more queries.
+  """
+  @spec insert_all([Changeset.t()]) :: :ok | {:error, Error.t()}
+  def insert_all([]), do: :ok
+
+  def insert_all(changesets) when is_list(changesets) do
+    case Enum.find(changesets, &(not &1.valid?)) do
+      nil -> do_insert_all(changesets)
+      invalid -> {:error, report(invalid_error(invalid))}
+    end
+  end
+
+  defp do_insert_all([first | _rest] = changesets) do
+    # The columns each changeset sets; the database fills the rest, as for a single insert
+    rows =
+      Enum.map(changesets, fn changeset ->
+        changeset |> Changeset.apply_changes() |> Map.take(Map.keys(changeset.changes))
+      end)
+
+    Repo.insert_all(LogEvent, rows)
+    :ok
+  rescue
+    error in Postgrex.Error ->
+      code = database_error_code(error)
+      event_type = Changeset.get_field(first, :event_type)
+      {:error, report(Error.new(code, event_type), interval(code, first))}
+
+    DBConnection.ConnectionError ->
+      {:error, report(Error.new(:insert_failed, Changeset.get_field(first, :event_type)))}
+  end
+
   defp do_insert(changeset, event_type) do
     case Repo.insert(changeset) do
       {:ok, event} -> {:ok, event}

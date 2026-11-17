@@ -62,7 +62,7 @@ Gathered at `456d235388` from the callers, changesets, direct `Repo` writes, and
 | --- | --- | --- |
 | `Course.create_project/3` (`course.ex:1092`) via `project_controller.ex:23` | One transaction (family, project, owner, root container, initial working publication); no audit | M: `create_project/3` |
 | `Clone.clone_project/3` (`clone.ex:18`) via `project_controller.ex:37`, `cognito_controller.ex:200`, `torus_doc.ex:91`, Scenario `clone_handler.ex:20` | One transaction including bulk SQL copies | M: `duplicate_project/3` |
-| `Course.create_project_from_archive/4` (`course.ex:1102`) inside the ingest transaction | Nested savepoint | C: inside `ingest_archive` (block 5) |
+| `Course.create_project_from_archive/4` (`course.ex:1102`) inside the ingest transaction | Nested savepoint | C: `import_project/5` inside the ingest transaction (block 1) |
 | `Course.create_project/1` (`course.ex:1067`), only from Scenario `section_handler.ex:165` | Bare insert without family | M: the Scenario uses `create_project/3` |
 | `update_project(project, %{status: :deleted})` (`overview_live.ex:935`) | Single update | M: `delete_project/2` |
 | `Publishing.publish_project/3` (`publishing.ex:1018`) via `publish_live.ex:192`, `publish_view.ex:226`, ingest `products.ex:22,96`, `automation_setup.ex:251`, Scenarios (`publish_handler`, `section_handler`, `remix_handler`, `product_handler`), seeders | Lock transaction, then publication transaction; `project_published` captured after commit, result ignored (`publishing.ex:1101`) | M: `Publishing.Audited.publish_project/3`; event inside the publication transaction |
@@ -131,12 +131,12 @@ Gathered at `456d235388` from the callers, changesets, direct `Repo` writes, and
 
 | Current path | Today | Class |
 | --- | --- | --- |
-| `Ingest.Processor.process/1` via `ingestv2.ex:238` (`Task.async`); `Ingest.ingest/2` via `automation_setup.ex:264` | One outer transaction (`processor.ex:30`) | M: `Interop.Audited.ingest_archive/3`; `project_imported` plus the nested `project_published` events in that transaction |
-| `GoogleDocs.Import.import/5` via `curriculum_live.ex:241` (`Task.Supervisor.async_nolink`) | Media and activities commit first; page created in `ContainerEditor.add_new` (`container_editor.ex:125`); event after commit (`import.ex:976`) | M: page creation and `google_doc_imported` in one transaction through `Authoring.Audited.import_google_doc_page/5` |
-| `ProjectRepair.repair_project/3` via `project_repair_live.ex:532` (`start_async`) | Lock transaction, one transaction per page (`repair.ex:435`), `RepairResult` | M: `repair_project/3`; one `authoring_content_replaced` per committed page |
+| `Ingest.Processor.process/1` via `ingestv2.ex:238` (`Task.async`); `Ingest.ingest/2` via `automation_setup.ex:264` | One outer transaction (`processor.ex:30`) | C: the project is created through `import_project/5` and published through `publish_project/4` inside that transaction, so `project_imported` and `project_published` commit or roll back with the ingest (block 1) |
+| `GoogleDocs.Import.import/5` via `curriculum_live.ex:241` (`Task.Supervisor.async_nolink`) | Media and activities commit first; page created in `ContainerEditor.add_new` (`container_editor.ex:125`); event after commit (`import.ex:976`) | M: page creation and `google_doc_imported` in one transaction through `Authoring.Audited.import_google_doc_page/6`; the import takes the task's `Context` |
+| `ProjectRepair.repair_project/3` via `project_repair_live.ex:532` (`start_async`) | Lock transaction, one transaction per page (`repair.ex:435`), `RepairResult` | M: `repair_project/4`; one `authoring_content_replaced` per committed page |
 | `history_live.ex:102,168,227` and `revision_history.ex:207,284,416` (`mimic_edit`, JSON save, attribute edit) | Force-clears the lock, new revision or in-place update, no transaction | M: `restore_revision/4`, `replace_revision_content/4`, `update_revision_attribute/5` |
 | `CSVImportView` (`csv_import_view.ex:155`) | In-place `update_revision` per row in a task | M: `import_metadata_row/4`, one transaction and event per row; partial by design, as today |
-| `ParameterCsv.import/3` (`parameter_csv.ex:95`) via `learning_model_parameters_live.ex:134` | One transaction | M: `import_learning_parameters/3`, one event per changed revision |
+| `ParameterCsv.import/3` (`parameter_csv.ex:95`) via `learning_model_parameters_live.ex:134` | One transaction | M: `import_learning_parameters/4`, one event per changed revision, inserted once per batch |
 | `CustomActivities.Package.import` | S3 uploads only, no database write | X |
 | `Oli.Release.reset/drop`, dashboard UI resets | Tooling or UI state | X |
 
@@ -150,7 +150,6 @@ Gathered at `456d235388` from the callers, changesets, direct `Repo` writes, and
 | `Oli.Publishing.Audited` (new) | Publication and sharing grants |
 | `Oli.Activities.Audited` (new) | Activity and tool availability in a project |
 | `Oli.Experiments.Audited` (new) | Experiment definitions and their lifecycle |
-| `Oli.Interop.Audited` (extended) | Archive ingest, next to the existing API key commands |
 
 Each new facade declares `use Boundary, top_level?: true, exports: [], check: [out: false]` and is added to `deps` in `lib/oli.ex`, `lib/oli_web.ex`, `lib/oli/constellation.ex`, and `test/support/live_component_tests.ex`.
 
@@ -167,9 +166,9 @@ Each new facade declares `use Boundary, top_level?: true, exports: [], check: [o
 | `MediaLibrary` | `delete_media_items`, `delete_items` | reads, uploads |
 | `Course` | `create_project/3`, `create_project_from_archive/4`, `delete`, settings writers, survey writers, `upgrade_learning_model`, `update_author_project` | reads; `update_project/2` restricted (section 3.3) |
 | `Clone`, `Collaborators` | writers | reads, email helpers |
-| `ProjectRepair.Repair`, `ParameterCsv` writes | the module, renamed under the facade | `ProjectRepair.analyze_project` |
+| `ProjectRepair.Repair`, `ParameterCsv.import/3` | the repair module and the parameter import writes | `ProjectRepair.analyze_project` and the preparation and instrumentation the repair shares (`instrument_repair/4`); `ParameterCsv` authorization, export, and the projection both directions share |
 
-`Publishing.publish_project/3`, `insert_visibility`, and `remove_visibility` move into `Oli.Publishing.Audited`; `Activities` and `Experiments` writers move into their facades; `Ingest.ingest/2` and `Processor.process/1` move into `Oli.Interop.Audited`. Processor step modules stay where they are: they only run inside that transaction. The moves are mechanical (rename and update callers); behavior changes are limited to those listed in section 5.
+`Publishing.publish_project/3`, `insert_visibility`, and `remove_visibility` move into `Oli.Publishing.Audited`; `Activities` and `Experiments` writers move into their facades. The archive ingest stays in `Oli.Interop.Ingest`: the project it creates and the publications it makes already go through `import_project/5` and `publish_project/4`, so the Boundary blocks any ingest that would skip their events. The moves are mechanical (rename and update callers); behavior changes are limited to those listed in section 5.
 
 Generic low-level writers (`Resources.create_revision_from_previous`, `Resources.update_revision`, `ChangeTracker.track_revision`) stay public: dozens of non-audited paths need them. The caller inventory, not the Boundary, closes their audited uses (section 7).
 
@@ -178,7 +177,7 @@ At checkpoint A, verify the topology with a temporary forbidden reference per ne
 ### 3.2 Responsibilities
 
 - **Facade:** owns the transaction (or composes into the caller's), locks, the before-state read, the diff, event construction, and safe errors. Adds no authorization; moves into the transaction any check that already lived in the migrated function.
-- **Private implementation modules:** the moved editor and domain writes, unchanged except for taking the transaction from the facade. In `Oli.Authoring.Audited`, the public module holds each command's documentation, spec, argument guards, and `:invalid_request` fallback; one private module per area (`Projects`, `Settings`, `Alternatives`, `Content`, `Collaborators`, `Pages`, `Activities`, `Objectives`, `Curriculum`, and later `Repair`) holds the command bodies, their event construction, and the writes they run, with event recording shared in `Support`. Each module's header names the editor each moved write came from (owner decision 2026-11-17).
+- **Private implementation modules:** the moved editor and domain writes, unchanged except for taking the transaction from the facade. In `Oli.Authoring.Audited`, the public module holds each command's documentation, spec, argument guards, and `:invalid_request` fallback; one private module per area (`Projects`, `Settings`, `Alternatives`, `Content`, `Collaborators`, `Pages`, `Activities`, `Objectives`, `Curriculum`, `Imports`, `LearningParameters`, `History`, and `Repair`) holds the command bodies, their event construction, and the writes they run, with event recording shared in `Support`. Each module's header names the editor each moved write came from (owner decision 2026-11-17).
 - **Domain modules:** reads, locks, creation paths, and unaudited system writes.
 - **Transport (LiveViews, controllers, tasks):** builds the `Context`, calls the facade, and runs broadcasts, lock release, cache invalidation, emails, and redirects after commit. Every LiveView that now calls a facade handles non-changeset errors with a flash instead of `{:ok, _} =` matches.
 
@@ -319,25 +318,22 @@ In-lock saves that update the same working revision in place still diff against 
 ### 4.5 Imports, repairs, and replacements
 
 ```elixir
-# Oli.Interop.Audited
-@spec ingest_archive(Context.t(), Oli.Interop.Ingest.State.t(), keyword()) :: {:ok, Project.t()} | {:error, term()}
-
 # Oli.Authoring.Audited
-@spec import_google_doc_page(Context.t(), Project.t(), Revision.t(), map(), (Revision.t() -> map())) :: {:ok, Revision.t()} | {:error, command_error()}
-@spec repair_project(Context.t(), Project.t() | String.t(), keyword()) :: {:ok, RepairResult.t()} | {:error, term()}
+@spec import_google_doc_page(Context.t(), Project.t(), Revision.t(), Author.t(), map(), (Revision.t() -> map())) :: {:ok, Revision.t()} | {:error, command_error()}
+@spec repair_project(Context.t(), Project.t() | String.t(), Author.t(), keyword()) :: {:ok, RepairResult.t()} | {:error, term()}
 @spec restore_revision(Context.t(), Project.t(), pos_integer(), pos_integer()) :: {:ok, Revision.t()} | {:error, command_error()}
 @spec replace_revision_content(Context.t(), Project.t(), pos_integer(), map()) :: {:ok, Revision.t()} | {:error, command_error()}
 @spec update_revision_attribute(Context.t(), Project.t(), pos_integer(), atom(), term()) :: {:ok, Revision.t()} | {:error, command_error()}
-@spec import_metadata_row(Context.t(), Project.t(), map()) :: {:ok, Revision.t()} | {:error, command_error()}
-@spec import_learning_parameters(Context.t(), Project.t(), binary()) :: {:ok, map()} | {:error, term()}
+@spec import_metadata_row(Context.t(), Project.t(), String.t(), map()) :: {:ok, Revision.t() | :unchanged} | {:error, command_error()}
+@spec import_learning_parameters(Context.t(), Project.t(), Author.t(), Enumerable.t()) :: {:ok, map()} | {:error, term()}
 ```
 
 Following FDD 7.4, each records inside the transaction that commits its work and records nothing for rolled-back work:
 
 - **Ingest:** `project_imported` when the project is created inside the outer transaction, with the importing author as actor and owner. A failed ingest rolls back the project, its events, and the nested publication events.
 - **Google Doc import:** the facade wraps `ContainerEditor.add_new/4` and appends `google_doc_imported` in its transaction, with the current detail keys. Media and activities committed before the page stay outside it, as today; the media counts remain details of the committed event. A page failure records nothing.
-- **Repair:** the facade injects a per-page step into the repair loop; each committed page transaction appends one `authoring_content_replaced` (page, previous and resulting revision, remapped activity count, `reason: repair`). `RepairResult` keeps its statuses; `:failed` means no page committed, so no event exists. The system-admin check stays in the command, inside the lock transaction.
-- **History and CSV replacements:** each command takes the lock as today (history keeps its force-clear), then writes and appends `authoring_content_replaced` with `reason` (`history_restore`, `json_edit`, `attribute_edit`, `metadata_csv`, `parameter_csv`) in one transaction. The in-place attribute edit and metadata CSV keep updating the revision in place; the event records the field diff, never the full content.
+- **Repair:** the facade injects a per-page step into the repair loop; each committed page transaction appends one `authoring_content_replaced` (page, previous and resulting revision, remapped activity count, `reason: repair`). `RepairResult` keeps its statuses; `:failed` means no page committed, so no event exists, and a page whose event cannot be recorded rolls back as a failed page. The system-admin check stays first in the command, as today.
+- **History and CSV replacements:** each command takes the lock as today (history keeps its force-clear), then writes and appends `authoring_content_replaced` with `reason` (`history_restore`, `json_edit`, `attribute_edit`, `metadata_csv`, `parameter_csv`) in one transaction. The in-place attribute edit and metadata CSV keep updating the revision in place; the event records the field diff, never the full content. The attribute edit accepts only `children` and `objectives`, the attributes the view offers; any other key returns `:protected`. The parameter import records each changed revision with one insert per batch (`Oli.Auditing.insert_all/1`), so its queries stay proportional to batches.
 
 Every task receives the `Context` built in the LiveView before the task starts; Scenario and Automation callers pass their own.
 
@@ -345,6 +341,7 @@ Every task receives the `Context` built in the LiveView before the task starts; 
 
 - Remove `project_ownership_changed` from `definitions.ex`, `event_examples.ex`, and `released_event_names.txt` (section 3.4).
 - `project_created`, `project_duplicated`, `project_imported`: `affected_kinds: [:author]`, `affected_required: true` (the owner). `project_imported` and the `destructive_content` family allow only `:succeeded`. The project family admits the system actor for technical setup (end-to-end fixtures, seeding).
+- `Fields.authoring_content/0` gains the settings a replacement can change: `objectives`, `children`, `graded`, `max_attempts`, `scoring_strategy_id`, `duration_minutes`.
 - Detail keys: `destructive_content` gains `removed_activity_ids`, `reason`, `remapped_activity_count`; `project_settings` gains `blueprint_count`, `experiment_id`, `alternatives_group_id`.
 - Pseudo keys: `visibility_grants`, `enabled_activities`, `alternatives_groups`, `experiment_status`, `experiment_conditions`, `experiment_definition` (project settings); `selection_rules` (authoring configuration); `triggers` (DOT). Each is declared in `Fields.schema_sources/0` with what it stands for; the field-policy drift test classifies any new schema involved (`ProjectVisibility`, `ActivityRegistrationProject`, experiment tables).
 - The legacy adapter drops `project_published` and `google_doc_imported`.
@@ -379,7 +376,7 @@ Main flow: the transport builds `Context.for_actor(author, source: :ui | :api | 
 
 No schema migration is planned.
 
-**Behavior changes callers will see:** the audited writes fail when the audit insert fails; `update_project/2` rejects settings keys; the survey, visibility-grant, alternatives, and history writes become transactional; collaborator invitation database writes become atomic; `auto_update_sections` stops writing unchanged values.
+**Behavior changes callers will see:** the audited writes fail when the audit insert fails; `update_project/2` rejects settings keys; the survey, visibility-grant, alternatives, and history writes become transactional; collaborator invitation database writes become atomic; `auto_update_sections` stops writing unchanged values; the history attribute edit accepts only `children` and `objectives`.
 
 ## 6. Test Plan
 
@@ -413,7 +410,7 @@ Database safety: every `mix test` run targets `oli_test`, which needs no backup.
   - **TRIAGE-2569:** live navigation can skip role-specific admin plugs; the ingest and history tools inherit it.
   - **Generic revision writers stay public.** `Resources.create_revision_from_previous`, `Resources.update_revision`, and `ChangeTracker.track_revision` cannot move behind the Boundary. The final caller inventory greps every use and classifies it; Scenario and seeder writes that bypass editors are excluded on purpose.
   - **Autosave cost.** Every page save now extracts triggers and selection rules twice. Checkpoint F measures it; if it exceeds the threshold, the extraction runs only when the content hash changed.
-  - **Size.** Five facades, the editors' writers, many LiveViews and controllers, and Scenario handlers. Checkpoints A–F keep review incremental within one PR.
+  - **Size.** Four new facades, the editors' writers, many LiveViews and controllers, and Scenario handlers. Checkpoints A–F keep review incremental within one PR.
   - **Objective deletion is not atomic with its detachments** (they run as separate page and activity edits before the delete). Each step records its own committed change; making them one transaction would change behavior and is not planned.
 - Owner decisions (2026-11-13):
   - Editors' writers move behind `Oli.Authoring.Audited` (section 3.1, option A).
@@ -429,6 +426,7 @@ Database safety: every `mix test` run targets `oli_test`, which needs no backup.
 - Owner decisions (2026-11-17):
   - `Oli.Authoring.Audited` keeps one facade; its private modules are split by area, with the page, activity, objective, and curriculum writes in `Pages`, `Activities`, `Objectives`, and `Curriculum` (section 3.2).
   - A save that removes activity references records one `authoring_content_removed` per activity (section 4.4).
+  - The archive ingest is not moved behind `Oli.Interop.Audited`: the project creation and publications it runs are already audited commands inside its transaction (section 3.1).
 
 ## 8. Definition of Done
 

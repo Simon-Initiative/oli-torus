@@ -7,34 +7,25 @@ defmodule Oli.Auditing.LegacyAdapterTest do
   alias Oli.Auditing.{Error, EventCatalog, LegacyAdapter}
 
   setup do
-    %{admin: insert(:author), user: insert(:user), project: insert(:project)}
+    %{admin: insert(:author), user: insert(:user)}
   end
 
   test "covers the remaining legacy event types, all in the catalog" do
     events = LegacyAdapter.events()
 
     assert Enum.sort(events) ==
-             Enum.sort(~w(section_created google_doc_imported
-               clickhouse_admin_operation_initiated resource_attempt_deleted)a)
+             Enum.sort(~w(section_created clickhouse_admin_operation_initiated
+               resource_attempt_deleted)a)
 
     assert events -- EventCatalog.names() == []
   end
 
   test "events whose producers moved to audited facades are rejected", %{admin: admin} do
     for event <- ~w(user_deleted author_deleted author_role_changed account_internal_flag_changed
-                    feature_flag_enabled feature_rollout_stage_changed project_published)a do
+                    feature_flag_enabled feature_rollout_stage_changed project_published
+                    google_doc_imported)a do
       assert {:error, %Error{code: :invalid_event}} = Auditing.capture(admin, event, admin, %{})
     end
-  end
-
-  test "Google Doc imports record the project and the imported page", %{
-    admin: admin,
-    project: project
-  } do
-    assert {:ok, imported} =
-             Auditing.capture(admin, :google_doc_imported, project, %{"page_resource_id" => 45})
-
-    assert {imported.project_id, imported.resource_id} == {project.id, 45}
   end
 
   test "section creation records the section and its base project", %{user: user} do

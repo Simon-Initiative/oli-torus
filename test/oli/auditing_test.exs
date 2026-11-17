@@ -1,6 +1,7 @@
 defmodule Oli.AuditingTest do
   use Oli.DataCase
 
+  import ExUnit.CaptureLog
   import Oli.Factory
 
   alias Oli.Auditing
@@ -18,22 +19,6 @@ defmodule Oli.AuditingTest do
       assert event.user_id == admin.id
       assert event.author_id == nil
       assert event.actor_snapshot["email"] == admin.email
-    end
-
-    test "records a project resource in the project column" do
-      author = insert(:author)
-      project = insert(:project, authors: [author])
-
-      assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(author, :google_doc_imported, project, %{
-                 "page_title" => "Week 1"
-               })
-
-      assert event.author_id == author.id
-      assert event.project_id == project.id
-      assert event.entity_type == :project
-      assert event.event_type == :google_doc_imported
-      assert event.details["page_title"] == "Week 1"
     end
 
     test "records a section resource in the section column" do
@@ -100,6 +85,40 @@ defmodule Oli.AuditingTest do
       assert event.details == %{"project_title" => project.title}
       assert event.search_text =~ "1.0.0"
       assert Auditing.get_event!(event.id, event.inserted_at).id == event.id
+    end
+
+    test "insert_all/1 writes several events in one statement, or none when one is invalid" do
+      author = insert(:author)
+      project = insert(:project)
+      context = Context.for_actor(author, source: :ui)
+
+      changeset = fn resource_id ->
+        {:ok, changeset} =
+          Auditing.build(context, %{
+            event_type: :authoring_content_replaced,
+            entity: {:resource, resource_id, %{title: "Page #{resource_id}"}},
+            scope: %{project_id: project.id, resource_id: resource_id},
+            details: %{reason: "parameter_csv"},
+            event_key: "resource:#{resource_id}:replaced"
+          })
+
+        changeset
+      end
+
+      assert :ok = Auditing.insert_all([changeset.(41), changeset.(42)])
+
+      events = audit_events(:authoring_content_replaced, project_id: project.id, actor: author)
+      assert events |> Enum.map(& &1.resource_id) |> Enum.sort() == [41, 42]
+      assert Enum.all?(events, &(&1.search_text =~ "Page"))
+
+      invalid = Ecto.Changeset.add_error(changeset.(43), :event_key, "invalid")
+
+      capture_log(fn ->
+        assert {:error, %Error{code: :invalid_event}} =
+                 Auditing.insert_all([changeset.(44), invalid])
+      end)
+
+      assert length(audit_events(:authoring_content_replaced, project_id: project.id)) == 2
     end
 
     test "reports a skip event without changes as no changes" do

@@ -110,9 +110,15 @@ defmodule Oli.Auditing.EventCatalog.Fields do
   @spec remix() :: policy()
   def remix, do: values(~w(parent position hidden numbering_index source_publication_id)a)
 
-  @doc "Revision-level fields changed by destructive authoring operations."
+  @doc """
+  Revision-level fields changed by destructive authoring operations and content replacements.
+  A replacement records the settings it changed, never the content.
+  """
   @spec authoring_content() :: policy()
-  def authoring_content, do: values(~w(deleted title revision_id)a)
+  def authoring_content do
+    values(~w(deleted title revision_id objectives children graded max_attempts
+      scoring_strategy_id duration_minutes)a)
+  end
 
   @doc "Discussion moderation state."
   @spec discussion() :: policy()

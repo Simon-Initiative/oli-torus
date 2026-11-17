@@ -1,23 +1,33 @@
-defmodule Oli.Authoring.ProjectRepair.Repair do
-  @moduledoc """
-  Applies lock-aware, deterministic shared-activity repairs.
+defmodule Oli.Authoring.Audited.Repair do
+  @moduledoc false
 
-  Repair never accepts a browser-provided plan. It receives a fresh analysis report
-  from the context, locks every source activity and every participant page, reruns
-  analysis under those locks, and compares a revision-bearing fingerprint before
-  the first write. Each changed page is then one transaction containing all of its
-  activity clones and exactly one new page revision.
+  # Project repair command of `Oli.Authoring.Audited`, which validates its arguments. Moved
+  # from `Oli.Authoring.ProjectRepair.Repair`; `Oli.Authoring.ProjectRepair` keeps the
+  # authorization, preparation, analysis, and instrumentation, through `instrument_repair/4`.
+  #
+  # Applies lock-aware, deterministic shared-activity repairs.
+  #
+  # Repair never accepts a browser-provided plan. It receives a fresh analysis report
+  # from the context, locks every source activity and every participant page, reruns
+  # analysis under those locks, and compares a revision-bearing fingerprint before
+  # the first write. Each changed page is then one transaction containing all of its
+  # activity clones, exactly one new page revision, and its `authoring_content_replaced`
+  # event.
+  #
+  # Page transactions are intentionally sequential and fail-fast. Earlier commits
+  # remain valid after a later failure, while the failed page rolls back all clones,
+  # its page revision, and its event. A final analysis report makes partial completion
+  # safely retryable because already-isolated relationships no longer appear as shared.
 
-  Page transactions are intentionally sequential and fail-fast. Earlier commits
-  remain valid after a later failure, while the failed page rolls back all clones
-  and its page revision. A final analysis report makes partial completion safely
-  retryable because already-isolated relationships no longer appear as shared.
-  """
+  import Oli.Authoring.Audited.Support, only: [record: 2]
 
   alias Oli.Accounts.Author
+  alias Oli.Auditing.Context
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Editing.{ContainerEditor, Utils}
+
+  alias Oli.Authoring.ProjectRepair
 
   alias Oli.Authoring.ProjectRepair.{
     Analysis,
@@ -63,23 +73,37 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
   @typedoc "Validated analysis controls passed through to post-lock/final analysis."
   @type options :: Analysis.options()
 
-  @doc """
-  Executes a repair from a fresh report produced for the normalized project.
+  ## Commands
 
-  Expected operational failures return `{:ok, %RepairResult{status: :failed}}` or
-  `:partial`; only context preparation and the initial analysis use top-level error
-  tuples. This keeps lock conflicts, stale plans, and page failures renderable by a
-  thin LiveView without exposing raw exceptions or authored content.
-  """
-  @spec repair(Project.t(), Publication.t(), Author.t(), options(), Report.t()) ::
+  def repair_project(context, project_or_slug, actor, opts) do
+    ProjectRepair.instrument_repair(project_or_slug, actor, opts, fn prepared, report ->
+      repair(
+        context,
+        prepared.project,
+        prepared.publication,
+        prepared.actor,
+        prepared.options,
+        report
+      )
+    end)
+  end
+
+  # Executes a repair from a fresh report produced for the normalized project.
+  #
+  # Expected operational failures return `{:ok, %RepairResult{status: :failed}}` or
+  # `:partial`; only context preparation and the initial analysis use top-level error
+  # tuples. This keeps lock conflicts, stale plans, and page failures renderable by a
+  # thin LiveView without exposing raw exceptions or authored content.
+  @spec repair(Context.t(), Project.t(), Publication.t(), Author.t(), options(), Report.t()) ::
           {:ok, RepairResult.t()}
-  def repair(
-        %Project{} = project,
-        %Publication{} = publication,
-        %Author{} = actor,
-        options,
-        %Report{} = report_before_repair
-      ) do
+  defp repair(
+         context,
+         %Project{} = project,
+         %Publication{} = publication,
+         %Author{} = actor,
+         options,
+         %Report{} = report_before_repair
+       ) do
     plan = build_plan(report_before_repair)
 
     case plan.lock_targets do
@@ -95,6 +119,7 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
 
       _targets ->
         execute_with_locks(
+          context,
           project,
           publication,
           actor,
@@ -170,13 +195,13 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
   defp lock_sort_key({:activity, resource_id}), do: {0, resource_id}
   defp lock_sort_key({:page, resource_id}), do: {1, resource_id}
 
-  defp execute_with_locks(project, publication, actor, options, before_report, plan) do
+  defp execute_with_locks(context, project, publication, actor, options, before_report, plan) do
     case acquire_locks(project, publication, actor, plan.lock_targets) do
       {:ok, acquired_locks} ->
         outcome =
           try do
             run_after_lock_acquisition_hook(options)
-            execute_locked(project, publication, actor, options, plan, acquired_locks)
+            execute_locked(context, project, publication, actor, options, plan, acquired_locks)
           rescue
             # Repair must never leak exceptions, changesets, activity/page content,
             # or lock-holder details through its public result contract.
@@ -323,13 +348,13 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
     |> Repo.update_all(set: [locked_by_id: actor_id, lock_updated_at: stamp])
   end
 
-  defp execute_locked(project, publication, actor, options, plan, acquired_locks) do
+  defp execute_locked(context, project, publication, actor, options, plan, acquired_locks) do
     case Analysis.analyze(project, publication, options) do
       {:ok, locked_report} ->
         locked_plan = build_plan(locked_report)
 
         case locked_plan.fingerprint == plan.fingerprint do
-          true -> repair_pages(project, publication, actor, plan, acquired_locks)
+          true -> repair_pages(context, project, publication, actor, plan, acquired_locks)
           false -> failed_outcome(stale_failure(), acquired_locks)
         end
 
@@ -338,7 +363,7 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
     end
   end
 
-  defp repair_pages(project, publication, actor, plan, acquired_locks) do
+  defp repair_pages(context, project, publication, actor, plan, acquired_locks) do
     plan.page_work
     |> Enum.sort_by(fn {page_resource_id, _work} -> page_resource_id end)
     |> Enum.reduce_while(empty_outcome(acquired_locks), fn {_page_resource_id, work}, outcome ->
@@ -351,7 +376,7 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
         {:ok, refreshed_locks} ->
           outcome = %{outcome | acquired_locks: refreshed_locks}
 
-          case repair_page(project, actor, work) do
+          case repair_page(context, project, actor, work) do
             {:ok, %{revision: revision, cloned_activity_count: clone_count}} ->
               # PubSub must observe only committed page revisions. Activity copying
               # remains inside the transaction and the page broadcast happens here.
@@ -430,7 +455,7 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
     end
   end
 
-  defp repair_page(project, actor, %{page: planned_page} = work) do
+  defp repair_page(context, project, actor, %{page: planned_page} = work) do
     transaction_result =
       Repo.transaction(fn ->
         with {:ok, current_page} <- validate_current_page(project.slug, planned_page),
@@ -446,7 +471,8 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
                  content: rewritten_content,
                  activity_refs: activity_refs,
                  author_id: actor.id
-               }) do
+               }),
+             :ok <- record_repair(context, project, current_page, updated_page, copies) do
           %{revision: updated_page, cloned_activity_count: map_size(copies)}
         else
           {:error, %RepairFailure{} = failure} -> Repo.rollback(failure)
@@ -463,6 +489,20 @@ defmodule Oli.Authoring.ProjectRepair.Repair do
     _exception -> {:error, page_update_failure(planned_page.resource_id)}
   catch
     _kind, _reason -> {:error, page_update_failure(planned_page.resource_id)}
+  end
+
+  defp record_repair(context, project, previous, resulting, copies) do
+    record(context, %{
+      event_type: :authoring_content_replaced,
+      entity: {:resource, previous.resource_id, %{title: previous.title, slug: previous.slug}},
+      scope: %{project_id: project.id, resource_id: previous.resource_id},
+      refs: [
+        %{role: :previous, type: :revision, id: previous.id, label: previous.title},
+        %{role: :resulting, type: :revision, id: resulting.id, label: resulting.title}
+      ],
+      details: %{reason: "repair", remapped_activity_count: map_size(copies)},
+      event_key: "resource:#{previous.resource_id}:replaced"
+    })
   end
 
   defp validate_current_page(project_slug, %PageSummary{} = planned_page) do

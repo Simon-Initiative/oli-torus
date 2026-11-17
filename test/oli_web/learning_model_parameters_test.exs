@@ -82,6 +82,16 @@ defmodule OliWeb.LearningModelParametersTest do
 
     assert revision.learning_model_parameters.payload.beta_lo == 1.5
     assert revision.previous_revision_id == s.objective.id
+
+    event =
+      assert_audited(:authoring_content_replaced,
+        project_id: s.project.id,
+        actor: s.admin,
+        source: :ui
+      )
+
+    assert event.resource_id == s.objective.resource_id
+    assert event.details == %{"reason" => "parameter_csv"}
   end
 
   test "ordinary author cannot mount or download", s do

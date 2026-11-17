@@ -223,7 +223,7 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
           detail_keys: ~w(removed_activity_ids)},
          {:authoring_content_replaced, "Content replaced",
           "The content of a resource was replaced wholesale, for example by a repair or import.",
-          []},
+          detail_keys: ~w(reason remapped_activity_count)},
          {:bank_question_deleted, "Bank question deleted",
           "A question was deleted from a project's activity bank.", []},
          {:media_deleted, "Media deleted", "A media library item was deleted from a project.",

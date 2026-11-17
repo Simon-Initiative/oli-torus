@@ -236,10 +236,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
             project_slug = socket.assigns.project.slug
             container_slug = socket.assigns.container.slug
             author = socket.assigns.author
+            context = Oli.Auditing.Context.for_actor(author, source: :ui)
 
             task =
               Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
-                importer.import(project_slug, container_slug, file_id, author, opts)
+                importer.import(context, project_slug, container_slug, file_id, author, opts)
               end)
 
             {:noreply,

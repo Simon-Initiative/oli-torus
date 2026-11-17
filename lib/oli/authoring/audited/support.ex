@@ -6,6 +6,7 @@ defmodule Oli.Authoring.Audited.Support do
   import Ecto.Query, only: [from: 2]
 
   alias Oli.Auditing
+  alias Oli.Auditing.Changes
   alias Oli.Auditing.EventCatalog.Fields
   alias Oli.Publishing.{AuthoringResolver, PublishedResource}
   alias Oli.Publishing.Publications.Publication
@@ -29,6 +30,24 @@ defmodule Oli.Authoring.Audited.Support do
     with {:ok, changeset} <- Auditing.build(context, proposal),
          {:ok, _event} <- Auditing.insert(changeset) do
       :ok
+    end
+  end
+
+  @doc """
+  Builds an event from each of `proposals` and inserts them all in one statement in the
+  current transaction.
+  """
+  def record_many(context, proposals) do
+    proposals
+    |> Enum.reduce_while({:ok, []}, fn proposal, {:ok, changesets} ->
+      case Auditing.build(context, proposal) do
+        {:ok, changeset} -> {:cont, {:ok, [changeset | changesets]}}
+        error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, changesets} -> changesets |> Enum.reverse() |> Auditing.insert_all()
+      error -> error
     end
   end
 
@@ -99,6 +118,28 @@ defmodule Oli.Authoring.Audited.Support do
   end
 
   @doc """
+  Records `authoring_content_replaced` for a resource whose content `previous` was replaced by
+  `resulting`, with `reason` and the settings that changed; an in-place edit (same revision)
+  references only that revision. Content itself is never recorded.
+  """
+  def record_replacement(context, project, previous, resulting, reason),
+    do: record(context, replacement(project, previous, resulting, reason))
+
+  @doc "The `authoring_content_replaced` proposal that `record_replacement/5` records."
+  def replacement(project, previous, resulting, reason) do
+    %{
+      event_type: :authoring_content_replaced,
+      entity: {:resource, previous.resource_id, %{title: previous.title, slug: previous.slug}},
+      scope: %{project_id: project.id, resource_id: previous.resource_id},
+      refs: replacement_refs(previous, resulting),
+      changes:
+        Changes.diff(previous, resulting, Map.delete(Fields.authoring_content(), :revision_id)),
+      details: %{reason: reason},
+      event_key: "resource:#{previous.resource_id}:replaced"
+    }
+  end
+
+  @doc """
   Locks the working-publication mappings of `resource_ids`, so that their revisions read next
   are the before-state of the write that follows in the same transaction.
   """
@@ -144,6 +185,16 @@ defmodule Oli.Authoring.Audited.Support do
       _ ->
         []
     end)
+  end
+
+  defp replacement_refs(%{id: id} = revision, %{id: id}),
+    do: [%{role: :resulting, type: :revision, id: id, label: revision.title}]
+
+  defp replacement_refs(previous, resulting) do
+    [
+      %{role: :previous, type: :revision, id: previous.id, label: previous.title},
+      %{role: :resulting, type: :revision, id: resulting.id, label: resulting.title}
+    ]
   end
 
   defp entity_type(%{resource_type_id: @container_type_id}), do: :container

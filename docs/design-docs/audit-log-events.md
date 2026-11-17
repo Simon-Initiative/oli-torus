@@ -1630,7 +1630,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `deleted`, `revision_id`, `title` |
+| Change fields | `children`, `deleted`, `duration_minutes`, `graded`, `max_attempts`, `objectives`, `revision_id`, `scoring_strategy_id`, `title` |
 | Detail keys | `removed_activity_ids` |
 | Reference roles | `previous`, `resulting` |
 | Status | active |
@@ -1675,8 +1675,8 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `deleted`, `revision_id`, `title` |
-| Detail keys | none |
+| Change fields | `children`, `deleted`, `duration_minutes`, `graded`, `max_attempts`, `objectives`, `revision_id`, `scoring_strategy_id`, `title` |
+| Detail keys | `reason`, `remapped_activity_count` |
 | Reference roles | `previous`, `resulting` |
 | Status | active |
 
@@ -1697,7 +1697,8 @@ Example:
   "entity_snapshot": {"id":4512,"title":"Unit 1 Quiz"},
   "project_id": 88,
   "resource_id": 4512,
-  "refs": [{"id":99100,"role":"previous","type":"revision"},{"id":99101,"role":"resulting","type":"revision"}],
+  "refs": [{"id":99100,"label":"Unit 1 Quiz","role":"previous","type":"revision"},{"id":99101,"label":"Unit 1 Quiz","role":"resulting","type":"revision"}],
+  "details": {"reason":"repair","remapped_activity_count":2},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "resource:4512:replaced",
@@ -1718,7 +1719,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `deleted`, `revision_id`, `title` |
+| Change fields | `children`, `deleted`, `duration_minutes`, `graded`, `max_attempts`, `objectives`, `revision_id`, `scoring_strategy_id`, `title` |
 | Detail keys | none |
 | Reference roles | `previous`, `resulting` |
 | Status | active |
@@ -1762,7 +1763,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `deleted`, `revision_id`, `title` |
+| Change fields | `children`, `deleted`, `duration_minutes`, `graded`, `max_attempts`, `objectives`, `revision_id`, `scoring_strategy_id`, `title` |
 | Detail keys | `file_name`, `mime_type` |
 | Reference roles | `previous`, `resulting` |
 | Status | active |
@@ -1805,7 +1806,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `deleted`, `revision_id`, `title` |
+| Change fields | `children`, `deleted`, `duration_minutes`, `graded`, `max_attempts`, `objectives`, `revision_id`, `scoring_strategy_id`, `title` |
 | Detail keys | `file_id_hash`, `page_revision_id`, `page_resource_id`, `page_title`, `warning_codes`, `warning_count`, `duration_ms`, `duration_bucket`, `download_bytes`, `uploaded_media_count`, `reused_media_count`, `failed_media_count`, `skipped_media_count`, `media_bytes_uploaded` |
 | Reference roles | `previous`, `resulting` |
 | Status | active |

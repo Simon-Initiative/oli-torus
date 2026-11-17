@@ -10,14 +10,15 @@ defmodule Oli.Authoring.ProjectRepair do
 
   Repair derives work from fresh analysis, protects participant resources with
   durable authoring locks, and commits each changed page independently so failures
-  remain bounded and retryable.
+  remain bounded and retryable. Its writes run through
+  `Oli.Authoring.Audited.repair_project/4`, which records each committed page.
   """
 
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
-  alias Oli.Authoring.ProjectRepair.{Analysis, Instrumentation, Repair}
+  alias Oli.Authoring.ProjectRepair.{Analysis, Instrumentation}
   alias Oli.Publishing
 
   @default_stream_max_rows 100
@@ -97,17 +98,24 @@ defmodule Oli.Authoring.ProjectRepair do
   end
 
   @doc """
-  Repairs every currently resolvable cross-page shared activity in a project.
+  Prepares a repair of every currently resolvable cross-page shared activity in a project,
+  analyzes it, runs `repair` with the prepared project data and the fresh report, and records
+  one completion event and log for the invocation.
 
-  Repair derives its plan from fresh server-side analysis, locks every source
-  activity and participant page, and revalidates the revision-bearing plan before
-  writing. Missing references are report-only and Adaptive pages cannot enter the
-  repair plan. Operation-level failures are returned in a structured
-  `%Oli.Authoring.ProjectRepair.RepairResult{}` rather than raised to the caller.
+  Preparation authorizes the actor first, exactly as `analyze_project/3` does. `repair`
+  receives a map with `:project`, `:publication`, `:actor`, and `:options` and returns
+  `{:ok, %Oli.Authoring.ProjectRepair.RepairResult{}}`. The writes live in
+  `Oli.Authoring.Audited.repair_project/4`, which calls this function.
   """
-  @spec repair_project(project_ref(), Author.t(), [option()]) ::
+  @spec instrument_repair(
+          project_ref(),
+          Author.t(),
+          [option()],
+          (map(), Oli.Authoring.ProjectRepair.Report.t() ->
+             {:ok, Oli.Authoring.ProjectRepair.RepairResult.t()})
+        ) ::
           {:ok, Oli.Authoring.ProjectRepair.RepairResult.t()} | {:error, error()}
-  def repair_project(project_or_slug, actor, opts \\ []) do
+  def instrument_repair(project_or_slug, actor, opts, repair) when is_function(repair, 2) do
     started_at = Instrumentation.start_time()
 
     case prepare(project_or_slug, actor, opts) do
@@ -115,13 +123,7 @@ defmodule Oli.Authoring.ProjectRepair do
         result =
           with {:ok, report} <-
                  Analysis.analyze(prepared.project, prepared.publication, prepared.options) do
-            Repair.repair(
-              prepared.project,
-              prepared.publication,
-              prepared.actor,
-              prepared.options,
-              report
-            )
+            repair.(prepared, report)
           end
 
         # The repair path may internally analyze several times for safety. The

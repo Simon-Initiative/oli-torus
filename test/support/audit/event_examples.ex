@@ -472,7 +472,11 @@ defmodule Oli.Auditing.EventExamples do
       entity: {:resource, @resource},
       scope: [project_id: 88, resource_id: 4512],
       key: "resource:4512:replaced",
-      refs: [ref(:previous, :revision, 99_100, nil), ref(:resulting, :revision, 99_101, nil)]
+      refs: [
+        ref(:previous, :revision, 99_100, "Unit 1 Quiz"),
+        ref(:resulting, :revision, 99_101, "Unit 1 Quiz")
+      ],
+      details: %{"reason" => "repair", "remapped_activity_count" => 2}
     ]
 
   defp spec(:bank_question_deleted),

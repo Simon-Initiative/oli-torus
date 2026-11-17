@@ -2,6 +2,8 @@ defmodule Oli.LearningModel.ParameterCsvTest do
   use Oli.DataCase
 
   alias Oli.Accounts.SystemRole
+  alias Oli.Auditing.Context
+  alias Oli.Authoring.Audited
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.LearningModel.ParameterCsv
   alias Oli.Publishing.{AuthoringResolver, PublishedResource}
@@ -54,6 +56,25 @@ defmodule Oli.LearningModel.ParameterCsvTest do
     assert {:ok, %{changed: 2, unchanged: 0}} = upload(s, rows)
     objective = latest(s, s.objective)
     activity = latest(s, s.activity)
+
+    events =
+      audit_events(:authoring_content_replaced,
+        project_id: s.project.id,
+        actor: s.admin,
+        source: :ui
+      )
+
+    assert events |> Enum.map(& &1.resource_id) |> Enum.sort() ==
+             Enum.sort([s.objective.resource_id, s.activity.resource_id])
+
+    objective_event = Enum.find(events, &(&1.resource_id == s.objective.resource_id))
+    assert objective_event.details == %{"reason" => "parameter_csv"}
+
+    assert Enum.map(objective_event.refs, &{&1["role"], &1["id"]}) == [
+             {"previous", s.objective.id},
+             {"resulting", objective.id}
+           ]
+
     assert objective.previous_revision_id == s.objective.id
     assert activity.previous_revision_id == s.activity.id
     assert objective.author_id == s.admin.id
@@ -63,6 +84,7 @@ defmodule Oli.LearningModel.ParameterCsvTest do
     assert Repo.get!(Revision, s.objective.id).learning_model_parameters == nil
     assert {:ok, %{changed: 0, unchanged: 2}} = upload(s, rows)
     assert latest(s, s.objective).id == objective.id
+    assert length(audit_events(:authoring_content_replaced, project_id: s.project.id)) == 2
     assert export_rows(s) == rows
   end
 
@@ -105,7 +127,8 @@ defmodule Oli.LearningModel.ParameterCsvTest do
 
   test "rejects malformed headers, empty files, invalid numbers and mismatched columns", s do
     for csv <- ["", "bad,headers\n", "title,resource_id,children_ids,beta_lo,beta_difficulty\n"] do
-      assert {:error, _} = ParameterCsv.import(s.project, s.admin, [csv])
+      assert {:error, _} =
+               Audited.import_learning_parameters(context(s), s.project, s.admin, [csv])
     end
 
     [row | _] = export_rows(s)
@@ -140,7 +163,7 @@ defmodule Oli.LearningModel.ParameterCsvTest do
 
   test "ordinary project authors cannot export or import", s do
     assert {:error, _} = ParameterCsv.export(s.project, s.author, &Enum.to_list/1)
-    assert {:error, _} = ParameterCsv.import(s.project, s.author, [])
+    assert {:error, _} = Audited.import_learning_parameters(context(s), s.project, s.author, [])
   end
 
   test "includes activities without parts and excludes deleted resources", s do
@@ -260,8 +283,12 @@ defmodule Oli.LearningModel.ParameterCsvTest do
 
       {result, queries} = capture_queries(fn -> upload(s, rows) end)
       assert result == {:ok, %{changed: size, unchanged: 0}}
-      assert length(queries) <= 5 * batches + 5
+      assert length(queries) <= 6 * batches + 5
       assert Enum.count(queries, &String.starts_with?(&1, "INSERT INTO revisions")) == batches
+
+      # One audit insert per batch records every changed resource of the batch
+      assert Enum.count(queries, &String.starts_with?(&1, ~s(INSERT INTO "audit_log_events"))) ==
+               batches
 
       assert Enum.count(queries, &String.starts_with?(&1, "UPDATE published_resources")) ==
                batches
@@ -290,6 +317,7 @@ defmodule Oli.LearningModel.ParameterCsvTest do
     assert Enum.count(queries, &String.starts_with?(&1, "INSERT INTO revisions")) == 1
     assert Repo.aggregate(Revision, :count) == count
     assert export_rows(s) == original_rows
+    assert audit_events(:authoring_content_replaced, project_id: s.project.id) == []
   end
 
   test "invalid first batch stops reading before the rest of the upload is decoded", s do
@@ -304,7 +332,9 @@ defmodule Oli.LearningModel.ParameterCsvTest do
     lines =
       Stream.concat(["title,resource_id,children_ids,beta_lo,beta_difficulty\n"], remaining_lines)
 
-    assert {:error, message} = ParameterCsv.import(s.project, s.admin, lines)
+    assert {:error, message} =
+             Audited.import_learning_parameters(context(s), s.project, s.admin, lines)
+
     assert message =~ "Row 2"
     assert message =~ "invalid"
   end
@@ -427,13 +457,16 @@ defmodule Oli.LearningModel.ParameterCsvTest do
 
   defp upload(s, rows),
     do:
-      ParameterCsv.import(
+      Audited.import_learning_parameters(
+        context(s),
         s.project,
         s.admin,
         CSV.encode(rows,
           headers: ["title", "resource_id", "children_ids", "beta_lo", "beta_difficulty"]
         )
       )
+
+  defp context(s), do: Context.for_actor(s.admin, source: :ui)
 
   defp latest(s, revision),
     do: AuthoringResolver.from_resource_id(s.project.slug, revision.resource_id)

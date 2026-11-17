@@ -5,6 +5,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningModelParametersLive do
 
   require Logger
 
+  alias Oli.Authoring.Audited
   alias Oli.LearningModel.ParameterCsv
   alias OliWeb.Common.Breadcrumb
 
@@ -126,12 +127,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningModelParametersLive do
           end)
 
         %{project: project, current_author: author} = socket.assigns
+        context = Oli.Auditing.Context.for_actor(author, source: :ui)
 
         {:noreply,
          socket
          |> assign(importing?: true)
          |> start_async(:import_parameters, fn ->
-           ParameterCsv.import(project, author, File.stream!(path, [:trim_bom]))
+           Audited.import_learning_parameters(
+             context,
+             project,
+             author,
+             File.stream!(path, [:trim_bom])
+           )
          end)}
 
       false ->
@@ -149,8 +156,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.LearningModelParametersLive do
     )
   end
 
-  def handle_async(:import_parameters, {:ok, {:error, message}}, socket) do
+  def handle_async(:import_parameters, {:ok, {:error, message}}, socket)
+      when is_binary(message) do
     finish_import(socket, :error, message)
+  end
+
+  def handle_async(:import_parameters, {:ok, {:error, _reason}}, socket) do
+    finish_import(socket, :error, "The import failed. Please try again.")
   end
 
   def handle_async(:import_parameters, {:exit, reason}, socket) do

@@ -50,9 +50,13 @@ defmodule Oli.Authoring.Audited do
     Collaborators,
     Content,
     Curriculum,
+    History,
+    Imports,
+    LearningParameters,
     Objectives,
     Pages,
     Projects,
+    Repair,
     Settings
   }
 
@@ -709,6 +713,146 @@ defmodule Oli.Authoring.Audited do
         )
 
   def reorder_curriculum_entry(_context, _container, _project, _author, _source_slug, _index),
+    do: {:error, :invalid_request}
+
+  ## Imports
+
+  @doc """
+  Creates the page of a Google Doc import in `container` from `attrs`, as `Oli.Authoring.Editing.ContainerEditor.add_new/4` does, and
+  records `google_doc_imported` in the same transaction with the details `details` returns for
+  the new revision. A failed page creation records nothing; media and activities the import
+  created before stay, as before.
+  """
+  @spec import_google_doc_page(
+          Context.t(),
+          Project.t(),
+          Revision.t(),
+          Author.t(),
+          map(),
+          (Revision.t() -> map())
+        ) :: {:ok, Revision.t()} | {:error, command_error()}
+  def import_google_doc_page(
+        %Context{} = context,
+        %Project{} = project,
+        %Revision{} = container,
+        %Author{} = author,
+        attrs,
+        details
+      )
+      when is_map(attrs) and is_function(details, 1),
+      do: Imports.import_google_doc_page(context, project, container, author, attrs, details)
+
+  def import_google_doc_page(_context, _project, _container, _author, _attrs, _details),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Applies one row of the metadata CSV import to the working revision with `revision_slug`:
+  sets `duration_minutes`, `poster_image`, `intro_video`, and `intro_content` from `change`
+  (other keys are ignored), in place, as the import did. Returns `{:ok, :unchanged}` when the
+  revision already has those values; otherwise records `authoring_content_replaced` with
+  `reason` `"metadata_csv"` and the duration change. Each row commits on its own, as before.
+  """
+  @spec import_metadata_row(Context.t(), Project.t(), String.t(), map()) ::
+          {:ok, Revision.t() | :unchanged} | {:error, command_error()}
+  def import_metadata_row(%Context{} = context, %Project{} = project, revision_slug, change)
+      when is_binary(revision_slug) and is_map(change),
+      do: Imports.import_metadata_row(context, project, revision_slug, change)
+
+  def import_metadata_row(_context, _project, _revision_slug, _change),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Imports learning model parameters from CSV `lines` into the project, all or nothing, as
+  `Oli.LearningModel.ParameterCsv` did: `author` must be a content administrator with access
+  to the project, and each changed resource gets a new revision. Records
+  `authoring_content_replaced` with `reason` `"parameter_csv"` for each changed resource.
+  Returns the changed and unchanged counts, or a message for the author.
+  """
+  @spec import_learning_parameters(Context.t(), Project.t(), Author.t(), Enumerable.t()) ::
+          {:ok, %{changed: non_neg_integer(), unchanged: non_neg_integer()}}
+          | {:error, String.t() | command_error()}
+  def import_learning_parameters(
+        %Context{} = context,
+        %Project{} = project,
+        %Author{} = author,
+        lines
+      ),
+      do: LearningParameters.import_learning_parameters(context, project, author, lines)
+
+  def import_learning_parameters(_context, _project, _author, _lines),
+    do: {:error, :invalid_request}
+
+  ## Repairs
+
+  @doc """
+  Repairs every cross-page shared activity of the project (a `Project` or its slug), as
+  `Oli.Authoring.ProjectRepair` did: `actor` must be a system administrator, the plan comes
+  from a fresh analysis under durable locks, and each changed page commits on its own. Each
+  committed page records `authoring_content_replaced` with the previous and resulting
+  revisions, `reason` `"repair"`, and the number of activities copied for it; pages that roll
+  back record nothing. See `Oli.Authoring.ProjectRepair.analyze_project/3` for `opts`.
+  """
+  @spec repair_project(Context.t(), Project.t() | String.t(), Author.t(), keyword()) ::
+          {:ok, Oli.Authoring.ProjectRepair.RepairResult.t()} | {:error, term()}
+  def repair_project(context, project_or_slug, actor, opts \\ [])
+
+  def repair_project(%Context{} = context, project_or_slug, actor, opts) when is_list(opts),
+    do: Repair.repair_project(context, project_or_slug, actor, opts)
+
+  def repair_project(_context, _project_or_slug, _actor, _opts), do: {:error, :invalid_request}
+
+  ## Revision history
+
+  @doc """
+  Restores the revision with `revision_id` of the resource with `resource_id`: creates a new
+  head revision with its content, title, objectives, and scoring settings, as the history view
+  did, after clearing any editing lock on the resource. Records `authoring_content_replaced`
+  with `reason` `"history_restore"`, the replaced and new revisions, and the changed settings.
+  Broadcasts after commit.
+  """
+  @spec restore_revision(Context.t(), Project.t(), pos_integer(), pos_integer()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def restore_revision(%Context{} = context, %Project{} = project, resource_id, revision_id)
+      when is_integer(resource_id) and is_integer(revision_id),
+      do: History.restore_revision(context, project, resource_id, revision_id)
+
+  def restore_revision(_context, _project, _resource_id, _revision_id),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Replaces the content of the resource with `resource_id` with `content` (edited or uploaded
+  JSON, already validated by the caller) in a new head revision, after clearing any editing
+  lock on the resource. Records `authoring_content_replaced` with `reason` `"json_edit"`.
+  Broadcasts after commit.
+  """
+  @spec replace_revision_content(Context.t(), Project.t(), pos_integer(), map()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def replace_revision_content(%Context{} = context, %Project{} = project, resource_id, content)
+      when is_integer(resource_id) and is_map(content),
+      do: History.replace_revision_content(context, project, resource_id, content)
+
+  def replace_revision_content(_context, _project, _resource_id, _content),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Sets the attribute `key` of the project revision with `revision_id` to `value`, in place, as
+  the history view did. Only `:children` and `:objectives` can be edited; any other key
+  returns `{:error, :protected}` and writes nothing. Records `authoring_content_replaced` with
+  `reason` `"attribute_edit"` and the attribute's change.
+  """
+  @spec update_revision_attribute(Context.t(), Project.t(), pos_integer(), atom(), term()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def update_revision_attribute(
+        %Context{} = context,
+        %Project{} = project,
+        revision_id,
+        key,
+        value
+      )
+      when is_integer(revision_id) and is_atom(key),
+      do: History.update_revision_attribute(context, project, revision_id, key, value)
+
+  def update_revision_attribute(_context, _project, _revision_id, _key, _value),
     do: {:error, :invalid_request}
 
   ## Collaborators
