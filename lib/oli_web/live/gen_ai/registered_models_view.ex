@@ -279,8 +279,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
          [%Message{role: :user, content: "Describe the sun in one word."}],
          [],
          model,
-         total_timeout_ms: 10_000,
-         provider_opts: [max_tokens: 8]
+         total_timeout_ms: 10_000
        )
      end)}
   end

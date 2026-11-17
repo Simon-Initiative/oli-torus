@@ -42,7 +42,13 @@ defmodule Oli.GenAI.RouterTest do
       probe_failure_interval_ms: 60_000
     }
 
-    backup_provider = %{provider | id: 2, name: "Backup", api_key: "backup-secret"}
+    backup_provider = %{
+      provider
+      | id: 2,
+        name: "Backup",
+        api_key: "backup-secret",
+        organization_key: "backup-organization"
+    }
 
     primary = %RegisteredModel{
       id: 11,
@@ -697,6 +703,110 @@ defmodule Oli.GenAI.RouterTest do
     send(server, {:response, 200, completion("production")})
     assert {:ok, "production"} = Task.await(task)
     :hackney.close(ref)
+    empty(c)
+  end
+
+  test "an administrative model test sends a 512-token budget and shows the Provider's message with its secrets redacted",
+       c do
+    task =
+      Task.async(fn ->
+        Oli.GenAI.Administrative.generate(messages(), [], c.config.primary_model,
+          runtime: c.runtime,
+          provider_opts: [max_tokens: 8]
+        )
+      end)
+
+    assert_receive {:request, server, _, %{"model" => "primary"} = body}, 2000
+    assert body["max_tokens"] == 512
+    refute Map.has_key?(body, "capture_provider_message")
+
+    message = "Unsupported parameter: 'max_tokens' (key provider-secret, endpoint #{c.url})"
+    send(server, {:response, 400, Jason.encode!(%{error: %{message: message}})})
+
+    assert Oli.GenAI.Diagnostics.test_result(Task.await(task)) ==
+             "Test failed: request_error: Unsupported parameter: 'max_tokens' (key [redacted], endpoint [redacted])"
+
+    empty(c)
+  end
+
+  test "a service-config test keeps the Provider's message on a backup attempt and redacts that Provider's key",
+       c do
+    task =
+      Task.async(fn ->
+        Oli.GenAI.Administrative.generate(messages(), [], c.config.primary_model,
+          runtime: c.runtime,
+          service_config: c.config
+        )
+      end)
+
+    assert_receive {:request, first, _, %{"model" => "primary"} = body}, 2000
+    assert body["max_tokens"] == 512
+    send(first, {:response, 503, "unavailable"})
+    assert_receive {:request, second, _, %{"model" => "backup"}}, 2000
+
+    send(
+      second,
+      {:response, 400,
+       Jason.encode!(%{error: %{message: "Invalid key backup-secret for backup-organization"}})}
+    )
+
+    assert {:error,
+            %{http_status: 400, provider_message: "Invalid key [redacted] for [redacted]"}} =
+             Task.await(task)
+
+    empty(c)
+  end
+
+  test "telemetry for an administrative test never carries the Provider's message or credentials",
+       c do
+    owner = self()
+    handler_id = {__MODULE__, make_ref()}
+    events = [[:oli, :genai, :provider, :stop], [:oli, :genai, :request, :stop]]
+
+    :telemetry.attach_many(
+      handler_id,
+      events,
+      fn event, measurements, metadata, _ ->
+        send(owner, {:telemetry, event, measurements, metadata})
+      end,
+      nil
+    )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    task =
+      Task.async(fn ->
+        Oli.GenAI.Administrative.generate(messages(), [], c.config.primary_model,
+          runtime: c.runtime
+        )
+      end)
+
+    assert_receive {:request, server, _, _}, 2000
+    message = "telemetry-canary rejected provider-secret"
+    send(server, {:response, 400, Jason.encode!(%{error: %{message: message}})})
+
+    assert {:error, %{provider_message: "telemetry-canary rejected [redacted]"}} =
+             Task.await(task)
+
+    for event <- events do
+      assert_receive {:telemetry, ^event, measurements, metadata}
+      refute inspect({measurements, metadata}) =~ "telemetry-canary"
+      refute inspect({measurements, metadata}) =~ "provider-secret"
+    end
+
+    empty(c)
+  end
+
+  test "production requests never carry the Provider's error message", c do
+    task = Task.async(fn -> Execution.generate(c.ctx, messages(), [], c.config) end)
+    assert_receive {:request, server, _, _}, 2000
+
+    send(
+      server,
+      {:response, 400, Jason.encode!(%{error: %{message: "private upstream detail"}})}
+    )
+
+    assert Task.await(task) == {:error, %{http_status: 400, error_category: :http_error}}
     empty(c)
   end
 
