@@ -25,15 +25,36 @@ defmodule Oli.Authoring.Audited.Curriculum do
   ## Commands
 
   def update_page_options(context, project, revision_slug, change) do
-    project
-    |> changing(
-      slug_ids([revision_slug]),
-      fn -> edit_page(project, revision_slug, change) end,
-      &record_options(context, project, &1, &2)
-    )
-    |> tap(fn
-      {:ok, revision} -> Broadcaster.broadcast_revision(revision, project.slug)
-      _error -> :ok
+    with {:ok, change} <- option_change(change) do
+      project
+      |> changing(
+        slug_ids([revision_slug]),
+        fn -> edit_page(project, revision_slug, change) end,
+        &record_options(context, project, &1, &2)
+      )
+      |> tap(fn
+        {:ok, revision} -> Broadcaster.broadcast_revision(revision, project.slug)
+        _error -> :ok
+      end)
+    end
+  end
+
+  # Keeps the fields the options modal edits, as atoms. Any other field (content, objectives,
+  # children, deletion, identity) is `:protected`, so these changes always go through the
+  # commands that record them.
+  defp option_change(change) do
+    allowed =
+      Map.new(
+        Map.keys(page_settings()) ++
+          ~w(ai_enabled author_id intro_content intro_video poster_image relates_to)a,
+        &{Atom.to_string(&1), &1}
+      )
+
+    Enum.reduce_while(change, {:ok, %{}}, fn {key, value}, {:ok, acc} ->
+      case Map.fetch(allowed, to_string(key)) do
+        {:ok, field} -> {:cont, {:ok, Map.put(acc, field, value)}}
+        :error -> {:halt, {:error, :protected}}
+      end
     end)
   end
 
@@ -119,23 +140,8 @@ defmodule Oli.Authoring.Audited.Curriculum do
 
   ## Writes
 
+  # `change` holds only the allowed option fields, with atom keys (`option_change/1`)
   def edit_page(%Project{} = project, revision_slug, change) do
-    # safe guard that we do never allow content or objective changes
-    atomized_change =
-      for {key, val} <- change,
-          into: %{},
-          do:
-            {if is_binary(key) do
-               String.to_atom(key)
-             else
-               key
-             end, val}
-
-    change =
-      atomized_change
-      |> Map.delete(:content)
-      |> Map.delete(:objectives)
-
     # ensure that changing a page to practice resets the max attempts to 0
     change =
       case Map.get(change, :graded, "true") do

@@ -248,8 +248,12 @@ defmodule Oli.Authoring.Audited do
   """
   @spec create_alternatives_group(Context.t(), String.t(), %Author{}, map()) ::
           {:ok, Oli.Resources.Revision.t()} | {:error, term()}
-  def create_alternatives_group(%Context{} = context, project_slug, %Author{} = author, attrs),
-    do: Alternatives.create_alternatives_group(context, project_slug, author, attrs)
+  def create_alternatives_group(%Context{} = context, project_slug, %Author{} = author, attrs)
+      when is_binary(project_slug) and is_map(attrs),
+      do: Alternatives.create_alternatives_group(context, project_slug, author, attrs)
+
+  def create_alternatives_group(_context, _project_slug, _author, _attrs),
+    do: {:error, :invalid_request}
 
   @doc """
   Applies `update` to the alternatives group with resource ID `resource_id` and records the
@@ -258,8 +262,18 @@ defmodule Oli.Authoring.Audited do
   """
   @spec edit_alternatives_group(Context.t(), String.t(), pos_integer(), %Author{}, map()) ::
           {:ok, Oli.Resources.Revision.t()} | {:error, term()}
-  def edit_alternatives_group(%Context{} = context, project_slug, resource_id, author, update),
-    do: Alternatives.edit_alternatives_group(context, project_slug, resource_id, author, update)
+  def edit_alternatives_group(
+        %Context{} = context,
+        project_slug,
+        resource_id,
+        %Author{} = author,
+        update
+      )
+      when is_binary(project_slug) and is_map(update),
+      do: Alternatives.edit_alternatives_group(context, project_slug, resource_id, author, update)
+
+  def edit_alternatives_group(_context, _project_slug, _resource_id, _author, _update),
+    do: {:error, :invalid_request}
 
   @doc """
   Moves option `option_id` of the group with resource ID `resource_id` (found in `groups`) to
@@ -278,12 +292,13 @@ defmodule Oli.Authoring.Audited do
   def move_alternatives_option(
         %Context{} = context,
         project_slug,
-        author,
+        %Author{} = author,
         groups,
         resource_id,
         option_id,
         drop_index
-      ) do
+      )
+      when is_binary(project_slug) and is_list(groups) do
     Alternatives.move_alternatives_option(
       context,
       project_slug,
@@ -294,6 +309,17 @@ defmodule Oli.Authoring.Audited do
       drop_index
     )
   end
+
+  def move_alternatives_option(
+        _context,
+        _project_slug,
+        _author,
+        _groups,
+        _resource_id,
+        _option_id,
+        _drop_index
+      ),
+      do: {:error, :invalid_request}
 
   ## Content and media removal
 
@@ -407,7 +433,10 @@ defmodule Oli.Authoring.Audited do
   @doc """
   Saves an edit of the page with `revision_slug` by the author with `author_email`, within the
   lock that author holds, as `Oli.Authoring.Editing.PageEditor` did: `update` holds revision
-  attributes as the editors send them (activity references by slug, `"releaseLock"`).
+  attributes as the editors send them (activity references by slug, `"releaseLock"`). Identity,
+  placement, and `children` cannot be set by a save: any of them returns `{:error, :protected}`
+  and writes nothing. The saving author is the revision's author; an `author_id` in `update` is
+  ignored.
 
   Records what the save changed, compared with the revision read under the lock:
 
@@ -616,9 +645,10 @@ defmodule Oli.Authoring.Audited do
   Detaches the objective with resource ID `objective_id` from every unlocked page and activity
   that references it. Each detachment is its own page or activity save (`edit_page/5`,
   `edit_activity/6`) and records its own `learning_objectives_changed`; locked resources are
-  skipped, as before.
+  skipped, as before. Returns `:ok`, or `[]` when nothing references the objective, as before.
   """
-  @spec detach_objective(Context.t(), pos_integer(), Project.t(), Author.t()) :: term()
+  @spec detach_objective(Context.t(), pos_integer(), Project.t(), Author.t()) ::
+          :ok | [] | {:error, :invalid_request}
   def detach_objective(
         %Context{} = context,
         objective_id,
@@ -634,8 +664,11 @@ defmodule Oli.Authoring.Audited do
   @doc """
   Saves the options of the page or container with `revision_slug` from the curriculum options
   modal, as `Oli.Authoring.Editing.ContainerEditor` did: content and objectives are never
-  changed, and a page made practice gets no attempt limit. Records `authoring_settings_changed`
-  for the settings and `dot_settings_changed` for `ai_enabled`. Broadcasts after commit.
+  changed, and a page made practice gets no attempt limit. Only the fields the options modal
+  edits are accepted: the page settings, `ai_enabled`, `author_id`, `intro_content`,
+  `intro_video`, `poster_image`, and `relates_to`; any other key returns `{:error, :protected}`
+  and writes nothing. Records `authoring_settings_changed` for the settings and
+  `dot_settings_changed` for `ai_enabled`. Broadcasts after commit.
   """
   @spec update_page_options(Context.t(), Project.t(), String.t(), map()) ::
           {:ok, Revision.t()} | {:error, command_error()}
@@ -880,9 +913,13 @@ defmodule Oli.Authoring.Audited do
   """
   @spec invite_collaborator(Context.t(), String.t(), String.t(), String.t(), String.t()) ::
           {:ok, %AuthorProject{}} | {:error, term()}
-  def invite_collaborator(%Context{} = context, inviter_name, inviter_email, email, project_slug) do
+  def invite_collaborator(%Context{} = context, inviter_name, inviter_email, email, project_slug)
+      when is_binary(email) and is_binary(project_slug) do
     Collaborators.invite_collaborator(context, inviter_name, inviter_email, email, project_slug)
   end
+
+  def invite_collaborator(_context, _inviter_name, _inviter_email, _email, _project_slug),
+    do: {:error, :invalid_request}
 
   @doc """
   Adds to `multi` the answer of the invited author to a pending collaboration

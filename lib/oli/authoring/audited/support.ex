@@ -68,12 +68,15 @@ defmodule Oli.Authoring.Audited.Support do
   Locks the working mappings of `resource_ids`, reads them, runs `write`, and calls
   `record_one.(before, after)` for each resource, all in one transaction. `write` returns
   `{:ok, result}` or `{:error, reason}`; `:created` returns the IDs of resources the write
-  created from its result, which are recorded with a `nil` before-state.
+  created from its result, which are recorded with a `nil` before-state. `:lock_first` lists
+  resources whose mappings are locked before `resource_ids`, such as the page whose editing lock
+  the write updates, so these commands lock in the same order as a page save.
   """
   def changing(project, resource_ids, write, record_one, opts \\ []) do
     created = Keyword.get(opts, :created, fn _result -> [] end)
 
     Repo.transaction(fn ->
+      lock_working_mappings(project, Keyword.get(opts, :lock_first, []))
       lock_working_mappings(project, resource_ids)
       before = latest_revisions(project, resource_ids)
 

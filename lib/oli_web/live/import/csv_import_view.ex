@@ -114,8 +114,12 @@ defmodule OliWeb.Import.CSVImportView do
             intro_content != ""
 
         case has_change? do
+          # A row without values still reports an unknown slug, as before
           false ->
-            :ok
+            case Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, slug) do
+              nil -> send(pid, {:update, row_num, :failure})
+              _revision -> :ok
+            end
 
           true ->
             change = %{

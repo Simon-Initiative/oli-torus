@@ -21,6 +21,14 @@ defmodule Oli.Authoring.AuditedPagesTest do
   end
 
   describe "edit_page/5" do
+    test "identity and structure fields are protected", ctx do
+      for update <- [%{"children" => []}, %{"resource_id" => 1}, %{scope: :banked}] do
+        assert {:error, :protected} = save(ctx, update)
+      end
+
+      assert events(ctx) == []
+    end
+
     test "a save that changes only text records nothing", ctx do
       assert {:ok, _} = save(ctx, %{"content" => content([paragraph("Edited text")])})
       assert events(ctx) == []

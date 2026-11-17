@@ -5,11 +5,16 @@ defmodule OliWeb.Projects.TransferPaymentCodes do
   attr :project, :map, required: true
   attr :author, :map, required: true, doc: "the author changing the setting"
 
+  attr :revert_count, :integer,
+    default: 0,
+    doc: "changes after a failed save, so the checkbox renders again from the saved state"
+
   def render(assigns) do
     ~H"""
     <div class="flex items-center h-full">
       <form phx-change="set_allow_transfer" phx-target={@myself}>
-        <div class="form-check">
+        <%!-- A new id after a failed save renders the checkbox again from the saved state --%>
+        <div class="form-check" id={"transfer_payment_codes_wrapper-#{@revert_count}"}>
           <label class="form-check-label">
             <input
               id="transfer_payment_codes"
@@ -47,7 +52,7 @@ defmodule OliWeb.Projects.TransferPaymentCodes do
 
       {:error, _reason} ->
         send(self(), {:flash_message, {:error, "The setting could not be saved."}})
-        {:noreply, socket}
+        {:noreply, assign(socket, revert_count: Map.get(socket.assigns, :revert_count, 0) + 1)}
     end
   end
 end

@@ -13,7 +13,7 @@ defmodule Oli.Authoring.Audited.Activities do
 
   import Oli.Authoring.Audited.Support,
     only: [
-      changing: 4,
+      changing: 5,
       record_resource_change: 5,
       resource_ids: 1
     ]
@@ -42,7 +42,7 @@ defmodule Oli.Authoring.Audited.Activities do
 
   def edit_activity(context, project_slug, lock_id, activity_id, author_email, update) do
     project_slug
-    |> editing(context, resource_ids([activity_id]), fn ->
+    |> editing(context, lock_id, resource_ids([activity_id]), fn ->
       edit(project_slug, lock_id, activity_id, author_email, update)
     end)
     |> tap(fn
@@ -59,7 +59,7 @@ defmodule Oli.Authoring.Audited.Activities do
       end
 
     project_slug
-    |> editing(context, resource_ids, fn ->
+    |> editing(context, lock_id, resource_ids, fn ->
       bulk_edit(project_slug, lock_id, author_email, updates)
     end)
     |> tap(fn
@@ -68,14 +68,17 @@ defmodule Oli.Authoring.Audited.Activities do
     end)
   end
 
-  defp editing(project_slug, context, resource_ids, write) do
+  # The page whose editing lock the write updates is locked first, as a page save does
+  defp editing(project_slug, context, lock_id, resource_ids, write) do
     case Course.get_project_by_slug(project_slug) do
       # The write reports a missing project with its usual error
       nil ->
         write.()
 
       project ->
-        changing(project, resource_ids, write, &record_activity(context, project, &1, &2))
+        changing(project, resource_ids, write, &record_activity(context, project, &1, &2),
+          lock_first: resource_ids([lock_id])
+        )
     end
   end
 

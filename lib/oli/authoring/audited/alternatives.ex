@@ -3,7 +3,8 @@ defmodule Oli.Authoring.Audited.Alternatives do
   # Alternatives group commands of `Oli.Authoring.Audited`, which validates their arguments.
   # Groups are a project setting, so their changes record `project_settings_changed`.
 
-  import Oli.Authoring.Audited.Support, only: [record: 2]
+  import Oli.Authoring.Audited.Support,
+    only: [lock_working_mappings: 2, record: 2, resource_ids: 1]
 
   alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.{AlternativesOptionEditor, ResourceEditor}
@@ -11,6 +12,18 @@ defmodule Oli.Authoring.Audited.Alternatives do
   alias Oli.Repo
 
   @alternatives_type_id Oli.Resources.ResourceType.id_for_alternatives()
+
+  # Locks the group's working mapping and reads it, so the recorded before-state is the one the
+  # write replaces
+  defp locked_group(project_slug, resource_id) do
+    with %{} = project <- Course.get_project_by_slug(project_slug),
+         [id] <- resource_ids([resource_id]) do
+      lock_working_mappings(project, [id])
+      AuthoringResolver.from_resource_id(project_slug, id)
+    else
+      _ -> nil
+    end
+  end
 
   def create_alternatives_group(context, project_slug, author, attrs) do
     Repo.transaction(fn ->
@@ -26,7 +39,7 @@ defmodule Oli.Authoring.Audited.Alternatives do
 
   def edit_alternatives_group(context, project_slug, resource_id, author, update) do
     Repo.transaction(fn ->
-      before = AuthoringResolver.from_resource_id(project_slug, resource_id)
+      before = locked_group(project_slug, resource_id)
 
       with {:ok, group} <- ResourceEditor.edit(project_slug, resource_id, author, update),
            :ok <- record_group(context, project_slug, group, before, group) do
@@ -47,6 +60,8 @@ defmodule Oli.Authoring.Audited.Alternatives do
         drop_index
       ) do
     Repo.transaction(fn ->
+      before = locked_group(project_slug, resource_id)
+
       case AlternativesOptionEditor.move_to(
              project_slug,
              author,
@@ -59,8 +74,6 @@ defmodule Oli.Authoring.Audited.Alternatives do
           :unchanged
 
         {:ok, updated_groups, group} ->
-          before = Enum.find(groups, &(&1.resource_id == group.resource_id))
-
           case record_group(context, project_slug, group, before, group) do
             :ok -> {updated_groups, group}
             {:error, reason} -> Repo.rollback(reason)

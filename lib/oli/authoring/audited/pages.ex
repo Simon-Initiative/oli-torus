@@ -27,7 +27,24 @@ defmodule Oli.Authoring.Audited.Pages do
 
   ## Commands
 
+  # Identity, placement, and curriculum structure, which a page save never sets. Children
+  # change through the curriculum commands, which record them.
+  @structural_fields ~w(id resource_id slug scope resource_scope resource_type_id activity_type_id
+    primary_resource_id previous_revision_id children ids_added legacy inserted_at updated_at)
+
   def edit_page(context, project_slug, revision_slug, author_email, update) do
+    case Enum.any?(Map.keys(update), &(to_string(&1) in @structural_fields)) do
+      true ->
+        {:error, :protected}
+
+      # The saving author is the revision's author; a client-supplied author is ignored
+      false ->
+        update = Map.drop(update, ["author_id", :author_id])
+        save_page(context, project_slug, revision_slug, author_email, update)
+    end
+  end
+
+  defp save_page(context, project_slug, revision_slug, author_email, update) do
     Repo.transaction(fn ->
       with {:ok, result} <- edit(project_slug, revision_slug, author_email, update),
            :ok <- record_page(context, Course.get_project_by_slug(project_slug), result) do

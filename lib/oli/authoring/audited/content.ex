@@ -13,7 +13,7 @@ defmodule Oli.Authoring.Audited.Content do
       latest_revisions: 2,
       lock_working_mappings: 2,
       record: 2,
-      record_all: 2,
+      record_many: 2,
       resource_ids: 1
     ]
 
@@ -41,10 +41,15 @@ defmodule Oli.Authoring.Audited.Content do
     |> removing(context, resource_ids, [cascade: true], fn ->
       remove_child(container, project, author, revision_slug)
     end)
-    |> tap(fn
-      {:ok, _} -> ContainerEditor.broadcast_update(container.resource_id, project.slug)
-      _error -> :ok
-    end)
+    |> case do
+      {:ok, {revision, edited}} ->
+        Pages.broadcast(edited, project.slug)
+        ContainerEditor.broadcast_update(container.resource_id, project.slug)
+        {:ok, revision}
+
+      error ->
+        error
+    end
   end
 
   def delete_unattached_page(context, project, revision_slug) do
@@ -54,9 +59,15 @@ defmodule Oli.Authoring.Audited.Content do
   end
 
   def delete_activity(context, project_slug, lock_id, activity_id, author) do
-    removing(project_slug, context, resource_ids([activity_id]), [], fn ->
-      Activities.delete(project_slug, lock_id, activity_id, author)
-    end)
+    removing(
+      project_slug,
+      context,
+      resource_ids([activity_id]),
+      [lock_first: resource_ids([lock_id])],
+      fn ->
+        Activities.delete(project_slug, lock_id, activity_id, author)
+      end
+    )
   end
 
   def delete_activities(context, project_slug, activity_ids, author) do
@@ -80,7 +91,7 @@ defmodule Oli.Authoring.Audited.Content do
   def delete_media(context, project_slug, media_ids) do
     Repo.transaction(fn ->
       with {:ok, items} <- mark_media_deleted(project_slug, media_ids),
-           :ok <- record_all(items, &record_media_deleted(context, &1)) do
+           :ok <- record_many(context, Enum.flat_map(items, &media_deleted/1)) do
         length(items)
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -101,6 +112,8 @@ defmodule Oli.Authoring.Audited.Content do
 
   defp removing(%Project{} = project, context, resource_ids, opts, write) do
     Repo.transaction(fn ->
+      # The page whose editing lock the write updates goes first, as in a page save
+      lock_working_mappings(project, Keyword.get(opts, :lock_first, []))
       lock_working_mappings(project, resource_ids)
       before = latest_revisions(project, resource_ids)
       embedded = if opts[:cascade], do: embedded_activities(project, before), else: %{}
@@ -108,10 +121,14 @@ defmodule Oli.Authoring.Audited.Content do
       with {:ok, result} <- write.(),
            after_state = latest_revisions(project, resource_ids),
            removed_embedded = removed(embedded, latest_revisions(project, Map.keys(embedded))),
+           # One insert records every removal of the batch
            :ok <-
-             record_all(resource_ids, fn id ->
-               record_removal(context, project, before[id], after_state[id], removed_embedded)
-             end) do
+             record_many(
+               context,
+               Enum.flat_map(resource_ids, fn id ->
+                 removal(project, before[id], after_state[id], removed_embedded)
+               end)
+             ) do
         result
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -151,8 +168,16 @@ defmodule Oli.Authoring.Audited.Content do
   Records the removal of a resource when `before` was not deleted and `after_rev` is; records
   nothing otherwise. `embedded` lists the activity IDs the removal deleted with it.
   """
-  def record_removal(context, project, %Revision{deleted: false} = before, after_rev, embedded)
-      when is_struct(after_rev, Revision) and after_rev.deleted do
+  def record_removal(context, project, before, after_rev, embedded) do
+    case removal(project, before, after_rev, embedded) do
+      [] -> :ok
+      [proposal] -> record(context, proposal)
+    end
+  end
+
+  # The removal event of `before`, in a list, or `[]` when nothing was removed
+  defp removal(project, %Revision{deleted: false} = before, after_rev, embedded)
+       when is_struct(after_rev, Revision) and after_rev.deleted do
     removed_activity_ids =
       before.content
       |> Editing.Utils.activity_references()
@@ -160,26 +185,28 @@ defmodule Oli.Authoring.Audited.Content do
       |> Enum.filter(&(&1 in embedded))
       |> Enum.sort()
 
-    record(context, %{
-      event_type: removal_event_type(before),
-      entity: {:resource, before.resource_id, %{title: before.title, slug: before.slug}},
-      scope: %{project_id: project.id, resource_id: before.resource_id},
-      refs: [
-        %{role: :previous, type: :revision, id: before.id, label: before.title},
-        %{role: :resulting, type: :revision, id: after_rev.id, label: after_rev.title}
-      ],
-      changes: Changes.diff(%{deleted: false}, %{deleted: true}, Fields.authoring_content()),
-      details:
-        case removed_activity_ids do
-          [] -> %{}
-          ids -> %{removed_activity_ids: ids}
-        end,
-      event_key: "resource:#{before.resource_id}:removed"
-    })
+    [
+      %{
+        event_type: removal_event_type(before),
+        entity: {:resource, before.resource_id, %{title: before.title, slug: before.slug}},
+        scope: %{project_id: project.id, resource_id: before.resource_id},
+        refs: [
+          %{role: :previous, type: :revision, id: before.id, label: before.title},
+          %{role: :resulting, type: :revision, id: after_rev.id, label: after_rev.title}
+        ],
+        changes: Changes.diff(%{deleted: false}, %{deleted: true}, Fields.authoring_content()),
+        details:
+          case removed_activity_ids do
+            [] -> %{}
+            ids -> %{removed_activity_ids: ids}
+          end,
+        event_key: "resource:#{before.resource_id}:removed"
+      }
+    ]
   end
 
   # Missing, already deleted, or not deleted by the write: nothing to record
-  def record_removal(_context, _project, _before, _after, _embedded), do: :ok
+  defp removal(_project, _before, _after, _embedded), do: []
 
   defp removal_event_type(%Revision{scope: :banked, resource_type_id: type_id}) do
     case type_id == Oli.Resources.ResourceType.id_for_activity() do
@@ -190,17 +217,20 @@ defmodule Oli.Authoring.Audited.Content do
 
   defp removal_event_type(_revision), do: :authoring_content_removed
 
-  defp record_media_deleted(_context, %MediaItem{deleted: true}), do: :ok
+  # An item that was already deleted records nothing
+  defp media_deleted(%MediaItem{deleted: true}), do: []
 
-  defp record_media_deleted(context, %MediaItem{} = item) do
-    record(context, %{
-      event_type: :media_deleted,
-      entity: {:media_item, item.id, %{title: item.file_name}},
-      scope: %{project_id: item.project_id},
-      changes: Changes.diff(%{deleted: false}, %{deleted: true}, Fields.authoring_content()),
-      details: %{file_name: item.file_name, mime_type: item.mime_type},
-      event_key: "media:#{item.id}:deleted"
-    })
+  defp media_deleted(%MediaItem{} = item) do
+    [
+      %{
+        event_type: :media_deleted,
+        entity: {:media_item, item.id, %{title: item.file_name}},
+        scope: %{project_id: item.project_id},
+        changes: Changes.diff(%{deleted: false}, %{deleted: true}, Fields.authoring_content()),
+        details: %{file_name: item.file_name, mime_type: item.mime_type},
+        event_key: "media:#{item.id}:deleted"
+      }
+    ]
   end
 
   ## Writes
@@ -208,7 +238,8 @@ defmodule Oli.Authoring.Audited.Content do
   @doc """
   Removes a child from a container and marks the child as deleted. The child is deleted
   through `PageEditor`, so the deletion fails while another author holds its lock, and the
-  activities it embeds are marked as deleted with it.
+  activities it embeds are marked as deleted with it. Returns the container's new revision and
+  the page edit result, which the caller broadcasts after commit.
   """
   def remove_child(container, project, author, revision_slug) do
     with {:ok, %{id: resource_id}} <-
@@ -222,10 +253,9 @@ defmodule Oli.Authoring.Audited.Content do
         # (in another tab, for example), and fails when another author is.
         with {:acquired} <- PageEditor.acquire_lock(project.slug, revision_slug, author.email),
              {:ok, edited} <- Pages.edit(project.slug, revision_slug, author.email, deletion),
-             _ <- Pages.broadcast(edited, project.slug),
              _ <- PageEditor.release_lock(project.slug, revision_slug, author.email),
              {:ok, revision} <- ChangeTracker.track_revision(project.slug, container, removal) do
-          revision
+          {revision, edited}
         else
           {:lock_not_acquired, value} -> Repo.rollback({:lock_not_acquired, value})
           {:error, e} -> Repo.rollback(e)

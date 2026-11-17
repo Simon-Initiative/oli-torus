@@ -50,6 +50,24 @@ defmodule Oli.Authoring.AuditedCurriculumTest do
       assert event.entity_type == :container
     end
 
+    test "fields the options modal does not edit are protected", ctx do
+      root = AuthoringResolver.root_container(ctx.project.slug)
+
+      for {slug, change} <- [
+            {ctx.revision1.slug, %{"deleted" => "true"}},
+            {root.slug, %{"children" => []}},
+            {ctx.revision1.slug, %{"title" => "Renamed", "content" => %{"model" => []}}},
+            {ctx.revision1.slug, %{"not_a_field_#{System.unique_integer([:positive])}" => 1}}
+          ] do
+        assert {:error, :protected} =
+                 Audited.update_page_options(ctx.context, ctx.project, slug, change)
+      end
+
+      refute AuthoringResolver.from_resource_id(ctx.project.slug, ctx.revision1.resource_id).deleted
+      assert AuthoringResolver.root_container(ctx.project.slug).children == root.children
+      assert audit_events(:authoring_settings_changed, project_id: ctx.project.id) == []
+    end
+
     test "saving the same options records nothing", ctx do
       assert {:ok, _} =
                Audited.update_page_options(ctx.context, ctx.project, ctx.revision1.slug, %{

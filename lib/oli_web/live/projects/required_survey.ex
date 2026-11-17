@@ -11,11 +11,16 @@ defmodule OliWeb.Projects.RequiredSurvey do
   attr :is_section, :boolean, default: false
   attr :required_survey, :map, default: nil
 
+  attr :revert_count, :integer,
+    default: 0,
+    doc: "changes after a failed save, so the checkbox renders again from the saved state"
+
   def render(assigns) do
     ~H"""
     <div class="flex items-center h-full">
       <form phx-change="set-required-survey" phx-target={@myself}>
-        <div class="form-check">
+        <%!-- A new id after a failed save renders the checkbox again from the saved state --%>
+        <div class="form-check" id={"survey_check_wrapper-#{@revert_count}"}>
           <label class="form-check-label">
             <input
               name="survey"
@@ -97,6 +102,6 @@ defmodule OliWeb.Projects.RequiredSurvey do
 
   defp survey_error(socket, message) do
     send(self(), {:flash_message, {:error, message}})
-    {:noreply, socket}
+    {:noreply, assign(socket, revert_count: Map.get(socket.assigns, :revert_count, 0) + 1)}
   end
 end

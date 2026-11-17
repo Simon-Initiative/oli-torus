@@ -57,6 +57,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
        active_publication_changes: active_publication_changes,
        active_sections: active_sections,
        auto_update_sections: project.auto_update_sections,
+       revert_count: 0,
        changeset: Publishing.change_publication(active_publication),
        ctx: ctx,
        has_changes: has_changes,
@@ -107,6 +108,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
               active_publication={@active_publication}
               active_publication_changes={@active_publication_changes}
               auto_update_sections={@auto_update_sections}
+              revert_count={@revert_count}
               include_out_of_date_sections={@include_out_of_date_sections}
               is_admin={@is_admin}
               description={@description}
@@ -165,7 +167,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
     include_out_of_date_sections = include_out_of_date_sections?(socket, publication)
     constrain_to_latest = !include_out_of_date_sections
 
-    socket = save_auto_update_sections(socket, project, auto_update_sections)
+    {socket, auto_update_sections} =
+      save_auto_update_sections(socket, project, auto_update_sections)
 
     {:noreply,
      assign(socket,
@@ -396,17 +399,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
   end
 
   # Unchanged values write nothing and record nothing.
+  # Saves the switch only when it changed. A failed save keeps the saved value and renders the
+  # switch again from it.
   defp save_auto_update_sections(socket, project, auto_update_sections) do
-    context = Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui)
+    case auto_update_sections == socket.assigns.auto_update_sections do
+      true ->
+        {socket, auto_update_sections}
 
-    case Oli.Authoring.Audited.update_project_settings(
-           context,
-           project.id,
-           %{auto_update_sections: auto_update_sections},
-           [:auto_update_sections]
-         ) do
-      {:ok, _project} -> socket
-      {:error, _reason} -> put_flash(socket, :error, "The update setting could not be saved.")
+      false ->
+        context = Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui)
+
+        case Oli.Authoring.Audited.update_project_settings(
+               context,
+               project.id,
+               %{auto_update_sections: auto_update_sections},
+               [:auto_update_sections]
+             ) do
+          {:ok, _project} ->
+            {socket, auto_update_sections}
+
+          {:error, _reason} ->
+            socket
+            |> put_flash(:error, "The update setting could not be saved.")
+            |> update(:revert_count, &(&1 + 1))
+            |> then(&{&1, socket.assigns.auto_update_sections})
+        end
     end
   end
 end

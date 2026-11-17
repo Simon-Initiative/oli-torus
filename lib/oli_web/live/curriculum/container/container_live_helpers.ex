@@ -67,6 +67,25 @@ defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
   end
 
   @doc """
+  Moves `revision` from `from_container` to `to_container` for the curriculum, container, and
+  pages LiveViews through `Oli.Authoring.Audited.move_curriculum_entry/6`, as `author`. Returns
+  the socket, with an error flash when the move fails.
+  """
+  def move_entry(socket, revision, from_container, to_container, author, project) do
+    case Oli.Authoring.Audited.move_curriculum_entry(
+           Oli.Auditing.Context.for_actor(author, source: :ui),
+           revision,
+           from_container,
+           to_container,
+           author,
+           project
+         ) do
+      {:ok, _} -> socket
+      {:error, _} -> put_flash(socket, :error, "Could not move the item")
+    end
+  end
+
+  @doc """
   Shared handler for save-options event in curriculum, container, and pages LiveViews
   """
   def handle_save_options(socket, revision_params) do

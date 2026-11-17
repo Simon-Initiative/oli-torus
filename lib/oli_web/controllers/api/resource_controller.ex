@@ -121,6 +121,9 @@ defmodule OliWeb.Api.ResourceController do
       {:error, {:feature_disabled, feature}} ->
         error(conn, 403, "#{feature} authoring is not enabled for this project")
 
+      {:error, :protected} ->
+        error(conn, 400, "the update includes fields that cannot be changed")
+
       e ->
         {_, msg} = Oli.Utils.log_error("Could not update resource", e)
         error(conn, 500, msg)

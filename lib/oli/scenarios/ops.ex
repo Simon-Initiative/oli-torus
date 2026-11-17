@@ -287,7 +287,7 @@ defmodule Oli.Scenarios.Ops do
 
   defp remove!(dest, title) do
     %{project: proj} = dest
-    _author = dest.root.author
+    author = dest.root.author
 
     revision = dest.rev_by_title[title]
 
@@ -302,23 +302,20 @@ defmodule Oli.Scenarios.Ops do
 
       case parent_info do
         {parent_title, parent_rev} ->
-          # ContainerEditor.remove_child also marks the child as deleted,
-          # which we don't actually want for reorganization. Instead,
-          # just remove from parent's children list directly.
-          new_children = Enum.filter(parent_rev.children, &(&1 != revision.resource_id))
-
-          # Create new revision with updated children
-          {:ok, updated_parent_rev} =
-            Oli.Resources.create_revision_from_previous(
+          # Removing the child from the curriculum would also mark it as deleted, which
+          # reorganization does not want: moving it out of its parent only detaches it.
+          {:ok, _} =
+            Oli.Authoring.Audited.move_curriculum_entry(
+              Oli.Auditing.Context.for_actor(author, source: :scenario),
+              revision,
               parent_rev,
-              %{children: new_children}
+              nil,
+              author,
+              proj
             )
 
-          # Update published resource
-          pub = Publishing.project_working_publication(proj.slug)
-
-          Publishing.get_published_resource!(pub.id, parent_rev.resource_id)
-          |> Publishing.update_published_resource(%{revision_id: updated_parent_rev.id})
+          updated_parent_rev =
+            AuthoringResolver.from_resource_id(proj.slug, parent_rev.resource_id)
 
           %{
             dest

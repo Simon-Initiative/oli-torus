@@ -64,14 +64,19 @@ defmodule OliWeb.Projects.CustomizationLive do
         {:noreply, assign(socket, :project, project)}
 
       {:error, _reason} ->
-        socket =
-          put_flash(
-            socket,
-            :error,
-            "Project couldn't be updated"
-          )
+        {:noreply, flash_error(socket, "Project couldn't be updated")}
+    end
+  end
 
-        {:noreply, assign(socket, :project, socket.assigns.project)}
+  # This view is rendered inside the project overview, which shows its flash messages
+  defp flash_error(socket, message) do
+    case socket.parent_pid do
+      nil ->
+        put_flash(socket, :error, message)
+
+      parent ->
+        send(parent, {:flash_message, {:error, message}})
+        socket
     end
   end
 end

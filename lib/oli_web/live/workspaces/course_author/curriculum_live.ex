@@ -365,7 +365,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
     %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
 
-    socket = move_entry(socket, revision, from_container, to_container, author, project)
+    socket =
+      ContainerLiveHelpers.move_entry(
+        socket,
+        revision,
+        from_container,
+        to_container,
+        author,
+        project
+      )
 
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
@@ -381,7 +389,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
     to_container = nil
 
-    socket = move_entry(socket, revision, from_container, to_container, author, project)
+    socket =
+      ContainerLiveHelpers.move_entry(
+        socket,
+        revision,
+        from_container,
+        to_container,
+        author,
+        project
+      )
 
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
@@ -1404,20 +1420,5 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
       {published_resource.resource_id, published_resource.author}
     end)
     |> Enum.into(%{})
-  end
-
-  # Moves a curriculum entry through the audited command and flashes an error if it fails.
-  defp move_entry(socket, revision, from_container, to_container, author, project) do
-    case Oli.Authoring.Audited.move_curriculum_entry(
-           Oli.Auditing.Context.for_actor(author, source: :ui),
-           revision,
-           from_container,
-           to_container,
-           author,
-           project
-         ) do
-      {:ok, _} -> socket
-      {:error, _} -> put_flash(socket, :error, "Could not move the item")
-    end
   end
 end

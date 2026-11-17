@@ -11,6 +11,7 @@ defmodule OliWeb.RevisionHistory do
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
   alias Oli.Authoring.Audited
+  alias OliWeb.RevisionHistory.Replacements
   alias OliWeb.RevisionHistory.Details
   alias OliWeb.RevisionHistory.Graph
   alias OliWeb.RevisionHistory.Table
@@ -179,32 +180,6 @@ defmodule OliWeb.RevisionHistory do
     end
   end
 
-  defp restore(socket, selected) do
-    socket
-    |> audit_context()
-    |> Audited.restore_revision(socket.assigns.project, socket.assigns.resource_id, selected.id)
-    |> assign_replacement(socket)
-  end
-
-  defp replace_content(socket, content) do
-    socket
-    |> audit_context()
-    |> Audited.replace_revision_content(
-      socket.assigns.project,
-      socket.assigns.resource_id,
-      content
-    )
-    |> assign_replacement(socket)
-  end
-
-  defp assign_replacement({:ok, revision}, socket), do: assign(socket, selected: revision)
-
-  defp assign_replacement({:error, _reason}, socket),
-    do: put_flash(socket, :error, "Could not save the revision")
-
-  defp audit_context(socket),
-    do: Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui)
-
   defp reset_editor(socket, default_value) do
     socket
     |> assign(
@@ -250,10 +225,10 @@ defmodule OliWeb.RevisionHistory do
               |> Jason.decode!()}
            end),
          :ok <- ExJsonSchema.Validator.validate(resource_schema, uploaded_content) do
-      {:noreply,
-       socket
-       |> replace_content(hd(uploaded_content))
-       |> assign(upload_errors: [])}
+      case Replacements.replace_content(socket, hd(uploaded_content)) do
+        {:ok, socket} -> {:noreply, assign(socket, upload_errors: [])}
+        {:error, socket} -> {:noreply, socket}
+      end
     else
       {:error, errors} ->
         {:noreply, assign(socket, upload_errors: flatten_validation_errors(errors))}
@@ -268,7 +243,8 @@ defmodule OliWeb.RevisionHistory do
     {:noreply,
      socket
      |> hide_modal(modal_assigns: nil)
-     |> restore(selected)}
+     |> Replacements.restore(selected)
+     |> elem(1)}
   end
 
   @impl Phoenix.LiveView
@@ -338,11 +314,12 @@ defmodule OliWeb.RevisionHistory do
         socket
       ) do
     case Jason.decode(value) do
+      # The editor stays editable, with the edit, when the save fails
       {:ok, edited} ->
-        {:noreply,
-         socket
-         |> reset_editor(value)
-         |> replace_content(edited)}
+        case Replacements.replace_content(socket, edited) do
+          {:ok, socket} -> {:noreply, reset_editor(socket, value)}
+          {:error, socket} -> {:noreply, socket}
+        end
 
       {:error, %Jason.DecodeError{}} ->
         {:noreply, assign(socket, edit_errors: ["Invalid JSON"])}
@@ -390,7 +367,7 @@ defmodule OliWeb.RevisionHistory do
     with {:ok, decoded_value} <- Jason.decode(value),
          {:ok, revision} <-
            Audited.update_revision_attribute(
-             audit_context(socket),
+             Replacements.audit_context(socket),
              socket.assigns.project,
              revision_being_edited.id,
              key_being_edited,

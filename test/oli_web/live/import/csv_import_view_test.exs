@@ -25,11 +25,14 @@ defmodule OliWeb.Import.CSVImportViewTest do
     type,title,slug,duration_minutes,poster_image,intro_video,intro_content
     Page,#{revision1.title},#{revision1.slug},25,,,
     Page,Missing,no-such-page,10,,,
+    Page,Blank,no-such-blank-page,,,,
     """)
 
     {:ok, view, _html} = live(conn, ~p"/admin/#{project.slug}/import/csv")
 
-    assert await_finished(view) =~ "Row #2 - failure"
+    html = await_finished(view)
+    assert html =~ "Row #2 - failure"
+    assert html =~ "Row #3 - failure"
 
     event =
       assert_audited(:authoring_content_replaced,

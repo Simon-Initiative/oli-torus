@@ -390,6 +390,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert event.changes["allow_transfer_payment_codes"]["after"] == true
     end
 
+    test "a setting that cannot be saved shows an error and renders the checkbox again", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      assert has_element?(view, "#transfer_payment_codes_wrapper-0")
+
+      reject_audit_inserts()
+
+      ExUnit.CaptureLog.capture_log(fn ->
+        element(view, "form[phx-change='set_allow_transfer']")
+        |> render_change(%{})
+      end)
+
+      assert render(view) =~ "The setting could not be saved."
+      assert has_element?(view, "#transfer_payment_codes_wrapper-1")
+      refute has_element?(view, "#transfer_payment_codes[checked]")
+      refute Course.get_project!(project.id).allow_transfer_payment_codes
+    end
+
     test "project can disable transfer payment codes", %{conn: conn, author: author} do
       project = create_project_with_author(author)
 
@@ -1331,5 +1352,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
   defp settings_events(project, author) do
     audit_events(:project_settings_changed, project_id: project.id, actor: author, source: :ui)
+  end
+
+  defp reject_audit_inserts do
+    Oli.Repo.query!("""
+    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'audit insert rejected by test';
+    END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Oli.Repo.query!("""
+    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
+      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
+    """)
   end
 end

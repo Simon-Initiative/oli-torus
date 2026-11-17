@@ -32,6 +32,8 @@ defmodule Oli.Scenarios.Directives.CurriculumOpsAuditTest do
               target: "Page 1"
               set:
                 max_attempts: 3
+          - remove:
+              from: "Page 1"
     """
 
     result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
@@ -41,8 +43,8 @@ defmodule Oli.Scenarios.Directives.CurriculumOpsAuditTest do
 
     filters = [project_id: project.id, actor: result.state.current_author, source: :scenario]
 
-    # The move records both modules; the reorder records Module B again
-    assert length(audit_events(:curriculum_changed, filters)) == 3
+    # The move records both modules, the reorder Module B, and the removal Module A
+    assert length(audit_events(:curriculum_changed, filters)) == 4
 
     settings = audit_events(:authoring_settings_changed, filters)
     assert Enum.any?(settings, &(&1.changes["max_attempts"]["after"] == 3))

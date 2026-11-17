@@ -239,6 +239,23 @@ defmodule OliWeb.Api.ResourceControllerTest do
     end
   end
 
+  describe "update/2 with protected fields" do
+    setup [:author_conn, :create_project_with_pages]
+
+    test "rejects a save that sets a page's children", %{
+      conn: conn,
+      project: project,
+      page_1: page
+    } do
+      conn =
+        put(conn, "/api/v1/project/#{project.slug}/resource/#{page.slug}", %{
+          "update" => %{"children" => [], "releaseLock" => false}
+        })
+
+      assert response(conn, 400) == "the update includes fields that cannot be changed"
+    end
+  end
+
   describe "create_objective/2" do
     setup [:author_conn]
 

@@ -28,7 +28,8 @@ defmodule OliWeb.Projects.VisibilityLive do
        institution_names: [],
        tab: :users,
        is_admin: is_admin?,
-       current_author: current_author
+       current_author: current_author,
+       revert_count: 0
      )}
   end
 
@@ -43,7 +44,8 @@ defmodule OliWeb.Projects.VisibilityLive do
       </div>
       <div class="md:col-span-8">
         <form phx-change="duplication" id="duplication_option">
-          <div class="form-check">
+          <%!-- A new id after a failed save renders the inputs again from the saved state --%>
+          <div class="form-check" id={"duplication_inputs-#{@revert_count}"}>
             <%= label class: "form-check-label" do %>
               {checkbox(:duplication, :allow_duplication,
                 id: "dupe_check",
@@ -68,7 +70,7 @@ defmodule OliWeb.Projects.VisibilityLive do
       <div class="md:col-span-8">
         <%= if @is_admin do %>
           <form phx-change="option" id="visibility_option">
-            <div class="form-check">
+            <div class="form-check" id={"visibility_inputs-#{@revert_count}"}>
               <div class="form-group mb-2">
                 <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
                   {radio_button(:visibility, :option, "authors",
@@ -364,10 +366,11 @@ defmodule OliWeb.Projects.VisibilityLive do
     else
       grants = Enum.map(emails, fn e -> {:author, elem(Integer.parse(e), 0)} end)
 
-      socket
-      |> update_grants(%{add: grants})
-      |> assign(user_emails: [])
-      |> then(&{:noreply, &1})
+      # The selection is kept when the grants could not be added
+      case update_grants(socket, %{add: grants}) do
+        {:ok, socket} -> {:noreply, assign(socket, user_emails: [])}
+        {:error, socket} -> {:noreply, socket}
+      end
     end
   end
 
@@ -382,10 +385,10 @@ defmodule OliWeb.Projects.VisibilityLive do
     else
       grants = Enum.map(institutions, fn e -> {:institution, elem(Integer.parse(e), 0)} end)
 
-      socket
-      |> update_grants(%{add: grants})
-      |> assign(institution_names: [])
-      |> then(&{:noreply, &1})
+      case update_grants(socket, %{add: grants}) do
+        {:ok, socket} -> {:noreply, assign(socket, institution_names: [])}
+        {:error, socket} -> {:noreply, socket}
+      end
     end
   end
 
@@ -419,7 +422,8 @@ defmodule OliWeb.Projects.VisibilityLive do
         |> Enum.filter(&(&1.visibility != nil && &1.visibility.id == id))
         |> Enum.map(&grant/1)
 
-      {:noreply, update_grants(socket, %{remove: grants})}
+      {_status, socket} = update_grants(socket, %{remove: grants})
+      {:noreply, socket}
     end
   end
 
@@ -430,13 +434,17 @@ defmodule OliWeb.Projects.VisibilityLive do
     %{project: project, current_author: author} = socket.assigns
     context = Context.for_actor(author, source: :ui)
 
-    socket =
+    {status, socket} =
       case Oli.Publishing.Audited.update_visibility_grants(context, project.id, changes) do
-        {:ok, _grants} -> socket
-        {:error, _reason} -> put_flash(socket, :error, "The access list could not be updated.")
+        {:ok, _grants} ->
+          {:ok, socket}
+
+        {:error, _reason} ->
+          {:error, flash_error(socket, "The access list could not be updated.")}
       end
 
-    assign(socket, project_visibilities: Publishing.get_all_project_visibilities(project.id))
+    {status,
+     assign(socket, project_visibilities: Publishing.get_all_project_visibilities(project.id))}
   end
 
   defp update_setting(socket, attrs, field) do
@@ -448,7 +456,22 @@ defmodule OliWeb.Projects.VisibilityLive do
         {:noreply, assign(socket, :project, project)}
 
       {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, "The setting could not be saved.")}
+        socket
+        |> flash_error("The setting could not be saved.")
+        |> update(:revert_count, &(&1 + 1))
+        |> then(&{:noreply, &1})
+    end
+  end
+
+  # This view is rendered inside the project overview, which shows its flash messages
+  defp flash_error(socket, message) do
+    case socket.parent_pid do
+      nil ->
+        put_flash(socket, :error, message)
+
+      parent ->
+        send(parent, {:flash_message, {:error, message}})
+        socket
     end
   end
 end

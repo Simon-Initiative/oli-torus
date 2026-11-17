@@ -376,7 +376,7 @@ Main flow: the transport builds `Context.for_actor(author, source: :ui | :api | 
 
 No schema migration is planned.
 
-**Behavior changes callers will see:** the audited writes fail when the audit insert fails; `update_project/2` rejects settings keys; the survey, visibility-grant, alternatives, and history writes become transactional; collaborator invitation database writes become atomic; `auto_update_sections` stops writing unchanged values; the history attribute edit accepts only `children` and `objectives`.
+**Behavior changes callers will see:** the audited writes fail when the audit insert fails; `update_project/2` rejects settings keys; the survey, visibility-grant, alternatives, and history writes become transactional; collaborator invitation database writes become atomic; `auto_update_sections` stops writing unchanged values; the history attribute edit accepts only `children` and `objectives`; the page options save accepts only the fields its modal edits, and a page save rejects identity, placement, and `children`, so neither can change what other commands record.
 
 ## 6. Test Plan
 
