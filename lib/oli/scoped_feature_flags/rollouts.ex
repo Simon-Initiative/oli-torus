@@ -10,7 +10,6 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
 
   require Logger
 
-  alias Oli.Auditing
   alias Oli.Repo
   alias Oli.ScopedFeatureFlags.ScopedFeatureExemption
   alias Oli.ScopedFeatureFlags.ScopedFeatureRollout
@@ -57,114 +56,6 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
   end
 
   @doc """
-  Creates or updates a rollout stage for the provided scope.
-
-  ## Options
-    * `:note` - free-form explanation recorded with the audit trail.
-  """
-  @spec upsert_rollout(
-          String.t() | atom(),
-          scope_type(),
-          integer() | nil,
-          ScopedFeatureRollout.stage(),
-          Oli.Accounts.Author.t() | nil,
-          keyword()
-        ) ::
-          {:ok, ScopedFeatureRollout.t()}
-          | {:error, Ecto.Changeset.t()}
-  def upsert_rollout(feature_name, scope_type, scope_id, stage, actor, opts \\ []) do
-    feature_name = normalize_feature_name(feature_name)
-    scope_type = normalize_scope_type(scope_type)
-    scope_id = normalize_scope_id(scope_type, scope_id)
-    stage = normalize_stage(stage)
-    attrs = rollout_attrs(feature_name, scope_type, scope_id, stage, actor)
-
-    Repo.transaction(fn ->
-      existing = get_rollout(feature_name, scope_type, scope_id)
-
-      case persist_rollout(existing, attrs) do
-        {:ok, rollout} ->
-          maybe_audit_stage_change(existing, rollout, actor, opts)
-          {existing, rollout}
-
-        {:error, changeset} ->
-          Repo.rollback(changeset)
-      end
-    end)
-    |> case do
-      {:ok, {previous, rollout}} ->
-        maybe_emit_stage_changed_telemetry(previous, rollout, actor)
-        broadcast_stage_invalidation(feature_name, scope_type, scope_id)
-        {:ok, rollout}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, changeset}
-    end
-  end
-
-  @doc """
-  Deletes a rollout record for the provided scope.
-  """
-  @spec delete_rollout(
-          String.t() | atom(),
-          scope_type(),
-          integer() | nil,
-          Oli.Accounts.Author.t() | nil,
-          keyword()
-        ) ::
-          :ok | {:error, :not_found}
-  def delete_rollout(feature_name, scope_type, scope_id, actor, opts \\ []) do
-    feature_name = normalize_feature_name(feature_name)
-    scope_type = normalize_scope_type(scope_type)
-    scope_id = normalize_scope_id(scope_type, scope_id)
-
-    Repo.transaction(fn ->
-      case get_rollout(feature_name, scope_type, scope_id) do
-        nil ->
-          Repo.rollback(:not_found)
-
-        rollout ->
-          case Repo.delete(rollout) do
-            {:ok, _} ->
-              maybe_audit_rollout_delete(rollout, actor, opts)
-              rollout
-
-            {:error, changeset} ->
-              Repo.rollback(changeset)
-          end
-      end
-    end)
-    |> case do
-      {:ok, rollout} ->
-        broadcast_stage_invalidation(feature_name, scope_type, scope_id)
-
-        :telemetry.execute(
-          [:torus, :feature_flag, :rollout_stage_deleted],
-          %{count: 1},
-          %{
-            feature: rollout.feature_name,
-            scope_type: rollout.scope_type,
-            scope_id: rollout.scope_id,
-            stage: rollout.stage,
-            actor_id: actor_identifier(actor)
-          }
-        )
-
-        :ok
-
-      {:error, :not_found} ->
-        {:error, :not_found}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        Logger.warning(
-          "Failed to delete rollout for #{feature_name}/#{scope_type}/#{inspect(scope_id)}: #{inspect(changeset.errors)}"
-        )
-
-        {:error, :not_found}
-    end
-  end
-
-  @doc """
   Retrieves the exemption record for a feature/publisher combination.
   """
   @spec get_exemption(String.t() | atom(), pos_integer()) ::
@@ -192,235 +83,54 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
   end
 
   @doc """
-  Creates or updates an exemption for a publisher.
+  Runs the effects of a committed rollout stage change: telemetry with the previous and new
+  stage, cache invalidation, and the PubSub broadcast. `actor_id` is `{:author | :user, id}`.
   """
-  @spec upsert_exemption(
-          String.t() | atom(),
-          pos_integer(),
-          ScopedFeatureExemption.effect(),
-          Oli.Accounts.Author.t() | nil,
-          keyword()
-        ) ::
-          {:ok, ScopedFeatureExemption.t()} | {:error, Ecto.Changeset.t()}
-  def upsert_exemption(feature_name, publisher_id, effect, actor, opts \\ []) do
-    feature_name = normalize_feature_name(feature_name)
-    effect = normalize_effect(effect)
-
-    attrs = %{
-      feature_name: feature_name,
-      publisher_id: publisher_id,
-      effect: effect,
-      updated_by_author_id: maybe_author_id(actor),
-      note: Keyword.get(opts, :note)
-    }
-
-    Repo.transaction(fn ->
-      existing = get_exemption(feature_name, publisher_id)
-
-      case persist_exemption(existing, attrs) do
-        {:ok, exemption} ->
-          maybe_audit_exemption(existing, exemption, actor, opts)
-          {existing, exemption}
-
-        {:error, changeset} ->
-          Repo.rollback(changeset)
-      end
-    end)
-    |> case do
-      {:ok, {_previous, exemption}} ->
-        broadcast_exemption_invalidation(feature_name, publisher_id)
-        {:ok, exemption}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, changeset}
-    end
+  def stage_changed(previous, rollout, actor_id) do
+    maybe_emit_stage_changed_telemetry(previous, rollout, actor_id)
+    broadcast_stage_invalidation(rollout.feature_name, rollout.scope_type, rollout.scope_id)
   end
 
-  @doc """
-  Removes an exemption record.
-  """
-  @spec delete_exemption(
-          String.t() | atom(),
-          pos_integer(),
-          Oli.Accounts.Author.t() | nil,
-          keyword()
-        ) ::
-          :ok | {:error, :not_found}
-  def delete_exemption(feature_name, publisher_id, actor, opts \\ []) do
-    feature_name = normalize_feature_name(feature_name)
+  @doc "Runs the effects of a committed rollout deletion: cache, PubSub, and telemetry."
+  def stage_deleted(rollout, actor_id) do
+    broadcast_stage_invalidation(rollout.feature_name, rollout.scope_type, rollout.scope_id)
 
-    Repo.transaction(fn ->
-      case get_exemption(feature_name, publisher_id) do
-        nil ->
-          Repo.rollback(:not_found)
-
-        exemption ->
-          case Repo.delete(exemption) do
-            {:ok, _} ->
-              maybe_audit_exemption_delete(exemption, actor, opts)
-              exemption
-
-            {:error, changeset} ->
-              Repo.rollback(changeset)
-          end
-      end
-    end)
-    |> case do
-      {:ok, exemption} ->
-        broadcast_exemption_invalidation(feature_name, publisher_id)
-
-        :telemetry.execute(
-          [:torus, :feature_flag, :rollout_exemption_deleted],
-          %{count: 1},
-          %{
-            feature: exemption.feature_name,
-            publisher_id: exemption.publisher_id,
-            effect: exemption.effect,
-            actor_id: actor_identifier(actor)
-          }
-        )
-
-        :ok
-
-      {:error, :not_found} ->
-        {:error, :not_found}
-
-      {:error, %Ecto.Changeset{}} ->
-        {:error, :not_found}
-    end
-  end
-
-  defp persist_rollout(nil, attrs) do
-    %ScopedFeatureRollout{}
-    |> ScopedFeatureRollout.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  defp persist_rollout(%ScopedFeatureRollout{} = rollout, attrs) do
-    rollout
-    |> ScopedFeatureRollout.changeset(attrs)
-    |> Repo.update()
-  end
-
-  defp persist_exemption(nil, attrs) do
-    %ScopedFeatureExemption{}
-    |> ScopedFeatureExemption.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  defp persist_exemption(%ScopedFeatureExemption{} = exemption, attrs) do
-    exemption
-    |> ScopedFeatureExemption.changeset(attrs)
-    |> Repo.update()
-  end
-
-  defp rollout_attrs(feature_name, scope_type, scope_id, stage, actor) do
-    %{
-      feature_name: feature_name,
-      scope_type: scope_type,
-      scope_id: scope_id,
-      stage: stage,
-      rollout_percentage: Map.fetch!(@stage_percentages, stage),
-      updated_by_author_id: maybe_author_id(actor)
-    }
-  end
-
-  defp maybe_audit_stage_change(previous, rollout, actor, opts) do
-    note = Keyword.get(opts, :note)
-
-    details =
-      %{
-        "feature_name" => rollout.feature_name,
-        "scope_type" => Atom.to_string(rollout.scope_type),
-        "scope_id" => rollout.scope_id,
-        "stage" => Atom.to_string(rollout.stage),
-        "rollout_percentage" => rollout.rollout_percentage
-      }
-      |> maybe_put_previous(previous)
-      |> maybe_put_note(note)
-
-    capture_audit(actor, :feature_rollout_stage_changed, nil, details)
-  end
-
-  defp maybe_audit_rollout_delete(rollout, actor, opts) do
-    note = Keyword.get(opts, :note)
-
-    details =
-      %{
-        "feature_name" => rollout.feature_name,
-        "scope_type" => Atom.to_string(rollout.scope_type),
-        "scope_id" => rollout.scope_id,
-        "stage" => Atom.to_string(rollout.stage)
-      }
-      |> maybe_put_note(note)
-
-    capture_audit(actor, :feature_rollout_stage_deleted, nil, details)
-  end
-
-  defp maybe_audit_exemption(previous, exemption, actor, opts) do
-    note = Keyword.get(opts, :note)
-
-    details =
-      %{
-        "feature_name" => exemption.feature_name,
-        "publisher_id" => exemption.publisher_id,
-        "effect" => Atom.to_string(exemption.effect)
-      }
-      |> maybe_put_previous(previous)
-      |> maybe_put_note(note)
-
-    capture_audit(actor, :feature_rollout_exemption_upserted, nil, details)
-  end
-
-  defp maybe_audit_exemption_delete(exemption, actor, opts) do
-    note = Keyword.get(opts, :note)
-
-    details =
-      %{
-        "feature_name" => exemption.feature_name,
-        "publisher_id" => exemption.publisher_id,
-        "effect" => Atom.to_string(exemption.effect)
-      }
-      |> maybe_put_note(note)
-
-    capture_audit(actor, :feature_rollout_exemption_deleted, nil, details)
-  end
-
-  defp maybe_put_previous(details, nil), do: details
-
-  defp maybe_put_previous(details, previous) do
-    Map.put(details, "previous", %{
-      "stage" =>
-        previous
-        |> Map.get(:stage)
-        |> maybe_atom_to_string(),
-      "effect" =>
-        previous
-        |> Map.get(:effect)
-        |> maybe_atom_to_string()
+    :telemetry.execute([:torus, :feature_flag, :rollout_stage_deleted], %{count: 1}, %{
+      feature: rollout.feature_name,
+      scope_type: rollout.scope_type,
+      scope_id: rollout.scope_id,
+      stage: rollout.stage,
+      actor_id: actor_id
     })
   end
 
-  defp maybe_put_note(details, nil), do: details
-  defp maybe_put_note(details, note), do: Map.put(details, "note", note)
+  @doc "Runs the effects of a committed exemption change: cache invalidation and PubSub."
+  def exemption_changed(exemption),
+    do: broadcast_exemption_invalidation(exemption.feature_name, exemption.publisher_id)
 
-  defp capture_audit(nil, _event_type, _resource, _details), do: :ok
+  @doc "Runs the effects of a committed exemption deletion: cache, PubSub, and telemetry."
+  def exemption_deleted(exemption, actor_id) do
+    broadcast_exemption_invalidation(exemption.feature_name, exemption.publisher_id)
 
-  defp capture_audit(actor, event_type, resource, details) do
-    case Auditing.capture(actor, event_type, resource, details) do
-      {:ok, _} -> :ok
-      {:error, _} -> :ok
-    end
+    :telemetry.execute([:torus, :feature_flag, :rollout_exemption_deleted], %{count: 1}, %{
+      feature: exemption.feature_name,
+      publisher_id: exemption.publisher_id,
+      effect: exemption.effect,
+      actor_id: actor_id
+    })
   end
 
-  defp maybe_emit_stage_changed_telemetry(previous, rollout, actor) do
+  @doc "Returns the rollout percentage of `stage`."
+  def stage_percentage(stage), do: Map.fetch!(@stage_percentages, stage)
+
+  defp maybe_emit_stage_changed_telemetry(previous, rollout, actor_id) do
     metadata = %{
       feature: rollout.feature_name,
       scope_type: rollout.scope_type,
       scope_id: rollout.scope_id,
       from_stage: previous && previous.stage,
       to_stage: rollout.stage,
-      actor_id: actor_identifier(actor)
+      actor_id: actor_id
     }
 
     :telemetry.execute([:torus, :feature_flag, :rollout_stage_changed], %{count: 1}, metadata)
@@ -446,10 +156,12 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
     )
   end
 
-  defp normalize_feature_name(feature) when is_atom(feature), do: Atom.to_string(feature)
-  defp normalize_feature_name(feature) when is_binary(feature), do: feature
+  @doc "Normalizes a feature name to its string form."
+  def normalize_feature_name(feature) when is_atom(feature), do: Atom.to_string(feature)
+  def normalize_feature_name(feature) when is_binary(feature), do: feature
 
-  defp normalize_scope_type(scope_type) do
+  @doc "Returns `scope_type` or raises `ArgumentError` when it is not a rollout scope type."
+  def normalize_scope_type(scope_type) do
     valid = ScopedFeatureRollout.scope_types()
 
     if Enum.member?(valid, scope_type) do
@@ -460,7 +172,8 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
     end
   end
 
-  defp normalize_stage(stage) do
+  @doc "Returns `stage` or raises `ArgumentError` when it is not a rollout stage."
+  def normalize_stage(stage) do
     valid = ScopedFeatureRollout.stages()
 
     if Enum.member?(valid, stage) do
@@ -471,12 +184,13 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
     end
   end
 
-  defp normalize_scope_id(:global, _scope_id), do: nil
+  @doc "Returns the scope ID for `scope_type` (`nil` for global) or raises `ArgumentError`."
+  def normalize_scope_id(:global, _scope_id), do: nil
 
-  defp normalize_scope_id(_scope_type, scope_id) when is_integer(scope_id) and scope_id > 0,
+  def normalize_scope_id(_scope_type, scope_id) when is_integer(scope_id) and scope_id > 0,
     do: scope_id
 
-  defp normalize_scope_id(scope_type, scope_id) do
+  def normalize_scope_id(scope_type, scope_id) do
     raise ArgumentError,
           "Invalid scope_id #{inspect(scope_id)} for scope type #{inspect(scope_type)}"
   end
@@ -484,7 +198,8 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
   defp scope_match_clause(nil), do: dynamic([r], is_nil(r.scope_id))
   defp scope_match_clause(scope_id), do: dynamic([r], r.scope_id == ^scope_id)
 
-  defp normalize_effect(effect) do
+  @doc "Returns `effect` or raises `ArgumentError` when it is not an exemption effect."
+  def normalize_effect(effect) do
     valid = ScopedFeatureExemption.effects()
 
     if Enum.member?(valid, effect) do
@@ -494,15 +209,4 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
             "Invalid exemption effect #{inspect(effect)}. Expected one of #{inspect(valid)}."
     end
   end
-
-  defp maybe_atom_to_string(nil), do: nil
-  defp maybe_atom_to_string(value) when is_atom(value), do: Atom.to_string(value)
-  defp maybe_atom_to_string(value), do: value
-
-  defp maybe_author_id(%{id: id, __struct__: Oli.Accounts.Author}), do: id
-  defp maybe_author_id(_), do: nil
-
-  defp actor_identifier(%Oli.Accounts.Author{id: id}), do: {:author, id}
-  defp actor_identifier(%Oli.Accounts.User{id: id}), do: {:user, id}
-  defp actor_identifier(_), do: nil
 end

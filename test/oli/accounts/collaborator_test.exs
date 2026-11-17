@@ -36,6 +36,7 @@ defmodule Oli.Accounts.CollaboratorTest do
 
       {:ok, author_project} =
         Collaborators.invite_collaborator(
+          Oli.Auditing.Context.for_actor(insert(:author), source: :ui),
           "Inviter Author",
           "inviter@gmail.com",
           "non_existing_author@gmail.com",
@@ -76,6 +77,7 @@ defmodule Oli.Accounts.CollaboratorTest do
 
       {:ok, author_project} =
         Collaborators.invite_collaborator(
+          Oli.Auditing.Context.for_actor(insert(:author), source: :ui),
           "Inviter Author",
           "inviter@gmail.com",
           existing_author.email,

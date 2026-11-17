@@ -113,7 +113,8 @@ defmodule Oli.TestHelpers do
         name: "Example Institution"
       })
 
-    {:ok, institution} = Institutions.create_institution(params)
+    {:ok, institution} =
+      Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), params)
 
     institution
   end
@@ -153,7 +154,8 @@ defmodule Oli.TestHelpers do
         line_items_service_domain: "some line_items_service_domain"
       })
 
-    {:ok, registration} = Institutions.create_registration(params)
+    {:ok, registration} =
+      Institutions.Audited.create_registration(Oli.TestHelpers.audit_context(), params)
 
     registration
   end
@@ -165,7 +167,8 @@ defmodule Oli.TestHelpers do
         deployment_id: "1"
       })
 
-    {:ok, deployment} = Institutions.create_deployment(params)
+    {:ok, deployment} =
+      Institutions.Audited.create_deployment(Oli.TestHelpers.audit_context(), params)
 
     deployment
   end
@@ -313,6 +316,112 @@ defmodule Oli.TestHelpers do
     {:ok, conn: conn, user: user}
   end
 
+  alias Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
+
+  @doc "Test fixture: inserts a section deep link without audit events."
+  def create_deep_link_fixture(attrs) do
+    %LtiSectionResourceDeepLink{}
+    |> LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc "Test fixture: inserts or replaces the deep link of a section resource without audit events."
+  def upsert_deep_link_fixture(attrs) do
+    %LtiSectionResourceDeepLink{}
+    |> LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.insert(
+      on_conflict: {:replace_all_except, [:id, :inserted_at]},
+      conflict_target: [:section_id, :resource_id]
+    )
+  end
+
+  @doc "Test fixture: updates a section deep link without audit events."
+  def update_deep_link_fixture(%LtiSectionResourceDeepLink{} = deep_link, attrs) do
+    deep_link
+    |> LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc "Test fixture: deletes a section deep link without audit events."
+  def delete_deep_link_fixture(%LtiSectionResourceDeepLink{} = deep_link),
+    do: Repo.delete(deep_link)
+
+  @doc "Test fixture: updates an API key's fields directly, without audit events."
+  def update_api_key_fixture(%Oli.Interop.ApiKey{} = key, attrs) do
+    key
+    |> Oli.Interop.ApiKey.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc "Test fixture: deletes a user session token without an audit event."
+  def delete_user_session_token_fixture(token) do
+    Repo.delete_all(Oli.Accounts.UserToken.token_and_context_query(token, "session"))
+    :ok
+  end
+
+  @doc "Test fixture: inserts an external tool platform instance without audit events."
+  def create_platform_instance_fixture(attrs \\ %{}) do
+    %Lti_1p3.DataProviders.EctoProvider.PlatformInstance{}
+    |> Lti_1p3.DataProviders.EctoProvider.PlatformInstance.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc "Test fixture: updates an external tool platform instance without audit events."
+  def update_platform_instance_fixture(platform_instance, attrs) do
+    platform_instance
+    |> Lti_1p3.DataProviders.EctoProvider.PlatformInstance.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc "Test fixture: inserts an external tool deployment without audit events."
+  def create_tool_deployment_fixture(attrs) do
+    %Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment{}
+    |> Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Audit context of a test administrator, for audited commands whose actor does not matter to
+  the test. It is built in memory; audit events keep actor IDs without a foreign key.
+  """
+  def audit_context do
+    Oli.Auditing.Context.for_actor(
+      %Oli.Accounts.Author{id: 1, name: "Test Admin", email: "test.admin@example.edu"},
+      source: :ui
+    )
+  end
+
+  @doc """
+  Test fixture: writes account fields directly with the account's `noauth_changeset/2`, without
+  audit events. Product code changes protected fields only through `Oli.Accounts.Audited`.
+  """
+  def update_account_fixture(%Oli.Accounts.User{} = user, attrs) do
+    user
+    |> Oli.Accounts.User.noauth_changeset(attrs)
+    |> Repo.update()
+  end
+
+  def update_account_fixture(%Oli.Accounts.Author{} = author, attrs) do
+    author
+    |> Oli.Accounts.Author.noauth_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Test fixture: replaces a user's platform roles (`Lti_1p3.Roles.PlatformRole` structs) without
+  audit events.
+  """
+  def put_platform_roles_fixture(%Oli.Accounts.User{} = user, roles) do
+    user
+    |> Repo.preload(:platform_roles, force: true)
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.put_assoc(
+      :platform_roles,
+      Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)
+    )
+    |> Repo.update()
+  end
+
   def guest_conn(%{conn: conn}) do
     guest = user_fixture(%{guest: true})
     conn = log_in_user(conn, guest)
@@ -324,7 +433,7 @@ defmodule Oli.TestHelpers do
     instructor = user_fixture(%{can_create_sections: true})
 
     {:ok, instructor} =
-      Accounts.update_user_platform_roles(
+      put_platform_roles_fixture(
         instructor,
         [Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)]
       )

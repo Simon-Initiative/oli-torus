@@ -8,7 +8,6 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
   alias Oli.Authoring.Locks
-  alias Oli.ScopedFeatureFlags.Rollouts
   alias Oli.Experiments.Schemas.{ExperimentDefinition, Intervention}
 
   describe "container editing" do
@@ -496,7 +495,14 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       container: %{revision: root_container},
       adaptive_page_revision: adaptive_page_revision
     } do
-      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :off, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :adaptive_duplication,
+          :global,
+          nil,
+          :off
+        )
 
       assert {:error, {:adaptive_duplication, :disabled}} =
                ContainerEditor.duplicate_page(
@@ -514,7 +520,14 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
            container: %{revision: root_container},
            adaptive_page_revision: adaptive_page_revision
          } do
-      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :adaptive_duplication,
+          :global,
+          nil,
+          :full
+        )
 
       assert {:ok, duplicated_page_revision} =
                ContainerEditor.duplicate_page(
@@ -535,7 +548,14 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
            publication: publication,
            container: %{revision: root_container}
          } do
-      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :adaptive_duplication,
+          :global,
+          nil,
+          :full
+        )
 
       %{revision: simple_adaptive_revision} =
         Seeder.create_page(

@@ -7,7 +7,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
 
   alias Oli.Authoring.Course
   alias Oli.Resources
-  alias Oli.ScopedFeatureFlags.Rollouts
   alias OliWeb.Workspaces.CourseAuthor.PagesLive
 
   defp live_view_all_pages_route(project_slug) do
@@ -490,7 +489,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
       adaptive_page_revision = insert_adaptive_page(project, publication, admin)
 
       {:ok, _} =
-        Rollouts.upsert_rollout(:adaptive_duplication, :project, project.id, :full, admin)
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(admin, source: :ui),
+          :adaptive_duplication,
+          :project,
+          project.id,
+          :full
+        )
 
       {:ok, view, _html} =
         live(conn, live_view_all_pages_route(project.slug))

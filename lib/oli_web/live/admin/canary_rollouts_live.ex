@@ -67,12 +67,12 @@ defmodule OliWeb.Admin.CanaryRolloutsLive do
          :global <- scope_type_atom,
          {:ok, stage_atom} <- parse_stage(stage),
          {:ok, _} <-
-           Rollouts.upsert_rollout(
+           Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+             Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
              feature,
              :global,
              nil,
              stage_atom,
-             socket.assigns.current_author,
              []
            ) do
       {:noreply,
@@ -103,11 +103,11 @@ defmodule OliWeb.Admin.CanaryRolloutsLive do
     with {:ok, publisher_id_int} <- parse_integer(publisher_id),
          {:ok, effect_atom} <- parse_effect(effect),
          {:ok, _} <-
-           Rollouts.upsert_exemption(
+           Oli.ScopedFeatureFlags.Audited.upsert_exemption(
+             Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
              feature,
              publisher_id_int,
              effect_atom,
-             socket.assigns.current_author,
              note: empty_to_nil(note)
            ) do
       {:noreply,
@@ -129,10 +129,10 @@ defmodule OliWeb.Admin.CanaryRolloutsLive do
       ) do
     with {:ok, publisher_id_int} <- parse_integer(publisher_id),
          :ok <-
-           Rollouts.delete_exemption(
+           Oli.ScopedFeatureFlags.Audited.delete_exemption(
+             Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
              feature,
              publisher_id_int,
-             socket.assigns.current_author,
              []
            ) do
       {:noreply,

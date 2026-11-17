@@ -1,677 +1,400 @@
 version: 1
-feature: MER-6066 Audit Log Expansion
-generated_from: prd.md
 requirements:
 - id: FR-001
   title: Identify the actor, affected subject, entity, scope, action, and time
-  status: verified_plan
   acceptance_criteria:
   - id: AC-001
     title: For each new event, persisted evidence identifies the acting user, author, or explicit system
       actor; the affected entity type and stable identifier; the applicable scope; the action; and its
       timestamp. Event-specific non-applicable fields are distinguishable from missing required fields.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-002
     title: When an instructor changes a student exception, the instructor is recorded as actor and the
       student as affected person, with the assessment and section identifiable. Equivalent account-on-account
       actions preserve the same distinction.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-003
     title: For a persisted value change, the event contains safe previous and resulting values from authoritative
       domain state, rather than stale submitted UI values. Creation and deletion use the applicable before/after
       side without inventing a nonexistent value.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-004
     title: Concurrent updates preserve the actual state transition attributable to each committed operation;
       event timestamps and asynchronous occurrence/recording semantics follow the documented event contract.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-002
   title: Define and enforce the full event contract before broad instrumentation
-  status: verified_plan
   acceptance_criteria:
   - id: AC-005
     title: A reviewed catalog maps every ticket action family and existing event to concrete actions,
       supported entry points, actors, subjects, scopes, safe changes, required/optional fields, no-op
       behavior, and event cardinality. Unsupported channel/action combinations are identified rather than
       silently omitted.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
   - id: AC-006
     title: Factory-backed persistence cases cover every cataloged event contract, including bulk, asynchronous,
       deleted-target, system-actor, and affected-student examples; invalid required-field combinations
       are rejected.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-007
     title: Application validation reports event-specific errors and database constraints reject violations
       of essential shared/version-dependent invariants even when inserts bypass changesets. Tests distinguish
       legitimate nulls from missing required data.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-003
   title: Commit local domain changes and their audit evidence atomically
-  status: verified_plan
   acceptance_criteria:
   - id: AC-008
     title: A successful in-scope local database mutation and its required event records commit together.
       A domain validation error, unauthorized request, exception, or transaction rollback leaves neither
       the intended change nor a successful-change event.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-009
     title: An audit insert failure rolls back the associated local database mutation and returns an actionable
       failure through the existing caller error path; it is not reduced to an ignored error or warning
       after a successful change.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-010
     title: Ordinary saves that produce no persisted change and canceled previews produce no successful-change
       event. Meaningful lifecycle operations without a value diff are handled by their own explicit contracts.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-004
   title: Cover supported channels and bulk operations without duplicate evidence
-  status: verified_plan
   acceptance_criteria:
   - id: AC-011
     title: For each cataloged action, every supported UI, API, MCP, bulk, background, and Scenario path
       produces equivalent semantic evidence with correct actor and scope; tests or reviewed coverage mappings
       account for every identified path.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-012
     title: When a migrated operation invokes internal helpers or previously audited operations, the resulting
       events match the cataloged semantic cardinality without duplicate captures from the caller, helper,
       or legacy producer.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-013
     title: A successful bulk operation identifies every changed target and its pertinent safe before/after
       values, with enough shared operation context to reconstruct the batch. Failed, unchanged, and skipped
       targets are not represented as successful changes.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-014
     title: Repeating a retried request or job for the same logical committed operation does not duplicate
       its semantic success evidence; a genuinely separate repeated action remains distinguishable.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-005
   title: Persist truthful outcomes for asynchronous and external administrative work
-  status: verified_plan
   acceptance_criteria:
   - id: AC-015
     title: Accepted asynchronous administrative work is distinguishable from completed work, and its initiated
       and terminal outcome evidence can be correlated with the original actor, action, and scope.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-016
     title: Successful, failed, canceled where supported, and partially completed operations report the
       persisted or externally confirmed outcome without labeling initiation or failure as full success.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-017
     title: For each asynchronous/external operation, documented retry and crash recovery behavior is exercised
       at relevant failure boundaries, including before dispatch and after work but before outcome persistence.
       Evidence is retained or reconciled without duplicating a completed action. Verification includes
       committed work before job acknowledgement, retry exhaustion, supported cancellation, and job pruning;
       required terminal evidence survives removal of the job and recovery outages cannot silently erase it.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
   - id: AC-018
     title: Jobs and process boundaries retain the initiating human or explicit system identity; worker
       identity alone does not replace the person who requested the operation. Outcome errors contain no
       credentials or secret payloads.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-006
   title: Audit user and author authentication and session revocation
-  status: verified_plan
   acceptance_criteria:
   - id: AC-019
     title: Successful password, SSO/OAuth, and LTI login flows for users and authors record the authenticated
       actor and applicable authentication mechanism at the successful session boundary, without storing
       authentication secrets.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-020
     title: Logout and forced session revocation record the relevant account/session scope and distinguish
       the initiating administrator or system from the affected account where applicable, without retaining
       raw session tokens.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-021
     title: Failed authentication, failed session establishment, canceled authentication, and repeated
       callbacks do not create false or duplicate successful login events; supported logout/revocation
       failure paths likewise do not claim completion.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-007
   title: Audit all user and author account mutations
-  status: verified_plan
   acceptance_criteria:
   - id: AC-022
     title: Creation, deletion, profile updates, locking/unlocking, role and permission changes, and course-section
       creation-right changes record the acting identity, affected account, and pertinent safe changes.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-023
     title: Account linking and credential-recovery operations record the lifecycle action and affected
       identities without passwords, recovery codes, or tokens; the audit actor is not inferred to be the
       affected account when another actor initiated the action.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-024
     title: Account deletion retains enough historical target identification for display and search after
       the account row is gone, including when the operation is reached through an alternate supported
       caller.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-008
   title: Audit project lifecycle, publication, ownership, and collaborators
-  status: verified_plan
   acceptance_criteria:
   - id: AC-025
     title: Project creation, duplication, import, and deletion identify the actor and affected project,
       with safe source/destination context where relevant and durable identity for deleted projects.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-026
     title: Publishing records the project and resulting publication/version context only for a successful
       publication, preserving existing publishing audit coverage.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-027
     title: Ownership and collaborator additions, removals, and permission changes identify affected people
       separately from the actor and record the pertinent previous/resulting relationship.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-009
   title: Audit instructor assessment-setting edits, bulk changes, and resets
-  status: verified_plan
   acceptance_criteria:
   - id: AC-028
     title: Each committed instructor assessment-setting change identifies actor, assessment resource,
       section, changed setting, and safe previous/resulting values, including all supported settings rather
       than a selected subset.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-029
     title: Bulk apply records every actually changed assessment and setting with batch context; unchanged
       fields and failed targets are not logged as successful value changes.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-030
     title: Reset-to-default operations record the removal of an override and the resulting default/effective
       state as needed to explain the change. Secret-valued settings disclose that they changed without
       disclosing either value.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-010
   title: Audit student assessment exceptions and exemptions
-  status: verified_plan
   acceptance_criteria:
   - id: AC-031
     title: Creating, modifying, or deleting a student assessment exception/exemption identifies the instructor/administrator
       actor separately from the affected student, with section, assessment, and meaningful safe before/after
       state.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-032
     title: Supported bulk exception/exemption actions account for all changed students and assessments
       without duplicate events or success evidence for failed/unchanged targets.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-011
   title: Audit DOT and activation-point configuration
-  status: verified_plan
   acceptance_criteria:
   - id: AC-033
     title: Persisted DOT and activation-point changes at project, section, and content levels identify
       the precise affected scope and safe prior/resulting configuration, including prompt configuration.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-034
     title: Persisted instructor AI recommendation configuration/actions within the ticket scope are attributable
       and distinguish configured prompts/recommendations from routine learner interactions; transient
       edits create no committed-change event.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-012
   title: Audit saved section remixes
-  status: verified_plan
   acceptance_criteria:
   - id: AC-035
     title: Saving a section remix records material additions/removals, moves/reordering, visibility changes,
       and source-publication changes with section and affected content/source identities sufficient to
       understand the resulting curriculum.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-036
     title: Unsaved drag/drop, previews, canceled remixes, and failed saves do not create successful remix-change
       events; a single save does not duplicate evidence through internal remix helpers.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-013
   title: Audit destructive authoring actions
-  status: verified_plan
   acceptance_criteria:
   - id: AC-037
     title: Removing pages or containers, removing activities from pages, deleting activity-bank questions,
       and deleting media identifies the actor, project/context, affected content, and safe historical
       identity after deletion.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-038
     title: Imports and repairs that replace authoring content identify the replaced scope and pertinent
       before/after evidence; asynchronous paths use the administrative outcome contract rather than reporting
       initiation as replacement success.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-014
   title: Audit discussion deletion and moderation
-  status: verified_plan
   acceptance_criteria:
   - id: AC-039
     title: Post/thread deletion and moderation by the content author, instructor, or administrator record
       the actual actor, affected discussion entity, relevant section/resource scope, and the action or
       state transition.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-040
     title: Self-deletion remains distinguishable from deletion by another actor. Deleted discussion entities
       remain identifiable without requiring indiscriminate retention of full post bodies.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-015
   title: Audit administrative interventions in learner records
-  status: verified_plan
   acceptance_criteria:
   - id: AC-041
     title: Attempt deletion/reset, progress restoration, manual grade changes, and regrading identify
       the initiating instructor/administrator, affected learner, section/resource/attempt scope, and pertinent
       safe previous/resulting state.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-042
     title: Administrative regrading is distinguishable from ordinary automatic scoring; intervention failures
       or partial asynchronous results follow the shared outcome rules and do not fabricate a completed
       grade/progress change.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-016
   title: Audit remaining project settings
-  status: verified_plan
   acceptance_criteria:
   - id: AC-043
     title: Persisted project visibility, duplication permissions, learning models, experiments, alternatives,
       activity/tool availability, and required-survey changes record actor, project, and meaningful safe
       prior/resulting values.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-044
     title: The action inventory accounts for other persisted project-setting mutations exposed by current
       application paths; no project-setting path is excluded solely because it uses a generic update function.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-017
   title: Audit authoring configuration
-  status: verified_plan
   acceptance_criteria:
   - id: AC-045
     title: Assessment defaults and activity-bank rules record actor, affected project/content/bank scope,
       and meaningful safe prior/resulting configuration.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-046
     title: Learning-objective and curriculum configuration changes record their affected entities, relationships,
       and project scope, including deletions and reorderings where supported.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-018
   title: Audit section, product, and blueprint lifecycle and settings
-  status: verified_plan
   acceptance_criteria:
   - id: AC-047
     title: Creation, deletion, and archival of sections, products, and blueprints record the actor and
       affected entity, retaining historical identity after removal.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-048
     title: Schedules, access, registration, content delivery, required surveys, and other persisted settings
       for sections/products/blueprints record meaningful safe changes and the correct entity/scope.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-019
   title: Audit enrollment and instructor-access administration
-  status: verified_plan
   acceptance_criteria:
   - id: AC-049
     title: Invitations, enrollment/access role changes, suspension, and unenrollment identify the initiating
       actor separately from each affected learner or instructor and record the relevant section and relationship
       transition.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-050
     title: Supported bulk roster/access administration accounts for each affected relationship and distinguishes
       failed/skipped entries from committed changes; sensitive invitation or access tokens are excluded.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-020
   title: Audit publication application and automatic-update policy changes
-  status: verified_plan
   acceptance_criteria:
   - id: AC-051
     title: Applying a publication update to a section identifies the section, source project/publication,
       previous and resulting publication context, and initiating actor.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-052
     title: Changes to automatic-publication-update policies record previous/resulting policy. Subsequent
       background application preserves an explicit system or initiating actor according to the documented
       operation contract.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-021
   title: Audit gating, prerequisites, and curriculum scheduling
-  status: verified_plan
   acceptance_criteria:
   - id: AC-053
     title: Creating, modifying, or removing gating/prerequisite conditions records the actor, affected
       section/content relationships, and meaningful previous/resulting conditions.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-054
     title: Bulk curriculum scheduling changes identify affected resources and previous/resulting schedules
       with shared operation context, without events for untouched entries.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-022
   title: Audit discussion, notes, and student-support configuration
-  status: verified_plan
   acceptance_criteria:
   - id: AC-055
     title: Persisted discussion, notes, and student-support configuration changes record the actor, applicable
       scope, and meaningful safe prior/resulting configuration; routine note/content use is not added
       to scope by this configuration requirement.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-023
   title: Audit payment, paywall, and entitlement administration
-  status: verified_plan
   acceptance_criteria:
   - id: AC-056
     title: Payment/paywall settings, pricing, discounts, and payment-code administrative changes record
       actor, affected entities/scope, and safe previous/resulting state without exposing secret redeemable
       codes or provider credentials.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-057
     title: Manual entitlement grants, changes, and revocations distinguish the acting administrator from
       the beneficiary and record applicable scope and previous/resulting entitlement.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-024
   title: Audit certificate configuration and administrative decisions
-  status: verified_plan
   acceptance_criteria:
   - id: AC-058
     title: Certificate configuration changes record actor, affected certificate/section scope, and meaningful
       safe previous/resulting configuration.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-059
     title: Administrative certificate grants and revocations identify the decision-maker separately from
       the recipient and record the certificate and applicable scope without treating routine automated
       learning outcomes as manual interventions.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-025
   title: Audit organization, consent, and integration configuration
-  status: verified_plan
   acceptance_criteria:
   - id: AC-060
     title: Institution, community/publisher, and research-consent configuration changes identify actor,
       affected entity/scope, and meaningful safe prior/resulting state.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-061
     title: LMS, SSO, LTI, and external-tool configuration changes record safe relationship/settings changes
       and relevant organization/project/section scope without credentials, private keys, tokens, or signed
       launch payloads.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-062
     title: Roster and grade-passback configuration changes are attributable and searchable; this configuration
       requirement does not add ordinary roster reads or automatic grade transmissions as administrative
       change events.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-026
   title: Audit AI services, credentials, feature flags, and rollouts
-  status: verified_plan
   acceptance_criteria:
   - id: AC-063
     title: AI model/service configuration changes record actor, affected service/model scope, and safe
       previous/resulting settings without provider credentials.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-064
     title: API/MCP credential creation, regeneration/rotation, enable/disable where supported, and deletion
       record the actor, safe credential identity, affected owner/scope, and lifecycle transition without
       any credential value.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-065
     title: Feature flag enable/disable/removal and rollout-stage/exemption creation/update/deletion preserve
       existing coverage and record the actor, scope, and pertinent previous/resulting control state.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-027
   title: Audit other administrative imports, repairs, and data interventions
-  status: verified_plan
   acceptance_criteria:
   - id: AC-066
     title: Administrative imports, repairs, deletion, restoration, and other operations replacing/removing
       data identify the actor, affected data scope, and safe evidence of the committed intervention across
       all supported entry points.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-067
     title: ClickHouse administrative work retains its existing initiation coverage and gains correlated
       durable outcomes, including failure/partial completion where applicable; telemetry or PubSub messages
       alone are not the terminal audit record.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-028
   title: Audit persisted user and author preferences
-  status: verified_plan
   acceptance_criteria:
   - id: AC-068
     title: Persisted user and author preference changes record the actor, affected account, and safe previous/resulting
       preference values. Implementation priority follows access and destructive actions, but this family
       is included in final acceptance.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-029
   title: Preserve all existing central audit coverage
-  status: verified_plan
   acceptance_criteria:
   - id: AC-069
     title: Regression coverage preserves user_deleted, author_deleted, author_role_changed, project_published,
       section_created, account_internal_flag_changed, google_doc_imported, and resource_attempt_deleted
       semantics after producer migration, without duplicate captures.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-070
     title: Regression coverage preserves feature_flag_enabled, feature_flag_disabled, feature_flag_removed,
       feature_rollout_stage_changed, feature_rollout_stage_deleted, feature_rollout_exemption_upserted,
       and feature_rollout_exemption_deleted semantics.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-071
     title: clickhouse_admin_operation_initiated remains recognizable as initiation in both historical
       and new records. Existing audit consumers continue to read migrated legacy events without treating
       initiation as completion.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-030
   title: Exclude secrets and preserve historical identification
-  status: verified_plan
   acceptance_criteria:
   - id: AC-072
     title: Event-specific safe-field rules reject or omit passwords, tokens, credentials, recovery secrets,
       and other secrets, including nested values and errors. Negative tests cover authentication, API/MCP,
       integrations, and assessment passwords.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-073
     title: Deleting or renaming an actor or affected entity does not erase or silently rewrite its recorded
       event-time identity; historical events remain understandable and searchable using retained safe
       identifiers/snapshots.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-074
     title: Neither event insertion errors, telemetry, nor the details UI exposes rejected secret values.
       Historical migration retains evidence of secret-setting changes without copying the values into
       the new store.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-031
   title: Introduce maintainable PostgreSQL time-partitioned audit storage
-  status: verified_plan
   acceptance_criteria:
   - id: AC-075
     title: A documented comparison of six-month and annual intervals justifies the selected time partitioning
       with available volume/growth evidence, retention granularity, query patterns, and operational tradeoffs;
       estimates are labeled.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
   - id: AC-076
     title: The new infrastructure routes historical and new events to the correct partitions at UTC interval
       boundaries and supports existing event lookup semantics and continued ID allocation after migration.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-077
     title: A tested provisioning/maintenance procedure creates future partitions before they are needed
       and defines observable failure/recovery behavior for missing partitions; normal inserts do not silently
       disappear.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
   - id: AC-078
     title: An isolated rehearsal demonstrates removal of an oldest partition without affecting newer retained
       partitions. Release does not enable automatic history deletion or establish an unapproved retention
       period.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
 - id: FR-032
   title: Migrate central history honestly and enforce the new format
-  status: verified_plan
   acceptance_criteria:
   - id: AC-079
     title: Migration records every existing central event identifier as provenance (legacy_source/legacy_id)
       while allocating new central identifiers in original order, and preserves timestamps, meanings,
       reliable scope references, and safe payload contents. Reconciliation accounts for every source record and explicitly
       records any required sanitization or invalid-data handling.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-080
     title: Migrated incomplete records use schema_version 1, preserve unknown fields as unknown, and remain
       readable. Migration does not fabricate event-time identities from current records, classify unknown
       actors as system, or convert initiation into success.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-081
     title: Normal new writes use schema_version 2 and satisfy their event-specific requirements. Application
       entry points cannot request legacy format to bypass validation, while conditional database constraints
       admit legitimate historical incompleteness.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-082
     title: Isolated cutover and rollback rehearsals verify simultaneous-write/application-version handling,
       sequences, constraints, and events created after cutover. The documented rollback preserves safe
@@ -679,197 +402,117 @@ requirements:
       superseded central audit table is removed in the same implementation PR and deployment as its replacement
       after verification and recovery-readiness checks; failure stops or recovers the deployment rather
       than deferring retirement to a later cleanup release.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
 - id: FR-033
   title: Consolidate assessment-settings history into the central store
-  status: verified_plan
   acceptance_criteria:
   - id: AC-083
     title: Historical settings_changes records are converted into central evidence with reliable actor-type
       mapping, resource/section scope, original time, safe prior/resulting values, and source provenance.
       Unknown types or operation grouping are not invented.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-084
     title: Historical conversion avoids collisions with central event IDs and is protected against duplicate
       source imports. Password/secret values are absent while evidence of their change remains available.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-085
     title: After cutover, individual, bulk, and reset settings operations write only the central history,
       atomically with their local mutations; functional effective-settings behavior is preserved.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-086
     title: Legacy history APIs, application/test consumers, and storage are retired after migration verification
       and any known external dependencies are addressed. Rollback/retirement is documented; no permanent
       double-write or parallel history remains.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
 - id: FR-034
   title: Make new and historical events understandable and searchable in the existing Audit Log
-  status: verified_plan
   acceptance_criteria:
   - id: AC-087
     title: The administrator Audit Log displays every cataloged event family with readable action, actor,
       affected subject/entity, relevant scope, time, safe changes, and outcome where applicable; it also
       renders incomplete historical and explicit system events without errors.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-088
     title: An administrator can find events by retained actor or affected-entity identity, including deleted
       targets; existing actor name/email and project/section slug searches remain useful. Safe snapshots
       participate where live records are unavailable.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-089
     title: Action, time-range, and applicable project/section constraints narrow results correctly, including
       at partition boundaries; combining filters, clearing filters, sorting, and pagination preserves
       stable results.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-090
     title: Details, empty results, unknown historical fields, and unavailable target links are understandable
       and keyboard accessible using established labels/focus patterns. The UI exposes neither secrets
       nor schema-version implementation details as primary content.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
 - id: FR-035
   title: Preserve authorization and scope isolation
-  status: verified_plan
   acceptance_criteria:
   - id: AC-091
     title: Only principals permitted by the existing administrator Audit Log policy can access its list,
       details, and search results; unauthorized direct requests and manipulated identifiers/filters do
       not disclose events.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-092
     title: Migrated operations retain their existing role, institution, project, and section authorization
       checks. Supplying an audit actor or using API/MCP/Scenario/job entry points does not grant additional
       operation permissions.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-036
   title: Separate mutation logic from shared audited orchestration and enforce dependencies
-  status: verified_plan
   acceptance_criteria:
   - id: AC-093
     title: Migrated operations expose a shared domain coordinator that invokes the raw mutation and event
       creation, independently of UI transport. Raw mutation code does not insert audit records; read APIs
       remain usable without mutation privileges.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
   - id: AC-094
     title: The Boundary pilot demonstrates that representative consumers can call allowed read/coordinator
       APIs, cannot directly reference protected mutation modules, and cause CI to fail on a deliberate
       forbidden reference. The verified compiler environments and topology are documented.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
   - id: AC-095
     title: Each migrated group removes or restricts its unaudited public shortcuts and inventories direct
       Repo writes, dynamic calls, nested operations, and test-support exceptions. There is no blanket
       Oli/OliWeb/Scenarios mutation exemption or claim that Boundary proves runtime audit completeness.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
 - id: FR-037
   title: Use intentional actors and audited operations in Scenarios and Playwright setup
-  status: verified_plan
   acceptance_criteria:
   - id: AC-096
     title: Scenario bootstrap creation of authors/instructors/students records an explicit technical/system
       actor such as Setup PW and identifies created accounts as subjects; attribution does not silently
       use the first available author.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-097
     title: Subsequent scenario project creation/publication uses the represented author, and section creation/invitations
       use the represented instructor. In-scope directives call audited application operations without
       duplicating existing captures.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-098
     title: Scenario/Playwright integration tests exercise real directives and domain paths, preserve authorization,
       tolerate legitimate setup audit events through scoped assertions, and verify that ordinary student
       answers do not generate administrative events.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
 - id: FR-038
   title: Validate incrementally and release the complete integration
-  status: verified_plan
   acceptance_criteria:
   - id: AC-099
     title: Each implementation PR includes its relevant contract/domain/transaction/channel/migration
       tests and passes required checks before integration; test work is not deferred to the final UI or
       final integration PR.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
   - id: AC-100
     title: The final integration contains all ticket coverage, compatible readers/writers, central-only
       assessment history, and no unapproved legacy-writer escape. QA records the current integration preview
       revision and acceptance results before the master merge queue.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
   - id: AC-101
     title: The reviewed implementation plan maps every requirement and criterion to a sized cohesive PR
       with dependencies, tests, and completion gates, and prepares one subtask draft per planned implementation
       PR for explicit approval before Jira creation.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
 - id: FR-039
   title: Establish performance and operational evidence for expanded auditing
-  status: verified_plan
   acceptance_criteria:
   - id: AC-102
     title: A reproducible benchmark report compares representative single/bulk audited writes and paginated/filtered
       searches with baseline behavior at documented dataset sizes. It records added latency, query plans/work,
       storage growth, and partition-pruning behavior against budgets accepted during architecture review.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
   - id: AC-103
     title: Migration rehearsal documents duration, locking, temporary capacity, and deployment impact;
       audit-write, asynchronous-outcome, and partition-maintenance failures are diagnosable through existing
       operational facilities without leaking payload secrets.
-    status: verified_plan
-    verification_method: hybrid
-    proofs: []
 - id: FR-040
   title: Keep routine learning and transient UI activity outside the expansion
-  status: verified_plan
   acceptance_criteria:
   - id: AC-104
     title: Ordinary page visits, quiz submissions, student activity answers, and automatic scoring create
       no new administrative audit events solely for that learning activity; explicit administrative intervention
       tests still produce the required evidence.
-    status: verified_plan
-    verification_method: automated
-    proofs: []
   - id: AC-105
     title: Unsaved configuration edits, canceled dialogs/previews, and no-op ordinary saves do not appear
       as committed changes; meaningful authentication and administrative lifecycle events are not incorrectly
       discarded because they lack a configuration diff.
-    status: verified_plan
-    verification_method: automated
-    proofs: []

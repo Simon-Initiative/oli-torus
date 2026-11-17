@@ -10,7 +10,7 @@ defmodule Oli.IndependentLearnersTest do
       independent_learner = user_fixture(%{independent_learner: true})
 
       {:ok, independent_instructor} =
-        Accounts.update_user_platform_roles(
+        Oli.TestHelpers.put_platform_roles_fixture(
           user_fixture(%{can_create_sections: true, independent_learner: true}),
           [
             Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)

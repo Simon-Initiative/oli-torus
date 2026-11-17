@@ -30,8 +30,8 @@ defmodule Oli.ScopedFeatureFlags do
 
   ### Usage Examples
 
-      # Enable for a project (authoring context)
-      ScopedFeatureFlags.enable_feature(:mcp_authoring, project)
+      # Enable for a project (authoring context), recording the change in the audit log
+      Oli.ScopedFeatureFlags.Audited.enable_feature(context, :mcp_authoring, project)
       
       # Check if enabled
       if ScopedFeatureFlags.enabled?(:mcp_authoring, project) do
@@ -47,7 +47,6 @@ defmodule Oli.ScopedFeatureFlags do
   require Logger
 
   alias Oli.Repo
-  alias Oli.Auditing
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
@@ -114,104 +113,6 @@ defmodule Oli.ScopedFeatureFlags do
     case get_feature_flag_state(feature_name_string, section_id: section_id) do
       %ScopedFeatureFlagState{} -> true
       nil -> false
-    end
-  end
-
-  @doc """
-  Enables a feature for a project or section.
-
-  ## Parameters
-  - feature_name: The name of the feature to enable (atom or string)
-  - resource: The project or section to enable the feature for
-  - actor: (optional) The user or author performing the action for audit logging
-  """
-  def enable_feature(feature_name, resource, actor \\ nil)
-
-  def enable_feature(feature_name, %Project{id: project_id} = project, actor) do
-    validate_feature_name_at_runtime(feature_name)
-
-    feature_name_string =
-      if is_atom(feature_name), do: Atom.to_string(feature_name), else: feature_name
-
-    case set_feature_flag(feature_name_string, project_id: project_id, enabled: true) do
-      {:ok, flag_state} ->
-        log_feature_flag_change(actor, :feature_flag_enabled, project, feature_name_string, true)
-        {:ok, flag_state}
-
-      error ->
-        error
-    end
-  end
-
-  def enable_feature(feature_name, %Section{id: section_id} = section, actor) do
-    validate_feature_name_at_runtime(feature_name)
-
-    feature_name_string =
-      if is_atom(feature_name), do: Atom.to_string(feature_name), else: feature_name
-
-    case set_feature_flag(feature_name_string, section_id: section_id, enabled: true) do
-      {:ok, flag_state} ->
-        log_feature_flag_change(actor, :feature_flag_enabled, section, feature_name_string, true)
-        {:ok, flag_state}
-
-      error ->
-        error
-    end
-  end
-
-  @doc """
-  Disables a feature for a project or section.
-
-  ## Parameters
-  - feature_name: The name of the feature to disable (atom or string)
-  - resource: The project or section to disable the feature for
-  - actor: (optional) The user or author performing the action for audit logging
-  """
-  def disable_feature(feature_name, resource, actor \\ nil)
-
-  def disable_feature(feature_name, %Project{id: project_id} = project, actor) do
-    validate_feature_name_at_runtime(feature_name)
-
-    feature_name_string =
-      if is_atom(feature_name), do: Atom.to_string(feature_name), else: feature_name
-
-    case set_feature_flag(feature_name_string, project_id: project_id, enabled: false) do
-      {:ok, flag_state} ->
-        log_feature_flag_change(
-          actor,
-          :feature_flag_disabled,
-          project,
-          feature_name_string,
-          false
-        )
-
-        {:ok, flag_state}
-
-      error ->
-        error
-    end
-  end
-
-  def disable_feature(feature_name, %Section{id: section_id} = section, actor) do
-    validate_feature_name_at_runtime(feature_name)
-
-    feature_name_string =
-      if is_atom(feature_name), do: Atom.to_string(feature_name), else: feature_name
-
-    case set_feature_flag(feature_name_string, section_id: section_id, enabled: false) do
-      {:ok, flag_state} ->
-        log_feature_flag_change(
-          actor,
-          :feature_flag_disabled,
-          section,
-          feature_name_string,
-          false
-        )
-
-        {:ok, flag_state}
-
-      error ->
-        error
     end
   end
 
@@ -315,59 +216,6 @@ defmodule Oli.ScopedFeatureFlags do
   end
 
   @doc """
-  Sets multiple features atomically for a project or section.
-  All operations succeed or all fail.
-
-  ## Parameters
-  - feature_settings: List of {feature_name, enabled} tuples
-  - resource: The project or section to set features for
-  - actor: (optional) The user or author performing the action for audit logging
-  """
-  def set_features_atomically(feature_settings, resource, actor \\ nil)
-
-  def set_features_atomically(feature_settings, %Project{id: project_id} = project, actor) do
-    Repo.transaction(fn ->
-      Enum.map(feature_settings, fn {feature_name, enabled} ->
-        case set_feature_flag(feature_name, project_id: project_id, enabled: enabled) do
-          {:ok, flag_state} ->
-            # Log the individual feature change
-            event_type = if enabled, do: :feature_flag_enabled, else: :feature_flag_disabled
-
-            feature_name_string =
-              if is_atom(feature_name), do: Atom.to_string(feature_name), else: feature_name
-
-            log_feature_flag_change(actor, event_type, project, feature_name_string, enabled)
-            flag_state
-
-          {:error, changeset} ->
-            Repo.rollback(changeset)
-        end
-      end)
-    end)
-  end
-
-  def set_features_atomically(feature_settings, %Section{id: section_id} = section, actor) do
-    Repo.transaction(fn ->
-      Enum.map(feature_settings, fn {feature_name, enabled} ->
-        case set_feature_flag(feature_name, section_id: section_id, enabled: enabled) do
-          {:ok, flag_state} ->
-            # Log the individual feature change
-            event_type = if enabled, do: :feature_flag_enabled, else: :feature_flag_disabled
-
-            feature_name_string =
-              if is_atom(feature_name), do: Atom.to_string(feature_name), else: feature_name
-
-            log_feature_flag_change(actor, event_type, section, feature_name_string, enabled)
-            flag_state
-
-          {:error, changeset} ->
-            Repo.rollback(changeset)
-        end
-      end)
-    end)
-  end
-
-  @doc """
   Returns all defined features with their metadata.
   """
   def all_defined_features do
@@ -401,74 +249,6 @@ defmodule Oli.ScopedFeatureFlags do
   """
   def get_feature_metadata(feature_name) do
     DefinedFeatures.get_feature(feature_name)
-  end
-
-  @doc """
-  Removes a feature flag state for a project or section.
-
-  ## Parameters
-  - feature_name: The name of the feature to remove (atom or string)
-  - resource: The project or section to remove the feature from
-  - actor: (optional) The user or author performing the action for audit logging
-  """
-  def remove_feature(feature_name, resource, actor \\ nil)
-
-  def remove_feature(feature_name, %Project{id: project_id} = project, actor) do
-    validate_feature_name_at_runtime(feature_name)
-
-    feature_name_string =
-      if is_atom(feature_name), do: Atom.to_string(feature_name), else: feature_name
-
-    case get_feature_flag_state(feature_name_string, project_id: project_id) do
-      %ScopedFeatureFlagState{} = flag_state ->
-        case Repo.delete(flag_state) do
-          {:ok, deleted_state} ->
-            log_feature_flag_change(
-              actor,
-              :feature_flag_removed,
-              project,
-              feature_name_string,
-              nil
-            )
-
-            {:ok, deleted_state}
-
-          error ->
-            error
-        end
-
-      nil ->
-        {:error, :not_found}
-    end
-  end
-
-  def remove_feature(feature_name, %Section{id: section_id} = section, actor) do
-    validate_feature_name_at_runtime(feature_name)
-
-    feature_name_string =
-      if is_atom(feature_name), do: Atom.to_string(feature_name), else: feature_name
-
-    case get_feature_flag_state(feature_name_string, section_id: section_id) do
-      %ScopedFeatureFlagState{} = flag_state ->
-        case Repo.delete(flag_state) do
-          {:ok, deleted_state} ->
-            log_feature_flag_change(
-              actor,
-              :feature_flag_removed,
-              section,
-              feature_name_string,
-              nil
-            )
-
-            {:ok, deleted_state}
-
-          error ->
-            error
-        end
-
-      nil ->
-        {:error, :not_found}
-    end
   end
 
   @doc """
@@ -554,43 +334,39 @@ defmodule Oli.ScopedFeatureFlags do
 
   # Private functions
 
-  defp log_feature_flag_change(actor, event_type, resource, feature_name, enabled_value) do
-    details = %{
-      "feature_name" => feature_name,
-      "enabled" => enabled_value
-    }
+  @doc """
+  Raises `ArgumentError` unless `feature_name` (atom or string) is a defined feature, as the
+  flag writers in `Oli.ScopedFeatureFlags.Audited` require.
+  """
+  def validate_feature_name!(feature_name), do: validate_feature_name_at_runtime(feature_name)
 
-    {details, resource} =
-      case resource do
-        %Project{} = project ->
-          details = Map.put(details, "resource_type", "project")
+  @doc """
+  Checks that the feature `feature_name` (a string) can be set on `resource`: a valid defined
+  name, a scope the feature supports (authoring for projects, delivery for sections), and a
+  positive resource ID. Returns `:ok` or `{:error, %{type => [message]}}`.
+  """
+  def validate_flag_write(feature_name, %Project{id: project_id}),
+    do: validate_write(feature_name, :authoring, project_id)
 
-          details =
-            if project.title, do: Map.put(details, "project_title", project.title), else: details
+  def validate_flag_write(feature_name, %Section{id: section_id}),
+    do: validate_write(feature_name, :delivery, section_id)
 
-          {details, project}
-
-        %Section{} = section ->
-          details = Map.put(details, "resource_type", "section")
-
-          details =
-            if section.title, do: Map.put(details, "section_title", section.title), else: details
-
-          {details, section}
-
-        _ ->
-          {details, resource}
-      end
-
-    # Only log if we have an actor (user or author)
-    if actor do
-      case Auditing.capture(actor, event_type, resource, details) do
-        {:ok, _event} -> :ok
-        # Don't fail the main operation if audit logging fails
-        {:error, _changeset} -> :ok
-      end
+  defp validate_write(feature_name, scope, resource_id) do
+    with :ok <- validate_feature_name(feature_name),
+         :ok <- validate_feature_scope(feature_name, scope),
+         :ok <- validate_resource_id(resource_id) do
+      :ok
+    else
+      {:error, type, message} -> {:error, %{type => [message]}}
     end
   end
+
+  @doc "Returns the stored flag state of `feature_name` for `resource`, or `nil` when unset."
+  def get_flag_state(feature_name, %Project{id: project_id}),
+    do: get_feature_flag_state(feature_name, project_id: project_id)
+
+  def get_flag_state(feature_name, %Section{id: section_id}),
+    do: get_feature_flag_state(feature_name, section_id: section_id)
 
   defp validate_feature_name_at_runtime(feature_name) when is_atom(feature_name) do
     unless DefinedFeatures.valid_feature?(feature_name) do
@@ -672,88 +448,6 @@ defmodule Oli.ScopedFeatureFlags do
     ScopedFeatureFlagState
     |> where(feature_name: ^feature_name, section_id: ^section_id)
     |> Repo.one()
-  end
-
-  defp set_feature_flag(feature_name, project_id: project_id, enabled: true) do
-    with :ok <- validate_feature_name(feature_name),
-         :ok <- validate_feature_scope(feature_name, :authoring),
-         :ok <- validate_resource_id(project_id) do
-      case get_feature_flag_state(feature_name, project_id: project_id) do
-        %ScopedFeatureFlagState{} = existing ->
-          # Already enabled, return the existing record
-          {:ok, existing}
-
-        nil ->
-          # Create new record to enable feature
-          %ScopedFeatureFlagState{}
-          |> ScopedFeatureFlagState.changeset_with_project(
-            %{feature_name: feature_name},
-            project_id
-          )
-          |> Repo.insert()
-      end
-    else
-      {:error, type, message} -> {:error, %{type => [message]}}
-    end
-  end
-
-  defp set_feature_flag(feature_name, project_id: project_id, enabled: false) do
-    with :ok <- validate_feature_name(feature_name),
-         :ok <- validate_feature_scope(feature_name, :authoring),
-         :ok <- validate_resource_id(project_id) do
-      case get_feature_flag_state(feature_name, project_id: project_id) do
-        %ScopedFeatureFlagState{} = existing ->
-          # Delete the record to disable feature
-          Repo.delete(existing)
-
-        nil ->
-          # Already disabled, return ok
-          {:ok, nil}
-      end
-    else
-      {:error, type, message} -> {:error, %{type => [message]}}
-    end
-  end
-
-  defp set_feature_flag(feature_name, section_id: section_id, enabled: true) do
-    with :ok <- validate_feature_name(feature_name),
-         :ok <- validate_feature_scope(feature_name, :delivery),
-         :ok <- validate_resource_id(section_id) do
-      case get_feature_flag_state(feature_name, section_id: section_id) do
-        %ScopedFeatureFlagState{} = existing ->
-          # Already enabled, return the existing record
-          {:ok, existing}
-
-        nil ->
-          # Create new record to enable feature
-          %ScopedFeatureFlagState{}
-          |> ScopedFeatureFlagState.changeset_with_section(
-            %{feature_name: feature_name},
-            section_id
-          )
-          |> Repo.insert()
-      end
-    else
-      {:error, type, message} -> {:error, %{type => [message]}}
-    end
-  end
-
-  defp set_feature_flag(feature_name, section_id: section_id, enabled: false) do
-    with :ok <- validate_feature_name(feature_name),
-         :ok <- validate_feature_scope(feature_name, :delivery),
-         :ok <- validate_resource_id(section_id) do
-      case get_feature_flag_state(feature_name, section_id: section_id) do
-        %ScopedFeatureFlagState{} = existing ->
-          # Delete the record to disable feature
-          Repo.delete(existing)
-
-        nil ->
-          # Already disabled, return ok
-          {:ok, nil}
-      end
-    else
-      {:error, type, message} -> {:error, %{type => [message]}}
-    end
   end
 
   defp evaluate_access(feature_name, actor, resource, opts) do

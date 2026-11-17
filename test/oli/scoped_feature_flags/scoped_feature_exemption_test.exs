@@ -7,7 +7,7 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureExemptionTest do
   describe "changeset/2" do
     test "is valid with required attributes" do
       {:ok, publisher} =
-        Inventories.create_publisher(%{
+        Inventories.Audited.create_publisher(Oli.TestHelpers.audit_context(), %{
           name: "Example Publisher #{System.unique_integer()}",
           email: "pub#{System.unique_integer()}@example.com",
           default: false
@@ -27,7 +27,7 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureExemptionTest do
 
     test "rejects unsupported effect" do
       {:ok, publisher} =
-        Inventories.create_publisher(%{
+        Inventories.Audited.create_publisher(Oli.TestHelpers.audit_context(), %{
           name: "Example Publisher #{System.unique_integer()}",
           email: "pub#{System.unique_integer()}@example.com",
           default: false

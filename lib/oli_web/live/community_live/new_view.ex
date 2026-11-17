@@ -1,6 +1,7 @@
 defmodule OliWeb.CommunityLive.NewView do
   use OliWeb, :live_view
 
+  alias Oli.Auditing.Context
   alias Oli.Groups
   alias Oli.Groups.Community
   alias OliWeb.Common.{Breadcrumb, FormContainer, Params}
@@ -40,7 +41,10 @@ defmodule OliWeb.CommunityLive.NewView do
   def handle_event("save", %{"community" => params}, socket) do
     socket = clear_flash(socket)
 
-    case Groups.create_community(Params.trim(params)) do
+    case Groups.create_community(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           Params.trim(params)
+         ) do
       {:ok, _community} ->
         {:noreply,
          socket

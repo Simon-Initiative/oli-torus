@@ -62,12 +62,19 @@ defmodule Oli.Authoring.Collaborators do
   Invite a collaborator to a project.
   It creates the author if that email does not exist in the system
   and then creates an invitation token and sends an email to the invited author/collaborator.
+  `context` identifies the inviting author, who is the actor of the created author's audit event.
   """
 
-  @spec invite_collaborator(String.t(), String.t(), String.t(), String.t()) ::
+  @spec invite_collaborator(
+          Oli.Auditing.Context.t(),
+          String.t(),
+          String.t(),
+          String.t(),
+          String.t()
+        ) ::
           {:ok, any()} | {:error, any()}
-  def invite_collaborator(inviter_name, inviter_email, email, project_slug) do
-    with {:ok, author} <- get_or_create_invited_author(email),
+  def invite_collaborator(context, inviter_name, inviter_email, email, project_slug) do
+    with {:ok, author} <- get_or_create_invited_author(context, email),
          {:ok, results} <- do_add_collaborator(email, project_slug, :pending_confirmation),
          {:ok, email_data} <- create_invitation_token(author, project_slug),
          {:ok, project} <-
@@ -160,11 +167,11 @@ defmodule Oli.Authoring.Collaborators do
     end
   end
 
-  def get_or_create_invited_author(email) do
+  def get_or_create_invited_author(context, email) do
     Accounts.get_author_by_email(email)
     |> case do
       nil ->
-        case Accounts.create_invited_author(email) do
+        case Accounts.Audited.invite_author(context, email) do
           {:ok, author} -> {:ok, author}
           {:error, _changeset} -> {:error, "Unable to create invitation for new author"}
         end

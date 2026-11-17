@@ -67,7 +67,7 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
     administrator = insert(:user)
 
     {:ok, administrator} =
-      Oli.Accounts.update_user_platform_roles(administrator, [
+      Oli.TestHelpers.put_platform_roles_fixture(administrator, [
         PlatformRoles.get_role(:institution_administrator)
       ])
 

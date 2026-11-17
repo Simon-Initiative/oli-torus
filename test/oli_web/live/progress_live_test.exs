@@ -6,7 +6,6 @@ defmodule OliWeb.ProgressLiveTest do
   import Oli.Factory
 
   alias Lti_1p3.Roles.{ContextRoles, PlatformRoles}
-  alias Oli.Accounts
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections
   alias Oli.Repo
@@ -406,10 +405,15 @@ defmodule OliWeb.ProgressLiveTest do
 
   defp setup_instructor_session(%{conn: conn, instructor: user, section: section}) do
     {:ok, user} =
-      Accounts.update_user(user, %{can_create_sections: true, independent_learner: true})
+      Oli.TestHelpers.update_account_fixture(user, %{
+        can_create_sections: true,
+        independent_learner: true
+      })
 
     {:ok, instructor} =
-      Accounts.update_user_platform_roles(user, [PlatformRoles.get_role(:institution_instructor)])
+      Oli.TestHelpers.put_platform_roles_fixture(user, [
+        PlatformRoles.get_role(:institution_instructor)
+      ])
 
     Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 

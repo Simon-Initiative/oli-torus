@@ -201,7 +201,11 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
   def handle_event("create", _, socket) do
     created_key = UUID.uuid4()
 
-    case Oli.Interop.create_key(created_key, socket.assigns.hint) do
+    case Oli.Interop.Audited.create_key(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           created_key,
+           socket.assigns.hint
+         ) do
       {:ok, _} ->
         {:noreply, assign(socket, created_key: created_key, keys: all_keys_sorted())}
 
@@ -212,34 +216,41 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
   end
 
   def handle_event("change", %{"id" => "text_" <> id, "value" => namespace}, socket) do
-    Oli.Interop.get_key(id)
-    |> Oli.Interop.update_key(%{registration_namespace: namespace})
-
-    {:noreply, assign(socket, keys: all_keys_sorted())}
+    socket
+    |> context()
+    |> Oli.Interop.Audited.update_key_settings(String.to_integer(id), %{
+      registration_namespace: namespace
+    })
+    |> after_key_write(socket)
   end
 
   def handle_event("toggle", %{"id" => id, "action" => action}, socket) do
-    Oli.Interop.get_key(id)
-    |> Oli.Interop.update_key(%{status: to_state(action)})
-
-    {:noreply, assign(socket, keys: all_keys_sorted())}
+    socket
+    |> context()
+    |> Oli.Interop.Audited.set_key_status(String.to_integer(id), to_state(action))
+    |> after_key_write(socket)
   end
 
   def handle_event("update", %{"field" => field, "id" => id, "action" => action}, socket) do
-    attrs =
-      Map.put(
-        %{},
-        String.to_existing_atom(field),
-        if action == "true" do
-          true
-        else
-          false
-        end
-      )
+    socket
+    |> context()
+    |> Oli.Interop.Audited.update_key_settings(String.to_integer(id), %{
+      field => action == "true"
+    })
+    |> after_key_write(socket)
+  end
 
-    Oli.Interop.get_key(id)
-    |> Oli.Interop.update_key(attrs)
+  defp context(socket),
+    do: Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    {:noreply, assign(socket, keys: all_keys_sorted())}
+  # Reloads the keys either way, so a failed toggle snaps back with a message.
+  defp after_key_write({:ok, _key}, socket),
+    do: {:noreply, assign(socket, keys: all_keys_sorted())}
+
+  defp after_key_write({:error, _reason}, socket) do
+    {:noreply,
+     socket
+     |> put_flash(:error, "We couldn't update the API key.")
+     |> assign(keys: all_keys_sorted())}
   end
 end

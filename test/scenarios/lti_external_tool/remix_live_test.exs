@@ -25,7 +25,7 @@ defmodule OliWeb.LtiExternalTool.RemixLiveTest do
              Sections.enroll(user.id, destination.id, [ContextRoles.get_role(:context_instructor)])
 
     assert {:ok, _} =
-             PlatformExternalTools.upsert_section_resource_deep_link(%{
+             Oli.TestHelpers.upsert_deep_link_fixture(%{
                section_id: source.id,
                resource_id: id,
                type: :ltiResourceLink,

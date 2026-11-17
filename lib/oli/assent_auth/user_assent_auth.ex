@@ -77,32 +77,33 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   User schema module and repo module will be fetched from config.
   """
   def create_user_with_identity(user_identity_params, user_params) do
-    %User{}
-    |> User.user_identity_changeset(user_identity_params, user_params)
-    |> Repo.insert()
+    changeset = User.user_identity_changeset(%User{}, user_identity_params, user_params)
+
+    Oli.Accounts.Audited.provision_account(
+      Oli.Auditing.Context.for_system(:provider_provisioning),
+      {:user, nil, changeset, "sso"}
+    )
   end
 
   @doc """
   Updates user details.
   """
   def update_user_details(user, attrs) do
-    user
-    |> User.details_changeset(attrs)
-    |> Repo.update()
+    Oli.Accounts.Audited.provision_account(
+      Oli.Auditing.Context.for_system(:provider_provisioning),
+      {:user, user.id, &User.details_changeset(&1, attrs), "sso"}
+    )
   end
 
   @doc """
   Adds a user identity for the provider and user.
   """
   def add_identity_provider(user, user_identity_params) do
-    {uid_provider_params, _additional_params} =
-      Map.split(user_identity_params, ["uid", "provider"])
-
-    user_identity = Ecto.build_assoc(user, :user_identities)
-
-    user_identity
-    |> UserIdentity.changeset(uid_provider_params)
-    |> Repo.insert()
+    Oli.Accounts.Audited.link_identity(
+      Oli.Auditing.Context.for_actor(user, source: :ui),
+      user,
+      user_identity_params
+    )
   end
 
   @doc """
@@ -110,16 +111,14 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   """
   def delete_identity_providers(
         {user_identities, rest},
-        %{password_hash: password_hash}
+        %{password_hash: password_hash} = account
       )
       when length(rest) > 0 or not is_nil(password_hash) do
-    results =
-      from(uid in UserIdentity,
-        where: uid.id in ^Enum.map(user_identities, & &1.id)
-      )
-      |> Repo.delete_all()
-
-    {:ok, results}
+    Oli.Accounts.Audited.unlink_identities(
+      Oli.Auditing.Context.for_actor(account, source: :ui),
+      account,
+      user_identities
+    )
   end
 
   def delete_identity_providers(_any, user) do

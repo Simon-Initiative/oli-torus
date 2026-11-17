@@ -571,19 +571,4 @@ defmodule Oli.Delivery do
     Repo.one(ResearchConsent)
     |> Map.get(:research_consent)
   end
-
-  @doc """
-  Updates the research consent form setting.
-  """
-  def update_system_research_consent_form_setting(research_consent) do
-    case Repo.one(ResearchConsent) do
-      nil ->
-        Repo.insert!(%ResearchConsent{research_consent: research_consent})
-
-      %ResearchConsent{} = research_consent_form ->
-        research_consent_form
-        |> ResearchConsent.changeset(%{research_consent: research_consent})
-        |> Repo.update()
-    end
-  end
 end

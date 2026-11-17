@@ -140,7 +140,7 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
         end
 
       id = Hooks.activity(ctx.state).resource_id
-      assert {:ok, _} = PlatformExternalTools.delete_section_resource_deep_link(link(source, id))
+      assert {:ok, _} = Oli.TestHelpers.delete_deep_link_fixture(link(source, id))
       assert {:ok, _} = save_selection(ctx.state, "unconfigured", selection("project-only"))
       publish(ctx.state)
 
@@ -163,7 +163,7 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
     end
 
     assert {:ok, _} =
-             PlatformExternalTools.delete_section_resource_deep_link(hd(links(ctx.source)))
+             Oli.TestHelpers.delete_deep_link_fixture(hd(links(ctx.source)))
 
     delete_resource(ctx.source, Hooks.activity(ctx.state, "unconfigured").resource_id)
     delete_resource(ctx.template, Hooks.activity(ctx.state, "cleared").resource_id)

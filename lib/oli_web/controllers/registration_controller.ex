@@ -1,6 +1,7 @@
 defmodule OliWeb.RegistrationController do
   use OliWeb, :controller
 
+  alias Oli.Auditing.Context
   alias Oli.Repo
   alias Oli.Institutions
   alias Oli.Lti.Tool.Registration
@@ -62,7 +63,10 @@ defmodule OliWeb.RegistrationController do
       registration_params
       |> Map.put("tool_jwk_id", active_jwk.id)
 
-    case Institutions.create_registration(registration_params) do
+    case Institutions.Audited.create_registration(
+           Context.for_actor(conn.assigns.current_author, source: :ui),
+           registration_params
+         ) do
       {:ok, registration} ->
         conn
         |> put_flash(:info, "Registration created successfully.")
@@ -104,7 +108,11 @@ defmodule OliWeb.RegistrationController do
       }) do
     registration = Institutions.get_registration!(id)
 
-    case Institutions.update_registration(registration, registration_params) do
+    case Institutions.Audited.update_registration(
+           Context.for_actor(conn.assigns.current_author, source: :ui),
+           registration.id,
+           registration_params
+         ) do
       {:ok, _registration} ->
         conn
         |> put_flash(:info, "Registration updated successfully.")
@@ -122,7 +130,12 @@ defmodule OliWeb.RegistrationController do
 
   def delete(conn, %{"id" => id}) do
     registration = Institutions.get_registration!(id)
-    {:ok, _registration} = Institutions.delete_registration(registration)
+
+    {:ok, _registration} =
+      Institutions.Audited.delete_registration(
+        Context.for_actor(conn.assigns.current_author, source: :ui),
+        registration.id
+      )
 
     conn
     |> put_flash(:info, "Registration deleted successfully.")

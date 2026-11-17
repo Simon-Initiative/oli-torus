@@ -12,7 +12,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
     institution = insert(:institution)
 
     {:ok, {pi, ar, dep}} =
-      PlatformExternalTools.register_lti_external_tool_activity(%{
+      Oli.Lti.Audited.register_external_tool(Oli.TestHelpers.audit_context(), %{
         "name" => "Original Tool",
         "description" => "A test tool",
         "target_link_uri" => "https://example.com/launch",
@@ -280,7 +280,11 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       platform_instance: pi,
       deployment: dep
     } do
-      PlatformExternalTools.update_lti_external_tool_activity_deployment(dep, %{status: :disabled})
+      Oli.Lti.Audited.update_external_tool_deployment(
+        Oli.TestHelpers.audit_context(),
+        dep.deployment_id,
+        %{status: :disabled}
+      )
 
       {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
 
@@ -321,9 +325,13 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       platform_instance: pi,
       deployment: dep
     } do
-      Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity_deployment(dep, %{
-        status: :deleted
-      })
+      Oli.Lti.Audited.update_external_tool_deployment(
+        Oli.TestHelpers.audit_context(),
+        dep.deployment_id,
+        %{
+          status: :deleted
+        }
+      )
 
       {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
 

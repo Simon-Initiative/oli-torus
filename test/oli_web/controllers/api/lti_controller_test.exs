@@ -6,7 +6,6 @@ defmodule OliWeb.Api.LtiControllerTest do
 
   setup :verify_on_exit!
 
-  alias Oli.Lti.PlatformExternalTools
   alias Oli.Authoring.Editing.{ActivityEditor, PageEditor}
   alias Oli.Publishing
   alias Oli.Delivery.Sections
@@ -299,7 +298,7 @@ defmodule OliWeb.Api.LtiControllerTest do
       "target_link_uri" => "some target_link_uri"
     }
 
-    PlatformExternalTools.register_lti_external_tool_activity(attrs)
+    Oli.Lti.Audited.register_external_tool(Oli.TestHelpers.audit_context(), attrs)
   end
 
   def setup_section(%{conn: conn}) do

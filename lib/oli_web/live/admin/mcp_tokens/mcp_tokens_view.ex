@@ -18,6 +18,7 @@ defmodule OliWeb.Admin.MCPTokens.MCPTokensView do
     include_disabled: true
   }
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   defp set_breadcrumbs() do
@@ -128,7 +129,11 @@ defmodule OliWeb.Admin.MCPTokens.MCPTokensView do
         :disabled -> :active
       end
 
-    case Auth.update_token_status(token_id, new_status) do
+    case Oli.MCP.Audited.set_token_status(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           token_id,
+           new_status
+         ) do
       {:ok, _updated_token} ->
         # Refresh the table data
         tokens =

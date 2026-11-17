@@ -13,7 +13,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       project = insert(:project)
 
       assert {:ok, _flag_state} =
-               ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
+               Oli.ScopedFeatureFlags.Audited.enable_feature(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 :mcp_authoring,
+                 project
+               )
 
       # Check that an audit log entry was created
       events = Auditing.list_events()
@@ -34,21 +38,15 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
 
       # mcp_authoring should fail on section since it's authoring-scoped only
       assert {:error, %{invalid_scope: [error_msg]}} =
-               ScopedFeatureFlags.enable_feature(:mcp_authoring, section, user)
+               Oli.ScopedFeatureFlags.Audited.enable_feature(
+                 Oli.Auditing.Context.for_actor(user, source: :ui),
+                 :mcp_authoring,
+                 section
+               )
 
       assert error_msg =~ "does not support scope 'delivery'"
 
       # Check that no audit log entry was created for invalid operation
-      events = Auditing.list_events()
-      assert length(events) == 0
-    end
-
-    test "does not log when actor is nil" do
-      project = insert(:project)
-
-      assert {:ok, _flag_state} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, nil)
-
-      # Check that no audit log entry was created
       events = Auditing.list_events()
       assert length(events) == 0
     end
@@ -60,10 +58,19 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       project = insert(:project)
 
       # First enable the feature
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :mcp_authoring,
+          project
+        )
 
       assert {:ok, _flag_state} =
-               ScopedFeatureFlags.disable_feature(:mcp_authoring, project, author)
+               Oli.ScopedFeatureFlags.Audited.disable_feature(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 :mcp_authoring,
+                 project
+               )
 
       # Check that an audit log entry was created; enabling the feature recorded its own event.
       assert [event] = Auditing.list_events(event_type: :feature_flag_disabled)
@@ -80,7 +87,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
 
       # mcp_authoring should fail on section since it's authoring-scoped only
       assert {:error, %{invalid_scope: [error_msg]}} =
-               ScopedFeatureFlags.disable_feature(:mcp_authoring, section, user)
+               Oli.ScopedFeatureFlags.Audited.disable_feature(
+                 Oli.Auditing.Context.for_actor(user, source: :ui),
+                 :mcp_authoring,
+                 section
+               )
 
       assert error_msg =~ "does not support scope 'delivery'"
 
@@ -96,10 +107,19 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       project = insert(:project)
 
       # First enable the feature
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :mcp_authoring,
+          project
+        )
 
       assert {:ok, _deleted_state} =
-               ScopedFeatureFlags.remove_feature(:mcp_authoring, project, author)
+               Oli.ScopedFeatureFlags.Audited.remove_feature(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 :mcp_authoring,
+                 project
+               )
 
       # Check that an audit log entry was created; enabling the feature recorded its own event.
       assert [event] = Auditing.list_events(event_type: :feature_flag_removed)
@@ -116,7 +136,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
 
       # mcp_authoring doesn't exist for sections, so should return not found
       assert {:error, :not_found} =
-               ScopedFeatureFlags.remove_feature(:mcp_authoring, section, user)
+               Oli.ScopedFeatureFlags.Audited.remove_feature(
+                 Oli.Auditing.Context.for_actor(user, source: :ui),
+                 :mcp_authoring,
+                 section
+               )
 
       # Check that no audit log entry was created for failed operation
       events = Auditing.list_events()
@@ -128,7 +152,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       project = insert(:project)
 
       assert {:error, :not_found} =
-               ScopedFeatureFlags.remove_feature(:mcp_authoring, project, author)
+               Oli.ScopedFeatureFlags.Audited.remove_feature(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 :mcp_authoring,
+                 project
+               )
 
       # Check that no audit log entry was created for failed removal
       events = Auditing.list_events()
@@ -146,7 +174,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       ]
 
       assert {:ok, _flag_states} =
-               ScopedFeatureFlags.set_features_atomically(feature_settings, project, author)
+               Oli.ScopedFeatureFlags.Audited.set_features_atomically(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 feature_settings,
+                 project
+               )
 
       # Check that audit log entries were created
       events = Auditing.list_events(order_by: [asc: :inserted_at])
@@ -171,7 +203,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
 
       # Should fail due to scope constraint
       assert {:error, %{invalid_scope: [error_msg]}} =
-               ScopedFeatureFlags.set_features_atomically(feature_settings, section, user)
+               Oli.ScopedFeatureFlags.Audited.set_features_atomically(
+                 Oli.Auditing.Context.for_actor(user, source: :ui),
+                 feature_settings,
+                 section
+               )
 
       assert error_msg =~ "does not support scope 'delivery'"
 
@@ -190,7 +226,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       ]
 
       assert {:error, _changeset} =
-               ScopedFeatureFlags.set_features_atomically(feature_settings, project, author)
+               Oli.ScopedFeatureFlags.Audited.set_features_atomically(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 feature_settings,
+                 project
+               )
 
       # Check that no audit log entries were created due to transaction rollback
       events = Auditing.list_events()
@@ -235,7 +275,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       project = insert(:project, title: "Test Project")
 
       assert {:ok, _flag_state} =
-               ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
+               Oli.ScopedFeatureFlags.Audited.enable_feature(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
+                 :mcp_authoring,
+                 project
+               )
 
       # Check that audit log includes project title
       events = Auditing.list_events()
@@ -251,7 +295,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
 
       # Should fail due to scope constraint
       assert {:error, %{invalid_scope: [error_msg]}} =
-               ScopedFeatureFlags.enable_feature(:mcp_authoring, section, user)
+               Oli.ScopedFeatureFlags.Audited.enable_feature(
+                 Oli.Auditing.Context.for_actor(user, source: :ui),
+                 :mcp_authoring,
+                 section
+               )
 
       assert error_msg =~ "does not support scope 'delivery'"
 
@@ -266,7 +314,12 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       project = insert(:project)
 
       # This should work without breaking - just no audit logging
-      assert {:ok, _flag_state} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project)
+      assert {:ok, _flag_state} =
+               Oli.ScopedFeatureFlags.Audited.enable_feature(
+                 Oli.TestHelpers.audit_context(),
+                 :mcp_authoring,
+                 project
+               )
 
       # Verify the feature is enabled
       assert ScopedFeatureFlags.enabled?(:mcp_authoring, project)
@@ -276,10 +329,20 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       project = insert(:project)
 
       # Enable first
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          :mcp_authoring,
+          project
+        )
 
       # This should work without breaking - just no audit logging
-      assert {:ok, _flag_state} = ScopedFeatureFlags.disable_feature(:mcp_authoring, project)
+      assert {:ok, _flag_state} =
+               Oli.ScopedFeatureFlags.Audited.disable_feature(
+                 Oli.TestHelpers.audit_context(),
+                 :mcp_authoring,
+                 project
+               )
 
       # Verify the feature is disabled
       refute ScopedFeatureFlags.enabled?(:mcp_authoring, project)
@@ -289,10 +352,20 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
       project = insert(:project)
 
       # Enable first
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.TestHelpers.audit_context(),
+          :mcp_authoring,
+          project
+        )
 
       # This should work without breaking - just no audit logging
-      assert {:ok, _deleted_state} = ScopedFeatureFlags.remove_feature(:mcp_authoring, project)
+      assert {:ok, _deleted_state} =
+               Oli.ScopedFeatureFlags.Audited.remove_feature(
+                 Oli.TestHelpers.audit_context(),
+                 :mcp_authoring,
+                 project
+               )
 
       # Verify the feature is no longer tracked
       refute ScopedFeatureFlags.enabled?(:mcp_authoring, project)
@@ -305,7 +378,11 @@ defmodule Oli.ScopedFeatureFlags.AuditIntegrationTest do
 
       # This should work without breaking - just no audit logging
       assert {:ok, _flag_states} =
-               ScopedFeatureFlags.set_features_atomically(feature_settings, project)
+               Oli.ScopedFeatureFlags.Audited.set_features_atomically(
+                 Oli.TestHelpers.audit_context(),
+                 feature_settings,
+                 project
+               )
 
       # Verify the features are set
       assert ScopedFeatureFlags.enabled?(:mcp_authoring, project)

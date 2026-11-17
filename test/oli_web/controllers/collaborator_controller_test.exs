@@ -222,6 +222,7 @@ defmodule OliWeb.CollaboratorControllerTest do
 
         {:ok, reinvited} =
           Collaborators.invite_collaborator(
+            Oli.Auditing.Context.for_actor(insert(:author), source: :ui),
             "Owner",
             "owner@example.edu",
             author.email,

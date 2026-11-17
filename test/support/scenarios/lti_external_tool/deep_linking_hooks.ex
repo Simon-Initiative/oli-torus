@@ -16,7 +16,6 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
   alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionSpecification
-  alias Oli.Lti.PlatformExternalTools
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Scenarios.DirectiveTypes.ExecutionState
@@ -27,7 +26,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
   @doc "Registers an enabled integration through the normal registration context."
   def register_tool(%ExecutionState{} = state) do
     assert {:ok, {platform, registration, deployment}} =
-             PlatformExternalTools.register_lti_external_tool_activity(%{
+             Oli.Lti.Audited.register_external_tool(Oli.TestHelpers.audit_context(), %{
                "name" => "Deep Linking Test Tool",
                "description" => "Protocol and persistence tests without a tool service",
                "client_id" => "deep-linking-test-client",
@@ -40,9 +39,13 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
     assert registration.slug == "deep_linking_test_tool"
 
     assert {:ok, deployment} =
-             PlatformExternalTools.update_lti_external_tool_activity_deployment(deployment, %{
-               deep_linking_enabled: true
-             })
+             Oli.Lti.Audited.update_external_tool_deployment(
+               Oli.TestHelpers.audit_context(),
+               deployment.deployment_id,
+               %{
+                 deep_linking_enabled: true
+               }
+             )
 
     %{state | params: Map.merge(state.params, %{platform: platform, deployment: deployment})}
   end

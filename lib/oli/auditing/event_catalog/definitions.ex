@@ -58,7 +58,8 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
             "identity-provider provisioning.",
           actor_kinds: [:user, :author, :system], detail_keys: ~w(creation_source)},
          {:account_updated, "Account updated",
-          "Profile or access fields of an account were changed.", no_op: :skip},
+          "Profile or access fields of an account were changed.",
+          actor_kinds: [:user, :author, :system], no_op: :skip},
          {:account_locked, "Account locked",
           "An account was locked and can no longer sign in until unlocked.",
           change_fields: %{locked_at: :value}},
@@ -66,13 +67,24 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
           change_fields: %{locked_at: :value}},
          {:account_linked, "Account linked",
           "A user account was linked to an author account (or the link was removed).",
-          ref_roles: [:linked], change_fields: %{author_id: :value}},
+          actor_kinds: [:user, :author, :system],
+          ref_roles: [:linked],
+          change_fields: %{author_id: :value}},
+         {:account_identity_linked, "Login provider connected",
+          "A login provider (for example Google) was connected to an account, so it can sign " <>
+            "in through that provider; the provider account identifier is not recorded.",
+          detail_keys: ~w(provider), change_fields: %{}},
+         {:account_identity_unlinked, "Login provider disconnected",
+          "A login provider was disconnected from an account.",
+          detail_keys: ~w(provider), change_fields: %{}},
          {:account_permissions_changed, "Account permissions changed",
-          "Access flags of an account, such as independent learner or hidden, were changed.",
-          no_op: :skip},
+          "Access flags or institution roles of an account, such as independent learner or " <>
+            "hidden, were changed.", actor_kinds: [:user, :author, :system], no_op: :skip},
          {:account_creation_rights_changed, "Section creation rights changed",
           "The right of a user to create course sections was granted or removed.",
-          no_op: :skip, change_fields: %{can_create_sections: :value}},
+          actor_kinds: [:user, :author, :system],
+          no_op: :skip,
+          change_fields: %{can_create_sections: :value}},
          {:account_recovery_requested, "Account recovery requested",
           "A password reset or confirmation email was requested; it does not imply the " <>
             "account was recovered.",
@@ -403,6 +415,7 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
       {:organizations, "Organizations",
        [
          entity_types: [:institution, :community, :publisher],
+         actor_kinds: [:user, :author, :system],
          no_op: :skip,
          change_fields: Fields.organization()
        ],
@@ -420,7 +433,6 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
       {:integrations, "Integrations",
        [
          entity_types: [:registration, :deployment, :external_tool, :institution, :section],
-         required_one_of: [:institution_id, :section_id],
          no_op: :skip,
          change_fields: Fields.integration(),
          ref_roles: [:provider]
@@ -428,6 +440,13 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        [
          {:lms_settings_changed, "LMS settings changed",
           "LMS registration or deployment settings were changed.", []},
+         {:lms_registration_declined, "LMS registration request declined",
+          "An administrator declined an institution's LTI registration request; the request's " <>
+            "identifying fields are kept, never its contact email.",
+          entity_types: [:pending_registration],
+          no_op: :lifecycle,
+          change_fields: %{},
+          detail_keys: ~w(institution_url country_code issuer client_id deployment_id)},
          {:sso_settings_changed, "SSO settings changed",
           "Single sign-on configuration was changed; keys are never recorded.", []},
          {:lti_settings_changed, "LTI settings changed", "LTI 1.3 tool settings were changed.",
@@ -435,9 +454,10 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
          {:external_tool_settings_changed, "External tool settings changed",
           "An external LTI tool was registered, enabled, disabled, or reconfigured.", []},
          {:roster_settings_changed, "Roster settings changed",
-          "Roster synchronization (NRPS) settings of a section were changed.", []},
+          "Roster synchronization (NRPS) settings of a section were changed.",
+          required: [:section_id]},
          {:grade_passback_settings_changed, "Grade passback settings changed",
-          "Grade passback settings of a section were changed.", []}
+          "Grade passback settings of a section were changed.", required: [:section_id]}
        ]},
       {:ai_credentials, "AI and credentials",
        [
@@ -448,7 +468,10 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
          {:ai_service_settings_changed, "AI service settings changed",
           "A registered AI model or service configuration was created, changed, or removed; " <>
             "API keys are never recorded.",
-          entity_types: [:ai_service], no_op: :skip, change_fields: Fields.ai_service()},
+          entity_types: [:ai_service],
+          actor_kinds: [:user, :author, :system],
+          no_op: :skip,
+          change_fields: Fields.ai_service()},
          {:credential_lifecycle_changed, "Credential lifecycle changed",
           "An API key or MCP token was created, rotated, enabled, disabled, or revoked; its " <>
             "value and hash are never recorded.",

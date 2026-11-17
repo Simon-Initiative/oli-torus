@@ -5,6 +5,7 @@ defmodule OliWeb.UserAuth do
   import Phoenix.Controller
 
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.Accounts.{User}
   alias Oli.Consent
   alias Oli.Delivery.Sections.Section
@@ -18,11 +19,19 @@ defmodule OliWeb.UserAuth do
   @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax"]
 
   @doc """
-  Logs the user in.
+  Logs the user in after a password check (the login form, registration, password change,
+  invitation acceptance, and account linking reach this function that way). The session is
+  issued and recorded through `Oli.Accounts.Audited.issue_session/4` with `:password`; if that
+  fails, the user is sent back to the login page.
   """
   def log_in_user(conn, user, params \\ %{}) do
-    token = Accounts.generate_user_session_token(user)
+    case Accounts.Audited.issue_session(Context.for_actor(user, source: :ui), user, :password) do
+      {:ok, %{token: token}} -> finish_log_in(conn, user, token, params)
+      {:error, _reason} -> log_in_failed(conn, user)
+    end
+  end
 
+  defp finish_log_in(conn, user, token, params) do
     user_return_to =
       maybe_return_to_section(params["section"]) || params["request_path"] ||
         get_session(conn, :user_return_to) || signed_in_path(conn)
@@ -99,6 +108,35 @@ defmodule OliWeb.UserAuth do
     token = Accounts.generate_user_session_token(user)
 
     install_session(conn, user, token)
+  end
+
+  @doc """
+  Creates a new session, as `create_session/2` does, after the user authenticated with an
+  identity provider (`:sso` or `:cognito`). The session is issued and recorded through
+  `Oli.Accounts.Audited.issue_session/4`.
+
+  Returns `{:ok, conn}`, or `{:error, :session_not_issued}` with nothing written to the browser
+  session, so the caller shows its own sign-in error.
+
+  `create_session/2` stays for sessions issued without an authentication: guest and
+  open-and-free enrollment, template previews, and the Playwright test route.
+  """
+  def create_session(conn, user, auth_method) when auth_method in [:sso, :cognito] do
+    case Accounts.Audited.issue_session(Context.for_actor(user, source: :ui), user, auth_method) do
+      {:ok, %{token: token}} -> {:ok, install_session(conn, user, token)}
+      {:error, _reason} -> {:error, :session_not_issued}
+    end
+  end
+
+  # Like a wrong password: only the error and the typed email reach the login page, and no
+  # success message the caller added before signing in.
+  defp log_in_failed(conn, user) do
+    conn
+    |> clear_flash()
+    |> put_flash(:error, "We couldn't sign you in. Please try again.")
+    |> put_flash(:email, String.slice(user.email || "", 0, 160))
+    |> redirect(to: ~p"/users/log_in")
+    |> halt()
   end
 
   @doc "Installs a committed token, rotating only this browser session; scoped entry never enables remember-me."
@@ -197,7 +235,7 @@ defmodule OliWeb.UserAuth do
   """
   def clear_all_session_data(conn) do
     user_token = get_session(conn, :user_token)
-    user_token && Accounts.delete_user_session_token(user_token)
+    user_token && Accounts.Audited.revoke_session(:user, user_token)
 
     if user_live_socket_id = get_session(conn, :user_live_socket_id) do
       OliWeb.Endpoint.broadcast(user_live_socket_id, "disconnect", %{})

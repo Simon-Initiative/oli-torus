@@ -77,32 +77,33 @@ defmodule Oli.AssentAuth.AuthorAssentAuth do
   User schema module and repo module will be fetched from config.
   """
   def create_user_with_identity(author_identity_params, user_params) do
-    %Author{}
-    |> Author.author_identity_changeset(author_identity_params, user_params)
-    |> Repo.insert()
+    changeset = Author.author_identity_changeset(%Author{}, author_identity_params, user_params)
+
+    Oli.Accounts.Audited.provision_account(
+      Oli.Auditing.Context.for_system(:provider_provisioning),
+      {:author, nil, changeset, "sso"}
+    )
   end
 
   @doc """
   Updates user details.
   """
   def update_user_details(author, attrs) do
-    author
-    |> Author.details_changeset(attrs)
-    |> Repo.update()
+    Oli.Accounts.Audited.provision_account(
+      Oli.Auditing.Context.for_system(:provider_provisioning),
+      {:author, author.id, &Author.details_changeset(&1, attrs), "sso"}
+    )
   end
 
   @doc """
   Adds an identity provider.
   """
   def add_identity_provider(author, author_identity_params) do
-    {uid_provider_params, _additional_params} =
-      Map.split(author_identity_params, ["uid", "provider"])
-
-    author_identity = Ecto.build_assoc(author, :user_identities)
-
-    author_identity
-    |> AuthorIdentity.changeset(uid_provider_params)
-    |> Repo.insert()
+    Oli.Accounts.Audited.link_identity(
+      Oli.Auditing.Context.for_actor(author, source: :ui),
+      author,
+      author_identity_params
+    )
   end
 
   @doc """
@@ -110,16 +111,14 @@ defmodule Oli.AssentAuth.AuthorAssentAuth do
   """
   def delete_identity_providers(
         {user_identities, rest},
-        %{password_hash: password_hash}
+        %{password_hash: password_hash} = account
       )
       when length(rest) > 0 or not is_nil(password_hash) do
-    results =
-      from(uid in AuthorIdentity,
-        where: uid.id in ^Enum.map(user_identities, & &1.id)
-      )
-      |> Repo.delete_all()
-
-    {:ok, results}
+    Oli.Accounts.Audited.unlink_identities(
+      Oli.Auditing.Context.for_actor(account, source: :ui),
+      account,
+      user_identities
+    )
   end
 
   def delete_identity_providers(_any, user) do

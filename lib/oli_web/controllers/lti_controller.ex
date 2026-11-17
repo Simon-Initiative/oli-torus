@@ -3,6 +3,7 @@ defmodule OliWeb.LtiController do
   use OliWeb, :verified_routes
 
   alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.Delivery.Sections
   alias Oli.Delivery.SecureAssessments
   alias Oli.Institutions
@@ -215,7 +216,22 @@ defmodule OliWeb.LtiController do
     end)
   end
 
-  defp issue_launch_session(user, nil), do: {:ok, Accounts.generate_user_session_token(user)}
+  # Runs inside the launch transaction, so a later launch failure also rolls back the session
+  # and its login event.
+  defp issue_launch_session(user, nil) do
+    Ecto.Multi.new()
+    |> Accounts.Audited.issue_session_multi(
+      :session,
+      Context.for_actor(user, source: :ui),
+      {user, :lti, []}
+    )
+    |> Oli.Repo.transaction()
+    |> case do
+      {:ok, %{session: %{token: token}}} -> {:ok, token}
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
+  end
+
   defp issue_launch_session(user, admission), do: SecureAssessments.issue_session(user, admission)
 
   defp get_institution_and_registration(issuer, client_id, deployment_id) do
@@ -281,9 +297,15 @@ defmodule OliWeb.LtiController do
   defp update_user_platform_roles(user, lti_params) do
     with {:ok, lti_roles} <- lti_roles_claim(lti_params),
          platform_roles <- PlatformRoles.get_roles_by_uris(lti_roles) do
-      case Accounts.update_user_platform_roles(user, platform_roles) do
-        {:ok, _user} -> :ok
-        {:error, _changeset} -> {:error, :failed_to_update_platform_roles}
+      context = Context.for_system(:provider_provisioning)
+
+      # Composed into the launch transaction; a failure rolls the whole launch back.
+      Ecto.Multi.new()
+      |> Accounts.Audited.sync_platform_roles_multi(:roles, context, {user.id, platform_roles})
+      |> Oli.Repo.transaction()
+      |> case do
+        {:ok, _changes} -> :ok
+        {:error, _step, _reason, _changes} -> {:error, :failed_to_update_platform_roles}
       end
     end
   end

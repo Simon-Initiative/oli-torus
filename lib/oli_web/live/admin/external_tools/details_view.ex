@@ -1,6 +1,8 @@
 defmodule OliWeb.Admin.ExternalTools.DetailsView do
   use OliWeb, :live_view
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   require Logger
 
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
@@ -193,11 +195,12 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   end
 
   def handle_event("update_tool", %{"tool_form" => params}, socket) do
-    case PlatformExternalTools.update_lti_external_tool_activity(
+    case Oli.Lti.Audited.update_external_tool(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
            socket.assigns.platform_instance.id,
            params
          ) do
-      {:ok, %{updated_platform_instance: platform_instance}} ->
+      {:ok, platform_instance} ->
         new_changeset = PlatformExternalTools.change_platform_instance(platform_instance)
 
         {:noreply,
@@ -209,7 +212,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
            message: "You have successfully updated the LTI 1.3 External Tool."
          })}
 
-      {:error, _, %Ecto.Changeset{} = changeset, _} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {flash_type, flash_message} =
           if Enum.any?(changeset.errors, fn
                {:client_id, {"has already been taken", _}} -> true
@@ -228,7 +231,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
            message: flash_message
          })}
 
-      {:error, _, {:not_found}, _} ->
+      {:error, :not_found} ->
         {:noreply,
          socket
          |> assign(:custom_flash, %{
@@ -255,8 +258,9 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
         :disabled -> :enabled
       end
 
-    case PlatformExternalTools.update_lti_external_tool_activity_deployment(
-           socket.assigns.deployment,
+    case Oli.Lti.Audited.update_external_tool_deployment(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.deployment.deployment_id,
            %{"status" => new_status}
          ) do
       {:ok, deployment} ->
@@ -282,8 +286,9 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   def handle_event("toggle_deep_linking_enabled", _params, socket) do
     new_value = !socket.assigns.deployment.deep_linking_enabled
 
-    case PlatformExternalTools.update_lti_external_tool_activity_deployment(
-           socket.assigns.deployment,
+    case Oli.Lti.Audited.update_external_tool_deployment(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.deployment.deployment_id,
            %{"deep_linking_enabled" => new_value}
          ) do
       {:ok, deployment} ->
@@ -308,8 +313,9 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   end
 
   def handle_event("delete_tool", _params, socket) do
-    case PlatformExternalTools.soft_delete_activity_deployment_and_platform_instance(
-           socket.assigns.deployment
+    case Oli.Lti.Audited.delete_external_tool(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.deployment.deployment_id
          ) do
       {:ok, _} ->
         {:noreply,

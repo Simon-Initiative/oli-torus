@@ -18,6 +18,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
 
   use OliWeb, :live_component
 
+  alias Oli.Auditing.Context
   alias Oli.Groups
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -38,6 +39,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
     disabled_edit = Map.get(assigns, :disabled_edit, true)
     institution = Map.get(assigns, :institution)
     user_id = assigns.user_id
+    socket = assign(socket, :current_author, Map.get(assigns, :current_author))
 
     # Only initialize communities on first mount
     # After that, ALWAYS keep the component's local state to preserve add/remove changes
@@ -172,7 +174,13 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
   defp handle_add_community(community_id, socket) do
     user_id = socket.assigns.user_id
 
-    case Groups.create_community_account(%{user_id: user_id, community_id: community_id}) do
+    case Groups.create_community_account(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           %{
+             user_id: user_id,
+             community_id: community_id
+           }
+         ) do
       {:ok, _} ->
         case Enum.find(socket.assigns.available_communities, &(&1.id == community_id)) do
           nil ->
@@ -213,7 +221,13 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
   defp handle_remove_community(community_id, socket) do
     user_id = socket.assigns.user_id
 
-    case Groups.delete_community_account(%{user_id: user_id, community_id: community_id}) do
+    case Groups.delete_community_account(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           %{
+             user_id: user_id,
+             community_id: community_id
+           }
+         ) do
       {:ok, _} ->
         removed_community =
           Enum.find(socket.assigns.direct_communities, &(&1.id == community_id))
