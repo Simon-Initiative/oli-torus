@@ -127,7 +127,8 @@
             {
               "text": "Modify the image."
             }
-          ]
+          ],
+          "id": "image-coding-stem-paragraph"
         }
       ],
       "editor": "slate",
@@ -151,7 +152,8 @@
               {
                 "text": "Try again."
               }
-            ]
+            ],
+            "id": "image-coding-feedback-paragraph"
           }
         ],
         "editor": "markdown",
@@ -190,7 +192,8 @@
                     {
                       "text": "Inspect each pixel."
                     }
-                  ]
+                  ],
+                  "id": "image-coding-hint-paragraph"
                 }
               ],
               "editor": "slate",

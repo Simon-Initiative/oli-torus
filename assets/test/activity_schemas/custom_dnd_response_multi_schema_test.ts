@@ -40,9 +40,9 @@ const factoryModels = () => {
   );
   CustomDnDActions.editPart('input1', 'renamed')(editedDnD);
   CustomDnDActions.removePart('input3')(editedDnD);
-  StemActions.editStemAndPreviewText([{ type: 'p', children: [{ text: 'Drag the labels.' }] }])(
-    editedDnD,
-  );
+  StemActions.editStemAndPreviewText([
+    { id: 'dnd-edited-stem-paragraph', type: 'p', children: [{ text: 'Drag the labels.' }] },
+  ])(editedDnD);
   const responseMulti = defaultResponseMulti();
   responseMulti.authoring.parts[0].explanation = makeFeedback('Explanation');
   const mixed = serialize(responseMulti);

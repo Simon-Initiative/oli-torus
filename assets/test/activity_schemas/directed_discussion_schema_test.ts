@@ -39,7 +39,11 @@ const factoryModels = () => {
   const edited = serialize(initial);
   DirectedDiscussionActions.editParticipation(participation)(edited);
   StemActions.editStemAndPreviewText([
-    { type: 'p', children: [{ text: 'Discuss the evidence.' }] },
+    {
+      id: 'discussion-edited-stem-paragraph',
+      type: 'p',
+      children: [{ text: 'Discuss the evidence.' }],
+    },
   ])(edited);
   StemActions.changeEditorMode('markdown')(edited);
   StemActions.changeTextDirection('rtl')(edited);

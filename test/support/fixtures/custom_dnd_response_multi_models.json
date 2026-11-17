@@ -354,7 +354,8 @@
             {
               "text": "Drag the labels."
             }
-          ]
+          ],
+          "id": "dnd-edited-stem-paragraph"
         }
       ],
       "editor": "slate",

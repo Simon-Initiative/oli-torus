@@ -24,12 +24,14 @@ const resetIds = () => {
   (guid as jest.Mock).mockImplementation(() => `image-coding-${++next}`);
 };
 const noPost = () => {};
-const text = (value: string): RichText => [{ type: 'p', children: [{ text: value }] }];
+const text = (value: string, id: string): RichText => [
+  { id, type: 'p', children: [{ text: value }] },
+];
 const factoryModels = () => {
   resetIds();
   const initial = defaultICModel();
   const edited = serialize(initial);
-  ICActions.editStem(text('Modify the image.'))(edited, noPost);
+  ICActions.editStem(text('Modify the image.', 'image-coding-stem-paragraph'))(edited, noPost);
   ICActions.editStarterCode('const image = new SimpleImage("image.png");')(edited, noPost);
   ICActions.editSolutionCode('print(image);')(edited, noPost);
   ICActions.editTolerance(2.5)(edited, noPost);
@@ -39,14 +41,14 @@ const factoryModels = () => {
   ICActions.addResourceURL('/media/data.csv')(edited, noPost);
   ICActions.addResourceURL('/media/image.png')(edited, noPost);
   ICActions.removeResourceURL('/media/data.csv')(edited, noPost);
-  ICActions.editFeedback(0, text('Try again.'))(edited, noPost);
+  ICActions.editFeedback(0, text('Try again.', 'image-coding-feedback-paragraph'))(edited, noPost);
   ICActions.editFeedbackEditorType(0, 'markdown')(edited, noPost);
   ICActions.editFeedbackTextDirection(0, 'rtl')(edited, noPost);
   ICActions.addCognitiveHint()(edited, noPost);
-  ICActions.editHint(edited.authoring.parts[0].hints[0].id, text('Inspect each pixel.'))(
-    edited,
-    noPost,
-  );
+  ICActions.editHint(
+    edited.authoring.parts[0].hints[0].id,
+    text('Inspect each pixel.', 'image-coding-hint-paragraph'),
+  )(edited, noPost);
   ICActions.removeHint(edited.authoring.parts[0].hints[1].id)(edited, noPost);
   edited.authoring.parts[0].explanation = makeFeedback('Explanation');
   return serialize({ initial, edited });

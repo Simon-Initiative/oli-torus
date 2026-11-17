@@ -121,7 +121,8 @@
             {
               "text": "Discuss the evidence."
             }
-          ]
+          ],
+          "id": "discussion-edited-stem-paragraph"
         }
       ],
       "editor": "markdown",
