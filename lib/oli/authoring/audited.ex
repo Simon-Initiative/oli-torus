@@ -18,7 +18,8 @@ defmodule Oli.Authoring.Audited do
 
   Page saves record the settings, objectives, DOT settings, and triggers they change, and the
   activities whose references they remove; activity saves record their objectives and triggers.
-  Saving only content text records nothing.
+  Saving only content text records nothing. Learning objective commands record
+  `learning_objectives_changed` for each objective they create, edit, delete, or relink.
 
   Removing a page, container, activity, alternatives group, or bibliography entry records
   `authoring_content_removed` (`bank_question_deleted` for a banked activity) with the previous
@@ -47,6 +48,7 @@ defmodule Oli.Authoring.Audited do
     Alternatives,
     Collaborators,
     Content,
+    Objectives,
     Pages,
     Projects,
     Settings
@@ -474,6 +476,152 @@ defmodule Oli.Authoring.Audited do
 
   def edit_activities(_context, _project_slug, _lock_id, _author_email, _updates),
     do: {:error, :invalid_request}
+
+  ## Learning objectives
+
+  @doc """
+  Creates a learning objective in `project`, as a sub-objective of the objective with
+  `container_slug` when given, and records `learning_objectives_changed` for the new objective
+  (its title) and for the parent (its sub-objectives). Returns the editor's result map, as
+  before.
+  """
+  @spec create_objective(Context.t(), map(), Author.t(), Project.t(), String.t() | nil) ::
+          {:ok, map()} | {:error, command_error()}
+  def create_objective(context, attrs, author, project, container_slug \\ nil)
+
+  def create_objective(
+        %Context{} = context,
+        attrs,
+        %Author{} = author,
+        %Project{} = project,
+        container_slug
+      )
+      when is_map(attrs),
+      do: Objectives.create_objective(context, attrs, author, project, container_slug)
+
+  def create_objective(_context, _attrs, _author, _project, _container_slug),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Adds the objective with `slug` as a sub-objective of the objective with `container_slug` and
+  records the parent's sub-objectives before and after.
+  """
+  @spec link_sub_objective(Context.t(), String.t(), String.t(), String.t(), Author.t()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def link_sub_objective(
+        %Context{} = context,
+        slug,
+        container_slug,
+        project_slug,
+        %Author{} = author
+      )
+      when is_binary(slug) and is_binary(container_slug) and is_binary(project_slug),
+      do: Objectives.link_sub_objective(context, slug, container_slug, project_slug, author)
+
+  def link_sub_objective(_context, _slug, _container_slug, _project_slug, _author),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Edits the objective with `revision_slug` (its title or sub-objectives) and records what
+  changed.
+  """
+  @spec edit_objective(Context.t(), String.t(), map(), Author.t(), Project.t()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def edit_objective(
+        %Context{} = context,
+        revision_slug,
+        attrs,
+        %Author{} = author,
+        %Project{} = project
+      )
+      when is_binary(revision_slug) and is_map(attrs),
+      do: Objectives.edit_objective(context, revision_slug, attrs, author, project)
+
+  def edit_objective(_context, _revision_slug, _attrs, _author, _project),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Marks the objective with `revision_slug` as deleted, removes it from `parent_objective` when
+  given, and records both changes. Callers detach it from pages and activities first with
+  `detach_objective/4`, as before.
+  """
+  @spec delete_objective(Context.t(), String.t(), Author.t(), Project.t(), Revision.t() | nil) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def delete_objective(context, revision_slug, author, project, parent_objective \\ nil)
+
+  def delete_objective(
+        %Context{} = context,
+        revision_slug,
+        %Author{} = author,
+        %Project{} = project,
+        parent_objective
+      )
+      when is_binary(revision_slug),
+      do: Objectives.delete_objective(context, revision_slug, author, project, parent_objective)
+
+  def delete_objective(_context, _revision_slug, _author, _project, _parent_objective),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Removes a shared sub-objective from one of its parents and records the parent's
+  sub-objectives. Refuses to remove its last parent (`:last_association`), as before.
+  """
+  @spec unlink_sub_objective(
+          Context.t(),
+          String.t(),
+          Author.t(),
+          Project.t(),
+          Revision.t() | String.t()
+        ) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def unlink_sub_objective(
+        %Context{} = context,
+        revision_slug,
+        %Author{} = author,
+        %Project{} = project,
+        parent
+      )
+      when is_binary(revision_slug),
+      do: Objectives.unlink_sub_objective(context, revision_slug, author, project, parent)
+
+  def unlink_sub_objective(_context, _revision_slug, _author, _project, _parent),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Deletes an untagged sub-objective with its last parent association and records both changes.
+  Refuses tagged or still shared sub-objectives, as before.
+  """
+  @spec delete_sub_objective(Context.t(), String.t(), Author.t(), Project.t(), String.t()) ::
+          {:ok, Revision.t()} | {:error, command_error()}
+  def delete_sub_objective(
+        %Context{} = context,
+        revision_slug,
+        %Author{} = author,
+        %Project{} = project,
+        parent_slug
+      )
+      when is_binary(revision_slug) and is_binary(parent_slug),
+      do: Objectives.delete_sub_objective(context, revision_slug, author, project, parent_slug)
+
+  def delete_sub_objective(_context, _revision_slug, _author, _project, _parent_slug),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Detaches the objective with resource ID `objective_id` from every unlocked page and activity
+  that references it. Each detachment is its own page or activity save (`edit_page/5`,
+  `edit_activity/6`) and records its own `learning_objectives_changed`; locked resources are
+  skipped, as before.
+  """
+  @spec detach_objective(Context.t(), pos_integer(), Project.t(), Author.t()) :: term()
+  def detach_objective(
+        %Context{} = context,
+        objective_id,
+        %Project{} = project,
+        %Author{} = author
+      ),
+      do: Objectives.detach_objective(context, objective_id, project, author)
+
+  def detach_objective(_context, _objective_id, _project, _author), do: {:error, :invalid_request}
 
   ## Collaborators
 

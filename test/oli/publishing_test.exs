@@ -9,7 +9,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Publishing.Publications.PublicationDiff
   alias Oli.Accounts.{SystemRole, Author}
   alias Oli.Authoring.{Course, Locks}
-  alias Oli.Authoring.Editing.{PageEditor, ObjectiveEditor, ActivityEditor}
+  alias Oli.Authoring.Editing.{PageEditor, ActivityEditor}
   alias Oli.Activities
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
@@ -755,12 +755,37 @@ defmodule Oli.PublishingTest do
       publication: publication,
       revision1: revision
     } do
-      {:ok, %{revision: obj1}} = ObjectiveEditor.add_new(%{title: "one"}, author, project)
-      {:ok, %{revision: obj2}} = ObjectiveEditor.add_new(%{title: "two"}, author, project)
-      {:ok, %{revision: obj3}} = ObjectiveEditor.add_new(%{title: "three"}, author, project)
+      {:ok, %{revision: obj1}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "one"},
+          author,
+          project
+        )
+
+      {:ok, %{revision: obj2}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "two"},
+          author,
+          project
+        )
+
+      {:ok, %{revision: obj3}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "three"},
+          author,
+          project
+        )
 
       {:ok, %{revision: page_only_objective}} =
-        ObjectiveEditor.add_new(%{title: "page only"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "page only"},
+          author,
+          project
+        )
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
@@ -857,7 +882,12 @@ defmodule Oli.PublishingTest do
       assert Publishing.objective_referenced?(page_only_objective.resource_id, publication.id)
 
       {:ok, %{revision: untagged_objective}} =
-        ObjectiveEditor.add_new(%{title: "untagged"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "untagged"},
+          author,
+          project
+        )
 
       refute Publishing.objective_referenced?(untagged_objective.resource_id, publication.id)
 
@@ -892,9 +922,29 @@ defmodule Oli.PublishingTest do
            publication: publication,
            revision1: revision
          } do
-      {:ok, %{revision: obj1}} = ObjectiveEditor.add_new(%{title: "one"}, author, project)
-      {:ok, %{revision: obj2}} = ObjectiveEditor.add_new(%{title: "two"}, author, project)
-      {:ok, %{revision: obj3}} = ObjectiveEditor.add_new(%{title: "three"}, author, project)
+      {:ok, %{revision: obj1}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "one"},
+          author,
+          project
+        )
+
+      {:ok, %{revision: obj2}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "two"},
+          author,
+          project
+        )
+
+      {:ok, %{revision: obj3}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "three"},
+          author,
+          project
+        )
 
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
@@ -1078,7 +1128,13 @@ defmodule Oli.PublishingTest do
       {:acquired} = PageEditor.acquire_lock(project.slug, original_revision.slug, author.email)
 
       # lock an activity
-      {:ok, %{revision: obj}} = ObjectiveEditor.add_new(%{title: "one"}, author, project)
+      {:ok, %{revision: obj}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "one"},
+          author,
+          project
+        )
 
       revision_with_activity =
         create_activity(

@@ -121,7 +121,7 @@ Gathered at `456d235388` from the callers, changesets, direct `Repo` writes, and
 | `ContainerEditor.edit_page/3` (`container_editor.ex:56`) via `container_live_helpers.ex:85` (curriculum, pages, container, pages view) and Scenario `ops.ex:338`, `builder.ex:104` | M: `update_page_options/4` (`authoring_settings_changed`, `dot_settings_changed` for `ai_enabled`) |
 | `PageEditor.edit/4` saves from the React editors and `editor_live.ex` | M: `edit_page/5` diffs configuration fields, selection rules, objectives, and triggers against the locked before-state; ordinary content changes emit nothing |
 | `ActivityEditor.edit/…`, `bulk_edit/…` via `activity_controller.ex:603,665`, `activity_bank.ex:86`, `authoring_launch.ex:161` | M: `edit_activity/6` and `edit_activities/5` (bulk) diff `objectives` and triggers per activity |
-| `ObjectiveEditor` add, edit, parent and sub-objective operations, detach (`objective_editor.ex:22-398`) via `objectives_live.ex`, `objectives.ex`, `objectives_controller.ex:155,227`, `resource_controller.ex:127`, Scenario `objectives_handler.ex` | M: `learning_objectives_changed` per objective or attachment change |
+| `ObjectiveEditor` add, edit, parent and sub-objective operations, detach (`objective_editor.ex:22-398`) via `objectives_live.ex`, `objectives.ex`, `objectives_controller.ex:155,227`, `resource_controller.ex:127`, Scenario `objectives_handler.ex` | M: `learning_objectives_changed` per objective whose title, sub-objectives, or deleted flag changed (entity `:objective`); detachments record on each page and activity they edit. `resource_controller.ex` `create_objective` has no route and is migrated with the rest |
 | `ContainerEditor.move_to/…`, `reorder_child/…` via the curriculum LiveViews and Scenario `ops.ex:153,245` | M: `curriculum_changed` |
 | `ContainerEditor.add_new/4`, `duplicate_page/…`, `ActivityEditor.create*`, MCP `create_activity_tool.ex:125` | X: creation is not audited; `add_new` stays public and is composed by the Google Doc import |
 | `Collaboration.upsert_collaborative_space` | X here: discussion configuration (PR-05) |
@@ -162,7 +162,7 @@ Each new facade declares `use Boundary, top_level?: true, exports: [], check: [o
 | `ContainerEditor` | `remove_child` (block 3); `move_to`, `reorder_child`, `edit_page` (block 4) | `add_new`, `duplicate_page`, reads |
 | `ActivityEditor` | `edit`, `bulk_edit`, `delete`, `delete_bulk` and their helpers (block 4: the deletes share the revision writer with the edits; block 3 audits them through the facade) | `create*`, reads, bundle repair, and `validate_request/1`, which creation shares |
 | `ActivityBank` | nothing: `update`, `delete`, and `delete_bulk` keep their bank checks and reference resolution, take a `Context`, and call the facade, so no write path bypasses it | reads, `create` |
-| `ObjectiveEditor` | every writer (block 4) | reads |
+| `ObjectiveEditor` | every writer (block 4); `add_new_parent_for_objective/4`, which had no caller, is removed | reads, the detachment preview, and the association checks the reads share |
 | `ResourceEditor`, `BibEntryEditor` | `delete` | reads, `create`, `edit`, `get_or_create_tag`: creating and editing tags, bibliography entries, and other resources is ordinary content editing (owner decision 2026-11-16) |
 | `MediaLibrary` | `delete_media_items`, `delete_items` | reads, uploads |
 | `Course` | `create_project/3`, `create_project_from_archive/4`, `delete`, settings writers, survey writers, `upgrade_learning_model`, `update_author_project` | reads; `update_project/2` restricted (section 3.3) |
@@ -295,7 +295,9 @@ Commands follow the PR-02 shape: a `*_multi/4` builder for callers that compose,
 @spec edit_activities(Context.t(), String.t(), term(), String.t(), [map()]) :: {:ok, [Revision.t()]} | {:error, command_error()}
 @spec update_page_options(Context.t(), Project.t(), String.t(), map()) :: {:ok, Revision.t()} | {:error, command_error()}
 @spec move_curriculum_entry(Context.t(), Project.t(), map()) :: {:ok, term()} | {:error, command_error()}
-@spec objective_command(Context.t(), Project.t(), objective_op()) :: {:ok, term()} | {:error, command_error()}
+# create_objective/5, link_sub_objective/5, edit_objective/5, delete_objective/5,
+# unlink_sub_objective/5, delete_sub_objective/5, detach_objective/4: the editor's arguments
+# after a Context, returning the editor's results
 ```
 
 A content save produces events only for what changed between the locked before-state and the result:

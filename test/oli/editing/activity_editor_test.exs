@@ -4,7 +4,7 @@ defmodule Oli.ActivityEditingTest do
   import Mox
 
   alias Oli.Authoring.Course.Project
-  alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor, ObjectiveEditor}
+  alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor}
   alias Oli.LearningModel.Parameters
   alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
   alias Oli.Publishing
@@ -903,10 +903,20 @@ defmodule Oli.ActivityEditingTest do
 
     test "can sync objectives to parts", %{author: author, project: project} do
       {:ok, %{revision: ob1}} =
-        ObjectiveEditor.add_new(%{title: "this is an objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "this is an objective"},
+          author,
+          project
+        )
 
       {:ok, %{revision: ob2}} =
-        ObjectiveEditor.add_new(%{title: "this is another objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "this is another objective"},
+          author,
+          project
+        )
 
       # Create a two part activity where each part is tied to one of the objectives above
       content = %{
@@ -947,10 +957,20 @@ defmodule Oli.ActivityEditingTest do
       revision1: revision1
     } do
       {:ok, %{revision: ob1}} =
-        ObjectiveEditor.add_new(%{title: "this is an objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "this is an objective"},
+          author,
+          project
+        )
 
       {:ok, %{revision: ob2}} =
-        ObjectiveEditor.add_new(%{title: "this is another objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "this is another objective"},
+          author,
+          project
+        )
 
       content = %{
         "content" => %{"authoring" => %{"parts" => ["1", "2"]}}

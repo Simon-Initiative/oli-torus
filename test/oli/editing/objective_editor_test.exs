@@ -31,11 +31,22 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
     test "delete/3 removes an objective", %{author: author, project: project} do
       {:ok, %{revision: parent}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
 
-      {:ok, _} = ObjectiveEditor.delete(parent.slug, author, project)
+      {:ok, _} =
+        Oli.Authoring.Audited.delete_objective(
+          Oli.TestHelpers.author_audit_context(),
+          parent.slug,
+          author,
+          project
+        )
 
       updated_parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
 
@@ -47,15 +58,33 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       project: project
     } do
       {:ok, %{revision: parent}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       {:ok, %{revision: child}} =
-        ObjectiveEditor.add_new(%{title: "Sub Objective"}, author, project, parent.slug)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Sub Objective"},
+          author,
+          project,
+          parent.slug
+        )
 
       parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
       assert parent.children == [child.resource_id]
 
-      {:ok, _} = ObjectiveEditor.delete(child.slug, author, project, parent)
+      {:ok, _} =
+        Oli.Authoring.Audited.delete_objective(
+          Oli.TestHelpers.author_audit_context(),
+          child.slug,
+          author,
+          project,
+          parent
+        )
 
       updated_parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
       updated_child = AuthoringResolver.from_resource_id(project.slug, child.resource_id)
@@ -66,7 +95,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
     test "add_new/3 can add an objetive", %{author: author, project: project} do
       {:ok, %{revision: revision}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       assert revision.title == "Test Objective"
     end
@@ -76,10 +110,21 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       project: project
     } do
       {:ok, %{revision: parent}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       {:ok, %{revision: child}} =
-        ObjectiveEditor.add_new(%{title: "Sub Objective"}, author, project, parent.slug)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Sub Objective"},
+          author,
+          project,
+          parent.slug
+        )
 
       parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
       assert parent.children == [child.resource_id]
@@ -87,9 +132,21 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
     test "edit/4 edits the title of an objective", %{author: author, project: project} do
       {:ok, %{revision: revision}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
-      {:ok, edited} = ObjectiveEditor.edit(revision.slug, %{title: "Edited"}, author, project)
+      {:ok, edited} =
+        Oli.Authoring.Audited.edit_objective(
+          Oli.TestHelpers.author_audit_context(),
+          revision.slug,
+          %{title: "Edited"},
+          author,
+          project
+        )
 
       assert edited.title == "Edited"
       refute edited.id == revision.id
@@ -101,7 +158,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       revision1: revision
     } do
       {:ok, %{revision: objective}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       # attach it to a page and release the lock
       objectives = %{"attached" => [objective.resource_id]}
@@ -118,7 +180,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       PageEditor.release_lock(project.slug, revision.slug, author.email)
 
-      ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+      Oli.Authoring.Audited.detach_objective(
+        Oli.Auditing.Context.for_actor(author, source: :ui),
+        objective.resource_id,
+        project,
+        author
+      )
 
       updated_page =
         AuthoringResolver.from_resource_id(project.slug, updated_revision.resource_id)
@@ -136,7 +203,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       revision1: revision
     } do
       {:ok, %{revision: objective}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       objectives = %{"attached" => [objective.resource_id]}
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
@@ -165,7 +237,13 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       PageEditor.release_lock(project.slug, revision.slug, author.email)
 
-      assert [] = ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+      assert [] =
+               Oli.Authoring.Audited.detach_objective(
+                 Oli.TestHelpers.author_audit_context(),
+                 objective.resource_id,
+                 project,
+                 author
+               )
 
       publication = Publishing.project_working_publication(project.slug)
       assert [] = Publishing.retrieve_lock_info([revision.resource_id], publication.id)
@@ -177,7 +255,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       revision1: revision
     } do
       {:ok, %{revision: objective}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       # attach it to a page and release the lock
       objectives = %{"attached" => [objective.resource_id]}
@@ -193,7 +276,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
           %{"objectives" => objectives}
         )
 
-      ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+      Oli.Authoring.Audited.detach_objective(
+        Oli.Auditing.Context.for_actor(author, source: :ui),
+        objective.resource_id,
+        project,
+        author
+      )
 
       updated_page =
         AuthoringResolver.from_resource_id(project.slug, updated_revision.resource_id)
@@ -207,7 +295,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       revision1: revision
     } do
       {:ok, %{revision: objective}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       # attach it to a page and release the lock
       content = %{"stem" => "one"}
@@ -255,7 +348,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       PageEditor.release_lock(project.slug, revision.slug, author.email)
 
-      ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+      Oli.Authoring.Audited.detach_objective(
+        Oli.Auditing.Context.for_actor(author, source: :ui),
+        objective.resource_id,
+        project,
+        author
+      )
 
       updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert updated_activity.objectives == %{"1" => []}
@@ -275,7 +373,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       project: project
     } do
       {:ok, %{revision: objective}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       # attach it to a page and release the lock
       content = %{"stem" => "one"}
@@ -301,7 +404,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       PageEditor.release_lock(project.slug, slug, author.email)
 
-      ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+      Oli.Authoring.Audited.detach_objective(
+        Oli.Auditing.Context.for_actor(author, source: :ui),
+        objective.resource_id,
+        project,
+        author
+      )
 
       updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert updated_activity.objectives == %{"1" => []}
@@ -312,7 +420,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       project: project
     } do
       {:ok, %{revision: objective}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       # attach it to a page and release the lock
       content = %{"stem" => "one"}
@@ -336,7 +449,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
         attachment
       )
 
-      ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+      Oli.Authoring.Audited.detach_objective(
+        Oli.Auditing.Context.for_actor(author, source: :ui),
+        objective.resource_id,
+        project,
+        author
+      )
 
       updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
       refute updated_activity.objectives == %{"1" => []}
@@ -348,7 +466,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       revision1: revision
     } do
       {:ok, %{revision: objective}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       # attach it to a page and release the lock
       content = %{"stem" => "one"}
@@ -394,7 +517,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
         attachment
       )
 
-      ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+      Oli.Authoring.Audited.detach_objective(
+        Oli.Auditing.Context.for_actor(author, source: :ui),
+        objective.resource_id,
+        project,
+        author
+      )
 
       updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
       refute updated_activity.objectives == %{"1" => []}
@@ -414,7 +542,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       refute Enum.member?(objective1_children, subobjective3A_resource_id)
 
       {:ok, %Revision{slug: slug, children: children}} =
-        ObjectiveEditor.add_new_parent_for_sub_objective(
+        Oli.Authoring.Audited.link_sub_objective(
+          Oli.TestHelpers.author_audit_context(),
           subobjective3A_slug,
           objective1_slug,
           project.slug,
@@ -446,7 +575,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       assert Enum.member?(objective1_children, subobjective12A_resource_id)
 
       {:ok, %Revision{slug: slug, children: children}} =
-        ObjectiveEditor.remove_sub_objective_from_parent(
+        Oli.Authoring.Audited.unlink_sub_objective(
+          Oli.TestHelpers.author_audit_context(),
           subobjective12A_slug,
           author,
           project,
@@ -475,7 +605,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       }
     } do
       assert {:error, :not_associated} =
-               ObjectiveEditor.remove_sub_objective_from_parent(
+               Oli.Authoring.Audited.unlink_sub_objective(
+                 Oli.TestHelpers.author_audit_context(),
                  subobjective3A_slug,
                  author,
                  project,
@@ -495,7 +626,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       }
     } do
       assert {:ok, _parent} =
-               ObjectiveEditor.remove_sub_objective_from_parent(
+               Oli.Authoring.Audited.unlink_sub_objective(
+                 Oli.TestHelpers.author_audit_context(),
                  subobjective12A_slug,
                  author,
                  project,
@@ -503,7 +635,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
                )
 
       assert {:error, :not_associated} =
-               ObjectiveEditor.remove_sub_objective_from_parent(
+               Oli.Authoring.Audited.unlink_sub_objective(
+                 Oli.TestHelpers.author_audit_context(),
                  subobjective12A_slug,
                  author,
                  project,
@@ -516,13 +649,25 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       author: author
     } do
       {:ok, %{revision: parent}} =
-        ObjectiveEditor.add_new(%{title: "Parent"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Parent"},
+          author,
+          project
+        )
 
       {:ok, %{revision: child}} =
-        ObjectiveEditor.add_new(%{title: "Child"}, author, project, parent.slug)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Child"},
+          author,
+          project,
+          parent.slug
+        )
 
       assert {:error, :last_association} =
-               ObjectiveEditor.remove_sub_objective_from_parent(
+               Oli.Authoring.Audited.unlink_sub_objective(
+                 Oli.TestHelpers.author_audit_context(),
                  child.slug,
                  author,
                  project,
@@ -541,10 +686,22 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       author: author,
       project: project
     } do
-      {:ok, %{revision: parent}} = ObjectiveEditor.add_new(%{title: "Parent"}, author, project)
+      {:ok, %{revision: parent}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Parent"},
+          author,
+          project
+        )
 
       {:ok, %{revision: child}} =
-        ObjectiveEditor.add_new(%{title: "Child"}, author, project, parent.slug)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Child"},
+          author,
+          project,
+          parent.slug
+        )
 
       assert {:ok, _} =
                ObjectiveEditor.sub_objective_delete_eligibility(child.slug, project, parent.slug)
@@ -566,13 +723,22 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       result =
         try do
-          ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug)
+          Oli.Authoring.Audited.delete_sub_objective(
+            Oli.TestHelpers.author_audit_context(),
+            child.slug,
+            author,
+            project,
+            parent.slug
+          )
         after
           :telemetry.detach(handler_id)
         end
 
       assert {:ok, deleted} = result
 
+      # The audited command locks the same two mappings by ID to read the before-state
+      assert_receive {:deletion_lock_query, audit_params}
+      assert audit_params == [project.id, [child.resource_id, parent.resource_id]]
       assert_receive {:deletion_lock_query, params}
       assert [child.slug, parent.slug] in params
       refute_receive {:deletion_lock_query, _params}
@@ -586,10 +752,17 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
              )
 
       assert {:error, :not_found} =
-               ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug)
+               Oli.Authoring.Audited.delete_sub_objective(
+                 Oli.TestHelpers.author_audit_context(),
+                 child.slug,
+                 author,
+                 project,
+                 parent.slug
+               )
 
       assert {:error, :not_found} =
-               ObjectiveEditor.add_new_parent_for_sub_objective(
+               Oli.Authoring.Audited.link_sub_objective(
+                 Oli.TestHelpers.author_audit_context(),
                  child.slug,
                  parent.slug,
                  project.slug,
@@ -606,7 +779,13 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       }
     } do
       assert {:error, :associated} =
-               ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug)
+               Oli.Authoring.Audited.delete_sub_objective(
+                 Oli.TestHelpers.author_audit_context(),
+                 child.slug,
+                 author,
+                 project,
+                 parent.slug
+               )
 
       refute AuthoringResolver.from_resource_id(project.slug, child.resource_id).deleted
 
@@ -621,10 +800,22 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
            author: author,
            project: project
          } do
-      {:ok, %{revision: parent}} = ObjectiveEditor.add_new(%{title: "Parent"}, author, project)
+      {:ok, %{revision: parent}} =
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Parent"},
+          author,
+          project
+        )
 
       {:ok, %{revision: child}} =
-        ObjectiveEditor.add_new(%{title: "Child"}, author, project, parent.slug)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Child"},
+          author,
+          project,
+          parent.slug
+        )
 
       {:ok, {%{resource_id: activity_id}, _}} =
         ActivityEditor.create(
@@ -639,7 +830,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
 
       assert {:ok, tagged_activity} =
-               ObjectiveEditor.edit(
+               Oli.Authoring.Audited.edit_objective(
+                 Oli.TestHelpers.author_audit_context(),
                  activity.slug,
                  %{objectives: %{"part" => [child.resource_id]}},
                  author,
@@ -650,7 +842,13 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
                ObjectiveEditor.sub_objective_delete_eligibility(child.slug, project, parent.slug)
 
       assert {:error, :tagged} =
-               ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug)
+               Oli.Authoring.Audited.delete_sub_objective(
+                 Oli.TestHelpers.author_audit_context(),
+                 child.slug,
+                 author,
+                 project,
+                 parent.slug
+               )
 
       refute AuthoringResolver.from_resource_id(project.slug, child.resource_id).deleted
 
@@ -672,10 +870,17 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       }
     } do
       assert {:ok, tagged_child} =
-               ObjectiveEditor.edit(child.slug, %{tags: [1, 2]}, author, project)
+               Oli.Authoring.Audited.edit_objective(
+                 Oli.TestHelpers.author_audit_context(),
+                 child.slug,
+                 %{tags: [1, 2]},
+                 author,
+                 project
+               )
 
       assert {:ok, _} =
-               ObjectiveEditor.remove_sub_objective_from_parent(
+               Oli.Authoring.Audited.unlink_sub_objective(
+                 Oli.TestHelpers.author_audit_context(),
                  tagged_child.slug,
                  author,
                  project,
@@ -694,7 +899,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
     } do
       # Create an objective
       {:ok, %{revision: objective}} =
-        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.TestHelpers.author_audit_context(),
+          %{title: "Test Objective"},
+          author,
+          project
+        )
 
       # Create a banked activity with tags
       content = %{"stem" => "one"}
@@ -742,7 +952,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       assert activity_with_objective.tags == tags
 
       # Detach the objective
-      ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+      Oli.Authoring.Audited.detach_objective(
+        Oli.Auditing.Context.for_actor(author, source: :ui),
+        objective.resource_id,
+        project,
+        author
+      )
 
       # Verify objective was removed but tags were preserved
       updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)

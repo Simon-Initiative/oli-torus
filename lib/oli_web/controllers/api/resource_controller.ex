@@ -3,7 +3,6 @@ defmodule OliWeb.Api.ResourceController do
 
   alias Oli.Accounts
   alias Oli.Authoring.Course
-  alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Delivery.Hierarchy
   alias Oli.Publishing.AuthoringResolver
@@ -132,7 +131,13 @@ defmodule OliWeb.Api.ResourceController do
     project = Course.get_project_by_slug(project_slug)
     author = conn.assigns[:current_author]
 
-    case ObjectiveEditor.add_new(%{title: title}, author, project, nil) do
+    case Oli.Authoring.Audited.create_objective(
+           Oli.Auditing.Context.for_actor(author, source: :api),
+           %{title: title},
+           author,
+           project,
+           nil
+         ) do
       {:ok, %{revision: revision}} ->
         conn
         |> json(%{"type" => "success", "revisionSlug" => revision.slug})

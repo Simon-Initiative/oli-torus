@@ -152,7 +152,14 @@ defmodule OliWeb.Api.ObjectivesController do
         with {:ok, %{slug: slug}} <-
                AuthoringResolver.from_resource_id(project.slug, objective_id)
                |> Oli.Utils.trap_nil(),
-             {:ok, _} <- ObjectiveEditor.edit(slug, %{title: title}, author, project) do
+             {:ok, _} <-
+               Oli.Authoring.Audited.edit_objective(
+                 audit_context(author),
+                 slug,
+                 %{title: title},
+                 author,
+                 project
+               ) do
           json(conn, %{"result" => "success"})
         else
           {:error, {:not_found}} ->
@@ -224,7 +231,13 @@ defmodule OliWeb.Api.ObjectivesController do
         error(conn, 400, "Missing title")
 
       title ->
-        case ObjectiveEditor.add_new(%{title: title}, author, project, parent_slug) do
+        case Oli.Authoring.Audited.create_objective(
+               audit_context(author),
+               %{title: title},
+               author,
+               project,
+               parent_slug
+             ) do
           {:ok, %{revision: revision}} ->
             conn
             # This sets status code 201 instead of 200
@@ -243,4 +256,6 @@ defmodule OliWeb.Api.ObjectivesController do
     |> send_resp(code, reason)
     |> halt()
   end
+
+  defp audit_context(author), do: Oli.Auditing.Context.for_actor(author, source: :api)
 end

@@ -134,13 +134,16 @@ defmodule Oli.Auditing.EventCatalog.Fields do
       experiment_status experiment_conditions experiment_definition)a)
   end
 
-  @doc "Authoring configuration: page settings, objectives, and curriculum structure."
+  @doc """
+  Authoring configuration: page settings, objectives, and curriculum structure. `deleted` records
+  the deletion of a learning objective.
+  """
   @spec authoring_configuration() :: policy()
   def authoring_configuration do
     values(~w(title graded purpose max_attempts recommended_attempts time_limit
       scoring_strategy_id retake_mode assessment_mode batch_scoring replacement_strategy
       explanation_strategy full_progress_pct duration_minutes learning_model_parameters
-      objectives children parent_objective_id selection_rules)a)
+      objectives children parent_objective_id selection_rules deleted)a)
   end
 
   @doc "Section, product, and blueprint settings (`Oli.Delivery.Sections.Section`)."

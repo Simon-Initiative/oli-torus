@@ -239,6 +239,34 @@ defmodule OliWeb.Api.ResourceControllerTest do
     end
   end
 
+  describe "create_objective/2" do
+    setup [:author_conn]
+
+    # The action has no route; it is called directly to cover its audit event.
+    test "records the created objective for the author", %{conn: conn, author: author} do
+      {:ok, %{project: project}} = create_project_fixture("Objectives", author)
+
+      conn =
+        conn
+        |> Plug.Conn.assign(:current_author, author)
+        |> OliWeb.Api.ResourceController.create_objective(%{
+          "project_id" => project.slug,
+          "title" => "Explain diffusion"
+        })
+
+      assert %{"type" => "success"} = json_response(conn, 200)
+
+      event =
+        assert_audited(:learning_objectives_changed,
+          project_id: project.id,
+          actor: author,
+          source: :api
+        )
+
+      assert event.changes["title"]["after"] == "Explain diffusion"
+    end
+  end
+
   defp create_project_with_pages(%{author: author}) do
     project = insert(:project, authors: [author])
 

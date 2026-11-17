@@ -325,7 +325,8 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
       assert_audited(:learning_objectives_changed,
         project_id: result.state.projects["bank_project"].project.id,
         actor: result.state.current_author,
-        source: :scenario
+        source: :scenario,
+        entity_type: :resource
       )
 
     assert event.changes["objectives"]["after"] == %{part_id => [objective_id]}

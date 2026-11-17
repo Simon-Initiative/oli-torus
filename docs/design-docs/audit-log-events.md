@@ -2240,7 +2240,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
+| Change fields | `assessment_mode`, `batch_scoring`, `children`, `deleted`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -2283,7 +2283,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
+| Change fields | `assessment_mode`, `batch_scoring`, `children`, `deleted`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -2326,7 +2326,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
+| Change fields | `assessment_mode`, `batch_scoring`, `children`, `deleted`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |

@@ -4,7 +4,6 @@ defmodule Oli.Scenarios.Builder do
   """
   alias Oli.Scenarios.Types.{ProjectSpec, Node, BuiltProject}
   alias Oli.Authoring.Editing.ContainerEditor
-  alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.ResourceType
@@ -212,7 +211,12 @@ defmodule Oli.Scenarios.Builder do
     Enum.reduce(objectives, %{}, fn objective, acc ->
       # Create parent objective
       {:ok, %{revision: parent_rev}} =
-        ObjectiveEditor.add_new(%{title: objective.title}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.Auditing.Context.for_actor(author, source: :scenario),
+          %{title: objective.title},
+          author,
+          project
+        )
 
       # Create sub-objectives if any, attaching each to the parent. Each
       # attachment produces a new parent revision (its `children` list
@@ -226,7 +230,13 @@ defmodule Oli.Scenarios.Builder do
           {child_map, updated_parent_rev} =
             Enum.reduce(children, {%{}, parent_rev}, fn child_title, {child_acc, _parent_rev} ->
               {:ok, %{revision: child_rev, container: updated_parent_rev}} =
-                ObjectiveEditor.add_new(%{title: child_title}, author, project, parent_rev.slug)
+                Oli.Authoring.Audited.create_objective(
+                  Oli.Auditing.Context.for_actor(author, source: :scenario),
+                  %{title: child_title},
+                  author,
+                  project,
+                  parent_rev.slug
+                )
 
               {Map.put(child_acc, child_title, child_rev), updated_parent_rev}
             end)
