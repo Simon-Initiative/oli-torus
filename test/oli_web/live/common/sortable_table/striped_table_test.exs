@@ -48,20 +48,41 @@ defmodule OliWeb.Common.SortableTable.StripedTableTest do
                Floki.find(doc, ~s(th button[phx-click="sort_event"][phx-value-sort_by="name"]))
 
       assert button |> Floki.text() |> String.trim() == "Name"
+      assert Floki.attribute(button, "aria-label") == ["Sort by Name"]
       assert Floki.find(doc, "th button") |> length() == 2
       assert [_] = Floki.find(doc, ~s(th[phx-value-sort_by="name"]))
     end
 
-    test "with sort_button only the sorted column exposes aria-sort, with its direction" do
+    test "with sort_button every sortable column exposes aria-sort, with its direction" do
       doc = render_table(sort_button: true)
 
       assert [_] = Floki.find(doc, ~s(th[phx-value-sort_by="name"][aria-sort="ascending"]))
-      assert Floki.find(doc, ~s(th[phx-value-sort_by="age"][aria-sort])) == []
+      assert [_] = Floki.find(doc, ~s(th[phx-value-sort_by="age"][aria-sort="none"]))
       assert Floki.find(doc, ~s(th[phx-value-sort_by="id"][aria-sort])) == []
-      assert Floki.find(doc, "th[aria-sort]") |> length() == 1
 
       doc = render_table(sort_button: true, model: %{model() | sort_order: :desc})
       assert [_] = Floki.find(doc, ~s(th[phx-value-sort_by="name"][aria-sort="descending"]))
+    end
+
+    test "sort arrows are hidden from assistive technology" do
+      doc = render_table()
+
+      assert Floki.find(doc, "th svg") |> length() == 2
+      assert Floki.find(doc, ~s{th svg:not([aria-hidden="true"])}) == []
+    end
+
+    test "header_info renders inside the <th> but outside the sort button" do
+      info = Phoenix.HTML.raw(~s(<button id="name-info">i</button>))
+      [name_spec | specs] = model().column_specs
+
+      doc =
+        render_table(
+          sort_button: true,
+          model: %{model() | column_specs: [%{name_spec | header_info: info} | specs]}
+        )
+
+      assert [_] = Floki.find(doc, ~s(th[phx-value-sort_by="name"] #name-info))
+      assert Floki.find(doc, "th button #name-info") == []
     end
   end
 

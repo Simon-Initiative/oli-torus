@@ -45,7 +45,11 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :sort_button, :boolean,
     default: false,
     doc:
-      "Passed through to StripedTable: sortable headers render a <button> that carries the sort click; the sorted <th> exposes aria-sort."
+      "Passed through to StripedTable: sortable headers render a <button> named \"Sort by <label>\" that carries the sort click; each sortable <th> exposes aria-sort."
+
+  attr :sort_button_class, :string,
+    default: nil,
+    doc: "Passed through to StripedTable: extra classes for each sort <button>."
 
   attr :table_id, :string,
     default: nil,
@@ -74,6 +78,7 @@ defmodule OliWeb.Common.StripedPagedTable do
             sticky_header_offset: @sticky_header_offset,
             header_bg_class: @header_bg_class,
             sort_button: @sort_button,
+            sort_button_class: @sort_button_class,
             table_id: @table_id
           })}
         </div>
@@ -112,6 +117,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         sticky_header_offset={@sticky_header_offset}
         header_bg_class={@header_bg_class}
         sort_button={@sort_button}
+        sort_button_class={@sort_button_class}
         id={@table_id}
       />
       """
@@ -126,6 +132,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         sticky_header_offset={@sticky_header_offset}
         header_bg_class={@header_bg_class}
         sort_button={@sort_button}
+        sort_button_class={@sort_button_class}
         id={@table_id}
       />
       """
