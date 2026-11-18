@@ -531,7 +531,7 @@ Validate group layout (`vertical`, `deck`), pagination (`normal`, `manualReveal`
 
 ### A consistent reference policy
 
-The editor and persisted page content both use numeric `activity_id` resource references. Revision slugs remain separate activity metadata; the TorusDoc converter emits only `activity_id` on reference nodes.
+The editor and persisted page content both use numeric `activity_id` resource references. Revision slugs remain separate activity metadata. The TorusDoc converter emits `activity_id` on reference nodes.
 
 Use an explicit interchange reference:
 

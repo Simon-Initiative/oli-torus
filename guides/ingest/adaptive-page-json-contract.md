@@ -1,6 +1,6 @@
 # Adaptive Page JSON contract
 
-Adaptive Pages store lesson settings and deck sequences, not inline adaptive activity models. Each sequence entry references a separately versioned activity. This contract follows the current Adaptive Page authoring, server save conversion, delivery loading, and navigation implementation.
+Adaptive Pages store lesson settings and deck sequences, not inline adaptive activity models. Each sequence entry references a separately versioned activity. This contract follows the current Adaptive Page authoring, server persistence, delivery loading, and navigation implementation.
 
 ## Schema entry points
 
@@ -26,7 +26,7 @@ The former Adaptive Page schema checked only flags, an untyped `model` array, an
 
 The authoring path is `assets/src/apps/authoring/store/page/slice.ts`, `actions/initializeFromContext.ts`, and `actions/savePage.ts`. It saves deck groups selected from the group store, strips runtime `resourceId` fields recursively, serializes custom CSS/script/stylesheets, and computes lesson score settings. Current lesson settings are mapped by `assets/src/apps/authoring/components/PropertyEditor/schemas/lesson.ts`; score settings are also updated by `components/Modal/ScoringOverview.tsx`.
 
-Server `lib/oli/authoring/editing/page_editor.ex` preserves numeric `activity_id` resource references on authoring load and save. Adaptive initialization derives internal `resourceId` and revision-slug metadata from those IDs. Saving emits `activity_id` and strips internal `resourceId` and reference-level `activitySlug`; no server slug/ID conversion is performed. The group store normalizes legacy IDs for runtime use.
+Server `lib/oli/authoring/editing/page_editor.ex` preserves numeric `activity_id` resource references on authoring load and save. Adaptive initialization uses those IDs to populate internal `resourceId` fields and look up revision slugs. Saving emits `activity_id` and strips internal `resourceId` and reference-level `activitySlug`. The group store normalizes legacy IDs for runtime use.
 
 Delivery uses `assets/src/apps/delivery/store/features/page/slice.ts`, `page/actions/loadInitialPageState.ts`, `groups/slice.ts`, `groups/actions/sequence.ts`, `groups/actions/navUtils.ts`, `groups/selectors/deck.ts`, and `layouts/deck/DeckLayoutView.tsx`. It reads lesson settings, restores sequence references, traverses layer lineage, and navigates banks. The sequence editor represents hierarchy using `layerRef` in a flat deck array; nested deck groups are not the persisted hierarchy representation.
 
@@ -46,8 +46,8 @@ Every `model` entry is a closed deck group requiring `type: "group"`, `layout: "
 
 Deck children are closed `activity-reference` objects with at least one typed target:
 
-- `activity_id`: integer/string persisted or exported resource reference.
-- `activitySlug`: legacy string revision-slug reference accepted by the schema for compatibility; current authoring saves use numeric `activity_id`.
+- `activity_id`: resource reference used by authoring, persistence, and export. Authoring saves use integers. The schema also accepts strings.
+- `activitySlug`: legacy string revision-slug reference accepted by the schema for compatibility.
 - `activityId`: integer/string legacy alias recognized by the group loader.
 
 Optional reference `id` is integer/string. `resourceId` is runtime-only and is rejected; the real save action removes it. Supplied aliases must each have the correct type, but agreement between aliases and target existence are domain checks.
@@ -78,7 +78,7 @@ Malformed structures previously accepted by the permissive Adaptive schema now f
 
 ## Verification
 
-`assets/test/activity_schemas/adaptive_page_schema_test.ts` invokes the real page save thunk and deck/group reducers with persistence mocked at the network boundary. It captures serialized save output, verifies runtime-ID removal, validates a persisted reference variant, and runs that content through actual delivery reducers and sequence helpers. It uses real lesson property transformations and checks flowchart/responsive settings, banks/layers, strict export composition, and malformed Adaptive dispatch.
+`assets/test/activity_schemas/adaptive_page_schema_test.ts` invokes the real page save thunk and deck/group reducers with persistence mocked at the network boundary. It validates the serialized save output, verifies runtime-ID removal, and passes the same reference shape to delivery reducers and sequence helpers. It uses real lesson property transformations and checks flowchart/responsive settings, banks/layers, strict export composition, and malformed Adaptive dispatch.
 
 `test/support/fixtures/adaptive_page_models.json` contains those serialized outputs and is checked against the client implementation. `test/oli/utils/adaptive_page_schema_test.exs` validates the same fixtures through cached JSV validators. Tests cover required/typed fields, structural dispatch, strict wrappers, reference forms, explicit legacy support, active setting types, opaque custom extensions, variable/EverApp contracts, concurrent reuse, and export validation.
 
