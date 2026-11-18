@@ -43,3 +43,9 @@ MER-6225 owns end-to-end replacement of shared preview users for admin section p
 Delivery receives the persistent preview user struct or ID in authorized preview context, never as an authenticated login. Remove shared-user helpers and update scenario/test callers. Template exit ends only preview context and preserves real login and return behavior. Audit session reads/writes and derived identities, record their handling, and verify that preview activity cannot affect real learner records. MER-6225 owns shared admin/template handling; MER-6241 applies it and covers project-specific paths.
 
 Verification confirmed all 31 descriptions and titles, formatting, unchanged parent relationships and 17 images, 21 Relates links, and 20 acyclic Blocks links with no cross-Story sub-task dependencies. The repository changes are committed locally without pushing. No application code was changed; implementation tests are specified in the tickets.
+
+## Approved Story consolidation
+
+MER-6220 directly implements and verifies its resolver/reset, account settings, ownership markers, and enrollment-role behavior. Its published description contains all MER-6240 implementation and acceptance details. Classification and traceability references point to MER-6220; existing Story dependencies remain unchanged.
+
+Jira denied the approved MER-6240 deletion with 403 Forbidden because the account lacks Delete Issues permission. The operator then instructed closing it as Won’t Do. MER-6240 is verified Closed Won’t Do under MER-6220, with its local T-019 record retained as a reference. There are 18 active and two closed sub-tasks. Both published Story descriptions passed text and formatting checks; the closed sub-task retained its description and parent. No code changed, and repository commits remain unpushed.
