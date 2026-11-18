@@ -38,6 +38,99 @@ defmodule Oli.EditingTest do
       }
     end
 
+    test "nested activity resource IDs survive save, context load, removal and undo", %{
+      author: author,
+      revision1: page,
+      project: project
+    } do
+      {:ok, {activity, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_multiple_choice",
+          author,
+          %{"stem" => "Question"},
+          []
+        )
+
+      reference = %{
+        "type" => "activity-reference",
+        "id" => "activity-node",
+        "activity_id" => activity.resource_id,
+        "children" => []
+      }
+
+      content = %{
+        "version" => "0.1.0",
+        "model" => [
+          %{"type" => "group", "id" => "group-node", "children" => [reference]}
+        ]
+      }
+
+      PageEditor.acquire_lock(project.slug, page.slug, author.email)
+
+      assert {:ok, saved} =
+               PageEditor.edit(project.slug, page.slug, author.email, %{"content" => content})
+
+      assert saved.content == content
+      assert {:ok, context} = PageEditor.create_context(project.slug, saved.slug, author)
+      assert context.content == content
+
+      assert {:ok, removed} =
+               PageEditor.edit(project.slug, saved.slug, author.email, %{
+                 "content" => %{"model" => []}
+               })
+
+      assert AuthoringResolver.from_resource_id(project.slug, activity.resource_id).deleted
+
+      assert {:ok, restored} =
+               PageEditor.edit(project.slug, removed.slug, author.email, %{"content" => content})
+
+      assert restored.content == content
+      refute AuthoringResolver.from_resource_id(project.slug, activity.resource_id).deleted
+    end
+
+    test "activity references reject invalid, inaccessible and non-activity IDs", %{
+      author: author,
+      revision1: page,
+      project: project
+    } do
+      foreign_project = Seeder.base_project_with_resource2()
+
+      {:ok, {foreign_activity, _}} =
+        ActivityEditor.create(
+          foreign_project.project.slug,
+          "oli_multiple_choice",
+          foreign_project.author,
+          %{"stem" => "Other project"},
+          []
+        )
+
+      PageEditor.acquire_lock(project.slug, page.slug, author.email)
+
+      for id <- [nil, "123", -1, 0, 9_999_999_999, page.resource_id, foreign_activity.resource_id] do
+        content = %{
+          "model" => [
+            %{
+              "type" => "group",
+              "children" => [
+                %{"type" => "activity-reference", "activity_id" => id}
+              ]
+            }
+          ]
+        }
+
+        assert {:error, :not_found} =
+                 PageEditor.edit(project.slug, page.slug, author.email, %{"content" => content})
+      end
+
+      assert {:error, :not_found} =
+               PageEditor.edit(project.slug, page.slug, author.email, %{
+                 "content" => %{
+                   "model" => [%{"type" => "activity-reference", "activitySlug" => "old-client"}]
+                 }
+               })
+    end
+
     test "edit/4 creates a new revision when no lock in place", %{
       author: author,
       revision1: revision1,
@@ -319,7 +412,7 @@ defmodule Oli.EditingTest do
             "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
           },
           %{
-            "activitySlug" => revision.slug,
+            "activity_id" => revision.resource_id,
             "id" => "2656470668",
             "children" => [],
             "purpose" => "none",
@@ -416,7 +509,7 @@ defmodule Oli.EditingTest do
           %{
             "type" => "activity-reference",
             "id" => "1",
-            "activitySlug" => revision.slug
+            "activity_id" => revision.resource_id
           }
         ]
       }

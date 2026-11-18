@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
+import { createCopy } from 'components/activity/DuplicateActivity';
 import { Editors } from 'components/resource/editors/Editors';
 import { PageEditor } from 'apps/page-editor/PageEditor';
 import * as ActivityPersistence from 'data/persistence/activity';
@@ -14,6 +15,7 @@ jest.mock('data/persistence/lti_platform', () => ({
   startAuthoringDeepLink: jest.fn(),
 }));
 jest.mock('data/persistence/activity', () => ({ edit: jest.fn() }));
+jest.mock('components/activity/DuplicateActivity', () => ({ createCopy: jest.fn() }));
 jest.mock('components/resource/editors/Editors', () => ({
   Editors: jest.fn((props: any) => (
     <div>{props.activityContexts.first()?.model.deepLink?.title}</div>
@@ -85,12 +87,64 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 
-async function renderEditablePage() {
+async function renderEditablePage(overrides: Record<string, unknown> = {}) {
   const page = React.createRef<PageEditor>();
-  render(<PageEditor {...props} ref={page} />);
+  render(<PageEditor {...props} {...overrides} ref={page} />);
   await waitFor(() => expect(page.current?.state.editMode).toBe(true));
   return page;
 }
+
+it('edits, duplicates and restores references using resource IDs while retaining slug metadata', async () => {
+  const reference = { type: 'activity-reference', id: 'original', activity_id: 42, children: [] };
+  const page = await renderEditablePage({ content: { model: [reference] } });
+  jest
+    .spyOn(ResourcePersistence, 'edit')
+    .mockResolvedValue({ type: 'success', revisionSlug: 'page' });
+  (ActivityPersistence.edit as jest.Mock).mockResolvedValue({ result: 'success' });
+
+  act(() => {
+    page.current!.onEditActivity('42', { ...entry, content: entry.model });
+  });
+  await act(async () => {
+    await page.current!.activityPersistence['42'].flushPendingChangesAsync?.(false);
+  });
+  expect(ActivityPersistence.edit).toHaveBeenCalledWith(
+    'project',
+    10,
+    42,
+    expect.objectContaining({ content: entry.model }),
+    false,
+  );
+  expect(page.current!.state.activityContexts.get('42')?.activitySlug).toBe('tool');
+
+  (createCopy as jest.Mock).mockImplementation((_project, _editor, _original, _scope, onAdded) => {
+    onAdded({ ...entry, activityId: 43, activitySlug: 'copied-revision' }, 'tool');
+  });
+  act(() => {
+    const calls = (Editors as jest.Mock).mock.calls;
+    calls[calls.length - 1][0].onDuplicate(entry);
+  });
+  expect(page.current!.state.content.toPersistence().model).toEqual([
+    expect.objectContaining({ activity_id: 43 }),
+    reference,
+  ]);
+  expect(page.current!.state.content.toPersistence().model[0]).not.toHaveProperty('activitySlug');
+  expect(page.current!.state.activityContexts.get('43')?.activitySlug).toBe('copied-revision');
+
+  act(() => page.current!.onRemove('original'));
+  expect(page.current!.state.content.find('original')).toBeUndefined();
+  const undoId = page.current!.state.undoables.keySeq().last()!;
+  act(() => page.current!.onInvokeUndo(undoId));
+  expect(page.current!.state.content.find('original')).toEqual(reference);
+  await act(async () => {
+    await page.current!.persistence.flushPendingChangesAsync?.(false);
+  });
+  const calls = (ResourcePersistence.edit as jest.Mock).mock.calls;
+  expect(calls[calls.length - 1][2].content.model).toEqual([
+    expect.objectContaining({ activity_id: 43 }),
+    reference,
+  ]);
+});
 
 it('uses the existing Saving / All changes saved indicator and synchronizes the saved model', async () => {
   await renderEditablePage();
@@ -169,7 +223,7 @@ it.each(['page', 'activity', 'new activity'])(
     const persistence =
       target === 'page'
         ? page.current!.persistence
-        : page.current!.activityPersistence[target === 'new activity' ? 'new-tool' : 'tool'];
+        : page.current!.activityPersistence[target === 'new activity' ? '43' : '42'];
     const response = deferred<void>();
     let saving!: Promise<void>;
     act(() => {
@@ -196,7 +250,7 @@ it('flushes the existing page/activity autosaves before preparing and blocks lau
     order.push('page');
     return Promise.resolve();
   });
-  page.current!.activityPersistence.tool.save(() => {
+  page.current!.activityPersistence['42'].save(() => {
     order.push('activity');
     return Promise.resolve();
   });
@@ -211,7 +265,7 @@ it('flushes the existing page/activity autosaves before preparing and blocks lau
   await act(async () => {
     await event('ltiAuthoringClose');
   });
-  page.current!.activityPersistence.tool.save(() =>
+  page.current!.activityPersistence['42'].save(() =>
     Promise.reject(new Error('Pending edit failed')),
   );
   await act(async () => {

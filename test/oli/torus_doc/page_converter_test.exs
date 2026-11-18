@@ -181,7 +181,7 @@ defmodule Oli.TorusDoc.PageConverterTest do
 
       [activity] = json["content"]["model"]
       assert activity["type"] == "activity-reference"
-      assert activity["activitySlug"]
+      assert activity["activity_id"]
     end
 
     test "handles bank selections parsed from YAML" do
@@ -528,7 +528,7 @@ defmodule Oli.TorusDoc.PageConverterTest do
       assert part1["type"] == "content"
       # Now properly converted as activity-reference
       assert activity["type"] == "activity-reference"
-      assert activity["activitySlug"]
+      assert activity["activity_id"]
       assert part2["type"] == "content"
       # Now properly converted
       assert bank["type"] == "selection"

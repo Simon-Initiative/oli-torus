@@ -59,6 +59,10 @@ export const savePage = createAsyncThunk(
     const updatedModel = clone(model);
     const removeResourceId = (items: any[]) => {
       items.forEach((item) => {
+        if (item.type === 'activity-reference') {
+          item.activity_id = item.resourceId;
+          delete item.activitySlug;
+        }
         delete item.resourceId;
         if (item.children) {
           removeResourceId(item.children);

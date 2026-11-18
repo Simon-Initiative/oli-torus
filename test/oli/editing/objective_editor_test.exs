@@ -194,7 +194,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
             %{
               "type" => "activity-reference",
               "id" => "1",
-              "activitySlug" => slug
+              "activity_id" => Oli.Resources.get_resource_from_slug(slug).id
             }
           ]
         }
@@ -315,7 +315,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
             %{
               "type" => "activity-reference",
               "id" => "1",
-              "activitySlug" => slug
+              "activity_id" => Oli.Resources.get_resource_from_slug(slug).id
             }
           ]
         }

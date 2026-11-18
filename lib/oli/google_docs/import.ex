@@ -574,7 +574,6 @@ defmodule Oli.GoogleDocs.Import do
       "type" => "activity-reference",
       "id" => unique_id(),
       "activity_id" => revision.resource_id,
-      "activitySlug" => revision.slug,
       "children" => []
     }
   end

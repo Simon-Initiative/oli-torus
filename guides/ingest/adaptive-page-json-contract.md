@@ -26,7 +26,7 @@ The former Adaptive Page schema checked only flags, an untyped `model` array, an
 
 The authoring path is `assets/src/apps/authoring/store/page/slice.ts`, `actions/initializeFromContext.ts`, and `actions/savePage.ts`. It saves deck groups selected from the group store, strips runtime `resourceId` fields recursively, serializes custom CSS/script/stylesheets, and computes lesson score settings. Current lesson settings are mapped by `assets/src/apps/authoring/components/PropertyEditor/schemas/lesson.ts`; score settings are also updated by `components/Modal/ScoringOverview.tsx`.
 
-Server `lib/oli/authoring/editing/page_editor.ex` converts authoring `activitySlug` references to persisted `activity_id` references, and performs the reverse mapping on authoring load. The group store normalizes legacy IDs for runtime use.
+Server `lib/oli/authoring/editing/page_editor.ex` preserves numeric `activity_id` resource references on authoring load and save. Adaptive initialization derives internal `resourceId` and revision-slug metadata from those IDs. Saving emits `activity_id` and strips internal `resourceId` and reference-level `activitySlug`; no server slug/ID conversion is performed. The group store normalizes legacy IDs for runtime use.
 
 Delivery uses `assets/src/apps/delivery/store/features/page/slice.ts`, `page/actions/loadInitialPageState.ts`, `groups/slice.ts`, `groups/actions/sequence.ts`, `groups/actions/navUtils.ts`, `groups/selectors/deck.ts`, and `layouts/deck/DeckLayoutView.tsx`. It reads lesson settings, restores sequence references, traverses layer lineage, and navigates banks. The sequence editor represents hierarchy using `layerRef` in a flat deck array; nested deck groups are not the persisted hierarchy representation.
 
@@ -47,7 +47,7 @@ Every `model` entry is a closed deck group requiring `type: "group"`, `layout: "
 Deck children are closed `activity-reference` objects with at least one typed target:
 
 - `activity_id`: integer/string persisted or exported resource reference.
-- `activitySlug`: string authoring revision slug before server conversion.
+- `activitySlug`: legacy string revision-slug reference accepted by the schema for compatibility; current authoring saves use numeric `activity_id`.
 - `activityId`: integer/string legacy alias recognized by the group loader.
 
 Optional reference `id` is integer/string. `resourceId` is runtime-only and is rejected; the real save action removes it. Supplied aliases must each have the correct type, but agreement between aliases and target existence are domain checks.

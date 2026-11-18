@@ -585,12 +585,12 @@ defmodule OliWeb.ActivityControllerTest do
           %{
             "type" => "activity-reference",
             "id" => "1",
-            "activitySlug" => slug
+            "activity_id" => Oli.Resources.get_resource_from_slug(slug).id
           },
           %{
             "type" => "activity-reference",
             "id" => "2",
-            "activitySlug" => slug2
+            "activity_id" => Oli.Resources.get_resource_from_slug(slug2).id
           }
         ]
       }

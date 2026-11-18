@@ -17,7 +17,7 @@ export const focusHandler =
     const desc =
       item.type === 'content'
         ? getContentDescription(item)
-        : activities.get((item as ActivityReference).activitySlug)?.friendlyName;
+        : activities.get(String((item as ActivityReference).activity_id))?.friendlyName;
 
     const index = content.flattenedIndex(key);
     setAssistive(`Listbox. ${index + 1} of ${content.count()}. ${desc}.`);

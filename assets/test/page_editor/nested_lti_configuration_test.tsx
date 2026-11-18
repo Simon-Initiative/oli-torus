@@ -30,7 +30,7 @@ const activity: ActivityEditContext = {
 const reference: ResourceContent = {
   type: 'activity-reference',
   id: 'placement',
-  activitySlug: 'tool',
+  activity_id: 42,
   children: [],
 };
 
@@ -50,7 +50,7 @@ describe.each<[string, ResourceContent]>([
         supportsLtiConfiguration,
         resourceContext: { optionalContentTypes: {} },
         editMode: false,
-        activities: Immutable.Map([['tool', activity]]),
+        activities: Immutable.Map([['42', activity]]),
         parents: [],
         index: [],
         allObjectives: [],

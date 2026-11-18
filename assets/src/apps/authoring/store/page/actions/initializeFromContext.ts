@@ -82,7 +82,8 @@ export const initializeFromContext = createAsyncThunk(
       const newSequence = children.map((childActivity) => {
         const entry = {
           type: 'activity-reference',
-          resourceId: childActivity.activityId,
+          activity_id: childActivity.resourceId,
+          resourceId: childActivity.resourceId,
           activitySlug: childActivity.activitySlug,
           custom: {
             sequenceId: `aa_${guid()}`,
@@ -122,7 +123,7 @@ export const initializeFromContext = createAsyncThunk(
 
     // populate the group
     // TODO: can this be recursively nested?
-    const groups = pageModel.filter((item: any) => item.type === 'group');
+    let groups = pageModel.filter((item: any) => item.type === 'group');
     const otherTypes = pageModel.filter((item: any) => item.type !== 'group');
     // for now just stick them into a group, this isn't reallly thought out yet
     // and there is technically only 1 supported layout type atm
@@ -130,19 +131,22 @@ export const initializeFromContext = createAsyncThunk(
       groups.push({ type: 'group', layout: 'deck', children: [...otherTypes] });
     }
 
-    // need resourceId in the group to be able to match it with the activity
-    groups.forEach((group) => {
-      group.children.forEach((child: any) => {
-        if (child.type === 'activity-reference' && !child.resourceId) {
-          const matchingActivity = activities.find(
-            (activity) => activity.activitySlug === child.activitySlug,
-          );
-          if (matchingActivity) {
-            child.resourceId = matchingActivity.resourceId;
-          }
-        }
-      });
-    });
+    // Hydrate internal sequence metadata from resource identity without mutating
+    // groups that may already have been frozen by Redux during blank-lesson setup.
+    groups = groups.map((group) => ({
+      ...group,
+      children: group.children.map((child: any) => {
+        if (child.type !== 'activity-reference') return child;
+        const matchingActivity = activities.find(
+          (activity) => activity.resourceId === child.activity_id,
+        );
+        return {
+          ...child,
+          resourceId: child.activity_id,
+          activitySlug: matchingActivity?.activitySlug,
+        };
+      }),
+    }));
 
     // here we should do any "layout processing" where for example we go and make sure all the parts
     // are referenced including inherited from layers or parent screens when in "deck" view
