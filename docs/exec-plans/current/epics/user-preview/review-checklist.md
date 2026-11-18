@@ -1,6 +1,6 @@
 # User Preview ticket review checklist
 
-Review scope: MER-6158 and its 11 Stories (including closed MER-6219) and 20 sub-tasks. This checklist tracks corrections to ticket definitions, not implementation of the feature.
+Review scope: MER-6158 and its 11 Stories (including closed MER-6219) and 18 active sub-tasks, plus two retired sub-task records outside the epic. This checklist tracks corrections to ticket definitions, not implementation of the feature.
 
 ## Working process
 
@@ -38,7 +38,7 @@ Read-back checks confirmed exact description text, headings, paragraphs, nested 
 
 ## Approved consolidation
 
-MER-6225 owns end-to-end replacement of shared preview users for admin section previews and author/admin template previews. MER-6226 is Closed Won’t Do under its existing parent and points to MER-6225. MER-6224 blocks MER-6225; both obsolete links to MER-6226 are removed. The seven affected descriptions, title, closure, references, and dependency changes are approved, published, and verified in Jira.
+MER-6225 owns end-to-end replacement of shared preview users for admin section previews and author/admin template previews. MER-6226 is Closed Won’t Do under retired MER-6206 outside the epic and points to MER-6225. MER-6224 blocks MER-6225; both obsolete links to MER-6226 are removed. The seven affected descriptions, title, closure, references, and dependency changes are approved, published, and verified in Jira.
 
 Delivery receives the persistent preview user struct or ID in authorized preview context, never as an authenticated login. Remove shared-user helpers and update scenario/test callers. Template exit ends only preview context and preserves real login and return behavior. Audit session reads/writes and derived identities, record their handling, and verify that preview activity cannot affect real learner records. MER-6225 owns shared admin/template handling; MER-6241 applies it and covers project-specific paths.
 
@@ -48,4 +48,8 @@ Verification confirmed all 31 descriptions and titles, formatting, unchanged par
 
 MER-6220 directly implements and verifies its resolver/reset, account settings, ownership markers, and enrollment-role behavior. Its published description contains all MER-6240 implementation and acceptance details. Classification and traceability references point to MER-6220; existing Story dependencies remain unchanged.
 
-Jira denied the approved MER-6240 deletion with 403 Forbidden because the account lacks Delete Issues permission. The operator then instructed closing it as Won’t Do. MER-6240 is verified Closed Won’t Do under MER-6220, with its local T-019 record retained as a reference. There are 18 active and two closed sub-tasks. Both published Story descriptions passed text and formatting checks; the closed sub-task retained its description and parent. No code changed, and repository commits remain unpushed.
+Jira denied the approved MER-6240 deletion with 403 Forbidden because the account lacks Delete Issues permission. The operator then instructed closing it as Won’t Do. MER-6240 is verified Closed Won’t Do under retired MER-6203 outside the epic, with its local T-019 record retained as a reference. The epic has 18 active sub-tasks; both closed sub-tasks are outside it. Both published Story descriptions passed text and formatting checks; the closed sub-task retained its description and parent. No code changed, and repository commits remain unpushed.
+
+## Closed sub-task relocation
+
+Moved MER-6226 from MER-6211 to retired MER-6206, and MER-6240 from MER-6220 to retired MER-6203, using the Jira CLI. Both remain Closed Won’t Do with their original descriptions and links. Read-back verified absence from the former parents and presence under the retired Stories outside MER-6158. No active dependency changed.
