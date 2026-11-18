@@ -92,7 +92,7 @@ Each previous implementation has one primary destination. A flattened former par
 | S-014 | [MER-6209](https://eliterate.atlassian.net/browse/MER-6209) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | [T-017](docs/exec-plans/current/epics/user-preview/tickets/T-017.md) | [MER-6238](https://eliterate.atlassian.net/browse/MER-6238) | Yes — created and verified |
 | S-015 | [MER-6203](https://eliterate.atlassian.net/browse/MER-6203) | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | [MER-6220](https://eliterate.atlassian.net/browse/MER-6220) | Yes — created and verified |
 | S-015a | [MER-6204](https://eliterate.atlassian.net/browse/MER-6204) | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md) | [MER-6240](https://eliterate.atlassian.net/browse/MER-6240) | Yes — created and verified |
-| S-015b | [MER-6205](https://eliterate.atlassian.net/browse/MER-6205) | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) | [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) | Yes — created and verified |
+| S-015b | [MER-6205](https://eliterate.atlassian.net/browse/MER-6205) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) | [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) | Yes — created and verified |
 | S-016 | [MER-6206](https://eliterate.atlassian.net/browse/MER-6206) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md), [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) | [MER-6225](https://eliterate.atlassian.net/browse/MER-6225), [MER-6226](https://eliterate.atlassian.net/browse/MER-6226) | Yes — created and verified |
 | S-016a | [MER-6207](https://eliterate.atlassian.net/browse/MER-6207) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md) | [MER-6225](https://eliterate.atlassian.net/browse/MER-6225) | Yes — created and verified |
 | S-016b | [MER-6208](https://eliterate.atlassian.net/browse/MER-6208) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) | [MER-6226](https://eliterate.atlassian.net/browse/MER-6226) | Yes — created and verified |
@@ -101,31 +101,30 @@ Historical Story sources: [tickets/ at the published pre-replacement commit](htt
 
 ## Replacement technical dependencies
 
-These are the 21 verified Blocks links. Whole-Feature shared acceptance uses related-work references so it does not introduce artificial cycles.
+Six Story-level Blocks links define delivery order; fourteen same-Story sub-task links define implementation order. No dependency crosses Story boundaries through a sub-task. Both graphs are acyclic.
 
 | Prerequisite | Blocks |
 | --- | --- |
+| [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) / [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) | [F-002](docs/exec-plans/current/epics/user-preview/tickets/F-002.md) / [MER-6212](https://eliterate.atlassian.net/browse/MER-6212) |
+| [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) / [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) | [F-003](docs/exec-plans/current/epics/user-preview/tickets/F-003.md) / [MER-6213](https://eliterate.atlassian.net/browse/MER-6213) |
+| [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) / [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) / [MER-6217](https://eliterate.atlassian.net/browse/MER-6217) |
+| [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) / [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) | [F-008](docs/exec-plans/current/epics/user-preview/tickets/F-008.md) / [MER-6218](https://eliterate.atlassian.net/browse/MER-6218) |
+| [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) / [MER-6220](https://eliterate.atlassian.net/browse/MER-6220) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) / [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) |
+| [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) / [MER-6220](https://eliterate.atlassian.net/browse/MER-6220) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) / [MER-6217](https://eliterate.atlassian.net/browse/MER-6217) |
 | [T-001](docs/exec-plans/current/epics/user-preview/tickets/T-001.md) / [MER-6222](https://eliterate.atlassian.net/browse/MER-6222) | [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md) / [MER-6224](https://eliterate.atlassian.net/browse/MER-6224) |
 | [T-002](docs/exec-plans/current/epics/user-preview/tickets/T-002.md) / [MER-6223](https://eliterate.atlassian.net/browse/MER-6223) | [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md) / [MER-6224](https://eliterate.atlassian.net/browse/MER-6224) |
-| [T-002](docs/exec-plans/current/epics/user-preview/tickets/T-002.md) / [MER-6223](https://eliterate.atlassian.net/browse/MER-6223) | [T-017](docs/exec-plans/current/epics/user-preview/tickets/T-017.md) / [MER-6238](https://eliterate.atlassian.net/browse/MER-6238) |
-| [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md) / [MER-6224](https://eliterate.atlassian.net/browse/MER-6224) | [F-003](docs/exec-plans/current/epics/user-preview/tickets/F-003.md) / [MER-6213](https://eliterate.atlassian.net/browse/MER-6213) |
-| [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md) / [MER-6224](https://eliterate.atlassian.net/browse/MER-6224) | [F-002](docs/exec-plans/current/epics/user-preview/tickets/F-002.md) / [MER-6212](https://eliterate.atlassian.net/browse/MER-6212) |
-| [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md) / [MER-6224](https://eliterate.atlassian.net/browse/MER-6224) | [F-008](docs/exec-plans/current/epics/user-preview/tickets/F-008.md) / [MER-6218](https://eliterate.atlassian.net/browse/MER-6218) |
 | [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md) / [MER-6224](https://eliterate.atlassian.net/browse/MER-6224) | [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) / [MER-6226](https://eliterate.atlassian.net/browse/MER-6226) |
+| [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md) / [MER-6225](https://eliterate.atlassian.net/browse/MER-6225) | [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) / [MER-6226](https://eliterate.atlassian.net/browse/MER-6226) |
 | [T-006](docs/exec-plans/current/epics/user-preview/tickets/T-006.md) / [MER-6227](https://eliterate.atlassian.net/browse/MER-6227) | [T-007](docs/exec-plans/current/epics/user-preview/tickets/T-007.md) / [MER-6228](https://eliterate.atlassian.net/browse/MER-6228) |
-| [T-011](docs/exec-plans/current/epics/user-preview/tickets/T-011.md) / [MER-6232](https://eliterate.atlassian.net/browse/MER-6232) | [T-012](docs/exec-plans/current/epics/user-preview/tickets/T-012.md) / [MER-6233](https://eliterate.atlassian.net/browse/MER-6233) |
-| [T-012](docs/exec-plans/current/epics/user-preview/tickets/T-012.md) / [MER-6233](https://eliterate.atlassian.net/browse/MER-6233) | [T-013](docs/exec-plans/current/epics/user-preview/tickets/T-013.md) / [MER-6234](https://eliterate.atlassian.net/browse/MER-6234) |
 | [T-008](docs/exec-plans/current/epics/user-preview/tickets/T-008.md) / [MER-6229](https://eliterate.atlassian.net/browse/MER-6229) | [T-009](docs/exec-plans/current/epics/user-preview/tickets/T-009.md) / [MER-6230](https://eliterate.atlassian.net/browse/MER-6230) |
 | [T-009](docs/exec-plans/current/epics/user-preview/tickets/T-009.md) / [MER-6230](https://eliterate.atlassian.net/browse/MER-6230) | [T-010](docs/exec-plans/current/epics/user-preview/tickets/T-010.md) / [MER-6231](https://eliterate.atlassian.net/browse/MER-6231) |
+| [T-011](docs/exec-plans/current/epics/user-preview/tickets/T-011.md) / [MER-6232](https://eliterate.atlassian.net/browse/MER-6232) | [T-012](docs/exec-plans/current/epics/user-preview/tickets/T-012.md) / [MER-6233](https://eliterate.atlassian.net/browse/MER-6233) |
+| [T-012](docs/exec-plans/current/epics/user-preview/tickets/T-012.md) / [MER-6233](https://eliterate.atlassian.net/browse/MER-6233) | [T-013](docs/exec-plans/current/epics/user-preview/tickets/T-013.md) / [MER-6234](https://eliterate.atlassian.net/browse/MER-6234) |
 | [T-014](docs/exec-plans/current/epics/user-preview/tickets/T-014.md) / [MER-6235](https://eliterate.atlassian.net/browse/MER-6235) | [T-015](docs/exec-plans/current/epics/user-preview/tickets/T-015.md) / [MER-6236](https://eliterate.atlassian.net/browse/MER-6236) |
 | [T-015](docs/exec-plans/current/epics/user-preview/tickets/T-015.md) / [MER-6236](https://eliterate.atlassian.net/browse/MER-6236) | [T-016](docs/exec-plans/current/epics/user-preview/tickets/T-016.md) / [MER-6237](https://eliterate.atlassian.net/browse/MER-6237) |
 | [T-016](docs/exec-plans/current/epics/user-preview/tickets/T-016.md) / [MER-6237](https://eliterate.atlassian.net/browse/MER-6237) | [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) / [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) |
-| [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md) / [MER-6240](https://eliterate.atlassian.net/browse/MER-6240) | [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) / [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) |
-| [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md) / [MER-6240](https://eliterate.atlassian.net/browse/MER-6240) | [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md) / [MER-6225](https://eliterate.atlassian.net/browse/MER-6225) |
-| [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) / [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) | [T-017](docs/exec-plans/current/epics/user-preview/tickets/T-017.md) / [MER-6238](https://eliterate.atlassian.net/browse/MER-6238) |
-| [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) / [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) | [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) / [MER-6226](https://eliterate.atlassian.net/browse/MER-6226) |
-| [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md) / [MER-6225](https://eliterate.atlassian.net/browse/MER-6225) | [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) / [MER-6226](https://eliterate.atlassian.net/browse/MER-6226) |
 | [T-017](docs/exec-plans/current/epics/user-preview/tickets/T-017.md) / [MER-6238](https://eliterate.atlassian.net/browse/MER-6238) | [T-018](docs/exec-plans/current/epics/user-preview/tickets/T-018.md) / [MER-6239](https://eliterate.atlassian.net/browse/MER-6239) |
+| [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) / [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) | [T-017](docs/exec-plans/current/epics/user-preview/tickets/T-017.md) / [MER-6238](https://eliterate.atlassian.net/browse/MER-6238) |
 
 ## Replacement sub-tasks
 
@@ -152,7 +151,7 @@ All items are direct children of their owning Feature/requirement Story. Former 
 | [T-017](docs/exec-plans/current/epics/user-preview/tickets/T-017.md) | Launch Full Course Preview from Publish with a complete preview shell | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | S-014 | [MER-6238](https://eliterate.atlassian.net/browse/MER-6238) | Created and verified |
 | [T-018](docs/exec-plans/current/epics/user-preview/tickets/T-018.md) | Add a publication-aware Full Course Preview card to Review | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | S-013 | [MER-6239](https://eliterate.atlassian.net/browse/MER-6239) | Created and verified |
 | [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md) | Preview-user ownership, markers, and reset | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | S-015a | [MER-6240](https://eliterate.atlassian.net/browse/MER-6240) | Created and verified |
-| [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) | Full Course Preview identity integration | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | S-015b | [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) | Created and verified |
+| [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) | Full Course Preview identity integration | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | S-015b | [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) | Created and verified |
 
 ## Replacement execution result
 
@@ -161,14 +160,14 @@ All items are direct children of their owning Feature/requirement Story. Former 
 - Removed Technical Approach and its tail from the epic; preserved the preceding five rich-text nodes and recording exactly.
 - Preserved all eight verbatim Feature sections, all original Figma URL targets, and 17 original PNG screenshots embedded as attachments.
 - Migrated full technical contracts and analysis once under each primary owner; flattened former sub-tasks receive necessary parent context and bounded owned scope.
-- Verified all 21 Blocks links, description text/structure/URLs, attachment bytes, and parent relationships. New work items are unassigned and retain project-default status/priority; no labels, components, versions, or estimates were added.
+- Verified all 20 Blocks links, description text/structure/URLs, attachment bytes, and parent relationships. New work items are unassigned and retain project-default status/priority; no labels, components, versions, or estimates were added.
 - Retained one active set of ticket documents. Repository changes remain local; pushing is explicitly on hold.
 
 ## Ticket description cleanup
 
 Completed and verified: all 31 Jira descriptions match the cleaned F-/T- documents. Preserve requirements, acceptance outcomes, technical constraints, design links, screenshots, parents, sub-tasks, and existing Blocks links. Remove ticket-authoring and migration narrative, source readiness/placeholders, requirement-number references and Requirements analysis, redundant sub-task inventories, and Related implementation lists. The Story descriptions are the requirements; the historical requirement mapping remains local for traceability. Use native Jira relationships for those inventories. Repository publishing remains on hold.
 
-The following 21 Relates links are verified in Linked work items; the 21 existing Blocks links and all parent/sub-task relationships are preserved:
+The following 21 Relates links are verified in Linked work items; the current 20 Blocks links follow Story delivery boundaries, and MER-6241 belongs to MER-6217:
 
 | Work item | Related work item |
 | --- | --- |
@@ -193,3 +192,7 @@ The following 21 Relates links are verified in Linked work items; the 21 existin
 | F-009 / MER-6219 | F-010 / MER-6220 |
 | F-009 / MER-6219 | F-011 / MER-6221 |
 | F-010 / MER-6220 | F-011 / MER-6221 |
+
+## Story delivery boundaries
+
+MER-6241 / T-020 belongs to F-007 / MER-6217. F-010 / MER-6220 delivers the reusable user resolver, reset and markers independently; F-001 / MER-6211 consumes that capability for admin preview. Project identity integration is owned and accepted by F-007. No admin-preview dependency on T-020 remains. Cross-Story dependencies are exclusively Story-level links.

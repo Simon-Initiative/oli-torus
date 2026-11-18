@@ -2,7 +2,7 @@
 
 Epic/source: [MER-6158](https://eliterate.atlassian.net/browse/MER-6158) and the existing local overview
 Review: all 11 feature/requirement Stories and 20 sub-task descriptions approved
-Filing: verified; 10 active Stories and one Closed Won’t Do Story (F-009), 20 sub-tasks, 17 embedded screenshots, and 21 dependencies; old work items Closed Won’t Do and removed from epic; repository changes remain local
+Filing: verified; 10 active Stories and one Closed Won’t Do Story (F-009), 20 sub-tasks, 17 embedded screenshots, and 20 dependencies; old work items Closed Won’t Do and removed from epic; repository changes remain local
 
 ## Outcomes and scope
 
@@ -357,6 +357,8 @@ No product decision remains open. The scope, Q10 interpretation, account reset, 
 
 - 2026-11-16 — Close MER-6219 / F-009 as Closed Won’t Do: Shared accessibility and authorization criteria are already covered by the affected feature Stories and remain in the epic. The operator approved closure and explicitly declined a separate verification task. Preserve the closed ticket and its links for traceability; no other Jira work items are changed.
 
+- 2026-11-18 — Story delivery boundaries: Move MER-6241 / T-020 from F-010 to F-007. F-010 delivers the reusable preview-user resolver/reset/markers; F-007 owns project identity integration. Admin integration consumes F-010 directly, not the project integration task. Replace cross-Story sub-task dependencies with six Story-level Blocks links and retain fourteen same-Story sub-task dependencies. Verify both graphs are acyclic. No repository push.
+
 ## Child work items
 
 The eight handoff Features each have one active Story, with two additional active Stories for preview-user management and preview-record identification. F-009 / MER-6219 is Closed Won’t Do: shared accessibility and authorization requirements are acceptance conditions of the affected Stories, not a separate work item. Technical implementation has one primary owner; related Features cross-link that work. Full source requirements, original design links, screenshots, and migrated technical guidance are in the linked documents. Each Description is the verified Jira description; metadata above it stays local. Proposed implementation details remain provisional within approved behavior, scope, acceptance criteria, and binding constraints.
@@ -365,42 +367,42 @@ The single active ticket set is `docs/exec-plans/current/epics/user-preview/tick
 
 | Story and document | Requirement | Implementation sub-tasks | Lane | Status | Jira |
 | --- | --- | --- | --- | --- | --- |
-| [F-001 — Instructor view to student preview](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | R-001 | [T-001](docs/exec-plans/current/epics/user-preview/tickets/T-001.md), [T-002](docs/exec-plans/current/epics/user-preview/tickets/T-002.md), [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md), [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md), [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) | A and D | Created and verified | [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) |
-| [F-002 — Instructor preview notes](docs/exec-plans/current/epics/user-preview/tickets/F-002.md) | R-002 | None; guidance in Story | A | Created and verified | [MER-6212](https://eliterate.atlassian.net/browse/MER-6212) |
-| [F-003 — Gating Instructor View/Student Preview Bypass](docs/exec-plans/current/epics/user-preview/tickets/F-003.md) | R-003 | None; guidance in Story | A | Created and verified | [MER-6213](https://eliterate.atlassian.net/browse/MER-6213) |
-| [F-004 — Update authoring page preview](docs/exec-plans/current/epics/user-preview/tickets/F-004.md) | R-004 | [T-006](docs/exec-plans/current/epics/user-preview/tickets/T-006.md), [T-007](docs/exec-plans/current/epics/user-preview/tickets/T-007.md) | B | Created and verified | [MER-6214](https://eliterate.atlassian.net/browse/MER-6214) |
-| [F-005 — Activity bank preview](docs/exec-plans/current/epics/user-preview/tickets/F-005.md) | R-005 | [T-008](docs/exec-plans/current/epics/user-preview/tickets/T-008.md), [T-009](docs/exec-plans/current/epics/user-preview/tickets/T-009.md), [T-010](docs/exec-plans/current/epics/user-preview/tickets/T-010.md) | C | Created and verified | [MER-6215](https://eliterate.atlassian.net/browse/MER-6215) |
-| [F-006 — Inaccurate previews](docs/exec-plans/current/epics/user-preview/tickets/F-006.md) | R-006 | [T-011](docs/exec-plans/current/epics/user-preview/tickets/T-011.md), [T-012](docs/exec-plans/current/epics/user-preview/tickets/T-012.md), [T-013](docs/exec-plans/current/epics/user-preview/tickets/T-013.md) | B | Created and verified | [MER-6216](https://eliterate.atlassian.net/browse/MER-6216) |
-| [F-007 — Project publication preview](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | R-007 | [T-014](docs/exec-plans/current/epics/user-preview/tickets/T-014.md), [T-015](docs/exec-plans/current/epics/user-preview/tickets/T-015.md), [T-016](docs/exec-plans/current/epics/user-preview/tickets/T-016.md), [T-017](docs/exec-plans/current/epics/user-preview/tickets/T-017.md), [T-018](docs/exec-plans/current/epics/user-preview/tickets/T-018.md) | D | Created and verified | [MER-6217](https://eliterate.atlassian.net/browse/MER-6217) |
-| [F-008 — Instructor Guidance on Switching Views](docs/exec-plans/current/epics/user-preview/tickets/F-008.md) | R-009 | None; guidance in Story | A | Created and verified | [MER-6218](https://eliterate.atlassian.net/browse/MER-6218) |
+| [F-001 — Instructor view to student preview](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | R-001 | [T-001](docs/exec-plans/current/epics/user-preview/tickets/T-001.md), [T-002](docs/exec-plans/current/epics/user-preview/tickets/T-002.md), [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md), [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md), [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) | B | Created and verified | [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) |
+| [F-002 — Instructor preview notes](docs/exec-plans/current/epics/user-preview/tickets/F-002.md) | R-002 | None; guidance in Story | B | Created and verified | [MER-6212](https://eliterate.atlassian.net/browse/MER-6212) |
+| [F-003 — Gating Instructor View/Student Preview Bypass](docs/exec-plans/current/epics/user-preview/tickets/F-003.md) | R-003 | None; guidance in Story | B | Created and verified | [MER-6213](https://eliterate.atlassian.net/browse/MER-6213) |
+| [F-004 — Update authoring page preview](docs/exec-plans/current/epics/user-preview/tickets/F-004.md) | R-004 | [T-006](docs/exec-plans/current/epics/user-preview/tickets/T-006.md), [T-007](docs/exec-plans/current/epics/user-preview/tickets/T-007.md) | D | Created and verified | [MER-6214](https://eliterate.atlassian.net/browse/MER-6214) |
+| [F-005 — Activity bank preview](docs/exec-plans/current/epics/user-preview/tickets/F-005.md) | R-005 | [T-008](docs/exec-plans/current/epics/user-preview/tickets/T-008.md), [T-009](docs/exec-plans/current/epics/user-preview/tickets/T-009.md), [T-010](docs/exec-plans/current/epics/user-preview/tickets/T-010.md) | E | Created and verified | [MER-6215](https://eliterate.atlassian.net/browse/MER-6215) |
+| [F-006 — Inaccurate previews](docs/exec-plans/current/epics/user-preview/tickets/F-006.md) | R-006 | [T-011](docs/exec-plans/current/epics/user-preview/tickets/T-011.md), [T-012](docs/exec-plans/current/epics/user-preview/tickets/T-012.md), [T-013](docs/exec-plans/current/epics/user-preview/tickets/T-013.md) | D | Created and verified | [MER-6216](https://eliterate.atlassian.net/browse/MER-6216) |
+| [F-007 — Project publication preview](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | R-007 | [T-014](docs/exec-plans/current/epics/user-preview/tickets/T-014.md), [T-015](docs/exec-plans/current/epics/user-preview/tickets/T-015.md), [T-016](docs/exec-plans/current/epics/user-preview/tickets/T-016.md), [T-017](docs/exec-plans/current/epics/user-preview/tickets/T-017.md), [T-018](docs/exec-plans/current/epics/user-preview/tickets/T-018.md), [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) | C | Created and verified | [MER-6217](https://eliterate.atlassian.net/browse/MER-6217) |
+| [F-008 — Instructor Guidance on Switching Views](docs/exec-plans/current/epics/user-preview/tickets/F-008.md) | R-009 | None; guidance in Story | B | Created and verified | [MER-6218](https://eliterate.atlassian.net/browse/MER-6218) |
 | [F-009 — Keep preview controls accessible and authorized](docs/exec-plans/current/epics/user-preview/tickets/F-009.md) | R-008 | None; guidance in Story | Shared acceptance | Closed Won’t Do | [MER-6219](https://eliterate.atlassian.net/browse/MER-6219) |
-| [F-010 — Manage and reset the author-linked preview user](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | R-010 | [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md), [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) | D | Created and verified | [MER-6220](https://eliterate.atlassian.net/browse/MER-6220) |
+| [F-010 — Manage and reset the author-linked preview user](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | R-010 | [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md) | A | Created and verified | [MER-6220](https://eliterate.atlassian.net/browse/MER-6220) |
 | [F-011 — Identify preview users and sections](docs/exec-plans/current/epics/user-preview/tickets/F-011.md) | R-011 | None; guidance in Story | Shared acceptance | Created and verified | [MER-6221](https://eliterate.atlassian.net/browse/MER-6221) |
 
 ### Implementation sub-tasks
 
 | Sub-task and document | Parent | Prerequisites | Status | Jira |
 | --- | --- | --- | --- | --- |
-| [T-001 — Move Instructor View to its dedicated routes](docs/exec-plans/current/epics/user-preview/tickets/T-001.md) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | None | Created and verified | [MER-6222](https://eliterate.atlassian.net/browse/MER-6222) |
-| [T-002 — Apply route-derived student presentation to delivery](docs/exec-plans/current/epics/user-preview/tickets/T-002.md) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | None | Created and verified | [MER-6223](https://eliterate.atlassian.net/browse/MER-6223) |
+| [T-001 — Move Instructor View to its dedicated routes](docs/exec-plans/current/epics/user-preview/tickets/T-001.md) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | None; external prerequisites belong to parent Story | Created and verified | [MER-6222](https://eliterate.atlassian.net/browse/MER-6222) |
+| [T-002 — Apply route-derived student presentation to delivery](docs/exec-plans/current/epics/user-preview/tickets/T-002.md) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | None; external prerequisites belong to parent Story | Created and verified | [MER-6223](https://eliterate.atlassian.net/browse/MER-6223) |
 | [T-003 — Add the instructor perspective selector and return flow](docs/exec-plans/current/epics/user-preview/tickets/T-003.md) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | [T-001](docs/exec-plans/current/epics/user-preview/tickets/T-001.md), [T-002](docs/exec-plans/current/epics/user-preview/tickets/T-002.md) | Created and verified | [MER-6224](https://eliterate.atlassian.net/browse/MER-6224) |
-| [T-004 — Admin preview identity and instructor enrollment](docs/exec-plans/current/epics/user-preview/tickets/T-004.md) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md) | Created and verified | [MER-6225](https://eliterate.atlassian.net/browse/MER-6225) |
-| [T-005 — Section and legacy admin preview integration](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md), [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md), [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md) | Created and verified | [MER-6226](https://eliterate.atlassian.net/browse/MER-6226) |
-| [T-006 — Shared delivery presentation boundary](docs/exec-plans/current/epics/user-preview/tickets/T-006.md) | [F-004](docs/exec-plans/current/epics/user-preview/tickets/F-004.md) | None | Created and verified | [MER-6227](https://eliterate.atlassian.net/browse/MER-6227) |
+| [T-004 — Admin preview identity and instructor enrollment](docs/exec-plans/current/epics/user-preview/tickets/T-004.md) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | None; external prerequisites belong to parent Story | Created and verified | [MER-6225](https://eliterate.atlassian.net/browse/MER-6225) |
+| [T-005 — Section and legacy admin preview integration](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) | [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md), [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md) | Created and verified | [MER-6226](https://eliterate.atlassian.net/browse/MER-6226) |
+| [T-006 — Shared delivery presentation boundary](docs/exec-plans/current/epics/user-preview/tickets/T-006.md) | [F-004](docs/exec-plans/current/epics/user-preview/tickets/F-004.md) | None; external prerequisites belong to parent Story | Created and verified | [MER-6227](https://eliterate.atlassian.net/browse/MER-6227) |
 | [T-007 — Integrate basic and advanced author preview](docs/exec-plans/current/epics/user-preview/tickets/T-007.md) | [F-004](docs/exec-plans/current/epics/user-preview/tickets/F-004.md) | [T-006](docs/exec-plans/current/epics/user-preview/tickets/T-006.md) | Created and verified | [MER-6228](https://eliterate.atlassian.net/browse/MER-6228) |
-| [T-008 — Authorized single-question rendering](docs/exec-plans/current/epics/user-preview/tickets/T-008.md) | [F-005](docs/exec-plans/current/epics/user-preview/tickets/F-005.md) | None | Created and verified | [MER-6229](https://eliterate.atlassian.net/browse/MER-6229) |
+| [T-008 — Authorized single-question rendering](docs/exec-plans/current/epics/user-preview/tickets/T-008.md) | [F-005](docs/exec-plans/current/epics/user-preview/tickets/F-005.md) | None; external prerequisites belong to parent Story | Created and verified | [MER-6229](https://eliterate.atlassian.net/browse/MER-6229) |
 | [T-009 — Bank launch, banner, and return](docs/exec-plans/current/epics/user-preview/tickets/T-009.md) | [F-005](docs/exec-plans/current/epics/user-preview/tickets/F-005.md) | [T-008](docs/exec-plans/current/epics/user-preview/tickets/T-008.md) | Created and verified | [MER-6230](https://eliterate.atlassian.net/browse/MER-6230) |
 | [T-010 — Align bank question action controls](docs/exec-plans/current/epics/user-preview/tickets/T-010.md) | [F-005](docs/exec-plans/current/epics/user-preview/tickets/F-005.md) | [T-009](docs/exec-plans/current/epics/user-preview/tickets/T-009.md) | Created and verified | [MER-6231](https://eliterate.atlassian.net/browse/MER-6231) |
-| [T-011 — Accessible limitation presentation and static cases](docs/exec-plans/current/epics/user-preview/tickets/T-011.md) | [F-006](docs/exec-plans/current/epics/user-preview/tickets/F-006.md) | None | Created and verified | [MER-6232](https://eliterate.atlassian.net/browse/MER-6232) |
+| [T-011 — Accessible limitation presentation and static cases](docs/exec-plans/current/epics/user-preview/tickets/T-011.md) | [F-006](docs/exec-plans/current/epics/user-preview/tickets/F-006.md) | None; external prerequisites belong to parent Story | Created and verified | [MER-6232](https://eliterate.atlassian.net/browse/MER-6232) |
 | [T-012 — Conditional embedded preview message](docs/exec-plans/current/epics/user-preview/tickets/T-012.md) | [F-006](docs/exec-plans/current/epics/user-preview/tickets/F-006.md) | [T-011](docs/exec-plans/current/epics/user-preview/tickets/T-011.md) | Created and verified | [MER-6233](https://eliterate.atlassian.net/browse/MER-6233) |
 | [T-013 — Explain limited and sample behavior in page preview](docs/exec-plans/current/epics/user-preview/tickets/T-013.md) | [F-006](docs/exec-plans/current/epics/user-preview/tickets/F-006.md) | [T-012](docs/exec-plans/current/epics/user-preview/tickets/T-012.md) | Created and verified | [MER-6234](https://eliterate.atlassian.net/browse/MER-6234) |
-| [T-014 — Review-section association and Publish-driven updates](docs/exec-plans/current/epics/user-preview/tickets/T-014.md) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | None | Created and verified | [MER-6235](https://eliterate.atlassian.net/browse/MER-6235) |
+| [T-014 — Review-section association and Publish-driven updates](docs/exec-plans/current/epics/user-preview/tickets/T-014.md) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | None; external prerequisites belong to parent Story | Created and verified | [MER-6235](https://eliterate.atlassian.net/browse/MER-6235) |
 | [T-015 — Authorized launch, readiness, and session contract](docs/exec-plans/current/epics/user-preview/tickets/T-015.md) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | [T-014](docs/exec-plans/current/epics/user-preview/tickets/T-014.md) | Created and verified | [MER-6236](https://eliterate.atlassian.net/browse/MER-6236) |
 | [T-016 — Failed-state Reset Preview recovery](docs/exec-plans/current/epics/user-preview/tickets/T-016.md) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | [T-015](docs/exec-plans/current/epics/user-preview/tickets/T-015.md) | Created and verified | [MER-6237](https://eliterate.atlassian.net/browse/MER-6237) |
-| [T-017 — Launch Full Course Preview from Publish with a complete preview shell](docs/exec-plans/current/epics/user-preview/tickets/T-017.md) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | [T-002](docs/exec-plans/current/epics/user-preview/tickets/T-002.md), [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) | Created and verified | [MER-6238](https://eliterate.atlassian.net/browse/MER-6238) |
+| [T-017 — Launch Full Course Preview from Publish with a complete preview shell](docs/exec-plans/current/epics/user-preview/tickets/T-017.md) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) | Created and verified | [MER-6238](https://eliterate.atlassian.net/browse/MER-6238) |
 | [T-018 — Add a publication-aware Full Course Preview card to Review](docs/exec-plans/current/epics/user-preview/tickets/T-018.md) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | [T-017](docs/exec-plans/current/epics/user-preview/tickets/T-017.md) | Created and verified | [MER-6239](https://eliterate.atlassian.net/browse/MER-6239) |
-| [T-019 — Preview-user ownership, markers, and reset](docs/exec-plans/current/epics/user-preview/tickets/T-019.md) | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | None | Created and verified | [MER-6240](https://eliterate.atlassian.net/browse/MER-6240) |
-| [T-020 — Full Course Preview identity integration](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | [T-016](docs/exec-plans/current/epics/user-preview/tickets/T-016.md), [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md) | Created and verified | [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) |
+| [T-019 — Preview-user ownership, markers, and reset](docs/exec-plans/current/epics/user-preview/tickets/T-019.md) | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | None; external prerequisites belong to parent Story | Created and verified | [MER-6240](https://eliterate.atlassian.net/browse/MER-6240) |
+| [T-020 — Full Course Preview identity integration](docs/exec-plans/current/epics/user-preview/tickets/T-020.md) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) | [T-016](docs/exec-plans/current/epics/user-preview/tickets/T-016.md) | Created and verified | [MER-6241](https://eliterate.atlassian.net/browse/MER-6241) |
 
 ### Requirements Traceability Analysis (RTA)
 
@@ -423,7 +425,7 @@ This is planned acceptance coverage, not proof of implemented behavior. Criterio
 | R-007 | Three Review states, draft count, preserved review/chart | Publish diff/version and QA machinery exist; Review card and published launch are missing. | [T-018](docs/exec-plans/current/epics/user-preview/tickets/T-018.md) ([MER-6239](https://eliterate.atlassian.net/browse/MER-6239)) AC1–8; evidence reviewed. Version information describes the section publication under Q10. |
 | [R-008](#r-008-keep-preview-controls-accessible-and-authorized) | Keyboard/focus/reflow, actor/project access, safe returns | Existing guards and return helpers are reused; each changed surface retains its own positive/negative acceptance. | T-001 AC4–6; T-002 AC5–10; T-004/T-005 AC1/2/5–9; T-003 AC3–7; F-003 AC3/5/6; F-002 AC2–6; F-008 AC2–6; F-004 P2/P3/N2; T-011/T-012 P3/N4; T-013 P3/N3; T-008/T-009 P1–3/N2; T-010 P2/N1–3; T-014/T-015/T-016 AC3/5–10; T-018 AC5–8; T-017 AC2/3/5–8. |
 | [R-009](#r-009-guide-first-time-instructors-to-the-view-switcher) | First entry, exact text, usable highlight, durable dismissal, focus | User preferences and warning-dismissal patterns exist. Add a user-only preference/callout, including the dedicated admin preview user’s state; no author preference or separate dismissal mapping. | [F-008](docs/exec-plans/current/epics/user-preview/tickets/F-008.md) ([MER-6218](https://eliterate.atlassian.net/browse/MER-6218)) AC1–6; evidence reviewed. Guidance frame and original screenshot are included in F-008; visual implementation checks remain future work. |
-| [R-010](#r-010-manage-and-reset-the-author-linked-preview-user) | Reset Preview User, own-account association, fresh cross-project progress, unified admin identity and preserved normal sessions | Account settings and synthetic-user creation exist; distinct preview association/reset and full-course identity integration are missing. | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) ([MER-6220](https://eliterate.atlassian.net/browse/MER-6220)) AC1–3/5–8 and T-019/T-020; evidence reviewed under Q11’s first-use dedicated-user policy. T-014/T-015/T-016 supplies launch/session foundations; [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md), [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) ([MER-6225](https://eliterate.atlassian.net/browse/MER-6225), [MER-6226](https://eliterate.atlassian.net/browse/MER-6226)) AC1–9 covers admin adoption and reset reuse. |
+| [R-010](#r-010-manage-and-reset-the-author-linked-preview-user) | Reset Preview User, own-account association, fresh cross-project progress, unified admin identity and preserved normal sessions | Account settings and synthetic-user creation exist; distinct preview association/reset and full-course identity integration are missing. | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) ([MER-6220](https://eliterate.atlassian.net/browse/MER-6220)) AC1–3/5–8 and T-019; F-007/T-020 owns project identity integration; evidence reviewed under Q11’s first-use dedicated-user policy. T-014/T-015/T-016 supplies launch/session foundations; [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md), [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) ([MER-6225](https://eliterate.atlassian.net/browse/MER-6225), [MER-6226](https://eliterate.atlassian.net/browse/MER-6226)) AC1–9 covers admin adoption and reset reuse. |
 | [R-011](#r-011-identify-preview-users-and-sections) | Queryable generated users and dedicated sections, including superseded records; no cleanup | Generic hidden/type/current-link values are insufficient. Add persistent preview-purpose markers at creation/replacement. | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) ([MER-6220](https://eliterate.atlassian.net/browse/MER-6220)) AC4/9, [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md), [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) ([MER-6225](https://eliterate.atlassian.net/browse/MER-6225), [MER-6226](https://eliterate.atlassian.net/browse/MER-6226)) AC6/7/9, and [T-014](docs/exec-plans/current/epics/user-preview/tickets/T-014.md), [T-015](docs/exec-plans/current/epics/user-preview/tickets/T-015.md), [T-016](docs/exec-plans/current/epics/user-preview/tickets/T-016.md) ([MER-6235](https://eliterate.atlassian.net/browse/MER-6235), [MER-6236](https://eliterate.atlassian.net/browse/MER-6236), [MER-6237](https://eliterate.atlassian.net/browse/MER-6237)) AC11/T-014/T-016; identification planned, cleanup excluded. |
 
 The 11 Stories and 20 sub-tasks cover the approved requirements with verified ticket content and relationships. Q11 defines first-use dedicated preview-user provisioning. Q10 defines the latest-publication boundary while preserving ordinary attempt behavior. Implementation and runtime acceptance remain future work. Deferred/excluded scope remains Make-prototype-only behavior, broader bank editor/filter redesign, unsupported activity capabilities, draft display in full-course preview, automatic progress reset, cleanup jobs, and retention policy.
@@ -433,90 +435,50 @@ Accessibility and authorization acceptance is owned by the affected Stories and 
 
 ## Lanes
 
-Each lane is a proposed serial ownership sequence with progressive merges. Solid arrows are the 21 technical prerequisites; dashed arrows indicate scheduling only. Tasks within one Feature may span lanes: F-001’s admin identity integration belongs in D, while its ordinary instructor work belongs in A. F-011 tracks classification acceptance across primary owners. F-009 is closed and has no delivery sequence; accessibility and authorization acceptance belongs to each affected feature. The task graph is acyclic; the grouped cross-lane graph is A → D.
-
-| Lane | Serial sequence | Handoffs |
-| --- | --- | --- |
-| A — Instructor perspectives | T-001 → T-002 → T-003 → F-003 → F-002 → F-008 | T-002 supplies student presentation to T-017; T-003 supplies the selector to T-005. |
-| B — Author page preview | T-006 → T-007 → T-011 → T-012 → T-013 | T-006/T-007 share delivery presentation; T-011/T-012/T-013 cover all nine author-page limitation types. |
-| C — Bank question preview | T-008 → T-009 → T-010 | T-008 enables bank launch/return, then T-010 completes the five action controls. |
-| D — Published course and preview identity | T-014 → T-015 → T-016 → T-019 → T-020 → T-004 → T-005 → T-017 → T-018 | T-019 can be analyzed independently; T-020 consumes completed section readiness/reset and the owned-user foundation. T-004/T-005 integrate admin entry; T-017/T-018 deliver Publish and Review. |
+Stories are the units of delivery. Dependencies between Stories are recorded only between their Story tickets. Sub-task Blocks links order work within one Story. A Story starts after its prerequisite Stories are delivered; shared acceptance does not create a sub-task dependency on another Story.
 
 ```mermaid
 flowchart TB
-  subgraph A["Lane A — Instructor perspectives"]
+  subgraph A["Lane A — Preview-user foundation"]
     direction LR
-    T001["T-001: Move Instructor View to its dedicated routes"]
-    T002["T-002: Apply route-derived student presentation to delivery"]
-    T003["T-003: Add the instructor perspective selector and return flow"]
-    F003["F-003: Gating Instructor View/Student Preview Bypass"]
-    F002["F-002: Instructor preview notes"]
-    F008["F-008: Instructor Guidance on Switching Views"]
+    F010["F-010: Preview-user management"]
   end
-  subgraph B["Lane B — Author page preview"]
+  subgraph B["Lane B — Instructor perspectives"]
     direction LR
-    T006["T-006: Shared delivery presentation boundary"]
-    T007["T-007: Integrate basic and advanced author preview"]
-    T011["T-011: Accessible limitation presentation and static cases"]
-    T012["T-012: Conditional embedded preview message"]
-    T013["T-013: Explain limited and sample behavior in page preview"]
+    F001["F-001: Instructor/student perspectives"]
+    F002["F-002: Instructor notes"]
+    F003["F-003: Gating bypass"]
+    F008["F-008: Switching guidance"]
+    F001 --> F002
+    F001 --> F003
+    F001 --> F008
+    F003 -.-> F002 -.-> F008
   end
-  subgraph C["Lane C — Bank question preview"]
+  subgraph C["Lane C — Project publication preview"]
     direction LR
-    T008["T-008: Authorized single-question rendering"]
-    T009["T-009: Bank launch, banner, and return"]
-    T010["T-010: Align bank question action controls"]
+    F007["F-007: Project preview and identity integration"]
   end
-  subgraph D["Lane D — Published course and preview identity"]
+  subgraph D["Lane D — Author page preview"]
     direction LR
-    T014["T-014: Review-section association and Publish-driven updates"]
-    T015["T-015: Authorized launch, readiness, and session contract"]
-    T016["T-016: Failed-state Reset Preview recovery"]
-    T019["T-019: Preview-user ownership, markers, and reset"]
-    T020["T-020: Full Course Preview identity integration"]
-    T004["T-004: Admin preview identity and instructor enrollment"]
-    T005["T-005: Section and legacy admin preview integration"]
-    T017["T-017: Launch Full Course Preview from Publish with a complete preview shell"]
-    T018["T-018: Add a publication-aware Full Course Preview card to Review"]
+    F004["F-004: Shared page preview"] -.-> F006["F-006: Preview limitations"]
   end
-  T001 --> T003
-  T002 --> T003
-  T002 --> T017
-  T003 --> F003
-  T003 --> F002
-  T003 --> F008
-  T003 --> T005
-  T006 --> T007
-  T011 --> T012
-  T012 --> T013
-  T008 --> T009
-  T009 --> T010
-  T014 --> T015
-  T015 --> T016
-  T016 --> T020
-  T019 --> T020
-  T019 --> T004
-  T020 --> T017
-  T020 --> T005
-  T004 --> T005
-  T017 --> T018
-  T001 -.-> T002
-  F003 -.-> F002
-  F002 -.-> F008
-  T007 -.-> T011
-  T016 -.-> T019
-  T020 -.-> T004
-  T005 -.-> T017
-  A ~~~ B ~~~ C ~~~ D
+  subgraph E["Lane E — Bank preview"]
+    direction LR
+    F005["F-005: Isolated bank question preview"]
+  end
+  F010 --> F001
+  F010 --> F007
+  F001 --> F007
+  A ~~~ B ~~~ C ~~~ D ~~~ E
 ```
 
-No feature flag is introduced. User-facing switching and Full Course Preview entry remain gated by the concrete prerequisite handoffs recorded in the tickets. Story sizes are not calendar commitments or estimates for individual sub-tasks.
+Solid arrows are the six Story-level prerequisites; dashed arrows are scheduling only. Invisible links arrange the lane blocks. F-011 tracks classification acceptance in its linked implementation; F-009 is closed. The Story graph and the complete work-item graph are acyclic. Fourteen same-Story sub-task links preserve implementation order; the full list is in feature_tracability.md. No feature flag is introduced.
 
 ## Jira filing and next work
 
-All 31 ticket descriptions are cleaned and verified. Story descriptions are the requirements; tickets omit requirement-number references, Requirements analysis, authoring history, and relationship inventories. The 21 Relates links are recorded in feature_tracability.md and verified in Jira Linked work items. Existing Blocks links, parent/sub-task relationships, and all 17 screenshots are preserved.
+All 31 ticket descriptions are cleaned and verified. Story descriptions are the requirements; tickets omit requirement-number references, Requirements analysis, authoring history, and relationship inventories. The 21 Relates links are recorded in feature_tracability.md and verified in Jira Linked work items. The current 20 Blocks links follow Story delivery boundaries; MER-6241 belongs to MER-6217. All 17 screenshots are preserved.
 
-Filing is complete and verified. [MER-6158](https://eliterate.atlassian.net/browse/MER-6158) contains exactly 11 replacement Story child work items: the eight handoff Features plus R-008, R-010, and R-011. Their 20 direct sub-tasks retain the migrated implementation detail and inherited context. All 21 Blocks links have the approved direction; related Feature acceptance is cross-linked without duplicate implementation tickets.
+Filing is complete and verified. [MER-6158](https://eliterate.atlassian.net/browse/MER-6158) contains exactly 11 replacement Story child work items: the eight handoff Features plus R-008, R-010, and R-011. Their 20 direct sub-tasks implement their owning Stories. F-010 owns the reusable user capability; F-007 owns project preview identity integration. All 20 Blocks links have the approved direction; related Feature acceptance is cross-linked without duplicate implementation tickets.
 
 The 29 old issues are Closed Won’t Do, with descriptions and history retained; the 16 old Stories are no longer epic children. The [migration table](docs/exec-plans/current/epics/user-preview/feature_tracability.md#ticket-recreation-migration) records every old identifier, corresponding new Jira URL, and verified migration state.
 
